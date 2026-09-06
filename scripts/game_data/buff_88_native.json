@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124891,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_Probablity_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_Probablity_DataForMemoryPackFormatter",
+      "Deserialize",
+      67762768
+    ],
+    [
+      124890,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_Probablity_DataForMemoryPack",
+      "Deserialize",
+      67762864
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67762768,
+      "endRva": 67762861,
+      "sha256": "9A463F00C61CC931C14E5D5110161E594E301719CE9E27C31F1BB734CF13D7DC",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 67762864,
+      "endRva": 67763195,
+      "sha256": "90102EEF6F0B6A093BF648F03BB4FAD40E2B1371115884ACBDB192F27B5168D1",
+      "boundary": "member5 normal source read order through RET"
+    },
+    {
+      "startRva": 67763195,
+      "endRva": 67763267,
+      "sha256": "09D8EC4D5EAC68469A6A17FF08D7708DB978F375B9D472512720656A1F88CD0A",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83304079,
+      "endRva": 83304100,
+      "sha256": "B0635AE6D7025E62932A6F5B584024C949D99FFB3F05B130CB2F59088E2ACC9D",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67763036,
+      "instructionHex": "488B15C5A2FE08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67763142,
+      "instructionHex": "488B15534AF508",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalarPayload"
+    ]
+  },
+  "boundary": "Exact static registration/module/token joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing: member-five header, byte, three scalar32 values and finite BlackboardDouble profile. Preserve null and empty payloads, arbitrary scalar bits and the nested four-byte raw value. The priority enum MethodSpec adds no nested member; the final context matches the separately pinned scalar-payload reader, not live formatter selection. Output setters and lazy construction add no source members. Field names, probability meaning, runtime use, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

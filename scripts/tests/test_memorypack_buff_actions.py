@@ -25,6 +25,11 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def tag88(nested=None):
+    return (b'\x88\x05\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
+            (scalar_payload() if nested is None else nested))
+
+
 def tag7a(value=b'wire',bits=0xffffffff):
     return (b'\x7a\x06\xfe'+struct.pack('<IIII',0xffffffff,0x80000000,0x7fc00000,bits)+payload(value))
 
@@ -1335,6 +1340,46 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
 
+    def test_tag88_scalar_payload_is_final_member(self):
+        for value in (None,b'',b'x',bytes(range(256))):
+            for bits in (bytes(4),b'\xff'*4,b'\x00\x00\xc0\x7f'):
+                child=tag88(scalar_payload(value,128,bits));end=19+len(child)
+                self.assertEqual(len(child),25+len(value or b''))
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='88.bin')
+                self.assertEqual(row['diagnostic'],dict(source='88.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=136),row['completedRecords'])
+                self.assertEqual(row['ranges'][-1],dict(start=end-4,end=end,kind='anonymous-scalar32'))
+                self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag88_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag88(),tag88(scalar_payload(None)),tag88(scalar_payload(b'')),tag88(b'\xff'),b'\x88\xff',b'\xfa\x88\x00'+tag88()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='88-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='88-limit',limit=n))
+
+    def test_tag88_bad_headers_and_counts(self):
+        raw=prefix(sequence(tag88()));good=event_prefix(raw,source='88-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='88-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('88-bounds',at,value))
+        row=event_prefix(prefix(sequence(b'\x48'+tag88()[1:])),source='88-other')
+        self.assertEqual(row['diagnostic'],dict(source='88-other',offset=19,expected='supported current union tag',actual=72,category='union-tag'))
+
     def test_tag7a_scalar_and_variable_payload_extent(self):
         for value in (None,b'',b'x',bytes(range(256))):
             for bits in (0,0xffffffff,0x80000000,0x7fc00000):
@@ -1372,9 +1417,9 @@ class BuffActionsTests(unittest.TestCase):
                 row=event_prefix(bad,source='7a-bounds')
                 self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('7a-bounds',at,value))
-        # Unknown physical tag stays unsupported, even with this known header.
+        # The newly supported physical tag requires its own member header.
         row=event_prefix(prefix(sequence(b'\x88'+tag7a()[1:])),source='7a-other')
-        self.assertEqual(row['diagnostic'],dict(source='7a-other',offset=19,expected='supported current union tag',actual=136,category='union-tag'))
+        self.assertEqual(row['diagnostic'],dict(source='7a-other',offset=20,expected=5,actual=6,category='member-count'))
 
     def test_tag0a_variable_payload_before_target_and_no_final_byte(self):
         for value in (None,b'',b'x',bytes(range(256))):

@@ -457,6 +457,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   source calls, not output fields. Preserve null/empty payloads and the scalar
   payload's four-byte raw value. Timer meaning and live provider choice remain
   unresolved; exact forward ranges do not establish whole-BuffData EOF.
+  `scripts/game_data/buff_88_native.json` pins a member-five action whose final
+  member is the same finite scalar payload. Its raw value occupies four bytes
+  despite the managed type name; neither that name nor the action identity
+  proves probability meaning. There is no source member after the nested read.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
