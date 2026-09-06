@@ -357,7 +357,12 @@ only.
   that missing runtime lineage keeps publication closed. The intervening graph
   handle is a logical resource record, not a D3D buffer identity. The pool's
   staging branch copies heap bytes through map/copy/unmap; map references can
-  share a backend mapping. The native D3D11 binder's range conversion is now
+  share a backend mapping. Native differential tests show the reference-policy
+  words decrement and reset and can retain a mapping across wrapper releases;
+  they are not generation IDs. Upload observation must follow backend mapping
+  lifetime from installation, preserving unknown initial mappings across windows.
+  See `cpp_map_reference_native_differential.json` for the conditional model.
+  The native D3D11 binder's range conversion is now
   recovered, but a causal upload generation must still connect the allocation
   to the draw. See `cpp_shadow_publication_native.json` for the exact contract.
   The copy routine produces distinct packed-constant and secondary allocations.
