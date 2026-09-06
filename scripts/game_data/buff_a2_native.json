@@ -1,0 +1,153 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119966,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EffectAction_EffectActionDataForMemoryPack+Beyond_Gameplay_Core_EffectAction_EffectActionDataForMemoryPackFormatter",
+      "Deserialize",
+      65724864
+    ],
+    [
+      119965,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EffectAction_EffectActionDataForMemoryPack",
+      "Deserialize",
+      53276560
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 65724864,
+      "endRva": 65724957,
+      "sha256": "471DB6CF06CBED6C32A3BCA05EBB2B757E8C4B5FD2AD441BD20619F9C016C6A3",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 53276560,
+      "endRva": 53278133,
+      "sha256": "76E9866C75E5AD53C6E9A063CEB1223FA1893EDFC3277E81C32FF00810ABD11D",
+      "boundary": "member18 normal source read order through RET"
+    },
+    {
+      "startRva": 53278133,
+      "endRva": 53278150,
+      "sha256": "672A4EFC6964180749DC5C7B99D552E388E18ED917AA7C80590C6C6627C89505",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    },
+    {
+      "startRva": 53278150,
+      "endRva": 53279310,
+      "sha256": "2C433D9FBEAFDA662B87275F549B6921C394CE48C4B3143D5C3F87871EE713BB",
+      "boundary": "cached output casts, stores and lazy initialization rejoins"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 53276998,
+      "instructionHex": "488B15BB25D909",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53277092,
+      "instructionHex": "488B151D49E009",
+      "cellVa": 6661421768,
+      "usageRawHex": "D3EA12C000000000",
+      "methodSpecIndex": 619881,
+      "methodSpec": [
+        428464,
+        -1,
+        14443
+      ],
+      "argumentRawHex": "200E0000000000000000120000000000",
+      "typeDefinition": 3616,
+      "typeName": "Beyond.Gameplay.EffectActionCfg",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53277186,
+      "instructionHex": "488B15FF24D909",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53277362,
+      "instructionHex": "488B154F24D909",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53277935,
+      "instructionHex": "488B151222D909",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member18": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "target-profile",
+      "effect-configuration-profile",
+      "target-profile",
+      "byte",
+      "target-profile",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte-payload",
+      "target-profile",
+      "byte"
+    ]
+  },
+  "boundary": "Exact static registration/module/token and five MethodSpec/type joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source read order supports structural-only finite framing. Four TargetSettings calls reuse buff_ec_native.json with finite selector extensions in buff_b2_native.json; the separate EffectActionCfg instance reuses the member85 source order in buff_9a_native.json. Byte payloads reuse the signed-length/advance helper proof. Repeated target type arguments do not merge serialized instances. Cached output casts, stores and lazy initialization rejoin the same source order; output offsets do not establish wire widths. Unknown nested shapes, nonempty unsupported effect arrays, deeper target recursion, string decoding, live provider selection, allocation/refill/error parity, field/gameplay meaning and whole-BuffData EOF remain unresolved."
+}

@@ -318,6 +318,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   null/empty-only; positive counts stop explicitly until element readers close.
   A normal exit may tail-jump to the write barrier: pin the entire instruction
   and the separate null rejoin, not an assumed RET or partial JMP byte.
+  The member-eighteen action in `scripts/game_data/buff_a2_native.json` reads
+  two byte payloads, four separate targets and one effect configuration among
+  its scalar members. Reuse the pinned member-85 configuration and finite
+  target profiles, preserving each instance's own unsupported boundary.
+  Cached output casts and stores rejoin the source reads; they add no wire
+  members and cannot substitute for the source cursor order.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

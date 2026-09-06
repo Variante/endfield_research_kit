@@ -131,6 +131,13 @@ def tag9a(units=None,env=None):
             (b'\x04'+bytes(8)+b'\xfe\xff'+b'\x00\x01'+scalar_payload(None) if env is None else env)+b'\x80'+target())
 
 
+def taga2(first=b'key',last=b'\xff\x00',targets=None,effect=None):
+    targets=(target(),)*4 if targets is None else targets
+    return (b'\xa2\x12\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+payload(first)+
+            targets[0]+(effect85() if effect is None else effect)+targets[1]+b'\xff'+targets[2]+
+            b'\xfe\x80\x01\x00\xff'+payload(last)+targets[3]+b'\x80')
+
+
 def tag02(items=(b'\x01'+payload(b'id'),),targets=None,value=None,flag=254):
     targets=(target(),)*3 if targets is None else targets
     return (b'\x02\x0c'+bytes([flag])+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
@@ -159,6 +166,51 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_taga2_four_targets_and_effect_boundaries(self):
+        row=event_prefix(prefix(sequence(taga2(),b'\x59')),source='a2.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',731))
+        self.assertEqual(row['diagnostic'],dict(source='a2.bin',offset=731,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertIn(dict(start=19,end=731,kind='union',tag=162),row['completedRecords'])
+        self.assertEqual([(r['start'],r['end']) for r in row['completedRecords'] if r['kind']=='anonymous-target-profile'],[(41,121),(478,558),(559,639),(650,730)])
+        self.assertIn(dict(start=121,end=478,kind='anonymous-effect-configuration-profile'),row['completedRecords'])
+        self.assertEqual(row['opaqueRemainderRange'],[731,734]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_taga2_nulls_extended_tag_truncations_and_limits(self):
+        for child in (taga2(),taga2(None,b'',(b'\xff',)*4,b'\xff'),b'\xa2\xff',
+                      b'\xfa\xa2\x00'+taga2()[1:],taga2(b'long-variable-payload',None)):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.subTest(n=n),self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='a2-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='a2-limit',limit=n))
+
+    def test_taga2_bad_headers_and_lengths(self):
+        raw=prefix(sequence(taga2()));good=event_prefix(raw,source='a2-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='a2-bounds')
+                self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+
+    def test_taga2_each_target_keeps_unknown_nested_boundary(self):
+        for index in range(4):
+            targets=[target()]*4;targets[index]=target(selector=b'\x03\xfe'+bytes(8))
+            row=event_prefix(prefix(sequence(taga2(targets=targets))),source='a2-gap')
+            self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['category'],'nested-profile')
+            self.assertFalse(any(r.get('tag')==162 for r in row['completedRecords']))
+        # An unrelated action body cannot be selected by replacing its tag/header.
+        wrong=b'\xa2\x12'+tag9a()[2:]
+        with self.assertRaises(FrameError):sequence_frame(sequence(wrong))
+
     def test_tag9a_nested_boundaries_and_unknown_tail(self):
         child=tag9a();row=event_prefix(prefix(sequence(child,b'\x59')),source='9a.bin')
         end=19+len(child)
