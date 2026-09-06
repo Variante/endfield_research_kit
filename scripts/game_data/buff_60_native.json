@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124226,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckEnemyRank_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckEnemyRank_DataForMemoryPackFormatter",
+      "Deserialize",
+      69242704
+    ],
+    [
+      124225,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckEnemyRank_DataForMemoryPack",
+      "Deserialize",
+      69242800
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 69242704,
+      "endRva": 69242797,
+      "sha256": "2EADDB95A26D5D0D9810546998C09FF964141663A0C77B30C95DEDF8A75C057B",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 69242800,
+      "endRva": 69243171,
+      "sha256": "3F4540AF2BB58D2118757A858C6BC89C642AC09D61979F0CF16E9A11E9D38EB6",
+      "boundary": "member6 source reads through normal RET"
+    },
+    {
+      "startRva": 69243171,
+      "endRva": 69243255,
+      "sha256": "AF3AE037DB7EC98B7A171F773727E4CA065966AFE7725F857B07B96DB7109227",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83451250,
+      "endRva": 83451263,
+      "sha256": "9E865D414751A96970A3E0ED4154EA4E366754B2EB285E8352D6F29E14AA906E",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83451319,
+      "endRva": 83451340,
+      "sha256": "D1C080D0953A42A72B0F8D30AFA33B5E61C7C87A2EE23D87113A31F6C95ACF97",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 69242972,
+      "instructionHex": "488B15C50DE808",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 69243078,
+      "instructionHex": "488B15AB10E308",
+      "cellVa": 6660792696,
+      "usageRawHex": "73E712C000000000",
+      "methodSpecIndex": 619449,
+      "methodSpec": [
+        428448,
+        -1,
+        42451
+      ],
+      "argumentRawHex": "B8340000000000000000118000000000",
+      "typeDefinition": 13496,
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckEnemyRank+EnemyRankSet",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 69243118,
+      "instructionHex": "488B151386E508",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member6 action consumes common byte/three DWORD then DWORD and final TargetSettings. The exact EnemyRankSet context selects the DWORD source helper, not an inferred width from a type name. Preserve raw scalar bits. The final target context joins the existing finite reader; unsupported children keep the parent incomplete. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Constructors and output setters add no source bytes. Enemy rank interpretation, comparison behavior, target ownership, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
