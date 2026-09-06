@@ -297,7 +297,9 @@ only.
   code pins. Publication requires the unique camera-frame join, coherent pointer
   rereads and the native branch. Matching owned producer-vector bytes still
   does not identify the actual pooled upload resource and binding range;
-  that missing runtime lineage keeps publication closed.
+  that missing runtime lineage keeps publication closed. The intervening graph
+  handle is a logical resource record, not a D3D buffer identity; a causal
+  mapping/upload generation must connect its allocation to the draw binding.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
