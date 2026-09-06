@@ -9,7 +9,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 from scripts.game_data.il2cpp_context import ContextError
-from scripts.game_data.il2cpp_context_audit import buff_ec_read_order
+from scripts.game_data.il2cpp_context_audit import buff_action_read_order
 
 
 class BuffEcNativeTests(unittest.TestCase):
@@ -41,7 +41,7 @@ class BuffEcNativeTests(unittest.TestCase):
     def decode(self):
         self.path.write_text(json.dumps(self.contract),encoding='utf8')
         with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]) as methods:
-            result=buff_ec_read_order(self.pe,self.md,self.reg,self.table,{},[],source='selected.dll',contract_path=self.path)
+            result=buff_action_read_order(self.pe,self.md,self.reg,self.table,{},[],source='selected.dll',contract_path=self.path)
             methods.assert_called_once_with(self.pe,self.md,{},[],[],source='selected.dll',expected_image='MemoryPack.Beyond.dll')
             return result
 

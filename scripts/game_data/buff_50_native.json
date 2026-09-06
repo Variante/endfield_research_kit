@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124837,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CompareFloat_DataForMemoryPack",
+      "Deserialize",
+      58576976
+    ],
+    [
+      124838,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CompareFloat_DataForMemoryPack+Beyond_Gameplay_Core_CompareFloat_DataForMemoryPackFormatter",
+      "Deserialize",
+      58576880
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58576880,
+      "endRva": 58576973,
+      "sha256": "41D90EC42DCA5EDD21D58BEABD4D0857154EC83952F1268AC054442BD1C01E65",
+      "boundary": "formatter forwards reader/output to static reader"
+    },
+    {
+      "startRva": 58576976,
+      "endRva": 58577588,
+      "sha256": "CBBF3CFC7586803C5022D9DABBB40BED41C5B510374CE06C3B799D88651D3311",
+      "boundary": "member7 normal/null paths; external cold branches not complete"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58577345,
+      "instructionHex": "488B1558748109",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null
+    },
+    {
+      "instructionRva": 58577404,
+      "instructionHex": "488B151D748109",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Selected normal/null consumer order and exact static type joins only. Both nested arguments join the scalar-payload reader separately validated by selectedBuffEcReadOrder and buff_ec_native.json. Its member-three profile consumes signed byte-length/bytes, one normalized byte and four scalar bytes. The fourth top-level DWORD precedes both nested reads despite its later output-object offset. External cold reuse/refill/error branches, live formatter selection, decoder parity, concrete runtime source identity and whole-BuffData EOF remain unresolved."
+}

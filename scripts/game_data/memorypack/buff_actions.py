@@ -65,12 +65,16 @@ class Reader:
     def _action(self,depth):
         tag=self.peek()
         if tag==255:self.take(1,'null-union');return
-        if tag not in (201,118,236):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
+        if tag not in (201,118,236,80):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(1,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header({201:8,118:5,236:10}[tag])
+        self.header({201:8,118:5,236:10,80:7}[tag])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
+        if tag==80:
+            self.take(4,'anonymous-scalar32')
+            for _ in range(2):self.scalar_payload()
+            return
         if tag==236:
             self.take(4,'anonymous-scalar32')
             self.target_profile()

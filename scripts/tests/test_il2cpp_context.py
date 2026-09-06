@@ -258,15 +258,17 @@ class BuffUnionRouteTests(unittest.TestCase):
             (0x390DA8A,'488B15FF1B7909488B0BE8875D6FFC488BCF4885C00F85FC9F5501488B150C397D09E82B08A0FC488903488BD0E926FFFFFF'),
             (0x3910A00,'488B1509F37809488B0BE8112E6FFC488BCF4885C00F859B6F5501488B153E097D09E865DF10FD488903488BD0E9B0CFFFFF'),
             (0x39149EA,'488B150F5A7209488B0BE827EE6EFC488BCF4885C00F856B215501488B1554D17C09E8C39310FD488903488BD0E9C68FFFFF'),
-            (0x390DCB0,'488B15B1936F09488B0BE8615B6FFC488BCF4885C00F8595A35501488B15E6307D09E8451011FD488903488BD0E900FDFFFF'))}
+            (0x390DCB0,'488B15B1936F09488B0BE8615B6FFC488BCF4885C00F8595A35501488B15E6307D09E8451011FD488903488BD0E900FDFFFF'),
+            (0x390DC1A,'488B1527307309488B0BE8F75B6FFC488BCF4885C00F8571915501488B1514387D09E8130311FD488903488BD0E996FDFFFF'))}
         targets=[0]*416
-        types=[None]*16684;self.ptrs={}
+        types=[None]*16718;self.ptrs={}
         for tag,target,index,definition,suffix,init in (
             (0xC9,0x390DA8A,106672,16163,'IfElseAction_IfElseActionData',0x417E68A),
             (0xC0,0x3910A00,106641,16145,'GainCostAction_Data',0x417E4D1),
             (0x40,0x39149EA,106441,16615,'CheckDamageTag_Data',None),
             (0x76,0x390E160,106507,16683,'Conditions_CheckSkillId_Data',None),
-            (0xEC,0x390DCB0,106853,16241,'ModifyDynamicBlackboard_Data',None)):
+            (0xEC,0x390DCB0,106853,16241,'ModifyDynamicBlackboard_Data',None),
+            (0x50,0x390DC1A,106467,16717,'CompareFloat_Data',None)):
             targets[tag]=target;types[definition]='Beyond.MemoryPack.Beyond_Gameplay_Core_'+suffix+'ForMemoryPack'
             pointer=self.base+index*16
             self.parts[index*16]=struct.pack('<QII',definition,0x120000,0)
@@ -287,7 +289,7 @@ class BuffUnionRouteTests(unittest.TestCase):
             return buff_union_routes(self.pe,self.md,self.reg,{},[],source='fixture.dll')
 
     def test_current_tag_routes_do_not_alias_old_names(self):
-        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64,118,236])
+        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64,118,236,80])
         self.assertIn('IfElse',row['rows'][0]['wrapperName'])
         self.assertIn('GainCost',row['rows'][1]['wrapperName'])
 

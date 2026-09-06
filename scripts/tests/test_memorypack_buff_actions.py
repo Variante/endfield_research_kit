@@ -48,6 +48,12 @@ def tag_ec(*,nested=None,value=None,key=b'key'):
             b'\x80'+payload(key)+bytes(4)+(scalar_payload() if value is None else value))
 
 
+def tag50(first=None,second=None):
+    return (b'\x50\x07\xfe'+struct.pack('<IIII',0xffffffff,1,0x80000000,14)+
+            (scalar_payload(b'\xff\x00',128) if first is None else first)+
+            (scalar_payload(None,2,b'\x00\x00\x80\xff') if second is None else second))
+
+
 class BuffActionsTests(unittest.TestCase):
     def test_normal_nested_ranges_and_explicit_opaque_tail(self):
         raw=sequence(action(sequence(b'\xff'),sequence(),b'\xff'))
@@ -206,10 +212,69 @@ class BuffActionsTests(unittest.TestCase):
             self.assertEqual(row['status'],'unsupported')
             self.assertEqual(row['diagnostic']['category'],'nested-profile')
             self.assertFalse(any(r.get('tag')==236 for r in row['completedRecords']))
-        row=event_prefix(prefix(sequence(tag_ec(),b'\x50')),source='ec-next.bin')
+        row=event_prefix(prefix(sequence(tag_ec(),b'\x51')),source='ec-next.bin')
         self.assertEqual(row['status'],'unsupported')
-        self.assertEqual(row['diagnostic']['actual'],80)
+        self.assertEqual(row['diagnostic']['actual'],81)
         self.assertTrue(any(r.get('tag')==236 for r in row['completedRecords']))
+
+    def test_tag50_ordered_pair_and_completed_record(self):
+        child=tag50()
+        raw=prefix(sequence(action(sequence(child),sequence(tag_ec()),b'\xff')))
+        row=event_prefix(raw+b'opaque',source='50.bin',limit=len(raw))
+        self.assertEqual(row['status'],'supported-prefix')
+        union=next(r for r in row['completedRecords'] if r.get('tag')==80)
+        self.assertEqual(union['end']-union['start'],len(child))
+        items=[r for r in row['completedRecords'] if r['kind']=='anonymous-scalar-payload'
+               and union['start']<r['start']<union['end']]
+        self.assertEqual([(r['start'],r['end']) for r in items],
+                         [(union['start']+19,union['start']+31),(union['start']+31,union['end'])])
+        self.assertEqual(row['opaqueRemainderRange'],[len(raw),len(raw)+6])
+        self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag50_all_truncations_trailing_and_hard_limit(self):
+        raw=sequence(tag50())
+        for n in range(len(raw)):
+            with self.subTest(n=n),self.assertRaises(FrameError) as caught:
+                sequence_frame(raw[:n],source='50-cut.bin')
+            self.assertEqual(caught.exception.diagnostic['source'],'50-cut.bin')
+        with self.assertRaises(FrameError) as caught:sequence_frame(raw+b'x',source='50-tail.bin')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        full=prefix(raw)
+        for n in range(len(full)):
+            row=event_prefix(full,source='50-bound.bin',limit=n)
+            self.assertEqual(row['status'],'failed')
+            self.assertLessEqual(row['consumedEnd'],n)
+            self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='50-bound.bin',limit=n))
+
+    def test_tag50_malformed_lengths_and_headers(self):
+        good=tag50()
+        # Independently calculated positions, not derived from parser ranges.
+        for at in (20,32):
+            for n in (-2,2147483647):
+                bad=bytearray(good);struct.pack_into('<i',bad,at,n)
+                with self.subTest(at=at,n=n),self.assertRaises(FrameError) as caught:
+                    sequence_frame(sequence(bad),source='50-length.bin')
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),
+                                 ('50-length.bin',at+5,n,'count-bounds'))
+        for at in (1,19,31):
+            bad=bytearray(good);bad[at]=42
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(bad),source='50-header.bin')
+            self.assertEqual(caught.exception.diagnostic['offset'],at+5)
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+
+    def test_tag50_nulls_empty_and_next_unknown(self):
+        for child in (b'\x50\xff',tag50(b'\xff',b'\xff'),
+                      tag50(scalar_payload(b''),scalar_payload(None)),
+                      tag50(b'\xff',scalar_payload()),tag50(scalar_payload(),b'\xff')):
+            raw=sequence(child)
+            self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+        child=tag50()
+        row=event_prefix(prefix(sequence(child,b'\x51')),source='50-next.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['actual'],81)
+        self.assertEqual(row['consumedEnd'],19+len(child))
+        self.assertTrue(any(r.get('tag')==80 for r in row['completedRecords']))
 
     def test_suffix_cannot_supply_missing_nested_bytes(self):
         raw=prefix(sequence(action()))

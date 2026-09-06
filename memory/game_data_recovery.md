@@ -253,6 +253,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Keep those bits anonymous, including non-finite values. Byte decoding, live
   provider selection and whole-BuffData EOF remain unresolved; selected native
   pins and read order are owned by `scripts/game_data/buff_ec_native.json`.
+  The selected member-seven child reuses that scalar-payload profile twice,
+  after one byte and four scalar32 reads. The fourth scalar is serialized
+  before both nested records despite its later destination-object offset;
+  memory layout must not substitute for consumer order. Its selected native
+  contract is `scripts/game_data/buff_50_native.json`; the two identical static
+  type arguments do not certify live formatter selection or comparison meaning.
   Next close the most frequent unsupported child consumers before extending
   this grammar; do not import legacy tag/name aliases to improve coverage.
 - Gameplay tag names come from exact predefined/config registries or validated
