@@ -71,12 +71,27 @@ class Reader:
         # FA carries an unsigned little-endian tag, not a child-object header.
         # Keep unknown tags at their first byte; never search for a later tag.
         if tag==255 and width==1:self.take(1,'null-union');return
-        if tag not in (201,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
+        if tag not in (201,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(width,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8,146:19,87:8,91:6,60:10,120:9,178:18,104:5,129:9,88:8,2:12,154:11,162:18,101:8}[tag])
+        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8,146:19,87:8,91:6,60:10,120:9,178:18,104:5,129:9,88:8,2:12,154:11,162:18,101:8,361:38}[tag])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
+        if tag==361:
+            self.byte_payload();self.byte_payload();self.take(4,'anonymous-scalar32');self.byte_payload()
+            self.target_profile();self.direction_profile()
+            for _ in range(4):self.take(1,'anonymous-nonzero-byte')
+            for _ in range(max(0,self.count(1,reserve=64,nullable=True))):self.assignment_profile()
+            self.take(1,'anonymous-nonzero-byte');self.target_profile();self.take(4,'anonymous-scalar32')
+            self.take(12,'anonymous-raw12');self.take(4,'anonymous-scalar32');self.byte_payload()
+            self.take(16,'anonymous-raw16')
+            for _ in range(2):self.take(1,'anonymous-nonzero-byte')
+            self.byte_payload()
+            for _ in range(2):self.take(1,'anonymous-nonzero-byte')
+            self.scalar_payload()
+            for _ in range(max(0,self.count(4,reserve=9,nullable=True))):self.byte_payload()
+            for _ in range(9):self.take(1,'anonymous-nonzero-byte')
+            return
         if tag==101:
             self.take(4,'anonymous-scalar32');self.target_profile()
             self.take(1,'anonymous-nonzero-byte');self.scalar_payload()

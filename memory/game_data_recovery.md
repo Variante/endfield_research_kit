@@ -285,6 +285,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   unresolved independently of this structural closure. Paired and scalar
   payloads can have identical extents; select their profiles from independent
   nested-consumer evidence, not byte length alone.
+  The extended member-38 action in `scripts/game_data/buff_169_native.json`
+  combines two targets, direction, assignment and byte-payload lists with raw
+  spans and scalar payloads. Its Vector3-context helper consumes twelve raw
+  bytes, while a separate inline operation consumes sixteen; neither is the
+  variable-width blackboard vector profile. Preserve all source operations,
+  and reuse list element contracts only after exact instantiation joins.
   The selected member-thirteen child closes three target profiles, a finder
   profile and a scalar payload in native read order. The finder contains a
   counted byte-payload list, scalar32 and a member-two query whose selected

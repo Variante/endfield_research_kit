@@ -143,6 +143,18 @@ def tag65(t=None,value=None):
             (target() if t is None else t)+b'\x80'+(scalar_payload(b'key') if value is None else value))
 
 
+def tag169(assignments=(),strings=(b'key',None,b''),targets=None,d=None,value=None):
+    targets=(target(),)*2 if targets is None else targets
+    return (b'\xfa\x69\x01\x26\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
+            payload(b'entity')+payload(None)+bytes(4)+payload(b'path')+targets[0]+(direction() if d is None else d)+
+            b'\xfe\x80\x00\xff'+struct.pack('<i',-1 if assignments is None else len(assignments))+
+            (b'' if assignments is None else b''.join(assignments))+b'\xfe'+targets[1]+bytes(4)+
+            bytes(range(12))+bytes(4)+payload(b'raw')+bytes(range(16))+b'\xff\x80'+payload(b'')+
+            b'\xfe\x01'+(scalar_payload(None) if value is None else value)+
+            struct.pack('<i',-1 if strings is None else len(strings))+
+            (b'' if strings is None else b''.join(payload(s) for s in strings))+b'\x00\x01\x80\xfe\xff\x02\x03\x04\x05')
+
+
 def tag02(items=(b'\x01'+payload(b'id'),),targets=None,value=None,flag=254):
     targets=(target(),)*3 if targets is None else targets
     return (b'\x02\x0c'+bytes([flag])+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
@@ -171,6 +183,46 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag169_extended_record_and_fixed_source_ranges(self):
+        child=tag169();end=19+len(child)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='169.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',end))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=361),row['completedRecords'])
+        self.assertEqual(row['diagnostic'],dict(source='169.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertEqual([(r['end']-r['start']) for r in row['ranges'] if r['kind'] in ('anonymous-raw12','anonymous-raw16')],[12,16])
+        self.assertEqual(row['opaqueRemainderRange'],[end,end+3]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag169_lists_nulls_and_every_limit(self):
+        assignment=b'\x06'+bytes(4)+payload(b'k')+bytes(4)+payload(None)+payload(b'v')+b'\xff'
+        for child in (tag169(),tag169((assignment,b'\xff')),tag169(None,None,(b'\xff',)*2,b'\xff',b'\xff'),b'\xfa\x69\x01\xff'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='169-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='169-limit',limit=n))
+
+    def test_tag169_bad_headers_counts_and_nested_boundaries(self):
+        raw=prefix(sequence(tag169()));good=event_prefix(raw,source='169-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='169-bounds')
+                self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+        for i in range(2):
+            targets=[target()]*2;targets[i]=target(selector=b'\x03\xfe'+bytes(8))
+            row=event_prefix(prefix(sequence(tag169(targets=targets))),source='169-gap')
+            self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['category'],'nested-profile')
+            self.assertFalse(any(r.get('tag')==361 for r in row['completedRecords']))
+
     def test_tag65_target_scalar_and_unknown_tail(self):
         child=tag65();end=19+len(child)
         row=event_prefix(prefix(sequence(child,b'\x59')),source='65.bin')
