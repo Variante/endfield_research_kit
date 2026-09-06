@@ -670,6 +670,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   nested sequence is followed by two four-byte values, payload and final byte.
   Keep that outer tail mandatory after a null or complete sequence; unknown
   children leave the outer action incomplete and retain their original offset.
+  `scripts/game_data/buff_151_native.json` pins a member-eight action with a
+  sequence, two independently bounded scalar profiles and final byte. Retain
+  completed children when a later profile fails; neither a null sequence nor
+  a null first profile permits omitting the remaining members.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

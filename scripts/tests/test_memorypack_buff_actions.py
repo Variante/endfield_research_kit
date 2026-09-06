@@ -83,6 +83,10 @@ def tag142(values=(None,b'',b'wire',b'\xff\x00',b'last'),nested=b'\xff',last=0xf
     return b'\xfa\x42\x01\x0b\xfe'+b'\xff'*12+payload(values[0])+nested+b''.join(payload(v) for v in values[1:])+struct.pack('<I',last)
 
 
+def tag151(nested=b'\xff',first=b'\xff',last=b'\xff'):
+    return b'\xfa\x51\x01\x08\xfe'+b'\xff'*12+nested+first+last+b'\x80'
+
+
 def tag115(nested=b'\xff',first=None,last=b'wire'):
     return (b'\xfa\x15\x01\x10\xfe'+b'\xff'*12+payload(first)+b'\x80'*16+
             b'\xff\xfe'+nested+b'\xff'*8+payload(last)+b'\x80')
@@ -1786,6 +1790,60 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
         self.assertFalse(any(v.get('tag')==322 for v in r.records))
         self.assertLess(r.pos,len(gap)-sum(len(payload(v)) for v in (b'',b'wire',b'\xff\x00',b'last'))-4)
+
+    def test_tag151_sequence_two_scalars_and_byte_have_independent_boundaries(self):
+        scalar=b'\x03'+payload(b'wire')+b'\xff'+b'\x80'*4
+        for nested in (b'\xff',sequence(),b'\x03'+payload(None)+b'\xff\xfe',sequence(tag2b())):
+            for first in (b'\xff',scalar):
+                for last in (b'\xff',scalar):
+                    child=tag151(nested,first,last);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='151.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='151.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=337),row['completedRecords'])
+                    self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+        r=Reader(tag151(sequence(b'\x59')),'151-unknown')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['category'],caught.exception.diagnostic['offset']),('union-tag',22))
+        self.assertFalse(any(v.get('tag')==337 for v in r.records))
+
+    def test_tag151_every_cut_null_wrapper_trailing_and_depth(self):
+        scalar=b'\x03'+payload(None)+b'\xff'+b'\x80'*4
+        full=tag151(sequence(tag2b()),scalar,scalar)
+        for child in (full,tag151(),b'\xfa\x51\x01\xff'):
+            r=Reader(child,'151-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'151-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==337 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        child=tag151()
+        for _ in range(66):child=tag151(sequence(child))
+        with self.assertRaises(Unsupported) as caught:sequence_frame(sequence(child))
+        self.assertEqual(caught.exception.diagnostic['category'],'depth-limit')
+
+    def test_tag151_bad_headers_counts_and_later_scalar_failure(self):
+        scalar=b'\x03'+payload(b'wire')+b'\xff'+b'\x80'*4
+        child=tag151(sequence(tag2b()),scalar,scalar)
+        r=Reader(child,'151-bounds');r.action(0)
+        for span in [v for v in r.ranges if v['kind'] in ('member-header','count-i32')]:
+            for value in ((0,254) if span['kind']=='member-header' else (-2,0x7fffffff)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'151-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('151-bounds',at,value))
+        r=Reader(child,'151-tail',len(child)-3)
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertTrue(any(v.get('tag')==43 for v in r.records))
+        self.assertTrue(any(v['kind']=='sequence' for v in r.records))
+        self.assertFalse(any(v.get('tag')==337 for v in r.records))
 
     def test_tag115_sequence_and_outer_tail_have_independent_boundaries(self):
         for nested in (b'\xff',sequence(),b'\x03'+payload(None)+b'\xff\xfe',sequence(tag2b())):
