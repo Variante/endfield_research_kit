@@ -1,0 +1,118 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122577,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveValueFromAIBlackboard_DataForMemoryPack+Beyond_Gameplay_Core_SaveValueFromAIBlackboard_DataForMemoryPackFormatter",
+      "Deserialize",
+      66350192
+    ],
+    [
+      122576,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveValueFromAIBlackboard_DataForMemoryPack",
+      "Deserialize",
+      66350288
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66350192,
+      "endRva": 66350285,
+      "sha256": "987440E71917E08E3B56B9E73432553F89DAAC22B2BF63B56E4F78FF3A526CF2",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 66350288,
+      "endRva": 66350829,
+      "sha256": "92A2883C7DDA40B098AF66AA729532C926F4D2BC7BD227531CFA089D6169B256",
+      "boundary": "member11 source reads through normal RET"
+    },
+    {
+      "startRva": 66350829,
+      "endRva": 66350913,
+      "sha256": "5CC6573E346F35ADD8A5C4430FB5791F50A331AF15CFD42F77C1021C05C63187",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83160908,
+      "endRva": 83160921,
+      "sha256": "13D613AB014936D12A953975A6ED225D782C9469570684C34688CA61BF112F03",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83160977,
+      "endRva": 83160998,
+      "sha256": "8D15466A4D68254031AA7835F8C7A06D3F705A9B781FCFE87366B603CE4CFA19",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66350460,
+      "instructionHex": "488B15A5301409",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66350600,
+      "instructionHex": "488B15F9A81109",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66350777,
+      "instructionHex": "488B1528D60C09",
+      "cellVa": 6660637928,
+      "usageRawHex": "3FE812C000000000",
+      "methodSpecIndex": 619551,
+      "methodSpec": [
+        428448,
+        -1,
+        42523
+      ],
+      "argumentRawHex": "39260000000000000000118000000000",
+      "typeDefinition": 9785,
+      "typeName": "Beyond.Gameplay.Core.SaveValueFromAIBlackboard+ValueType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member11": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "target-profile",
+      "byte-payload",
+      "byte-payload",
+      "byte-payload",
+      "byte-payload",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member11 action consumes common byte/three DWORD, a byte payload, TargetSettings, four independent byte payloads and a required final DWORD. Preserve independent null and empty payloads and arbitrary final scalar bits. Unknown target profiles leave following payloads and scalar unread. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Constructors and output setters add no source bytes. Blackboard meaning, value conversion, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

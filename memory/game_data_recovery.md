@@ -612,6 +612,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   ending with a DWORD under an exact enum context. Preserve raw bits and
   reject missing scalar bytes; event meaning and achievement behavior
   remain unresolved.
+  `scripts/game_data/buff_142_native.json` pins a member-eleven action
+  with five independent byte payloads, a target between the first and second,
+  and a required final DWORD. Unknown target profiles preserve the unread tail;
+  blackboard meaning and value conversion remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

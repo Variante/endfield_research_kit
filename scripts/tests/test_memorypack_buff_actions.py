@@ -71,6 +71,10 @@ def tag89(first=b'',second=b''):
     return b'\x89\x06\xfe'+b'\xff'*12+payload(first)+payload(second)
 
 
+def tag142(values=(None,b'',b'wire',b'\xff\x00',b'last'),nested=b'\xff',last=0xffffffff):
+    return b'\xfa\x42\x01\x0b\xfe'+b'\xff'*12+payload(values[0])+nested+b''.join(payload(v) for v in values[1:])+struct.pack('<I',last)
+
+
 def tag06(value=0xffffffff):
     return b'\x06\x05\xfe'+b'\xff'*12+struct.pack('<I',value)
 
@@ -1574,6 +1578,53 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertIn(dict(start=19,end=end,kind='union',tag=137),row['completedRecords'])
                 counts=[r['start'] for r in row['ranges'] if r['kind']=='count-i32' and r['start']>=34]
                 self.assertEqual(counts,[34,38+len(first or b'')])
+
+    def test_tag142_independent_payloads_target_and_final_scalar(self):
+        for nested in (b'\xff',target()):
+            for values in ((None,)*5,(b'',)*5,(b'a',None,b'',b'\xfa\x42\x01',b'last')):
+                child=tag142(values,nested);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='142.bin')
+                self.assertEqual(row['diagnostic'],dict(source='142.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=322),row['completedRecords'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag142_cuts_hard_limits_nulls_and_trailing(self):
+        for child in (tag142(),tag142(nested=target()),b'\xfa\x42\x01\xff'):
+            r=Reader(child,'142-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'142-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n)
+                    self.assertFalse(any(v.get('tag')==322 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag142_malformed_lengths_headers_and_unknown_target(self):
+        child=tag142((b'',)*5);r=Reader(child,'142-bounds');r.action(0)
+        counts=[v['start'] for v in r.ranges if v['kind']=='count-i32']
+        self.assertEqual(len(counts),5)
+        for at in counts:
+            for value in (-2,0x7fffffff):
+                bad=bytearray(child);struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'142-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('142-bounds',at,value))
+        for value in (0,5,10,12,254):
+            bad=bytearray(child);bad[3]=value;r=Reader(bad,'142-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+        gap=tag142(nested=target(selector=b'\x03\x10'))
+        r=Reader(gap,'142-gap')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
+        self.assertFalse(any(v.get('tag')==322 for v in r.records))
+        self.assertLess(r.pos,len(gap)-sum(len(payload(v)) for v in (b'',b'wire',b'\xff\x00',b'last'))-4)
 
     def test_tag06_final_scalar_raw_bits_and_unknown_successor(self):
         for value in (0,0xffffffff,0x80000000,0x7fc00000):
