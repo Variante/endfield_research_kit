@@ -49,7 +49,74 @@ from scripts.game_data.il2cpp_context_audit import buff_union_routes
 from scripts.game_data.il2cpp_context_audit import buff_ifelse_forwarding
 from scripts.game_data.il2cpp_context_audit import buff_ifelse_read_order
 from scripts.game_data.il2cpp_context_audit import buff_sequence_read_order
+from scripts.game_data.il2cpp_context_audit import buff_tag76_read_order
 from unittest.mock import patch
+
+
+class BuffTag76ReadOrderTests(unittest.TestCase):
+    def setUp(self):
+        self.base=0x180000000
+        self.parts={self.base+at:bytes.fromhex(raw) for at,raw in (
+            (0x3F7FD49,'4533C0488BD3488BCF488B5C24304883C4205FE91F000000'),
+            (0x3F7FE00,'4080FE050F85635BFD00'),
+            (0x3D9BB19,'4533C0488BD3488BCF488B5C24304883C4205FE91F000000'),
+            (0x3D9BBD5,'4080FD030F85E0621701'),
+            (0x2CA8729,'488B43504863388B733083EE040F885C8CE30148834350048343400483434404897330'),
+            (0x2CA874C,'48634344488B4B18482BC8483BCF0F8C528CE30183FFFF743785FF7517'),
+            (0x2CA8780,'4533C08BD7488BCB488B5C2430488B7424384883C4205FE974020000'),
+            (0x2CA8A97,'4533C9448BC7488BD5488BCEE878F8FFFF488BE885FF7418'),
+            (0x2CA8AAF,'8B73302BF70F88B0A4F70148017B50017B40017B44897330'))}
+        for at,target in ((0x3F7FDB6,0x2CA8860),(0x3F7FE10,0x2CA88C0),
+            (0x3F7FE39,0x2CA86B0),(0x3F7FE5A,0x2CA86B0),(0x3F7FE7B,0x2CA86B0),
+            (0x3F7FEA3,0x381F8F0),(0x3D9BBE5,0x2CA8700),
+            (0x3D9BC13,0x2CA88C0),(0x3D9BC37,0x2CA8700)):
+            self.parts[self.base+at]=b'\xe8'+struct.pack('<i',target-at-5)
+        self.parts[self.base+0x3F7FE96]=bytes.fromhex('488B15EB970B09')
+        self.parts[self.base+0xD039688]=struct.pack('<Q',(6<<29)|(610878<<1)|1)
+        self.parts[0x1000+610878*12]=struct.pack('<iii',428462,-1,62664)
+        self.parts[0x18D2534A8]=struct.pack('<QQ',0x2000,0x3000)+bytes(16)
+        self.parts[0x2000]=bytes.fromhex('91920000000000000000120000000000')
+        self.pe=SimpleNamespace(image_base=self.base,bytes_at_va=lambda va,n:self.parts[va])
+        self.md=SimpleNamespace(methods=[None]*428463,types=list(range(37522)),
+            type_full_name=lambda t:{37521:'System.Collections.Generic.List`1',177:'Beyond.Blackboard+BlackboardString'}[t])
+        self.reg={'methodSpecs':'0x1000','methodSpecsCount':627868,'genericInstsCount':73902}
+        self.arg=SimpleNamespace(raw_type_record_hex='A834258D010000000000150000000000',type_pointer_va=0x18C3B11D8)
+        self.element=SimpleNamespace(raw_type_record_hex='B1000000000000000000120000000000')
+        self.inst=SimpleNamespace(arguments=[self.arg],as_dict=lambda:{'index':62664})
+        self.nested=SimpleNamespace(index=17007,arguments=[self.element],as_dict=lambda:{'index':17007})
+        self.table=SimpleNamespace(resolve=lambda i:self.inst if i==62664 else None,
+            resolve_pointer=lambda p:self.nested if p==0x3000 else None)
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]):
+            return buff_tag76_read_order(self.pe,self.md,self.reg,self.table,{},[],source='fixture.dll')
+
+    def test_order_context_and_encoding_boundary(self):
+        row=self.decode()
+        self.assertEqual(row['listCarrier']['baseDefinitionIndex'],37521)
+        self.assertEqual(row['elementInstantiation']['index'],17007)
+        self.assertEqual([r['targetRva'] for r in row['orderedCalls'][-3:]],[0x2CA8700,0x2CA88C0,0x2CA8700])
+        self.assertIn('structural-only',row['boundary'])
+
+    def test_truncated_trailing_and_mutated_windows_records(self):
+        for va,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[va]=bad
+                with self.subTest(va=va,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[va]=good
+
+    def test_bad_count_wrong_element_and_ambiguous_pointer(self):
+        self.reg['methodSpecsCount']=610878
+        with self.assertRaises(ContextError):self.decode()
+        self.reg['methodSpecsCount']=627868
+        self.element.raw_type_record_hex='00'*16
+        with self.assertRaises(ContextError):self.decode()
+        self.element.raw_type_record_hex='B1000000000000000000120000000000'
+        # The real registered-pointer join must reject duplicate matches;
+        # its exact ambiguity diagnostics are covered by GenericInstantiation tests.
+        def ambiguous(p):raise ContextError('fixture.dll',p,'unique pointer',[1,2])
+        self.table.resolve_pointer=ambiguous
+        with self.assertRaises(ContextError):self.decode()
 
 
 class BuffSequenceReadOrderTests(unittest.TestCase):
@@ -187,15 +254,17 @@ class BuffUnionRouteTests(unittest.TestCase):
             (0x390D8D2,'4080FEFA731C66418936B001'),
             (0x417E68A,'488B0DE70FF20833D2E85872C2FE488BCF488BD8E87D4DE8FB4C8B0D9E87E70841B8C9000000488BD3488BCFE8B1EE18FC'),
             (0x417E4D1,'488B0D3018F20833D2E81174C2FE488BCF488BD8E8364FE8FB4C8B0D5789E70841B8C0000000488BD3488BCFE86AF018FC'),
+            (0x390E160,'488B1529B57209488B0BE8B1566FFC488BCF4885C00F852F905501488B1576357D09E8690111FD488903488BD0E950F8FFFF'),
             (0x390DA8A,'488B15FF1B7909488B0BE8875D6FFC488BCF4885C00F85FC9F5501488B150C397D09E82B08A0FC488903488BD0E926FFFFFF'),
             (0x3910A00,'488B1509F37809488B0BE8112E6FFC488BCF4885C00F859B6F5501488B153E097D09E865DF10FD488903488BD0E9B0CFFFFF'),
             (0x39149EA,'488B150F5A7209488B0BE827EE6EFC488BCF4885C00F856B215501488B1554D17C09E8C39310FD488903488BD0E9C68FFFFF'))}
         targets=[0]*416
-        types=[None]*16616;self.ptrs={}
+        types=[None]*16684;self.ptrs={}
         for tag,target,index,definition,suffix,init in (
             (0xC9,0x390DA8A,106672,16163,'IfElseAction_IfElseActionData',0x417E68A),
             (0xC0,0x3910A00,106641,16145,'GainCostAction_Data',0x417E4D1),
-            (0x40,0x39149EA,106441,16615,'CheckDamageTag_Data',None)):
+            (0x40,0x39149EA,106441,16615,'CheckDamageTag_Data',None),
+            (0x76,0x390E160,106507,16683,'Conditions_CheckSkillId_Data',None)):
             targets[tag]=target;types[definition]='Beyond.MemoryPack.Beyond_Gameplay_Core_'+suffix+'ForMemoryPack'
             pointer=self.base+index*16
             self.parts[index*16]=struct.pack('<QII',definition,0x120000,0)
@@ -216,7 +285,7 @@ class BuffUnionRouteTests(unittest.TestCase):
             return buff_union_routes(self.pe,self.md,self.reg,{},[],source='fixture.dll')
 
     def test_current_tag_routes_do_not_alias_old_names(self):
-        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64])
+        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64,118])
         self.assertIn('IfElse',row['rows'][0]['wrapperName'])
         self.assertIn('GainCost',row['rows'][1]['wrapperName'])
 

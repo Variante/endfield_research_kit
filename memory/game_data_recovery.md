@@ -224,7 +224,8 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   byte-to-boolean normalization must not be mistaken for a strict 0/1 encoding.
   `memorypack.buff_actions` now frames the anonymous first collection forward
   from byte zero under each retained filename-anchor candidate's hard limit.
-  It supports the current IfElse/Sequence grammar, nulls and bounded counts,
+  It supports the current IfElse/Sequence grammar, the selected member-five
+  child profile, nulls and bounded counts,
   records completed nested spans, and stops at the first unsupported union.
   Atomic spans plus an explicit physical-file remainder tile the bytes; that
   remainder is opaque, not a decoded record. `buff_corpus` publishes a separate
@@ -232,6 +233,15 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   on malformed prefixes even when the legacy suffix reader succeeds. Current
   Sequence consumer evidence places the counted indirect child array before
   two nonzero-normalized bytes; child output-slot width does not bound payloads.
+  The member-five child closes a 13-byte anonymous scalar prefix followed by
+  a counted member-three record collection. Each record contains two signed-
+  length-prefixed byte spans separated by one nonzero-normalized byte. The
+  selected native wrapper's type argument independently joins a List of
+  BlackboardString; its element reader confirms that order and byte-length
+  advancement. This is a structural-only profile, not proof of live generic
+  formatter selection, decoder parity, field names or gameplay conditions.
+  Null and empty byte spans remain distinct; negative lengths below -1 fail
+  closed, and no standard MemoryPack UTF-16/negative-length variant is guessed.
   Next close the most frequent unsupported child consumers before extending
   this grammar; do not import legacy tag/name aliases to improve coverage.
 - Gameplay tag names come from exact predefined/config registries or validated

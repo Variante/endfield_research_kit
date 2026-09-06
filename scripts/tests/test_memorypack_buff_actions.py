@@ -17,6 +17,18 @@ def prefix(seq):
     return b'\x1e'+struct.pack('<i',1)+b'\x02'+bytes(4)+struct.pack('<i',1)+seq
 
 
+def payload(value):
+    return struct.pack('<i',-1 if value is None else len(value))+(value or b'')
+
+
+def pair(a=b'',b=b'',flag=0):
+    return b'\x03'+payload(a)+bytes([flag])+payload(b)
+
+
+def tag76(*items):
+    return b'\x76\x05'+bytes(13)+struct.pack('<i',len(items))+b''.join(items)
+
+
 class BuffActionsTests(unittest.TestCase):
     def test_normal_nested_ranges_and_explicit_opaque_tail(self):
         raw=sequence(action(sequence(b'\xff'),sequence(),b'\xff'))
@@ -54,7 +66,7 @@ class BuffActionsTests(unittest.TestCase):
             with self.subTest(raw=raw):self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
 
     def test_unknown_union_does_not_borrow_legacy_alias_or_search(self):
-        for tag in (0xC0,0x40,0x76,0xFA):
+        for tag in (0xC0,0x40,0x71,0xFA):
             raw=prefix(sequence(bytes([tag])+action()))
             row=event_prefix(raw,source='unknown.bin')
             self.assertEqual(row['status'],'unsupported')
@@ -63,6 +75,54 @@ class BuffActionsTests(unittest.TestCase):
             self.assertEqual(row['opaqueRemainderRange'],[19,len(raw)])
             self.assertEqual(row['completedRecords'],[])
             with self.assertRaises(Unsupported):sequence_frame(sequence(bytes([tag])))
+
+    def test_tag76_multiple_pairs_nested_in_ifelse_and_record_bounds(self):
+        child=tag76(pair(b'skillId',b'',1),pair(b'',b'example'),pair(None,b'\xff\xfe',255))
+        raw=prefix(sequence(action(sequence(child),sequence(),b'\xff')))
+        row=event_prefix(raw+b'opaque',source='pair.bin',limit=len(raw))
+        self.assertEqual(row['status'],'supported-prefix')
+        self.assertEqual(row['opaqueRemainderRange'],[len(raw),len(raw)+6])
+        unions=[r for r in row['completedRecords'] if r['kind']=='union']
+        self.assertEqual([r['tag'] for r in unions],[118,201])
+        records=[r for r in row['completedRecords'] if r['kind']=='anonymous-paired-payload']
+        self.assertEqual(len(records),3)
+        self.assertTrue(all(unions[0]['start']<r['start']<r['end']<=unions[0]['end'] for r in records))
+        self.assertTrue(all(a['end']==b['start'] for a,b in zip(row['ranges'],row['ranges'][1:])))
+
+    def test_tag76_every_truncation_trailing_and_hard_limit(self):
+        raw=sequence(tag76(pair(b'a',b'bc'),pair(b'def',b'g')))
+        for n in range(len(raw)):
+            with self.subTest(n=n),self.assertRaises(FrameError):sequence_frame(raw[:n],source='pair-cut.bin')
+        with self.assertRaises(FrameError) as caught:sequence_frame(raw+b'x',source='pair-tail.bin')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        full=prefix(raw)
+        for n in range(len(full)):
+            self.assertEqual(event_prefix(full,source='bounded.bin',limit=n),
+                event_prefix(full[:n]+b'\xff'*(len(full)-n),source='bounded.bin',limit=n))
+
+    def test_tag76_malformed_counts_lengths_and_headers(self):
+        good=bytearray(tag76(pair(b'a',b'bc')))
+        for offset in (15,20,26):
+            for value in (-2,2147483647):
+                bad=bytearray(good);struct.pack_into('<i',bad,offset,value)
+                with self.subTest(offset=offset,value=value),self.assertRaises(FrameError) as caught:
+                    sequence_frame(sequence(bad),source='bad-pair.bin')
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),
+                    ('bad-pair.bin',offset+5,value,'count-bounds'))
+        for offset in (1,19):
+            bad=bytearray(good);bad[offset]=4
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(bad))
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+
+    def test_tag76_nulls_empty_and_stop_after_complete_record(self):
+        for child in (b'\x76\xff',tag76(),tag76(b'\xff'),tag76(pair(None,None)),
+                      b'\x76\x05'+bytes(13)+struct.pack('<i',-1)):
+            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+        row=event_prefix(prefix(sequence(tag76(pair()),b'\xec')),source='next.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['actual'],236)
+        self.assertTrue(any(r.get('tag')==118 for r in row['completedRecords']))
 
     def test_suffix_cannot_supply_missing_nested_bytes(self):
         raw=prefix(sequence(action()))

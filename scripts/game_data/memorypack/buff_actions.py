@@ -65,14 +65,40 @@ class Reader:
     def _action(self,depth):
         tag=self.peek()
         if tag==255:self.take(1,'null-union');return
-        if tag!=201:raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
+        if tag not in (201,118):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(1,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header(8)
+        self.header(8 if tag==201 else 5)
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
+        if tag==118:
+            start=self.pos
+            # Null element is one byte. Bound count before iterating, even
+            # though a non-null member-three element needs at least ten bytes.
+            for _ in range(max(0,self.count(1,nullable=True))):self.paired_payload()
+            self.records.append(dict(start=start,end=self.pos,kind='anonymous-paired-payload-list'))
+            return
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.sequence(depth)
+
+    def byte_payload(self):
+        start=self.pos
+        n=self.count(1,nullable=True)
+        # The selected native helper advances by the supplied byte length.
+        # Do not substitute standard MemoryPack UTF-16/negative-length layouts
+        # or claim decoder parity; even non-UTF8 bytes are structurally valid.
+        if n>0:self.take(n,'anonymous-length-prefixed-bytes')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-byte-payload',isNull=n==-1))
+
+    def paired_payload(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-paired-payload')
+        else:
+            self.header(3)
+            self.byte_payload()
+            self.take(1,'anonymous-nonzero-byte')
+            self.byte_payload()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-paired-payload'))
 
 
 def sequence_frame(data,*,source='<sequence>'):

@@ -28,8 +28,15 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = '1FA6B0BFB313F70C5B08ECBEE96A0E65080D3FF0A97C6E364A4AF141E7621FE5'
+CORPUS_SHA = 'FA23D943446257C644C05B06A70B18A5A83E35451CA14CFC03649920580F14DC'
 CONSUMER_WINDOWS = (
+    (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
+    (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
+    (0x3D9BAF0,0x3D9BB4D,'7C7BF6A31C88EA2D1D2925193F774396233F35465E56AFBAC2DFC756B3C2599D'),
+    (0x3D9BB50,0x3D9BCC5,'83DB6041548B27BB2CCE4E6DB6AD2803F3CFDDE712B2E07D02CA6D2127BDC05A'),
+    (0x2CA8860,0x2CA88B7,'CA6788FE028DC684758CD40833EFA107116A7BF664BFBF1746D792E52114639F'),
+    (0x2CA8700,0x2CA87C6,'B8944001C41E1AF65B44F7DDE366FCE5E4E8B35E2A32682E628C2E0A36145BEF'),
+    (0x2CA8A10,0x2CA8AFD,'A839E67CFE09CC6BF53DA3BE9E149AEF9B411E9AA20D23C981A94C18C13678BC'),
     (0x39C6A40,0x39C6A9D,'650BBFFE813D1F3A7663C6C9C42E160E5799B70541246A11AAADABF1D3F08DD6'),
     (0x39C6AA0,0x39C6FA7,'6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90'),
     (0x3773670,0x37736CD,'D1E00A92152340C6A1F095DC4FF14393C99973AED0304478AD12506492E37A0C'),
@@ -346,6 +353,67 @@ def reader_cursor_consumers(pe, *, source):
             'boundary':'No authenticated logical-file allocation, initial descriptor, complete helper ABI, final cursor or EOF join. Keep both terminal candidates.'}
 
 
+def buff_tag76_read_order(pe,md,reg,table,modules,image_owners,*,source):
+    """Current anonymous tag-76 profile; no live list formatter or field names."""
+    wrapper='Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillId_DataForMemoryPack'
+    element='Beyond.MemoryPack.Beyond_Blackboard_BlackboardStringForMemoryPack'
+    methods=module_methods(pe,md,modules,image_owners,
+        [(124595,wrapper,'Deserialize',0x3F7FD80),
+         (124596,wrapper+'+Beyond_Gameplay_Core_Conditions_CheckSkillId_DataForMemoryPackFormatter','Deserialize',0x3F7FD20),
+         (162686,element,'Deserialize',0x3D9BB50),
+         (162687,element+'+Beyond_Blackboard_BlackboardStringForMemoryPackFormatter','Deserialize',0x3D9BAF0)],
+        source=source,expected_image='MemoryPack.Beyond.dll')
+    windows=[]
+    for at,expected in (
+        (0x3F7FD49,'4533C0488BD3488BCF488B5C24304883C4205FE91F000000'),
+        (0x3F7FE00,'4080FE050F85635BFD00'),
+        (0x3D9BB19,'4533C0488BD3488BCF488B5C24304883C4205FE91F000000'),
+        (0x3D9BBD5,'4080FD030F85E0621701'),
+        (0x2CA8729,'488B43504863388B733083EE040F885C8CE30148834350048343400483434404897330'),
+        (0x2CA874C,'48634344488B4B18482BC8483BCF0F8C528CE30183FFFF743785FF7517'),
+        (0x2CA8780,'4533C08BD7488BCB488B5C2430488B7424384883C4205FE974020000'),
+        (0x2CA8A97,'4533C9448BC7488BD5488BCEE878F8FFFF488BE885FF7418'),
+        (0x2CA8AAF,'8B73302BF70F88B0A4F70148017B50017B40017B44897330')):
+        raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
+        windows.append({'rva':at,'rawHex':expected})
+    calls=[]
+    for at,target in ((0x3F7FDB6,0x2CA8860),(0x3F7FE10,0x2CA88C0),
+        (0x3F7FE39,0x2CA86B0),(0x3F7FE5A,0x2CA86B0),(0x3F7FE7B,0x2CA86B0),
+        (0x3F7FEA3,0x381F8F0),(0x3D9BBE5,0x2CA8700),
+        (0x3D9BC13,0x2CA88C0),(0x3D9BC37,0x2CA8700)):
+        raw=pe.bytes_at_va(pe.image_base+at,5);require(raw[:1],b'\xe8',source,at)
+        require(relative_branch_target(raw,pe.image_base+at,source=source),pe.image_base+target,source,at)
+        calls.append({'rva':at,'targetRva':target})
+    at=pe.image_base+0x3F7FE96
+    cell=rip_qword_load_target(pe.bytes_at_va(at,7),at,source=source)
+    require(cell,pe.image_base+0xD039688,source,at)
+    usage=pe.bytes_at_va(cell,8)
+    require(method_spec_usage_index(usage,reg['methodSpecsCount'],source=source,offset=cell),610878,source,cell)
+    va=int(reg['methodSpecs'],16)+610878*12;raw=pe.bytes_at_va(va,12)
+    require(method_spec_record(raw,len(md.methods),reg['genericInstsCount'],source=source,offset=va),(428462,-1,62664),source,va)
+    instance=table.resolve(62664)
+    require(len(instance.arguments),1,source)
+    arg=instance.arguments[0];tr=bytes.fromhex(arg.raw_type_record_hex)
+    require(tr,bytes.fromhex('A834258D010000000000150000000000'),source)
+    cp=struct.unpack_from('<Q',tr)[0];cr=pe.bytes_at_va(cp,32)
+    require(len(cr),32,source,cp)
+    bp=struct.unpack_from('<Q',cr)[0]
+    require(bp!=0,True,source,cp)
+    carrier=generic_type_carrier(tr,cr,pe.bytes_at_va(bp,16),type_pointer=arg.type_pointer_va,type_count=len(md.types),source=source)
+    require(carrier['baseDefinitionIndex'],37521,source,bp)
+    require(md.type_full_name(md.types[37521]),'System.Collections.Generic.List`1',source)
+    nested=table.resolve_pointer(carrier['classInstantiationPointerVa'])
+    require(nested.index,17007,source)
+    require([a.raw_type_record_hex for a in nested.arguments],['B1000000000000000000120000000000'],source)
+    require(md.type_full_name(md.types[177]),'Beyond.Blackboard+BlackboardString',source)
+    return {'methods':methods,'windows':windows,'orderedCalls':calls,
+        'nestedUsageCellVa':cell,'nestedUsageRawHex':usage.hex().upper(),
+        'nestedMethodSpecIndex':610878,'nestedMethodSpecRawHex':raw.hex().upper(),
+        'methodInstantiation':instance.as_dict(),'listCarrier':carrier,'elementInstantiation':nested.as_dict(),
+        'level':'direct conditional consumer order; exact static nested type identity',
+        'boundary':'Tag 76 routes to the current wrapper in selectedBuffUnionRoutes. Its member-five path reads one nonzero-normalized byte and three DWORDs before ReadPackable with List<BlackboardString>. The independently joined element reader takes member three, length-prefixed bytes, one normalized byte, then length-prefixed bytes. The length helper reads a signed DWORD: -1 returns null, zero takes an empty path, and positive length is forwarded unchanged to the byte consumer, which advances source/counters by that length after its decoder call. Payload bytes remain anonymous: encoding/cache contents, complete decoder parity, negative values below -1, live list formatter, concrete source carrier and final cursor/EOF are not proven. The maintained finite list profile is structural-only; neither managed names nor output-slot widths establish serialized order or gameplay meaning.'}
+
+
 def buff_sequence_read_order(pe,md,modules,image_owners,*,source):
     """Selected member-three sequence: count, indirect elements, two bytes."""
     name='Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack'
@@ -456,6 +524,7 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x390D8D2,'4080FEFA731C66418936B001'),
         (0x417E68A,'488B0DE70FF20833D2E85872C2FE488BCF488BD8E87D4DE8FB4C8B0D9E87E70841B8C9000000488BD3488BCFE8B1EE18FC'),
         (0x417E4D1,'488B0D3018F20833D2E81174C2FE488BCF488BD8E8364FE8FB4C8B0D5789E70841B8C0000000488BD3488BCFE86AF018FC'),
+        (0x390E160,'488B1529B57209488B0BE8B1566FFC488BCF4885C00F852F905501488B1576357D09E8690111FD488903488BD0E950F8FFFF'),
         (0x390DA8A,'488B15FF1B7909488B0BE8875D6FFC488BCF4885C00F85FC9F5501488B150C397D09E82B08A0FC488903488BD0E926FFFFFF'),
         (0x3910A00,'488B1509F37809488B0BE8112E6FFC488BCF4885C00F859B6F5501488B153E097D09E865DF10FD488903488BD0E9B0CFFFFF'),
         (0x39149EA,'488B150F5A7209488B0BE827EE6EFC488BCF4885C00F856B215501488B1554D17C09E8C39310FD488903488BD0E9C68FFFFF')):
@@ -468,7 +537,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
     for tag,target,index,definition,suffix,init in (
         (0xC9,0x390DA8A,106672,16163,'IfElseAction_IfElseActionData',0x417E68A),
         (0xC0,0x3910A00,106641,16145,'GainCostAction_Data',0x417E4D1),
-        (0x40,0x39149EA,106441,16615,'CheckDamageTag_Data',None)):
+        (0x40,0x39149EA,106441,16615,'CheckDamageTag_Data',None),
+        (0x76,0x390E160,106507,16683,'Conditions_CheckSkillId_Data',None)):
         require(targets[tag],target,source,table_va+tag*4)
         operands=[]
         for at,usage_tag in ((target,1),)+(((init,2),) if init is not None else ()):
@@ -2231,6 +2301,7 @@ def audit():
     buff_forwarding=buff_ifelse_forwarding(pe,md,reg,table,source=str(gate.gameassembly))
     buff_order=buff_ifelse_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly))
     buff_sequence=buff_sequence_read_order(pe,md,modules,image_owners,source=str(gate.gameassembly))
+    buff_tag76=buff_tag76_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly))
     list_candidate['bodyWindows']=[]
     for start,end,digest in (
         (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
@@ -2345,6 +2416,7 @@ def audit():
         'selectedBuffIfElseForwarding':buff_forwarding,
         'selectedBuffIfElseReadOrder':buff_order,
         'selectedBuffSequenceReadOrder':buff_sequence,
+        'selectedBuffTag76ReadOrder':buff_tag76,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,
