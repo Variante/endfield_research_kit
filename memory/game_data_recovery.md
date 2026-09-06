@@ -600,6 +600,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   ending with scalar32 and a final target profile. Its enum context selects
   a DWORD source read; preserve raw bits and keep incomplete targets explicit.
   Enemy rank interpretation and comparison behavior remain unresolved.
+  `scripts/game_data/buff_126_native.json` pins an extended member-five
+  action ending directly with a target profile. Preserve nested null/count
+  boundaries and leave unknown children explicit; poise recovery behavior
+  and target ownership remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
