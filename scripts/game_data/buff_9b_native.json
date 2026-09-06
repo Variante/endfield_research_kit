@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119862,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DebugPrintAction_DataForMemoryPack+Beyond_Gameplay_Core_DebugPrintAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      65994224
+    ],
+    [
+      119861,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DebugPrintAction_DataForMemoryPack",
+      "Deserialize",
+      65994320
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 65994224,
+      "endRva": 65994317,
+      "sha256": "AEB110932963E72BE9527EB2286D1E9DBA537366AC2410DB3769B5793E67DB0A",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 65994320,
+      "endRva": 65994834,
+      "sha256": "A7471D91972AE28A74017DF2F9029C4E393332950E5F6AB1D91FD6E29C51C1C2",
+      "boundary": "member9 normal source read order through RET"
+    },
+    {
+      "startRva": 65994834,
+      "endRva": 65994930,
+      "sha256": "DD44B4CA3499C50101ED24F05F1E198EBEBBB2E9FA1DB8066CEC77F93685B0FD",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83107281,
+      "endRva": 83107302,
+      "sha256": "31A434C1405DCD67CC435F7E6FAA8B805326471E8967D2E299C3E730ADB074FC",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 65994741,
+      "instructionHex": "488B156C8C1A09",
+      "cellVa": 6661180520,
+      "usageRawHex": "99E812C000000000",
+      "methodSpecIndex": 619596,
+      "methodSpec": [
+        428448,
+        -1,
+        42559
+      ],
+      "argumentRawHex": "B8240000000000000000118000000000",
+      "typeDefinition": 9400,
+      "typeName": "Beyond.Gameplay.Core.DebugPrintAction+Data+LogType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 65994781,
+      "instructionHex": "488B15E4161709",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member9": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "bytePayload",
+      "raw16",
+      "bytePayload",
+      "scalar32",
+      "target"
+    ]
+  },
+  "boundary": "Exact static registration/module/token joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing: member-nine header, byte, three scalar32 values, signed-length byte payload, sixteen inline source bytes, second byte payload, scalar32 and finite TargetSettings profile. The inline source load and explicit advance of sixteen bytes establish wire extent independently of the output store. Preserve null and empty payloads and arbitrary raw bits. The scalar enum MethodSpec adds no nested member; the final TargetSettings context matches the separately pinned finite consumer, not a live formatter selection. Output setters and lazy construction add no source members. Field names, log or color meaning, runtime use, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

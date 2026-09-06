@@ -426,6 +426,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   its shared list count/null/loop remains conditional on provider selection.
   The latter reuses the byte-payload helper's length/advance proof, not the
   single-byte helper's width. Preserve unknown enum bits and byte contents.
+  `scripts/game_data/buff_9b_native.json` pins another member-nine order:
+  two byte payloads separated by sixteen inline source bytes, then scalar32
+  and target after the common prefix. The explicit sixteen-byte advance proves
+  the raw extent independently of output stores; log and color meanings remain
+  unresolved. Its scalar enum context adds no nested serialized member.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

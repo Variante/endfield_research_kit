@@ -109,6 +109,11 @@ def tag3c(finder=None,nested=None,value=None):
             struct.pack('<I',0xffffffff)+b'\x80'+(scalar_payload(None) if value is None else value))
 
 
+def tag9b(first=b'first',second=b'second',nested=None):
+    return (b'\x9b\x09\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+payload(first)+
+            bytes(range(16))+payload(second)+struct.pack('<I',0xffffffff)+(target() if nested is None else nested))
+
+
 def tag10f(first=254,last=128):
     return b'\xfa\x0f\x01\x05'+bytes([first])+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+bytes([last])
 
@@ -1190,6 +1195,49 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['diagnostic']['category'],'nested-profile')
         self.assertEqual(row['diagnostic']['actual'],0)
         self.assertFalse(any(r['kind']=='union' and r['tag']==60 for r in row['completedRecords']))
+
+    def test_tag9b_variable_payload_before_target_and_no_final_byte(self):
+        for first in (None,b'',b'x',bytes(range(256))):
+            for second in (None,b'',b'\xff\x00'):
+                child=tag9b(first,second);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='9b.bin')
+                self.assertEqual(row['diagnostic'],dict(source='9b.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=155),row['completedRecords'])
+                raw_start=34+len(payload(first));target_start=raw_start+16+len(payload(second))+4
+                self.assertIn(dict(start=raw_start,end=raw_start+16,kind='anonymous-raw16'),row['ranges'])
+                self.assertIn(dict(start=target_start,end=end,kind='anonymous-target-profile'),row['completedRecords'])
+                self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag9b_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag9b(),tag9b(None),tag9b(b''),tag9b(nested=b'\xff'),b'\x9b\xff',b'\xfa\x9b\x00'+tag9b()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='9b-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='9b-limit',limit=n))
+
+    def test_tag9b_bad_headers_counts_and_unknown_nested(self):
+        raw=prefix(sequence(tag9b()));good=event_prefix(raw,source='9b-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='9b-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('9b-bounds',at,value))
+        row=event_prefix(prefix(sequence(tag9b(nested=target(selector=b'\x03\x06'+bytes(8))))),source='9b-gap')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertFalse(any(r.get('tag')==155 for r in row['completedRecords']))
 
     def test_tag10f_fixed_members_keep_both_byte_values(self):
         for first in (0,1,128,255):
