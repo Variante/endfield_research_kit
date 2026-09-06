@@ -303,6 +303,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   count precedes that nested header. Reuse the pinned element reader directly;
   a shared element type does not establish a shared collection shape. The final
   scalar payload still consumes four raw scalar bytes despite its managed name.
+  The member-twelve action in `scripts/game_data/buff_02_native.json` instead
+  reads a counted member-one value list, two targets, byte, scalar payload,
+  third target and two bytes after the common prefix. Its list consumer and
+  element instantiation match the existing value-list proof; a single-value
+  reader cannot replace the collection count. Repeated target type arguments
+  represent separate serialized instances, each with its own bounded profile.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

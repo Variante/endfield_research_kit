@@ -275,7 +275,8 @@ class BuffUnionRouteTests(unittest.TestCase):
             (0x390DA29,'488B15B0BF7809488B0BE8E85D6FFC488BCF4885C00F854C9E5501488B15F5377D09E8A408A0FC488903488BD0EB8A'),
             (0x390DDDC,'488B15B5BF7209488B0BE8355A6FFC488BCF4885C00F8531925501488B15DA377D09E89D0311FD488903488BD0E9D4FBFFFF'),
             (0x390E674,'488B1585277309488B0BE89D516FFC488BCF4885C00F855E8C5501488B15BA307D09E851FD10FD488903488BD0E93CF3FFFF'),
-            (0x390E098,'488B1569C97209488B0BE879576FFC488BCF4885C00F85C98D5501488B150E347D09E86DFF10FD488903488BD0E918F9FFFF'))}
+            (0x390E098,'488B1569C97209488B0BE879576FFC488BCF4885C00F85C98D5501488B150E347D09E86DFF10FD488903488BD0E918F9FFFF'),
+            (0x390E0CA,'488B1597997809488B0BE847576FFC488BCF4885C00F8595825501488B15BC3C7D09E81FF710FD488903488BD0E9E6F8FFFF'))}
         targets=[0]*416
         types=[None]*16718;self.ptrs={}
         for tag,target,index,definition,suffix,init in (
@@ -296,7 +297,8 @@ class BuffUnionRouteTests(unittest.TestCase):
             (0xB2,0x390DA29,106623,16111,'FindTargetAction_FindTargetActionData',None),
             (0x68,0x390DDDC,106493,16647,'Conditions_CheckMainCharacterCondition_Data',None),
             (0x81,0x390E674,106518,16707,'Conditions_CheckTimedMarkerCondition_Data',None),
-            (0x58,0x390E098,106478,16599,'Conditions_CheckBuffStackNum_Data',None)):
+            (0x58,0x390E098,106478,16599,'Conditions_CheckBuffStackNum_Data',None),
+            (0x02,0x390E0CA,106256,16115,'AbilityActions_FinishBuffAction_Data',None)):
             targets[tag]=target;types[definition]='Beyond.MemoryPack.Beyond_Gameplay_Core_'+suffix+'ForMemoryPack'
             pointer=self.base+index*16
             self.parts[index*16]=struct.pack('<QII',definition,0x120000,0)
@@ -317,7 +319,7 @@ class BuffUnionRouteTests(unittest.TestCase):
             return buff_union_routes(self.pe,self.md,self.reg,{},[],source='fixture.dll')
 
     def test_current_tag_routes_do_not_alias_old_names(self):
-        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88])
+        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2])
         self.assertIn('IfElse',row['rows'][0]['wrapperName'])
         self.assertIn('GainCost',row['rows'][1]['wrapperName'])
 
