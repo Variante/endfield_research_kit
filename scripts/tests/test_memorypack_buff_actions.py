@@ -67,6 +67,10 @@ def tag160(nested=b'\xff',first=0xffffffff,second=0x80000000):
     return b'\xfa\x60\x01\x0a\xfe'+b'\xff'*12+b'\xfe\x80'+struct.pack('<I',first)+b'\xff'+struct.pack('<I',second)+nested
 
 
+def tag89(first=b'',second=b''):
+    return b'\x89\x06\xfe'+b'\xff'*12+payload(first)+payload(second)
+
+
 def tag3f(nested=b'\xff',value=b'wire'):
     return b'\x3f\x07\xfe'+b'\xff'*16+nested+payload(value)
 
@@ -1527,6 +1531,47 @@ class BuffActionsTests(unittest.TestCase):
                     self.assertIn(dict(start=19,end=end,kind='union',tag=352),row['completedRecords'])
                     self.assertIn(dict(start=47,end=end,kind='anonymous-target-profile'),row['completedRecords'])
                     for at in (38,43):self.assertIn(dict(start=at,end=at+4,kind='anonymous-scalar32'),row['ranges'])
+
+    def test_tag89_independent_payload_lengths_and_null_states(self):
+        for first in (None,b'',b'\xff\x00',b'first'):
+            for second in (None,b'',b'last\x89\x06'):
+                child=tag89(first,second);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='89.bin')
+                self.assertEqual(row['diagnostic'],dict(source='89.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=137),row['completedRecords'])
+                counts=[r['start'] for r in row['ranges'] if r['kind']=='count-i32' and r['start']>=34]
+                self.assertEqual(counts,[34,38+len(first or b'')])
+
+    def test_tag89_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag89(),tag89(None,None),tag89(b'first',b'last'),b'\x89\xff',b'\xfa\x89\x00'+tag89()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='89-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='89-limit',limit=n))
+
+    def test_tag89_malformed_headers_lengths_and_incomplete_second(self):
+        raw=prefix(sequence(tag89(b'first',b'last')))
+        good=event_prefix(raw,source='89-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='89-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('89-bounds',at,value))
+                self.assertFalse(any(r.get('tag')==137 for r in row['completedRecords']))
+        row=event_prefix(raw,source='89-second',limit=43)
+        self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],43)
+        self.assertFalse(any(r.get('tag')==137 for r in row['completedRecords']))
+        self.assertEqual(row['ranges'],[r for r in good['ranges'] if r['end']<=43])
 
     def test_tag160_null_cuts_limits_and_trailing(self):
         for child in (tag160(),tag160(target()),b'\xfa\x60\x01\xff'):
