@@ -143,6 +143,14 @@ def tag65(t=None,value=None):
             (target() if t is None else t)+b'\x80'+(scalar_payload(b'key') if value is None else value))
 
 
+def tagfe(values=None,targets=None):
+    values=(scalar_payload(b'\xffkey'),scalar_payload(None)) if values is None else values
+    targets=(target(),target()) if targets is None else targets
+    return (b'\xfa\xfe\x00\x14\xfe'+struct.pack('<IIIII',0xffffffff,0x80000000,0x7fc00000,1,0xdeadbeef)+
+            b'\x80'+struct.pack('<I',0xffffffff)+values[0]+struct.pack('<I',0x80000000)+values[1]+
+            b'\xfe\xff\x80\x00'+targets[0]+targets[1]+b'\xff\x80'+struct.pack('<I',0x7fc00000))
+
+
 def tag157(t=None,value=None,key=b'\xffkey'):
     return (b'\xfa\x57\x01\x0b\xfe'+struct.pack('<IIII',0xffffffff,0x80000000,0x7fc00000,0xdeadbeef)+
             b'\x80'+payload(key)+struct.pack('<I',0xffffffff)+(target() if t is None else t)+
@@ -189,6 +197,58 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tagfe_extended_identity_nested_order_and_opaque_tail(self):
+        child=tagfe();end=19+len(child)
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='fe.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',end))
+        self.assertIn(dict(start=19,end=end,kind='union',tag=254),row['completedRecords'])
+        self.assertIn(dict(start=19,end=22,kind='union-tag'),row['ranges'])
+        nested=[r for r in row['completedRecords'] if r['kind'] in ('anonymous-scalar-payload','anonymous-target-profile')]
+        # Separate source reads survive even when managed argument types repeat.
+        scalars=[r for r in nested if r['kind']=='anonymous-scalar-payload']
+        self.assertEqual([(r['start'],r['end']) for r in scalars[:2]],
+                         [(49,63),(67,77)])
+        self.assertEqual(row['diagnostic'],dict(source='fe.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertEqual(row['opaqueRemainderRange'],[end,end+3]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tagfe_nulls_truncations_trailing_and_hard_limits(self):
+        for child in (tagfe(),b'\xfa\xfe\x00\xff',tagfe(values=(b'\xff',b'\xff'),targets=(b'\xff',b'\xff')),
+                      tagfe(values=(scalar_payload(b'longer-key'),scalar_payload(b'')))):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='fe-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='fe-limit',limit=n))
+
+    def test_tagfe_bad_headers_lengths_and_each_nested_gap(self):
+        raw=prefix(sequence(tagfe()));good=event_prefix(raw,source='fe-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='fe-bounds')
+                self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+        gap=target(selector=b'\x03\xfe'+bytes(8))
+        for targets in ((gap,target()),(target(),gap)):
+            row=event_prefix(prefix(sequence(tagfe(targets=targets))),source='fe-gap')
+            self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['category'],'nested-profile')
+            self.assertFalse(any(r.get('tag')==254 for r in row['completedRecords']))
+
+    def test_tagfe_physical_reserved_lead_never_selects_extended_profile(self):
+        for suffix in (b'',b'\xff',tagfe()[3:],tagfe()):
+            reader=Reader(b'\xfe'+suffix,'physical-fe')
+            with self.assertRaises(Unsupported) as caught:reader.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='physical-fe',offset=0,expected='supported current union tag',actual=254,category='union-tag'))
+            self.assertEqual((reader.pos,reader.ranges,reader.records),(0,[],[]))
+
     def test_tag6e_keeps_identity_with_shared_structural_profile(self):
         child=b'\x6e'+tag65()[1:];end=19+len(child)
         row=event_prefix(prefix(sequence(child,b'\x59')),source='6e.bin')

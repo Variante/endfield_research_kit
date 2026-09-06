@@ -284,7 +284,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   family, then reads a byte and scalar payload. Equal nested type arguments
   permit profile reuse, not omission or reordering of intervening source reads.
   Extended unions consume FA followed by a little-endian unsigned tag; record
-  reports retain that decoded tag rather than the escape byte. Unknown tags
+  reports retain that decoded tag rather than the escape byte. Supporting a
+  decoded tag does not automatically admit its reserved single-byte encoding:
+  `scripts/game_data/buff_fe_native.json` pins the member-twenty reader reached
+  by the authenticated FA FE 00 records, while physical FE remains unsupported.
+  Its value-class helper reads one DWORD; distinguish this source operation
+  from the interleaved scalar-payload and target providers. Unknown tags
   stop at the original start. The selected extended member-eight child reads
   one byte, three scalar32 values, paired payload, scalar payload, one byte and
   paired payload. Its normal reader crosses chained unwind regions: the first
