@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122486,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveDamageSkillCastId_DataForMemoryPack+Beyond_Gameplay_Core_SaveDamageSkillCastId_DataForMemoryPackFormatter",
+      "Deserialize",
+      72471008
+    ],
+    [
+      122485,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveDamageSkillCastId_DataForMemoryPack",
+      "Deserialize",
+      72471104
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72471008,
+      "endRva": 72471101,
+      "sha256": "9E9A8184743499A9CB7DB7B1144072C5AC153307A2D642874F725A05F2E2ED6B",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 72471104,
+      "endRva": 72471390,
+      "sha256": "B4254B060B78DA89CBA9048A9391ED5070B5DC4E82010C4E9FCC602118067046",
+      "boundary": "member4 source reads through normal RET"
+    },
+    {
+      "startRva": 72471390,
+      "endRva": 72471450,
+      "sha256": "CBDB5B9205B6CB4760DD2A26FAEC5B3194AF66DB1979A79EEA4BB1017523B6CB",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83792712,
+      "endRva": 83792725,
+      "sha256": "58462339781D5E61360C5E2C336E71E59A69603129318FAE094D025168422BD0",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83792781,
+      "endRva": 83792802,
+      "sha256": "BD18295F5B74FCDDDA5C0505C4157CF15D5EBFCA7375CCD1D05C9E083CF4079B",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72471276,
+      "instructionHex": "488B1535CBB608",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member4": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member4 action consumes only the common byte and three DWORDs, with no nested profile or additional tail. Preserve every scalar bit and keep null wrappers distinct. The actual member check is cmp sil,4, separate from header availability and output construction. Normal, lazy, formatter, existing-output and FF paths retain complete instructions; output constructors/setters add no source bytes. Damage skill-cast identity meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

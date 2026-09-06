@@ -1765,6 +1765,35 @@ class BuffActionsTests(unittest.TestCase):
         self.assertFalse(any(v.get('tag')==322 for v in r.records))
         self.assertLess(r.pos,len(gap)-sum(len(payload(v)) for v in (b'',b'wire',b'\xff\x00',b'last'))-4)
 
+    def test_tag13c_common_members_end_before_next_union(self):
+        for fields in (bytes(13),b'\xff'*13,b'\x80'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)):
+            for tag in (b'\xfa\x3c\x01',):
+                child=tag+b'\x04'+fields;end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='13c.bin')
+                self.assertEqual(row['diagnostic'],dict(source='13c.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=316),row['completedRecords'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag13c_every_cut_null_extended_bad_header_and_trailing(self):
+        for tag in (b'\xfa\x3c\x01',):
+            for child in (tag+b'\x04'+b'\xff'*13,tag+b'\xff'):
+                r=Reader(child,'13c-cut');r.action(0);self.assertEqual(r.pos,len(child))
+                for n in range(len(child)):
+                    results=[]
+                    for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                        r=Reader(data,'13c-cut',n)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==316 for v in r.records))
+                        results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                    self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+                for tail in (b'\x00',b'\xff'):
+                    with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            for header in (0,3,5,254):
+                r=Reader(tag+bytes([header])+bytes(13),'13c-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='13c-header',offset=len(tag),expected=4,actual=header,category='member-count'))
+
     def test_tag62_common_members_end_before_next_union(self):
         for fields in (bytes(13),b'\xff'*13,b'\x80'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)):
             for tag in (b'\x62',b'\xfa\x62\x00'):
