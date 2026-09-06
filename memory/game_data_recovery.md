@@ -307,12 +307,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   counts do not select a layout. `scripts/game_data/buff_3c_native.json` pins
   that distinct order through normal return and the separate null path.
   Intermediate setters do not establish wire order or gameplay conditions.
-  The member-nine child adds a scalar, two bytes, target and counted scalar32
-  list after the common prefix. `scripts/game_data/buff_78_native.json` joins
-  the list element to a separate concrete source consumer that advances four
-  bytes. Its count/null/loop profile remains conditional on the shared list
-  reader: the element-width witness does not prove actual provider selection.
-  Preserve unknown enum values as raw bits; managed enum size is not the witness.
+  Member-nine actions have distinct orders: `scripts/game_data/buff_78_native.json`
+  adds scalar32, two bytes, target and counted scalar32 values to the common
+  prefix; `scripts/game_data/buff_81_native.json` instead adds a length-prefixed
+  byte payload, target, another byte payload and two bytes. Equal headers do not
+  select either layout. The former pins an independent four-byte element reader;
+  its shared list count/null/loop remains conditional on provider selection.
+  The latter reuses the byte-payload helper's length/advance proof, not the
+  single-byte helper's width. Preserve unknown enum bits and byte contents.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

@@ -99,6 +99,11 @@ def tag68(nested=None,flag=254):
             (target() if nested is None else nested))
 
 
+def tag81(first=b'key',last=b'\xff\x00',nested=None,flag=254):
+    return (b'\x81\x09'+bytes([flag])+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
+            payload(first)+(target() if nested is None else nested)+payload(last)+b'\x80\xff')
+
+
 def tag57():
     return (b'\x57\x08\xfe'+struct.pack('<III',0xffffffff,0x80000000,1)+payload(b'\xff\x00')+
             struct.pack('<i',3)+pair(b'a',b'\xff\x00',254)+b'\xff'+pair(None,b'',128)+
@@ -114,6 +119,55 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag81_ordered_payloads_and_target_boundary(self):
+        child=tag81();self.assertEqual(len(child),110)
+        row=event_prefix(prefix(sequence(child,b'\x82')),source='81.bin')
+        self.assertEqual((row['status'],row['consumedEnd']),('unsupported',129))
+        self.assertEqual(row['diagnostic'],dict(source='81.bin',offset=129,expected='supported current union tag',actual=130,category='union-tag'))
+        self.assertIn(dict(start=19,end=129,kind='union',tag=129),row['completedRecords'])
+        self.assertIn(dict(start=41,end=121,kind='anonymous-target-profile'),row['completedRecords'])
+        self.assertIn(dict(start=34,end=41,kind='anonymous-byte-payload',isNull=False),row['completedRecords'])
+        self.assertIn(dict(start=121,end=127,kind='anonymous-byte-payload',isNull=False),row['completedRecords'])
+        self.assertEqual(row['opaqueRemainderRange'],[129,132]);self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag81_truncation_limits_and_trailing_bytes(self):
+        for child in (tag81(),tag81(None,None,b'\xff'),tag81(b'',b'',b'\xff'),b'\x81\xff',
+                      b'\xfa\x81\x00\xff',b'\xfa\x81\x00'+tag81()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.subTest(n=n),self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='81-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='81-limit',limit=n))
+
+    def test_tag81_malformed_headers_and_payload_lengths(self):
+        raw=prefix(sequence(tag81()));good=event_prefix(raw,source='81-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='81-bounds')
+                self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],at)
+        for flag in (0,1,128,254,255):
+            raw=sequence(tag81(flag=flag));self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+
+    def test_tag81_nested_gap_and_equal_header_dispatch(self):
+        child=tag81(nested=target(selector=b'\x03\xfe'+bytes(8)))
+        row=event_prefix(prefix(sequence(child)),source='81-gap')
+        self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertFalse(any(r.get('tag')==129 for r in row['completedRecords']))
+        # Both actions have nine members, but their type-selected wire orders differ.
+        raw=sequence(tag81(),tag78());self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+        wrong=b'\x81'+tag78()[1:]
+        with self.assertRaises(FrameError):sequence_frame(sequence(wrong))
+
     def test_tag68_target_boundary_and_later_unknown(self):
         child=tag68();self.assertEqual(len(child),95)
         row=event_prefix(prefix(sequence(child,b'\x69')),source='68.bin')

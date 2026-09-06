@@ -1,0 +1,70 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124760,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTimedMarkerCondition_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckTimedMarkerCondition_DataForMemoryPackFormatter",
+      "Deserialize",
+      66867744
+    ],
+    [
+      124759,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckTimedMarkerCondition_DataForMemoryPack",
+      "Deserialize",
+      66867840
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66867744,
+      "endRva": 66867837,
+      "sha256": "4102807E8EB2F6E29643A70DA7F12A315D188A3F925CB2E8525241A398990CC9",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 66867840,
+      "endRva": 66868307,
+      "sha256": "6C9008B290F4D39BDEF37AD0DC8D4E8D5D8E62A4712EA852E8D0FB06AEDADAC0",
+      "boundary": "member9 normal source read order through RET"
+    },
+    {
+      "startRva": 83212041,
+      "endRva": 83212062,
+      "sha256": "58FEC28EB3D6A8437FB398723A2156767AF27B1148506582F920D387A56CF373",
+      "boundary": "FF output clear and rejoin normal epilogue"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66868152,
+      "instructionHex": "488B1549C30909",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member9": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "target-profile",
+      "byte-payload",
+      "byte",
+      "byte"
+    ]
+  },
+  "boundary": "Exact static registration/module/token and TargetSettings MethodSpec/type joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source read order supports a structural-only finite profile. The two calls to 0x2CA8700 reuse the byte-length/payload source-advance witness in the common selectedBuffTag76ReadOrder audit, not the single-byte helper; a negative length below -1 fails closed. TargetSettings reuses buff_ec_native.json and the finite selector extensions in buff_b2_native.json. The common byte/scalar32 helpers prove source width independently of managed declarations and destination offsets. Equal member-nine headers do not make this profile interchangeable with the target/scalar-list action. Direction targets remain null-only and postprocessor target expansion is limited to one. Preserve arbitrary byte content, scalar bits and nonzero byte values anonymously. Unknown nested tags, deeper recursion, string decoding, live formatter selection, allocation/refill/error parity, field/gameplay meaning and whole-BuffData EOF remain unresolved."
+}
