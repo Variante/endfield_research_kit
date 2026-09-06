@@ -302,6 +302,12 @@ only.
   defaults do not validate those live values. Exact t7 uses the completed
   resolve, and t11 uses same-camera/frame contact output with separate content
   gates. Legacy HLSL bindings remain a different contract.
+  The exact retained Default variant consumes only red from t7 and t11,
+  confirmed by fresh DXBC disassembly and independent channel interventions.
+  Contact red remains nonneutral; green independence here does not apply to
+  other consumers or close whole-texture publication. Prioritize the two live
+  red producers and stencil population for this deferred path. See
+  `deferred_shadow_channel_dependency.json` and the lab's maintained replay.
   The base native camera lifecycle resets its counter to zero and increments
   on camera Update, independently of contact dispatch readiness. The lab now
   owns that counter in pipeline camera state and passes it to contact; producer
