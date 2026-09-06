@@ -25,6 +25,12 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def tag48(values=(0,0xffffffff),bits=0x80000000):
+    return (b'\x48\x06\xfe'+struct.pack('<IIII',0xffffffff,0x80000000,0x7fc00000,bits)+
+            struct.pack('<i',-1 if values is None else len(values))+
+            b''.join(struct.pack('<I',value) for value in (values or ())))
+
+
 def tag88(nested=None):
     return (b'\x88\x05\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
             (scalar_payload() if nested is None else nested))
@@ -1340,6 +1346,45 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
 
+    def test_tag48_final_list_extent_and_raw_bits(self):
+        for values in (None,(),(0,),(0xffffffff,0x80000000,0x7fc00000)):
+            child=tag48(values);end=19+len(child)
+            self.assertEqual(len(child),23+4*len(values or ()))
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='48.bin')
+            self.assertEqual(row['diagnostic'],dict(source='48.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+            self.assertIn(dict(start=19,end=end,kind='union',tag=72),row['completedRecords'])
+            self.assertIn(dict(start=38,end=end,kind='anonymous-scalar32-list'),row['completedRecords'])
+            self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag48_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag48(),tag48(None),tag48(()),b'\x48\xff',b'\xfa\x48\x00'+tag48()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='48-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='48-limit',limit=n))
+
+    def test_tag48_bad_headers_and_counts(self):
+        raw=prefix(sequence(tag48()));good=event_prefix(raw,source='48-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='48-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('48-bounds',at,value))
+        row=event_prefix(prefix(sequence(b'\x5a'+tag48()[1:])),source='48-other')
+        self.assertEqual(row['diagnostic'],dict(source='48-other',offset=19,expected='supported current union tag',actual=90,category='union-tag'))
+
     def test_tag88_scalar_payload_is_final_member(self):
         for value in (None,b'',b'x',bytes(range(256))):
             for bits in (bytes(4),b'\xff'*4,b'\x00\x00\xc0\x7f'):
@@ -1378,7 +1423,7 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('88-bounds',at,value))
         row=event_prefix(prefix(sequence(b'\x48'+tag88()[1:])),source='88-other')
-        self.assertEqual(row['diagnostic'],dict(source='88-other',offset=19,expected='supported current union tag',actual=72,category='union-tag'))
+        self.assertEqual(row['diagnostic'],dict(source='88-other',offset=20,expected=6,actual=5,category='member-count'))
 
     def test_tag7a_scalar_and_variable_payload_extent(self):
         for value in (None,b'',b'x',bytes(range(256))):

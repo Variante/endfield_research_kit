@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124430,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckOriginSkillType_DataForMemoryPack+Beyond_Gameplay_Core_CheckOriginSkillType_DataForMemoryPackFormatter",
+      "Deserialize",
+      67081936
+    ],
+    [
+      124429,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckOriginSkillType_DataForMemoryPack",
+      "Deserialize",
+      67082384
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67081936,
+      "endRva": 67082029,
+      "sha256": "F1D8B0DB2E8BC08B54C2E4972AFFA8272317B23D6A7AC01372FC1243F51D6EB7",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 67082384,
+      "endRva": 67082755,
+      "sha256": "3DCBF95290252133B4B31F460233657794BF94D53AF09DEE2544003B22305C15",
+      "boundary": "member6 normal source read order through RET"
+    },
+    {
+      "startRva": 67082755,
+      "endRva": 67082839,
+      "sha256": "6E52B3F72DB26E825F77E47CB0E6CB584612232DFBA1564F7BA4B16CDF69709F",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83248177,
+      "endRva": 83248198,
+      "sha256": "2492980870545E3E6D9510DB56138EE9281669A6B4BCE130A1069AC60CDD5DAD",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67082556,
+      "instructionHex": "488B15E5040909",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67082662,
+      "instructionHex": "488B1533020409",
+      "cellVa": 6660791264,
+      "usageRawHex": "7FE712C000000000",
+      "methodSpecIndex": 619455,
+      "methodSpec": [
+        428448,
+        -1,
+        42457
+      ],
+      "argumentRawHex": "ED340000000000000000118000000000",
+      "typeDefinition": 13549,
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckSkillType+AttackTypeMask",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67082702,
+      "instructionHex": "488B1513020409",
+      "cellVa": 6660791272,
+      "usageRawHex": "23A412C000000000",
+      "methodSpecIndex": 610833,
+      "methodSpec": [
+        428462,
+        -1,
+        62631
+      ],
+      "argumentRawHex": "3883258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000A083EF8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 20087,
+        "elementArguments": [
+          "6E050000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "counted-scalar32"
+    ]
+  },
+  "boundary": "Exact static registration/module/token joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing: member-six header, byte, four scalar32 values and a counted scalar32 list. Both scalar enum contexts add no nested member. The final List<SkillType> context exactly matches the cell, MethodSpec and element carrier pinned by buff_78_native.json; that contract separately pins a ReadUnmanaged<SkillType> source-width witness and the conditional shared list count/null/loop boundary. Elements have four raw bytes and no per-element header. This reuse does not prove live formatter selection. Preserve null/empty lists and arbitrary scalar bits; bound counts before multiplication or iteration. Output setters and lazy construction add no source members. Field names, skill-origin meaning, runtime use, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

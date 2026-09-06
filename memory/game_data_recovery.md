@@ -438,6 +438,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   its shared list count/null/loop remains conditional on provider selection.
   The latter reuses the byte-payload helper's length/advance proof, not the
   single-byte helper's width. Preserve unknown enum bits and byte contents.
+  The member-six reader in `scripts/game_data/buff_48_native.json` reaches the
+  same list context after only the common prefix and scalar32. Its element
+  type and shared source-width witness support the same count-times-four
+  profile without element headers; the different outer layout and live list
+  provider selection remain separate claims. Preserve null and empty lists.
   `scripts/game_data/buff_9b_native.json` pins another member-nine order:
   two byte payloads separated by sixteen inline source bytes, then scalar32
   and target after the common prefix. The explicit sixteen-byte advance proves
