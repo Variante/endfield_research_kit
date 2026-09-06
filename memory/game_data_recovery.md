@@ -666,6 +666,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   immediately after one BlackboardDouble profile. Reuse the independently
   authenticated payload/byte/four-byte reader; its managed name does not
   establish an eight-byte value or energy semantics.
+  `scripts/game_data/buff_115_native.json` pins a member-sixteen action whose
+  nested sequence is followed by two four-byte values, payload and final byte.
+  Keep that outer tail mandatory after a null or complete sequence; unknown
+  children leave the outer action incomplete and retain their original offset.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

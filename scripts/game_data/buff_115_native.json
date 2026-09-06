@@ -1,0 +1,106 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121850,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayAnimationAction_PlayAnimationActionDataForMemoryPack+Beyond_Gameplay_Core_PlayAnimationAction_PlayAnimationActionDataForMemoryPackFormatter",
+      "Deserialize",
+      58161040
+    ],
+    [
+      121849,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayAnimationAction_PlayAnimationActionDataForMemoryPack",
+      "Deserialize",
+      58159072
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58161040,
+      "endRva": 58161133,
+      "sha256": "FFE3010129EDE0AB9B149D629DE1972A401572C7F812D3C8F1972FAE3A0B695A",
+      "boundary": "formatter forwarding with complete lazy and class initialization"
+    },
+    {
+      "startRva": 58159072,
+      "endRva": 58160002,
+      "sha256": "E3B0DBFA8725308805BA2C520BB1F1F4B68A3B1CECC1243F178B98FC0BF1D4F1",
+      "boundary": "member16 source reads through normal RET"
+    },
+    {
+      "startRva": 58160002,
+      "endRva": 58160019,
+      "sha256": "687A4BEEAED207C6313FCC47C23F4927AF7FE982ED242782553E15CAA8D0C450",
+      "boundary": "FF clear and complete epilogue rejoin"
+    },
+    {
+      "startRva": 58160019,
+      "endRva": 58160091,
+      "sha256": "A0914251360BC38C4901D172E742129AA9C297C77BD492091F272A2575F43B9E",
+      "boundary": "reader lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 81977380,
+      "endRva": 81977393,
+      "sha256": "57905331FBBFF47C9C81C4FC855C4FFA71CAA1236E16B41322C3B40890CEDB40",
+      "boundary": "existing-output preparation and header rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58159280,
+      "instructionHex": "488B15712D9109",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58159727,
+      "instructionHex": "488B15F2DB8709",
+      "cellVa": 6660509288,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member16": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "raw4",
+      "raw4",
+      "scalar32",
+      "raw4",
+      "byte",
+      "byte",
+      "sequence",
+      "raw4",
+      "raw4",
+      "byte-payload",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. After common byte/three DWORDs, the member16 action reads payload, two raw4 values, DWORD, raw4, two bytes, SequenceActionData, two raw4 values, payload and final byte. MethodSpec619962 joins typedef9202 and the independently pinned member3 nullable count/indirect-child/two-byte sequence grammar. Shared provider selection remains conditional. Sequence termination does not terminate this action: the final two raw4 values, payload and byte remain mandatory. Unknown child unions retain their first offset and leave the enclosing action incomplete; recursion remains bounded. The 2CA8BB0 helper consumes four source bytes; output setters add no source bytes. Formatter lazy/class initialization, reader lazy initialization, normal RET, existing-output and FF paths retain complete instructions. Animation meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
