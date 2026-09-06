@@ -170,8 +170,10 @@ only.
   managed texture publication also checks the cloud feature's CPU-command state
   and Unity texture validity. Keep these conditions separate and do not infer
   the final GPU binding without the live phase and later-publisher joins. The
-  current source audit is `cloud_shadow_native_publishers.json` in that report
-  directory; IFix execution and live environment selection remain unproven.
+  current source audit is `cloud_shadow_native_publishers.json`. Separately,
+  `cloud_draw_inputs.json` proves neutral cloud modulation for the retained
+  current-build shadow draws; it does not generalize to unsampled frames or
+  establish live environment ownership.
   The bounded environment observer retains selected cloud configuration,
   exact managed texture-publisher getter routes, the feature getter's actual
   return and the constant method's before/after bytes. Keep these CPU-side
