@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124417,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckObtainAtbType_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckObtainAtbType_DataForMemoryPackFormatter",
+      "Deserialize",
+      70221104
+    ],
+    [
+      124416,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckObtainAtbType_DataForMemoryPack",
+      "Deserialize",
+      70221200
+    ],
+    [
+      121534,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ObtainCostAction_DataForMemoryPack",
+      "Deserialize",
+      64262160
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70221104,
+      "endRva": 70221197,
+      "sha256": "48302752FDBE665050F3B5F563249850876BF1244475D1DA07AB9AAC456D77D3",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 70221200,
+      "endRva": 70221640,
+      "sha256": "B51B768E0219DD5FE2B3D85FAC0A740674ED742A9531FBC1B8A4665157A2D185",
+      "boundary": "member8 normal source read order through RET"
+    },
+    {
+      "startRva": 70221640,
+      "endRva": 70221724,
+      "sha256": "FB1DD108BA94E8C2D70BC627F1455F22061642A25C78390E1C18558D24862445",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83540705,
+      "endRva": 83540726,
+      "sha256": "09532ADF1946D521620DFF7D03CEEC0CE8A8286FD5C29C49222E59CD54C788C4",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    },
+    {
+      "startRva": 64262160,
+      "endRva": 64263056,
+      "sha256": "45A99F22B149643BC4CDEBA3453D808F6CA350253A5BC628CAB177536732C336",
+      "boundary": "independent two element-type DWORD source witnesses through normal RET"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70221372,
+      "instructionHex": "488B15E51FD908",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70221546,
+      "instructionHex": "488B156F1CD408",
+      "cellVa": 6660791136,
+      "usageRawHex": "4FA312C000000000",
+      "methodSpecIndex": 610727,
+      "methodSpec": [
+        428462,
+        -1,
+        62540
+      ],
+      "argumentRawHex": "28B7258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000609CEF8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 19696,
+        "elementArguments": [
+          "68050000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 70221587,
+      "instructionHex": "488B15C6E7D108",
+      "cellVa": 6660646624,
+      "usageRawHex": "51A312C000000000",
+      "methodSpecIndex": 610728,
+      "methodSpec": [
+        428462,
+        -1,
+        62541
+      ],
+      "argumentRawHex": "08B7258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000B040EA8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 8616,
+        "elementArguments": [
+          "67050000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 64262438,
+      "instructionHex": "488B15F3CE2B09",
+      "cellVa": 6660579360,
+      "usageRawHex": "E3E512C000000000",
+      "methodSpecIndex": 619249,
+      "methodSpec": [
+        428448,
+        -1,
+        19696
+      ],
+      "argumentRawHex": "68050000000000000000118000000000",
+      "typeDefinition": 1384,
+      "typeName": "Beyond.Gameplay.GainAtbMethod",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64262552,
+      "instructionHex": "488B1591CE2B09",
+      "cellVa": 6660579376,
+      "usageRawHex": "E5E512C000000000",
+      "methodSpecIndex": 619250,
+      "methodSpec": [
+        428448,
+        -1,
+        8616
+      ],
+      "argumentRawHex": "67050000000000000000118000000000",
+      "typeDefinition": 1383,
+      "typeName": "Beyond.Gameplay.GainAtbType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "counted-scalar32",
+      "counted-scalar32"
+    ]
+  },
+  "boundary": "Exact static registration/module/token joins under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing: member-eight header, byte, three scalar32 values, two bytes and two distinct counted scalar32 lists. Each list context joins its own element instantiation. Independently the module/token-joined ObtainCostAction reader passes each exact element type to the common DWORD source helper; managed enum names or output widths are not the width proof. Signed count/null/loop framing reuses the conditional shared list profile, not the provider bridge alone. Preserve list order, independent null/empty states and arbitrary four-byte bits, with no element headers. Bound counts before multiplication or iteration. Priority adds no nested member. Output setters and lazy construction add no source members. Live provider selection, ATB/field meanings, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

@@ -25,6 +25,12 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def tag6a(first=(),second=()):
+    def values(items):
+        return struct.pack('<i',-1 if items is None else len(items))+(b'' if items is None else b''.join(struct.pack('<I',x) for x in items))
+    return b'\x6a\x08\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+b'\xff\x80'+values(first)+values(second)
+
+
 def tagbd(children=None,nested=None):
     return (b'\xbd\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
             (sequence() if children is None else children)+(target() if nested is None else nested))
@@ -1379,6 +1385,47 @@ class BuffActionsTests(unittest.TestCase):
         row=event_prefix(prefix(sequence(child)),source='c5-element')
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
+
+    def test_tag6a_two_independent_scalar32_lists(self):
+        for first in (None,(),(0,),(0xffffffff,0x80000000,0x7fc00000)):
+            for second in (None,(),(1,2),(0xffffffff,)):
+                child=tag6a(first,second);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='6a.bin')
+                self.assertEqual(row['diagnostic'],dict(source='6a.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=106),row['completedRecords'])
+                lists=[r for r in row['completedRecords'] if r['kind']=='anonymous-scalar32-list']
+                split=36+4+4*len(first or ())
+                self.assertEqual(lists,[dict(start=36,end=split,kind='anonymous-scalar32-list'),dict(start=split,end=end,kind='anonymous-scalar32-list')])
+                self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag6a_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag6a(),tag6a(None,None),tag6a((1,2),(0xffffffff,)),b'\x6a\xff',b'\xfa\x6a\x00'+tag6a()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='6a-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='6a-limit',limit=n))
+
+    def test_tag6a_malformed_headers_and_both_list_counts(self):
+        raw=prefix(sequence(tag6a((1,2),(3,4))));good=event_prefix(raw,source='6a-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='6a-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('6a-bounds',at,value))
+        row=event_prefix(prefix(sequence(b'\x6b'+tag6a()[1:])),source='6a-other')
+        self.assertEqual(row['diagnostic'],dict(source='6a-other',offset=19,expected='supported current union tag',actual=107,category='union-tag'))
 
     def test_tagbd_sequence_then_independent_target(self):
         for children in (b'\xff',b'\x03'+struct.pack('<i',-1)+b'\xfe\xff',sequence(),sequence(b'\xff',tag145()),sequence(tagbd(b'\xff',b'\xff'))):

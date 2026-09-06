@@ -494,6 +494,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   An unknown child stops inside the sequence and leaves the enclosing action
   incomplete; sequence termination alone does not consume the final target.
   The managed iteration name does not establish runtime execution semantics.
+  `scripts/game_data/buff_6a_native.json` pins a member-eight reader with
+  two bytes and two distinct counted scalar32 lists after the common prefix.
+  A separately joined consumer passes each exact list element type to the
+  DWORD source helper; enum names and output slots are not the width proof.
+  Keep count/null/loop framing conditional, preserve each list independently,
+  and admit no element headers or inferred ATB meanings.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
