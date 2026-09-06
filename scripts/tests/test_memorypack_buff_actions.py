@@ -71,6 +71,10 @@ def tag89(first=b'',second=b''):
     return b'\x89\x06\xfe'+b'\xff'*12+payload(first)+payload(second)
 
 
+def tag132(first=b'',second=b''):
+    return b'\xfa\x32\x01\x06\xfe'+b'\xff'*12+payload(first)+payload(second)
+
+
 def tag171(first=b'\xff',second=b'\xff',value=b'',third=b'\xff',nested=b'\xff',last=255):
     return b'\xfa\x71\x01\x0d\xfe'+b'\xff'*16+first+second+payload(value)+third+b'\x80'*8+nested+bytes([last])
 
@@ -1545,6 +1549,47 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertIn(dict(start=19,end=end,kind='union',tag=137),row['completedRecords'])
                 counts=[r['start'] for r in row['ranges'] if r['kind']=='count-i32' and r['start']>=34]
                 self.assertEqual(counts,[34,38+len(first or b'')])
+
+    def test_tag132_independent_payload_lengths_and_null_states(self):
+        for first in (None,b'',b'\xff\x00',b'first'):
+            for second in (None,b'',b'last\x89\x06'):
+                child=tag132(first,second);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='132.bin')
+                self.assertEqual(row['diagnostic'],dict(source='132.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=306),row['completedRecords'])
+                counts=[r['start'] for r in row['ranges'] if r['kind']=='count-i32' and r['start']>=36]
+                self.assertEqual(counts,[36,40+len(first or b'')])
+
+    def test_tag132_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag132(),tag132(None,None),tag132(b'first',b'last'),b'\xfa\x32\x01\xff'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='132-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='132-limit',limit=n))
+
+    def test_tag132_malformed_headers_lengths_and_incomplete_second(self):
+        raw=prefix(sequence(tag132(b'first',b'last')))
+        good=event_prefix(raw,source='132-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='132-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('132-bounds',at,value))
+                self.assertFalse(any(r.get('tag')==306 for r in row['completedRecords']))
+        row=event_prefix(raw,source='132-second',limit=45)
+        self.assertEqual(row['status'],'failed');self.assertEqual(row['diagnostic']['offset'],45)
+        self.assertFalse(any(r.get('tag')==306 for r in row['completedRecords']))
+        self.assertEqual(row['ranges'],[r for r in good['ranges'] if r['end']<=45])
 
     def test_tag171_independent_scalar_profiles_and_final_byte(self):
         for first in (b'\xff',scalar_payload(b'a')):

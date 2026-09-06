@@ -1,0 +1,79 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122344,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveAtbObtainValue_DataForMemoryPack+Beyond_Gameplay_Core_SaveAtbObtainValue_DataForMemoryPackFormatter",
+      "Deserialize",
+      71533968
+    ],
+    [
+      122343,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveAtbObtainValue_DataForMemoryPack",
+      "Deserialize",
+      71534064
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 71533968,
+      "endRva": 71534061,
+      "sha256": "B83B664FA91D4BE28DA42DB853646265F91B16655B1B124014AD28F124C115F0",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 71534064,
+      "endRva": 71534418,
+      "sha256": "E2EAE381D7BFB46A36D0E9B4397BE9E5816E8BA6CE668C8DBCF7E8A8C44A19DE",
+      "boundary": "member6 source reads through normal RET"
+    },
+    {
+      "startRva": 71534418,
+      "endRva": 71534478,
+      "sha256": "41327BA57D73AAA5292EA811052A0358C498CFADAD6547034347B753675B4D9A",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83681474,
+      "endRva": 83681487,
+      "sha256": "65515DAED61B8BA445CF1D6AB7524E454D731CCE54106832821B72625A736250",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83681543,
+      "endRva": 83681564,
+      "sha256": "BCC5FE47F964CAD717280E4F44CFFD915DEBDEAF35C3CC28866387F9C62D36B8",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 71534236,
+      "instructionHex": "488B158517C508",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member6 action consumes common byte/three DWORD then two independent length-prefixed byte payloads through the same pinned source helper. There is no nested object header or intervening flag. Preserve each signed payload length and null/empty state; completion of the first cannot complete the action before the second. Priority selects the common DWORD context. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Constructors and output setters add no source bytes. Payload encoding, ATB-value ownership or save behavior, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
