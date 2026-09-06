@@ -1442,6 +1442,48 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
 
+    def test_tag73_fixed_end_and_independent_adjacent_records(self):
+        for flag in (0,1,128,254,255):
+            child=b'\x73\x04'+bytes([flag])+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)
+            for encoded in (child,b'\xfa\x73\x00'+child[1:],b'\x73\xff'):
+                end=19+len(encoded)
+                row=event_prefix(prefix(sequence(encoded,b'\x59')),source='73.bin')
+                self.assertEqual(row['diagnostic'],dict(source='73.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertEqual(row['completedRecords'],[dict(start=19,end=end,kind='union',tag=115)])
+                raw=sequence(encoded,encoded)
+                reader=Reader(raw,'73-pair');reader.sequence()
+                self.assertEqual(reader.pos,len(raw))
+                self.assertEqual([r for r in reader.records if r['kind']=='union'],[
+                    dict(start=5,end=5+len(encoded),kind='union',tag=115),
+                    dict(start=5+len(encoded),end=5+2*len(encoded),kind='union',tag=115)])
+
+    def test_tag73_null_extended_cuts_limits_and_trailing(self):
+        for child in (b'\x73\x04'+b'\xff'*13,b'\xfa\x73\x00\x04'+bytes(13),b'\x73\xff',b'\xfa\x73\x00\xff'):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='73-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='73-limit',limit=n))
+
+    def test_tag73_malformed_headers_and_enclosing_counts(self):
+        raw=prefix(sequence(b'\x73\x04'+bytes(13)))
+        good=event_prefix(raw,source='73-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='73-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('73-bounds',at,value))
+                self.assertFalse(any(r.get('tag')==115 for r in row['completedRecords']))
+
     def test_tag14d_three_independent_nested_boundaries(self):
         for first in (b'\xff',finder14d(),finder14d(None,None),finder14d((),())):
             for second in (b'\xff',target()):

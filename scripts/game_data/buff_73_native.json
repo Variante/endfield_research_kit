@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124547,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillCastId_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckSkillCastId_DataForMemoryPackFormatter",
+      "Deserialize",
+      71361824
+    ],
+    [
+      124546,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillCastId_DataForMemoryPack",
+      "Deserialize",
+      71361920
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 71361824,
+      "endRva": 71361917,
+      "sha256": "5E0D490C81A85197A00FF460A988E7725B17222104F62BFE90206416DD9BA177",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 71361920,
+      "endRva": 71362206,
+      "sha256": "856814CD83D96C3D3B7674F16214F8F82A532CA4356E7360A0666279A3018435",
+      "boundary": "member4 source reads through normal RET"
+    },
+    {
+      "startRva": 71362206,
+      "endRva": 71362266,
+      "sha256": "2666F3CBF5B0A8DAAC8A27E8C78BB8595038479D68D56D3C8D70D597E2C18434",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83665120,
+      "endRva": 83665133,
+      "sha256": "9A6FB4CE8EB8EB0E137424E95313833B3B388308171E316FFC0822FEB7593E60",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83665189,
+      "endRva": 83665210,
+      "sha256": "5EE588AACF854D4CC04E1155FF40890E6DC6FEF3E056A35218789EDEF51692ED",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 71362092,
+      "instructionHex": "488B15F5B7C708",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member4": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only fixed framing. The member4 reader ends immediately after its common byte and three DWORD members. Its Priority context belongs to the first DWORD source read; there is no nested provider or final payload. Do not infer extra data from constructors, output setters, type names or adjacent methods. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Skill-cast identity meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

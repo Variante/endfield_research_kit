@@ -544,6 +544,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   prefix. Each nested context joins its own finite reader; preserve their null
   states and counts independently. An unsupported target keeps the final payload
   unconsumed. Duration and operation meanings remain unresolved.
+  `scripts/game_data/buff_73_native.json` pins a member-four action ending
+  immediately after the common byte and three scalar32 members. The Priority
+  context belongs to a scalar read; neither constructors nor output setters
+  introduce nested source data. Skill-cast identity meaning remains unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
