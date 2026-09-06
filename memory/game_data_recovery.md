@@ -592,6 +592,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   action ending in two independent byte payloads. Preserve both signed lengths
   and null/empty states; the parent completes only after the second payload.
   Payload encoding and ATB-value ownership remain unresolved.
+  `scripts/game_data/buff_d4_native.json` pins a member-eight action
+  with two independent target profiles followed by two four-byte scalars.
+  Preserve raw scalar bits and keep the parent incomplete until both tails
+  finish; target ownership and interrupt behavior remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

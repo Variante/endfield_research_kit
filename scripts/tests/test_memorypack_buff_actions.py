@@ -71,6 +71,10 @@ def tag89(first=b'',second=b''):
     return b'\x89\x06\xfe'+b'\xff'*12+payload(first)+payload(second)
 
 
+def tagd4(first=b'\xff',second=b'\xff',raw=0x7fc00000,last=0xffffffff):
+    return b'\xd4\x08\xfe'+b'\xff'*12+first+second+struct.pack('<II',raw,last)
+
+
 def tag132(first=b'',second=b''):
     return b'\xfa\x32\x01\x06\xfe'+b'\xff'*12+payload(first)+payload(second)
 
@@ -1549,6 +1553,57 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertIn(dict(start=19,end=end,kind='union',tag=137),row['completedRecords'])
                 counts=[r['start'] for r in row['ranges'] if r['kind']=='count-i32' and r['start']>=34]
                 self.assertEqual(counts,[34,38+len(first or b'')])
+
+    def test_tagd4_independent_targets_and_raw_tail(self):
+        for first in (b'\xff',target()):
+            for second in (b'\xff',target()):
+                for bits in (0,0xffffffff,0x80000000,0x7fc00000):
+                    child=tagd4(first,second,bits,bits);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='d4.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='d4.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=212),row['completedRecords'])
+                    self.assertIn(dict(start=34,end=34+len(first),kind='anonymous-target-profile'),row['completedRecords'])
+                    self.assertIn(dict(start=34+len(first),end=end-8,kind='anonymous-target-profile'),row['completedRecords'])
+                    for at in (end-8,end-4):self.assertIn(dict(start=at,end=at+4,kind='anonymous-scalar32'),row['ranges'])
+
+    def test_tagd4_null_extended_cuts_limits_and_trailing(self):
+        for child in (tagd4(),tagd4(target(),target()),b'\xd4\xff',b'\xfa\xd4\x00'+tagd4()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='d4-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='d4-limit',limit=n))
+
+    def test_tagd4_malformed_children_and_required_tail(self):
+        child=tagd4(target(),target());raw=prefix(sequence(child));end=19+len(child)
+        good=event_prefix(raw,source='d4-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='d4-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('d4-bounds',at,value))
+                self.assertFalse(any(r.get('tag')==212 for r in row['completedRecords']))
+        for limit in range(end-8,end):
+            row=event_prefix(raw,source='d4-tail',limit=limit)
+            self.assertEqual(row['status'],'failed')
+            self.assertIn(dict(start=34+len(target()),end=end-8,kind='anonymous-target-profile'),row['completedRecords'])
+            self.assertFalse(any(r.get('tag')==212 for r in row['completedRecords']))
+        unknown=target(selector=b'\x03\x10')
+        for first,second in ((unknown,target()),(target(),unknown)):
+            child=tagd4(first,second);row=event_prefix(prefix(sequence(child)),source='d4-gap')
+            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+            self.assertLess(row['consumedEnd'],19+len(child)-8)
+            self.assertFalse(any(r.get('tag')==212 for r in row['completedRecords']))
+            if first!=unknown:self.assertIn(dict(start=34,end=34+len(first),kind='anonymous-target-profile'),row['completedRecords'])
 
     def test_tag132_independent_payload_lengths_and_null_states(self):
         for first in (None,b'',b'\xff\x00',b'first'):

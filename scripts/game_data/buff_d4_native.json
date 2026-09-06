@@ -1,0 +1,115 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120827,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_InterruptAction_DataForMemoryPack+Beyond_Gameplay_Core_InterruptAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      67074816
+    ],
+    [
+      120826,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_InterruptAction_DataForMemoryPack",
+      "Deserialize",
+      67074912
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67074816,
+      "endRva": 67074909,
+      "sha256": "02D06EA1EB020096AE1B97E94606BB091C69A06F4824BCD5D2C767F26ADE1AE4",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 67074912,
+      "endRva": 67075351,
+      "sha256": "FB3C3693CF899D4A1FB99550C820A70A3453FF2B5A63BFFDC1D9D964081725D4",
+      "boundary": "member8 source reads through normal RET"
+    },
+    {
+      "startRva": 67075351,
+      "endRva": 67075423,
+      "sha256": "01FB27CE422674705F473A1B9DD605AC9D05A5DA8098A2B2F07628490CFDB9F7",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83246928,
+      "endRva": 83246941,
+      "sha256": "A9130DFEA7A5A33D69816C69F3649FFFA6F2D8DA0222BFC106CA618D2B006FC7",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83246997,
+      "endRva": 83247018,
+      "sha256": "8AA8288F034B37D8F70489182BA7FA6EE2BB1BE739C5C3BC0D750785C928E512",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67075084,
+      "instructionHex": "488B1515220909",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67075190,
+      "instructionHex": "488B158B9A0609",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 67075231,
+      "instructionHex": "488B15629A0609",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target",
+      "target",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member8 action consumes common byte/three DWORD then two independent TargetSettings and two four-byte scalar reads. Both target contexts join the existing finite target reader; preserve independent null states and nested boundaries. The first tail scalar uses the four-byte 2CA8BB0 helper pinned in buff_24_native.json; the second uses the DWORD helper. Preserve arbitrary raw bits, including nonfinite patterns. Unknown children keep both tail scalars unconsumed; completed targets alone cannot complete the parent. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Constructors and output setters add no source bytes. Interrupt behavior, target ownership, scalar meanings, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
