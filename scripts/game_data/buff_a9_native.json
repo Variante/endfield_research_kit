@@ -1,0 +1,342 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120098,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EnemyHurtAnimAction_DataForMemoryPack+Beyond_Gameplay_Core_EnemyHurtAnimAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      61436528
+    ],
+    [
+      120097,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EnemyHurtAnimAction_DataForMemoryPack",
+      "Deserialize",
+      61438416
+    ],
+    [
+      112718,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BlackboardImpactValueForMemoryPack+Beyond_Gameplay_Core_BlackboardImpactValueForMemoryPackFormatter",
+      "Deserialize",
+      62973696
+    ],
+    [
+      112717,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BlackboardImpactValueForMemoryPack",
+      "Deserialize",
+      62973792
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 61436528,
+      "endRva": 61436621,
+      "sha256": "813BE687F5783FBA6F6EF9DC62B5A8913B1D8596BF933138F4C176D8925F933A",
+      "boundary": "outer formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 61438416,
+      "endRva": 61439601,
+      "sha256": "9672C2D8906360692064A1263F001EC186EA2255241221A2EEB7FA317C1E30A3",
+      "boundary": "member28 source reads through normal RET"
+    },
+    {
+      "startRva": 61439601,
+      "endRva": 61439745,
+      "sha256": "AB0D8A22B96E2A7C6ED5EBC9E55E6A11A7BF5D04EC5FE80F962B71D15679F7A1",
+      "boundary": "outer lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82451722,
+      "endRva": 82451735,
+      "sha256": "7CCA30B1327923C24AA1A86317540AA961BE79BDB788B0956C40511231FA9596",
+      "boundary": "outer existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 82451791,
+      "endRva": 82451812,
+      "sha256": "DC7A2B30C5ADE8905A9451B5548E25A405DA6B966E8FBDADC343F05CFD2DDDE5",
+      "boundary": "outer FF clear and complete epilogue rejoin"
+    },
+    {
+      "startRva": 62973696,
+      "endRva": 62973789,
+      "sha256": "3414905B0DF2EC77CA064C08F1C3DF617C30171D093E2F8D5D0E1C54BAE69A77",
+      "boundary": "nested formatter forwarding and initialization"
+    },
+    {
+      "startRva": 62973792,
+      "endRva": 62974071,
+      "sha256": "43FD607DBE35D34995B1F6357CE317BEB854918C3A140897AD49684078DEFEB7",
+      "boundary": "nested member4 reads through RET and existing-output preparation"
+    },
+    {
+      "startRva": 62974071,
+      "endRva": 62974088,
+      "sha256": "5F7D8788D2BC0C4E54A91EAFFB77222F57590CD49A45E4475E21781595374FA1",
+      "boundary": "nested FF clear and complete epilogue rejoin"
+    },
+    {
+      "startRva": 62974088,
+      "endRva": 62974136,
+      "sha256": "7E7717FD9021CAF0F2994FB4632A21B49DB78D916BEB6744A0EDB1A3CC0FC7DC",
+      "boundary": "nested lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82689566,
+      "endRva": 82689617,
+      "sha256": "0DB6A792E4CA00136DF5B7D9EA0AF2BFE8339CAB10AA25B32F2C2BAC22790964",
+      "boundary": "nested allocation and complete header rejoin"
+    },
+    {
+      "startRva": 52483248,
+      "endRva": 52483328,
+      "sha256": "DAC8A4984FEE536BD66F454DDD5AC25B89BDD57CEFBECE611CF09D498FF67476",
+      "boundary": "one-byte enum helper normal source advance through RET"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 61438588,
+      "instructionHex": "488B15A5235F09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 61438728,
+      "instructionHex": "488B15F99B5C09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61438871,
+      "instructionHex": "488B156A9B5C09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61438912,
+      "instructionHex": "488B1581586509",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61439021,
+      "instructionHex": "488B15B41F5F09",
+      "cellVa": 6661118952,
+      "usageRawHex": "D1EA12C000000000",
+      "methodSpecIndex": 619880,
+      "methodSpec": [
+        428464,
+        -1,
+        14417
+      ],
+      "argumentRawHex": "2A280000000000000000120000000000",
+      "typeDefinition": 10282,
+      "typeName": "Beyond.Gameplay.Core.DirectionSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61439096,
+      "instructionHex": "488B1571046009",
+      "cellVa": 6661177584,
+      "usageRawHex": "9DE512C000000000",
+      "methodSpecIndex": 619214,
+      "methodSpec": [
+        428448,
+        -1,
+        19651
+      ],
+      "argumentRawHex": "DB240000000000000000118000000000",
+      "typeDefinition": 9435,
+      "typeName": "Beyond.Gameplay.Core.EnemyHurtAnim",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 61439170,
+      "instructionHex": "488B1507046009",
+      "cellVa": 6661177552,
+      "usageRawHex": "9DEA12C000000000",
+      "methodSpecIndex": 619854,
+      "methodSpec": [
+        428464,
+        -1,
+        13940
+      ],
+      "argumentRawHex": "6E260000000000000000120000000000",
+      "typeDefinition": 9838,
+      "typeName": "Beyond.Gameplay.Core.BlackboardImpactValue",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61439278,
+      "instructionHex": "488B15EBC85509",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61439353,
+      "instructionHex": "488B1580036009",
+      "cellVa": 6661177600,
+      "usageRawHex": "A1E512C000000000",
+      "methodSpecIndex": 619216,
+      "methodSpec": [
+        428448,
+        -1,
+        42282
+      ],
+      "argumentRawHex": "DD240000000000000000118000000000",
+      "typeDefinition": 9437,
+      "typeName": "Beyond.Gameplay.Core.EnemyHurtShakeIntensity",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 61439428,
+      "instructionHex": "488B1555C85509",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61439503,
+      "instructionHex": "488B150AC85509",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61439544,
+      "instructionHex": "488B15E1C75509",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member28": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "target",
+      "byte",
+      "byte",
+      "raw4",
+      "target",
+      "curve",
+      "byte",
+      "byte",
+      "direction",
+      "byte",
+      "scalar32",
+      "byte",
+      "impact-profile",
+      "scalar32",
+      "byte",
+      "scalar-payload",
+      "byte",
+      "byte-enum",
+      "byte",
+      "scalar-payload",
+      "byte",
+      "scalar-payload",
+      "scalar-payload"
+    ],
+    "member4": [
+      "byte-payload",
+      "byte",
+      "scalar32",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member28 action preserves two targets, curve, direction, BlackboardImpactValue, four independently nullable BlackboardDouble profiles and every intervening byte/scalar in the recorded order. The concrete Impact member4 reader has byte payload, byte, DWORD and final byte, permitting reuse of the scalar-flag-payload grammar while keeping type identity distinct. The helper320D4B0 consumes exactly one source byte, independent of the enum type name. Header availability checks are not member counts. Existing target/direction/curve and four-byte Double profiles retain their selected native evidence (buff_24_native.json and buff_35_native.json). Count bounds precede multiplication/iteration; arbitrary scalar bits and independent null states remain preserved. Normal, FF, lazy, formatter, allocation and existing-output paths retain complete instructions. Hurt animation behavior, impact meaning, target ownership, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

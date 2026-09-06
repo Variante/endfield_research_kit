@@ -644,6 +644,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   ending with a byte payload and GameplayTagQuery. Its explicit output-pointer
   ABI and sixteen-byte result do not establish wire width; preserve bounded
   query counts. Damage transfer meaning and tag interpretation remain unresolved.
+  `scripts/game_data/buff_a9_native.json` pins a member-28 action with
+  independently nullable targets, curve, direction and scalar profiles. Its
+  BlackboardImpactValue reader reuses the member-four payload/byte/DWORD/byte
+  grammar; the dedicated enum helper consumes one byte. Hurt behavior remains unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

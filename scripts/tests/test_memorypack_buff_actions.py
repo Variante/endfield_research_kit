@@ -83,6 +83,13 @@ def tag142(values=(None,b'',b'wire',b'\xff\x00',b'last'),nested=b'\xff',last=0xf
     return b'\xfa\x42\x01\x0b\xfe'+b'\xff'*12+payload(values[0])+nested+b''.join(payload(v) for v in values[1:])+struct.pack('<I',last)
 
 
+def taga9(profiles=None):
+    t,u,c,d,i,a,b,e,f=profiles or (b'\xff',)*9
+    return (b'\xa9\x1c\xfe'+b'\xff'*12+b'\x80'+t+b'\xfe\xff'+b'\x80'*4+u+c+
+            b'\xff\x80'+d+b'\xfe'+b'\xff'*4+b'\x80'+i+b'\x80'*4+b'\xff'+a+
+            b'\x80\xfe\xff'+b+b'\xfe'+e+f)
+
+
 def query41(items=()):
     return b'\x02'+b'\xff'*4+struct.pack('<i',-1 if items is None else len(items))+b''.join(struct.pack('<I',v) for v in items or ())
 
@@ -1757,6 +1764,55 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
         self.assertFalse(any(v.get('tag')==322 for v in r.records))
         self.assertLess(r.pos,len(gap)-sum(len(payload(v)) for v in (b'',b'wire',b'\xff\x00',b'last'))-4)
+
+    def test_taga9_independent_nested_fields_and_final_profile(self):
+        profiles=[target(),target(direction_value=b'\xff'),curve24((b'\xff'*28,)),direction(),
+                  scalar_flag(None),scalar_payload(None),scalar_payload(b''),scalar_payload(b'wire'),scalar_payload(b'last')]
+        cases=[profiles,(b'\xff',)*9]
+        for n in range(9):
+            case=list(profiles);case[n]=b'\xff';cases.append(case)
+        for case in cases:
+            child=taga9(case);end=19+len(child)
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='a9.bin')
+            self.assertEqual(row['diagnostic'],dict(source='a9.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+            self.assertIn(dict(start=19,end=end,kind='union',tag=169),row['completedRecords'])
+            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_taga9_every_cut_hard_limit_extended_null_and_trailing(self):
+        full=taga9([target(),target(),curve24((bytes(28),)),direction(),scalar_flag(b'\xff'),
+                    scalar_payload(None),scalar_payload(b''),scalar_payload(b'\xff'),scalar_payload(b'last')])
+        for child in (full,taga9(),b'\xa9\xff',b'\xfa\xa9\x00'+full[1:]):
+            r=Reader(child,'a9-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'a9-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==169 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_taga9_bad_headers_counts_and_partial_parent(self):
+        child=taga9([target(),target(),curve24((bytes(28),)),direction(),scalar_flag(b'impact'),
+                     scalar_payload(None),scalar_payload(b''),scalar_payload(b'wire'),scalar_payload(b'last')])
+        r=Reader(child,'a9-bounds');r.action(0)
+        spans=[v for v in r.ranges if v['kind'] in ('member-header','count-i32')]
+        self.assertGreater(len(spans),20)
+        for span in spans:
+            for value in ((0,254) if span['kind']=='member-header' else (-2,0x7fffffff)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'a9-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('a9-bounds',at,value))
+        r=Reader(child,'a9-tail',len(child)-1)
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertEqual(sum(v.get('kind')=='anonymous-scalar-payload' for v in r.records),3)
+        self.assertFalse(any(v.get('tag')==169 for v in r.records))
 
     def test_tag41_payload_and_independent_query_boundaries(self):
         for value in (None,b'',b'\xff\x41\x06'):
