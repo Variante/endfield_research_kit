@@ -414,6 +414,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   equal member counts and null samples cannot establish a fixed record width.
   Scalar enum contexts add no nested records, and output setters add no source
   reads. Keep null and empty payloads distinct and their contents anonymous.
+  `scripts/game_data/buff_7a_native.json` pins another member-six order:
+  common byte/three-scalar prefix, scalar32 and byte payload. It has no extra
+  byte before that payload. Both enum contexts consume four bytes without a
+  nested header; equal member counts cannot select this reader or the distinct
+  byte/scalar/payload order above. Infliction meaning remains unresolved.
   Another member-ten child reads the common byte/three-scalar prefix, finder,
   scalar32, target, scalar32, byte and scalar payload. Its three static type
   contexts reuse the existing finder/target/scalar readers; equal outer member
