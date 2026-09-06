@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119465,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckConsumeBuffLayer_DataForMemoryPack+Beyond_Gameplay_Core_CheckConsumeBuffLayer_DataForMemoryPackFormatter",
+      "Deserialize",
+      61450864
+    ],
+    [
+      119464,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckConsumeBuffLayer_DataForMemoryPack",
+      "Deserialize",
+      61450144
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 61450864,
+      "endRva": 61450957,
+      "sha256": "FCB83E8FD9EB2EA9301F5A0A8BE7E574C4A6555F5D59B511914640DEA1222E25",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 61450144,
+      "endRva": 61450549,
+      "sha256": "C7F453F380B9C93B5F882723DFBD75921F67EA7DB45EE400E5C8FE2DDE54A9AF",
+      "boundary": "member7 source reads through normal RET"
+    },
+    {
+      "startRva": 61450549,
+      "endRva": 61450633,
+      "sha256": "CCDB34B20C2BDC368179B92C432EA540C4638124AC6483B0368E44435F318E02",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82452600,
+      "endRva": 82452613,
+      "sha256": "75C6FADDBA59B8072D0069FA81750C853FC7EF13D40423EDB66DB57BBF48AEFE",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 82452669,
+      "endRva": 82452690,
+      "sha256": "759F3C1CC9E0230B198059BBCEC42C000CFC8F9FFC742C1D1B14992F0363A383",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 61450316,
+      "instructionHex": "488B15D5F55E09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 61450422,
+      "instructionHex": "488B156BF55F09",
+      "cellVa": 6661185064,
+      "usageRawHex": "37E512C000000000",
+      "methodSpecIndex": 619163,
+      "methodSpec": [
+        428448,
+        -1,
+        42245
+      ],
+      "argumentRawHex": "3B7B0000000000000000118000000000",
+      "typeDefinition": 31547,
+      "typeName": "Beyond.CompareType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 61450462,
+      "instructionHex": "488B15439D5509",
+      "cellVa": 6660507176,
+      "usageRawHex": "CBEB12C000000000",
+      "methodSpecIndex": 620005,
+      "methodSpec": [
+        428464,
+        -1,
+        17006
+      ],
+      "argumentRawHex": "AE000000000000000000120000000000",
+      "typeDefinition": 174,
+      "typeName": "Beyond.Blackboard+BlackboardInt",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only finite framing. The member7 reader consumes the common prefix, another DWORD, scalar payload and a separate final byte payload. Its exact BlackboardInt context reuses the concrete reader independently pinned in buff_16b_native.json: header3, signed byte payload, byte and DWORD. The nested and final payloads have independent signed counts and null states. Priority and CompareType contexts belong to DWORD source reads. Count bounds apply before slicing, and incomplete nested or final payloads never complete the action. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Output setters add no source bytes. Buff consumption, comparison meanings, live formatter choice, refill/error parity and whole-BuffData EOF remain unresolved."
+}

@@ -25,6 +25,10 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def tag3f(nested=b'\xff',value=b'wire'):
+    return b'\x3f\x07\xfe'+b'\xff'*16+nested+payload(value)
+
+
 def tag61(nested=b'\xff',value=b'wire'):
     return b'\x61\x0a\xfe'+b'\xff'*12+nested+b'\x80'*4+b'\xff\xfe'+b'\x01'*4+payload(value)
 
@@ -1426,6 +1430,46 @@ class BuffActionsTests(unittest.TestCase):
         row=event_prefix(prefix(sequence(child)),source='c5-element')
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
+
+    def test_tag3f_independent_nested_and_final_payloads(self):
+        for nested in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'\x00\xff',bits=b'\xff'*4)):
+            for value in (None,b'',b'\x00\xffwire'):
+                child=tag3f(nested,value);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='3f.bin')
+                self.assertEqual(row['diagnostic'],dict(source='3f.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=63),row['completedRecords'])
+                self.assertIn(dict(start=38,end=38+len(nested),kind='anonymous-scalar-payload'),row['completedRecords'])
+                self.assertIn(dict(start=38+len(nested),end=end,kind='anonymous-byte-payload',isNull=value is None),row['completedRecords'])
+
+    def test_tag3f_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag3f(),tag3f(scalar_payload(b'raw')),b'\x3f\xff',b'\xfa\x3f\x00'+tag3f()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='3f-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='3f-limit',limit=n))
+
+    def test_tag3f_malformed_independent_counts_and_headers(self):
+        raw=prefix(sequence(tag3f(scalar_payload(b'raw'))))
+        # Explicit source positions: nested payload count 39, final count 51.
+        for at in (39,51):
+            for value in (-2,2147483647):
+                bad=bytearray(raw);struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='3f-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual'],row['diagnostic']['category']),('3f-bounds',at,value,'count-bounds'))
+                self.assertFalse(any(r.get('tag')==63 for r in row['completedRecords']))
+        for at in (20,38):
+            for value in (0,254):
+                bad=bytearray(raw);bad[at]=value
+                row=event_prefix(bad,source='3f-header');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['offset'],row['diagnostic']['actual'],row['diagnostic']['category']),(at,value,'member-count'))
+                self.assertFalse(any(r.get('tag')==63 for r in row['completedRecords']))
 
     def test_tag61_target_and_final_payload_boundaries(self):
         for nested in (b'\xff',target(),target(direction_value=b'\xff')):
