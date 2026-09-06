@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121157,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_MergeTargetAction_DataForMemoryPack+Beyond_Gameplay_Core_MergeTargetAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      65102896
+    ],
+    [
+      121156,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_MergeTargetAction_DataForMemoryPack",
+      "Deserialize",
+      65103328
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 65102896,
+      "endRva": 65102989,
+      "sha256": "6897DF0752ED27863A13188881C8D8213CB43453F9D2A8D2C5AA617082686D63",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 65103328,
+      "endRva": 65103727,
+      "sha256": "A4032C61B408E5E997E266A9DEAAC6667BBB2E5743E21B0DBC46A467C6A8CFA1",
+      "boundary": "member7 source reads through normal RET"
+    },
+    {
+      "startRva": 65103727,
+      "endRva": 65103799,
+      "sha256": "66D0C5DAF6FABD5AB3F6669DE4B2DDDE92825DF53074886A92E045C0CACEC05C",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82980516,
+      "endRva": 82980529,
+      "sha256": "F1E00D647AB678B76BE6AB05819F0CE95727FB1398E62DE42ED7681FCEC20045",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 82980585,
+      "endRva": 82980606,
+      "sha256": "A35EC0D6F36F5BBE9B43F5EE92958CB5F0CC1437E5756072CC0ABC81289B4DD3",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 65103500,
+      "instructionHex": "488B1595372709",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 65103674,
+      "instructionHex": "488B159F071F09",
+      "cellVa": 6660583136,
+      "usageRawHex": "3FA412C000000000",
+      "methodSpecIndex": 610847,
+      "methodSpec": [
+        428462,
+        -1,
+        62642
+      ],
+      "argumentRawHex": "B878258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000001052F08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 16792,
+        "elementArguments": [
+          "28280000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte-payload",
+      "target-list"
+    ],
+    "target-list": [
+      "nullable-count-i32",
+      "independently bounded target elements"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only finite framing. After the common prefix the member7 reader consumes a byte, signed-length byte payload and a distinct nullable target list. The list MethodSpec carrier joins List<TargetSettings> with the same concrete element context as the separately authenticated target reader. Shared reference-list dispatch remains conditional; bound count before iteration, preserve null elements, and stop before unsupported target children without completing the list or action. Priority belongs to the first DWORD. Normal return, formatter initialization, lazy rejoin, existing-output preparation and FF clear retain complete instructions. Setters add no source bytes. Merge behavior, field meanings, live provider choice, refill/error parity and whole-BuffData EOF remain unresolved."
+}

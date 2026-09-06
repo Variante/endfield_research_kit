@@ -523,6 +523,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Reuse finite profiles only through these concrete source-reader joins, and
   keep unsupported direction children incomplete. Animation meaning and live
   formatter selection remain unresolved.
+  `scripts/game_data/buff_ea_native.json` pins a member-seven reader ending
+  with a byte, byte payload and independently counted target list. The exact
+  list carrier joins the existing target element type; shared list dispatch
+  remains conditional. Preserve nullable counts and null elements, and leave
+  the list and action incomplete at an unsupported child. The managed merge
+  name does not establish runtime behavior or cross-target relationships.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

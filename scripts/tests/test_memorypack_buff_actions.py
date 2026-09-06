@@ -25,6 +25,12 @@ def pair(a=b'',b=b'',flag=0):
     return b'\x03'+payload(a)+bytes([flag])+payload(b)
 
 
+def tagea(items=(),value=b'wire'):
+    return (b'\xea\x07\xfe'+b'\xff'*12+b'\x80'+payload(value)+
+            struct.pack('<i',-1 if items is None else len(items))+
+            (b'' if items is None else b''.join(items)))
+
+
 def tag35(first=b'\xff',second=b'\xff',curve=b'\xff',direction_value=b'\xff',last=b'\xff'):
     return (b'\x35\x0f\xfe'+b'\xff'*12+first+b'\xfe\x80'+second+curve+
             b'\xff'+direction_value+b'\xfe'+b'\x80'*8+last)
@@ -1416,6 +1422,54 @@ class BuffActionsTests(unittest.TestCase):
         row=event_prefix(prefix(sequence(child)),source='c5-element')
         self.assertEqual((row['status'],row['diagnostic']['expected'],row['diagnostic']['actual']),('failed',1,2))
         self.assertEqual(row['diagnostic']['source'],'c5-element')
+
+    def test_tagea_independent_payload_and_target_list(self):
+        for value in (None,b'',b'\x00\xffwire'):
+            for items in (None,(),(b'\xff',),(target(),b'\xff',target(direction_value=b'\xff'))):
+                child=tagea(items,value);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='ea.bin')
+                self.assertEqual(row['diagnostic'],dict(source='ea.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=234),row['completedRecords'])
+                start=39+len(value or b'')
+                self.assertIn(dict(start=start,end=end,kind='anonymous-target-list'),row['completedRecords'])
+                cursor=start+4
+                for item in items or ():
+                    self.assertIn(dict(start=cursor,end=cursor+len(item),kind='anonymous-target-profile'),row['completedRecords'])
+                    cursor+=len(item)
+                self.assertEqual(cursor,end)
+
+    def test_tagea_null_extended_cuts_limits_and_trailing(self):
+        for child in (tagea(),tagea((target(),b'\xff',target())),b'\xea\xff',b'\xfa\xea\x00'+tagea()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='ea-limit',limit=n)
+                self.assertEqual(row['status'],'failed');self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='ea-limit',limit=n))
+
+    def test_tagea_malformed_counts_headers_and_incomplete_list(self):
+        raw=prefix(sequence(tagea((target(),b'\xff',target()))))
+        good=event_prefix(raw,source='ea-bounds');self.assertEqual(good['status'],'supported-prefix')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='ea-bounds');self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('ea-bounds',at,value))
+        for before in ((),(b'\xff',target())):
+            child=tagea(before+(target(selector=b'\x03\x10'),))
+            row=event_prefix(prefix(sequence(child)),source='ea-gap')
+            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+            self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
+            self.assertFalse(any(r.get('tag')==234 or r['kind']=='anonymous-target-list' for r in row['completedRecords']))
+            self.assertEqual(len([r for r in row['completedRecords'] if r['kind']=='anonymous-target-profile']),len(before))
 
     def test_tag35_independent_targets_and_final_source_boundary(self):
         for first in (b'\xff',target(),target(direction_value=b'\xff')):
