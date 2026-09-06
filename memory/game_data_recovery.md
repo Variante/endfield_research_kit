@@ -655,6 +655,9 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   `scripts/game_data/buff_90_native.json` pins two independent BlackboardInt
   profiles before a byte and final target. Their payload/byte/DWORD grammar
   reuses the concrete Int reader; shield counts and UI behavior remain unresolved.
+  `scripts/game_data/buff_bb_native.json` pins two independent targets after
+  the common fields, without an intervening byte or extra tail. A failed second
+  target preserves the first completed target; combat forcing remains unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
