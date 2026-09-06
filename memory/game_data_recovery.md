@@ -269,6 +269,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   not move that scalar after the target on the wire. The ObjectType enum
   context adds no nested record, and the target ends the action with no final
   source byte; the managed condition name remains separate from this framing.
+  `scripts/game_data/buff_44_native.json` pins another member-six layout with
+  a signed-length byte payload before the target instead of that fourth scalar.
+  Preserve its variable extent and null/empty distinction; the payload's later
+  object offset does not move it after the target in source order. Timer names
+  and equal member counts establish neither runtime behavior nor wire grammar.
   The selected member-seven child reuses that scalar-payload profile twice,
   after one byte and four scalar32 reads. The fourth scalar is serialized
   before both nested records despite its later destination-object offset;

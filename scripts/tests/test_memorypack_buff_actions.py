@@ -109,6 +109,9 @@ def tag3c(finder=None,nested=None,value=None):
             struct.pack('<I',0xffffffff)+b'\x80'+(scalar_payload(None) if value is None else value))
 
 
+def tag44(value=b'variable-name',nested=None):
+    return b'\x44\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,1)+payload(value)+(target() if nested is None else nested)
+
 def tag69(nested=None):
     return b'\x69\x06\xfe'+struct.pack('<IIII',0xffffffff,0x80000000,1,0x7fc00000)+(target() if nested is None else nested)
 
@@ -1184,6 +1187,46 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['diagnostic']['category'],'nested-profile')
         self.assertEqual(row['diagnostic']['actual'],0)
         self.assertFalse(any(r['kind']=='union' and r['tag']==60 for r in row['completedRecords']))
+
+    def test_tag44_variable_payload_before_target_and_no_final_byte(self):
+        for value in (None,b'',b'x',bytes(range(256))):
+            child=tag44(value);end=19+len(child)
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='44.bin')
+            self.assertEqual(row['diagnostic'],dict(source='44.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+            self.assertIn(dict(start=19,end=end,kind='union',tag=68),row['completedRecords'])
+            self.assertIn(dict(start=34+len(payload(value)),end=end,kind='anonymous-target-profile'),row['completedRecords'])
+            self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag44_null_extended_cuts_limits_and_trailing(self):
+        for child in (tag44(),tag44(None),tag44(b''),tag44(nested=b'\xff'),b'\x44\xff',b'\xfa\x44\x00'+tag44()[1:]):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='44-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='44-limit',limit=n))
+
+    def test_tag44_bad_headers_counts_and_unknown_nested(self):
+        raw=prefix(sequence(tag44()));good=event_prefix(raw,source='44-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='44-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('44-bounds',at,value))
+        row=event_prefix(prefix(sequence(tag44(nested=target(selector=b'\x03\x06'+bytes(8))))),source='44-gap')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertFalse(any(r.get('tag')==68 for r in row['completedRecords']))
 
     def test_tag69_fourth_scalar_precedes_target_and_no_final_byte(self):
         child=tag69();end=19+len(child)

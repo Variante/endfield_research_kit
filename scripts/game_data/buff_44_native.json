@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124271,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckGlobalCDTimerAction_DataForMemoryPack+Beyond_Gameplay_Core_CheckGlobalCDTimerAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      70110528
+    ],
+    [
+      124270,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckGlobalCDTimerAction_DataForMemoryPack",
+      "Deserialize",
+      70110624
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70110528,
+      "endRva": 70110621,
+      "sha256": "1749B47B9BAD7FC3B2B50F159C99A39EF33FE7E612B82FC6983E2B764DBE9863",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 70110624,
+      "endRva": 70110989,
+      "sha256": "1DC76A2CC5B3B670B0610ADE653BEDB4C698857BFAF6E635CA50B2B6E74FDC10",
+      "boundary": "member6 normal source read order through RET"
+    },
+    {
+      "startRva": 70110989,
+      "endRva": 70111061,
+      "sha256": "47F06849B7C942EBC6787DCC352B8749F0DA36D58C3EA2DDCAD00BA0555B4A48",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83528197,
+      "endRva": 83528218,
+      "sha256": "24E421DC6A58EC0826C19741838304E00B9EDB85C734C905602C0F717CB9EFC9",
+      "boundary": "FF output clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70110936,
+      "instructionHex": "488B152948D808",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "target-profile"
+    ]
+  },
+  "boundary": "Exact static registration/module/token and TargetSettings MethodSpec-type callsite join under the selected GameAssembly+metadata hash gate. Direct selected normal/null source order supports structural-only framing: member-six header, nonzero-normalized byte, three scalar32 values, signed-length byte payload and one finite target profile. The payload uses the separately pinned 2CA8700 byte-length consumer; null and empty remain distinct and unsupported negative lengths fail closed. TargetSettings reuses independently pinned EC consumers and maintained finite extensions. The variable payload is read before target despite its later destination-object offset. Output setters and lazy construction add no source members, and the selected normal path returns after target storage without another source byte. Equal member counts do not select the scalar32-before-target layout. Unknown nested profiles stop in place. Field names, byte decoding, timer/condition semantics, live provider selection, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}
