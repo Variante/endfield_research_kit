@@ -516,6 +516,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   in two target profiles. Both exact contexts select the same finite profile,
   but their null states, nested counts and source boundaries stay independent.
   No source field follows the second target. Containment meaning is unresolved.
+  `scripts/game_data/buff_35_native.json` pins a member-fifteen reader with
+  independent targets, a bounded curve, direction and final scalar payload.
+  Its exact BlackboardDouble wrapper and inlined formatter both consume four
+  source bytes for the final scalar; the name does not establish eight bytes.
+  Reuse finite profiles only through these concrete source-reader joins, and
+  keep unsupported direction children incomplete. Animation meaning and live
+  formatter selection remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
