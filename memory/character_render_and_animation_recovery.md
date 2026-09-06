@@ -159,13 +159,14 @@ only.
   with nontrivial data. The character helper and actual Unity
   pass have a native-oracle GPU fixture under `tools/character_csm_differential/`
   in the lab; live producer/publication authority remains separate.
-- The private character PreG surface still omits `DepthOnlyOutline`, which
-  writes expanded character depth/stencil after the body prepasses and before
-  scene HGBuffer. It is distinct from the later ZWrite-off color outline.
-  Preserve source material enablement, cutoff, and variant-specific stencil
-  masks; one retained variant preserves CharacterBit. The owning evidence and
-  implementation queue are in lab PROGRESS finding 142 and
-  `reports/assets/character_recovery/depth_only_outline_writer_audit.json`.
+- The shared character PreG surface records source-enabled `DepthOnlyOutline`
+  after body prepasses and before scene HGBuffer. Keep it distinct from the
+  later ZWrite-off color outline. Material pass flags and shader keywords select
+  the recovered cutoff/stencil variant; unknown enabled variants fail closed.
+  The hair branch preserves CharacterBit through its write mask and rejects
+  stored CharacterBit through its comparison. Depth writes and other stencil
+  bits must not be inferred from the later color pass. See lab PROGRESS findings
+  142-143 and `reports/assets/character_recovery/depth_only_outline_validation.json`.
 - ContactShadow captured-input replay needs repeat controls: original dispatches
   can differ at pixels with overlapping recovered output writes. Preserve the
   original dot-product instructions through distance quantization; scalar
