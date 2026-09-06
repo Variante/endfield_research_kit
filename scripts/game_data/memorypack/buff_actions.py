@@ -59,18 +59,29 @@ class Reader:
 
     def action(self,depth):
         start=self.pos
-        self._action(depth)
-        self.records.append(dict(start=start,end=self.pos,kind='union',tag=self.data[start]))
+        lead=self.peek();width=3 if lead==250 else 1
+        if width>self.limit-self.pos:
+            raise FrameError(self.source,self.pos,{'bytes':width},{'remaining':self.limit-self.pos},'truncated')
+        tag=struct.unpack_from('<H',self.data,self.pos+1)[0] if lead==250 else lead
+        self._action(depth,tag,width)
+        self.records.append(dict(start=start,end=self.pos,kind='union',tag=tag))
 
-    def _action(self,depth):
-        tag=self.peek()
-        if tag==255:self.take(1,'null-union');return
-        if tag not in (201,118,236,80):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
-        self.take(1,'union-tag')
+    def _action(self,depth,tag,width):
+        # FA carries an unsigned little-endian tag, not a child-object header.
+        # Keep unknown tags at their first byte; never search for a later tag.
+        if tag==255 and width==1:self.take(1,'null-union');return
+        if tag not in (201,118,236,80,287):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
+        self.take(width,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header({201:8,118:5,236:10,80:7}[tag])
+        self.header({201:8,118:5,236:10,80:7,287:8}[tag])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
+        if tag==287:
+            self.paired_payload()
+            self.scalar_payload()
+            self.take(1,'anonymous-nonzero-byte')
+            self.paired_payload()
+            return
         if tag==80:
             self.take(4,'anonymous-scalar32')
             for _ in range(2):self.scalar_payload()

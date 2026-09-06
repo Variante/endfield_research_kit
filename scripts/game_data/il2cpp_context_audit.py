@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = 'EA8B1A4E5F08955CFAB465B723D5181A66FF95059C3F5157E81974F190062A63'
+CORPUS_SHA = 'B98DC1CE22E0E78354B25881357AF3AD44C7F290A3B0798992E9C87C17D9156B'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -576,6 +576,10 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
     for at,expected in (
         (0x390D974,'488D5424384533C06689742438488BCFE8F7FEFFFF84C00F8422BD55010FB774243881FE9F0100000F87E0BC5501488D1557266FFC8B8CB2185391034803CAFFE1'),
         (0x390D8D2,'4080FEFA731C66418936B001'),
+        (0x390D8F4,'754B837B30020F8C208A5501488B43500FB700664189068B7B3083EF020F881F8A550148834350028343400283434402897B30EBB3'),
+        (0x390D941,'33C066418906EB95'),
+        (0x4E66320,'4533C0BA02000000488BCBE82C2E8A0490E9CE75AAFE'),
+        (0x4E696B3,'48893333D2E92543AAFE'),
         (0x417E68A,'488B0DE70FF20833D2E85872C2FE488BCF488BD8E87D4DE8FB4C8B0D9E87E70841B8C9000000488BD3488BCFE8B1EE18FC'),
         (0x417E4D1,'488B0D3018F20833D2E81174C2FE488BCF488BD8E8364FE8FB4C8B0D5789E70841B8C0000000488BD3488BCFE86AF018FC'),
         (0x390E160,'488B1529B57209488B0BE8B1566FFC488BCF4885C00F852F905501488B1576357D09E8690111FD488903488BD0E950F8FFFF'),
@@ -583,7 +587,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x3910A00,'488B1509F37809488B0BE8112E6FFC488BCF4885C00F859B6F5501488B153E097D09E865DF10FD488903488BD0E9B0CFFFFF'),
         (0x39149EA,'488B150F5A7209488B0BE827EE6EFC488BCF4885C00F856B215501488B1554D17C09E8C39310FD488903488BD0E9C68FFFFF'),
         (0x390DCB0,'488B15B1936F09488B0BE8615B6FFC488BCF4885C00F8595A35501488B15E6307D09E8451011FD488903488BD0E900FDFFFF'),
-        (0x390DC1A,'488B1527307309488B0BE8F75B6FFC488BCF4885C00F8571915501488B1514387D09E8130311FD488903488BD0E996FDFFFF')):
+        (0x390DC1A,'488B1527307309488B0BE8F75B6FFC488BCF4885C00F8571915501488B1514387D09E8130311FD488903488BD0E996FDFFFF'),
+        (0x390DED6,'488B1563997009488B0BE83B596FFC488BCF4885C00F85F4A75501488B1588297D09E8CF1211FD488903488BD0E9DAFAFFFF')):
         raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
         windows.append({'rva':at,'rawHex':expected})
     table_va=pe.image_base+0x3915318;raw=pe.bytes_at_va(table_va,416*4)
@@ -596,7 +601,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x40,0x39149EA,106441,16615,'CheckDamageTag_Data',None),
         (0x76,0x390E160,106507,16683,'Conditions_CheckSkillId_Data',None),
         (0xEC,0x390DCB0,106853,16241,'ModifyDynamicBlackboard_Data',None),
-        (0x50,0x390DC1A,106467,16717,'CompareFloat_Data',None)):
+        (0x50,0x390DC1A,106467,16717,'CompareFloat_Data',None),
+        (0x11F,0x390DED6,106969,16341,'RaiseTrainLevelEvent_Data',None)):
         require(targets[tag],target,source,table_va+tag*4)
         operands=[]
         for at,usage_tag in ((target,1),)+(((init,2),) if init is not None else ()):
@@ -619,7 +625,7 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
     return {'methods':methods,'windows':windows,'switchTableRva':0x3915318,'switchEntryCount':416,
         'switchTableSha256':hashlib.sha256(raw).hexdigest().upper(),'rows':rows,
         'level':'direct current native tag-to-wrapper routing; exact metadata identity',
-        'boundary':'The token/module-joined reader calls the bounded tag helper then uses its ushort output in an unsigned <=0x19F switch. The helper fast path consumes one byte and directly returns tags below 0xFA; wider and segment-replacement paths are not promoted here. Selected table entries reach exact type-usage operands. For C9 and C0, separate cctor callsites pass those literal tags alongside a helper result derived from the same registered type pointer (usage kind two versus branch kind one). Current C9 describes the IfElse wrapper; C0 describes GainCost, contradicting the legacy Buff reader C0 name. Tag 40 describes CheckDamageTag. This is not a blanket tag renumbering rule or proof of nested fields, actual object allocation, formatter execution, record extent or EOF. Do not alias C9 to the legacy C0 parser or promote existing labels for current bytes without the concrete nested consumer ABI.'}
+        'boundary':'The token/module-joined reader calls the bounded tag helper then uses its ushort output in an unsigned <=0x19F switch. The helper fast path consumes one byte and directly returns tags below 0xFA. FA consumes two more bytes as a little-endian ushort with no lower-value restriction; its short-input path calls an external refill helper, not an in-body zero-result failure. FB..FF return false with zero tag output, skipping the AL=1 instruction; the dispatcher false path clears its output. The maintained finite parser retains FF null and leaves FB..FE unsupported. Segment replacement is not certified. Selected table entries reach exact type-usage operands. For C9 and C0, separate cctor callsites pass those literal tags alongside a helper result derived from the same registered type pointer (usage kind two versus branch kind one). Current C9 describes the IfElse wrapper; C0 describes GainCost, contradicting the legacy Buff reader C0 name. Tag 40 describes CheckDamageTag. This is not a blanket tag renumbering rule or proof of nested fields, actual object allocation, formatter execution, record extent or EOF. Do not alias C9 to the legacy C0 parser or promote existing labels for current bytes without the concrete nested consumer ABI.'}
 
 
 def element_provider_state_flow(pe,*,source):
@@ -2027,7 +2033,8 @@ def audit():
     sources = [Path(__file__), Path(__file__).with_name('il2cpp_context.py'),
                mapper_path, catalog_path, ROOT / 'scripts/common.py',
                Path(__file__).with_name('buff_ec_native.json'),
-               Path(__file__).with_name('buff_50_native.json')]
+               Path(__file__).with_name('buff_50_native.json'),
+               Path(__file__).with_name('buff_11f_native.json')]
     source_hashes = {str(p): sha(p) for p in sources}
     mapper = load('context_audit_mapper', mapper_path)
     catalog = load('context_audit_catalog', catalog_path)
@@ -2366,6 +2373,8 @@ def audit():
         contract_path=Path(__file__).with_name('buff_ec_native.json'))
     buff_50=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_50_native.json'))
+    buff_11f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('buff_11f_native.json'))
     list_candidate['bodyWindows']=[]
     for start,end,digest in (
         (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
@@ -2483,6 +2492,7 @@ def audit():
         'selectedBuffTag76ReadOrder':buff_tag76,
         'selectedBuffEcReadOrder':buff_ec,
         'selectedBuff50ReadOrder':buff_50,
+        'selectedBuff11fReadOrder':buff_11f,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,

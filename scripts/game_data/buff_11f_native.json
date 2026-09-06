@@ -1,0 +1,100 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122049,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RaiseTrainLevelEvent_DataForMemoryPack",
+      "Deserialize",
+      63362480
+    ],
+    [
+      122050,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RaiseTrainLevelEvent_DataForMemoryPack+Beyond_Gameplay_Core_RaiseTrainLevelEvent_DataForMemoryPackFormatter",
+      "Deserialize",
+      63362384
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63362384,
+      "endRva": 63362477,
+      "sha256": "5425990BC30C243CD4D4A247E78784DD3729A4D5865F4406573E29F306E68162",
+      "boundary": "formatter forwarding"
+    },
+    {
+      "startRva": 63362480,
+      "endRva": 63362938,
+      "sha256": "2687D932454A9552AFB73E734C400098FFD81D0A0EC8EFAB1401ED35B91F74A1",
+      "boundary": "member8 normal fallthrough through RET; crosses chained unwind regions"
+    },
+    {
+      "startRva": 82742317,
+      "endRva": 82742338,
+      "sha256": "E9DDD55EB10020E4A652241093AEA212F4BDF4C73BADD628EE130BD19D086301",
+      "boundary": "FF header null output path rejoins normal epilogue"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63362772,
+      "instructionHex": "488B159DC24109",
+      "cellVa": 6661118328,
+      "usageRawHex": "CDEB12C000000000",
+      "methodSpecIndex": 620006,
+      "methodSpec": [
+        428464,
+        -1,
+        17007
+      ],
+      "argumentRawHex": "B1000000000000000000120000000000",
+      "typeDefinition": 177,
+      "typeName": "Beyond.Blackboard+BlackboardString",
+      "generic": null
+    },
+    {
+      "instructionRva": 63362810,
+      "instructionHex": "488B151F6F3809",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null
+    },
+    {
+      "instructionRva": 63362885,
+      "instructionHex": "488B152CC24109",
+      "cellVa": 6661118328,
+      "usageRawHex": "CDEB12C000000000",
+      "methodSpecIndex": 620006,
+      "methodSpec": [
+        428464,
+        -1,
+        17007
+      ],
+      "argumentRawHex": "B1000000000000000000120000000000",
+      "typeDefinition": 177,
+      "typeName": "Beyond.Blackboard+BlackboardString",
+      "generic": null
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "paired-payload",
+      "scalar-payload",
+      "byte",
+      "paired-payload"
+    ]
+  },
+  "boundary": "Selected normal/null read order, not whole-function execution parity. The first unwind region ends at a conditional branch; normal reading continues through chained regions to the pinned RET. Paired payloads reuse selectedBuffTag76ReadOrder; the scalar payload reuses selectedBuffEcReadOrder. Static nested type arguments do not prove active formatter selection. Payload encoding, field names, runtime source receipt, cold object reuse/refill/error behavior and whole-BuffData EOF remain unresolved."
+}

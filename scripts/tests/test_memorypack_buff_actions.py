@@ -2,7 +2,7 @@
 import struct
 import unittest
 
-from scripts.game_data.memorypack.buff_actions import FrameError, Unsupported, event_prefix, sequence_frame
+from scripts.game_data.memorypack.buff_actions import FrameError, Reader, Unsupported, event_prefix, sequence_frame
 
 
 def sequence(*actions,tail=b'\x00\x00'):
@@ -54,6 +54,13 @@ def tag50(first=None,second=None):
             (scalar_payload(None,2,b'\x00\x00\x80\xff') if second is None else second))
 
 
+def tag11f(first=None,value=None,last=None):
+    return (b'\xfa\x1f\x01\x08\x80'+struct.pack('<III',0xffffffff,0x80000000,14)+
+            (pair(b'key',b'\xff',254) if first is None else first)+
+            (scalar_payload(None) if value is None else value)+b'\xfe'+
+            (pair(b'',None) if last is None else last))
+
+
 class BuffActionsTests(unittest.TestCase):
     def test_normal_nested_ranges_and_explicit_opaque_tail(self):
         raw=sequence(action(sequence(b'\xff'),sequence(),b'\xff'))
@@ -91,7 +98,7 @@ class BuffActionsTests(unittest.TestCase):
             with self.subTest(raw=raw):self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
 
     def test_unknown_union_does_not_borrow_legacy_alias_or_search(self):
-        for tag in (0xC0,0x40,0x71,0xFA):
+        for tag in (0xC0,0x40,0x71):
             raw=prefix(sequence(bytes([tag])+action()))
             row=event_prefix(raw,source='unknown.bin')
             self.assertEqual(row['status'],'unsupported')
@@ -275,6 +282,91 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['diagnostic']['actual'],81)
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==80 for r in row['completedRecords']))
+
+    def test_extended_tag_and_member8_record_ranges(self):
+        child=tag11f()
+        self.assertEqual(len(child),52)
+        raw=prefix(sequence(action(sequence(child),b'\xff',sequence())))
+        row=event_prefix(raw+b'opaque',source='11f.bin',limit=len(raw))
+        self.assertEqual(row['status'],'supported-prefix')
+        union=next(r for r in row['completedRecords'] if r.get('tag')==287)
+        self.assertEqual(union['end']-union['start'],52)
+        tag=next(r for r in row['ranges'] if r['start']==union['start'])
+        self.assertEqual(tag,dict(start=union['start'],end=union['start']+3,kind='union-tag'))
+        nested=[r for r in row['completedRecords'] if r['kind'] in ('anonymous-paired-payload','anonymous-scalar-payload')
+                and union['start']<r['start']<union['end']]
+        self.assertEqual([(r['start']-union['start'],r['end']-union['start']) for r in nested],
+                         [(17,31),(31,41),(42,52)])
+        self.assertEqual(row['opaqueRemainderRange'],[len(raw),len(raw)+6])
+        self.assertFalse(row['wholeSchemaExact'])
+
+    def test_extended_tag_truncation_and_unresolved_values(self):
+        for wire in (b'\xfa',b'\xfa\x1f'):
+            reader=Reader(wire,'tag-cut.bin')
+            with self.assertRaises(FrameError) as caught:reader.action(0)
+            self.assertEqual(caught.exception.diagnostic['category'],'truncated')
+            self.assertEqual(caught.exception.diagnostic['offset'],0)
+            self.assertEqual(reader.pos,0)
+        for tag in (0,250,255,288,415,416,65535):
+            wire=b'\xfa'+struct.pack('<H',tag)
+            row=event_prefix(prefix(sequence(wire+tag11f())),source='unknown-u16.bin')
+            self.assertEqual(row['status'],'unsupported')
+            self.assertEqual(row['diagnostic']['actual'],tag)
+            self.assertEqual(row['consumedEnd'],19)
+            self.assertEqual(row['completedRecords'],[])
+        # The selected helper does not impose a minimum u16 value after FA.
+        for child in (tag50(),tag_ec(),tag76(),action()):
+            expanded=b'\xfa'+struct.pack('<H',child[0])+child[1:]
+            row=event_prefix(prefix(sequence(expanded)),source='wide-short.bin')
+            self.assertEqual(row['status'],'supported-prefix')
+            self.assertTrue(any(r.get('tag')==child[0] for r in row['completedRecords']))
+        for lead in (251,252,253,254):
+            row=event_prefix(prefix(sequence(bytes([lead]))),source='reserved.bin')
+            self.assertEqual(row['status'],'unsupported')
+            self.assertEqual(row['diagnostic']['actual'],lead)
+
+    def test_tag11f_all_truncations_trailing_and_hard_limit(self):
+        raw=sequence(tag11f())
+        for n in range(len(raw)):
+            with self.subTest(n=n),self.assertRaises(FrameError) as caught:
+                sequence_frame(raw[:n],source='11f-cut.bin')
+            self.assertEqual(caught.exception.diagnostic['source'],'11f-cut.bin')
+        with self.assertRaises(FrameError) as caught:sequence_frame(raw+b'x',source='11f-tail.bin')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        full=prefix(raw)
+        for n in range(len(full)):
+            row=event_prefix(full,source='11f-bound.bin',limit=n)
+            self.assertEqual(row['status'],'failed')
+            self.assertLessEqual(row['consumedEnd'],n)
+            self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='11f-bound.bin',limit=n))
+
+    def test_tag11f_malformed_lengths_and_headers(self):
+        good=tag11f()
+        for at in (18,26,32,43,48):
+            for value in (-2,2147483647):
+                bad=bytearray(good);struct.pack_into('<i',bad,at,value)
+                with self.subTest(at=at,value=value),self.assertRaises(FrameError) as caught:
+                    sequence_frame(sequence(bad),source='11f-length.bin')
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),
+                                 ('11f-length.bin',at+5,value,'count-bounds'))
+        for at in (3,17,31,42):
+            bad=bytearray(good);bad[at]=42
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(bad),source='11f-header.bin')
+            self.assertEqual(caught.exception.diagnostic['offset'],at+5)
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+
+    def test_tag11f_null_variants_and_later_unknown(self):
+        for child in (b'\xfa\x1f\x01\xff',tag11f(b'\xff',b'\xff',b'\xff'),
+                      tag11f(pair(None,None),scalar_payload(b''),pair(b'',b''))):
+            raw=sequence(child)
+            self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+        child=tag11f()
+        row=event_prefix(prefix(sequence(child,b'\xfa\x20\x01')),source='11f-next.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['actual'],288)
+        self.assertEqual(row['consumedEnd'],19+len(child))
+        self.assertTrue(any(r.get('tag')==287 for r in row['completedRecords']))
 
     def test_suffix_cannot_supply_missing_nested_bytes(self):
         raw=prefix(sequence(action()))

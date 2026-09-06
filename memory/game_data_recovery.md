@@ -259,6 +259,16 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   memory layout must not substitute for consumer order. Its selected native
   contract is `scripts/game_data/buff_50_native.json`; the two identical static
   type arguments do not certify live formatter selection or comparison meaning.
+  Extended unions consume FA followed by a little-endian unsigned tag; record
+  reports retain that decoded tag rather than the escape byte. Unknown tags
+  stop at the original start. The selected extended member-eight child reads
+  one byte, three scalar32 values, paired payload, scalar payload, one byte and
+  paired payload. Its normal reader crosses chained unwind regions: the first
+  `.pdata` end is not a record or function end. The selected read/null paths
+  live in `scripts/game_data/buff_11f_native.json`; names and runtime use remain
+  unresolved independently of this structural closure. Paired and scalar
+  payloads can have identical extents; select their profiles from independent
+  nested-consumer evidence, not byte length alone.
   Next close the most frequent unsupported child consumers before extending
   this grammar; do not import legacy tag/name aliases to improve coverage.
 - Gameplay tag names come from exact predefined/config registries or validated
