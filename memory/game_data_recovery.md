@@ -317,7 +317,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   common byte/three-DWORD prefix, with no nested provider; its managed
   control-flow name does not prove branch suppression or execution order.
   Physical FD likewise stays unsupported independently of decoded tag FD. Unknown tags
-  stop at the original start. The selected extended member-eight child reads
+  stop at the original start. `scripts/game_data/buff_119_native.json` pins a
+  member-twenty-two action with inline DWORD advances among scalar helpers,
+  a byte payload and target; two scalar32 values end the record. Output-side
+  cast/cache branches add no source fields. Its required finder-three extension
+  reads raw12, raw16, a scalar payload and a byte, each with an independent
+  source boundary. Raw widths and managed names establish neither spatial
+  meanings nor audio-event identity, ownership or actual playback.
+  The selected extended member-eight child reads
   one byte, three scalar32 values, paired payload, scalar payload, one byte and
   paired payload. Its normal reader crosses chained unwind regions: the first
   `.pdata` end is not a record or function end. The selected read/null paths

@@ -1,0 +1,282 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121929,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PlaySoundAction_PlaySoundActionDataForMemoryPack+Beyond_Gameplay_Core_PlaySoundAction_PlaySoundActionDataForMemoryPackFormatter",
+      "Deserialize",
+      66147040
+    ],
+    [
+      121928,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PlaySoundAction_PlaySoundActionDataForMemoryPack",
+      "Deserialize",
+      53265888
+    ],
+    [
+      167062,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_FixedPointFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_FixedPointFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      52469472
+    ],
+    [
+      167061,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_FixedPointFinder_DataForMemoryPack",
+      "Deserialize",
+      52469568
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66147040,
+      "endRva": 66147133,
+      "sha256": "318CD2DACEDC0AF0C5084E65F1825B9B4A827AF8F28C278F8FE135EC01FF11E4",
+      "boundary": "formatter forwarding and initialization rejoin"
+    },
+    {
+      "startRva": 53265888,
+      "endRva": 53267794,
+      "sha256": "3964E2F46B1BD03E954D307984E5C6E8B86D05E5806E22E3D9750BC81BA8AB8B",
+      "boundary": "member22 normal and FF paths including RET and complete null rejoin"
+    },
+    {
+      "startRva": 53267794,
+      "endRva": 53268322,
+      "sha256": "0815ED876CDBD4536FAB9178829CF80F392DD729F40823618C65C7935E692AEE",
+      "boundary": "reader and output-accessor lazy initialization and complete rejoins"
+    },
+    {
+      "startRva": 81119939,
+      "endRva": 81119992,
+      "sha256": "798278D91337B589A3400DA0931AAAA8E0CB2DD68835CE9226798E7E6716FB9A",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81119992,
+      "endRva": 81120045,
+      "sha256": "1D6C09EF678938689158DA3CDD85CBB913F6BC647FEC8FF07A21DD5EDDDD952C",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120045,
+      "endRva": 81120098,
+      "sha256": "3311360E22EE049F01B9E4DD2F4D6CA0C71ED3E6DC1AF61CB06D49E499B8EE31",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120098,
+      "endRva": 81120151,
+      "sha256": "EF8BB3EFE202979914CEEE0A89526331AE38AEA75DEFCDD847A1FDA08D935088",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120151,
+      "endRva": 81120204,
+      "sha256": "8EE72C50A55DBCBAA92DDAE03D2812D6B15C13F30C396D24B00ED6092701A475",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120204,
+      "endRva": 81120257,
+      "sha256": "84FCF018B0735753BCCF9E131AAD62A263F24207D06992A4C0A41C8CEE369B5C",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120257,
+      "endRva": 81120310,
+      "sha256": "6FAFFD4F5101B26AD677955942741CE1C1A0DE210FEE2F7EF303F1D572AD5498",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120310,
+      "endRva": 81120363,
+      "sha256": "44AE0677008FFDAC9D205424D135DCAB6200A6B5B8536748AC5D280CFBC55D76",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120411,
+      "endRva": 81120464,
+      "sha256": "F8DE33CF68F2C961427002BDDF878E0676505827AFDFE966F05BFBB4B218725A",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120464,
+      "endRva": 81120517,
+      "sha256": "A844F1D8C3EB5355D5C0773368957CEAFB0A237596DA57CDCBC765102A078C9E",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120517,
+      "endRva": 81120570,
+      "sha256": "B9C1192779E62708E0E4EB558FF814C1CE829E2A318D2C8BD5AC8FFEBAF6435F",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120570,
+      "endRva": 81120623,
+      "sha256": "8E40CCAA0F51DD24446F9FD6B8B2F55AF03966F5846CC82201BED41BC4FAC113",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120623,
+      "endRva": 81120676,
+      "sha256": "84F8B089E3832074C45F793E205A1DB3EA0E3309C4CDCAA2A135BB7CA12B9ED9",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120676,
+      "endRva": 81120729,
+      "sha256": "B46BB83ECE17040EE304EC42CDF28F40127F622930387E4452E9CAF82895C576",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120729,
+      "endRva": 81120782,
+      "sha256": "D33BEBE4475D2C1F5731AA98BFB33EAED89CE8A7D61C76BE3A67AC8062A6C521",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120782,
+      "endRva": 81120835,
+      "sha256": "1631921FAB6ADCCEC8C889C57B162B69434B8126C31DFFF8FADC3FD2BF25F955",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120835,
+      "endRva": 81120888,
+      "sha256": "9459780965322A0285B592BCF9D0AAE6FE747B4B4047F171634BECB2238A1947",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 81120936,
+      "endRva": 81120989,
+      "sha256": "0F906C2D60E05004A9AF565E03E94AAE90190B0CDDE945D8C77D4E2B19B0B17F",
+      "boundary": "output-side cast/cache/store and complete rejoin; no source cursor advance"
+    },
+    {
+      "startRva": 52469472,
+      "endRva": 52469565,
+      "sha256": "E23E70BCC6F72FE59BBBF7B6F365D72E87480AD8042537737F52A37145AF1E4F",
+      "boundary": "finder3 formatter forwarding"
+    },
+    {
+      "startRva": 52469568,
+      "endRva": 52470073,
+      "sha256": "7BB9FFF02E9638A3E242DE45D2E2C9F00C80FA74BD03897540D3D71A3DED7E24",
+      "boundary": "finder3 member4 normal and FF paths through complete exits"
+    },
+    {
+      "startRva": 52470073,
+      "endRva": 52470157,
+      "sha256": "59B3D7C3FFA9E149C7860B2FCCCB91BAE5D64C68EA744942342871F202A24874",
+      "boundary": "finder3 lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 59819716,
+      "endRva": 59819760,
+      "sha256": "A06F04F6DBC7911A086D62B257687CB87749D5058F8D3FF92961CF44A95005CA",
+      "boundary": "selector finder3 type and provider route"
+    },
+    {
+      "startRva": 59820035,
+      "endRva": 59820044,
+      "sha256": "A3B99FF62E7AA8087DA5921DD2E1C727CD15E768708047322BCF04DEF4C7BD0B",
+      "boundary": "finder3 allocation-context route and common provider rejoin"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 59821664,
+      "endRva": 59821668,
+      "sha256": "2C1EB8BBB7E4AAB724751CE08F451D8DE98D476399B48716445FA42237B882AE",
+      "boundary": "finder3 switch route"
+    },
+    {
+      "startRva": 217990376,
+      "endRva": 217990384,
+      "sha256": "10BE7F662EADE2BAA3D78BE1D88EE79E8E011118BE53D278E1030B62EF44EAF7",
+      "boundary": "finder3 exact type usage107039"
+    },
+    {
+      "startRva": 206847144,
+      "endRva": 206847152,
+      "sha256": "6C9CE4583C52CDE806384A4BE1792DAAF8F39ED5B6A990BD57EE6C275E670F4C",
+      "boundary": "finder3 registered type pointer slot"
+    },
+    {
+      "startRva": 220266728,
+      "endRva": 220266744,
+      "sha256": "4DDF5DABB60F8BD3F2E97D4C1A86D0ACE5BF93DD7511EC90D7066486E7C4470E",
+      "boundary": "finder3 class record definition23031"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 53266995,
+      "instructionHex": "488B15CE4CD909",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 52469924,
+      "instructionHex": "488B1575A5DE09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member22": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "bytePayload",
+      "scalar32",
+      "byte",
+      "byte",
+      "byte",
+      "scalar32",
+      "target",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "scalar32",
+      "scalar32"
+    ],
+    "finderUnion3": [
+      "raw12",
+      "raw16",
+      "scalarPayload",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected-build static registration/module/token joins. Direct member22 normal source order supports structural-only finite framing; the common prefix contains one inline DWORD and two scalar helpers. Later inline DWORD loads also advance the source cursor explicitly and must not be omitted from a helper-call inventory. The two 2CA8BB0 operations each consume four raw bytes; preserve arbitrary bits. The action nested context is TargetSettings. Its finder3 extension separately joins the selected member-four wrapper, which advances twelve and sixteen inline bytes, reads a scalar payload under the exact BlackboardDouble context, and ends with a byte. Neither raw extent implies vector/rotation meaning. Existing finite target and scalar consumers retain their evidence boundary. Output-side casts, cached references, stores and lazy initialization add no source members. Two scalar32 reads end the action, not a final byte. Signed-length payloads retain null/empty distinctions. Native names do not establish event identity, playback, audio ownership, field semantics or decoding. Actual provider selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

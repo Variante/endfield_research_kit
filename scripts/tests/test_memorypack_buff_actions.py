@@ -109,6 +109,17 @@ def tag3c(finder=None,nested=None,value=None):
             struct.pack('<I',0xffffffff)+b'\x80'+(scalar_payload(None) if value is None else value))
 
 
+def tag119(value=b'wire',nested=None):
+    return (b'\xfa\x19\x01\x16\xfe'+struct.pack('<IIIIII',0xffffffff,0x80000000,0x7fc00000,1,2,3)+
+            payload(value)+struct.pack('<I',0xffffffff)+b'\xfe\x80\xff'+struct.pack('<I',0x80000000)+
+            (target() if nested is None else nested)+struct.pack('<IIII',0xffffffff,0x80000000,0x7fc00000,0xff800000)+
+            b'\xfe\x80'+struct.pack('<II',0xffffffff,0x80000000))
+
+
+def finder3(value=None):
+    return b'\x03\x04'+bytes(range(12))+bytes(range(16))+scalar_payload(value)+b'\x80'
+
+
 def tagc5(tags=None,effect=None,calc=None,nested=None,value=b'wire'):
     return (b'\xc5\x10\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+b'\x80'+payload(value)+
             (effect85() if effect is None else effect)+(b'\x00\x01'+scalar_payload(None) if calc is None else calc)+
@@ -1206,6 +1217,62 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['diagnostic']['category'],'nested-profile')
         self.assertEqual(row['diagnostic']['actual'],0)
         self.assertFalse(any(r['kind']=='union' and r['tag']==60 for r in row['completedRecords']))
+
+    def test_tag119_variable_payload_before_target_and_no_final_byte(self):
+        for value in (None,b'',b'x',bytes(range(256))):
+            child=tag119(value);end=19+len(child)
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='119.bin')
+            self.assertEqual(row['diagnostic'],dict(source='119.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+            self.assertIn(dict(start=19,end=end,kind='union',tag=281),row['completedRecords'])
+            self.assertIn(dict(start=end-4,end=end,kind='anonymous-scalar32'),row['ranges'])
+            self.assertEqual(row['opaqueRemainderRange'][0],end)
+
+    def test_tag119_null_finder_cuts_limits_and_trailing(self):
+        for child in (tag119(),tag119(None),tag119(b''),tag119(nested=b'\xff'),b'\xfa\x19\x01\xff',tag119(nested=target(selector=b'\x03'+finder3()+bytes(8)))):
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            for extra in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+extra)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='119-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertLessEqual(row['consumedEnd'],n)
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='119-limit',limit=n))
+
+    def test_tag119_bad_headers_counts_and_unknown_nested(self):
+        raw=prefix(sequence(tag119(nested=target(selector=b'\x03'+finder3(b'key')+bytes(8)))));good=event_prefix(raw,source='119-bounds')
+        for span in good['ranges']:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for value in ((0,254) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(raw);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                row=event_prefix(bad,source='119-bounds')
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('119-bounds',at,value))
+        row=event_prefix(prefix(sequence(tag119(nested=target(selector=b'\x03\x06'+bytes(8))))),source='119-gap')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertFalse(any(r.get('tag')==281 for r in row['completedRecords']))
+
+    def test_finder3_raw_spans_payload_and_extended_null(self):
+        for raw in (finder3(),finder3(b'abc'),b'\xfa\x03\x00'+finder3()[1:],b'\x03\xff'):
+            r=Reader(raw,'finder3');r.selector_finder_profile();self.assertEqual(r.pos,len(raw))
+            for n in range(len(raw)):
+                r=Reader(raw,'finder3',n)
+                with self.assertRaises(FrameError):r.selector_finder_profile()
+                self.assertLessEqual(r.pos,n)
+        r=Reader(finder3(),'finder3');r.selector_finder_profile()
+        self.assertIn(dict(start=2,end=14,kind='anonymous-raw12'),r.ranges)
+        self.assertIn(dict(start=14,end=30,kind='anonymous-raw16'),r.ranges)
+        for header in (0,3,5):
+            with self.assertRaises(FrameError) as caught:Reader(b'\x03'+bytes([header])+finder3()[2:],'finder3').selector_finder_profile()
+            self.assertEqual(caught.exception.diagnostic,dict(source='finder3',offset=1,expected=4,actual=header,category='member-count'))
+        row=event_prefix(prefix(sequence(b'\x19'+tag119()[3:])),source='119-physical')
+        self.assertEqual((row['status'],row['consumedEnd'],row['diagnostic']['actual']),('unsupported',19,25))
 
     def test_tagc5_tag_list_instances_and_final_byte(self):
         for tags in (b'\xff',taglist(None),taglist(()),taglist(),taglist((b'\xff',b'\x01'+struct.pack('<I',0x80000000)))):
