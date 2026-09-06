@@ -285,6 +285,10 @@ The report partitions selected files into successful candidate framing, failed
 reader execution and unsupported shapes; uniqueness is only within that reader.
 Each accepted BuffData suffix also records a hard-bounded prefix-reader stop and
 remaining gap, with prefix support counted separately from suffix acceptance.
+`memorypack.buff_actions` owns the independent anonymous event-prefix grammar;
+its per-candidate scalar/record spans and explicit opaque remainder have a separate
+success/failed/unsupported/ambiguous census. Malformed prefixes fail the corpus
+gate even if the legacy suffix candidate succeeds; unknown unions are not aliased.
 `python -m scripts.game_data.il2cpp_context_audit` emits an exact-build native
 generic-instantiation audit as JSON on stdout. `il2cpp_context` owns bounded
 pointer-table/record/vector decoding and reciprocal method-parameter identity;

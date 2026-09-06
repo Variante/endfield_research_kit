@@ -48,7 +48,39 @@ from scripts.game_data.il2cpp_context_audit import element_provider_state_flow
 from scripts.game_data.il2cpp_context_audit import buff_union_routes
 from scripts.game_data.il2cpp_context_audit import buff_ifelse_forwarding
 from scripts.game_data.il2cpp_context_audit import buff_ifelse_read_order
+from scripts.game_data.il2cpp_context_audit import buff_sequence_read_order
 from unittest.mock import patch
+
+
+class BuffSequenceReadOrderTests(unittest.TestCase):
+    def setUp(self):
+        self.base=0x180000000
+        self.parts={self.base+at:bytes.fromhex(raw) for at,raw in (
+            (0x39C6A69,'4533C0488BD3488BCF488B5C24304883C4205FE91F000000'),
+            (0x39C6B06,'488B43500FB6308B7B3083EF017911BA01000000488BCBE81EB6100284C0750D48FF4350FF4340FF4344897B304080FEFF7516'),
+            (0x39C6B82,'4080FE030F85DD030000'),
+            (0x39C6BF8,'488B43508B28448B73304183EE047911BA04000000488BCBE82BB5100284C07511488343500483434004834344044489733048634344488B4B18482BC84863C5483BC80F8C78030000'),
+            (0x39C6D4D,'488B4738488B4818E806D53DFF4C8BF085ED0F8EB6000000'),
+            (0x39C6D98,'4D8B16488BD34863C6498BCE4883C0044D8B8A980100004C8D04C741FF9290010000FFC63BF57CB0EB59'),
+            (0x39C6EA2,'488B43500FB6288B7B3083EF017911BA01000000488BCBE882B2100284C0750D48FF4350FF4340FF4344897B30'),
+            (0x39C6EE5,'4084ED0F95C0884119'),
+            (0x39C6F07,'488B43500FB6288B7B3083EF017911BA01000000488BCBE81DB2100284C0750D48FF4350FF4340FF4344897B30'),
+            (0x39C6F47,'4084ED4C8B6C2428488B6C24680F95C04C8B742420884118'))}
+        self.pe=SimpleNamespace(image_base=self.base,bytes_at_va=lambda va,n:self.parts[va])
+
+    def decode(self):
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]):
+            return buff_sequence_read_order(self.pe,None,{},[],source='fixture.dll')
+
+    def test_conditional_structure_retains_unknown_elements(self):
+        self.assertIn('not serialized element width',self.decode()['boundary'])
+
+    def test_truncated_trailing_and_mutated_windows(self):
+        for va,good in list(self.parts.items()):
+            for bad in (good[:-1],good+b'!',bytes(len(good))):
+                self.parts[va]=bad
+                with self.subTest(va=va,length=len(bad)),self.assertRaises(ContextError):self.decode()
+            self.parts[va]=good
 
 
 class BuffIfElseReadOrderTests(unittest.TestCase):

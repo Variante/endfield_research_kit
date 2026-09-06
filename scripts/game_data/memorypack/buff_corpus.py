@@ -18,6 +18,7 @@ from pathlib import Path
 
 from . import corpus_gate as vfs
 from .buff import decode_buff_post_id_prefix_at, buff_post_id_result_is_exact_tail, decode_buff_pre_id_modifier_prefix
+from .buff_actions import event_prefix
 
 PREFIX='Data/Json/BuffData/'
 PATTERN=re.compile(r'^Data/Json/BuffData/[^/]+[.]json$')
@@ -32,7 +33,7 @@ def select_rows(rows, *, expected_input):
 
 
 def frame_candidates(data: bytes, *, source: str) -> dict:
-    result={'wholeSchemaExact':False,'candidates':[],'candidateCount':0}
+    result={'wholeSchemaExact':False,'candidates':[],'candidateCount':0,'eventPrefixStatus':'unsupported'}
     if not data or data[0]!=30:
         return {**result,'coverageStatus':'unsupported','diagnostic':{'source':source,'offset':0,'expected':30,'actual':data[0] if data else None}}
     value=Path(source).stem;encoded=value.encode('utf-8')
@@ -48,8 +49,9 @@ def frame_candidates(data: bytes, *, source: str) -> dict:
         end=decoded.get('endOffset')
         if accepted and (not isinstance(end,str) or int(end,0)!=len(data)):
             vfs._fail('buff-reader-false-eof',source=source,offset=at,expected=len(data),actual=end)
-        prefix_probe=None
+        prefix_probe=None;current_prefix=None
         if accepted:
+            current_prefix=event_prefix(data,source=source,limit=at)
             prefix=decode_buff_pre_id_modifier_prefix(data,at)
             prefix_end=prefix.get('endOffset')
             stop=int(prefix_end,0) if isinstance(prefix_end,str) else None
@@ -66,9 +68,15 @@ def frame_candidates(data: bytes, *, source: str) -> dict:
             'opaquePrefixRange':[1,at],
             'readerInternalOpaqueRangesCertified':False,
             'prefixProbe':prefix_probe,
+            'currentEventPrefix':current_prefix,
             'diagnostic':decoded.get('tailParseError') or decoded.get('error')})
     count=sum(row['readerAcceptedThroughEof'] for row in result['candidates'])
+    current=[c['currentEventPrefix'] for c in result['candidates'] if c['currentEventPrefix'] is not None]
+    event_status=('failed' if any(c['status']=='failed' for c in current) else
+                  'ambiguous' if count>1 else
+                  'success' if count==1 and current[0]['status']=='supported-prefix' else 'unsupported')
     return {**result,'candidateCount':count,'anchorCount':len(positions),
+        'eventPrefixStatus':event_status,
         'coverageStatus':'unsupported' if count==0 else 'ambiguous' if count>1 else 'unique'}
 
 
@@ -164,15 +172,25 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
     guard();counts=Counter(row['coverageStatus'] for row in rows)
     prefix_counts=Counter(c['prefixProbe']['readerStatus'] for row in rows for c in row.get('candidates',[])
         if c.get('prefixProbe') is not None)
+    event_counts=Counter(row.get('eventPrefixStatus','failed') for row in rows)
+    categories={status:Counter(c['currentEventPrefix']['diagnostic']['category']
+        for row in rows for c in row.get('candidates',[])
+        if c.get('currentEventPrefix') and c['currentEventPrefix']['status']==status)
+        for status in ('failed','unsupported')}
+    event_summary={'total':len(rows),**{s:event_counts[s] for s in ('success','failed','unsupported','ambiguous')},
+        'failureCategories':{s:dict(sorted(v.items())) for s,v in categories.items()},
+        'boundary':'Success means the supported anonymous first collection ended before its candidate anchor. Scalar spans plus an explicit physical-file remainder tile EOF; the remainder is opaque, not decoded. Unknown unions stop at their first byte. No legacy names or whole-schema success.'}
+    failed=bool(counts['failed'] or event_counts['failed'])
     return {'format':'animestudio-buffdata-current-vfs-corpus','schemaVersion':1,
-        'inputSetSha256':expected,'status':'failed' if counts['failed'] else 'complete',
-        'publicationEligible':not counts['failed'],'wholeSchemaExact':False,
+        'inputSetSha256':expected,'status':'failed' if failed else 'complete',
+        'publicationEligible':not failed,'wholeSchemaExact':False,
         'provenance':{**provenance,**before},'evidenceBoundary':BOUNDARY,
         'summary':{'filesSelected':len(selected),'filesSucceeded':counts['unique']+counts['ambiguous'],
             'filesFailed':counts['failed'],'filesUnsupported':counts['unsupported'],
             'filesUnique':counts['unique'],'filesAmbiguous':counts['ambiguous'],
             'filesWithMultipleAnchors':sum(row.get('anchorCount',0)>1 for row in rows),
             'acceptedSuffixPrefixStatusCounts':dict(sorted(prefix_counts.items())),
+            'currentEventPrefix':event_summary,
             'logicalBytes':sum(row['length'] for row in selected)},
         'identitySetSha256':vfs._canonical_sha256([{'identity':r['identity'],'logicalSha256':r['logicalSha256']} for r in rows]),'files':rows}
 

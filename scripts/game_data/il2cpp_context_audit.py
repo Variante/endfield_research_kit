@@ -15,6 +15,7 @@ from pathlib import Path
 from scripts.common import check_installed_native_inputs
 from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range, unresolved_usage_index, rip_qword_load_target
 from scripts.game_data.memorypack.skill_corpus import verify_current_report_inputs
+from scripts.game_data.memorypack.corpus_gate import verify_current_report_inputs as verify_family_report_inputs
 from scripts.game_data.il2cpp_context import class_sharing_branch
 from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
@@ -27,8 +28,10 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = 'E2817E52AB1B14C7ADBA1C42D1FC18B2FC55CF4E84EA0ECCD52599ED65BFEF92'
+CORPUS_SHA = '1FA6B0BFB313F70C5B08ECBEE96A0E65080D3FF0A97C6E364A4AF141E7621FE5'
 CONSUMER_WINDOWS = (
+    (0x39C6A40,0x39C6A9D,'650BBFFE813D1F3A7663C6C9C42E160E5799B70541246A11AAADABF1D3F08DD6'),
+    (0x39C6AA0,0x39C6FA7,'6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90'),
     (0x3773670,0x37736CD,'D1E00A92152340C6A1F095DC4FF14393C99973AED0304478AD12506492E37A0C'),
     (0x3774060,0x37742A8,'AC1FF978FEF71639E74980B43AE00D9746518A9DD94B41772F2867963A596ED8'),
     (0x2CA88C0,0x2CA8912,'636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E'),
@@ -341,6 +344,31 @@ def reader_cursor_consumers(pe, *, source):
             'nestedRead':{'rva':0x381F8F0,'readerRegister':'R15',
                           'boundary':'Entry RCX is saved in R15 and passed to dispatch as R8; the local output is returned after formatter dispatch. This body is another provider/dispatch layer, not the list count or element consumer. Its cold cache paths, live MethodInfo and selected list formatter are unresolved.'},
             'boundary':'No authenticated logical-file allocation, initial descriptor, complete helper ABI, final cursor or EOF join. Keep both terminal candidates.'}
+
+
+def buff_sequence_read_order(pe,md,modules,image_owners,*,source):
+    """Selected member-three sequence: count, indirect elements, two bytes."""
+    name='Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack'
+    methods=module_methods(pe,md,modules,image_owners,
+        [(104346,name,'Deserialize',0x39C6AA0),
+         (104347,name+'+Beyond_Gameplay_Core_SequenceActionDataForMemoryPackFormatter','Deserialize',0x39C6A40)],
+        source=source,expected_image='MemoryPack.Beyond.dll')
+    windows=[]
+    for at,expected in (
+        (0x39C6A69,'4533C0488BD3488BCF488B5C24304883C4205FE91F000000'),
+        (0x39C6B06,'488B43500FB6308B7B3083EF017911BA01000000488BCBE81EB6100284C0750D48FF4350FF4340FF4344897B304080FEFF7516'),
+        (0x39C6B82,'4080FE030F85DD030000'),
+        (0x39C6BF8,'488B43508B28448B73304183EE047911BA04000000488BCBE82BB5100284C07511488343500483434004834344044489733048634344488B4B18482BC84863C5483BC80F8C78030000'),
+        (0x39C6D4D,'488B4738488B4818E806D53DFF4C8BF085ED0F8EB6000000'),
+        (0x39C6D98,'4D8B16488BD34863C6498BCE4883C0044D8B8A980100004C8D04C741FF9290010000FFC63BF57CB0EB59'),
+        (0x39C6EA2,'488B43500FB6288B7B3083EF017911BA01000000488BCBE882B2100284C0750D48FF4350FF4340FF4344897B30'),
+        (0x39C6EE5,'4084ED0F95C0884119'),
+        (0x39C6F07,'488B43500FB6288B7B3083EF017911BA01000000488BCBE81DB2100284C0750D48FF4350FF4340FF4344897B30'),
+        (0x39C6F47,'4084ED4C8B6C2428488B6C24680F95C04C8B742420884118')):
+        raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
+        windows.append({'rva':at,'rawHex':expected})
+    return {'methods':methods,'windows':windows,'level':'direct conditional selected-consumer structure',
+        'boundary':'Header FF clears the output; header 3 takes a signed DWORD count after the one-byte header. The fast count path compares total-minus-consumed with the count, not count times an element width. Count -1 skips elements; zero uses a separate empty-array helper. Positive counts call a provider-selected class+0x190 target with the same reader, an eight-byte array output slot and class+0x198 companion. Output-slot width is not serialized element width. Then two bytes are consumed and nonzero-normalized, writing object offsets 0x19 then 0x18. No semantic field names, live provider identity, negative-count allocation behavior, nested extent, authenticated source cursor or EOF are promoted. Maintained framing rejects counts below -1 conservatively.'}
 
 
 def buff_ifelse_read_order(pe,md,reg,table,modules,image_owners,*,source):
@@ -1861,6 +1889,11 @@ def audit():
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     corpus = json.loads(corpus_path.read_text(encoding='utf-8'))
     verify_current_report_inputs(corpus)
+    buff_path=ROOT/'reports/animestudio/buffdata_current_latest.json'
+    buff_sha=sha(buff_path);buff_corpus=json.loads(buff_path.read_text(encoding='utf-8'))
+    verify_family_report_inputs(buff_corpus,expected_format='animestudio-buffdata-current-vfs-corpus',label='BuffData')
+    require(buff_corpus['inputSetSha256'],corpus['inputSetSha256'],buff_path)
+    require(buff_corpus['status'],'complete',buff_path)
     mapper_path = ROOT / 'tools/endfield-il2cpp/map_body_targets_to_gameassembly.py'
     catalog_path = ROOT / 'tools/endfield-il2cpp/catalog_option_flow_metadata.py'
     sources = [Path(__file__), Path(__file__).with_name('il2cpp_context.py'),
@@ -2197,6 +2230,7 @@ def audit():
     buff_routes=buff_union_routes(pe,md,reg,modules,image_owners,source=str(gate.gameassembly))
     buff_forwarding=buff_ifelse_forwarding(pe,md,reg,table,source=str(gate.gameassembly))
     buff_order=buff_ifelse_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly))
+    buff_sequence=buff_sequence_read_order(pe,md,modules,image_owners,source=str(gate.gameassembly))
     list_candidate['bodyWindows']=[]
     for start,end,digest in (
         (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
@@ -2247,11 +2281,15 @@ def audit():
     native_gate()
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     verify_current_report_inputs(corpus)
+    require(sha(buff_path),buff_sha,buff_path)
+    verify_family_report_inputs(buff_corpus,expected_format='animestudio-buffdata-current-vfs-corpus',label='BuffData')
     for path, expected in source_hashes.items():
         require(sha(path), expected, path)
     return {
         'schemaVersion': 1, 'status': 'failed' if failures else 'structural-only',
         'inputSetSha256': corpus['inputSetSha256'],
+        'buffCorpusReference':{'path':str(buff_path),'sha256':buff_sha,'summary':buff_corpus['summary'],
+                               'inputSetSha256':buff_corpus['inputSetSha256']},
         'corpusReference': {'path': str(corpus_path), 'sha256': CORPUS_SHA,
                             'boundary': 'Authenticated corpus reference; this native audit does not restream VFS bytes.'},
         'nativeInputs': {'gameassembly': str(gate.gameassembly), 'gameassemblySha256': GA_SHA,
@@ -2306,6 +2344,7 @@ def audit():
         'selectedBuffUnionRoutes':buff_routes,
         'selectedBuffIfElseForwarding':buff_forwarding,
         'selectedBuffIfElseReadOrder':buff_order,
+        'selectedBuffSequenceReadOrder':buff_sequence,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,

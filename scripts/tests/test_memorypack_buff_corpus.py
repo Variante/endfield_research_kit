@@ -95,6 +95,25 @@ class BuffCandidateTests(unittest.TestCase):
             'status':'parsed-through-exact-tail','endOffset':hex(len(raw))}):
             row=self.frame(raw)
         self.assertEqual((row['coverageStatus'],row['candidateCount']),('ambiguous',2))
+        with mock.patch.object(gate,'decode_buff_post_id_prefix_at',return_value={
+            'status':'parsed-through-exact-tail','endOffset':hex(len(raw))}),mock.patch.object(
+                gate,'event_prefix',return_value={'status':'supported-prefix'}):
+            row=self.frame(raw)
+        self.assertEqual(row['eventPrefixStatus'],'ambiguous')
+
+    def test_current_event_profile_has_independent_status_and_bounded_gap(self):
+        raw=b'\x1e'+bytes(4)+_normal()[1:]
+        row=self.frame(raw)
+        self.assertEqual(row['eventPrefixStatus'],'success')
+        profile=row['candidates'][0]['currentEventPrefix']
+        self.assertEqual(profile['consumedEnd'],5)
+        self.assertEqual(profile['readLimit'],5)
+        self.assertEqual(profile['opaqueRemainderRange'],[5,len(raw)])
+        malformed=b'\x1e'+struct.pack('<i',-2)+_normal()[1:]
+        row=self.frame(malformed)
+        self.assertEqual(row['coverageStatus'],'unique')
+        self.assertEqual(row['eventPrefixStatus'],'failed')
+        self.assertEqual(row['candidates'][0]['currentEventPrefix']['diagnostic']['category'],'count-bounds')
 
     def test_false_reader_eof_and_search_limit_fail_closed(self):
         with mock.patch.object(gate,'decode_buff_post_id_prefix_at',return_value={
@@ -187,6 +206,13 @@ class BuffJoinTests(unittest.TestCase):
         self.assertIn('selectedChunkResolution',report['provenance'])
         self.assertIn('corpusGate',report['provenance'])
         self.assertFalse(report['wholeSchemaExact'])
+        event=summary['currentEventPrefix']
+        self.assertEqual(event['total'],sum(event[k] for k in ('success','failed','unsupported','ambiguous')))
+        # This suffix-only fixture has no valid event prefix. Its failure is
+        # published and closes the gate despite the legacy suffix succeeding.
+        self.assertEqual(event['failed'],1)
+        self.assertEqual(report['status'],'failed')
+        self.assertFalse(report['publicationEligible'])
 
     def test_chunk_overlay_tool_and_parser_drift_have_specific_diagnostics(self):
         for name in ('_chunk_fingerprints','_chunk_selection_snapshot','_stream_tool_snapshot','_parser_source_snapshots'):

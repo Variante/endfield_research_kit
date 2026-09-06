@@ -222,6 +222,18 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   by three calls carrying the same SequenceActionData type argument. This proves
   selected-consumer order, not live provider selection, nested extents or EOF;
   byte-to-boolean normalization must not be mistaken for a strict 0/1 encoding.
+  `memorypack.buff_actions` now frames the anonymous first collection forward
+  from byte zero under each retained filename-anchor candidate's hard limit.
+  It supports the current IfElse/Sequence grammar, nulls and bounded counts,
+  records completed nested spans, and stops at the first unsupported union.
+  Atomic spans plus an explicit physical-file remainder tile the bytes; that
+  remainder is opaque, not a decoded record. `buff_corpus` publishes a separate
+  prefix success/failure/unsupported/ambiguity denominator and fails its gate
+  on malformed prefixes even when the legacy suffix reader succeeds. Current
+  Sequence consumer evidence places the counted indirect child array before
+  two nonzero-normalized bytes; child output-slot width does not bound payloads.
+  Next close the most frequent unsupported child consumers before extending
+  this grammar; do not import legacy tag/name aliases to improve coverage.
 - Gameplay tag names come from exact predefined/config registries or validated
   runtime capture under the same native gate. CRC/context-derived names retain
   their derivation label; raw unmapped ids remain visible.
