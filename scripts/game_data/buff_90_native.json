@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119668,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CountShieldUIAction_DataForMemoryPack+Beyond_Gameplay_Core_CountShieldUIAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      61449712
+    ],
+    [
+      119667,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CountShieldUIAction_DataForMemoryPack",
+      "Deserialize",
+      61448688
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 61449712,
+      "endRva": 61449805,
+      "sha256": "A8ACD7C8FB0C0CE7DB003556C11CCE1FA4A0FDFF0DA8398C93CF91046CA4D352",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 61448688,
+      "endRva": 61449135,
+      "sha256": "1B76487553F629B8D85D6BF0DAFD171AAAAB55AB7CD6D04131AD096E66599F08",
+      "boundary": "member8 source reads through normal RET"
+    },
+    {
+      "startRva": 61449135,
+      "endRva": 61449219,
+      "sha256": "CF2D19CD497F4EDB57A760B50D42FF2B056B9873F2C5EAB6EF2B3A44B924DE4C",
+      "boundary": "lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82452448,
+      "endRva": 82452461,
+      "sha256": "AD307D0287E834842F416CA6270024F0511E3568C0B9532BDFECF65EA7B8A30A",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 82452517,
+      "endRva": 82452538,
+      "sha256": "41B6A4BAA0D584F8D4AF6BA77009C5E73819B0FD669256B841C2DA65E324A64C",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 61448860,
+      "instructionHex": "488B1585FB5E09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 61448966,
+      "instructionHex": "488B151BA35509",
+      "cellVa": 6660507176,
+      "usageRawHex": "CBEB12C000000000",
+      "methodSpecIndex": 620005,
+      "methodSpec": [
+        428464,
+        -1,
+        17006
+      ],
+      "argumentRawHex": "AE000000000000000000120000000000",
+      "typeDefinition": 174,
+      "typeName": "Beyond.Blackboard+BlackboardInt",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61449007,
+      "instructionHex": "488B15F2A25509",
+      "cellVa": 6660507176,
+      "usageRawHex": "CBEB12C000000000",
+      "methodSpecIndex": 620005,
+      "methodSpec": [
+        428464,
+        -1,
+        17006
+      ],
+      "argumentRawHex": "AE000000000000000000120000000000",
+      "typeDefinition": 174,
+      "typeName": "Beyond.Blackboard+BlackboardInt",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61449082,
+      "instructionHex": "488B1587735C09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload",
+      "scalar-payload",
+      "byte",
+      "target"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member8 action consumes common byte/three DWORDs, two independently nullable BlackboardInt profiles, a byte and a final TargetSettings profile. Both Int contexts reuse the concrete header3 payload/byte/DWORD reader pinned by buff_16b_native.json. Source order is two Int reads before the byte; output setters add no source bytes. Preserve arbitrary scalar bits, independent null states and payload counts. Unknown nested targets leave the parent incomplete. Normal, lazy, formatter, existing-output and FF paths retain complete instructions. Shield counts, UI behavior, target ownership, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

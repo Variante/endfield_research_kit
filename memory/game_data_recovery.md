@@ -652,6 +652,9 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   member-four actions ending immediately after their common byte and three DWORDs.
   Preserve the latter's extended union encoding. Do not append a nested
   payload from the type name; damage skill-cast identity meaning remains unresolved.
+  `scripts/game_data/buff_90_native.json` pins two independent BlackboardInt
+  profiles before a byte and final target. Their payload/byte/DWORD grammar
+  reuses the concrete Int reader; shield counts and UI behavior remain unresolved.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
