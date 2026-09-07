@@ -645,7 +645,49 @@ def tag14f(last=0xff):
     return b'\xfa\x4f\x01\x05\x80'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+bytes([last])
 
 
+def tag71(last=255,extended=False):
+    return (b'\xfa\x71\x00' if extended else b'\x71')+b'\x05\x80'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+bytes([last])
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag71_both_encodings_fixed_extent_and_raw_last_byte(self):
+        for extended in (False,True):
+            size=18 if extended else 16
+            for bits in (0,1,127,128,255):
+                child=tag71(bits,extended);self.assertEqual(len(child),size)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='71.bin')
+                self.assertEqual(row['diagnostic'],dict(source='71.bin',offset=19+size,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=19+size,kind='union',tag=113),row['completedRecords']);self.assertFalse(row['wholeSchemaExact'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag71_every_cut_limits_and_trailing(self):
+        for child in (tag71(),tag71(255,True),b'\x71\xff',b'\xfa\x71\x00\xff'):
+            r=Reader(child,'71-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                out=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'71-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==113 for v in r.records))
+                    out.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(out[0],out[1]);self.assertEqual(out[0],out[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag71_bad_member_count_and_mandatory_final_byte(self):
+        for extended in (False,True):
+            child=tag71(255,extended);offset=3 if extended else 1
+            for header in (0,4,6,254):
+                bad=bytearray(child);bad[offset]=header;r=Reader(bad,'71-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='71-header',offset=offset,expected=5,actual=header,category='member-count'))
+            r=Reader(child[:-1],'71-last')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],len(child)-1)
+            self.assertFalse(any(v.get('tag')==113 for v in r.records))
+
+
     def test_tag14f_fixed_extent_arbitrary_final_byte(self):
         for bits in (0,1,127,128,255):
             child=tag14f(bits);self.assertEqual(len(child),18)
@@ -6574,7 +6616,7 @@ class BuffActionsTests(unittest.TestCase):
             with self.subTest(raw=raw):self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
 
     def test_unknown_union_does_not_borrow_legacy_alias_or_search(self):
-        for tag in (0xC0,0x59,0x71):
+        for tag in (0xC0,0x59):
             raw=prefix(sequence(bytes([tag])+action()))
             row=event_prefix(raw,source='unknown.bin')
             self.assertEqual(row['status'],'unsupported')

@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124523,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckProjectileInPerfectDodgeCd_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckProjectileInPerfectDodgeCd_DataForMemoryPackFormatter",
+      "Deserialize",
+      73839552
+    ],
+    [
+      124522,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckProjectileInPerfectDodgeCd_DataForMemoryPack",
+      "Deserialize",
+      73839648
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73839552,
+      "endRva": 73839641,
+      "sha256": "BC191BA4E9E14E4F2106D127172F0F3B96554DC7754658812BE2B6A6AE5CA4F6",
+      "boundary": "complete formatter initialization and forwarding"
+    },
+    {
+      "startRva": 73839648,
+      "endRva": 73840011,
+      "sha256": "F728F171F88E87D0D61CE74FDA01B2F8B6B932E81E44908AB374117E3624D6AE",
+      "boundary": "complete initialization and member5 normal reads through RET"
+    },
+    {
+      "startRva": 83955696,
+      "endRva": 83955709,
+      "sha256": "6F83ED7436A402B3CB1F7C423C96A3D4F1B94FFB5470B0AAEEEAE02ADBB942BC",
+      "boundary": "existing output and rejoin"
+    },
+    {
+      "startRva": 83955765,
+      "endRva": 83955786,
+      "sha256": "A80A51B0C2B7EAA04E7991BA35BBFFE74BF1FABE1C9CEBC8C24265095C054A50",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 73839871,
+      "instructionHex": "488B1522E9A108",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte"
+    ]
+  },
+  "boundary": "Exact current union registration and module/token joins establish the member5 source order: byte, three DWORDs, then a required byte. The Priority context adds no serialized header. There are no nested profiles, variable payloads, counts or offsets. Short and extended non-null records occupy sixteen and eighteen bytes respectively; FF wrapper termination is distinct. Preserve arbitrary terminal byte values without inferring boolean semantics. Complete formatter, initialization/normal, existing-output and FF windows retain whole instructions. Structural-only framing does not establish projectile/dodge condition behavior, runtime evaluation, live formatter selection, full refill/error parity or whole-BuffData EOF."
+}

@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = 'B0BA762DDFEC70B2C6ECFA4A9443CBB348955038DFC114883E848E6F9176AF70'
+CORPUS_SHA = 'FBEF912D11F524792F55FEFBB39589ED4CCEFBBBF93B614F6D478770D90DAFBA'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -719,6 +719,7 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x3910B2C,'488B15CD697009488B0BE8E52C6FFC488BCF4885C00F851C7C5501488B15D2FD7C09E809E710FD488903488BD0E984CEFFFF'),
         (0x3910AFA,'488B151F687009488B0BE8172D6FFC488BCF4885C00F85397C5501488B1514FE7C09E823E710FD488903488BD0E9B6CEFFFF'),
         (0x3910C26,'488B15B3257009488B0BE8EB2B6FFC488BCF4885C00F85BC805501488B1540FF7C09E8E7E910FD488903488BD0E98ACDFFFF'),
+        (0x3914B16,'488B15D34C7209488B0BE8FBEC6EFC488BCF4885C00F85B4255501488B1518CB7C09E82F9710FD488903488BD0E99A8EFFFF'),
         (0x390DD14,'488B15651E7809488B0BE8FD5A6FFC488BCF4885C00F85A28C5501488B15D23D7D09E89DFF10FD488903488BD0E99CFCFFFF')):
         raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
         windows.append({'rva':at,'rawHex':expected})
@@ -859,7 +860,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x8E,0x3910938,106532,16039,'CostAtbRefreshLongestSkillCd_Data',None),
         (0x125,0x3910B2C,106981,16353,'RecoverDashEnergy_Data',None),
         (0x124,0x3910AFA,106980,16351,'RecordBattleDetails_Data',None),
-        (0x14F,0x3910C26,107089,16437,'SetFirstDashParam_Data',None)):
+        (0x14F,0x3910C26,107089,16437,'SetFirstDashParam_Data',None),
+        (0x71,0x3914B16,106502,16671,'Conditions_CheckProjectileInPerfectDodgeCd_Data',None)):
         require(targets[tag],target,source,table_va+tag*4)
         operands=[]
         for at,usage_tag in ((target,1),)+(((init,2),) if init is not None else ()):
@@ -2422,7 +2424,8 @@ def audit():
                Path(__file__).with_name('finder_0e_native.json'),
                Path(__file__).with_name('buff_125_native.json'),
                Path(__file__).with_name('buff_124_native.json'),
-               Path(__file__).with_name('buff_14f_native.json')]
+               Path(__file__).with_name('buff_14f_native.json'),
+               Path(__file__).with_name('buff_71_native.json')]
     source_hashes = {str(p): sha(p) for p in sources}
     mapper = load('context_audit_mapper', mapper_path)
     catalog = load('context_audit_catalog', catalog_path)
@@ -2975,6 +2978,8 @@ def audit():
         contract_path=Path(__file__).with_name('buff_124_native.json'))
     buff_14f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_14f_native.json'))
+    buff_71=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('buff_71_native.json'))
     buff_16b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_16b_native.json'))
     buff_24=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -3271,6 +3276,7 @@ def audit():
         'selectedBuff125ReadOrder':buff_125,
         'selectedBuff124ReadOrder':buff_124,
         'selectedBuff14FReadOrder':buff_14f,
+        'selectedBuff71ReadOrder':buff_71,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,
