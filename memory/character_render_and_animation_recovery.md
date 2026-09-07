@@ -379,8 +379,10 @@ only.
   prepared graph-command ownership. Final resource binding remains unproven.
   Callback snapshots now distinguish the global renderer from the TLS device
   used for native texture-pointer lookup and require its table to match actual
-  setters. Binary descriptor-array paths alone cannot identify the active backend;
-  retain their runtime selection gap before extending GPU-binding observation.
+  setters. The internal descriptor-dispatch alternative resolves OpenGL-named
+  binding functions; it cannot establish the captured D3D11 route. Binary
+  alternatives alone cannot identify the active backend. Capture the callback
+  renderer and submission/execution streams before extending binding observation.
   Callback-owned allocation bytes are read before the
   native callback frees them; completion cannot establish allocation lifetime.
   See
