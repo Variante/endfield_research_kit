@@ -395,6 +395,10 @@ only.
   both Map endpoints. Duplicate or leftover tickets and changed identities fail
   collection. Runtime exercise of this join is still required before treating
   it as retained retail evidence; lifetime and intervening writes remain open.
+  Allocation adjustment also depends on the metadata class: one getter reads
+  the handle's first word, another decodes a numeric offset-plus-one handle,
+  and standalone allocations use zero. The offline reader distinguishes these
+  cases; production validation against the Map byte offset remains pending.
   Native graph execution resolves texture handles into property/texture pairs,
   batches them through a device callback, and updates renderer property state.
   The property setter is a useful execution observation point, but it is not the
