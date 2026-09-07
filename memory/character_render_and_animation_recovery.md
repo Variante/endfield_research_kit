@@ -390,6 +390,11 @@ only.
   no-ops for flush/invalidate. The shims unwrap the memory handle before calling
   the D3D context. Authenticate the selected runtime table and unwrapped resource;
   ABI layout alone neither selects the backend nor proves GPU writer coverage.
+  The observer now links each upload to the pinned Map call inside its flush,
+  retains the checked backend and unwrapped D3D candidate, and compares it with
+  both Map endpoints. Duplicate or leftover tickets and changed identities fail
+  collection. Runtime exercise of this join is still required before treating
+  it as retained retail evidence; lifetime and intervening writes remain open.
   Native graph execution resolves texture handles into property/texture pairs,
   batches them through a device callback, and updates renderer property state.
   The property setter is a useful execution observation point, but it is not the
