@@ -1,0 +1,201 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123365,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SwitchAction_DataForMemoryPack+Beyond_Gameplay_Core_SwitchAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      67560192
+    ],
+    [
+      123364,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SwitchAction_DataForMemoryPack",
+      "Deserialize",
+      67560288
+    ],
+    [
+      163193,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SwitchAction_OptionForMemoryPack+Beyond_Gameplay_Core_SwitchAction_OptionForMemoryPackFormatter",
+      "Deserialize",
+      67314144
+    ],
+    [
+      163192,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SwitchAction_OptionForMemoryPack",
+      "Deserialize",
+      67314240
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67560192,
+      "endRva": 67560285,
+      "sha256": "FB2942381F9B890F3DBA0AEB4F6F6D01C054A164672BF2C5047DAE9D46F79ED1",
+      "boundary": "outer formatter and initialization"
+    },
+    {
+      "startRva": 67560288,
+      "endRva": 67560694,
+      "sha256": "494451B0EDA20AFC45BB19DE64DE513A67893F575076A3D33DAE1707213DA3B9",
+      "boundary": "member7 source reads through normal RET"
+    },
+    {
+      "startRva": 67560694,
+      "endRva": 67560778,
+      "sha256": "6A68CA224AF2C5F5D79F4328DA9A0003D1B04CC548CD411476153B071C9A5437",
+      "boundary": "outer lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83282636,
+      "endRva": 83282649,
+      "sha256": "25769B8F677414595BB401D34D72196CBBDC3646BAD87F5A888E06C1953CBEE7",
+      "boundary": "outer existing-output preparation and rejoin"
+    },
+    {
+      "startRva": 83282705,
+      "endRva": 83282726,
+      "sha256": "0618968BE0C7EF5FEA4B0984E409F6E363C6A9C5CF0FA43F8F51399C956502F8",
+      "boundary": "outer FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 67314144,
+      "endRva": 67314237,
+      "sha256": "1A83F1C6EB9B64882A562B9AFCF07D48681860550926A7F65BB84BC708AF4952",
+      "boundary": "child formatter and initialization"
+    },
+    {
+      "startRva": 67314240,
+      "endRva": 67314419,
+      "sha256": "3BB8A3D070799B927EF0F1B021B03D5A0A10BFF5125EEAAB927FDB127AF419AD",
+      "boundary": "member2 source reads through normal RET"
+    },
+    {
+      "startRva": 67314419,
+      "endRva": 67314491,
+      "sha256": "4A2218A119D9E116CEE791B0359F6B2558DB69B4F3003419ADC3F9E0CEF6A46D",
+      "boundary": "child lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83265306,
+      "endRva": 83265357,
+      "sha256": "BD7B9BCA006AFE722C5316A7241EB2213C78D48562B69866504D67F5F4CFFFFD",
+      "boundary": "child allocation and header rejoin"
+    },
+    {
+      "startRva": 83265413,
+      "endRva": 83265434,
+      "sha256": "EA039E52C23524BC8B1CA922C9D574315E44CCB6D8F1A31225239D1293930911",
+      "boundary": "child FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67560460,
+      "instructionHex": "488B1515BA0109",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67560600,
+      "instructionHex": "488B158161F808",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 67560641,
+      "instructionHex": "488B15C08EFB08",
+      "cellVa": 6660715400,
+      "usageRawHex": "C5A412C000000000",
+      "methodSpecIndex": 610914,
+      "methodSpec": [
+        428462,
+        -1,
+        62694
+      ],
+      "argumentRawHex": "B8F2248D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000903FF08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17136,
+        "elementArguments": [
+          "AE260000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 67314325,
+      "instructionHex": "488B15CC2BFC08",
+      "cellVa": 6660509288,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 67314366,
+      "instructionHex": "488B155B23FC08",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "scalar-payload",
+      "nullable-sequence-scalar-list"
+    ],
+    "member2-child": [
+      "sequence",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member7 action consumes common byte/three DWORDs, another byte, BlackboardDouble profile and a direct nullable List<Option> with no extra wrapper or tail. List MethodSpec610914 joins typedef37521, element instantiation17136 and Option typedef9902. The selected member2 child reader consumes SequenceActionData then BlackboardDouble via MethodSpecs619962 and620004. FF children and nullable lists remain distinct; signed counts are bounded before iteration and recursive sequence depth is limited. BlackboardDouble retains the separately pinned member3 payload/byte/four-byte grammar. Shared provider selection remains conditional. Completed nested records survive failure of the later profile or option; incomplete parents are never completed. All ten formatter, reader, initialization, allocation, existing-output and FF windows retain complete instructions. Switch selection meaning, live provider choice, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

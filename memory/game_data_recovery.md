@@ -686,6 +686,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   payload and final byte after the common fields. A null curve differs from a
   null key list; bound the key count before reading raw keys, and retain the
   mandatory outer payload/byte after the nested profiles complete.
+  `scripts/game_data/buff_176_native.json` closes a direct nullable list of
+  member-two sequence/scalar profiles after the action's extra byte and scalar
+  profile. The list has no additional object header; each non-null element
+  consumes its sequence before its scalar profile. Null elements, null lists
+  and null nested sequences remain distinct. Bound counts and recursive depth
+  before consumption, preserve completed children on later failure, and never
+  mark the incomplete option or action complete. The selected native reader
+  proves this structure; live provider choice and switch meaning remain open.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

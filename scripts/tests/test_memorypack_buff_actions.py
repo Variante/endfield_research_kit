@@ -83,6 +83,15 @@ def tag142(values=(None,b'',b'wire',b'\xff\x00',b'last'),nested=b'\xff',last=0xf
     return b'\xfa\x42\x01\x0b\xfe'+b'\xff'*12+payload(values[0])+nested+b''.join(payload(v) for v in values[1:])+struct.pack('<I',last)
 
 
+def option176(nested=b'\xff',scalar=b'\xff'):
+    return b'\x02'+nested+scalar
+
+
+def tag176(items=(),scalar=b'\xff'):
+    return (b'\xfa\x76\x01\x07\xfe'+b'\xff'*12+b'\x80'+scalar+
+            struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ()))
+
+
 def tag98(first=None,curve=b'\xff',scalar=b'\xff',last=b'wire'):
     return b'\x98\x09\xfe'+b'\xff'*12+payload(first)+curve+scalar+payload(last)+b'\xff'
 
@@ -1802,6 +1811,68 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
         self.assertFalse(any(v.get('tag')==322 for v in r.records))
         self.assertLess(r.pos,len(gap)-sum(len(payload(v)) for v in (b'',b'wire',b'\xff\x00',b'last'))-4)
+
+    def test_tag176_direct_list_and_ordered_option_profiles(self):
+        for scalar in (b'\xff',scalar_payload(None),scalar_payload(b'wire')):
+            for nested in (b'\xff',sequence(),b'\x03'+struct.pack('<i',-1)+b'\xfe\xff',sequence(tag16d())):
+                for items in (None,(),(b'\xff',),(option176(nested,scalar),b'\xff',option176())):
+                    child=tag176(items,scalar);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='176.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='176.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=374),row['completedRecords'])
+                    self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+        child=tag176((option176(sequence(tag16d()),scalar_payload(b'wire')),b'\xff'))
+        r=Reader(child,'176-order');r.action(0)
+        # Fixed fixture: count follows the one-byte null outer scalar at 19;
+        # child member2 starts at 23, sequence at 24, scalar at 55, FF at 69.
+        self.assertIn(dict(start=23,end=69,kind='anonymous-sequence-scalar-profile'),r.records)
+        self.assertIn(dict(start=69,end=70,kind='anonymous-sequence-scalar-profile'),r.records)
+        self.assertIn(dict(start=19,end=70,kind='anonymous-sequence-scalar-list'),r.records)
+
+    def test_tag176_every_cut_hard_limit_null_wrapper_and_trailing(self):
+        full=tag176((option176(sequence(tag16d()),scalar_payload(b'wire')),b'\xff'),scalar_payload(None))
+        for child in (full,tag176(),b'\xfa\x76\x01\xff'):
+            r=Reader(child,'176-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'176-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==374 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag176_bad_headers_counts_and_incomplete_option(self):
+        child=tag176((option176(sequence(tag16d()),scalar_payload(b'wire')),b'\xff'))
+        # Independent fixed wire offsets: outer, option, sequence, child,
+        # scalar headers; direct option count, sequence count, scalar length.
+        for at,values in ((3,(0,254)),(23,(0,254)),(24,(0,254)),(32,(0,254)),(55,(0,254)),
+                          (19,(-2,0x7fffffff)),(25,(-2,0x7fffffff)),(56,(-2,0x7fffffff))):
+            for value in values:
+                bad=bytearray(child)
+                if at in (19,25,56):struct.pack_into('<i',bad,at,value)
+                else:bad[at]=value
+                r=Reader(bad,'176-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('176-bounds',at,value))
+        r=Reader(child,'176-incomplete',68)
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertIn(dict(start=24,end=55,kind='sequence'),r.records)
+        self.assertFalse(any(v['kind']=='anonymous-sequence-scalar-profile' or v.get('tag')==374 for v in r.records))
+        gap=tag176((option176(sequence(b'\x59')),))
+        r=Reader(gap,'176-gap')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']), (29,89))
+        self.assertFalse(any(v.get('tag')==374 for v in r.records))
+
+    def test_tag176_recursive_options_share_sequence_depth_limit(self):
+        child=tag176()
+        for _ in range(66):child=tag176((option176(sequence(child)),))
+        with self.assertRaises(Unsupported) as caught:sequence_frame(sequence(child),source='176-depth')
+        self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['category']),('176-depth','depth-limit'))
 
     def test_tag98_curve_scalar_and_payloads_have_independent_boundaries(self):
         for curve in (b'\xff',curve24(None),curve24(),curve24((b'\xff'*28,b'\x80'*28))):
