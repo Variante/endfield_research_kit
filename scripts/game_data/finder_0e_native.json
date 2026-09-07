@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      167195,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_PointFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_PointFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      66767216
+    ],
+    [
+      167194,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_PointFinder_DataForMemoryPack",
+      "Deserialize",
+      66767312
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66767216,
+      "endRva": 66767309,
+      "sha256": "048558699BBF369A4C2506CADC905C3269FA8B43213CB8F5FBCC50DE24EE2CA2",
+      "boundary": "complete formatter initialization and forwarding"
+    },
+    {
+      "startRva": 66767312,
+      "endRva": 66767540,
+      "sha256": "D405461E5D5E56C4812DFA6B5545DD2A515BFBD40262396A5BE0028A7444D10D",
+      "boundary": "member2 normal source reads and RET"
+    },
+    {
+      "startRva": 66767540,
+      "endRva": 66767600,
+      "sha256": "945C538C3DEF339FF9AA7E35E395E0B2CE3479DEB377D11EC9B314A021B8118B",
+      "boundary": "complete lazy initialization and rejoin"
+    },
+    {
+      "startRva": 83203054,
+      "endRva": 83203067,
+      "sha256": "2B125A9477EBBCDCBB34406B502A18EE23C6514ECF12FDF90475A497CD9FC17C",
+      "boundary": "existing output and rejoin"
+    },
+    {
+      "startRva": 83203123,
+      "endRva": 83203144,
+      "sha256": "56BFE624AF60284FBC6499F58C42542088F6623A0CCC9EC5E9F0941FF07297BA",
+      "boundary": "FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 59820056,
+      "endRva": 59820063,
+      "sha256": "2E8C557621CC26932BA78502E31DAAD6D68A96C21D019DC1710B6239D4B1D0AF",
+      "boundary": "finder14 exact type operand"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66767450,
+      "instructionHex": "488B15BF430E09",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66767487,
+      "instructionHex": "488B159A430E09",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "finder14member2": [
+      "BlackboardVector3",
+      "BlackboardVector3"
+    ]
+  },
+  "boundary": "Exact current finder dispatch and registered type join establish PointFinder identity. The member2 reader consumes two independent BlackboardVector3 profiles under distinct source callsites sharing MethodSpec620008. Each conditional finite vector shape is FF or header3 followed by three independent scalar payload profiles. Signed payload lengths are bounded before consumption. No source read follows the second vector. Null union, FF wrapper and nested null values remain distinct. Complete formatter, normal, initialization and cold rejoin windows retain whole instructions. Structural-only framing does not establish position/direction meaning, runtime point selection, live formatter choice, full refill/error parity or whole-BuffData EOF.",
+  "dataWindows": [
+    {
+      "startRva": 59821708,
+      "endRva": 59821712,
+      "sha256": "A91D1E65EC9BD451AD30243CAF33BBCBF6F22203507841BCBABE988EB08D7CDC",
+      "boundary": "finder14 dispatch entry"
+    },
+    {
+      "startRva": 217990624,
+      "endRva": 217990632,
+      "sha256": "9505CE5929DAED96FDC2FC1F635230949CDE94BA6F2032F9DF653CF70DC40946",
+      "boundary": "finder14 type usage"
+    },
+    {
+      "startRva": 206847288,
+      "endRva": 206847296,
+      "sha256": "CF693246EA98C3567C1DBB345ED83DC1AA7D72E251A7A3232320DEC61A04133B",
+      "boundary": "finder14 registered type slot"
+    },
+    {
+      "startRva": 220254824,
+      "endRva": 220254840,
+      "sha256": "E8AC71CDFF9904A5CC1753DEB9EE1113E46556653002299068A95E81440324FD",
+      "boundary": "finder14 class definition"
+    }
+  ]
+}

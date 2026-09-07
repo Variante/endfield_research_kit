@@ -6121,6 +6121,48 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertEqual(caught.exception.diagnostic,dict(source='finder10-header',offset=len(wire),expected=0,actual=h,category='member-count'))
                 self.assertEqual(r.records,[])
 
+    def test_finder14_independent_vectors_and_parent_continuation(self):
+        vectors=(b'\xff',b'\x03'+b'\xff'*3,b'\x03'+scalar_payload(None)+scalar_payload(b'')+scalar_payload(b'wire',128))
+        for wire in (b'\x0e',b'\xfa\x0e\x00'):
+            for first in vectors:
+                for second in vectors:
+                    value=wire+b'\x02'+first+second;r=Reader(value+b'\xaa','finder14');r.selector_finder_profile()
+                    self.assertEqual(r.pos,len(value))
+                    spans=[v for v in r.records if v['kind']=='anonymous-vector-payload']
+                    self.assertEqual([(v['start'],v['end']) for v in spans],[(len(wire)+1,len(wire)+1+len(first)),(len(wire)+1+len(first),len(value))])
+                    child=tag_ec(nested=target(selector=b'\x03'+value+bytes(8)));raw=sequence(child)
+                    self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='finder14')
+                    self.assertEqual(row['diagnostic']['offset'],19+len(child));self.assertEqual(row['diagnostic']['actual'],89)
+                    for tail in (b'\x00',b'\xff'):
+                        with self.assertRaises(FrameError) as caught:sequence_frame(raw+tail)
+                        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_finder14_every_cut_and_hard_limits(self):
+        v=b'\x03'+scalar_payload(b'wire')+b'\xff'+scalar_payload(None)
+        for value in (b'\x0e\x02'+v+v,b'\xfa\x0e\x00\x02'+v+b'\xff',b'\x0e\xff',b'\xfa\x0e\x00\xff'):
+            r=Reader(value,'finder14');r.selector_finder_profile();self.assertEqual(r.pos,len(value))
+            for n in range(len(value)):
+                out=[]
+                for data in (value,value[:n],value[:n]+b'\xff'*(len(value)-n)):
+                    r=Reader(data,'finder14-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.selector_finder_profile()
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v['kind']=='anonymous-selector-finder-profile' for v in r.records))
+                    out.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(out[0],out[1]);self.assertEqual(out[0],out[2])
+
+    def test_finder14_bad_header_lengths_and_second_vector_required(self):
+        for wire in (b'\x0e',b'\xfa\x0e\x00'):
+            for header in (0,1,3,254):
+                r=Reader(wire+bytes([header]),'finder14-header')
+                with self.assertRaises(FrameError) as caught:r.selector_finder_profile()
+                self.assertEqual(caught.exception.diagnostic,dict(source='finder14-header',offset=len(wire),expected=2,actual=header,category='member-count'))
+            for second in (b'',b'\x02',b'\x03\x03'+struct.pack('<i',-2),b'\x03\x03'+struct.pack('<i',0x7fffffff),b'\x03'+scalar_payload()[:-1]):
+                r=Reader(wire+b'\x02\xff'+second,'finder14-bad')
+                with self.assertRaises(FrameError) as caught:r.selector_finder_profile()
+                self.assertGreaterEqual(caught.exception.diagnostic['offset'],len(wire)+2)
+                self.assertFalse(any(v['kind']=='anonymous-selector-finder-profile' for v in r.records))
+
     def test_finder21_zero_members_and_parent_continuation(self):
         for value in (b'\xff',b'\x15\x00',b'\x15\xff',b'\xfa\x15\x00\x00',b'\xfa\x15\x00\xff'):
             r=Reader(value+b'\xaa','finder21');r.selector_finder_profile()
