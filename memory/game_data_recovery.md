@@ -632,6 +632,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   followed by two independent targets. Equal member-three headers do not make
   the first two profiles interchangeable: exact contexts select their distinct
   payload tails. The second target is mandatory; custom-event behavior remains unresolved.
+  `scripts/game_data/buff_187_native.json` instead consumes an AssignPair
+  list, byte and three targets. Its list reuses the member-six assignment reader;
+  reserve the byte and three minimum target headers when checking the count.
+  Each target is independent, and combo-skill meaning remains unresolved.
   `scripts/game_data/buff_5e_native.json` pins a member-five action
   ending with a required DWORD under the exact DamageTypeMask context.
   Preserve arbitrary raw bits and reject incomplete scalars; mask meaning
