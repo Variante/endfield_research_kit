@@ -621,7 +621,67 @@ def tag1b(first=b'\xff',second=b'\xff',direct=b'\xff',scalars=(b'\xff',)*6,wire=
     return wire+b'\x11'+bytes(13)+first+a+b+b'\x80\xff\x00\x7f'+c+direct+d+b'\xff'+e+b'\x80'+second+b'\x00'+f
 
 
+def tag87(items=(),wire=b'\x87'):
+    return wire+b'\x05'+bytes(13)+struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag87_nullable_list_and_independent_sequences(self):
+        for wire in (b'\x87',b'\xfa\x87\x00'):
+            for items in (None,(),(b'\xff',),(sequence(),),(b'\x03'+struct.pack('<i',-1)+b'\xff\x80',),(sequence(tag120()),b'\xff',sequence(tag87((sequence(b'\xff'),))))):
+                child=tag87(items,wire);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='87.bin')
+                self.assertEqual(row['diagnostic'],dict(source='87.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=135),row['completedRecords'])
+                self.assertFalse(row['wholeSchemaExact'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag87_every_cut_hard_limits_and_trailing(self):
+        child=tag87((sequence(tag120(scalar_payload(),scalar_payload(None),b'last')),b'\xff',sequence(tag87((sequence(b'\xff'),)))))
+        for child in (child,tag87(None),b'\x87\xff',b'\xfa\x87\x00\xff'):
+            r=Reader(child,'87-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'87-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n)
+                    self.assertFalse(any(v.get('tag')==135 and v['start']==0 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag87_headers_counts_and_incomplete_children(self):
+        for at in (1,19):
+            bad=bytearray(tag87((sequence(),)));bad[at]=42;r=Reader(bad,'87-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category']),(at,'member-count'))
+        for good,at in ((tag87(),15),(tag87((sequence(),)),20)):
+            for count in (-2,1,0x7fffffff):
+                bad=bytearray(good);struct.pack_into('<i',bad,at,count);r=Reader(bad,'87-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('87-count',at,count,'count-bounds'))
+        for missing in (1,2):
+            data=tag87((sequence(b'\xff'),))[:-missing];r=Reader(data,'87-child-tail')
+            with self.assertRaises(FrameError):r.action(0)
+            self.assertFalse(any(v.get('tag')==135 for v in r.records))
+        first=sequence(tag120());child=tag87((first,sequence(b'\x59')))
+        row=event_prefix(prefix(sequence(child)),source='87-child-unknown')
+        self.assertEqual((row['status'],row['diagnostic']['actual']),('unsupported',89))
+        self.assertTrue(any(v.get('tag')==288 for v in row['completedRecords']))
+        self.assertFalse(any(v.get('tag')==135 for v in row['completedRecords']))
+
+    def test_tag87_recursive_sequences_keep_depth_gate(self):
+        child=tag87()
+        for _ in range(33):child=tag87((sequence(child),))
+        r=Reader(child,'87-depth')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'depth-limit')
+        self.assertFalse(any(v.get('tag')==135 and v['start']==0 for v in r.records))
+
     def test_tag1b_independent_profiles_and_interleaved_members(self):
         for wire in (b'\x1b',b'\xfa\x1b\x00'):
             for first in (b'\xff',target()):

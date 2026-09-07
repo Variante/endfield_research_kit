@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124879,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_OrConditionAction_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_OrConditionAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      72371808
+    ],
+    [
+      124878,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_OrConditionAction_DataForMemoryPack",
+      "Deserialize",
+      72371904
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72371808,
+      "endRva": 72371901,
+      "sha256": "3F5F7190680B1422311BA1F16DD775DB7918386CA91F67521CE53268D5328B54",
+      "boundary": "formatter complete initialization and forwarding"
+    },
+    {
+      "startRva": 72371904,
+      "endRva": 72372235,
+      "sha256": "796367C376B522EEB162FBC2CF3E2AE3D6AE15F08C7EBFDA9AD424A148195B3B",
+      "boundary": "member5 normal source reads through RET"
+    },
+    {
+      "startRva": 72372235,
+      "endRva": 72372307,
+      "sha256": "F407CC69653EBC9445AECB4B9AEB0385ED977332F32DEFAAD18F550A2AA184D0",
+      "boundary": "complete lazy initialization and rejoin"
+    },
+    {
+      "startRva": 83776570,
+      "endRva": 83776583,
+      "sha256": "004AF0D812C7792C384149E23B6B779F41CE2BBE16BCC3074DEC5A068E84386F",
+      "boundary": "existing output preparation and rejoin"
+    },
+    {
+      "startRva": 83776639,
+      "endRva": 83776660,
+      "sha256": "4CA0B23493D3DB5D039087718977B07341B6E3F349DB62B334929C28D9A3141C",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72372076,
+      "instructionHex": "488B15B54EB808",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72372182,
+      "instructionHex": "488B15DBB9B308",
+      "cellVa": 6660819384,
+      "usageRawHex": "19A412C000000000",
+      "methodSpecIndex": 610828,
+      "methodSpec": [
+        428462,
+        -1,
+        62627
+      ],
+      "argumentRawHex": "A886258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000000087F98A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 16408,
+        "elementArguments": [
+          "F2230000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "nullable-sequence-list"
+    ]
+  },
+  "boundary": "Exact current union registration and module/token joins establish the member5 source order: common byte and three DWORDs then a terminal nullable list. MethodSpec 610828 selects List<SequenceActionData> with element instantiation 16408 and raw type record F2230000000000000000120000000000, matching the independently authenticated sequence type argument. The shared reference-list consumer supports conditional signed count/null/loop framing; each element independently uses the finite FF or member3 sequence reader, with counted action unions followed by two bytes. There is no parent tail after the list. Bound the outer count before iteration, preserve null list, empty list, null sequence and empty sequence separately, and propagate depth limits and unsupported child unions without completing the parent. Complete formatter, normal, initialization, existing-output and FF windows retain whole instructions. Structural-only framing does not establish boolean evaluation, execution order, short-circuit behavior, live provider selection, full refill/error parity or whole-BuffData EOF."
+}

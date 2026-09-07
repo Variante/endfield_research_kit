@@ -580,6 +580,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   the final scalar after the last byte. Direction's nested target children
   retain their explicit unsupported boundary. Blow-off behavior, units and
   direction conventions remain unresolved.
+  `scripts/game_data/buff_87_native.json` closes a terminal nullable list of
+  sequence profiles. Each element owns its header, action count and two final
+  bytes; there is no additional parent tail. Preserve null/empty lists and
+  null/empty sequences separately. Propagate recursive depth limits and unknown
+  child unions without completing the parent. Boolean evaluation, execution
+  order and short-circuit behavior remain unresolved.
   `scripts/game_data/buff_7e_native.json` pins a member-six reader ending
   in two target profiles. Both exact contexts select the same finite profile,
   but their null states, nested counts and source boundaries stay independent.
