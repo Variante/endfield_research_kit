@@ -698,6 +698,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a terminal byte payload after the common scalar prefix. Its reader has
   no nested provider or further tail. Keep null and empty payloads distinct;
   a managed storage-oriented name does not establish text or enum semantics.
+  `scripts/game_data/buff_fc_native.json` closes an extended-only member-six
+  action with target then scalar profile. Accept its full extended union
+  encoding while keeping the one-byte reserved marker unsupported. A completed
+  target never makes the independently nullable final scalar optional.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

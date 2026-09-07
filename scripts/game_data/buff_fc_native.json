@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121497,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_NotifyCharPassiveUIAction_DataForMemoryPack+Beyond_Gameplay_Core_NotifyCharPassiveUIAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      69693456
+    ],
+    [
+      121496,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_NotifyCharPassiveUIAction_DataForMemoryPack",
+      "Deserialize",
+      69693552
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 69693456,
+      "endRva": 69693549,
+      "sha256": "B87E8A2067BA3111CE47B4DDB5788E6EA4C24E4D7C27CF91E07B771425F74EB6",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 69693552,
+      "endRva": 69693924,
+      "sha256": "E2AD6EF25DEACDE86FE2EFD32D33B7FAB3F66DFCBC09D7D2A8908E69E1E3911C",
+      "boundary": "member6 source reads through normal RET"
+    },
+    {
+      "startRva": 69693924,
+      "endRva": 69694008,
+      "sha256": "07D6200CF3BD7CC71052DAD6A10072465A12B079EDC62F279736F2298D3B8A69",
+      "boundary": "reader lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83489906,
+      "endRva": 83489919,
+      "sha256": "3739818A3B53227FFF313D48834D4A2FEB3E064C287FF3F29DAA15F1F015673D",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83489975,
+      "endRva": 83489996,
+      "sha256": "84FEA0A9E4826C542B537A53E43EF6C5EC498208BAFE49B95CD76711038E9248",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 69693724,
+      "instructionHex": "488B15052DE108",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 69693830,
+      "instructionHex": "488B157BA5DE08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 69693871,
+      "instructionHex": "488B156AD4D708",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target-profile",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact registration and module/token joins establish direct selected source order and structural-only framing. Tag252 is admitted only as FA FC 00; single-byte FC remains reserved. The member6 action consumes the common byte/three DWORDs then TargetSettings and BlackboardDouble with no additional tail. MethodSpecs619977 and620004 join typedefs10280 and173, reusing separately pinned target and member3 payload/byte/four-byte scalar profiles. Shared provider selection remains conditional. Null target and null scalar are independent; a completed target does not waive the final scalar. Malformed counts and truncated nested payloads stop at their bounded diagnostics without completing the action. Formatter initialization, normal RET, lazy rejoin, existing-output and FF windows retain complete instructions. Passive UI meaning, live formatter choice, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
