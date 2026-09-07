@@ -364,6 +364,9 @@ only.
   The backend Map ledger covers all D3D11 buffers because native staging copies
   are not restricted to constant buffers; textures remain outside its range
   model. An unknown mapping cannot classify the destination or prove copy loss.
+  Draw-local CB Map timestamps are taken before the original D3D draw and can
+  order native command construction against that snapshot. They do not prove
+  the command executed or exclude intervening texture bindings.
   See `cpp_map_reference_native_differential.json` for the conditional model.
   The native D3D11 binder's range conversion is now
   recovered, but a causal upload generation must still connect the allocation
