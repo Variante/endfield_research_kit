@@ -1,0 +1,260 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      118713,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BlowOffAction_DataForMemoryPack+Beyond_Gameplay_Core_BlowOffAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      66278688
+    ],
+    [
+      118712,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BlowOffAction_DataForMemoryPack",
+      "Deserialize",
+      66278784
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66278688,
+      "endRva": 66278781,
+      "sha256": "82476471EB72CDA1CCAF516D304CA4D62AE1153BAA137F96FC3EDDEF186839C6",
+      "boundary": "formatter complete initialization and forwarding"
+    },
+    {
+      "startRva": 66278784,
+      "endRva": 66279589,
+      "sha256": "7A4DDDCFF87F530A86377531035EAE4BBF8D077A05F5085CBF6EC56370850B25",
+      "boundary": "member17 normal source reads through RET"
+    },
+    {
+      "startRva": 66279589,
+      "endRva": 66279697,
+      "sha256": "D6FDFC3BFB7B779A223B03D66957FAD03E4DCA52FDAB468D737649E3F3456ADC",
+      "boundary": "complete lazy initialization and rejoin"
+    },
+    {
+      "startRva": 83137022,
+      "endRva": 83137035,
+      "sha256": "5B73B83C1608C53B3BC861DAEAEFD61EB12C28FCE56351CD628EEC185A849184",
+      "boundary": "existing output preparation and rejoin"
+    },
+    {
+      "startRva": 83137091,
+      "endRva": 83137112,
+      "sha256": "9202A5F6F5FD8247419E8AAA1248E0EF682F35BFEEC6622FD9CB9709F42E2500",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66278956,
+      "instructionHex": "488B15F5471509",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66279062,
+      "instructionHex": "488B156BC01209",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66279103,
+      "instructionHex": "488B155AEF0B09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66279144,
+      "instructionHex": "488B1531EF0B09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66279185,
+      "instructionHex": "488B15B0441509",
+      "cellVa": 6661118920,
+      "usageRawHex": "3DE512C000000000",
+      "methodSpecIndex": 619166,
+      "methodSpec": [
+        428448,
+        -1,
+        42248
+      ],
+      "argumentRawHex": "73080000000000000000118000000000",
+      "typeDefinition": 2163,
+      "typeName": "Beyond.Gameplay.ControlledStateDeadOption",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66279225,
+      "instructionHex": "488B15E0EE0B09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66279266,
+      "instructionHex": "488B157F441509",
+      "cellVa": 6661118952,
+      "usageRawHex": "D1EA12C000000000",
+      "methodSpecIndex": 619880,
+      "methodSpec": [
+        428464,
+        -1,
+        14417
+      ],
+      "argumentRawHex": "2A280000000000000000120000000000",
+      "typeDefinition": 10282,
+      "typeName": "Beyond.Gameplay.Core.DirectionSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66279307,
+      "instructionHex": "488B158EEE0B09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66279382,
+      "instructionHex": "488B1543EE0B09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66279457,
+      "instructionHex": "488B15E0BE1209",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66279532,
+      "instructionHex": "488B15ADED0B09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member17": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target-profile",
+      "scalar-payload",
+      "scalar-payload",
+      "scalar32",
+      "scalar-payload",
+      "direction-profile",
+      "scalar-payload",
+      "byte",
+      "scalar-payload",
+      "byte",
+      "target-profile",
+      "byte",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact current union registration and module/token joins establish the member17 source order. Two target contexts select MethodSpec 619977, six independent scalar payload contexts select 620004, and the direct direction context selects 619880. These reuse the finite target, scalar and direction grammars, with direction source consumers pinned in buff_ec_native.json and the explicit four-byte scalar proof in buff_35_native.json. The extra scalar32 context adds no header. Preserve all independent null profiles, raw scalar bits and interleaved bytes; the final scalar payload remains mandatory after the last byte. Unknown nested target or direction children leave the parent incomplete. Complete formatter, normal, initialization, existing-output and FF windows retain whole instructions. Structural-only framing does not establish blow-off behavior, units, direction convention, target ownership, live provider selection, full refill/error parity or whole-BuffData EOF."
+}

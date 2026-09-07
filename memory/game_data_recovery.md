@@ -574,6 +574,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   contexts do not merge their null states; completed targets do not replace
   the final query header, count or elements. Unknown target children leave the
   parent incomplete. Dispel behavior and query-tag meanings remain unresolved.
+  `scripts/game_data/buff_1b_native.json` interleaves two target profiles,
+  six scalar payloads and a direct direction profile with bytes and a DWORD.
+  Repeated scalar contexts select independent variable-width instances; require
+  the final scalar after the last byte. Direction's nested target children
+  retain their explicit unsupported boundary. Blow-off behavior, units and
+  direction conventions remain unresolved.
   `scripts/game_data/buff_7e_native.json` pins a member-six reader ending
   in two target profiles. Both exact contexts select the same finite profile,
   but their null states, nested counts and source boundaries stay independent.

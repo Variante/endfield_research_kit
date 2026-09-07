@@ -616,7 +616,63 @@ def tag9f(first=b'\xff',second=b'\xff',last=b'\xff',wire=b'\x9f'):
     return wire+b'\x09'+bytes(13)+b'\xff'+b'\x80\xff\x00\x7f'+first+second+last
 
 
+def tag1b(first=b'\xff',second=b'\xff',direct=b'\xff',scalars=(b'\xff',)*6,wire=b'\x1b'):
+    a,b,c,d,e,f=scalars
+    return wire+b'\x11'+bytes(13)+first+a+b+b'\x80\xff\x00\x7f'+c+direct+d+b'\xff'+e+b'\x80'+second+b'\x00'+f
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag1b_independent_profiles_and_interleaved_members(self):
+        for wire in (b'\x1b',b'\xfa\x1b\x00'):
+            for first in (b'\xff',target()):
+                for second in (b'\xff',target(direction_value=b'\xff')):
+                    for direct in (b'\xff',direction()):
+                        for scalars in ((b'\xff',)*6,tuple(scalar_payload(bytes([i])) for i in range(6)),(b'\xff',scalar_payload(None))*3):
+                            child=tag1b(first,second,direct,scalars,wire);end=19+len(child)
+                            row=event_prefix(prefix(sequence(child,b'\x59')),source='1b.bin')
+                            self.assertEqual(row['diagnostic'],dict(source='1b.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                            self.assertIn(dict(start=19,end=end,kind='union',tag=27),row['completedRecords'])
+                            self.assertFalse(row['wholeSchemaExact'])
+                            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag1b_every_cut_hard_limits_and_trailing(self):
+        for child in (tag1b(target(),target(direction_value=b'\xff'),direction(),tuple(scalar_payload(bytes([i])) for i in range(6))),tag1b(),b'\x1b\xff',b'\xfa\x1b\x00\xff'):
+            r=Reader(child,'1b-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'1b-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==27 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag1b_headers_lengths_and_incomplete_terminal_profile(self):
+        for at in (1,15,16,17,22,23,24,26,28,30):
+            bad=bytearray(tag1b());bad[at]=42;r=Reader(bad,'1b-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category']),(at,'member-count'))
+        for slot,at in enumerate((16,17,22,24,26,30)):
+            scalars=[b'\xff']*6;scalars[slot]=scalar_payload(None)
+            for count in (-2,0x7fffffff):
+                bad=bytearray(tag1b(scalars=scalars));struct.pack_into('<i',bad,at+1,count);r=Reader(bad,'1b-length')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('1b-length',at+1,count,'count-bounds'))
+        child=tag1b(scalars=(b'\xff',)*5+(scalar_payload(b'last'),))
+        for data in (child[:30],child[:-1]):
+            r=Reader(data,'1b-final')
+            with self.assertRaises(FrameError):r.action(0)
+            self.assertFalse(any(v.get('tag')==27 for v in r.records))
+            self.assertEqual(sum(v['kind']=='anonymous-scalar-payload' for v in r.records),5)
+        bad=bytearray(direction());bad[8]=1
+        row=event_prefix(prefix(sequence(tag1b(direct=bad))),source='1b-direction')
+        self.assertEqual((row['status'],row['diagnostic']['category']),('unsupported','nested-profile'))
+        self.assertFalse(any(v.get('tag')==27 for v in row['completedRecords']))
+
     def test_tag9f_independent_targets_and_terminal_query(self):
         for wire in (b'\x9f',b'\xfa\x9f\x00'):
             for first in (b'\xff',target()):
