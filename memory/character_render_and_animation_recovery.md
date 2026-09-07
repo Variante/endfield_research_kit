@@ -634,7 +634,10 @@ for sessions made before aggregate budget checks were shared.
   runtime constants.
 - The optional environment observer also samples gyroscope Tick state before
   and after the original call within its two capture windows. Missing nested
-  objects and failed reads remain distinct. Candidate driver/tween identities
+  objects and failed reads remain distinct. Metadata and native registration
+  establish Frame/Tick (8); PreLate is 256. The lab adapter uses Update for
+  polling and tween advancement. Validate enum names as well as return values.
+  Candidate driver/tween identities
   do not establish actor ownership or actual tween-advance timing; join those
   separately before changing the lab camera scheduler. See the capture README
   for collection and validation; this scope omits Streamline surfaces.
