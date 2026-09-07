@@ -228,6 +228,9 @@ only.
   Recover names from the original compressed program's referenced parameter
   record when exported metadata omits fields. Exact RB, RGB/blend, and dissolve
   variants establish this contract; see the CharEffect RB parameter audit.
+  Its blend-as-alpha mode uses neutral white for the scene RGB multiplier and
+  the texture's red channel for alpha. It does not invert texture RGB; that
+  mistranscription produces dark refractive mesh fragments.
   Offline hardware replay of the retained original first draw reproduces its
   complete RT0 exactly. This proves packet sufficiency for that color output,
   not reconstructed Unity fidelity or RT1 parity; preserve those boundaries.
