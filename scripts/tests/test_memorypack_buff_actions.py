@@ -637,7 +637,46 @@ def tag125(value=b'\xff',flag=255):
     return b'\xfa\x25\x01\x06'+bytes(13)+bytes([flag])+value
 
 
+def tag124(last=0xffffffff):
+    return b'\xfa\x24\x01\x05\x80'+struct.pack('<IIII',0xffffffff,0x80000000,0x7fc00000,last)
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag124_fixed_extent_arbitrary_final_dword(self):
+        for bits in (0,1,0x80000000,0x7fc00000,0xffffffff):
+            child=tag124(bits);self.assertEqual(len(child),21)
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='124.bin')
+            self.assertEqual(row['diagnostic'],dict(source='124.bin',offset=40,expected='supported current union tag',actual=89,category='union-tag'))
+            self.assertIn(dict(start=19,end=40,kind='union',tag=292),row['completedRecords']);self.assertFalse(row['wholeSchemaExact'])
+            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag124_every_cut_hard_limits_and_trailing(self):
+        for child in (tag124(),b'\xfa\x24\x01\xff'):
+            r=Reader(child,'124-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                out=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'124-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==292 for v in r.records))
+                    out.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(out[0],out[1]);self.assertEqual(out[0],out[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag124_bad_member_count_and_missing_last_dword(self):
+        for header in (0,4,6,254):
+            bad=bytearray(tag124());bad[3]=header;r=Reader(bad,'124-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='124-header',offset=3,expected=5,actual=header,category='member-count'))
+        for n in range(17,21):
+            r=Reader(tag124()[:n],'124-last')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],17)
+            self.assertFalse(any(v.get('tag')==292 for v in r.records))
+
+
     def test_tag125_byte_then_independent_terminal_scalar(self):
         for flag in (0,1,128,254,255):
             for scalar in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'wire',128,b'\xff'*4)):

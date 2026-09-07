@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122156,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RecordBattleDetails_DataForMemoryPack+Beyond_Gameplay_Core_RecordBattleDetails_DataForMemoryPackFormatter",
+      "Deserialize",
+      73019648
+    ],
+    [
+      122155,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RecordBattleDetails_DataForMemoryPack",
+      "Deserialize",
+      73019744
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73019648,
+      "endRva": 73019737,
+      "sha256": "963DC0980A374116C0F20049A841295D1C9EF1AB39CE0B2AA8712951DF531971",
+      "boundary": "complete formatter initialization and forwarding"
+    },
+    {
+      "startRva": 73019744,
+      "endRva": 73020125,
+      "sha256": "0081CAF41B7B011EA0EEB8B7E424F80676AD3CF1EFAE40319AB4C46CE4411DD5",
+      "boundary": "complete initialization and member5 normal reads through RET"
+    },
+    {
+      "startRva": 83863736,
+      "endRva": 83863749,
+      "sha256": "8795310AD206BE00497C688E2A95E741B436BAD053581DADB5AD0B1C7C213F0B",
+      "boundary": "existing output and rejoin"
+    },
+    {
+      "startRva": 83863805,
+      "endRva": 83863826,
+      "sha256": "ADEE1B496BDE8DBE7C1D8AA3A4EFF7B03AEC9B4DFAEDEB7CBAD7A6D5254C6F7B",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 73019979,
+      "instructionHex": "488B15D66BAE08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 73020073,
+      "instructionHex": "488B156040A708",
+      "cellVa": 6660649744,
+      "usageRawHex": "ABE812C000000000",
+      "methodSpecIndex": 619605,
+      "methodSpec": [
+        428448,
+        -1,
+        42568
+      ],
+      "argumentRawHex": "F9250000000000000000118000000000",
+      "typeDefinition": 9721,
+      "typeName": "Beyond.Gameplay.Core.RecordBattleDetails+Data+RecordType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact current union registration and module/token joins establish the member5 source order: byte and four DWORDs. Priority and RecordType contexts belong to the first and last DWORD respectively and add no serialized header. There are no nested profiles, variable payloads, counts or offsets in this body. The extended non-null record consumes twenty-one bytes; FF wrapper termination remains distinct. Preserve arbitrary raw DWORD values without assigning enum semantics. Complete formatter, initialization/normal, existing-output and FF windows retain whole instructions. Structural-only framing does not establish battle-record meaning, runtime evaluation, live formatter selection, full refill/error parity or whole-BuffData EOF."
+}
