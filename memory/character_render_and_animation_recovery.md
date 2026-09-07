@@ -370,6 +370,11 @@ only.
   and upload, rejecting overlaps even when an epoch value repeats. Calls already
   in flight before installation, suballocation continuity and intervening writes
   remain open, so reset chronology alone cannot promote lifetime or GPU ownership.
+  Global constants now retain their constructor's actual pool context and owner.
+  The global copy must match its render bridge, pinned stack-copy destination
+  and full descriptor bytes; upload candidates must share its observed reset.
+  This association is independently observed rather than borrowed from the
+  packed shader allocation, whose pool need not be the same.
   The backend Map ledger covers all D3D11 buffers because native staging copies
   are not restricted to constant buffers; textures remain outside its range
   model. An unknown mapping cannot classify the destination or prove copy loss.
