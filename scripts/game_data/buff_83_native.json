@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124794,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckUsp_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckUsp_DataForMemoryPackFormatter",
+      "Deserialize",
+      71540688
+    ],
+    [
+      124793,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckUsp_DataForMemoryPack",
+      "Deserialize",
+      71540784
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 71540688,
+      "endRva": 71540781,
+      "sha256": "FD4AFD13D61F0219D78D2583734EECF9375259F2A787A48D833C1E3896F6212D",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 71540784,
+      "endRva": 71541230,
+      "sha256": "FCE444302C230466099846EAA65C9B9B2CC67921142C3DA97F0FF8CCFA0FA940",
+      "boundary": "member8 source reads through normal RET"
+    },
+    {
+      "startRva": 71541230,
+      "endRva": 71541326,
+      "sha256": "21B3A8579ADC8727F4FEF0CBF23CB9EB0F5FB0803A5C01004AB6214CE788C4D9",
+      "boundary": "reader lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83683714,
+      "endRva": 83683727,
+      "sha256": "EC3DA9C16EC9B90D15A197A48D3AD58205671D12B91A81C8F9026669D4DCA0BE",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83683783,
+      "endRva": 83683804,
+      "sha256": "16503C505F35B17D12B9516E8A7DE94FB0C35D9B65D3515AFBB566506D4A1B49",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 71540956,
+      "instructionHex": "488B1545FDC408",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 71541062,
+      "instructionHex": "488B15DBFCC508",
+      "cellVa": 6661185064,
+      "usageRawHex": "37E512C000000000",
+      "methodSpecIndex": 619163,
+      "methodSpec": [
+        428448,
+        -1,
+        42245
+      ],
+      "argumentRawHex": "3B7B0000000000000000118000000000",
+      "typeDefinition": 31547,
+      "typeName": "Beyond.CompareType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 71541136,
+      "instructionHex": "488B157175C208",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71541177,
+      "instructionHex": "488B1560A4BB08",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "target-profile",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact registration and module/token joins establish direct selected source order and structural-only framing. The member8 action consumes the common byte/three DWORDs, another DWORD, one byte, TargetSettings and BlackboardDouble, with no additional tail. CompareType MethodSpec619163/typedef31547 is read through the DWORD helper, not a byte-sized or nested profile. MethodSpecs619977 and620004 join typedefs10280 and173 and reuse separately pinned target/scalar profiles; scalar payload retains four value bytes despite its managed name. Shared provider selection remains conditional. Null target and scalar are independent; incomplete nested profiles never complete the action. Counts and lengths remain bounded by the active hard limit. Formatter initialization, normal RET, lazy rejoin, existing-output and FF windows retain complete instructions. Usp condition meaning, live formatter choice, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

@@ -702,6 +702,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   action with target then scalar profile. Accept its full extended union
   encoding while keeping the one-byte reserved marker unsupported. A completed
   target never makes the independently nullable final scalar optional.
+  `scripts/game_data/buff_83_native.json` adds a DWORD and byte before that
+  target/scalar pair. Its CompareType context is consumed by the DWORD helper;
+  preserve the full raw width instead of inferring an enum byte or validating
+  gameplay values from the managed type name.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

@@ -566,6 +566,59 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag83_scalar32_byte_target_scalar_order(self):
+        for bits in (0,0xffffffff,0x80000000,0x7fc00000):
+            for first in (b'\xff',target()):
+                for last in (b'\xff',scalar_payload(None),scalar_payload(b'wire')):
+                    child=b'\x83\x08\xfe'+b'\xff'*12+struct.pack('<I',bits)+b'\x80'+first+last
+                    end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='83.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='83.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=131),row['completedRecords'])
+                    self.assertIn(dict(start=34,end=38,kind='anonymous-scalar32'),row['ranges'])
+                    self.assertIn(dict(start=39+len(first),end=end,kind='anonymous-scalar-payload'),row['completedRecords'])
+                    self.assertFalse(row['wholeSchemaExact'])
+                    self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag83_all_cuts_extended_null_hard_limits_and_trailing(self):
+        full=b'\x83\x08'+bytes(17)+b'\xfe'+target()+scalar_payload(b'wire')
+        for child in (full,b'\xfa\x83\x00'+full[1:],b'\x83\xff',b'\xfa\x83\x00\xff'):
+            r=Reader(child,'83-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'83-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==131 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag83_nested_count_headers_and_final_scalar_failure(self):
+        child=b'\x83\x08'+bytes(17)+b'\xfe'+target()+scalar_payload(b'wire')
+        r=Reader(child,'83-bounds');r.action(0)
+        for span in [v for v in r.ranges if v['kind'] in ('member-header','count-i32')]:
+            for value in ((0,254) if span['kind']=='member-header' else (-2,0x7fffffff)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'83-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('83-bounds',at,value))
+        r=Reader(child,'83-final',20+len(target()))
+        with self.assertRaises(FrameError):r.action(0)
+        completed=list(r.records);self.assertTrue(completed)
+        r=Reader(child,'83-final',len(child)-1)
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertEqual(r.records[:len(completed)],completed)
+        self.assertFalse(any(v.get('tag')==131 for v in r.records))
+        gap=b'\x83\x08'+bytes(18)+target(selector=b'\x03\x59')+b'\xff'
+        r=Reader(gap,'83-gap')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
+        self.assertFalse(any(v.get('tag')==131 for v in r.records))
+
     def test_tagfc_extended_only_target_then_scalar_exact_end(self):
         for first in (b'\xff',target()):
             for last in (b'\xff',scalar_payload(None),scalar_payload(b'\xff\x00')):
