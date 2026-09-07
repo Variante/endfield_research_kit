@@ -372,11 +372,15 @@ only.
   The property setter is a useful execution observation point, but it is not the
   final D3D slot binding. Direct and queued device routes both exist; an observed
   wrapper vtable alone cannot select between them. The observer now records
-  bounded callback/setter pairs with exact loaded-code and patch checks, but
+  bounded callback/setter pairs with exact loaded-code and patch checks, and
   submissions retain their enclosing render bridge and full texture-pair bytes
   for callback candidate matching. Repeated identical submissions remain
   ambiguous; pointer/byte equality does not establish allocation continuity or
   prepared graph-command ownership. Final resource binding remains unproven.
+  Callback snapshots now distinguish the global renderer from the TLS device
+  used for native texture-pointer lookup and require its table to match actual
+  setters. Binary descriptor-array paths alone cannot identify the active backend;
+  retain their runtime selection gap before extending GPU-binding observation.
   Callback-owned allocation bytes are read before the
   native callback frees them; completion cannot establish allocation lifetime.
   See
