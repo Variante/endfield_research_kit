@@ -611,6 +611,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
+  wrapper. Its constructor consumes no source fields; short/extended tags,
+  member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity
+  does not prove runtime enemy ownership or selection.
   `scripts/game_data/finder_10_native.json` pins finder 16 and its nested
   Vector2 reader. Member nine consumes scalar, Vector2, Vector3, three scalars,
   DWORD and two bytes; Vector2 independently contains two scalar payloads.

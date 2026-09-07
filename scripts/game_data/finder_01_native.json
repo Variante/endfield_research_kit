@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      167036,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AllEnemyFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_AllEnemyFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      75157104
+    ],
+    [
+      167035,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AllEnemyFinder_DataForMemoryPack",
+      "Deserialize",
+      75157200
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 75157104,
+      "endRva": 75157193,
+      "sha256": "6AD6C1C14E6D38474628B3BE834ED9B9D478ED5C2768B473B141E7D11230CDA4",
+      "boundary": "complete formatter initialization and forwarding"
+    },
+    {
+      "startRva": 75157200,
+      "endRva": 75157378,
+      "sha256": "2905EE89D6FB8E82973925158CEF85B7110EDBCDF796159A483AE993E9772720",
+      "boundary": "complete initialization and zero-member reader through RET"
+    },
+    {
+      "startRva": 84160108,
+      "endRva": 84160121,
+      "sha256": "8746E49C21185FD637B91B471853930A3669F8CC31BA6226AAB1E1CB70D56F39",
+      "boundary": "existing output and rejoin"
+    },
+    {
+      "startRva": 84160177,
+      "endRva": 84160198,
+      "sha256": "E5BD2DC91C3ECD9A5A2673A166AA1720869810140F557EDF5921E06969F2D9D3",
+      "boundary": "FF clear and rejoin"
+    },
+    {
+      "startRva": 59820599,
+      "endRva": 59820606,
+      "sha256": "DE4B77CAD78D284024C89DFB782BCD09F2B4D597713E4F58237D52FD7C8BFF7B",
+      "boundary": "finder1 exact type operand"
+    }
+  ],
+  "nestedContexts": [],
+  "anonymousReadOrder": {
+    "finder1member0": []
+  },
+  "boundary": "Exact current finder dispatch and registered type join establish AllEnemyFinder identity. The non-null wrapper requires member count zero and has no fields, counts, nested profiles or terminal bytes. Short and extended encodings consume two and four bytes respectively; FF wrapper and null union remain distinct. Constructor and output initialization do not consume source members. Complete formatter, initialization/normal and cold rejoin windows retain whole instructions. Structural-only framing does not establish enemy ownership, runtime selection, live formatter choice, full refill/error parity or whole-BuffData EOF.",
+  "dataWindows": [
+    {
+      "startRva": 59821656,
+      "endRva": 59821660,
+      "sha256": "FFDF260385DE0D482D0558D683F4044A728EDED96E7DF14143CAD18A12EBD4F4",
+      "boundary": "finder1 dispatch entry"
+    },
+    {
+      "startRva": 217990432,
+      "endRva": 217990440,
+      "sha256": "29F27FB183BBD7C081DAC1FD4BACE4D6F859C9D1626000DD71066D57AD0C88CE",
+      "boundary": "finder1 type usage"
+    },
+    {
+      "startRva": 206847032,
+      "endRva": 206847040,
+      "sha256": "177AF0A7702622E728FD6705B2F1EE258D0C8BC001EC54E7DAB494A597F8FA3D",
+      "boundary": "finder1 registered type slot"
+    },
+    {
+      "startRva": 220268904,
+      "endRva": 220268920,
+      "sha256": "8D934CFF0A1AE5631B0C0C4ADF546092FBB902D4FE5C2109693B4C935005BDD1",
+      "boundary": "finder1 class definition"
+    }
+  ]
+}
