@@ -371,7 +371,12 @@ only.
   batches them through a device callback, and updates renderer property state.
   The property setter is a useful execution observation point, but it is not the
   final D3D slot binding. Direct and queued device routes both exist; an observed
-  wrapper vtable alone cannot select between them. See
+  wrapper vtable alone cannot select between them. The observer now records
+  bounded callback/setter pairs with exact loaded-code and patch checks, but
+  these observations still require a join to the originating graph/batch and
+  final resource binding. Callback-owned allocation bytes are read before the
+  native callback frees them; completion cannot establish allocation lifetime.
+  See
   `cpp_cloud_command_execution.json` for the pinned path and remaining joins.
   See `cpp_map_reference_native_differential.json` for the conditional model.
   The native D3D11 binder's range conversion is now
