@@ -367,6 +367,12 @@ only.
   Draw-local CB Map timestamps are taken before the original D3D draw and can
   order native command construction against that snapshot. They do not prove
   the command executed or exclude intervening texture bindings.
+  Native graph execution resolves texture handles into property/texture pairs,
+  batches them through a device callback, and updates renderer property state.
+  The property setter is a useful execution observation point, but it is not the
+  final D3D slot binding. Direct and queued device routes both exist; an observed
+  wrapper vtable alone cannot select between them. See
+  `cpp_cloud_command_execution.json` for the pinned path and remaining joins.
   See `cpp_map_reference_native_differential.json` for the conditional model.
   The native D3D11 binder's range conversion is now
   recovered, but a causal upload generation must still connect the allocation
