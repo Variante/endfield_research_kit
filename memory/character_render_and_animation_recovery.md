@@ -381,6 +381,10 @@ only.
   Draw-local CB Map timestamps are taken before the original D3D draw and can
   order native command construction against that snapshot. They do not prove
   the command executed or exclude intervening texture bindings.
+  A hooked WARP counterexample overwrites and restores a constant buffer by GPU
+  copy without changing its draw-time Map generation. Matching endpoint bytes
+  and Map generations cannot close intervening writes; resource lifetime and
+  coverage of GPU writers remain separate requirements.
   Native graph execution resolves texture handles into property/texture pairs,
   batches them through a device callback, and updates renderer property state.
   The property setter is a useful execution observation point, but it is not the
