@@ -1,0 +1,133 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124867,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_ModifyCollectedBuffBbValue_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_ModifyCollectedBuffBbValue_DataForMemoryPackFormatter",
+      "Deserialize",
+      69303456
+    ],
+    [
+      124866,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_ModifyCollectedBuffBbValue_DataForMemoryPack",
+      "Deserialize",
+      69303552
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 69303456,
+      "endRva": 69303549,
+      "sha256": "1D59B7D712124AA59C37C4264C7AB07C530C14D82231A5041453BEE1CF9AE545",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 69303552,
+      "endRva": 69304033,
+      "sha256": "D6B31B141CEAECCA0803B94480881E1F9F81DFA331C36A1D1D29083ED52BB86F",
+      "boundary": "member9 source reads through normal RET"
+    },
+    {
+      "startRva": 69304033,
+      "endRva": 69304105,
+      "sha256": "7E2A87B9B1D5AF042F862C9D164EDEB47745960E79DCA51244FDB41E77134383",
+      "boundary": "reader lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83457276,
+      "endRva": 83457289,
+      "sha256": "CFFBAF5DED4C25CB81F7F73884F14566E60833EF16A9AC34EAEF6DDB95CC7373",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83457345,
+      "endRva": 83457366,
+      "sha256": "1D482AFECEC5BA7B734552DA473884F62C85F840E19317D2BDCC4286A45E399D",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 69303724,
+      "instructionHex": "488B157520E708",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 69303830,
+      "instructionHex": "488B1503C8DD08",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 69303905,
+      "instructionHex": "488B15B8C7DD08",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 69303946,
+      "instructionHex": "488B158FC7DD08",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member9": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload",
+      "byte-payload",
+      "scalar-payload",
+      "scalar-payload",
+      "byte"
+    ]
+  },
+  "boundary": "Exact registration and module/token joins establish direct selected source order and structural-only framing. The member9 action consumes the common byte/three DWORDs, scalar profile, byte payload, two more scalar profiles and final byte. All three nested contexts resolve MethodSpec620004/typedef173 but represent independent serialized instances, each using the separately pinned FF or member3 payload/byte/four-byte value grammar. Shared provider selection remains conditional. Null profiles, null payloads and empty payloads remain distinct. Lengths are bounded by the active hard limit before consumption. Completed profiles survive later failure, but the final byte remains mandatory and incomplete actions never complete. Formatter initialization, normal RET, lazy rejoin, existing-output and FF windows retain complete instructions. Collected-value modification meaning, live formatter choice, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

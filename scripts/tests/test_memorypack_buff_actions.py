@@ -566,6 +566,57 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag86_three_independent_scalars_payload_and_final_byte(self):
+        for first in (b'\xff',scalar_payload(None)):
+            for middle in (b'\xff',scalar_payload(b'wire')):
+                for last in (b'\xff',scalar_payload(b'')):
+                    for value in (None,b'',b'\xff\x00'):
+                        child=b'\x86\x09\xfe'+b'\xff'*12+first+payload(value)+middle+last+b'\x80'
+                        end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='86.bin')
+                        self.assertEqual(row['diagnostic'],dict(source='86.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                        self.assertIn(dict(start=19,end=end,kind='union',tag=134),row['completedRecords'])
+                        expected=[];at=34
+                        for part,skip in ((first,len(payload(value))),(middle,0),(last,0)):
+                            expected.append((at,at+len(part)));at+=len(part)+skip
+                        actual=[(v['start'],v['end']) for v in row['completedRecords'] if v['kind']=='anonymous-scalar-payload']
+                        self.assertEqual(actual,expected)
+                        self.assertFalse(row['wholeSchemaExact'])
+                        self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag86_all_cuts_extended_null_hard_limits_and_trailing(self):
+        full=b'\x86\x09'+bytes(13)+scalar_payload(None)+payload(b'wire')+scalar_payload(b'\xff')+scalar_payload(b'')+b'\xfe'
+        for child in (full,b'\xfa\x86\x00'+full[1:],b'\x86\xff',b'\xfa\x86\x00\xff'):
+            r=Reader(child,'86-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'86-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==134 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag86_bad_headers_lengths_and_mandatory_byte_after_profiles(self):
+        child=b'\x86\x09'+bytes(13)+scalar_payload(None)+payload(b'wire')+scalar_payload(b'\xff')+scalar_payload(b'')+b'\xfe'
+        # Independently calculated header and signed-length offsets.
+        for at,values in ((1,(0,254)),(15,(0,254)),(33,(0,254)),(44,(0,254)),
+                          (16,(-2,0x7fffffff)),(25,(-2,0x7fffffff)),(34,(-2,0x7fffffff)),(45,(-2,0x7fffffff))):
+            for value in values:
+                bad=bytearray(child)
+                if at in (1,15,33,44):bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'86-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('86-bounds',at,value))
+        r=Reader(child,'86-tail');r.action(0);completed=[v for v in r.records if v.get('tag')!=134]
+        r=Reader(child,'86-tail',len(child)-1)
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertEqual(r.records,completed)
+        self.assertEqual(len([v for v in r.records if v['kind']=='anonymous-scalar-payload']),3)
+
     def test_tag13a_two_payloads_have_independent_null_and_length_boundaries(self):
         for first in (None,b'',b'\xff\x00'):
             for second in (None,b'',b'wire'):
