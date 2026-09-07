@@ -83,6 +83,10 @@ def tag142(values=(None,b'',b'wire',b'\xff\x00',b'last'),nested=b'\xff',last=0xf
     return b'\xfa\x42\x01\x0b\xfe'+b'\xff'*12+payload(values[0])+nested+b''.join(payload(v) for v in values[1:])+struct.pack('<I',last)
 
 
+def tag98(first=None,curve=b'\xff',scalar=b'\xff',last=b'wire'):
+    return b'\x98\x09\xfe'+b'\xff'*12+payload(first)+curve+scalar+payload(last)+b'\xff'
+
+
 def tag140(value=None,first=b'\xff',second=b'\xff'):
     return b'\xfa\x40\x01\x07\xfe'+b'\xff'*12+payload(value)+first+second
 
@@ -1798,6 +1802,48 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
         self.assertFalse(any(v.get('tag')==322 for v in r.records))
         self.assertLess(r.pos,len(gap)-sum(len(payload(v)) for v in (b'',b'wire',b'\xff\x00',b'last'))-4)
+
+    def test_tag98_curve_scalar_and_payloads_have_independent_boundaries(self):
+        for curve in (b'\xff',curve24(None),curve24(),curve24((b'\xff'*28,b'\x80'*28))):
+            for scalar in (b'\xff',b'\x03'+payload(None)+b'\xfe'+b'\xff'*4):
+                for first,last in ((None,b''),(b'wire',None),(b'\xff',b'\x00\xff')):
+                    child=tag98(first,curve,scalar,last);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='98.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='98.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=152),row['completedRecords'])
+                    self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag98_every_cut_hard_limit_extended_null_wrapper_and_trailing(self):
+        full=tag98(b'wire',curve24((b'\xff'*28,)),b'\x03'+payload(b'\xff')+b'\xfe'+b'\x80'*4)
+        for child in (full,tag98(),b'\x98\xff',b'\xfa\x98\x00'+full[1:]):
+            r=Reader(child,'98-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'98-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==152 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag98_bad_headers_counts_and_tail_failure_preserves_profiles(self):
+        child=tag98(b'wire',curve24((b'\xff'*28,)),b'\x03'+payload(None)+b'\xff'+b'\x80'*4)
+        r=Reader(child,'98-bounds');r.action(0)
+        for span in [v for v in r.ranges if v['kind'] in ('member-header','count-i32')]:
+            for value in ((0,254) if span['kind']=='member-header' else (-2,0x7fffffff)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'98-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('98-bounds',at,value))
+        r=Reader(child,'98-tail');r.action(0);completed=[v for v in r.records if v.get('tag')!=152]
+        r=Reader(child,'98-tail',len(child)-1)
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertTrue(completed);self.assertEqual(r.records,completed)
 
     def test_tag140_payload_two_independent_targets_exact_end(self):
         for value in (None,b'',b'wire',b'\xff\x00'):

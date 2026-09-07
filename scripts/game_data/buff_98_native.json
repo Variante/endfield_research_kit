@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119797,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CurveEvaluateFloat_DataForMemoryPack+Beyond_Gameplay_Core_CurveEvaluateFloat_DataForMemoryPackFormatter",
+      "Deserialize",
+      68106912
+    ],
+    [
+      119796,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CurveEvaluateFloat_DataForMemoryPack",
+      "Deserialize",
+      68107008
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 68106912,
+      "endRva": 68107005,
+      "sha256": "D13F2EA74DAE8CCD638BBFF5263C95420D717CE73B0BBDCDCFD595E81D83208B",
+      "boundary": "formatter forwarding with complete initialization"
+    },
+    {
+      "startRva": 68107008,
+      "endRva": 68107482,
+      "sha256": "FB45E5598370C6116E9D5540D6A5BADB793A727A2D3B5D1567C8A51047490D3E",
+      "boundary": "member9 source reads through normal RET"
+    },
+    {
+      "startRva": 68107482,
+      "endRva": 68107566,
+      "sha256": "71900386F94C99899B9F07D4B67F39C266EBEAB0A77CCE936EEA9C1AB837BC3C",
+      "boundary": "reader lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83340366,
+      "endRva": 83340379,
+      "sha256": "BFCBE338E805198871B24A75DCEF464B6D0AA84808ABE6ABC0291B4310673568",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83340435,
+      "endRva": 83340456,
+      "sha256": "77B1890DCE48700EEAFC04F3ADFEC1501A33EF77905D1B177D8FB320CA9A0A54",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 68107180,
+      "instructionHex": "488B157562F908",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 68107320,
+      "instructionHex": "488B150998FF08",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 68107361,
+      "instructionHex": "488B15B809F008",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member9": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "curve",
+      "scalar-payload",
+      "byte-payload",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member9 action consumes common byte/three DWORDs, signed-length payload, AnimationCurve, BlackboardDouble profile, second signed-length payload and final byte. Curve MethodSpec619846 joins typedef43514 and the independently pinned FF or member3 raw8/nullable-count/raw28-key grammar. Scalar MethodSpec620004 joins typedef173 and its separately pinned FF or member3 payload/byte/four-byte value grammar. Shared provider selection remains conditional. Null curve, null key list, null scalar profile and null payloads remain distinct. Key counts are bounded before multiplication or iteration; later payload and final byte remain mandatory after completed nested profiles. Formatter initialization, reader initialization, normal RET, existing-output and FF paths retain complete instructions. Curve-evaluation meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
