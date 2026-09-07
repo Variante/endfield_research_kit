@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119451,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckBuffEnhanceChangedLayer_DataForMemoryPack+Beyond_Gameplay_Core_CheckBuffEnhanceChangedLayer_DataForMemoryPackFormatter",
+      "Deserialize",
+      72478512
+    ],
+    [
+      119450,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckBuffEnhanceChangedLayer_DataForMemoryPack",
+      "Deserialize",
+      72478608
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72478512,
+      "endRva": 72478601,
+      "sha256": "461756E5090B8703976FA78DF4FC3D2C639110CCB08B75A2562DAB9D263748F2",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 72478608,
+      "endRva": 72479080,
+      "sha256": "580F5EFB77821E4D72CC87F32DF207020039E86C14E0A84B038885F5D1F39170",
+      "boundary": "member7 source reads with inline initialization through normal RET"
+    },
+    {
+      "startRva": 83794804,
+      "endRva": 83794817,
+      "sha256": "AA1EAEA9B7D4209F3F57DD852DE7FA1081FC0288C35BDABA8146757F3299ABB7",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83794873,
+      "endRva": 83794894,
+      "sha256": "D6626A4B3E8C93EE744E3674248C1BFBAE6B57F56624E1939164FBD63A50D1EB",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72478855,
+      "instructionHex": "488B159AADB608",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72478961,
+      "instructionHex": "488B1530ADB708",
+      "cellVa": 6661185064,
+      "usageRawHex": "37E512C000000000",
+      "methodSpecIndex": 619163,
+      "methodSpec": [
+        428448,
+        -1,
+        42245
+      ],
+      "argumentRawHex": "3B7B0000000000000000118000000000",
+      "typeDefinition": 31547,
+      "typeName": "Beyond.CompareType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72478997,
+      "instructionHex": "488B150C55AD08",
+      "cellVa": 6660507176,
+      "usageRawHex": "CBEB12C000000000",
+      "methodSpecIndex": 620005,
+      "methodSpec": [
+        428464,
+        -1,
+        17006
+      ],
+      "argumentRawHex": "AE000000000000000000120000000000",
+      "typeDefinition": 174,
+      "typeName": "Beyond.Blackboard+BlackboardInt",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload-profile",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member7 action consumes common byte/three DWORDs, one further DWORD, a BlackboardInt profile and a terminal signed-length byte payload, with no extra source tail. The exact BlackboardInt context reuses buff_16b_native.json, whose reader consumes header3, byte payload, byte and four raw bytes. CompareType identifies the extra DWORD context but adds no nested member or value restriction. Short and extended union encodings retain distinct widths. Preserve independently null nested profile and terminal payload; completed children cannot complete an action with a failed final payload. Formatter and inline reader initialization, normal RET, existing-output and FF windows retain complete instructions; output setters add no source bytes. Buff-layer comparison behavior, payload meaning, ownership, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

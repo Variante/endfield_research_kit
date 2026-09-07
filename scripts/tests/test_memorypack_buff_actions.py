@@ -573,6 +573,51 @@ def tag183(first=(),second=(),scalar1=b'\xff',scalar2=b'\xff',curve=b'\xff',valu
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag3a_scalar_and_terminal_payload_independent_nulls(self):
+        for wire in (b'\x3a',b'\xfa\x3a\x00'):
+            for nested in (b'\xff',scalar_payload(None),scalar_payload(b'\xff\x00')):
+                for value in (None,b'',b'\xff\xfa\x3a\x00'):
+                    child=wire+b'\x07'+b'\xff'*17+nested+payload(value)
+                    end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='3a.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='3a.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=58),row['completedRecords'])
+                    self.assertFalse(row['wholeSchemaExact'])
+                    self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag3a_every_cut_hard_limits_and_trailing(self):
+        for wire in (b'\x3a',b'\xfa\x3a\x00'):
+            for child in (wire+b'\x07'+bytes(17)+scalar_payload()+payload(b'tail'),wire+b'\xff'):
+                r=Reader(child,'3a-cut');r.action(0);self.assertEqual(r.pos,len(child))
+                for n in range(len(child)):
+                    results=[]
+                    for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                        r=Reader(data,'3a-cut',n)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==58 for v in r.records))
+                        results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+                for tail in (b'\x00',b'\xff'):
+                    with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag3a_bad_headers_lengths_and_partial_terminal(self):
+        for wire in (b'\x3a',b'\xfa\x3a\x00'):
+            base=wire+b'\x07'+bytes(17)
+            for at in (len(wire),len(base)):
+                bad=bytearray(base+b'\xff'+payload(None));bad[at]=42;r=Reader(bad,'3a-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category']),(at,'member-count'))
+            for lead in (base+b'\x03',base+b'\xff'):
+                for count in (-2,0x7fffffff):
+                    r=Reader(lead+struct.pack('<i',count),'3a-length')
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    d=caught.exception.diagnostic
+                    self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('3a-length',len(lead),count,'count-bounds'))
+            r=Reader(base+scalar_payload()+payload(b'tail')[:-1],'3a-terminal')
+            with self.assertRaises(FrameError):r.action(0)
+            self.assertFalse(any(v.get('tag')==58 for v in r.records))
+            self.assertTrue(any(v['kind']=='anonymous-byte-payload' for v in r.records))
+
     def test_tag05_terminal_target_encodings_and_nulls(self):
         for wire in (b'\x05',b'\xfa\x05\x00'):
             for nested in (b'\xff',target(),target(direction_value=b'\xff')):

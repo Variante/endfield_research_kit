@@ -533,6 +533,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   authenticated reader proving payload/byte/DWORD source order; equal headers
   and managed names alone do not justify profile reuse. An unknown target
   keeps the enclosing action incomplete. Spawning behavior remains unresolved.
+  `scripts/game_data/buff_3a_native.json` independently selects that same Int
+  profile after an extra DWORD and before a terminal byte payload. Preserve
+  independent null states and reject an incomplete terminal payload even after
+  the nested profile completes; comparison names do not establish layer meaning.
   `scripts/game_data/buff_7e_native.json` pins a member-six reader ending
   in two target profiles. Both exact contexts select the same finite profile,
   but their null states, nested counts and source boundaries stay independent.
