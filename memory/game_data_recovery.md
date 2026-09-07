@@ -586,6 +586,9 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   null/empty sequences separately. Propagate recursive depth limits and unknown
   child unions without completing the parent. Boolean evaluation, execution
   order and short-circuit behavior remain unresolved.
+  `scripts/game_data/finder_15_native.json` independently joins selector-finder
+  union 21 to a member-zero SourceFinder reader. It has no serialized members
+  or nested providers; runtime source-entity selection remains unresolved.
   `scripts/game_data/finder_0a_native.json` independently pins selector-finder
   union 10 to a member-zero reader. It consumes no fields after its header;
   constructor initialization adds no source bytes. Keep finder, validator and

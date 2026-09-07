@@ -6121,6 +6121,38 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertEqual(caught.exception.diagnostic,dict(source='finder10-header',offset=len(wire),expected=0,actual=h,category='member-count'))
                 self.assertEqual(r.records,[])
 
+    def test_finder21_zero_members_and_parent_continuation(self):
+        for value in (b'\xff',b'\x15\x00',b'\x15\xff',b'\xfa\x15\x00\x00',b'\xfa\x15\x00\xff'):
+            r=Reader(value+b'\xaa','finder21');r.selector_finder_profile()
+            self.assertEqual(r.pos,len(value));self.assertEqual(r.records[-1],dict(start=0,end=len(value),kind='anonymous-selector-finder-profile'))
+            child=tag_ec(nested=target(selector=b'\x03'+value+bytes(8)))
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='finder21')
+            self.assertEqual(row['diagnostic']['offset'],19+len(child));self.assertEqual(row['diagnostic']['actual'],89)
+            self.assertFalse(row['wholeSchemaExact'])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_finder21_every_cut_and_hard_limit_mutation(self):
+        for value in (b'\x15\x00',b'\x15\xff',b'\xfa\x15\x00\x00',b'\xfa\x15\x00\xff'):
+            for n in range(len(value)):
+                out=[]
+                for data in (value,value[:n],value[:n]+b'\xff'*(len(value)-n)):
+                    r=Reader(data,'finder21-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.selector_finder_profile()
+                    self.assertLessEqual(r.pos,n);self.assertEqual(r.records,[])
+                    out.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(out[0],out[1]);self.assertEqual(out[0],out[2])
+
+    def test_finder21_wrong_member_count_stops_at_header(self):
+        for wire in (b'\x15',b'\xfa\x15\x00'):
+            for h in (1,3,254):
+                r=Reader(wire+bytes([h])+bytes(32),'finder21-header')
+                with self.assertRaises(FrameError) as caught:r.selector_finder_profile()
+                self.assertEqual(caught.exception.diagnostic,dict(source='finder21-header',offset=len(wire),expected=0,actual=h,category='member-count'))
+                self.assertEqual(r.records,[])
+
     def test_selector_finder_tag2_zero_members_and_null(self):
         for value in (b'\xff',b'\x02\x00',b'\x02\xff',b'\xfa\x02\x00\x00',b'\xfa\x02\x00\xff'):
             raw=sequence(tag_ec(nested=target(selector=b'\x03'+value+bytes(8))))
