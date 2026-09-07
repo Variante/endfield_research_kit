@@ -573,6 +573,50 @@ def tag183(first=(),second=(),scalar1=b'\xff',scalar2=b'\xff',curve=b'\xff',valu
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag05_terminal_target_encodings_and_nulls(self):
+        for wire in (b'\x05',b'\xfa\x05\x00'):
+            for nested in (b'\xff',target(),target(direction_value=b'\xff')):
+                child=wire+b'\x05'+b'\xff'*13+nested
+                end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='05.bin')
+                self.assertEqual(row['diagnostic'],dict(source='05.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=5),row['completedRecords'])
+                self.assertFalse(row['wholeSchemaExact'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag05_every_cut_hard_limits_and_trailing(self):
+        for wire in (b'\x05',b'\xfa\x05\x00'):
+            for child in (wire+b'\x05'+bytes(13)+target(),wire+b'\xff'):
+                r=Reader(child,'05-cut');r.action(0);self.assertEqual(r.pos,len(child))
+                for n in range(len(child)):
+                    results=[]
+                    for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                        r=Reader(data,'05-cut',n)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==5 for v in r.records))
+                        results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+                for tail in (b'\x00',b'\xff'):
+                    with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag05_bad_headers_lengths_and_unknown_selector(self):
+        for wire in (b'\x05',b'\xfa\x05\x00'):
+            base=wire+b'\x05'+bytes(13)
+            for at in (len(wire),len(base)):
+                bad=bytearray(base+b'\xff');bad[at]=42;r=Reader(bad,'05-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category']),(at,'member-count'))
+            for count in (-2,0x7fffffff):
+                r=Reader(base+b'\x0d\xff'+struct.pack('<i',count),'05-length')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('05-length',len(base)+2,count,'count-bounds'))
+            r=Reader(base+target(selector=b'\x03\x59'),'05-selector')
+            with self.assertRaises(Unsupported) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['category'],caught.exception.diagnostic['actual']),('nested-profile',89))
+            self.assertFalse(any(v.get('tag')==5 and v.get('kind')=='union' for v in r.records))
+            self.assertTrue(any(v['kind']=='anonymous-byte-payload' for v in r.records))
+
     def test_tag16f_byte_target_and_terminal_scalar(self):
         for t in (b'\xff',target(),target(direction_value=b'\xff')):
             for v in (b'\xff',scalar_payload(None),scalar_payload(b'\xff\x00')):
