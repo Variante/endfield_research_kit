@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124511,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckProjectileIgnoreImmuneLevel_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckProjectileIgnoreImmuneLevel_DataForMemoryPackFormatter",
+      "Deserialize",
+      73578352
+    ],
+    [
+      124510,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckProjectileIgnoreImmuneLevel_DataForMemoryPack",
+      "Deserialize",
+      73578448
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73578352,
+      "endRva": 73578441,
+      "sha256": "0889790671CDB0107B366C7E76D27D037D96CFFF40FC1F16294D124295085F2B",
+      "boundary": "complete formatter initialization and forwarding"
+    },
+    {
+      "startRva": 73578448,
+      "endRva": 73578885,
+      "sha256": "7FEDBB857AB96041E248EE80FE86DEAF55237F9111154740F1CD28F8C49D53A5",
+      "boundary": "complete initialization and member6 normal reads through RET"
+    },
+    {
+      "startRva": 83928360,
+      "endRva": 83928373,
+      "sha256": "9FD3022BA604CEAAE4AC5312BDC0746A0A94B1F88821B93C444C062A3B879040",
+      "boundary": "existing output and rejoin"
+    },
+    {
+      "startRva": 83928429,
+      "endRva": 83928450,
+      "sha256": "04C5ABE1CA2DFAD9638FEB1A73A4960E0C7700FEF815296F3080E3E22D6A35DD",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 73578695,
+      "instructionHex": "488B155AE5A508",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 73578797,
+      "instructionHex": "488B1554DEA008",
+      "cellVa": 6660790152,
+      "usageRawHex": "7DE712C000000000",
+      "methodSpecIndex": 619454,
+      "methodSpec": [
+        428448,
+        -1,
+        42456
+      ],
+      "argumentRawHex": "DC340000000000000000118000000000",
+      "typeDefinition": 13532,
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckProjectileIgnoreImmuneLevel+CheckType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 73578833,
+      "instructionHex": "488B15B82FAC08",
+      "cellVa": 6661531920,
+      "usageRawHex": "89E612C000000000",
+      "methodSpecIndex": 619332,
+      "methodSpec": [
+        428448,
+        -1,
+        42366
+      ],
+      "argumentRawHex": "62050000000000000000118000000000",
+      "typeDefinition": 1378,
+      "typeName": "Beyond.Gameplay.ProjectileIgnoreImmuneLevel",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact current union registration and module/token joins establish member6 source order: one byte and five DWORDs. Three scalar generic contexts add no serialized headers. There are no nested profiles, variable payloads, counts or offsets. Short and extended non-null records occupy twenty-three and twenty-five bytes respectively; FF wrapper termination is distinct. Both terminal DWORDs are required and preserve arbitrary raw bits without inferred enum semantics. Complete formatter, initialization/normal, existing-output and FF windows retain whole instructions. Structural-only framing does not establish projectile immunity behavior, runtime evaluation, live formatter selection, full refill/error parity or whole-BuffData EOF."
+}

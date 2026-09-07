@@ -649,7 +649,50 @@ def tag71(last=255,extended=False):
     return (b'\xfa\x71\x00' if extended else b'\x71')+b'\x05\x80'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+bytes([last])
 
 
+def tag70(a=0xffffffff,b=0x80000000,extended=False):
+    return (b'\xfa\x70\x00' if extended else b'\x70')+b'\x06\x80'+struct.pack('<IIIII',0xffffffff,0x80000000,0x7fc00000,a,b)
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag70_both_encodings_fixed_extent_and_raw_terminal_dwords(self):
+        for extended in (False,True):
+            size=25 if extended else 23
+            for a,b in ((0,0),(1,0xffffffff),(0x80000000,0x7fc00000),(0xffffffff,0x80000000)):
+                child=tag70(a,b,extended);self.assertEqual(len(child),size)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='70.bin')
+                self.assertEqual(row['diagnostic'],dict(source='70.bin',offset=19+size,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=19+size,kind='union',tag=112),row['completedRecords']);self.assertFalse(row['wholeSchemaExact'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag70_every_cut_limits_and_trailing(self):
+        for child in (tag70(),tag70(0,0,True),b'\x70\xff',b'\xfa\x70\x00\xff'):
+            r=Reader(child,'70-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                out=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'70-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==112 for v in r.records))
+                    out.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(out[0],out[1]);self.assertEqual(out[0],out[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag70_bad_member_count_and_both_required_terminal_dwords(self):
+        for extended in (False,True):
+            child=tag70(0,0,extended);offset=3 if extended else 1
+            for header in (0,5,7,254):
+                bad=bytearray(child);bad[offset]=header;r=Reader(bad,'70-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='70-header',offset=offset,expected=6,actual=header,category='member-count'))
+            for n in range(len(child)-8,len(child)):
+                r=Reader(child[:n],'70-last')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],len(child)-8 if n<len(child)-4 else len(child)-4)
+                self.assertFalse(any(v.get('tag')==112 for v in r.records))
+
+
     def test_tag71_both_encodings_fixed_extent_and_raw_last_byte(self):
         for extended in (False,True):
             size=18 if extended else 16

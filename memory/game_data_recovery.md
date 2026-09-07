@@ -591,6 +591,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   profile, with at most 64 active non-null target instances across recursive
   paths. Reject deeper targets before their header; unwind depth on failure,
   retain completed children and leave incomplete parents unrecorded.
+  `scripts/game_data/buff_70_native.json` pins member-six framing: one byte
+  and five DWORDs, including two required terminal DWORDs. Its three scalar
+  generic contexts add no headers. Preserve raw values without promoting
+  enum labels to projectile immunity behavior.
   `scripts/game_data/buff_71_native.json` independently pins the same member-five
   byte/three-DWORD/byte shape for short and extended union encodings. Its final
   byte is mandatory; equal layout does not establish a shared runtime purpose
