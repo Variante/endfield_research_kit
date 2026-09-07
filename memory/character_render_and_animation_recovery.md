@@ -373,8 +373,11 @@ only.
   final D3D slot binding. Direct and queued device routes both exist; an observed
   wrapper vtable alone cannot select between them. The observer now records
   bounded callback/setter pairs with exact loaded-code and patch checks, but
-  these observations still require a join to the originating graph/batch and
-  final resource binding. Callback-owned allocation bytes are read before the
+  submissions retain their enclosing render bridge and full texture-pair bytes
+  for callback candidate matching. Repeated identical submissions remain
+  ambiguous; pointer/byte equality does not establish allocation continuity or
+  prepared graph-command ownership. Final resource binding remains unproven.
+  Callback-owned allocation bytes are read before the
   native callback frees them; completion cannot establish allocation lifetime.
   See
   `cpp_cloud_command_execution.json` for the pinned path and remaining joins.
