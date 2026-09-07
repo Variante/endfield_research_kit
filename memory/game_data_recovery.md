@@ -586,6 +586,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   null/empty sequences separately. Propagate recursive depth limits and unknown
   child unions without completing the parent. Boolean evaluation, execution
   order and short-circuit behavior remain unresolved.
+  `scripts/game_data/buff_52_native.json` pins a fixed member-five body:
+  byte, three DWORDs and a final byte. It has no nested provider or variable
+  count. The final byte remains required for every non-null wrapper, regardless
+  of its value; raw scalar bits do not become counts or lengths. Squad combat
+  state and runtime condition evaluation remain unresolved.
   `scripts/game_data/buff_7e_native.json` pins a member-six reader ending
   in two target profiles. Both exact contexts select the same finite profile,
   but their null states, nested counts and source boundaries stay independent.

@@ -625,7 +625,48 @@ def tag87(items=(),wire=b'\x87'):
     return wire+b'\x05'+bytes(13)+struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())
 
 
+def tag52(last=255,wire=b'\x52'):
+    return wire+b'\x05\x80'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+bytes([last])
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag52_fixed_extent_and_arbitrary_terminal_byte(self):
+        for wire in (b'\x52',b'\xfa\x52\x00'):
+            for last in range(256):
+                child=tag52(last,wire);end=19+len(child)
+                self.assertEqual(len(child),15+len(wire))
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='52.bin')
+                self.assertEqual(row['diagnostic'],dict(source='52.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=82),row['completedRecords'])
+                self.assertFalse(row['wholeSchemaExact'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag52_every_cut_hard_limits_and_trailing(self):
+        for child in (tag52(),tag52(wire=b'\xfa\x52\x00'),b'\x52\xff',b'\xfa\x52\x00\xff'):
+            r=Reader(child,'52-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'52-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==82 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag52_member_count_and_missing_terminal_byte(self):
+        for wire in (b'\x52',b'\xfa\x52\x00'):
+            for header in (0,4,6,254):
+                bad=bytearray(tag52(wire=wire));bad[len(wire)]=header;r=Reader(bad,'52-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='52-header',offset=len(wire),expected=5,actual=header,category='member-count'))
+            child=tag52(wire=wire);r=Reader(child[:-1],'52-final')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],len(child)-1)
+            self.assertFalse(any(v.get('tag')==82 for v in r.records))
+
     def test_tag87_nullable_list_and_independent_sequences(self):
         for wire in (b'\x87',b'\xfa\x87\x00'):
             for items in (None,(),(b'\xff',),(sequence(),),(b'\x03'+struct.pack('<i',-1)+b'\xff\x80',),(sequence(tag120()),b'\xff',sequence(tag87((sequence(b'\xff'),))))):

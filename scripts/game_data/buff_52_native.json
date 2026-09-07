@@ -1,0 +1,78 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124664,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Condition_CheckSquadInFight_DataForMemoryPack+Beyond_Gameplay_Core_Condition_CheckSquadInFight_DataForMemoryPackFormatter",
+      "Deserialize",
+      70099328
+    ],
+    [
+      124663,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Condition_CheckSquadInFight_DataForMemoryPack",
+      "Deserialize",
+      70099424
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70099328,
+      "endRva": 70099421,
+      "sha256": "AC757FFD019B3A467BD90F75EFFFBA8023387369C0898E5CBBD7DDBC58D2E7F1",
+      "boundary": "formatter complete initialization and forwarding"
+    },
+    {
+      "startRva": 70099424,
+      "endRva": 70099744,
+      "sha256": "D513697C71959CF5FFC0A164F50C40F1D84AFAC1D3D3E90F14C4D984E040AE68",
+      "boundary": "member5 normal source reads through RET"
+    },
+    {
+      "startRva": 70099744,
+      "endRva": 70099804,
+      "sha256": "DA9DD3FF57CD2FAC43A1555352CA38222F15B280FBF67EE597121CBD461E5723",
+      "boundary": "complete lazy initialization and rejoin"
+    },
+    {
+      "startRva": 83526294,
+      "endRva": 83526307,
+      "sha256": "25806EC18878C78679FD83CC775B919AAAB8D1F3C7AFDB18E3F0669D32984537",
+      "boundary": "existing output preparation and rejoin"
+    },
+    {
+      "startRva": 83526363,
+      "endRva": 83526384,
+      "sha256": "F828CCF6F2F91F16E976B7C5CB997CE85160DBF41773664B7A65E55D9A41A20E",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70099596,
+      "instructionHex": "488B1595FBDA08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte"
+    ]
+  },
+  "boundary": "Exact current union registration and module/token joins establish the member5 source order: byte, three DWORDs and one final byte. The sole Priority context selects the first DWORD reader and adds no nested header. There are no nested providers, serialized collection counts, offsets or variable-length members in this selected body. Normal non-null records consume sixteen bytes with a short tag or eighteen with FA+u16; FF wrapper termination remains distinct. Every raw scalar bit pattern and terminal byte value is preserved structurally. Complete formatter, normal, initialization, existing-output and FF windows retain whole instructions. Structural-only framing does not establish squad membership, combat-state meaning, runtime condition evaluation, live provider selection, full refill/error parity or whole-BuffData EOF."
+}
