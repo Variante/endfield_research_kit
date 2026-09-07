@@ -556,6 +556,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   bytes. Reserve those six bytes while bounding the list; neither a null list
   nor a completed element completes the parent. Preserve raw four-byte values
   and independent curve nulls without promoting camera or blend meaning.
+  `scripts/game_data/buff_08_native.json` closes two levels of nullable lists:
+  each member-one element owns a list of member-five records containing a byte,
+  byte payload, two DWORDs and raw4. Their exact contexts remain distinct from
+  the action's vector, scalar and curve profiles. Both outer lists reserve the
+  minimum remaining parent bytes; thirteen terminal bytes are independently
+  required. Null lists, empty lists and null elements remain separate, while
+  camera state and condition meanings stay unresolved.
   `scripts/game_data/buff_7e_native.json` pins a member-six reader ending
   in two target profiles. Both exact contexts select the same finite profile,
   but their null states, nested counts and source boundaries stay independent.

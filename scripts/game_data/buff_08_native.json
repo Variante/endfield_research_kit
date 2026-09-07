@@ -1,0 +1,678 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      118952,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AddDynamicCcsAction_AddDynamicCcsActionDataForMemoryPack+Beyond_Gameplay_Core_AddDynamicCcsAction_AddDynamicCcsActionDataForMemoryPackFormatter",
+      "Deserialize",
+      71272704
+    ],
+    [
+      118951,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AddDynamicCcsAction_AddDynamicCcsActionDataForMemoryPack",
+      "Deserialize",
+      54737728
+    ],
+    [
+      162730,
+      "Beyond.MemoryPack.Beyond_Gameplay_View_CameraControlState_TransitionConditionAndForMemoryPack+Beyond_Gameplay_View_CameraControlState_TransitionConditionAndForMemoryPackFormatter",
+      "Deserialize",
+      157865840
+    ],
+    [
+      162729,
+      "Beyond.MemoryPack.Beyond_Gameplay_View_CameraControlState_TransitionConditionAndForMemoryPack",
+      "Deserialize",
+      157866072
+    ],
+    [
+      166652,
+      "Beyond.MemoryPack.Beyond_Gameplay_View_CameraControlState_TransitionConditionForMemoryPack+Beyond_Gameplay_View_CameraControlState_TransitionConditionForMemoryPackFormatter",
+      "Deserialize",
+      158060536
+    ],
+    [
+      166651,
+      "Beyond.MemoryPack.Beyond_Gameplay_View_CameraControlState_TransitionConditionForMemoryPack",
+      "Deserialize",
+      158060748
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 71272704,
+      "endRva": 71272797,
+      "sha256": "73D92C3E47E7C164F8CD83C7E56D0472954A41393C33E28E3A925010D29975EB",
+      "boundary": "parent formatter"
+    },
+    {
+      "startRva": 54737728,
+      "endRva": 54739759,
+      "sha256": "D6B051ED0C2F6CEC4E4E534C3D4A96E92035F1E6F374302D12D74EB64F20CCA9",
+      "boundary": "member50 normal through RET"
+    },
+    {
+      "startRva": 54739759,
+      "endRva": 54739879,
+      "sha256": "42FB39D57EE92F0FB3B3DF015CB9253BBBEBFBAC1CF581594982D61976282049",
+      "boundary": "parent lazy initialization"
+    },
+    {
+      "startRva": 81375268,
+      "endRva": 81375281,
+      "sha256": "C87872762ADDE637F6C6CA9699AAB301A9439986499C3B749B6FF6AFA07DFA69",
+      "boundary": "parent existing output rejoin"
+    },
+    {
+      "startRva": 81375337,
+      "endRva": 81375358,
+      "sha256": "8ADE64C3E5785AE9D4D09BD0438376332763D549178CE9A3CDD42F9659D07434",
+      "boundary": "parent FF clear"
+    },
+    {
+      "startRva": 157865840,
+      "endRva": 157865929,
+      "sha256": "65132EB3FEC72357B217AD1FEB84D583F149C03AB4584B8DBE4BA5970F2BC410",
+      "boundary": "member1 formatter"
+    },
+    {
+      "startRva": 157866072,
+      "endRva": 157866358,
+      "sha256": "33D008120703EAD1865783CAB750A748944385399BD9F9CC9D3D0E65E1F3B77D",
+      "boundary": "member1 complete reader including init allocation bad-header null and RET"
+    },
+    {
+      "startRva": 158060536,
+      "endRva": 158060625,
+      "sha256": "B7E0F5D6C2CD25154789DCB435CA88B84C0A48F162A2B3D1805EFE69E47C4FE5",
+      "boundary": "member5 formatter"
+    },
+    {
+      "startRva": 158060748,
+      "endRva": 158061182,
+      "sha256": "928E46A8357DD2B88E31A3D7651767262BF08F071E79AE988220476DDDCA6000",
+      "boundary": "member5 complete reader including init allocation bad-header null and RET"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 158060996,
+      "instructionHex": "488B151D7D4804",
+      "cellVa": 6672371432,
+      "usageRawHex": "03E512C000000000",
+      "methodSpecIndex": 619137,
+      "methodSpec": [
+        428448,
+        -1,
+        42228
+      ],
+      "argumentRawHex": "31210000000000000000118000000000",
+      "typeDefinition": 8497,
+      "typeName": "Beyond.Gameplay.View.CameraControlConditionComparator",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 158061032,
+      "instructionHex": "488B15017D4804",
+      "cellVa": 6672371440,
+      "usageRawHex": "05E512C000000000",
+      "methodSpecIndex": 619138,
+      "methodSpec": [
+        428448,
+        -1,
+        42229
+      ],
+      "argumentRawHex": "30210000000000000000118000000000",
+      "typeDefinition": 8496,
+      "typeName": "Beyond.Gameplay.View.CameraControlConditionType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 157866237,
+      "instructionHex": "488B1594994904",
+      "cellVa": 6672249496,
+      "usageRawHex": "81A412C000000000",
+      "methodSpecIndex": 610880,
+      "methodSpec": [
+        428462,
+        -1,
+        62665
+      ],
+      "argumentRawHex": "3833258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000003044F08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17012,
+        "elementArguments": [
+          "29210000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 54737900,
+      "instructionHex": "488B153562C509",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54738006,
+      "instructionHex": "488B15C3D1C509",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738047,
+      "instructionHex": "488B159AD1C509",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738088,
+      "instructionHex": "488B157109BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738129,
+      "instructionHex": "488B154809BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738170,
+      "instructionHex": "488B151F09BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738211,
+      "instructionHex": "488B15F608BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738252,
+      "instructionHex": "488B15F596CB09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738293,
+      "instructionHex": "488B15B47EC509",
+      "cellVa": 6661127216,
+      "usageRawHex": "87E712C000000000",
+      "methodSpecIndex": 619459,
+      "methodSpec": [
+        428448,
+        -1,
+        26642
+      ],
+      "argumentRawHex": "A1CB0000000000000000118000000000",
+      "typeDefinition": 52129,
+      "typeName": "Cinemachine.CinemachineBlendDefinition+Style",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54738333,
+      "instructionHex": "488B157C08BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738374,
+      "instructionHex": "488B157B96CB09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738415,
+      "instructionHex": "488B153A7EC509",
+      "cellVa": 6661127216,
+      "usageRawHex": "87E712C000000000",
+      "methodSpecIndex": 619459,
+      "methodSpec": [
+        428448,
+        -1,
+        26642
+      ],
+      "argumentRawHex": "A1CB0000000000000000118000000000",
+      "typeDefinition": 52129,
+      "typeName": "Cinemachine.CinemachineBlendDefinition+Style",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54738455,
+      "instructionHex": "488B150208BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738530,
+      "instructionHex": "488B15B707BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738673,
+      "instructionHex": "488B1520CFC509",
+      "cellVa": 6661148184,
+      "usageRawHex": "83A412C000000000",
+      "methodSpecIndex": 610881,
+      "methodSpec": [
+        428462,
+        -1,
+        62666
+      ],
+      "argumentRawHex": "C833258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000002044F08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17013,
+        "elementArguments": [
+          "2A210000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 54738714,
+      "instructionHex": "488B152795CB09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738789,
+      "instructionHex": "488B15ACCEC509",
+      "cellVa": 6661148184,
+      "usageRawHex": "83A412C000000000",
+      "methodSpecIndex": 610881,
+      "methodSpec": [
+        428462,
+        -1,
+        62666
+      ],
+      "argumentRawHex": "C833258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000002044F08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17013,
+        "elementArguments": [
+          "2A210000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 54738830,
+      "instructionHex": "488B158BCEC509",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738871,
+      "instructionHex": "488B156206BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738912,
+      "instructionHex": "488B153906BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738953,
+      "instructionHex": "488B151006BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54738994,
+      "instructionHex": "488B15E705BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54739035,
+      "instructionHex": "488B15BE05BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54739076,
+      "instructionHex": "488B159505BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54739219,
+      "instructionHex": "488B152E93CB09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54739260,
+      "instructionHex": "488B15DDCCC509",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member50": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "vector",
+      "vector",
+      "scalar",
+      "scalar",
+      "scalar",
+      "scalar",
+      "curve",
+      "scalar32",
+      "scalar",
+      "curve",
+      "scalar32",
+      "scalar",
+      "raw4",
+      "scalar",
+      "byte",
+      "payload",
+      "byte",
+      "group-list",
+      "curve",
+      "byte",
+      "group-list",
+      "vector",
+      "scalar",
+      "scalar",
+      "scalar",
+      "scalar",
+      "scalar",
+      "scalar",
+      "byte",
+      "byte",
+      "byte",
+      "curve",
+      "vector",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte"
+    ],
+    "member1": [
+      "nullable-member5-list"
+    ],
+    "member5": [
+      "byte",
+      "byte-payload",
+      "scalar32",
+      "scalar32",
+      "raw4"
+    ]
+  },
+  "boundary": "Exact current registration, module/token joins and selected source operations establish structural-only finite framing. The member50 action interleaves independent vector/scalar/curve profiles, raw4 values, a byte payload and two nullable lists, then ends in thirteen independent bytes. Vector/scalar/curve profiles reuse buff_b2_native.json, buff_35_native.json and buff_24_native.json. List MethodSpec 610881 selects member1 elements, each containing a nullable list selected by MethodSpec 610880. Its member5 element consumes byte, signed-length byte payload, two DWORDs and raw4. Bound both list levels before looping; reserve the parent minimum remainder of 31 or 25 bytes at the two outer counts. Null wrappers, null lists, empty lists and null elements remain independent. Parent completion requires every final byte. Complete selected parent and nested method windows preserve initialization, normal/null paths and instruction boundaries. Camera state and condition meanings, live provider selection, full refill/error parity and whole-BuffData EOF remain unresolved."
+}

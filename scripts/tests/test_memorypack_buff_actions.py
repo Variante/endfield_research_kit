@@ -592,7 +592,82 @@ def tag19e(first=b'\xff',second=b'\xff',items=(),value=None,last=b'\x00\x80\xff\
             b''.join(payload(v) for v in items or ())+last)
 
 
+def condition08(value=None):
+    return b'\x05\xff'+payload(value)+b'\xff'*8+b'\x80'*4
+
+
+def group08(items=()):
+    return b'\x01'+struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())
+
+
+def tag08(first=(),second=(),vector=b'\xff',scalar=b'\xff',curve=b'\xff',last=b'\xff'*13,wire=b'\x08'):
+    first_list=struct.pack('<i',-1 if first is None else len(first))+b''.join(first or ())
+    second_list=struct.pack('<i',-1 if second is None else len(second))+b''.join(second or ())
+    return (wire+b'\x32'+bytes(13)+vector*2+scalar*4+
+            (curve+b'\xff'*4+scalar)*2+b'\x80'*4+scalar+b'\xff'+payload(None)+b'\x80'+
+            first_list+curve+b'\xff'+second_list+vector+scalar*6+b'\x80\xff\x00'+curve+vector+last)
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag08_independent_nested_lists_null_states_and_profiles(self):
+        groups=(None,(),(b'\xff',),(group08(None),),(group08(),),(group08((b'\xff',condition08(b'\xff\xfa'))),))
+        for wire in (b'\x08',b'\xfa\x08\x00'):
+            for first in groups:
+                for second in groups:
+                    child=tag08(first,second,wire=wire);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='08.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='08.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=8),row['completedRecords'])
+                    self.assertFalse(row['wholeSchemaExact'])
+                    self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag08_every_cut_hard_limits_and_trailing(self):
+        child=tag08((group08((condition08(b'payload'),b'\xff')),),(group08(None),),b'\x03'+b'\xff'*3,scalar_payload(),curve24((b'\xff'*28,)))
+        for child in (child,b'\x08\xff',b'\xfa\x08\x00\xff'):
+            r=Reader(child,'08-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'08-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==8 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag08_nested_headers_lengths_counts_and_parent_reservations(self):
+        for at in (1,15,16,17,21):
+            bad=bytearray(tag08());bad[at]=42;r=Reader(bad,'08-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category']),(at,'member-count'))
+        for at in (44,50):
+            for count in (-2,1,0x7fffffff):
+                bad=bytearray(tag08());struct.pack_into('<i',bad,at,count);r=Reader(bad,'08-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('08-count',at,count,'count-bounds'))
+        for method,head,at in (('counted_payload_scalars_profile',b'\x01',1),('byte_payload_scalars_profile',b'\x05\xff',2)):
+            for count in (-2,0x7fffffff):
+                r=Reader(head+struct.pack('<i',count),'08-inner')
+                with self.assertRaises(FrameError) as caught:getattr(r,method)()
+                self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],caught.exception.diagnostic['category']),(at,count,'count-bounds'))
+            r=Reader(b'\x2a','08-inner-header')
+            with self.assertRaises(FrameError) as caught:getattr(r,method)()
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+
+    def test_tag08_nested_completion_does_not_replace_parent_tail(self):
+        for missing in range(1,14):
+            data=tag08(first=None,second=None)[:-missing];r=Reader(data,'08-last')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],len(data))
+            self.assertFalse(any(v.get('tag')==8 for v in r.records))
+        data=group08((condition08(b'payload'),condition08()))[:-1];r=Reader(data,'08-child-last')
+        with self.assertRaises(FrameError):r.counted_payload_scalars_profile()
+        self.assertFalse(any(v['kind']=='anonymous-counted-payload-scalars-profile' for v in r.records))
+        self.assertTrue(any(v['kind']=='anonymous-byte-payload-scalars-profile' for v in r.records))
+
     def test_tag19e_independent_curves_nullable_list_and_six_final_bytes(self):
         for first in (b'\xff',curve24(None),curve24((b'\xff'*28,))):
             for second in (b'\xff',curve24(),curve24((b'\x80'*28,))):
