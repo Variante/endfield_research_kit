@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124444,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckOverHeal_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckOverHeal_DataForMemoryPackFormatter",
+      "Deserialize",
+      72143232
+    ],
+    [
+      124443,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckOverHeal_DataForMemoryPack",
+      "Deserialize",
+      72143328
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72143232,
+      "endRva": 72143325,
+      "sha256": "5C39AF603B4DF45C39E519648229A901642E579236C28B98586953CB5F8A6A8C",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 72143328,
+      "endRva": 72143716,
+      "sha256": "209593FA66FAF2880F12F8D2B794B99AFA6714359E1214AD579FCD4927DA16A4",
+      "boundary": "member7 source reads through normal RET"
+    },
+    {
+      "startRva": 72143716,
+      "endRva": 72143776,
+      "sha256": "092B5B519B6868613EB41468E64787E10D195EB36B0A92D9EA8A4CBA8C21A8E5",
+      "boundary": "reader lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83745154,
+      "endRva": 83745167,
+      "sha256": "2535C02057675087882E45BD445B63212F63F5B0D9C42DDECDC9237FB2CEBE4D",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83745223,
+      "endRva": 83745244,
+      "sha256": "392DB11C8F3F7B1C7EC29BC0DFF435BBA7768B0177781AAC2C8332F34E4B7232",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72143500,
+      "instructionHex": "488B1595CBBB08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "byte-payload",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member7 action consumes the common byte/three DWORDs followed by three independent signed-length byte payloads and no extra tail. All three source calls target helper2CA8700; each payload retains its own nullable length and bounded byte range. Null and empty payloads remain distinct. Lengths are checked against the active hard limit before consumption, and incomplete actions never complete. Formatter initialization, normal RET, lazy rejoin, existing-output and FF windows retain complete instructions. Over-heal meaning, live formatter choice, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

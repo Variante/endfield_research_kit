@@ -593,6 +593,9 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Their shared parser retains distinct union identities. Preserve both signed lengths
   and null/empty states; the parent completes only after the second payload.
   Payload encoding, ATB-value and collected-value ownership remain unresolved.
+  `scripts/game_data/buff_6b_native.json` instead ends a member-seven action
+  with three independent byte payloads. The third signed length is mandatory;
+  completed earlier payloads remain recorded when a later payload is incomplete.
   `scripts/game_data/buff_d4_native.json` pins a member-eight action
   with two independent target profiles followed by two four-byte scalars.
   Preserve raw scalar bits and keep the parent incomplete until both tails

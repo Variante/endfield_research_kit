@@ -566,6 +566,46 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag6b_three_independent_terminal_payloads(self):
+        for first in (None,b'',b'wire'):
+            for second in (None,b'',b'\xff\x00'):
+                for third in (None,b'',b'last'):
+                    child=b'\x6b\x07\xfe'+b'\xff'*12+payload(first)+payload(second)+payload(third)
+                    end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='6b.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='6b.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=107),row['completedRecords'])
+                    self.assertFalse(row['wholeSchemaExact'])
+                    self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag6b_every_cut_null_extended_hard_limits_and_trailing(self):
+        full=b'\x6b\x07'+bytes(13)+payload(b'a')+payload(b'bb')+payload(b'ccc')
+        for child in (full,b'\xfa\x6b\x00'+full[1:],b'\x6b\xff',b'\xfa\x6b\x00\xff'):
+            r=Reader(child,'6b-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'6b-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==107 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag6b_each_length_is_bounded_and_header_is_exact(self):
+        child=b'\x6b\x07'+bytes(13)+payload(b'a')+payload(b'bb')+payload(b'ccc')
+        for at,values in ((1,(0,254)),(15,(-2,0x7fffffff)),(20,(-2,0x7fffffff)),(26,(-2,0x7fffffff))):
+            for value in values:
+                bad=bytearray(child)
+                if at==1:bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'6b-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('6b-bounds',at,value))
+                self.assertFalse(any(v.get('tag')==107 for v in r.records))
+                self.assertEqual(len(r.records),{1:0,15:0,20:1,26:2}[at])
+
     def test_tag63_direct_terminal_query_boundaries(self):
         for query in (b'\xff',query41(None),query41(),query41((0,0xffffffff,0x80000000))):
             child=b'\x63\x05\xfe'+b'\xff'*12+query;end=19+len(child)
@@ -3928,7 +3968,7 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
         self.assertFalse(any(r.get('tag')==363 for r in row['completedRecords']))
         row=event_prefix(prefix(sequence(b'\x6b'+tag16b()[3:])),source='16b-short')
-        self.assertEqual((row['diagnostic']['offset'],row['diagnostic']['actual'],row['diagnostic']['category']),(19,107,'union-tag'))
+        self.assertEqual((row['diagnostic']['offset'],row['diagnostic']['expected'],row['diagnostic']['actual'],row['diagnostic']['category']),(20,7,6,'member-count'))
 
     def test_tag24_nested_curve_counts_and_independent_envelope_members(self):
         curves=(b'\xff',curve24(None),curve24(),curve24((bytes(range(28)),)),curve24((b'\xff'*28,b'\x80'*28)))
@@ -4018,7 +4058,7 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('6a-bounds',at,value))
         row=event_prefix(prefix(sequence(b'\x6b'+tag6a()[1:])),source='6a-other')
-        self.assertEqual(row['diagnostic'],dict(source='6a-other',offset=19,expected='supported current union tag',actual=107,category='union-tag'))
+        self.assertEqual(row['diagnostic'],dict(source='6a-other',offset=20,expected=7,actual=8,category='member-count'))
 
     def test_tagbd_sequence_then_independent_target(self):
         for children in (b'\xff',b'\x03'+struct.pack('<i',-1)+b'\xfe\xff',sequence(),sequence(b'\xff',tag145()),sequence(tagbd(b'\xff',b'\xff'))):
