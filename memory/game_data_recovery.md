@@ -498,6 +498,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   An unknown child stops inside the sequence and leaves the enclosing action
   incomplete; sequence termination alone does not consume the final target.
   The managed iteration name does not establish runtime execution semantics.
+  `scripts/game_data/buff_2f_native.json` separately pins sequence, byte,
+  DWORD, target and two raw four-byte values after the common prefix. Its
+  inlined header read preserves the same one-byte/FF boundary. Neither null
+  nested profile removes later fields; preserve completed sequence evidence
+  when target or tail consumption fails. Channeling/timing meaning stays open.
   `scripts/game_data/buff_6a_native.json` pins a member-eight reader with
   two bytes and two distinct counted scalar32 lists after the common prefix.
   A separately joined consumer passes each exact list element type to the

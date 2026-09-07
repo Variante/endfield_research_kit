@@ -1,0 +1,117 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119290,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChannelingAction_DataForMemoryPack+Beyond_Gameplay_Core_ChannelingAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      63731072
+    ],
+    [
+      119289,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChannelingAction_DataForMemoryPack",
+      "Deserialize",
+      63731168
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63731072,
+      "endRva": 63731165,
+      "sha256": "CC35B5507570457D752964DF5790EC0FB925CDAB73BCA3B55DCA5D2E17FCFBF9",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 63731168,
+      "endRva": 63731744,
+      "sha256": "AA8425D7E6BBB460E3FF3A4D24E71A014E90230E779E1F7916E141E0A6AEE8AC",
+      "boundary": "member10 inline header and source reads through normal RET"
+    },
+    {
+      "startRva": 63731744,
+      "endRva": 63731761,
+      "sha256": "D3BE7352EEB4BBF584F83263A54735CCC4C171AB586A84E46451AB66E7273A96",
+      "boundary": "FF clear and complete epilogue rejoin"
+    },
+    {
+      "startRva": 63731761,
+      "endRva": 63731845,
+      "sha256": "263ECE4004A8683839653227A71F284E60CA62A970220F0D2B8354F8D7C085A3",
+      "boundary": "reader lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82788286,
+      "endRva": 82788299,
+      "sha256": "5AB4515F918B68BCDDD94875A43D9E4CE8F0CB53E95C13C9A25C8D7ACCDCCED5",
+      "boundary": "existing-output preparation and header rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63731371,
+      "instructionHex": "488B1576273C09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63731486,
+      "instructionHex": "488B1543D73209",
+      "cellVa": 6660509288,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63731617,
+      "instructionHex": "488B15609F3909",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member10": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "sequence",
+      "byte",
+      "scalar32",
+      "target-profile",
+      "raw4",
+      "raw4"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member10 action consumes common byte/three DWORDs, SequenceActionData, byte, DWORD, TargetSettings and two raw four-byte values. Its inlined header path checks source availability, advances one byte and preserves FF separately from member10. Sequence uses the existing signed nullable count, indirect children and two-byte tail; preserve depth bounds and unknown children without scanning. TargetSettings reuses buff_ec_native.json with finite buff_b2_native.json extensions. The final two calls use the source float-width helper pinned by buff_24_native.json, not nested headers or output offsets; their raw bits remain anonymous. A null sequence or target does not remove the following members. Retain completed children when a later target or raw value fails; no further source tail follows the second raw value. Formatter, normal, lazy, FF and existing-output windows retain complete instructions. Channeling ownership, timing meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
