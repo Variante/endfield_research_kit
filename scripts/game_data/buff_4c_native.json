@@ -1,0 +1,177 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119520,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ClearProjectileAction_DataForMemoryPack+Beyond_Gameplay_Core_ClearProjectileAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      70827856
+    ],
+    [
+      119519,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ClearProjectileAction_DataForMemoryPack",
+      "Deserialize",
+      70827952
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70827856,
+      "endRva": 70827949,
+      "sha256": "4BD0B54AFCD46A8B73ABB5A76F7A03B29C0BDC4977AC5529920071CE79BA51B2",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 70827952,
+      "endRva": 70828552,
+      "sha256": "FED060D3126AE394D395D34C6A1DB0E8F6994483631C8EEC53E00CC28C1A0F91",
+      "boundary": "member12 source reads through normal RET"
+    },
+    {
+      "startRva": 70828552,
+      "endRva": 70828660,
+      "sha256": "206E4492FCD8AFBF009B7DD942654ABC18A2766EBF98AC56D001A35D929905FB",
+      "boundary": "complete lazy initialization and normal rejoin"
+    },
+    {
+      "startRva": 83588808,
+      "endRva": 83588821,
+      "sha256": "D953B1D16BF8BAF6516BE76805D1611B694DF26F8496F0F3C2962E131B6CF453",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83588877,
+      "endRva": 83588898,
+      "sha256": "27129E4A90C68440E8A132815D6D5F2D1DAA3C8ED7730101211BA0DD4329F107",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70828124,
+      "instructionHex": "488B15C5DDCF08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70828230,
+      "instructionHex": "488B155385C608",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 70828271,
+      "instructionHex": "488B151256CD08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 70828380,
+      "instructionHex": "488B158DDBD008",
+      "cellVa": 6661184752,
+      "usageRawHex": "25E812C000000000",
+      "methodSpecIndex": 619538,
+      "methodSpec": [
+        428448,
+        -1,
+        42511
+      ],
+      "argumentRawHex": "3A2F0000000000000000118000000000",
+      "typeDefinition": 12090,
+      "typeName": "Beyond.Gameplay.Core.ProjectileComponent+FinishAction",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70828454,
+      "instructionHex": "488B15CB7EC608",
+      "cellVa": 6660505720,
+      "usageRawHex": "33A412C000000000",
+      "methodSpecIndex": 610841,
+      "methodSpec": [
+        428462,
+        -1,
+        1828
+      ],
+      "argumentRawHex": "387F258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000C039FE8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 891,
+        "elementArguments": [
+          "C78C00000000000000000E0000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 70828495,
+      "instructionHex": "488B153255CD08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member12": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload-profile",
+      "target-profile",
+      "byte",
+      "byte",
+      "scalar32",
+      "byte",
+      "nullable-byte-payload-list",
+      "target-profile"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member12 action consumes common byte/three DWORDs, BlackboardDouble, TargetSettings, two bytes, one DWORD, one byte, a nullable List<String> and an independent terminal TargetSettings, with no source tail. Exact contexts reuse buff_35_native.json scalar framing, buff_ec_native.json with finite buff_b2_native.json targets, and the conditional reference-list/byte-payload grammar in buff_b4_native.json. Validate signed list counts with four bytes minimum per element and one reserved byte for the terminal target; list storage pointer width is not wire width. Null list, empty list, null payload element and independently null profiles remain distinct. FinishAction identifies the extra DWORD context but adds no member or value restriction. Short and extended unions retain distinct widths. Unknown nested profiles stop in place and incomplete actions are never marked complete. Formatter and lazy initialization, normal RET, existing-output and FF windows retain complete instructions; setters add no source bytes. String decoding, projectile clearing behavior, ownership, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

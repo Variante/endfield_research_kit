@@ -331,6 +331,12 @@ def scalar_payload(value=b'value',flag=255,bits=b'\x00\x00\xc0\x7f'):
     return b'\x03'+payload(value)+bytes([flag])+bits
 
 
+def tag4c(wire=b'\x4c',scalar=b'\xff',first=b'\xff',items=(),last=b'\xff'):
+    count=struct.pack('<i',-1 if items is None else len(items))
+    return (wire+b'\x0c'+b'\xff'*13+scalar+first+b'\x80\xfe'+b'\xff'*4+b'\x80'+
+            count+b''.join(payload(v) for v in (items or ()))+last)
+
+
 def tag7b(t=None,value=None):
     return (b'\x7b\x07\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+
             (target() if t is None else t)+struct.pack('<I',0x80000001)+
@@ -573,6 +579,54 @@ def tag183(first=(),second=(),scalar1=b'\xff',scalar2=b'\xff',curve=b'\xff',valu
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag4c_independent_profiles_and_nullable_list(self):
+        for wire in (b'\x4c',b'\xfa\x4c\x00'):
+            for items in (None,(),(None,),(None,b'',b'\xff\xfa')):
+                for scalar,first,last in ((b'\xff',b'\xff',target()),(scalar_payload(),target(),b'\xff'),(scalar_payload(None),target(),target())):
+                    child=tag4c(wire,scalar,first,items,last)
+                    end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='4c.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='4c.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=76),row['completedRecords'])
+                    self.assertFalse(row['wholeSchemaExact'])
+                    self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag4c_every_cut_hard_limits_and_trailing(self):
+        for wire in (b'\x4c',b'\xfa\x4c\x00'):
+            for child in (tag4c(wire,scalar_payload(),target(),(None,b'key'),target()),wire+b'\xff'):
+                r=Reader(child,'4c-cut');r.action(0);self.assertEqual(r.pos,len(child))
+                for n in range(len(child)):
+                    results=[]
+                    for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                        r=Reader(data,'4c-cut',n)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==76 for v in r.records))
+                        results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+                for tail in (b'\x00',b'\xff'):
+                    with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag4c_bad_headers_counts_and_terminal_target(self):
+        for wire in (b'\x4c',b'\xfa\x4c\x00'):
+            good=tag4c(wire);count_at=len(wire)+23
+            for at in (len(wire),len(wire)+14,len(wire)+15,len(good)-1):
+                bad=bytearray(good);bad[at]=42;r=Reader(bad,'4c-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category']),(at,'member-count'))
+            for count,remaining in ((-2,b'\xff'),(0x7fffffff,b'\xff'),(1,b'\xff'*4)):
+                r=Reader(good[:count_at]+struct.pack('<i',count)+remaining,'4c-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],caught.exception.diagnostic['category']),(count_at,count,'count-bounds'))
+            for count in (-2,0x7fffffff):
+                r=Reader(good[:count_at]+struct.pack('<ii',1,count)+b'\xff','4c-element')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],caught.exception.diagnostic['category']),(count_at+4,count,'count-bounds'))
+            r=Reader(tag4c(wire,scalar_payload(),target(),(b'keep',),target(selector=b'\x03\x59')),'4c-last')
+            with self.assertRaises(Unsupported) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['category'],caught.exception.diagnostic['actual']),('nested-profile',89))
+            self.assertFalse(any(v.get('tag')==76 for v in r.records))
+            self.assertTrue(any(v['kind']=='anonymous-byte-payload' for v in r.records))
+
     def test_tag3a_scalar_and_terminal_payload_independent_nulls(self):
         for wire in (b'\x3a',b'\xfa\x3a\x00'):
             for nested in (b'\xff',scalar_payload(None),scalar_payload(b'\xff\x00')):

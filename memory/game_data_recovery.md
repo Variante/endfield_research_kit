@@ -272,6 +272,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   target-ending action, including its lazy initialization and null rejoin.
   Short and extended union encodings preserve their distinct widths; the
   registered interruption name does not establish live skill behavior.
+  `scripts/game_data/buff_4c_native.json` pins two independent targets with a
+  nullable byte-payload list between them. Its list count reserves the terminal
+  target minimum before iteration; null lists, null elements and target nulls
+  remain distinct. Projectile clearing behavior and string decoding are unproven.
   `scripts/game_data/buff_16f_native.json` separately establishes a byte before
   the target and a terminal BlackboardDouble profile after it. The scalar
   profile ends in four raw bytes; keep both nested null states independent and
