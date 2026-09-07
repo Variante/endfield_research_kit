@@ -361,6 +361,9 @@ only.
   words decrement and reset and can retain a mapping across wrapper releases;
   they are not generation IDs. Upload observation must follow backend mapping
   lifetime from installation, preserving unknown initial mappings across windows.
+  The backend Map ledger covers all D3D11 buffers because native staging copies
+  are not restricted to constant buffers; textures remain outside its range
+  model. An unknown mapping cannot classify the destination or prove copy loss.
   See `cpp_map_reference_native_differential.json` for the conditional model.
   The native D3D11 binder's range conversion is now
   recovered, but a causal upload generation must still connect the allocation
