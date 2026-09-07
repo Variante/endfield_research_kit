@@ -387,6 +387,12 @@ only.
   candidate executes outside the submission interval. Use those observed
   renderer identities to trace binding; neither equality nor chronology closes
   allocation or draw-consumption ownership.
+  The selector-compatible D3D11 initializer is now traced through descriptor
+  submission, execution-state updates, pixel-shader SRV assembly and the native
+  draw callback. Its packed shader metadata maps descriptor sets to actual PS
+  slots. This is the next observation path; static calls and a matching selector
+  still do not prove live dispatch targets or exclude intervening bindings. See
+  `cpp_d3d11_descriptor_binding_path.json` for the pinned native and SDK evidence.
   Callback-owned allocation bytes are read before the
   native callback frees them; completion cannot establish allocation lifetime.
   See
