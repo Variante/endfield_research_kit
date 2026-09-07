@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123351,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_StoreSkillDamageType_DataForMemoryPack+Beyond_Gameplay_Core_StoreSkillDamageType_DataForMemoryPackFormatter",
+      "Deserialize",
+      73825648
+    ],
+    [
+      123350,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_StoreSkillDamageType_DataForMemoryPack",
+      "Deserialize",
+      73825744
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73825648,
+      "endRva": 73825737,
+      "sha256": "185268617F79096F2294ACBE5C22CC6AA9A21C4C990BE0233083A53E1546FB36",
+      "boundary": "formatter forwarding and inline initialization"
+    },
+    {
+      "startRva": 73825744,
+      "endRva": 73826107,
+      "sha256": "8EB457C27D3946301911B1F88C4134D6D5790C22DEDBB8AAE5AE229430E7078E",
+      "boundary": "member5 source reads including inline initialization through normal RET"
+    },
+    {
+      "startRva": 83953828,
+      "endRva": 83953841,
+      "sha256": "3206DFE5842A295BFBC34424BEE714B94E124E88051931019FD1B126C438518F",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83953897,
+      "endRva": 83953918,
+      "sha256": "FA07FD76AFCB77CCA73DAC10637DC69CDBDFE7A7A04856C48DC1760F6C20E11D",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 73825967,
+      "instructionHex": "488B15721FA208",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact registration and module/token joins establish direct selected source order and structural-only framing. The member5 action consumes a common byte/three DWORDs and a terminal signed-length byte payload, with no nested provider or additional tail. The separately pinned payload helper advances by byte length; null length -1, empty length zero and arbitrary payload bytes remain distinct without asserting text decoding. Priority is the sole MethodSpec context. Counts are checked against the active hard limit before consuming payload bytes, and truncated payloads never complete the action. Formatter and reader inline initialization, normal RET, existing-output and FF windows retain complete instructions. Skill damage storage meaning, live formatter choice, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

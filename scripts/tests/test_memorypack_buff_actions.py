@@ -566,6 +566,42 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag175_terminal_payload_null_empty_and_arbitrary_bytes(self):
+        for value in (None,b'',b'wire',b'\xff\x00\xfe'):
+            child=b'\xfa\x75\x01\x05\xfe'+b'\xff'*12+payload(value)
+            end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='175.bin')
+            self.assertEqual(row['diagnostic'],dict(source='175.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+            self.assertIn(dict(start=19,end=end,kind='union',tag=373),row['completedRecords'])
+            self.assertIn(dict(start=36,end=end,kind='anonymous-byte-payload',isNull=value is None),row['completedRecords'])
+            self.assertFalse(row['wholeSchemaExact'])
+            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag175_all_cuts_hard_limits_null_wrapper_and_trailing(self):
+        for child in (b'\xfa\x75\x01\x05\xfe'+b'\xff'*12+payload(b'\xff\x00wire'),b'\xfa\x75\x01\xff'):
+            r=Reader(child,'175-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'175-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==373 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag175_malformed_header_and_payload_length_diagnostics(self):
+        child=b'\xfa\x75\x01\x05'+bytes(13)+payload(b'wire')
+        for at,value,category in ((3,0,'member-count'),(3,254,'member-count'),(17,-2,'count-bounds'),(17,0x7fffffff,'count-bounds')):
+            bad=bytearray(child)
+            if at==3:bad[at]=value
+            else:struct.pack_into('<i',bad,at,value)
+            r=Reader(bad,'175-bounds')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],caught.exception.diagnostic['category']),('175-bounds',at,value,category))
+            self.assertFalse(any(v.get('tag')==373 for v in r.records))
+
     def test_tag93_shared_wire_profiles_keep_distinct_union_identity(self):
         child=b'\x93'+tag92()[1:]
         row=event_prefix(prefix(sequence(child,b'\x59')),source='93.bin')

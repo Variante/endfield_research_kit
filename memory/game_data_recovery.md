@@ -694,6 +694,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   before consumption, preserve completed children on later failure, and never
   mark the incomplete option or action complete. The selected native reader
   proves this structure; live provider choice and switch meaning remain open.
+  `scripts/game_data/buff_175_native.json` instead closes a member-five action
+  with a terminal byte payload after the common scalar prefix. Its reader has
+  no nested provider or further tail. Keep null and empty payloads distinct;
+  a managed storage-oriented name does not establish text or enum semantics.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
