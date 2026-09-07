@@ -732,6 +732,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   payload and final byte after the common fields. A null curve differs from a
   null key list; bound the key count before reading raw keys, and retain the
   mandatory outer payload/byte after the nested profiles complete.
+  `scripts/game_data/buff_183_native.json` has two independent target lists
+  separated by a byte, with a scalar profile before the first and after the
+  second. Reserve the remaining minimum tail before either count-driven loop.
+  Three DWORDs follow the second scalar, then a curve and two required bytes;
+  the two GameplayTag reads use raw DWORD source advances without headers.
+  Preserve null lists, completed targets and all terminal bytes. Time-dilation
+  ownership remains unresolved despite the selected reader's exact identity.
   `scripts/game_data/buff_176_native.json` closes a direct nullable list of
   member-two sequence/scalar profiles after the action's extra byte and scalar
   profile. The list has no additional object header; each non-null element

@@ -565,7 +565,59 @@ def tag92():
             struct.pack('<i',3)+payload(b'\xff\x00')+payload(None)+payload(b'')+b'\x00\x01\x80\xfe\xff'+b'\xff')
 
 
+def tag183(first=(),second=(),scalar1=b'\xff',scalar2=b'\xff',curve=b'\xff',value=None):
+    def items(values):
+        return struct.pack('<i',-1 if values is None else len(values))+(b'' if values is None else b''.join(values))
+    return (b'\xfa\x83\x01\x10'+b'\xff'*13+payload(value)+scalar1+items(first)+b'\xfe'+
+            items(second)+scalar2+b'\xff'*12+curve+b'\x80\xfe')
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag183_independent_lists_profiles_and_final_bytes(self):
+        for first in (None,(),(b'\xff',),(target(),b'\xff')):
+            for second in (None,(),(b'\xff',target())):
+                child=tag183(first,second,scalar_payload(None),scalar_payload(b'wire'),curve24((bytes(28),)))
+                end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='183.bin')
+                self.assertEqual(row['diagnostic'],dict(source='183.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=387),row['completedRecords'])
+                self.assertFalse(row['wholeSchemaExact'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag183_every_cut_hard_limits_and_trailing(self):
+        full=tag183((target(),b'\xff'),(target(),),scalar_payload(b'wire'),scalar_payload(None),curve24((bytes(28),)))
+        for child in (full,b'\xfa\x83\x01\xff'):
+            r=Reader(child,'183-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'183-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==387 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag183_count_reserves_headers_and_partial_second_list(self):
+        good=tag183();self.assertEqual(len(good),47)
+        for at in (22,27):
+            for value in (-2,1,0x7fffffff):
+                bad=bytearray(good);struct.pack_into('<i',bad,at,value);r=Reader(bad,'183-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('183-count',at,value,'count-bounds'))
+                self.assertEqual(r.pos,at+4);self.assertFalse(any(v.get('tag')==387 for v in r.records))
+        for at in (3,21,31,44):
+            bad=bytearray(good);bad[at]=42;r=Reader(bad,'183-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category']),(at,'member-count'))
+        first=target();r=Reader(tag183((first,),(target(selector=b'\x03\x59'),)),'183-second')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['category'],caught.exception.diagnostic['actual']),('nested-profile',89))
+        self.assertTrue(any(v['start']==26 and v['end']==26+len(first) for v in r.records))
+        self.assertFalse(any(v.get('tag')==387 for v in r.records))
+
     def test_tag5c_fixed_source_widths_and_encodings(self):
         for wire in (b'\x5c',b'\xfa\x5c\x00'):
             for body in (bytes(25),b'\xff'*25,bytes(range(25))):

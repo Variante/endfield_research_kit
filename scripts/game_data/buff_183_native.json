@@ -1,0 +1,239 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123575,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TimeDilationAction_DataForMemoryPack+Beyond_Gameplay_Core_TimeDilationAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      65103808
+    ],
+    [
+      123574,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TimeDilationAction_DataForMemoryPack",
+      "Deserialize",
+      65103904
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 65103808,
+      "endRva": 65103901,
+      "sha256": "DE3B27E7E38723B39A6797A8CF0F2FAB9C4AEABD62F9FF70C5DBF2EBB30126B2",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 65103904,
+      "endRva": 65104659,
+      "sha256": "3B6DF9262CD1B6BAAD33DACA25415B32A3DC158B494425FCB91FD96FE7AD1DAF",
+      "boundary": "member16 source reads through normal RET"
+    },
+    {
+      "startRva": 65104659,
+      "endRva": 65104779,
+      "sha256": "FA921A45E8B192F3B9E0755221CA6170AF74A92C0B82C8C1303C4867F16849F1",
+      "boundary": "reader lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 82980606,
+      "endRva": 82980619,
+      "sha256": "C5D80962CE19152E6A0A029EF9BF94E9E4B595E84405A3C91B7EB17B737D9BAE",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 82980675,
+      "endRva": 82980696,
+      "sha256": "787445B75812F7510BE239BA333B200CC27D9F9597BFD44B0C009FF4E8F562A1",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 65104076,
+      "instructionHex": "488B1555352709",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 65104216,
+      "instructionHex": "488B15C1DC1D09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 65104257,
+      "instructionHex": "488B1558051F09",
+      "cellVa": 6660583136,
+      "usageRawHex": "3FA412C000000000",
+      "methodSpecIndex": 610847,
+      "methodSpec": [
+        428462,
+        -1,
+        62642
+      ],
+      "argumentRawHex": "B878258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000001052F08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 16792,
+        "elementArguments": [
+          "28280000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 65104332,
+      "instructionHex": "488B150D051F09",
+      "cellVa": 6660583136,
+      "usageRawHex": "3FA412C000000000",
+      "methodSpecIndex": 610847,
+      "methodSpec": [
+        428462,
+        -1,
+        62642
+      ],
+      "argumentRawHex": "B878258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000001052F08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 16792,
+        "elementArguments": [
+          "28280000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 65104373,
+      "instructionHex": "488B1524DC1D09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 65104414,
+      "instructionHex": "488B15F3F42009",
+      "cellVa": 6660710168,
+      "usageRawHex": "E9E612C000000000",
+      "methodSpecIndex": 619380,
+      "methodSpec": [
+        428448,
+        -1,
+        42398
+      ],
+      "argumentRawHex": "75310000000000000000118000000000",
+      "typeDefinition": 12661,
+      "typeName": "Beyond.Gameplay.Core.TimeDilationTarget",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 65104454,
+      "instructionHex": "488B15FBD11D09",
+      "cellVa": 6660504648,
+      "usageRawHex": "99CA0FC000000000",
+      "methodSpecIndex": 517452,
+      "methodSpec": [
+        428448,
+        -1,
+        816
+      ],
+      "argumentRawHex": "A22D0000000000000000118000000000",
+      "typeDefinition": 11682,
+      "typeName": "Beyond.Gameplay.Core.GameplayTag",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 65104494,
+      "instructionHex": "488B15D3D11D09",
+      "cellVa": 6660504648,
+      "usageRawHex": "99CA0FC000000000",
+      "methodSpecIndex": 517452,
+      "methodSpec": [
+        428448,
+        -1,
+        816
+      ],
+      "argumentRawHex": "A22D0000000000000000118000000000",
+      "typeDefinition": 11682,
+      "typeName": "Beyond.Gameplay.Core.GameplayTag",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 65104534,
+      "instructionHex": "488B15AB692D09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member16": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "scalar-payload",
+      "counted-target-profiles",
+      "byte",
+      "counted-target-profiles",
+      "scalar-payload",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "curve-profile",
+      "byte",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The extended member16 action consumes common byte/three DWORDs, payload, scalar profile, target list, byte, a second target list, scalar profile, three DWORDs, curve and two terminal bytes. Both list contexts resolve TargetSettings through instantiation16792 and reuse conditional shared reference-list count/null/loop evidence in buff_b4_native.json. Bound counts with a one-byte null-element minimum and reserve 21 then 16 bytes for the remaining minimum tail. Preserve independent list and profile null states; neither equal contexts nor null lists merge instances or remove following members. The Double profiles reuse the four-byte raw scalar reader in buff_35_native.json, targets use buff_ec_native.json with finite buff_b2_native.json extensions, and curve framing reuses buff_24_native.json. Two GameplayTag calls reuse the raw DWORD load/advance pinned by buff_fe_native.json, without object headers; the enum context belongs to the preceding DWORD. Keep all scalar bits anonymous. Completed children remain evidence on later failure; never mark an incomplete action complete. Formatter, normal, lazy, existing-output and FF windows retain complete instructions. Time-dilation ownership, gameplay meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
