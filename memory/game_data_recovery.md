@@ -268,6 +268,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   selects this target-ending order. Preserve null target versus null wrapper
   and stop unknown nested shapes in place; its UI name does not establish
   shield ownership or add a source tail.
+  `scripts/game_data/buff_16f_native.json` separately establishes a byte before
+  the target and a terminal BlackboardDouble profile after it. The scalar
+  profile ends in four raw bytes; keep both nested null states independent and
+  do not infer ATB spending or ownership from the action name.
   `scripts/game_data/buff_10f_native.json` pins a fixed member-five reader:
   byte, three scalar32 values, then a final byte, with no nested provider.
   Its byte helpers establish nonzero normalization, not gameplay meaning;
