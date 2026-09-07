@@ -633,7 +633,50 @@ def tag8e(value=b'\xff',wire=b'\x8e'):
     return wire+b'\x05'+bytes(13)+value
 
 
+def tag125(value=b'\xff',flag=255):
+    return b'\xfa\x25\x01\x06'+bytes(13)+bytes([flag])+value
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag125_byte_then_independent_terminal_scalar(self):
+        for flag in (0,1,128,254,255):
+            for scalar in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'wire',128,b'\xff'*4)):
+                child=tag125(scalar,flag);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='125.bin')
+                self.assertEqual(row['diagnostic'],dict(source='125.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=293),row['completedRecords']);self.assertFalse(row['wholeSchemaExact'])
+                raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+
+    def test_tag125_every_cut_limits_and_trailing(self):
+        for child in (tag125(),tag125(scalar_payload()),tag125(scalar_payload(None)),b'\xfa\x25\x01\xff'):
+            r=Reader(child,'125-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                out=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'125-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==293 for v in r.records))
+                    out.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(out[0],out[1]);self.assertEqual(out[0],out[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag125_bad_header_length_and_missing_interposed_byte(self):
+        for header in (0,5,7,254):
+            bad=bytearray(tag125());bad[3]=header;r=Reader(bad,'125-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='125-header',offset=3,expected=6,actual=header,category='member-count'))
+        for value in (b'',b'\x02',b'\x03'+struct.pack('<i',-2),b'\x03'+struct.pack('<i',0x7fffffff),scalar_payload()[:-1]):
+            r=Reader(tag125(value),'125-bad')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertGreaterEqual(caught.exception.diagnostic['offset'],18)
+            self.assertFalse(any(v.get('tag')==293 for v in r.records))
+        r=Reader(tag125()[:17]+b'\xff','125-missing-byte')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],18)
+
+
     def test_tag8e_independent_terminal_scalar_extent(self):
         for wire in (b'\x8e',b'\xfa\x8e\x00'):
             for value in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'\xff\x8e\x00',128,b'\xff'*4)):

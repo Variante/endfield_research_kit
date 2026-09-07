@@ -591,6 +591,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   profile, with at most 64 active non-null target instances across recursive
   paths. Reject deeper targets before their header; unwind depth on failure,
   retain completed children and leave incomplete parents unrecorded.
+  `scripts/game_data/buff_125_native.json` pins an extended member-six action
+  with a required byte between the common prefix and terminal scalar payload.
+  The byte remains required when the scalar is null; dash-energy recovery
+  semantics remain unresolved.
   `scripts/game_data/finder_0e_native.json` pins selector-finder union 14 to
   a member-two PointFinder reader with two independent vector payloads. Shared
   type context does not merge their null states or length boundaries. The

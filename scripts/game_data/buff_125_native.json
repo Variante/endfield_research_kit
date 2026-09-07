@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122169,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RecoverDashEnergy_DataForMemoryPack+Beyond_Gameplay_Core_RecoverDashEnergy_DataForMemoryPackFormatter",
+      "Deserialize",
+      72713120
+    ],
+    [
+      122168,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RecoverDashEnergy_DataForMemoryPack",
+      "Deserialize",
+      72713216
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72713120,
+      "endRva": 72713209,
+      "sha256": "C54A1E74EF559B2839148B59F27884FAEEBD098B5DAEB65E622468B8F4F503E3",
+      "boundary": "complete formatter initialization and forwarding"
+    },
+    {
+      "startRva": 72713216,
+      "endRva": 72713632,
+      "sha256": "1F03076DB5564683E6A580E75BF129C3B4746B3F2EBB2DF4E8FDD4DDF586AB73",
+      "boundary": "complete initialization and member6 normal reads through RET"
+    },
+    {
+      "startRva": 83814784,
+      "endRva": 83814797,
+      "sha256": "E268FD6480968F6B4AC97635AEB8248D7F9D04E7A30CDDB4C87FB01773CE1FC8",
+      "boundary": "existing output and rejoin"
+    },
+    {
+      "startRva": 83814853,
+      "endRva": 83814874,
+      "sha256": "A8D478A97661874B76105FDF8EA288EA2656F7D14024D1C3DB4B34E2D84D6371",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72713451,
+      "instructionHex": "488B153619B308",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72713579,
+      "instructionHex": "488B15AEC0A908",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "BlackboardDouble scalar payload"
+    ]
+  },
+  "boundary": "Exact current union registration and module/token joins establish the member6 source order: common byte and three DWORDs, one additional byte and terminal BlackboardDouble. The scalar profile is independently nullable with bounded signed payload length, byte and raw four-byte scalar. The interposed byte is required even when the scalar is null. Complete formatter, initialization/normal, existing-output and FF windows retain whole instructions. Structural-only framing does not establish dash energy recovery, runtime evaluation, live formatter selection, full refill/error parity or whole-BuffData EOF."
+}
