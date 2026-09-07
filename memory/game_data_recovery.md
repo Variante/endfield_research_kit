@@ -264,6 +264,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   same variable-width target profile. `scripts/game_data/buff_68_native.json`
   pins its own normal/null paths and exact target context; its equal member
   count does not select the earlier member-five counted-payload layout.
+  The extended union in `scripts/game_data/buff_15c_native.json` independently
+  selects this target-ending order. Preserve null target versus null wrapper
+  and stop unknown nested shapes in place; its UI name does not establish
+  shield ownership or add a source tail.
   `scripts/game_data/buff_10f_native.json` pins a fixed member-five reader:
   byte, three scalar32 values, then a final byte, with no nested provider.
   Its byte helpers establish nonzero normalization, not gameplay meaning;
