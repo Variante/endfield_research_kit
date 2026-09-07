@@ -591,6 +591,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   profile, with at most 64 active non-null target instances across recursive
   paths. Reject deeper targets before their header; unwind depth on failure,
   retain completed children and leave incomplete parents unrecorded.
+  `scripts/game_data/buff_14f_native.json` pins a member-five body of one
+  byte, three DWORDs and a required terminal byte. Its Priority context adds
+  no header. Preserve terminal byte values without boolean or dash semantics;
+  parent completion requires the final byte.
   `scripts/game_data/buff_124_native.json` pins a fixed member-five body:
   one byte and four DWORDs. Priority and RecordType contexts add no nested
   headers; the final DWORD is required for every non-null wrapper. Raw values

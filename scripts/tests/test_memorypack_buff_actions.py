@@ -641,7 +641,46 @@ def tag124(last=0xffffffff):
     return b'\xfa\x24\x01\x05\x80'+struct.pack('<IIII',0xffffffff,0x80000000,0x7fc00000,last)
 
 
+def tag14f(last=0xff):
+    return b'\xfa\x4f\x01\x05\x80'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+bytes([last])
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag14f_fixed_extent_arbitrary_final_byte(self):
+        for bits in (0,1,127,128,255):
+            child=tag14f(bits);self.assertEqual(len(child),18)
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='14f.bin')
+            self.assertEqual(row['diagnostic'],dict(source='14f.bin',offset=37,expected='supported current union tag',actual=89,category='union-tag'))
+            self.assertIn(dict(start=19,end=37,kind='union',tag=335),row['completedRecords']);self.assertFalse(row['wholeSchemaExact'])
+            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag14f_every_cut_hard_limits_and_trailing(self):
+        for child in (tag14f(),b'\xfa\x4f\x01\xff'):
+            r=Reader(child,'14f-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                out=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'14f-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==335 for v in r.records))
+                    out.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(out[0],out[1]);self.assertEqual(out[0],out[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag14f_bad_member_count_and_missing_last_byte(self):
+        for header in (0,4,6,254):
+            bad=bytearray(tag14f());bad[3]=header;r=Reader(bad,'14f-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='14f-header',offset=3,expected=5,actual=header,category='member-count'))
+        for n in range(17,18):
+            r=Reader(tag14f()[:n],'14f-last')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],17)
+            self.assertFalse(any(v.get('tag')==335 for v in r.records))
+
+
     def test_tag124_fixed_extent_arbitrary_final_dword(self):
         for bits in (0,1,0x80000000,0x7fc00000,0xffffffff):
             child=tag124(bits);self.assertEqual(len(child),21)
