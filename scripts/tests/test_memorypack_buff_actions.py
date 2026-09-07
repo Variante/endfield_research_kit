@@ -566,6 +566,49 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag18a_two_independent_scalar_profiles(self):
+        for first in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'wire')):
+            for second in (b'\xff',scalar_payload(None),scalar_payload(b'\xff\x00')):
+                child=b'\xfa\x8a\x01\x07'+b'\xff'*17+first+second
+                end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='18a.bin')
+                self.assertEqual(row['diagnostic'],dict(source='18a.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=394),row['completedRecords'])
+                self.assertFalse(row['wholeSchemaExact'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag18a_every_cut_hard_limits_and_trailing(self):
+        full=b'\xfa\x8a\x01\x07'+bytes(17)+scalar_payload(b'wire')+scalar_payload(None)
+        for child in (full,b'\xfa\x8a\x01\xff'):
+            r=Reader(child,'18a-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'18a-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==394 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag18a_bad_headers_lengths_and_partial_second(self):
+        base=b'\xfa\x8a\x01\x07'+bytes(17)
+        for value in (-2,2,0x7fffffff):
+            r=Reader(base+b'\x03'+struct.pack('<i',value)+b'\xff','18a-length')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('18a-length',22,value))
+            self.assertEqual(r.pos,26);self.assertFalse(r.records)
+        for h in (0,6,8,254):
+            r=Reader(base[:3]+bytes([h])+base[4:],'18a-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),(3,h))
+        first=scalar_payload(b'wire');r=Reader(base+first+b'\x02','18a-second')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),(len(base+first),2))
+        self.assertFalse(any(v.get('tag')==394 for v in r.records))
+        self.assertTrue(any(v['start']==21 and v['end']==21+len(first) for v in r.records))
+
     def test_tag139_payload_and_terminal_target(self):
         for value in (None,b'',b'wire',b'\xff\x00'):
             for nested in (b'\xff',target(),target(direction_value=b'\xff')):

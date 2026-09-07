@@ -709,6 +709,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   independent targets with no extra tail. A completed first target remains
   evidence when the second fails; either null target still consumes its own
   marker and does not eliminate the other member.
+  `scripts/game_data/buff_18a_native.json` places a DWORD before two
+  independently nullable scalar profiles. Both exact Double contexts reuse the
+  payload/byte/four-byte reader; their shared context does not merge instances.
+  Preserve the second profile boundary and leave UI-event meaning unresolved.
   `scripts/game_data/buff_98_native.json` pins payload, curve, scalar profile,
   payload and final byte after the common fields. A null curve differs from a
   null key list; bound the key count before reading raw keys, and retain the

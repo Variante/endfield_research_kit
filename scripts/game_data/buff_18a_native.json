@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123675,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerLiinoUIEvent_DataForMemoryPack+Beyond_Gameplay_Core_TriggerLiinoUIEvent_DataForMemoryPackFormatter",
+      "Deserialize",
+      70612992
+    ],
+    [
+      123674,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerLiinoUIEvent_DataForMemoryPack",
+      "Deserialize",
+      70613088
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70612992,
+      "endRva": 70613085,
+      "sha256": "429BE9A4CC7BEE76CA2C89B53706EBB7B01E2B83ECBB52C964B6BB9619AA24D4",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 70613088,
+      "endRva": 70613500,
+      "sha256": "7E18D90250ACE7BA5A1758B6FC4CA1C44C9A03D10F5B0EB11033AB1D3E95947F",
+      "boundary": "member7 source reads through normal RET"
+    },
+    {
+      "startRva": 70613500,
+      "endRva": 70613584,
+      "sha256": "00FB202E49AB9A3547ED62F3669C53475EA6E9F2C7746C80834452793CCC2DEA",
+      "boundary": "reader lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83570116,
+      "endRva": 83570129,
+      "sha256": "0D985BC10615229E8846182910DCBA5BA127185B9D0FD8E1BEE9EED14D1C1C04",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83570185,
+      "endRva": 83570206,
+      "sha256": "81BBF19B634F962F477B5C7FB997F2A047907872AF650DF10374ECB43BE8E63D",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70613260,
+      "instructionHex": "488B151525D308",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70613366,
+      "instructionHex": "488B1543D8CC08",
+      "cellVa": 6660706752,
+      "usageRawHex": "75E812C000000000",
+      "methodSpecIndex": 619578,
+      "methodSpec": [
+        428448,
+        -1,
+        42543
+      ],
+      "argumentRawHex": "DE260000000000000000118000000000",
+      "typeDefinition": 9950,
+      "typeName": "Beyond.Gameplay.Core.TriggerLiinoUIEvent+LiinoEvent",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70613406,
+      "instructionHex": "488B157BCCC908",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 70613447,
+      "instructionHex": "488B1552CCC908",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The extended member7 action consumes the common byte/three DWORDs, a further DWORD under LiinoEvent context and two independently nullable BlackboardDouble profiles. Both exact nested contexts reuse the member3 payload/byte/four-byte reader pinned by buff_35_native.json; the managed Double name does not imply eight wire bytes. Preserve independent null profiles and payload lengths, and retain the first completed profile when the second fails. The enum context adds no nested header and raw bits remain anonymous. No source tail follows the second profile. Formatter initialization, normal RET, lazy rejoin, existing-output and FF windows retain complete instructions; output setters add no source bytes. UI-event meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
