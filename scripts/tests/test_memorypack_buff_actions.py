@@ -566,6 +566,45 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag77_direct_nullable_dword_list(self):
+        for values in (None,(),(0,),(0xffffffff,0x80000000,0x7fc00000)):
+            items=struct.pack('<i',-1 if values is None else len(values))+b''.join(struct.pack('<I',v) for v in values or ())
+            child=b'\x77\x05\xfe'+b'\xff'*12+items;end=19+len(child)
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='77.bin')
+            self.assertEqual(row['diagnostic'],dict(source='77.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+            self.assertIn(dict(start=19,end=end,kind='union',tag=119),row['completedRecords'])
+            self.assertFalse(row['wholeSchemaExact'])
+            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag77_every_cut_null_extended_hard_limits_and_trailing(self):
+        full=b'\x77\x05'+bytes(13)+struct.pack('<iIII',3,0,0xffffffff,0x80000000)
+        for child in (full,b'\xfa\x77\x00'+full[1:],b'\x77\xff',b'\xfa\x77\x00\xff'):
+            r=Reader(child,'77-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'77-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==119 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag77_header_and_count_fail_before_elements(self):
+        child=b'\x77\x05'+bytes(13)+struct.pack('<iII',2,1,2)
+        for at,values in ((1,(0,254)),(15,(-2,3,0x7fffffff))):
+            for value in values:
+                bad=bytearray(child)
+                if at==1:bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'77-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('77-bounds',at,value))
+                self.assertFalse(r.records)
+                self.assertLessEqual(r.pos,19)
+
     def test_tag6b_three_independent_terminal_payloads(self):
         for first in (None,b'',b'wire'):
             for second in (None,b'',b'\xff\x00'):

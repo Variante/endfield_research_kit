@@ -1,0 +1,255 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124609,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillInterruptReason_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckSkillInterruptReason_DataForMemoryPackFormatter",
+      "Deserialize",
+      73613376
+    ],
+    [
+      124608,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillInterruptReason_DataForMemoryPack",
+      "Deserialize",
+      73613472
+    ],
+    [
+      124607,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillInterruptReason_DataForMemoryPack",
+      "RegisterFormatter",
+      68281920
+    ]
+  ],
+  "methodGroups": [
+    {
+      "image": "MemoryPack.dll",
+      "methods": [
+        [
+          428977,
+          "MemoryPack.Formatters.UnmanagedFormatter`1",
+          "Deserialize",
+          null
+        ]
+      ]
+    }
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73613376,
+      "endRva": 73613465,
+      "sha256": "2BC41AB52CD3CF222968497A70DD9FB1C9EB97CB198DE47AE4FF6D8F472CCD5B",
+      "boundary": "formatter forwarding and inline initialization"
+    },
+    {
+      "startRva": 73613472,
+      "endRva": 73613854,
+      "sha256": "1C949754D4C818CDE72BF37333AA2CE80E4235B9E396D2DC51A533635AAC6130",
+      "boundary": "member5 reads through RET including inline initialization"
+    },
+    {
+      "startRva": 83932452,
+      "endRva": 83932465,
+      "sha256": "482B45EA8AB8BD698CA389663B65BB72576E26EDDFB951D48B8AC7DEF263904E",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83932521,
+      "endRva": 83932542,
+      "sha256": "637AB15C9E0C784BA9BF831A3225E01686A172B4686E263C165E13DEAA983A3E",
+      "boundary": "FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 68281920,
+      "endRva": 68282409,
+      "sha256": "CB6C9A02949E1169D8BFFCF45A7EAD22994CEE72D3845AFF5BB290B047BCA281",
+      "boundary": "exact element formatter construction and registration through terminal branch"
+    },
+    {
+      "startRva": 57808,
+      "endRva": 57937,
+      "sha256": "4CC1E0AEC83B33BB9089039788D75F001989225C48ACBFF4ED8D387C1E17489E",
+      "boundary": "conditional enum underlying-type normalization"
+    },
+    {
+      "startRva": 2911248,
+      "endRva": 2911776,
+      "sha256": "D0C37020DB6E3FA5F5D8429326495F7C63157F0A731EE3DC070E1CB3F8BC05B4",
+      "boundary": "conditional generic-instance normalization through RET, jump table separate"
+    },
+    {
+      "startRva": 249632,
+      "endRva": 250724,
+      "sha256": "E1629CA701FE3C68029C4FA2207449CF615DC38E9EB43F4B3DFDA8319A41F48F",
+      "boundary": "generic method lookup and normalized-instance retry"
+    },
+    {
+      "startRva": 2913616,
+      "endRva": 2913747,
+      "sha256": "CE47EA89E1466DA991434EB620A2DCFDF25D50F80A8D2A7A67CE87E70D73B13A",
+      "boundary": "bounded generic method pointer and invoker projection"
+    },
+    {
+      "startRva": 64076720,
+      "endRva": 64076793,
+      "sha256": "F807237CC6474B9DEAD17A007AF9D9A45A8169F8EB90D6E426B2CE268C23448C",
+      "boundary": "Int32 unmanaged source DWORD and exact four-byte advancement"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 2911776,
+      "endRva": 2911808,
+      "sha256": "E62EBBF329740032E70D885D4C7CB1AB6D998AC5CFA92EE03B4DF8E398A1D15E",
+      "boundary": "underlying-kind normalization jump table"
+    },
+    {
+      "startRva": 183459520,
+      "endRva": 183459536,
+      "sha256": "AA878B9E11001FC3708ECAC3C13669DA67A2C174A205DCD0A24221D95DB38872",
+      "boundary": "generic instance record"
+    },
+    {
+      "startRva": 220995432,
+      "endRva": 220995448,
+      "sha256": "9EC5C0AC60D4DD1B785C67CAD611369DD9701A7DC1E46C4D466F378C5E59C735",
+      "boundary": "generic argument type record"
+    },
+    {
+      "startRva": 184459232,
+      "endRva": 184459248,
+      "sha256": "A89117656247556C511177863DA9739EC0145CB9CA39C5FC91F52F2EC933D269",
+      "boundary": "generic instance record"
+    },
+    {
+      "startRva": 222428696,
+      "endRva": 222428712,
+      "sha256": "3E9E331EF7F565E74812E8848FF4E06B19437DF7E2AB73B568D4B62E998F5E38",
+      "boundary": "generic argument type record"
+    },
+    {
+      "startRva": 189328032,
+      "endRva": 189328044,
+      "sha256": "29328C7F8D92429A91EDC649F5EA0872C8C42FB12C92B3E70B0C4D6E879CEAA0",
+      "boundary": "exact formatter MethodSpec"
+    },
+    {
+      "startRva": 191740260,
+      "endRva": 191740272,
+      "sha256": "8971766760988C48672D0B5B46ACE3DB4DCF7C928BD5D00B761CFB617B8488A5",
+      "boundary": "exact formatter MethodSpec"
+    },
+    {
+      "startRva": 191976864,
+      "endRva": 191976876,
+      "sha256": "13F64A4C4F1392DB4C9A195297BEC8D09E39BDBCCA6065B6500DBCCD648BE7A0",
+      "boundary": "exact formatter MethodSpec"
+    },
+    {
+      "startRva": 202053360,
+      "endRva": 202053376,
+      "sha256": "979A754BB254736838DD7EB4A1E9C9B73219977C83D1EFCAFAD5A822850107B1",
+      "boundary": "Int32 unmanaged generic method table row"
+    },
+    {
+      "startRva": 195098808,
+      "endRva": 195098816,
+      "sha256": "517F715BD0AD421043CC04B0D04A92368138E03E9D5A77DD5C55B071DE60CD06",
+      "boundary": "Int32 unmanaged native pointer"
+    },
+    {
+      "startRva": 207000304,
+      "endRva": 207000312,
+      "sha256": "767C20FA897ED868408B673B314759BA9F4D2F6C3B55A721EA5103D288030357",
+      "boundary": "enum value__ type pointer"
+    },
+    {
+      "startRva": 219353592,
+      "endRva": 219353608,
+      "sha256": "D4FF5632B0412A84228EDCA8F45919D512F037EA9ACD77420A94DCBC55E94B24",
+      "boundary": "enum value__ Int32 type record"
+    },
+    {
+      "startRva": 218339064,
+      "endRva": 218339072,
+      "sha256": "18A97CD9CAF606D6A8C1B4FFFD9F824F4A5BCB6B93C889F8ADAF47B7FBBDDD34",
+      "boundary": "allocated formatter type usage"
+    },
+    {
+      "startRva": 207720696,
+      "endRva": 207720704,
+      "sha256": "46BC1C286912FE8888C0DBCF094B33B9315F8A02C65150BCB5CE2C4C88C8E977",
+      "boundary": "allocated formatter registered pointer"
+    },
+    {
+      "startRva": 205660600,
+      "endRva": 205660616,
+      "sha256": "B9987DAF63504F89361F7B171147648BE8FFD0A35ED2BE59DA9C2BE1230129BC",
+      "boundary": "allocated formatter generic type"
+    },
+    {
+      "startRva": 221893224,
+      "endRva": 221893256,
+      "sha256": "5F1FDB20425892E8DF53EFA6EAE626E79DCF3C1A86C8D4B4C05A776A9B478FD3",
+      "boundary": "allocated formatter class instantiation"
+    },
+    {
+      "startRva": 220029512,
+      "endRva": 220029528,
+      "sha256": "353B3A2F3808F1670A816CEE027853E4714E4DBA62C88D198A8E694174D344F1",
+      "boundary": "UnmanagedFormatter base type"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 73613707,
+      "instructionHex": "488B15965CA508",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 73613801,
+      "instructionHex": "488B152855A008",
+      "cellVa": 6660790040,
+      "usageRawHex": "C1A412C000000000",
+      "methodSpecIndex": 610912,
+      "methodSpec": [
+        428462,
+        -1,
+        62692
+      ],
+      "argumentRawHex": "D818258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000C05EEF8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 20678,
+        "elementArguments": [
+          "59230000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "counted-scalar32"
+    ]
+  },
+  "boundary": "Exact selected registration/module/token identities and source calls establish member5 common byte/three DWORDs followed by a nullable signed-count list. The selected RegisterFormatter constructs UnmanagedFormatter<Skill.InterruptReason>; the gated enum value__ is Int32. No exact enum Deserialize MethodSpec exists. The native normalized-instance retry conditionally maps enum underlying kind 8 to the Int32 sharing class; the canonical Int32 Deserialize MethodSpec and pointer-table row reach a raw DWORD load and four-byte cursor advancement. This supports a structural-only counted-DWORD profile without per-element headers, not a claim of live provider selection or enabled sharing configuration. The generic lookup, enum normalization, selected registration, metadata storage and canonical reader are separately pinned; the 16-byte type/output carriers are not wire-width evidence. Counts are bounded before iteration, null and empty lists differ, and arbitrary four-byte element bits remain anonymous. Interrupt semantics, live formatter/normalization branch, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

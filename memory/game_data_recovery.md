@@ -651,6 +651,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   `scripts/game_data/buff_63_native.json` uses that same bounded query directly
   after the common prefix in a member-five action. Its output copy adds no wire
   fields; preserve distinct null-query, null-array and empty-array states.
+  `scripts/game_data/buff_77_native.json` pins a terminal counted-DWORD list.
+  Its enum element width is supported by explicit unmanaged-formatter registration,
+  underlying-type normalization, a generic lookup retry and the canonical Int32
+  source reader. Absence of an enum-specific MethodSpec does not justify selecting
+  a shared reader without that chain; live provider selection remains conditional.
   `scripts/game_data/buff_a9_native.json` pins a member-28 action with
   independently nullable targets, curve, direction and scalar profiles. Its
   BlackboardImpactValue reader reuses the member-four payload/byte/DWORD/byte
