@@ -566,6 +566,64 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag93_shared_wire_profiles_keep_distinct_union_identity(self):
+        child=b'\x93'+tag92()[1:]
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='93.bin')
+        self.assertEqual(row['diagnostic'],dict(source='93.bin',offset=138,expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertIn(dict(start=19,end=138,kind='union',tag=147),row['completedRecords'])
+        self.assertFalse(any(v.get('tag')==146 for v in row['completedRecords']))
+        for a,b,kind in ((17,28,'anonymous-scalar-bytes-profile'),(32,74,'anonymous-input-profile'),
+                         (38,62,'anonymous-assignment-profile'),(84,94,'anonymous-scalar-payload')):
+            self.assertIn(dict(start=19+a,end=19+b,kind=kind),row['completedRecords'])
+        self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag93_every_cut_hard_limit_extended_null_and_trailing(self):
+        full=b'\x93'+tag92()[1:-1]+target()
+        for child in (full,b'\xfa\x93\x00'+full[1:],b'\x93\xff',b'\xfa\x93\x00\xff'):
+            r=Reader(child,'93-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'93-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==147 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag93_bad_counts_headers_and_mandatory_final_target(self):
+        child=b'\x93'+tag92()[1:]
+        for at in (22,28,34,43,53,57,63,69,79,85,95,99,105,109):
+            for value in (-2,0x7fffffff):
+                bad=bytearray(child);struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'93-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],caught.exception.diagnostic['category']),('93-count',at,value,'count-bounds'))
+        for at in (1,17,32,38,84,118):
+            bad=bytearray(child);bad[at]=42;r=Reader(bad,'93-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category']), (at,'member-count'))
+        r=Reader(child,'93-final',118)
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertTrue(any(v['kind']=='anonymous-input-profile' for v in r.records))
+        self.assertFalse(any(v.get('tag')==147 for v in r.records))
+        gap=child[:-1]+target(selector=b'\x03\x59');r=Reader(gap,'93-gap')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
+        self.assertFalse(any(v.get('tag')==147 for v in r.records))
+
+    def test_tag93_null_lists_empty_lists_and_nested_assignments(self):
+        for count in (-1,0):
+            for item in (b'\xff',b'\x05\xfe'+struct.pack('<i',count)+payload(None)+payload(b'')+b'\x80'):
+                child=(b'\x93\x13'+bytes(15)+b'\xff'+struct.pack('<i',1)+item+bytes(4)+payload(None)+
+                       b'\xff\x80'+struct.pack('<i',count)+bytes(5)+b'\xff')
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+            child=(b'\x93\x13'+bytes(15)+b'\xff'+struct.pack('<i',count)+bytes(4)+payload(None)+
+                   b'\xff\x80'+struct.pack('<i',count)+bytes(5)+b'\xff')
+            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
     def test_tag7b_target_scalar_and_payload_keep_source_order(self):
         child=tag7b();end=19+len(child)
         row=event_prefix(prefix(sequence(child,b'\x59')),source='7b.bin')

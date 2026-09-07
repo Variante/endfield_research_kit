@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = '896B0A45090F902B062013E9ADFA9E985028747E01E832164470D2155B93AB13'
+CORPUS_SHA = '2B067D03630ED56629A5B5161F3A7F235CFF60839D8A430684DC7AC99B8AA463'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -683,6 +683,7 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x390EEDA,'488B15B7537009488B0BE837496FFC488BCF4885C00F85439C5501488B157C1B7D09E8D70511FD488903488BD0E9D6EAFFFF'),
         (0x390ECB4,'488B1535A37809488B0BE85D4B6FFC488BCF4885C00F855D885501488B15F2237D09E82DF910FD488903488BD0E9FCECFFFF'),
         (0x390E89A,'488B15F78A7109488B0BE8774F6FFC488BCF4885C00F858FA85501488B156C1C7D09E8D31011FD488903488BD0E916F1FFFF'),
+        (0x391038E,'488B15B3907809488B0BE883346FFC488BCF4885C00F851A715501488B15680C7D09E8DBE110FD488903488BD0E922D6FFFF'),
         (0x390DD14,'488B15651E7809488B0BE8FD5A6FFC488BCF4885C00F85A28C5501488B15D23D7D09E89DFF10FD488903488BD0E99CFCFFFF')):
         raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
         windows.append({'rva':at,'rawHex':expected})
@@ -787,7 +788,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x13F,0x39150C0,107015,16405,'SaveShieldValueToBB_Data',None),
         (0x140,0x390EEDA,107016,16407,'SaveTargetDistanceAction_Data',None),
         (0x98,0x390ECB4,106543,16059,'CurveEvaluateFloat_Data',None),
-        (0x176,0x390E89A,107166,16509,'SwitchAction_Data',None)):
+        (0x176,0x390E89A,107166,16509,'SwitchAction_Data',None),
+        (0x93,0x391038E,106538,16049,'CreateBuffAttachingSkill_Data',None)):
         require(targets[tag],target,source,table_va+tag*4)
         operands=[]
         for at,usage_tag in ((target,1),)+(((init,2),) if init is not None else ()):
@@ -2309,7 +2311,8 @@ def audit():
                Path(__file__).with_name('buff_13f_native.json'),
                Path(__file__).with_name('buff_140_native.json'),
                Path(__file__).with_name('buff_98_native.json'),
-               Path(__file__).with_name('buff_176_native.json')]
+               Path(__file__).with_name('buff_176_native.json'),
+               Path(__file__).with_name('buff_93_native.json')]
     source_hashes = {str(p): sha(p) for p in sources}
     mapper = load('context_audit_mapper', mapper_path)
     catalog = load('context_audit_catalog', catalog_path)
@@ -2782,6 +2785,8 @@ def audit():
         contract_path=Path(__file__).with_name('buff_98_native.json'))
     buff_176=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_176_native.json'))
+    buff_93=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('buff_93_native.json'))
     buff_16b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_16b_native.json'))
     buff_24=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -3038,6 +3043,7 @@ def audit():
         'selectedBuff140ReadOrder':buff_140,
         'selectedBuff98ReadOrder':buff_98,
         'selectedBuff176ReadOrder':buff_176,
+        'selectedBuff93ReadOrder':buff_93,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,

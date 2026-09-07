@@ -700,6 +700,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   than destination offsets: helper calls also consume scalar and byte members.
   `scripts/game_data/buff_92_native.json` pins these readers, nested contexts,
   the assignment-list candidate and the selector finder's zero-member route.
+  `scripts/game_data/buff_93_native.json` independently joins another action to
+  the same source order and nested type arguments, allowing one shared parser
+  branch while retaining separate union identities. Its ActionTargetType is a
+  DWORD helper read, not a nested object. Both lists must reserve later fields,
+  and completed input profiles never make a missing final target acceptable.
   Shared reference-list and provider dispatch remain conditional; a concrete
   static reader is structural evidence, not proof of live formatter execution.
   Next close the most frequent unsupported child consumers before extending
