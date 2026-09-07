@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119916,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DispelAction_DataForMemoryPack+Beyond_Gameplay_Core_DispelAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      71587504
+    ],
+    [
+      119915,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DispelAction_DataForMemoryPack",
+      "Deserialize",
+      71587600
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 71587504,
+      "endRva": 71587597,
+      "sha256": "BD564A4272515047D67B17A63F5DC5BD092F4E6AE7DF2B343E7AAA9A6EF90B9A",
+      "boundary": "formatter complete initialization and forwarding"
+    },
+    {
+      "startRva": 71587600,
+      "endRva": 71588119,
+      "sha256": "1D5A4DA48BEDA17B2C4CC5D224BC3F6C4E1FFECFEA74744F33CC3D6129B8BBA7",
+      "boundary": "member9 normal source reads through RET"
+    },
+    {
+      "startRva": 71588119,
+      "endRva": 71588215,
+      "sha256": "BBBC2E55CD3DBFB666AE1395FAB112E4458FC03EE24C774F7490D37EC298F165",
+      "boundary": "complete lazy initialization and rejoin"
+    },
+    {
+      "startRva": 83688796,
+      "endRva": 83688809,
+      "sha256": "95D61F0A1B90520066084FA473243134ACC6D2107C241556F55300A794BF8FA6",
+      "boundary": "existing output preparation and rejoin"
+    },
+    {
+      "startRva": 83688865,
+      "endRva": 83688886,
+      "sha256": "C550255A0099BD75C23A72C4DE29DEA21D62048BF3E6C629DBE69E379A145350",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 71587772,
+      "instructionHex": "488B156546C408",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 71587912,
+      "instructionHex": "488B15D9BCC108",
+      "cellVa": 6660953384,
+      "usageRawHex": "55E512C000000000",
+      "methodSpecIndex": 619178,
+      "methodSpec": [
+        428448,
+        -1,
+        42255
+      ],
+      "argumentRawHex": "44270000000000000000118000000000",
+      "typeDefinition": 10052,
+      "typeName": "Beyond.Gameplay.Core.DispelLevel",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 71587952,
+      "instructionHex": "488B1591BEC108",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71587993,
+      "instructionHex": "488B1568BEC108",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71588034,
+      "instructionHex": "4C8B058FF5BA08",
+      "cellVa": 6660509272,
+      "usageRawHex": "37CC0FC000000000",
+      "methodSpecIndex": 517659,
+      "methodSpec": [
+        428464,
+        -1,
+        12732
+      ],
+      "argumentRawHex": "AA2D0000000000000000118000000000",
+      "typeDefinition": 11690,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member9": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "scalar32",
+      "target-profile",
+      "target-profile",
+      "query-profile"
+    ]
+  },
+  "boundary": "Exact current union registration and module/token joins establish a member9 source order: common byte and three DWORDs, an extra byte and DWORD, two independent target profiles, and a final direct query profile. Both target contexts select MethodSpec 619977 and reuse the existing finite target grammar; the final R8 context selects MethodSpec 517659 with the independent query grammar. The scalar enum context adds no nested header. Preserve null wrappers, independently null targets, null query and null/empty query lists. Unknown nested target members retain the parent incomplete, and completed targets never replace the final query. Complete formatter, normal, initialization, existing-output and FF windows retain whole instructions. Structural-only framing does not establish dispel behavior, level meaning, target ownership, tag semantics, live provider selection, full refill/error parity or whole-BuffData EOF."
+}

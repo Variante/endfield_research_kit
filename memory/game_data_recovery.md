@@ -569,6 +569,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   width. Both profiles may complete while the parent remains truncated; require
   the final DWORD and full signed-length payload. Random algorithm, distribution
   and payload ownership remain unresolved.
+  `scripts/game_data/buff_9f_native.json` places an extra byte and DWORD before
+  two independent target profiles and a final direct query. Matching target
+  contexts do not merge their null states; completed targets do not replace
+  the final query header, count or elements. Unknown target children leave the
+  parent incomplete. Dispel behavior and query-tag meanings remain unresolved.
   `scripts/game_data/buff_7e_native.json` pins a member-six reader ending
   in two target profiles. Both exact contexts select the same finite profile,
   but their null states, nested counts and source boundaries stay independent.
