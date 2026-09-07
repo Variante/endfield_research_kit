@@ -586,7 +586,60 @@ def taga7(disabled=b'\xff',enabled=b'\xff',query=b'\xff',last=b'\x80',wire=b'\xa
     return wire+b'\x0b'+bytes(13)+b'\xff'+disabled+enabled+query+disabled+enabled+last
 
 
+def tag19e(first=b'\xff',second=b'\xff',items=(),value=None,last=b'\x00\x80\xff\xfe\x01\x02'):
+    return (b'\xfa\x9e\x01\x17'+b'\xff'*13+first+b'\xff'*8+second+b'\x80'*16+
+            payload(value)+b'\xff\x80'+payload(b'')+struct.pack('<i',-1 if items is None else len(items))+
+            b''.join(payload(v) for v in items or ())+last)
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag19e_independent_curves_nullable_list_and_six_final_bytes(self):
+        for first in (b'\xff',curve24(None),curve24((b'\xff'*28,))):
+            for second in (b'\xff',curve24(),curve24((b'\x80'*28,))):
+                for items in (None,(),(None,),(b'',b'\xff\xfa')):
+                    child=tag19e(first,second,items);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='19e.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='19e.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=414),row['completedRecords'])
+                    self.assertFalse(row['wholeSchemaExact'])
+                    self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag19e_every_cut_hard_limits_and_trailing(self):
+        for child in (tag19e(curve24((b'\xff'*28,)),curve24(),(None,b'\xfa\xff'),b'payload'),b'\xfa\x9e\x01\xff'):
+            r=Reader(child,'19e-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'19e-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==414 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag19e_bad_headers_lengths_list_reservation_and_missing_tail(self):
+        for at in (3,17,26):
+            bad=bytearray(tag19e());bad[at]=42;r=Reader(bad,'19e-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category']),(at,'member-count'))
+        for at in (43,len(tag19e())-10):
+            for count in (-2,0x7fffffff):
+                bad=bytearray(tag19e());struct.pack_into('<i',bad,at,count);r=Reader(bad,'19e-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('19e-count',at,count,'count-bounds'))
+        bad=bytearray(tag19e());at=len(bad)-10;struct.pack_into('<i',bad,at,1)
+        r=Reader(bad,'19e-reserve')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category']),(at,'count-bounds'))
+        for missing in range(1,7):
+            data=tag19e(items=None)[:-missing];r=Reader(data,'19e-last')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],len(data))
+            self.assertFalse(any(v.get('tag')==414 for v in r.records))
+
     def test_taga7_profiles_null_states_and_terminal_boundary(self):
         for wire in (b'\xa7',b'\xfa\xa7\x00'):
             for disabled in (b'\xff',b'\x01\x00',b'\x01\xff'):

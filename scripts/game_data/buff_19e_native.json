@@ -1,0 +1,188 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      118895,
+      "Beyond.MemoryPack.Beyond_Gameplay_View_AddCameraControlStateAction_AddCameraControlStateActionDataForMemoryPack+Beyond_Gameplay_View_AddCameraControlStateAction_AddCameraControlStateActionDataForMemoryPackFormatter",
+      "Deserialize",
+      54755120
+    ],
+    [
+      118894,
+      "Beyond.MemoryPack.Beyond_Gameplay_View_AddCameraControlStateAction_AddCameraControlStateActionDataForMemoryPack",
+      "Deserialize",
+      54747600
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 54755120,
+      "endRva": 54755213,
+      "sha256": "178ABC0852D38ADB153AA572B0AD188975D9ADA76EBDA9EAD05E13BF0BF739F1",
+      "boundary": "formatter complete initialization and forwarding"
+    },
+    {
+      "startRva": 54747600,
+      "endRva": 54748569,
+      "sha256": "A3DA8A93631644EA746C3DC4EA76E2F4FE36B4D6A724AAF9137D4F9DDD9CF44C",
+      "boundary": "member23 normal source reads through RET"
+    },
+    {
+      "startRva": 54748569,
+      "endRva": 54748665,
+      "sha256": "AE00E66A4C91E8511912F68A37D42FBE250AD82CC49AD2B7AC8705140B1ED44D",
+      "boundary": "complete lazy initialization and rejoin"
+    },
+    {
+      "startRva": 81375678,
+      "endRva": 81375691,
+      "sha256": "551DC05E939859FBA40C7BABBE45CD3333B0106C58123252F1569A4FD7C2BCA4",
+      "boundary": "existing output preparation and rejoin"
+    },
+    {
+      "startRva": 81375747,
+      "endRva": 81375768,
+      "sha256": "6299721459BBB57B39CA1A631152D0C1A4A46E15E84A8A1978A2D77AD6E1C249",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 54747772,
+      "instructionHex": "488B15A53BC509",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54747878,
+      "instructionHex": "488B155B71CB09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54747919,
+      "instructionHex": "488B151A59C509",
+      "cellVa": 6661127216,
+      "usageRawHex": "87E712C000000000",
+      "methodSpecIndex": 619459,
+      "methodSpec": [
+        428448,
+        -1,
+        26642
+      ],
+      "argumentRawHex": "A1CB0000000000000000118000000000",
+      "typeDefinition": 52129,
+      "typeName": "Cinemachine.CinemachineBlendDefinition+Style",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54747993,
+      "instructionHex": "488B15E870CB09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54748034,
+      "instructionHex": "488B15A758C509",
+      "cellVa": 6661127216,
+      "usageRawHex": "87E712C000000000",
+      "methodSpecIndex": 619459,
+      "methodSpec": [
+        428448,
+        -1,
+        26642
+      ],
+      "argumentRawHex": "A1CB0000000000000000118000000000",
+      "typeDefinition": 52129,
+      "typeName": "Cinemachine.CinemachineBlendDefinition+Style",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54748312,
+      "instructionHex": "488B15D9DBBB09",
+      "cellVa": 6660505720,
+      "usageRawHex": "33A412C000000000",
+      "methodSpecIndex": 610841,
+      "methodSpec": [
+        428462,
+        -1,
+        1828
+      ],
+      "argumentRawHex": "387F258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000C039FE8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 891,
+        "elementArguments": [
+          "C78C00000000000000000E0000000000"
+        ]
+      },
+      "typeKind": 21
+    }
+  ],
+  "anonymousReadOrder": {
+    "member23": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "curve-profile",
+      "scalar32",
+      "raw4",
+      "curve-profile",
+      "scalar32",
+      "raw4",
+      "raw4",
+      "raw4",
+      "byte-payload",
+      "byte",
+      "byte",
+      "byte-payload",
+      "nullable-byte-payload-list",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte"
+    ]
+  },
+  "boundary": "Exact current union registration joins the View wrapper, not a Core namespace alias. Module/token-joined source calls establish two independent curve profiles with scalar32/raw4 interleaving, two signed-length byte payloads, a nullable byte-payload list and six final bytes. Both curves reuse the selected buff_24_native.json grammar. The list uses the exact MethodSpec 610841 already pinned for payload lists: direct signed count, minimum four bytes per element, no element header; reserve six final bytes before looping. Raw4 values remain anonymous bits. Null curve, null list, empty list and null wrapper stay distinct. Complete formatter, normal, initialization, existing-output and FF paths retain whole instructions. Structural-only finite framing does not establish camera state identity, blend meaning, live provider selection, complete refill/error parity or whole-BuffData EOF."
+}

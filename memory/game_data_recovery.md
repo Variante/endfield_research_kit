@@ -551,6 +551,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   two terminal bytes. The parent still requires its own final byte. Preserve
   separate nested boundaries; part identity and modification meaning remain
   unresolved despite the exact selected type contexts.
+  `scripts/game_data/buff_19e_native.json` independently joins a View wrapper
+  with two curve profiles and a nullable byte-payload list before six terminal
+  bytes. Reserve those six bytes while bounding the list; neither a null list
+  nor a completed element completes the parent. Preserve raw four-byte values
+  and independent curve nulls without promoting camera or blend meaning.
   `scripts/game_data/buff_7e_native.json` pins a member-six reader ending
   in two target profiles. Both exact contexts select the same finite profile,
   but their null states, nested counts and source boundaries stay independent.

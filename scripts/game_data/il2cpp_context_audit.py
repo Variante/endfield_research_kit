@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = 'FB9B7E533E7A29DE79E7F234DE58F323F6D733D91EE65F943922EA22C11C07FA'
+CORPUS_SHA = '5DEA82DBF070615F1DF78E399243FFDB0F2E728A5B3787C2C66395353A9C1FE3'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -708,6 +708,7 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x390FE7A,'488B155F9E7809488B0BE897396FFC488BCF4885C00F85BD6E5501488B152C1D7D09E853E010FD488903488BD0E936DBFFFF'),
         (0x391006E,'488B15D3327009488B0BE8A3376FFC488BCF4885C00F85898C5501488B15E00A7D09E8C3F510FD488903488BD0E942D9FFFF'),
         (0x390F1FA,'488B153F947809488B0BE817466FFC488BCF4885C00F850A855501488B15C41F7D09E837F510FD488903488BD0E9B6E7FFFF'),
+        (0x390EBEC,'488B153D2C7809488B0BE8254C6FFC488BCF4885C00F8523AA5501488B152A177D09E81D1111FD488903488BD0E9C4EDFFFF'),
         (0x390DD14,'488B15651E7809488B0BE8FD5A6FFC488BCF4885C00F85A28C5501488B15D23D7D09E89DFF10FD488903488BD0E99CFCFFFF')):
         raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
         windows.append({'rva':at,'rawHex':expected})
@@ -837,7 +838,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x3A,0x391083E,106435,16013,'CheckBuffEnhanceChangedLayer_Data',None),
         (0x4C,0x390FE7A,106455,16023,'ClearProjectileAction_Data',None),
         (0x150,0x391006E,107090,16439,'SetGeneralAbilityCd_Data',None),
-        (0xA7,0x390F1FA,106586,16091,'EnablePartsAction_Data',None)):
+        (0xA7,0x390F1FA,106586,16091,'EnablePartsAction_Data',None),
+        (0x19E,0x390EBEC,107707,15957,'AddCameraControlStateAction_AddCameraControlStateActionData',None)):
         require(targets[tag],target,source,table_va+tag*4)
         operands=[]
         for at,usage_tag in ((target,1),)+(((init,2),) if init is not None else ()):
@@ -851,7 +853,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
             require(record[10],0x12,source,pointer+10)
             require(struct.unpack_from('<Q',record)[0],definition,source,pointer)
             require(definition<len(md.types),True,source,pointer)
-            expected_name='Beyond.MemoryPack.Beyond_Gameplay_Core_'+suffix+'ForMemoryPack'
+            namespace='View' if tag==0x19E else 'Core'
+            expected_name='Beyond.MemoryPack.Beyond_Gameplay_'+namespace+'_'+suffix+'ForMemoryPack'
             require(md.type_full_name(md.types[definition]),expected_name,source,pointer)
             operands.append({'instructionRva':at,'cellVa':cell,'usageRawHex':usage.hex().upper(),
                 'usageTag':usage_tag,'registeredTypeIndex':index,'typePointerVa':pointer,'typeRawHex':record.hex().upper()})
@@ -2385,7 +2388,8 @@ def audit():
                Path(__file__).with_name('buff_3a_native.json'),
                Path(__file__).with_name('buff_4c_native.json'),
                Path(__file__).with_name('buff_150_native.json'),
-               Path(__file__).with_name('buff_a7_native.json')]
+               Path(__file__).with_name('buff_a7_native.json'),
+               Path(__file__).with_name('buff_19e_native.json')]
     source_hashes = {str(p): sha(p) for p in sources}
     mapper = load('context_audit_mapper', mapper_path)
     catalog = load('context_audit_catalog', catalog_path)
@@ -2910,6 +2914,8 @@ def audit():
         contract_path=Path(__file__).with_name('buff_150_native.json'))
     buff_a7=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_a7_native.json'))
+    buff_19e=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('buff_19e_native.json'))
     buff_16b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_16b_native.json'))
     buff_24=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -3192,6 +3198,7 @@ def audit():
         'selectedBuff4CReadOrder':buff_4c,
         'selectedBuff150ReadOrder':buff_150,
         'selectedBuffA7ReadOrder':buff_a7,
+        'selectedBuff19EReadOrder':buff_19e,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,
