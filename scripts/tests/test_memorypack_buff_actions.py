@@ -566,6 +566,49 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag139_payload_and_terminal_target(self):
+        for value in (None,b'',b'wire',b'\xff\x00'):
+            for nested in (b'\xff',target(),target(direction_value=b'\xff')):
+                child=b'\xfa\x39\x01\x06'+b'\xff'*13+payload(value)+nested
+                end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='139.bin')
+                self.assertEqual(row['diagnostic'],dict(source='139.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=313),row['completedRecords'])
+                self.assertFalse(row['wholeSchemaExact'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag139_every_cut_hard_limits_and_trailing(self):
+        full=b'\xfa\x39\x01\x06'+bytes(13)+payload(b'wire')+target()
+        for child in (full,b'\xfa\x39\x01\xff'):
+            r=Reader(child,'139-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'139-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==313 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag139_bad_length_header_and_partial_target(self):
+        base=b'\xfa\x39\x01\x06'+bytes(13)
+        for value in (-2,2,0x7fffffff):
+            r=Reader(base+struct.pack('<i',value)+b'\xff','139-length')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('139-length',17,value))
+            self.assertEqual(r.pos,21);self.assertFalse(r.records)
+        for h in (0,5,7,254):
+            r=Reader(base[:3]+bytes([h])+base[4:],'139-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),(3,h))
+        child=base+payload(b'wire')+target(selector=b'\x03\x59')
+        row=event_prefix(prefix(sequence(child)),source='139-unknown')
+        self.assertEqual(row['diagnostic']['category'],'nested-profile');self.assertEqual(row['diagnostic']['actual'],89)
+        self.assertFalse(any(v.get('tag')==313 for v in row['completedRecords']))
+        self.assertTrue(any(v['kind']=='anonymous-byte-payload' and v['start']==36 and v['end']==44 for v in row['completedRecords']))
+
     def test_tag187_assignment_list_and_three_targets(self):
         item=b'\x06'+bytes(4)+payload(None)+b'\xff'*4+payload(b'wire')+payload(b'')+b'\xfe'
         for items in (None,(),(b'\xff',),(item,b'\xff',item)):
