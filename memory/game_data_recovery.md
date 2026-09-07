@@ -705,6 +705,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   `scripts/game_data/buff_139_native.json` ends immediately after payload
   and target, with no scalar tail. Preserve their independent null states and
   completed payload evidence when the target fails; character-type meaning is unresolved.
+  `scripts/game_data/buff_135_native.json` places one BuffId profile before
+  target and a final byte payload. Its exact value-type context reuses the
+  member-one payload reader without a list count or implied raw value width.
+  Preserve each null state and completed child on later failure; no source
+  tail follows the last payload. Stack-count ownership remains unresolved.
   `scripts/game_data/buff_140_native.json` pins a payload followed by two
   independent targets with no extra tail. A completed first target remains
   evidence when the second fails; either null target still consumes its own

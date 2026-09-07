@@ -566,6 +566,57 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag135_independent_profiles_and_terminal_payload(self):
+        for first in (b'\xff',b'\x01'+payload(None),b'\x01'+payload(b'wire')):
+            for nested in (b'\xff',target()):
+                for value in (None,b'',b'\xff\x00'):
+                    child=b'\xfa\x35\x01\x07'+b'\xff'*13+first+nested+payload(value)
+                    end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='135.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='135.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=309),row['completedRecords'])
+                    self.assertFalse(row['wholeSchemaExact'])
+                    self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag135_every_cut_hard_limits_and_trailing(self):
+        full=b'\xfa\x35\x01\x07'+bytes(13)+b'\x01'+payload(b'id')+target()+payload(b'wire')
+        for child in (full,b'\xfa\x35\x01\xff'):
+            r=Reader(child,'135-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'135-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==309 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag135_bad_headers_lengths_and_partial_tail(self):
+        base=b'\xfa\x35\x01\x07'+bytes(13)
+        for lead in (base+b'\x01',base+b'\xff\xff'):
+            for value in (-2,2,0x7fffffff):
+                r=Reader(lead+struct.pack('<i',value)+b'\xff','135-length')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('135-length',len(lead),value,'count-bounds'))
+                self.assertFalse(any(v.get('tag')==309 for v in r.records))
+        for at in (3,17):
+            bad=bytearray(base+b'\xff\xff'+payload(None));bad[at]=42
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(bad))
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category']),(at+5,'member-count'))
+        first=b'\x01'+payload(b'id')
+        child=base+first+target(selector=b'\x03\x59')
+        row=event_prefix(prefix(sequence(child)),source='135-unknown')
+        self.assertEqual(row['diagnostic']['category'],'nested-profile');self.assertEqual(row['diagnostic']['actual'],89)
+        self.assertFalse(any(v.get('tag')==309 for v in row['completedRecords']))
+        self.assertTrue(any(v['start']==36 and v['end']==36+len(first) for v in row['completedRecords']))
+        r=Reader(base+first+target()+b'\x00','135-tail')
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertTrue(any(v['start']==17 and v['end']==17+len(first) for v in r.records))
+        self.assertFalse(any(v.get('tag')==309 for v in r.records))
+
     def test_tag18a_two_independent_scalar_profiles(self):
         for first in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'wire')):
             for second in (b'\xff',scalar_payload(None),scalar_payload(b'\xff\x00')):
