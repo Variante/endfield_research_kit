@@ -381,8 +381,12 @@ only.
   used for native texture-pointer lookup and require its table to match actual
   setters. The internal descriptor-dispatch alternative resolves OpenGL-named
   binding functions; it cannot establish the captured D3D11 route. Binary
-  alternatives alone cannot identify the active backend. Capture the callback
-  renderer and submission/execution streams before extending binding observation.
+  alternatives alone cannot identify the active backend. The new authenticated
+  environment capture retains complete submission/execution streams: the
+  callback renderer differs from the submission device, and the selected byte
+  candidate executes outside the submission interval. Use those observed
+  renderer identities to trace binding; neither equality nor chronology closes
+  allocation or draw-consumption ownership.
   Callback-owned allocation bytes are read before the
   native callback frees them; completion cannot establish allocation lifetime.
   See
