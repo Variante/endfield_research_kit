@@ -611,6 +611,51 @@ class BuffActionsTests(unittest.TestCase):
         self.assertFalse(any(v.get('tag')==392 for v in row['completedRecords']))
         self.assertIn(dict(start=38,end=38+len(target()),kind='anonymous-target-profile'),row['completedRecords'])
 
+    def test_tag40_direct_nullable_member_one_list(self):
+        for values in (None,(),(0,),(0xffffffff,0x80000000,0x7fc00000)):
+            items=struct.pack('<i',-1 if values is None else len(values))+b''.join(b'\x01'+struct.pack('<I',v) for v in values or ())
+            child=b'\x40\x06\xfe'+b'\xff'*16+items;end=19+len(child)
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='40.bin')
+            self.assertEqual(row['diagnostic'],dict(source='40.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+            self.assertIn(dict(start=19,end=end,kind='union',tag=64),row['completedRecords'])
+            self.assertFalse(row['wholeSchemaExact'])
+            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag40_every_cut_null_extended_hard_limits_and_trailing(self):
+        full=b'\x40\x06'+bytes(17)+struct.pack('<i',3)+b'\xff\x01'+b'\xff'*4+b'\x01'+bytes(4)
+        for child in (full,b'\xfa\x40\x00'+full[1:],b'\x40\xff',b'\xfa\x40\x00\xff'):
+            r=Reader(child,'40-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'40-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==64 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag40_header_and_count_fail_before_elements(self):
+        child=b'\x40\x06'+bytes(17)+struct.pack('<i',1)+b'\xff'
+        for at,values in ((1,(0,254)),(19,(-2,2,0x7fffffff))):
+            for value in values:
+                bad=bytearray(child)
+                if at==1:bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'40-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('40-bounds',at,value))
+                self.assertFalse(r.records)
+                self.assertLessEqual(r.pos,23)
+
+        for value in (0,2,254):
+            r=Reader(b'\x40\x06'+bytes(17)+struct.pack('<i',1)+bytes([value])+bytes(4),'40-element')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),(23,value))
+            self.assertFalse(any(v.get('tag')==64 for v in r.records))
+
     def test_tag77_direct_nullable_dword_list(self):
         for values in (None,(),(0,),(0xffffffff,0x80000000,0x7fc00000)):
             items=struct.pack('<i',-1 if values is None else len(values))+b''.join(struct.pack('<I',v) for v in values or ())
@@ -5125,7 +5170,7 @@ class BuffActionsTests(unittest.TestCase):
             with self.subTest(raw=raw):self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
 
     def test_unknown_union_does_not_borrow_legacy_alias_or_search(self):
-        for tag in (0xC0,0x40,0x71):
+        for tag in (0xC0,0x59,0x71):
             raw=prefix(sequence(bytes([tag])+action()))
             row=event_prefix(raw,source='unknown.bin')
             self.assertEqual(row['status'],'unsupported')

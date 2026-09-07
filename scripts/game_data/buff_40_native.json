@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124144,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckDamageTag_DataForMemoryPack+Beyond_Gameplay_Core_CheckDamageTag_DataForMemoryPackFormatter",
+      "Deserialize",
+      73399792
+    ],
+    [
+      124143,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckDamageTag_DataForMemoryPack",
+      "Deserialize",
+      73399888
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73399792,
+      "endRva": 73399881,
+      "sha256": "D5CC51267C17F34AE5CDADB7E88A7768B8BE7EB2D427A7CE81EE0EAC32E27404",
+      "boundary": "formatter forwarding and inline initialization"
+    },
+    {
+      "startRva": 73399888,
+      "endRva": 73400326,
+      "sha256": "0FEBBA55A87D915D70C4057F53608EDDA8245BE59188D5C0FEA71C72152AC4B8",
+      "boundary": "member6 source reads through RET including inline initialization"
+    },
+    {
+      "startRva": 83911848,
+      "endRva": 83911861,
+      "sha256": "4A816C606679FFBB1AE5F86FD9421CD1B4508E6595C22983054ACFFC2248150B",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83911917,
+      "endRva": 83911938,
+      "sha256": "7509663A0DA378625A21DA8A65384C0CF04CCEBC2268076327B0B01AE133C8D0",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 73400135,
+      "instructionHex": "488B15DA9EA808",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 73400237,
+      "instructionHex": "488B15AC17A608",
+      "cellVa": 6660953952,
+      "usageRawHex": "C7E712C000000000",
+      "methodSpecIndex": 619491,
+      "methodSpec": [
+        428448,
+        -1,
+        42484
+      ],
+      "argumentRawHex": "A92D0000000000000000118000000000",
+      "typeDefinition": 11689,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery+QueryType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 73400273,
+      "instructionHex": "488B1598409F08",
+      "cellVa": 6660505712,
+      "usageRawHex": "55A312C000000000",
+      "methodSpecIndex": 610730,
+      "methodSpec": [
+        428462,
+        -1,
+        8486
+      ],
+      "argumentRawHex": "28B6258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000D03CFE8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 816,
+        "elementArguments": [
+          "A22D0000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "tag-elements"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member6 action consumes the common byte/three DWORDs, a DWORD under QueryType context, and a direct List<GameplayTag>. List MethodSpec610730 joins element instantiation816 and reuses the independently pinned FF/member1 DWORD element reader in buff_c5_native.json. There is no GameplayTagList object header or final source tail. Signed nullable count/loop remains conditional on selectedListFormatterCandidate. Check counts before iteration; preserve null list, empty list and null elements independently. QueryType bits remain anonymous and the element object header must not be erased into a raw DWORD-array profile. Outer and formatter initialization are inline; bytes after the normal RET are error or output-setter paths, not additional source members. Tag interpretation, condition behavior, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
