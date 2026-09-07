@@ -710,6 +710,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   member-one payload reader without a list count or implied raw value width.
   Preserve each null state and completed child on later failure; no source
   tail follows the last payload. Stack-count ownership remains unresolved.
+  `scripts/game_data/buff_122_native.json` closes a nullable list after the
+  common fields. Each member-four element reads scalar profile, payload,
+  target and payload, with no element or outer tail. Bound the count using
+  the null element's one-byte minimum; retain completed elements when a later
+  element fails. The concrete element reader establishes source order, while
+  shared list dispatch and skill-setting ownership remain unresolved.
   `scripts/game_data/buff_140_native.json` pins a payload followed by two
   independent targets with no extra tail. A completed first target remains
   evidence when the second fails; either null target still consumes its own

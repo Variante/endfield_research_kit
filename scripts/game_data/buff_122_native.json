@@ -1,0 +1,184 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122117,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ReadSkillSettingData_DataForMemoryPack+Beyond_Gameplay_Core_ReadSkillSettingData_DataForMemoryPackFormatter",
+      "Deserialize",
+      68984480
+    ],
+    [
+      122116,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ReadSkillSettingData_DataForMemoryPack",
+      "Deserialize",
+      68984576
+    ],
+    [
+      163149,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ReadSkillSettingData_ReadDataForMemoryPack+Beyond_Gameplay_Core_ReadSkillSettingData_ReadDataForMemoryPackFormatter",
+      "Deserialize",
+      68658384
+    ],
+    [
+      163148,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ReadSkillSettingData_ReadDataForMemoryPack",
+      "Deserialize",
+      68658480
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 68984480,
+      "endRva": 68984573,
+      "sha256": "9131B754A54E1D0ACA401405B33373FE27F8CD8B122313F924318BDC9B5C45FE",
+      "boundary": "action formatter forwarding and initialization"
+    },
+    {
+      "startRva": 68984576,
+      "endRva": 68984907,
+      "sha256": "C442783ECDE90FABFCB07576B8C77FDDE6AA72F67F924266F7219DF584430440",
+      "boundary": "member5 source reads through normal RET"
+    },
+    {
+      "startRva": 68984907,
+      "endRva": 68984979,
+      "sha256": "C2B41638AD8FFB5219608A256AF47034AF4654C05D7092B76ED61C0CE6A14CF9",
+      "boundary": "action lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83436300,
+      "endRva": 83436313,
+      "sha256": "666966CCAA9403E90D2F9DF224FD36292B783106BB9539DD80D5F1AC6AE0D712",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83436369,
+      "endRva": 83436390,
+      "sha256": "12585E0D3414A1B74186AAB22971A0D2EACA583B3A464BD8D74A3E08017EED8A",
+      "boundary": "action FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 68658384,
+      "endRva": 68658477,
+      "sha256": "8D0E4E3E8F864532C2A34523D0E9A255F8A50EFB3374EC22137F0AA4E3F3F287",
+      "boundary": "element formatter forwarding and initialization"
+    },
+    {
+      "startRva": 68658480,
+      "endRva": 68658727,
+      "sha256": "3E2EAD981EEA562652BAA1871A85415627A152383FA0052677077AB9A9205D0F",
+      "boundary": "member4 element source reads through normal RET"
+    },
+    {
+      "startRva": 68658727,
+      "endRva": 68658799,
+      "sha256": "39ABEE909A870801EBABA8506BE975133B6B4A7AC94FB34A46D6ABE042ED1B29",
+      "boundary": "element lazy initialization and complete rejoin"
+    },
+    {
+      "startRva": 83386732,
+      "endRva": 83386783,
+      "sha256": "8BC05D5595C7E1914212EE2F758D0AC0B33BB83A2BD742CC272D5B35831D4208",
+      "boundary": "element construction and header rejoin"
+    },
+    {
+      "startRva": 83386839,
+      "endRva": 83386860,
+      "sha256": "8D46940204B361B9E8EDCE2AA0A0B54AC2DB8E0E500079AE687326D994F150A8",
+      "boundary": "element FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 68984748,
+      "instructionHex": "488B1575FEEB08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 68984854,
+      "instructionHex": "488B15DBCEE408",
+      "cellVa": 6660648696,
+      "usageRawHex": "BBA412C000000000",
+      "methodSpecIndex": 610909,
+      "methodSpec": [
+        428462,
+        -1,
+        62689
+      ],
+      "argumentRawHex": "F821258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000403DF08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17120,
+        "elementArguments": [
+          "F1250000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 68658565,
+      "instructionHex": "488B1594A0E708",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 68658640,
+      "instructionHex": "488B153171EE08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "counted-member4-profiles"
+    ],
+    "member4-element": [
+      "scalar-payload",
+      "byte-payload",
+      "target-profile",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The extended member5 action consumes the common byte/three DWORDs and a nullable list whose exact generic context resolves ReadData element9713 through instantiation17120. Each element is FF or member4, consuming BlackboardDouble, byte payload, TargetSettings and a final byte payload. The Double context reuses the member3 payload/byte/four-byte reader pinned by buff_35_native.json; its name and output slot do not establish wire width. TargetSettings reuses buff_ec_native.json and finite buff_b2_native.json extensions. Shared reference-list count/null/loop framing reuses the conditional consumer in buff_b4_native.json; actual provider selection remains unresolved. Bound signed counts before iteration using the one-byte null element minimum. Preserve independent null/empty list, null elements and nested payload states, and completed children when a later read fails. Neither the element nor the action has a further source tail. Normal, lazy, formatter, construction, existing-output and FF windows retain complete instructions; output setters add no source bytes. Skill-setting ownership, identifier meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
