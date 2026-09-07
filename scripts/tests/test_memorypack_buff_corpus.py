@@ -105,7 +105,7 @@ class BuffCandidateTests(unittest.TestCase):
 
     def test_root_continuation_joins_supported_first_collection(self):
         prefix=b'\x1e'+bytes(4)
-        segment=b'\xff'+struct.pack('<i',2)+bytes(8)+b'\x02'+struct.pack('<i',-1)+b'\x7f'
+        segment=b'\xff'+struct.pack('<i',2)+bytes(8)+b'\x02'+struct.pack('<i',-1)+b'\x7f'+struct.pack('<i',0)
         raw=prefix+segment+b'opaque'+_normal()[1:]
         row=self.frame(raw)
         self.assertEqual(row['rootContinuationStatus'],'success')
@@ -240,7 +240,7 @@ class BuffJoinTests(unittest.TestCase):
             self.assertNotEqual(caught.exception.diagnostic['expected'],caught.exception.diagnostic['actual'])
 
     def test_root_continuation_failure_closes_publication_with_diagnostics(self):
-        for segment,expected in ((b'\xff'+struct.pack('<i',0)+b'\xff','complete'),
+        for segment,expected in ((b'\xff'+struct.pack('<i',0)+b'\xff'+struct.pack('<i',0),'complete'),
                                  (b'\xff'+struct.pack('<i',-2),'failed')):
             with self.subTest(expected=expected):
                 self.data=b'\x1e'+bytes(4)+segment+_normal()[1:]

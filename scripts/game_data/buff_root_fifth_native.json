@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      104277,
+      "Beyond.MemoryPack.Beyond_Blackboard_DataPairForMemoryPack+Beyond_Blackboard_DataPairForMemoryPackFormatter",
+      "Deserialize",
+      62899376
+    ],
+    [
+      104276,
+      "Beyond.MemoryPack.Beyond_Blackboard_DataPairForMemoryPack",
+      "Deserialize",
+      62899472
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 53281150,
+      "endRva": 53281209,
+      "sha256": "CB005815FF17DC2CA26BC92FADFCA00E36486134774F6FEBAA995076FAF194FC",
+      "boundary": "root member5 context, source call and output through next source context"
+    },
+    {
+      "startRva": 62899376,
+      "endRva": 62899469,
+      "sha256": "6BC21A5D770E986A6DEEC3FA6DAC4BDD59B13F8CF6E4589AD10D5312BBC814E9",
+      "boundary": "DataPair formatter initialization and forwarding"
+    },
+    {
+      "startRva": 62899472,
+      "endRva": 62899768,
+      "sha256": "B7E7B787FA0D106E633E0E4012B1080346D5F521D86AA78FCF73C3E19ADC3DB4",
+      "boundary": "DataPair normal, FF and initialization paths"
+    },
+    {
+      "startRva": 82677092,
+      "endRva": 82677141,
+      "sha256": "B4F75C95A7FBD2CF5D0F8C65935F588FAF1FD13143B59FEA60EA067D314F38EB",
+      "boundary": "DataPair allocation and rejoin"
+    },
+    {
+      "startRva": 62899776,
+      "endRva": 62899859,
+      "sha256": "A6CB5D2506A9B32503FB4983CC1CE536393A5792DF399CFF6F086BFAF769EF76",
+      "boundary": "raw eight-byte source load and cursor advancement"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 53281150,
+      "instructionHex": "488B15FB4DD209",
+      "cellVa": 6660509568,
+      "usageRawHex": "7FA412C000000000",
+      "methodSpecIndex": 610879,
+      "methodSpec": [
+        428462,
+        -1,
+        59977
+      ],
+      "argumentRawHex": "1835258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000D0BEEB8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 5404,
+        "elementArguments": [
+          "A9000000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    }
+  ],
+  "anonymousReadOrder": {
+    "rootMember5": [
+      "nullable-signed-count",
+      "DataPair-profile repeated count times"
+    ],
+    "DataPairHeader4": [
+      "BYTE",
+      "nullable-byte-payload",
+      "raw8",
+      "nullable-byte-payload"
+    ]
+  },
+  "boundary": "Exact root MethodSpec 610879 joins List<DataPair> with value-type element definition169; the separately token/module-joined DataPair wrapper reader consumes FF or header4, BYTE, a signed nullable byte payload, eight raw source bytes and a second signed nullable byte payload. The eight-byte helper explicitly loads and advances eight bytes, independently of output storage size or the distinct BlackboardDouble four-byte raw payload profile. Count/null/loop framing is conditional on the shared collection provider. No live formatter selection, pair type-byte meanings, blackboard key/value semantics, suffix-anchor ownership or whole-BuffData EOF is claimed."
+}

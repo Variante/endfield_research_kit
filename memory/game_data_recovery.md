@@ -624,8 +624,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   elements contain three DWORDs and a scalar payload. FF wrappers and null/empty
   arrays are distinct, and only a non-null collection has the terminal byte.
   Preserve conditional provider selection and structural-only field meanings.
-  Continue from the fourth root member into the next collection; retain the
-  independent suffix anchor and explicit physical opaque range until joined.
+  `scripts/game_data/buff_root_fifth_native.json` pins the next root collection
+  to a List<DataPair> context. Its selected member-four elements read a byte,
+  signed nullable byte payload, eight raw bytes and another nullable payload.
+  The eight-byte load/advance is independently pinned; do not reuse the scalar
+  profile's four-byte raw value or interpret the leading byte as a union tag.
+  Null elements and null/empty collections remain distinct. Continue from the
+  fifth root member into the next collection, retaining conditional provider
+  selection, the independent suffix anchor and the physical opaque range.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity

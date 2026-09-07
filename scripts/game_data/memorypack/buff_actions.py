@@ -1007,6 +1007,23 @@ class Reader:
         self.take(max(0,count)*4,'anonymous-dword-array-body')
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-dword-array',count=count))
 
+    def data_pair_collection_profile(self):
+        start=self.pos
+        count=self.count(1,nullable=True)
+        for _ in range(max(0,count)):
+            element=self.pos
+            if self.peek()==255:self.take(1,'null-data-pair-profile')
+            else:
+                self.header(4)
+                self.take(1,'anonymous-byte')
+                self.byte_payload()
+                # This selected helper advances eight source bytes; it is not
+                # the four-byte raw value inside scalar_payload().
+                self.take(8,'anonymous-raw8')
+                self.byte_payload()
+            self.records.append(dict(start=element,end=self.pos,kind='anonymous-data-pair-profile'))
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-data-pair-collection-profile',count=count))
+
     def modifier_collection_profile(self):
         start=self.pos
         if self.peek()==255:self.take(1,'null-modifier-collection-profile')
@@ -1174,7 +1191,7 @@ def event_prefix(data,*,source,limit=None):
 
 
 def root_continuation(data,*,source,start,limit=None):
-    """Members 2-4, called only after a supported first-collection endpoint.
+    """Members 2-5, called only after a supported first-collection endpoint.
 
     The caller owns that prerequisite; this function does not authenticate an
     arbitrary start offset or claim that a suffix candidate is a root field.
@@ -1187,6 +1204,7 @@ def root_continuation(data,*,source,start,limit=None):
         reader.scalar_payload()
         reader.raw_dword_array()
         reader.modifier_collection_profile()
+        reader.data_pair_collection_profile()
     except Unsupported as exc:status='unsupported';diagnostic=exc.diagnostic
     except FrameError as exc:status='failed';diagnostic=exc.diagnostic
     cursor=start
@@ -1199,6 +1217,6 @@ def root_continuation(data,*,source,start,limit=None):
                 readLimit=reader.limit,ranges=reader.ranges,completedRecords=reader.records,
                 opaqueRemainderRange=[reader.pos,len(data)],wholeSchemaExact=False,
                 evidenceLevel='structural-only',
-                boundary='Selected root members 2-4 after the independently supported first collection. '
+                boundary='Selected root members 2-5 after the independently supported first collection. '
                 'Together their atomic ranges and the physical-file opaque remainder tile EOF; '
                 'no field meanings, live provider selection or whole-BuffData EOF claim.')
