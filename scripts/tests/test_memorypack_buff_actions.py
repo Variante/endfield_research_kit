@@ -608,7 +608,54 @@ def tag08(first=(),second=(),vector=b'\xff',scalar=b'\xff',curve=b'\xff',last=b'
             first_list+curve+b'\xff'+second_list+vector+scalar*6+b'\x80\xff\x00'+curve+vector+last)
 
 
+def tag120(first=b'\xff',second=b'\xff',value=None):
+    return b'\xfa\x20\x01\x08'+bytes(13)+first+second+b'\x80\xff\x00\x7f'+payload(value)
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag120_independent_scalar_profiles_and_terminal_payload(self):
+        for first in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'\xff\xfa')):
+            for second in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'other')):
+                for value in (None,b'',b'\xff\xfa\x20\x01'):
+                    child=tag120(first,second,value);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='120.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='120.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=288),row['completedRecords'])
+                    self.assertFalse(row['wholeSchemaExact'])
+                    self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag120_every_cut_hard_limits_and_trailing_bytes(self):
+        for child in (tag120(scalar_payload(b'first'),scalar_payload(b'second'),b'terminal'),tag120(),b'\xfa\x20\x01\xff'):
+            r=Reader(child,'120-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'120-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==288 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag120_headers_lengths_and_required_parent_remainder(self):
+        for at in (3,17,18):
+            bad=bytearray(tag120());bad[at]=42;r=Reader(bad,'120-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category']),(at,'member-count'))
+        for child,at in ((tag120(),23),(tag120(scalar_payload(None)),18),(tag120(second=scalar_payload(None)),19)):
+            for size in (-2,0x7fffffff):
+                bad=bytearray(child);struct.pack_into('<i',bad,at,size);r=Reader(bad,'120-length')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('120-length',at,size,'count-bounds'))
+        for data in (tag120()[:19],tag120()[:23],tag120(value=b'last')[:-1]):
+            r=Reader(data,'120-tail')
+            with self.assertRaises(FrameError):r.action(0)
+            self.assertFalse(any(v.get('tag')==288 for v in r.records))
+            self.assertEqual(sum(v['kind']=='anonymous-scalar-payload' for v in r.records),2)
+
     def test_tag08_independent_nested_lists_null_states_and_profiles(self):
         groups=(None,(),(b'\xff',),(group08(None),),(group08(),),(group08((b'\xff',condition08(b'\xff\xfa'))),))
         for wire in (b'\x08',b'\xfa\x08\x00'):
@@ -6215,7 +6262,7 @@ class BuffActionsTests(unittest.TestCase):
             self.assertEqual(caught.exception.diagnostic['category'],'truncated')
             self.assertEqual(caught.exception.diagnostic['offset'],0)
             self.assertEqual(reader.pos,0)
-        for tag in (0,250,255,288,415,416,65535):
+        for tag in (0,250,255,415,416,65535):
             wire=b'\xfa'+struct.pack('<H',tag)
             row=event_prefix(prefix(sequence(wire+tag11f())),source='unknown-u16.bin')
             self.assertEqual(row['status'],'unsupported')
@@ -6270,9 +6317,9 @@ class BuffActionsTests(unittest.TestCase):
             raw=sequence(child)
             self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
         child=tag11f()
-        row=event_prefix(prefix(sequence(child,b'\xfa\x20\x01')),source='11f-next.bin')
+        row=event_prefix(prefix(sequence(child,b'\xfa\xa0\x01')),source='11f-next.bin')
         self.assertEqual(row['status'],'unsupported')
-        self.assertEqual(row['diagnostic']['actual'],288)
+        self.assertEqual(row['diagnostic']['actual'],416)
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==287 for r in row['completedRecords']))
 

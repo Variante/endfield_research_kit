@@ -563,6 +563,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   minimum remaining parent bytes; thirteen terminal bytes are independently
   required. Null lists, empty lists and null elements remain separate, while
   camera state and condition meanings stay unresolved.
+  `scripts/game_data/buff_120_native.json` selects two independent scalar
+  payload profiles followed by a DWORD and a terminal byte payload. The shared
+  scalar context proves profile reuse, not shared null state or a fixed parent
+  width. Both profiles may complete while the parent remains truncated; require
+  the final DWORD and full signed-length payload. Random algorithm, distribution
+  and payload ownership remain unresolved.
   `scripts/game_data/buff_7e_native.json` pins a member-six reader ending
   in two target profiles. Both exact contexts select the same finite profile,
   but their null states, nested counts and source boundaries stay independent.

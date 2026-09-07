@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122065,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RandomAction_DataForMemoryPack+Beyond_Gameplay_Core_RandomAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      66870448
+    ],
+    [
+      122064,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RandomAction_DataForMemoryPack",
+      "Deserialize",
+      66870544
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66870448,
+      "endRva": 66870541,
+      "sha256": "97C84FE3A3F5F8D5A55269C3202354BB0057E100C1A6A0AC71206D61969F9254",
+      "boundary": "formatter complete initialization and forwarding"
+    },
+    {
+      "startRva": 66870544,
+      "endRva": 66870990,
+      "sha256": "55CF3F598E396F8D046F768F470167238D9D88BDEB917D99BD1A76672001B6E0",
+      "boundary": "member8 normal source reads through RET"
+    },
+    {
+      "startRva": 66870990,
+      "endRva": 66871074,
+      "sha256": "3EC4E792EDF04B05323127539A4040144C7523D9F26B7C02025EB814E6560E34",
+      "boundary": "complete lazy initialization and rejoin"
+    },
+    {
+      "startRva": 83212262,
+      "endRva": 83212275,
+      "sha256": "53B3A31D604A4D18BA7372392412E3D8088716D2E127DB762BEBC22F7DC3CD55",
+      "boundary": "existing output preparation and rejoin"
+    },
+    {
+      "startRva": 83212331,
+      "endRva": 83212352,
+      "sha256": "D896221450183C8878EAECC4165F2866DB56E884D26BF76FB000E5D5DF437FD3",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66870716,
+      "instructionHex": "488B1565400C09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66870822,
+      "instructionHex": "488B15F3E70209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66870863,
+      "instructionHex": "488B15CAE70209",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66870904,
+      "instructionHex": "488B1589190509",
+      "cellVa": 6660651016,
+      "usageRawHex": "29E812C000000000",
+      "methodSpecIndex": 619540,
+      "methodSpec": [
+        428448,
+        -1,
+        42513
+      ],
+      "argumentRawHex": "E3250000000000000000118000000000",
+      "typeDefinition": 9699,
+      "typeName": "Beyond.Gameplay.Core.RandomAction+RandomType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload",
+      "scalar-payload",
+      "scalar32",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact current union registration and module/token joins establish the member8 source order. Two independent MethodSpec 620004 contexts select the scalar payload grammar authenticated in buff_35_native.json: FF or member3 containing a signed-length byte payload, byte and four raw scalar bytes. The separate RandomType context consumes one DWORD without an extra header, followed by a terminal signed-length byte payload. Null wrapper, null profiles, null payloads and empty payloads stay independent; nested completion does not replace the final DWORD or payload. Complete formatter, normal, initialization, existing-output and FF windows retain whole instructions. Structural-only framing does not establish random algorithm, range/distribution, payload ownership, live provider selection, full refill/error parity or whole-BuffData EOF."
+}
