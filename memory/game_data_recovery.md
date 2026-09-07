@@ -674,6 +674,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   sequence, two independently bounded scalar profiles and final byte. Retain
   completed children when a later profile fails; neither a null sequence nor
   a null first profile permits omitting the remaining members.
+  `scripts/game_data/buff_13f_native.json` pins payload, target and a final
+  DWORD after the common fields. Its ValueType context belongs to that DWORD
+  helper; it adds no nested header and does not establish a one-byte enum.
+  Preserve a completed target when the final four bytes are truncated.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather

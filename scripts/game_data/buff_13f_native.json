@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122527,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveShieldValueToBB_DataForMemoryPack+Beyond_Gameplay_Core_SaveShieldValueToBB_DataForMemoryPackFormatter",
+      "Deserialize",
+      73271344
+    ],
+    [
+      122526,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveShieldValueToBB_DataForMemoryPack",
+      "Deserialize",
+      73271440
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73271344,
+      "endRva": 73271433,
+      "sha256": "B6719E9320BADB763ED904CE766E0F58505E6613E8CD9ED354B7FFF4FCEE37CF",
+      "boundary": "formatter forwarding with complete initialization"
+    },
+    {
+      "startRva": 73271440,
+      "endRva": 73271912,
+      "sha256": "F18DE7D25B06BF1D00482A6927881BD415EEF721E8A7E5F2F3AA3F5AB6D416E8",
+      "boundary": "member7 source reads and inline initialization through normal RET"
+    },
+    {
+      "startRva": 83893364,
+      "endRva": 83893377,
+      "sha256": "AC496ADAD697995D4AF63E05C10CF31FFF446EAC476C7570A83751314DFDE0D2",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83893433,
+      "endRva": 83893454,
+      "sha256": "425F27AE29E7952B07BA335784BB9C4F34E9A8CDF430ADAF88CB655C5B91CB17",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 73271687,
+      "instructionHex": "488B159A94AA08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 73271823,
+      "instructionHex": "488B15F20CA808",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 73271860,
+      "instructionHex": "488B158D38A308",
+      "cellVa": 6660637384,
+      "usageRawHex": "3DE812C000000000",
+      "methodSpecIndex": 619550,
+      "methodSpec": [
+        428448,
+        -1,
+        42522
+      ],
+      "argumentRawHex": "32260000000000000000118000000000",
+      "typeDefinition": 9778,
+      "typeName": "Beyond.Gameplay.Core.SaveShieldValueToBB+ValueType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "target",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member7 action consumes common byte/three DWORDs, signed-length byte payload, TargetSettings and final DWORD. MethodSpec619977 joins typedef10280 and its independently pinned finite target grammar. The final ValueType context is MethodSpec619550/typedef9778 attached to the DWORD helper, not a nested profile or one-byte enum. Shared provider selection remains conditional. Null payload and null target are independent states; the final four bytes remain mandatory. Unknown nested target unions retain their first offset and leave the enclosing action incomplete. Target completion is preserved on final DWORD truncation. Formatter initialization, reader inline initialization, normal RET, existing-output and FF paths retain complete instructions. Shield-value meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
