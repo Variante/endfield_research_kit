@@ -408,6 +408,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.
   Preserve the raw bits: a mask-like managed name does not prove flag meanings.
+  `scripts/game_data/buff_5c_native.json` independently selects this same fixed
+  source order and reuses the QWORD reader. Its Priority context belongs to
+  the first DWORD and CheckType to the fourth; neither enum identity changes
+  the wire width or establishes damage/immunity meaning. There is no extra tail.
   The separate member-six reader in `scripts/game_data/buff_6d_native.json`
   ends with a signed-length byte payload after a byte and four scalar32 values.
   Its final helper consumes variable bytes, not the preceding reader's scalar64;

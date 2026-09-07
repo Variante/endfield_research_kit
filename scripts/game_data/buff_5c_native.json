@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124130,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckDamageIgnoreImmuneLevel_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckDamageIgnoreImmuneLevel_DataForMemoryPackFormatter",
+      "Deserialize",
+      73614320
+    ],
+    [
+      124129,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckDamageIgnoreImmuneLevel_DataForMemoryPack",
+      "Deserialize",
+      73614416
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73614320,
+      "endRva": 73614409,
+      "sha256": "0ECA3F76482CC6F4B917D91F69A0D564881531BCDD30D35F84F5F33606796541",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 73614416,
+      "endRva": 73614831,
+      "sha256": "3CC3E96693321D0FF1846A967400D80BB0275514B44E1B830D4DBBC6E056872A",
+      "boundary": "member6 source reads with inline initialization through normal RET"
+    },
+    {
+      "startRva": 83932604,
+      "endRva": 83932617,
+      "sha256": "75318B9B840D7165930D73A880087D66C5D745C2B01EC66CFC87180E7A2F3802",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83932673,
+      "endRva": 83932694,
+      "sha256": "77132F271F495BA909090B878A8D2D973A33698057AA3605B5F5F9DA87C61F37",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 73614651,
+      "instructionHex": "488B15E658A508",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 73614749,
+      "instructionHex": "488B15A45DA008",
+      "cellVa": 6660793160,
+      "usageRawHex": "71E712C000000000",
+      "methodSpecIndex": 619448,
+      "methodSpec": [
+        428448,
+        -1,
+        42450
+      ],
+      "argumentRawHex": "AE340000000000000000118000000000",
+      "typeDefinition": 13486,
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckDamageIgnoreImmuneLevel+CheckType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar64"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The member6 action consumes the common byte/three DWORDs, a further DWORD and one raw QWORD. The final helper reuses the source load and eight-byte cursor/counter advance pinned by buff_5b_native.json; it is not a nested object or an output-slot width assumption. Priority belongs to the first DWORD context and CheckType to the fourth. Preserve arbitrary scalar bits; enum identity does not constrain values. There is no further source tail. Formatter and inline reader initialization, normal RET, existing-output and FF windows retain complete instructions; output setters add no source bytes. Damage/immunity meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

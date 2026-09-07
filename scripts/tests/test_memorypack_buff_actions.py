@@ -566,6 +566,49 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag5c_fixed_source_widths_and_encodings(self):
+        for wire in (b'\x5c',b'\xfa\x5c\x00'):
+            for body in (bytes(25),b'\xff'*25,bytes(range(25))):
+                child=wire+b'\x06'+body
+                end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='5c.bin')
+                self.assertEqual(row['diagnostic'],dict(source='5c.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=92),row['completedRecords'])
+                spans=[v for v in row['ranges'] if 19+len(wire)+1<=v['start']<end]
+                self.assertEqual([(v['kind'],v['end']-v['start']) for v in spans],[('anonymous-nonzero-byte',1)]+[('anonymous-scalar32',4)]*4+[('anonymous-scalar64',8)])
+                self.assertFalse(row['wholeSchemaExact'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag5c_every_cut_hard_limits_and_trailing(self):
+        for wire in (b'\x5c',b'\xfa\x5c\x00'):
+            for child in (wire+b'\x06'+b'\xff'*25,wire+b'\xff'):
+                r=Reader(child,'5c-cut');r.action(0);self.assertEqual(r.pos,len(child))
+                for n in range(len(child)):
+                    results=[]
+                    for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                        r=Reader(data,'5c-cut',n)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==92 for v in r.records))
+                        results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+                for tail in (b'\x00',b'\xff'):
+                    with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag5c_bad_header_and_atomic_qword(self):
+        for wire in (b'\x5c',b'\xfa\x5c\x00'):
+            for h in (0,5,7,254):
+                r=Reader(wire+bytes([h])+bytes(25),'5c-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual(d,dict(source='5c-header',offset=len(wire),expected=6,actual=h,category='member-count'))
+            start=len(wire)+18
+            for n in range(8):
+                r=Reader(wire+b'\x06'+bytes(17+n),'5c-qword')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='5c-qword',offset=start,expected={'bytes':8},actual={'remaining':n},category='truncated'))
+                self.assertEqual(r.pos,start);self.assertFalse(r.records)
+                self.assertFalse(any(v['kind']=='anonymous-scalar64' for v in r.ranges))
+
     def test_tag122_nullable_list_and_independent_elements(self):
         elem=b'\x04'+scalar_payload(b'wire')+payload(None)+target()+payload(b'\xff\x00')
         empty=b'\x04\xff'+payload(b'')+b'\xff'+payload(None)
@@ -5143,9 +5186,9 @@ class BuffActionsTests(unittest.TestCase):
 
     def test_tag57_paired_record_boundaries_and_later_unknown(self):
         child=tag57();self.assertEqual(len(child),70)
-        row=event_prefix(prefix(sequence(child,b'\x5c')),source='57.bin')
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='57.bin')
         self.assertEqual(row['status'],'unsupported')
-        self.assertEqual(row['diagnostic']['actual'],92)
+        self.assertEqual(row['diagnostic']['actual'],89)
         self.assertEqual(row['consumedEnd'],89)
         self.assertIn(dict(start=19,end=89,kind='union',tag=87),row['completedRecords'])
         spans=[(r['start']-19,r['end']-19) for r in row['completedRecords'] if r['kind']=='anonymous-paired-payload']
