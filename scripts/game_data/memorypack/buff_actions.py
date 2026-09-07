@@ -15,7 +15,7 @@ class Unsupported(FrameError):
 class Reader:
     def __init__(self,data,source,limit=None):
         self.data=data;self.source=source;self.pos=0;self.ranges=[];self.records=[]
-        self.postprocessor_depth=0
+        self.postprocessor_depth=0;self.target_depth=0
         self.limit=len(data) if limit is None else limit
         if type(self.limit) is not int or not 0<=self.limit<=len(data):
             raise FrameError(source,0,'limit within file',self.limit)
@@ -840,7 +840,8 @@ class Reader:
             self.take(4,'anonymous-scalar32')
             self.take(1,'anonymous-nonzero-byte')
             for _ in range(2):
-                self.null_profile('nested-target')
+                if self.peek()==255:self.null_profile('nested-target')
+                else:self.target_profile()
                 self.take(4,'anonymous-scalar32')
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-direction-profile'))
 
@@ -1064,8 +1065,15 @@ class Reader:
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-effect-configuration-profile'))
 
     def target_profile(self):
-        # Selected finite profile. Direction targets remain null-only and
-        # postprocessor target expansion is explicitly bounded above.
+        # Count every active non-null target, including direction and selector paths.
+        if self.peek()==255:return self._target_profile()
+        if self.target_depth>=64:
+            raise Unsupported(self.source,self.pos,'target nesting <= 64',self.target_depth+1,'depth-limit')
+        self.target_depth+=1
+        try:self._target_profile()
+        finally:self.target_depth-=1
+
+    def _target_profile(self):
         start=self.pos
         if self.peek()==255:self.take(1,'null-target-profile')
         else:

@@ -586,6 +586,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   null/empty sequences separately. Propagate recursive depth limits and unknown
   child unions without completing the parent. Boolean evaluation, execution
   order and short-circuit behavior remain unresolved.
+  The EC native contract pins both direction-to-target calls and the reverse
+  target-to-direction call. Direction now admits the existing finite target
+  profile, with at most 64 active non-null target instances across recursive
+  paths. Reject deeper targets before their header; unwind depth on failure,
+  retain completed children and leave incomplete parents unrecorded.
   `scripts/game_data/finder_0e_native.json` pins selector-finder union 14 to
   a member-two PointFinder reader with two independent vector payloads. Shared
   type context does not merge their null states or length boundaries. The

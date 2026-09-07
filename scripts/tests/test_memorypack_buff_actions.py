@@ -813,7 +813,7 @@ class BuffActionsTests(unittest.TestCase):
             self.assertEqual(sum(v['kind']=='anonymous-scalar-payload' for v in r.records),5)
         bad=bytearray(direction());bad[8]=1
         row=event_prefix(prefix(sequence(tag1b(direct=bad))),source='1b-direction')
-        self.assertEqual((row['status'],row['diagnostic']['category']),('unsupported','nested-profile'))
+        self.assertEqual((row['status'],row['diagnostic']['category']),('failed','member-count'))
         self.assertFalse(any(v.get('tag')==27 for v in row['completedRecords']))
 
     def test_tag9f_independent_targets_and_terminal_query(self):
@@ -3015,8 +3015,7 @@ class BuffActionsTests(unittest.TestCase):
             raw=sequence(tag68(flag=flag));self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
 
     def test_tag68_preserves_unknown_and_recursive_target_gaps(self):
-        for nested in (target(selector=b'\x03\xfe'+bytes(8)),
-                       target(direction_value=direction().replace(b'\xff',b'\x0d',1))):
+        for nested in (target(selector=b'\x03\xfe'+bytes(8)),):
             row=event_prefix(prefix(sequence(tag68(nested))),source='68-gap')
             self.assertEqual(row['status'],'unsupported')
             self.assertEqual(row['diagnostic']['category'],'nested-profile')
@@ -3067,13 +3066,13 @@ class BuffActionsTests(unittest.TestCase):
             for n in range(len(raw)):
                 with self.assertRaises(FrameError):sequence_frame(raw[:n])
 
-    def test_tag78_recursive_target_remains_unsupported(self):
+    def test_tag78_incomplete_recursive_target_fails_closed(self):
         bad_direction=bytearray(direction());bad_direction[8]=13
         child=tag78(nested=target(direction_value=bad_direction))
         row=event_prefix(prefix(sequence(child)),source='78-gap.bin')
-        self.assertEqual(row['status'],'unsupported')
-        self.assertEqual(row['diagnostic']['category'],'nested-profile')
-        self.assertEqual(row['diagnostic']['actual'],13)
+        self.assertEqual(row['status'],'failed')
+        self.assertEqual(row['diagnostic']['category'],'member-count')
+        self.assertEqual(row['diagnostic']['actual'],0)
         self.assertFalse(any(r['kind']=='union' and r['tag']==120 for r in row['completedRecords']))
 
     def test_tag3c_nested_boundaries_and_later_unknown(self):
@@ -5137,8 +5136,8 @@ class BuffActionsTests(unittest.TestCase):
             child=tag35(direction_value=bad,last=scalar_payload())
             row=event_prefix(prefix(sequence(child)),source='35-direction-gap')
             self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),
-                             ('unsupported','nested-profile',13))
-            self.assertEqual(row['consumedEnd'],40+at)
+                             ('failed','member-count',0))
+            self.assertEqual(row['consumedEnd'],41+at)
             self.assertFalse(any(r.get('tag')==53 for r in row['completedRecords']))
 
     def test_tag7e_two_independent_targets(self):
@@ -6121,6 +6120,51 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertEqual(caught.exception.diagnostic,dict(source='finder10-header',offset=len(wire),expected=0,actual=h,category='member-count'))
                 self.assertEqual(r.records,[])
 
+    def test_direction_targets_independent_recursive_boundaries(self):
+        leaf=target(direction_value=b'\xff',selector=b'\xff')
+        values=(b'\xff',leaf,target(direction_value=direction()[:8]+leaf+bytes(4)+b'\xff'+bytes(4)))
+        for first in values:
+            for second in values:
+                value=direction()[:8]+first+b'\xff'*4+second+b'\x80'*4
+                r=Reader(value,'direction-recursive');r.direction_profile();self.assertEqual(r.pos,len(value));self.assertEqual(r.target_depth,0)
+                self.assertEqual(r.records[-1],dict(start=0,end=len(value),kind='anonymous-direction-profile'))
+                child=tag_ec(nested=target(direction_value=value));raw=sequence(child)
+                self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+                for tail in (b'\x00',b'\xff'):
+                    with self.assertRaises(FrameError) as caught:sequence_frame(raw+tail)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_direction_target_recursion_limit_and_cleanup(self):
+        value=target(direction_value=b'\xff',selector=b'\xff')
+        for _ in range(63):value=target(direction_value=direction()[:8]+value+bytes(4)+b'\xff'+bytes(4),selector=b'\xff')
+        r=Reader(value,'depth64');r.target_profile();self.assertEqual(r.pos,len(value));self.assertEqual(r.target_depth,0)
+        value=target(direction_value=direction()[:8]+value+bytes(4)+b'\xff'+bytes(4),selector=b'\xff')
+        r=Reader(value,'depth65')
+        with self.assertRaises(Unsupported) as caught:r.target_profile()
+        self.assertEqual(caught.exception.diagnostic,dict(source='depth65',offset=64*9,expected='target nesting <= 64',actual=65,category='depth-limit'))
+        self.assertEqual(r.pos,64*9);self.assertEqual(r.target_depth,0);self.assertEqual(r.records,[])
+        r=Reader(b'\xff','null-depth');r.target_depth=64;r.target_profile();self.assertEqual(r.pos,1);self.assertEqual(r.target_depth,64)
+
+    def test_direction_target_all_cuts_lengths_and_unknown_nested(self):
+        leaf=target(direction_value=b'\xff',selector=b'\xff');value=direction()[:8]+leaf+bytes(4)+leaf+bytes(4)
+        for n in range(len(value)):
+            out=[]
+            for data in (value,value[:n],value[:n]+b'\xff'*(len(value)-n)):
+                r=Reader(data,'recursive-cut',n)
+                with self.assertRaises(FrameError) as caught:r.direction_profile()
+                self.assertLessEqual(r.pos,n);self.assertEqual(r.target_depth,0)
+                self.assertFalse(any(v['kind']=='anonymous-direction-profile' and v['start']==0 for v in r.records))
+                out.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+            self.assertEqual(out[0],out[1]);self.assertEqual(out[0],out[2])
+        for count in (-2,0x7fffffff):
+            bad=direction()[:8]+b'\x0d\xff'+struct.pack('<i',count);r=Reader(bad,'recursive-length')
+            with self.assertRaises(FrameError) as caught:r.direction_profile()
+            self.assertEqual(caught.exception.diagnostic['offset'],10);self.assertEqual(caught.exception.diagnostic['actual'],count);self.assertEqual(r.target_depth,0)
+        unknown=target(direction_value=b'\xff',selector=b'\x03\x01');r=Reader(direction()[:8]+unknown,'recursive-unknown')
+        with self.assertRaises(Unsupported) as caught:r.direction_profile()
+        self.assertEqual(caught.exception.diagnostic['category'],'nested-profile');self.assertEqual(r.target_depth,0)
+        self.assertFalse(any(v['kind']=='anonymous-target-profile' for v in r.records))
+
     def test_finder14_independent_vectors_and_parent_continuation(self):
         vectors=(b'\xff',b'\x03'+b'\xff'*3,b'\x03'+scalar_payload(None)+scalar_payload(b'')+scalar_payload(b'wire',128))
         for wire in (b'\x0e',b'\xfa\x0e\x00'):
@@ -6523,8 +6567,7 @@ class BuffActionsTests(unittest.TestCase):
                       tag_ec(nested=target(selector=b'\xff',direction_value=b'\xff'))):
             self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
         for nested in (target(selector=b'\x03\x00'+bytes(8)),
-                       target(selector=b'\x03\xff'+struct.pack('<ii',1,0)),
-                       target(direction_value=direction().replace(b'\xff',b'\x0d',1))):
+                       target(selector=b'\x03\xff'+struct.pack('<ii',1,0))):
             row=event_prefix(prefix(sequence(tag_ec(nested=nested))),source='ec-unsupported.bin')
             self.assertEqual(row['status'],'unsupported')
             self.assertEqual(row['diagnostic']['category'],'nested-profile')

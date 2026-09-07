@@ -351,5 +351,5 @@
       "scalar32"
     ]
   },
-  "boundary": "Selected normal consumer paths and exact static type joins only. Chained unwind regions are retained as reviewed code windows, not independent complete functions. Delegated formatter selection, source carrier/segment replacement, decoder parity, field meaning and runtime EOF are unresolved. Parser admits only a null finder and empty selector collections, and null recursive targets."
+  "boundary": "Selected normal consumer paths and exact static type joins only. Chained unwind regions are retained as reviewed code windows, not independent complete functions. Delegated formatter selection, source carrier/segment replacement, decoder parity, field meaning and runtime EOF are unresolved. The maintained finite selector extensions and target/direction recursion are separately bounded. Direction retains both exact TargetSettings callsites; target nesting is limited before consuming a non-null header. Null direction-target ranges remain unchanged. Runtime direction/target meaning remains unresolved."
 }
