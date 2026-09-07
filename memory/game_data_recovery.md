@@ -545,6 +545,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   byte after a BlackboardDouble profile. A null profile still requires that
   byte; a null wrapper ends separately. This source order does not prove a
   cooldown unit, operation, or runtime effect.
+  `scripts/game_data/buff_a7_native.json` closes two independently nullable
+  profiles repeated around a direct query. The member-one profile contains a
+  byte; the member-six profile interleaves two DWORD/scalar-payload pairs before
+  two terminal bytes. The parent still requires its own final byte. Preserve
+  separate nested boundaries; part identity and modification meaning remain
+  unresolved despite the exact selected type contexts.
   `scripts/game_data/buff_7e_native.json` pins a member-six reader ending
   in two target profiles. Both exact contexts select the same finite profile,
   but their null states, nested counts and source boundaries stay independent.

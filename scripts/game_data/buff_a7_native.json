@@ -1,0 +1,332 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120049,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EnablePartsAction_DataForMemoryPack+Beyond_Gameplay_Core_EnablePartsAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      68909600
+    ],
+    [
+      120048,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EnablePartsAction_DataForMemoryPack",
+      "Deserialize",
+      68909696
+    ],
+    [
+      162931,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EnablePartsAction_DisablePartParamForMemoryPack+Beyond_Gameplay_Core_EnablePartsAction_DisablePartParamForMemoryPackFormatter",
+      "Deserialize",
+      71459936
+    ],
+    [
+      162930,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EnablePartsAction_DisablePartParamForMemoryPack",
+      "Deserialize",
+      71460032
+    ],
+    [
+      162947,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EnablePartsAction_EnablePartParamForMemoryPack+Beyond_Gameplay_Core_EnablePartsAction_EnablePartParamForMemoryPackFormatter",
+      "Deserialize",
+      69918992
+    ],
+    [
+      162946,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EnablePartsAction_EnablePartParamForMemoryPack",
+      "Deserialize",
+      69919088
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 68909600,
+      "endRva": 68909693,
+      "sha256": "986B1D977C6612DAEB90C80110D56CC67A872C480ED75BC8F7281A39D6F741A8",
+      "boundary": "parent formatter"
+    },
+    {
+      "startRva": 68909696,
+      "endRva": 68910287,
+      "sha256": "511F87ED0BC81590FFA611EC6E986B757ED831A1532ADB9EA88AC7613980696C",
+      "boundary": "member11 normal through RET"
+    },
+    {
+      "startRva": 68910287,
+      "endRva": 68910383,
+      "sha256": "AA5FBBEA856E4BA4741643F5CC600C7F5A571E105EED11A98A81A09671079712",
+      "boundary": "parent lazy initialization and rejoin"
+    },
+    {
+      "startRva": 83426764,
+      "endRva": 83426777,
+      "sha256": "10A608C59D41D5B76859E3CDDBA3643A24C27346A6E3F788F502CB67719EDDD0",
+      "boundary": "parent existing output"
+    },
+    {
+      "startRva": 83426833,
+      "endRva": 83426854,
+      "sha256": "E62B311A9E20DF6C24A2CEFC6B6F9ECE1C123C4815867966B10CFE0083CFF810",
+      "boundary": "parent FF clear"
+    },
+    {
+      "startRva": 71459936,
+      "endRva": 71460029,
+      "sha256": "0DF78846C38EB2BC109B3B1167E4C23B67E8DFDDAB2FA253B932D3E058F7B4FE",
+      "boundary": "member1 formatter"
+    },
+    {
+      "startRva": 71460032,
+      "endRva": 71460159,
+      "sha256": "3264DB0B42BEC915ED6ABE4C971C11FD761DC0A66572A0437EB3F3D4E192885B",
+      "boundary": "member1 normal through RET"
+    },
+    {
+      "startRva": 71460159,
+      "endRva": 71460207,
+      "sha256": "7195DF7ABE1B07B8D4A97D6F7A6E19515A0CF4900E97A3A38508727CD39BCC1A",
+      "boundary": "member1 lazy initialization"
+    },
+    {
+      "startRva": 83676332,
+      "endRva": 83676383,
+      "sha256": "1C0FFCCF809EDD2BDD2540CC372BE856506FEB4DE9F89349228E0771E70EA4D7",
+      "boundary": "member1 allocation and rejoin"
+    },
+    {
+      "startRva": 83676439,
+      "endRva": 83676460,
+      "sha256": "CEDF3FFB0178915D0738017BDEE2BF5D8942762AE3A3F14FAB62ACDC3BE60B90",
+      "boundary": "member1 FF clear"
+    },
+    {
+      "startRva": 69918992,
+      "endRva": 69919085,
+      "sha256": "AD5300001BFF7F488F7058C48D478987A9878C12C50EA26CE1573BEE6CF7D366",
+      "boundary": "member6 formatter"
+    },
+    {
+      "startRva": 69919088,
+      "endRva": 69919415,
+      "sha256": "CBE24A35DD53DFA89FE541363A78B8336CD81E833FA30CA2C680A104C69FB26E",
+      "boundary": "member6 normal through RET"
+    },
+    {
+      "startRva": 69919415,
+      "endRva": 69919487,
+      "sha256": "ED78431E6B8C3C2B488B2CACF667480AEBEFBB3623556873A95D458B5205F362",
+      "boundary": "member6 lazy initialization"
+    },
+    {
+      "startRva": 83507324,
+      "endRva": 83507375,
+      "sha256": "449F44A9E850C794713AD076CC19D507C20D55561DACAF46B3BF4F4326431D4B",
+      "boundary": "member6 allocation and rejoin"
+    },
+    {
+      "startRva": 83507431,
+      "endRva": 83507452,
+      "sha256": "A0F38B4661739B733B3B475C32EB8DC7FD122D17C34B5BAC3B1EDDF67E5EBF30",
+      "boundary": "member6 FF clear"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 68909868,
+      "instructionHex": "488B15F522ED08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 68910008,
+      "instructionHex": "488B15610AEE08",
+      "cellVa": 6661178912,
+      "usageRawHex": "DFEB12C000000000",
+      "methodSpecIndex": 620015,
+      "methodSpec": [
+        428464,
+        -1,
+        17030
+      ],
+      "argumentRawHex": "D4240000000000000000120000000000",
+      "typeDefinition": 9428,
+      "typeName": "Beyond.Gameplay.Core.EnablePartsAction+DisablePartParam",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 68910049,
+      "instructionHex": "488B15400AEE08",
+      "cellVa": 6661178920,
+      "usageRawHex": "E1EB12C000000000",
+      "methodSpecIndex": 620016,
+      "methodSpec": [
+        428464,
+        -1,
+        17031
+      ],
+      "argumentRawHex": "D3240000000000000000120000000000",
+      "typeDefinition": 9427,
+      "typeName": "Beyond.Gameplay.Core.EnablePartsAction+EnablePartParam",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 68910090,
+      "instructionHex": "4C8B0547D2E308",
+      "cellVa": 6660509272,
+      "usageRawHex": "37CC0FC000000000",
+      "methodSpecIndex": 517659,
+      "methodSpec": [
+        428464,
+        -1,
+        12732
+      ],
+      "argumentRawHex": "AA2D0000000000000000118000000000",
+      "typeDefinition": 11690,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 68910159,
+      "instructionHex": "488B15CA09EE08",
+      "cellVa": 6661178912,
+      "usageRawHex": "DFEB12C000000000",
+      "methodSpecIndex": 620015,
+      "methodSpec": [
+        428464,
+        -1,
+        17030
+      ],
+      "argumentRawHex": "D4240000000000000000120000000000",
+      "typeDefinition": 9428,
+      "typeName": "Beyond.Gameplay.Core.EnablePartsAction+DisablePartParam",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 68910200,
+      "instructionHex": "488B15A909EE08",
+      "cellVa": 6661178920,
+      "usageRawHex": "E1EB12C000000000",
+      "methodSpecIndex": 620016,
+      "methodSpec": [
+        428464,
+        -1,
+        17031
+      ],
+      "argumentRawHex": "D3240000000000000000120000000000",
+      "typeDefinition": 9427,
+      "typeName": "Beyond.Gameplay.Core.EnablePartsAction+EnablePartParam",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 69919173,
+      "instructionHex": "488B150C61D908",
+      "cellVa": 6660834008,
+      "usageRawHex": "6BE612C000000000",
+      "methodSpecIndex": 619317,
+      "methodSpec": [
+        428448,
+        -1,
+        42353
+      ],
+      "argumentRawHex": "75850000000000000000118000000000",
+      "typeDefinition": 34165,
+      "typeName": "Beyond.GEnums.PartModifyAttrType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 69919213,
+      "instructionHex": "488B152C64D408",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 69919254,
+      "instructionHex": "488B15BB60D908",
+      "cellVa": 6660834008,
+      "usageRawHex": "6BE612C000000000",
+      "methodSpecIndex": 619317,
+      "methodSpec": [
+        428448,
+        -1,
+        42353
+      ],
+      "argumentRawHex": "75850000000000000000118000000000",
+      "typeDefinition": 34165,
+      "typeName": "Beyond.GEnums.PartModifyAttrType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 69919294,
+      "instructionHex": "488B15DB63D408",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member11": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte-profile",
+      "scalar-pair-flags-profile",
+      "query-profile",
+      "byte-profile",
+      "scalar-pair-flags-profile",
+      "byte"
+    ],
+    "byte-profile-member1": [
+      "byte"
+    ],
+    "scalar-pair-flags-profile-member6": [
+      "scalar32",
+      "scalar-payload-profile",
+      "scalar32",
+      "scalar-payload-profile",
+      "byte",
+      "byte"
+    ]
+  },
+  "boundary": "Exact current union registration, module/token joins and selected source calls establish structural-only finite framing. The parent repeats independent member1 and member6 profiles around a direct query, then consumes a final byte. Member1 consumes one byte; member6 consumes two interleaved DWORD/scalar-payload pairs followed by two bytes. Exact BlackboardDouble contexts reuse buff_35_native.json payload/byte/four-byte framing. Null profiles and null wrappers terminate independently. No nested completion substitutes for the parent final byte. Complete formatter, normal, initialization, allocation/existing-output and FF windows are pinned. Part identity, modification meaning, live provider selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

@@ -578,7 +578,61 @@ def tag183(first=(),second=(),scalar1=b'\xff',scalar2=b'\xff',curve=b'\xff',valu
             items(second)+scalar2+b'\xff'*12+curve+b'\x80\xfe')
 
 
+def scalar_pair_flags(first=b'\xff',second=b'\xff'):
+    return b'\x06'+b'\xff'*4+first+b'\x80'*4+second+b'\xff\x80'
+
+
+def taga7(disabled=b'\xff',enabled=b'\xff',query=b'\xff',last=b'\x80',wire=b'\xa7'):
+    return wire+b'\x0b'+bytes(13)+b'\xff'+disabled+enabled+query+disabled+enabled+last
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_taga7_profiles_null_states_and_terminal_boundary(self):
+        for wire in (b'\xa7',b'\xfa\xa7\x00'):
+            for disabled in (b'\xff',b'\x01\x00',b'\x01\xff'):
+                for enabled in (b'\xff',scalar_pair_flags(),scalar_pair_flags(scalar_payload(None),scalar_payload())):
+                    for query in (b'\xff',query41(),query41((0,0xffffffff))):
+                        child=taga7(disabled,enabled,query,wire=wire)
+                        end=19+len(child);row=event_prefix(prefix(sequence(child,b'\x59')),source='a7.bin')
+                        self.assertEqual(row['diagnostic'],dict(source='a7.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                        self.assertIn(dict(start=19,end=end,kind='union',tag=167),row['completedRecords'])
+                        self.assertFalse(row['wholeSchemaExact'])
+                        self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_taga7_every_cut_hard_limits_and_trailing(self):
+        for child in (taga7(b'\x01\xff',scalar_pair_flags(scalar_payload(),scalar_payload(None)),query41((1,2))),b'\xa7\xff',b'\xfa\xa7\x00\xff'):
+            r=Reader(child,'a7-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'a7-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==167 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_taga7_bad_headers_counts_and_missing_final_bytes(self):
+        for at in (1,16,17,18,19,20):
+            bad=bytearray(taga7());bad[at]=42;r=Reader(bad,'a7-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category']),(at,'member-count'))
+        for count in (-2,0x7fffffff):
+            for body,offset in ((b'\x06'+bytes(4)+b'\x03'+struct.pack('<i',count),6),):
+                r=Reader(body,'a7-length')
+                with self.assertRaises(FrameError) as caught:r.scalar_pair_flags_profile()
+                d=caught.exception.diagnostic
+                self.assertEqual((d['source'],d['offset'],d['actual'],d['category']),('a7-length',offset,count,'count-bounds'))
+        for body,method in ((b'\x01','byte_profile'),(scalar_pair_flags()[:-1],'scalar_pair_flags_profile'),(taga7()[:-1],'action')):
+            r=Reader(body,'a7-last')
+            with self.assertRaises(FrameError) as caught:
+                if method=='action':r.action(0)
+                else:getattr(r,method)()
+            self.assertEqual(caught.exception.diagnostic['offset'],len(body))
+            self.assertFalse(any(v.get('tag')==167 for v in r.records))
+
     def test_tag150_scalar_and_independent_terminal_byte(self):
         for nested in (b'\xff',scalar_payload(None),scalar_payload(b'\xff\x00')):
             for last in (b'\x00',b'\x80',b'\xff'):
