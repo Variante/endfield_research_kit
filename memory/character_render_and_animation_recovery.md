@@ -385,10 +385,11 @@ only.
   copy without changing its draw-time Map generation. Matching endpoint bytes
   and Map generations cannot close intervening writes; resource lifetime and
   coverage of GPU writers remain separate requirements.
-  The alternate native flush constructs a Vulkan-compatible mapped-memory range;
-  its callback table is runtime-owned. Wrapper offsets and a D3D Map overlap do
-  not identify that callback's implementation. Resolve the backend table before
-  classifying this alternate route as a concrete API call or GPU writer.
+  The memory interface uses a Vulkan-compatible ABI across backend implementations.
+  Its D3D11 initializer installs local Map/Unmap shims and success-returning
+  no-ops for flush/invalidate. The shims unwrap the memory handle before calling
+  the D3D context. Authenticate the selected runtime table and unwrapped resource;
+  ABI layout alone neither selects the backend nor proves GPU writer coverage.
   Native graph execution resolves texture handles into property/texture pairs,
   batches them through a device callback, and updates renderer property state.
   The property setter is a useful execution observation point, but it is not the
