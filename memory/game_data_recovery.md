@@ -678,6 +678,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   DWORD after the common fields. Its ValueType context belongs to that DWORD
   helper; it adds no nested header and does not establish a one-byte enum.
   Preserve a completed target when the final four bytes are truncated.
+  `scripts/game_data/buff_140_native.json` pins a payload followed by two
+  independent targets with no extra tail. A completed first target remains
+  evidence when the second fails; either null target still consumes its own
+  marker and does not eliminate the other member.
   The member-nineteen child adds counted input profiles containing counted
   assignment profiles, a scalar/byte-payload pair, and the existing scalar,
   byte-payload-list and target profiles. Preserve the native read order rather
