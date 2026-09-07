@@ -361,6 +361,12 @@ only.
   words decrement and reset and can retain a mapping across wrapper releases;
   they are not generation IDs. Upload observation must follow backend mapping
   lifetime from installation, preserving unknown initial mappings across windows.
+  The native observer now records the enclosing pool flush and links each upload
+  to its thread-local parent; packed allocations and uploads retain actual pool
+  owner/epoch endpoint reads. These observations have separately charged bounded
+  storage and strict receipt validation. Equal endpoints do not exclude a reset
+  already in progress: reset admission/exit and intervening allocation/write
+  chronology remain necessary before promoting lifetime or GPU ownership.
   The backend Map ledger covers all D3D11 buffers because native staging copies
   are not restricted to constant buffers; textures remain outside its range
   model. An unknown mapping cannot classify the destination or prove copy loss.
