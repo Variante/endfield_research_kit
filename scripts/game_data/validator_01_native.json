@@ -1,0 +1,124 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      166863,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_BuffValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_BuffValidator_DataForMemoryPackFormatter",
+      "Deserialize",
+      72973696
+    ],
+    [
+      166862,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_BuffValidator_DataForMemoryPack",
+      "Deserialize",
+      72973792
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72973696,
+      "endRva": 72973785,
+      "sha256": "4B0F87C10F85E5251DBCAAC4EDF07D738052B14A89F4DCE04A847BBFDDDF0697",
+      "boundary": "complete formatter initialization and forwarding"
+    },
+    {
+      "startRva": 72973792,
+      "endRva": 72974078,
+      "sha256": "885E123E20EFD7A1749B44CA0A048BADA6F79295C5FC46BBF70F6CBF1B747E7C",
+      "boundary": "complete initialization and member2 reads through RET"
+    },
+    {
+      "startRva": 83856736,
+      "endRva": 83856749,
+      "sha256": "E4258E75606B277C5A7300A2E3119BEB7790B58D516869A9E8F237233DDDCA92",
+      "boundary": "existing output and rejoin"
+    },
+    {
+      "startRva": 83856805,
+      "endRva": 83856826,
+      "sha256": "239D73BBC4F5C482CB6C69DB54CB079CEC742D24DBD6F07B785892983E1B69B3",
+      "boundary": "FF clear and rejoin"
+    },
+    {
+      "startRva": 66918704,
+      "endRva": 66918711,
+      "sha256": "1E478FDE2619DECE511DC7252A617E6A1876711F2021612E4FFB9E5F4B829C5B",
+      "boundary": "validator1 exact type operand"
+    },
+    {
+      "startRva": 66918239,
+      "endRva": 66918267,
+      "sha256": "BF8156FC9B8728A7EF3D0A04FAEE357A9A3F28EFAD7914679C4F39C8C539C2F2",
+      "boundary": "validator bounded table dispatch"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72973989,
+      "instructionHex": "488B15ECCFA508",
+      "cellVa": 6660509336,
+      "usageRawHex": "A5EA12C000000000",
+      "methodSpecIndex": 619858,
+      "methodSpec": [
+        428464,
+        -1,
+        13980
+      ],
+      "argumentRawHex": "56270000000000000000120000000000",
+      "typeDefinition": 10070,
+      "typeName": "Beyond.Gameplay.Core.BuffFindSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 72974026,
+      "instructionHex": "488B15D7B0A608",
+      "cellVa": 6660566952,
+      "usageRawHex": "ADE812C000000000",
+      "methodSpecIndex": 619606,
+      "methodSpec": [
+        428448,
+        -1,
+        42569
+      ],
+      "argumentRawHex": "05280000000000000000118000000000",
+      "typeDefinition": 10245,
+      "typeName": "Beyond.Gameplay.Core.Selector+BuffValidator+ValidateMode",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "validator1member2": [
+      "BuffFindSettings",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact current validator dispatch and registered type join establish BuffValidator identity. Member2 consumes BuffFindSettings followed by a required DWORD; its ValidateMode scalar context adds no serialized header. BuffFindSettings reuses the independently pinned B4 reader: FF or header3 with nullable signed payload list, DWORD and query; query has its own nullable counted DWORD list. All counts and lengths are bounded before use. Null settings do not remove the terminal DWORD. Complete formatter, initialization/normal, table dispatch and cold rejoin windows retain whole instructions. Structural-only framing does not establish buff ownership, validation behavior, live formatter choice, full refill/error parity or whole-BuffData EOF.",
+  "dataWindows": [
+    {
+      "startRva": 66919392,
+      "endRva": 66919396,
+      "sha256": "F1B58443AB41AC102F0AB9CCC9CEEA264D4919EB5C133BEF84EA393B187E7287",
+      "boundary": "validator1 dispatch entry"
+    },
+    {
+      "startRva": 217991336,
+      "endRva": 217991344,
+      "sha256": "D3BA497E46E76D54A93AB78F425C1979998AC5CE2C9EBC951E63714656164793",
+      "boundary": "validator1 type usage"
+    },
+    {
+      "startRva": 206847048,
+      "endRva": 206847056,
+      "sha256": "B9D05B911A7D672BDE2EE3B04F7485233561751EFE06A149FBA3C58E2378F286",
+      "boundary": "validator1 registered type slot"
+    },
+    {
+      "startRva": 220269112,
+      "endRva": 220269128,
+      "sha256": "DD83334E02678866439E84F82E26A9C7C8902A13269C6D485F22B60C53C8CE91",
+      "boundary": "validator1 class definition"
+    }
+  ]
+}

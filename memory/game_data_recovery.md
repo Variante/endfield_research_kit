@@ -611,6 +611,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/validator_01_native.json` pins validator 1 independently
+  of finder 1: member two consumes BuffFindSettings then a required DWORD.
+  Reuse the bounded payload-list/query reader and preserve its null states;
+  ValidateMode adds no header and does not establish runtime validation rules.
+  The supported first collection now closes across the authenticated current
+  corpus. Continue from its exact endpoint into the remaining root members;
+  retain the independent suffix anchor and explicit opaque range until joined.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity

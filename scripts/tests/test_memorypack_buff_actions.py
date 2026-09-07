@@ -6371,6 +6371,56 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile');self.assertEqual(r.target_depth,0)
         self.assertFalse(any(v['kind']=='anonymous-target-profile' for v in r.records))
 
+    def test_validator1_nested_settings_and_parent_continuation(self):
+        for wire in (b'\x01',b'\xfa\x01\x00'):
+            for settings in (b'\xff',finder14d(None,None),finder14d((),()),finder14d((None,b'',b'wire'),(0,0xffffffff))):
+                for bits in (0,0xffffffff,0x80000000,0x7fc00000):
+                    value=wire+b'\x02'+settings+struct.pack('<I',bits)
+                    r=Reader(value+b'\xaa','validator1');r.selector_validator_profile();self.assertEqual(r.pos,len(value))
+                    self.assertEqual(r.records[-1],dict(start=0,end=len(value),kind='anonymous-selector-validator-profile'))
+                    child=tag_ec(nested=target(selector=b'\x03\xff'+bytes(4)+struct.pack('<i',1)+value));raw=sequence(child)
+                    self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='validator1');self.assertEqual(row['diagnostic']['offset'],19+len(child))
+                    self.assertEqual(row['diagnostic']['actual'],89);self.assertFalse(row['wholeSchemaExact'])
+                    for tail in (b'\x00',b'\xff'):
+                        with self.assertRaises(FrameError) as caught:sequence_frame(raw+tail)
+                        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_validator1_all_cuts_limits_nulls_and_required_dword(self):
+        body=finder14d((None,b'wire'),(1,0xffffffff))+bytes(4)
+        for value in (b'\x01\x02'+body,b'\xfa\x01\x00\x02'+body,b'\x01\xff',b'\xfa\x01\x00\xff',b'\x01\x02\xff'+bytes(4)):
+            r=Reader(value,'validator1');r.selector_validator_profile();self.assertEqual(r.pos,len(value))
+            for n in range(len(value)):
+                out=[]
+                for data in (value,value[:n],value[:n]+b'\xff'*(len(value)-n)):
+                    r=Reader(data,'validator1-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.selector_validator_profile()
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v['kind']=='anonymous-selector-validator-profile' for v in r.records))
+                    out.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(out[0],out[1]);self.assertEqual(out[0],out[2])
+        for n in range(4):
+            r=Reader(b'\x01\x02\xff'+bytes(n),'validator1-tail')
+            with self.assertRaises(FrameError) as caught:r.selector_validator_profile()
+            self.assertEqual(caught.exception.diagnostic['offset'],3)
+            self.assertFalse(any(v['kind']=='anonymous-selector-validator-profile' for v in r.records))
+
+    def test_validator1_bad_members_nested_counts_and_lengths(self):
+        for wire in (b'\x01',b'\xfa\x01\x00'):
+            for header in (0,1,3,254):
+                r=Reader(wire+bytes([header]),'validator1-header')
+                with self.assertRaises(FrameError) as caught:r.selector_validator_profile()
+                self.assertEqual(caught.exception.diagnostic,dict(source='validator1-header',offset=len(wire),expected=2,actual=header,category='member-count'))
+            for n in (-2,0x7fffffff):
+                cases=((b'\x03'+struct.pack('<i',n)+bytes(9),len(wire)+2),
+                       (b'\x03'+struct.pack('<i',1)+struct.pack('<i',n)+bytes(9),len(wire)+6),
+                       (b'\x03'+bytes(8)+b'\x02'+bytes(4)+struct.pack('<i',n)+bytes(4),len(wire)+15))
+                for settings,offset in cases:
+                    r=Reader(wire+b'\x02'+settings,'validator1-count')
+                    with self.assertRaises(FrameError) as caught:r.selector_validator_profile()
+                    self.assertEqual(caught.exception.diagnostic['offset'],offset)
+                    self.assertEqual(caught.exception.diagnostic['actual'],n)
+                    self.assertFalse(any(v['kind']=='anonymous-selector-validator-profile' for v in r.records))
+
     def test_finder1_zero_members_and_parent_continuation(self):
         for wire in (b'\x01',b'\xfa\x01\x00'):
             for header in (b'\x00',b'\xff'):
