@@ -580,6 +580,12 @@ authenticated source inputs for deferred recovery; capture completeness does
 not establish final rendering or cloth parity. Collection must validate the
 individual producer/consumer owners within a joined packet, and its streamed
 artifact hashing bound must accommodate the observer's permitted payload size.
+Live completion and shutdown must apply the same combined CPU limit, including
+graphics retention and both native observer reservations. ECS call snapshots
+use a preallocated shared raw-record pool with disjoint, never-recycled spans;
+pool exhaustion remains failed evidence. See the capture ECS guide for capacity
+and receipt contracts. A completed live graphics schedule alone is insufficient
+for sessions made before aggregate budget checks were shared.
 
 ## Reference and comparison policy
 
