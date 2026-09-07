@@ -588,10 +588,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with three independent scalar payloads, a separate byte payload and target
   followed by a required byte. Exact BlackboardDouble contexts reuse the
   four-byte scalar reader; attribute ownership and arithmetic remain unresolved.
-  `scripts/game_data/buff_132_native.json` pins an extended member-six
-  action ending in two independent byte payloads. Preserve both signed lengths
+  `scripts/game_data/buff_132_native.json` and `buff_13a_native.json` pin
+  separate extended member-six actions ending in two independent byte payloads.
+  Their shared parser retains distinct union identities. Preserve both signed lengths
   and null/empty states; the parent completes only after the second payload.
-  Payload encoding and ATB-value ownership remain unresolved.
+  Payload encoding, ATB-value and collected-value ownership remain unresolved.
   `scripts/game_data/buff_d4_native.json` pins a member-eight action
   with two independent target profiles followed by two four-byte scalars.
   Preserve raw scalar bits and keep the parent incomplete until both tails

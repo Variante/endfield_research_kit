@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122461,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveCollectedBuffBbValue_DataForMemoryPack+Beyond_Gameplay_Core_SaveCollectedBuffBbValue_DataForMemoryPackFormatter",
+      "Deserialize",
+      73609728
+    ],
+    [
+      122460,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveCollectedBuffBbValue_DataForMemoryPack",
+      "Deserialize",
+      73609824
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73609728,
+      "endRva": 73609817,
+      "sha256": "10F1C5367CE96FB736768D2514FEB8CF540CD2F8EA51EDC4DA50E87D489F9C64",
+      "boundary": "formatter forwarding and inline initialization"
+    },
+    {
+      "startRva": 73609824,
+      "endRva": 73610221,
+      "sha256": "3132ADE178E2EC9E0B658DDE1B0BA2D0DE268017C5EEF0F66894243493E56F72",
+      "boundary": "member6 source reads including inline initialization through normal RET"
+    },
+    {
+      "startRva": 83931844,
+      "endRva": 83931857,
+      "sha256": "CF86F66E4512852DCFF2C78281F344D5F515AC37DD37826067F021BE6554C822",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83931913,
+      "endRva": 83931934,
+      "sha256": "559D2502DB4249241D3AACB9AD95F50D1420125898BEE1BABB8CEFB280D6C297",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 73610047,
+      "instructionHex": "488B15E26AA508",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact registration and module/token joins establish direct selected source order and structural-only framing. The member6 action consumes the common byte/three DWORDs then two independent signed-length byte payloads, with no nested provider or additional tail. The separately pinned payload helper advances by byte length; null and empty payloads remain distinct and arbitrary payload bytes do not establish text semantics. Each length is bounded by the active hard limit before consumption. A completed first payload does not waive the second length or payload, and incomplete actions never become completed records. Priority is the sole MethodSpec context. Formatter and reader inline initialization, normal RET, existing-output and FF windows retain complete instructions; calls after RET belong to adjacent methods and are excluded. Collected-value meaning, live formatter choice, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}

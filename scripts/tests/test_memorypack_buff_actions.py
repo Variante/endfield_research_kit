@@ -566,6 +566,50 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag13a_two_payloads_have_independent_null_and_length_boundaries(self):
+        for first in (None,b'',b'\xff\x00'):
+            for second in (None,b'',b'wire'):
+                child=b'\xfa\x3a\x01\x06\xfe'+b'\xff'*12+payload(first)+payload(second)
+                split=36+len(payload(first));end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='13a.bin')
+                self.assertEqual(row['diagnostic'],dict(source='13a.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=314),row['completedRecords'])
+                self.assertIn(dict(start=36,end=split,kind='anonymous-byte-payload',isNull=first is None),row['completedRecords'])
+                self.assertIn(dict(start=split,end=end,kind='anonymous-byte-payload',isNull=second is None),row['completedRecords'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+                self.assertFalse(row['wholeSchemaExact'])
+
+    def test_tag13a_all_cuts_hard_limits_null_wrapper_and_trailing(self):
+        for child in (b'\xfa\x3a\x01\x06'+bytes(13)+payload(b'wire')+payload(b'\xff\x00'),b'\xfa\x3a\x01\xff'):
+            r=Reader(child,'13a-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'13a-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==314 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag13a_bad_lengths_headers_and_incomplete_second_payload(self):
+        child=b'\xfa\x3a\x01\x06'+bytes(13)+payload(b'wire')+payload(b'\xff\x00')
+        for at,values in ((3,(0,254)),(17,(-2,0x7fffffff)),(25,(-2,0x7fffffff))):
+            for value in values:
+                bad=bytearray(child)
+                if at==3:bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'13a-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],caught.exception.diagnostic['category']),('13a-bounds',at,value,'member-count' if at==3 else 'count-bounds'))
+        for n in range(25,len(child)):
+            r=Reader(child,'13a-second',n)
+            with self.assertRaises(FrameError):r.action(0)
+            self.assertIn(dict(start=17,end=25,kind='anonymous-byte-payload',isNull=False),r.records)
+            self.assertFalse(any(v.get('tag')==314 for v in r.records))
+
     def test_tag83_scalar32_byte_target_scalar_order(self):
         for bits in (0,0xffffffff,0x80000000,0x7fc00000):
             for first in (b'\xff',target()):
