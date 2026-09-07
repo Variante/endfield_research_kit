@@ -3650,7 +3650,7 @@ class BuffActionsTests(unittest.TestCase):
             bad=bytearray(child);bad[3]=value;r=Reader(bad,'142-header')
             with self.assertRaises(FrameError) as caught:r.action(0)
             self.assertEqual(caught.exception.diagnostic['category'],'member-count')
-        gap=tag142(nested=target(selector=b'\x03\x10'))
+        gap=tag142(nested=target(selector=b'\x03\x17'))
         r=Reader(gap,'142-gap')
         with self.assertRaises(Unsupported) as caught:r.action(0)
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
@@ -4324,7 +4324,7 @@ class BuffActionsTests(unittest.TestCase):
                 r=Reader(bad,'174-bounds')
                 with self.assertRaises(FrameError) as caught:r.action(0)
                 self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('174-bounds',at,value))
-        gap=tag174(nested=target(selector=b'\x03\x10'));r=Reader(gap,'174-gap')
+        gap=tag174(nested=target(selector=b'\x03\x17'));r=Reader(gap,'174-gap')
         with self.assertRaises(Unsupported) as caught:r.action(0)
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
         self.assertLess(r.pos,len(gap)-1)
@@ -4374,7 +4374,7 @@ class BuffActionsTests(unittest.TestCase):
                 r=Reader(bad,'84-bounds')
                 with self.assertRaises(FrameError) as caught:r.action(0)
                 self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('84-bounds',at,value))
-        gap=tag84(target(selector=b'\x03\x10'));r=Reader(gap,'84-gap')
+        gap=tag84(target(selector=b'\x03\x17'));r=Reader(gap,'84-gap')
         with self.assertRaises(Unsupported) as caught:r.action(0)
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
         self.assertLess(r.pos,len(gap)-4)
@@ -4546,10 +4546,10 @@ class BuffActionsTests(unittest.TestCase):
                 row=event_prefix(bad,source='1c-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('1c-bounds',at,value))
                 self.assertFalse(any(r.get('tag')==28 for r in row['completedRecords']))
-        unknown=target(selector=b'\x03\x10')
+        unknown=target(selector=b'\x03\x17')
         for first,second in ((unknown,target()),(target(),unknown)):
             row=event_prefix(prefix(sequence(tag1c(first,second=second))),source='1c-gap')
-            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',23))
             self.assertFalse(any(r.get('tag')==28 for r in row['completedRecords']))
 
     def test_scalar_flag_payload_requires_own_final_byte(self):
@@ -4598,8 +4598,8 @@ class BuffActionsTests(unittest.TestCase):
                 row=event_prefix(bad,source='126-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('126-bounds',at,value))
                 self.assertFalse(any(r.get('tag')==294 for r in row['completedRecords']))
-        row=event_prefix(prefix(sequence(tag126(target(selector=b'\x03\x10')))),source='126-gap')
-        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+        row=event_prefix(prefix(sequence(tag126(target(selector=b'\x03\x17')))),source='126-gap')
+        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',23))
         self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
         self.assertFalse(any(r.get('tag')==294 for r in row['completedRecords']))
 
@@ -4639,8 +4639,8 @@ class BuffActionsTests(unittest.TestCase):
                 row=event_prefix(bad,source='60-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('60-bounds',at,value))
                 self.assertFalse(any(r.get('tag')==96 for r in row['completedRecords']))
-        row=event_prefix(prefix(sequence(tag60(target(selector=b'\x03\x10')))),source='60-gap')
-        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+        row=event_prefix(prefix(sequence(tag60(target(selector=b'\x03\x17')))),source='60-gap')
+        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',23))
         self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
         self.assertFalse(any(r.get('tag')==96 for r in row['completedRecords']))
 
@@ -4687,10 +4687,10 @@ class BuffActionsTests(unittest.TestCase):
             self.assertEqual(row['status'],'failed')
             self.assertIn(dict(start=34+len(target()),end=end-8,kind='anonymous-target-profile'),row['completedRecords'])
             self.assertFalse(any(r.get('tag')==212 for r in row['completedRecords']))
-        unknown=target(selector=b'\x03\x10')
+        unknown=target(selector=b'\x03\x17')
         for first,second in ((unknown,target()),(target(),unknown)):
             child=tagd4(first,second);row=event_prefix(prefix(sequence(child)),source='d4-gap')
-            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',23))
             self.assertLess(row['consumedEnd'],19+len(child)-8)
             self.assertFalse(any(r.get('tag')==212 for r in row['completedRecords']))
             if first!=unknown:self.assertIn(dict(start=34,end=34+len(first),kind='anonymous-target-profile'),row['completedRecords'])
@@ -4775,9 +4775,9 @@ class BuffActionsTests(unittest.TestCase):
                 row=event_prefix(bad,source='171-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('171-bounds',at,value))
                 self.assertFalse(any(r.get('tag')==369 for r in row['completedRecords']))
-        child=tag171(nested=target(selector=b'\x03\x10'))
+        child=tag171(nested=target(selector=b'\x03\x17'))
         row=event_prefix(prefix(sequence(child)),source='171-gap')
-        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',23))
         self.assertLess(row['consumedEnd'],19+len(child)-1)
         self.assertFalse(any(r.get('tag')==369 for r in row['completedRecords']))
         child=tag171(nested=target());full=prefix(sequence(child));end=19+len(child)
@@ -4843,8 +4843,8 @@ class BuffActionsTests(unittest.TestCase):
                 row=event_prefix(bad,source='160-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('160-bounds',at,value))
                 self.assertFalse(any(r.get('tag')==352 for r in row['completedRecords']))
-        row=event_prefix(prefix(sequence(tag160(target(selector=b'\x03\x10')))),source='160-gap')
-        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+        row=event_prefix(prefix(sequence(tag160(target(selector=b'\x03\x17')))),source='160-gap')
+        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',23))
         self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
         self.assertFalse(any(r.get('tag')==352 for r in row['completedRecords']))
 
@@ -4874,10 +4874,10 @@ class BuffActionsTests(unittest.TestCase):
                 row=event_prefix(bad,source='16d-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('16d-bounds',at,value))
                 self.assertFalse(any(r.get('tag')==365 for r in row['completedRecords']))
-        unknown=target(selector=b'\x03\x10')
+        unknown=target(selector=b'\x03\x17')
         for first,second in ((unknown,target()),(target(),unknown)):
             row=event_prefix(prefix(sequence(tag16d(first,second))),source='16d-gap')
-            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',23))
             self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
             self.assertFalse(any(r.get('tag')==365 for r in row['completedRecords']))
             profiles=[r for r in row['completedRecords'] if r['kind']=='anonymous-target-profile']
@@ -4942,8 +4942,8 @@ class BuffActionsTests(unittest.TestCase):
                 row=event_prefix(bad,source='95-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('95-bounds',at,value))
                 self.assertFalse(any(r.get('tag')==149 for r in row['completedRecords']))
-        row=event_prefix(prefix(sequence(tag95(items,last=target(selector=b'\x03\x10')))),source='95-gap')
-        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+        row=event_prefix(prefix(sequence(tag95(items,last=target(selector=b'\x03\x17')))),source='95-gap')
+        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',23))
         self.assertEqual(len([r for r in row['completedRecords'] if r['kind']=='anonymous-global-input-list']),1)
         self.assertFalse(any(r.get('tag')==149 for r in row['completedRecords']))
 
@@ -4972,10 +4972,10 @@ class BuffActionsTests(unittest.TestCase):
                 else:struct.pack_into('<i',bad,at,value)
                 row=event_prefix(bad,source='27-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('27-bounds',at,value))
-        bad_target=target(selector=b'\x03\x10');middle=pair(b'first',None)
+        bad_target=target(selector=b'\x03\x17');middle=pair(b'first',None)
         for first,last in ((bad_target,target()),(target(),bad_target)):
             row=event_prefix(prefix(sequence(tag27(first,middle,last))),source='27-gap')
-            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',23))
             self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
             self.assertFalse(any(r.get('tag')==39 for r in row['completedRecords']))
             paired=[r for r in row['completedRecords'] if r['kind']=='anonymous-paired-payload']
@@ -5017,10 +5017,10 @@ class BuffActionsTests(unittest.TestCase):
                 else:struct.pack_into('<i',bad,at,value)
                 row=event_prefix(bad,source='42-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('42-bounds',at,value))
-        bad_target=target(selector=b'\x03\x10')
+        bad_target=target(selector=b'\x03\x17')
         for first,second in ((bad_target,target()),(target(),bad_target)):
             row=event_prefix(prefix(sequence(tag42(first,second))),source='42-gap')
-            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',23))
             self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
             self.assertFalse(any(r.get('tag')==66 for r in row['completedRecords']))
             completed=[r for r in row['completedRecords'] if r['kind']=='anonymous-target-profile']
@@ -5145,9 +5145,9 @@ class BuffActionsTests(unittest.TestCase):
                 else:struct.pack_into('<i',bad,at,value)
                 row=event_prefix(bad,source='14d-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('14d-bounds',at,value))
-        child=tag14d(finder14d(),target(selector=b'\x03\x10'),scalar_payload())
+        child=tag14d(finder14d(),target(selector=b'\x03\x17'),scalar_payload())
         row=event_prefix(prefix(sequence(child)),source='14d-gap')
-        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+        self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',23))
         self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
         self.assertIn(dict(start=36,end=36+len(finder14d()),kind='anonymous-finder-profile'),row['completedRecords'])
         self.assertFalse(any(r.get('tag')==333 or r['kind']=='anonymous-scalar-payload' for r in row['completedRecords']))
@@ -5274,9 +5274,9 @@ class BuffActionsTests(unittest.TestCase):
                 row=event_prefix(bad,source='ea-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('ea-bounds',at,value))
         for before in ((),(b'\xff',target())):
-            child=tagea(before+(target(selector=b'\x03\x10'),))
+            child=tagea(before+(target(selector=b'\x03\x17'),))
             row=event_prefix(prefix(sequence(child)),source='ea-gap')
-            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',16))
+            self.assertEqual((row['status'],row['diagnostic']['category'],row['diagnostic']['actual']),('unsupported','nested-profile',23))
             self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
             self.assertFalse(any(r.get('tag')==234 or r['kind']=='anonymous-target-list' for r in row['completedRecords']))
             self.assertEqual(len([r for r in row['completedRecords'] if r['kind']=='anonymous-target-profile']),len(before))
@@ -5328,11 +5328,11 @@ class BuffActionsTests(unittest.TestCase):
                 row=event_prefix(bad,source='35-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('35-bounds',at,value))
         for first_gap in (True,False):
-            bad=target(selector=b'\x03\x10');good_target=target()
+            bad=target(selector=b'\x03\x17');good_target=target()
             child=tag35(bad,good_target) if first_gap else tag35(good_target,bad)
             row=event_prefix(prefix(sequence(child)),source='35-gap')
             self.assertEqual(row['status'],'unsupported')
-            self.assertEqual((row['diagnostic']['category'],row['diagnostic']['actual']),('nested-profile',16))
+            self.assertEqual((row['diagnostic']['category'],row['diagnostic']['actual']),('nested-profile',23))
             self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
             self.assertFalse(any(r.get('tag')==53 for r in row['completedRecords']))
             self.assertEqual(len([r for r in row['completedRecords'] if r['kind']=='anonymous-target-profile']),0 if first_gap else 1)
@@ -5383,11 +5383,11 @@ class BuffActionsTests(unittest.TestCase):
                 row=event_prefix(bad,source='7e-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('7e-bounds',at,value))
         for first_gap in (True,False):
-            bad=target(selector=b'\x03\x10');good_target=target()
+            bad=target(selector=b'\x03\x17');good_target=target()
             child=tag7e(bad,good_target) if first_gap else tag7e(good_target,bad)
             row=event_prefix(prefix(sequence(child)),source='7e-gap')
             self.assertEqual(row['status'],'unsupported')
-            self.assertEqual((row['diagnostic']['category'],row['diagnostic']['actual']),('nested-profile',16))
+            self.assertEqual((row['diagnostic']['category'],row['diagnostic']['actual']),('nested-profile',23))
             self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
             self.assertFalse(any(r.get('tag')==126 for r in row['completedRecords']))
             self.assertEqual(len([r for r in row['completedRecords'] if r['kind']=='anonymous-target-profile']),0 if first_gap else 1)
@@ -5428,10 +5428,10 @@ class BuffActionsTests(unittest.TestCase):
                 else:struct.pack_into('<i',bad,at,value)
                 row=event_prefix(bad,source='16b-bounds');self.assertEqual(row['status'],'failed')
                 self.assertEqual((row['diagnostic']['source'],row['diagnostic']['offset'],row['diagnostic']['actual']),('16b-bounds',at,value))
-        child=tag16b(scalar_payload(b'x'),target(selector=b'\x03\x10'))
+        child=tag16b(scalar_payload(b'x'),target(selector=b'\x03\x17'))
         row=event_prefix(prefix(sequence(child)),source='16b-gap')
         self.assertEqual(row['status'],'unsupported')
-        self.assertEqual((row['diagnostic']['category'],row['diagnostic']['actual']),('nested-profile',16))
+        self.assertEqual((row['diagnostic']['category'],row['diagnostic']['actual']),('nested-profile',23))
         self.assertEqual(row['consumedEnd'],row['diagnostic']['offset'])
         self.assertFalse(any(r.get('tag')==363 for r in row['completedRecords']))
         row=event_prefix(prefix(sequence(b'\x6b'+tag16b()[3:])),source='16b-short')
@@ -6370,6 +6370,65 @@ class BuffActionsTests(unittest.TestCase):
         with self.assertRaises(Unsupported) as caught:r.direction_profile()
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile');self.assertEqual(r.target_depth,0)
         self.assertFalse(any(v['kind']=='anonymous-target-profile' for v in r.records))
+
+    def test_finder16_independent_members_and_parent_continuation(self):
+        shapes=(b'\xff',b'\x02'+scalar_payload(None)+scalar_payload(b'wire',128),b'\x02\xff\xff')
+        for wire in (b'\x10',b'\xfa\x10\x00'):
+            for v2 in shapes:
+                for v3 in (b'\xff',b'\x03'+scalar_payload(b'')+b'\xff'+scalar_payload(None)):
+                    value=wire+b'\x09'+scalar_payload(b'a')+v2+v3+scalar_payload(None)+b'\xff'+scalar_payload(b'last')+b'\xff\xff\xff\xff\x80\xff'
+                    r=Reader(value+b'\xaa','finder16');r.selector_finder_profile();self.assertEqual(r.pos,len(value))
+                    rec=next(v for v in r.records if v['kind']=='anonymous-vector2-payload')
+                    self.assertEqual(rec['end']-rec['start'],len(v2))
+                    child=tag_ec(nested=target(selector=b'\x03'+value+bytes(8)));raw=sequence(child)
+                    self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='finder16');self.assertEqual(row['diagnostic']['offset'],19+len(child))
+                    self.assertEqual(row['diagnostic']['actual'],89);self.assertFalse(row['wholeSchemaExact'])
+                    for tail in (b'\x00',b'\xff'):
+                        with self.assertRaises(FrameError) as caught:sequence_frame(raw+tail)
+                        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_finder16_every_cut_hard_limits_and_required_tail(self):
+        body=scalar_payload(b'wire')+b'\x02'+scalar_payload(None)+scalar_payload(b'')+b'\x03\xff\xff\xff'+b'\xff'*3+bytes(6)
+        for value in (b'\x10\x09'+body,b'\xfa\x10\x00\x09'+body,b'\x10\xff',b'\xfa\x10\x00\xff'):
+            r=Reader(value,'finder16');r.selector_finder_profile();self.assertEqual(r.pos,len(value))
+            for n in range(len(value)):
+                out=[]
+                for data in (value,value[:n],value[:n]+b'\xff'*(len(value)-n)):
+                    r=Reader(data,'finder16-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.selector_finder_profile()
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v['kind']=='anonymous-selector-finder-profile' for v in r.records))
+                    out.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(out[0],out[1]);self.assertEqual(out[0],out[2])
+        for n in (1,2):
+            r=Reader(b'\x10\x09'+body[:-n],'finder16-tail')
+            with self.assertRaises(FrameError) as caught:r.selector_finder_profile()
+            self.assertEqual(caught.exception.diagnostic['offset'],2+len(body)-n)
+
+    def test_finder16_headers_and_nested_lengths_fail_closed(self):
+        for wire in (b'\x10',b'\xfa\x10\x00'):
+            for header in (0,8,10,254):
+                r=Reader(wire+bytes([header]),'finder16-header')
+                with self.assertRaises(FrameError) as caught:r.selector_finder_profile()
+                self.assertEqual(caught.exception.diagnostic,dict(source='finder16-header',offset=len(wire),expected=9,actual=header,category='member-count'))
+            for n in (-2,0x7fffffff):
+                value=wire+b'\x09\xff\x02\xff\x03'+struct.pack('<i',n)
+                r=Reader(value,'finder16-length')
+                with self.assertRaises(FrameError) as caught:r.selector_finder_profile()
+                self.assertEqual(caught.exception.diagnostic['offset'],len(wire)+5)
+                self.assertFalse(any(v['kind'] in ('anonymous-vector2-payload','anonymous-selector-finder-profile') for v in r.records))
+
+    def test_vector2_independent_nulls_headers_and_all_truncations(self):
+        for value in (b'\xff',b'\x02\xff\xff',b'\x02'+scalar_payload(None)+scalar_payload(b'wire',255)):
+            r=Reader(value+b'\xaa','vector2');r.vector2_payload();self.assertEqual(r.pos,len(value))
+            for n in range(len(value)):
+                r=Reader(value,'vector2',n)
+                with self.assertRaises(FrameError):r.vector2_payload()
+                self.assertFalse(any(v['kind']=='anonymous-vector2-payload' for v in r.records))
+        for header in (0,1,3,254):
+            r=Reader(bytes([header]),'vector2-header')
+            with self.assertRaises(FrameError) as caught:r.vector2_payload()
+            self.assertEqual(caught.exception.diagnostic,dict(source='vector2-header',offset=0,expected=2,actual=header,category='member-count'))
 
     def test_finder14_independent_vectors_and_parent_continuation(self):
         vectors=(b'\xff',b'\x03'+b'\xff'*3,b'\x03'+scalar_payload(None)+scalar_payload(b'')+scalar_payload(b'wire',128))

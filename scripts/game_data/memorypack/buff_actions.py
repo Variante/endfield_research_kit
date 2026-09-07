@@ -866,11 +866,11 @@ class Reader:
 
     def selector_finder_profile(self):
         start=self.pos
-        tag=self.nested_union_tag((2,3,5,7,8,10,12,13,14,18,19,21),'finder')
+        tag=self.nested_union_tag((2,3,5,7,8,10,12,13,14,16,18,19,21),'finder')
         if tag is None:pass
         elif self.peek()==255:self.take(1,'null-nested-finder-wrapper')
         else:
-            self.header({2:0,3:4,5:0,7:8,8:0,10:0,12:1,13:1,14:2,18:11,19:4,21:0}[tag])
+            self.header({2:0,3:4,5:0,7:8,8:0,10:0,12:1,13:1,14:2,16:9,18:11,19:4,21:0}[tag])
             if tag==3:
                 self.take(12,'anonymous-raw12');self.take(16,'anonymous-raw16')
                 self.scalar_payload();self.take(1,'anonymous-nonzero-byte')
@@ -884,6 +884,11 @@ class Reader:
             elif tag==13:self.take(4,'anonymous-scalar32')
             elif tag==14:
                 self.vector_payload();self.vector_payload()
+            elif tag==16:
+                self.scalar_payload();self.vector2_payload();self.vector_payload()
+                for _ in range(3):self.scalar_payload()
+                self.take(4,'anonymous-scalar32')
+                for _ in range(2):self.take(1,'anonymous-byte')
             elif tag==18:
                 for _ in range(3):self.take(1,'anonymous-nonzero-byte')
                 for _ in range(3):self.take(4,'anonymous-scalar32')
@@ -943,6 +948,14 @@ class Reader:
         else:
             self.header(2);self.finder_profile();self.take(4,'anonymous-scalar32')
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-filter-profile'))
+
+    def vector2_payload(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-vector2-payload')
+        else:
+            self.header(2)
+            for _ in range(2):self.scalar_payload()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-vector2-payload'))
 
     def vector_payload(self):
         start=self.pos

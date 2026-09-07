@@ -1,0 +1,296 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      167228,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_RandomPointFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_RandomPointFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      64280592
+    ],
+    [
+      167227,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_RandomPointFinder_DataForMemoryPack",
+      "Deserialize",
+      64280688
+    ],
+    [
+      168316,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardVector2ForMemoryPack+Beyond_Blackboard_BlackboardVector2ForMemoryPackFormatter",
+      "Deserialize",
+      66420304
+    ],
+    [
+      168315,
+      "Beyond.MemoryPack.Beyond_Blackboard_BlackboardVector2ForMemoryPack",
+      "Deserialize",
+      66420400
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 64280592,
+      "endRva": 64280685,
+      "sha256": "C09E532936F330F415D845E6B03A3B5C28386F90FBC0BB981B03DA046DE92D35",
+      "boundary": "complete finder formatter"
+    },
+    {
+      "startRva": 64280688,
+      "endRva": 64281227,
+      "sha256": "DD9A9F642F685F32A45D2896DAE2210EEB54860F00C207F4921F00A6FC2D1A55",
+      "boundary": "finder member9 normal reads through RET"
+    },
+    {
+      "startRva": 64281227,
+      "endRva": 64281244,
+      "sha256": "B6816D360773F46BE4A5C0E68DB3ACCBE9E3593567DC5B55DDF27A484BAD4A01",
+      "boundary": "finder FF clear and rejoin"
+    },
+    {
+      "startRva": 64281244,
+      "endRva": 64281340,
+      "sha256": "3233F5B332AAC74581ED59EB59A720DDCA31D99FF60076AF751780478AB499E1",
+      "boundary": "finder lazy initialization and rejoin"
+    },
+    {
+      "startRva": 82867710,
+      "endRva": 82867723,
+      "sha256": "1E23B4B153132F0081C3303211034CA022A6D442CBA9231345E8E86E0D5F96A3",
+      "boundary": "finder existing output and rejoin"
+    },
+    {
+      "startRva": 59819828,
+      "endRva": 59819835,
+      "sha256": "C12576D4C77082F1FE420C4D086AC476A819A543699CE16C6AEF7BD266E8B14C",
+      "boundary": "finder16 exact type operand"
+    },
+    {
+      "startRva": 66420304,
+      "endRva": 66420397,
+      "sha256": "902B5726FEB117F4A482416EF86A4FA1A08D6F9CF06EB6CDF402C29DFC7E7F60",
+      "boundary": "complete Vector2 formatter"
+    },
+    {
+      "startRva": 66420400,
+      "endRva": 66420606,
+      "sha256": "1EAE871B076E50F362F506E6109C2EA33BB5865AF763A79ADC6AB0E4F631696A",
+      "boundary": "Vector2 member2 normal reads through RET"
+    },
+    {
+      "startRva": 66420606,
+      "endRva": 66420623,
+      "sha256": "C235106657762DE64FFD3742DBE834CF12FBB44C3408A1199529FEFC1754F5E5",
+      "boundary": "Vector2 FF clear and rejoin"
+    },
+    {
+      "startRva": 66420623,
+      "endRva": 66420683,
+      "sha256": "672C7735332F1C40F8760A84CF322621A0BCB05316BD2ADE2E476276B571DE70",
+      "boundary": "Vector2 lazy initialization and rejoin"
+    },
+    {
+      "startRva": 83168918,
+      "endRva": 83168969,
+      "sha256": "19F042E89099670F84307EC343AED462AA240173810CC05008ED6E469527B90C",
+      "boundary": "Vector2 allocation and source rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 64280852,
+      "instructionHex": "488B15056D2A09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64280893,
+      "instructionHex": "488B1584442B09",
+      "cellVa": 6660562376,
+      "usageRawHex": "CFEB12C000000000",
+      "methodSpecIndex": 620007,
+      "methodSpec": [
+        428464,
+        -1,
+        17008
+      ],
+      "argumentRawHex": "AF000000000000000000120000000000",
+      "typeDefinition": 175,
+      "typeName": "Beyond.Blackboard+BlackboardVector2",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64280934,
+      "instructionHex": "488B15B3343409",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64280975,
+      "instructionHex": "488B158A6C2A09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64281016,
+      "instructionHex": "488B15616C2A09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64281057,
+      "instructionHex": "488B15386C2A09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64281098,
+      "instructionHex": "488B15A7432B09",
+      "cellVa": 6660562360,
+      "usageRawHex": "B7E612C000000000",
+      "methodSpecIndex": 619355,
+      "methodSpec": [
+        428448,
+        -1,
+        42381
+      ],
+      "argumentRawHex": "23020000000000000000118000000000",
+      "typeDefinition": 547,
+      "typeName": "Beyond.Gameplay.Shape",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66420507,
+      "instructionHex": "488B15FEC60909",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66420548,
+      "instructionHex": "488B15D5C60909",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "finder16member9": [
+      "BlackboardDouble",
+      "BlackboardVector2",
+      "BlackboardVector3",
+      "BlackboardDouble",
+      "BlackboardDouble",
+      "BlackboardDouble",
+      "scalar32",
+      "byte",
+      "byte"
+    ],
+    "vector2member2": [
+      "BlackboardDouble",
+      "BlackboardDouble"
+    ]
+  },
+  "boundary": "Exact current finder dispatch and registered type join establish RandomPointFinder identity. Member9 reads scalar payload, Vector2, Vector3, three scalar payloads, DWORD and two bytes in order. Independently joined Vector2 reader is FF or header2 plus two scalar payloads; Vector3 remains FF or header3 plus three scalar payloads. Every scalar payload has independent nullable signed length, byte and raw4 fields. Null states do not remove sibling reads. Both final bytes are required before parent completion. Type contexts prove scalar carriers rather than random-selection meaning. Complete formatter, normal, null, initialization and relevant cold rejoin windows retain whole instructions. Structural-only framing does not establish coordinate roles, runtime random selection, live formatter choice, full refill/error parity or whole-BuffData EOF.",
+  "dataWindows": [
+    {
+      "startRva": 59821716,
+      "endRva": 59821720,
+      "sha256": "F8E486D336F6DB27C7E21B17C9603C33C67200800D41949BB8110C08FE8FE1BB",
+      "boundary": "finder16 dispatch entry"
+    },
+    {
+      "startRva": 217990640,
+      "endRva": 217990648,
+      "sha256": "FF985715ED9278E2DB133F1FB79808F4FEBF8E477F70096A187B21A46C19E8FF",
+      "boundary": "finder16 type usage"
+    },
+    {
+      "startRva": 206847320,
+      "endRva": 206847328,
+      "sha256": "F71EF69D82A5B19CFCF2F0FCF64307381D5975CD38601F0A57802D6FE298006D",
+      "boundary": "finder16 registered type slot"
+    },
+    {
+      "startRva": 220254408,
+      "endRva": 220254424,
+      "sha256": "BB46FBB20D50679389FFACC0CAFE0D1DB6AE7DB77A4329575DB91CE5B3598943",
+      "boundary": "finder16 class definition"
+    }
+  ]
+}

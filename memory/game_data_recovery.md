@@ -611,6 +611,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/finder_10_native.json` pins finder 16 and its nested
+  Vector2 reader. Member nine consumes scalar, Vector2, Vector3, three scalars,
+  DWORD and two bytes; Vector2 independently contains two scalar payloads.
+  Nulls and lengths remain independent, and both terminal bytes are required.
+  Static type identity does not prove coordinates or runtime random selection.
   `scripts/game_data/finder_0e_native.json` pins selector-finder union 14 to
   a member-two PointFinder reader with two independent vector payloads. Shared
   type context does not merge their null states or length boundaries. The
