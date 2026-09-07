@@ -629,7 +629,49 @@ def tag52(last=255,wire=b'\x52'):
     return wire+b'\x05\x80'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+bytes([last])
 
 
+def tag8e(value=b'\xff',wire=b'\x8e'):
+    return wire+b'\x05'+bytes(13)+value
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag8e_independent_terminal_scalar_extent(self):
+        for wire in (b'\x8e',b'\xfa\x8e\x00'):
+            for value in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'\xff\x8e\x00',128,b'\xff'*4)):
+                child=tag8e(value,wire);end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='8e.bin')
+                self.assertEqual(row['diagnostic'],dict(source='8e.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=142),row['completedRecords'])
+                self.assertFalse(row['wholeSchemaExact'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag8e_all_cuts_limits_and_trailing(self):
+        for child in (tag8e(scalar_payload()),tag8e(scalar_payload(None),b'\xfa\x8e\x00'),tag8e(),b'\x8e\xff',b'\xfa\x8e\x00\xff'):
+            r=Reader(child,'8e-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'8e-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==142 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag8e_malformed_headers_lengths_and_required_final_scalar(self):
+        for wire in (b'\x8e',b'\xfa\x8e\x00'):
+            for header in (0,4,6,254):
+                bad=bytearray(tag8e(wire=wire));bad[len(wire)]=header;r=Reader(bad,'8e-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='8e-header',offset=len(wire),expected=5,actual=header,category='member-count'))
+            for value in (b'\x02',b'\x03'+struct.pack('<i',-2),b'\x03'+struct.pack('<i',0x7fffffff),scalar_payload()[:-1],b''):
+                r=Reader(tag8e(value,wire),'8e-bad')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic['source'],'8e-bad')
+                self.assertGreaterEqual(caught.exception.diagnostic['offset'],len(wire)+14)
+                self.assertFalse(any(v.get('tag')==142 for v in r.records))
+
     def test_tag52_fixed_extent_and_arbitrary_terminal_byte(self):
         for wire in (b'\x52',b'\xfa\x52\x00'):
             for last in range(256):

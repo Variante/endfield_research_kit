@@ -586,6 +586,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   null/empty sequences separately. Propagate recursive depth limits and unknown
   child unions without completing the parent. Boolean evaluation, execution
   order and short-circuit behavior remain unresolved.
+  `scripts/game_data/buff_8e_native.json` pins a member-five body ending
+  in an independent BlackboardDouble profile after the common byte and three
+  DWORDs. Its null state and payload length remain local; the parent completes
+  only after the profile's final four bytes. ATB cost and cooldown selection
+  remain unresolved runtime meanings.
   `scripts/game_data/buff_52_native.json` pins a fixed member-five body:
   byte, three DWORDs and a final byte. It has no nested provider or variable
   count. The final byte remains required for every non-null wrapper, regardless

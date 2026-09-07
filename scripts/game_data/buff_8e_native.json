@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119635,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CostAtbRefreshLongestSkillCd_DataForMemoryPack+Beyond_Gameplay_Core_CostAtbRefreshLongestSkillCd_DataForMemoryPackFormatter",
+      "Deserialize",
+      73004176
+    ],
+    [
+      119634,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CostAtbRefreshLongestSkillCd_DataForMemoryPack",
+      "Deserialize",
+      73004272
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73004176,
+      "endRva": 73004265,
+      "sha256": "3E3A15155069CD79D9401435846BF8C18C8DA117AA59801141AD12AB8958DD64",
+      "boundary": "complete formatter initialization and forwarding"
+    },
+    {
+      "startRva": 73004272,
+      "endRva": 73004654,
+      "sha256": "DE9B6D8642B62C696B77B669424A210C641F29956F3F67AD3CACA884D43710A7",
+      "boundary": "complete initialization and member5 normal source reads through RET"
+    },
+    {
+      "startRva": 83861642,
+      "endRva": 83861655,
+      "sha256": "76970312295C94B5F777F5334FBE4F1E3EB16A47A06065534C9DAA6988C11579",
+      "boundary": "existing output preparation and rejoin"
+    },
+    {
+      "startRva": 83861711,
+      "endRva": 83861732,
+      "sha256": "2F1A9250F079B41337C101B1AE60FA2EAF2252DC3EA329D77B9FC8D5D5649F05",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 73004507,
+      "instructionHex": "488B1546A8AE08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 73004601,
+      "instructionHex": "488B15E04FA508",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "BlackboardDouble scalar payload"
+    ]
+  },
+  "boundary": "Exact current union registration and module/token joins establish the member5 source order: byte, three DWORDs and a terminal nested BlackboardDouble. The Priority context selects the first DWORD; the independent nested context is MethodSpec 620004, whose conditional finite shape is FF or header3 followed by nullable byte payload, byte and raw four-byte scalar. No source read follows this nested value. The nested payload length is bounded before consumption. Complete formatter, initialization/normal, existing-output and FF windows retain whole instructions. Structural-only framing does not establish ATB cost, cooldown selection, runtime evaluation, live formatter selection, full refill/error parity or whole-BuffData EOF."
+}
