@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = '257865B653AF84B20D91A576D5E0A567359A344FAF4E9162E772D03460E896B5'
+CORPUS_SHA = 'EC7972F97344678FBF76834A49ADEEB037D3961B20D2125827E6FDD616F02D78'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -2410,7 +2410,8 @@ def audit():
                Path(__file__).with_name('buff_1b_native.json'),
                Path(__file__).with_name('buff_87_native.json'),
                Path(__file__).with_name('buff_52_native.json'),
-               Path(__file__).with_name('buff_8e_native.json')]
+               Path(__file__).with_name('buff_8e_native.json'),
+               Path(__file__).with_name('finder_0a_native.json')]
     source_hashes = {str(p): sha(p) for p in sources}
     mapper = load('context_audit_mapper', mapper_path)
     catalog = load('context_audit_catalog', catalog_path)
@@ -2951,6 +2952,8 @@ def audit():
         contract_path=Path(__file__).with_name('buff_52_native.json'))
     buff_8e=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_8e_native.json'))
+    finder_0a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('finder_0a_native.json'))
     buff_16b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_16b_native.json'))
     buff_24=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -3241,6 +3244,7 @@ def audit():
         'selectedBuff87ReadOrder':buff_87,
         'selectedBuff52ReadOrder':buff_52,
         'selectedBuff8EReadOrder':buff_8e,
+        'selectedFinder0AReadOrder':finder_0a,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,

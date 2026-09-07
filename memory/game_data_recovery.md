@@ -586,6 +586,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   null/empty sequences separately. Propagate recursive depth limits and unknown
   child unions without completing the parent. Boolean evaluation, execution
   order and short-circuit behavior remain unresolved.
+  `scripts/game_data/finder_0a_native.json` independently pins selector-finder
+  union 10 to a member-zero reader. It consumes no fields after its header;
+  constructor initialization adds no source bytes. Keep finder, validator and
+  action tag spaces distinct. Main-target runtime selection remains unresolved.
   `scripts/game_data/buff_8e_native.json` pins a member-five body ending
   in an independent BlackboardDouble profile after the common byte and three
   DWORDs. Its null state and payload length remain local; the parent completes

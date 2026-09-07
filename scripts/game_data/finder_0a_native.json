@@ -1,0 +1,86 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      167145,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainTargetFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_MainTargetFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      67045904
+    ],
+    [
+      167144,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainTargetFinder_DataForMemoryPack",
+      "Deserialize",
+      67046000
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67045904,
+      "endRva": 67045997,
+      "sha256": "56AF4B848F017E4D6155A901EF19F8B44C0EAD5583E881F4B898017DF34223BF",
+      "boundary": "complete formatter initialization and forwarding"
+    },
+    {
+      "startRva": 67046000,
+      "endRva": 67046135,
+      "sha256": "6587602FDB6AF14839F6D56ED7CD36ACA847C10F1635C7F66FE65E4702381D02",
+      "boundary": "member0 normal source header and RET"
+    },
+    {
+      "startRva": 67046135,
+      "endRva": 67046183,
+      "sha256": "D5C3CA34C17D6E14435EC4D4541BAADC254B56F7345DEAB445B63AED16D7E026",
+      "boundary": "complete lazy initialization and rejoin"
+    },
+    {
+      "startRva": 83232180,
+      "endRva": 83232193,
+      "sha256": "9C8FEDA5CF31D1CA1266F4CA5D577B511C3933C445CEBAAFDE400E01F21D33DE",
+      "boundary": "existing output and rejoin"
+    },
+    {
+      "startRva": 83232249,
+      "endRva": 83232270,
+      "sha256": "E2C78CA33333EEC1387BE1F8B0B2A2B088E5F53782F95AB7297CF91DFCA7FA22",
+      "boundary": "FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 59819922,
+      "endRva": 59819929,
+      "sha256": "AC7EA4843F9159070A057E646755CA9A01A71FB514FDC18D41B8A6F2B19A53BF",
+      "boundary": "finder10 exact type operand"
+    }
+  ],
+  "nestedContexts": [],
+  "anonymousReadOrder": {
+    "finder10member0": []
+  },
+  "boundary": "Exact current finder union dispatch and registered type join establish MainTargetFinder identity independently of validator/action tag10. The selected module/token-joined reader accepts member0 with no serialized fields after its header. Constructor initialization is output-only and adds no source fields. Null union, FF wrapper and non-null member0 remain distinct. Complete formatter, normal, initialization and cold rejoin windows retain whole instructions. This conditional finite framing is structural-only; main-target selection, runtime use, live formatter choice, full refill/error parity and whole-BuffData EOF remain unresolved.",
+  "dataWindows": [
+    {
+      "startRva": 59821692,
+      "endRva": 59821696,
+      "sha256": "3596B115131400129F2C8110CAEB9DD8C0C4E056574BC11ABAD763BA26F101E8",
+      "boundary": "finder10 dispatch entry"
+    },
+    {
+      "startRva": 217990256,
+      "endRva": 217990264,
+      "sha256": "AC678E04F02AE8E1972C6B130A5AEA37C4366654117ADE9686E9986D5B4A5F59",
+      "boundary": "finder10 type usage"
+    },
+    {
+      "startRva": 206847248,
+      "endRva": 206847256,
+      "sha256": "D046018E7AFDF0A4E3C5B3F2A26AAF47B722575AF581C9CD30328B721F584EC9",
+      "boundary": "finder10 registered type slot"
+    },
+    {
+      "startRva": 220255544,
+      "endRva": 220255560,
+      "sha256": "48B3425D1EDE0D481382B0CE901B2BEFB4AABB3CCA346219E28FB2B230D773E5",
+      "boundary": "finder10 class definition"
+    }
+  ]
+}
