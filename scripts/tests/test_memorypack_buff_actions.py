@@ -566,6 +566,46 @@ def tag92():
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag63_direct_terminal_query_boundaries(self):
+        for query in (b'\xff',query41(None),query41(),query41((0,0xffffffff,0x80000000))):
+            child=b'\x63\x05\xfe'+b'\xff'*12+query;end=19+len(child)
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='63.bin')
+            self.assertEqual(row['diagnostic'],dict(source='63.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+            self.assertIn(dict(start=19,end=end,kind='union',tag=99),row['completedRecords'])
+            self.assertIn(dict(start=34,end=end,kind='anonymous-query-profile'),row['completedRecords'])
+            self.assertFalse(row['wholeSchemaExact'])
+            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag63_all_cuts_null_extended_hard_limits_and_trailing(self):
+        full=b'\x63\x05'+bytes(13)+query41((0,0xffffffff,0x80000000))
+        for child in (full,b'\xfa\x63\x00'+full[1:],b'\x63\xff',b'\xfa\x63\x00\xff'):
+            r=Reader(child,'63-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'63-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==99 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag63_bad_headers_counts_and_incomplete_query(self):
+        child=b'\x63\x05'+bytes(13)+query41((1,2))
+        for at,values in ((1,(0,254)),(15,(0,254)),(20,(-2,0x7fffffff))):
+            for value in values:
+                bad=bytearray(child)
+                if at in (1,15):bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'63-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('63-bounds',at,value))
+        r=Reader(child,'63-query',len(child)-1)
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertFalse(r.records)
+
     def test_tag86_three_independent_scalars_payload_and_final_byte(self):
         for first in (b'\xff',scalar_payload(None)):
             for middle in (b'\xff',scalar_payload(b'wire')):

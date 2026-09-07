@@ -645,6 +645,9 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   ending with a byte payload and GameplayTagQuery. Its explicit output-pointer
   ABI and sixteen-byte result do not establish wire width; preserve bounded
   query counts. Damage transfer meaning and tag interpretation remain unresolved.
+  `scripts/game_data/buff_63_native.json` uses that same bounded query directly
+  after the common prefix in a member-five action. Its output copy adds no wire
+  fields; preserve distinct null-query, null-array and empty-array states.
   `scripts/game_data/buff_a9_native.json` pins a member-28 action with
   independently nullable targets, curve, direction and scalar profiles. Its
   BlackboardImpactValue reader reuses the member-four payload/byte/DWORD/byte
