@@ -1000,6 +1000,31 @@ class Reader:
             else:self.header(1);self.take(4,'anonymous-scalar32')
             self.records.append(dict(start=element,end=self.pos,kind='anonymous-tag-element'))
 
+    def raw_dword_array(self):
+        # The selected root helper copies count*4 bytes, without element headers.
+        start=self.pos
+        count=self.count(4,nullable=True)
+        self.take(max(0,count)*4,'anonymous-dword-array-body')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-dword-array',count=count))
+
+    def modifier_collection_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-modifier-collection-profile')
+        else:
+            self.header(2)
+            count=self.count(1,reserve=1,nullable=True)
+            for _ in range(max(0,count)):
+                element=self.pos
+                if self.peek()==255:self.take(1,'null-modifier-element-profile')
+                else:
+                    self.header(4)
+                    for _ in range(3):self.take(4,'anonymous-scalar32')
+                    self.scalar_payload()
+                self.records.append(dict(start=element,end=self.pos,kind='anonymous-modifier-element-profile'))
+            # A null/empty array still has this independent root-member byte.
+            self.take(1,'anonymous-byte')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-modifier-collection-profile'))
+
     def tag_list_profile(self):
         # Conditional list count/loop plus separately pinned member-one element;
         # no candidate search or live provider/adapter-selection claim.
@@ -1146,3 +1171,34 @@ def event_prefix(data,*,source,limit=None):
                 completedRecords=reader.records,
                 opaqueRemainderRange=[reader.pos,len(data)],wholeSchemaExact=False,
                 evidenceLevel='structural-only',boundary='Forward prefix profile only; no whole-object ownership, field meanings or EOF claim. Opaque remainder is bounded by the authenticated physical file, not a decoded record extent.')
+
+
+def root_continuation(data,*,source,start,limit=None):
+    """Members 2-4, called only after a supported first-collection endpoint.
+
+    The caller owns that prerequisite; this function does not authenticate an
+    arbitrary start offset or claim that a suffix candidate is a root field.
+    """
+    reader=Reader(data,source,limit)
+    if type(start) is not int or not 1<=start<=reader.limit:
+        raise FrameError(source,0,'first-collection endpoint within read limit',start,'start-bounds')
+    reader.pos=start;status='supported-prefix';diagnostic=None
+    try:
+        reader.scalar_payload()
+        reader.raw_dword_array()
+        reader.modifier_collection_profile()
+    except Unsupported as exc:status='unsupported';diagnostic=exc.diagnostic
+    except FrameError as exc:status='failed';diagnostic=exc.diagnostic
+    cursor=start
+    for span in reader.ranges:
+        if span['start']!=cursor or not cursor<span['end']<=reader.limit:
+            raise FrameError(source,cursor,'contiguous bounded scalar ranges',span,'internal-range')
+        cursor=span['end']
+    if cursor!=reader.pos:raise FrameError(source,cursor,reader.pos,cursor,'internal-range')
+    return dict(status=status,diagnostic=diagnostic,startOffset=start,consumedEnd=reader.pos,
+                readLimit=reader.limit,ranges=reader.ranges,completedRecords=reader.records,
+                opaqueRemainderRange=[reader.pos,len(data)],wholeSchemaExact=False,
+                evidenceLevel='structural-only',
+                boundary='Selected root members 2-4 after the independently supported first collection. '
+                'Together their atomic ranges and the physical-file opaque remainder tile EOF; '
+                'no field meanings, live provider selection or whole-BuffData EOF claim.')

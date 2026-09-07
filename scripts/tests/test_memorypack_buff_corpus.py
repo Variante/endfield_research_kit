@@ -97,9 +97,28 @@ class BuffCandidateTests(unittest.TestCase):
         self.assertEqual((row['coverageStatus'],row['candidateCount']),('ambiguous',2))
         with mock.patch.object(gate,'decode_buff_post_id_prefix_at',return_value={
             'status':'parsed-through-exact-tail','endOffset':hex(len(raw))}),mock.patch.object(
-                gate,'event_prefix',return_value={'status':'supported-prefix'}):
+                gate,'event_prefix',return_value={'status':'supported-prefix','consumedEnd':1}),mock.patch.object(
+                gate,'root_continuation',return_value={'status':'supported-prefix'}):
             row=self.frame(raw)
         self.assertEqual(row['eventPrefixStatus'],'ambiguous')
+        self.assertEqual(row['rootContinuationStatus'],'ambiguous')
+
+    def test_root_continuation_joins_supported_first_collection(self):
+        prefix=b'\x1e'+bytes(4)
+        segment=b'\xff'+struct.pack('<i',2)+bytes(8)+b'\x02'+struct.pack('<i',-1)+b'\x7f'
+        raw=prefix+segment+b'opaque'+_normal()[1:]
+        row=self.frame(raw)
+        self.assertEqual(row['rootContinuationStatus'],'success')
+        candidate=row['candidates'][0]
+        continued=candidate['currentRootContinuation']
+        self.assertEqual(continued['startOffset'],candidate['currentEventPrefix']['consumedEnd'])
+        self.assertEqual(continued['consumedEnd'],len(prefix+segment))
+        self.assertEqual(continued['opaqueRemainderRange'],[len(prefix+segment),len(raw)])
+        bad=prefix+b'\xff'+struct.pack('<i',-2)+_normal()[1:]
+        row=self.frame(bad)
+        self.assertEqual(row['eventPrefixStatus'],'success')
+        self.assertEqual(row['rootContinuationStatus'],'failed')
+        self.assertEqual(row['candidates'][0]['currentRootContinuation']['diagnostic']['category'],'count-bounds')
 
     def test_current_event_profile_has_independent_status_and_bounded_gap(self):
         raw=b'\x1e'+bytes(4)+_normal()[1:]
@@ -219,6 +238,27 @@ class BuffJoinTests(unittest.TestCase):
             with self.subTest(name=name),self.assertRaises(gate.vfs.CensusGateError) as caught:self.build(drift=name)
             self.assertEqual(caught.exception.diagnostic['code'],'buff-corpus-input-drift')
             self.assertNotEqual(caught.exception.diagnostic['expected'],caught.exception.diagnostic['actual'])
+
+    def test_root_continuation_failure_closes_publication_with_diagnostics(self):
+        for segment,expected in ((b'\xff'+struct.pack('<i',0)+b'\xff','complete'),
+                                 (b'\xff'+struct.pack('<i',-2),'failed')):
+            with self.subTest(expected=expected):
+                self.data=b'\x1e'+bytes(4)+segment+_normal()[1:]
+                self.path.write_bytes(self.data)
+                self.ledger=_ledger_row(self.path,self.data)
+                report=self.build()
+                self.assertEqual(report['status'],expected)
+                self.assertEqual(report['publicationEligible'],expected=='complete')
+                self.assertEqual(report['summary']['currentEventPrefix']['success'],1)
+                summary=report['summary']['currentRootContinuation']
+                self.assertEqual(summary['success' if expected=='complete' else 'failed'],1)
+                if expected=='failed':
+                    self.assertEqual(summary['failureCategories']['failed'],{'count-bounds':1})
+                    row=report['files'][0]
+                    diagnostic=row['candidates'][0]['currentRootContinuation']['diagnostic']
+                    self.assertEqual(diagnostic['source'],self.ledger['virtualPath'])
+                    self.assertEqual((diagnostic['offset'],diagnostic['actual']),(6,-2))
+                    self.assertEqual(row['logicalSha256'],hashlib.sha256(self.data).hexdigest().upper())
 
     def test_output_cannot_overwrite_input_or_alias_other_output(self):
         root=Path(self.temp.name)

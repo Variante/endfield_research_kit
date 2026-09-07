@@ -615,9 +615,17 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   of finder 1: member two consumes BuffFindSettings then a required DWORD.
   Reuse the bounded payload-list/query reader and preserve its null states;
   ValidateMode adds no header and does not establish runtime validation rules.
-  The supported first collection now closes across the authenticated current
-  corpus. Continue from its exact endpoint into the remaining root members;
-  retain the independent suffix anchor and explicit opaque range until joined.
+  `scripts/game_data/buff_root_prefix_native.json` pins root members 2-4 after
+  the supported first collection: scalar payload, directly counted raw DWORD
+  array, then a member-two collection profile. The array helper copies four
+  bytes per entry without an element header; the GameplayTag type name does
+  not select the separate tag-list wrapper grammar. The collection consumes a
+  nullable reference array followed by a required byte; its selected member-four
+  elements contain three DWORDs and a scalar payload. FF wrappers and null/empty
+  arrays are distinct, and only a non-null collection has the terminal byte.
+  Preserve conditional provider selection and structural-only field meanings.
+  Continue from the fourth root member into the next collection; retain the
+  independent suffix anchor and explicit physical opaque range until joined.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity
