@@ -364,9 +364,12 @@ only.
   The native observer now records the enclosing pool flush and links each upload
   to its thread-local parent; packed allocations and uploads retain actual pool
   owner/epoch endpoint reads. These observations have separately charged bounded
-  storage and strict receipt validation. Equal endpoints do not exclude a reset
-  already in progress: reset admission/exit and intervening allocation/write
-  chronology remain necessary before promoting lifetime or GPU ownership.
+  storage and strict receipt validation. Reset admission/exit is now recorded
+  across observer windows; epoch reads sit inside their recorded intervals.
+  Staging candidates require the same completed observed reset for allocation
+  and upload, rejecting overlaps even when an epoch value repeats. Calls already
+  in flight before installation, suballocation continuity and intervening writes
+  remain open, so reset chronology alone cannot promote lifetime or GPU ownership.
   The backend Map ledger covers all D3D11 buffers because native staging copies
   are not restricted to constant buffers; textures remain outside its range
   model. An unknown mapping cannot classify the destination or prove copy loss.
