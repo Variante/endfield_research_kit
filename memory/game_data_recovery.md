@@ -541,6 +541,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   profile after an extra DWORD and before a terminal byte payload. Preserve
   independent null states and reject an incomplete terminal payload even after
   the nested profile completes; comparison names do not establish layer meaning.
+  `scripts/game_data/buff_150_native.json` independently places a terminal
+  byte after a BlackboardDouble profile. A null profile still requires that
+  byte; a null wrapper ends separately. This source order does not prove a
+  cooldown unit, operation, or runtime effect.
   `scripts/game_data/buff_7e_native.json` pins a member-six reader ending
   in two target profiles. Both exact contexts select the same finite profile,
   but their null states, nested counts and source boundaries stay independent.

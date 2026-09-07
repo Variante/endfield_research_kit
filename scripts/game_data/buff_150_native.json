@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122783,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetGeneralAbilityCd_DataForMemoryPack+Beyond_Gameplay_Core_SetGeneralAbilityCd_DataForMemoryPackFormatter",
+      "Deserialize",
+      71812432
+    ],
+    [
+      122782,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetGeneralAbilityCd_DataForMemoryPack",
+      "Deserialize",
+      71812528
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 71812432,
+      "endRva": 71812525,
+      "sha256": "62F80296C0445257CD4AAEA5AEEB4902D36A51C363294935B1FDBC8A25BE410E",
+      "boundary": "formatter forwarding and complete initialization"
+    },
+    {
+      "startRva": 71812528,
+      "endRva": 71812893,
+      "sha256": "EDF1ADB5876B3678306FC947E13DB8A41398090FC270D12F61195A4FA3B9FEB4",
+      "boundary": "member6 source reads through normal RET"
+    },
+    {
+      "startRva": 71812893,
+      "endRva": 71812965,
+      "sha256": "993275768A7308856A571362861FC0E20AE1406F8D841D99E2EA75F843F77DA9",
+      "boundary": "complete lazy initialization and normal rejoin"
+    },
+    {
+      "startRva": 83710090,
+      "endRva": 83710103,
+      "sha256": "A2972E2513012674C001C5AB3EBEFD6356E4A81717E1FA6CF741E3A261EBD277",
+      "boundary": "existing-output preparation and header rejoin"
+    },
+    {
+      "startRva": 83710159,
+      "endRva": 83710180,
+      "sha256": "D3CAFAF9FBA4DE788FDE1C8837647BF855700884597C8F194EFB2FFE09473F8B",
+      "boundary": "FF clear and complete epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 71812700,
+      "instructionHex": "488B15C5D7C008",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 71812806,
+      "instructionHex": "488B15537FB708",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload-profile",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. The extended member6 action consumes common byte/three DWORDs, one BlackboardDouble profile and a final byte, with no further source tail. Its exact context reuses buff_35_native.json scalar framing: header3, signed-length byte payload, byte and four raw bytes. Neither the managed Double name nor the action name widens the source scalar. Null nested profile still requires the final byte, while null wrapper ends independently. A completed profile cannot complete an action whose last byte is missing. Formatter and lazy initialization, normal RET, existing-output and FF windows retain complete instructions; setters add no source bytes. Cooldown meaning, ownership, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
+}
