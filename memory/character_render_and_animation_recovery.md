@@ -706,6 +706,10 @@ build and collection procedure.
   native paths; join activation/release and tween identity before choosing
   whether lab selection resets or preserves camera state. Visible actor-switch
   gaps do not establish camera initialization timestamps.
+  The pose observer now retains bounded gyroscope lifecycle callbacks across
+  both visits, with before/after extension/tween state and QPC/Present clocks.
+  Use the complete raw receipt to test reuse; it does not establish allocation
+  lifetime or actor consumption by itself.
   EndfieldCapture's
   dedicated pose-timing launcher preallocates a bounded dense palette sequence
   before readiness and arms on a new Animator/graphics trigger without waiting
