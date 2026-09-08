@@ -771,6 +771,10 @@ def tag37(nested=b'\xff',extended=False,last=b'\xff'*4,flag=b'\x80'):
     return (b'\xfa\x37\x00' if extended else b'\x37')+b'\x0a\xfe'+b'\xff'*12+b'\x80\xfe\xff'+nested+flag+last
 
 
+def tag17(pair=b'\xff',extended=False):
+    return (b'\xfa\x17\x00' if extended else b'\x17')+b'\x05\xfe'+struct.pack('<III',0x01020304,0x80000000,0xffffffff)+pair
+
+
 def tagce(first=b'\xff',value=None,last=b'\xff',extended=False,word=b'\x04\x03\x02\x81'):
     return ((b'\xfa\xce\x00' if extended else b'\xce')+b'\x08\xfe'+
             struct.pack('<III',0x01020304,0x80000000,0xffffffff)+first+word+payload(value)+last)
@@ -1442,6 +1446,85 @@ class BuffActionsTests(unittest.TestCase):
             for count in (-2,2147483647):
                 with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+child+bytes(2))
                 self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(caught.exception.diagnostic['offset'],1)
+
+    def test_17_encodings_and_paired_states(self):
+        self.assertEqual(len(tag17()),16);self.assertEqual(len(tag17(extended=True)),18)
+        for extended in (False,True):
+            for pair in (b'\xff',b'\x03'+payload(None)+b'\x80'+payload(None),
+                         b'\x03'+payload(b'')+b'\xff'+payload(b''),b'\x03'+payload(b'\xff\x00')+b'\xfe'+payload(b'\x01\x80\xfa')):
+                child=tag17(pair,extended)
+                for tail in (b'\x00',b'\xff'):
+                    for limit in (len(child),len(child)+1):
+                        q=Reader(child+tail,'17',limit);q.action(0)
+                        self.assertEqual(q.pos,len(child));self.assertEqual(q.records[-1]['tag'],23)
+                        self.assertEqual(q.ranges[0]['start'],0);self.assertEqual(q.ranges[-1]['end'],len(child))
+                        self.assertTrue(all(a['end']==b['start'] for a,b in zip(q.ranges,q.ranges[1:])))
+            wrapper=(b'\xfa\x17\x00' if extended else b'\x17')+b'\xff'
+            q=Reader(wrapper+b'\xa5','17-null');q.action(0);self.assertEqual(q.pos,len(wrapper))
+
+    def test_17_every_cut_and_both_required_lengths(self):
+        for extended in (False,True):
+            for first,last in ((None,None),(b'',b''),(b'\xff\x00',b'\x01\x80\xfa')):
+                pair=b'\x03'+payload(first)+b'\xfe'+payload(last);child=tag17(pair,extended)
+                for cut in range(len(child)):
+                    outcomes=[]
+                    for data in (child[:cut],child,child[:cut]+b'\xff'*32):
+                        q=Reader(data,'17-cut',cut)
+                        with self.assertRaises(FrameError) as caught:q.action(0)
+                        self.assertLessEqual(q.pos,cut);self.assertFalse(any(v.get('tag')==23 for v in q.records))
+                        outcomes.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+                    self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[0],outcomes[2])
+                first_offset=16+2*extended;last_offset=first_offset+5+len(first or b'')
+                for offset in (first_offset,last_offset):
+                    for count in (-2,2147483647):
+                        q=Reader(child[:offset]+struct.pack('<i',count)+child[offset+4:],'17-count')
+                        with self.assertRaises(FrameError) as caught:q.action(0)
+                        self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+                        self.assertEqual(caught.exception.diagnostic['offset'],offset);self.assertEqual(q.pos,offset+4)
+                    for nbytes in range(4):
+                        q=Reader(child[:offset+nbytes],'17-length-cut')
+                        with self.assertRaises(FrameError) as caught:q.action(0)
+                        self.assertEqual(caught.exception.diagnostic['offset'],offset);self.assertEqual(q.pos,offset)
+                q=Reader(child[:last_offset-1],'17-required-byte')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],last_offset-1);self.assertEqual(q.pos,last_offset-1)
+
+    def test_17_headers_and_required_profile(self):
+        for extended in (False,True):
+            child=tag17(extended=extended);h=1+2*extended
+            for bad in (0,4,6,254):
+                q=Reader(child[:h]+bytes([bad])+child[h+1:],'17-header')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],h)
+            q=Reader(child[:-1],'17-profile-required')
+            with self.assertRaises(FrameError) as caught:q.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],len(child)-1)
+            q=Reader(child[:-1]+b'\x02','17-paired-header')
+            with self.assertRaises(FrameError) as caught:q.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],len(child)-1)
+
+    def test_17_parent_bounds_tails_and_unknown(self):
+        for extended in (False,True):
+            child=tag17(extended=extended)
+            for parent in (b'\x03'+struct.pack('<i',-1)+b'\x80\xff',b'\x03'+struct.pack('<i',0)+b'\x80\xff',sequence(child)):
+                q=Reader(parent,'17-parent');q.sequence();self.assertEqual(q.pos,len(parent))
+                for k in (1,2):
+                    q=Reader(parent[:-k],'17-parent-tail')
+                    with self.assertRaises(FrameError) as caught:q.sequence()
+                    self.assertEqual(caught.exception.diagnostic['offset'],len(parent)-k);self.assertEqual(q.pos,len(parent)-k)
+            for count in (-2,2147483647):
+                q=Reader(b'\x03'+struct.pack('<i',count)+child+bytes(2),'17-parent-count')
+                with self.assertRaises(FrameError) as caught:q.sequence()
+                self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(q.pos,5)
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            row=event_prefix(prefix(sequence(child,b'\xd0')),source='17-next')
+            self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['actual'],208)
+            self.assertEqual(row['consumedEnd'],19+len(child));self.assertTrue(any(v.get('tag')==23 for v in row['completedRecords']))
+        q=Reader(b'\x03'+struct.pack('<i',1)+b'\xff\x80','17-reserve2')
+        with self.assertRaises(FrameError) as caught:q.sequence()
+        self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(q.pos,5)
 
     def test_ce_both_encodings_nested_states_and_bits(self):
         self.assertEqual(len(tagce()),25);self.assertEqual(len(tagce(extended=True)),27)

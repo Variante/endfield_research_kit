@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      118648,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BindBountyEnemyAction_DataForMemoryPack+Beyond_Gameplay_Core_BindBountyEnemyAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      63369904
+    ],
+    [
+      118647,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BindBountyEnemyAction_DataForMemoryPack",
+      "Deserialize",
+      63367888
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63369904,
+      "endRva": 63369997,
+      "sha256": "719F3AF89050A217481AE34BF4900F0A25FE0644C9E6601A21EFE03F777DAAFE",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 63367888,
+      "endRva": 63368291,
+      "sha256": "DFCBEE7661ADB72D1CF238BDE9A410481274B19600DC10ADD85958F7B1B74F11",
+      "boundary": "header5 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 82742952,
+      "endRva": 82742965,
+      "sha256": "6F52DDE00B13C9BF2B45A93365B096C3BD682DD23706C88E79832BB98A330CE2",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 82743021,
+      "endRva": 82743042,
+      "sha256": "5709DF3A97E1271E3F4EFC57807A935D57F332509516DAA46C7CEE180780DC17",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63368060,
+      "instructionHex": "488B15A5B24109",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63368166,
+      "instructionHex": "488B158BAD4109",
+      "cellVa": 6661118328,
+      "usageRawHex": "CDEB12C000000000",
+      "methodSpecIndex": 620006,
+      "methodSpec": [
+        428464,
+        -1,
+        17007
+      ],
+      "argumentRawHex": "B1000000000000000000120000000000",
+      "typeDefinition": 177,
+      "typeName": "Beyond.Blackboard+BlackboardString",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "blackboard-string-profile"
+    ]
+  },
+  "boundary": "Exact selected union23 dispatch, registered type usage and module/token joins identify BindBountyEnemyAction_Data. Its header5 reader consumes the common byte and three DWORDs followed by one terminal BlackboardString profile. Exact contexts identify Priority and BlackboardString. The reused String profile is FF or header3 with a nullable byte payload, one byte and a second nullable byte payload. Payload length markers and the byte are required independently of null/empty values; raw payload contents remain anonymous. Short17 and extendedFA1700 identify the same union. Null union, null outer wrapper and null nested profile remain distinct wire states. No additional source byte follows the terminal profile. Complete formatter/normal/init/existing-output/FF windows exclude adjacent methods. Static identity is exact, source order direct and framing structural-only. Bounty/enemy behavior, payload encoding/reference ownership, field meaning, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
