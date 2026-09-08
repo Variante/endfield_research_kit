@@ -241,6 +241,9 @@ only.
   from shared billboard materials. A native matrix-bank declaration does not
   establish Unity's procedural buffer stride; validate the bound descriptor,
   shader loads, and actual post-VS positions together.
+  Four-texture BaseV2 masking accumulates authored Sample1/2/3 weights
+  for both RGB and alpha from 1-UseMask. Preserve those source weights in
+  material import; texture ordinal alone does not establish its mask role.
 - A component-complete current-build Streamline capture retains two consecutive
   native-resolution DLAA input/output/depth/motion transactions and a complete
   selected-actor Animator timeline. Its direct
