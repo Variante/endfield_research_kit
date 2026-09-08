@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122620,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SelfRotateAction_DataForMemoryPack+Beyond_Gameplay_Core_SelfRotateAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      58158976
+    ],
+    [
+      122619,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SelfRotateAction_DataForMemoryPack",
+      "Deserialize",
+      58156800
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58158976,
+      "endRva": 58159069,
+      "sha256": "327384BBBBCF99AD2A4774D289286C4A6A14E9D028949464EFB61EE21A499B5C",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 58156800,
+      "endRva": 58157844,
+      "sha256": "5DDC5DEA537A256A471672C5ED791B18F5E535E5E068A19B27515DFC896B2FE8",
+      "boundary": "inline header18 and normal source reads through RET"
+    },
+    {
+      "startRva": 58157844,
+      "endRva": 58157981,
+      "sha256": "14F45F6F194A9B8AF06FEA4694750410BDEB43779749B43CF32A2E14D564C9A4",
+      "boundary": "FF clear and epilogue rejoin, then initialization and normal rejoin"
+    },
+    {
+      "startRva": 81977262,
+      "endRva": 81977275,
+      "sha256": "6ECFA9DE5AC05B28098A6D640645F6F7D7514D8E854F70A19AE2EE9114576F3E",
+      "boundary": "existing output rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58157008,
+      "instructionHex": "488B1551369109",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58157123,
+      "instructionHex": "488B159E339109",
+      "cellVa": 6661118952,
+      "usageRawHex": "D1EA12C000000000",
+      "methodSpecIndex": 619880,
+      "methodSpec": [
+        428464,
+        -1,
+        14417
+      ],
+      "argumentRawHex": "2A280000000000000000120000000000",
+      "typeDefinition": 10282,
+      "typeName": "Beyond.Gameplay.Core.DirectionSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58157467,
+      "instructionHex": "488B152ED38909",
+      "cellVa": 6660635856,
+      "usageRawHex": "45E812C000000000",
+      "methodSpecIndex": 619554,
+      "methodSpec": [
+        428448,
+        -1,
+        42526
+      ],
+      "argumentRawHex": "40260000000000000000118000000000",
+      "typeDefinition": 9792,
+      "typeName": "Beyond.Gameplay.Core.SelfRotateAction+RootMotionDirectionType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58157565,
+      "instructionHex": "488B15BCD28909",
+      "cellVa": 6660635840,
+      "usageRawHex": "47E812C000000000",
+      "methodSpecIndex": 619555,
+      "methodSpec": [
+        428448,
+        -1,
+        42527
+      ],
+      "argumentRawHex": "3F260000000000000000118000000000",
+      "typeDefinition": 9791,
+      "typeName": "Beyond.Gameplay.Core.SelfRotateAction+RotateDirectionType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58157666,
+      "instructionHex": "488B157FD28909",
+      "cellVa": 6660635880,
+      "usageRawHex": "49E812C000000000",
+      "methodSpecIndex": 619556,
+      "methodSpec": [
+        428448,
+        -1,
+        42528
+      ],
+      "argumentRawHex": "3E260000000000000000118000000000",
+      "typeDefinition": 9790,
+      "typeName": "Beyond.Gameplay.Core.SelfRotateAction+RotateType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58157714,
+      "instructionHex": "488B156FAC8E09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member18": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "direction-profile",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte-payload",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "raw-float32",
+      "scalar32",
+      "target-profile",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected union324 dispatch and module/token joins identify SelfRotateAction_Data. Its header18 reader consumes the common byte/three DWORDs, DirectionSettings, five bytes, a signed nullable byte payload, three DWORDs, raw float4, a DWORD, TargetSettings and a required final byte. Six exact generic contexts identify Priority, DirectionSettings, RootMotionDirectionType, RotateDirectionType, RotateType and TargetSettings. DirectionSettings and TargetSettings reuse the separately pinned buff_ec_native.json finite profiles and their maintained selector extensions. Null nested wrappers and null/empty payloads do not remove subsequent source fields or the final byte. The float source helper reads four raw bytes; preserve all bits without interpreting a physical unit or normalizing NaNs. Source calls establish ordering independently of destination setters and managed declaration order. FA 44 01 is union324; short44 is the distinct supported union68. Formatter forwarding, normal return, inline FF clear/rejoin, initialization rejoin and existing-output windows retain whole instructions. Static identity is exact, selected source order direct and framing structural-only. Rotation behavior, field meaning, target ownership, enum values, payload decoding, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

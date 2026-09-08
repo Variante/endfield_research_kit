@@ -623,6 +623,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_144_native.json` joins SelfRotateAction to a header18
+  reader with DirectionSettings, five bytes, a nullable byte payload, mixed
+  DWORD/raw-float fields, TargetSettings and a required final byte. Source
+  calls establish this order independently of setters; null nested wrappers
+  retain the final byte. Rotation behavior and numeric meanings remain unresolved.
   `scripts/game_data/buff_12a_native.json` joins RefrainObtainUsp to a header7
   reader with a byte, a GameplayTagList wrapper and a required terminal target.
   The wrapper retains its header1 and nullable element list; it is not a raw
