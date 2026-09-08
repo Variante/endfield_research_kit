@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121242,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyResilienceDecreaseFactor_DataForMemoryPack+Beyond_Gameplay_Core_ModifyResilienceDecreaseFactor_DataForMemoryPackFormatter",
+      "Deserialize",
+      72370848
+    ],
+    [
+      121241,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyResilienceDecreaseFactor_DataForMemoryPack",
+      "Deserialize",
+      72370944
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72370848,
+      "endRva": 72370941,
+      "sha256": "922C53C8BC85A3DCAE27C87F0A98823054E9624601B2E137B46ACF6A2B394B8F",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 72370944,
+      "endRva": 72371347,
+      "sha256": "20CEDA0CEBFA5B07B28357B3DF1C21264CF2BAC0BC1F74F1C48CB1441131BE08",
+      "boundary": "header5 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83776418,
+      "endRva": 83776431,
+      "sha256": "27B148A78EABB28D6B740A37DD83E2B82668F80A495B130DB064F0A9A495851E",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83776487,
+      "endRva": 83776508,
+      "sha256": "DEA43E79007FBD47B6D64F746B087795B7E489D0F631B65BE8798D2EF9229131",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72371116,
+      "instructionHex": "488B157552B808",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72371222,
+      "instructionHex": "488B1503FAAE08",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact union240 dispatch and registered type/module/token joins identify ModifyResilienceDecreaseFactor_DataForMemoryPack. Header5 reads only the common byte/three-DWORD prefix and one terminal BlackboardDouble record. The selected static context reuses the finite scalar-payload profile pinned in buff_ec_native.json: FF, or header3 followed by bounded signed-length byte payload, BYTE and four raw scalar bytes. The Double name does not change that source width to eight bytes. Null(-1), empty(0) and nonempty payloads retain the following byte and four-byte tail. There is no outer payload or extra terminal byte after the scalar profile; the output setter consumes no source bytes. ShortF0 and FAF000 identify union240. Nonnull outer records have minimum lengths16/18 with null scalar and25/27 with nonnull scalar containing null or empty payload; null union FF and F0FF/FAF000FF wrapper states remain distinct. This source order may reuse another independently pinned scalar-ending action branch without identifying gameplay behavior. Complete formatter/reader/init/existing-output/FF windows exclude adjacent setters and error bodies. Static identity is exact, source order direct and framing structural-only. Resilience behavior, numeric interpretation, units, payload encoding, live provider selection, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

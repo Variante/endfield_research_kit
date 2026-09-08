@@ -465,6 +465,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   MountPoint selects the DWORD helper. A null target does not remove the final
   length word, and FF bytes inside raw16 are ordinary data. Raw16 meaning,
   payload encoding, text rendering and target ownership remain unresolved.
+  `scripts/game_data/buff_f0_native.json` independently pins a member-five
+  scalar-ending action. Its BlackboardDouble context reuses the bounded
+  payload/byte/raw4 profile, not an eight-byte scalar. Null and empty payloads
+  retain both tail fields; null scalar, null wrapper and null union differ.
+  Equal source order permits parser reuse while preserving separate union
+  identities. Resilience behavior, numeric interpretation and units remain
+  unresolved; no extra outer payload follows the output setter.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

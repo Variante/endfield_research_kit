@@ -907,8 +907,93 @@ def tagb7(nested=b'\xff',value=None,*,extended=False,raw=bytes(range(16)),flag=2
             bytes(12)+raw+bytes([flag])+struct.pack('<I',0x80000000)+nested+payload(value))
 
 
+def tagf0(nested=b'\xff',*,extended=False):
+    return ((b'\xfa\xf0\x00' if extended else b'\xf0')+b'\x05\x80'+
+            struct.pack('<III',0xffffffff,0x80000000,0x01234567)+nested)
+
+
 class BuffActionsTests(unittest.TestCase):
 
+
+
+    def test_f0_terminal_scalar_identity_encodings_and_null_states(self):
+        for extended in (False,True):
+            start=17 if extended else 15
+            for value in (None,b'',b'\xff\x00\x80',b'longer'):
+                for bits in (0,0x80000000,0x7fc00001,0xffffffff):
+                    nested=scalar_payload(value,flag=255,bits=struct.pack('<I',bits))
+                    child=tagf0(nested,extended=extended);r=Reader(child,'f0-full.bin');r.action(0)
+                    self.assertEqual((r.pos,len(child),r.records[-1]['tag']),(start+len(nested),start+len(nested),240))
+                    profile=next(q for q in r.records if q['kind']=='anonymous-scalar-payload')
+                    self.assertEqual((profile['start'],profile['end']),(start,len(child)))
+                    self.assertEqual((r.ranges[-1]['start'],r.ranges[-1]['end']),(len(child)-4,len(child)))
+            child=tagf0(extended=extended);r=Reader(child,'f0-scalar-null.bin');r.action(0)
+            self.assertEqual((r.pos,len(child)),(start+1,start+1))
+            for data,tag in ((b'\xff',255),(b'\xf0\xff',240),(b'\xfa\xf0\x00\xff',240)):
+                r=Reader(data,'f0-wrapper-null.bin');r.action(0);self.assertEqual((r.pos,r.records[-1]['tag']),(len(data),tag))
+
+    def test_f0_all_cuts_limits_and_trailing_bytes(self):
+        for extended in (False,True):
+            for nested in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'\xff\xfa\x00\x80')):
+                child=tagf0(nested,extended=extended)
+                for cut in range(len(child)):
+                    outcomes=[]
+                    for data in (child[:cut],child,child[:cut]+b'\xff'*20):
+                        r=Reader(data,'f0-cut.bin',cut)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,cut)
+                        self.assertFalse(any(q.get('tag')==240 and q['start']==0 for q in r.records))
+                        outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+                for tail in (b'\xff',bytes(8)):
+                    for limit in (len(child),len(child+tail)):
+                        r=Reader(child+tail,'f0-tail.bin',limit);r.action(0);self.assertEqual(r.pos,len(child))
+                    with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_f0_lengths_headers_and_required_scalar_tail(self):
+        for extended in (False,True):
+            start=17 if extended else 15
+            for value in (None,b'',b'\xff\x80\x00'):
+                child=tagf0(scalar_payload(value,bits=b'\xff'*4),extended=extended);at=start+1
+                for count in (-2,2147483647):
+                    r=Reader(child[:at]+struct.pack('<i',count)+child[at+4:],'f0-count.bin')
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    d=caught.exception.diagnostic
+                    self.assertEqual((d['offset'],d['actual'],d['category'],r.pos),(at,count,'count-bounds',at+4))
+                for available in range(4):
+                    r=Reader(child,'f0-length-cut.bin',at+available)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(at,at))
+                for at,width in ((len(child)-5,1),(len(child)-4,4)):
+                    for available in range(width):
+                        r=Reader(child,'f0-tail-cut.bin',at+available)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        d=caught.exception.diagnostic
+                        self.assertEqual((d['category'],d['offset'],d['expected'],r.pos),('truncated',at,{'bytes':width},at))
+                for at,expected in ((start-14,5),(start,3)):
+                    r=Reader(child[:at]+b'\x2a'+child[at+1:],'f0-header.bin')
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    d=caught.exception.diagnostic
+                    self.assertEqual((d['offset'],d['expected'],d['actual'],r.pos),(at,expected,42,at))
+
+    def test_f0_parent_counts_tails_and_separate_union_identity(self):
+        for extended in (False,True):
+            child=tagf0(scalar_payload(b'payload'),extended=extended)
+            for count in (-2,2147483647):
+                r=Reader(b'\x03'+struct.pack('<i',count)+child+bytes(2),'f0-parent-count.bin')
+                with self.assertRaises(FrameError) as caught:r.sequence()
+                d=caught.exception.diagnostic
+                self.assertEqual((d['offset'],d['actual'],d['category'],r.pos),(1,count,'count-bounds',5))
+            data=sequence(child)
+            for missing in (1,2):
+                r=Reader(data,'f0-parent-tail.bin',len(data)-missing)
+                with self.assertRaises(FrameError) as caught:r.sequence()
+                self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(len(data)-missing,len(data)-missing))
+            other=tag8e(scalar_payload(b'other'));r=Reader(sequence(child,other,b'\xfa\xa0\x01'),'f0-next.bin')
+            with self.assertRaises(Unsupported) as caught:r.sequence()
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],r.pos),(5+len(child)+len(other),416,5+len(child)+len(other)))
+            self.assertEqual([q['tag'] for q in r.records if q['kind']=='union'],[240,142])
 
     def test_b7_fixed_raw16_null_states_and_encodings(self):
         for extended in (False,True):
