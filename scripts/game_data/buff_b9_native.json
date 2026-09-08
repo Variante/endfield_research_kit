@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120361,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ForceHideHeadBarAction_DataForMemoryPack+Beyond_Gameplay_Core_ForceHideHeadBarAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      70113200
+    ],
+    [
+      120360,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ForceHideHeadBarAction_DataForMemoryPack",
+      "Deserialize",
+      70113296
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70113200,
+      "endRva": 70113293,
+      "sha256": "824B71603E09DD96E5E34D09E5D8576754878E8F27924CB5E6436C23E7BEC232",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 70113296,
+      "endRva": 70113733,
+      "sha256": "616A5ADC2878DD3DAA11C4425A343C4DAF52B0B643019694560CFCE41FB3D96D",
+      "boundary": "header6 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83528410,
+      "endRva": 83528423,
+      "sha256": "CA86CA77BC347233411A79250834C2475EAA68C1FC1EBA2732E9F932540CF53C",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83528479,
+      "endRva": 83528500,
+      "sha256": "D006C37C83E27EE8F8A2C21B820F0F0D1A75283D2E4AF4CA1FFAA64FFDDA586D",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70113468,
+      "instructionHex": "488B1565C5DA08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70113608,
+      "instructionHex": "488B15B93DD808",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "target"
+    ]
+  },
+  "boundary": "Exact selected union185 dispatch and module/token joins identify ForceHideHeadBarAction_Data. The header6 reader consumes common byte/three DWORDs, one additional byte and TargetSettings. Generic contexts identify Priority and TargetSettings. TargetSettings reuses buff_ec_native.json and its finite selector extensions. Short B9 and extended FA B9 00 select the same type. Null union, null outer wrapper and null target remain independent. The extra byte is required before the target, including a null target; its raw bits are not a nullable header. No source field follows TargetSettings. Unknown target unions preserve their source offset and completed earlier children without completing the enclosing action. Output setters add no source fields. Source order is direct and static identity exact; framing remains structural-only. Head-bar visibility behavior, target ownership, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

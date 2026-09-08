@@ -623,6 +623,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_b9_native.json` joins ForceHideHeadBarAction
+  to a header6 reader with one required BYTE before TargetSettings. Short and
+  extended union encodings share this profile; the target ends the action,
+  without establishing head-bar visibility behavior or target ownership.
   `scripts/game_data/buff_186_native.json` joins TriggerCharSpellInflictionEvent
   to a header7 reader with TargetSettings and two required DWORDs after it.
   Both scalar reads remain required for a null target. The selected helpers
