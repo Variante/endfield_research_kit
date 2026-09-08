@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123860,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_VoiceInterruptAction_VoiceInterruptActionDataForMemoryPack+Beyond_Gameplay_Core_VoiceInterruptAction_VoiceInterruptActionDataForMemoryPackFormatter",
+      "Deserialize",
+      72343600
+    ],
+    [
+      123859,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_VoiceInterruptAction_VoiceInterruptActionDataForMemoryPack",
+      "Deserialize",
+      72343696
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72343600,
+      "endRva": 72343693,
+      "sha256": "2B772D48D797303E9D6782C51E43E59763CD5D4917D2AA6C291EF466F1D09FF8",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 72343696,
+      "endRva": 72344109,
+      "sha256": "AA77BE1275A6134D7DDC1659EE11DB3438315B278BB52CC1E2DF29846C0C46C3",
+      "boundary": "header6 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83773448,
+      "endRva": 83773461,
+      "sha256": "289C3D3FD3022175889ED3182164592E65D5726D34CB03D074132B5E52BEE5B6",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83773517,
+      "endRva": 83773538,
+      "sha256": "FC00FE35327545B9F034DC3282ECB3B5E8910995C913D312705F876EDBFC7CBF",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72343868,
+      "instructionHex": "488B15E5BCB808",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte"
+    ]
+  },
+  "boundary": "Exact union407 dispatch, registered type and module/token joins identify VoiceInterruptAction_VoiceInterruptActionData. Its header6 reader consumes one byte, four DWORDs and one terminal byte. The common prefix accounts for the first byte and three DWORDs; the last DWORD and byte are both required. The sole source generic context identifies Priority. Setters receive previously read values and do not supply extra source members. Every DWORD/byte bit pattern remains structurally accepted without assigning field meaning. FA9701 plus header6 occupies exactly 22 bytes for the nonnull wrapper; FA9701FF and null union FF are distinct states. Short97 is distinct union151 rather than an alias for union407. No nullable payload or nested target is consumed, and no source read follows the terminal byte. Complete formatter/normal/init/existing-output/FF windows exclude adjacent setters and methods. Static identity is exact, source order direct and framing structural-only. Voice interruption behavior, scalar/flag meaning, live provider selection, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

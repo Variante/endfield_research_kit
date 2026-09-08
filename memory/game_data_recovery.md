@@ -633,6 +633,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   bytes and a required raw float32 field close the record; null nested profiles
   do not remove that tail. Short and extended union encodings share this order.
   Continuous targeting behavior and payload ownership remain unresolved.
+  `scripts/game_data/buff_197_native.json` joins VoiceInterruptAction to a
+  fixed header6 profile: common prefix, required DWORD and terminal BYTE.
+  All bit patterns remain anonymous; neither an all-zero nor an all-FF scalar
+  removes the terminal byte. Short97 is not the FA9701 union. Runtime voice
+  interruption and scalar/flag meaning remain unresolved.
   `scripts/game_data/buff_198_native.json` joins VoiceTriggerAction to header11:
   the common prefix, two DWORDs, a nullable payload, two DWORDs, another nullable
   payload and terminal TargetSettings. Both length markers and the final target

@@ -876,7 +876,71 @@ def tag198(first=None,second=None,last=b'\xff'):
             payload(first)+struct.pack('<II',0xfedcba98,0x80000001)+payload(second)+last)
 
 
+def tag197(word=0x80000001,last=255):
+    return b'\xfa\x97\x01\x06\xfe'+struct.pack('<IIII',0x01234567,0xffffffff,0x7fc00001,word)+bytes([last])
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_197_fixed_source_order_all_bits_and_distinct_alias(self):
+        for word in (0,1,0x7fc00000,0x80000000,0xffffffff):
+            for last in (0,1,128,255):
+                child=tag197(word,last);self.assertEqual(len(child),22)
+                r=Reader(child+b'opaque','197.bin',22);r.action(0)
+                self.assertEqual((r.pos,r.records[-1]['tag']),(22,407))
+                self.assertEqual([(q['start'],q['end']) for q in r.ranges],[(0,3),(3,4),(4,5),(5,9),(9,13),(13,17),(17,21),(21,22)])
+        for child,expected in ((b'\xff',255),(b'\xfa\x97\x01\xff',407)):
+            r=Reader(child,'197-null.bin');r.action(0);self.assertEqual((r.pos,r.records[-1]['tag']),(len(child),expected))
+        r=Reader(b'\x97','197-short.bin')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['actual'],r.pos),(151,0))
+
+    def test_197_every_cut_hard_limits_and_required_last_members(self):
+        child=tag197()
+        for n in range(len(child)):
+            results=[]
+            for z in (child[:n],child,child[:n]+b'\xff'*20):
+                r=Reader(z,'197-cut.bin',n)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertLessEqual(r.pos,n);self.assertFalse(r.records)
+                results.append((r.pos,caught.exception.diagnostic,r.ranges))
+            self.assertEqual(results[0],results[1]);self.assertEqual(results[1],results[2])
+        for available in range(4):
+            r=Reader(child,'197-word.bin',17+available)
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(17,17))
+        r=Reader(child,'197-byte.bin',21)
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(21,21))
+
+    def test_197_header_unknown_union_and_trailing(self):
+        for header in (0,5,7,42):
+            child=bytearray(tag197());child[3]=header;r=Reader(child,'197-header.bin')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            d=caught.exception.diagnostic
+            self.assertEqual((d['offset'],d['expected'],d['actual'],d['category'],r.pos),(3,6,header,'member-count',3))
+        for tail in (b'x',b'\xff'):
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(tag197())+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        r=Reader(sequence(tag197(),b'\xfa\xa0\x01'),'197-unknown.bin')
+        with self.assertRaises(Unsupported) as caught:r.sequence()
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],r.pos),(27,416,27))
+        self.assertTrue(any(q.get('tag')==407 for q in r.records))
+
+    def test_197_parent_counts_tail_and_minimum_guard(self):
+        for count in (-1,0,1):
+            child=b'\x03'+struct.pack('<i',count)+(tag197() if count==1 else b'')+bytes(2)
+            sequence_frame(child)
+            for missing in (1,2):
+                r=Reader(child,'197-tail.bin',len(child)-missing)
+                with self.assertRaises(FrameError) as caught:r.sequence()
+                self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(len(child)-missing,len(child)-missing))
+        for count in (-2,2147483647):
+            with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+tag197()+bytes(2))
+            self.assertEqual((caught.exception.diagnostic['category'],caught.exception.diagnostic['actual']),('count-bounds',count))
+        with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',1)+bytes(2))
+        self.assertEqual((caught.exception.diagnostic['category'],caught.exception.diagnostic['offset']),('count-bounds',1))
+
+
     def test_198_source_order_independent_payloads_and_terminal_target(self):
         self.assertEqual(len(tag198()),42)
         for first,second in ((None,None),(b'',b''),(b'\xff\xfa',b'\x80'),(None,b'xyz'),(b'abc',None)):
