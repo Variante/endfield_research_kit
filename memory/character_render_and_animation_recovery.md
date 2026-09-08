@@ -379,8 +379,12 @@ only.
   This does not establish the retail camera's initial phase or an IFix override.
   Contact settings now import the selected authored phase with independent
   provenance, native percent conversions and ignore-edge lane; the installed
-  base feature getter gates intensity. Unknown settings fail closed. This does
-  not validate runtime blend/IFix state or refresh the legacy light/exposure
+  base feature getter gates intensity. Unknown settings fail closed.
+  The screen-shadow diagnostic joins attenuation/blend to that same phase by
+  source path, PathID and raw hash, then uses the native manual-override policy;
+  missing visibility rejects publication; inactive phases require stack resolution.
+  This replaces the diagnostic constant without selecting the migrated phase.
+  This does not validate runtime blend/IFix state or refresh the legacy light/exposure
   snapshot's identity. Current authored exposure metadata is retained separately.
   The reusable shadow visibility interpolator now preserves inactive configs,
   copies active endpoints and applies the native scalar/boolean rules. Ordered
