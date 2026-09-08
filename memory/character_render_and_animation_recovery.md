@@ -234,6 +234,10 @@ only.
   Offline hardware replays of both retained original opening draws reproduce
   their complete RT0 outputs exactly. This proves packet sufficiency for those color outputs,
   not reconstructed Unity fidelity or RT1 parity; preserve those boundaries.
+  Extracted lab RB pixel-function bodies also reproduce both opening RT0
+  outputs with native constants and VS varyings. This isolates that active
+  arithmetic; actual Unity varying/binding transport and particle phase remain
+  open, as do the inactive shader branches and RT1.
   Public Unity particle instance records require their own stream-layout
   contract. Refract selects its Custom1 record; BaseV2 selects Custom1 or
   Custom1+Custom2 and loads Custom1 from the procedural buffer. Both select
