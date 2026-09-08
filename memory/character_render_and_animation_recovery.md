@@ -244,6 +244,10 @@ only.
   Four-texture BaseV2 masking accumulates authored Sample1/2/3 weights
   for both RGB and alpha from 1-UseMask. Preserve those source weights in
   material import; texture ordinal alone does not establish its mask role.
+  Validate sampler descriptors independently of shader sampler names and
+  imported texture defaults. The observed polar+screen variant uses Clamp
+  for Main and bilinear Repeat for its four samples; static ordinal-based
+  Mirror/MirrorOnce/PointClamp assumptions did not match its native bindings.
 - A component-complete current-build Streamline capture retains two consecutive
   native-resolution DLAA input/output/depth/motion transactions and a complete
   selected-actor Animator timeline. Its direct
