@@ -701,8 +701,12 @@ build and collection procedure.
   dedicated pose-timing launcher preallocates a bounded dense palette sequence
   before readiness and arms on a new Animator/graphics trigger without waiting
   for Full mode's Streamline publication. Follow its README procedure. Retained
-  palettes remain frame-end samples; metadata clocks and VS resource aliases
-  do not establish same-draw consumption. The first validated retail pose
+  older palettes remain frame-end samples; metadata clocks and VS resource
+  aliases do not establish same-draw consumption. The current observer adds
+  an exact-prepass draw-copy receipt and deferred staging transfer, with native
+  call/resource joins checked by the collector. Its new route still needs a
+  retail capture; shader/geometry admission alone does not prove actor ownership
+  or the Animator sample consumed. The first validated retail pose
   session reaches the early entrance; use its phase-joined packets for an
   independent Unity palette comparison. See the lab progress log and generated
   pose-timing session review for the retained sample and startup-join gaps.
