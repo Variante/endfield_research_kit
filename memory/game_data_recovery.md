@@ -233,6 +233,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   on malformed prefixes even when the legacy suffix reader succeeds. Current
   Sequence consumer evidence places the counted indirect child array before
   two nonzero-normalized bytes; child output-slot width does not bound payloads.
+  `scripts/game_data/buff_184_native.json` joins TogglableAction to header6:
+  the common prefix followed by two independent SequenceActionData records.
+  Null or empty first sequences retain the second, and each count reserves
+  its own two terminal bytes. Only Sequence-to-action entry increments depth;
+  no extra outer byte follows the second sequence. The shared type argument
+  proves neither activation/deactivation roles nor runtime execution order.
   The member-five child closes a 13-byte anonymous scalar prefix followed by
   a counted member-three record collection. Each record contains two signed-
   length-prefixed byte spans separated by one nonzero-normalized byte. The

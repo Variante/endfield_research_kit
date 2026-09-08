@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123588,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TogglableAction_DataForMemoryPack+Beyond_Gameplay_Core_TogglableAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      71153504
+    ],
+    [
+      123587,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TogglableAction_DataForMemoryPack",
+      "Deserialize",
+      71153600
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 71153504,
+      "endRva": 71153597,
+      "sha256": "55BF1A9E18349E5891FB52164B9B16F5344411B2D93DB101DB1232AB74534364",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 71153600,
+      "endRva": 71154044,
+      "sha256": "92BF315D172E8CD31041DB1B92A54510C3EE3E424E83CE242ABD5E77E285F957",
+      "boundary": "header6 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83636026,
+      "endRva": 83636039,
+      "sha256": "3C15DC1470DD6E842E5BE4D4B4C3B605A4DB6824C2EDCC03ADB6E08532822222",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83636095,
+      "endRva": 83636116,
+      "sha256": "CC374A200C492FB39FE2B607C908B2733FC4995676438F6AB9FED09FD145FDAC",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 71153772,
+      "instructionHex": "488B15B5E5CA08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 71153878,
+      "instructionHex": "488B158B95C108",
+      "cellVa": 6660509288,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71153919,
+      "instructionHex": "488B156295C108",
+      "cellVa": 6660509288,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "sequence",
+      "sequence"
+    ]
+  },
+  "boundary": "Exact union388 dispatch, registered type and module/token joins identify TogglableAction_DataForMemoryPack. Its header6 reader consumes the common byte/three-DWORD prefix followed by two independent SequenceActionData records. Both nested calls share MethodSpec619962 without merging the records. Sequence framing reuses the existing event-prefix proof: FF or header3, nullable count, bounded action elements and two required terminal bytes. Each sequence count reserves its own two terminal bytes before iteration. A null or empty first sequence does not remove the second. There is no outer source read after the second sequence; setters receive previously read values. FA8401 identifies union388, while short84 is distinct union132. The nonnull outer minimum is 19 bytes when both sequences are null; FF union and FA8401FF wrapper null remain distinct. Action depth increases only when Sequence enters an action, preserving the existing bounded recursion policy. Complete formatter/reader/init/existing-output/FF windows exclude adjacent setter and error bodies. Static identity is exact, source order direct and framing structural-only. Toggle behavior, activation/deactivation labels, sequence execution order, live provider selection, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

@@ -886,7 +886,86 @@ def tag91(shape=b'\xff',last=b'\xff',*,extended=False,bits=0x7fc00001,flags=b'\x
             struct.pack('<I',bits)+flags+shape+last)
 
 
+def tag184(first=b'\xff',second=b'\xff'):
+    return b'\xfa\x84\x01\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00001)+first+second
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_184_two_independent_sequences_and_distinct_short_tag(self):
+        choices=(b'\xff',b'\x03'+struct.pack('<i',-1)+b'\xff\x80',sequence(),sequence(b'\xff'),sequence(tag197(),b'\xff'))
+        for first in choices:
+            for second in choices:
+                child=tag184(first,second);r=Reader(child+b'opaque','184.bin');r.action(0)
+                self.assertEqual((r.pos,r.records[-1]['tag']),(len(child),388))
+                outer_seqs=[q for q in r.records if q['kind']=='sequence' and q['start'] in (17,17+len(first))]
+                self.assertEqual([(q['start'],q['end']) for q in outer_seqs],[(17,17+len(first)),(17+len(first),len(child))])
+        self.assertEqual(len(tag184()),19)
+        for child,tag in ((b'\xff',255),(b'\xfa\x84\x01\xff',388),(b'\x84\xff',132),(tag84(),132)):
+            r=Reader(child,'184-null.bin');r.action(0);self.assertEqual((r.pos,r.records[-1]['tag']),(len(child),tag))
+
+    def test_184_all_cuts_and_required_second_sequence(self):
+        for first,second in ((b'\xff',b'\xff'),(sequence(),sequence(b'\xff',tag197())),(sequence(tag184()),sequence(tag197()))):
+            child=tag184(first,second)
+            for cut in range(len(child)):
+                outcomes=[]
+                for data in (child[:cut],child,child[:cut]+b'\xff'*30):
+                    r=Reader(data,'184-cut.bin',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut)
+                    self.assertFalse(any(q.get('tag')==388 and q['start']==0 for q in r.records))
+                    outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+            r=Reader(child,'184-second.bin',17+len(first))
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(17+len(first),17+len(first)))
+            self.assertTrue(any(q['kind']=='sequence' and q['start']==17 for q in r.records))
+            for tail in (b'x',b'\xff'):
+                r=Reader(child+tail,'184-tail.bin',len(child));r.action(0);self.assertEqual(r.pos,len(child))
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_184_nested_counts_headers_and_sequence_tails(self):
+        first,second=sequence(tag197()),sequence(b'\xff',tag197())
+        child=tag184(first,second)
+        for start,seq in ((17,first),(17+len(first),second)):
+            for count in (-2,2147483647):
+                data=child[:start+1]+struct.pack('<i',count)+child[start+5:];r=Reader(data,'184-count.bin')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['offset'],d['category'],d['actual'],r.pos),(start+1,'count-bounds',count,start+5))
+            for available in range(4):
+                r=Reader(child,'184-count-cut.bin',start+1+available)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(start+1,start+1))
+            for missing in (1,2):
+                end=start+len(seq);r=Reader(child,'184-seq-tail.bin',end-missing)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(end-missing,end-missing))
+        for at,expected in ((3,6),(17,3),(17+len(first),3)):
+            data=child[:at]+b'\x2a'+child[at+1:];r=Reader(data,'184-header.bin')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            d=caught.exception.diagnostic
+            self.assertEqual((d['offset'],d['expected'],d['actual'],r.pos),(at,expected,42,at))
+        r=Reader(tag184(sequence(b'\xfa\xa0\x01')),'184-unknown.bin')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],r.pos),(22,416,22))
+
+    def test_184_depth_counts_and_parent_tail(self):
+        # Each Sequence -> action edge raises depth exactly once.
+        child=tag184()
+        for _ in range(64):child=tag184(sequence(child))
+        r=Reader(child,'184-depth64.bin');r.action(0);self.assertEqual(r.pos,len(child))
+        r=Reader(tag184(sequence(child)),'184-depth65.bin')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['category'],caught.exception.diagnostic['actual']),('depth-limit',65))
+        for count in (-1,0,1):
+            data=b'\x03'+struct.pack('<i',count)+(tag184() if count==1 else b'')+bytes(2)
+            sequence_frame(data)
+            for missing in (1,2):
+                r=Reader(data,'184-parent-tail.bin',len(data)-missing)
+                with self.assertRaises(FrameError) as caught:r.sequence()
+                self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(len(data)-missing,len(data)-missing))
+
     def test_91_short_extended_source_order_and_null_states(self):
         for extended in (False,True):
             width=3 if extended else 1
