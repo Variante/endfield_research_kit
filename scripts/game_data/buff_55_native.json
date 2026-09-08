@@ -1,0 +1,144 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123975,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckBuffFromSource_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckBuffFromSource_DataForMemoryPackFormatter",
+      "Deserialize",
+      58567120
+    ],
+    [
+      123974,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckBuffFromSource_DataForMemoryPack",
+      "Deserialize",
+      58568000
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58567120,
+      "endRva": 58567213,
+      "sha256": "9FE6FE0467CEC0B38F06717DAD92EF927B0DC8B5B18E28C97B8FFAB4C16368AE",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 58568000,
+      "endRva": 58568584,
+      "sha256": "BABFD925F5609A1B3BBDD423E66F7FC2509823A3D6B234A4419F2CBEEDA095C2",
+      "boundary": "header9 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 82029106,
+      "endRva": 82029119,
+      "sha256": "10BFED5368B9B6BE326173D57C1CD523154ABD3E340A45E3D0B0427C933DFC09",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 82029175,
+      "endRva": 82029196,
+      "sha256": "DBE675287ABF0D02ED4BADDD504B850E0B0CC22E9971F617359CF23401B21162",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58568172,
+      "instructionHex": "488B1535F08A09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58568278,
+      "instructionHex": "488B1553578B09",
+      "cellVa": 6661146032,
+      "usageRawHex": "15CC0FC000000000",
+      "methodSpecIndex": 517642,
+      "methodSpec": [
+        428464,
+        -1,
+        13983
+      ],
+      "argumentRawHex": "4D270000000000000000118000000000",
+      "typeDefinition": 10061,
+      "typeName": "Beyond.Gameplay.Core.BuffId",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58568319,
+      "instructionHex": "488B1582688809",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58568360,
+      "instructionHex": "488B1559688809",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58568435,
+      "instructionHex": "488B1526978109",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member9": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "single-payload",
+      "target-profile",
+      "target-profile",
+      "byte",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact union85 dispatch and registered type/module/token joins identify Conditions_CheckBuffFromSource_DataForMemoryPack. Header9 reads common byte/three DWORD, one BuffId value profile, two independent TargetSettings profiles, BYTE and terminal BlackboardDouble. BuffId reuses the FF/header1 signed-length byte-payload reader in buff_56_native.json and provider bridge in buff_28_native.json; its eight-byte output carrier does not establish wire width. No list count precedes this single value. TargetSettings and BlackboardDouble reuse buff_ec_native.json and finite selector extensions. The scalar profile is FF or header3, bounded nullable byte payload, BYTE and raw4; the Double name does not imply eight source bytes. Equal target contexts do not merge serialized target instances. The BYTE and terminal scalar remain required after null preceding profiles. Short55 and FA5500 identify union85, independently of decimal55/hex37. Minimum nonnull outer lengths20/22 use null children. Output setters add no source bytes. Complete formatter/reader/init/existing-output/FF windows exclude adjacent methods and error bodies. Static identity is exact, source order direct and framing structural-only. Buff source/target ownership, condition behavior, numeric interpretation, payload encoding, live provider selection, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

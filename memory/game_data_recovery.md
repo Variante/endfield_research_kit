@@ -472,6 +472,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Equal source order permits parser reuse while preserving separate union
   identities. Resilience behavior, numeric interpretation and units remain
   unresolved; no extra outer payload follows the output setter.
+  `scripts/game_data/buff_55_native.json` pins a member-nine condition with
+  one BuffId value, two independent TargetSettings instances, a byte and a
+  terminal scalar profile after the common prefix. BuffId uses its own
+  nullable member-one payload wrapper; its output carrier width does not
+  establish wire width. Equal target contexts preserve separate byte ranges.
+  Null preceding profiles retain the byte and final scalar. Source/target
+  ownership and condition behavior remain unresolved.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

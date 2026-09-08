@@ -912,9 +912,115 @@ def tagf0(nested=b'\xff',*,extended=False):
             struct.pack('<III',0xffffffff,0x80000000,0x01234567)+nested)
 
 
+
+def tag55(single=b'\xff',first=b'\xff',second=b'\xff',scalar=b'\xff',*,extended=False,flag=255):
+    return ((b'\xfa\x55\x00' if extended else b'\x55')+b'\x09\x80'+
+            struct.pack('<III',0xffffffff,0x80000000,0x01234567)+single+first+second+bytes([flag])+scalar)
+
+
 class BuffActionsTests(unittest.TestCase):
 
 
+
+
+    def test_55_single_value_two_targets_and_terminal_scalar(self):
+        for extended in (False,True):
+            at=17 if extended else 15
+            for value in (None,b'',b'\xff\xfa\x00\x55'):
+                single=b'\x01'+payload(value);first=target();second=target(direction_value=b'\xff')
+                scalar=scalar_payload(value,bits=b'\xff'*4);data=tag55(single,first,second,scalar,extended=extended)
+                r=Reader(data,'55-normal');r.action(0);self.assertEqual(r.pos,len(data))
+                expected=[(at,at+len(single),'anonymous-single-payload'),
+                          (at+len(single),at+len(single)+len(first),'anonymous-target-profile'),
+                          (at+len(single)+len(first),at+len(single)+len(first)+len(second),'anonymous-target-profile'),
+                          (len(data)-len(scalar),len(data),'anonymous-scalar-payload')]
+                for start,end,kind in expected:self.assertIn(dict(start=start,end=end,kind=kind),r.records)
+                self.assertEqual(r.records[-1]['tag'],85)
+            data=tag55(extended=extended);self.assertEqual(len(data),at+5)
+            r=Reader(data,'55-null');r.action(0);self.assertEqual(r.pos,len(data))
+        for data in (b'\xff',b'\x55\xff',b'\xfa\x55\x00\xff'):
+            r=Reader(data,'55-wrapper');r.action(0);self.assertEqual(r.pos,len(data))
+
+    def test_55_all_cuts_limits_and_trailing_bytes(self):
+        for extended in (False,True):
+            for data in (tag55(extended=extended),
+                         tag55(b'\x01'+payload(None),scalar=scalar_payload(None),extended=extended),
+                         tag55(b'\x01'+payload(b''),target(),target(direction_value=b'\xff'),scalar_payload(b'\xff\x00'),extended=extended)):
+                for cut in range(len(data)):
+                    outcomes=[]
+                    for raw in (data[:cut],data,data[:cut]+b'\xff'*16):
+                        r=Reader(raw,'55-cut',cut)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,cut)
+                        self.assertFalse(any(q.get('tag')==85 for q in r.records))
+                        outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+                for tail in (b'\xff',bytes(4)):
+                    for limit in (len(data),len(data+tail)):
+                        r=Reader(data+tail,'55-end',limit);r.action(0);self.assertEqual(r.pos,len(data))
+                    with self.assertRaises(FrameError) as caught:sequence_frame(sequence(data)+tail)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_55_headers_lengths_and_required_terminal_fields(self):
+        for extended in (False,True):
+            at=17 if extended else 15
+            single=b'\x01'+payload(b'\xff\x00');first=target();second=target(direction_value=b'\xff');scalar=scalar_payload(b'\xff')
+            data=tag55(single,first,second,scalar,extended=extended)
+            scalar_at=len(data)-len(scalar);flag_at=scalar_at-1
+            for start,header in ((at-14,9),(at,1),(at+len(single),13),(at+len(single)+len(first),13),(scalar_at,3)):
+                r=Reader(data[:start]+b'\x2a'+data[start+1:],'55-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['category'],d['offset'],d['expected'],d['actual'],r.pos),('member-count',start,header,42,start))
+            for start in (at+1,scalar_at+1):
+                for count in (-2,2147483647):
+                    r=Reader(data[:start]+struct.pack('<i',count)+data[start+4:],'55-count')
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    d=caught.exception.diagnostic
+                    self.assertEqual((d['category'],d['offset'],d['actual'],r.pos),('count-bounds',start,count,start+4))
+                for available in range(4):
+                    r=Reader(data,'55-word',start+available)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    d=caught.exception.diagnostic
+                    self.assertEqual((d['category'],d['offset'],d['expected'],r.pos),('truncated',start,{'bytes':4},start))
+            for start,width in ((flag_at,1),(len(data)-5,1),(len(data)-4,4)):
+                for available in range(width):
+                    r=Reader(data,'55-tail',start+available)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    d=caught.exception.diagnostic
+                    self.assertEqual((d['category'],d['offset'],d['expected'],r.pos),('truncated',start,{'bytes':width},start))
+            r=Reader(data,'55-missing-scalar',scalar_at)
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(scalar_at,scalar_at))
+
+    def test_55_independent_target_gaps_parent_tails_and_union_identity(self):
+        for index in range(2):
+            targets=[target(),target(direction_value=b'\xff')]
+            targets[index]=target(selector=b'\x03\xfe'+bytes(8))
+            data=tag55(b'\x01'+payload(b'id'),*targets,scalar_payload(None))
+            r=Reader(data,'55-target-gap')
+            with self.assertRaises(Unsupported) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
+            self.assertFalse(any(q.get('tag')==85 for q in r.records))
+            if index:self.assertTrue(any(q['kind']=='anonymous-target-profile' and q['start']==22 for q in r.records))
+        data=tag55(b'\x01'+payload(b'longer'),target(),target(),scalar_payload(None))
+        for count in (-2,2147483647):
+            r=Reader(b'\x03'+struct.pack('<i',count)+data+bytes(2),'55-parent-count')
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            d=caught.exception.diagnostic;self.assertEqual((d['category'],d['offset'],d['actual'],r.pos),('count-bounds',1,count,5))
+        parent=sequence(data)
+        for missing in (1,2):
+            r=Reader(parent,'55-parent-tail',len(parent)-missing)
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(len(parent)-missing,len(parent)-missing))
+        r=Reader(sequence(data,b'\xfa\xa0\x01'),'55-next')
+        with self.assertRaises(Unsupported) as caught:r.sequence()
+        self.assertEqual((caught.exception.diagnostic['actual'],r.pos),(416,5+len(data)))
+        self.assertEqual([q['tag'] for q in r.records if q['kind']=='union'],[85])
+        # Decimal55 (hex37) has a separate member-ten contract.
+        r=Reader(b'\x37'+data[1:],'55-not-decimal55')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['expected']),(1,10))
 
     def test_f0_terminal_scalar_identity_encodings_and_null_states(self):
         for extended in (False,True):
