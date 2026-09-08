@@ -654,6 +654,56 @@ def tag70(a=0xffffffff,b=0x80000000,extended=False):
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_tag159_nested_header4_payloads_and_target(self):
+        for value in (None,b'',b'\xff\x00wire'):
+            nested=b'\x04'+payload(value)+b'\xff'+bytes.fromhex('FFFFFFFF')+b'\x80'
+            for children in ((b'\xff',b'\xff',b'\xff'),(nested,nested,target())):
+                child=b'\xfa\x59\x01\x07\xfe'+bytes(12)+b''.join(children)
+                r=Reader(child,'159');r.action(0);self.assertEqual(r.pos,len(child))
+                self.assertIn(dict(start=0,end=len(child),kind='union',tag=345),r.records)
+                result=event_prefix(prefix(sequence(child,b'\x59')),source='159.bin')
+                self.assertEqual(result['diagnostic']['offset'],19+len(child))
+                self.assertEqual(result['diagnostic']['actual'],89)
+                self.assertFalse(result['wholeSchemaExact'])
+
+    def test_tag159_all_cuts_limits_null_wrapper_and_trailing(self):
+        nested=b'\x04'+payload(b'\xff\x00wire')+b'\x80'+bytes.fromhex('000080FF')+b'\xff'
+        for child in (b'\xfa\x59\x01\xff',b'\xfa\x59\x01\x07\xfe'+bytes(12)+nested+nested+target()):
+            for cut in range(len(child)):
+                values=[]
+                for data in (child,child[:cut],child[:cut]+b'\xff'*20):
+                    r=Reader(data,'159-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut)
+                    self.assertFalse(any(v.get('tag')==345 for v in r.records))
+                    values.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(values[0],values[1]);self.assertEqual(values[0],values[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag159_bad_headers_payload_lengths_and_required_target(self):
+        common=b'\xfa\x59\x01\x07\x00'+bytes(12)
+        for header in (0,3,6,8,254):
+            r=Reader(common[:3]+bytes([header])+common[4:]+b'\xff'*3,'159-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+            self.assertEqual(caught.exception.diagnostic['offset'],3)
+        for prior in (b'',b'\xff'):
+            for length in (-2,0x7fffffff):
+                r=Reader(common+prior+b'\x04'+struct.pack('<i',length)+bytes(8),'159-length')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+                self.assertEqual(caught.exception.diagnostic['offset'],18+len(prior))
+            r=Reader(common+prior+b'\x03'+bytes(12),'159-nested-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['expected'],4)
+        r=Reader(common+b'\xff\xff','159-target')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],19)
+        self.assertFalse(any(v.get('tag')==345 for v in r.records))
+
+
     def test_tag70_both_encodings_fixed_extent_and_raw_terminal_dwords(self):
         for extended in (False,True):
             size=25 if extended else 23

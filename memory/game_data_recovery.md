@@ -640,6 +640,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   now includes unsupported actions reached inside this collection; close those
   before treating all sixth-member endpoints as known. Retain conditional
   provider selection, the independent suffix anchor and the physical opaque range.
+  `scripts/game_data/buff_159_native.json` independently pins the reached
+  action and both BlackboardImpactValue/BlackboardSuperArmorValue wrappers.
+  The header-seven action reads the common byte/three DWORD prefix, two
+  `scalar_flag_payload` profiles, then TargetSettings. Each nested wrapper
+  reads FF or header four, nullable byte payload, byte, DWORD and required
+  final byte; do not substitute the header-three scalar profile. Exact type
+  identity does not establish gameplay effects, numeric units or boolean
+  meanings. Keep the existing TargetSettings depth/unknown-profile boundary.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity

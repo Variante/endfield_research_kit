@@ -1,0 +1,197 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122927,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetSuperArmorAction_DataForMemoryPack+Beyond_Gameplay_Core_SetSuperArmorAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      61439856
+    ],
+    [
+      122926,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetSuperArmorAction_DataForMemoryPack",
+      "Deserialize",
+      61439952
+    ],
+    [
+      105476,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BlackboardSuperArmorValueForMemoryPack+Beyond_Gameplay_Core_BlackboardSuperArmorValueForMemoryPackFormatter",
+      "Deserialize",
+      62972848
+    ],
+    [
+      105475,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BlackboardSuperArmorValueForMemoryPack",
+      "Deserialize",
+      62972944
+    ],
+    [
+      112718,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BlackboardImpactValueForMemoryPack+Beyond_Gameplay_Core_BlackboardImpactValueForMemoryPackFormatter",
+      "Deserialize",
+      62973696
+    ],
+    [
+      112717,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BlackboardImpactValueForMemoryPack",
+      "Deserialize",
+      62973792
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 61439856,
+      "endRva": 61439949,
+      "sha256": "6943390EF01EAAE778DA1963468398DED38BC8FC5B4FA35EE2C7381DF9055C02",
+      "boundary": "action formatter initialization and forwarding"
+    },
+    {
+      "startRva": 61439952,
+      "endRva": 61440461,
+      "sha256": "62DDB38A2132C66EB3F9CDD4A163EF8919C1EDDE085D4366193768072F153933",
+      "boundary": "action normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 82451812,
+      "endRva": 82451825,
+      "sha256": "82E6A64C39AAB0ECB652BD4758DC289A65A90F92A70896BC6224E2DEA9CAEE3A",
+      "boundary": "action existing output rejoin"
+    },
+    {
+      "startRva": 82451881,
+      "endRva": 82451902,
+      "sha256": "DA992C19D16E217D4B21A3FF063EEC47C30014865000E7CA6D3FE0D87B011E73",
+      "boundary": "action FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 62972848,
+      "endRva": 62972941,
+      "sha256": "F3EA90808715F5CEBA72BFACFED520BA2100434666EB927500BCF09D861D2FD1",
+      "boundary": "SuperArmorValue formatter"
+    },
+    {
+      "startRva": 62972944,
+      "endRva": 62973232,
+      "sha256": "DE5211A081B55983F02BE5B6EAF64F76F7B8FE9D05E240FC50A2E1AD39822C84",
+      "boundary": "SuperArmorValue normal and initialization rejoin"
+    },
+    {
+      "startRva": 82689234,
+      "endRva": 82689285,
+      "sha256": "14899DC1FC073FA96FAFC9CDA7B80727F4878DA2D422526791B68070B9BA5E4C",
+      "boundary": "SuperArmorValue allocation rejoin"
+    },
+    {
+      "startRva": 82689341,
+      "endRva": 82689362,
+      "sha256": "2897FFC6530E5E5B9CC496A52B5015510A8E73E5EC8FA7411B51D552BD8C7D05",
+      "boundary": "SuperArmorValue FF clear and rejoin"
+    },
+    {
+      "startRva": 62973696,
+      "endRva": 62973789,
+      "sha256": "3414905B0DF2EC77CA064C08F1C3DF617C30171D093E2F8D5D0E1C54BAE69A77",
+      "boundary": "ImpactValue formatter"
+    },
+    {
+      "startRva": 62973792,
+      "endRva": 62974136,
+      "sha256": "749E2C61F57DE66547EF3CABF98E9BC3F8A46F61C8AA0CF225BB6BB7B1CBDF3D",
+      "boundary": "ImpactValue normal, FF and initialization rejoin"
+    },
+    {
+      "startRva": 82689566,
+      "endRva": 82689617,
+      "sha256": "0DB6A792E4CA00136DF5B7D9EA0AF2BFE8339CAB10AA25B32F2C2BAC22790964",
+      "boundary": "ImpactValue allocation rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 61440124,
+      "instructionHex": "488B15A51D5F09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 61440230,
+      "instructionHex": "488B15E3FF5F09",
+      "cellVa": 6661177552,
+      "usageRawHex": "9DEA12C000000000",
+      "methodSpecIndex": 619854,
+      "methodSpec": [
+        428464,
+        -1,
+        13940
+      ],
+      "argumentRawHex": "6E260000000000000000120000000000",
+      "typeDefinition": 9838,
+      "typeName": "Beyond.Gameplay.Core.BlackboardImpactValue",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61440271,
+      "instructionHex": "488B15A2B75509",
+      "cellVa": 6660503736,
+      "usageRawHex": "9FEA12C000000000",
+      "methodSpecIndex": 619855,
+      "methodSpec": [
+        428464,
+        -1,
+        13944
+      ],
+      "argumentRawHex": "6D260000000000000000120000000000",
+      "typeDefinition": 9837,
+      "typeName": "Beyond.Gameplay.Core.BlackboardSuperArmorValue",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61440312,
+      "instructionHex": "488B15C9955C09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-flag-payload",
+      "scalar-flag-payload",
+      "target-profile"
+    ],
+    "bothNestedMember4": [
+      "nullable byte payload",
+      "byte",
+      "scalar32",
+      "byte"
+    ]
+  },
+  "boundary": "Exact current union registration and module/token joins identify the action and both nested wrappers. Selected header7 source order is the common byte/three DWORD prefix, BlackboardImpactValue, BlackboardSuperArmorValue, then TargetSettings. Each of the first two nested wrappers independently reads FF or header4, signed nullable byte payload, byte, DWORD, and required final byte, matching the existing scalar_flag_payload grammar. They are not header3 scalar_payload records; payloads remain opaque bytes and terminal byte values are not restricted to booleans. TargetSettings retains its independently pinned bounded profile. Static identity and direct source order do not establish live provider choice, super-armor gameplay behavior, numeric units, suffix-anchor ownership or whole-BuffData EOF. Unsupported nested profiles retain their exact stop and opaque remainder."
+}
