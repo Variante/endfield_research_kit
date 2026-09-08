@@ -535,7 +535,9 @@ only.
   indices when light packing changes and can reject whole light contributions.
   The matched GPU diagnosis is in `endminf_shadow_schedule_287_validation.json`.
   Contact, low-resolution directional, VisibilitySH, and screen-shadow producers
-  consume that post-HG surface and its R32 depth copy. An active HG owner failure
+  consume that post-HG surface and its R32 depth copy. The shared D32S8 allocation
+  explicitly requests an R8_UInt stencil shader view, and ContactShadow rejects
+  its absence before dispatch. An active HG owner failure
   cannot fall back to the independent character diagnostic. Default t1 need not
   be the paired DSV resource: retained early packets copy its depth SRV into
   a separate R32 texture before lighting; t0 is the binning buffer. The native
