@@ -623,6 +623,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_14b_native.json` joins SetAnimTimeScaleAction to
+  header6, the common prefix, TargetSettings and terminal BlackboardDouble.
+  The scalar wrapper is required even when the target is null; no further
+  byte or DWORD follows it. Time-scale behavior and target ownership remain
+  unresolved.
   `scripts/game_data/buff_8a_native.json` joins ContinuousFindTargetAction to
   its header19 direction, scalar, payload and selector read order. Two final
   bytes and a required raw float32 field close the record; null nested profiles

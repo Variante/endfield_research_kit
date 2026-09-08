@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122715,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAnimTimeScaleAction_DataForMemoryPack+Beyond_Gameplay_Core_SetAnimTimeScaleAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      71696160
+    ],
+    [
+      122714,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAnimTimeScaleAction_DataForMemoryPack",
+      "Deserialize",
+      71696256
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 71696160,
+      "endRva": 71696253,
+      "sha256": "EFAED19E48B723B4C9F9F7F4D678AD472AAC878876771819312F9FA6D9359D43",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 71696256,
+      "endRva": 71696712,
+      "sha256": "EFAAC30661C058BB8165C6E91C7672260933357FEDDDB45EBFCAC75EF39A11C7",
+      "boundary": "header6 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83699436,
+      "endRva": 83699449,
+      "sha256": "B32046C36298B0A8C8E62F32E04972535B7DA1795C346452531C3CC6D8DD99A9",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83699505,
+      "endRva": 83699526,
+      "sha256": "A026FDB6C9C5596BAC6366EB8C7CB301307EA8B5508FCC95279D187E07686AAD",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 71696428,
+      "instructionHex": "488B15F59DC208",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 71696534,
+      "instructionHex": "488B156B16C008",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71696575,
+      "instructionHex": "488B155A45B908",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact selected union331 dispatch and module/token joins identify SetAnimTimeScaleAction_Data. Its header6 reader consumes the common byte/three DWORDs, TargetSettings and terminal BlackboardDouble. Three exact generic contexts identify Priority, TargetSettings and BlackboardDouble. TargetSettings reuses the independently pinned bounded nullable target profile and finite selector extensions; BlackboardDouble reuses FF/header3 signed nullable byte payload, byte and four raw source bytes. The scalar wrapper is required even when the preceding target is null. Completing the target does not finish this action; completing the scalar does, without another byte or DWORD. FA4B01 identifies union331; short4B is distinct union75. Null union, null outer wrapper, null target, null scalar and null/empty scalar payloads retain distinct boundaries. Source calls establish order independently of managed declarations or output setters. Formatter, normal/init, existing-output and FF windows retain complete instructions. Static identity is exact, selected source order direct and framing structural-only. Animation time-scale behavior, target ownership, payload interpretation, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

@@ -324,6 +324,10 @@ def post1_shape():
             a+b'\x24\x23\x22\x21'+v+b'\xfe')
 
 
+def tag14b(t=b'\xff',scalar=b'\xff'):
+    return b'\xfa\x4b\x01\x06\xfe'+struct.pack('<III',0x01020304,0x80000000,0xffffffff)+t+scalar
+
+
 def direction():
     return b'\x08\x01\x00'+bytes(4)+b'\x00\xff'+bytes(4)+b'\xff'+bytes(4)
 
@@ -885,6 +889,80 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['status'],'unsupported')
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
+
+    def test_14b_target_scalar_null_states_source_order_and_alias(self):
+        self.assertEqual(len(tag14b()),19)
+        for t in (b'\xff',target(),target(direction_value=b'\xff')):
+            for scalar in (b'\xff',scalar_payload(None,128),scalar_payload(b'',254,b'\x04\x03\x02\x01'),scalar_payload(b'\xfeA',255)):
+                child=tag14b(t,scalar);r=Reader(child+b'\xaa','14b');r.action(0)
+                self.assertEqual(r.pos,len(child));self.assertEqual(r.records[-1]['tag'],331)
+                if scalar!=b'\xff':
+                    self.assertEqual(r.ranges[-1],dict(start=len(child)-4,end=len(child),kind='anonymous-scalar32'))
+                if t!=b'\xff':
+                    self.assertIn(dict(start=17,end=17+len(t),kind='anonymous-target-profile'),r.records)
+        for value in (b'\xff',b'\xfa\x4b\x01\xff'):
+            r=Reader(value+b'\xaa','14b-wrapper');r.action(0);self.assertEqual(r.pos,len(value))
+        r=Reader(b'\x4b\xff','14b-short')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['actual'],75);self.assertEqual(r.pos,0)
+
+    def test_14b_all_cuts_required_scalar_and_parent_sequence_tails(self):
+        for child in (tag14b(),tag14b(target(),scalar_payload(b'wire\xff',128,b'\x04\x03\x02\x01'))):
+            for cut in range(len(child)):
+                results=[]
+                for data in (child,child[:cut],child[:cut]+b'\xff'*16):
+                    q=Reader(data,'14b-cut',cut)
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    self.assertLessEqual(q.pos,cut);self.assertFalse(any(v.get('tag')==331 for v in q.records))
+                    results.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            parent=prefix(sequence(child))
+            for cut in range(len(parent)):
+                row=event_prefix(parent,source='14b-parent',limit=cut);self.assertEqual(row['status'],'failed')
+                self.assertEqual(row,event_prefix(parent[:cut]+b'\xff'*(len(parent)-cut),source='14b-parent',limit=cut))
+            for tail in (b'\x00',b'\xff'*4):
+                r=Reader(child+tail,'14b-end');r.action(0);self.assertEqual(r.pos,len(child))
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        for t in (b'\xff',target()):
+            child=tag14b(t);r=Reader(child[:-1],'14b-scalar-required')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],17+len(t));self.assertEqual(r.pos,17+len(t))
+            self.assertFalse(any(v.get('tag')==331 for v in r.records))
+            child=tag14b(t,scalar_payload(b'x'))
+            for k in range(1,5):
+                r=Reader(child[:-k],'14b-scalar-dword')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],len(child)-4);self.assertEqual(r.pos,len(child)-4)
+
+    def test_14b_bad_headers_counts_unknown_nested_and_next_child(self):
+        child=tag14b(target(),scalar_payload(b'wire'));r=Reader(child,'14b');r.action(0)
+        for span in r.ranges:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for invalid in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                data=bytearray(child);at=span['start']
+                if span['kind']=='member-header':data[at]=invalid
+                else:struct.pack_into('<i',data,at,invalid)
+                q=Reader(data,'14b-invalid')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],at)
+                self.assertFalse(any(v.get('tag')==331 for v in q.records))
+        for count in (-2,2147483647):
+            q=Reader(b'\x03'+struct.pack('<i',count)+child+bytes(2),'14b-parent-count')
+            with self.assertRaises(FrameError) as caught:q.sequence()
+            self.assertEqual(caught.exception.diagnostic['offset'],1);self.assertEqual(q.pos,5)
+        for parent in (sequence(child),sequence(),b'\x03'+struct.pack('<i',-1)+bytes(2)):
+            q=Reader(parent,'14b-parent');q.sequence();self.assertEqual(q.pos,len(parent))
+            for k in (1,2):
+                q=Reader(parent[:-k],'14b-parent-tail')
+                with self.assertRaises(FrameError) as caught:q.sequence()
+                self.assertEqual(caught.exception.diagnostic['offset'],len(parent)-k);self.assertEqual(q.pos,len(parent)-k)
+        q=Reader(tag14b(target(selector=b'\x03\x17'+bytes(8))),'14b-unknown')
+        with self.assertRaises(Unsupported) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['actual'],23);self.assertEqual(q.target_depth,0)
+        row=event_prefix(prefix(sequence(child,b'\xd0')),source='14b-next')
+        self.assertEqual(row['diagnostic']['actual'],208);self.assertEqual(row['diagnostic']['offset'],19+len(child))
+        self.assertEqual(row['consumedEnd'],19+len(child));self.assertTrue(any(v.get('tag')==331 for v in row['completedRecords']))
 
     def test_8a_nullable_profiles_payloads_both_encodings_and_raw_terminal(self):
         d=b'\x08\x80\xfe\x04\x03\x02\x01\xff'+target(direction_value=b'\xff')+b'\x08\x07\x06\x05\xff\x0c\x0b\x0a\x09'
