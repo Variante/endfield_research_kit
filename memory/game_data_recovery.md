@@ -547,6 +547,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Null vector, target or payload never removes the twelve-byte terminal region.
   Operation enum contexts consume DWORDs without additional object headers.
   Coordinate conventions, target roles and conversion behavior remain unresolved.
+  `scripts/game_data/buff_4e_native.json` pins ComboCacheAction's member5
+  terminal list of BattleCmdMappingModifierData. Each element is FF or member6:
+  byte, scalar payload, byte, DWORD, byte and an independent byte payload.
+  Bound the list with a one-byte minimum element; it has no outer tail.
+  A null scalar does not remove the element's final payload, and a null list
+  is distinct from an empty list. Command mapping behavior and payload roles
+  remain unresolved; the list provider bridge stays conditional.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

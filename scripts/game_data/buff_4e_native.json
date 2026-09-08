@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119546,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ComboCacheAction_DataForMemoryPack+Beyond_Gameplay_Core_ComboCacheAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      68028368
+    ],
+    [
+      119545,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ComboCacheAction_DataForMemoryPack",
+      "Deserialize",
+      68028464
+    ],
+    [
+      162850,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ComboCacheAction_Data_BattleCmdMappingModifierDataForMemoryPack+Beyond_Gameplay_Core_ComboCacheAction_Data_BattleCmdMappingModifierDataForMemoryPackFormatter",
+      "Deserialize",
+      68421920
+    ],
+    [
+      162849,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ComboCacheAction_Data_BattleCmdMappingModifierDataForMemoryPack",
+      "Deserialize",
+      68422016
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 68028368,
+      "endRva": 68028461,
+      "sha256": "B011C9D9F4EAFC07A676F4F260A98678493784C94CA382713E8FEFF68C75B427",
+      "boundary": "formatter forwarding and initialization rejoins"
+    },
+    {
+      "startRva": 68028464,
+      "endRva": 68028867,
+      "sha256": "10629F333F6ABD6B807D741AEFC10C21658BCADA3144F164D32A6730FC4AF42C",
+      "boundary": "header5 source reads, normal return and initialization rejoin"
+    },
+    {
+      "startRva": 68421920,
+      "endRva": 68422013,
+      "sha256": "E165C88D25767FFBA5DD85C327144DF9A4CDB5E04250154C829CF0ACABF658B9",
+      "boundary": "element formatter forwarding and initialization rejoins"
+    },
+    {
+      "startRva": 68422016,
+      "endRva": 68422402,
+      "sha256": "6C1513518B19D153AC384B1C3F21E48951340CCA020A8A13555C7419FA9D64FD",
+      "boundary": "element header6 source reads, normal return and initialization rejoin"
+    },
+    {
+      "startRva": 83333080,
+      "endRva": 83333093,
+      "sha256": "FB52E09795408607688B00AAC646C80CE278C97D835650954654495C843FE156",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83333149,
+      "endRva": 83333170,
+      "sha256": "6839CD22BD9CA28663934DFAD3BB419BB770617EC6293A84196D6BA620E76B03",
+      "boundary": "FF output clear and epilogue rejoin"
+    },
+    {
+      "startRva": 83375926,
+      "endRva": 83375977,
+      "sha256": "B5F95F7DE721C389BE98179720E893C590413C368F9B32EE41A43B0BBA6676AB",
+      "boundary": "element allocation rejoin"
+    },
+    {
+      "startRva": 83376033,
+      "endRva": 83376054,
+      "sha256": "70DEC0C9A63F8CE5685FD21F218232EF94D2E5F957F9114A38E3DE886C7365C5",
+      "boundary": "element FF output clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 68028636,
+      "instructionHex": "488B154595FA08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 68028742,
+      "instructionHex": "488B159B8FFB08",
+      "cellVa": 6661183720,
+      "usageRawHex": "CDA412C000000000",
+      "methodSpecIndex": 610918,
+      "methodSpec": [
+        428462,
+        -1,
+        62698
+      ],
+      "argumentRawHex": "68E2248D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000003FF08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17145,
+        "elementArguments": [
+          "88240000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 68422135,
+      "instructionHex": "488B15223CEB08",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 68422210,
+      "instructionHex": "488B151F9AE908",
+      "cellVa": 6660400232,
+      "usageRawHex": "85E812C000000000",
+      "methodSpecIndex": 619586,
+      "methodSpec": [
+        428448,
+        -1,
+        42549
+      ],
+      "argumentRawHex": "83230000000000000000118000000000",
+      "typeDefinition": 9091,
+      "typeName": "Beyond.Gameplay.Core.AbilitySystem+ComboController+BattleCommandType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "counted-combo-cache-mappings"
+    ],
+    "mappingMember6": [
+      "byte",
+      "scalar-payload",
+      "byte",
+      "scalar32",
+      "byte",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact union78 dispatch and registered type/module/token joins identify ComboCacheAction_DataForMemoryPack. Header5 reads common BYTE/three DWORD and a nullable List<BattleCmdMappingModifierData>, with no outer tail. Each element is FF or header6 BYTE, BlackboardDouble, BYTE, DWORD, BYTE, signed-length byte payload. The independently joined BlackboardDouble context reuses the FF/header3 payload/BYTE/raw4 profile in buff_ec_native.json. Null/empty outer lists, FF elements, null scalar wrappers and null/empty scalar or terminal payloads remain distinct. Count/null/element-loop framing reuses the conditional shared reference-list consumer in buff_b4_native.json, with minimum element1 and no outer reserve; reference carrier width does not determine serialized width or live provider selection. A nonnull minimal element occupies13 bytes. Short4E and FA4E00 share this union; FF union and null wrappers have separate extents. Minimum nonnull outer lengths are19 and21. BattleCommandType selects a DWORD read without an extra header or value restriction. Five outer and six element source CALLs, normal returns, initialization, existing-output, allocation and FF rejoins are separately pinned. Static identity is exact, selected source order direct and framing structural-only. Command mapping behavior, payload encoding, field roles, live formatter selection, complete allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

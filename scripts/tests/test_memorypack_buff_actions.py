@@ -1003,7 +1003,92 @@ def tag8c(vector=b'\xff',nested=b'\xff',value=None,*,extended=False,bits=(0xffff
             bytes.fromhex('FFFFFFFF0000008067452301')+vector+nested+
             struct.pack('<II',*bits[:2])+payload(value)+struct.pack('<III',*bits[2:]))
 
+
+def mapping4e(scalar=b'\xff',value=None,bits=0x80000000):
+    return b'\x06\x80'+scalar+b'\xfe'+struct.pack('<I',bits)+b'\xff'+payload(value)
+
+
+def tag4e(items=(),*,extended=False):
+    return ((b'\xfa\x4e\x00' if extended else b'\x4e')+b'\x05\x80'+
+            bytes.fromhex('FFFFFFFF0000008067452301')+
+            struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ()))
+
 class BuffActionsTests(unittest.TestCase):
+
+    def test_4e_list_element_scalar_and_payload_states(self):
+        groups=(None,(),(b'\xff',),(mapping4e(),),
+                tuple(mapping4e(scalar_payload(v,flag=128),p) for v,p in ((None,b''),(b'',None),(b'\x00\xff',b'\x80'))),
+                (b'\xff',mapping4e(scalar_payload(b'key'),b'value'),b'\xff'))
+        for extended in (False,True):
+            for items in groups:
+                data=tag4e(items,extended=extended);r=Reader(data,'4e-normal');r.action(0)
+                self.assertEqual(r.pos,len(data));self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=78))
+                self.assertIn(dict(start=17 if extended else 15,end=len(data),kind='anonymous-combo-cache-mapping-list'),r.records)
+                self.assertEqual(len([q for q in r.records if q['kind']=='anonymous-combo-cache-mapping']),len(items or ()))
+        self.assertEqual(len(mapping4e()),13);self.assertEqual(len(tag4e()),19);self.assertEqual(len(tag4e(extended=True)),21)
+        for data in (b'\xff',b'\x4e\xff',b'\xfa\x4e\x00\xff'):
+            r=Reader(data,'4e-null');r.action(0);self.assertEqual(r.pos,len(data))
+
+    def test_4e_every_cut_and_bounded_trailing_bytes(self):
+        for data in (tag4e(None),tag4e(extended=True),tag4e((b'\xff',mapping4e())),
+                     tag4e((mapping4e(scalar_payload(None),b''),mapping4e(scalar_payload(b'\xff\x80'),b'\x00\xff')),extended=True)):
+            for cut in range(len(data)):
+                outcomes=[]
+                for raw in (data[:cut],data,data[:cut]+b'\xff\x00'*30):
+                    r=Reader(raw,'4e-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut);self.assertFalse(any(q.get('tag')==78 for q in r.records))
+                    outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+            for tail in (b'\xff',b'\x00'*8):
+                for limit in (len(data),len(data+tail)):
+                    r=Reader(data+tail,'4e-tail',limit);r.action(0);self.assertEqual(r.pos,len(data))
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(data)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_4e_headers_counts_and_required_terminal_payload(self):
+        for extended in (False,True):
+            shift=2 if extended else 0;data=tag4e(extended=extended);at=15+shift
+            for n in (-2,1,2147483647):
+                r=Reader(data[:at]+struct.pack('<i',n),'4e-list-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='4e-list-count',offset=at,category='count-bounds',expected={'minimum':-1,'maximum':0},actual=n));self.assertEqual(r.pos,at+4)
+            data=tag4e((mapping4e(scalar_payload(None)),),extended=extended)
+            for at,expected in ((1+shift,5),(19+shift,6),(21+shift,3)):
+                r=Reader(data[:at]+b'\x2a'+data[at+1:],'4e-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='4e-header',offset=at,category='member-count',expected=expected,actual=42));self.assertEqual(r.pos,at)
+            data=tag4e((mapping4e(),),extended=extended);at=len(data)-4
+            for n in (-2,2147483647):
+                r=Reader(data[:at]+struct.pack('<i',n),'4e-terminal-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='4e-terminal-count',offset=at,category='count-bounds',expected={'minimum':-1,'maximum':0},actual=n));self.assertEqual(r.pos,len(data))
+            for available in range(4):
+                r=Reader(data,'4e-terminal-length',at+available)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='4e-terminal-length',offset=at,category='truncated',expected={'bytes':4},actual={'remaining':available}));self.assertEqual(r.pos,at)
+            data=tag4e((mapping4e(value=b'xyz'),),extended=extended);at=len(data)-3
+            r=Reader(data,'4e-terminal-bytes',len(data)-1)
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='4e-terminal-bytes',offset=at-4,category='count-bounds',expected={'minimum':-1,'maximum':2},actual=3));self.assertEqual(r.pos,at)
+
+    def test_4e_parent_counts_required_tails_and_unknown_child(self):
+        for extended in (False,True):
+            child=tag4e((mapping4e(),),extended=extended);parent=sequence(child)
+            r=Reader(parent,'4e-parent');r.sequence();self.assertEqual(r.pos,len(parent))
+            for n in (-2,2147483647):
+                r=Reader(parent[:1]+struct.pack('<i',n)+parent[5:],'4e-parent-count')
+                with self.assertRaises(FrameError) as caught:r.sequence()
+                self.assertEqual(caught.exception.diagnostic,dict(source='4e-parent-count',offset=1,category='count-bounds',expected={'minimum':-1,'maximum':len(child)},actual=n));self.assertEqual(r.pos,5)
+            for missing in (1,2):
+                end=len(parent)-missing;r=Reader(parent,'4e-parent-tail',end)
+                with self.assertRaises(FrameError) as caught:r.sequence()
+                self.assertEqual(caught.exception.diagnostic,dict(source='4e-parent-tail',offset=end,category='truncated',expected={'bytes':1},actual={'remaining':0}));self.assertEqual(r.pos,end)
+            r=Reader(sequence(child,b'\x59'),'4e-parent-next')
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='4e-parent-next',offset=5+len(child),category='union-tag',expected='supported current union tag',actual=89));self.assertEqual(r.pos,5+len(child))
+
+
 
     def test_8c_vector_target_payload_states_and_terminal_words(self):
         vectors=(b'\xff',b'\x03\xff\xff\xff',
