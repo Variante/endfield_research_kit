@@ -623,6 +623,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_17c_native.json` joins TeleportAction to a header14
+  reader with a bounded nested sequence, scalar payload and TargetSettings.
+  Preserve sequence depth/count limits and its two-byte tail; the action also
+  requires its own final byte after the target, including when the target is null.
+  Static identity and framing do not establish teleport execution behavior.
   `scripts/game_data/buff_f6_native.json` joins MoveToAction to a bounded
   header46 reader: raw Vector3 and variable BlackboardVector3 stay distinct.
   Both final SubSpeed references are required; each nonnull header5 SubSpeed

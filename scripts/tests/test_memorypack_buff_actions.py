@@ -714,6 +714,11 @@ def tag2c(first=b'\xff',second=b'\xff',nested=b'\xff',value=None,last=None):
             b'\xff'+payload(value)+b'\x80'*4+nested+b'\xfe'+payload(last))
 
 
+def tag17c(nested=b'\xff',scalar=b'\xff',last_target=b'\xff',last=b'\xff'):
+    return (b'\xfa\x7c\x01\x0e\xfe'+b'\xff'*12+nested+b'\xff\xfe\x80\x00'+
+            b'\x00\x00\xc0\x7f'+scalar+b'\xfe'+last_target+last)
+
+
 def subspeedf6(first=b'\xff',value=None,second=b'\xff',curve=b'\xff',last=b'\xff'*4):
     return b'\x05'+first+payload(value)+second+curve+last
 
@@ -793,6 +798,78 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['status'],'unsupported')
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
+
+    def test_17c_sequence_nulls_profiles_and_distinct_short_tag(self):
+        for nested in (b'\xff',b'\x03'+struct.pack('<i',-1)+b'\xff\xfe',sequence(),
+                       sequence(b'\xff'),sequence(tag17c(),b'\x7c\xff')):
+            for scalar,nested_target in ((b'\xff',b'\xff'),(scalar_payload(None),target()),
+                                         (scalar_payload(b'expr'),target(direction_value=b'\xff'))):
+                child=tag17c(nested,scalar,nested_target);r=Reader(child+b'\xaa','17c');r.action(0)
+                self.assertEqual(r.pos,len(child));self.assertEqual(r.records[-1]['tag'],380)
+                row=event_prefix(prefix(sequence(child,b'\x7c\xff')),source='17c-identity')
+                self.assertEqual(row['status'],'supported-prefix')
+                self.assertEqual([v['tag'] for v in row['completedRecords'] if 'tag' in v][-2:],[380,124])
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='17c-next')
+                self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['offset'],19+len(child))
+        for raw in (b'\xff',b'\xfa\x7c\x01\xff'):
+            r=Reader(raw+b'\xaa','17c-null');r.action(0);self.assertEqual(r.pos,len(raw))
+
+    def test_17c_all_cuts_final_byte_and_parent_tails(self):
+        child=tag17c(sequence(b'\xff',tag17c()),scalar_payload(b'wire'),target())
+        for cut in range(len(child)):
+            results=[]
+            for raw in (child,child[:cut],child[:cut]+b'\xff'*20):
+                r=Reader(raw,'17c-cut',cut)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertLessEqual(r.pos,cut)
+                self.assertFalse(any(v.get('tag')==380 and v['start']==0 for v in r.records))
+                results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+            self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        for nested_target in (b'\xff',target()):
+            r=Reader(tag17c(sequence(b'\xff'),last_target=nested_target,last=b''),'17c-final-byte')
+            with self.assertRaises(FrameError):r.action(0)
+            self.assertTrue(any(v['kind']=='sequence' for v in r.records))
+            self.assertFalse(any(v.get('tag')==380 for v in r.records))
+        full=prefix(sequence(child))
+        for cut in range(len(full)):
+            row=event_prefix(full,source='17c-limit',limit=cut)
+            self.assertEqual(row['status'],'failed')
+            self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='17c-limit',limit=cut))
+        for tail in (b'\x00',b'\xff'):
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_17c_nested_header_count_and_unknown_child_boundaries(self):
+        child=tag17c(sequence(b'\xff',tag17c()),scalar_payload(b'wire'),target())
+        r=Reader(child,'17c-invalid');r.action(0)
+        for span in r.ranges:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for invalid in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=invalid
+                else:struct.pack_into('<i',bad,at,invalid)
+                q=Reader(bad,'17c-invalid')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],at)
+                self.assertFalse(any(v.get('tag')==380 and v['start']==0 for v in q.records))
+        nested=sequence(b'\xff',b'\x59');r=Reader(tag17c(nested),'17c-child-unknown')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],23);self.assertEqual(r.pos,23)
+        self.assertTrue(any(v.get('tag')==255 for v in r.records))
+        self.assertFalse(any(v.get('tag')==380 or v['kind']=='sequence' for v in r.records))
+        unknown=target(selector=b'\x03\x17'+bytes(8));r=Reader(tag17c(sequence(b'\xff'),last_target=unknown),'17c-target-unknown')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['actual'],23);self.assertEqual(r.target_depth,0)
+        self.assertTrue(any(v['kind']=='sequence' for v in r.records))
+        self.assertFalse(any(v.get('tag')==380 for v in r.records))
+
+    def test_17c_recursive_sequence_depth_remains_bounded(self):
+        child=tag17c()
+        for _ in range(66):child=tag17c(sequence(child))
+        row=event_prefix(prefix(sequence(child)),source='17c-depth')
+        self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['category'],'depth-limit')
+        self.assertEqual(row['diagnostic']['actual'],65)
+        self.assertFalse(any(v.get('tag')==380 for v in row['completedRecords']))
 
     def test_f6_profiles_nulls_and_two_independent_subspeed_members(self):
         for wire in (b'\xf6',b'\xfa\xf6\x00'):

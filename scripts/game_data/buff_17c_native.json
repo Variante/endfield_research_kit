@@ -1,0 +1,132 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123466,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TeleportAction_DataForMemoryPack+Beyond_Gameplay_Core_TeleportAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      66738448
+    ],
+    [
+      123465,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TeleportAction_DataForMemoryPack",
+      "Deserialize",
+      66738544
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66738448,
+      "endRva": 66738541,
+      "sha256": "160A35408D1302DBF189810E9818DFCCAD05D8544633B4B947F70616A204E544",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 66738544,
+      "endRva": 66739291,
+      "sha256": "545A2CC5D17A8CD5564AD704D48B880B6F589AE1AB5BC51957DE90119EBEACA0",
+      "boundary": "header14 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83199660,
+      "endRva": 83199673,
+      "sha256": "FD4CCC6F8E93ACDD067AEC88F483CB03F551DD4608977454EA84D7E35B5F4D03",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83199729,
+      "endRva": 83199750,
+      "sha256": "67D8FEE571E9FD83648A492BB0C6CEE4EBD11ECA384AD2B0D2ED1A64D646ADB3",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66738716,
+      "instructionHex": "488B1505440E09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66738822,
+      "instructionHex": "488B15DBF30409",
+      "cellVa": 6660509288,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66739033,
+      "instructionHex": "488B15C0EA0409",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66739108,
+      "instructionHex": "488B155DBB0B09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member14": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "sequence",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "raw4",
+      "scalar-payload",
+      "byte",
+      "target",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected union380 dispatch and module/token joins identify TeleportAction_Data. The header14 reader consumes common byte/three DWORDs, SequenceActionData, four bytes, a raw four-byte float-helper result, BlackboardDouble, byte, TargetSettings and required final byte. Four generic contexts identify Priority, SequenceActionData, BlackboardDouble and TargetSettings. Sequence reuses the separately pinned member3 signed nullable count, indirect child and two-byte tail grammar in buff_sequence_read_order; preserve reserve2 and bounded recursive depth. Unknown child unions retain their first byte and never complete the enclosing action. Null sequence, nullable action list, null child and null outer wrapper remain distinct. Completing a sequence does not finish this action: all following members, especially the byte after TargetSettings, remain required even when nested profiles are null. Raw helper 2CA8BB0 consumes four bytes as pinned by buff_24_native.json; its bits are anonymous and output setters supply no source fields. Source order is direct and static identity exact; framing remains structural-only. Teleport behavior, execution order, target ownership, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
