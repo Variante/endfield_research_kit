@@ -3672,6 +3672,60 @@ class BuffActionsTests(unittest.TestCase):
         wrong=b'\xa2\x12'+tag9a()[2:]
         with self.assertRaises(FrameError):sequence_frame(sequence(wrong))
 
+    def test_calculation5_variants_raw_bits_and_required_dword(self):
+        values=[b'\xff',b'\x05\xff',b'\x05\x04\xff'+b'\xff'*4+b'\xff'+b'\xff'*4]
+        for val in (None,b'',b'\x00\xff'):
+            values.append(b'\x05\x04\xfe'+struct.pack('<I',0x80000000)+scalar_payload(val)+struct.pack('<I',0x7fc00000))
+        values += [b'\xfa\x05\x00'+v[1:] for v in values if v[0]==5]
+        for value in values:
+            r=Reader(value,'calc5',len(value));r.calculation_profile()
+            self.assertEqual(r.pos,len(value))
+            self.assertEqual(r.records[-1],dict(start=0,end=len(value),kind='anonymous-calculation-profile'))
+            for cut in range(len(value)):
+                results=[]
+                for data in (value,value[:cut],value[:cut]+b'\xff'*24):
+                    r=Reader(data,'calc5-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.calculation_profile()
+                    self.assertLessEqual(r.pos,cut)
+                    self.assertFalse(any(v['kind']=='anonymous-calculation-profile' for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+
+    def test_calculation5_bad_header_payload_and_unknown_union(self):
+        for value in (b'\x01',b'\x04',b'\x06',b'\xfa\x05\x01'):
+            r=Reader(value,'calc5-unknown',len(value))
+            with self.assertRaises(Unsupported) as caught:r.calculation_profile()
+            self.assertEqual((r.pos,caught.exception.diagnostic['offset']),(0,0))
+        for value,offset in ((b'\x05\x03',1),(b'\x05\x04'+bytes(5)+b'\x04',7),
+                             (b'\x05\x04'+bytes(5)+b'\x03'+struct.pack('<i',-2),8),
+                             (b'\x05\x04'+bytes(5)+b'\x03'+struct.pack('<i',2147483647),8)):
+            r=Reader(value,'calc5-bad',len(value))
+            with self.assertRaises(FrameError) as caught:r.calculation_profile()
+            self.assertEqual(caught.exception.diagnostic['offset'],offset)
+        # Same member count does not justify the tag3 scalar/DWORD/scalar/DWORD order.
+        wrong=b'\x05\x04'+scalar_payload(b'x')+bytes(4)+scalar_payload(None)+bytes(4)
+        r=Reader(wrong,'calc5-order',len(wrong))
+        with self.assertRaises(FrameError):r.calculation_profile()
+
+    def test_calculation5_parent_tail_and_trailing_sequence(self):
+        for calc in (b'\x05\xff',b'\x05\x04'+bytes(5)+b'\xff'+bytes(4),
+                     b'\xfa\x05\x00\x04\xff'+bytes(4)+scalar_payload(b'k')+b'\xff'*4):
+            child=tag9a(struct.pack('<i',1)+damage33(calc,b'\xff'),b'\xff')
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for cut in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:cut])
+            full=prefix(raw)
+            for cut in range(len(full)):
+                row=event_prefix(full,source='calc5-limit',limit=cut)
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='calc5-limit',limit=cut))
+            for tail in (b'\xff',bytes(8)):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='calc5-next')
+            self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['actual'],89)
+            self.assertIn(dict(start=19,end=19+len(child),kind='union',tag=154),row['completedRecords'])
+
     def test_damage_processor_variants_and_modifier_reuse(self):
         modifier=b'\x04'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+scalar_payload(b'wire')
         values=[b'\xff',b'\x00\xff',b'\x09\xff',b'\x00\x01\xff',b'\x09\x02\xff'+b'\xff'*4]

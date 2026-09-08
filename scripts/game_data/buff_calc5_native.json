@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      125237,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PrimaryAttrCalculationForMemoryPack+Beyond_Gameplay_Core_PrimaryAttrCalculationForMemoryPackFormatter",
+      "Deserialize",
+      64370272
+    ],
+    [
+      125236,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PrimaryAttrCalculationForMemoryPack",
+      "Deserialize",
+      64370368
+    ],
+    [
+      107884,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CalculationBaseForMemoryPack+Beyond_Gameplay_Core_CalculationBaseForMemoryPackFormatter",
+      "Deserialize",
+      59818640
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 59818640,
+      "endRva": 59819478,
+      "sha256": "5214271B3431702F23FCF5A666B8537CA4DC017BF34EF66C555388324D35347A",
+      "boundary": "CalculationBase union dispatch and full initialization rejoin"
+    },
+    {
+      "startRva": 64370272,
+      "endRva": 64370365,
+      "sha256": "D5919EDAD9D352ED3EA7E11FA32DF3AEF0ECAD142AC2F04AFFAFD904CF209E62",
+      "boundary": "PrimaryAttrCalculation formatter"
+    },
+    {
+      "startRva": 64370368,
+      "endRva": 64370757,
+      "sha256": "792FEC6E0EF6C20562D3FA0862A0DB061BB64E6A8D6B2343304A40AF98879B2E",
+      "boundary": "header4 BYTE DWORD nested scalar DWORD and full initialization rejoin"
+    },
+    {
+      "startRva": 82204137,
+      "endRva": 82204145,
+      "sha256": "72C9E269C2787C897527437C53E13EEE3E587E7BE7FFE68C775E0C5803E1C573",
+      "boundary": "null clear and rejoin"
+    },
+    {
+      "startRva": 82875740,
+      "endRva": 82875753,
+      "sha256": "EA3E6012B5E28F8C8603C08293E7EAE64A0AB22870181C30470C6A58E91850D4",
+      "boundary": "existing-output rejoin"
+    },
+    {
+      "startRva": 82875809,
+      "endRva": 82875830,
+      "sha256": "C13F0F2AD8C26C4D6EEF48868122B72136A3ABF4D9CA15496207DD7892452515",
+      "boundary": "null clear and rejoin"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 59819500,
+      "endRva": 59819504,
+      "sha256": "139BF7D7A4DEB2713CB9F30CA07A2FFEFF223F76A176104956890742261E62A9",
+      "boundary": "CalculationBase tag5 table entry routes to RVA 0x390C460"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 59819195,
+      "instructionHex": "488B1586117609",
+      "cellVa": 6661002824,
+      "usageRawHex": "45C012C000000000",
+      "methodSpecIndex": 614434,
+      "methodSpec": [
+        428462,
+        -1,
+        24884
+      ],
+      "argumentRawHex": "89410000000000000000120000000000",
+      "typeDefinition": 16777,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PrimaryAttrCalculationForMemoryPack",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64370540,
+      "instructionHex": "488B15DDC82D09",
+      "cellVa": 6660816976,
+      "usageRawHex": "23E812C000000000",
+      "methodSpecIndex": 619537,
+      "methodSpec": [
+        428448,
+        -1,
+        42510
+      ],
+      "argumentRawHex": "93270000000000000000118000000000",
+      "typeDefinition": 10131,
+      "typeName": "Beyond.Gameplay.Core.PrimaryAttrCalculation+PrimaryAttrCalculationType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64370580,
+      "instructionHex": "488B15850E2909",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64370621,
+      "instructionHex": "488B1534CA2D09",
+      "cellVa": 6660817400,
+      "usageRawHex": "F7E612C000000000",
+      "methodSpecIndex": 619387,
+      "methodSpec": [
+        428448,
+        -1,
+        42404
+      ],
+      "argumentRawHex": "5E270000000000000000118000000000",
+      "typeDefinition": 10078,
+      "typeName": "Beyond.Gameplay.Core.ValueSource",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "calculation5": [
+      "union5",
+      "FF wrapper or header4",
+      "byte",
+      "raw scalar32",
+      "scalar-payload",
+      "required raw scalar32"
+    ]
+  },
+  "boundary": "The exact CalculationBase union table entry 5 selects PrimaryAttrCalculationForMemoryPack through MethodSpec614434. Its selected header4 reader consumes byte, raw DWORD, BlackboardDouble scalar-payload, and a required final raw DWORD. Exact enum contexts PrimaryAttrCalculationType and ValueSource add no wire header; preserve raw bits without assigning gameplay meaning. This layout is distinct from the existing header4 tag3 scalar/DWORD/scalar/DWORD profile. Short and extended union tags, null unions, null wrappers and null/empty scalar byte payloads retain separate bounds. A null scalar does not remove the final DWORD; failed child reads or missing parent tails cannot complete their enclosing record. The scalar profile and shared generic helper remain separately pinned by prior contracts. Static identity is exact and selected source order direct; framing is structural-only. Live provider choice, full allocation/refill/error parity, primary-attribute arithmetic, field meanings, suffix-anchor ownership and whole-BuffData EOF remain unresolved. Unknown CalculationBase tags stop before their tag."
+}

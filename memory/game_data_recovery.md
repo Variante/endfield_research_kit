@@ -417,6 +417,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   tail. First/third lists and the effect array remain null/empty-only; unknown
   processor tags stop before their tag. Static type joins and selected source
   order do not establish live provider selection or gameplay behavior.
+  `scripts/game_data/buff_calc5_native.json` adds CalculationBase tag 5:
+  header four reads byte, DWORD, a scalar-payload profile and required DWORD.
+  It cannot reuse tag 3's different header-four layout; null scalar payloads
+  still require the final DWORD. Attribute arithmetic remains unresolved.
   A normal exit may tail-jump to the write barrier: pin the entire instruction
   and the separate null rejoin, not an assumed RET or partial JMP byte.
   The member-eighteen action in `scripts/game_data/buff_a2_native.json` reads
