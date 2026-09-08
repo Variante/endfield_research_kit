@@ -544,7 +544,8 @@ only.
   identity alone does not prove payload continuity. The exact Unity bridge
   retains the sampled R32 copy and D32S8 attachment separately through native
   submission completion; sampling must not determine which surface supplies
-  stencil rejection. Native draw failure
+  stencil rejection. Validate the R32 float SRV and its resource together:
+  Unity may use an R32 typeless backing for an R32_SFloat texture. Native draw failure
   cannot certify content merely because the metadata shell produced finite pixels.
   Foreground HG geometry replaces classification only after passing shared
   depth. This does not establish every retail stencil writer. The shared surface
