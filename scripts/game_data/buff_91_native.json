@@ -1,0 +1,111 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119685,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateAdditionalBattleShape_DataForMemoryPack+Beyond_Gameplay_Core_CreateAdditionalBattleShape_DataForMemoryPackFormatter",
+      "Deserialize",
+      70867248
+    ],
+    [
+      119684,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateAdditionalBattleShape_DataForMemoryPack",
+      "Deserialize",
+      70867344
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70867248,
+      "endRva": 70867341,
+      "sha256": "C22A64F51569F3FA1BDDB3E18ADE0021734BC9D384EF933052BE315F99982A5C",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 70867344,
+      "endRva": 70867936,
+      "sha256": "DB1C759FBD1CC970D35A88FB90C2CA5BD290E02ACD3E7CF82A8F144C6E9854D5",
+      "boundary": "header10 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83597132,
+      "endRva": 83597145,
+      "sha256": "A78464C2FD1B6822F4438C635F742F9E6A25D2BE2ED1117B3A6370845A568E8E",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83597201,
+      "endRva": 83597222,
+      "sha256": "2F1B4D60165784BEA905D55EDBFA4D393CF3A2248C1AA984B8C7AAB5FE3DF585",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70867516,
+      "instructionHex": "488B15E543CF08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70867758,
+      "instructionHex": "488B15F34BD408",
+      "cellVa": 6661449512,
+      "usageRawHex": "C7EA12C000000000",
+      "methodSpecIndex": 619875,
+      "methodSpec": [
+        428464,
+        -1,
+        14346
+      ],
+      "argumentRawHex": "1A050000000000000000120000000000",
+      "typeDefinition": 1306,
+      "typeName": "Beyond.Gameplay.ColliderShapeData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 70867799,
+      "instructionHex": "488B15AABBCC08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member10": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "raw4",
+      "byte",
+      "byte",
+      "byte",
+      "collider-shape-profile",
+      "target-profile"
+    ]
+  },
+  "boundary": "Exact union145 dispatch, registered type and module/token joins identify CreateAdditionalBattleShape_DataForMemoryPack. Its header10 reader consumes the common byte/three-DWORD prefix, four raw float bits, three bytes, ColliderShapeData and TargetSettings, with no terminal byte after the target. ColliderShapeData reuses the distinct member16 proof in buff_7c_native.json, including raw12 Vector3 carriers; it is not the member18 HitBoxFinder ShapeData. TargetSettings and bounded finite selector extensions reuse buff_ec_native.json and buff_b2_native.json. Setters receive already-read values and are not extra wire members. Short91 and FA9100 are both union145; nonnull minimum lengths are 24 and 26 bytes with both children null. Null union FF and null wrapper 91FF/FA9100FF remain distinct. All scalar and byte bits are anonymous. Complete formatter/reader/init/existing-output/FF windows exclude adjacent setter bodies. Static identity is exact, source order direct and framing structural-only. Battle shape creation behavior, field meaning, live provider selection, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

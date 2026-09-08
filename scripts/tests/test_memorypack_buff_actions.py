@@ -880,7 +880,92 @@ def tag197(word=0x80000001,last=255):
     return b'\xfa\x97\x01\x06\xfe'+struct.pack('<IIII',0x01234567,0xffffffff,0x7fc00001,word)+bytes([last])
 
 
+def tag91(shape=b'\xff',last=b'\xff',*,extended=False,bits=0x7fc00001,flags=b'\xff\x00\x80'):
+    return ((b'\xfa\x91\x00' if extended else b'\x91')+b'\x0a\xfe'+
+            struct.pack('<III',0xffffffff,0x80000000,0x01234567)+
+            struct.pack('<I',bits)+flags+shape+last)
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_91_short_extended_source_order_and_null_states(self):
+        for extended in (False,True):
+            width=3 if extended else 1
+            for bits in (0,0x80000000,0x7fc00001,0xff800000,0xffffffff):
+                for flags in (bytes(3),b'\xff'*3,b'\x80\x01\xfe'):
+                    child=tag91(extended=extended,bits=bits,flags=flags)
+                    r=Reader(child+b'opaque','91-bits.bin',len(child));r.action(0)
+                    self.assertEqual((r.pos,r.records[-1]['tag']),(23+width,145))
+                    self.assertEqual([(q['start'],q['end']) for q in r.ranges],
+                        [(0,width),(width,width+1),(width+1,width+2),
+                         (width+2,width+6),(width+6,width+10),(width+10,width+14),
+                         (width+14,width+18),(width+18,width+19),(width+19,width+20),
+                         (width+20,width+21),(width+21,width+22),(width+22,width+23)])
+            null=(b'\xfa\x91\x00' if extended else b'\x91')+b'\xff'
+            r=Reader(null,'91-null.bin');r.action(0)
+            self.assertEqual((r.pos,r.records[-1]['tag']),(len(null),145))
+        r=Reader(b'\xff','91-union-null.bin');r.action(0)
+        self.assertEqual((r.pos,r.records[-1]['tag']),(1,255))
+
+    def test_91_nonnull_children_every_cut_and_terminal_target(self):
+        for extended in (False,True):
+            for shape,last in ((b'\xff',b'\xff'),(collider16(),b'\xff'),(b'\xff',target()),(collider16(),target())):
+                child=tag91(shape,last,extended=extended)
+                r=Reader(child,'91-full.bin');r.action(0);self.assertEqual(r.pos,len(child))
+                self.assertEqual(r.records[-1]['tag'],145)
+                for n in range(len(child)):
+                    results=[]
+                    for data in (child[:n],child,child[:n]+b'\xff'*20):
+                        r=Reader(data,'91-cut.bin',n)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,n)
+                        self.assertFalse(any(q.get('tag')==145 for q in r.records))
+                        results.append((r.pos,caught.exception.diagnostic,r.ranges,r.records))
+                    self.assertEqual(results[0],results[1]);self.assertEqual(results[1],results[2])
+                # A complete shape is retained when the required target is absent.
+                r=Reader(child,'91-target.bin',len(child)-len(last))
+                with self.assertRaises(FrameError):r.action(0)
+                self.assertTrue(any(q['kind']=='anonymous-collider-shape-profile' for q in r.records))
+
+    def test_91_nested_lengths_headers_and_trailing(self):
+        for extended in (False,True):
+            width=3 if extended else 1
+            child=tag91(collider16(),target(),extended=extended)
+            # First collider byte payload follows its header and raw12.
+            length_at=width+34
+            for count in (-2,2147483647):
+                bad=child[:length_at]+struct.pack('<i',count)+child[length_at+4:]
+                r=Reader(bad,'91-count.bin')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['offset'],d['actual'],d['category'],r.pos),(length_at,count,'count-bounds',length_at+4))
+            for pos,expected in ((width,10),(width+21,16),(width+21+len(collider16()),13)):
+                bad=child[:pos]+b'\x2a'+child[pos+1:];r=Reader(bad,'91-header.bin')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['offset'],d['expected'],d['actual'],d['category'],r.pos),(pos,expected,42,'member-count',pos))
+            for tail in (b'x',b'\xff'):
+                r=Reader(child+tail,'91-tail.bin');r.action(0);self.assertEqual(r.pos,len(child))
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_91_parent_counts_required_tail_and_unknown_sibling(self):
+        for extended in (False,True):
+            child=tag91(collider16(),target(),extended=extended)
+            for count in (-1,0,1):
+                data=b'\x03'+struct.pack('<i',count)+(child if count==1 else b'')+bytes(2)
+                sequence_frame(data)
+                for missing in (1,2):
+                    r=Reader(data,'91-parent-tail.bin',len(data)-missing)
+                    with self.assertRaises(FrameError) as caught:r.sequence()
+                    self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(len(data)-missing,len(data)-missing))
+            for count in (-2,2147483647):
+                with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+child+bytes(2))
+                self.assertEqual((caught.exception.diagnostic['category'],caught.exception.diagnostic['actual']),('count-bounds',count))
+            r=Reader(sequence(child,b'\xfa\xa0\x01'),'91-unknown.bin')
+            with self.assertRaises(Unsupported) as caught:r.sequence()
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],r.pos),(len(child)+5,416,len(child)+5))
+            self.assertTrue(any(q.get('tag')==145 for q in r.records))
+
     def test_197_fixed_source_order_all_bits_and_distinct_alias(self):
         for word in (0,1,0x7fc00000,0x80000000,0xffffffff):
             for last in (0,1,128,255):
