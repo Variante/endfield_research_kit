@@ -179,8 +179,11 @@ only.
   original-binary numeric or publication proof.
   The current ordinary VFX writer derives the cloud clock with
   `fmodf(_Time.y, 1024)`. Its reusable conversion accepts that global time lane;
-  animation elapsed time is not a proven substitute. Upstream time ownership
-  and upload chronology remain separate from the finite native arithmetic checks.
+  animation elapsed time is not a proven substitute. The ordinary render-time
+  manager caches UnityEngine.Time.time, and camera packing places that render
+  time in _Time.y while gameplay time occupies _Time.w. Selected manager/update
+  history, override state and upload chronology remain separate from this static
+  chain and the finite native arithmetic checks.
   `cloud_draw_inputs.json` proves neutral cloud modulation for the retained
   current-build shadow draws; it does not generalize to unsampled frames or
   establish live environment ownership.
