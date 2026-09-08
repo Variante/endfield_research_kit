@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119184,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangeGeneralAbilityButton_DataForMemoryPack+Beyond_Gameplay_Core_ChangeGeneralAbilityButton_DataForMemoryPackFormatter",
+      "Deserialize",
+      58568592
+    ],
+    [
+      119183,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangeGeneralAbilityButton_DataForMemoryPack",
+      "Deserialize",
+      58569120
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58568592,
+      "endRva": 58568685,
+      "sha256": "66FC79953D85D4A4702510506E84560126720A48EA43DE6A0E82CE3FC974928C",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 58569120,
+      "endRva": 58569609,
+      "sha256": "0FDDAAA1D55D2DF9353BAE1987F7FEB8249F50B29B4F2EEF94943B670ABF0266",
+      "boundary": "header7 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 82029258,
+      "endRva": 82029271,
+      "sha256": "0BDF0C3940FF3A1E43D37BD681386251EDDAF2D58A461237039937AC943D8306",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 82029327,
+      "endRva": 82029348,
+      "sha256": "960A30989AE01303FA426C40BA4CE632CC94060CE807EE54B03C0782E6ABB3DC",
+      "boundary": "FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 65140416,
+      "endRva": 65140549,
+      "sha256": "65C4C95704206215951E16EE31E958DF7EFABB536E529B52B4445F0DBF09A870",
+      "boundary": "BuffId provider bridge with eight-byte output carrier and complete initialization"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58569292,
+      "instructionHex": "488B15D5EB8A09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58569398,
+      "instructionHex": "488B15F3528B09",
+      "cellVa": 6661146032,
+      "usageRawHex": "15CC0FC000000000",
+      "methodSpecIndex": 517642,
+      "methodSpec": [
+        428464,
+        -1,
+        13983
+      ],
+      "argumentRawHex": "4D270000000000000000118000000000",
+      "typeDefinition": 10061,
+      "typeName": "Beyond.Gameplay.Core.BuffId",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58569473,
+      "instructionHex": "488B15B8528B09",
+      "cellVa": 6661146048,
+      "usageRawHex": "CDE712C000000000",
+      "methodSpecIndex": 619494,
+      "methodSpec": [
+        428448,
+        -1,
+        26650
+      ],
+      "argumentRawHex": "9F0C0000000000000000118000000000",
+      "typeDefinition": 3231,
+      "typeName": "Beyond.Gameplay.GeneralAbilitySystem+TempAbilityActiveState",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "single-payload",
+      "byte-payload",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected union40 dispatch, registered type usage and module/token joins identify ChangeGeneralAbilityButton_Data. Its header7 reader consumes common byte/three DWORDs, a BuffId value profile, a signed nullable byte payload and a required terminal DWORD. Three precise contexts independently identify Priority, BuffId and TempAbilityActiveState. BuffId reuses the independently pinned FF/header1 byte-payload reader in buff_56_native.json. The selected provider bridge forwards the same reader to a provider-selected formatter, zeroes an eight-byte output carrier and returns it; output carrier width does not establish wire width or prove live provider selection. No collection count precedes the single BuffId profile. Null nested wrapper and header1 with null/empty/nonempty payload remain distinct wire states. The following payload and terminal four source bytes remain required even when BuffId is null. Short28 and FA2800 select union40; no extra field follows the terminal DWORD. Source calls establish order independently of managed declarations or setters. Formatter, normal/init, existing-output, FF and provider windows retain complete instructions. Static identity is exact, selected source order direct and framing structural-only. Ability-button behavior, identifier/field ownership, payload decoding, enum meaning, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
