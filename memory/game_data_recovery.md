@@ -623,6 +623,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_07_native.json` joins AddAIMarkerAction to a header8
+  reader with Double profile, GameplayTag DWORD, TargetSettings and a required
+  terminal byte after the common fields. Existing independently pinned readers
+  bound both nullable profiles and the tag DWORD; target completion does not
+  imply action completion. AI marker behavior and tag meaning remain unresolved.
   `scripts/game_data/buff_15b_native.json` joins SetWeaknessAction to a header11
   reader with two Double profiles, byte, SequenceActionData, Int, byte and
   terminal Double. Int and Double independently have the same bounded

@@ -714,6 +714,12 @@ def tag2c(first=b'\xff',second=b'\xff',nested=b'\xff',value=None,last=None):
             b'\xff'+payload(value)+b'\x80'*4+nested+b'\xfe'+payload(last))
 
 
+def tag07(first=b'\xff',last=b'\xff',extended=False):
+    return ((b'\xfa\x07\x00' if extended else b'\x07')+b'\x08\xfe'+
+            struct.pack('<III',0xffffffff,0x80000000,1)+first+
+            struct.pack('<I',0x01020304)+last+b'\x80')
+
+
 def tag15b(first=b'\xff',second=b'\xff',seq=b'\xff',integer=b'\xff',last=b'\xff'):
     return (b'\xfa\x5b\x01\x0b\xfe'+struct.pack('<III',0xffffffff,0x80000000,1)+
             first+second+b'\x80'+seq+integer+b'\xfe'+last)
@@ -851,6 +857,63 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
 
+    def test_07_short_extended_nullable_profiles_and_source_order(self):
+        values=(b'\xff',scalar_payload(None,0,b'\xff'*4),scalar_payload(b'',128,b'\x01\x02\x03\x04'),scalar_payload(b'wire\xff',254))
+        for extended in (False,True):
+            for first in values:
+                for last in (b'\xff',target()):
+                    child=tag07(first,last,extended);q=Reader(child+b'\xaa','07');q.action(0)
+                    self.assertEqual(q.pos,len(child));self.assertEqual(q.records[-1]['tag'],7)
+                    at=(17 if extended else 15)+len(first)
+                    self.assertIn({'start':at,'end':at+4,'kind':'anonymous-scalar32'},q.ranges)
+                    self.assertEqual(child[at:at+4],b'\x04\x03\x02\x01')
+                    self.assertEqual(q.ranges[-1],{'start':len(child)-1,'end':len(child),'kind':'anonymous-byte'})
+        self.assertEqual(len(tag07()),22);self.assertEqual(len(tag07(extended=True)),24)
+        for raw in (b'\xff',b'\x07\xff',b'\xfa\x07\x00\xff'):
+            q=Reader(raw+b'\xaa','07-wrapper');q.action(0);self.assertEqual(q.pos,len(raw))
+
+    def test_07_all_cuts_terminal_byte_and_parent_tails(self):
+        for extended in (False,True):
+            child=tag07(scalar_payload(b'\xffwire',254,b'\x01\x00\xc0\x7f'),target(),extended)
+            for cut in range(len(child)):
+                results=[]
+                for raw in (child,child[:cut],child[:cut]+b'\xff'*20):
+                    q=Reader(raw,'07-cut',cut)
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    self.assertLessEqual(q.pos,cut);self.assertFalse(any(x.get('tag')==7 for x in q.records))
+                    results.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for last in (b'\xff',target()):
+                raw=tag07(last=last,extended=extended);q=Reader(raw[:-1],'07-terminal')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],len(raw)-1);self.assertEqual(q.pos,len(raw)-1)
+                self.assertFalse(any(x.get('tag')==7 for x in q.records))
+            parent=prefix(sequence(child))
+            for cut in range(len(parent)):
+                row=event_prefix(parent,source='07-parent',limit=cut);self.assertEqual(row['status'],'failed')
+                self.assertEqual(row,event_prefix(parent[:cut]+b'\xff'*(len(parent)-cut),source='07-parent',limit=cut))
+            for tail in (b'\x00',b'\xff'*4):
+                q=Reader(child+tail,'07-end');q.action(0);self.assertEqual(q.pos,len(child))
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_07_headers_counts_and_unknown_parent_child(self):
+        child=tag07(scalar_payload(b'wire'),target());r=Reader(child,'07-invalid');r.action(0)
+        for span in r.ranges:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for invalid in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=invalid
+                else:struct.pack_into('<i',bad,at,invalid)
+                q=Reader(bad,'07-invalid')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],at)
+                self.assertFalse(any(x.get('tag')==7 for x in q.records))
+        row=event_prefix(prefix(sequence(child,b'\xd0')),source='07-next')
+        self.assertEqual(row['diagnostic']['category'],'union-tag');self.assertEqual(row['diagnostic']['actual'],208)
+        self.assertEqual(row['consumedEnd'],19+len(child));self.assertEqual(row['diagnostic']['offset'],19+len(child))
+        self.assertTrue(any(x.get('tag')==7 for x in row['completedRecords']))
+
     def test_15b_independent_scalar_nulls_sequence_states_and_short5b(self):
         values=(b'\xff',scalar_payload(None,0,b'\xff'*4),scalar_payload(b'',128,b'\x01\x02\x03\x04'),scalar_payload(b'wire\xff',254))
         sequences=(b'\xff',b'\x03'+struct.pack('<i',-1)+b'\x80\xfe',sequence(),sequence(b'\xff',tag5b()))
@@ -912,10 +975,10 @@ class BuffActionsTests(unittest.TestCase):
                 with self.assertRaises(FrameError) as caught:q.action(0)
                 self.assertEqual(caught.exception.diagnostic['offset'],at)
                 self.assertFalse(any(x.get('tag')==347 for x in q.records))
-        q=Reader(tag15b(seq=sequence(b'\x07')),'15b-unknown-child')
+        q=Reader(tag15b(seq=sequence(b'\xd0')),'15b-unknown-child')
         with self.assertRaises(Unsupported) as caught:q.action(0)
         self.assertEqual(caught.exception.diagnostic['category'],'union-tag')
-        self.assertEqual(caught.exception.diagnostic['actual'],7);self.assertEqual(caught.exception.diagnostic['offset'],25)
+        self.assertEqual(caught.exception.diagnostic['actual'],208);self.assertEqual(caught.exception.diagnostic['offset'],25)
         self.assertEqual(q.pos,25);self.assertEqual(len(q.records),2)
         nested=tag15b()
         for _ in range(65):nested=tag15b(seq=sequence(nested))

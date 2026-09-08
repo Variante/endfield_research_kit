@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      118383,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AddAIMarkerAction_DataForMemoryPack+Beyond_Gameplay_Core_AddAIMarkerAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      69339120
+    ],
+    [
+      118382,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AddAIMarkerAction_DataForMemoryPack",
+      "Deserialize",
+      69339216
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 69339120,
+      "endRva": 69339213,
+      "sha256": "8824D448B8859E5C0849E169916738813FE2E5D208ED82EDF249E0CA493854CF",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 69339216,
+      "endRva": 69339758,
+      "sha256": "64882ECD2AA18185A9F5734E7B034B8F3F921A29C80B6FB0852F3C8A805D6313",
+      "boundary": "header8 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83460074,
+      "endRva": 83460087,
+      "sha256": "2D7549CE4D8C5485D56A0BD1388DCDFD6E7E8267C21AD4EAAF233CFDE3D53303",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83460143,
+      "endRva": 83460164,
+      "sha256": "CBAB4B85A308194974AA521462DD8BF8F00548D17F86726E65FE10E1F076AC92",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 69339388,
+      "instructionHex": "488B152595E608",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 69339494,
+      "instructionHex": "488B15B33CDD08",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 69339535,
+      "instructionHex": "488B15B232DD08",
+      "cellVa": 6660504648,
+      "usageRawHex": "99CA0FC000000000",
+      "methodSpecIndex": 517452,
+      "methodSpec": [
+        428448,
+        -1,
+        816
+      ],
+      "argumentRawHex": "A22D0000000000000000118000000000",
+      "typeDefinition": 11682,
+      "typeName": "Beyond.Gameplay.Core.GameplayTag",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 69339575,
+      "instructionHex": "488B154A0DE408",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload",
+      "scalar32",
+      "target",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected union7 dispatch and module/token joins identify AddAIMarkerAction_Data. Its header8 reader consumes the common byte and three DWORDs, BlackboardDouble, GameplayTag DWORD, TargetSettings and a required terminal byte. Four precise generic contexts identify Priority, Double, GameplayTag and TargetSettings. Double and TargetSettings reuse independently pinned bounded profiles; GameplayTag reuses the direct four-byte source helper proven in buff_fe_native and buff_c7_native. Short07 and FA0700 select the same union, and FF outer/null wrappers remain distinct. Preserve arbitrary byte values, raw DWORD bits, signed nullable payload counts and independently nullable nested profiles. Completing TargetSettings does not complete the action: the terminal byte remains required. Formatter forwarding, normal return, initialization rejoin, existing-output and FF windows retain complete instructions. Static identity is exact, selected source order direct, and framing structural-only. AI marker behavior, field semantics, payload decoding, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
