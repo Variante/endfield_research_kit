@@ -1,0 +1,150 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119421,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CharWeaponVisibleAction_CharWeaponVisibleActionDataForMemoryPack+Beyond_Gameplay_Core_CharWeaponVisibleAction_CharWeaponVisibleActionDataForMemoryPackFormatter",
+      "Deserialize",
+      65246752
+    ],
+    [
+      119420,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CharWeaponVisibleAction_CharWeaponVisibleActionDataForMemoryPack",
+      "Deserialize",
+      65246848
+    ],
+    [
+      162834,
+      "Beyond.MemoryPack.Beyond_Gameplay_WeaponVFXOverrideConfigForMemoryPack+Beyond_Gameplay_WeaponVFXOverrideConfigForMemoryPackFormatter",
+      "Deserialize",
+      65271344
+    ],
+    [
+      162833,
+      "Beyond.MemoryPack.Beyond_Gameplay_WeaponVFXOverrideConfigForMemoryPack",
+      "Deserialize",
+      65271440
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 65246752,
+      "endRva": 65246845,
+      "sha256": "642CC341C0F845BE05003F09155B6328947371F827F7372DBE2BF9BDEEB20F8F",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 65246848,
+      "endRva": 65247420,
+      "sha256": "3F9DEBD60D7949186294C3C94B543BD09794FDD9C24C20BBA79383B92369E376",
+      "boundary": "header10 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83001394,
+      "endRva": 83001407,
+      "sha256": "1638E778888D1F3E993E8CB4F26E878D44B51085896FF8ED314112B90AE0ACEB",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83001463,
+      "endRva": 83001484,
+      "sha256": "CA135C5B8F7CB5C465FEAA00B6762B44A6D9D7B4A84BA251739318E197B108B5",
+      "boundary": "FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 65271344,
+      "endRva": 65271437,
+      "sha256": "AB2D4392A4B2E636B864A5384D55DC0C48A08D3F22956C38412B0AE9B5F5181D",
+      "boundary": "WeaponVFXOverrideConfig formatter forwarding and initialization"
+    },
+    {
+      "startRva": 65271440,
+      "endRva": 65272193,
+      "sha256": "0BC3EC69853D329A92C375287B4BDCB54B13DB1C79863A3F2F02CE7BCA960260",
+      "boundary": "WeaponVFXOverrideConfig header18 normal source reads and complete initialization rejoin"
+    },
+    {
+      "startRva": 83006272,
+      "endRva": 83006323,
+      "sha256": "C44F4DCCE838B7C8B74F12AB87DCB63ED8C2CF3B5D799DFFCDAB84C8FE55669D",
+      "boundary": "WeaponVFXOverrideConfig allocation and header rejoin"
+    },
+    {
+      "startRva": 83006379,
+      "endRva": 83006400,
+      "sha256": "7B56A44B601B22116A37A985A2D35042EFED80EF84DC72A93140A2291EA462D9",
+      "boundary": "WeaponVFXOverrideConfig FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 65247020,
+      "instructionHex": "488B15F5062509",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 65247228,
+      "instructionHex": "488B15CD052609",
+      "cellVa": 6661184976,
+      "usageRawHex": "ABEB12C000000000",
+      "methodSpecIndex": 619989,
+      "methodSpec": [
+        428464,
+        -1,
+        16954
+      ],
+      "argumentRawHex": "20050000000000000000120000000000",
+      "typeDefinition": 1312,
+      "typeName": "Beyond.Gameplay.WeaponVFXOverrideConfig",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member10": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "byte",
+      "weapon-vfx-profile",
+      "byte",
+      "scalar32"
+    ],
+    "weaponVfxHeader18": [
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte-payload",
+      "byte-payload",
+      "byte-payload",
+      "byte-payload",
+      "byte-payload",
+      "byte-payload",
+      "byte-payload",
+      "byte-payload",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact selected union55 dispatch and module/token joins identify CharWeaponVisibleAction_CharWeaponVisibleActionData. Its header10 reader consumes common byte/three DWORDs, three bytes, WeaponVFXOverrideConfig, a required byte and a required DWORD. The separate token-joined nested header18 reader consumes nine individual bytes then nine independently nullable signed-length byte payloads. Exact generic contexts identify Priority and the nested reference type; nested source reads require no further generic contexts. Null nested wrappers still require both outer tail fields. Empty and null payloads remain distinct, and no text encoding or resource identity is inferred. Short37 and FA 37 00 select the same union55; current observed frontiers use short37. Completed nested objects survive later tail failure without completing the outer action. Output setters add no source fields. Static identity is exact, selected source order direct and framing structural-only. Weapon visibility/VFX behavior, payload ownership/encoding, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

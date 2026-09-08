@@ -714,6 +714,14 @@ def tag2c(first=b'\xff',second=b'\xff',nested=b'\xff',value=None,last=None):
             b'\xff'+payload(value)+b'\x80'*4+nested+b'\xfe'+payload(last))
 
 
+def weapon_vfx(values=(None,)*9,flags=b'\x00\x01\x7f\x80\xfe\xff\x02\x03\x04'):
+    return b'\x12'+flags+b''.join(payload(v) for v in values)
+
+
+def tag37(nested=b'\xff',extended=False,last=b'\xff'*4,flag=b'\x80'):
+    return (b'\xfa\x37\x00' if extended else b'\x37')+b'\x0a\xfe'+b'\xff'*12+b'\x80\xfe\xff'+nested+flag+last
+
+
 def tag15d(items=(),paired=b'\xff',first_scalar=b'\xff',last_scalar=b'\xff',first=b'\xff',second=b'\xff'):
     return (b'\xfa\x5d\x01\x0d\xff'+bytes.fromhex('FFFFFFFF000000800000C07F')+b'\x80\xff'+paired+first_scalar+
             struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+b'\xff'+last_scalar+first+second)
@@ -827,6 +835,69 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['status'],'unsupported')
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
+
+    def test_37_grouped_nine_bytes_then_nine_payloads_and_both_encodings(self):
+        cases=((None,)*9,(b'',)*9,(None,b'',b'\xff',b'wire',b'\x00\xfe',b'longer',None,b'x',b'\x80'))
+        for ext in (False,True):
+            for nested in (b'\xff',*(weapon_vfx(values) for values in cases)):
+                for last in (bytes(4),b'\xff'*4,b'\x00\x00\xc0\x7f'):
+                    child=tag37(nested,ext,last);r=Reader(child+b'\xaa','37');r.action(0)
+                    self.assertEqual(r.pos,len(child));self.assertEqual(r.records[-1]['tag'],55)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='37-next')
+                    self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['offset'],19+len(child))
+                    self.assertTrue(any(v.get('tag')==55 for v in row['completedRecords']))
+            body=tag37(weapon_vfx(cases[-1]),ext);r=Reader(body,'37-order');r.action(0)
+            nested_start=20 if ext else 18
+            counts=[v for v in r.ranges if v['kind']=='count-i32']
+            self.assertEqual(len(counts),9);self.assertEqual(counts[0]['start'],nested_start+10)
+            flags=[v for v in r.ranges if nested_start+1<=v['start']<nested_start+10]
+            self.assertEqual([v['end']-v['start'] for v in flags],[1]*9)
+        for raw in (b'\xff',b'\x37\xff',b'\xfa\x37\x00\xff'):
+            r=Reader(raw+b'\xaa','37-null');r.action(0);self.assertEqual(r.pos,len(raw))
+
+    def test_37_all_cuts_and_required_byte_dword_after_null_nested(self):
+        for ext in (False,True):
+            child=tag37(weapon_vfx((b'x',None,b'',b'\xff\x80',b'wire',None,b'',b'y',None)),ext)
+            for cut in range(len(child)):
+                results=[]
+                for raw in (child,child[:cut],child[:cut]+b'\xff'*20):
+                    q=Reader(raw,'37-cut',cut)
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    self.assertLessEqual(q.pos,cut);self.assertFalse(any(v.get('tag')==55 for v in q.records))
+                    results.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for nested in (b'\xff',weapon_vfx()):
+                body=tag37(nested,ext)
+                for missing in range(1,6):
+                    q=Reader(body[:-missing],'37-tail')
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    self.assertEqual(caught.exception.diagnostic['offset'],len(body)-(5 if missing==5 else 4))
+                    self.assertEqual(caught.exception.diagnostic['expected'],{'bytes':1 if missing==5 else 4})
+                    self.assertTrue(any(v['kind']=='anonymous-weapon-vfx-profile' for v in q.records))
+                    self.assertFalse(any(v.get('tag')==55 for v in q.records))
+            full=prefix(sequence(child))
+            for cut in range(len(full)):
+                row=event_prefix(full,source='37-limit',limit=cut);self.assertEqual(row['status'],'failed')
+                self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='37-limit',limit=cut))
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_37_headers_all_nine_payload_lengths_and_parent_counts(self):
+        for ext in (False,True):
+            child=tag37(weapon_vfx((b'x',)*9),ext);r=Reader(child,'37-invalid');r.action(0)
+            for span in r.ranges:
+                if span['kind'] not in ('member-header','count-i32'):continue
+                for invalid in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                    bad=bytearray(child);at=span['start']
+                    if span['kind']=='member-header':bad[at]=invalid
+                    else:struct.pack_into('<i',bad,at,invalid)
+                    q=Reader(bad,'37-invalid')
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    self.assertEqual(caught.exception.diagnostic['offset'],at);self.assertFalse(any(v.get('tag')==55 for v in q.records))
+            for count in (-2,2147483647):
+                with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+child+bytes(2))
+                self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(caught.exception.diagnostic['offset'],1)
 
     def test_15d_nullable_lists_end_at_second_target_without_final_dword(self):
         for items in (None,(),(b'\xff',),(keyword19b(None),),(keyword19b((None,b'',b'\xff\x80'),scalar_payload(b'expr')),)):

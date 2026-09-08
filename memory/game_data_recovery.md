@@ -623,6 +623,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_37_native.json` joins CharWeaponVisibleAction to a
+  header10 reader with three bytes, a nullable WeaponVFXOverrideConfig and
+  required byte/DWORD tails. The nested header18 consumes nine bytes followed
+  by nine independently nullable length-prefixed payloads. Null nested wrappers
+  retain both outer tail fields; weapon/VFX behavior and payload meaning remain unresolved.
   `scripts/game_data/buff_15d_native.json` joins ShelterAction to a header13
   reader with paired/scalar payloads, a nullable KeywordEnhanceEdit list and
   two terminal targets. The last target ends the record; unlike the separately
