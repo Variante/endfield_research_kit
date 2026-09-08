@@ -985,13 +985,15 @@ class Reader:
         self.take(width,'nested-'+kind+'-union-tag');return tag
 
     def selector_validator_profile(self):
-        start=self.pos;tag=self.nested_union_tag((1,4,5,9,10,11),'validator')
+        start=self.pos;tag=self.nested_union_tag((1,2,4,5,9,10,11),'validator')
         if tag is None:pass
         elif self.peek()==255:self.take(1,'null-nested-validator-wrapper')
         else:
-            self.header(2 if tag==1 else 3 if tag==4 else 1 if tag==11 else 0)
+            self.header(2 if tag in (1,2) else 3 if tag==4 else 1 if tag==11 else 0)
             if tag==1:
                 self.finder_profile();self.take(4,'anonymous-scalar32')
+            elif tag==2:
+                self.take(4,'anonymous-scalar32');self.take(4,'anonymous-scalar32')
             elif tag==4:
                 self.take(1,'anonymous-nonzero-byte');self.take(4,'anonymous-scalar32');self.scalar_payload()
             elif tag==11:self.query_profile()

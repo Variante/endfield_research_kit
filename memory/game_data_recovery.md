@@ -623,6 +623,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/validator_02_native.json` joins validator tag 2 to
+  CheckRaycastValidator: header2 followed by two required raw DWORDs.
+  Both native read contexts identify LayerMask without a nested object header;
+  scalar FF bytes cannot suppress the second value or later parent elements.
+  Actual raycast behavior and individual layer meanings remain unresolved.
   `scripts/game_data/validator_01_native.json` pins validator 1 independently
   of finder 1: member two consumes BuffFindSettings then a required DWORD.
   Reuse the bounded payload-list/query reader and preserve its null states;

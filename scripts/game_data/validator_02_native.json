@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      166876,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CheckRaycastValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_CheckRaycastValidator_DataForMemoryPackFormatter",
+      "Deserialize",
+      72320400
+    ],
+    [
+      166875,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CheckRaycastValidator_DataForMemoryPack",
+      "Deserialize",
+      72320496
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72320400,
+      "endRva": 72320493,
+      "sha256": "0BE7214D832E3D89CAFA36648C237CF59928AC6E484E43C95FB298BC16ED7166",
+      "boundary": "complete formatter initialization and forwarding"
+    },
+    {
+      "startRva": 72320496,
+      "endRva": 72320782,
+      "sha256": "2D3A564A2F455F5FFE98AE72606ACA9DCD79EB090F63BFDD7C7D703E7602A24B",
+      "boundary": "complete member2 reader normal RET and initialization rejoin"
+    },
+    {
+      "startRva": 66918239,
+      "endRva": 66918267,
+      "sha256": "BF8156FC9B8728A7EF3D0A04FAEE357A9A3F28EFAD7914679C4F39C8C539C2F2",
+      "boundary": "validator bounded dispatch table load"
+    },
+    {
+      "startRva": 66918564,
+      "endRva": 66918632,
+      "sha256": "D0A011E8D4765F8C02DFA11B0F80D3AC2EA3FB9A3189D55A4F15713899F3F3CA",
+      "boundary": "tag2 type test and existing-wrapper branch"
+    },
+    {
+      "startRva": 66918758,
+      "endRva": 66918789,
+      "sha256": "DF77794BF9E373504ADEF4A05D6C097FE14E9B66BD519452B2791EDF7EF88C20",
+      "boundary": "tag2 new-wrapper context, read and output rejoin"
+    },
+    {
+      "startRva": 67564224,
+      "endRva": 67564279,
+      "sha256": "609D1BD77A8D1CF669B9FB897604202B32226C2A3933E143C8A7E4335C7C7CD6",
+      "boundary": "LayerMask selected contiguous DWORD read and advance4 call"
+    },
+    {
+      "startRva": 46827968,
+      "endRva": 46828033,
+      "sha256": "1AC9D1CA96F68251C17CB7953A869C40B3C0CDD002EA1BE824D60A0757AF1BFD",
+      "boundary": "selected advance cursor and remaining-count updates through RET"
+    },
+    {
+      "startRva": 83770226,
+      "endRva": 83770239,
+      "sha256": "D934694190C77CCF874C5052A63D233D90E358A573C3BB6B6F28FBC912666C78",
+      "boundary": "existing-output rejoin"
+    },
+    {
+      "startRva": 83770295,
+      "endRva": 83770316,
+      "sha256": "E7C61C8DD5E458D496E3FA89DC59869FAD0E2115D9605C87687F8B98445ECFAB",
+      "boundary": "FF clear and rejoin"
+    },
+    {
+      "startRva": 83283018,
+      "endRva": 83283037,
+      "sha256": "8423FA7A11D0FCACBA7384B8D1BC1BCC952F2B101A86CB8F3F238CB388E7B26B",
+      "boundary": "DWORD helper ensure4 request and contiguous-path rejoin"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 66919396,
+      "endRva": 66919400,
+      "sha256": "610DF42672069D39034EEEBD29D88E654662A0D871D5586BC50A84B2A012E4C0",
+      "boundary": "validator2 dispatch entry"
+    },
+    {
+      "startRva": 217991344,
+      "endRva": 217991352,
+      "sha256": "46710D1B5C08B7CB0C629D5EB7FC53CCCEFE8882EDC64157FC42C2D5D2FC32F1",
+      "boundary": "validator2 type usage"
+    },
+    {
+      "startRva": 206847064,
+      "endRva": 206847072,
+      "sha256": "6EE560DFBECD8950C025473B0C860FD3E5B3595B88EC308B4EB75F5DA6A8F65F",
+      "boundary": "validator2 registered type slot"
+    },
+    {
+      "startRva": 220268152,
+      "endRva": 220268168,
+      "sha256": "1B415CC75C528B22439D54E550FE185FEBF444F81F4E6D3286D4AE99CCC5AC80",
+      "boundary": "validator2 class definition"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72320634,
+      "instructionHex": "488B15A762BF08",
+      "cellVa": 6661531944,
+      "usageRawHex": "A7CA0FC000000000",
+      "methodSpecIndex": 517459,
+      "methodSpec": [
+        428448,
+        -1,
+        1206
+      ],
+      "argumentRawHex": "02AB0000000000000000118000000000",
+      "typeDefinition": 43778,
+      "typeName": "UnityEngine.LayerMask",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72320670,
+      "instructionHex": "488B158362BF08",
+      "cellVa": 6661531944,
+      "usageRawHex": "A7CA0FC000000000",
+      "methodSpecIndex": 517459,
+      "methodSpec": [
+        428448,
+        -1,
+        1206
+      ],
+      "argumentRawHex": "02AB0000000000000000118000000000",
+      "typeDefinition": 43778,
+      "typeName": "UnityEngine.LayerMask",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66918758,
+      "instructionHex": "488B15BB2F0109",
+      "cellVa": 6660442408,
+      "usageRawHex": "C5C012C000000000",
+      "methodSpecIndex": 614498,
+      "methodSpec": [
+        428462,
+        -1,
+        24965
+      ],
+      "argumentRawHex": "D9590000000000000000120000000000",
+      "typeDefinition": 23001,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CheckRaycastValidator_DataForMemoryPack",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "validator2member2": [
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact validator tag2 dispatch, registered type usage and new-wrapper MethodSpec join CheckRaycastValidator_DataForMemoryPack. Its selected non-null reader requires header2 followed by two independent raw DWORDs. Both read contexts join UnityEngine.LayerMask; the selected helper reads four contiguous bytes and advances four, with no nested member header. FF/FE/80 within a DWORD are data and cannot suppress the second value. Null union and null wrapper remain separate, and a completed validator cannot omit subsequent parent elements or fields. Output constructor/setters consume no source members. Parent nullable counts retain their bounds/reserve checks; unknown nested tags stop before consumption. Static type identity is exact, selected read order direct and framing structural-only. Raycast behavior, individual layer meanings, live provider selection, complete allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
