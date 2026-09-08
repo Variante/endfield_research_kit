@@ -290,6 +290,10 @@ only.
   and settings returns, and render consumption before changing lab gates.
   Post receipts retain raw constructor/cache component pointers and producer
   bytes so offline validation can replay the joins and conditional call order.
+  The environment combined launcher arms two bounded post-observation windows
+  from its overview-entry triggers and waits for window closure before the
+  saved-entry prompts. Collection joins their triggers and memory charge to
+  the exact session; Python independently replays the raw window membership.
   Shutdown closes new admissions while retaining nested callbacks until accepted
   camera scopes drain. Patch drift or timeout retains the provider and fails
   evidence; callback code is pinned through process exit for late pass-through.
