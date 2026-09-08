@@ -714,6 +714,11 @@ def tag2c(first=b'\xff',second=b'\xff',nested=b'\xff',value=None,last=None):
             b'\xff'+payload(value)+b'\x80'*4+nested+b'\xfe'+payload(last))
 
 
+def tag15d(items=(),paired=b'\xff',first_scalar=b'\xff',last_scalar=b'\xff',first=b'\xff',second=b'\xff'):
+    return (b'\xfa\x5d\x01\x0d\xff'+bytes.fromhex('FFFFFFFF000000800000C07F')+b'\x80\xff'+paired+first_scalar+
+            struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+b'\xff'+last_scalar+first+second)
+
+
 def animator_param(raw4=b'\x00\x00\xc0\x7f',first=b'\xff'*4,flag=b'\xfe',last=b'\xff'*8):
     return b'\x05'+first+flag+raw4+last
 
@@ -822,6 +827,70 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['status'],'unsupported')
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
+
+    def test_15d_nullable_lists_end_at_second_target_without_final_dword(self):
+        for items in (None,(),(b'\xff',),(keyword19b(None),),(keyword19b((None,b'',b'\xff\x80'),scalar_payload(b'expr')),)):
+            for first,second in ((b'\xff',b'\xff'),(target(),b'\xff'),(b'\xff',target()),(target(),target(direction_value=b'\xff'))):
+                child=tag15d(items,paired=pair(None,b'wire',255),first_scalar=scalar_payload(None),last_scalar=scalar_payload(b''),first=first,second=second)
+                r=Reader(child+b'\xaa','15d');r.action(0);self.assertEqual(r.pos,len(child));self.assertEqual(r.records[-1]['tag'],349)
+                row=event_prefix(prefix(sequence(child,tag19b())),source='15d-next')
+                self.assertEqual(row['status'],'supported-prefix')
+                self.assertEqual([v['tag'] for v in row['completedRecords'] if 'tag' in v],[349,411])
+        # One null element leaves exactly byte + scalar + two target null wrappers.
+        child=tag15d((b'\xff',));r=Reader(child,'15d-minimum-reserve');r.action(0);self.assertEqual(r.pos,len(child))
+        for value in (None,(),(b'\xff',)):
+            child=tag15d(value);r=Reader(child+b'\xff'*4,'15d-end');r.action(0)
+            self.assertEqual(r.pos,len(child));self.assertLess(r.pos,r.limit)
+        for raw in (b'\xff',b'\xfa\x5d\x01\xff'):
+            r=Reader(raw+b'\xaa','15d-null');r.action(0);self.assertEqual(r.pos,len(raw))
+        # Short 5D remains the existing union93, not an alias of 349.
+        r=Reader(b'\x5d\xff','15d-short');r.action(0);self.assertEqual(r.records[-1]['tag'],93)
+
+    def test_15d_all_cuts_required_list_tail_and_parent_trailing(self):
+        child=tag15d((keyword19b((b'x',),scalar_payload(None)),),paired=pair(b'expr',b''),first=target(),second=target())
+        for cut in range(len(child)):
+            results=[]
+            for raw in (child,child[:cut],child[:cut]+b'\xff'*20):
+                q=Reader(raw,'15d-cut',cut)
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertLessEqual(q.pos,cut);self.assertFalse(any(v.get('tag')==349 for v in q.records))
+                results.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+            self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        for items in (None,(),(b'\xff',)):
+            body=tag15d(items)
+            for cut in range(len(body)-4,len(body)):
+                q=Reader(body,'15d-required-tail',cut)
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                # Positive counts fail at the reserve gate before entering the list.
+                self.assertEqual(caught.exception.diagnostic['offset'],21 if items else cut)
+                self.assertEqual(caught.exception.diagnostic['category'],'count-bounds' if items else 'truncated')
+                self.assertFalse(any(v.get('tag')==349 for v in q.records))
+        full=prefix(sequence(child))
+        for cut in range(len(full)):
+            row=event_prefix(full,source='15d-limit',limit=cut);self.assertEqual(row['status'],'failed')
+            self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='15d-limit',limit=cut))
+        for tail in (b'\x00',b'\xff'):
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_15d_nested_headers_counts_and_unknown_target(self):
+        child=tag15d((keyword19b((None,b'x'),scalar_payload(b'v')),),paired=pair(b'key',None),first=target());r=Reader(child,'15d-invalid');r.action(0)
+        for span in r.ranges:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for invalid in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=invalid
+                else:struct.pack_into('<i',bad,at,invalid)
+                q=Reader(bad,'15d-invalid')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],at);self.assertFalse(any(v.get('tag')==349 for v in q.records))
+        unknown=target(selector=b'\x03\x17'+bytes(8));q=Reader(tag15d(None,second=unknown),'15d-unknown')
+        with self.assertRaises(Unsupported) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['actual'],23);self.assertEqual(q.target_depth,0)
+        self.assertFalse(any(v.get('tag')==349 for v in q.records))
+        for count in (-2,2147483647):
+            with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+child+bytes(2))
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(caught.exception.diagnostic['offset'],1)
 
     def test_14a_independent_null_objects_payloads_and_distinct_short_tag(self):
         profiles=(b'\xff',animator_param(),animator_param(b'\x00\x00\x80\xff',bytes(4),b'\x00',bytes(8)))

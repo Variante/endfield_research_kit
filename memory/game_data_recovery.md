@@ -623,6 +623,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_15d_native.json` joins ShelterAction to a header13
+  reader with paired/scalar payloads, a nullable KeywordEnhanceEdit list and
+  two terminal targets. The last target ends the record; unlike the separately
+  pinned header14 enhancement actions, no final DWORD follows. The list reserves
+  four minimum tail bytes. Shelter behavior and keyword meaning remain unresolved.
   `scripts/game_data/buff_14a_native.json` joins SetAnimatorParamAction to a
   header8 reader with a byte, two independently nullable AnimatorParamAction
   objects and a required signed-length payload. Each nested header5 consumes
