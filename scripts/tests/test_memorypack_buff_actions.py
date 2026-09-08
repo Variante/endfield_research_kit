@@ -705,6 +705,52 @@ def tag128(effect=b'\xff',calc=b'\xff',last=b'\xff'):
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_164_fixed_record_null_wrapper_and_no_following_field(self):
+        child=b'\xfa\x64\x01\x04\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)
+        reader=Reader(child,'164.bin');reader.action(0)
+        self.assertEqual(reader.pos,17)
+        self.assertEqual(reader.records[-1]['tag'],356)
+        self.assertEqual(sequence_frame(sequence(child))[-1]['end'],24)
+        for raw in (b'\xfa\x64\x01\xff',b'\xff'):
+            reader=Reader(raw,'164-null.bin');reader.action(0);self.assertEqual(reader.pos,len(raw))
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='164-next.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['consumedEnd'],36)
+        self.assertTrue(any(r.get('tag')==356 for r in row['completedRecords']))
+
+    def test_164_every_cut_hard_limit_and_trailing(self):
+        child=b'\xfa\x64\x01\x04'+b'\xff'*13
+        for n in range(len(child)):
+            reader=Reader(child[:n],'164-cut.bin')
+            with self.subTest(n=n),self.assertRaises(FrameError):reader.action(0)
+            self.assertFalse(any(r.get('tag')==356 for r in reader.records))
+        full=prefix(sequence(child))
+        for n in range(len(full)):
+            row=event_prefix(full,source='164-limit.bin',limit=n)
+            self.assertEqual(row['status'],'failed')
+            self.assertLessEqual(row['consumedEnd'],n)
+            self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='164-limit.bin',limit=n))
+        with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+b'x')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_164_wrong_header_parent_count_and_distinct_tag(self):
+        child=b'\xfa\x64\x01\x04'+bytes(13)
+        for header in (0,3,5,254):
+            bad=child[:3]+bytes([header])+child[4:]
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(bad),source='164-header.bin')
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']), (8,header))
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+        for count in (-2,2147483647):
+            bad=b'\x03'+struct.pack('<i',count)+child+bytes(2)
+            with self.assertRaises(FrameError) as caught:sequence_frame(bad,source='164-count.bin')
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+            self.assertEqual(caught.exception.diagnostic['offset'],1)
+        # Dropping the high tag byte must not alias the recovered extended action.
+        row=event_prefix(prefix(sequence(b'\x64'+child[3:])),source='164-alias.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['diagnostic']['actual'],100)
+        self.assertEqual(row['consumedEnd'],19)
+
     def test_128_config_calculations_and_terminal_target(self):
         calculations=(b'\xff',b'\x00\xff',b'\x00\x01'+scalar_payload(None),
                       b'\x02\x03\xfe'+scalar_payload(b'')+scalar_payload(),

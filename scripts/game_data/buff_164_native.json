@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123066,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillAffixAction_DataForMemoryPack+Beyond_Gameplay_Core_SkillAffixAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      70905520
+    ],
+    [
+      123065,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillAffixAction_DataForMemoryPack",
+      "Deserialize",
+      70905616
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70905520,
+      "endRva": 70905613,
+      "sha256": "FD020FC49855E7AB3E4077D5B985E27B302309DAC1F5675015A482E8C6F9E0E3",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 70905616,
+      "endRva": 70905962,
+      "sha256": "D625EBB02BBFF07DBE3B23CA1FFE2E2896A63B95C9811D8A0A3642F5F0E638A3",
+      "boundary": "header4 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83601196,
+      "endRva": 83601209,
+      "sha256": "7F4EF8B47795D363CBA1D1B8B043930326BD6D364406B1F572141FB914B44816",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83601265,
+      "endRva": 83601286,
+      "sha256": "6200B9CB4E6D777DB80499337DD30E6B9C6AF5CD81E688AC8E7B78FE91F5E8D6",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70905788,
+      "instructionHex": "488B1565AECE08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member4": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected union dispatch and module/token joins identify SkillAffixAction. Header4 consumes only the common byte and three DWORDs. The Priority context belongs to the first DWORD and adds no wire header. There are no additional payloads, nested objects or collection counts. Preserve arbitrary scalar/byte bits, independent FF union and FF wrapper, the full extended union tag 0x164, and the required final DWORD. Normal extended records are 17 bytes; null wrappers are four. Static identity is exact and selected source order direct; framing remains structural-only. Skill-affix behavior, authored field meanings, live formatter choice, complete refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

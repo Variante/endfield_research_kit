@@ -688,6 +688,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   profiles; unknown calculation variants stop before their tag, and the final
   target remains required after both children complete. Poise and calculation
   meanings stay unresolved independently of this framing.
+  `scripts/game_data/buff_164_native.json` pins header-four SkillAffixAction:
+  only the common byte and three DWORDs, with no additional nested fields.
+  Extended normal records consume seventeen bytes; FF wrappers consume four.
+  The final DWORD remains required, while skill-affix meanings stay unresolved.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity
