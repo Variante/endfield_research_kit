@@ -701,6 +701,11 @@ build and collection procedure.
   alignment and matched-clock camera comparisons isolate timing
   and input-state differences; serialized entry offsets are not recorded input
   history. Keep camera input replay separate from Animator clock recovery.
+  Compare actual simulation timestamps at the reference sampling rate, with
+  contiguous temporal holdouts and neighboring frames excluded from fitting.
+  Interleaved holdouts against sparsely saved renders can select one sampling
+  phase and misstate motion agreement. Image alignment remains separate from
+  authenticated runtime clock evidence.
   CharInfo caches camera groups per character template while rebuilding model
   items separately. Camera disable and explicit gyroscope release have distinct
   native paths; join activation/release and tween identity before choosing
