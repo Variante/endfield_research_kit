@@ -240,9 +240,12 @@ only.
   open, as do the inactive shader branches and RT1.
   The retained corrected Unity draw matches active material values and screen-UV
   transport but differs in global mip bias from the native opening packets.
-  Isolated native replay confirms that scalar affects their pixels. Recover the
-  selected camera's material and dynamic-resolution/AA bias before replacing
-  the generic authored-camera fallback; another camera's receipt is insufficient.
+  Isolated native replay confirms that scalar affects their pixels. The native
+  unpatched TAAU post phase resets material bias and caps it at
+  `log2(renderingScale) - 1`; authored zero is not a runtime invariant. Join its
+  selected camera, AA/scale gates and post-to-Update ordering through global
+  buffer consumption before replacing the fallback. Another camera's receipt
+  is insufficient; the writer does not establish its selected-frame execution.
   Public Unity particle instance records require their own stream-layout
   contract. Refract selects its Custom1 record; BaseV2 selects Custom1 or
   Custom1+Custom2 and loads Custom1 from the procedural buffer. Both select
