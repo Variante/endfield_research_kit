@@ -231,8 +231,8 @@ only.
   Its blend-as-alpha mode uses neutral white for the scene RGB multiplier and
   the texture's red channel for alpha. It does not invert texture RGB; that
   mistranscription produces dark refractive mesh fragments.
-  Offline hardware replay of the retained original first draw reproduces its
-  complete RT0 exactly. This proves packet sufficiency for that color output,
+  Offline hardware replays of both retained original opening draws reproduce
+  their complete RT0 outputs exactly. This proves packet sufficiency for those color outputs,
   not reconstructed Unity fidelity or RT1 parity; preserve those boundaries.
   Public Unity particle instance records require their own stream-layout
   contract. Refract selects its Custom1 record; BaseV2 selects Custom1 or
