@@ -683,7 +683,73 @@ def tag101(value=0xffffffff,last=255):
     return b'\xfa\x01\x01\x06\xff'+bytes.fromhex('FFFFFFFF000000800000C07F')+struct.pack('<I',value)+bytes([last])
 
 
+def tagc7(first=b'\xff',second=b'\xff',value=None,curve=b'\xff',last=255,extended=False):
+    return ((b'\xfa\xc7\x00' if extended else b'\xc7')+b'\x0c\xff'+bytes.fromhex('FFFFFFFF000000800000C07F')+
+            b'\xff'*4+first+payload(value)+curve+b'\x00\x00\xc0\x7f'+second+b'\xff'*4+bytes([last]))
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tagc7_targets_curve_arrays_and_raw_gameplay_tag(self):
+        for curve in (b'\xff',curve24(None),curve24(),curve24((bytes(range(28)),))):
+            for first,second in ((b'\xff',target()),(target(),b'\xff'),(b'\xff',b'\xff')):
+                for extended in (False,True):
+                    child=tagc7(first,second,b'\xff\x00wire',curve,128,extended);r=Reader(child,'c7');r.action(0)
+                    self.assertEqual(r.pos,len(child))
+                    self.assertIn(dict(start=0,end=len(child),kind='union',tag=199),r.records)
+                    self.assertEqual(sum(v['kind']=='anonymous-curve-profile' for v in r.records),1)
+                    result=event_prefix(prefix(sequence(child,b'\x59')),source='c7.bin')
+                    self.assertEqual(result['diagnostic']['offset'],19+len(child))
+                    self.assertEqual(result['diagnostic']['actual'],89);self.assertFalse(result['wholeSchemaExact'])
+        for value in (None,b''):
+            for last in (0,1,127,128,255):
+                child=tagc7(value=value,last=last);r=Reader(child,'c7-null');r.action(0)
+                self.assertEqual(r.pos,len(child));self.assertEqual(len(child),35)
+
+    def test_tagc7_all_cuts_limits_null_wrapper_and_trailing(self):
+        for child in (tagc7(),tagc7(target(),target(),b'raw',curve24((bytes(28),))),b'\xc7\xff',b'\xfa\xc7\x00\xff'):
+            for cut in range(len(child)):
+                values=[]
+                for data in (child,child[:cut],child[:cut]+b'\xff'*20):
+                    r=Reader(data,'c7-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut);self.assertFalse(any(v.get('tag')==199 for v in r.records))
+                    values.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(values[0],values[1]);self.assertEqual(values[0],values[2])
+            for tail in (b'\xff',b'\x00'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tagc7_bad_header_payload_curve_count_and_required_tail(self):
+        for header in (0,11,13,254):
+            child=bytearray(tagc7());child[1]=header;r=Reader(child,'c7-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],1)
+            self.assertEqual(caught.exception.diagnostic['expected'],12)
+        child=tagc7(curve=curve24((bytes(28),)))
+        for offset in (20,33):
+            for count in (-2,0x7fffffff):
+                r=Reader(child[:offset]+struct.pack('<i',count)+child[offset+4:],'c7-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],offset)
+                self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+                self.assertFalse(any(v.get('tag')==199 for v in r.records))
+        for child in (tagc7(),tagc7(curve=curve24(None)),tagc7(curve=curve24())):
+            r=Reader(child[:-1],'c7-tail')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],len(child)-1)
+            self.assertFalse(any(v.get('tag')==199 for v in r.records))
+
+    def test_tagc7_unknown_nested_stops_preserve_completed_curve(self):
+        unknown=b'\x0d\xff'+payload(None)+bytes(6)+payload(None)+b'\x03\x17'
+        for child,start in ((tagc7(first=unknown),19),(tagc7(second=unknown),29)):
+            offset=start+len(unknown)-1
+            r=Reader(child,'c7-unknown')
+            with self.assertRaises(Unsupported) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],offset)
+            self.assertEqual(r.pos,offset)
+            self.assertFalse(any(v.get('tag')==199 for v in r.records))
+            if start==29:self.assertTrue(any(v['kind']=='anonymous-curve-profile' for v in r.records))
+
     def test_tag101_fixed_width_arbitrary_values_and_next_unknown(self):
         for value in (0,0x80000000,0x7fc00000,0xffffffff):
             for last in (0,1,127,128,255):

@@ -670,6 +670,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   required byte. Priority and SpellAbnormalType contexts add no wire headers;
   arbitrary values remain valid structural bytes, without boolean or spell
   behavior claims. Preserve the complete extended union identity.
+  `scripts/game_data/buff_c7_native.json` pins header-twelve HitStop:
+  common prefix, DWORD, target, payload, curve, raw4, target, raw GameplayTag
+  DWORD and byte. GameplayTag has no object header at this call. Curve header3
+  owns raw8 and a nullable raw28-element array; keep independent null states,
+  target unknown stops and required tail, without hit-stop behavior claims.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity

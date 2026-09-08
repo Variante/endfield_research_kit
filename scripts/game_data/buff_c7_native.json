@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120582,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_HitStopAction_DataForMemoryPack+Beyond_Gameplay_Core_HitStopAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      65267920
+    ],
+    [
+      120581,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_HitStopAction_DataForMemoryPack",
+      "Deserialize",
+      65268016
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 65267920,
+      "endRva": 65268013,
+      "sha256": "2A68F941AE66C36F1AFB1AAA7800A48691EC732D3F789BB4D9ABFD5A4F732729",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 65268016,
+      "endRva": 65268723,
+      "sha256": "424F90BCC065052C75DEE60CB9F059F5D361B272086920E6D7ED8338812984EF",
+      "boundary": "header12 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83005720,
+      "endRva": 83005733,
+      "sha256": "B3360B020B10AA9327C511B76999285A0B6FFE43DAFC56CD823AEA468F030655",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83005789,
+      "endRva": 83005810,
+      "sha256": "5B2FB9A76218DCFF7C3A328E0851679F8CF5103279B09ACF79D6423967FF9D85",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 65268188,
+      "instructionHex": "488B1545B42409",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 65268294,
+      "instructionHex": "488B1573112609",
+      "cellVa": 6661209024,
+      "usageRawHex": "CFE712C000000000",
+      "methodSpecIndex": 619495,
+      "methodSpec": [
+        428448,
+        -1,
+        42487
+      ],
+      "argumentRawHex": "18250000000000000000118000000000",
+      "typeDefinition": 9496,
+      "typeName": "Beyond.Gameplay.Core.HitStopAction+AffectType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 65268334,
+      "instructionHex": "488B15932C2209",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 65268409,
+      "instructionHex": "488B1588E92A09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 65268484,
+      "instructionHex": "488B15FD2B2209",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 65268525,
+      "instructionHex": "488B1514511B09",
+      "cellVa": 6660504648,
+      "usageRawHex": "99CA0FC000000000",
+      "methodSpecIndex": 517452,
+      "methodSpec": [
+        428448,
+        -1,
+        816
+      ],
+      "argumentRawHex": "A22D0000000000000000118000000000",
+      "typeDefinition": 11682,
+      "typeName": "Beyond.Gameplay.Core.GameplayTag",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member12": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target-profile",
+      "byte-payload",
+      "curve",
+      "scalar32",
+      "target-profile",
+      "scalar32",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected union dispatch and module/token joins identify HitStopAction. Header12 consumes the common byte/three DWORD prefix, another DWORD, TargetSettings, byte payload, AnimationCurve, raw four-byte scalar, another TargetSettings, raw GameplayTag DWORD and required byte. The GameplayTag call uses helper3C63FC0 pinned in buff_fe_native.json, not the header1 wrapper in buff_c5_native.json. Exact TargetSettings contexts reuse the bounded target profile; the AnimationCurve context reuses buff_24_native.json: FF or header3, raw8, signed nullable count and count raw28 elements without element headers. The MOVSS helper consumes four bytes regardless of output type. Preserve independent target/curve nulls, null/empty payload and curve array, arbitrary scalar bits and raw byte values. Unknown nested shapes stop at their first byte; incomplete actions never become completed records. Evidence is exact static identity, direct selected source order and structural-only framing. Hit-stop behavior, target ownership, curve/byte meanings, live provider choice, complete refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
