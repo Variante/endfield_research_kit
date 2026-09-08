@@ -710,6 +710,53 @@ def tagcf(nested=b'\xff',value=None,raw8=b'\xff'*8):
 
 
 class BuffActionsTests(unittest.TestCase):
+    def test_12b_fixed_record_and_distinct_short_action(self):
+        child=b'\xfa\x2b\x01\x04\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)
+        reader=Reader(child,'12b.bin');reader.action(0)
+        self.assertEqual(reader.pos,17)
+        self.assertEqual(reader.records[-1]['tag'],299)
+        row=event_prefix(prefix(sequence(child,tag2b())),source='12b-short.bin')
+        self.assertEqual(row['status'],'supported-prefix')
+        self.assertEqual([r['tag'] for r in row['completedRecords'] if 'tag' in r],[299,43])
+        for raw in (b'\xfa\x2b\x01\xff',b'\xff'):
+            reader=Reader(raw,'12b-null.bin');reader.action(0);self.assertEqual(reader.pos,len(raw))
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='12b-next.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['consumedEnd'],36)
+        self.assertTrue(any(r.get('tag')==299 for r in row['completedRecords']))
+
+    def test_12b_every_cut_hard_limit_and_trailing(self):
+        child=b'\xfa\x2b\x01\x04'+b'\xff'*13
+        for n in range(len(child)):
+            reader=Reader(child[:n],'12b-cut.bin')
+            with self.subTest(n=n),self.assertRaises(FrameError):reader.action(0)
+            self.assertFalse(any(r.get('tag')==299 for r in reader.records))
+        full=prefix(sequence(child))
+        for n in range(len(full)):
+            row=event_prefix(full,source='12b-limit.bin',limit=n)
+            self.assertEqual(row['status'],'failed')
+            self.assertLessEqual(row['consumedEnd'],n)
+            self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='12b-limit.bin',limit=n))
+        with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+b'x')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_12b_wrong_header_parent_count_and_missing_final_dword(self):
+        child=b'\xfa\x2b\x01\x04'+bytes(13)
+        for header in (0,3,5,254):
+            bad=child[:3]+bytes([header])+child[4:]
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(bad),source='12b-header.bin')
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']), (8,header))
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+        for count in (-2,2147483647):
+            bad=b'\x03'+struct.pack('<i',count)+child+bytes(2)
+            with self.assertRaises(FrameError) as caught:sequence_frame(bad,source='12b-count.bin')
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+            self.assertEqual(caught.exception.diagnostic['offset'],1)
+        reader=Reader(child[:-4],'12b-last.bin')
+        with self.assertRaises(FrameError) as caught:reader.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],13)
+        self.assertFalse(any(r.get('tag')==299 for r in reader.records))
+
     def test_cf_vector_bits_target_and_required_payload(self):
         for raw8 in (bytes(8),bytes.fromhex('0000C07F000080FF'),b'\xff'*8):
             for value in (None,b'',b'\xff\xfe\x00payload'):

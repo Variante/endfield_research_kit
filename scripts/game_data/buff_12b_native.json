@@ -1,0 +1,71 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122240,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RefreshBuffAttrModifierValue_DataForMemoryPack+Beyond_Gameplay_Core_RefreshBuffAttrModifierValue_DataForMemoryPackFormatter",
+      "Deserialize",
+      70386704
+    ],
+    [
+      122239,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RefreshBuffAttrModifierValue_DataForMemoryPack",
+      "Deserialize",
+      70386800
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70386704,
+      "endRva": 70386797,
+      "sha256": "1A4F4BD96D046BDCECE2B970E24B1ECB7CE6211B5F373931B2AAD097B9D6D54D",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 70386800,
+      "endRva": 70387146,
+      "sha256": "92BFB9FAEC7882D2388ACD0EB879C2B909EE793D6C2B9919672C3DE68DA219D2",
+      "boundary": "header4 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83555778,
+      "endRva": 83555791,
+      "sha256": "ABB563E8543B0617B81F209A6C13811427FF5D7765D3B5650BB8B6184D0E03F8",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83555847,
+      "endRva": 83555868,
+      "sha256": "239FA534151A043B7C32439E74F9416F8416E15E12FDD2C22A0D70E2E3AC994C",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70386972,
+      "instructionHex": "488B150599D608",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member4": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected union dispatch and module/token joins identify RefreshBuffAttrModifierValue. Header4 consumes only the common byte and three DWORDs. The Priority context belongs to the first DWORD and adds no wire header. There are no additional payloads, nested objects or collection counts. Preserve arbitrary scalar/byte bits, independent FF union and FF wrapper, the full extended union tag 0x12B, and the required final DWORD. Normal extended records are 17 bytes; null wrappers are four. Static identity is exact and selected source order direct; framing remains structural-only. Attribute refresh behavior, authored field meanings, live formatter choice, complete refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
