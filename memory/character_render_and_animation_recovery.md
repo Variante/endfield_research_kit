@@ -238,6 +238,11 @@ only.
   outputs with native constants and VS varyings. This isolates that active
   arithmetic; actual Unity varying/binding transport and particle phase remain
   open, as do the inactive shader branches and RT1.
+  The retained corrected Unity draw matches active material values and screen-UV
+  transport but differs in global mip bias from the native opening packets.
+  Isolated native replay confirms that scalar affects their pixels. Recover the
+  selected camera's material and dynamic-resolution/AA bias before replacing
+  the generic authored-camera fallback; another camera's receipt is insufficient.
   Public Unity particle instance records require their own stream-layout
   contract. Refract selects its Custom1 record; BaseV2 selects Custom1 or
   Custom1+Custom2 and loads Custom1 from the procedural buffer. Both select
