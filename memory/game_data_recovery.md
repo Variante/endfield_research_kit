@@ -485,6 +485,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   `buff_14a_native.json`; identical contexts do not merge source ranges or
   remove intervening fields. Preserve all floating bits and the final DWORD
   even with null children. Weapon animation and parameter roles remain unresolved.
+  `scripts/game_data/buff_20_native.json` pins BreakoutAction to a member-six
+  order: common prefix, signed-length byte payload and terminal DWORD. Null
+  and empty payloads retain that DWORD; neither output setter adds a nested
+  record. The final static context joins AbnormalState without proving its
+  value meanings or runtime effect. Keep payload encoding and breakout behavior
+  unresolved, and preserve the opaque physical remainder after root framing.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

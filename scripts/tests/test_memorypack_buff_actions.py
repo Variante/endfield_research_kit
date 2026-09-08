@@ -925,11 +925,92 @@ def tag36(children=(b'\xff',b'\xff',b'\xff'),*,extended=False,raw4=b'\xff\x00\xc
             children[0]+children[1]+raw4+b'\x80'+children[2]+b'\xff'*4)
 
 
+
+def tag20(value=None,*,extended=False,bits=0xffffffff):
+    return ((b'\xfa\x20\x00' if extended else b'\x20')+b'\x06\x80'+
+            struct.pack('<III',0xffffffff,0x80000000,0x01234567)+payload(value)+struct.pack('<I',bits))
+
+
 class BuffActionsTests(unittest.TestCase):
 
 
 
 
+
+
+    def test_20_payload_states_terminal_bits_and_null_wrappers(self):
+        for extended in (False,True):
+            for value in (None,b'',b'\xff\x00\x80',b'wire'):
+                for bits in (0,0xffffffff,0x80000000,0x7fc00000):
+                    data=tag20(value,extended=extended,bits=bits)
+                    r=Reader(data,'20-normal');r.action(0)
+                    self.assertEqual(r.pos,23+2*extended+len(value or b''))
+                    self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=32))
+                    self.assertIn(dict(start=15+2*extended,end=len(data)-4,kind='anonymous-byte-payload',isNull=value is None),r.records)
+                    self.assertEqual(r.ranges[-1],dict(start=len(data)-4,end=len(data),kind='anonymous-scalar32'))
+        for data in (b'\xff',b'\x20\xff',b'\xfa\x20\x00\xff'):
+            r=Reader(data,'20-wrapper');r.action(0);self.assertEqual(r.pos,len(data))
+
+    def test_20_all_cuts_three_limits_and_explicit_tails(self):
+        for extended in (False,True):
+            for value in (None,b'',b'\xff\x00\x80'):
+                data=tag20(value,extended=extended)
+                for cut in range(len(data)):
+                    outcomes=[]
+                    for raw in (data[:cut],data,data[:cut]+b'\xff'*20):
+                        r=Reader(raw,'20-cut',cut)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,cut)
+                        self.assertFalse(any(q.get('tag')==32 for q in r.records))
+                        outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+                for tail in (b'\xff',bytes(4)):
+                    for limit in (len(data),len(data+tail)):
+                        r=Reader(data+tail,'20-tail',limit);r.action(0);self.assertEqual(r.pos,len(data))
+                    with self.assertRaises(FrameError) as caught:sequence_frame(sequence(data)+tail)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_20_exact_header_length_and_terminal_diagnostics(self):
+        for extended in (False,True):
+            for value in (None,b'',b'\xff\x00\x80'):
+                data=tag20(value,extended=extended);po=15+2*extended
+                for at in (po,len(data)-4):
+                    for available in range(4):
+                        r=Reader(data,'20-field',at+available)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertEqual(caught.exception.diagnostic,dict(source='20-field',category='truncated',offset=at,expected={'bytes':4},actual={'remaining':available}))
+                        self.assertEqual(r.pos,at)
+                for n in (-2,2147483647):
+                    raw=data[:po]+struct.pack('<i',n)+data[po+4:];r=Reader(raw,'20-length')
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertEqual(caught.exception.diagnostic,dict(source='20-length',category='count-bounds',offset=po,expected={'minimum':-1,'maximum':len(data)-po-4},actual=n))
+                    self.assertEqual(r.pos,po+4)
+                at=1+2*extended;r=Reader(data[:at]+b'\x2a'+data[at+1:],'20-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='20-header',category='member-count',offset=at,expected=6,actual=42))
+                self.assertEqual(r.pos,at)
+
+    def test_20_parent_counts_tails_and_unknown_next_union(self):
+        data=tag20(b'\xff\x00\x80')
+        for count in (-2,2147483647):
+            raw=b'\x03'+struct.pack('<i',count)+data+bytes(2);r=Reader(raw,'20-parent-count')
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='20-parent-count',category='count-bounds',offset=1,expected={'minimum':-1,'maximum':len(data)},actual=count))
+            self.assertEqual(r.pos,5)
+        parent=sequence(data)
+        for missing in (1,2):
+            r=Reader(parent,'20-parent-tail',len(parent)-missing)
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            at=len(parent)-missing
+            self.assertEqual(caught.exception.diagnostic,dict(source='20-parent-tail',category='truncated',offset=at,expected={'bytes':1},actual={'remaining':0}))
+            self.assertEqual(r.pos,at)
+        r=Reader(sequence(data,b'\xfa\xa0\x01'),'20-next')
+        with self.assertRaises(Unsupported) as caught:r.sequence()
+        self.assertEqual((caught.exception.diagnostic['actual'],r.pos),(416,5+len(data)))
+        self.assertEqual([q['tag'] for q in r.records if q['kind']=='union'],[32])
+        r=Reader(b'\xfa\x20\x01'+data[1:],'20-distinct')
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertFalse(any(q.get('tag')==32 for q in r.records))
 
     def test_36_three_independent_profiles_null_combinations_and_raw_bits(self):
         profiles=[animator_param(raw4=struct.pack('<I',bits),first=struct.pack('<I',index),flag=bytes([255-index]),last=struct.pack('<II',index+11,index+99))

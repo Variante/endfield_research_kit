@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      118823,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BreakoutAction_DataForMemoryPack+Beyond_Gameplay_Core_BreakoutAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      72243456
+    ],
+    [
+      118822,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BreakoutAction_DataForMemoryPack",
+      "Deserialize",
+      72243552
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72243456,
+      "endRva": 72243549,
+      "sha256": "18F23B0D9A8E1D932DB4555B5397CF91D900F3983FF4B35E08481AA5EC068D6E",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 72243552,
+      "endRva": 72243988,
+      "sha256": "FCC4ED01F728ECCBEC14EACE59D39790026DBCFF6857BCF82E0E49E1AC26E218",
+      "boundary": "header6 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83761238,
+      "endRva": 83761251,
+      "sha256": "B5387EAD4FFC0BD44C5AC72CFD127AEC8CCA51697E0134F94C4DA9865EBA2466",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83761307,
+      "endRva": 83761328,
+      "sha256": "9C08B061E24E8502306CD4EDF2290190B5480B7B8F2CE484B50BCA37C419FB91",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72243724,
+      "instructionHex": "488B151544BA08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72243864,
+      "instructionHex": "488B1521C4BA08",
+      "cellVa": 6661152448,
+      "usageRawHex": "39E712C000000000",
+      "methodSpecIndex": 619420,
+      "methodSpec": [
+        428448,
+        -1,
+        42424
+      ],
+      "argumentRawHex": "2B240000000000000000118000000000",
+      "typeDefinition": 9259,
+      "typeName": "Beyond.Gameplay.Core.BreakoutAction+AbnormalState",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact union32 dispatch and registered type/module/token joins identify BreakoutAction_DataForMemoryPack. Header6 reads the common BYTE/three-DWORD prefix followed by one bounded signed-length byte payload and one terminal DWORD. Payload lengths -1, 0 and positive values do not remove the required terminal DWORD. The two output setters consume no source bytes. Short20 and FA2000 identify union32; nonnull records have minimum lengths23/25. Null union FF and 20FF/FA2000FF wrapper states remain distinct. Complete formatter/reader/init/existing-output/FF windows exclude adjacent setters and error bodies. Static identity is exact, source order direct and framing structural-only. Breakout behavior, enum value meanings, payload encoding, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
