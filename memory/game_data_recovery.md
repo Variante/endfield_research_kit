@@ -520,6 +520,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   target profile; a null target does not remove the final four source bytes.
   The last static context identifies ProfessionCategoryMask, but its bit
   meanings and runtime profession checks remain unresolved.
+  `scripts/game_data/buff_161_native.json` joins ShowSquadTipsAction to a
+  member-five reader: common prefix and one signed-length byte payload.
+  Null and empty payloads stay distinct; no terminal scalar follows them.
+  The extended union identity remains separate from the short low-byte tag.
+  Payload encoding, text/identifier role and actual tip behavior remain unresolved.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

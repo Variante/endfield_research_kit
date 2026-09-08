@@ -1,0 +1,72 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123026,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ShowSquadTipsAction_DataForMemoryPack+Beyond_Gameplay_Core_ShowSquadTipsAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      73025472
+    ],
+    [
+      123025,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ShowSquadTipsAction_DataForMemoryPack",
+      "Deserialize",
+      73025568
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73025472,
+      "endRva": 73025561,
+      "sha256": "A5E65501FCE2E5AAD9CB2C61465B47DFFE31B3C43D1717EAA06A956722E2D3BC",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 73025568,
+      "endRva": 73025931,
+      "sha256": "3B0FC03EDB697DD8F63761BBE0E000B294B7330CF444510555819FA8FF559429",
+      "boundary": "header5 initialization and normal return"
+    },
+    {
+      "startRva": 83864876,
+      "endRva": 83864889,
+      "sha256": "6F34E8F9B967FF5EC8A1EF540E3E79DDDA19512F15EEF0B685396C60BF1D5AA8",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83864945,
+      "endRva": 83864966,
+      "sha256": "DAB5DE8FA907A2953CD7A8366DD7F60FB27B94D29CFFC6C14EDC36173023FC8A",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 73025791,
+      "instructionHex": "488B152255AE08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact extended union353 dispatch and registered type/module/token joins identify ShowSquadTipsAction_DataForMemoryPack. Header5 reads common BYTE/three DWORD followed by a signed-length byte payload; null and empty payloads have distinct counts and neither has an additional terminal field. The sole Priority context belongs to the first DWORD. FA6101 minimum nonnull length is21 bytes; short61 andFA6100 select a different union. FF union and FF wrapper remain separate forms. Formatter/reader initialization and existing-output/FF rejoins exclude adjacent setters and error bodies. Output setters add no source fields. Static identity is exact, source order direct and framing structural-only. Payload encoding, authored text/identifier role, squad-tip behavior, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

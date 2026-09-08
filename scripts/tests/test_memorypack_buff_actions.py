@@ -974,7 +974,85 @@ def tag6f(value=b'\xff',*,extended=False,bits=0xffffffff):
     return (b'\xfa\x6f\x00' if extended else b'\x6f')+b'\x06\x80'+bytes.fromhex('FFFFFFFF0000008067452301')+value+struct.pack('<I',bits)
 
 
+
+def tag161(value=None):
+    return bytes.fromhex('FA61010580FFFFFFFF0000008067452301')+struct.pack('<i',-1 if value is None else len(value))+(value or b'')
+
 class BuffActionsTests(unittest.TestCase):
+
+    def test_161_payload_states_and_exact_extents(self):
+        for value in (None,b'',b'\x00',b'\xff\x00\x80',bytes(range(256))):
+            data=tag161(value);r=Reader(data,'161-normal');r.action(0)
+            self.assertEqual(r.pos,21+len(value or b''))
+            self.assertEqual(struct.unpack_from('<i',data,17)[0],-1 if value is None else len(value))
+            self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=353))
+            cursor=0
+            for span in r.ranges:self.assertEqual(span['start'],cursor);cursor=span['end']
+            self.assertEqual(cursor,len(data))
+            for tail in (b'\x00',b'\xff',bytes(5)):
+                for limit in (len(data),len(data+tail)):
+                    r=Reader(data+tail,'161-tail',limit);r.action(0);self.assertEqual(r.pos,len(data))
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(data)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        for data in (b'\xff',bytes.fromhex('FA6101FF')):
+            r=Reader(data,'161-null');r.action(0);self.assertEqual(r.pos,len(data))
+
+    def test_161_every_cut_in_three_limits(self):
+        for value in (None,b'',b'\xff\x00\x80',bytes(range(32))):
+            data=tag161(value)
+            for cut in range(len(data)):
+                outcomes=[]
+                for raw in (data[:cut],data,data[:cut]+b'\xff\x00'*30):
+                    r=Reader(raw,'161-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut);self.assertFalse(any(q.get('tag')==353 for q in r.records))
+                    outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+
+    def test_161_length_header_and_distinct_union_diagnostics(self):
+        data=tag161(b'\xff\x00\x80')
+        for n in (-2,2147483647):
+            raw=data[:17]+struct.pack('<i',n)+data[21:];r=Reader(raw,'161-count')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='161-count',offset=17,category='count-bounds',expected={'minimum':-1,'maximum':3},actual=n))
+            self.assertEqual(r.pos,21)
+        for available in range(4):
+            r=Reader(data,'161-length',17+available)
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='161-length',offset=17,category='truncated',expected={'bytes':4},actual={'remaining':available}));self.assertEqual(r.pos,17)
+        for available in range(3):
+            r=Reader(data,'161-body',21+available)
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='161-body',offset=17,category='count-bounds',expected={'minimum':-1,'maximum':available},actual=3));self.assertEqual(r.pos,21)
+        r=Reader(data[:3]+b'\x2a'+data[4:],'161-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,dict(source='161-header',offset=3,category='member-count',expected=5,actual=42));self.assertEqual(r.pos,3)
+        for lead in (b'\x61',bytes.fromhex('FA6100')):
+            r=Reader(lead+data[3:],'161-distinct')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='161-distinct',offset=len(lead),category='member-count',expected=10,actual=5));self.assertEqual(r.pos,len(lead))
+            self.assertFalse(any(q.get('tag')==353 for q in r.records))
+        r=Reader(bytes.fromhex('FA6102')+data[3:],'161-unknown')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,dict(source='161-unknown',offset=0,category='union-tag',expected='supported current union tag',actual=609));self.assertEqual(r.pos,0)
+
+    def test_161_parent_counts_required_tails_and_unknown_child(self):
+        child=tag161(b'\xff\x00\x80');parent=sequence(child)
+        r=Reader(parent,'161-parent');r.sequence();self.assertEqual(r.pos,len(parent))
+        for n in (-2,2147483647):
+            r=Reader(parent[:1]+struct.pack('<i',n)+parent[5:],'161-parent')
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='161-parent',offset=1,category='count-bounds',expected={'minimum':-1,'maximum':len(child)},actual=n));self.assertEqual(r.pos,5)
+        for missing in (1,2):
+            end=len(parent)-missing;r=Reader(parent,'161-parent-tail',end)
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='161-parent-tail',offset=end,category='truncated',expected={'bytes':1},actual={'remaining':0}))
+            self.assertEqual(r.pos,end);self.assertIn(dict(start=5,end=5+len(child),kind='union',tag=353),r.records)
+        r=Reader(sequence(child,b'\x59'),'161-parent-next')
+        with self.assertRaises(FrameError) as caught:r.sequence()
+        self.assertEqual(caught.exception.diagnostic,dict(source='161-parent-next',offset=5+len(child),category='union-tag',expected='supported current union tag',actual=89));self.assertEqual(r.pos,5+len(child))
+
+
 
     def test_6f_target_states_raw_dword_and_exact_extents(self):
         for extended in (False,True):
