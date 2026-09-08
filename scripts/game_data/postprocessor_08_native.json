@@ -1,0 +1,147 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      166818,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ShuffleTarget_DataForMemoryPack+Beyond_Gameplay_Core_Selector_ShuffleTarget_DataForMemoryPackFormatter",
+      "Deserialize",
+      67176256
+    ],
+    [
+      166817,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ShuffleTarget_DataForMemoryPack",
+      "Deserialize",
+      67176352
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67176256,
+      "endRva": 67176349,
+      "sha256": "6C09D6AA88B32232213C437B4790B22FDB9637DC5A58F5AE1BDA342BD7120364",
+      "boundary": "complete formatter initialization and forwarding"
+    },
+    {
+      "startRva": 67176352,
+      "endRva": 67176655,
+      "sha256": "AD460F19D2222196355F2E2EDDBF5BEF9141303BEF81787FFB2E58D29E5C0A8D",
+      "boundary": "complete member2 reader normal RET and initialization rejoin"
+    },
+    {
+      "startRva": 69874990,
+      "endRva": 69875023,
+      "sha256": "ED28E975F2E291EED7E3A16545497EF5941ED65E5D9A01AF0D2B9B585CAAC237",
+      "boundary": "postprocessor bounded dispatch table load"
+    },
+    {
+      "startRva": 69875418,
+      "endRva": 69875482,
+      "sha256": "7BA4D22941908CF6043F68755B7D964E18804F366D74316A9982492CD2AE6DE6",
+      "boundary": "tag8 type test and existing-wrapper branch"
+    },
+    {
+      "startRva": 69875575,
+      "endRva": 69875606,
+      "sha256": "394BFEFCC482F71231BEC99A89D880BA6CE8FE14BF7978E1E839CDD125E6163A",
+      "boundary": "tag8 new-wrapper context, read and output rejoin"
+    },
+    {
+      "startRva": 83256962,
+      "endRva": 83256975,
+      "sha256": "177487FF2A915D422D13C6628BFF64303CDE31B2FCB996B0FF17206C90891F5D",
+      "boundary": "existing-output rejoin"
+    },
+    {
+      "startRva": 83257031,
+      "endRva": 83257052,
+      "sha256": "39909A4A8C9992D6FDB511920F4EFC5AB3019786ED6BB8263C4621E64D9BEA96",
+      "boundary": "FF clear and rejoin"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 69876036,
+      "endRva": 69876040,
+      "sha256": "E48E134D3F870C93CA350E38B49ABA05C8499965938E2D6048258817BBB73D9E",
+      "boundary": "postprocessor8 dispatch entry"
+    },
+    {
+      "startRva": 217990888,
+      "endRva": 217990896,
+      "sha256": "78718BE2EE68BD3C75F69915020F6CF8756FD7DF1877CDAB55126746A0951FCD",
+      "boundary": "postprocessor8 type usage"
+    },
+    {
+      "startRva": 206847352,
+      "endRva": 206847360,
+      "sha256": "2A3905AF75EE93FBAE7216581D48F092C545A4C1E85B76639065EED6CE1E063A",
+      "boundary": "postprocessor8 registered type slot"
+    },
+    {
+      "startRva": 220254360,
+      "endRva": 220254376,
+      "sha256": "0D7CA07204D053E1F46D77A5D5BDE03236EC6B08CCA0F12AFD682AB2AD7710F4",
+      "boundary": "postprocessor8 class definition"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67176490,
+      "instructionHex": "488B15D728FF08",
+      "cellVa": 6660567304,
+      "usageRawHex": "43E812C000000000",
+      "methodSpecIndex": 619553,
+      "methodSpec": [
+        428448,
+        -1,
+        42525
+      ],
+      "argumentRawHex": "F7270000000000000000118000000000",
+      "typeDefinition": 10231,
+      "typeName": "Beyond.Gameplay.Core.Selector+ProcessTargetType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67176530,
+      "instructionHex": "488B15CF3DFE08",
+      "cellVa": 6660507176,
+      "usageRawHex": "CBEB12C000000000",
+      "methodSpecIndex": 620005,
+      "methodSpec": [
+        428464,
+        -1,
+        17006
+      ],
+      "argumentRawHex": "AE000000000000000000120000000000",
+      "typeDefinition": 174,
+      "typeName": "Beyond.Blackboard+BlackboardInt",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 69875575,
+      "instructionHex": "488B150211D408",
+      "cellVa": 6660442240,
+      "usageRawHex": "05C112C000000000",
+      "methodSpecIndex": 614530,
+      "methodSpec": [
+        428462,
+        -1,
+        25001
+      ],
+      "argumentRawHex": "D1590000000000000000120000000000",
+      "typeDefinition": 22993,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ShuffleTarget_DataForMemoryPack",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "postprocessor8member2": [
+      "scalar32",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact postprocessor tag8 dispatch, registered type usage and MethodSpec614530 join ShuffleTarget_DataForMemoryPack. Its selected non-null reader requires header2 followed by a DWORD and an independently nullable BlackboardInt. ProcessTargetType is the DWORD context and adds no member header or value restriction. BlackboardInt reuses the concrete reader independently pinned in buff_16b_native.json: FF or header3, signed-length byte payload, byte and raw DWORD. This variable-width scalar profile follows direct source consumption, not managed name, destination size or equal member count. Negative payload lengths below -1 and overlong payloads fail closed before slicing. Null union, null wrapper, null scalar and null payload retain distinct boundaries. Parent postprocessor counts reserve the following validator count, and completed children do not waive later elements or fields. Tag8 introduces no target recursion and does not relax the finite tag4 expansion guard. Exact static identity and direct selected read order support structural-only framing. Target-shuffling behavior, payload/enum meaning, live provider choice, complete allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

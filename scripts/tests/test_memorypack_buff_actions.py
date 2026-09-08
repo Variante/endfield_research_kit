@@ -7252,6 +7252,83 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile');self.assertEqual(r.target_depth,0)
         self.assertFalse(any(v['kind']=='anonymous-target-profile' for v in r.records))
 
+    def test_postprocessor8_scalar_null_layers_and_bounded_cuts(self):
+        values=[b'\xff',b'\x08\xff',b'\xfa\x08\x00\xff']
+        for wire in (b'\x08',b'\xfa\x08\x00'):
+            for scalar in (b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'\xff\xfe\x80')):
+                values.append(wire+b'\x02'+b'\xff'*4+scalar)
+        for value in values:
+            r=Reader(value+b'\xaa'*16,'post8');r.selector_postprocessor_profile()
+            self.assertEqual(r.pos,len(value));self.assertEqual(r.postprocessor_depth,0)
+            self.assertEqual(r.records[-1],dict(start=0,end=len(value),kind='anonymous-selector-postprocessor-profile'))
+            for cut in range(len(value)):
+                results=[]
+                for data in (value,value[:cut],value[:cut]+b'\xff'*16):
+                    r=Reader(data,'post8-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.selector_postprocessor_profile()
+                    self.assertLessEqual(r.pos,cut);self.assertEqual(r.postprocessor_depth,0)
+                    self.assertFalse(any(v['kind']=='anonymous-selector-postprocessor-profile' for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        for wire in (b'\x08',b'\xfa\x08\x00'):
+            for header in (0,1,3,250,254):
+                r=Reader(wire+bytes([header])+bytes(20),'post8-header')
+                with self.assertRaises(FrameError) as caught:r.selector_postprocessor_profile()
+                self.assertEqual(caught.exception.diagnostic,dict(source='post8-header',offset=len(wire),expected=2,actual=header,category='member-count'))
+            for length in (-2,2147483647):
+                value=wire+b'\x02'+bytes(4)+b'\x03'+struct.pack('<i',length)+bytes(5)
+                r=Reader(value,'post8-length')
+                with self.assertRaises(FrameError) as caught:r.selector_postprocessor_profile()
+                self.assertEqual(caught.exception.diagnostic['offset'],len(wire)+6)
+                self.assertFalse(any(v['kind']=='anonymous-selector-postprocessor-profile' for v in r.records))
+        for wire in (b'\x09',b'\xfa\x00\x01'):
+            r=Reader(wire+bytes(20),'post8-unknown')
+            with self.assertRaises(Unsupported):r.selector_postprocessor_profile()
+            self.assertEqual(r.pos,0);self.assertEqual(r.records,[])
+
+    def test_postprocessor8_parent_counts_reserve_and_next_element(self):
+        for value in (b'\x08\x02'+bytes(4)+b'\xff',b'\x08\x02'+bytes(4)+scalar_payload(b''),b'\x08\xff',b'\xff'):
+            for count in (-1,0,1):
+                parent=b'\x03\xff'+struct.pack('<i',2)+value+b'\xff'+struct.pack('<i',count)+b'\xff'*max(0,count)
+                r=Reader(parent+b'\xaa','post8-parent');r.selector_profile();self.assertEqual(r.pos,len(parent))
+                for cut in range(len(parent)):
+                    results=[]
+                    for data in (parent,parent[:cut],parent[:cut]+b'\xff'*20):
+                        r=Reader(data,'post8-parent-cut',cut)
+                        with self.assertRaises(FrameError) as caught:r.selector_profile()
+                        self.assertFalse(any(v['kind']=='anonymous-selector-profile' for v in r.records))
+                        results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            raw=b'\x03\xff'+struct.pack('<i',2)+value+b'\x09'+bytes(4)
+            r=Reader(raw,'post8-next')
+            with self.assertRaises(Unsupported) as caught:r.selector_profile()
+            self.assertEqual(r.pos,6+len(value));self.assertEqual(caught.exception.diagnostic['offset'],6+len(value))
+            for count in (-2,2147483647):
+                for offset in (2,6+len(value)):
+                    raw=bytearray(b'\x03\xff'+struct.pack('<i',1)+value+bytes(4));struct.pack_into('<i',raw,offset,count)
+                    r=Reader(raw,'post8-count')
+                    with self.assertRaises(FrameError) as caught:r.selector_profile()
+                    self.assertEqual(caught.exception.diagnostic['offset'],offset)
+                    self.assertFalse(any(v['kind']=='anonymous-selector-profile' for v in r.records))
+
+    def test_postprocessor8_action_tail_and_trailing_sequence(self):
+        for value in (b'\x08\x02'+bytes(4)+scalar_payload(b'x'),b'\xfa\x08\x00\x02'+bytes(4)+b'\xff',b'\x08\xff'):
+            child=tag_ec(nested=target(selector=b'\x03\xff'+struct.pack('<i',1)+value+bytes(4)));raw=sequence(child)
+            self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for cut in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:cut])
+            full=prefix(raw)
+            for cut in range(len(full)):
+                row=event_prefix(full,source='post8-limit',limit=cut)
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='post8-limit',limit=cut))
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='post8-next')
+            self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['offset'],19+len(child))
+            self.assertEqual(row['diagnostic']['actual'],89)
+
     def test_validator2_two_raw_dwords_nulls_and_bounded_cuts(self):
         for value in (b'\x02\x02'+bytes(8),b'\xfa\x02\x00\x02'+b'\xff'*8,
                       b'\x02\x02'+bytes.fromhex('FFFE800012345678'),
