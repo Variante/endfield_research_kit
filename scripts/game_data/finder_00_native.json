@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      167024,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      73872672
+    ],
+    [
+      167023,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPack",
+      "Deserialize",
+      73872768
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73872672,
+      "endRva": 73872761,
+      "sha256": "5021BAC94E5B8A14F54EA555C1AB93B6CF37F8C76B6D221577694A10C2DF6E77",
+      "boundary": "complete formatter initialization and forwarding"
+    },
+    {
+      "startRva": 73872768,
+      "endRva": 73872946,
+      "sha256": "241530697011B4E2330C7207FDB4790229D7EF85EA00368DFFC865138B999A6C",
+      "boundary": "complete initialization and zero-member reader through RET"
+    },
+    {
+      "startRva": 59819608,
+      "endRva": 59819642,
+      "sha256": "CB3A0DEDFFDC2A33D830CD81DF39CDEF12D2597D5A76C869CAD2AEA7B5F2C9C0",
+      "boundary": "finder union bounded tag dispatch table load"
+    },
+    {
+      "startRva": 59820469,
+      "endRva": 59820512,
+      "sha256": "DF259282CE8465D72FFCDA6E8A5BAEE05109961038193841AAF846EFEA05EE47",
+      "boundary": "tag0 type test and new-wrapper context through shared call rejoin"
+    },
+    {
+      "startRva": 59819964,
+      "endRva": 59819988,
+      "sha256": "2E2F07211C0B29F14D73725F9C24FD08CCD71177F8E9DF926F601B9EED5D964F",
+      "boundary": "shared new-wrapper read and output rejoin"
+    },
+    {
+      "startRva": 83964830,
+      "endRva": 83964843,
+      "sha256": "D320AE8A589AE03ECDFCE2B603AA768231AB7E50C166CFC90AE11388147C34D2",
+      "boundary": "existing-output rejoin"
+    },
+    {
+      "startRva": 83964899,
+      "endRva": 83964920,
+      "sha256": "11A032C392BDC6B338EA19C1738031B3A47ED8B084E9EDB49EDF67235003E6B5",
+      "boundary": "FF clear and rejoin"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 59821652,
+      "endRva": 59821656,
+      "sha256": "E7A71E7DB18795D3B9657FAB347B8E19E1C787A8895028290EBE345E7F4BEDA3",
+      "boundary": "finder0 dispatch entry"
+    },
+    {
+      "startRva": 217990424,
+      "endRva": 217990432,
+      "sha256": "875AF29760D4F42AF1CF9FD2579D5AD8575D4E1854410C4489519B8495D67AA2",
+      "boundary": "finder0 type usage"
+    },
+    {
+      "startRva": 206847024,
+      "endRva": 206847032,
+      "sha256": "01DB452F31D760BF36830885FD8DCD8961144D598A702855640B774D5976C9E0",
+      "boundary": "finder0 registered type slot"
+    },
+    {
+      "startRva": 220269288,
+      "endRva": 220269304,
+      "sha256": "681C4AF732ECBBED3F63010DEA9E75A390B38868DBC39C379C22BE27037C8079",
+      "boundary": "finder0 class definition"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 59820500,
+      "instructionHex": "488B15BD7B6D09",
+      "cellVa": 6660441496,
+      "usageRawHex": "BBC012C000000000",
+      "methodSpecIndex": 614493,
+      "methodSpec": [
+        428462,
+        -1,
+        24960
+      ],
+      "argumentRawHex": "F1590000000000000000120000000000",
+      "typeDefinition": 23025,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPack",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "finder0member0": []
+  },
+  "boundary": "Exact finder tag0 dispatch, registered type usage and MethodSpec614493 join AbilityEntityTargetFinder_DataForMemoryPack. The selected non-null reader requires a zero member header and consumes no fields, arrays or nested records. Zero union tag and zero object header are separate bytes, not absent/null data. Short/extended tags consume two/four bytes with header0; null union and null wrapper are distinct. Constructor/output initialization does not consume source members. A completed zero-member finder does not remove the parent selector postprocessor and validator counts, their reserve/bounds checks or later parent fields. Preserve unknown finder stops before their tag. Static identity is exact and selected source order direct; framing remains structural-only. Actual ability/entity target selection, ownership, live formatter/provider choice, complete allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

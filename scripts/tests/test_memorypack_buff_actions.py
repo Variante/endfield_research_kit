@@ -7302,6 +7302,70 @@ class BuffActionsTests(unittest.TestCase):
                     self.assertEqual(caught.exception.diagnostic['actual'],n)
                     self.assertFalse(any(v['kind']=='anonymous-selector-validator-profile' for v in r.records))
 
+    def test_finder0_zero_header_null_variants_and_no_extra_read(self):
+        for value in (b'\x00\x00',b'\xfa\x00\x00\x00',b'\x00\xff',b'\xfa\x00\x00\xff',b'\xff'):
+            r=Reader(value+b'\xaa'*12,'finder0');r.selector_finder_profile()
+            self.assertEqual(r.pos,len(value))
+            self.assertEqual(r.records,[dict(start=0,end=len(value),kind='anonymous-selector-finder-profile')])
+            for cut in range(len(value)):
+                results=[]
+                for data in (value,value[:cut],value[:cut]+b'\xff'*12):
+                    r=Reader(data,'finder0-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.selector_finder_profile()
+                    self.assertLessEqual(r.pos,cut);self.assertEqual(r.records,[])
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        for wire in (b'\x00',b'\xfa\x00\x00'):
+            for header in (1,2,250,254):
+                r=Reader(wire+bytes([header])+bytes(16),'finder0-header')
+                with self.assertRaises(FrameError) as caught:r.selector_finder_profile()
+                self.assertEqual(caught.exception.diagnostic,dict(source='finder0-header',offset=len(wire),expected=0,actual=header,category='member-count'))
+                self.assertEqual(r.records,[])
+        for wire in (b'\x17',b'\xfa\x00\x01'):
+            r=Reader(wire+bytes(16),'finder0-unknown')
+            with self.assertRaises(Unsupported):r.selector_finder_profile()
+            self.assertEqual(r.pos,0);self.assertEqual(r.records,[])
+
+    def test_finder0_parent_counts_required_and_bounded(self):
+        for finder in (b'\x00\x00',b'\xfa\x00\x00\x00',b'\x00\xff',b'\xff'):
+            for post in (-1,0,1):
+                for validator in (-1,0,1):
+                    value=b'\x03'+finder+struct.pack('<i',post)+b'\xff'*max(0,post)+struct.pack('<i',validator)+b'\xff'*max(0,validator)
+                    r=Reader(value,'finder0-parent');r.selector_profile();self.assertEqual(r.pos,len(value))
+                    for cut in range(1+len(finder),len(value)):
+                        results=[]
+                        for raw in (value,value[:cut],value[:cut]+b'\xff'*16):
+                            r=Reader(raw,'finder0-parent-cut',cut)
+                            with self.assertRaises(FrameError) as caught:r.selector_profile()
+                            self.assertFalse(any(v['kind']=='anonymous-selector-profile' for v in r.records))
+                            results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                        self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for offset in (1+len(finder),5+len(finder)):
+                for count in (-2,2147483647):
+                    value=bytearray(b'\x03'+finder+bytes(8));struct.pack_into('<i',value,offset,count)
+                    r=Reader(value,'finder0-count')
+                    with self.assertRaises(FrameError) as caught:r.selector_profile()
+                    self.assertEqual(caught.exception.diagnostic['offset'],offset)
+                    self.assertFalse(any(v['kind']=='anonymous-selector-profile' for v in r.records))
+
+    def test_finder0_action_parent_tail_and_trailing_sequence(self):
+        for finder in (b'\x00\x00',b'\xfa\x00\x00\x00',b'\x00\xff'):
+            child=tag_ec(nested=target(selector=b'\x03'+finder+bytes(8)));raw=sequence(child)
+            self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for cut in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:cut])
+            full=prefix(raw)
+            for cut in range(len(full)):
+                row=event_prefix(full,source='finder0-limit',limit=cut)
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='finder0-limit',limit=cut))
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='finder0-next')
+            self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['offset'],19+len(child))
+            self.assertEqual(row['diagnostic']['actual'],89)
+
     def test_finder1_zero_members_and_parent_continuation(self):
         for wire in (b'\x01',b'\xfa\x01\x00'):
             for header in (b'\x00',b'\xff'):
@@ -7793,7 +7857,7 @@ class BuffActionsTests(unittest.TestCase):
         for child in (b'\xec\xff',tag_ec(nested=b'\xff',value=b'\xff',key=None),
                       tag_ec(nested=target(selector=b'\xff',direction_value=b'\xff'))):
             self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
-        for nested in (target(selector=b'\x03\x00'+bytes(8)),
+        for nested in (target(selector=b'\x03\x17'+bytes(8)),
                        target(selector=b'\x03\xff'+struct.pack('<ii',1,0))):
             row=event_prefix(prefix(sequence(tag_ec(nested=nested))),source='ec-unsupported.bin')
             self.assertEqual(row['status'],'unsupported')

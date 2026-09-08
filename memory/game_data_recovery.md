@@ -718,6 +718,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Exact generic contexts distinguish BlackboardDouble from TargetSettings;
   the byte and final payload length remain required after a null target.
   Skill-switch, lifetime and slot behavior remain unresolved.
+  `scripts/game_data/finder_00_native.json` joins finder tag 0 to the
+  AbilityEntityTargetFinder wrapper: zero union tag and zero object header
+  are separate required bytes, followed by no fields. The parent selector
+  still requires both postprocessor and validator counts. Target selection
+  and ability/entity ownership remain unresolved.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity

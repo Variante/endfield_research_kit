@@ -939,11 +939,11 @@ class Reader:
 
     def selector_finder_profile(self):
         start=self.pos
-        tag=self.nested_union_tag((1,2,3,5,7,8,10,12,13,14,16,18,19,21),'finder')
+        tag=self.nested_union_tag((0,1,2,3,5,7,8,10,12,13,14,16,18,19,21),'finder')
         if tag is None:pass
         elif self.peek()==255:self.take(1,'null-nested-finder-wrapper')
         else:
-            self.header({1:0,2:0,3:4,5:0,7:8,8:0,10:0,12:1,13:1,14:2,16:9,18:11,19:4,21:0}[tag])
+            self.header({0:0,1:0,2:0,3:4,5:0,7:8,8:0,10:0,12:1,13:1,14:2,16:9,18:11,19:4,21:0}[tag])
             if tag==3:
                 self.take(12,'anonymous-raw12');self.take(16,'anonymous-raw16')
                 self.scalar_payload();self.take(1,'anonymous-nonzero-byte')
