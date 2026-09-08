@@ -410,9 +410,13 @@ only.
   it as retained retail evidence; lifetime and intervening writes remain open.
   Allocation adjustment also depends on the metadata class: one getter reads
   the handle's first word, another decodes a numeric offset-plus-one handle,
-  and standalone allocations use zero. The offline reader distinguishes these
-  cases and tests their range comparison against hooked Map metadata; production
-  validation against the Map byte offset remains pending.
+  and standalone allocations use zero. Production recording now pins both getter
+  bodies and relocated vtable slots and compares decoded offsets against both
+  upload Map endpoints. Receipts retain explicit decode/range failures and reject
+  missing feature scope. The optional bounded storage is charged separately;
+  the combined CPU limit is unchanged. Synthetic dispatch and Map-range tests
+  validate the implementation; new retail evidence is still required. Endpoint
+  equality does not establish allocation continuity or GPU consumption.
   Native graph execution resolves texture handles into property/texture pairs,
   batches them through a device callback, and updates renderer property state.
   The property setter is a useful execution observation point, but it is not the
