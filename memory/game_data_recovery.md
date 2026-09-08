@@ -458,6 +458,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Repeated type contexts do not merge source spans or establish activation
   roles; collision behavior, layer-bit meanings and effect ownership remain
   unresolved independently of the exact static identity and direct read order.
+  `scripts/game_data/buff_b7_native.json` joins FlowTextAction to header nine:
+  common prefix, raw16, byte, DWORD, target and terminal byte payload. Its
+  inline sixteen-byte copy and Advance call share an explicit remaining-byte
+  guard; pin the separate ensure-input rejoin without claiming refill parity.
+  MountPoint selects the DWORD helper. A null target does not remove the final
+  length word, and FF bytes inside raw16 are ordinary data. Raw16 meaning,
+  payload encoding, text rendering and target ownership remain unresolved.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

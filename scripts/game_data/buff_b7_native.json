@@ -1,0 +1,116 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120332,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_FlowTextAction_DataForMemoryPack+Beyond_Gameplay_Core_FlowTextAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      65993504
+    ],
+    [
+      120331,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_FlowTextAction_DataForMemoryPack",
+      "Deserialize",
+      65993600
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 65993504,
+      "endRva": 65993597,
+      "sha256": "5BEC77FE27D9E27A4A6019FC0A700C89BEA95367B90B5A85C9E359E86CF2AFFC",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 65993600,
+      "endRva": 65994210,
+      "sha256": "9DBA383DC07A82FD12576E40860301F92B35B07B9E14B45FC64B233B425FF8B7",
+      "boundary": "header9 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83107091,
+      "endRva": 83107113,
+      "sha256": "A3BF35F757A81FE619CD5E23875D337BCD0B64C11CA61D321A21BA63862D30C1",
+      "boundary": "ensure raw16 and source-read rejoin"
+    },
+    {
+      "startRva": 83107078,
+      "endRva": 83107091,
+      "sha256": "42910B1ED790F141186C88866EA273775945D2B4A850AD426DBAEEAD26B4EA97",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83107169,
+      "endRva": 83107190,
+      "sha256": "C0D634ACCFB0D783C6FDBB57C4B6F366CD6AADA117EAF9EA1C4A3C281A85AFF9",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 65993772,
+      "instructionHex": "488B15F5A11909",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 65993987,
+      "instructionHex": "488B15763F1009",
+      "cellVa": 6660504704,
+      "usageRawHex": "45E612C000000000",
+      "methodSpecIndex": 619298,
+      "methodSpec": [
+        428448,
+        -1,
+        8642
+      ],
+      "argumentRawHex": "80050000000000000000118000000000",
+      "typeDefinition": 1408,
+      "typeName": "Beyond.Gameplay.MountPoint",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 65994027,
+      "instructionHex": "488B15D6191709",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member9": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "raw16",
+      "byte",
+      "scalar32",
+      "target-profile",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact union183 dispatch and registered type/module/token joins identify FlowTextAction_DataForMemoryPack. Header9 reads the common byte/three-DWORD prefix, sixteen contiguous raw bytes, BYTE, DWORD, TargetSettings and a terminal bounded signed-length byte payload. The inline raw16 load is guarded by remaining >=16, copies sixteen bytes and calls Advance with16; its separate ensure/refill request and source-read rejoin are pinned without claiming full refill/error parity. MountPoint selects a DWORD helper, not the following target provider. TargetSettings reuses buff_ec_native.json and finite selector extensions. Null target still requires the terminal length word; null(-1), empty(0), nonempty payload and FF target/wrapper/union are distinct. ShortB7 and FAB700 identify union183; minimum nonnull lengths are41/43 with a null target and null or empty payload. Raw16 may contain arbitrary bits including FF without becoming a nested header. Payload bytes remain anonymous and are not decoded as text. Output setters add no wire fields. Complete formatter/reader/init/ensure16/existing-output/FF windows exclude adjacent wrappers, setters and error bodies. Static identity is exact, source order direct and framing structural-only. Raw16 meaning, mount-point behavior, text encoding/rendering, target ownership, live provider selection, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

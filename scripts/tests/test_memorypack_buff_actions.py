@@ -902,7 +902,99 @@ def tag1f(first=b'\xff',second=b'\xff',third=b'\xff',left=b'\xff',right=b'\xff',
             third+right+struct.pack('<I',0xfedcba98))
 
 
+def tagb7(nested=b'\xff',value=None,*,extended=False,raw=bytes(range(16)),flag=255):
+    return ((b'\xfa\xb7\x00' if extended else b'\xb7')+b'\x09\xfe'+
+            bytes(12)+raw+bytes([flag])+struct.pack('<I',0x80000000)+nested+payload(value))
+
+
 class BuffActionsTests(unittest.TestCase):
+
+
+    def test_b7_fixed_raw16_null_states_and_encodings(self):
+        for extended in (False,True):
+            shift=2 if extended else 0
+            for raw in (bytes(16),b'\xff'*16,bytes(range(16)),b'\x00\x00\xc0\x7f'*4):
+                for flag in (0,1,128,255):
+                    for value in (None,b''):
+                        child=tagb7(value=value,extended=extended,raw=raw,flag=flag)
+                        r=Reader(child+b'opaque','b7.bin');r.action(0)
+                        self.assertEqual((r.pos,len(child),r.records[-1]['tag']),(41+shift,41+shift,183))
+                        span=next(q for q in r.ranges if q['kind']=='anonymous-raw16')
+                        self.assertEqual((span['start'],span['end']),(15+shift,31+shift))
+                        self.assertEqual(child[span['start']:span['end']],raw)
+            for child,tag in ((b'\xff',255),(b'\xb7\xff',183),(b'\xfa\xb7\x00\xff',183)):
+                r=Reader(child,'b7-null.bin');r.action(0);self.assertEqual((r.pos,r.records[-1]['tag']),(len(child),tag))
+
+    def test_b7_nested_target_terminal_payload_and_every_cut(self):
+        for extended in (False,True):
+            for child in (tagb7(extended=extended),tagb7(value=b'\xff\x00\xfa\x80',extended=extended),
+                          tagb7(target(),b'longer-tail',extended=extended)):
+                r=Reader(child,'b7-full.bin');r.action(0);self.assertEqual(r.pos,len(child))
+                for cut in range(len(child)):
+                    outcomes=[]
+                    for data in (child[:cut],child,child[:cut]+b'\xff'*20):
+                        r=Reader(data,'b7-cut.bin',cut)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,cut)
+                        self.assertFalse(any(q.get('tag')==183 and q['start']==0 for q in r.records))
+                        outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+                for tail in (b'\xff',b'other'):
+                    for limit in (len(child),len(child+tail)):
+                        r=Reader(child+tail,'b7-tail.bin',limit);r.action(0);self.assertEqual(r.pos,len(child))
+                    with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_b7_length_words_payload_bounds_raw16_and_headers(self):
+        nested=(b'\x0d\xff'+payload(None)+b'\x80'+bytes(4)+b'\xfe'+payload(b'')+
+                b'\xff'+bytes(12)+payload(b'A')+payload(b'XYZ')+bytes(4))
+        self.assertEqual(len(nested),45)
+        for extended in (False,True):
+            shift=2 if extended else 0;child=tagb7(nested,b'final',extended=extended)
+            for at in tuple(36+shift+k for k in (2,12,29,34))+(81+shift,):
+                for count in (-2,2147483647):
+                    r=Reader(child[:at]+struct.pack('<i',count)+child[at+4:],'b7-count.bin')
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    d=caught.exception.diagnostic
+                    self.assertEqual((d['offset'],d['actual'],d['category'],r.pos),(at,count,'count-bounds',at+4))
+                for available in range(4):
+                    r=Reader(child,'b7-word.bin',at+available)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(at,at))
+            for at,width in ((15+shift,16),(31+shift,1),(32+shift,4)):
+                for available in range(width):
+                    r=Reader(child,'b7-fixed.bin',at+available)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    d=caught.exception.diagnostic
+                    self.assertEqual((d['category'],d['offset'],d['expected'],r.pos),('truncated',at,{'bytes':width},at))
+            for at,expected in ((1+shift,9),(36+shift,13)):
+                r=Reader(child[:at]+b'\x2a'+child[at+1:],'b7-header.bin')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['offset'],d['expected'],d['actual'],r.pos),(at,expected,42,at))
+            at=81+shift
+            for available in range(5):
+                r=Reader(child,'b7-payload.bin',at+4+available)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['offset'],d['actual'],d['expected'],r.pos),(at,5,{'minimum':-1,'maximum':available},at+4))
+
+    def test_b7_parent_tail_unknown_nested_and_next_union(self):
+        for extended in (False,True):
+            child=tagb7(value=b'body',extended=extended);data=sequence(child)
+            for missing in (1,2):
+                r=Reader(data,'b7-parent.bin',len(data)-missing)
+                with self.assertRaises(FrameError) as caught:r.sequence()
+                self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(len(data)-missing,len(data)-missing))
+            r=Reader(sequence(child,b'\xfa\xa0\x01'),'b7-next.bin')
+            with self.assertRaises(Unsupported) as caught:r.sequence()
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],r.pos),(5+len(child),416,5+len(child)))
+            self.assertTrue(any(q.get('tag')==183 for q in r.records))
+            bad=tagb7(target(selector=b'\x03\x17'+bytes(8)),b'opaque',extended=extended)
+            r=Reader(bad,'b7-unknown-target.bin')
+            with self.assertRaises(Unsupported) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
+            self.assertFalse(any(q.get('tag')==183 for q in r.records))
 
     def test_1f_fixed_source_order_null_states_and_encodings(self):
         for extended in (False,True):
