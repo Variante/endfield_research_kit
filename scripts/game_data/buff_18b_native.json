@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123687,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerSpellBurstEventAction_DataForMemoryPack+Beyond_Gameplay_Core_TriggerSpellBurstEventAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      67013264
+    ],
+    [
+      123686,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerSpellBurstEventAction_DataForMemoryPack",
+      "Deserialize",
+      67014032
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67013264,
+      "endRva": 67013357,
+      "sha256": "5F4BA9D0BF4316EE82E8DA73C5A86EB2EBC1C55CF42C2FD5E76AF0E093DD0FB7",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 67014032,
+      "endRva": 67014434,
+      "sha256": "1CBD689455CD10DEBE8886253A681EDF996FE1D4C7968E97BC7F744AEB7282B4",
+      "boundary": "header5 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83229110,
+      "endRva": 83229123,
+      "sha256": "98069AADFC10F4327CFF369B026F1CD9A0A8ADC210B42BFD358292A15262BCFD",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83229179,
+      "endRva": 83229200,
+      "sha256": "39D287D388D2474ECCCD63558E512FA5AB9F633A4384436B3518F159269BDD13",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67014204,
+      "instructionHex": "488B15E50F0A09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67014310,
+      "instructionHex": "488B1573710B09",
+      "cellVa": 6661210144,
+      "usageRawHex": "B5E512C000000000",
+      "methodSpecIndex": 619226,
+      "methodSpec": [
+        428448,
+        -1,
+        26601
+      ],
+      "argumentRawHex": "97840000000000000000118000000000",
+      "typeDefinition": 33943,
+      "typeName": "Beyond.GEnums.EnergyShardType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected union395 dispatch and module/token joins identify TriggerSpellBurstEventAction_Data. The header5 source order is one byte and four DWORDs, including the common byte/three DWORDs followed by one required terminal DWORD. Source order follows direct reader calls, not managed declaration or setter order. Two precise generic contexts identify Priority and the terminal value type. All DWORDs preserve raw bits without enum-range or semantic inference. FA 8B 01 selects union395; short8B is a different union139. FF null union and extended null wrapper are distinct. No nested profile, optional trailing byte or additional scalar follows the terminal DWORD. Formatter forwarding and normal/init/existing-output/FF windows retain complete instructions and exclude adjacent readers. Static identity is exact, selected source order direct and framing structural-only. Spell-burst behavior, terminal field meaning, event ownership, execution order, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

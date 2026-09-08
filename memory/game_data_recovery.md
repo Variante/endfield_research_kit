@@ -623,6 +623,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_18b_native.json` joins TriggerSpellBurstEventAction
+  to a fixed header5 reader: common byte/three DWORDs, then a required DWORD.
+  The final context identifies EnergyShardType, but framing preserves arbitrary
+  bits without inferring enum validity, spell-burst behavior or event ownership.
   `scripts/game_data/buff_07_native.json` joins AddAIMarkerAction to a header8
   reader with Double profile, GameplayTag DWORD, TargetSettings and a required
   terminal byte after the common fields. Existing independently pinned readers

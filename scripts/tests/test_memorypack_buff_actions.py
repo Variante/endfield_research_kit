@@ -714,6 +714,10 @@ def tag2c(first=b'\xff',second=b'\xff',nested=b'\xff',value=None,last=None):
             b'\xff'+payload(value)+b'\x80'*4+nested+b'\xfe'+payload(last))
 
 
+def tag18b(value=0x01020304):
+    return b'\xfa\x8b\x01\x05\xfe'+struct.pack('<IIII',0xffffffff,0x80000000,1,value)
+
+
 def tag07(first=b'\xff',last=b'\xff',extended=False):
     return ((b'\xfa\x07\x00' if extended else b'\x07')+b'\x08\xfe'+
             struct.pack('<III',0xffffffff,0x80000000,1)+first+
@@ -856,6 +860,55 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['status'],'unsupported')
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
+
+    def test_18b_fixed_order_raw_dword_bits_and_distinct_short_tag(self):
+        for value in (0,1,0xffffffff,0x80000000,0x7fc00001,0x01020304):
+            child=tag18b(value);q=Reader(child+b'\xaa','18b');q.action(0)
+            self.assertEqual(len(child),21);self.assertEqual(q.pos,21);self.assertEqual(q.records[-1]['tag'],395)
+            self.assertEqual([(x['start'],x['end']) for x in q.ranges if x['kind']=='anonymous-scalar32'],[(5,9),(9,13),(13,17),(17,21)])
+            self.assertEqual(child[17:21],struct.pack('<I',value))
+        for raw in (b'\xff',b'\xfa\x8b\x01\xff'):
+            q=Reader(raw+b'\xaa','18b-null');q.action(0);self.assertEqual(q.pos,len(raw))
+        q=Reader(b'\x8b'+tag18b()[3:],'18b-short')
+        with self.assertRaises(Unsupported) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['actual'],139);self.assertEqual(q.pos,0)
+
+    def test_18b_all_cuts_required_terminal_dword_and_trailing(self):
+        child=tag18b()
+        for cut in range(len(child)):
+            results=[]
+            for raw in (child,child[:cut],child[:cut]+b'\xff'*20):
+                q=Reader(raw,'18b-cut',cut)
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertLessEqual(q.pos,cut);self.assertFalse(any(x.get('tag')==395 for x in q.records))
+                results.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+            self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        for k in range(1,5):
+            q=Reader(child[:-k],'18b-terminal')
+            with self.assertRaises(FrameError) as caught:q.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],17);self.assertEqual(q.pos,17)
+        for tail in (b'\x00',b'\xff'*4):
+            q=Reader(child+tail,'18b-end');q.action(0);self.assertEqual(q.pos,21)
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_18b_bad_header_parent_count_tails_and_unknown_child(self):
+        bad=bytearray(tag18b());bad[3]=6;q=Reader(bad,'18b-header')
+        with self.assertRaises(FrameError) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],3)
+        for count in (-2,2147483647):
+            parent=b'\x03'+struct.pack('<i',count)+tag18b()+bytes(2);q=Reader(parent,'18b-count')
+            with self.assertRaises(FrameError) as caught:q.sequence()
+            self.assertEqual(caught.exception.diagnostic['offset'],1);self.assertEqual(q.pos,5)
+        for parent in (sequence(tag18b()),b'\x03'+struct.pack('<i',-1)+bytes(2),sequence()):
+            q=Reader(parent,'18b-parent');q.sequence();self.assertEqual(q.pos,len(parent))
+            for k in (1,2):
+                q=Reader(parent[:-k],'18b-tail')
+                with self.assertRaises(FrameError) as caught:q.sequence()
+                self.assertEqual(caught.exception.diagnostic['offset'],len(parent)-k);self.assertEqual(q.pos,len(parent)-k)
+        row=event_prefix(prefix(sequence(tag18b(),b'\xd0')),source='18b-next')
+        self.assertEqual(row['diagnostic']['actual'],208);self.assertEqual(row['diagnostic']['offset'],40)
+        self.assertEqual(row['consumedEnd'],40);self.assertTrue(any(x.get('tag')==395 for x in row['completedRecords']))
 
     def test_07_short_extended_nullable_profiles_and_source_order(self):
         values=(b'\xff',scalar_payload(None,0,b'\xff'*4),scalar_payload(b'',128,b'\x01\x02\x03\x04'),scalar_payload(b'wire\xff',254))
