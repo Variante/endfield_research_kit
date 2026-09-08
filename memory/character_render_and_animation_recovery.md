@@ -177,6 +177,10 @@ only.
   converts custom pitch/yaw through Unity Euler conversion. Runtime direct-light
   state, texture/time ownership and integration remain separate; this is not an
   original-binary numeric or publication proof.
+  The current ordinary VFX writer derives the cloud clock with
+  `fmodf(_Time.y, 1024)`. Its reusable conversion accepts that global time lane;
+  animation elapsed time is not a proven substitute. Upstream time ownership
+  and upload chronology remain separate from the finite native arithmetic checks.
   `cloud_draw_inputs.json` proves neutral cloud modulation for the retained
   current-build shadow draws; it does not generalize to unsampled frames or
   establish live environment ownership.
