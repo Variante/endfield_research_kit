@@ -1,0 +1,252 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123196,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SpawnEnemyAction_DataForMemoryPack+Beyond_Gameplay_Core_SpawnEnemyAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      66410128
+    ],
+    [
+      123195,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SpawnEnemyAction_DataForMemoryPack",
+      "Deserialize",
+      66410224
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66410128,
+      "endRva": 66410221,
+      "sha256": "7E0F3626D86ABE602677F435303ECEA5009198329CBD8198BC665988AB782095",
+      "boundary": "outer formatter initialization and forwarding"
+    },
+    {
+      "startRva": 66410224,
+      "endRva": 66411228,
+      "sha256": "9DDCF6D3CEC1B91A9F9F0D8D251248260806347010999BA6BC616CF82F4D9E09",
+      "boundary": "outer header18 normal and initialization through rejoin"
+    },
+    {
+      "startRva": 60610928,
+      "endRva": 60611024,
+      "sha256": "1ED1A00F806038CBF5D9D3A9A582505A31CBA91355AB3A7E0D77D270F333CC52",
+      "boundary": "Vector3 source length guard, raw12 copy and reader advance"
+    },
+    {
+      "startRva": 66150992,
+      "endRva": 66151080,
+      "sha256": "480DCADB17DD36A6A488BB311F3EA0452BD187EC2A985853ACEAB39F6EBB6027",
+      "boundary": "Quaternion source length guard, raw16 copy and reader advance"
+    },
+    {
+      "startRva": 83164564,
+      "endRva": 83164577,
+      "sha256": "2861C27AE43ADB7A0771FE0226CA9750D98FA8760913FCB83EDBE81F16C9CD7F",
+      "boundary": "outer existing output rejoin"
+    },
+    {
+      "startRva": 83164633,
+      "endRva": 83164654,
+      "sha256": "064CD4A96A0757C2B9492B29C16BB9B5E9CBF4A99453096381576740997827BC",
+      "boundary": "outer FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 79069846,
+      "endRva": 79069868,
+      "sha256": "E159B64D683CD557205845FDEDB9C096FDAA1B6251F6537CAF83C663FEDFB8A1",
+      "boundary": "Vector3 ensure12 and source copy rejoin"
+    },
+    {
+      "startRva": 79372762,
+      "endRva": 79372784,
+      "sha256": "CC41ACFE130C2830D7F57AF7D5E39F41F997AC53D5A0AE73769E6B46B41612BB",
+      "boundary": "Quaternion ensure16 and source copy rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66410396,
+      "instructionHex": "488B1585461309",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66410536,
+      "instructionHex": "488B15D9BE1009",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66410577,
+      "instructionHex": "4C8B05980C0A09",
+      "cellVa": 6660515056,
+      "usageRawHex": "D1CA0FC000000000",
+      "methodSpecIndex": 517480,
+      "methodSpec": [
+        428448,
+        -1,
+        908
+      ],
+      "argumentRawHex": "C5AA0000000000000000118000000000",
+      "typeDefinition": 43717,
+      "typeName": "UnityEngine.Vector3",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66410649,
+      "instructionHex": "488B1580220D09",
+      "cellVa": 6660717344,
+      "usageRawHex": "BFE812C000000000",
+      "methodSpecIndex": 619615,
+      "methodSpec": [
+        428448,
+        -1,
+        42578
+      ],
+      "argumentRawHex": "93260000000000000000118000000000",
+      "typeDefinition": 9875,
+      "typeName": "Beyond.Gameplay.Core.SpawnEnemyAction+Data+BornRotation",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66410686,
+      "instructionHex": "4C8B054B7F0A09",
+      "cellVa": 6660544528,
+      "usageRawHex": "B5CA0FC000000000",
+      "methodSpecIndex": 517466,
+      "methodSpec": [
+        428448,
+        -1,
+        1207
+      ],
+      "argumentRawHex": "C6AA0000000000000000118000000000",
+      "typeDefinition": 43718,
+      "typeName": "UnityEngine.Quaternion",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66410749,
+      "instructionHex": "488B15AC381409",
+      "cellVa": 6661181872,
+      "usageRawHex": "19A312C000000000",
+      "methodSpecIndex": 610700,
+      "methodSpec": [
+        428462,
+        -1,
+        62518
+      ],
+      "argumentRawHex": "E8CE258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000D070E78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 14378,
+        "elementArguments": [
+          "4C270000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 66410787,
+      "instructionHex": "488B15DEBD1009",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66410930,
+      "instructionHex": "488B1567EC0909",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66411039,
+      "instructionHex": "488B15E2BC1009",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member18": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "target-profile",
+      "raw12",
+      "scalar32",
+      "raw16",
+      "input-profile-list",
+      "target-profile",
+      "byte-payload",
+      "byte-payload",
+      "byte",
+      "scalar-payload",
+      "raw4",
+      "byte",
+      "target-profile"
+    ]
+  },
+  "boundary": "Exact extended union362 (FA6A01) dispatch and registered type/module/token joins identify SpawnEnemyAction_DataForMemoryPack. Header18 reads common BYTE/three DWORD, BYTE, TargetSettings, raw12 Vector3, DWORD, raw16 Quaternion, nullable signed-count List<CreateBuffActionInput>, TargetSettings, two independent signed-length byte payloads, BYTE, scalar payload, raw4, BYTE and TargetSettings. Source helpers separately guard/copy/advance12 and16 bytes, including bounded refill rejoin paths; output carriers alone do not prove width. Each list element reuses buff_92_native.json FF/header5 BYTE, nullable AssignPair list, two byte payloads and BYTE. The list reserves the17-byte minimum remaining source tail; element assignment counts retain their own terminal reserve. TargetSettings and BlackboardDouble reuse the independently audited buff_ec contract. All three target instances, both outer payloads and terminal raw4/BYTE/target remain independent even with null lists/scalars. Minimum nonnull outer length is72 bytes with null target/list/scalar states. Short6A belongs to another union; no one-byte representation of362 is admitted. Static identity is exact, source order direct and framing structural-only. Spawn behavior, target ownership, coordinate/rotation conventions, payload encoding, runtime provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

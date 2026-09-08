@@ -506,6 +506,15 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   the DWORD carriers, not their value meanings. Null alert/payload values do
   not remove the final target. Alert geometry, units and broadcast behavior
   remain unresolved; exact static identity does not prove runtime selection.
+  `scripts/game_data/buff_16a_native.json` pins SpawnEnemyAction to three
+  independent targets around raw12, DWORD, raw16, a nullable CreateBuffActionInput
+  list, two byte payloads, byte, scalar payload, raw4 and byte. Vector3 and
+  Quaternion helpers prove their separate source guards and advances; output
+  sizes alone are insufficient. List elements reuse the member-five input
+  profile and its nested AssignPair list from `buff_92_native.json`, with
+  distinct null/empty states and terminal reserves at both list levels.
+  Spawning behavior, target ownership and coordinate/rotation conventions remain
+  unresolved; the final target is required even when preceding lists are null.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

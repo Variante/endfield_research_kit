@@ -952,7 +952,114 @@ def tag23(alert=b'\xff',value=None,*,extended=False,target_value=b'\xff'):
             alert+bytes.fromhex('78563412FFFFFFFF')+payload(value)+bytes.fromhex('67452301FF00C07F')+target_value)
 
 
+
+def assignment16a():
+    return b'\x06'+bytes.fromhex('FFFFFFFF')+payload(b'\xff\x00')+bytes.fromhex('67452301')+payload(None)+payload(b'')+b'\x80'
+
+
+def input16a(items=(),first=None,second=b''):
+    return b'\x05\xfe'+struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+payload(first)+payload(second)+b'\x80'
+
+
+def tag16a(items=(),*,targets=(b'\xff',b'\xff',b'\xff'),values=(None,b''),scalar=b'\xff'):
+    return (b'\xfa\x6a\x01\x12\x80'+bytes.fromhex('FFFFFFFF0000008067452301')+
+            b'\xfe'+targets[0]+bytes.fromhex('0000C07F0000807F000080FF')+bytes.fromhex('FFFFFFFF')+
+            bytes.fromhex('0000008001000000FFFFFFFF67452301')+struct.pack('<i',-1 if items is None else len(items))+
+            b''.join(items or ())+targets[1]+payload(values[0])+payload(values[1])+b'\x80'+scalar+
+            bytes.fromhex('FF00C07F')+b'\xfe'+targets[2])
+
+
 class BuffActionsTests(unittest.TestCase):
+
+    def test_16a_list_profiles_targets_payloads_and_raw_extents(self):
+        lists=(None,(),(b'\xff',),(input16a(None),),(input16a((),b'',b'raw'),),
+               (b'\xff',input16a((b'\xff',assignment16a()),b'\xff\x00',None)))
+        for items in lists:
+            for scalar in (b'\xff',scalar_payload(b'\xff\x00')):
+                for targets in ((b'\xff',)*3,(target(),b'\xff',target()),(b'\xff',target(),b'\xff')):
+                    data=tag16a(items,targets=targets,values=(b'\xff\x00',None),scalar=scalar)
+                    r=Reader(data,'16a');r.action(0)
+                    self.assertEqual(r.pos,len(data));self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=362))
+                    at=18+len(targets[0])
+                    self.assertIn(dict(start=at,end=at+12,kind='anonymous-raw12'),r.ranges)
+                    self.assertIn(dict(start=at+16,end=at+32,kind='anonymous-raw16'),r.ranges)
+                    self.assertEqual(sum(q['kind']=='anonymous-input-profile' for q in r.records),len(items or ()))
+        for items in (None,()):
+            self.assertEqual(len(tag16a(items)),72)
+        for data in (b'\xff',b'\xfa\x6a\x01\xff'):
+            r=Reader(data,'16a-null');r.action(0);self.assertEqual(r.pos,len(data))
+
+    def test_16a_all_cut_modes_and_explicit_tails(self):
+        cases=[tag16a(items,scalar=scalar,values=values) for items in
+               (None,(),(b'\xff',),(input16a(None),),(input16a((assignment16a(),b'\xff'),b'x',None),))
+               for scalar in (b'\xff',scalar_payload(None)) for values in ((None,b''),(b'\xff\x00',None))]
+        cases.append(tag16a((input16a((assignment16a(),)),),targets=(target(),target(),target()),scalar=scalar_payload(b'bits')))
+        for data in cases:
+            for cut in range(len(data)):
+                outcomes=[]
+                for raw in (data[:cut],data,data[:cut]+b'\xff\x00'*20):
+                    r=Reader(raw,'16a-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut)
+                    self.assertFalse(any(q.get('tag')==362 for q in r.records))
+                    outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+            for tail in (b'\xff',bytes(5)):
+                for limit in (len(data),len(data+tail)):
+                    r=Reader(data+tail,'16a-tail',limit);r.action(0);self.assertEqual(r.pos,len(data))
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(data)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_16a_headers_counts_and_source_width_diagnostics(self):
+        data=tag16a(None)
+        for at,width in ((19,12),(31,4),(35,16),(51,4),(56,4),(60,4),(66,4)):
+            for available in range(width):
+                r=Reader(data,'16a-width',at+available)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='16a-width',offset=at,category='truncated',expected={'bytes':width},actual={'remaining':available}))
+                self.assertEqual(r.pos,at)
+        for at,reserve in ((51,17),(56,0),(60,0)):
+            for n in (-2,2147483647):
+                raw=data[:at]+struct.pack('<i',n)+data[at+4:];r=Reader(raw,'16a-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='16a-count',offset=at,category='count-bounds',expected={'minimum':-1,'maximum':len(raw)-at-4-reserve},actual=n))
+                self.assertEqual(r.pos,at+4)
+        child=input16a((assignment16a(),))
+        full=tag16a((child,))
+        for at,expected in ((3,18),(55,5),(61,6)):
+            r=Reader(full[:at]+b'\x2a'+full[at+1:],'16a-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='16a-header',offset=at,category='member-count',expected=expected,actual=42))
+            self.assertEqual(r.pos,at)
+        for missing,at,expected,actual in ((1,71,'one byte','EOF'),(2,70,{'bytes':1},{'remaining':0})):
+            r=Reader(data,'16a-required',len(data)-missing)
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='16a-required',offset=at,category='truncated',expected=expected,actual=actual))
+            self.assertEqual(r.pos,at)
+
+    def test_16a_parent_guards_and_distinct_union_encodings(self):
+        data=tag16a((input16a((assignment16a(),)),))
+        parent=sequence(data)
+        for n in (-2,2147483647):
+            r=Reader(parent[:1]+struct.pack('<i',n)+parent[5:],'16a-parent')
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='16a-parent',offset=1,category='count-bounds',expected={'minimum':-1,'maximum':len(data)},actual=n))
+            self.assertEqual(r.pos,5)
+        for k in (1,2):
+            end=len(parent)-k;r=Reader(parent,'16a-parent-tail',end)
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='16a-parent-tail',offset=end,category='truncated',expected={'bytes':1},actual={'remaining':0}))
+            self.assertEqual(r.pos,end);self.assertIn(dict(start=5,end=5+len(data),kind='union',tag=362),r.records)
+        r=Reader(sequence(data,b'\x59'),'16a-parent-next')
+        with self.assertRaises(FrameError) as caught:r.sequence()
+        self.assertEqual(caught.exception.diagnostic,dict(source='16a-parent-next',offset=5+len(data),category='union-tag',expected='supported current union tag',actual=89))
+        self.assertEqual(r.pos,5+len(data))
+        for lead in (b'\x6a',b'\xfa\x6a\x02'):
+            r=Reader(lead+data[3:],'16a-distinct')
+            with self.assertRaises(FrameError):r.action(0)
+            self.assertFalse(any(q.get('tag')==362 for q in r.records))
+
+
 
 
 
