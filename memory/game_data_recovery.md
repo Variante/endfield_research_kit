@@ -498,6 +498,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   profiles; the generic helper alone cannot identify either as a target.
   Reserve the following target and DWORD when bounding the list, and stop
   unknown element tags at their first byte. Aim geometry and units remain unresolved.
+  `scripts/game_data/buff_23_native.json` joins BroadcastAlertToCharactersAction
+  to a member-eleven order: common prefix, SkillAlertData, two DWORDs, byte
+  payload, DWORD, raw4 and TargetSettings. SkillAlertData is FF or header9
+  followed by raw4 three times, DWORD, raw4 four times and DWORD. Preserve
+  nine separate four-byte spans; AlertMoveType and AlertShape contexts identify
+  the DWORD carriers, not their value meanings. Null alert/payload values do
+  not remove the final target. Alert geometry, units and broadcast behavior
+  remain unresolved; exact static identity does not prove runtime selection.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

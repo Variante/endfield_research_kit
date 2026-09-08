@@ -941,6 +941,17 @@ def taga8(items=(),*,extended=False,target_value=b'\xff'):
             struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+target_value+b'\xff'*4)
 
 
+
+def skill_alert():
+    return b'\x09'+struct.pack('<9I',0x7fc00000,0xffffffff,0x80000000,0x01234567,
+                               0,0x7f800000,0xff800000,0x7fa12345,0xffffffff)
+
+
+def tag23(alert=b'\xff',value=None,*,extended=False,target_value=b'\xff'):
+    return ((b'\xfa\x23\x00' if extended else b'\x23')+b'\x0b\x80'+bytes.fromhex('FFFFFFFF0000008067452301')+
+            alert+bytes.fromhex('78563412FFFFFFFF')+payload(value)+bytes.fromhex('67452301FF00C07F')+target_value)
+
+
 class BuffActionsTests(unittest.TestCase):
 
 
@@ -948,6 +959,88 @@ class BuffActionsTests(unittest.TestCase):
 
 
 
+
+
+    def test_23_alert_payload_target_states_and_arbitrary_bits(self):
+        for extended in (False,True):
+            for alert in (b'\xff',skill_alert()):
+                for value in (None,b'',b'\xff\x00wire'):
+                    for target_value in (b'\xff',target()):
+                        data=tag23(alert,value,extended=extended,target_value=target_value)
+                        r=Reader(data,'23-normal');r.action(0)
+                        self.assertEqual(r.pos,37+2*extended+len(alert)-1+len(value or b'')+len(target_value)-1)
+                        self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=35))
+                        at=15+2*extended
+                        self.assertIn(dict(start=at,end=at+len(alert),kind='anonymous-skill-alert-profile'),r.records)
+                        if len(alert)>1:
+                            fields=[q for q in r.ranges if at+1<=q['start']<at+37]
+                            self.assertEqual([q['kind'] for q in fields],['anonymous-raw4']*3+['anonymous-scalar32']+['anonymous-raw4']*4+['anonymous-scalar32'])
+                            self.assertEqual([(q['start']-at,q['end']-at) for q in fields],[(1+4*i,5+4*i) for i in range(9)])
+        for raw in (b'\xff',b'\x23\xff',b'\xfa\x23\x00\xff'):
+            r=Reader(raw,'23-null');r.action(0);self.assertEqual(r.pos,len(raw))
+
+    def test_23_all_cuts_three_limits_and_explicit_tails(self):
+        for extended in (False,True):
+            for alert in (b'\xff',skill_alert()):
+                for value in (None,b'',b'\xff\x00wire'):
+                    for target_value in (b'\xff',target()):
+                        data=tag23(alert,value,extended=extended,target_value=target_value)
+                        for cut in range(len(data)):
+                            outcomes=[]
+                            for raw in (data[:cut],data,data[:cut]+b'\xff'*30):
+                                r=Reader(raw,'23-cut',cut)
+                                with self.assertRaises(FrameError) as caught:r.action(0)
+                                self.assertLessEqual(r.pos,cut)
+                                self.assertFalse(any(q.get('tag')==35 for q in r.records))
+                                outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                            self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+                        for tail in (b'\xff',bytes(5)):
+                            for limit in (len(data),len(data+tail)):
+                                r=Reader(data+tail,'23-tail',limit);r.action(0);self.assertEqual(r.pos,len(data))
+                            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(data)+tail)
+                            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_23_every_alert_word_and_post_alert_field_diagnostics(self):
+        for extended in (False,True):
+            for alert in (b'\xff',skill_alert()):
+                data=tag23(alert,b'\xff\x00',extended=extended);start=15+2*extended;po=start+len(alert)+8
+                fields=([(start+1+4*i,4) for i in range(9)] if len(alert)>1 else [])
+                fields += [(start+len(alert),4),(start+len(alert)+4,4),(po,4),(len(data)-9,4),(len(data)-5,4)]
+                for at,width in fields:
+                    for available in range(width):
+                        r=Reader(data,'23-field',at+available)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertEqual(caught.exception.diagnostic,dict(source='23-field',category='truncated',offset=at,expected={'bytes':width},actual={'remaining':available}))
+                        self.assertEqual(r.pos,at)
+                for n in (-2,2147483647):
+                    raw=data[:po]+struct.pack('<i',n)+data[po+4:];r=Reader(raw,'23-count')
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertEqual(caught.exception.diagnostic,dict(source='23-count',category='count-bounds',offset=po,expected={'minimum':-1,'maximum':len(data)-po-4},actual=n))
+                    self.assertEqual(r.pos,po+4)
+                for at,expected in [(1+2*extended,11)]+([(start,9)] if len(alert)>1 else []):
+                    r=Reader(data[:at]+b'\x2a'+data[at+1:],'23-header')
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertEqual(caught.exception.diagnostic,dict(source='23-header',category='member-count',offset=at,expected=expected,actual=42))
+                    self.assertEqual(r.pos,at)
+                r=Reader(data,'23-target-required',len(data)-1)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='23-target-required',category='truncated',offset=len(data)-1,expected='one byte',actual='EOF'))
+
+    def test_23_parent_counts_tails_and_separate_union_identity(self):
+        data=tag23(skill_alert(),b'\xff\x00');parent=sequence(data)
+        for n in (-2,2147483647):
+            r=Reader(parent[:1]+struct.pack('<i',n)+parent[5:],'23-parent')
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='23-parent',category='count-bounds',offset=1,expected={'minimum':-1,'maximum':len(data)},actual=n))
+        for missing in (1,2):
+            end=len(parent)-missing;r=Reader(parent,'23-parent-tail',end)
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='23-parent-tail',category='truncated',offset=end,expected={'bytes':1},actual={'remaining':0}))
+            self.assertEqual([q['tag'] for q in r.records if q['kind']=='union'],[35])
+        for tag in (b'\x17',b'\xfa\x23\x01'):
+            r=Reader(tag+data[1:],'23-distinct')
+            with self.assertRaises(FrameError):r.action(0)
+            self.assertFalse(any(q.get('tag')==35 for q in r.records))
 
     def test_a8_list_states_independent_scalars_and_target(self):
         for extended in (False,True):

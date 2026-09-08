@@ -1,0 +1,244 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      118865,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BroadcastAlertToCharactersAction_BroadcastAlertToCharactersActionDataForMemoryPack+Beyond_Gameplay_Core_BroadcastAlertToCharactersAction_BroadcastAlertToCharactersActionDataForMemoryPackFormatter",
+      "Deserialize",
+      66678992
+    ],
+    [
+      118864,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BroadcastAlertToCharactersAction_BroadcastAlertToCharactersActionDataForMemoryPack",
+      "Deserialize",
+      66679088
+    ],
+    [
+      162718,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillAlertDataForMemoryPack+Beyond_Gameplay_Core_SkillAlertDataForMemoryPackFormatter",
+      "Deserialize",
+      67967520
+    ],
+    [
+      162717,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillAlertDataForMemoryPack",
+      "Deserialize",
+      67967616
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66678992,
+      "endRva": 66679085,
+      "sha256": "D9610E2A8B1A660279B500B8A6D00370DC430F65B0121E71931A302FD2B67AA5",
+      "boundary": "outer formatter initialization and forwarding"
+    },
+    {
+      "startRva": 66679088,
+      "endRva": 66679772,
+      "sha256": "CD1DE2872D6ACFF964A73C66BE20BEBFCC35CA49D575BF064C1FC421C36B460B",
+      "boundary": "outer header11 normal and initialization through rejoin"
+    },
+    {
+      "startRva": 67967520,
+      "endRva": 67967613,
+      "sha256": "1E93491F28005CD6357B8C69BE3D34CF4D494BEE6115E169BA55CCAD14F52303",
+      "boundary": "alert formatter initialization and forwarding"
+    },
+    {
+      "startRva": 67967616,
+      "endRva": 67968103,
+      "sha256": "EBEA9C9E4AB3B2D5EA876C203119DE44B65494ACED19CDFF4D5AECCD2D22BC67",
+      "boundary": "alert header9 normal and initialization through rejoin"
+    },
+    {
+      "startRva": 83196208,
+      "endRva": 83196221,
+      "sha256": "764DA353D4031CF83C393B65227C9732AFE8F4413592315F9743B7765F6745B4",
+      "boundary": "outer existing output rejoin"
+    },
+    {
+      "startRva": 83196277,
+      "endRva": 83196298,
+      "sha256": "3DAB2BDB818A9FC02E35FB6FD95FF865CAAEE3039FD6BAD1175C365CBF0FE874",
+      "boundary": "outer FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 83327328,
+      "endRva": 83327379,
+      "sha256": "AB8646A978ACFBFCD09EEFF668ED976DA33BF1A6733DFD33706B0272A5511CC3",
+      "boundary": "alert allocate new output after header and rejoin"
+    },
+    {
+      "startRva": 83327435,
+      "endRva": 83327456,
+      "sha256": "AF2E79B08252E83BC2A8B63B818C6094B5D9D0302FF87B22748400C27376F137",
+      "boundary": "alert FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66679260,
+      "instructionHex": "488B15452C0F09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66679366,
+      "instructionHex": "488B159BA40F09",
+      "cellVa": 6661150440,
+      "usageRawHex": "7BEB12C000000000",
+      "methodSpecIndex": 619965,
+      "methodSpec": [
+        428464,
+        -1,
+        16654
+      ],
+      "argumentRawHex": "34240000000000000000120000000000",
+      "typeDefinition": 9268,
+      "typeName": "Beyond.Gameplay.Core.SkillAlertData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66679407,
+      "instructionHex": "488B152AB80F09",
+      "cellVa": 6661155488,
+      "usageRawHex": "CBE412C000000000",
+      "methodSpecIndex": 619109,
+      "methodSpec": [
+        428448,
+        -1,
+        42208
+      ],
+      "argumentRawHex": "7E050000000000000000118000000000",
+      "typeDefinition": 1406,
+      "typeName": "Beyond.Gameplay.ActionTargetType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66679447,
+      "instructionHex": "488B15FAA30F09",
+      "cellVa": 6661150360,
+      "usageRawHex": "8BE812C000000000",
+      "methodSpecIndex": 619589,
+      "methodSpec": [
+        428448,
+        -1,
+        42552
+      ],
+      "argumentRawHex": "37240000000000000000118000000000",
+      "typeDefinition": 9271,
+      "typeName": "Beyond.Gameplay.Core.BroadcastAlertToCharactersAction+BroadcastAlertToCharactersActionData+BroadcastTarget",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66679521,
+      "instructionHex": "488B15C0A30F09",
+      "cellVa": 6661150376,
+      "usageRawHex": "53E512C000000000",
+      "methodSpecIndex": 619177,
+      "methodSpec": [
+        428448,
+        -1,
+        42254
+      ],
+      "argumentRawHex": "7D050000000000000000118000000000",
+      "typeDefinition": 1405,
+      "typeName": "Beyond.Gameplay.DirectionType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66679595,
+      "instructionHex": "488B15D6A30C09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 67967803,
+      "instructionHex": "488B15A68AF008",
+      "cellVa": 6660400616,
+      "usageRawHex": "D5E412C000000000",
+      "methodSpecIndex": 619114,
+      "methodSpec": [
+        428448,
+        -1,
+        42212
+      ],
+      "argumentRawHex": "33240000000000000000118000000000",
+      "typeDefinition": 9267,
+      "typeName": "Beyond.Gameplay.Core.AlertMoveType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67967979,
+      "instructionHex": "488B15068AF008",
+      "cellVa": 6660400632,
+      "usageRawHex": "D7E412C000000000",
+      "methodSpecIndex": 619115,
+      "methodSpec": [
+        428448,
+        -1,
+        42213
+      ],
+      "argumentRawHex": "32240000000000000000118000000000",
+      "typeDefinition": 9266,
+      "typeName": "Beyond.Gameplay.Core.AlertShape",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member11": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "skill-alert-profile",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "scalar32",
+      "raw4",
+      "target-profile"
+    ],
+    "skillAlert9": [
+      "raw4",
+      "raw4",
+      "raw4",
+      "scalar32",
+      "raw4",
+      "raw4",
+      "raw4",
+      "raw4",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact union35 dispatch and registered type/module/token joins identify BroadcastAlertToCharactersAction_BroadcastAlertToCharactersActionDataForMemoryPack. Header11 reads common BYTE/three DWORD, SkillAlertData, two DWORDs, bounded signed-length byte payload, DWORD, raw4 and TargetSettings. SkillAlertData is FF or header9 followed by three raw4 reads, DWORD, four raw4 reads and DWORD: one or37 source bytes. Its AlertMoveType and AlertShape contexts select DWORD reads; the seven floating source spans preserve arbitrary bits without numeric interpretation. The new-output allocation branch occurs after the child header and consumes no extra fields. Null alert, null or empty payload and null target remain independent; post-alert DWORDs, payload length, DWORD and raw4 stay required. Short23 and FA2300 identify union35 with nonnull minimum lengths37/39 using null alert and target; a nonnull alert raises them to73/75. TargetSettings reuses the separately pinned finite profile and extensions. Complete formatter/reader/init/allocation/existing-output/FF windows exclude adjacent setters and error bodies. Static identity is exact, source order direct and framing structural-only. Alert behavior, geometry, numeric units, payload encoding, target ownership, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
