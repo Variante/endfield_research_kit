@@ -699,7 +699,72 @@ def tag19b(items=(),paired=b'\xff',first_scalar=b'\xff',last_scalar=b'\xff',firs
             b'\xff'+last_scalar+first+second+b'\xff'*4)
 
 
+def tag128(effect=b'\xff',calc=b'\xff',last=b'\xff'):
+    return (b'\xfa\x28\x01\x0b\xfe'+b'\xff'*12+b'\x80'+effect+
+            b'\xfe'*4+b'\xff'+b'\x80'*4+calc+last)
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_128_config_calculations_and_terminal_target(self):
+        calculations=(b'\xff',b'\x00\xff',b'\x00\x01'+scalar_payload(None),
+                      b'\x02\x03\xfe'+scalar_payload(b'')+scalar_payload(),
+                      b'\x03\x04'+scalar_payload()+bytes(4)+scalar_payload(None)+bytes(4))
+        for effect in (b'\xff',effect85()):
+            for calc in calculations:
+                child=tag128(effect,calc,target())
+                row=event_prefix(prefix(sequence(child)),source='128.bin')
+                self.assertEqual(row['status'],'supported-prefix')
+                record=next(r for r in row['completedRecords'] if r.get('tag')==296)
+                self.assertEqual((record['start'],record['end']),(19,19+len(child)))
+        for child in (tag128(),b'\xfa\x28\x01\xff'):
+            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_128_all_cuts_limits_and_trailing(self):
+        raw=sequence(tag128(effect85(),b'\x00\x01'+scalar_payload(),target()))
+        for n in range(len(raw)):
+            with self.subTest(n=n),self.assertRaises(FrameError):
+                sequence_frame(raw[:n],source='128-cut.bin')
+        with self.assertRaises(FrameError) as caught:sequence_frame(raw+b'x',source='128-tail.bin')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        full=prefix(raw)
+        for n in range(len(full)):
+            row=event_prefix(full,source='128-limit.bin',limit=n)
+            self.assertEqual(row['status'],'failed')
+            self.assertLessEqual(row['consumedEnd'],n)
+            self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='128-limit.bin',limit=n))
+
+    def test_128_bad_headers_and_nested_lengths(self):
+        raw=prefix(sequence(tag128(effect85(),b'\x00\x01'+scalar_payload(),target())))
+        good=event_prefix(raw,source='128-bad.bin')
+        for r in good['ranges']:
+            if r['kind'] not in ('count-i32','member-header'):continue
+            for value in ((-2,2147483647) if r['kind']=='count-i32' else (42,)):
+                bad=bytearray(raw);at=r['start']
+                if r['kind']=='count-i32':struct.pack_into('<i',bad,at,value)
+                else:bad[at]=value
+                row=event_prefix(bad,source='128-bad.bin')
+                with self.subTest(at=at,value=value):
+                    self.assertEqual(row['status'],'failed')
+                    self.assertEqual(row['diagnostic']['offset'],at)
+                    self.assertEqual(row['diagnostic']['actual'],value)
+
+    def test_128_unknown_children_and_missing_final_target(self):
+        reader=Reader(tag128()[:-1],'128-missing.bin')
+        with self.assertRaises(FrameError) as caught:reader.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],29)
+        self.assertFalse(any(r.get('tag')==296 for r in reader.records))
+        unknown=b'\x0d\xff'+payload(None)+bytes(6)+payload(None)+b'\x03\x17'
+        for child,offset in ((tag128(calc=b'\x01'),28),
+                             (tag128(last=unknown),29+len(unknown)-1)):
+            row=event_prefix(prefix(sequence(child)),source='128-unknown.bin')
+            self.assertEqual(row['status'],'unsupported')
+            self.assertEqual(row['consumedEnd'],19+offset)
+            self.assertFalse(any(r.get('tag')==296 for r in row['completedRecords']))
+        row=event_prefix(prefix(sequence(tag128(),b'\x59')),source='128-next.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['consumedEnd'],49)
+        self.assertTrue(any(r.get('tag')==296 for r in row['completedRecords']))
+
     def test_tag19b_nested_lists_null_empty_payloads_and_tail(self):
         for items in (None,(),(b'\xff',),(keyword19b(None),),(keyword19b(),),(keyword19b((None,b'',b'\xffwire'),scalar_payload()),)):
             child=tag19b(items,pair(None,b'raw',128),scalar_payload(),scalar_payload(None),target(),target())

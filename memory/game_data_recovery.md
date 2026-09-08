@@ -682,6 +682,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   lists and null payloads remain distinct. The post-list scalar precedes two
   targets and the required DWORD; keyword and vulnerability meanings remain
   unresolved independently of these structural boundaries.
+  `scripts/game_data/buff_128_native.json` pins header-eleven RecoverPoise:
+  common prefix, byte, EffectActionCfg, DWORD, byte, DWORD, CalculationBase
+  and target. Reuse the bounded member85 configuration and calculation union
+  profiles; unknown calculation variants stop before their tag, and the final
+  target remains required after both children complete. Poise and calculation
+  meanings stay unresolved independently of this framing.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity

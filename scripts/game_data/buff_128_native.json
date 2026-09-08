@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122199,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RecoverPoiseAction_DataForMemoryPack+Beyond_Gameplay_Core_RecoverPoiseAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      58165552
+    ],
+    [
+      122198,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RecoverPoiseAction_DataForMemoryPack",
+      "Deserialize",
+      58164432
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58165552,
+      "endRva": 58165645,
+      "sha256": "0FFACCFE3E839A3F608EB99E32D41A7F1EFCE4188B8B70CBDEA8B68D7B50651F",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 58164432,
+      "endRva": 58165117,
+      "sha256": "B4DC19F90F276FBF18B0D542E0FA9A6565FE6FBFAC448C4541876B65A23A45C6",
+      "boundary": "header11 source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 81977734,
+      "endRva": 81977747,
+      "sha256": "C2307BF30CFFBE7988428AD70D8DD8338E1DEC86EA5D616A51B6771119EBCA9A",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 81977803,
+      "endRva": 81977824,
+      "sha256": "EDFF091373D46E328E6D98E0D5E6096BAFD4BCD5EA652568A9CCFD7155664B9A",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58164604,
+      "instructionHex": "488B15A5189109",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58164744,
+      "instructionHex": "488B15B9B49509",
+      "cellVa": 6661421768,
+      "usageRawHex": "D3EA12C000000000",
+      "methodSpecIndex": 619881,
+      "methodSpec": [
+        428464,
+        -1,
+        14443
+      ],
+      "argumentRawHex": "200E0000000000000000120000000000",
+      "typeDefinition": 3616,
+      "typeName": "Beyond.Gameplay.EffectActionCfg",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58164785,
+      "instructionHex": "488B1568A49109",
+      "cellVa": 6661155488,
+      "usageRawHex": "CBE412C000000000",
+      "methodSpecIndex": 619109,
+      "methodSpec": [
+        428448,
+        -1,
+        42208
+      ],
+      "argumentRawHex": "7E050000000000000000118000000000",
+      "typeDefinition": 1406,
+      "typeName": "Beyond.Gameplay.ActionTargetType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58164859,
+      "instructionHex": "488B158EC98709",
+      "cellVa": 6660509712,
+      "usageRawHex": "49E512C000000000",
+      "methodSpecIndex": 619172,
+      "methodSpec": [
+        428448,
+        -1,
+        19594
+      ],
+      "argumentRawHex": "96840000000000000000118000000000",
+      "typeDefinition": 33942,
+      "typeName": "Beyond.GEnums.DamageType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58164899,
+      "instructionHex": "488B1586878E09",
+      "cellVa": 6660951600,
+      "usageRawHex": "B1EA12C000000000",
+      "methodSpecIndex": 619864,
+      "methodSpec": [
+        428464,
+        -1,
+        13995
+      ],
+      "argumentRawHex": "60270000000000000000120000000000",
+      "typeDefinition": 10080,
+      "typeName": "Beyond.Gameplay.Core.CalculationBase",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58164940,
+      "instructionHex": "488B1535908E09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member11": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "effect-configuration-profile",
+      "scalar32",
+      "byte",
+      "scalar32",
+      "calculation-profile",
+      "target-profile"
+    ]
+  },
+  "boundary": "Exact selected union dispatch and module/token joins identify RecoverPoiseAction. Header11 consumes common byte/three DWORDs, byte, EffectActionCfg, DWORD, byte, DWORD, CalculationBase and required TargetSettings. Exact MethodSpecs619881/619864/619977 reuse the separately pinned finite profiles in buff_9a_native.json, buff_c5_native.json and target contracts; EffectActionCfg member85 is not an anonymous fixed-width blob. Calculation unknown unions stop at their first byte. Scalar enum contexts add no wire headers, and arbitrary byte/scalar bits remain structural values. Preserve independent null wrappers, nested counts and terminal target; completed configuration/calculation children do not complete an action whose target is missing. Exact static identity and direct selected source order support structural-only framing. Poise behavior, authored field ownership, calculation meaning, target selection, live provider choice, complete refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
