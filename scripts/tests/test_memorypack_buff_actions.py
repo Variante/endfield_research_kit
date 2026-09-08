@@ -304,6 +304,14 @@ def tag76(*items):
     return b'\x76\x05'+bytes(13)+struct.pack('<i',len(items))+b''.join(items)
 
 
+def tag8a(d=b'\xff',sel=b'\xff',values=(None,None,None,None),extended=False,bits=b'\x01\x00\xc0\x7f'):
+    return ((b'\xfa\x8a\x00' if extended else b'\x8a')+b'\x13\xfe'+
+            struct.pack('<III',0x01020304,0x80000000,0xffffffff)+d+
+            b'\x04\x03\x02\x01'+payload(values[0])+b'\x08\x07\x06\x05\x80'+payload(values[1])+sel+
+            b'\x0c\x0b\x0a\x09\x10\x0f\x0e\x0d'+payload(values[2])+b'\x14\x13\x12\x11'+payload(values[3])+
+            b'\xfe\xff'+bits)
+
+
 def direction():
     return b'\x08\x01\x00'+bytes(4)+b'\x00\xff'+bytes(4)+b'\xff'+bytes(4)
 
@@ -865,6 +873,79 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['status'],'unsupported')
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
+
+    def test_8a_nullable_profiles_payloads_both_encodings_and_raw_terminal(self):
+        d=b'\x08\x80\xfe\x04\x03\x02\x01\xff'+target(direction_value=b'\xff')+b'\x08\x07\x06\x05\xff\x0c\x0b\x0a\x09'
+        selectors=(b'\xff',b'\x03\xff'+struct.pack('<ii',-1,-1),b'\x03\x00\x00'+bytes(8),b'\x03\xff'+struct.pack('<i',1)+b'\xff'+struct.pack('<i',1)+b'\xff')
+        self.assertEqual(len(tag8a()),60);self.assertEqual(len(tag8a(extended=True)),62)
+        for extended in (False,True):
+            for direction_value in (b'\xff',d):
+                for sel in selectors:
+                    for values in ((None,b'',b'a\xff',b'\x01\x02\x03'),(b'\x80',None,b'',b'last')):
+                        child=tag8a(direction_value,sel,values,extended,b'\x04\x03\x02\x01');q=Reader(child+b'\xaa','8a');q.action(0)
+                        self.assertEqual(q.pos,len(child));self.assertEqual(q.records[-1]['tag'],138)
+                        self.assertEqual(q.ranges[-1],{'start':len(child)-4,'end':len(child),'kind':'anonymous-float32-bits'})
+                        self.assertEqual(child[-6:],b'\xfe\xff\x04\x03\x02\x01')
+                        at=(17 if extended else 15)+len(direction_value)
+                        self.assertIn({'start':at,'end':at+4,'kind':'anonymous-scalar32'},q.ranges)
+                        self.assertEqual(child[at:at+4],b'\x04\x03\x02\x01')
+        for raw in (b'\xff',b'\x8a\xff',b'\xfa\x8a\x00\xff'):
+            q=Reader(raw+b'\xaa','8a-null');q.action(0);self.assertEqual(q.pos,len(raw))
+
+    def test_8a_all_cuts_required_float_tail_parent_and_trailing(self):
+        for extended in (False,True):
+            child=tag8a(direction(),b'\x03\xff'+bytes(8),(b'a\xff',b'bc',b'\x80',b'def'),extended)
+            for cut in range(len(child)):
+                results=[]
+                for raw in (child,child[:cut],child[:cut]+b'\xff'*20):
+                    q=Reader(raw,'8a-cut',cut)
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    self.assertLessEqual(q.pos,cut);self.assertFalse(any(x.get('tag')==138 for x in q.records))
+                    results.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for raw in (tag8a(extended=extended),child):
+                for k in range(1,7):
+                    q=Reader(raw[:-k],'8a-terminal')
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    at=len(raw)-4 if k<=4 else len(raw)-k
+                    self.assertEqual(caught.exception.diagnostic['offset'],at);self.assertEqual(q.pos,at)
+            parent=prefix(sequence(child))
+            for cut in range(len(parent)):
+                row=event_prefix(parent,source='8a-parent',limit=cut);self.assertEqual(row['status'],'failed')
+                self.assertEqual(row,event_prefix(parent[:cut]+b'\xff'*(len(parent)-cut),source='8a-parent',limit=cut))
+            for tail in (b'\x00',b'\xff'*4):
+                q=Reader(child+tail,'8a-end');q.action(0);self.assertEqual(q.pos,len(child))
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_8a_bad_headers_counts_unknown_nested_and_parent_boundaries(self):
+        child=tag8a(direction(),b'\x03\xff'+bytes(8),(b'a',b'bc',b'def',b'last'));r=Reader(child,'8a');r.action(0)
+        for span in r.ranges:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for invalid in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=invalid
+                else:struct.pack_into('<i',bad,at,invalid)
+                q=Reader(bad,'8a-invalid')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],at)
+                self.assertFalse(any(x.get('tag')==138 for x in q.records))
+        q=Reader(tag8a(sel=b'\x03\x17'+bytes(8)),'8a-unknown')
+        with self.assertRaises(Unsupported) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['actual'],23);self.assertEqual(q.target_depth,0)
+        for count in (-2,2147483647):
+            q=Reader(b'\x03'+struct.pack('<i',count)+child+bytes(2),'8a-count')
+            with self.assertRaises(FrameError) as caught:q.sequence()
+            self.assertEqual(caught.exception.diagnostic['offset'],1);self.assertEqual(q.pos,5)
+        for parent in (sequence(child),sequence(),b'\x03'+struct.pack('<i',-1)+bytes(2)):
+            q=Reader(parent,'8a-parent');q.sequence();self.assertEqual(q.pos,len(parent))
+            for k in (1,2):
+                q=Reader(parent[:-k],'8a-parent-tail')
+                with self.assertRaises(FrameError) as caught:q.sequence()
+                self.assertEqual(caught.exception.diagnostic['offset'],len(parent)-k);self.assertEqual(q.pos,len(parent)-k)
+        row=event_prefix(prefix(sequence(child,b'\xd0')),source='8a-next')
+        self.assertEqual(row['diagnostic']['actual'],208);self.assertEqual(row['diagnostic']['offset'],19+len(child))
+        self.assertEqual(row['consumedEnd'],19+len(child));self.assertTrue(any(x.get('tag')==138 for x in row['completedRecords']))
 
     def test_18b_fixed_order_raw_dword_bits_and_distinct_short_tag(self):
         for value in (0,1,0xffffffff,0x80000000,0x7fc00001,0x01020304):

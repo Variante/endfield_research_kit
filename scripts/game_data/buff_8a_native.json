@@ -1,0 +1,199 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119579,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ContinuousFindTargetAction_DataForMemoryPack+Beyond_Gameplay_Core_ContinuousFindTargetAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      63315296
+    ],
+    [
+      119578,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ContinuousFindTargetAction_DataForMemoryPack",
+      "Deserialize",
+      63315392
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63315296,
+      "endRva": 63315389,
+      "sha256": "20FADFC5609360E041BB7992F0898AC622F2D3D2D95D86DA775360E34E1CFFCC",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 63315392,
+      "endRva": 63316442,
+      "sha256": "474504E8279AB694B178022F48CFF48A7E7BC6F6DB058DE53D17E079CE38480E",
+      "boundary": "header19 normal source reads, FF clear and initialization through rejoin"
+    },
+    {
+      "startRva": 82735164,
+      "endRva": 82735177,
+      "sha256": "2D016A9A453E6D1A21B4103AC2AE82EC20EE8B29E04F745FD2127C1B49D6BA98",
+      "boundary": "existing output rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63315600,
+      "instructionHex": "488B15917F4209",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63315715,
+      "instructionHex": "488B15DE7C4209",
+      "cellVa": 6661118952,
+      "usageRawHex": "D1EA12C000000000",
+      "methodSpecIndex": 619880,
+      "methodSpec": [
+        428464,
+        -1,
+        14417
+      ],
+      "argumentRawHex": "2A280000000000000000120000000000",
+      "typeDefinition": 10282,
+      "typeName": "Beyond.Gameplay.Core.DirectionSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63315753,
+      "instructionHex": "488B15700B4309",
+      "cellVa": 6661155488,
+      "usageRawHex": "CBE412C000000000",
+      "methodSpecIndex": 619109,
+      "methodSpec": [
+        428448,
+        -1,
+        42208
+      ],
+      "argumentRawHex": "7E050000000000000000118000000000",
+      "typeDefinition": 1406,
+      "typeName": "Beyond.Gameplay.ActionTargetType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63315827,
+      "instructionHex": "488B15061D3909",
+      "cellVa": 6660504704,
+      "usageRawHex": "45E612C000000000",
+      "methodSpecIndex": 619298,
+      "methodSpec": [
+        428448,
+        -1,
+        8642
+      ],
+      "argumentRawHex": "80050000000000000000118000000000",
+      "typeDefinition": 1408,
+      "typeName": "Beyond.Gameplay.MountPoint",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63315935,
+      "instructionHex": "488B15F27A4309",
+      "cellVa": 6661184216,
+      "usageRawHex": "07EC12C000000000",
+      "methodSpecIndex": 620035,
+      "methodSpec": [
+        428464,
+        -1,
+        17124
+      ],
+      "argumentRawHex": "00280000000000000000120000000000",
+      "typeDefinition": 10240,
+      "typeName": "Beyond.Gameplay.Core.Selector+SelectorData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63315976,
+      "instructionHex": "488B1599F64209",
+      "cellVa": 6661150376,
+      "usageRawHex": "53E512C000000000",
+      "methodSpecIndex": 619177,
+      "methodSpec": [
+        428448,
+        -1,
+        42254
+      ],
+      "argumentRawHex": "7D050000000000000000118000000000",
+      "typeDefinition": 1405,
+      "typeName": "Beyond.Gameplay.DirectionType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63316016,
+      "instructionHex": "488B15690A4309",
+      "cellVa": 6661155488,
+      "usageRawHex": "CBE412C000000000",
+      "methodSpecIndex": 619109,
+      "methodSpec": [
+        428448,
+        -1,
+        42208
+      ],
+      "argumentRawHex": "7E050000000000000000118000000000",
+      "typeDefinition": 1406,
+      "typeName": "Beyond.Gameplay.ActionTargetType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63316090,
+      "instructionHex": "488B151F0A4309",
+      "cellVa": 6661155488,
+      "usageRawHex": "CBE412C000000000",
+      "methodSpecIndex": 619109,
+      "methodSpec": [
+        428448,
+        -1,
+        42208
+      ],
+      "argumentRawHex": "7E050000000000000000118000000000",
+      "typeDefinition": 1406,
+      "typeName": "Beyond.Gameplay.ActionTargetType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member19": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "direction",
+      "scalar32",
+      "byte-payload",
+      "scalar32",
+      "byte",
+      "byte-payload",
+      "selector",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "scalar32",
+      "byte-payload",
+      "byte",
+      "byte",
+      "raw-float32-bits"
+    ]
+  },
+  "boundary": "Exact selected union138 dispatch and module/token joins identify ContinuousFindTargetAction_Data. Its header19 reader consumes common byte/three DWORDs, DirectionSettings, DWORD, payload, DWORD, byte, payload, SelectorData, two DWORDs, payload, DWORD, payload, two bytes and required terminal raw float32 bits. Eight precise generic contexts independently identify Priority, DirectionSettings, ActionTargetType three times, MountPoint, SelectorData and DirectionType. Direction and selector reuse independently pinned nullable bounded profiles. Payloads use signed nullable byte counts. The final four bytes are a source read, not optional padding; no additional field follows. Short8A and FA8A00 encode the same union138; FF union and either union with FF member header remain distinct valid null forms. Source calls establish order independently of managed declarations or setters. Formatter, normal/FF/init and existing-output windows retain complete instructions. Static identity is exact, selected source order direct and framing structural-only. Continuous targeting behavior, enum value meaning, payload decoding, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

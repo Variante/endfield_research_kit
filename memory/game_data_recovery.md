@@ -623,6 +623,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_8a_native.json` joins ContinuousFindTargetAction to
+  its header19 direction, scalar, payload and selector read order. Two final
+  bytes and a required raw float32 field close the record; null nested profiles
+  do not remove that tail. Short and extended union encodings share this order.
+  Continuous targeting behavior and payload ownership remain unresolved.
   `scripts/game_data/buff_19c_native.json` independently joins WeakAction to
   the header13 paired/scalar/list/byte/scalar/two-target order shared with
   ShelterAction. The list reserves four bytes for later fields, and the second
