@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121300,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveGaitAction_DataForMemoryPack+Beyond_Gameplay_Core_MoveGaitAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      67627920
+    ],
+    [
+      121299,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveGaitAction_DataForMemoryPack",
+      "Deserialize",
+      67628016
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67627920,
+      "endRva": 67628013,
+      "sha256": "50B3927E31417AA7869A776C9CEB543BC23076DE32134C5984BD3F69E92EFF8E",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 67628016,
+      "endRva": 67628458,
+      "sha256": "EA6EA74019CFD161C7A0E0CB4B107AFE0DA61E85D91198D8FB8C7F0D7F621E44",
+      "boundary": "header6 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83294298,
+      "endRva": 83294311,
+      "sha256": "C962D756B181B82AF0C2970E24C8869DE6986328518D91472706EBF01274F7A1",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83294367,
+      "endRva": 83294388,
+      "sha256": "768E933A14BB58593B0B9500AF5AABBA7E7D9257E9A203FC2CD10C712394F124",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67628188,
+      "instructionHex": "488B1585B10009",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67628294,
+      "instructionHex": "488B1583E3F708",
+      "cellVa": 6660542608,
+      "usageRawHex": "F9E712C000000000",
+      "methodSpecIndex": 619516,
+      "methodSpec": [
+        428448,
+        -1,
+        26288
+      ],
+      "argumentRawHex": "B92F0000000000000000118000000000",
+      "typeDefinition": 12217,
+      "typeName": "Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67628334,
+      "instructionHex": "488B155BE3F708",
+      "cellVa": 6660542608,
+      "usageRawHex": "F9E712C000000000",
+      "methodSpecIndex": 619516,
+      "methodSpec": [
+        428448,
+        -1,
+        26288
+      ],
+      "argumentRawHex": "B92F0000000000000000118000000000",
+      "typeDefinition": 12217,
+      "typeName": "Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected union244 dispatch and module/token joins identify MoveGaitAction_Data. The header6 reader consumes one byte and five independent DWORDs. Generic contexts identify Priority and the same GroundedMoveGait enum for both final scalar calls; the source helper remains four bytes and adds no nested header. Short F4 and extended FA F4 00 select the same type. Null union and null outer wrapper remain independent. Both final DWORDs are required, including all-FF scalar bits; no nested object, collection or additional tail follows. Output setters add no source fields. Source order is direct and static identity exact; framing remains structural-only. Movement behavior, enum-value semantics, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

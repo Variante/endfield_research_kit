@@ -714,6 +714,10 @@ def tag2c(first=b'\xff',second=b'\xff',nested=b'\xff',value=None,last=None):
             b'\xff'+payload(value)+b'\x80'*4+nested+b'\xfe'+payload(last))
 
 
+def tagf4(first=b'\xff'*4,last=b'\xff'*4,extended=False):
+    return (b'\xfa\xf4\x00' if extended else b'\xf4')+b'\x06\xfe'+b'\xff'*12+first+last
+
+
 def tagb9(nested=b'\xff',flag=b'\xff',extended=False):
     return (b'\xfa\xb9\x00' if extended else b'\xb9')+b'\x06\xfe'+b'\xff'*12+flag+nested
 
@@ -806,6 +810,58 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['status'],'unsupported')
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
+
+    def test_f4_both_encodings_and_independent_scalar_bits(self):
+        for first,last in ((b'\xff'*4,bytes(4)),(bytes(4),b'\xff'*4),(b'\x80'*4,b'\xfe'*4)):
+            for extended in (False,True):
+                child=tagf4(first,last,extended);r=Reader(child+b'\xaa','f4');r.action(0)
+                self.assertEqual(r.pos,len(child));self.assertEqual(len(child),25 if extended else 23)
+                self.assertEqual(r.records[-1]['tag'],244)
+                self.assertEqual([v['end']-v['start'] for v in r.ranges[-2:]],[4,4])
+                self.assertEqual([v['kind'] for v in r.ranges[-2:]],['anonymous-scalar32']*2)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='f4-next')
+                self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['offset'],19+len(child))
+                self.assertTrue(any(v.get('tag')==244 for v in row['completedRecords']))
+        for raw in (b'\xff',b'\xf4\xff',b'\xfa\xf4\x00\xff'):
+            r=Reader(raw+b'\xaa','f4-null');r.action(0);self.assertEqual(r.pos,len(raw))
+
+    def test_f4_all_cuts_required_scalar_tails_and_parent_boundaries(self):
+        for extended in (False,True):
+            child=tagf4(extended=extended)
+            for cut in range(len(child)):
+                results=[]
+                for raw in (child,child[:cut],child[:cut]+b'\xff'*20):
+                    q=Reader(raw,'f4-cut',cut)
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    self.assertLessEqual(q.pos,cut);self.assertFalse(any(v.get('tag')==244 for v in q.records))
+                    results.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for n in range(1,9):
+                q=Reader(child[:-n],'f4-required')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['expected'],{'bytes':4})
+                self.assertEqual(caught.exception.diagnostic['offset'],len(child)-(4 if n<=4 else 8))
+                self.assertFalse(any(v.get('tag')==244 for v in q.records))
+            full=prefix(sequence(child))
+            for cut in range(len(full)):
+                row=event_prefix(full,source='f4-limit',limit=cut)
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='f4-limit',limit=cut))
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_f4_header_and_parent_count_fail_at_source(self):
+        for extended in (False,True):
+            child=tagf4(extended=extended);at=3 if extended else 1
+            for header in (0,5,7,254):
+                bad=bytearray(child);bad[at]=header;q=Reader(bad,'f4-header')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],at)
+                self.assertFalse(any(v.get('tag')==244 for v in q.records))
+        for count in (-2,2147483647):
+            with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+tagf4()+bytes(2))
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(caught.exception.diagnostic['offset'],1)
 
     def test_b9_encodings_required_byte_and_target_endpoint(self):
         for nested in (b'\xff',target(),target(direction_value=b'\xff')):
