@@ -294,6 +294,9 @@ only.
   from its overview-entry triggers and waits for window closure before the
   saved-entry prompts. Collection joins their triggers and memory charge to
   the exact session; Python independently replays the raw window membership.
+  Payload summaries distinguish effective activity from retained intensity.
+  Mode comparison assumes stable repeated intensity getters: the producer
+  reads the parameter again for its threshold, separately from the packed value.
   Shutdown closes new admissions while retaining nested callbacks until accepted
   camera scopes drain. Patch drift or timeout retains the provider and fails
   evidence; callback code is pinned through process exit for late pass-through.
