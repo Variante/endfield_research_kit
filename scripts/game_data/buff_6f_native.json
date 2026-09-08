@@ -1,0 +1,107 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124498,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckProfession_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckProfession_DataForMemoryPackFormatter",
+      "Deserialize",
+      71159040
+    ],
+    [
+      124497,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckProfession_DataForMemoryPack",
+      "Deserialize",
+      71159136
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 71159040,
+      "endRva": 71159133,
+      "sha256": "1CBEFFCE070E2EF3C1655FADC4C8985EA9F923037FC1D7F860EF657FAFD07EB4",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 71159136,
+      "endRva": 71159591,
+      "sha256": "564D0CE8F36FCA7CD2B74465B177D3F436EA987D121AEE78C466135AB1756632",
+      "boundary": "header6 normal and initialization through rejoin"
+    },
+    {
+      "startRva": 83636992,
+      "endRva": 83637005,
+      "sha256": "C05A9EF920DE4E94AFAC298AA60F6E0A207375C8F5B70DA3BA5DE47469F3D803",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83637061,
+      "endRva": 83637082,
+      "sha256": "196C4FBFF787588B4367B9583324C22599A70BE9C2778293EA2F956AC60CC954",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 71159308,
+      "instructionHex": "488B1515D0CA08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 71159414,
+      "instructionHex": "488B158B48C808",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71159455,
+      "instructionHex": "488B1532CBC508",
+      "cellVa": 6660790744,
+      "usageRawHex": "7BE712C000000000",
+      "methodSpecIndex": 619453,
+      "methodSpec": [
+        428448,
+        -1,
+        42455
+      ],
+      "argumentRawHex": "D9340000000000000000118000000000",
+      "typeDefinition": 13529,
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckProfession+ProfessionCategoryMask",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target-profile",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact union111 dispatch and registered type/module/token joins identify Conditions_CheckProfession_DataForMemoryPack. Header6 reads common BYTE/three DWORD, TargetSettings and terminal DWORD. The separately joined ProfessionCategoryMask context selects the final four-byte source read; a null target does not remove it. TargetSettings reuses the independently pinned buff_ec_native.json finite profile and current extensions. Short6F and FA6F00 have minimum nonnull lengths20/22 with null target; FF union and FF wrapper remain separate null forms. Full formatter/reader initialization and existing-output/FF windows exclude adjacent setters/error bodies. Output setters add no source fields. Static identity is exact, source order direct and framing structural-only. Profession membership/bit meanings, condition behavior, target ownership, payload encoding, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

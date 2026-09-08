@@ -969,7 +969,86 @@ def tag16a(items=(),*,targets=(b'\xff',b'\xff',b'\xff'),values=(None,b''),scalar
             bytes.fromhex('FF00C07F')+b'\xfe'+targets[2])
 
 
+
+def tag6f(value=b'\xff',*,extended=False,bits=0xffffffff):
+    return (b'\xfa\x6f\x00' if extended else b'\x6f')+b'\x06\x80'+bytes.fromhex('FFFFFFFF0000008067452301')+value+struct.pack('<I',bits)
+
+
 class BuffActionsTests(unittest.TestCase):
+
+    def test_6f_target_states_raw_dword_and_exact_extents(self):
+        for extended in (False,True):
+            for value in (b'\xff',target(),target(direction_value=b'\xff',selector=b'\xff')):
+                for bits in (0,0x80000000,0x7fc00000,0xffffffff):
+                    data=tag6f(value,extended=extended,bits=bits);r=Reader(data,'6f-normal');r.action(0)
+                    self.assertEqual(r.pos,19+2*extended+len(value))
+                    self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=111))
+                    self.assertIn(dict(start=15+2*extended,end=len(data)-4,kind='anonymous-target-profile'),r.records)
+                    self.assertEqual(r.ranges[-1],dict(start=len(data)-4,end=len(data),kind='anonymous-scalar32'))
+                    self.assertEqual(data[-4:],struct.pack('<I',bits))
+        for data in (b'\xff',b'\x6f\xff',b'\xfa\x6f\x00\xff'):
+            r=Reader(data,'6f-null');r.action(0);self.assertEqual(r.pos,len(data))
+
+    def test_6f_every_cut_in_three_limits_and_explicit_tails(self):
+        for extended in (False,True):
+            for value in (b'\xff',target(),target(direction_value=b'\xff',selector=b'\xff')):
+                data=tag6f(value,extended=extended)
+                for cut in range(len(data)):
+                    outcomes=[]
+                    for raw in (data[:cut],data,data[:cut]+b'\xff\x00'*30):
+                        r=Reader(raw,'6f-cut',cut)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,cut);self.assertFalse(any(q.get('tag')==111 for q in r.records))
+                        outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+                for extra in (b'\x00',b'\xff',bytes(5)):
+                    for limit in (len(data),len(data+extra)):
+                        r=Reader(data+extra,'6f-tail',limit);r.action(0);self.assertEqual(r.pos,len(data))
+                    with self.assertRaises(FrameError) as caught:sequence_frame(sequence(data)+extra)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_6f_terminal_dword_and_nested_payload_diagnostics(self):
+        for extended in (False,True):
+            for value in (b'\xff',target(direction_value=b'\xff',selector=b'\xff')):
+                data=tag6f(value,extended=extended);end=len(data)-4
+                for available in range(4):
+                    r=Reader(data,'6f-dword',end+available)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertEqual(caught.exception.diagnostic,dict(source='6f-dword',offset=end,category='truncated',expected={'bytes':4},actual={'remaining':available}))
+                    self.assertEqual(r.pos,end);self.assertIn(dict(start=15+2*extended,end=end,kind='anonymous-target-profile'),r.records)
+            data=tag6f(target(direction_value=b'\xff',selector=b'\xff'),extended=extended)
+            at=17+2*extended
+            for n in (-2,2147483647):
+                raw=data[:at]+struct.pack('<i',n)+data[at+4:];r=Reader(raw,'6f-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='6f-count',offset=at,category='count-bounds',expected={'minimum':-1,'maximum':len(raw)-at-4},actual=n))
+                self.assertEqual(r.pos,at+4)
+            for at,expected in ((1+2*extended,6),(15+2*extended,13)):
+                r=Reader(data[:at]+b'\x2a'+data[at+1:],'6f-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='6f-header',offset=at,category='member-count',expected=expected,actual=42))
+                self.assertEqual(r.pos,at)
+
+    def test_6f_parent_counts_required_tails_and_distinct_union(self):
+        child=tag6f(target(direction_value=b'\xff',selector=b'\xff'));parent=sequence(child)
+        for n in (-2,2147483647):
+            r=Reader(parent[:1]+struct.pack('<i',n)+parent[5:],'6f-parent')
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='6f-parent',offset=1,category='count-bounds',expected={'minimum':-1,'maximum':len(child)},actual=n));self.assertEqual(r.pos,5)
+        for missing in (1,2):
+            end=len(parent)-missing;r=Reader(parent,'6f-parent-tail',end)
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='6f-parent-tail',offset=end,category='truncated',expected={'bytes':1},actual={'remaining':0}))
+            self.assertEqual(r.pos,end);self.assertIn(dict(start=5,end=5+len(child),kind='union',tag=111),r.records)
+        r=Reader(sequence(child,b'\x59'),'6f-parent-next')
+        with self.assertRaises(FrameError) as caught:r.sequence()
+        self.assertEqual(caught.exception.diagnostic,dict(source='6f-parent-next',offset=5+len(child),category='union-tag',expected='supported current union tag',actual=89));self.assertEqual(r.pos,5+len(child))
+        for lead in (b'\xfa\x6f\x01',b'\x6e'):
+            r=Reader(lead+child[1:],'6f-distinct')
+            with self.assertRaises(FrameError):r.action(0)
+            self.assertFalse(any(q.get('tag')==111 for q in r.records))
+
+
 
     def test_16a_list_profiles_targets_payloads_and_raw_extents(self):
         lists=(None,(),(b'\xff',),(input16a(None),),(input16a((),b'',b'raw'),),

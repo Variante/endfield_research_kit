@@ -515,6 +515,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   distinct null/empty states and terminal reserves at both list levels.
   Spawning behavior, target ownership and coordinate/rotation conventions remain
   unresolved; the final target is required even when preceding lists are null.
+  `scripts/game_data/buff_6f_native.json` joins CheckProfession to a member-six
+  order: common prefix, TargetSettings and a terminal DWORD. Reuse the bounded
+  target profile; a null target does not remove the final four source bytes.
+  The last static context identifies ProfessionCategoryMask, but its bit
+  meanings and runtime profession checks remain unresolved.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.
