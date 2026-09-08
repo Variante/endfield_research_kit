@@ -633,6 +633,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   bytes and a required raw float32 field close the record; null nested profiles
   do not remove that tail. Short and extended union encodings share this order.
   Continuous targeting behavior and payload ownership remain unresolved.
+  `scripts/game_data/buff_198_native.json` joins VoiceTriggerAction to header11:
+  the common prefix, two DWORDs, a nullable payload, two DWORDs, another nullable
+  payload and terminal TargetSettings. Both length markers and the final target
+  remain required for null/empty payloads. VoSpeakerType identifies a context,
+  while voice behavior, payload encoding and speaker/target ownership remain
+  unresolved. Short98 is a distinct union, not an alias for FA9801.
   `scripts/game_data/buff_ad_native.json` joins EventListenerAction to header5,
   the common prefix and a nullable AbilityActionMap list. Each FF/header2 map
   places its DWORD before the nullable Sequence array; no field follows that

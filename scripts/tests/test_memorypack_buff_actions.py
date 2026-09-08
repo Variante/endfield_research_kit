@@ -871,7 +871,82 @@ def tagad(items=(),extended=False):
     return (b'\xfa\xad\x00' if extended else b'\xad')+b'\x05\x80'+b'\xfe'*12+struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())
 
 
+def tag198(first=None,second=None,last=b'\xff'):
+    return (b'\xfa\x98\x01\x0b\xfe'+struct.pack('<IIIII',0,0x80000000,0xffffffff,0x7fc00001,0x01234567)+
+            payload(first)+struct.pack('<II',0xfedcba98,0x80000001)+payload(second)+last)
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_198_source_order_independent_payloads_and_terminal_target(self):
+        self.assertEqual(len(tag198()),42)
+        for first,second in ((None,None),(b'',b''),(b'\xff\xfa',b'\x80'),(None,b'xyz'),(b'abc',None)):
+            for last in (b'\xff',target(),target(direction_value=b'\xff')):
+                child=tag198(first,second,last);r=Reader(child+b'opaque','198.bin',len(child));r.action(0)
+                self.assertEqual(r.pos,len(child));self.assertEqual(r.records[-1]['tag'],408)
+                cursor=0
+                for q in r.ranges:self.assertEqual(q['start'],cursor);cursor=q['end']
+                self.assertEqual(cursor,len(child))
+        r=Reader(b'\xfa\x98\x01\xff','198-null.bin');r.action(0);self.assertEqual(r.pos,4)
+        r=Reader(b'\x98','198-short.bin')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['category'],r.pos),('truncated',1))
+        r=Reader(b'\x98\xff','198-short-wrapper.bin');r.action(0)
+        self.assertEqual(r.records[-1]['tag'],152)
+
+    def test_198_every_cut_hard_limit_and_required_terminal_target(self):
+        for child in (tag198(),tag198(b'\x80\xff',b'a',target()),tag198(b'',None)):
+            for n in range(len(child)):
+                results=[]
+                for z in (child[:n],child,child[:n]+b'\xff'*20):
+                    r=Reader(z,'198-cut.bin',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(q.get('tag')==408 for q in r.records))
+                    results.append((r.pos,caught.exception.diagnostic,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[1],results[2])
+        child=tag198();r=Reader(child,'198-target.bin',41)
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category'],r.pos),(41,'truncated',41))
+
+    def test_198_independent_lengths_and_wrong_headers(self):
+        for first,second in ((None,None),(b'',b''),(b'xyz',b'\xff')):
+            child=tag198(first,second)
+            for at in (25,37+len(first or b'')):
+                for value in (-2,2147483647):
+                    bad=bytearray(child);struct.pack_into('<i',bad,at,value);r=Reader(bad,'198-length.bin')
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    d=caught.exception.diagnostic
+                    self.assertEqual((d['offset'],d['actual'],d['category'],r.pos),(at,value,'count-bounds',at+4))
+                for width in range(4):
+                    r=Reader(child,'198-marker.bin',at+width)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(at,at))
+        for at in (3,41):
+            bad=bytearray(tag198());bad[at]=42;r=Reader(bad,'198-header.bin')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category'],r.pos),(at,'member-count',at))
+
+    def test_198_parent_count_tails_unknown_and_trailing(self):
+        child=tag198()
+        for n in (-1,0,1):
+            raw=b'\x03'+struct.pack('<i',n)+(child if n==1 else b'')+bytes(2)
+            sequence_frame(raw)
+            for missing in (1,2):
+                r=Reader(raw,'198-tail.bin',len(raw)-missing)
+                with self.assertRaises(FrameError) as caught:r.sequence()
+                self.assertEqual(caught.exception.diagnostic['category'],'truncated')
+                self.assertEqual(r.pos,len(raw)-missing)
+        for n in (-2,2147483647):
+            with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',n)+child+bytes(2))
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+        for tail in (b'x',b'\xff'):
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        r=Reader(sequence(child,b'\xfa\xa0\x01'),'198-unknown.bin')
+        with self.assertRaises(Unsupported) as caught:r.sequence()
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],r.pos),(47,416,47))
+        self.assertTrue(any(q.get('tag')==408 for q in r.records))
+
+
     def test_tagad_maps_null_states_and_recursive_source_order(self):
         for extended in (False,True):
             for items in (None,(),(b'\xff',),(ability_map(None),),(ability_map(),),

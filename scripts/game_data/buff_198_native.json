@@ -1,0 +1,112 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123878,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_VoiceTriggerAction_VoiceTriggerActionDataForMemoryPack+Beyond_Gameplay_Core_VoiceTriggerAction_VoiceTriggerActionDataForMemoryPackFormatter",
+      "Deserialize",
+      64609344
+    ],
+    [
+      123877,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_VoiceTriggerAction_VoiceTriggerActionDataForMemoryPack",
+      "Deserialize",
+      64609440
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 64609344,
+      "endRva": 64609437,
+      "sha256": "C222565CFC12A9A36A79CAC5E291B23A266E93E2B5CDB5A097AD681AFB4A786C",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 64609440,
+      "endRva": 64610073,
+      "sha256": "3E207911AD95424B59BF2DF08B82A55F5611845352FE05F9993B22AA50423A5C",
+      "boundary": "header11 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 82912306,
+      "endRva": 82912319,
+      "sha256": "192B81843933AE861D7980CCA0A3C8462D6D463BEB27EEEAB691B4FCC287BF5D",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 82912375,
+      "endRva": 82912396,
+      "sha256": "17654326E420E6BE4060F51509D3D41863E39CB4481820E3962BB260D88E4E29",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 64609617,
+      "instructionHex": "488B15D0C02E09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64609862,
+      "instructionHex": "488B155BCF2909",
+      "cellVa": 6660795816,
+      "usageRawHex": "F9E612C000000000",
+      "methodSpecIndex": 619388,
+      "methodSpec": [
+        428448,
+        -1,
+        26628
+      ],
+      "argumentRawHex": "D0840000000000000000118000000000",
+      "typeDefinition": 34000,
+      "typeName": "Beyond.GEnums.VoSpeakerType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64609936,
+      "instructionHex": "488B1571382C09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member11": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "nullable-byte-payload",
+      "scalar32",
+      "scalar32",
+      "nullable-byte-payload",
+      "target-settings"
+    ]
+  },
+  "boundary": "Exact union408 dispatch, registered type and module/token joins identify VoiceTriggerAction_VoiceTriggerActionData. Its header11 reader consumes the common byte and three DWORDs, two DWORDs, a nullable byte payload, two DWORDs, a second nullable byte payload and terminal TargetSettings. Exact contexts identify Priority, VoSpeakerType and TargetSettings. All DWORD bits remain anonymous; the enum name does not narrow accepted values. Existing byte-length and TargetSettings profiles reuse the selected buff_ec_native.json consumer evidence. Both payload length markers and the terminal target wrapper remain required independently of null/empty payloads. No additional source byte follows the target. FA9801 is the extended union408 encoding; short98 identifies distinct union152 and is not an alias. Null union and FA9801FF null outer wrapper remain distinct states. Complete formatter/normal/init/existing-output/FF windows exclude adjacent setters and methods. Static identity is exact, source order direct and framing structural-only. Voice trigger behavior, payload encoding/reference ownership, speaker/target ownership, live provider selection, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
