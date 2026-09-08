@@ -679,7 +679,55 @@ def tagc1(first=b'\xff\x00raw',second=b'\x80tail',extended=False):
     return (b'\xfa\xc1\x00' if extended else b'\xc1')+b'\x06\xff'+bytes.fromhex('FFFFFFFF000000800000C07F')+payload(first)+payload(second)
 
 
+def tag101(value=0xffffffff,last=255):
+    return b'\xfa\x01\x01\x06\xff'+bytes.fromhex('FFFFFFFF000000800000C07F')+struct.pack('<I',value)+bytes([last])
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag101_fixed_width_arbitrary_values_and_next_unknown(self):
+        for value in (0,0x80000000,0x7fc00000,0xffffffff):
+            for last in (0,1,127,128,255):
+                child=tag101(value,last);r=Reader(child,'101');r.action(0)
+                self.assertEqual(r.pos,22);self.assertEqual(len(child),22)
+                self.assertIn(dict(start=0,end=22,kind='union',tag=257),r.records)
+                result=event_prefix(prefix(sequence(child,b'\x59')),source='101.bin')
+                self.assertEqual(result['diagnostic']['offset'],41)
+                self.assertEqual(result['diagnostic']['actual'],89);self.assertFalse(result['wholeSchemaExact'])
+
+    def test_tag101_all_cuts_hard_limits_null_wrapper_and_trailing(self):
+        for child in (tag101(),b'\xfa\x01\x01\xff'):
+            complete=Reader(child,'101-full');complete.action(0);self.assertEqual(complete.pos,len(child))
+            for cut in range(len(child)):
+                values=[]
+                for data in (child,child[:cut],child[:cut]+b'\xff'*20):
+                    r=Reader(data,'101-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut);self.assertFalse(any(v.get('tag')==257 for v in r.records))
+                    values.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(values[0],values[1]);self.assertEqual(values[0],values[2])
+            for tail in (b'\xff',b'\x00'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag101_wrong_header_parent_count_alias_and_required_byte(self):
+        for header in (0,5,7,254):
+            child=bytearray(tag101());child[3]=header;r=Reader(child,'101-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],3)
+            self.assertEqual(caught.exception.diagnostic['expected'],6)
+        for tag in (b'\x01',b'\xfa\x01\x00'):
+            r=Reader(tag+tag101()[3:],'101-alias')
+            with self.assertRaises(Unsupported) as caught:r.action(0)
+            self.assertEqual(r.pos,0);self.assertEqual(caught.exception.diagnostic['actual'],1)
+        for count in (-2,0x7fffffff):
+            with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+tag101()+b'\x00\x00')
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+            self.assertEqual(caught.exception.diagnostic['offset'],1)
+        r=Reader(tag101()[:-1],'101-tail')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],21)
+        self.assertFalse(any(v.get('tag')==257 for v in r.records))
+
     def test_tagc1_independent_payload_null_empty_and_extended(self):
         for first in (None,b'',b'\xff\x00raw'):
             for second in (None,b'',b'\x80tail'):

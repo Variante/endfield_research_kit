@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121572,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_OnSpellAbnormalStartFinish_DataForMemoryPack+Beyond_Gameplay_Core_OnSpellAbnormalStartFinish_DataForMemoryPackFormatter",
+      "Deserialize",
+      68133424
+    ],
+    [
+      121571,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_OnSpellAbnormalStartFinish_DataForMemoryPack",
+      "Deserialize",
+      68133520
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 68133424,
+      "endRva": 68133517,
+      "sha256": "5603665B013A06E5386A2362478E21FC249E4157492751B965E690435CF147E1",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 68133520,
+      "endRva": 68133956,
+      "sha256": "61BBDE0DD06A92B6A64BBBFBF7E4187E2127BD8AC5E0EA8E6CD20BF6B7BFB3E0",
+      "boundary": "header6 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83345672,
+      "endRva": 83345685,
+      "sha256": "9F2F8B5448E6C768376EA1A075E8ED6FF98D39948336C70F99E37425D51EB509",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83345741,
+      "endRva": 83345762,
+      "sha256": "617428ED736B1BED229FBB5A8B594FF9546FD917D69338B93823CCE0084CB2FE",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 68133692,
+      "instructionHex": "488B15E5FAF808",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 68133798,
+      "instructionHex": "488B159BB7F008",
+      "cellVa": 6660578120,
+      "usageRawHex": "D5E612C000000000",
+      "methodSpecIndex": 619370,
+      "methodSpec": [
+        428448,
+        -1,
+        26626
+      ],
+      "argumentRawHex": "7B050000000000000000118000000000",
+      "typeDefinition": 1403,
+      "typeName": "Beyond.Gameplay.SpellAbnormalType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected union dispatch and module/token joins identify OnSpellAbnormalStartFinish. Its header6 source order is the common byte/three DWORD prefix, a fourth DWORD and a required final byte. Priority and SpellAbnormalType contexts belong to the first and fourth DWORD respectively; they add no wire headers. There are no source payloads, nested objects or collection counts. Preserve arbitrary scalar and byte values, independent FF wrapper and the full extended union tag 0x101. Native identity is exact and selected source order direct; framing remains structural-only. Terminal byte boolean meaning, authored field ownership, spell behavior, live formatter choice, complete refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

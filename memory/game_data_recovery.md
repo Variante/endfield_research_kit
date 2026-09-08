@@ -665,6 +665,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   common byte/three DWORDs followed by two independently nullable byte
   payloads. Both length words are required even when the first is null/empty;
   keep payload encoding, cross-file identity and AI behavior unresolved.
+  `scripts/game_data/buff_101_native.json` pins header-six
+  OnSpellAbnormalStartFinish: common byte/three DWORDs, another DWORD and a
+  required byte. Priority and SpellAbnormalType contexts add no wire headers;
+  arbitrary values remain valid structural bytes, without boolean or spell
+  behavior claims. Preserve the complete extended union identity.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity
