@@ -1,0 +1,218 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121067,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_LaunchUpwardAction_DataForMemoryPack+Beyond_Gameplay_Core_LaunchUpwardAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      66277728
+    ],
+    [
+      121066,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_LaunchUpwardAction_DataForMemoryPack",
+      "Deserialize",
+      66277824
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66277728,
+      "endRva": 66277821,
+      "sha256": "4F2C9D2379DFF9C3AFB422513937F2FF3BFDE1DDC3C51D8CC55B17F20B8EE601",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 66277824,
+      "endRva": 66278678,
+      "sha256": "8DDF003F76DB08E9D24B0C5E96AFE25C4DC19854A249E4DF51526C107801A269",
+      "boundary": "header15 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83136932,
+      "endRva": 83136945,
+      "sha256": "79FF5893A02DAE1E01B20781A28B63DE9680452D4219F98DBF4FA09735D7C334",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83137001,
+      "endRva": 83137022,
+      "sha256": "1F005D290595123E8692FC75DAEE62FB04A943DBA9CFBD3BD1825A206C741286",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66277996,
+      "instructionHex": "488B15B54B1509",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66278102,
+      "instructionHex": "488B15EBE71909",
+      "cellVa": 6661421768,
+      "usageRawHex": "D3EA12C000000000",
+      "methodSpecIndex": 619881,
+      "methodSpec": [
+        428464,
+        -1,
+        14443
+      ],
+      "argumentRawHex": "200E0000000000000000120000000000",
+      "typeDefinition": 3616,
+      "typeName": "Beyond.Gameplay.EffectActionCfg",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66278143,
+      "instructionHex": "488B15C2481509",
+      "cellVa": 6661118920,
+      "usageRawHex": "3DE512C000000000",
+      "methodSpecIndex": 619166,
+      "methodSpec": [
+        428448,
+        -1,
+        42248
+      ],
+      "argumentRawHex": "73080000000000000000118000000000",
+      "typeDefinition": 2163,
+      "typeName": "Beyond.Gameplay.ControlledStateDeadOption",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66278183,
+      "instructionHex": "488B15BA481509",
+      "cellVa": 6661118952,
+      "usageRawHex": "D1EA12C000000000",
+      "methodSpecIndex": 619880,
+      "methodSpec": [
+        428464,
+        -1,
+        14417
+      ],
+      "argumentRawHex": "2A280000000000000000120000000000",
+      "typeDefinition": 10282,
+      "typeName": "Beyond.Gameplay.Core.DirectionSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66278224,
+      "instructionHex": "488B15C9F20B09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66278265,
+      "instructionHex": "488B15A0F20B09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66278340,
+      "instructionHex": "488B150D481509",
+      "cellVa": 6661118936,
+      "usageRawHex": "05E712C000000000",
+      "methodSpecIndex": 619394,
+      "methodSpec": [
+        428448,
+        -1,
+        42408
+      ],
+      "argumentRawHex": "E5230000000000000000118000000000",
+      "typeDefinition": 9189,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+ReturnTrueMethod",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66278380,
+      "instructionHex": "488B1515C31209",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66278455,
+      "instructionHex": "488B15CAC21209",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member15": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "effect-configuration-profile",
+      "scalar32",
+      "direction-profile",
+      "scalar-payload",
+      "scalar-payload",
+      "raw4",
+      "scalar32",
+      "target-profile",
+      "raw4",
+      "target-profile",
+      "byte"
+    ]
+  },
+  "boundary": "Exact union223 dispatch, registered type and module/token joins identify LaunchUpwardAction_DataForMemoryPack. Its header15 reader consumes the common byte/three-DWORD prefix, EffectActionCfg, DWORD, DirectionSettings, two BlackboardDouble records, raw float32 bits, DWORD, TargetSettings, raw float32 bits, TargetSettings and a required final byte. EffectActionCfg reuses the member85 source proof in buff_9a_native.json; direction, scalar and target profiles reuse buff_ec_native.json and finite selector extensions in buff_b2_native.json. Repeated Double and Target contexts identify separate instances, not shared wire spans. ControlledStateDeadOption and ReturnTrueMethod contexts still select DWORD helper reads. Float-return ABI carries four source bytes each; output setters add no source members. Null nested records do not remove the following scalars, target or terminal byte. ShortDF and FADF00 both identify union223; nonnull minimum lengths with null children are 38 and 40 bytes. FF union and DFFF/FADF00FF wrapper null remain distinct. All scalar and byte bits stay anonymous. Complete formatter/reader/init/existing-output/FF windows exclude adjacent setters and error bodies. Static identity is exact, source order direct and framing structural-only. Upward launch behavior, numerical units, target roles, live provider selection, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

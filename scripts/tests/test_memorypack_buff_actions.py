@@ -890,7 +890,95 @@ def tag184(first=b'\xff',second=b'\xff'):
     return b'\xfa\x84\x01\x06\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00001)+first+second
 
 
+def tagdf(effect=b'\xff',direction_value=b'\xff',first=b'\xff',second=b'\xff',left=b'\xff',right=b'\xff',*,extended=False,bits=0x7fc00001,last=255):
+    return ((b'\xfa\xdf\x00' if extended else b'\xdf')+b'\x0f\xfe'+bytes(12)+effect+
+            struct.pack('<I',0xffffffff)+direction_value+first+second+struct.pack('<II',bits,0x80000000)+
+            left+struct.pack('<I',bits)+right+bytes([last]))
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_df_source_order_bits_encodings_and_null_states(self):
+        for extended in (False,True):
+            size=40 if extended else 38
+            for bits in (0,0x80000000,0x7fc00001,0xff800000,0xffffffff):
+                for last in (0,1,128,255):
+                    child=tagdf(extended=extended,bits=bits,last=last)
+                    r=Reader(child+b'opaque','df-bits.bin',size);r.action(0)
+                    self.assertEqual((r.pos,len(child),r.records[-1]['tag']),(size,size,223))
+                    raw=[q for q in r.ranges if q['kind']=='anonymous-float32-bits']
+                    shift=2 if extended else 0
+                    self.assertEqual([(q['start'],q['end']) for q in raw],[(23+shift,27+shift),(32+shift,36+shift)])
+                    self.assertEqual((r.ranges[-1]['start'],r.ranges[-1]['end']),(size-1,size))
+        for child,tag in ((b'\xff',255),(b'\xdf\xff',223),(b'\xfa\xdf\x00\xff',223)):
+            r=Reader(child,'df-null.bin');r.action(0);self.assertEqual((r.pos,r.records[-1]['tag']),(len(child),tag))
+
+    def test_df_nonnull_instances_all_cuts_and_terminal_byte(self):
+        for extended in (False,True):
+            for child in (tagdf(extended=extended),tagdf(first=scalar_payload(b'one'),second=scalar_payload(b'longer'),left=target(),right=target(direction_value=b'\xff'),extended=extended),tagdf(effect85(),direction(),scalar_payload(None),scalar_payload(b''),target(),target(),extended=extended)):
+                r=Reader(child,'df-full.bin');r.action(0);self.assertEqual(r.pos,len(child))
+                for cut in range(len(child)):
+                    outcomes=[]
+                    for data in (child[:cut],child,child[:cut]+b'\xff'*20):
+                        r=Reader(data,'df-cut.bin',cut)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,cut)
+                        self.assertFalse(any(q.get('tag')==223 and q['start']==0 for q in r.records))
+                        outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+                r=Reader(child,'df-final.bin',len(child)-1)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(len(child)-1,len(child)-1))
+                self.assertTrue(any(q['kind']=='anonymous-target-profile' for q in r.records))
+                for tail in (b'x',b'\xff'):
+                    r=Reader(child+tail,'df-tail.bin');r.action(0);self.assertEqual(r.pos,len(child))
+                    with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_df_two_payload_counts_raw_words_and_headers(self):
+        first,second=scalar_payload(b'a'),scalar_payload(b'long')
+        for extended in (False,True):
+            shift=2 if extended else 0
+            child=tagdf(first=first,second=second,extended=extended)
+            for at in (22+shift,22+shift+len(first)):
+                for count in (-2,2147483647):
+                    data=child[:at]+struct.pack('<i',count)+child[at+4:];r=Reader(data,'df-length.bin')
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    d=caught.exception.diagnostic
+                    self.assertEqual((d['offset'],d['actual'],d['category'],r.pos),(at,count,'count-bounds',at+4))
+                for available in range(4):
+                    r=Reader(child,'df-length-cut.bin',at+available)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(at,at))
+            fixed=tagdf(extended=extended)
+            for at in (23+shift,32+shift):
+                for available in range(4):
+                    r=Reader(fixed,'df-raw4-cut.bin',at+available)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(at,at))
+            for at,expected in ((1+shift,15),(21+shift,3),(21+shift+len(first),3)):
+                data=child[:at]+b'\x2a'+child[at+1:];r=Reader(data,'df-header.bin')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['offset'],d['expected'],d['actual'],r.pos),(at,expected,42,at))
+
+    def test_df_parent_nullable_counts_tails_and_unknown_sibling(self):
+        for extended in (False,True):
+            child=tagdf(extended=extended)
+            for count in (-1,0,1):
+                data=b'\x03'+struct.pack('<i',count)+(child if count==1 else b'')+bytes(2)
+                sequence_frame(data)
+                for missing in (1,2):
+                    r=Reader(data,'df-parent-tail.bin',len(data)-missing)
+                    with self.assertRaises(FrameError) as caught:r.sequence()
+                    self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(len(data)-missing,len(data)-missing))
+            for count in (-2,2147483647):
+                with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+child+bytes(2))
+                self.assertEqual((caught.exception.diagnostic['category'],caught.exception.diagnostic['actual']),('count-bounds',count))
+            r=Reader(sequence(child,b'\xfa\xa0\x01'),'df-unknown.bin')
+            with self.assertRaises(Unsupported) as caught:r.sequence()
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],r.pos),(len(child)+5,416,len(child)+5))
+            self.assertTrue(any(q.get('tag')==223 for q in r.records))
+
     def test_184_two_independent_sequences_and_distinct_short_tag(self):
         choices=(b'\xff',b'\x03'+struct.pack('<i',-1)+b'\xff\x80',sequence(),sequence(b'\xff'),sequence(tag197(),b'\xff'))
         for first in choices:
