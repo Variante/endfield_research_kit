@@ -714,6 +714,10 @@ def tag2c(first=b'\xff',second=b'\xff',nested=b'\xff',value=None,last=None):
             b'\xff'+payload(value)+b'\x80'*4+nested+b'\xfe'+payload(last))
 
 
+def tag186(nested=b'\xff',first=b'\xff'*4,last=b'\xff'*4):
+    return b'\xfa\x86\x01\x07\xfe'+b'\xff'*12+nested+first+last
+
+
 def tag17c(nested=b'\xff',scalar=b'\xff',last_target=b'\xff',last=b'\xff'):
     return (b'\xfa\x7c\x01\x0e\xfe'+b'\xff'*12+nested+b'\xff\xfe\x80\x00'+
             b'\x00\x00\xc0\x7f'+scalar+b'\xfe'+last_target+last)
@@ -798,6 +802,67 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['status'],'unsupported')
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
+
+    def test_186_target_nulls_and_two_independent_scalar_tails(self):
+        for nested in (b'\xff',target(),target(direction_value=b'\xff')):
+            for first,last in ((b'\xff'*4,bytes(4)),(bytes(4),b'\xff'*4),(b'\x80'*4,b'\xfe'*4)):
+                child=tag186(nested,first,last);r=Reader(child+b'\xaa','186');r.action(0)
+                self.assertEqual(r.pos,len(child));self.assertEqual(r.records[-1]['tag'],390)
+                self.assertEqual([v['end']-v['start'] for v in r.ranges[-2:]],[4,4])
+                self.assertEqual([v['kind'] for v in r.ranges[-2:]],['anonymous-scalar32']*2)
+                row=event_prefix(prefix(sequence(child,b'\x86\xff')),source='186-identity')
+                self.assertEqual(row['status'],'supported-prefix')
+                self.assertEqual([v['tag'] for v in row['completedRecords'] if 'tag' in v],[390,134])
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='186-next')
+                self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['offset'],19+len(child))
+        for raw in (b'\xff',b'\xfa\x86\x01\xff'):
+            r=Reader(raw+b'\xaa','186-null');r.action(0);self.assertEqual(r.pos,len(raw))
+
+    def test_186_all_cuts_both_dwords_required_and_parent_trailing(self):
+        child=tag186(target());r=Reader(child,'186');r.action(0)
+        for cut in range(len(child)):
+            results=[]
+            for raw in (child,child[:cut],child[:cut]+b'\xff'*20):
+                q=Reader(raw,'186-cut',cut)
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertLessEqual(q.pos,cut);self.assertFalse(any(v.get('tag')==390 for v in q.records))
+                results.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+            self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        for nested in (b'\xff',target()):
+            for n in range(1,9):
+                q=Reader(tag186(nested)[:-n],'186-tail')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['expected'],{'bytes':4})
+                self.assertTrue(any(v['kind']=='anonymous-target-profile' for v in q.records))
+                self.assertFalse(any(v.get('tag')==390 for v in q.records))
+        full=prefix(sequence(child))
+        for cut in range(len(full)):
+            row=event_prefix(full,source='186-limit',limit=cut)
+            self.assertEqual(row['status'],'failed')
+            self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='186-limit',limit=cut))
+        for tail in (b'\x00',b'\xff'):
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_186_nested_header_count_and_unknown_target_boundaries(self):
+        child=tag186(target());r=Reader(child,'186-invalid');r.action(0)
+        for span in r.ranges:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for invalid in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=invalid
+                else:struct.pack_into('<i',bad,at,invalid)
+                q=Reader(bad,'186-invalid')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],at)
+                self.assertFalse(any(v.get('tag')==390 for v in q.records))
+        unknown=target(selector=b'\x03\x17'+bytes(8));q=Reader(tag186(unknown),'186-target-unknown')
+        with self.assertRaises(Unsupported) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['actual'],23);self.assertEqual(q.target_depth,0)
+        self.assertFalse(any(v.get('tag')==390 for v in q.records))
+        for count in (-2,2147483647):
+            with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+child+bytes(2))
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(caught.exception.diagnostic['offset'],1)
 
     def test_17c_sequence_nulls_profiles_and_distinct_short_tag(self):
         for nested in (b'\xff',b'\x03'+struct.pack('<i',-1)+b'\xff\xfe',sequence(),

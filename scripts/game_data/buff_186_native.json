@@ -1,0 +1,125 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123617,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerCharSpellInflictionEvent_DataForMemoryPack+Beyond_Gameplay_Core_TriggerCharSpellInflictionEvent_DataForMemoryPackFormatter",
+      "Deserialize",
+      63973040
+    ],
+    [
+      123616,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerCharSpellInflictionEvent_DataForMemoryPack",
+      "Deserialize",
+      63973136
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63973040,
+      "endRva": 63973133,
+      "sha256": "7AC1E81F2BB53B9F7F3188063EB4426844B8BB0151734120B3981F1540F67DC7",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 63973136,
+      "endRva": 63973643,
+      "sha256": "4F623EFCB8628B67C47AABF694585E635DE3E193C6B3E80117E67C5D58E5BA78",
+      "boundary": "header7 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 82817122,
+      "endRva": 82817135,
+      "sha256": "4669F7FFBB0704FECF697DFA9A9CC6F3FB966B851C4080F83A344AE97F4E3694",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 82817191,
+      "endRva": 82817212,
+      "sha256": "C2EB8EB65E69377111292E0758E8FB86938E73C91F24D4C6058C85A4158EB5D4",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63973308,
+      "instructionHex": "488B1565763809",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63973414,
+      "instructionHex": "488B15DBEE3509",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63973455,
+      "instructionHex": "488B15B21F3D09",
+      "cellVa": 6661425160,
+      "usageRawHex": "15E712C000000000",
+      "methodSpecIndex": 619402,
+      "methodSpec": [
+        428448,
+        -1,
+        5695
+      ],
+      "argumentRawHex": "8D230000000000000000118000000000",
+      "typeDefinition": 9101,
+      "typeName": "Beyond.Gameplay.Core.AbilitySystem+Event",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63973495,
+      "instructionHex": "488B15BAE83509",
+      "cellVa": 6660952376,
+      "usageRawHex": "D9E612C000000000",
+      "methodSpecIndex": 619372,
+      "methodSpec": [
+        428448,
+        -1,
+        42393
+      ],
+      "argumentRawHex": "98840000000000000000118000000000",
+      "typeDefinition": 33944,
+      "typeName": "Beyond.GEnums.SpellInflictionOnCharType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected union390 dispatch and module/token joins identify TriggerCharSpellInflictionEvent_Data. The header7 reader consumes common byte/three DWORDs, TargetSettings and two independent required DWORDs. Four generic contexts identify Priority, TargetSettings, AbilitySystem.Event and SpellInflictionOnCharType. The final enum contexts call the same four-byte scalar source helper; neither adds a nested header and their raw bits remain anonymous. TargetSettings reuses buff_ec_native.json and its finite selector extensions. Null union, null outer wrapper and null target remain independent. A target endpoint does not finish this action: both following DWORDs are required even for a null target or all-FF scalar bits. Unknown target unions retain their source offset, preserve completed earlier children and never complete the enclosing action. Output setters add no source fields. Source order is direct and static identity exact; framing remains structural-only. Event emission behavior, spell attachment meaning, target ownership, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
