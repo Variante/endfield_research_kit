@@ -450,6 +450,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   DWORD helpers, not the following nested calls. Preserve both Double/Target
   instances and both raw float spans even when adjacent profiles are null;
   upward-launch behavior, numerical units and target roles remain unresolved.
+  `scripts/game_data/buff_1f_native.json` independently joins BombTouchLayerAction
+  to three sequence instances, two effect configurations and one target among
+  scalar members. Its LayerMask helper consumes one DWORD without a nested
+  header; both mask reads remain required, including the terminal DWORD after
+  the second effect. Preserve each sequence's count, depth and two tail bytes.
+  Repeated type contexts do not merge source spans or establish activation
+  roles; collision behavior, layer-bit meanings and effect ownership remain
+  unresolved independently of the exact static identity and direct read order.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

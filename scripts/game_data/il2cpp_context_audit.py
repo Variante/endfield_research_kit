@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = '6817B78947042AF8C29A3DCB9CC0B3A0CA2CA0236092CC677E8EEB44C7DA8EB6'
+CORPUS_SHA = 'AF5EEFC8A2FFE1B3D56581074D5356420A57D49B0D1C198432C06A0BE7CBDD0F'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -765,6 +765,7 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x390FBF0,'488B1511957809488B0BE8213C6FFC488BCF4885C00F858E785501488B1526147D09E855E910FD488903488BD0E9C0DDFFFF'),
         (0x390F9FC,'488B15D5677109488B0BE8153E6FFC488BCF4885C00F8581985501488B15220C7D09E8CD0011FD488903488BD0E9B4DFFFFF'),
         (0x390FCB8,'488B1519D17809488B0BE8593B6FFC488BCF4885C00F8568815501488B158E0F7D09E829EF10FD488903488BD0E9F8DCFFFF'),
+        (0x39101FE,'488B15931A7809488B0BE813366FFC488BCF4885C00F8504655501488B1548177D09E8A3D810FD488903488BD0E9B2D7FFFF'),
         (0x390DD14,'488B15651E7809488B0BE8FD5A6FFC488BCF4885C00F85A28C5501488B15D23D7D09E89DFF10FD488903488BD0E99CFCFFFF')):
         raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
         windows.append({'rva':at,'rawHex':expected})
@@ -951,7 +952,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (407,0x3910744,107232,16575,'VoiceInterruptAction_VoiceInterruptActionData',None),
         (145,0x390FBF0,106535,16045,'CreateAdditionalBattleShape_Data',None),
         (388,0x390F9FC,107197,16537,'TogglableAction_Data',None),
-        (223,0x390FCB8,106786,16223,'LaunchUpwardAction_Data',None)):
+        (223,0x390FCB8,106786,16223,'LaunchUpwardAction_Data',None),
+        (31,0x39101FE,106332,15945,'BombTouchLayerAction_Data',None)):
         require(targets[tag],target,source,table_va+tag*4)
         operands=[]
         for at,usage_tag in ((target,1),)+(((init,2),) if init is not None else ()):
@@ -2573,7 +2575,8 @@ def audit():
                Path(__file__).with_name('buff_197_native.json'),
                Path(__file__).with_name('buff_91_native.json'),
                Path(__file__).with_name('buff_184_native.json'),
-               Path(__file__).with_name('buff_df_native.json')]
+               Path(__file__).with_name('buff_df_native.json'),
+               Path(__file__).with_name('buff_1f_native.json')]
     source_hashes = {str(p): sha(p) for p in sources}
     mapper = load('context_audit_mapper', mapper_path)
     catalog = load('context_audit_catalog', catalog_path)
@@ -3244,6 +3247,8 @@ def audit():
         contract_path=Path(__file__).with_name('buff_184_native.json'))
     buff_df=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_df_native.json'))
+    buff_1f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('buff_1f_native.json'))
     buff_16b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_16b_native.json'))
     buff_24=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -3595,6 +3600,7 @@ def audit():
         'selectedBuff91ReadOrder':buff_91,
         'selectedBuff184ReadOrder':buff_184,
         'selectedBuffDfReadOrder':buff_df,
+        'selectedBuff1fReadOrder':buff_1f,
         'selectedBuff127ReadOrder':buff_127,
         'selectedBuffDamageListsReadOrder':buff_damage_lists,
         'selectedBuffCalc5ReadOrder':buff_calc5,

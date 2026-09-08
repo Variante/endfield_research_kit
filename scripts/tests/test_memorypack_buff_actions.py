@@ -478,19 +478,19 @@ def tag81(first=b'key',last=b'\xff\x00',nested=None,flag=254):
             payload(first)+(target() if nested is None else nested)+payload(last)+b'\x80\xff')
 
 
-def effect85():
+def effect85(value=b"fx"):
     return (b'\x55'+
             bytes(4) + bytes(4) + bytes(4) + bytes(1) + bytes(1) + bytes(4) + bytes(4) + bytes(4) +
-            bytes(4) + bytes(8) + bytes(4) + scalar_payload(None) + payload(b"fx") + bytes(4) + bytes(1) + bytes(4) +
+            bytes(4) + bytes(8) + bytes(4) + scalar_payload(None) + payload(value) + bytes(4) + bytes(1) + bytes(4) +
             bytes(1) + bytes(4) + bytes(4) + bytes(1) + bytes(1) + bytes(4) + bytes(1) + bytes(1) +
             bytes(4) + bytes(1) + bytes(1) + bytes(1) + bytes(1) + bytes(1) + bytes(1) + scalar_payload(None) +
-            bytes(4) + bytes(1) + bytes(4) + payload(b"fx") + bytes(4) + bytes(1) + bytes(4) + bytes(4) +
+            bytes(4) + bytes(1) + bytes(4) + payload(value) + bytes(4) + bytes(1) + bytes(4) + bytes(4) +
             bytes(4) + bytes(4) + bytes(1) + bytes(12) + b"\x03"+scalar_payload(None)*3 + bytes(4) + bytes(4) + bytes(1) +
             bytes(1) + bytes(4) + bytes(4) + bytes(4) + bytes(1) + bytes(4) + bytes(4) + bytes(12) +
             b"\x03"+scalar_payload(None)*3 + bytes(1) + bytes(12) + b"\x03"+scalar_payload(None)*3 + bytes(1) + bytes(4) + bytes(1) + bytes(1) +
             bytes(1) + bytes(4) + bytes(4) + bytes(1) + bytes(1) + bytes(1) + bytes(1) + bytes(1) +
             bytes(1) + bytes(1) + bytes(1) + bytes(1) + bytes(4) + bytes(1) + bytes(1) + bytes(4) +
-            bytes(4) + bytes(4) + bytes(4) + payload(b"fx") + bytes(1))
+            bytes(4) + bytes(4) + bytes(4) + payload(value) + bytes(1))
 
 
 def damage33(calc=b'\x03\x04'+scalar_payload(None)+bytes(4)+scalar_payload(None)+bytes(4),effect=None,processors=()):
@@ -896,7 +896,103 @@ def tagdf(effect=b'\xff',direction_value=b'\xff',first=b'\xff',second=b'\xff',le
             left+struct.pack('<I',bits)+right+bytes([last]))
 
 
+def tag1f(first=b'\xff',second=b'\xff',third=b'\xff',left=b'\xff',right=b'\xff',nested=b'\xff',*,extended=False,bits=0x7fc00001):
+    return ((b'\xfa\x1f\x00' if extended else b'\x1f')+b'\x0f\xfe'+bytes(12)+first+second+left+
+            b'\x80'+struct.pack('<II',0xffffffff,bits)+nested+struct.pack('<I',0x80000000)+
+            third+right+struct.pack('<I',0xfedcba98))
+
+
 class BuffActionsTests(unittest.TestCase):
+
+    def test_1f_fixed_source_order_null_states_and_encodings(self):
+        for extended in (False,True):
+            shift=2 if extended else 0
+            for bits in (0,0x80000000,0x7fc00001,0xff800000,0xffffffff):
+                child=tag1f(extended=extended,bits=bits);r=Reader(child+b'opaque','1f.bin');r.action(0)
+                self.assertEqual((r.pos,len(child),r.records[-1]['tag']),(38+shift,38+shift,31))
+                self.assertEqual([(v['start'],v['end']) for v in r.ranges if v['kind']=='anonymous-float32-bits'],[(23+shift,27+shift)])
+                self.assertEqual((r.ranges[-1]['start'],r.ranges[-1]['end']),(34+shift,38+shift))
+            for count in (-1,0):
+                seq=b'\x03'+struct.pack('<i',count)+b'\xff\x80'
+                child=tag1f(seq,seq,seq,extended=extended);r=Reader(child,'1f-null-array.bin');r.action(0)
+                self.assertEqual(r.pos,len(child))
+        for data,tag in ((b'\xff',255),(b'\x1f\xff',31),(b'\xfa\x1f\x00\xff',31)):
+            r=Reader(data,'1f-null.bin');r.action(0);self.assertEqual((r.pos,r.records[-1]['tag']),(len(data),tag))
+
+    def test_1f_independent_nested_instances_and_every_cut(self):
+        first,second,third=sequence(tag197()),sequence(tag197(),b'\xff'),sequence(tag1f())
+        left,right,nested=effect85(b'a'),effect85(b'longer'),target()
+        for extended in (False,True):
+            child=tag1f(first,second,third,left,right,nested,extended=extended)
+            start=17 if extended else 15
+            seqstarts=[start,start+len(first),start+len(first)+len(second)+len(left)+9+len(nested)+4]
+            r=Reader(child,'1f-full.bin');r.action(0);self.assertEqual(r.pos,len(child))
+            self.assertEqual([(v['start'],v['end']) for v in r.records if v['kind']=='sequence' and v['start'] in seqstarts],
+                             [(q,q+len(seq)) for q,seq in zip(seqstarts,(first,second,third))])
+            for cut in range(len(child)):
+                outcomes=[]
+                for data in (child[:cut],child,child[:cut]+b'\xff'*20):
+                    r=Reader(data,'1f-cut.bin',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut)
+                    self.assertFalse(any(v.get('tag')==31 and v['start']==0 for v in r.records))
+                    outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+            for tail in (b'\xff',b'x'*9):
+                for limit in (len(child),len(child+tail)):
+                    r=Reader(child+tail,'1f-tail.bin',limit);r.action(0);self.assertEqual(r.pos,len(child))
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_1f_three_counts_two_effect_lengths_headers_and_fixed_tails(self):
+        seqs=(sequence(tag197()),sequence(tag197(),b'\xff'),sequence(tag197(),tag197()))
+        effects=(effect85(b'a'),effect85(b'longer'))
+        for extended in (False,True):
+            start=17 if extended else 15
+            child=tag1f(*seqs,*effects,extended=extended)
+            e1=start+len(seqs[0])+len(seqs[1]);s3=e1+len(effects[0])+14;e2=s3+len(seqs[2])
+            # Constructed source positions, independent of parser output.
+            counts=(start+1,start+len(seqs[0])+1,s3+1,e1+53,e2+53)
+            for at in counts:
+                for count in (-2,2147483647):
+                    data=child[:at]+struct.pack('<i',count)+child[at+4:];r=Reader(data,'1f-count.bin')
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    d=caught.exception.diagnostic
+                    self.assertEqual((d['offset'],d['actual'],d['category'],r.pos),(at,count,'count-bounds',at+4))
+                for available in range(4):
+                    r=Reader(child,'1f-count-cut.bin',at+available)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(at,at))
+            for at,expected in ((start-14,15),(start,3),(start+len(seqs[0]),3),(s3,3),(e1,85),(e2,85)):
+                r=Reader(child[:at]+b'*'+child[at+1:],'1f-header.bin')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['offset'],d['expected'],d['actual'],r.pos),(at,expected,42,at))
+            for at in (e1+len(effects[0])+5,s3-4,len(child)-4):
+                for available in range(4):
+                    r=Reader(child,'1f-word-cut.bin',at+available)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(at,at))
+            for at,seq in zip((start,start+len(seqs[0]),s3),seqs):
+                for missing in (1,2):
+                    end=at+len(seq)-missing;r=Reader(child,'1f-seq-tail.bin',end)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(end,end))
+
+    def test_1f_each_recursive_sequence_depth_and_unknown_sibling(self):
+        for slot in range(3):
+            child=tag1f()
+            for _ in range(64):
+                seqs=[b'\xff']*3;seqs[slot]=sequence(child);child=tag1f(*seqs)
+            r=Reader(child,'1f-depth64.bin');r.action(0);self.assertEqual(r.pos,len(child))
+            seqs=[b'\xff']*3;seqs[slot]=sequence(child);r=Reader(tag1f(*seqs),'1f-depth65.bin')
+            with self.assertRaises(Unsupported) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['category'],caught.exception.diagnostic['actual']),('depth-limit',65))
+        child=tag1f();r=Reader(sequence(child,b'\xfa\xa0\x01'),'1f-next.bin')
+        with self.assertRaises(Unsupported) as caught:r.sequence()
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],r.pos),(len(child)+5,416,len(child)+5))
+        self.assertTrue(any(v.get('tag')==31 for v in r.records))
+
     def test_df_source_order_bits_encodings_and_null_states(self):
         for extended in (False,True):
             size=40 if extended else 38

@@ -1,0 +1,235 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      118789,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BombTouchLayerAction_DataForMemoryPack+Beyond_Gameplay_Core_BombTouchLayerAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      71112912
+    ],
+    [
+      118788,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BombTouchLayerAction_DataForMemoryPack",
+      "Deserialize",
+      71113008
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 71112912,
+      "endRva": 71113005,
+      "sha256": "B8A8BB5A93EE20F64D5AB1D33C8B6CDA4EA9991F628093B010E2F53385BFDD45",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 71113008,
+      "endRva": 71113856,
+      "sha256": "6BAFFBD99F41E7C3C212AEA29EDA841925860D0C810C0CA05CE206FE50FA0C40",
+      "boundary": "header15 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83629816,
+      "endRva": 83629829,
+      "sha256": "EFEA0FC8146241B8332D8F1DAA3EECC9BAC7C89D8651FEF4B3088FEABAD50673",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83629885,
+      "endRva": 83629906,
+      "sha256": "254548F552024D79246C96456665BD5BDB11875DA27CF4E0B1DBB74ED1E608BF",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 71113180,
+      "instructionHex": "488B154584CB08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 71113286,
+      "instructionHex": "488B151B34C208",
+      "cellVa": 6660509288,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71113327,
+      "instructionHex": "488B15F233C208",
+      "cellVa": 6660509288,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71113368,
+      "instructionHex": "488B152920D008",
+      "cellVa": 6661421768,
+      "usageRawHex": "D3EA12C000000000",
+      "methodSpecIndex": 619881,
+      "methodSpec": [
+        428464,
+        -1,
+        14443
+      ],
+      "argumentRawHex": "200E0000000000000000120000000000",
+      "typeDefinition": 3616,
+      "typeName": "Beyond.Gameplay.EffectActionCfg",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71113443,
+      "instructionHex": "488B151610CC08",
+      "cellVa": 6661155584,
+      "usageRawHex": "25E512C000000000",
+      "methodSpecIndex": 619154,
+      "methodSpec": [
+        428448,
+        -1,
+        42241
+      ],
+      "argumentRawHex": "EE290000000000000000118000000000",
+      "typeDefinition": 10734,
+      "typeName": "Beyond.Gameplay.Core.ColliderOptions",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 71113517,
+      "instructionHex": "488B15D4FBC808",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71113558,
+      "instructionHex": "488B15CBCDD108",
+      "cellVa": 6661531944,
+      "usageRawHex": "A7CA0FC000000000",
+      "methodSpecIndex": 517459,
+      "methodSpec": [
+        428448,
+        -1,
+        1206
+      ],
+      "argumentRawHex": "02AB0000000000000000118000000000",
+      "typeDefinition": 43778,
+      "typeName": "UnityEngine.LayerMask",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 71113598,
+      "instructionHex": "488B15E332C208",
+      "cellVa": 6660509288,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71113639,
+      "instructionHex": "488B151A1FD008",
+      "cellVa": 6661421768,
+      "usageRawHex": "D3EA12C000000000",
+      "methodSpecIndex": 619881,
+      "methodSpec": [
+        428464,
+        -1,
+        14443
+      ],
+      "argumentRawHex": "200E0000000000000000120000000000",
+      "typeDefinition": 3616,
+      "typeName": "Beyond.Gameplay.EffectActionCfg",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71113680,
+      "instructionHex": "488B1551CDD108",
+      "cellVa": 6661531944,
+      "usageRawHex": "A7CA0FC000000000",
+      "methodSpecIndex": 517459,
+      "methodSpec": [
+        428448,
+        -1,
+        1206
+      ],
+      "argumentRawHex": "02AB0000000000000000118000000000",
+      "typeDefinition": 43778,
+      "typeName": "UnityEngine.LayerMask",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member15": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "sequence",
+      "sequence",
+      "effect-configuration-profile",
+      "byte",
+      "scalar32",
+      "raw4",
+      "target-profile",
+      "scalar32",
+      "sequence",
+      "effect-configuration-profile",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact union31 dispatch and registered type/module/token joins identify BombTouchLayerAction_DataForMemoryPack. Its header15 reader consumes the common byte/three-DWORD prefix, two independent SequenceActionData records, EffectActionCfg, BYTE, DWORD, raw float32 bits, TargetSettings, LayerMask DWORD, a third SequenceActionData, a second EffectActionCfg and a terminal LayerMask DWORD. SequenceActionData retains its bounded nullable action array, recursive depth and two terminal bytes. EffectActionCfg reuses the member85 source operations in buff_9a_native.json; target profiles reuse buff_ec_native.json and finite selector extensions. The LayerMask helper ABI and four-byte source advance are pinned in validator_02_native.json; ColliderOptions likewise selects a DWORD helper, not a nested record. Repeated type contexts never merge independent source spans. Null nested profiles do not remove the following scalars or terminal DWORD. Short1F and FA1F00 identify union31 with minimum nonnull lengths 38/40 when all six nested records are null. Null union FF and 1FFF/FA1F00FF wrappers remain distinct. Complete formatter/reader/init/existing-output/FF windows exclude adjacent setters and error bodies. Static identity is exact, source order direct and framing structural-only. Bomb collision behavior, individual layer bits, sequence activation roles, effect/target ownership, live provider selection, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
