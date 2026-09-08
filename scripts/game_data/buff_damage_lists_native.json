@@ -1,0 +1,257 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124975,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AttackCriticalRateProcessorForMemoryPack+Beyond_Gameplay_Core_AttackCriticalRateProcessorForMemoryPackFormatter",
+      "Deserialize",
+      71732560
+    ],
+    [
+      124974,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AttackCriticalRateProcessorForMemoryPack",
+      "Deserialize",
+      71732656
+    ],
+    [
+      125089,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_InstantModifyAttributeForMemoryPack+Beyond_Gameplay_Core_InstantModifyAttributeForMemoryPackFormatter",
+      "Deserialize",
+      65896784
+    ],
+    [
+      125088,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_InstantModifyAttributeForMemoryPack",
+      "Deserialize",
+      65896880
+    ],
+    [
+      162905,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageAction_DamageUnitForMemoryPack",
+      "Deserialize",
+      58584912
+    ],
+    [
+      107731,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageProcessorBaseForMemoryPack+Beyond_Gameplay_Core_DamageProcessorBaseForMemoryPackFormatter",
+      "Deserialize",
+      67954208
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58585379,
+      "endRva": 58585397,
+      "sha256": "B89F220272EFE4FE0FCEAB7E83A8670E02C8C3F00585BD84FA8F05D0599643A7",
+      "boundary": "second DamageUnit list selected context and call"
+    },
+    {
+      "startRva": 67954208,
+      "endRva": 67955527,
+      "sha256": "FE1108EC03CF2E3A21E62655B879AF91AE316F63EBABDA35BB6FCED225EB7E1E",
+      "boundary": "DamageProcessorBase union dispatch and initialization"
+    },
+    {
+      "startRva": 71732560,
+      "endRva": 71732653,
+      "sha256": "3DC58A042A78600181F87FB629386BECB835801C2063AFC0ED4E9E2497188A51",
+      "boundary": "tag0 formatter"
+    },
+    {
+      "startRva": 71732656,
+      "endRva": 71732907,
+      "sha256": "AAC1158E3E6269E11843723DA342CB7318EE3B01968D4AD191848B7500CCF497",
+      "boundary": "tag0 header1 source reads and initialization rejoin"
+    },
+    {
+      "startRva": 65896784,
+      "endRva": 65896877,
+      "sha256": "4C654CA610C2CAE1DFAEE1070BDE8070D2046C024AC2695BADE56180067A04FF",
+      "boundary": "tag9 formatter"
+    },
+    {
+      "startRva": 65896880,
+      "endRva": 65897183,
+      "sha256": "C91E58297DF3C631D2947C8F7888BA23BE7B01462CFF18B8DC381841EEE99168",
+      "boundary": "tag9 header2 source reads and initialization rejoin"
+    },
+    {
+      "startRva": 83324825,
+      "endRva": 83324833,
+      "sha256": "834898607C5FF553B01AFC9D2E13587891BD03744CF8EAF3FD739DF2CFD273DC",
+      "boundary": "null clear/rejoin"
+    },
+    {
+      "startRva": 83700862,
+      "endRva": 83700875,
+      "sha256": "B896D63320A01CE7B5A59BC4A59CDFBBC6927ADC85E9767034A55BCCEDF4DB43",
+      "boundary": "existing-output rejoin"
+    },
+    {
+      "startRva": 83700931,
+      "endRva": 83700952,
+      "sha256": "6D7C6ABD50A10CF5DC10E6D96BC8BDCC255C2EF3BD9DD72912F264616EA8488E",
+      "boundary": "null clear/rejoin"
+    },
+    {
+      "startRva": 83085236,
+      "endRva": 83085249,
+      "sha256": "209EF9F95FD94E2D11DDA67012C52657894A05FEB0555D39FF88119EFB03D130",
+      "boundary": "existing-output rejoin"
+    },
+    {
+      "startRva": 83085305,
+      "endRva": 83085326,
+      "sha256": "2AA772D09934CC880612245A178D7BE796BCA87EF3D08002D5B91C582002AA79",
+      "boundary": "null clear/rejoin"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 67955528,
+      "endRva": 67955532,
+      "sha256": "09A981C6EDF09DB8CBE51D6266144D54909F9F0EBE1AFA8AE1C02EE87015E837",
+      "boundary": "union tag 0 table entry routes to RVA 0x40ce7b6"
+    },
+    {
+      "startRva": 67955564,
+      "endRva": 67955568,
+      "sha256": "FDC465454CEC59D87D2FD2E47B9DE12BD13A4C8F409B6A1029307B3D74814121",
+      "boundary": "union tag 9 table entry routes to RVA 0x40ce70f"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58585382,
+      "instructionHex": "488B1553248809",
+      "cellVa": 6660953472,
+      "usageRawHex": "1FA312C000000000",
+      "methodSpecIndex": 610703,
+      "methodSpec": [
+        428462,
+        -1,
+        62521
+      ],
+      "argumentRawHex": "38CB258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000005075E78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 14393,
+        "elementArguments": [
+          "6B270000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 67954876,
+      "instructionHex": "488B154DEEF908",
+      "cellVa": 6661003024,
+      "usageRawHex": "1BBC12C000000000",
+      "methodSpecIndex": 613901,
+      "methodSpec": [
+        428462,
+        -1,
+        24240
+      ],
+      "argumentRawHex": "61410000000000000000120000000000",
+      "typeDefinition": 16737,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AttackCriticalRateProcessorForMemoryPack",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 67954845,
+      "instructionHex": "488B1504EFF908",
+      "cellVa": 6661003176,
+      "usageRawHex": "93BE12C000000000",
+      "methodSpecIndex": 614217,
+      "methodSpec": [
+        428462,
+        -1,
+        24618
+      ],
+      "argumentRawHex": "73410000000000000000120000000000",
+      "typeDefinition": 16755,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InstantModifyAttributeForMemoryPack",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71732794,
+      "instructionHex": "488B15DFB7B808",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 65897018,
+      "instructionHex": "488B15FF821609",
+      "cellVa": 6660818240,
+      "usageRawHex": "C5EB12C000000000",
+      "methodSpecIndex": 620002,
+      "methodSpec": [
+        428464,
+        -1,
+        17000
+      ],
+      "argumentRawHex": "73020000000000000000120000000000",
+      "typeDefinition": 627,
+      "typeName": "Beyond.Gameplay.AttributeModifierData+AttributeModifier",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 65897059,
+      "instructionHex": "488B154E841609",
+      "cellVa": 6660818616,
+      "usageRawHex": "93E712C000000000",
+      "methodSpecIndex": 619465,
+      "methodSpec": [
+        428448,
+        -1,
+        42466
+      ],
+      "argumentRawHex": "6C270000000000000000118000000000",
+      "typeDefinition": 10092,
+      "typeName": "Beyond.Gameplay.Core.DamageScaleProcessor+DamageScaleSide",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "secondDamageUnitList": [
+      "nullable signed count; one-byte minimum element; reserve42 for remaining unit",
+      "DamageProcessorBase union element repeated count times"
+    ],
+    "processor0": [
+      "union0",
+      "FF wrapper or header1",
+      "scalar-payload"
+    ],
+    "processor9": [
+      "union9",
+      "FF wrapper or header2",
+      "modifier-element-profile",
+      "required raw scalar32"
+    ],
+    "modifierElement": [
+      "FF or header4",
+      "raw scalar32 x3",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "The selected DamageUnit second list context joins List<DamageProcessorBase>; first CostData and third GameplayTag lists are separate. Pinned union table entries 0/9 select AttackCriticalRateProcessorForMemoryPack and InstantModifyAttributeForMemoryPack. Their readers consume header1/scalar-payload and header2/AttributeModifier/raw DWORD respectively; exact contexts reuse the separately pinned BlackboardDouble and AttributeModifier profiles in buff_root_prefix_native.json. Short/extended union tags, null unions and null wrappers are distinct. The second list reserves the shortest 42-byte remaining DamageUnit tail; unknown processor tags stop before the tag. Static identities are exact and selected leaf source order direct; framing remains structural-only and conditional on the previously pinned shared reference-list consumer. Live inflated provider selection, complete refill/error and allocation parity, arithmetic/attribute behavior, scalar meaning and whole-BuffData EOF remain unresolved. First/third positive unit lists and the effect array remain unsupported; calculation tags outside 0/2/3 retain their separate boundary."
+}

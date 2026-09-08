@@ -1112,6 +1112,29 @@ class Reader:
             self.records.append(dict(start=element,end=self.pos,kind='anonymous-buff-action-map-profile'))
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-buff-action-map-collection-profile',count=count))
 
+    def modifier_element_profile(self):
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-modifier-element-profile')
+        else:
+            self.header(4)
+            for _ in range(3):self.take(4,'anonymous-scalar32')
+            self.scalar_payload()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-modifier-element-profile'))
+
+    def damage_processor_profile(self):
+        # Separately pinned union routes and leaf readers; raw values do not
+        # establish critical-rate arithmetic or attribute mutation semantics.
+        start=self.pos;tag=self.nested_union_tag((0,9),'damage-processor')
+        if tag is not None:
+            if self.peek()==255:self.take(1,'null-damage-processor-wrapper')
+            else:
+                self.header({0:1,9:2}[tag])
+                if tag==0:self.scalar_payload()
+                else:
+                    self.modifier_element_profile()
+                    self.take(4,'anonymous-scalar32')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-damage-processor-profile',variant=tag))
+
     def modifier_collection_profile(self):
         start=self.pos
         if self.peek()==255:self.take(1,'null-modifier-collection-profile')
@@ -1119,13 +1142,7 @@ class Reader:
             self.header(2)
             count=self.count(1,reserve=1,nullable=True)
             for _ in range(max(0,count)):
-                element=self.pos
-                if self.peek()==255:self.take(1,'null-modifier-element-profile')
-                else:
-                    self.header(4)
-                    for _ in range(3):self.take(4,'anonymous-scalar32')
-                    self.scalar_payload()
-                self.records.append(dict(start=element,end=self.pos,kind='anonymous-modifier-element-profile'))
+                self.modifier_element_profile()
             # A null/empty array still has this independent root-member byte.
             self.take(1,'anonymous-byte')
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-modifier-collection-profile'))
@@ -1183,7 +1200,10 @@ class Reader:
             self.calculation_profile();self.scalar_payload();self.take(1,'anonymous-nonzero-byte')
             self.empty_damage_collection('damage unit list')
             self.take(4,'anonymous-scalar32');self.take(8,'anonymous-scalar64')
-            for _ in range(2):self.empty_damage_collection('damage unit list')
+            # Only the second list has selected DamageProcessorBase elements.
+            # Reserve the third count and shortest remaining unit tail.
+            for _ in range(max(0,self.count(1,reserve=42,nullable=True))):self.damage_processor_profile()
+            self.empty_damage_collection('damage unit list')
             self.take(4,'anonymous-scalar32');self.byte_payload();self.take(4,'anonymous-scalar32')
             self.effect_configuration_profile()
             for _ in range(5):self.take(1,'anonymous-nonzero-byte')

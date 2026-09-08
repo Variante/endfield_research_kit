@@ -410,8 +410,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   calculation unions. Inline scalar/vector advances and helper reads must both
   appear in source order; an output-store inventory misses serialized members.
   The nested vector contains three variable-width scalar payloads, distinct
-  from an inline twelve-byte span. Three unit lists and the effect array remain
-  null/empty-only; positive counts stop explicitly until element readers close.
+  from an inline twelve-byte span. `scripts/game_data/buff_damage_lists_native.json`
+  separately pins the second unit list as DamageProcessorBase: union 0 reads
+  a scalar-payload profile; union 9 reads the existing AttributeModifier profile
+  followed by a required DWORD. Its count reserves the shortest 42-byte unit
+  tail. First/third lists and the effect array remain null/empty-only; unknown
+  processor tags stop before their tag. Static type joins and selected source
+  order do not establish live provider selection or gameplay behavior.
   A normal exit may tail-jump to the write barrier: pin the entire instruction
   and the separate null rejoin, not an assumed RET or partial JMP byte.
   The member-eighteen action in `scripts/game_data/buff_a2_native.json` reads

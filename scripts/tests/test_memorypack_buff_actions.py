@@ -469,8 +469,8 @@ def effect85():
             bytes(4) + bytes(4) + bytes(4) + payload(b"fx") + bytes(1))
 
 
-def damage33(calc=b'\x03\x04'+scalar_payload(None)+bytes(4)+scalar_payload(None)+bytes(4),effect=None):
-    return (b'\x21\xfe\x80'+calc+scalar_payload(None)+b'\xff'+bytes(4)+bytes(4)+bytes(8)+bytes(8)+
+def damage33(calc=b'\x03\x04'+scalar_payload(None)+bytes(4)+scalar_payload(None)+bytes(4),effect=None,processors=()):
+    return (b'\x21\xfe\x80'+calc+scalar_payload(None)+b'\xff'+bytes(4)+bytes(4)+bytes(8)+struct.pack('<i',-1 if processors is None else len(processors))+b''.join(processors or ())+bytes(4)+
             bytes(4)+payload(b'unit')+bytes(4)+(effect85() if effect is None else effect)+b'\xfe'*5+
             b'\x01'+payload(b'sound')+bytes(4)+b'\x80'*6+calc+b'\xff'+bytes.fromhex('0000807f')+b'\xfe'*3)
 
@@ -3672,6 +3672,80 @@ class BuffActionsTests(unittest.TestCase):
         wrong=b'\xa2\x12'+tag9a()[2:]
         with self.assertRaises(FrameError):sequence_frame(sequence(wrong))
 
+    def test_damage_processor_variants_and_modifier_reuse(self):
+        modifier=b'\x04'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)+scalar_payload(b'wire')
+        values=[b'\xff',b'\x00\xff',b'\x09\xff',b'\x00\x01\xff',b'\x09\x02\xff'+b'\xff'*4]
+        for payload_value in (None,b'',b'\x00\xff'):
+            values.append(b'\x00\x01'+scalar_payload(payload_value))
+        values.append(b'\x09\x02'+modifier+bytes.fromhex('0000807f'))
+        values += [b'\xfa'+bytes([v[0],0])+v[1:] for v in values if v[0]!=255]
+        for value in values:
+            r=Reader(value,'processor',len(value));r.damage_processor_profile()
+            self.assertEqual(r.pos,len(value))
+            self.assertEqual(r.records[-1]['kind'],'anonymous-damage-processor-profile')
+        r=Reader(modifier,'modifier',len(modifier));r.modifier_element_profile()
+        wrapped=b'\x02'+struct.pack('<i',1)+modifier+b'\xff'
+        a=Reader(wrapped,'modifier',len(wrapped));a.modifier_collection_profile()
+        child=next(v for v in a.records if v['kind']=='anonymous-modifier-element-profile')
+        self.assertEqual((child['start'],child['end']),(5,5+r.pos))
+
+    def test_damage_processor_lists_and_required_parent_tail(self):
+        values=(b'\xff',b'\x00\x01'+scalar_payload(b'key'),b'\x09\x02\xff'+bytes(4))
+        for items in (None,(),values):
+            child=tag9a(struct.pack('<i',1)+damage33(b'\xff',b'\xff',items),b'\xff')
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for n in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:n])
+            full=prefix(raw)
+            for n in range(len(full)):
+                row=event_prefix(full,source='processor-limit',limit=n)
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='processor-limit',limit=n))
+            for tail in (b'\xff',b'\x00'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            unknown=event_prefix(prefix(sequence(child,b'\x59')),source='processor-tail')
+            self.assertEqual(unknown['status'],'unsupported')
+            self.assertEqual(unknown['diagnostic']['actual'],89)
+
+    def test_damage_processor_unknown_header_and_truncation(self):
+        values=(b'\x00\x01'+scalar_payload(b'key'),b'\x09\x02\x04'+bytes(12)+scalar_payload(None)+bytes(4),b'\xfa\x09\x00\xff')
+        for value in values:
+            for cut in range(len(value)):
+                for raw in (value,value[:cut],value[:cut]+b'\xff'*16):
+                    r=Reader(raw,'processor-cut',cut)
+                    with self.assertRaises(FrameError):r.damage_processor_profile()
+                    self.assertLessEqual(r.pos,cut)
+                    self.assertFalse(any(v['kind']=='anonymous-damage-processor-profile' for v in r.records))
+        for value in (b'\x01',b'\xfa\x00\x01'):
+            r=Reader(value,'processor-unknown',len(value))
+            with self.assertRaises(Unsupported) as caught:r.damage_processor_profile()
+            self.assertEqual(r.pos,0);self.assertEqual(caught.exception.diagnostic['offset'],0)
+        for value in (b'\x00\x02',b'\x09\x01',b'\x09\x02\x03',b'\x00\x01\x03'+struct.pack('<i',-2),b'\x00\x01\x03'+struct.pack('<i',2147483647)):
+            r=Reader(value,'processor-bad',len(value))
+            with self.assertRaises(FrameError):r.damage_processor_profile()
+
+    def test_damage_processor_second_count_reserves_42_bytes(self):
+        # Minimal unit: both calculation profiles, scalar, effect and sound null.
+        head=b'\x21'+bytes(2)+b'\xff\xff'+bytes(1)+bytes(4)+bytes(12)
+        tail=bytes(4)+bytes(4)+payload(None)+bytes(4)+b'\xff'+bytes(5)+b'\xff'+bytes(4)+bytes(6)+b'\xff'+bytes(1)+bytes(4)+bytes(3)
+        self.assertEqual(len(tail),42)
+        good=head+struct.pack('<i',1)+b'\xff'+tail
+        r=Reader(good,'processor-count',len(good));r.damage_unit_profile();self.assertEqual(r.pos,len(good))
+        for count in (-2,2,2147483647):
+            bad=head+struct.pack('<i',count)+b'\xff'+tail
+            r=Reader(bad,'processor-count',len(bad))
+            with self.assertRaises(FrameError) as caught:r.damage_unit_profile()
+            self.assertEqual(caught.exception.diagnostic['offset'],len(head))
+        r=Reader(good[:-1],'processor-count',len(good)-1)
+        with self.assertRaises(FrameError) as caught:r.damage_unit_profile()
+        self.assertEqual(caught.exception.diagnostic['offset'],len(head))
+        bad=head+struct.pack('<i',1)+b'\x01'+tail
+        r=Reader(bad,'processor-unknown',len(bad))
+        with self.assertRaises(Unsupported):r.damage_unit_profile()
+        self.assertEqual(r.pos,len(head)+4)
+        self.assertFalse(any(v['kind']=='anonymous-damage-unit-profile' for v in r.records))
+
     def test_tag9a_nested_boundaries_and_unknown_tail(self):
         child=tag9a();row=event_prefix(prefix(sequence(child,b'\x59')),source='9a.bin')
         end=19+len(child)
@@ -3717,13 +3791,17 @@ class BuffActionsTests(unittest.TestCase):
         row=event_prefix(prefix(sequence(tag9a(struct.pack('<i',1)+damage33(b'\x04')))),source='9a-gap')
         self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['actual'],4)
         raw=prefix(sequence(tag9a()));good=event_prefix(raw,source='9a-list')
-        # The three unit lists and terrain-effect array have no positive element
-        # profile; an otherwise bounded positive count must stay unsupported.
+        # The first/third unit lists and terrain-effect array have no positive
+        # element profile; an otherwise bounded positive count must stay unsupported.
         payload_starts={r['start'] for r in good['completedRecords'] if r['kind']=='anonymous-byte-payload'}
         targets=[r for r in good['completedRecords'] if r['kind']=='anonymous-target-profile']
         for span in good['ranges']:
             if span['kind']!='count-i32' or span['start'] in payload_starts or raw[span['start']:span['end']]!=bytes(4):continue
             if any(r['start']<=span['start']<r['end'] for r in targets):continue
+            # The second unit list is now independently framed.
+            unit=next(r for r in good['completedRecords'] if r['kind']=='anonymous-damage-unit-profile')
+            unit_counts=[r for r in good['ranges'] if r['kind']=='count-i32' and unit['start']<=r['start']<unit['end'] and r['start'] not in payload_starts]
+            if span['start']==unit_counts[1]['start']:continue
             bad=bytearray(raw);struct.pack_into('<i',bad,span['start'],1)
             row=event_prefix(bad,source='9a-list')
             self.assertEqual(row['status'],'unsupported')
