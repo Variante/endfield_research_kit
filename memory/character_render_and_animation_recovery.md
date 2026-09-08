@@ -240,15 +240,16 @@ only.
   open, as do the inactive shader branches and RT1.
   The retained corrected Unity draw matches active material values and screen-UV
   transport but differs in global mip bias from the native opening packets.
-  Isolated native replay confirms that scalar affects their pixels. The native
-  unpatched TAAU post phase resets material bias and caps it at
-  `log2(renderingScale) - 1`; authored zero is not a runtime invariant. Join its
-  selected camera, AA/scale gates and post-to-Update ordering through global
-  buffer consumption before replacing the fallback. Another camera's receipt
-  is insufficient; the writer does not establish its selected-frame execution.
+  Isolated native replay confirms that scalar affects their pixels. The CPP
+  request independently computes `min(log2(renderingScale)-1, materialMipBias)`
+  under its TAAU/DLSS/FSR3 gates and the engine writes that otherData value into
+  globals. This differs from the managed post-phase material-bias writer and
+  HGCamera's own global field. Join selected CPP inputs and upload generation
+  before replacing the fallback; another camera's receipt is insufficient.
   Environment snapshots retain material/global mip bits, additional-data identity
   and raw AA flags at each native endpoint. Their draw diagnostic compares global
-  bits without promoting a match to writer execution or GPU publication proof.
+  bits without promoting a match to writer execution or GPU publication proof;
+  a mismatch may reflect the independent CPP override rather than timing drift.
   Public Unity particle instance records require their own stream-layout
   contract. Refract selects its Custom1 record; BaseV2 selects Custom1 or
   Custom1+Custom2 and loads Custom1 from the procedural buffer. Both select
