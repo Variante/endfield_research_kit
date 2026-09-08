@@ -1,0 +1,182 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120137,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EventListenerAction_DataForMemoryPack+Beyond_Gameplay_Core_EventListenerAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      66314208
+    ],
+    [
+      120136,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EventListenerAction_DataForMemoryPack",
+      "Deserialize",
+      66314304
+    ],
+    [
+      104446,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityActionMapForMemoryPack+Beyond_Gameplay_Core_AbilityActionMapForMemoryPackFormatter",
+      "Deserialize",
+      63974064
+    ],
+    [
+      104445,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityActionMapForMemoryPack",
+      "Deserialize",
+      63974160
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66314208,
+      "endRva": 66314301,
+      "sha256": "5B5FB0A0887A855E1BCD197113B382E63C65BAE5304E3E9ED08CE5BCE4AE6E37",
+      "boundary": "outer formatter initialization and forwarding"
+    },
+    {
+      "startRva": 66314304,
+      "endRva": 66314707,
+      "sha256": "CFD45B427E66E66242968F1370F421B1800D8A61B34A7F800CCCF419045240C9",
+      "boundary": "outer header5 normal and initialization through rejoin"
+    },
+    {
+      "startRva": 83142104,
+      "endRva": 83142117,
+      "sha256": "C698FE11832F664BA1ED089275FA6C7A0E131D1EDA76556A64E87D3EFA2DC2A6",
+      "boundary": "outer existing output rejoin"
+    },
+    {
+      "startRva": 83142173,
+      "endRva": 83142194,
+      "sha256": "0F0CCAF9907F2478E6CF486B4F1DCF67F708DF4C178F39528CD6BEB07EC2BDB8",
+      "boundary": "outer FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 63974064,
+      "endRva": 63974157,
+      "sha256": "CF70425D9ECA9145FEDE7129290DA6FB5CE9715CD69C9B6DB1B07E3136A34940",
+      "boundary": "AbilityActionMap formatter initialization and forwarding"
+    },
+    {
+      "startRva": 63974160,
+      "endRva": 63974463,
+      "sha256": "ADDDF617D14CF2A723E7E6CDD2978D46BC6557DEE539EA28A21A12619CCF42BB",
+      "boundary": "map header2 DWORD then reference array, FF and initialization"
+    },
+    {
+      "startRva": 82817340,
+      "endRva": 82817362,
+      "sha256": "EC3A259B809B5E9B8793EF10C9CFD7A4E1DDA37142AFF085F870C8DEEECC29BB",
+      "boundary": "map header refill and complete rejoin JMP"
+    },
+    {
+      "startRva": 82817362,
+      "endRva": 82817388,
+      "sha256": "E94C72F7C9C265B50CD17B59B1CC4003A076613DEAE1D8AEF9AFD5C04C6C2918",
+      "boundary": "map header bounds branch and complete rejoin JMP"
+    },
+    {
+      "startRva": 82817388,
+      "endRva": 82817439,
+      "sha256": "F48C17062111EB5B5CD6702F0B3CF1CED9CB2C2C359F78082A242090330AD617",
+      "boundary": "map allocation branch and complete rejoin JMP"
+    },
+    {
+      "startRva": 82817439,
+      "endRva": 82817494,
+      "sha256": "4A0EFD4F6204387206837CE983175E8654F3E22EE0DD5CFCDDF46B2D4865A47A",
+      "boundary": "map header2 mismatch helper through CALL, excludes INT3"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66314476,
+      "instructionHex": "488B1535BD1409",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66314582,
+      "instructionHex": "488B158B640B09",
+      "cellVa": 6660507112,
+      "usageRawHex": "CDA212C000000000",
+      "methodSpecIndex": 610662,
+      "methodSpec": [
+        428462,
+        -1,
+        62488
+      ],
+      "argumentRawHex": "68ED258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D0100000000BCE78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 13826,
+        "elementArguments": [
+          "48270000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 63974271,
+      "instructionHex": "488B15821C3D09",
+      "cellVa": 6661425160,
+      "usageRawHex": "15E712C000000000",
+      "methodSpecIndex": 619402,
+      "methodSpec": [
+        428448,
+        -1,
+        5695
+      ],
+      "argumentRawHex": "8D230000000000000000118000000000",
+      "typeDefinition": 9101,
+      "typeName": "Beyond.Gameplay.Core.AbilitySystem+Event",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63974317,
+      "instructionHex": "488B154CE73509",
+      "cellVa": 6660952832,
+      "usageRawHex": "4BA212C000000000",
+      "methodSpecIndex": 610597,
+      "methodSpec": [
+        428469,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "nullable-ability-action-map-list"
+    ],
+    "mapMember2": [
+      "scalar32",
+      "nullable-sequence-array"
+    ]
+  },
+  "boundary": "Exact selected union173 dispatch and module/token joins identify EventListenerAction_Data. Its header5 reader consumes the common byte and three DWORDs followed by List<AbilityActionMap>; no source byte follows the list. Exact generic carrier and element instantiation identify AbilityActionMap, whose FF/header2 body reads a DWORD then a SequenceActionData reference array. This differs from BuffActionMap source order. Nullable signed list/array counts use conservative one-byte minimum elements before iteration, with no trailing field reserve; each Sequence reuses FF/header3, nullable action count with two-byte tail reserve, nested actions and two required bytes. Sequence recursion retains the caller depth and increments only for child actions. Ordinary shared reference-list count/null/loop evidence is reused from buff_b4_native.json; reference-array/Sequence consumption is the existing event-prefix profile. The parser rejects counts below -1 rather than emulating native output-reuse behavior. Static type identity is exact, source order direct and framing structural-only. Event identity context does not prove event meaning or trigger ownership. Live formatter selection, allocation/refill/error parity, cross-file references, runtime listener behavior, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

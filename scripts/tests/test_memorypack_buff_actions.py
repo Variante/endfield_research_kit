@@ -863,7 +863,84 @@ def tagf6(overrides=None,wire=b'\xf6'):
     return wire+b'\x2e'+b''.join(members)
 
 
+def ability_map(items=()):
+    return b'\x02'+b'\x80\xfe\xff\x00'+struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())
+
+
+def tagad(items=(),extended=False):
+    return (b'\xfa\xad\x00' if extended else b'\xad')+b'\x05\x80'+b'\xfe'*12+struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tagad_maps_null_states_and_recursive_source_order(self):
+        for extended in (False,True):
+            for items in (None,(),(b'\xff',),(ability_map(None),),(ability_map(),),
+                          (ability_map((b'\xff',sequence(tagad(None)))),b'\xff')):
+                child=tagad(items,extended)
+                reader=Reader(child+b'opaque','ad.bin',len(child));reader.action(0)
+                self.assertEqual(reader.pos,len(child))
+                self.assertEqual(reader.records[-1],dict(start=0,end=len(child),kind='union',tag=173))
+                cursor=0
+                for r in reader.ranges:self.assertEqual(r['start'],cursor);cursor=r['end']
+                self.assertEqual(cursor,len(child))
+            for child in ((b'\xfa\xad\x00' if extended else b'\xad')+b'\xff',):
+                r=Reader(child,'ad-null.bin');r.action(0);self.assertEqual(r.pos,len(child))
+
+    def test_tagad_every_cut_limit_and_trailing(self):
+        for extended in (False,True):
+            child=tagad((ability_map((sequence(tagad((b'\xff',))),b'\xff')),),extended)
+            wire=sequence(child)
+            for n in range(len(wire)):
+                results=[]
+                for data in (wire[:n],wire,wire[:n]+b'\xff'*(len(wire)-n)):
+                    r=Reader(data,'ad-cut.bin',n)
+                    with self.assertRaises(FrameError) as caught:r.sequence()
+                    self.assertLessEqual(r.pos,n)
+                    if n<5+len(child):
+                        self.assertFalse(any(v.get('tag')==173 and v['start']==5 for v in r.records))
+                    else:
+                        self.assertTrue(any(v.get('tag')==173 and v['start']==5 for v in r.records))
+                    results.append((r.pos,caught.exception.diagnostic,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[1],results[2])
+            with self.assertRaises(FrameError) as caught:sequence_frame(wire+b'x')
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tagad_count_header_guards_and_unknown_child(self):
+        for extended in (False,True):
+            shift=2 if extended else 0
+            good=tagad((ability_map((sequence(b'\xff'),)),),extended)
+            # Outer list, map Sequence array, Sequence action array.
+            for at in (15+shift,24+shift,29+shift):
+                for value in (-2,2147483647):
+                    bad=bytearray(good);struct.pack_into('<i',bad,at,value)
+                    r=Reader(bad,'ad-count.bin')
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    d=caught.exception.diagnostic
+                    self.assertEqual((d['offset'],d['actual'],d['category'],r.pos),(at,value,'count-bounds',at+4))
+            for at in (1+shift,19+shift,28+shift):
+                bad=bytearray(good);bad[at]=42;r=Reader(bad,'ad-header.bin')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['category'],r.pos),(at,'member-count',at))
+            child=tagad((ability_map((sequence(b'\xff',b'\xfa\xa0\x01'),)),),extended)
+            r=Reader(child,'ad-unknown.bin')
+            with self.assertRaises(Unsupported) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],r.pos),(34+shift,416,34+shift))
+            self.assertEqual([v.get('tag') for v in r.records],[255])
+
+    def test_tagad_depth_propagates_through_map_sequences(self):
+        child=tagad((ability_map((b'\xff',)),))
+        r=Reader(child,'ad-depth.bin');r.action(64);self.assertEqual(r.pos,len(child))
+        r=Reader(child,'ad-depth.bin')
+        with self.assertRaises(Unsupported) as caught:r.action(65)
+        self.assertEqual((caught.exception.diagnostic['category'],caught.exception.diagnostic['actual'],r.pos),('depth-limit',65,28))
+        child=tagad(None)
+        for _ in range(66):child=tagad((ability_map((sequence(child),)),))
+        r=Reader(child,'ad-recursive.bin')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'depth-limit')
+        self.assertFalse(any(v.get('tag')==173 for v in r.records))
+
+
     def test_2c_independent_scalars_payloads_and_null_wrappers(self):
         for first,second in ((b'\xff',b'\xff'),(scalar_payload(None),scalar_payload(b'')),
                              (scalar_payload(b'\xff\x00'),scalar_payload())):

@@ -633,6 +633,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   bytes and a required raw float32 field close the record; null nested profiles
   do not remove that tail. Short and extended union encodings share this order.
   Continuous targeting behavior and payload ownership remain unresolved.
+  `scripts/game_data/buff_ad_native.json` joins EventListenerAction to header5,
+  the common prefix and a nullable AbilityActionMap list. Each FF/header2 map
+  places its DWORD before the nullable Sequence array; no field follows that
+  array or the outer list. Nested sequences retain the action recursion depth
+  and their two required tail bytes. Framing remains structural-only; the Event
+  type context does not establish trigger ownership or runtime listener behavior.
   `scripts/game_data/buff_17_native.json` joins BindBountyEnemyAction to
   header5, the common prefix and terminal BlackboardString. Its paired profile
   retains both nullable payload lengths and the intervening byte; null/empty
