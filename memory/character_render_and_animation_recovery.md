@@ -235,9 +235,11 @@ only.
   their complete RT0 outputs exactly. This proves packet sufficiency for those color outputs,
   not reconstructed Unity fidelity or RT1 parity; preserve those boundaries.
   Extracted lab RB pixel-function bodies also reproduce both opening RT0
-  outputs with native constants and VS varyings. This isolates that active
-  arithmetic; actual Unity varying/binding transport and particle phase remain
-  open, as do the inactive shader branches and RT1.
+  outputs with native constants and VS varyings. The active RT1 output and blend
+  also agree under independent initial-state probes: R/G/A are preserved and
+  covered blue becomes one. The saved Unity draw uses the same RT1 state. This
+  isolates active arithmetic/state, not upstream RT1 history, particle phase,
+  inactive shader branches, or complete Unity image parity.
   The retained corrected Unity draw matches active material values and screen-UV
   transport but differs in global mip bias from the native opening packets.
   Isolated native replay confirms that scalar affects their pixels. The CPP
