@@ -282,6 +282,12 @@ only.
   its late pulse. This identifies curve-value phases, not body-pose phases or
   EffectInstance clock ownership. See the generated
   `post_dlaa_uber_producer_review.json` and parameter audit.
+  Stored chromatic intensity does not establish active chromatic rendering:
+  the native producer retains it independently of the volume/settings gates.
+  Effect controllers can enable their destination component despite a disabled
+  authored profile. Post construction consumes component references cached
+  from the camera's volume stack; join the actual cache getter, scoped activity
+  and settings returns, and render consumption before changing lab gates.
   Exact replay additionally requires the consumer's fresh t0 contents, t1/t2,
   ranged VS b0 and PS b0/b1, and actual pipeline state. Capture v4 retains those
   inputs; v3 cannot establish them from resource identity alone. Initial
