@@ -1,0 +1,126 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120686,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_IgniteAction_DataForMemoryPack+Beyond_Gameplay_Core_IgniteAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      63972400
+    ],
+    [
+      120685,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_IgniteAction_DataForMemoryPack",
+      "Deserialize",
+      63972496
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63972400,
+      "endRva": 63972493,
+      "sha256": "206D7E265E9B17E6E66B7C7ACD7365292E3D70A8D290F8B293A2BCD5DA719AC4",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 63972496,
+      "endRva": 63973026,
+      "sha256": "1541A9F370DA619471CABC0897D94B7F6B0864FA0B11DB927E47198FC56C807F",
+      "boundary": "header8 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 82817032,
+      "endRva": 82817045,
+      "sha256": "535F251210D771E599321CD70C9F90D9F5F42A0DFD4B70343F2F1F235A2168E4",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 82817101,
+      "endRva": 82817122,
+      "sha256": "3F47F70A7E29FD311A2FD7B618D3C6BF05BB24F7E7CB8132A7F39E4DE1B8D3DE",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63972668,
+      "instructionHex": "488B15E5783809",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63972774,
+      "instructionHex": "488B155BF13509",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63972815,
+      "instructionHex": "488B15C2EC3509",
+      "cellVa": 6660952728,
+      "usageRawHex": "FFE512C000000000",
+      "methodSpecIndex": 619263,
+      "methodSpec": [
+        428448,
+        -1,
+        42312
+      ],
+      "argumentRawHex": "99840000000000000000118000000000",
+      "typeDefinition": 33945,
+      "typeName": "Beyond.GEnums.IgniteType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63972889,
+      "instructionHex": "488B15E8F03509",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target-settings",
+      "scalar32",
+      "nullable-byte-payload",
+      "target-settings"
+    ]
+  },
+  "boundary": "Exact selected union206 dispatch, registered type usage and module/token joins identify IgniteAction_Data. Its header8 source order is the common byte and three DWORDs, TargetSettings, one DWORD, a nullable byte payload and terminal TargetSettings. Four contexts identify Priority, both TargetSettings calls and IgniteType. The enum source helper consumes a DWORD independently of its name or setter; all bits stay anonymous. Short CE and extended FACE00 identify the same union. Null union, null wrapper, null payload and null target remain separate states. Neither null/empty payload nor a null first target removes the required final target wrapper. No additional source byte follows the second target. Complete formatter/normal/init/existing-output/FF windows exclude adjacent methods. Static identity is exact, source order direct and framing structural-only. Ignition behavior, enum meaning, payload/target ownership, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

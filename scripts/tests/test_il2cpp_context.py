@@ -428,6 +428,7 @@ class BuffUnionRouteTests(unittest.TestCase):
             (0x390FE16,'488B159B077809488B0BE8FB396FFC488BCF4885C00F85D7695501488B15A01B7D09E863DD10FD488903488BD0E99ADBFFFF'),
             (0x390FFA6,'488B154B5C6F09488B0BE86B386FFC488BCF4885C00F85AF835501488B15980E7D09E853EF10FD488903488BD0E90ADAFFFF'),
             (0x3910136,'488B15E3537109488B0BE8DB366FFC488BCF4885C00F85A3925501488B1550057D09E877FA10FD488903488BD0E97AD8FFFF'),
+            (0x390FAF6,'488B157BF57809488B0BE81B3D6FFC488BCF4885C00F85B1805501488B1598187D09E86BEF10FD488903488BD0E9BADEFFFF'),
             (0x390DD14,'488B15651E7809488B0BE8FD5A6FFC488BCF4885C00F85A28C5501488B15D23D7D09E89DFF10FD488903488BD0E99CFCFFFF'))}
         targets=[0]*416
         types=[None]*16728;self.ptrs={}
@@ -602,7 +603,8 @@ class BuffUnionRouteTests(unittest.TestCase):
             (370,0x390F100,107158,16501,'StoreBuffCount_Data',None),
             (40,0x390FE16,106363,15979,'ChangeGeneralAbilityButton_Data',None),
             (258,0x390FFA6,106905,16285,'OnSpellInflictionStart_Data',None),
-            (398,0x3910136,107220,16557,'TyphoeaArcheryChipDataAction_Data',None)):
+            (398,0x3910136,107220,16557,'TyphoeaArcheryChipDataAction_Data',None),
+            (206,0x390FAF6,106674,16173,'IgniteAction_Data',None)):
             namespace='View' if tag==0x19E else 'Core'
             targets[tag]=target;types[definition]='Beyond.MemoryPack.Beyond_Gameplay_'+namespace+'_'+suffix+'ForMemoryPack'
             pointer=self.base+index*16
@@ -624,7 +626,7 @@ class BuffUnionRouteTests(unittest.TestCase):
             return buff_union_routes(self.pe,self.md,self.reg,{},[],source='fixture.dll')
 
     def test_current_tag_routes_do_not_alias_old_names(self):
-        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,372,65,169,98,316,144,187,11,43,277,337,319,320,152,374,147,373,252,131,314,134,99,107,119,392,391,313,394,309,290,92,387,47,348,367,5,58,76,336,167,414,8,288,159,27,135,82,142,293,292,335,113,112,345,22,376,193,257,199,411,296,356,207,299,44,295,171,246,380,390,185,244,307,330,349,55,298,324,347,7,395,412,138,331,358,370,40,258,398])
+        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,372,65,169,98,316,144,187,11,43,277,337,319,320,152,374,147,373,252,131,314,134,99,107,119,392,391,313,394,309,290,92,387,47,348,367,5,58,76,336,167,414,8,288,159,27,135,82,142,293,292,335,113,112,345,22,376,193,257,199,411,296,356,207,299,44,295,171,246,380,390,185,244,307,330,349,55,298,324,347,7,395,412,138,331,358,370,40,258,398,206])
         self.assertIn('IfElse',row['rows'][0]['wrapperName'])
         self.assertIn('GainCost',row['rows'][1]['wrapperName'])
         self.assertEqual(next(r for r in row['rows'] if r['tag']==0x19E)['wrapperName'],'Beyond.MemoryPack.Beyond_Gameplay_View_AddCameraControlStateAction_AddCameraControlStateActionDataForMemoryPack')
