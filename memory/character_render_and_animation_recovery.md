@@ -246,6 +246,9 @@ only.
   selected camera, AA/scale gates and post-to-Update ordering through global
   buffer consumption before replacing the fallback. Another camera's receipt
   is insufficient; the writer does not establish its selected-frame execution.
+  Environment snapshots retain material/global mip bits, additional-data identity
+  and raw AA flags at each native endpoint. Their draw diagnostic compares global
+  bits without promoting a match to writer execution or GPU publication proof.
   Public Unity particle instance records require their own stream-layout
   contract. Refract selects its Custom1 record; BaseV2 selects Custom1 or
   Custom1+Custom2 and loads Custom1 from the procedural buffer. Both select
