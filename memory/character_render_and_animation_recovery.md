@@ -697,7 +697,11 @@ build and collection procedure.
   a playback offset or establish the PlayerLoop/particle phase. Use the current
   Animator lifecycle report under `reports/assets/character_recovery/`; older
   build addresses cannot authenticate this ordering.
-- Join the early rigid pose and camera to source animation. EndfieldCapture's
+- Join the early rigid pose and camera to source animation. Reference-image
+  alignment and matched-clock camera comparisons isolate timing
+  and input-state differences; serialized entry offsets are not recorded input
+  history. Keep camera input replay separate from Animator clock recovery.
+  EndfieldCapture's
   dedicated pose-timing launcher preallocates a bounded dense palette sequence
   before readiness and arms on a new Animator/graphics trigger without waiting
   for Full mode's Streamline publication. Follow its README procedure. Retained
