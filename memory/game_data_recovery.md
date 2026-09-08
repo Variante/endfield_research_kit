@@ -701,6 +701,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   RefreshBuffAttrModifierValue to the common byte and three DWORDs.
   Its short-tag counterpart is a different action; shared field widths do not
   establish shared runtime behavior or attribute semantics.
+  `scripts/game_data/buff_2c_native.json` pins header-fourteen ChangeSkill:
+  two scalar-payload profiles precede the byte/DWORD/payload fields and target.
+  Exact generic contexts distinguish BlackboardDouble from TargetSettings;
+  the byte and final payload length remain required after a null target.
+  Skill-switch, lifetime and slot behavior remain unresolved.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity

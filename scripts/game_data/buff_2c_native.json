@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119245,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangeSkillAction_DataForMemoryPack+Beyond_Gameplay_Core_ChangeSkillAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      68732720
+    ],
+    [
+      119244,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangeSkillAction_DataForMemoryPack",
+      "Deserialize",
+      68732816
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 68732720,
+      "endRva": 68732813,
+      "sha256": "5F9B4E2D8FE7402BB9515EF5129BBEBAF69F90BAD4DB18EB1D3D1191F86252DC",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 68732816,
+      "endRva": 68733591,
+      "sha256": "AF8BDEB6894F7668C06CA2F06A1CCDF7C893645E19F9A84D25FCD47A212B0C49",
+      "boundary": "header14 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83410584,
+      "endRva": 83410597,
+      "sha256": "182BBC9267C50107192129C9F7D89F33EC97676A987B5FF6FAAC52C215A12787",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83410653,
+      "endRva": 83410674,
+      "sha256": "AAF3574C19E8E4EB6BC8EF2C50D6E7B138C240F1A5F319187BCE0609195EAACD",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 68732988,
+      "instructionHex": "488B15E5D5EF08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 68733094,
+      "instructionHex": "488B15737DE608",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 68733135,
+      "instructionHex": "488B154A7DE608",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 68733210,
+      "instructionHex": "488B159738F008",
+      "cellVa": 6661145016,
+      "usageRawHex": "51E712C000000000",
+      "methodSpecIndex": 619432,
+      "methodSpec": [
+        428448,
+        -1,
+        42434
+      ],
+      "argumentRawHex": "58240000000000000000118000000000",
+      "typeDefinition": 9304,
+      "typeName": "Beyond.Gameplay.Core.ChangeSkillAction+LifeTimeType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 68733318,
+      "instructionHex": "488B153338F008",
+      "cellVa": 6661145024,
+      "usageRawHex": "53E712C000000000",
+      "methodSpecIndex": 619433,
+      "methodSpec": [
+        428448,
+        -1,
+        42435
+      ],
+      "argumentRawHex": "57240000000000000000118000000000",
+      "typeDefinition": 9303,
+      "typeName": "Beyond.Gameplay.Core.ChangeSkillAction+SkillSlot",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 68733358,
+      "instructionHex": "488B15534DED08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member14": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload",
+      "scalar-payload",
+      "byte",
+      "scalar32",
+      "byte",
+      "byte-payload",
+      "scalar32",
+      "target-profile",
+      "byte",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact selected union dispatch and module/token joins identify ChangeSkillAction. Header14 consumes common byte/three DWORDs, two scalar-payload profiles, byte, DWORD, byte, byte payload, DWORD, target, byte and required final byte payload. Two exact MethodSpec620004 contexts reuse the separately pinned BlackboardDouble profile; MethodSpec619977 reuses bounded TargetSettings. Enum contexts add no wire header. Preserve independent null wrappers and null/empty payloads, arbitrary byte/scalar bits and unknown target stops. The final byte and payload length remain required after a null target; completed child profiles cannot complete an action with a missing tail. Static identity is exact and selected source order direct; framing remains structural-only. Skill switching, lifetime and slot behavior, arithmetic meaning, byte decoding, live provider choice, complete refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

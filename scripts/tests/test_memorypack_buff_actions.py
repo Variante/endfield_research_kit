@@ -709,7 +709,72 @@ def tagcf(nested=b'\xff',value=None,raw8=b'\xff'*8):
             raw8+b'\x80'+nested+payload(value))
 
 
+def tag2c(first=b'\xff',second=b'\xff',nested=b'\xff',value=None,last=None):
+    return (b'\x2c\x0e\xfe'+b'\xff'*12+first+second+b'\x80'+b'\xfe'*4+
+            b'\xff'+payload(value)+b'\x80'*4+nested+b'\xfe'+payload(last))
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_2c_independent_scalars_payloads_and_null_wrappers(self):
+        for first,second in ((b'\xff',b'\xff'),(scalar_payload(None),scalar_payload(b'')),
+                             (scalar_payload(b'\xff\x00'),scalar_payload())):
+            for value,last in ((None,b''),(b'',None),(b'first',b'last')):
+                child=tag2c(first,second,target(),value,last)
+                row=event_prefix(prefix(sequence(child)),source='2c.bin')
+                self.assertEqual(row['status'],'supported-prefix')
+                r=next(r for r in row['completedRecords'] if r.get('tag')==44)
+                self.assertEqual((r['start'],r['end']),(19,19+len(child)))
+        for child in (b'\x2c\xff',b'\xfa\x2c\x00\xff',tag2c(),b'\xfa\x2c\x00'+tag2c()[1:]):
+            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_2c_every_cut_hard_limits_and_trailing(self):
+        raw=sequence(tag2c(scalar_payload(),scalar_payload(None),target(),b'first',b'last'))
+        for n in range(len(raw)):
+            with self.subTest(n=n),self.assertRaises(FrameError):sequence_frame(raw[:n],source='2c-cut.bin')
+        full=prefix(raw)
+        for n in range(len(full)):
+            row=event_prefix(full,source='2c-limit.bin',limit=n)
+            self.assertEqual(row['status'],'failed')
+            self.assertLessEqual(row['consumedEnd'],n)
+            self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='2c-limit.bin',limit=n))
+        with self.assertRaises(FrameError) as caught:sequence_frame(raw+b'x')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_2c_malformed_headers_lengths_and_required_tail(self):
+        for missing,offset in ((5,32),(4,33)):
+            reader=Reader(tag2c()[:-missing],'2c-tail.bin')
+            with self.assertRaises(FrameError) as caught:reader.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],offset)
+            self.assertFalse(any(r.get('tag')==44 for r in reader.records))
+        for at in (23,33):
+            for n in (-2,2147483647):
+                child=bytearray(tag2c());struct.pack_into('<i',child,at,n)
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child),source='2c-length.bin')
+                self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']), (at+5,n))
+                self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+        full=prefix(sequence(tag2c(scalar_payload(),scalar_payload(None),target(),b'first',b'last')))
+        good=event_prefix(full,source='2c-bad.bin')
+        for r in good['ranges']:
+            if r['kind'] not in ('member-header','count-i32'):continue
+            bad=bytearray(full);at=r['start']
+            if r['kind']=='member-header':bad[at]=42
+            else:struct.pack_into('<i',bad,at,2147483647)
+            row=event_prefix(bad,source='2c-bad.bin')
+            self.assertEqual(row['status'],'failed')
+            self.assertEqual(row['diagnostic']['offset'],at)
+
+    def test_2c_unknown_child_preserves_only_completed_records(self):
+        unknown=b'\x0d\xff'+payload(None)+bytes(6)+payload(None)+b'\x03\x17'
+        row=event_prefix(prefix(sequence(tag2c(nested=unknown))),source='2c-target.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['consumedEnd'],19+31+len(unknown)-1)
+        self.assertFalse(any(r.get('tag')==44 for r in row['completedRecords']))
+        child=tag2c(scalar_payload(),scalar_payload(None),target(),b'first',b'last')
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='2c-next.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['consumedEnd'],19+len(child))
+        self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
+
     def test_12b_fixed_record_and_distinct_short_action(self):
         child=b'\xfa\x2b\x01\x04\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)
         reader=Reader(child,'12b.bin');reader.action(0)
