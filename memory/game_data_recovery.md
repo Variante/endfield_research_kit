@@ -491,6 +491,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   record. The final static context joins AbnormalState without proving its
   value meanings or runtime effect. Keep payload encoding and breakout behavior
   unresolved, and preserve the opaque physical remainder after root framing.
+  `scripts/game_data/buff_a8_native.json` pins a nullable ShapeEdit list before
+  TargetSettings and a terminal DWORD. Its independent element union accepts
+  tag zero as a nullable member-three Sector wrapper: DWORD, scalar payload,
+  scalar payload. The two Double contexts establish separate variable-width
+  profiles; the generic helper alone cannot identify either as a target.
+  Reserve the following target and DWORD when bounding the list, and stop
+  unknown element tags at their first byte. Aim geometry and units remain unresolved.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

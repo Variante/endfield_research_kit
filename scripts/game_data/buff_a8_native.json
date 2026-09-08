@@ -1,0 +1,270 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120063,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EnableSpecialAim_DataForMemoryPack+Beyond_Gameplay_Core_EnableSpecialAim_DataForMemoryPackFormatter",
+      "Deserialize",
+      71894912
+    ],
+    [
+      120062,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EnableSpecialAim_DataForMemoryPack",
+      "Deserialize",
+      71895008
+    ],
+    [
+      162957,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EnableSpecialAim_SpecialAimShapeEditForMemoryPack+Beyond_Gameplay_Core_EnableSpecialAim_SpecialAimShapeEditForMemoryPackFormatter",
+      "Deserialize",
+      73296400
+    ],
+    [
+      166693,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EnableSpecialAim_SpecialAimEditSectorForMemoryPack+Beyond_Gameplay_Core_EnableSpecialAim_SpecialAimEditSectorForMemoryPackFormatter",
+      "Deserialize",
+      70847344
+    ],
+    [
+      166692,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EnableSpecialAim_SpecialAimEditSectorForMemoryPack",
+      "Deserialize",
+      70847440
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 71894912,
+      "endRva": 71895005,
+      "sha256": "2099FFF028DCDE318681CA56304A2CEF0B2F273C534755556619C99FB5190833",
+      "boundary": "outer formatter initialization and forwarding"
+    },
+    {
+      "startRva": 71895008,
+      "endRva": 71895516,
+      "sha256": "BCA1D6C6BB9F495A3AFA6A40FCDAB6DB8F4C80B7796CB380A32185043174C76E",
+      "boundary": "outer header7 normal and initialization through rejoin"
+    },
+    {
+      "startRva": 73296400,
+      "endRva": 73296642,
+      "sha256": "8D7C09C58F3FA4E2E6DD9D94699A85A3FD68933F074A735D13866E9866892B5C",
+      "boundary": "shape union0 dispatch reuse new output null and initialization"
+    },
+    {
+      "startRva": 70847344,
+      "endRva": 70847437,
+      "sha256": "C1118E7BCC2B22FFFAC6F79E163956415ED622EEF01BA5401746BD388999F91C",
+      "boundary": "sector formatter initialization and forwarding"
+    },
+    {
+      "startRva": 70847440,
+      "endRva": 70847784,
+      "sha256": "31948E2A75EA6399051451C09856B796FCB540EE98478F1F3BE9E8D8CCB51ED3",
+      "boundary": "sector header3 normal and initialization through rejoin"
+    },
+    {
+      "startRva": 83720154,
+      "endRva": 83720167,
+      "sha256": "0A319BEBA1C76925D867C83462A741FE5649D24DEF27DBA80459A6DB6D4F26D5",
+      "boundary": "outer existing output rejoin"
+    },
+    {
+      "startRva": 83720223,
+      "endRva": 83720244,
+      "sha256": "00853C354E2C346E81E533285C46C74F2590B033EDD655CB6064E8AD0E61AC7D",
+      "boundary": "outer FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 83593142,
+      "endRva": 83593155,
+      "sha256": "101E772047733D1AC1CD3F8E5661213F5F739936FFDB19EB893BBE909C46E085",
+      "boundary": "sector existing output rejoin"
+    },
+    {
+      "startRva": 83593211,
+      "endRva": 83593232,
+      "sha256": "B6EC9F8E3A842AA01454150DD46E43634E210C054946EC3FA6F1F7FC31364BAE",
+      "boundary": "sector FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 71895180,
+      "instructionHex": "488B159595BF08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 71895286,
+      "instructionHex": "488B150377C008",
+      "cellVa": 6661177344,
+      "usageRawHex": "8FA412C000000000",
+      "methodSpecIndex": 610887,
+      "methodSpec": [
+        428462,
+        -1,
+        62671
+      ],
+      "argumentRawHex": "C827258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000000046F08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17033,
+        "elementArguments": [
+          "D7240000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 71895327,
+      "instructionHex": "488B15E20DBD08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 71895368,
+      "instructionHex": "488B15C976C008",
+      "cellVa": 6661177368,
+      "usageRawHex": "33E712C000000000",
+      "methodSpecIndex": 619417,
+      "methodSpec": [
+        428448,
+        -1,
+        42421
+      ],
+      "argumentRawHex": "8C280000000000000000118000000000",
+      "typeDefinition": 10380,
+      "typeName": "Beyond.Gameplay.Core.BattleManager+SpecialAimType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 73296503,
+      "instructionHex": "4C8B05AAE79F08",
+      "cellVa": 6660444712,
+      "usageRawHex": "F7DD12C000000000",
+      "methodSpecIndex": 618235,
+      "methodSpec": [
+        428461,
+        -1,
+        24526
+      ],
+      "argumentRawHex": "BF590000000000000000120000000000",
+      "typeDefinition": 22975,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_EnableSpecialAim_SpecialAimEditSectorForMemoryPack",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 73296537,
+      "instructionHex": "488B1580E79F08",
+      "cellVa": 6660444704,
+      "usageRawHex": "03BE12C000000000",
+      "methodSpecIndex": 614145,
+      "methodSpec": [
+        428462,
+        -1,
+        24526
+      ],
+      "argumentRawHex": "BF590000000000000000120000000000",
+      "typeDefinition": 22975,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_EnableSpecialAim_SpecialAimEditSectorForMemoryPack",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 70847578,
+      "instructionHex": "488B153770C608",
+      "cellVa": 6660521112,
+      "usageRawHex": "31E712C000000000",
+      "methodSpecIndex": 619416,
+      "methodSpec": [
+        428448,
+        -1,
+        42420
+      ],
+      "argumentRawHex": "8D280000000000000000118000000000",
+      "typeDefinition": 10381,
+      "typeName": "Beyond.Gameplay.Core.BattleManager+SpecialAimForwardType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70847618,
+      "instructionHex": "488B159739C608",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 70847659,
+      "instructionHex": "488B156E39C608",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "special-aim-shape-list",
+      "target-profile",
+      "scalar32"
+    ],
+    "specialAimSector3": [
+      "scalar32",
+      "scalar-payload",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact union168 dispatch and registered type/module/token joins identify EnableSpecialAim_DataForMemoryPack. Header7 reads common BYTE/three DWORD, a nullable signed-count List<SpecialAimShapeEdit>, TargetSettings and terminal DWORD. List elements use their independent union reader: FF null, or tag0 in short00/FA0000 form; every other tag remains unsupported at its start. Tag0 resolves SpecialAimEditSectorForMemoryPack through distinct reuse/new-output contexts. Its nullable wrapper is FF or header3, DWORD and two independent BlackboardDouble profiles. The finite Double profile is FF or header3 bounded signed byte payload, BYTE and raw4, as pinned in buff_ec_native.json. The shared generic source helper does not imply TargetSettings for these two Double contexts. Null/empty lists and scalar null states preserve the following target and terminal DWORD. Outer shortA8/FAA800 nonnull minimum lengths24/26 use null list and target; every count is bounded before iteration. Complete formatter/reader/union/init/existing-output/FF windows exclude adjacent setters and error bodies. Static identity is exact, source order direct and framing structural-only. Aim geometry, angle/range units, target ownership, payload encoding, runtime provider selection, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

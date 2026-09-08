@@ -931,12 +931,125 @@ def tag20(value=None,*,extended=False,bits=0xffffffff):
             struct.pack('<III',0xffffffff,0x80000000,0x01234567)+payload(value)+struct.pack('<I',bits))
 
 
+
+def aim_sector(first=b'\xff',second=b'\xff',*,extended=False):
+    return (b'\xfa\x00\x00' if extended else b'\x00')+b'\x03'+b'\xff'*4+first+second
+
+
+def taga8(items=(),*,extended=False,target_value=b'\xff'):
+    return ((b'\xfa\xa8\x00' if extended else b'\xa8')+b'\x07\x80'+bytes.fromhex('FFFFFFFF0000008067452301')+
+            struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+target_value+b'\xff'*4)
+
+
 class BuffActionsTests(unittest.TestCase):
 
 
 
 
 
+
+
+    def test_a8_list_states_independent_scalars_and_target(self):
+        for extended in (False,True):
+            for child_extended in (False,True):
+                for mask in range(4):
+                    first=scalar_payload(None,flag=128,bits=b'\xff'*4) if mask&1 else b'\xff'
+                    second=scalar_payload(b'\xff\x00wire',flag=255,bits=b'\x00\x00\x00\x80') if mask&2 else b'\xff'
+                    child=aim_sector(first,second,extended=child_extended)
+                    for items in (None,(),(b'\xff',),(b'\x00\xff',),(child,),(b'\xff',b'\xfa\x00\x00\xff',child)):
+                        data=taga8(items,extended=extended);r=Reader(data,'a8-normal');r.action(0)
+                        self.assertEqual(r.pos,len(data))
+                        self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=168))
+                        self.assertEqual(r.ranges[-1],dict(start=len(data)-4,end=len(data),kind='anonymous-scalar32'))
+        data=taga8((aim_sector(scalar_payload(b'a'),scalar_payload(b'longer')),),target_value=target())
+        r=Reader(data,'a8-target');r.action(0);self.assertEqual(r.pos,len(data))
+        for raw in (b'\xff',b'\xa8\xff',b'\xfa\xa8\x00\xff'):
+            r=Reader(raw,'a8-null');r.action(0);self.assertEqual(r.pos,len(raw))
+
+    def test_a8_all_cuts_and_tail_limits(self):
+        for extended in (False,True):
+            for items in (None,(),(b'\xff',),(b'\x00\xff',),(aim_sector(),),
+                          (aim_sector(scalar_payload(None),scalar_payload(b'\xff\x00'),extended=True),)):
+                data=taga8(items,extended=extended)
+                for cut in range(len(data)):
+                    outcomes=[]
+                    for raw in (data[:cut],data,data[:cut]+b'\xff'*30):
+                        r=Reader(raw,'a8-cut',cut)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,cut)
+                        self.assertFalse(any(q.get('tag')==168 for q in r.records))
+                        outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+                for tail in (b'\xff',bytes(5)):
+                    for limit in (len(data),len(data+tail)):
+                        r=Reader(data+tail,'a8-tail',limit);r.action(0);self.assertEqual(r.pos,len(data))
+                    with self.assertRaises(FrameError) as caught:sequence_frame(sequence(data)+tail)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_a8_malformed_counts_headers_and_required_fields(self):
+        for extended in (False,True):
+            child=aim_sector(scalar_payload(None),scalar_payload(b'\xff\x00'))
+            data=taga8((child,),extended=extended);po=15+2*extended
+            for count in (-2,2147483647):
+                r=Reader(data[:po]+struct.pack('<i',count)+data[po+4:],'a8-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='a8-count',category='count-bounds',offset=po,expected={'minimum':-1,'maximum':len(data)-po-9},actual=count))
+                self.assertEqual(r.pos,po+4)
+            for available in range(4):
+                r=Reader(data,'a8-count-cut',po+available)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='a8-count-cut',category='truncated',offset=po,expected={'bytes':4},actual={'remaining':available}))
+            r=Reader(data,'a8-spans');r.action(0)
+            for span in r.ranges:
+                if span['kind']=='member-header':
+                    at=span['start'];bad=data[:at]+b'\x2a'+data[at+1:];q=Reader(bad,'a8-header')
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    self.assertEqual(caught.exception.diagnostic,dict(source='a8-header',category='member-count',offset=at,expected=data[at],actual=42))
+                if span['kind']=='count-i32' and span['start']!=po:
+                    at=span['start'];bad=data[:at]+struct.pack('<i',-2)+data[at+4:];q=Reader(bad,'a8-payload')
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    self.assertEqual(caught.exception.diagnostic,dict(source='a8-payload',category='count-bounds',offset=at,expected={'minimum':-1,'maximum':len(data)-at-4},actual=-2))
+            for items in (None,(),(child,)):
+                raw=taga8(items,extended=extended)
+                for available in range(4):
+                    at=len(raw)-4;q=Reader(raw,'a8-terminal',at+available)
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    self.assertEqual(caught.exception.diagnostic,dict(source='a8-terminal',category='truncated',offset=at,expected={'bytes':4},actual={'remaining':available}))
+                    self.assertEqual(q.pos,at)
+            # A minimal null element cannot consume the bytes reserved for
+            # the target and terminal DWORD; its list guard fails first.
+            raw=taga8((b'\xff',),extended=extended)
+            for missing in range(1,5):
+                q=Reader(raw,'a8-reserve',len(raw)-missing)
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='a8-reserve',category='count-bounds',offset=po,expected={'minimum':-1,'maximum':0},actual=1))
+                self.assertEqual(q.pos,po+4)
+
+    def test_a8_shape_union_unknown_extended_and_null_boundaries(self):
+        for lead,tag in ((b'\x01',1),(b'\xfe',254),(b'\xfa\x01\x00',1),(b'\xfa\x00\x01',256),(b'\xfa\xff\x00',255)):
+            raw=taga8((lead+aim_sector(),));r=Reader(raw,'a8-unknown')
+            with self.assertRaises(Unsupported) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='a8-unknown',category='special-aim-shape-tag',offset=19,expected=0,actual=tag))
+            self.assertEqual(r.pos,19)
+        for raw in (b'\xfa',b'\xfa\x00'):
+            r=Reader(raw,'a8-shape-tag')
+            with self.assertRaises(FrameError) as caught:r.special_aim_shape()
+            self.assertEqual(caught.exception.diagnostic,dict(source='a8-shape-tag',category='truncated',offset=0,expected={'bytes':3},actual={'remaining':len(raw)}))
+            self.assertEqual(r.pos,0)
+        for raw in (b'\xff',b'\x00\xff',b'\xfa\x00\x00\xff',aim_sector(),aim_sector(extended=True)):
+            r=Reader(raw,'a8-shape');r.special_aim_shape();self.assertEqual(r.pos,len(raw))
+
+    def test_a8_parent_sequence_count_and_tail_integration(self):
+        child=taga8((aim_sector(),));parent=sequence(child)
+        for count in (-2,2147483647):
+            r=Reader(parent[:1]+struct.pack('<i',count)+parent[5:],'a8-parent')
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='a8-parent',category='count-bounds',offset=1,expected={'minimum':-1,'maximum':len(child)},actual=count))
+        for missing in (1,2):
+            end=len(parent)-missing;r=Reader(parent,'a8-parent-tail',end)
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='a8-parent-tail',category='truncated',offset=end,expected={'bytes':1},actual={'remaining':0}))
+            self.assertEqual([q['tag'] for q in r.records if q['kind']=='union'],[168])
 
     def test_20_payload_states_terminal_bits_and_null_wrappers(self):
         for extended in (False,True):
