@@ -701,6 +701,11 @@ build and collection procedure.
   alignment and matched-clock camera comparisons isolate timing
   and input-state differences; serialized entry offsets are not recorded input
   history. Keep camera input replay separate from Animator clock recovery.
+  CharInfo caches camera groups per character template while rebuilding model
+  items separately. Camera disable and explicit gyroscope release have distinct
+  native paths; join activation/release and tween identity before choosing
+  whether lab selection resets or preserves camera state. Visible actor-switch
+  gaps do not establish camera initialization timestamps.
   EndfieldCapture's
   dedicated pose-timing launcher preallocates a bounded dense palette sequence
   before readiness and arms on a new Animator/graphics trigger without waiting
