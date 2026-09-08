@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122358,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveBuffLifeTime_DataForMemoryPack+Beyond_Gameplay_Core_SaveBuffLifeTime_DataForMemoryPackFormatter",
+      "Deserialize",
+      70542480
+    ],
+    [
+      122357,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SaveBuffLifeTime_DataForMemoryPack",
+      "Deserialize",
+      70542576
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70542480,
+      "endRva": 70542573,
+      "sha256": "B140D844D087A45002FFBDC6E6CD166F697566A3DAB1F3BD3B51279472E9D74C",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 70542576,
+      "endRva": 70543066,
+      "sha256": "BE5BEC52F77D14F41CEA686B88F07BB933B3C1EF19070CE2B57D8BBFE583A7AE",
+      "boundary": "header7 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83561414,
+      "endRva": 83561427,
+      "sha256": "94D9CCA32938458EBBE48F6A628F9FC287061CDD0FECB5F48D7BDB1096271DCE",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83561483,
+      "endRva": 83561504,
+      "sha256": "6A4B7D8F36162E36ED6F2F80A9D296ECD5EF8B427723790A8E00817CEE6E1401",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70542748,
+      "instructionHex": "488B158538D408",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70542854,
+      "instructionHex": "488B15FBB0D108",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 70542895,
+      "instructionHex": "488B1562E8CA08",
+      "cellVa": 6660509336,
+      "usageRawHex": "A5EA12C000000000",
+      "methodSpecIndex": 619858,
+      "methodSpec": [
+        428464,
+        -1,
+        13980
+      ],
+      "argumentRawHex": "56270000000000000000120000000000",
+      "typeDefinition": 10070,
+      "typeName": "Beyond.Gameplay.Core.BuffFindSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target",
+      "finder",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact selected union307 dispatch and module/token joins identify SaveBuffLifeTime_Data. The header7 reader consumes common byte/three DWORDs, TargetSettings, BuffFindSettings and a required signed-length byte payload. Exact generic contexts identify Priority, TargetSettings and BuffFindSettings; target and finder reuse independently pinned finite profiles in buff_ec_native.json and buff_b4_native.json. The target profile is independent of the BuffFindSettings wrapper and its nullable payload-list/query counts. The final payload length remains required even when both nested objects are null. Its null and empty states remain distinct, and its byte contents are opaque. FA 33 01 is union307; short33 is a different union. Unknown target children retain their original offsets and completed earlier children without completing the outer action. Output setters add no source fields. Source order is direct and static identity exact; framing remains structural-only. Buff lifetime behavior, payload encoding and ownership, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

@@ -623,6 +623,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_133_native.json` joins SaveBuffLifeTime to a header7
+  reader with TargetSettings, BuffFindSettings and a required signed-length
+  byte payload. Both nested objects may be null independently; neither removes
+  the final payload length. Payload meaning and lifetime behavior remain unresolved.
   `scripts/game_data/buff_f4_native.json` joins MoveGaitAction to a header6
   reader with two required DWORDs after the common prefix. Both calls share
   the GroundedMoveGait context; neither adds a nested header, and the enum
