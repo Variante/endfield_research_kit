@@ -692,6 +692,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   only the common byte and three DWORDs, with no additional nested fields.
   Extended normal records consume seventeen bytes; FF wrappers consume four.
   The final DWORD remains required, while skill-affix meanings stay unresolved.
+  `scripts/game_data/buff_cf_native.json` pins header-eleven IgniteBuffText:
+  common prefix, DWORD, byte, DWORD, raw8, byte, target and byte payload.
+  The Vector2-context helper consumes eight raw bytes without a wire header;
+  preserve its bits and require the final payload length after a null target.
+  Text behavior and payload encoding remain unresolved.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity

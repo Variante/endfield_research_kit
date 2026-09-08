@@ -1,0 +1,164 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120704,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_IgniteBuffTextAction_DataForMemoryPack+Beyond_Gameplay_Core_IgniteBuffTextAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      67014448
+    ],
+    [
+      120703,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_IgniteBuffTextAction_DataForMemoryPack",
+      "Deserialize",
+      67014544
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67014448,
+      "endRva": 67014541,
+      "sha256": "9715858CB215A492F063603F50998CB3DCB8A6CAB1B74495C861717A8CE67A4B",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 67014544,
+      "endRva": 67015210,
+      "sha256": "09AF8033C5C99658F7EC30EB297ECA2328AAFCCA437B41DD97F651D7E741AAB0",
+      "boundary": "header11 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83229200,
+      "endRva": 83229213,
+      "sha256": "9F1083DD520B6A56D67DD2CCCD0D3C1EF046D5517B2DA21C6E6AAFF865BD50B0",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83229269,
+      "endRva": 83229290,
+      "sha256": "C8DA0EBE7D19591CE5E221FC0B871AFBC21D324938B2353073544D1CA3DFE673",
+      "boundary": "FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 64479280,
+      "endRva": 64479386,
+      "sha256": "A25DDED95D130813A85763445C9C66E873EF4E46E8C0206E4DB8582D62496330",
+      "boundary": "raw8 source reader and RAX packed return"
+    },
+    {
+      "startRva": 82886854,
+      "endRva": 82886873,
+      "sha256": "827BB39624333CEFFA43D27A82C368F63878416A936478B7B02D76DFA45428AE",
+      "boundary": "raw8 refill request and rejoin"
+    },
+    {
+      "startRva": 82886873,
+      "endRva": 82886899,
+      "sha256": "30BEA81A204AEE715B924A1F323A6A380D2AD96E14C920871471E975E746B20B",
+      "boundary": "raw8 segmented advance and rejoins"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67014716,
+      "instructionHex": "488B15E50D0A09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67014822,
+      "instructionHex": "488B15736F0B09",
+      "cellVa": 6661210144,
+      "usageRawHex": "B5E512C000000000",
+      "methodSpecIndex": 619226,
+      "methodSpec": [
+        428448,
+        -1,
+        26601
+      ],
+      "argumentRawHex": "97840000000000000000118000000000",
+      "typeDefinition": 33943,
+      "typeName": "Beyond.GEnums.EnergyShardType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67014896,
+      "instructionHex": "488B1589AB0009",
+      "cellVa": 6660504704,
+      "usageRawHex": "45E612C000000000",
+      "methodSpecIndex": 619298,
+      "methodSpec": [
+        428448,
+        -1,
+        8642
+      ],
+      "argumentRawHex": "80050000000000000000118000000000",
+      "typeDefinition": 1408,
+      "typeName": "Beyond.Gameplay.MountPoint",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67014936,
+      "instructionHex": "488B1521D40009",
+      "cellVa": 6660515136,
+      "usageRawHex": "CDCA0FC000000000",
+      "methodSpecIndex": 517478,
+      "methodSpec": [
+        428448,
+        -1,
+        907
+      ],
+      "argumentRawHex": "C8AA0000000000000000118000000000",
+      "typeDefinition": 43720,
+      "typeName": "UnityEngine.Vector2",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67015011,
+      "instructionHex": "488B159E850709",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member11": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "scalar32",
+      "raw8",
+      "byte",
+      "target-profile",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact selected union dispatch and module/token joins identify IgniteBuffTextAction. Header11 consumes common byte/three DWORDs, DWORD, byte, DWORD, raw8, byte, TargetSettings and required signed-length byte payload. MethodSpec517478 carries UnityEngine.Vector2 into the direct raw8 helper: two source DWORD bit patterns are returned packed in RAX and forwarded as RDX, with eight-byte cursor advancement. The helper has no wire object header. Pin its complete fast path and two cold rejoins; external refill/segmented helpers and complete error parity remain outside this contract. Enum contexts add no wire headers. Preserve arbitrary raw bits, independent FF wrapper/target, null versus empty payloads and the final payload length even after a null target. TargetSettings uses the separately pinned bounded target profiles. Static identity is exact and selected source order direct; framing remains structural-only. Ignite/text behavior, authored field meaning, payload encoding, runtime provider choice, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

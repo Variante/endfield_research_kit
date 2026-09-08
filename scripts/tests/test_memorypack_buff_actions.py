@@ -704,7 +704,70 @@ def tag128(effect=b'\xff',calc=b'\xff',last=b'\xff'):
             b'\xfe'*4+b'\xff'+b'\x80'*4+calc+last)
 
 
+def tagcf(nested=b'\xff',value=None,raw8=b'\xff'*8):
+    return (b'\xcf\x0b\xfe'+b'\xff'*12+b'\x80'*4+b'\xff'+b'\xfe'*4+
+            raw8+b'\x80'+nested+payload(value))
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_cf_vector_bits_target_and_required_payload(self):
+        for raw8 in (bytes(8),bytes.fromhex('0000C07F000080FF'),b'\xff'*8):
+            for value in (None,b'',b'\xff\xfe\x00payload'):
+                for nested in (b'\xff',target()):
+                    child=tagcf(nested,value,raw8)
+                    row=event_prefix(prefix(sequence(child)),source='cf.bin')
+                    self.assertEqual(row['status'],'supported-prefix')
+                    r=next(r for r in row['completedRecords'] if r.get('tag')==207)
+                    self.assertEqual((r['start'],r['end']),(19,19+len(child)))
+        for child in (b'\xcf\xff',b'\xfa\xcf\x00'+tagcf()[1:]):
+            self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+        reader=Reader(tagcf()[:-4],'cf-required.bin')
+        with self.assertRaises(FrameError) as caught:reader.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],34)
+        self.assertFalse(any(r.get('tag')==207 for r in reader.records))
+
+    def test_cf_all_cuts_hard_limits_and_trailing(self):
+        raw=sequence(tagcf(target(),b'\xff\x00value'))
+        for n in range(len(raw)):
+            with self.subTest(n=n),self.assertRaises(FrameError):sequence_frame(raw[:n],source='cf-cut.bin')
+        full=prefix(raw)
+        for n in range(len(full)):
+            row=event_prefix(full,source='cf-limit.bin',limit=n)
+            self.assertEqual(row['status'],'failed')
+            self.assertLessEqual(row['consumedEnd'],n)
+            self.assertEqual(row,event_prefix(full[:n]+b'\xff'*(len(full)-n),source='cf-limit.bin',limit=n))
+        with self.assertRaises(FrameError) as caught:sequence_frame(raw+b'x')
+        self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_cf_malformed_headers_and_payload_lengths(self):
+        for count in (-2,2147483647):
+            raw=tagcf()[:-4]+struct.pack('<i',count)
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(raw),source='cf-length.bin')
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],
+                              caught.exception.diagnostic['category']),(39,count,'count-bounds'))
+        good=prefix(sequence(tagcf(target(),b'value')))
+        row=event_prefix(good,source='cf-bad.bin')
+        for r in row['ranges']:
+            if r['kind'] not in ('member-header','count-i32'):continue
+            bad=bytearray(good);at=r['start']
+            if r['kind']=='member-header':bad[at]=42
+            else:struct.pack_into('<i',bad,at,2147483647)
+            result=event_prefix(bad,source='cf-bad.bin')
+            self.assertEqual(result['status'],'failed')
+            self.assertEqual(result['diagnostic']['offset'],at)
+
+    def test_cf_unknown_target_and_later_unknown_action(self):
+        unknown=b'\x0d\xff'+payload(None)+bytes(6)+payload(None)+b'\x03\x17'
+        row=event_prefix(prefix(sequence(tagcf(unknown))),source='cf-target.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['consumedEnd'],19+33+len(unknown)-1)
+        self.assertFalse(any(r.get('tag')==207 for r in row['completedRecords']))
+        child=tagcf(target(),b'last')
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='cf-next.bin')
+        self.assertEqual(row['status'],'unsupported')
+        self.assertEqual(row['consumedEnd'],19+len(child))
+        self.assertTrue(any(r.get('tag')==207 for r in row['completedRecords']))
+
     def test_164_fixed_record_null_wrapper_and_no_following_field(self):
         child=b'\xfa\x64\x01\x04\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)
         reader=Reader(child,'164.bin');reader.action(0)
