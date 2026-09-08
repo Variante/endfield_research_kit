@@ -288,6 +288,11 @@ only.
   authored profile. Post construction consumes component references cached
   from the camera's volume stack; join the actual cache getter, scoped activity
   and settings returns, and render consumption before changing lab gates.
+  The post observer's shutdown must close new admissions while retaining nested
+  callback routing until accepted camera scopes drain. Patch drift or a drain
+  timeout retains the provider and fails evidence; it must not seal partial
+  scopes as successful. Native body pins alone do not prove an unpatched IFix
+  path, object lifetime, or consumption of the recorded CPU payload by a draw.
   Exact replay additionally requires the consumer's fresh t0 contents, t1/t2,
   ranged VS b0 and PS b0/b1, and actual pipeline state. Capture v4 retains those
   inputs; v3 cannot establish them from resource identity alone. Initial
