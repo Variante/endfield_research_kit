@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122181,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RecoverLockOnEndIfNoLockAction_DataForMemoryPack+Beyond_Gameplay_Core_RecoverLockOnEndIfNoLockAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      70906448
+    ],
+    [
+      122180,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RecoverLockOnEndIfNoLockAction_DataForMemoryPack",
+      "Deserialize",
+      70906544
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70906448,
+      "endRva": 70906541,
+      "sha256": "0E4C951D1CEE42E3AC1CA0339514C663EA5456B907C9CB0527B942767DEDC180",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 70906544,
+      "endRva": 70906947,
+      "sha256": "B70CC3C4C311B01FF4686C484761D38C765F078939F65CEAD5BF7DF3B31D1C83",
+      "boundary": "header5 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83601392,
+      "endRva": 83601405,
+      "sha256": "86E346776C8D1349C4DE804B9FB076F31515CC608D22FA513CA62A02D1CA4DC6",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83601461,
+      "endRva": 83601482,
+      "sha256": "73CF15CFE169DA0DA05853D01E6273034B404E8DBD3B1C07790142EF09B148FC",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70906716,
+      "instructionHex": "488B15C5AACE08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70906822,
+      "instructionHex": "488B153B23CC08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target"
+    ]
+  },
+  "boundary": "Exact selected union295 dispatch and module/token joins identify RecoverLockOnEndIfNoLockAction_Data. Header5 consumes the common byte and three DWORDs, then a required independently nullable TargetSettings reference. Priority belongs to the first DWORD and adds no wire header. The exact TargetSettings context reuses buff_ec_native.json and maintained bounded selector extensions; its variable-width body is not an inline DWORD or inferred from managed size. There is no source tail after the target. Preserve arbitrary scalar/byte bits, distinct FF union/wrapper/target, and full extended tag0x127; short0x27 names a different action. Unknown nested targets/selectors and deeper unsupported recursion keep the outer record incomplete at the precise boundary. Static identity is exact and selected source order direct; framing remains structural-only. Lock-on recovery behavior, target ownership, live formatter choice, complete refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

@@ -623,6 +623,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_127_native.json` joins RecoverLockOnEndIfNoLock
+  to header5: the common byte/three DWORDs followed by an independently
+  nullable TargetSettings, with no additional source tail. Nested target
+  bounds and recursion limits remain required; lock-on behavior is unresolved.
   `scripts/game_data/postprocessor_08_native.json` joins postprocessor tag 8
   to ShuffleTarget: header2, DWORD, then an independently nullable BlackboardInt.
   Its payload/byte/DWORD reader reuses `buff_16b_native.json`; the parent still

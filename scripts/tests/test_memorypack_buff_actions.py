@@ -775,6 +775,63 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
 
+    def test_127_target_profile_nulls_and_distinct_short_action(self):
+        base=b'\xfa\x27\x01\x05\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)
+        for nested in (b'\xff',target(),target(direction_value=b'\xff'),target(selector=b'\x03\x00\x00'+bytes(8))):
+            child=base+nested;r=Reader(child+b'\xaa','127');r.action(0)
+            self.assertEqual(r.pos,len(child));self.assertEqual(r.records[-1]['tag'],295)
+            row=event_prefix(prefix(sequence(child,tag27())),source='127-short')
+            self.assertEqual(row['status'],'supported-prefix')
+            self.assertEqual([r['tag'] for r in row['completedRecords'] if 'tag' in r],[295,39])
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='127-next')
+            self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['offset'],19+len(child))
+            self.assertTrue(any(r.get('tag')==295 for r in row['completedRecords']))
+        for value in (b'\xff',b'\xfa\x27\x01\xff'):
+            r=Reader(value+b'\xaa','127-null');r.action(0);self.assertEqual(r.pos,len(value))
+
+    def test_127_all_cuts_limits_and_parent_trailing(self):
+        for child in (b'\xff',b'\xfa\x27\x01\xff',b'\xfa\x27\x01\x05'+b'\xff'*13+b'\xff',b'\xfa\x27\x01\x05'+bytes(13)+target()):
+            for cut in range(len(child)):
+                results=[]
+                for data in (child,child[:cut],child[:cut]+b'\xff'*20):
+                    r=Reader(data,'127-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut);self.assertFalse(any(v.get('tag')==295 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            full=prefix(sequence(child))
+            for cut in range(len(full)):
+                row=event_prefix(full,source='127-limit',limit=cut)
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='127-limit',limit=cut))
+            for tail in (b'x',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_127_headers_target_lengths_counts_and_missing_target(self):
+        base=b'\xfa\x27\x01\x05'+bytes(13)
+        for header in (0,4,6,254):
+            r=Reader(base[:3]+bytes([header])+base[4:]+b'\xff','127-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='127-header',offset=3,expected=5,actual=header,category='member-count'))
+        r=Reader(base,'127-missing-target')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],17)
+        self.assertFalse(any(v.get('tag')==295 for v in r.records))
+        for length in (-2,2147483647):
+            r=Reader(base+b'\x0d\xff'+struct.pack('<i',length)+bytes(20),'127-target-length')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],19)
+            self.assertFalse(any(v.get('tag')==295 for v in r.records))
+        for count in (-2,2147483647):
+            with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+base+b'\xff'+bytes(2))
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(caught.exception.diagnostic['offset'],1)
+        r=Reader(base+target(selector=b'\x03\x17'+bytes(8)),'127-nested-unknown')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'nested-profile')
+        self.assertEqual(caught.exception.diagnostic['actual'],23)
+        self.assertFalse(any(v.get('tag')==295 for v in r.records));self.assertEqual(r.target_depth,0)
+
     def test_12b_fixed_record_and_distinct_short_action(self):
         child=b'\xfa\x2b\x01\x04\xfe'+struct.pack('<III',0xffffffff,0x80000000,0x7fc00000)
         reader=Reader(child,'12b.bin');reader.action(0)
