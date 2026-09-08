@@ -714,6 +714,10 @@ def tag2c(first=b'\xff',second=b'\xff',nested=b'\xff',value=None,last=None):
             b'\xff'+payload(value)+b'\x80'*4+nested+b'\xfe'+payload(last))
 
 
+def tag12a(tags=b'\xff',last=b'\xff',flag=b'\x80'):
+    return b'\xfa\x2a\x01\x07\xfe'+b'\xff'*12+flag+tags+last
+
+
 def weapon_vfx(values=(None,)*9,flags=b'\x00\x01\x7f\x80\xfe\xff\x02\x03\x04'):
     return b'\x12'+flags+b''.join(payload(v) for v in values)
 
@@ -835,6 +839,73 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['status'],'unsupported')
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
+
+    def test_12a_distinct_tag_wrappers_lists_elements_and_terminal_target(self):
+        for tags in (b'\xff',taglist(None),taglist(()),taglist(),taglist((b'\xff',b'\x01'+bytes(4),b'\x01'+b'\xff'*4))):
+            for last in (b'\xff',target(),target(direction_value=b'\xff')):
+                child=tag12a(tags,last);r=Reader(child+b'\xaa','12a');r.action(0)
+                self.assertEqual(r.pos,len(child));self.assertEqual(r.records[-1]['tag'],298)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='12a-next')
+                self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['offset'],19+len(child))
+                self.assertTrue(any(v.get('tag')==298 for v in row['completedRecords']))
+        # Null element and null target are distinct one-byte wrappers.
+        body=tag12a(taglist((b'\xff',)));r=Reader(body,'12a-minimum-reserve');r.action(0)
+        self.assertEqual(r.pos,len(body));self.assertEqual(sum(v['kind']=='anonymous-tag-element' for v in r.records),1)
+        for raw in (b'\xff',b'\xfa\x2a\x01\xff'):
+            r=Reader(raw+b'\xaa','12a-null');r.action(0);self.assertEqual(r.pos,len(raw))
+        q=Reader(b'\x2a\xff','12a-short')
+        with self.assertRaises(Unsupported) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['actual'],42);self.assertEqual(q.pos,0)
+
+    def test_12a_all_cuts_required_target_and_parent_trailing(self):
+        child=tag12a(taglist((b'\xff',b'\x01'+b'\xff'*4,b'\x01'+bytes(4))),target())
+        for cut in range(len(child)):
+            results=[]
+            for raw in (child,child[:cut],child[:cut]+b'\xff'*20):
+                q=Reader(raw,'12a-cut',cut)
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertLessEqual(q.pos,cut);self.assertFalse(any(v.get('tag')==298 for v in q.records))
+                results.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+            self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        for tags in (b'\xff',taglist(None),taglist(())):
+            body=tag12a(tags);q=Reader(body[:-1],'12a-target')
+            with self.assertRaises(FrameError) as caught:q.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],len(body)-1)
+            self.assertTrue(any(v['kind']=='anonymous-tag-list-profile' for v in q.records))
+            self.assertFalse(any(v.get('tag')==298 for v in q.records))
+        body=tag12a(taglist((b'\xff',)));q=Reader(body[:-1],'12a-reserve')
+        with self.assertRaises(FrameError) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],19);self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+        full=prefix(sequence(child))
+        for cut in range(len(full)):
+            row=event_prefix(full,source='12a-limit',limit=cut);self.assertEqual(row['status'],'failed')
+            self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='12a-limit',limit=cut))
+        for tail in (b'\x00',b'\xff'):
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_12a_headers_counts_elements_and_unknown_nested_target(self):
+        child=tag12a(taglist((b'\x01'+b'\x80'*4,)),target());r=Reader(child,'12a-invalid');r.action(0)
+        for span in r.ranges:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for invalid in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=invalid
+                else:struct.pack_into('<i',bad,at,invalid)
+                q=Reader(bad,'12a-invalid')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],at);self.assertFalse(any(v.get('tag')==298 for v in q.records))
+        # Erasing an element's header must not silently turn this into a DWORD array.
+        q=Reader(tag12a(taglist((b'\x02\x00\x00\x00',))),'12a-raw-array')
+        with self.assertRaises(FrameError) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],23);self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+        q=Reader(tag12a(taglist(),target(selector=b'\x03\x17'+bytes(8))),'12a-unknown')
+        with self.assertRaises(Unsupported) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['actual'],23);self.assertEqual(q.target_depth,0)
+        self.assertTrue(any(v['kind']=='anonymous-tag-element' for v in q.records));self.assertFalse(any(v.get('tag')==298 for v in q.records))
+        for count in (-2,2147483647):
+            with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+child+bytes(2))
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(caught.exception.diagnostic['offset'],1)
 
     def test_37_grouped_nine_bytes_then_nine_payloads_and_both_encodings(self):
         cases=((None,)*9,(b'',)*9,(None,b'',b'\xff',b'wire',b'\x00\xfe',b'longer',None,b'x',b'\x80'))

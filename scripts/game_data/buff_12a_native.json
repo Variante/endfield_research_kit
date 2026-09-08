@@ -1,0 +1,108 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122229,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RefrainObtainUsp_DataForMemoryPack+Beyond_Gameplay_Core_RefrainObtainUsp_DataForMemoryPackFormatter",
+      "Deserialize",
+      70655872
+    ],
+    [
+      122228,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_RefrainObtainUsp_DataForMemoryPack",
+      "Deserialize",
+      70655968
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70655872,
+      "endRva": 70655965,
+      "sha256": "1CBE6DC1D7D9DEE970A3BB75D66F0939F7A49132F3968753A33F058F5A765FF3",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 70655968,
+      "endRva": 70656458,
+      "sha256": "328CE39E7134A8A398053EC38F3196C6F62A265271D37AC40E0BED5FFE30992A",
+      "boundary": "header7 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83575614,
+      "endRva": 83575627,
+      "sha256": "4471B840D67C714CAF09D6BDA215A03CF1ACFB87408628DBE5EAF06439C127C1",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83575683,
+      "endRva": 83575704,
+      "sha256": "078DAB752FD19E16D37A26C4F985D61A2B31BFCFB309C845438933BD74D763FB",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70656140,
+      "instructionHex": "488B15957DD208",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70656280,
+      "instructionHex": "488B15292DC908",
+      "cellVa": 6660509256,
+      "usageRawHex": "E3EA12C000000000",
+      "methodSpecIndex": 619889,
+      "methodSpec": [
+        428464,
+        -1,
+        14693
+      ],
+      "argumentRawHex": "B02D0000000000000000120000000000",
+      "typeDefinition": 11696,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagList",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 70656321,
+      "instructionHex": "488B15C0F5CF08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "tag-list-profile",
+      "target-profile"
+    ]
+  },
+  "boundary": "Exact selected union298 dispatch and module/token joins identify RefrainObtainUsp_Data. Its header7 reader consumes common byte/three DWORDs, a byte, GameplayTagList and a required terminal TargetSettings. Three exact generic contexts independently identify Priority, GameplayTagList and TargetSettings. GameplayTagList reuses the separately pinned buff_c5_native.json FF or header1 wrapper with signed nullable list count and FF or header1 DWORD elements; it is neither a direct list nor a raw DWORD array. The outer use reserves one minimum byte for the final target before entering positive list elements. Null wrapper, null/empty list and null elements remain independent; none removes the final target wrapper. Conditional list-provider framing does not prove live provider choice. TargetSettings reuses separately pinned bounded finite profiles and unknown nested targets retain their original offsets and completed previous records without completing the outer action. FA 2A 01 is union298; short2A is a different union. Static identity is exact, selected source order direct and framing structural-only. USP acquisition behavior, gameplay-tag meaning, target ownership, payload decoding, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

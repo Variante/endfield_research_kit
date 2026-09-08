@@ -623,6 +623,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_12a_native.json` joins RefrainObtainUsp to a header7
+  reader with a byte, a GameplayTagList wrapper and a required terminal target.
+  The wrapper retains its header1 and nullable element list; it is not a raw
+  DWORD array. This caller reserves one byte for the target. USP behavior and
+  gameplay-tag meanings remain unresolved.
   `scripts/game_data/buff_37_native.json` joins CharWeaponVisibleAction to a
   header10 reader with three bytes, a nullable WeaponVFXOverrideConfig and
   required byte/DWORD tails. The nested header18 consumes nine bytes followed
