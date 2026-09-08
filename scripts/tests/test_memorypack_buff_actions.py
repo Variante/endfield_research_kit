@@ -688,7 +688,75 @@ def tagc7(first=b'\xff',second=b'\xff',value=None,curve=b'\xff',last=255,extende
             b'\xff'*4+first+payload(value)+curve+b'\x00\x00\xc0\x7f'+second+b'\xff'*4+bytes([last]))
 
 
+def keyword19b(values=(),scalar=b'\xff'):
+    return (b'\x03'+struct.pack('<i',-1 if values is None else len(values))+
+            b''.join(payload(v) for v in values or ())+b'\xff'*4+scalar)
+
+
+def tag19b(items=(),paired=b'\xff',first_scalar=b'\xff',last_scalar=b'\xff',first=b'\xff',second=b'\xff'):
+    return (b'\xfa\x9b\x01\x0e\xff'+bytes.fromhex('FFFFFFFF000000800000C07F')+b'\x80\xff'+paired+first_scalar+
+            struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+
+            b'\xff'+last_scalar+first+second+b'\xff'*4)
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag19b_nested_lists_null_empty_payloads_and_tail(self):
+        for items in (None,(),(b'\xff',),(keyword19b(None),),(keyword19b(),),(keyword19b((None,b'',b'\xffwire'),scalar_payload()),)):
+            child=tag19b(items,pair(None,b'raw',128),scalar_payload(),scalar_payload(None),target(),target())
+            r=Reader(child,'19b');r.action(0);self.assertEqual(r.pos,len(child))
+            self.assertIn(dict(start=0,end=len(child),kind='union',tag=411),r.records)
+            self.assertEqual(sum(v['kind']=='anonymous-keyword-edit-profile' for v in r.records),len(items or ()))
+            result=event_prefix(prefix(sequence(child,b'\x59')),source='19b.bin')
+            self.assertEqual(result['diagnostic']['offset'],19+len(child))
+            self.assertEqual(result['diagnostic']['actual'],89);self.assertFalse(result['wholeSchemaExact'])
+
+    def test_tag19b_all_cuts_hard_limits_wrappers_and_trailing(self):
+        for child in (tag19b(None),tag19b((b'\xff',keyword19b((None,b'',b'raw'),scalar_payload()))),b'\xfa\x9b\x01\xff'):
+            for cut in range(len(child)):
+                values=[]
+                for data in (child,child[:cut],child[:cut]+b'\xff'*20):
+                    r=Reader(data,'19b-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut);self.assertFalse(any(v.get('tag')==411 for v in r.records))
+                    values.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(values[0],values[1]);self.assertEqual(values[0],values[2])
+            for tail in (b'\xff',b'\x00'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag19b_headers_list_counts_payload_lengths_and_reserves(self):
+        child=tag19b((keyword19b((b'raw',)),))
+        for offset,expected in ((3,14),(25,3)):
+            malformed=bytearray(child);malformed[offset]=expected+1;r=Reader(malformed,'19b-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],offset)
+            self.assertEqual(caught.exception.diagnostic['expected'],expected)
+        for offset in (21,26,30):
+            for count in (-2,0x7fffffff):
+                r=Reader(child[:offset]+struct.pack('<i',count)+child[offset+4:],'19b-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],offset)
+                self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+        r=Reader(tag19b((b'\xff',))[:-1],'19b-outer-reserve')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],21)
+        r=Reader(b'\x03'+struct.pack('<i',1)+payload(None)+bytes(4),'19b-inner-reserve')
+        with self.assertRaises(FrameError) as caught:r.keyword_edit_profile()
+        self.assertEqual(caught.exception.diagnostic['offset'],1)
+        self.assertFalse(r.records)
+
+    def test_tag19b_late_unknown_keeps_child_but_requires_final_dword(self):
+        element=keyword19b();unknown=b'\x0d\xff'+payload(None)+bytes(6)+payload(None)+b'\x03\x17'
+        child=tag19b((element,),second=unknown);r=Reader(child,'19b-unknown')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],28+len(element)+len(unknown)-1)
+        self.assertTrue(any(v['kind']=='anonymous-keyword-edit-profile' for v in r.records))
+        self.assertFalse(any(v.get('tag')==411 for v in r.records))
+        for n in (1,2,3,4):
+            child=tag19b(None);r=Reader(child[:-n],'19b-tail')
+            with self.assertRaises(FrameError):r.action(0)
+            self.assertFalse(any(v.get('tag')==411 for v in r.records))
+
     def test_tagc7_targets_curve_arrays_and_raw_gameplay_tag(self):
         for curve in (b'\xff',curve24(None),curve24(),curve24((bytes(range(28)),))):
             for first,second in ((b'\xff',target()),(target(),b'\xff'),(b'\xff',b'\xff')):

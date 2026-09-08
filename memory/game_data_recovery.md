@@ -675,6 +675,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   DWORD and byte. GameplayTag has no object header at this call. Curve header3
   owns raw8 and a nullable raw28-element array; keep independent null states,
   target unknown stops and required tail, without hit-stop behavior claims.
+  `scripts/game_data/buff_19b_native.json` pins header-fourteen Vulnerable
+  and its KeywordEnhanceEdit list. Each header-three element owns a nullable
+  byte-payload list, DWORD and scalar profile. Reserve at least eight bytes
+  after the outer list and five after the inner list; null wrappers, null/empty
+  lists and null payloads remain distinct. The post-list scalar precedes two
+  targets and the required DWORD; keyword and vulnerability meanings remain
+  unresolved independently of these structural boundaries.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity

@@ -1,0 +1,306 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120970,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_VulnerableAction_DataForMemoryPack+Beyond_Gameplay_Core_VulnerableAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      63356416
+    ],
+    [
+      120969,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_VulnerableAction_DataForMemoryPack",
+      "Deserialize",
+      63357616
+    ],
+    [
+      162982,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_KeywordEnhanceEditForMemoryPack+Beyond_Gameplay_Core_KeywordEnhanceEditForMemoryPackFormatter",
+      "Deserialize",
+      63626144
+    ],
+    [
+      162981,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_KeywordEnhanceEditForMemoryPack",
+      "Deserialize",
+      63626240
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63356416,
+      "endRva": 63356509,
+      "sha256": "3A792F151C7C1A343359A8F808AC19613F948823671930613F65C1C39BB36898",
+      "boundary": "outer formatter initialization and forwarding"
+    },
+    {
+      "startRva": 63357616,
+      "endRva": 63358418,
+      "sha256": "FE22C9F1BDE75CFAA99DD15CB1150D98F973C17C1386A9547CBC7B1ACDCB9E47",
+      "boundary": "header14 source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 82741798,
+      "endRva": 82741811,
+      "sha256": "D5A605649DE976943CC071251C2D97C969F392AD592896F00F5C5D7BA5D4F887",
+      "boundary": "outer existing output rejoin"
+    },
+    {
+      "startRva": 82741867,
+      "endRva": 82741888,
+      "sha256": "5CCF71D48630BCB35F926BBFD25E617C53E6050FB33CE0C6B268C6F6375C7FD7",
+      "boundary": "outer FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 63626144,
+      "endRva": 63626237,
+      "sha256": "A528251C73AE7E553D85C9CA6AAC45A99768E3D1C05C283D5BCA810FBC9196E7",
+      "boundary": "element formatter initialization and forwarding"
+    },
+    {
+      "startRva": 63626240,
+      "endRva": 63626543,
+      "sha256": "396FEAAE8A3F2B085E47F4B0014A0A398A8BB91F0D597311075423D40027EC78",
+      "boundary": "header3 element reads and initialization through rejoin"
+    },
+    {
+      "startRva": 82772560,
+      "endRva": 82772611,
+      "sha256": "6ED3DD71194854892185BA4F876CDBC5587007F45D6C4A36C606E4171B471558",
+      "boundary": "element allocation and complete rejoin"
+    },
+    {
+      "startRva": 82772667,
+      "endRva": 82772688,
+      "sha256": "0C403972755BF01DF67287BCDD2AFE7C49C1C51102C768EE036A58EEABC7776E",
+      "boundary": "element FF clear and complete rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63357788,
+      "instructionHex": "488B15C5DA4109",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63357962,
+      "instructionHex": "488B1567D54109",
+      "cellVa": 6661118328,
+      "usageRawHex": "CDEB12C000000000",
+      "methodSpecIndex": 620006,
+      "methodSpec": [
+        428464,
+        -1,
+        17007
+      ],
+      "argumentRawHex": "B1000000000000000000120000000000",
+      "typeDefinition": 177,
+      "typeName": "Beyond.Blackboard+BlackboardString",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63358003,
+      "instructionHex": "488B15E6813809",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63358044,
+      "instructionHex": "488B159D154309",
+      "cellVa": 6661200384,
+      "usageRawHex": "6FA312C000000000",
+      "methodSpecIndex": 610743,
+      "methodSpec": [
+        428462,
+        -1,
+        62553
+      ],
+      "argumentRawHex": "1896258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000005017E78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 15098,
+        "elementArguments": [
+          "42250000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 63358119,
+      "instructionHex": "488B1572813809",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63358160,
+      "instructionHex": "488B1531523F09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63358201,
+      "instructionHex": "488B1508523F09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63358242,
+      "instructionHex": "488B15EF0B4309",
+      "cellVa": 6661198104,
+      "usageRawHex": "0DE612C000000000",
+      "methodSpecIndex": 619270,
+      "methodSpec": [
+        428448,
+        -1,
+        42318
+      ],
+      "argumentRawHex": "A2270000000000000000118000000000",
+      "typeDefinition": 10146,
+      "typeName": "Beyond.Gameplay.Core.KeywordActionSubType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63626325,
+      "instructionHex": "488B151C643409",
+      "cellVa": 6660505720,
+      "usageRawHex": "33A412C000000000",
+      "methodSpecIndex": 610841,
+      "methodSpec": [
+        428462,
+        -1,
+        1828
+      ],
+      "argumentRawHex": "387F258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000C039FE8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 891,
+        "elementArguments": [
+          "C78C00000000000000000E0000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 63626366,
+      "instructionHex": "488B1503943509",
+      "cellVa": 6660583560,
+      "usageRawHex": "A7E812C000000000",
+      "methodSpecIndex": 619603,
+      "methodSpec": [
+        428448,
+        -1,
+        42566
+      ],
+      "argumentRawHex": "6A250000000000000000118000000000",
+      "typeDefinition": 9578,
+      "typeName": "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data+OperationType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63626406,
+      "instructionHex": "488B1573693409",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member14": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "paired-payload",
+      "scalar-payload",
+      "nullable-keyword-edit-list",
+      "byte",
+      "scalar-payload",
+      "target-profile",
+      "target-profile",
+      "scalar32"
+    ],
+    "keywordEditMember3": [
+      "nullable-byte-payload-list",
+      "scalar32",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact selected union dispatch and module/token joins identify VulnerableAction and KeywordEnhanceEdit. The header14 action consumes common byte/three DWORDs, two bytes, BlackboardString, BlackboardDouble, nullable List<KeywordEnhanceEdit>, byte, a second BlackboardDouble, two TargetSettings and a required DWORD. Element header3 consumes a nullable byte-payload list, DWORD and BlackboardDouble. Outer instantiation15098 uniquely joins element td9538; the inner MethodSpec610841/instantiation891 has a string-kind argument and reuses separately pinned signed nullable byte-payload list framing without element headers. Outer and inner list counts reserve at least8 and5 bytes respectively; null wrapper, null/empty list and null elements remain independent. Paired/string, scalar and targets reuse separately pinned bounded profiles. Shared reference-list provider choice remains conditional on selectedListFormatterCandidate. Unknown targets preserve incomplete parents; required final DWORD cannot be omitted after a null list. Exact static identity and direct selected source order support structural-only framing. Keyword identity, vulnerability behavior, arithmetic meaning, byte decoding, live provider choice, complete refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
