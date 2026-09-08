@@ -623,6 +623,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_19c_native.json` independently joins WeakAction to
+  the header13 paired/scalar/list/byte/scalar/two-target order shared with
+  ShelterAction. The list reserves four bytes for later fields, and the second
+  target wrapper is required without an extra terminal DWORD. Weakness behavior
+  and keyword/target ownership remain unresolved.
   `scripts/game_data/buff_18b_native.json` joins TriggerSpellBurstEventAction
   to a fixed header5 reader: common byte/three DWORDs, then a required DWORD.
   The final context identifies EnergyShardType, but framing preserves arbitrary

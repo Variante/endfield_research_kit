@@ -1,0 +1,189 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120926,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_WeakAction_DataForMemoryPack+Beyond_Gameplay_Core_WeakAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      63352176
+    ],
+    [
+      120925,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_WeakAction_DataForMemoryPack",
+      "Deserialize",
+      63352496
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63352176,
+      "endRva": 63352269,
+      "sha256": "E1E5D5924C6772CE0CB1610E64D7AD1595CA34890A87E6B91FEA02B7BE13631A",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 63352496,
+      "endRva": 63353246,
+      "sha256": "3AE29495F39B63ED241B1033C019DD045F26309900C2A5C83CACE3CA3E9A1477",
+      "boundary": "header13 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 82741356,
+      "endRva": 82741369,
+      "sha256": "6914299F96ECE341B8F3FD0E52401AD5A20D827D293E24788B0486CDA4CF502C",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 82741425,
+      "endRva": 82741446,
+      "sha256": "D50E616149D173D14D331DA8D28BA895001DD1058971BFBFD62547EACA939435",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63352668,
+      "instructionHex": "488B15C5EE4109",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63352842,
+      "instructionHex": "488B1567E94109",
+      "cellVa": 6661118328,
+      "usageRawHex": "CDEB12C000000000",
+      "methodSpecIndex": 620006,
+      "methodSpec": [
+        428464,
+        -1,
+        17007
+      ],
+      "argumentRawHex": "B1000000000000000000120000000000",
+      "typeDefinition": 177,
+      "typeName": "Beyond.Blackboard+BlackboardString",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63352883,
+      "instructionHex": "488B15E6953809",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63352924,
+      "instructionHex": "488B159D294309",
+      "cellVa": 6661200384,
+      "usageRawHex": "6FA312C000000000",
+      "methodSpecIndex": 610743,
+      "methodSpec": [
+        428462,
+        -1,
+        62553
+      ],
+      "argumentRawHex": "1896258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000005017E78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 15098,
+        "elementArguments": [
+          "42250000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 63352999,
+      "instructionHex": "488B1572953809",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63353040,
+      "instructionHex": "488B1531663F09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63353081,
+      "instructionHex": "488B1508663F09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member13": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "paired-payload",
+      "scalar-payload",
+      "keyword-edit-list",
+      "byte",
+      "scalar-payload",
+      "target",
+      "target"
+    ]
+  },
+  "boundary": "Exact selected union412 dispatch and module/token joins identify WeakAction_Data. Its header13 reader consumes common byte/three DWORDs, two bytes, BlackboardString, BlackboardDouble, a nullable List of KeywordEnhanceEdit, one byte, BlackboardDouble and two TargetSettings. Seven precise generic contexts independently identify Priority, String, Double twice, List with concrete KeywordEnhanceEdit element, and TargetSettings twice. String reuses the pinned FF/header3 byte-payload/byte/byte-payload profile; Double reuses FF/header3 byte-payload/byte/DWORD. The list uses a signed nullable count with minimum one byte per element and four bytes reserved for the later byte, scalar wrapper and two target wrappers. Each KeywordEnhanceEdit reuses its independently pinned FF/header3 payload-list/DWORD/scalar profile. This matches the source shape of union349, not the extra terminal DWORD of unions411/171. The final target wrapper is required even when null; no additional DWORD or byte follows it. FA9C01 is union412; short9C is distinct union156. Source calls establish order independently of managed declarations or setters. Formatter, normal/init, existing-output and FF windows retain complete instructions. Static identity is exact, selected source order direct and framing structural-only. Weakness behavior, keyword/target ownership, payload decoding, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
