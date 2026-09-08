@@ -557,6 +557,9 @@ only.
   stencil rejection. Validate the R32 float SRV and its resource together:
   Unity may use an R32 typeless backing for an R32_SFloat texture. Native draw failure
   cannot certify content merely because the metadata shell produced finite pixels.
+  The diagnostic HLSL comparator now shares the read-only depth/stencil test,
+  verified by GPU visibility probes. Its legacy Ruri shadow/resource layout still
+  differs from the current DXBC; pixel differences do not isolate arithmetic.
   Foreground HG geometry replaces classification only after passing shared
   depth. This does not establish every retail stencil writer. The shared surface
   now includes the floor's separate source-owned distance-field HGBuffer pass:
