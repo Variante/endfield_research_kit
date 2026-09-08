@@ -1,0 +1,181 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119610,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ConvertToTargetContext_DataForMemoryPack+Beyond_Gameplay_Core_ConvertToTargetContext_DataForMemoryPackFormatter",
+      "Deserialize",
+      66910608
+    ],
+    [
+      119609,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ConvertToTargetContext_DataForMemoryPack",
+      "Deserialize",
+      66910704
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 66910608,
+      "endRva": 66910701,
+      "sha256": "3C6B1F5E4FE5F52CEC4BBCFFAD711FB8E98D6EA9F1B80F6EE204BBC88D6B23AE",
+      "boundary": "formatter forwarding and initialization rejoins"
+    },
+    {
+      "startRva": 66910704,
+      "endRva": 66911428,
+      "sha256": "950389B587DF0EB0D86852AA5C531B7815FA33048C777EF1432C7CFD2E35EC4D",
+      "boundary": "header12 source reads, normal return and initialization rejoin"
+    },
+    {
+      "startRva": 83215228,
+      "endRva": 83215241,
+      "sha256": "49BF46F0B3ECE6CD1D527ECDD616AA46F33630CC1D85E774B251334FD34469BB",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83215297,
+      "endRva": 83215318,
+      "sha256": "BD40ED6024DA7ECF1CC9630E81A4EDCF02FA39AD5A0CC16DF189766EDADA1BCF",
+      "boundary": "FF output clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 66910876,
+      "instructionHex": "488B1585A30B09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66910982,
+      "instructionHex": "488B1513130C09",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66911023,
+      "instructionHex": "488B15D21B0909",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 66911064,
+      "instructionHex": "488B15412F0C09",
+      "cellVa": 6661155488,
+      "usageRawHex": "CBE412C000000000",
+      "methodSpecIndex": 619109,
+      "methodSpec": [
+        428448,
+        -1,
+        42208
+      ],
+      "argumentRawHex": "7E050000000000000000118000000000",
+      "typeDefinition": 1406,
+      "typeName": "Beyond.Gameplay.ActionTargetType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66911104,
+      "instructionHex": "488B15899A0C09",
+      "cellVa": 6661182992,
+      "usageRawHex": "93E812C000000000",
+      "methodSpecIndex": 619593,
+      "methodSpec": [
+        428448,
+        -1,
+        42556
+      ],
+      "argumentRawHex": "91240000000000000000118000000000",
+      "typeDefinition": 9361,
+      "typeName": "Beyond.Gameplay.Core.ConvertToTargetContext+Data+OperationType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66911178,
+      "instructionHex": "488B15779A0C09",
+      "cellVa": 6661183048,
+      "usageRawHex": "95E812C000000000",
+      "methodSpecIndex": 619594,
+      "methodSpec": [
+        428448,
+        -1,
+        42557
+      ],
+      "argumentRawHex": "92240000000000000000118000000000",
+      "typeDefinition": 9362,
+      "typeName": "Beyond.Gameplay.Core.ConvertToTargetContext+Data+TranslateOperationType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 66911252,
+      "instructionHex": "488B15852E0C09",
+      "cellVa": 6661155488,
+      "usageRawHex": "CBE412C000000000",
+      "methodSpecIndex": 619109,
+      "methodSpec": [
+        428448,
+        -1,
+        42208
+      ],
+      "argumentRawHex": "7E050000000000000000118000000000",
+      "typeDefinition": 1406,
+      "typeName": "Beyond.Gameplay.ActionTargetType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member12": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "vector-payload",
+      "target-profile",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "scalar32",
+      "raw4",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact union140 dispatch and registered type/module/token joins identify ConvertToTargetContext_DataForMemoryPack. Header12 reads a common BYTE and three DWORDs, BlackboardVector3, TargetSettings, two DWORDs, a signed-length byte payload, DWORD, raw4 and a final DWORD. The vector reuses the FF/header3 three variable-width scalar profiles pinned in buff_b2_native.json; target and scalar consumers reuse buff_ec_native.json. Each nullable instance is independent. Null vectors/targets/payloads retain every later field, including twelve terminal bytes after the payload. Short8C and FA8C00 share this union; FF union and null wrappers have separate extents. Minimum nonnull lengths are41 and43. Enum contexts select DWORD readers and do not add headers or constrain values. Static identity is exact, selected source order direct and framing structural-only. Coordinate system, target roles, operation meanings, payload encoding, live formatter selection, complete allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

@@ -997,7 +997,79 @@ def tag11c(items=(),first=b'\xff',scalar=b'\xff',last=b'\xff'):
             first+bytes.fromhex('FF0080000000800000C07F')+scalar+
             bytes.fromhex('FEFFFFFFFF0000807F')+last+b'\x80')
 
+
+def tag8c(vector=b'\xff',nested=b'\xff',value=None,*,extended=False,bits=(0xffffffff,0x80000000,0x7fc00000,0xff800000,0x01234567)):
+    return ((b'\xfa\x8c\x00' if extended else b'\x8c')+b'\x0c\x80'+
+            bytes.fromhex('FFFFFFFF0000008067452301')+vector+nested+
+            struct.pack('<II',*bits[:2])+payload(value)+struct.pack('<III',*bits[2:]))
+
 class BuffActionsTests(unittest.TestCase):
+
+    def test_8c_vector_target_payload_states_and_terminal_words(self):
+        vectors=(b'\xff',b'\x03\xff\xff\xff',
+                 b'\x03'+scalar_payload(None)+scalar_payload(b'')+scalar_payload(b'\x00\xff\x80'))
+        for extended in (False,True):
+            for vector in vectors:
+                for nested in (b'\xff',target()):
+                    for value in (None,b'',b'\x00\xff\x80'):
+                        data=tag8c(vector,nested,value,extended=extended);r=Reader(data,'8c-normal');r.action(0)
+                        self.assertEqual(r.pos,len(data));self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=140))
+                        self.assertEqual(r.ranges[-3:],[dict(start=len(data)-12,end=len(data)-8,kind='anonymous-scalar32'),
+                            dict(start=len(data)-8,end=len(data)-4,kind='anonymous-raw4'),dict(start=len(data)-4,end=len(data),kind='anonymous-scalar32')])
+        self.assertEqual(len(tag8c()),41);self.assertEqual(len(tag8c(extended=True)),43)
+        for data in (b'\xff',b'\x8c\xff',b'\xfa\x8c\x00\xff'):
+            r=Reader(data,'8c-null');r.action(0);self.assertEqual(r.pos,len(data))
+
+    def test_8c_every_cut_and_bounded_trailing_bytes(self):
+        for data in (tag8c(),tag8c(extended=True),tag8c(b'\x03\xff\xff\xff',value=b''),
+                     tag8c(b'\x03'+scalar_payload(None)+scalar_payload(b'')+scalar_payload(b'xyz'),target(),b'\xff\x00',extended=True)):
+            for cut in range(len(data)):
+                outcomes=[]
+                for raw in (data[:cut],data,data[:cut]+b'\xff\x00'*30):
+                    r=Reader(raw,'8c-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut);self.assertFalse(any(q.get('tag')==140 for q in r.records))
+                    outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+            for tail in (b'\xff',b'\x00'*8):
+                for limit in (len(data),len(data+tail)):
+                    r=Reader(data+tail,'8c-tail',limit);r.action(0);self.assertEqual(r.pos,len(data))
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(data)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_8c_headers_payload_bounds_and_each_terminal_word(self):
+        for extended in (False,True):
+            shift=2 if extended else 0;data=tag8c(extended=extended);at=25+shift
+            for n in (-2,2147483647):
+                r=Reader(data[:at]+struct.pack('<i',n)+data[at+4:],'8c-count')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='8c-count',offset=at,category='count-bounds',expected={'minimum':-1,'maximum':12},actual=n));self.assertEqual(r.pos,at+4)
+            expanded=tag8c(b'\x03'+scalar_payload(None)+b'\xff\xff',target(),extended=extended)
+            for at,expected in ((1+shift,12),(15+shift,3),(16+shift,3),(28+shift,13)):
+                r=Reader(expanded[:at]+b'\x2a'+expanded[at+1:],'8c-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='8c-header',offset=at,category='member-count',expected=expected,actual=42));self.assertEqual(r.pos,at)
+            for missing in range(1,13):
+                end=len(data)-missing;r=Reader(data,'8c-terminal',end);at=len(data)-12+((12-missing)//4)*4
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual(caught.exception.diagnostic,dict(source='8c-terminal',offset=at,category='truncated',expected={'bytes':4},actual={'remaining':end-at}));self.assertEqual(r.pos,at)
+
+    def test_8c_parent_counts_required_tails_and_unknown_child(self):
+        for extended in (False,True):
+            child=tag8c(extended=extended);parent=sequence(child);r=Reader(parent,'8c-parent');r.sequence();self.assertEqual(r.pos,len(parent))
+            for n in (-2,2147483647):
+                r=Reader(parent[:1]+struct.pack('<i',n)+parent[5:],'8c-parent-count')
+                with self.assertRaises(FrameError) as caught:r.sequence()
+                self.assertEqual(caught.exception.diagnostic,dict(source='8c-parent-count',offset=1,category='count-bounds',expected={'minimum':-1,'maximum':len(child)},actual=n));self.assertEqual(r.pos,5)
+            for missing in (1,2):
+                end=len(parent)-missing;r=Reader(parent,'8c-parent-tail',end)
+                with self.assertRaises(FrameError) as caught:r.sequence()
+                self.assertEqual(caught.exception.diagnostic,dict(source='8c-parent-tail',offset=end,category='truncated',expected={'bytes':1},actual={'remaining':0}));self.assertEqual(r.pos,end)
+            r=Reader(sequence(child,b'\x59'),'8c-parent-next')
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='8c-parent-next',offset=5+len(child),category='union-tag',expected='supported current union tag',actual=89));self.assertEqual(r.pos,5+len(child))
+
+
 
     def test_11c_list_states_nested_flags_and_distinct_extents(self):
         groups=(None,(),(b'\xff',),(attenuation11c(),),

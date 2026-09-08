@@ -540,6 +540,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Its large inline initialization and jump-table data remain distinct from
   source reads; output getters/setters add no wire members. Pull behavior,
   attenuation units and live list-provider selection remain unresolved.
+  `scripts/game_data/buff_8c_native.json` pins ConvertToTargetContext's member12
+  order: common prefix, Vector3, TargetSettings, two DWORDs, byte payload,
+  DWORD, raw4 and final DWORD. Vector3 retains three independently nullable
+  scalar profiles from `buff_b2_native.json`; it is not a raw coordinate triple.
+  Null vector, target or payload never removes the twelve-byte terminal region.
+  Operation enum contexts consume DWORDs without additional object headers.
+  Coordinate conventions, target roles and conversion behavior remain unresolved.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.
