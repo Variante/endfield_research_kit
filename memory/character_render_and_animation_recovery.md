@@ -246,6 +246,10 @@ only.
   globals. This differs from the managed post-phase material-bias writer and
   HGCamera's own global field. Join selected CPP inputs and upload generation
   before replacing the fallback; another camera's receipt is insufficient.
+  GetRenderingScale is render-path dependent: the unpatched UI/UI3D paths use
+  one, while Forward/Deferred use the settings/display calculation, including
+  even-pixel quantization at lower display resolutions. Camera-buffer dimensions
+  alone do not identify this input; effective getters and IFix remain relevant.
   Environment snapshots retain material/global mip bits, additional-data identity
   and raw AA flags at each native endpoint. Their draw diagnostic compares global
   bits without promoting a match to writer execution or GPU publication proof;
