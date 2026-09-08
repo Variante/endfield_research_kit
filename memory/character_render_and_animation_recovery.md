@@ -560,6 +560,10 @@ only.
   The diagnostic HLSL comparator now shares the read-only depth/stencil test,
   verified by GPU visibility probes. Its legacy Ruri shadow/resource layout still
   differs from the current DXBC; pixel differences do not isolate arithmetic.
+  Combined diagnostics must explicitly request the live SphereOutside producer
+  (`ENDFIELD_RECOVERED_DEFERRED_GBUFFER_FRAME`) alongside LitEffect. The standalone
+  SphereOutside GPU-test flag does not populate the live shared surface; use
+  `tools/render_endminf_deferred_diagnostic.ps1` to preserve that distinction.
   Foreground HG geometry replaces classification only after passing shared
   depth. This does not establish every retail stencil writer. The shared surface
   now includes the floor's separate source-owned distance-field HGBuffer pass:
