@@ -1,0 +1,136 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      166722,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ConvertToBoxCenterPlaneProjectionPoint_DataForMemoryPack+Beyond_Gameplay_Core_Selector_ConvertToBoxCenterPlaneProjectionPoint_DataForMemoryPackFormatter",
+      "Deserialize",
+      61212496
+    ],
+    [
+      166721,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ConvertToBoxCenterPlaneProjectionPoint_DataForMemoryPack",
+      "Deserialize",
+      61212912
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 61212496,
+      "endRva": 61212589,
+      "sha256": "C4E5360341B62417116955B134ED58BD8DCD99FA6273B6A2EB26EFBEA2D2FD89",
+      "boundary": "complete formatter initialization and forwarding"
+    },
+    {
+      "startRva": 61212912,
+      "endRva": 61213163,
+      "sha256": "7432EB8A8752C1DF36C318E39A9B0CE8DA5D54E711F450CCFD4FF518F5C37D7A",
+      "boundary": "complete member1 reader normal RET and initialization rejoin"
+    },
+    {
+      "startRva": 69874990,
+      "endRva": 69875023,
+      "sha256": "ED28E975F2E291EED7E3A16545497EF5941ED65E5D9A01AF0D2B9B585CAAC237",
+      "boundary": "postprocessor bounded dispatch table load"
+    },
+    {
+      "startRva": 69875160,
+      "endRva": 69875228,
+      "sha256": "DBB14CDD1BE4811AA59BF92F489FCD4499786B11D457EAA821C6B3A49302C29E",
+      "boundary": "tag1 type test and existing-wrapper branch"
+    },
+    {
+      "startRva": 69875513,
+      "endRva": 69875544,
+      "sha256": "EFE296D10303633F0B14ADC70000B856DFE4E08148A606F6F329BEC75D2A13CB",
+      "boundary": "tag1 new-wrapper context, read and output rejoin"
+    },
+    {
+      "startRva": 82428220,
+      "endRva": 82428233,
+      "sha256": "59EA02D6AF422F822EC0B9D252797A5DD7880ED52D43D6383625BEA0D9BA4DAF",
+      "boundary": "existing-output rejoin"
+    },
+    {
+      "startRva": 82428289,
+      "endRva": 82428310,
+      "sha256": "0E9DE34B9ED1E38D6061239EB664247889D75CC5B80593FC9074B649C214EC37",
+      "boundary": "FF clear and rejoin"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 69876008,
+      "endRva": 69876012,
+      "sha256": "FA597A37E49A41E66153722A8AD7F2CAED7BC0D81EBA981A7C29A0D3180A0B3D",
+      "boundary": "postprocessor1 dispatch entry"
+    },
+    {
+      "startRva": 217990960,
+      "endRva": 217990968,
+      "sha256": "625BF31217F1859F97A3AAFB19A514EF56468BBAE7B2613E99660FAF6CFE8CAB",
+      "boundary": "postprocessor1 type usage"
+    },
+    {
+      "startRva": 206847080,
+      "endRva": 206847088,
+      "sha256": "93DA784AD46F741225829ED7AC7C3A50CD5A003658FBAFCAA987CCEFDA84EA4F",
+      "boundary": "postprocessor1 registered type slot"
+    },
+    {
+      "startRva": 220268504,
+      "endRva": 220268520,
+      "sha256": "7D528D5BF94494E67BF23F7AB614C9E3EF75E964178FA7B2F59CF0354BE21217",
+      "boundary": "postprocessor1 class definition"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 61213050,
+      "instructionHex": "488B1597225809",
+      "cellVa": 6660434968,
+      "usageRawHex": "D3A412C000000000",
+      "methodSpecIndex": 610921,
+      "methodSpec": [
+        428462,
+        -1,
+        62701
+      ],
+      "argumentRawHex": "7802258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000703AF08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17170,
+        "elementArguments": [
+          "C9270000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 69875513,
+      "instructionHex": "488B156810D408",
+      "cellVa": 6660442024,
+      "usageRawHex": "C9C012C000000000",
+      "methodSpecIndex": 614500,
+      "methodSpec": [
+        428462,
+        -1,
+        24967
+      ],
+      "argumentRawHex": "C3590000000000000000120000000000",
+      "typeDefinition": 22979,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ConvertToBoxCenterPlaneProjectionPoint_DataForMemoryPack",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "postprocessor1member1": [
+      "nullable-shape-list"
+    ]
+  },
+  "boundary": "Exact postprocessor tag1 dispatch, registered type usage and selected wrapper MethodSpec join ConvertToBoxCenterPlaneProjectionPoint_DataForMemoryPack. Its selected non-null reader requires header1 followed only by a signed nullable List<HitBoxFinder.ShapeData>. MethodSpec610921 identifies the concrete List carrier with base definition37521 and element instantiation17170; its reference-type argument is definition10185 HitBoxFinder.ShapeData, independently pinned in buff_b2_native.json. Each element is FF or the bounded header18 scalar/vector/byte/DWORD profile; this is not ColliderShapeData or a fixed-size destination object. The list checks minimum one source byte per element before iteration and has no additional local tail reserve. Null list, empty list and null element have separate wire states. Finishing the list completes this postprocessor without an extra byte or DWORD. Parent postprocessor counts still reserve the following validator count, and completing this child does not waive later elements or fields. Short01 and FA0100 share the postprocessor domain; null union and null wrapper remain separate. Complete formatter/reader/initialization/existing-output/FF and selected dispatch branch windows retain whole instructions. Exact static identity and direct selected source order support structural-only framing. Projection behavior, shape ownership, live provider choice, complete allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

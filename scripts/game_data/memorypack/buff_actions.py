@@ -1105,9 +1105,12 @@ class Reader:
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-selector-validator-profile'))
 
     def selector_postprocessor_profile(self):
-        start=self.pos;tag=self.nested_union_tag((4,7,8),'postprocessor')
+        start=self.pos;tag=self.nested_union_tag((1,4,7,8),'postprocessor')
         if tag is None:pass
         elif self.peek()==255:self.take(1,'null-nested-postprocessor-wrapper')
+        elif tag==1:
+            self.header(1)
+            for _ in range(max(0,self.count(1,nullable=True))):self.shape_profile()
         elif tag==8:
             self.header(2);self.take(4,'anonymous-scalar32');self.scalar_payload()
         elif tag==7:

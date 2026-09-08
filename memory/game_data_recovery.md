@@ -706,6 +706,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   to header5: the common byte/three DWORDs followed by an independently
   nullable TargetSettings, with no additional source tail. Nested target
   bounds and recursion limits remain required; lock-on behavior is unresolved.
+  `scripts/game_data/postprocessor_01_native.json` joins postprocessor 1 to
+  ConvertToBoxCenterPlaneProjectionPoint: header1 and a nullable List of
+  HitBoxFinder.ShapeData, using the independently pinned header18 element.
+  There is no local tail after the list; the parent still requires its
+  validator count. Projection behavior and shape ownership remain unresolved.
   `scripts/game_data/postprocessor_08_native.json` joins postprocessor tag 8
   to ShuffleTarget: header2, DWORD, then an independently nullable BlackboardInt.
   Its payload/byte/DWORD reader reuses `buff_16b_native.json`; the parent still

@@ -312,6 +312,18 @@ def tag8a(d=b'\xff',sel=b'\xff',values=(None,None,None,None),extended=False,bits
             b'\xfe\xff'+bits)
 
 
+def post1(items=(),wire=b'\x01'):
+    return wire+b'\x01'+struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())
+
+
+def post1_shape():
+    a=scalar_payload(b'\xffa',128,b'\x04\x03\x02\x01')
+    v=b'\x03'+a+b'\xff'+scalar_payload(None,254,b'\x08\x07\x06\x05')
+    return (b'\x12'+a+b'\x0c\x0b\x0a\x09'+v+b'\x10\x0f\x0e\x0d\x14\x13\x12\x11\x80'+
+            v+b'\xff\x18\x17\x16\x15\xfe\xff'+a+b'\x1c\x1b\x1a\x19\x20\x1f\x1e\x1d'+
+            a+b'\x24\x23\x22\x21'+v+b'\xfe')
+
+
 def direction():
     return b'\x08\x01\x00'+bytes(4)+b'\x00\xff'+bytes(4)+b'\xff'+bytes(4)
 
@@ -8491,6 +8503,91 @@ class BuffActionsTests(unittest.TestCase):
         with self.assertRaises(Unsupported) as caught:r.direction_profile()
         self.assertEqual(caught.exception.diagnostic['category'],'nested-profile');self.assertEqual(r.target_depth,0)
         self.assertFalse(any(v['kind']=='anonymous-target-profile' for v in r.records))
+
+    def test_postprocessor1_nullable_lists_shapes_and_all_byte_cuts(self):
+        values=[b'\xff',b'\x01\xff',b'\xfa\x01\x00\xff']
+        self.assertEqual(len(post1(None)),6);self.assertEqual(len(post1()),6)
+        for wire in (b'\x01',b'\xfa\x01\x00'):
+            for items in (None,(),(b'\xff',),(post1_shape(),),(b'\xff',post1_shape(),b'\xff')):
+                values.append(post1(items,wire))
+        for value in values:
+            r=Reader(value+b'\xaa'*8,'post1');r.selector_postprocessor_profile()
+            self.assertEqual(r.pos,len(value));self.assertEqual(r.postprocessor_depth,0)
+            self.assertEqual(r.records[-1],dict(start=0,end=len(value),kind='anonymous-selector-postprocessor-profile'))
+            for cut in range(len(value)):
+                results=[]
+                for data in (value,value[:cut],value[:cut]+b'\xff'*16):
+                    q=Reader(data,'post1-cut',cut)
+                    with self.assertRaises(FrameError) as caught:q.selector_postprocessor_profile()
+                    self.assertLessEqual(q.pos,cut);self.assertEqual(q.postprocessor_depth,0)
+                    self.assertFalse(any(v['kind']=='anonymous-selector-postprocessor-profile' for v in q.records))
+                    results.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        r=Reader(post1((post1_shape(),b'\x11')),'post1-partial')
+        with self.assertRaises(FrameError):r.selector_postprocessor_profile()
+        self.assertEqual(sum(v['kind']=='anonymous-shape-profile' for v in r.records),1)
+        self.assertFalse(any(v['kind']=='anonymous-selector-postprocessor-profile' for v in r.records))
+
+    def test_postprocessor1_malformed_counts_headers_and_parent_required_count(self):
+        child=post1((post1_shape(),));q=Reader(child,'post1');q.selector_postprocessor_profile()
+        for span in q.ranges:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for invalid in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=invalid
+                else:struct.pack_into('<i',bad,at,invalid)
+                r=Reader(bad,'post1-invalid')
+                with self.assertRaises(FrameError) as caught:r.selector_postprocessor_profile()
+                self.assertEqual(caught.exception.diagnostic['offset'],at)
+                self.assertFalse(any(v['kind']=='anonymous-selector-postprocessor-profile' for v in r.records))
+        for count in (-2,2147483647,1):
+            r=Reader(b'\x01\x01'+struct.pack('<i',count),'post1-count')
+            with self.assertRaises(FrameError) as caught:r.selector_postprocessor_profile()
+            self.assertEqual(caught.exception.diagnostic['offset'],2);self.assertEqual(r.pos,6)
+        for items in (None,(),(b'\xff',),(post1_shape(),)):
+            child=post1(items)
+            for validator_count in (-1,0,1):
+                parent=b'\x03\xff'+struct.pack('<i',1)+child+struct.pack('<i',validator_count)+b'\xff'*max(0,validator_count)
+                r=Reader(parent+b'\xaa','post1-parent');r.selector_profile();self.assertEqual(r.pos,len(parent))
+                for cut in range(len(parent)):
+                    results=[]
+                    for data in (parent,parent[:cut],parent[:cut]+b'\xff'*16):
+                        r=Reader(data,'post1-parent-cut',cut)
+                        with self.assertRaises(FrameError) as caught:r.selector_profile()
+                        results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            parent=b'\x03\xff'+struct.pack('<i',1)+child+bytes(4)
+            for k in range(1,5):
+                r=Reader(parent[:-k],'post1-parent-tail')
+                with self.assertRaises(FrameError) as caught:r.selector_profile()
+                self.assertEqual(caught.exception.diagnostic['offset'],len(parent)-4);self.assertEqual(r.pos,len(parent)-4)
+                self.assertTrue(any(v['kind']=='anonymous-selector-postprocessor-profile' for v in r.records))
+        for count in (-1,0):
+            parent=b'\x03\xff'+struct.pack('<i',count)+bytes(4)
+            for k in range(1,5):
+                r=Reader(parent[:-k],'post1-empty-parent')
+                with self.assertRaises(FrameError) as caught:r.selector_profile()
+                self.assertEqual(caught.exception.diagnostic['offset'],6);self.assertEqual(r.pos,6)
+        r=Reader(b'\x03\xff'+struct.pack('<i',1)+b'\xff','post1-reserve')
+        with self.assertRaises(FrameError) as caught:r.selector_profile()
+        self.assertEqual(caught.exception.diagnostic['offset'],2);self.assertEqual(r.pos,6)
+
+    def test_postprocessor1_unknown_next_child_and_full_action_tails(self):
+        value=post1((post1_shape(),))
+        for unknown in (b'\x09',b'\xfa\x01\x01'):
+            r=Reader(b'\x03\xff'+struct.pack('<i',2)+value+unknown+bytes(4),'post1-next')
+            with self.assertRaises(Unsupported) as caught:r.selector_profile()
+            self.assertEqual(r.pos,6+len(value));self.assertEqual(caught.exception.diagnostic['offset'],6+len(value))
+            self.assertTrue(any(v['kind']=='anonymous-selector-postprocessor-profile' for v in r.records))
+        for value in (post1(None),post1((b'\xff',),b'\xfa\x01\x00'),post1((post1_shape(),))):
+            child=tag_ec(nested=target(selector=b'\x03\xff'+struct.pack('<i',1)+value+bytes(4)))
+            full=prefix(sequence(child));self.assertEqual(event_prefix(full,source='post1-full')['status'],'supported-prefix')
+            for cut in range(len(full)):
+                row=event_prefix(full,source='post1-limit',limit=cut);self.assertEqual(row['status'],'failed')
+                self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='post1-limit',limit=cut))
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
 
     def test_postprocessor8_scalar_null_layers_and_bounded_cuts(self):
         values=[b'\xff',b'\x08\xff',b'\xfa\x08\x00\xff']
