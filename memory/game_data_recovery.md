@@ -633,6 +633,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   bytes and a required raw float32 field close the record; null nested profiles
   do not remove that tail. Short and extended union encodings share this order.
   Continuous targeting behavior and payload ownership remain unresolved.
+  `scripts/game_data/buff_172_native.json` joins StoreBuffCount to header8,
+  the common prefix, two nullable byte payloads, TargetSettings and one
+  required terminal byte. Null and empty payloads remain distinct; a null
+  target does not remove the terminal byte. Count-storage behavior and
+  payload/target ownership remain unresolved.
   `scripts/game_data/buff_166_native.json` independently joins SlowAction to
   the header13 paired/scalar/keyword-list/byte/scalar/two-target order. Its
   list reserves four bytes for the required remaining fields, including both

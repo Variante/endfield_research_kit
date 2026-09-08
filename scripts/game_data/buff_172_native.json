@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123308,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_StoreBuffCount_DataForMemoryPack+Beyond_Gameplay_Core_StoreBuffCount_DataForMemoryPackFormatter",
+      "Deserialize",
+      69307584
+    ],
+    [
+      123307,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_StoreBuffCount_DataForMemoryPack",
+      "Deserialize",
+      69307680
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 69307584,
+      "endRva": 69307677,
+      "sha256": "D6370A13CF3742C2E36D81B103D350F56C24B2350B56A8C5CC289647F7841DE1",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 69307680,
+      "endRva": 69308185,
+      "sha256": "BA2F8D62F306593B6B6EE587A3651FFB4E34F5C9FCBF86CB8CA539F187A73044",
+      "boundary": "header8 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83458032,
+      "endRva": 83458045,
+      "sha256": "1991808425D191534133E65562717B6F6A88E4D7FE4866DD14DC9570DE54EAA1",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83458101,
+      "endRva": 83458122,
+      "sha256": "3B7C8380EBDA5939F751D4CB926EFAEED60612ED2D55C1B23A67563931E382C4",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 69307852,
+      "instructionHex": "488B155510E708",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 69308026,
+      "instructionHex": "488B158788E408",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "byte-payload",
+      "target",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected union370 dispatch, registered type usage and module/token joins identify StoreBuffCount_Data. Its header8 reader consumes common byte/three DWORDs, two signed nullable byte payloads, TargetSettings and a required terminal byte. Two precise contexts independently identify Priority and TargetSettings. Both payload counts distinguish -1 from zero and retain their bounded raw bytes without decoding text or assigning ownership. TargetSettings reuses its independently pinned finite nullable direction/target/selector profiles. Completing either a null or nonnull target does not complete the action: one source byte still follows. No additional field follows that byte. FA7201 is union370; short72 is distinct union114. Source calls establish order independently of managed declarations or setters. Formatter, normal/init, existing-output and FF windows retain complete instructions. Static identity is exact, selected source order direct and framing structural-only. Buff-count storage behavior, key/target ownership, payload decoding, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

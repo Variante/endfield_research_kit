@@ -424,6 +424,7 @@ class BuffUnionRouteTests(unittest.TestCase):
             (0x390DBB6,'488B153BBF7809488B0BE85B5C6FFC488BCF4885C00F85D9975501488B15E83B7D09E8E70811FD488903488BD0E9FAFDFFFF'),
             (0x391003C,'488B159D387009488B0BE8D5376FFC488BCF4885C00F85248C5501488B157A0A7D09E859F510FD488903488BD0E974D9FFFF'),
             (0x39100D2,'488B15D7D67809488B0BE83F376FFC488BCF4885C00F85D98E5501488B159CD57809E82BCF10FD488903488BD0E9DED8FFFF'),
+            (0x390F100,'488B15B9877109488B0BE811476FFC488BCF4885C00F85D59F5501488B153E147D09E8190811FD488903488BD0E9B0E8FFFF'),
             (0x390DD14,'488B15651E7809488B0BE8FD5A6FFC488BCF4885C00F85A28C5501488B15D23D7D09E89DFF10FD488903488BD0E99CFCFFFF'))}
         targets=[0]*416
         types=[None]*16728;self.ptrs={}
@@ -594,7 +595,8 @@ class BuffUnionRouteTests(unittest.TestCase):
             (412,0x390FD80,107242,16207,'WeakAction_Data',None),
             (138,0x390DBB6,106527,16031,'ContinuousFindTargetAction_Data',None),
             (331,0x391003C,107084,16429,'SetAnimTimeScaleAction_Data',None),
-            (358,0x39100D2,107124,16209,'SlowAction_Data',None)):
+            (358,0x39100D2,107124,16209,'SlowAction_Data',None),
+            (370,0x390F100,107158,16501,'StoreBuffCount_Data',None)):
             namespace='View' if tag==0x19E else 'Core'
             targets[tag]=target;types[definition]='Beyond.MemoryPack.Beyond_Gameplay_'+namespace+'_'+suffix+'ForMemoryPack'
             pointer=self.base+index*16
@@ -616,7 +618,7 @@ class BuffUnionRouteTests(unittest.TestCase):
             return buff_union_routes(self.pe,self.md,self.reg,{},[],source='fixture.dll')
 
     def test_current_tag_routes_do_not_alias_old_names(self):
-        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,372,65,169,98,316,144,187,11,43,277,337,319,320,152,374,147,373,252,131,314,134,99,107,119,392,391,313,394,309,290,92,387,47,348,367,5,58,76,336,167,414,8,288,159,27,135,82,142,293,292,335,113,112,345,22,376,193,257,199,411,296,356,207,299,44,295,171,246,380,390,185,244,307,330,349,55,298,324,347,7,395,412,138,331,358])
+        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,372,65,169,98,316,144,187,11,43,277,337,319,320,152,374,147,373,252,131,314,134,99,107,119,392,391,313,394,309,290,92,387,47,348,367,5,58,76,336,167,414,8,288,159,27,135,82,142,293,292,335,113,112,345,22,376,193,257,199,411,296,356,207,299,44,295,171,246,380,390,185,244,307,330,349,55,298,324,347,7,395,412,138,331,358,370])
         self.assertIn('IfElse',row['rows'][0]['wrapperName'])
         self.assertIn('GainCost',row['rows'][1]['wrapperName'])
         self.assertEqual(next(r for r in row['rows'] if r['tag']==0x19E)['wrapperName'],'Beyond.MemoryPack.Beyond_Gameplay_View_AddCameraControlStateAction_AddCameraControlStateActionDataForMemoryPack')
