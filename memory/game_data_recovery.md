@@ -623,6 +623,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_ab_native.json` independently joins EnhancedAction
+  to the same bounded header14 field order as VulnerableAction. Reuse the
+  keyword-edit list reader and both count reserves; the post-list byte and
+  final DWORD remain required. Shared framing does not establish shared behavior.
   `scripts/game_data/buff_127_native.json` joins RecoverLockOnEndIfNoLock
   to header5: the common byte/three DWORDs followed by an independently
   nullable TargetSettings, with no additional source tail. Nested target
