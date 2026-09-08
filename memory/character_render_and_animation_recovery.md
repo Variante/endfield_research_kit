@@ -250,6 +250,10 @@ only.
   and raw AA flags at each native endpoint. Their draw diagnostic compares global
   bits without promoting a match to writer execution or GPU publication proof;
   a mismatch may reflect the independent CPP override rather than timing drift.
+  Render-bridge snapshots additionally retain CPP otherData identity and bias
+  before/after the engine call, reject read/change failures, and compare nested
+  global-copy endpoints. Retail execution of this extension remains unobserved;
+  endpoint equality cannot close allocation lifetime or draw consumption.
   Public Unity particle instance records require their own stream-layout
   contract. Refract selects its Custom1 record; BaseV2 selects Custom1 or
   Custom1+Custom2 and loads Custom1 from the procedural buffer. Both select
