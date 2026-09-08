@@ -248,6 +248,8 @@ only.
   imported texture defaults. The observed polar+screen variant uses Clamp
   for Main and bilinear Repeat for its four samples; static ordinal-based
   Mirror/MirrorOnce/PointClamp assumptions did not match its native bindings.
+  The observed non-polar four-texture tuple instead uses Repeat for Main
+  and Samples 0/1/3, with Clamp for Sample2 and the same bilinear filtering.
 - A component-complete current-build Streamline capture retains two consecutive
   native-resolution DLAA input/output/depth/motion transactions and a complete
   selected-actor Animator timeline. Its direct
