@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120484,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_GetAITransDataAction_DataForMemoryPack+Beyond_Gameplay_Core_GetAITransDataAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      67977120
+    ],
+    [
+      120483,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_GetAITransDataAction_DataForMemoryPack",
+      "Deserialize",
+      67977216
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67977120,
+      "endRva": 67977213,
+      "sha256": "5CB2A75B80AA23E5030CE8F02143647FD67453DA9DEBD0A01FC1F9307A75815D",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 67977216,
+      "endRva": 67977630,
+      "sha256": "E588DFDE544403563EC7FC068203FAEAC8680EF7D0B78AD61C3BF2981DA19F8D",
+      "boundary": "header6 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83328450,
+      "endRva": 83328463,
+      "sha256": "23D468E176BF6483CA787AE5300C6340DDF1F6B37A6193F6D6FD34E19F22F82D",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83328519,
+      "endRva": 83328540,
+      "sha256": "0832499900404E809F4EFDCE3B3D8C97763B9AEB671C076F8A89B673A2211E76",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67977388,
+      "instructionHex": "488B15755DFB08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Exact selected union dispatch and module/token joins identify GetAITransDataAction. The selected header6 source order is the common byte/three DWORD prefix followed by two independently signed nullable byte payloads. Only the first DWORD has an explicit Priority MethodSpec. No nested object or collection width is inferred from the name. Both payload length words are required, including after a null/empty first payload. Preserve FF wrapper versus each null/empty payload and opaque payload bytes. Native identity is exact and selected source order direct; framing remains structural-only. Payload encoding/meaning, AI behavior, live formatter choice, complete refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

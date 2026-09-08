@@ -661,6 +661,10 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   required final byte. There are no nested objects or list elements. Keep
   FF wrapper, null/empty payload and arbitrary terminal byte values distinct;
   the static type name does not prove mode behavior or payload meaning.
+  `scripts/game_data/buff_c1_native.json` pins header-six GetAITransData:
+  common byte/three DWORDs followed by two independently nullable byte
+  payloads. Both length words are required even when the first is null/empty;
+  keep payload encoding, cross-file identity and AI behavior unresolved.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity
