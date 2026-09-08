@@ -623,6 +623,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_f6_native.json` joins MoveToAction to a bounded
+  header46 reader: raw Vector3 and variable BlackboardVector3 stay distinct.
+  Both final SubSpeed references are required; each nonnull header5 SubSpeed
+  consumes scalar payload, byte payload, scalar payload, curve and final DWORD
+  in that order. These boundaries do not establish movement behavior.
   `scripts/game_data/buff_ab_native.json` independently joins EnhancedAction
   to the same bounded header14 field order as VulnerableAction. Reuse the
   keyword-edit list reader and both count reserves; the post-list byte and

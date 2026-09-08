@@ -1,0 +1,559 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121367,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_DataForMemoryPack+Beyond_Gameplay_Core_MoveToAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      54744464
+    ],
+    [
+      121366,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_DataForMemoryPack",
+      "Deserialize",
+      54739888
+    ],
+    [
+      163009,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack+Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPackFormatter",
+      "Deserialize",
+      54731248
+    ],
+    [
+      163008,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveToAction_SubSpeedForMemoryPack",
+      "Deserialize",
+      54731344
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 54744464,
+      "endRva": 54744557,
+      "sha256": "76A71B6E05B106177A077787E71F6D100B50F66448EC57FC4D98E78697C6162B",
+      "boundary": "outer formatter initialization and forwarding"
+    },
+    {
+      "startRva": 54739888,
+      "endRva": 54742016,
+      "sha256": "B8CD6B1D9D916B30EEBD1A0AD3EACB36A6F8C4F44993FF99BE48689E482773FF",
+      "boundary": "outer inline header46 normal source reads, FF clear, initialization and rejoins"
+    },
+    {
+      "startRva": 81375358,
+      "endRva": 81375371,
+      "sha256": "B5B3155B9E3CF3CF76580D587F5C7BEE1D2D80FBD9D0E20AAA85DC69DAA9D74B",
+      "boundary": "outer existing output rejoin"
+    },
+    {
+      "startRva": 81375371,
+      "endRva": 81375393,
+      "sha256": "5093B9A1787375C3EE69836BAE067C6F0DC3B1DDCF5C6EB0F0CF019F6A8469B3",
+      "boundary": "outer ensure-one helper request and rejoin"
+    },
+    {
+      "startRva": 81375393,
+      "endRva": 81375419,
+      "sha256": "85603E092D7ADFCAD1A4B2F07BB2521F518D72159DF29EBCCF8FE93C3DB9603E",
+      "boundary": "outer negative remaining helper and cursor rejoins"
+    },
+    {
+      "startRva": 54731248,
+      "endRva": 54731341,
+      "sha256": "2AFE7414EBB64A2DD9BA4BCAAC0F102DC4C93B6BDF3BE78789D4A661900D9D22",
+      "boundary": "SubSpeed formatter initialization and forwarding"
+    },
+    {
+      "startRva": 54731344,
+      "endRva": 54731821,
+      "sha256": "CFD6AD3DA9BD0FE46C71900CC1229BAC4BCB51B47AE3806E374AA8A24158F1F5",
+      "boundary": "SubSpeed inline header5 normal source reads, FF clear, initialization and rejoins"
+    },
+    {
+      "startRva": 81374304,
+      "endRva": 81374326,
+      "sha256": "6C3C7744DAA0083434E5FD55C25EBFCCA24A0865F6D6937395F02974645632AB",
+      "boundary": "SubSpeed ensure-one helper request and rejoin"
+    },
+    {
+      "startRva": 81374326,
+      "endRva": 81374352,
+      "sha256": "3FBB3D52208E879450569E5BC9B592237E77CBCE2ABAAFB0690728DD9DA50CF6",
+      "boundary": "SubSpeed negative remaining helper and cursor rejoins"
+    },
+    {
+      "startRva": 81374352,
+      "endRva": 81374403,
+      "sha256": "7DD7581A529248C035D1D0719EAEA1CC3627DAC4B7D32C38CD79407D6C854477",
+      "boundary": "SubSpeed output allocation, constructor and header rejoin; no source member"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 54740091,
+      "instructionHex": "488B15A659C509",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54740237,
+      "instructionHex": "488B150C01BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54740312,
+      "instructionHex": "488B155123BD09",
+      "cellVa": 6660581552,
+      "usageRawHex": "F1E712C000000000",
+      "methodSpecIndex": 619512,
+      "methodSpec": [
+        428448,
+        -1,
+        42497
+      ],
+      "argumentRawHex": "81250000000000000000118000000000",
+      "typeDefinition": 9601,
+      "typeName": "Beyond.Gameplay.Core.MoveToAction+DirectionType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54740556,
+      "instructionHex": "488B15CDFFBB09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54740631,
+      "instructionHex": "4C8B05521EBC09",
+      "cellVa": 6660515056,
+      "usageRawHex": "D1CA0FC000000000",
+      "methodSpecIndex": 517480,
+      "methodSpec": [
+        428448,
+        -1,
+        908
+      ],
+      "argumentRawHex": "C5AA0000000000000000118000000000",
+      "typeDefinition": 43717,
+      "typeName": "UnityEngine.Vector3",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54740703,
+      "instructionHex": "488B15C2CFC509",
+      "cellVa": 6661150376,
+      "usageRawHex": "53E512C000000000",
+      "methodSpecIndex": 619177,
+      "methodSpec": [
+        428448,
+        -1,
+        42254
+      ],
+      "argumentRawHex": "7D050000000000000000118000000000",
+      "typeDefinition": 1405,
+      "typeName": "Beyond.Gameplay.DirectionType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54740740,
+      "instructionHex": "488B1515C7C509",
+      "cellVa": 6661148192,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54740781,
+      "instructionHex": "488B15ECFEBB09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54740856,
+      "instructionHex": "488B15A9A1CB09",
+      "cellVa": 6661531944,
+      "usageRawHex": "A7CA0FC000000000",
+      "methodSpecIndex": 517459,
+      "methodSpec": [
+        428448,
+        -1,
+        1206
+      ],
+      "argumentRawHex": "02AB0000000000000000118000000000",
+      "typeDefinition": 43778,
+      "typeName": "UnityEngine.LayerMask",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54740998,
+      "instructionHex": "488B1513FEBB09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54741073,
+      "instructionHex": "488B155020BD09",
+      "cellVa": 6660581544,
+      "usageRawHex": "F3E712C000000000",
+      "methodSpecIndex": 619513,
+      "methodSpec": [
+        428448,
+        -1,
+        42498
+      ],
+      "argumentRawHex": "80250000000000000000118000000000",
+      "typeDefinition": 9600,
+      "typeName": "Beyond.Gameplay.Core.MoveToAction+MoveType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54741215,
+      "instructionHex": "488B153AFDBB09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54741256,
+      "instructionHex": "488B1511FDBB09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54741297,
+      "instructionHex": "488B15E8FCBB09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54741338,
+      "instructionHex": "488B15E78ACB09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54741379,
+      "instructionHex": "488B156620BD09",
+      "cellVa": 6660581872,
+      "usageRawHex": "F5E712C000000000",
+      "methodSpecIndex": 619514,
+      "methodSpec": [
+        428448,
+        -1,
+        42499
+      ],
+      "argumentRawHex": "82250000000000000000118000000000",
+      "typeDefinition": 9602,
+      "typeName": "Beyond.Gameplay.Core.MoveToAction+SpeedType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 54741520,
+      "instructionHex": "488B15F1CCC209",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54741561,
+      "instructionHex": "488B15E0FBBB09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54741704,
+      "instructionHex": "488B15111FBD09",
+      "cellVa": 6660581856,
+      "usageRawHex": "FBEB12C000000000",
+      "methodSpecIndex": 620029,
+      "methodSpec": [
+        428464,
+        -1,
+        17099
+      ],
+      "argumentRawHex": "83250000000000000000120000000000",
+      "typeDefinition": 9603,
+      "typeName": "Beyond.Gameplay.Core.MoveToAction+SubSpeed",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54741745,
+      "instructionHex": "488B15E81EBD09",
+      "cellVa": 6660581856,
+      "usageRawHex": "FBEB12C000000000",
+      "methodSpecIndex": 620029,
+      "methodSpec": [
+        428464,
+        -1,
+        17099
+      ],
+      "argumentRawHex": "83250000000000000000120000000000",
+      "typeDefinition": 9603,
+      "typeName": "Beyond.Gameplay.Core.MoveToAction+SubSpeed",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54731455,
+      "instructionHex": "488B155A23BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54731554,
+      "instructionHex": "488B15F722BC09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54731607,
+      "instructionHex": "488B15EAB0CB09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 54731660,
+      "instructionHex": "488B155D46BD09",
+      "cellVa": 6660581872,
+      "usageRawHex": "F5E712C000000000",
+      "methodSpecIndex": 619514,
+      "methodSpec": [
+        428448,
+        -1,
+        42499
+      ],
+      "argumentRawHex": "82250000000000000000118000000000",
+      "typeDefinition": 9602,
+      "typeName": "Beyond.Gameplay.Core.MoveToAction+SpeedType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member46": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "scalar-payload",
+      "byte",
+      "scalar32",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "scalar-payload",
+      "byte",
+      "raw12",
+      "scalar32",
+      "vector-payload",
+      "scalar-payload",
+      "byte",
+      "scalar32",
+      "byte",
+      "byte",
+      "byte",
+      "scalar-payload",
+      "raw4",
+      "scalar32",
+      "byte",
+      "byte",
+      "byte-payload",
+      "scalar-payload",
+      "scalar-payload",
+      "scalar-payload",
+      "curve",
+      "scalar32",
+      "scalar32",
+      "raw4",
+      "byte",
+      "target",
+      "scalar-payload",
+      "byte",
+      "byte",
+      "byte",
+      "scalar-payload-curve-profile",
+      "scalar-payload-curve-profile"
+    ],
+    "subSpeedMember5": [
+      "scalar-payload",
+      "byte-payload",
+      "scalar-payload",
+      "curve",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected union246 dispatch and module/token joins identify MoveToAction_Data. The header46 reader uses inline one-byte header/FF handling and twenty generic contexts; source calls are distinct from interleaved output setters. UnityEngine.Vector3 calls the separately pinned raw12 helper in buff_7c_native.json; BlackboardVector3 retains the variable three-scalar profile. LayerMask calls the DWORD helper pinned in validator_02_native.json. Eight BlackboardDouble references, AnimationCurve, TargetSettings and both final SubSpeed references reuse their explicit finite profiles. The separately joined SubSpeed header5 reader and four contexts consume BlackboardDouble, bounded byte payload, BlackboardDouble, AnimationCurve and required DWORD. Both final SubSpeed members must be present, including when nullable; each nonnull SubSpeed requires its final DWORD after the curve. Null union, null outer wrapper, null SubSpeed, nested scalar nulls and nullable curve key arrays are independent. Header ensure-one and negative-remaining helper requests/rejoins are pinned without claiming full refill/error parity. Source order is direct and static identity exact; framing remains structural-only. Movement behavior, units, curve interpretation, target ownership, live formatter choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

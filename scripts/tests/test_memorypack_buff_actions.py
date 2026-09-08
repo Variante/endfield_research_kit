@@ -714,6 +714,25 @@ def tag2c(first=b'\xff',second=b'\xff',nested=b'\xff',value=None,last=None):
             b'\xff'+payload(value)+b'\x80'*4+nested+b'\xfe'+payload(last))
 
 
+def subspeedf6(first=b'\xff',value=None,second=b'\xff',curve=b'\xff',last=b'\xff'*4):
+    return b'\x05'+first+payload(value)+second+curve+last
+
+
+def tagf6(overrides=None,wire=b'\xf6'):
+    # Independent member-numbered fixture from the selected 46 source calls.
+    scalar=scalar_payload(b'expr');vector=b'\x03'+scalar_payload(None)+b'\xff'+scalar_payload(b'')
+    sub=subspeedf6(scalar,b'\xff\x00',scalar_payload(None),curve24((bytes(28),)))
+    members=[b'\xfe',b'\xff'*4,b'\x80'*4,bytes(4),b'\xff',scalar,b'\x80',bytes(4),
+             b'\xff',b'\xfe',b'\x80',b'\x00',b'\xff',b'\xfe',scalar,b'\x80',
+             b'\xff'*12,b'\xff'*4,vector,scalar,b'\xfe',b'\xff'*4,b'\xff',b'\xfe',b'\x80',
+             scalar,b'\x00\x00\xc0\x7f',b'\xff'*4,b'\xfe',b'\xff',payload(b'wire'),
+             scalar,scalar,scalar,curve24((bytes(28),)),b'\xff'*4,b'\x80'*4,
+             b'\x00\x00\x80\x7f',b'\xfe',target(),scalar,b'\xff',b'\xfe',b'\x80',sub,sub]
+    assert len(members)==46
+    for member,value in (overrides or {}).items():members[member-1]=value
+    return wire+b'\x2e'+b''.join(members)
+
+
 class BuffActionsTests(unittest.TestCase):
     def test_2c_independent_scalars_payloads_and_null_wrappers(self):
         for first,second in ((b'\xff',b'\xff'),(scalar_payload(None),scalar_payload(b'')),
@@ -774,6 +793,75 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['status'],'unsupported')
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
+
+    def test_f6_profiles_nulls_and_two_independent_subspeed_members(self):
+        for wire in (b'\xf6',b'\xfa\xf6\x00'):
+            for overrides in ({},{19:b'\xff',35:b'\xff',40:b'\xff',45:b'\xff',46:b'\xff'},
+                              {45:b'\xff',46:subspeedf6()}, {45:subspeedf6(),46:b'\xff'}):
+                child=tagf6(overrides,wire);r=Reader(child+b'\xaa','f6');r.action(0)
+                self.assertEqual(r.pos,len(child));self.assertEqual(r.records[-1]['tag'],246)
+                raw12=[v for v in r.ranges if v['kind']=='anonymous-raw12']
+                self.assertEqual(len(raw12),1);self.assertEqual(raw12[0]['end']-raw12[0]['start'],12)
+                subs=[v for v in r.records if v['kind']=='anonymous-scalar-payload-curve-profile']
+                self.assertEqual(len(subs),2);self.assertEqual(subs[0]['end'],subs[1]['start'])
+                self.assertEqual(subs[1]['end'],len(child))
+                row=event_prefix(prefix(sequence(child,b'\xff')),source='f6-next-null')
+                self.assertEqual(row['status'],'supported-prefix')
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='f6-next-unknown')
+                self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['offset'],19+len(child))
+        for raw in (b'\xff',b'\xf6\xff',b'\xfa\xf6\x00\xff'):
+            r=Reader(raw+b'\xaa','f6-null');r.action(0);self.assertEqual(r.pos,len(raw))
+
+    def test_f6_every_cut_and_required_parent_and_subspeed_tails(self):
+        for wire in (b'\xf6',b'\xfa\xf6\x00'):
+            child=tagf6(wire=wire)
+            for cut in range(len(child)):
+                results=[]
+                for raw in (child,child[:cut],child[:cut]+b'\xff'*20):
+                    r=Reader(raw,'f6-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut);self.assertFalse(any(v.get('tag')==246 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            # Removing either entire required final reference is not a nullable encoding.
+            for overrides in ({45:b'',46:b'\xff'},{45:b'\xff',46:b''}):
+                r=Reader(tagf6(overrides,wire),'f6-missing-ref')
+                with self.assertRaises(FrameError):r.action(0)
+                self.assertFalse(any(v.get('tag')==246 for v in r.records))
+            for n in range(1,5):
+                sub=subspeedf6(curve=curve24((bytes(28),)))[:-n]
+                r=Reader(tagf6({46:sub},wire),'f6-sub-final-dword')
+                with self.assertRaises(FrameError):r.action(0)
+                self.assertFalse(any(v.get('tag')==246 for v in r.records))
+            full=prefix(sequence(child))
+            for cut in range(len(full)):
+                row=event_prefix(full,source='f6-limit',limit=cut)
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='f6-limit',limit=cut))
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_f6_nested_headers_counts_and_unknown_target_fail_closed(self):
+        for wire in (b'\xf6',b'\xfa\xf6\x00'):
+            child=tagf6(wire=wire);r=Reader(child,'f6-invalid');r.action(0)
+            for span in r.ranges:
+                if span['kind'] not in ('member-header','count-i32'):continue
+                for invalid in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                    bad=bytearray(child);at=span['start']
+                    if span['kind']=='member-header':bad[at]=invalid
+                    else:struct.pack_into('<i',bad,at,invalid)
+                    q=Reader(bad,'f6-invalid')
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    self.assertEqual(caught.exception.diagnostic['offset'],at)
+                    self.assertFalse(any(v.get('tag')==246 for v in q.records))
+            unknown=target(selector=b'\x03\x17'+bytes(8));q=Reader(tagf6({40:unknown},wire),'f6-unknown')
+            with self.assertRaises(Unsupported) as caught:q.action(0)
+            self.assertEqual(caught.exception.diagnostic['actual'],23);self.assertEqual(q.target_depth,0)
+            self.assertFalse(any(v.get('tag')==246 for v in q.records))
+            for count in (-2,2147483647):
+                with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+child+bytes(2))
+                self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(caught.exception.diagnostic['offset'],1)
 
     def test_ab_shared_field_order_keeps_distinct_action_identity(self):
         for wire in (b'\xab',b'\xfa\xab\x00'):
