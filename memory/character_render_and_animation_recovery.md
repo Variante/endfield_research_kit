@@ -235,8 +235,9 @@ only.
   complete RT0 exactly. This proves packet sufficiency for that color output,
   not reconstructed Unity fidelity or RT1 parity; preserve those boundaries.
   Public Unity particle instance records require their own stream-layout
-  contract. The recovered refraction path selects its Custom1 record variant
-  from the renderer's mesh/GPU/active-stream settings and isolates that choice
+  contract. Refract selects its Custom1 record; BaseV2 selects Custom1 or
+  Custom1+Custom2 and loads Custom1 from the procedural buffer. Both select
+  from the renderer's mesh/GPU/active-stream settings and isolate that choice
   from shared billboard materials. A native matrix-bank declaration does not
   establish Unity's procedural buffer stride; validate the bound descriptor,
   shader loads, and actual post-VS positions together.
