@@ -541,7 +541,10 @@ only.
   a separate R32 texture before lighting; t0 is the binning buffer. The native
   copy uses SampleLevel with explicit UV transform, mip and sampler. The lab's
   integer texel copy requires those values to establish equivalence; endpoint
-  identity alone does not prove payload continuity. Native draw failure
+  identity alone does not prove payload continuity. The exact Unity bridge
+  retains the sampled R32 copy and D32S8 attachment separately through native
+  submission completion; sampling must not determine which surface supplies
+  stencil rejection. Native draw failure
   cannot certify content merely because the metadata shell produced finite pixels.
   Foreground HG geometry replaces classification only after passing shared
   depth. This does not establish every retail stencil writer. The shared surface
