@@ -648,6 +648,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   final byte; do not substitute the header-three scalar profile. Exact type
   identity does not establish gameplay effects, numeric units or boolean
   meanings. Keep the existing TargetSettings depth/unknown-profile boundary.
+  `scripts/game_data/buff_16_native.json` pins the header-thirty AuraAction
+  and its distinct BuffInput and TargetFilter wrappers. BuffInput is FF or
+  header three, byte, nullable AssignPair list and raw byte payload; neither
+  CreateBuffInput nor GlobalBuffInput has this complete shape. TargetFilter
+  is FF or header ten, byte/enum fields, GameplayTagQuery and a required final
+  DWORD, distinct from BuffFilterSettings. The query helper has an output
+  carrier, not a fixed sixteen-byte wire value. Preserve nested Sequence
+  unknown stops, independent list null states and the minimum required tail.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity

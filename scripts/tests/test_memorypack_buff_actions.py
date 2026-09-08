@@ -653,7 +653,81 @@ def tag70(a=0xffffffff,b=0x80000000,extended=False):
     return (b'\xfa\x70\x00' if extended else b'\x70')+b'\x06\x80'+struct.pack('<IIIII',0xffffffff,0x80000000,0x7fc00000,a,b)
 
 
+def buff_input16(items=(),value=b'wire'):
+    return b'\x03\xff'+struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+payload(value)
+
+
+def target_filter16(query=b'\xff'):
+    return b'\x0a\xff\x80'+bytes.fromhex('FFFFFFFF')+b'\xff\x80\x00'+bytes(8)+query+bytes.fromhex('000080FF')
+
+
+def tag16(items=(),extended=False,first=b'\xff',second=b'\xff',rich=False):
+    head=(b'\xfa\x16\x00' if extended else b'\x16')+b'\x1e\xff'+bytes(12)
+    return (head+first+second+payload(b'wire')+(target() if rich else b'\xff')+bytes(4)+
+            (b'\x02'+bytes(4)+payload(None) if rich else b'\xff')+
+            struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+bytes(8)+b'\x80'+
+            (target() if rich else b'\xff')+b'\xff\x80'+
+            (scalar_payload() if rich else b'\xff')+direction()+b'\xff'+b'\xff\x80\x00\x01'+bytes(4)+b'\xff\x80'+
+            (collider16() if rich else b'\xff')+target_filter16(query41((0,0xffffffff)))+bytes.fromhex('FFFFFFFF'))
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag16_both_encodings_distinct_inputs_and_full_tail(self):
+        assignment=b'\x06'+bytes(4)+payload(None)+bytes(4)+payload(b'\xff')+payload(b'')+b'\x80'
+        for extended in (False,True):
+            for items in (None,(),(b'\xff',buff_input16(None,None),buff_input16((b'\xff',assignment)))):
+                child=tag16(items,extended,rich=True)
+                r=Reader(child,'16');r.action(0);self.assertEqual(r.pos,len(child))
+                self.assertIn(dict(start=0,end=len(child),kind='union',tag=22),r.records)
+                result=event_prefix(prefix(sequence(child,b'\x59')),source='16.bin')
+                self.assertEqual(result['diagnostic']['offset'],19+len(child))
+                self.assertEqual(result['diagnostic']['actual'],89)
+                self.assertFalse(result['wholeSchemaExact'])
+
+    def test_tag16_every_cut_hard_limits_null_wrappers_and_trailing(self):
+        for child in (tag16((buff_input16((b'\xff',)),),rich=True),tag16(extended=True),b'\x16\xff',b'\xfa\x16\x00\xff'):
+            for cut in range(len(child)):
+                values=[]
+                for data in (child,child[:cut],child[:cut]+b'\xff'*20):
+                    r=Reader(data,'16-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut);self.assertFalse(any(v.get('tag')==22 for v in r.records))
+                    values.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(values[0],values[1]);self.assertEqual(values[0],values[2])
+            for tail in (b'\xff',b'\x00'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag16_profile_headers_counts_and_required_tails(self):
+        for body in (b'\x05'+bytes(30),b'\x03\xff'+struct.pack('<i',-2)+bytes(4),
+                     b'\x03\xff'+struct.pack('<i',2)+b'\xff'+bytes(4)):
+            r=Reader(body,'16-input')
+            with self.assertRaises(FrameError):r.buff_input_profile()
+            self.assertFalse(any(v['kind']=='anonymous-buff-input-profile' for v in r.records))
+        for body in (b'\x02'+bytes(40),target_filter16()[:-1],target_filter16(b'\x02'+bytes(4)+struct.pack('<i',-2))):
+            r=Reader(body,'16-filter')
+            with self.assertRaises(FrameError):r.target_filter_profile()
+        for header in (0,29,31,254):
+            child=bytearray(tag16());child[1]=header;r=Reader(child,'16-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['category'],'member-count')
+            self.assertEqual(caught.exception.diagnostic['expected'],30)
+        # Root list count requires the entire minimum tail, including final DWORD.
+        before=b'\x16\x1e\xff'+bytes(12)+b'\xff\xff'+payload(b'')+b'\xff'+bytes(4)+b'\xff'
+        r=Reader(before+struct.pack('<i',2)+bytes(32),'16-list')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+
+    def test_tag16_unknown_nested_sequence_preserves_completed_predecessor(self):
+        first=sequence(b'\xff');second=b'\x03'+struct.pack('<i',1)+b'\x59'+bytes(2)
+        child=tag16(first=first,second=second);r=Reader(child,'16-unknown')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],15+len(first)+5)
+        self.assertEqual(caught.exception.diagnostic['actual'],89)
+        self.assertEqual(len([v for v in r.records if v['kind']=='sequence']),1)
+        self.assertFalse(any(v.get('tag')==22 for v in r.records))
+
+
     def test_tag159_nested_header4_payloads_and_target(self):
         for value in (None,b'',b'\xff\x00wire'):
             nested=b'\x04'+payload(value)+b'\xff'+bytes.fromhex('FFFFFFFF')+b'\x80'
