@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119404,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CharWeaponAnimationAction_CharWeaponAnimationActionDataForMemoryPack+Beyond_Gameplay_Core_CharWeaponAnimationAction_CharWeaponAnimationActionDataForMemoryPackFormatter",
+      "Deserialize",
+      67770912
+    ],
+    [
+      119403,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CharWeaponAnimationAction_CharWeaponAnimationActionDataForMemoryPack",
+      "Deserialize",
+      67771008
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67770912,
+      "endRva": 67771005,
+      "sha256": "9039050D496488F9724BD4BFBFF976CFEB42080BBF5C716DE9A86186A298D957",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 67771008,
+      "endRva": 67771662,
+      "sha256": "C4E2816EB0BAEB0923FFF87F07B5D708621FD410F8B053B99C34EE46E49593A8",
+      "boundary": "header12 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83306602,
+      "endRva": 83306615,
+      "sha256": "421312B2D32AE22BEA1203CEA99406453F5A2329F1084181C9597A0FDBFA1204",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83306671,
+      "endRva": 83306692,
+      "sha256": "325B1D8DAF9D25B6244719E81558C7916D9348A38FA4FDAFB33E8C048645C17B",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67771180,
+      "instructionHex": "488B15F582FE08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67771354,
+      "instructionHex": "488B159786FF08",
+      "cellVa": 6661186168,
+      "usageRawHex": "93EA12C000000000",
+      "methodSpecIndex": 619849,
+      "methodSpec": [
+        428464,
+        -1,
+        13890
+      ],
+      "argumentRawHex": "72240000000000000000120000000000",
+      "typeDefinition": 9330,
+      "typeName": "Beyond.Gameplay.Core.AnimatorParamAction",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 67771395,
+      "instructionHex": "488B156E86FF08",
+      "cellVa": 6661186168,
+      "usageRawHex": "93EA12C000000000",
+      "methodSpecIndex": 619849,
+      "methodSpec": [
+        428464,
+        -1,
+        13890
+      ],
+      "argumentRawHex": "72240000000000000000120000000000",
+      "typeDefinition": 9330,
+      "typeName": "Beyond.Gameplay.Core.AnimatorParamAction",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 67771504,
+      "instructionHex": "488B150186FF08",
+      "cellVa": 6661186168,
+      "usageRawHex": "93EA12C000000000",
+      "methodSpecIndex": 619849,
+      "methodSpec": [
+        428464,
+        -1,
+        13890
+      ],
+      "argumentRawHex": "72240000000000000000120000000000",
+      "typeDefinition": 9330,
+      "typeName": "Beyond.Gameplay.Core.AnimatorParamAction",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member12": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "animator-param-profile",
+      "animator-param-profile",
+      "raw4",
+      "byte",
+      "animator-param-profile",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact union54 dispatch and registered type/module/token joins identify CharWeaponAnimationAction_CharWeaponAnimationActionDataForMemoryPack. Header12 reads common byte/three DWORD, BYTE, BYTE, two AnimatorParamAction profiles, raw4 through the float helper, BYTE, a third AnimatorParamAction and terminal DWORD. All three distinct nested source calls resolve the same AnimatorParamAction MethodSpec619849. They reuse the independently pinned FF/header5 DWORD-BYTE-raw4-DWORD-DWORD profile in buff_14a_native.json, not TargetSettings. Each nonnull profile is18 bytes and null profile is one byte. Repeated type contexts do not merge serialized instances. The outer float span, following byte and final DWORD remain required with null children. Short36 and FA3600 identify union54, independently of decimal36/hex24. Minimum nonnull outer lengths29/31 use three null children; all three nonnull profiles produce80/82 bytes. Preserve arbitrary raw floating bits and integer/byte values without enum validation or normalization. Output setters add no source bytes. Complete formatter/reader/init/existing-output/FF windows exclude adjacent methods and error bodies. Static identity is exact, source order direct and framing structural-only. Weapon animation behavior, parameter roles, numeric units, live provider selection, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

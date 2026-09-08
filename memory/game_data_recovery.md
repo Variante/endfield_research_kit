@@ -479,6 +479,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   establish wire width. Equal target contexts preserve separate byte ranges.
   Null preceding profiles retain the byte and final scalar. Source/target
   ownership and condition behavior remain unresolved.
+  `scripts/game_data/buff_36_native.json` pins three independent
+  AnimatorParamAction instances around an outer raw4/byte span and a terminal
+  DWORD. Each nullable child reuses the member-five fixed profile in
+  `buff_14a_native.json`; identical contexts do not merge source ranges or
+  remove intervening fields. Preserve all floating bits and the final DWORD
+  even with null children. Weapon animation and parameter roles remain unresolved.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

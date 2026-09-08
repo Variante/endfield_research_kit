@@ -918,10 +918,100 @@ def tag55(single=b'\xff',first=b'\xff',second=b'\xff',scalar=b'\xff',*,extended=
             struct.pack('<III',0xffffffff,0x80000000,0x01234567)+single+first+second+bytes([flag])+scalar)
 
 
+
+def tag36(children=(b'\xff',b'\xff',b'\xff'),*,extended=False,raw4=b'\xff\x00\xc0\x7f'):
+    return ((b'\xfa\x36\x00' if extended else b'\x36')+b'\x0c\x80'+
+            struct.pack('<III',0xffffffff,0x80000000,0x01234567)+b'\xff\xfe'+
+            children[0]+children[1]+raw4+b'\x80'+children[2]+b'\xff'*4)
+
+
 class BuffActionsTests(unittest.TestCase):
 
 
 
+
+
+    def test_36_three_independent_profiles_null_combinations_and_raw_bits(self):
+        profiles=[animator_param(raw4=struct.pack('<I',bits),first=struct.pack('<I',index),flag=bytes([255-index]),last=struct.pack('<II',index+11,index+99))
+                  for index,bits in enumerate((0x7fc00000,0xffffffff,0x80000000))]
+        for extended in (False,True):
+            for mask in range(8):
+                children=[profiles[i] if mask&(1<<i) else b'\xff' for i in range(3)]
+                data=tag36(children,extended=extended);r=Reader(data,'36-normal');r.action(0)
+                self.assertEqual((r.pos,len(data),r.records[-1]['tag']),(29+2*extended+17*mask.bit_count(),len(data),54))
+                at=17+2*extended;spans=[]
+                for i,child in enumerate(children):
+                    if i==2:at+=5
+                    spans.append(dict(start=at,end=at+len(child),kind='anonymous-animator-param-profile'));at+=len(child)
+                self.assertEqual([q for q in r.records if q['kind']=='anonymous-animator-param-profile'],spans)
+                self.assertEqual(r.ranges[-1],dict(start=len(data)-4,end=len(data),kind='anonymous-scalar32'))
+        for data in (b'\xff',b'\x36\xff',b'\xfa\x36\x00\xff'):
+            r=Reader(data,'36-null-wrapper');r.action(0);self.assertEqual(r.pos,len(data))
+
+    def test_36_all_cuts_logical_limits_and_trailing_bytes(self):
+        for extended in (False,True):
+            for mask in range(8):
+                children=[animator_param() if mask&(1<<i) else b'\xff' for i in range(3)]
+                data=tag36(children,extended=extended)
+                for cut in range(len(data)):
+                    outcomes=[]
+                    for raw in (data[:cut],data,data[:cut]+b'\xff'*20):
+                        r=Reader(raw,'36-cut',cut)
+                        with self.assertRaises(FrameError) as caught:r.action(0)
+                        self.assertLessEqual(r.pos,cut)
+                        self.assertFalse(any(q.get('tag')==54 for q in r.records))
+                        outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                    self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+                for tail in (b'\xff',bytes(4)):
+                    for limit in (len(data),len(data+tail)):
+                        r=Reader(data+tail,'36-tail',limit);r.action(0);self.assertEqual(r.pos,len(data))
+                    with self.assertRaises(FrameError) as caught:sequence_frame(sequence(data)+tail)
+                    self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_36_every_required_field_and_nested_header(self):
+        for extended in (False,True):
+            start=17+2*extended;children=[animator_param()]*3;data=tag36(children,extended=extended)
+            nested_starts=(start,start+18,start+41)
+            fields=[(start-2,1),(start-1,1),(start+36,4),(start+40,1),(len(data)-4,4)]
+            for at in nested_starts:
+                fields.extend((at+off,width) for off,width in ((1,4),(5,1),(6,4),(10,4),(14,4)))
+            for at,width in fields:
+                for available in range(width):
+                    r=Reader(data,'36-field',at+available)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    d=caught.exception.diagnostic
+                    self.assertEqual((d['category'],d['offset'],d['expected'],d['actual'],r.pos),('truncated',at,{'bytes':width},{'remaining':available},at))
+            for at,header in [(1+2*extended,12)]+[(at,5) for at in nested_starts]:
+                r=Reader(data[:at]+b'\x2a'+data[at+1:],'36-header')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                d=caught.exception.diagnostic
+                self.assertEqual((d['category'],d['offset'],d['expected'],d['actual'],r.pos),('member-count',at,header,42,at))
+                self.assertEqual(len([q for q in r.records if q['kind']=='anonymous-animator-param-profile']),0 if header==12 else nested_starts.index(at))
+            null=tag36(extended=extended)
+            for available in range(4):
+                r=Reader(null,'36-null-terminal',len(null)-4+available)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['expected'],r.pos),({'bytes':4},len(null)-4))
+
+    def test_36_parent_counts_tails_and_separate_union_identity(self):
+        data=tag36([animator_param()]*3)
+        for count in (-2,2147483647):
+            r=Reader(b'\x03'+struct.pack('<i',count)+data+bytes(2),'36-parent-count')
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            d=caught.exception.diagnostic;self.assertEqual((d['category'],d['offset'],d['actual'],r.pos),('count-bounds',1,count,5))
+        parent=sequence(data)
+        for missing in (1,2):
+            r=Reader(parent,'36-parent-tail',len(parent)-missing)
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual((caught.exception.diagnostic['offset'],r.pos),(len(parent)-missing,len(parent)-missing))
+        r=Reader(sequence(data,b'\xfa\xa0\x01'),'36-next')
+        with self.assertRaises(Unsupported) as caught:r.sequence()
+        self.assertEqual((caught.exception.diagnostic['actual'],r.pos),(416,5+len(data)))
+        self.assertEqual([q['tag'] for q in r.records if q['kind']=='union'],[54])
+        for lead in (b'\x24',b'\xfa\x36\x01'):
+            r=Reader(lead+data[1:],'36-identity')
+            with self.assertRaises(FrameError):r.action(0)
+            self.assertFalse(any(q.get('tag')==54 for q in r.records))
 
     def test_55_single_value_two_targets_and_terminal_scalar(self):
         for extended in (False,True):
