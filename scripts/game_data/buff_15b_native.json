@@ -1,0 +1,163 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122958,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetWeaknessAction_DataForMemoryPack+Beyond_Gameplay_Core_SetWeaknessAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      61447232
+    ],
+    [
+      122957,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetWeaknessAction_DataForMemoryPack",
+      "Deserialize",
+      61445936
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 61447232,
+      "endRva": 61447325,
+      "sha256": "145A191443ADFAD62D91D3CB8195F129C0B30C126339B859E4ABA18C1EA2A36D",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 61445936,
+      "endRva": 61446595,
+      "sha256": "9EF028B39359254F9B85056A3FB3534DD7927793C7AA6FBA0F864A6C4AE1A22B",
+      "boundary": "header11 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 82452144,
+      "endRva": 82452157,
+      "sha256": "604F5299A4572DECF61437BD36E906AE7622234280FA8FF0C9B0D7685B83677E",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 82452213,
+      "endRva": 82452234,
+      "sha256": "8EA04A3602FF9684DC8B5A641AB5787CA5C7B94DDF28F44A233E479B980F8EDF",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 61446108,
+      "instructionHex": "488B1545065F09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 61446214,
+      "instructionHex": "488B15D3AD5509",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61446255,
+      "instructionHex": "488B15AAAD5509",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61446330,
+      "instructionHex": "488B15A7B55509",
+      "cellVa": 6660509288,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61446371,
+      "instructionHex": "488B153EAD5509",
+      "cellVa": 6660507176,
+      "usageRawHex": "CBEB12C000000000",
+      "methodSpecIndex": 620005,
+      "methodSpec": [
+        428464,
+        -1,
+        17006
+      ],
+      "argumentRawHex": "AE000000000000000000120000000000",
+      "typeDefinition": 174,
+      "typeName": "Beyond.Blackboard+BlackboardInt",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61446446,
+      "instructionHex": "488B15EBAC5509",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member11": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload",
+      "scalar-payload",
+      "byte",
+      "sequence",
+      "scalar-payload",
+      "byte",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact selected union347 dispatch and module/token joins identify SetWeaknessAction_Data. Its header11 reader consumes the common byte/three DWORDs, BlackboardDouble twice, a byte, SequenceActionData, BlackboardInt, a byte and terminal BlackboardDouble. Six exact generic contexts identify Priority, three Double uses, SequenceActionData and Int. Double reuses the separately pinned FF/header3 signed nullable byte-payload, byte and DWORD profile; Int independently reuses the same source shape proven by its concrete reader in buff_16b_native.json, not by equal member counts or managed type names. Sequence reuses buff_sequence_read_order with FF/header3, signed nullable child count, minimum one byte per child, two required tail bytes and bounded recursive depth. Null sequence, null/empty child list, null child and null outer wrapper are distinct. Completing SequenceActionData does not complete the outer action: Int, byte and terminal Double remain required. The last Double wrapper is required even when null; no extra byte or DWORD follows it. Preserve independent null profiles and payload counts, arbitrary byte values and scalar bits. FA 5B 01 is union347; short5B is distinct supported union91. Source calls establish order independently of setters and managed declarations. Formatter forwarding, normal return, initialization rejoin, FF clear and existing-output windows retain complete instructions. Static identity is exact, selected source order direct and framing structural-only. Weakness behavior, field meaning, execution order, payload decoding, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

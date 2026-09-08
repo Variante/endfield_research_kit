@@ -714,6 +714,11 @@ def tag2c(first=b'\xff',second=b'\xff',nested=b'\xff',value=None,last=None):
             b'\xff'+payload(value)+b'\x80'*4+nested+b'\xfe'+payload(last))
 
 
+def tag15b(first=b'\xff',second=b'\xff',seq=b'\xff',integer=b'\xff',last=b'\xff'):
+    return (b'\xfa\x5b\x01\x0b\xfe'+struct.pack('<III',0xffffffff,0x80000000,1)+
+            first+second+b'\x80'+seq+integer+b'\xfe'+last)
+
+
 def tag144(first=b'\xff',value=None,last=b'\xff',tail=b'\xfe',bits=0x7fc00001):
     return (b'\xfa\x44\x01\x12\xfe'+struct.pack('<III',0xffffffff,0x80000000,1)+
             first+b'\x00\x01\x80\xfe\xff'+payload(value)+
@@ -845,6 +850,79 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['status'],'unsupported')
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
+
+    def test_15b_independent_scalar_nulls_sequence_states_and_short5b(self):
+        values=(b'\xff',scalar_payload(None,0,b'\xff'*4),scalar_payload(b'',128,b'\x01\x02\x03\x04'),scalar_payload(b'wire\xff',254))
+        sequences=(b'\xff',b'\x03'+struct.pack('<i',-1)+b'\x80\xfe',sequence(),sequence(b'\xff',tag5b()))
+        for i in range(len(values)):
+            for seq in sequences:
+                child=tag15b(values[i],values[(i+1)%4],seq,values[(i+2)%4],values[(i+3)%4])
+                r=Reader(child+b'\xaa','15b');r.action(0)
+                self.assertEqual(r.pos,len(child));self.assertEqual(r.records[-1]['tag'],347)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='15b-next')
+                self.assertEqual(row['diagnostic']['offset'],19+len(child))
+                self.assertTrue(any(x.get('tag')==347 for x in row['completedRecords']))
+        self.assertEqual(len(tag15b()),24)
+        short=tag5b();q=Reader(short,'15b-short');q.action(0)
+        self.assertEqual(q.pos,len(short));self.assertEqual(q.records[-1]['tag'],91)
+        for raw in (b'\xff',b'\xfa\x5b\x01\xff'):
+            q=Reader(raw+b'\xaa','15b-wrapper');q.action(0);self.assertEqual(q.pos,len(raw))
+
+    def test_15b_all_cuts_required_terminal_scalar_and_parent_trailing(self):
+        child=tag15b(scalar_payload(b'first'),scalar_payload(None),sequence(tag5b()),scalar_payload(b'int'),scalar_payload(b'last',128))
+        for cut in range(len(child)):
+            results=[]
+            for raw in (child,child[:cut],child[:cut]+b'\xff'*20):
+                q=Reader(raw,'15b-cut',cut)
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertLessEqual(q.pos,cut);self.assertFalse(any(x.get('tag')==347 for x in q.records))
+                results.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+            self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        for seq in (b'\xff',sequence(),b'\x03'+struct.pack('<i',-1)+bytes(2)):
+            body=tag15b(seq=seq);q=Reader(body[:-1],'15b-last-wrapper')
+            with self.assertRaises(FrameError) as caught:q.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],len(body)-1)
+            self.assertTrue(any(x['kind']=='sequence' for x in q.records))
+            self.assertFalse(any(x.get('tag')==347 for x in q.records))
+        for value in (None,b'',b'\xffwire'):
+            body=tag15b(last=scalar_payload(value));last_dword=len(body)-4
+            for k in range(1,5):
+                q=Reader(body[:-k],'15b-last-dword')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],last_dword)
+        parent=prefix(sequence(child))
+        for cut in range(len(parent)):
+            row=event_prefix(parent,source='15b-parent',limit=cut);self.assertEqual(row['status'],'failed')
+            self.assertEqual(row,event_prefix(parent[:cut]+b'\xff'*(len(parent)-cut),source='15b-parent',limit=cut))
+        for tail in (b'\x00',b'\xff'*4):
+            q=Reader(child+tail,'15b-record-end');q.action(0);self.assertEqual(q.pos,len(child))
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_15b_scalar_headers_counts_unknown_sequence_child_and_depth(self):
+        child=tag15b(scalar_payload(b'one'),scalar_payload(None),sequence(b'\xff'),scalar_payload(b'int'),scalar_payload(b'last'))
+        r=Reader(child,'15b-invalid');r.action(0)
+        for span in r.ranges:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for invalid in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=invalid
+                else:struct.pack_into('<i',bad,at,invalid)
+                q=Reader(bad,'15b-invalid')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],at)
+                self.assertFalse(any(x.get('tag')==347 for x in q.records))
+        q=Reader(tag15b(seq=sequence(b'\x07')),'15b-unknown-child')
+        with self.assertRaises(Unsupported) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'union-tag')
+        self.assertEqual(caught.exception.diagnostic['actual'],7);self.assertEqual(caught.exception.diagnostic['offset'],25)
+        self.assertEqual(q.pos,25);self.assertEqual(len(q.records),2)
+        nested=tag15b()
+        for _ in range(65):nested=tag15b(seq=sequence(nested))
+        q=Reader(nested,'15b-depth')
+        with self.assertRaises(Unsupported) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'depth-limit')
+        self.assertEqual(caught.exception.diagnostic['actual'],65);self.assertEqual(caught.exception.diagnostic['offset'],1645)
 
     def test_144_order_null_profiles_scalar_bits_and_short44_distinction(self):
         asymmetric=(b'\x08\xfe\x80'+struct.pack('<I',0x01020304)+b'\xff'+
