@@ -475,6 +475,11 @@ only.
   in the same report directory.
   The diagnostic now records CharacterPrePass and HGBuffer on one five-MRT/
   D32S8 surface, using the same character draw collector as canonical PreG.
+  Punctual shadows belong to the camera's forward light loop even when no
+  LitEffect particle is alive. Update the atlas and packed light-to-shadow map
+  under the producer's own rig gate; a particle-dependent skip leaves stale
+  indices when light packing changes and can reject whole light contributions.
+  The matched GPU diagnosis is in `endminf_shadow_schedule_287_validation.json`.
   Contact, low-resolution directional, VisibilitySH, and screen-shadow producers
   consume that post-HG surface and its R32 depth copy. An active HG owner failure
   cannot fall back to the independent character diagnostic. Default's paired
