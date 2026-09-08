@@ -401,6 +401,10 @@ only.
   The combined capture needs no repeat for those graphics inputs. The optional
   environment-shadow extension observes selected phases, ordered applied
   volumes/factors and camera/shadow-manager state within the same two entries.
+  It also samples the full registered list at the first selected getter in each
+  entry, with bounded capacity and header/element/key consistency checks. Only
+  complete samples linked to validated records support a current-order claim;
+  they do not establish earlier registration chronology or phase asset identity.
   It uses guarded reads and original-call forwarding without Unity API calls.
   FrameSetup may have no observed calls during these entries. Pinned deferred
   and contact-parameter getter callers supply independent observation routes;
