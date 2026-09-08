@@ -532,6 +532,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   CostType and the two separate ActionTargetType contexts add no nested headers.
   Preserve raw bits and both terminal DWORDs when CostData is null; cost units,
   enum meanings and runtime effects remain unresolved.
+  `scripts/game_data/buff_11c_native.json` pins PullAction's member19 order,
+  including a nullable PullAttenuationValueConfig list, two independent targets
+  and a required final byte. Each list element is FF or header2 with raw4 and
+  BlackboardSuperArmorValue, whose member4 payload/byte/DWORD/byte profile
+  reuses `buff_159_native.json`. Reserve the outer tail when bounding the list.
+  Its large inline initialization and jump-table data remain distinct from
+  source reads; output getters/setters add no wire members. Pull behavior,
+  attenuation units and live list-provider selection remain unresolved.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

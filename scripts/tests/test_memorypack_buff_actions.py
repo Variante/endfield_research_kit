@@ -986,7 +986,94 @@ def costc0(bits=(0x80000000,0xffffffff,0x7fc00000)):
 def tagc0(value=b'\xff',*,extended=False,bits=(0xffffffff,0x80000000)):
     return (b'\xfa\xc0\x00' if extended else b'\xc0')+b'\x07\x80'+bytes.fromhex('FFFFFFFF0000008067452301')+value+struct.pack('<II',*bits)
 
+
+def attenuation11c(flag=b'\xff',bits=0x80000000):
+    return b'\x02'+struct.pack('<I',bits)+flag
+
+
+def tag11c(items=(),first=b'\xff',scalar=b'\xff',last=b'\xff'):
+    return (bytes.fromhex('FA1C011380FFFFFFFF0000008067452301FF80')+
+            struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+
+            first+bytes.fromhex('FF0080000000800000C07F')+scalar+
+            bytes.fromhex('FEFFFFFFFF0000807F')+last+b'\x80')
+
 class BuffActionsTests(unittest.TestCase):
+
+    def test_11c_list_states_nested_flags_and_distinct_extents(self):
+        groups=(None,(),(b'\xff',),(attenuation11c(),),
+                tuple(attenuation11c(scalar_flag(v,last=128)) for v in (None,b'',b'\x00\xff\x80')),
+                (b'\xff',attenuation11c(scalar_flag(b'wire')),b'\xff'))
+        for items in groups:
+            for first,scalar,last in ((b'\xff',b'\xff',b'\xff'),(target(),scalar_payload(),target())):
+                data=tag11c(items,first,scalar,last);r=Reader(data,'11c-normal');r.action(0)
+                self.assertEqual(r.pos,len(data));self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=284))
+                end=23+sum(len(v) for v in items or ())
+                self.assertIn(dict(start=19,end=end,kind='anonymous-pull-attenuation-list'),r.records)
+                self.assertEqual(len([q for q in r.records if q['kind']=='anonymous-pull-attenuation-profile']),len(items or ()))
+                self.assertEqual(r.ranges[-1],dict(start=len(data)-1,end=len(data),kind='anonymous-nonzero-byte'))
+        self.assertEqual(len(tag11c()),47);self.assertEqual(len(tag11c(None)),47)
+        for data in (b'\xff',bytes.fromhex('FA1C01FF')):
+            r=Reader(data,'11c-null');r.action(0);self.assertEqual(r.pos,len(data))
+
+    def test_11c_all_cuts_and_bounded_trailing_bytes(self):
+        for data in (tag11c(None),tag11c(),tag11c((b'\xff',attenuation11c())),
+                     tag11c((attenuation11c(scalar_flag(b'\x00\xff')),),target(),scalar_payload(),target())):
+            for cut in range(len(data)):
+                outcomes=[]
+                for raw in (data[:cut],data,data[:cut]+b'\xff\x00'*30):
+                    r=Reader(raw,'11c-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut)
+                    self.assertFalse(any(q.get('tag')==284 for q in r.records))
+                    outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+            for tail in (b'\xff',b'\x00'*5):
+                for limit in (len(data),len(data+tail)):
+                    r=Reader(data+tail,'11c-tail',limit);r.action(0);self.assertEqual(r.pos,len(data))
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(data)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_11c_count_headers_nested_payload_and_terminal_diagnostics(self):
+        data=tag11c()
+        for count in (-2,1,2147483647):
+            r=Reader(data[:19]+struct.pack('<i',count)+data[23:],'11c-count')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='11c-count',offset=19,category='count-bounds',expected={'minimum':-1,'maximum':0},actual=count))
+            self.assertEqual(r.pos,23)
+        data=tag11c((attenuation11c(scalar_flag(None)),))
+        for at,expected in ((3,19),(23,2),(28,4)):
+            r=Reader(data[:at]+b'\x2a'+data[at+1:],'11c-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='11c-header',offset=at,category='member-count',expected=expected,actual=42));self.assertEqual(r.pos,at)
+        r=Reader(data[:29]+struct.pack('<i',-2)+data[33:],'11c-payload')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,dict(source='11c-payload',offset=29,category='count-bounds',expected={'minimum':-1,'maximum':len(data)-33},actual=-2));self.assertEqual(r.pos,33)
+        for data in (tag11c(None),tag11c((attenuation11c(scalar_flag(b'x')),))):
+            r=Reader(data,'11c-last',len(data)-1)
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='11c-last',offset=len(data)-1,category='truncated',expected={'bytes':1},actual={'remaining':0}));self.assertEqual(r.pos,len(data)-1)
+        for lead in (b'\x1c',bytes.fromhex('FA1C00')):
+            r=Reader(lead+tag11c()[3:],'11c-distinct')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='11c-distinct',offset=len(lead),category='member-count',expected=15,actual=19));self.assertEqual(r.pos,len(lead))
+
+    def test_11c_parent_counts_required_tails_and_unknown_child(self):
+        child=tag11c();parent=sequence(child)
+        r=Reader(parent,'11c-parent');r.sequence();self.assertEqual(r.pos,len(parent))
+        for n in (-2,2147483647):
+            r=Reader(parent[:1]+struct.pack('<i',n)+parent[5:],'11c-parent')
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='11c-parent',offset=1,category='count-bounds',expected={'minimum':-1,'maximum':len(child)},actual=n));self.assertEqual(r.pos,5)
+        for missing in (1,2):
+            end=len(parent)-missing;r=Reader(parent,'11c-parent-tail',end)
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='11c-parent-tail',offset=end,category='truncated',expected={'bytes':1},actual={'remaining':0}))
+            self.assertEqual(r.pos,end);self.assertIn(dict(start=5,end=5+len(child),kind='union',tag=284),r.records)
+        r=Reader(sequence(child,b'\x59'),'11c-parent-next')
+        with self.assertRaises(FrameError) as caught:r.sequence()
+        self.assertEqual(caught.exception.diagnostic,dict(source='11c-parent-next',offset=5+len(child),category='union-tag',expected='supported current union tag',actual=89));self.assertEqual(r.pos,5+len(child))
+
+
 
     def test_c0_cost_states_raw_patterns_and_exact_extents(self):
         for extended in (False,True):

@@ -1,0 +1,229 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121984,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PullAction_DataForMemoryPack+Beyond_Gameplay_Core_PullAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      65042192
+    ],
+    [
+      121983,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PullAction_DataForMemoryPack",
+      "Deserialize",
+      65043040
+    ],
+    [
+      163065,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PullComponent_PullAttenuationValueConfigForMemoryPack+Beyond_Gameplay_Core_PullComponent_PullAttenuationValueConfigForMemoryPackFormatter",
+      "Deserialize",
+      61436208
+    ],
+    [
+      163064,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PullComponent_PullAttenuationValueConfigForMemoryPack",
+      "Deserialize",
+      61436304
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 65042192,
+      "endRva": 65042285,
+      "sha256": "F4786DF6F9A3C1921C12F602F0880DD0929C65560A9A2C9D79AA46A8E557A57F",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 65043040,
+      "endRva": 65050320,
+      "sha256": "4C67893276FDCE7DDAE7BA8F34B0879B441CA1D3638B68F1C3C2FE687B6576BD",
+      "boundary": "inline initialization, header19, normal return, existing-output and FF rejoins"
+    },
+    {
+      "startRva": 61436208,
+      "endRva": 61436301,
+      "sha256": "6F2760DB7F1919BB0D8DF863D817148026B4B2C5D1E6909EE0011DFA8F7E601D",
+      "boundary": "element formatter initialization and forwarding"
+    },
+    {
+      "startRva": 61436304,
+      "endRva": 61436521,
+      "sha256": "7FE99A1057776CE748B18FEEBFEFA1E077B7B764F5D15A58F5500CEB23DC343F",
+      "boundary": "element header2 normal return and lazy initialization"
+    },
+    {
+      "startRva": 82451538,
+      "endRva": 82451583,
+      "sha256": "40C2D43778956378970EE076C9AA919D6917482AFB9E73D74ACEC7BAD93D9D33",
+      "boundary": "element allocation rejoin"
+    },
+    {
+      "startRva": 82451639,
+      "endRva": 82451660,
+      "sha256": "1BDB806E31C717FBCF5AF4FBD4F3FCB4C0C67D079E839476667F8FA13E829CC0",
+      "boundary": "element FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 65050400,
+      "endRva": 65050708,
+      "sha256": "8308066060DC182CE543F4E09076DDF9988F222F2D294A5A8FE2FEF27BA87615",
+      "boundary": "eleven seven-entry inline initialization jump tables; data, not instructions"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 65049020,
+      "instructionHex": "488B15650C2809",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 65049215,
+      "instructionHex": "488B151ABB1F09",
+      "cellVa": 6660574624,
+      "usageRawHex": "B7A412C000000000",
+      "methodSpecIndex": 610907,
+      "methodSpec": [
+        428462,
+        -1,
+        62687
+      ],
+      "argumentRawHex": "B821258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000D03DF08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17115,
+        "elementArguments": [
+          "672F0000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 65049339,
+      "instructionHex": "488B1506842509",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 65049705,
+      "instructionHex": "488B15B0B11E09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 65049884,
+      "instructionHex": "488B1575B81F09",
+      "cellVa": 6660574616,
+      "usageRawHex": "27E812C000000000",
+      "methodSpecIndex": 619539,
+      "methodSpec": [
+        428448,
+        -1,
+        42512
+      ],
+      "argumentRawHex": "DA250000000000000000118000000000",
+      "typeDefinition": 9690,
+      "typeName": "Beyond.Gameplay.Core.PullAction+PullTargetType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 65049985,
+      "instructionHex": "488B1580812509",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 61436413,
+      "instructionHex": "488B15B4C65509",
+      "cellVa": 6660503736,
+      "usageRawHex": "9FEA12C000000000",
+      "methodSpecIndex": 619855,
+      "methodSpec": [
+        428464,
+        -1,
+        13944
+      ],
+      "argumentRawHex": "6D260000000000000000120000000000",
+      "typeDefinition": 9837,
+      "typeName": "Beyond.Gameplay.Core.BlackboardSuperArmorValue",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member19": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "counted-pull-attenuation-profiles",
+      "target-profile",
+      "byte",
+      "byte",
+      "byte",
+      "raw4",
+      "raw4",
+      "scalar-payload",
+      "byte",
+      "scalar32",
+      "raw4",
+      "target-profile",
+      "byte"
+    ],
+    "attenuationMember2": [
+      "raw4",
+      "scalar-flag-payload"
+    ]
+  },
+  "boundary": "Exact extended union284 dispatch and registered type/module/token joins identify PullAction_DataForMemoryPack. Header19 reads common BYTE/three DWORD, two BYTEs, a nullable List<PullAttenuationValueConfig>, TargetSettings, three BYTEs, two raw4 spans, BlackboardDouble, BYTE, DWORD, raw4, a second TargetSettings and final BYTE. List elements are FF or header2 with raw4 and BlackboardSuperArmorValue. The latter reuses the independently pinned FF/header4 byte-payload/BYTE/DWORD/BYTE profile in buff_159_native.json. Count/null/element-loop framing reuses the conditional shared list consumer in buff_b4_native.json; the value-type carrier does not establish raw element width or live provider selection. Target and Double reuse buff_ec_native.json. Bound list count with minimum element one and reserve24; null lists/elements do not remove the required outer tail. FA1C01 minimum nonnull outer length is47; short1C andFA1C00 are a separate union. Inline header guard/load/one-byte advance, all19 source calls, two element source calls, formatter/reader initialization, existing/FF rejoins and11 inline initializer jump tables are separately pinned. Setters and output getters add no source fields. Static identity is exact, source order direct and framing structural-only. Pull attenuation behavior, numerical units, target roles, enum values, live provider selection, complete allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
