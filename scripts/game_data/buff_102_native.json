@@ -1,0 +1,89 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121584,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_OnSpellInflictionStart_DataForMemoryPack+Beyond_Gameplay_Core_OnSpellInflictionStart_DataForMemoryPackFormatter",
+      "Deserialize",
+      67012656
+    ],
+    [
+      121583,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_OnSpellInflictionStart_DataForMemoryPack",
+      "Deserialize",
+      67012752
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67012656,
+      "endRva": 67012749,
+      "sha256": "7AC9B0909847AA4D5ABA1B7216BF79E2AFADFE6DE1B806346A01584B7C7C52FE",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 67012752,
+      "endRva": 67013154,
+      "sha256": "238190C931DB7492FE8B7664012097E9D4715928C91CB0D7FC03466137713BF3",
+      "boundary": "header5 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83228930,
+      "endRva": 83228943,
+      "sha256": "D06BD33941AEF1355101FA2F9098C1C1D0BCC40CF7EE142EF3921FCD8F876383",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83228999,
+      "endRva": 83229020,
+      "sha256": "770939DD9E2111BFE54F6445CED7ED88AF8EC5B0E691297313519193887C3DA1",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67012924,
+      "instructionHex": "488B15E5140A09",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67013030,
+      "instructionHex": "488B1573760B09",
+      "cellVa": 6661210144,
+      "usageRawHex": "B5E512C000000000",
+      "methodSpecIndex": 619226,
+      "methodSpec": [
+        428448,
+        -1,
+        26601
+      ],
+      "argumentRawHex": "97840000000000000000118000000000",
+      "typeDefinition": 33943,
+      "typeName": "Beyond.GEnums.EnergyShardType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected union258 dispatch, registered type usage and module/token joins identify OnSpellInflictionStart_Data. Its header5 reader consumes the common byte/three DWORDs followed by one required terminal DWORD. Two precise contexts independently identify Priority and the final scalar argument. The selected source helper consumes four bytes for each scalar independently of enum names or setter destinations. No nested object, byte payload, list count or extra terminal field occurs in this selected source order. FA0201 is union258; short02 is distinct union2 and cannot be used as an alias. An FF outer wrapper has no member body. Arbitrary terminal bits remain anonymous, without narrowing to observed enum values. Formatter, normal/init, existing-output and FF windows retain complete instructions. Static identity is exact, selected source order direct and framing structural-only. Spell-infliction behavior, enum meaning, field ownership, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

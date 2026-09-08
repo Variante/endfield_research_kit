@@ -633,6 +633,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   bytes and a required raw float32 field close the record; null nested profiles
   do not remove that tail. Short and extended union encodings share this order.
   Continuous targeting behavior and payload ownership remain unresolved.
+  `scripts/game_data/buff_102_native.json` joins OnSpellInflictionStart to
+  header5, the common prefix and a required terminal DWORD. The exact final
+  context identifies EnergyShardType, while its source width remains four
+  bytes with arbitrary bits retained. Spell-infliction behavior, enum meaning
+  and field ownership remain unresolved.
   `scripts/game_data/buff_28_native.json` joins ChangeGeneralAbilityButton
   to header7, the common prefix, one BuffId profile, a nullable byte payload
   and a required terminal DWORD. BuffId reuses the pinned header1 payload

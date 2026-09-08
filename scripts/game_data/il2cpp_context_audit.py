@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = 'B2F94BB6CD6A7307C9336BEB3C61A13C106A331581678FF89D37CD61ABCC72FF'
+CORPUS_SHA = '5525D7F213CC3993A27A28AA3235B00799F5D05B0A7E387E62DAC36AD5FFC8BC'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -755,6 +755,7 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x39100D2,'488B15D7D67809488B0BE83F376FFC488BCF4885C00F85D98E5501488B159CD57809E82BCF10FD488903488BD0E9DED8FFFF'),
         (0x390F100,'488B15B9877109488B0BE811476FFC488BCF4885C00F85D59F5501488B153E147D09E8190811FD488903488BD0E9B0E8FFFF'),
         (0x390FE16,'488B159B077809488B0BE8FB396FFC488BCF4885C00F85D7695501488B15A01B7D09E863DD10FD488903488BD0E99ADBFFFF'),
+        (0x390FFA6,'488B154B5C6F09488B0BE86B386FFC488BCF4885C00F85AF835501488B15980E7D09E853EF10FD488903488BD0E90ADAFFFF'),
         (0x390DD14,'488B15651E7809488B0BE8FD5A6FFC488BCF4885C00F85A28C5501488B15D23D7D09E89DFF10FD488903488BD0E99CFCFFFF')):
         raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
         windows.append({'rva':at,'rawHex':expected})
@@ -931,7 +932,8 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (331,0x391003C,107084,16429,'SetAnimTimeScaleAction_Data',None),
         (358,0x39100D2,107124,16209,'SlowAction_Data',None),
         (370,0x390F100,107158,16501,'StoreBuffCount_Data',None),
-        (40,0x390FE16,106363,15979,'ChangeGeneralAbilityButton_Data',None)):
+        (40,0x390FE16,106363,15979,'ChangeGeneralAbilityButton_Data',None),
+        (258,0x390FFA6,106905,16285,'OnSpellInflictionStart_Data',None)):
         require(targets[tag],target,source,table_va+tag*4)
         operands=[]
         for at,usage_tag in ((target,1),)+(((init,2),) if init is not None else ()):
@@ -2543,7 +2545,8 @@ def audit():
                Path(__file__).with_name('buff_14b_native.json'),
                Path(__file__).with_name('buff_166_native.json'),
                Path(__file__).with_name('buff_172_native.json'),
-               Path(__file__).with_name('buff_28_native.json')]
+               Path(__file__).with_name('buff_28_native.json'),
+               Path(__file__).with_name('buff_102_native.json')]
     source_hashes = {str(p): sha(p) for p in sources}
     mapper = load('context_audit_mapper', mapper_path)
     catalog = load('context_audit_catalog', catalog_path)
@@ -3194,6 +3197,8 @@ def audit():
         contract_path=Path(__file__).with_name('buff_172_native.json'))
     buff_28=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_28_native.json'))
+    buff_102=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('buff_102_native.json'))
     buff_16b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_16b_native.json'))
     buff_24=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -3535,6 +3540,7 @@ def audit():
         'selectedBuff166ReadOrder':buff_166,
         'selectedBuff172ReadOrder':buff_172,
         'selectedBuff28ReadOrder':buff_28,
+        'selectedBuff102ReadOrder':buff_102,
         'selectedBuff127ReadOrder':buff_127,
         'selectedBuffDamageListsReadOrder':buff_damage_lists,
         'selectedBuffCalc5ReadOrder':buff_calc5,
