@@ -771,6 +771,10 @@ def tag37(nested=b'\xff',extended=False,last=b'\xff'*4,flag=b'\x80'):
     return (b'\xfa\x37\x00' if extended else b'\x37')+b'\x0a\xfe'+b'\xff'*12+b'\x80\xfe\xff'+nested+flag+last
 
 
+def tag166(items=(),paired=b'\xff',first_scalar=b'\xff',last_scalar=b'\xff',first=b'\xff',second=b'\xff'):
+    return (b'\xfa\x66\x01\x0d\xfe'+struct.pack('<III',0x01020304,0x80000000,0xffffffff)+b'\x80\xff'+paired+first_scalar+
+            struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+b'\xff'+last_scalar+first+second)
+
 def tag19c(items=(),paired=b'\xff',first_scalar=b'\xff',last_scalar=b'\xff',first=b'\xff',second=b'\xff'):
     return (b'\xfa\x9c\x01\x0d\xfe'+struct.pack('<III',0x01020304,0x80000000,0xffffffff)+b'\x80\xff'+paired+first_scalar+
             struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+b'\xff'+last_scalar+first+second)
@@ -1412,6 +1416,87 @@ class BuffActionsTests(unittest.TestCase):
             for count in (-2,2147483647):
                 with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+child+bytes(2))
                 self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(caught.exception.diagnostic['offset'],1)
+
+    def test_166_nullable_lists_end_at_second_target_without_final_dword(self):
+        for items in (None,(),(b'\xff',),(keyword19b(None),),(keyword19b((None,b'',b'\xff\x80'),scalar_payload(b'expr')),)):
+            for first,second in ((b'\xff',b'\xff'),(target(),b'\xff'),(b'\xff',target()),(target(),target(direction_value=b'\xff'))):
+                child=tag166(items,paired=pair(None,b'wire',255),first_scalar=scalar_payload(None),last_scalar=scalar_payload(b''),first=first,second=second)
+                r=Reader(child+b'\xaa','166');r.action(0);self.assertEqual(r.pos,len(child));self.assertEqual(r.records[-1]['tag'],358)
+                row=event_prefix(prefix(sequence(child,tag19b())),source='166-next')
+                self.assertEqual(row['status'],'supported-prefix')
+                self.assertEqual([v['tag'] for v in row['completedRecords'] if 'tag' in v],[358,411])
+        # One null element leaves exactly byte + scalar + two target null wrappers.
+        child=tag166((b'\xff',));r=Reader(child,'166-minimum-reserve');r.action(0);self.assertEqual(r.pos,len(child))
+        for value in (None,(),(b'\xff',)):
+            child=tag166(value);r=Reader(child+b'\xff'*4,'166-end');r.action(0)
+            self.assertEqual(r.pos,len(child));self.assertLess(r.pos,r.limit)
+        for raw in (b'\xff',b'\xfa\x66\x01\xff'):
+            r=Reader(raw+b'\xaa','166-null');r.action(0);self.assertEqual(r.pos,len(raw))
+        self.assertEqual(len(tag166()),29)
+        r=Reader(b'\x66\xff','166-short')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['actual'],102);self.assertEqual(r.pos,0)
+
+    def test_166_all_cuts_required_list_tail_and_parent_trailing(self):
+        child=tag166((keyword19b((b'x',),scalar_payload(None)),),paired=pair(b'expr',b''),first=target(),second=target())
+        for cut in range(len(child)):
+            results=[]
+            for raw in (child,child[:cut],child[:cut]+b'\xff'*20):
+                q=Reader(raw,'166-cut',cut)
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertLessEqual(q.pos,cut);self.assertFalse(any(v.get('tag')==358 for v in q.records))
+                results.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+            self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        for items in (None,(),(b'\xff',)):
+            body=tag166(items)
+            for cut in range(len(body)-4,len(body)):
+                q=Reader(body,'166-required-tail',cut)
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                # Positive counts fail at the reserve gate before entering the list.
+                self.assertEqual(caught.exception.diagnostic['offset'],21 if items else cut)
+                self.assertEqual(caught.exception.diagnostic['category'],'count-bounds' if items else 'truncated')
+                self.assertFalse(any(v.get('tag')==358 for v in q.records))
+        full=prefix(sequence(child))
+        for cut in range(len(full)):
+            row=event_prefix(full,source='166-limit',limit=cut);self.assertEqual(row['status'],'failed')
+            self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='166-limit',limit=cut))
+        for tail in (b'\x00',b'\xff'):
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_166_nested_headers_counts_and_unknown_target(self):
+        child=tag166((keyword19b((None,b'x'),scalar_payload(b'v')),),paired=pair(b'key',None),first=target());r=Reader(child,'166-invalid');r.action(0)
+        for span in r.ranges:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for invalid in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=invalid
+                else:struct.pack_into('<i',bad,at,invalid)
+                q=Reader(bad,'166-invalid')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],at);self.assertFalse(any(v.get('tag')==358 for v in q.records))
+        unknown=target(selector=b'\x03\x17'+bytes(8));q=Reader(tag166(None,second=unknown),'166-unknown')
+        with self.assertRaises(Unsupported) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['actual'],23);self.assertEqual(q.target_depth,0)
+        self.assertFalse(any(v.get('tag')==358 for v in q.records))
+        for count in (-2,2147483647):
+            with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+child+bytes(2))
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(caught.exception.diagnostic['offset'],1)
+
+    def test_166_parent_null_empty_required_tails_and_unknown_next(self):
+        for parent in (b'\x03'+struct.pack('<i',-1)+b'\x80\xff',
+                       b'\x03'+struct.pack('<i',0)+b'\x80\xff',sequence(tag166())):
+            q=Reader(parent,'166-parent');q.sequence();self.assertEqual(q.pos,len(parent))
+            for k in (1,2):
+                q=Reader(parent[:-k],'166-parent-tail')
+                with self.assertRaises(FrameError) as caught:q.sequence()
+                self.assertEqual(caught.exception.diagnostic['category'],'truncated')
+                self.assertEqual(caught.exception.diagnostic['offset'],len(parent)-k)
+                self.assertEqual(q.pos,len(parent)-k)
+        row=event_prefix(prefix(sequence(tag166(),b'\xd0')),source='166-next')
+        self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['actual'],208)
+        self.assertEqual(row['consumedEnd'],19+len(tag166()))
+        self.assertTrue(any(v.get('tag')==358 for v in row['completedRecords']))
 
     def test_19c_nullable_lists_end_at_second_target_without_final_dword(self):
         for items in (None,(),(b'\xff',),(keyword19b(None),),(keyword19b((None,b'',b'\xff\x80'),scalar_payload(b'expr')),)):

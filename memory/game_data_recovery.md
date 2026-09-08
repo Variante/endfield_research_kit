@@ -633,6 +633,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   bytes and a required raw float32 field close the record; null nested profiles
   do not remove that tail. Short and extended union encodings share this order.
   Continuous targeting behavior and payload ownership remain unresolved.
+  `scripts/game_data/buff_166_native.json` independently joins SlowAction to
+  the header13 paired/scalar/keyword-list/byte/scalar/two-target order. Its
+  list reserves four bytes for the required remaining fields, including both
+  nullable target wrappers; the second target ends the record. Slow-action
+  behavior and keyword/target ownership remain unresolved.
   `scripts/game_data/buff_19c_native.json` independently joins WeakAction to
   the header13 paired/scalar/list/byte/scalar/two-target order shared with
   ShelterAction. The list reserves four bytes for later fields, and the second
