@@ -289,7 +289,7 @@ remaining gap, with prefix support counted separately from suffix acceptance.
 its per-candidate scalar/record spans and explicit opaque remainder have a separate
 success/failed/unsupported/ambiguous census. Malformed prefixes fail the corpus
 gate even if the legacy suffix candidate succeeds; unknown unions are not aliased.
-`currentRootContinuation` consumes selected root members 2-5 only after a
+`currentRootContinuation` consumes selected root members 2-6 only after a
 supported first collection, beginning at `currentEventPrefix.consumedEnd`.
 Its independent status and ranges retain the remaining physical bytes as opaque;
 malformed continuation data also fails publication. This does not join the

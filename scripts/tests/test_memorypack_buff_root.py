@@ -18,7 +18,7 @@ class BuffRootContinuationTests(unittest.TestCase):
 
     def test_nested_elements_and_raw_array_have_distinct_boundaries(self):
         child=b'\x04'+bytes(12)+scalar()
-        segment=scalar()+i32(2)+b'\xff\x01\x02\x03'*2+b'\x02'+i32(2)+b'\xff'+child+b'\x91'+i32(0)
+        segment=scalar()+i32(2)+b'\xff\x01\x02\x03'*2+b'\x02'+i32(2)+b'\xff'+child+b'\x91'+i32(0)+i32(0)
         result=self.frame(segment)
         self.assertEqual(result['status'],'supported-prefix')
         self.assertEqual(result['consumedEnd'],len(segment)+1)
@@ -35,6 +35,7 @@ class BuffRootContinuationTests(unittest.TestCase):
 
     def test_all_truncations_and_outside_limit_bytes_fail_identically(self):
         segment=scalar()+i32(2)+bytes(8)+b'\x02'+i32(2)+b'\xff\x04'+bytes(12)+scalar()+b'\x01'+i32(1)+b'\x04\x80'+i32(0)+bytes(8)+i32(0)
+        segment+=i32(1)+b'\x02'+i32(2)+b'\xff\x03'+i32(0)+b'\x00\x01'+i32(-1)
         physical=b'P'+segment
         for cut in range(1,len(physical)):
             with self.subTest(cut=cut):
@@ -43,7 +44,7 @@ class BuffRootContinuationTests(unittest.TestCase):
                 for result in outputs:
                     self.assertEqual(result['status'],'failed')
                     self.assertLessEqual(result['consumedEnd'],cut)
-                    self.assertFalse(any(r['kind']=='anonymous-data-pair-collection-profile' for r in result['completedRecords']))
+                    self.assertFalse(any(r['kind']=='anonymous-buff-action-map-collection-profile' for r in result['completedRecords']))
                 for key in ('diagnostic','consumedEnd','ranges','completedRecords'):
                     self.assertEqual(outputs[0][key],outputs[1][key])
                     self.assertEqual(outputs[0][key],outputs[2][key])
@@ -52,9 +53,9 @@ class BuffRootContinuationTests(unittest.TestCase):
         for count in (-1,0):
             segment=b'\xff'+i32(count)+b'\x02'+i32(count)
             self.assertEqual(self.frame(segment)['status'],'failed')
-            self.assertEqual(self.frame(segment+b'\x01'+i32(0))['status'],'supported-prefix')
-        self.assertEqual(self.frame(b'\xff'+i32(-1)+b'\xff'+i32(0))['status'],'supported-prefix')
-        self.assertEqual(self.frame(b'\xff'+i32(0)+b'\x02'+i32(1)+b'\xff\x00'+i32(0))['status'],'supported-prefix')
+            self.assertEqual(self.frame(segment+b'\x01'+i32(0)+i32(0))['status'],'supported-prefix')
+        self.assertEqual(self.frame(b'\xff'+i32(-1)+b'\xff'+i32(0)+i32(0))['status'],'supported-prefix')
+        self.assertEqual(self.frame(b'\xff'+i32(0)+b'\x02'+i32(1)+b'\xff\x00'+i32(0)+i32(0))['status'],'supported-prefix')
 
     def test_malformed_lengths_counts_and_headers_have_actionable_diagnostics(self):
         cases=[(b'\x02','member-count'),
@@ -76,7 +77,7 @@ class BuffRootContinuationTests(unittest.TestCase):
                 self.assertIn('actual',diagnostic)
 
     def test_tail_stays_explicitly_opaque_and_cannot_satisfy_a_bounded_read(self):
-        segment=b'\xff'+i32(0)+b'\xff'+i32(0)
+        segment=b'\xff'+i32(0)+b'\xff'+i32(0)+i32(0)
         for tail in (b'\xff',b'\x00'*20):
             result=self.frame(segment+tail,limit=len(segment)+1)
             self.assertEqual(result['status'],'supported-prefix')
@@ -90,16 +91,16 @@ class BuffRootContinuationTests(unittest.TestCase):
         pair=b'\x04\xff'+i32(3)+b'key'+b'\xff\x01\x02\x03\x04\x05\x06\x07'+i32(5)+b'value'
         for count,body in ((-1,b''),(0,b''),(2,b'\xff'+pair)):
             with self.subTest(count=count):
-                result=self.frame(prefix+i32(count)+body+b'opaque')
+                result=self.frame(prefix+i32(count)+body+i32(0)+b'opaque')
                 self.assertEqual(result['status'],'supported-prefix')
-                self.assertEqual(result['consumedEnd'],1+len(prefix)+4+len(body))
-                parent=result['completedRecords'][-1]
+                self.assertEqual(result['consumedEnd'],1+len(prefix)+8+len(body))
+                parent=next(r for r in result['completedRecords'] if r['kind']=='anonymous-data-pair-collection-profile')
                 self.assertEqual((parent['kind'],parent['count']),('anonymous-data-pair-collection-profile',count))
                 elements=[r for r in result['completedRecords'] if r['kind']=='anonymous-data-pair-profile']
                 self.assertEqual([r['end']-r['start'] for r in elements],[] if count<=0 else [1,len(pair)])
         for first in (-1,0):
             for last in (-1,0):
-                result=self.frame(prefix+i32(1)+b'\x04\x00'+i32(first)+bytes(8)+i32(last))
+                result=self.frame(prefix+i32(1)+b'\x04\x00'+i32(first)+bytes(8)+i32(last)+i32(0))
                 self.assertEqual(result['status'],'supported-prefix')
 
     def test_fifth_counts_and_both_payload_lengths_fail_closed(self):
@@ -127,6 +128,53 @@ class BuffRootContinuationTests(unittest.TestCase):
             # loop before even the first null element is consumed.
             self.assertEqual(len(elements),0 if cut==0 else 1)
             if elements:self.assertEqual(elements[0]['end']-elements[0]['start'],1)
+
+    def test_sixth_map_array_precedes_required_scalar(self):
+        prefix=b'\xff'+i32(0)+b'\xff'+i32(0)
+        sequence_null=b'\xff'
+        sequence_empty=b'\x03'+i32(-1)+b'\x7f\x80'
+        sequence_action=b'\x03'+i32(1)+b'\xff\x01\x00'
+        body=b'\x02'+i32(3)+sequence_null+sequence_empty+sequence_action+i32(-1)
+        result=self.frame(prefix+i32(2)+b'\xff'+body)
+        self.assertEqual(result['status'],'supported-prefix')
+        maps=[r for r in result['completedRecords'] if r['kind']=='anonymous-buff-action-map-profile']
+        self.assertEqual([r['end']-r['start'] for r in maps],[1,len(body)])
+        self.assertEqual(result['completedRecords'][-1]['kind'],'anonymous-buff-action-map-collection-profile')
+        for count in (-1,0):
+            good=prefix+i32(1)+b'\x02'+i32(count)+i32(-1)
+            self.assertEqual(self.frame(good)['status'],'supported-prefix')
+            for cut in range(1,5):self.assertEqual(self.frame(good[:-cut])['status'],'failed')
+            self.assertEqual(self.frame(prefix+i32(count))['status'],'supported-prefix')
+
+    def test_sixth_unknown_action_stops_without_completing_its_map(self):
+        prefix=b'\xff'+i32(0)+b'\xff'+i32(0)
+        before=prefix+i32(1)+b'\x02'+i32(2)+b'\xff\x03'+i32(1)
+        for tail in (b'\x59'+bytes(6),b'\x59\xff\x00\x00'+bytes(50)):
+            result=self.frame(before+tail)
+            self.assertEqual(result['status'],'unsupported')
+            self.assertEqual(result['consumedEnd'],len(before)+1)
+            self.assertEqual(result['diagnostic']['offset'],len(before)+1)
+            self.assertEqual(result['diagnostic']['actual'],89)
+            self.assertEqual(result['diagnostic']['category'],'union-tag')
+            sequences=[r for r in result['completedRecords'] if r['kind']=='sequence']
+            self.assertEqual(len(sequences),1)
+            self.assertEqual(sequences[0]['end']-sequences[0]['start'],1)
+            self.assertFalse(any(r['kind']=='anonymous-buff-action-map-profile' for r in result['completedRecords']))
+
+    def test_sixth_count_reserves_scalar_and_rejects_wrong_map_order(self):
+        prefix=b'\xff'+i32(0)+b'\xff'+i32(0)
+        cases=[(i32(-2),'count-bounds'),(i32(0x7fffffff),'count-bounds'),
+               (i32(1)+b'\x03','member-count'),
+               (i32(1)+b'\x02'+i32(-2)+bytes(4),'count-bounds'),
+               (i32(1)+b'\x02'+i32(2)+b'\xff'+bytes(4),'count-bounds'),
+               (i32(1)+b'\x02'+i32(7)+i32(0),'count-bounds')]
+        for body,category in cases:
+            with self.subTest(body=body):
+                result=self.frame(prefix+body)
+                self.assertEqual(result['status'],'failed')
+                self.assertEqual(result['diagnostic']['category'],category)
+                self.assertGreaterEqual(result['diagnostic']['offset'],1+len(prefix))
+        self.assertEqual(self.frame(prefix+i32(1)+b'\xff')['status'],'supported-prefix')
 
 
 if __name__=='__main__':

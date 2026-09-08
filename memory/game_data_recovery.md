@@ -629,9 +629,17 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   signed nullable byte payload, eight raw bytes and another nullable payload.
   The eight-byte load/advance is independently pinned; do not reuse the scalar
   profile's four-byte raw value or interpret the leading byte as a union tag.
-  Null elements and null/empty collections remain distinct. Continue from the
-  fifth root member into the next collection, retaining conditional provider
-  selection, the independent suffix anchor and the physical opaque range.
+  Null elements and null/empty collections remain distinct.
+  `scripts/game_data/buff_root_sixth_native.json` pins the following
+  List<BuffActionMap>: FF or member two, a nullable Sequence array, then a
+  required inline DWORD. This reverses the first collection's scalar/array
+  order; equal member counts do not make the maps interchangeable. Null map
+  elements end immediately, while a null/empty array still needs the DWORD.
+  Reuse the separately pinned Sequence/action grammar, keeping unknown actions
+  at their first byte and preserving completed predecessors. The recovery queue
+  now includes unsupported actions reached inside this collection; close those
+  before treating all sixth-member endpoints as known. Retain conditional
+  provider selection, the independent suffix anchor and the physical opaque range.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity

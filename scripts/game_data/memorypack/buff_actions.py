@@ -1024,6 +1024,21 @@ class Reader:
             self.records.append(dict(start=element,end=self.pos,kind='anonymous-data-pair-profile'))
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-data-pair-collection-profile',count=count))
 
+    def buff_action_map_collection_profile(self):
+        start=self.pos
+        count=self.count(1,nullable=True)
+        for _ in range(max(0,count)):
+            element=self.pos
+            if self.peek()==255:self.take(1,'null-buff-action-map-profile')
+            else:
+                self.header(2)
+                for _ in range(max(0,self.count(1,reserve=4,nullable=True))):self.sequence()
+                # This map reads its Sequence array before the scalar, unlike
+                # the separately pinned map in the first root collection.
+                self.take(4,'anonymous-scalar32')
+            self.records.append(dict(start=element,end=self.pos,kind='anonymous-buff-action-map-profile'))
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-buff-action-map-collection-profile',count=count))
+
     def modifier_collection_profile(self):
         start=self.pos
         if self.peek()==255:self.take(1,'null-modifier-collection-profile')
@@ -1191,7 +1206,7 @@ def event_prefix(data,*,source,limit=None):
 
 
 def root_continuation(data,*,source,start,limit=None):
-    """Members 2-5, called only after a supported first-collection endpoint.
+    """Members 2-6, called only after a supported first-collection endpoint.
 
     The caller owns that prerequisite; this function does not authenticate an
     arbitrary start offset or claim that a suffix candidate is a root field.
@@ -1205,6 +1220,7 @@ def root_continuation(data,*,source,start,limit=None):
         reader.raw_dword_array()
         reader.modifier_collection_profile()
         reader.data_pair_collection_profile()
+        reader.buff_action_map_collection_profile()
     except Unsupported as exc:status='unsupported';diagnostic=exc.diagnostic
     except FrameError as exc:status='failed';diagnostic=exc.diagnostic
     cursor=start
@@ -1217,6 +1233,6 @@ def root_continuation(data,*,source,start,limit=None):
                 readLimit=reader.limit,ranges=reader.ranges,completedRecords=reader.records,
                 opaqueRemainderRange=[reader.pos,len(data)],wholeSchemaExact=False,
                 evidenceLevel='structural-only',
-                boundary='Selected root members 2-5 after the independently supported first collection. '
+                boundary='Selected root members 2-6 after the independently supported first collection. '
                 'Together their atomic ranges and the physical-file opaque remainder tile EOF; '
                 'no field meanings, live provider selection or whole-BuffData EOF claim.')

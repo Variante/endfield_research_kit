@@ -197,7 +197,7 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
         for status in ('failed','unsupported')}
     root_summary={'total':len(rows),**{s:root_counts[s] for s in ('success','failed','unsupported','ambiguous')},
         'failureCategories':{s:dict(sorted(v.items())) for s,v in root_categories.items()},
-        'boundary':'Success requires a supported first collection followed by selected root members 2-5. '
+        'boundary':'Success requires a supported first collection followed by selected root members 2-6. '
         'Continuation ranges begin at currentEventPrefix.consumedEnd. The remaining physical-file bytes '
         'stay opaque; neither suffix-anchor ownership nor whole-schema EOF is established.'}
     failed=bool(counts['failed'] or event_counts['failed'] or root_counts['failed'])

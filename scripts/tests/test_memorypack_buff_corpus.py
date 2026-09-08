@@ -105,7 +105,7 @@ class BuffCandidateTests(unittest.TestCase):
 
     def test_root_continuation_joins_supported_first_collection(self):
         prefix=b'\x1e'+bytes(4)
-        segment=b'\xff'+struct.pack('<i',2)+bytes(8)+b'\x02'+struct.pack('<i',-1)+b'\x7f'+struct.pack('<i',0)
+        segment=b'\xff'+struct.pack('<i',2)+bytes(8)+b'\x02'+struct.pack('<i',-1)+b'\x7f'+struct.pack('<i',0)+struct.pack('<i',0)
         raw=prefix+segment+b'opaque'+_normal()[1:]
         row=self.frame(raw)
         self.assertEqual(row['rootContinuationStatus'],'success')
@@ -240,7 +240,7 @@ class BuffJoinTests(unittest.TestCase):
             self.assertNotEqual(caught.exception.diagnostic['expected'],caught.exception.diagnostic['actual'])
 
     def test_root_continuation_failure_closes_publication_with_diagnostics(self):
-        for segment,expected in ((b'\xff'+struct.pack('<i',0)+b'\xff'+struct.pack('<i',0),'complete'),
+        for segment,expected in ((b'\xff'+struct.pack('<i',0)+b'\xff'+struct.pack('<i',0)+struct.pack('<i',0),'complete'),
                                  (b'\xff'+struct.pack('<i',-2),'failed')):
             with self.subTest(expected=expected):
                 self.data=b'\x1e'+bytes(4)+segment+_normal()[1:]
@@ -259,6 +259,23 @@ class BuffJoinTests(unittest.TestCase):
                     self.assertEqual(diagnostic['source'],self.ledger['virtualPath'])
                     self.assertEqual((diagnostic['offset'],diagnostic['actual']),(6,-2))
                     self.assertEqual(row['logicalSha256'],hashlib.sha256(self.data).hexdigest().upper())
+
+    def test_unknown_sixth_action_is_reported_without_aliasing_or_false_success(self):
+        before=b'\x1e'+bytes(4)+b'\xff'+bytes(4)+b'\xff'+bytes(4)
+        before+=struct.pack('<i',1)+b'\x02'+struct.pack('<i',1)+b'\x03'+struct.pack('<i',1)
+        self.data=before+b'\x59'+bytes(6)+_normal()[1:]
+        self.path.write_bytes(self.data)
+        self.ledger=_ledger_row(self.path,self.data)
+        report=self.build()
+        self.assertTrue(report['publicationEligible'])
+        self.assertEqual(report['status'],'complete')
+        summary=report['summary']['currentRootContinuation']
+        self.assertEqual([summary[k] for k in ('success','failed','unsupported','ambiguous')],[0,0,1,0])
+        self.assertEqual(summary['failureCategories']['unsupported'],{'union-tag':1})
+        profile=report['files'][0]['candidates'][0]['currentRootContinuation']
+        self.assertEqual(profile['consumedEnd'],len(before))
+        self.assertEqual(profile['diagnostic']['actual'],89)
+        self.assertFalse(profile['wholeSchemaExact'])
 
     def test_output_cannot_overwrite_input_or_alias_other_output(self):
         root=Path(self.temp.name)

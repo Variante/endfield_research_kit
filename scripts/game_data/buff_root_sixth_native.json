@@ -1,0 +1,97 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      104480,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffActionMapForMemoryPack+Beyond_Gameplay_Core_BuffActionMapForMemoryPackFormatter",
+      "Deserialize",
+      63974480
+    ],
+    [
+      104479,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffActionMapForMemoryPack",
+      "Deserialize",
+      63974576
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 53281209,
+      "endRva": 53281268,
+      "sha256": "63F314DBAAF78F335B9FE94290610C0122D07BC157F9EC62ED76D30395FE768D",
+      "boundary": "root member6 source context, call and output until next source context"
+    },
+    {
+      "startRva": 63974480,
+      "endRva": 63974573,
+      "sha256": "F74733558649F6C09BDA1BA192F94772E26FD4B7F9C00C6079AA2A6874275DE9",
+      "boundary": "BuffActionMap formatter initialization and forwarding"
+    },
+    {
+      "startRva": 63974576,
+      "endRva": 63974914,
+      "sha256": "C5E0CACBC612935C8CF90EA6B28DC10F3BCD76A051D7C592536DF58F511C4A73",
+      "boundary": "BuffActionMap normal, FF and initialization through rejoin"
+    },
+    {
+      "startRva": 82817544,
+      "endRva": 82817595,
+      "sha256": "E1DB8586A742A8B8B6A262E28433246C32CC949101782BDB914A0C38C5E4F84C",
+      "boundary": "BuffActionMap allocation and complete rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 53281209,
+      "instructionHex": "488B15A843D209",
+      "cellVa": 6660506984,
+      "usageRawHex": "EFA212C000000000",
+      "methodSpecIndex": 610679,
+      "methodSpec": [
+        428462,
+        -1,
+        62501
+      ],
+      "argumentRawHex": "7801268D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D0100000040A3E78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 13977,
+        "elementArguments": [
+          "47270000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 63974687,
+      "instructionHex": "488B15DAE53509",
+      "cellVa": 6660952832,
+      "usageRawHex": "4BA212C000000000",
+      "methodSpecIndex": 610597,
+      "methodSpec": [
+        428469,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "rootMember6": [
+      "nullable-signed-count",
+      "BuffActionMap-profile repeated count times"
+    ],
+    "BuffActionMapHeader2": [
+      "nullable SequenceActionData array",
+      "required raw DWORD"
+    ]
+  },
+  "boundary": "Exact root generic context joins List<BuffActionMap>; the selected wrapper consumes FF or header2, a nullable SequenceActionData array and a required inline DWORD. Source reads and cursor advancement place the array before the DWORD, unlike the first-root-collection map. A null element has no terminal DWORD; a null/empty array within header2 still requires it. Shared array helper framing and the independently pinned Sequence/action profiles remain conditional on provider selection. Unknown child actions stop at their exact first byte, preserving completed predecessors and an explicit physical opaque remainder. No live formatter choice, map event meaning, action semantics, suffix-anchor ownership or whole-BuffData EOF is claimed."
+}
