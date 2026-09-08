@@ -421,6 +421,9 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   header four reads byte, DWORD, a scalar-payload profile and required DWORD.
   It cannot reuse tag 3's different header-four layout; null scalar payloads
   still require the final DWORD. Attribute arithmetic remains unresolved.
+  `scripts/game_data/buff_calc1_native.json` pins tag 1 as header two followed
+  by two independent scalar-payload profiles. A null first scalar still requires
+  the second; the BreakingAttack type identity does not establish its arithmetic.
   A normal exit may tail-jump to the write barrier: pin the entire instruction
   and the separate null rejoin, not an assumed RET or partial JMP byte.
   The member-eighteen action in `scripts/game_data/buff_a2_native.json` reads

@@ -1158,18 +1158,19 @@ class Reader:
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-tag-list-profile'))
 
     def calculation_profile(self):
-        start=self.pos;tag=self.nested_union_tag((0,2,3,5),'calculation')
+        start=self.pos;tag=self.nested_union_tag((0,1,2,3,5),'calculation')
         if tag is not None:
             if self.peek()==255:self.take(1,'null-calculation-wrapper')
             else:
-                self.header({0:1,2:3,3:4,5:4}[tag])
+                self.header({0:1,1:2,2:3,3:4,5:4}[tag])
                 if tag in (2,5):self.take(1,'anonymous-nonzero-byte')
                 # PrimaryAttrCalculation has a different member-four layout
                 # from tag3: byte/DWORD precede its one scalar profile.
                 if tag==5:self.take(4,'anonymous-scalar32')
                 self.scalar_payload()
                 if tag==3:self.take(4,'anonymous-scalar32')
-                if tag in (2,3):self.scalar_payload()
+                # Tag1 reads two independent scalars, even when the first is null.
+                if tag in (1,2,3):self.scalar_payload()
                 if tag in (3,5):self.take(4,'anonymous-scalar32')
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-calculation-profile'))
 

@@ -1,0 +1,131 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      125180,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BreakingAttackCalculationForMemoryPack+Beyond_Gameplay_Core_BreakingAttackCalculationForMemoryPackFormatter",
+      "Deserialize",
+      69919504
+    ],
+    [
+      125179,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BreakingAttackCalculationForMemoryPack",
+      "Deserialize",
+      69919600
+    ],
+    [
+      107884,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CalculationBaseForMemoryPack+Beyond_Gameplay_Core_CalculationBaseForMemoryPackFormatter",
+      "Deserialize",
+      59818640
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 59818640,
+      "endRva": 59819478,
+      "sha256": "5214271B3431702F23FCF5A666B8537CA4DC017BF34EF66C555388324D35347A",
+      "boundary": "CalculationBase union dispatch and full initialization rejoin"
+    },
+    {
+      "startRva": 69919504,
+      "endRva": 69919597,
+      "sha256": "B18C63BFC6328795823188D8E64CA67152573D1769180490BFDEB12ECA70E739",
+      "boundary": "BreakingAttackCalculation formatter"
+    },
+    {
+      "startRva": 69919600,
+      "endRva": 69919888,
+      "sha256": "7DFE1257C4C48BF09BD0DDF657D617FECA3B02DD162EF1CBF6712BEC083FF907",
+      "boundary": "header2 two nested scalar reads and full initialization rejoin"
+    },
+    {
+      "startRva": 82204137,
+      "endRva": 82204145,
+      "sha256": "72C9E269C2787C897527437C53E13EEE3E587E7BE7FFE68C775E0C5803E1C573",
+      "boundary": "null clear and rejoin"
+    },
+    {
+      "startRva": 83507452,
+      "endRva": 83507465,
+      "sha256": "E0A1546C62A0DF0E2318F929E4D253D39F60BC5B6F9E1D0D98E697DE6D47B5AF",
+      "boundary": "existing-output rejoin"
+    },
+    {
+      "startRva": 83507521,
+      "endRva": 83507542,
+      "sha256": "178FF38298C36AC79CE579F898555A0DEF2A1BF54EB22FBFDEB8FBB87A01BEFB",
+      "boundary": "null clear and rejoin"
+    }
+  ],
+  "dataWindows": [
+    {
+      "startRva": 59819484,
+      "endRva": 59819488,
+      "sha256": "3222623817BB936D12BA6FBE569D1A427BEA03E147DB5259E063E8D689B8E106",
+      "boundary": "CalculationBase tag1 table entry routes to RVA 0x390C401"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 59819164,
+      "instructionHex": "488B15ED107609",
+      "cellVa": 6661002640,
+      "usageRawHex": "59BC12C000000000",
+      "methodSpecIndex": 613932,
+      "methodSpec": [
+        428462,
+        -1,
+        24272
+      ],
+      "argumentRawHex": "81410000000000000000120000000000",
+      "typeDefinition": 16769,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BreakingAttackCalculationForMemoryPack",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 69919738,
+      "instructionHex": "488B151F62D408",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 69919775,
+      "instructionHex": "488B15FA61D408",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "calculation1": [
+      "union1",
+      "FF wrapper or header2",
+      "scalar-payload",
+      "required second scalar-payload"
+    ]
+  },
+  "boundary": "The exact CalculationBase union table entry 1 selects BreakingAttackCalculationForMemoryPack through MethodSpec613932. Its selected header2 reader independently consumes two BlackboardDouble scalar-payload profiles through two exact MethodSpec620004 contexts. The second source read is unconditional after a successful first read, including a null first scalar. Short and extended union tags, null union, null wrapper and each scalar null/empty byte payload retain distinct bounds. Missing second scalar or incomplete parent tails cannot complete their enclosing record. The scalar profile and shared generic helper remain separately pinned by prior contracts; raw bits do not establish scalar arithmetic. Static identity is exact and selected source order direct; framing is structural-only. Live provider choice, full allocation/refill/error parity, breaking-attack behavior, field meanings, suffix-anchor ownership and whole-BuffData EOF remain unresolved. Unknown CalculationBase tags stop before their tag."
+}

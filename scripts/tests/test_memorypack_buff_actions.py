@@ -975,7 +975,7 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic['offset'],29)
         self.assertFalse(any(r.get('tag')==296 for r in reader.records))
         unknown=b'\x0d\xff'+payload(None)+bytes(6)+payload(None)+b'\x03\x17'
-        for child,offset in ((tag128(calc=b'\x01'),28),
+        for child,offset in ((tag128(calc=b'\x04'),28),
                              (tag128(last=unknown),29+len(unknown)-1)):
             row=event_prefix(prefix(sequence(child)),source='128-unknown.bin')
             self.assertEqual(row['status'],'unsupported')
@@ -3672,6 +3672,63 @@ class BuffActionsTests(unittest.TestCase):
         wrong=b'\xa2\x12'+tag9a()[2:]
         with self.assertRaises(FrameError):sequence_frame(sequence(wrong))
 
+    def test_calculation1_independent_scalars_and_all_cuts(self):
+        scalars=(b'\xff',scalar_payload(None),scalar_payload(b''),scalar_payload(b'\x00\xff'))
+        values=[b'\xff',b'\x01\xff']
+        values += [b'\x01\x02'+a+b for a in scalars for b in scalars]
+        values += [b'\xfa\x01\x00'+v[1:] for v in values if v[0]==1]
+        for value in values:
+            r=Reader(value,'calc1',len(value));r.calculation_profile()
+            self.assertEqual(r.pos,len(value))
+            self.assertEqual(r.records[-1],dict(start=0,end=len(value),kind='anonymous-calculation-profile'))
+            for cut in range(len(value)):
+                results=[]
+                for data in (value,value[:cut],value[:cut]+b'\xff'*20):
+                    r=Reader(data,'calc1-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.calculation_profile()
+                    self.assertLessEqual(r.pos,cut)
+                    self.assertFalse(any(v['kind']=='anonymous-calculation-profile' for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+
+    def test_calculation1_missing_second_and_malformed_payloads(self):
+        for first in (b'\xff',scalar_payload(None),scalar_payload(b'k')):
+            value=b'\x01\x02'+first;r=Reader(value,'calc1-second',len(value))
+            with self.assertRaises(FrameError) as caught:r.calculation_profile()
+            self.assertEqual(caught.exception.diagnostic['offset'],len(value))
+            self.assertFalse(any(v['kind']=='anonymous-calculation-profile' for v in r.records))
+        for value,offset in ((b'\x01\x03',1),(b'\x01\x02\x04',2),(b'\x01\x02\xff\x04',3)):
+            r=Reader(value,'calc1-header',len(value))
+            with self.assertRaises(FrameError) as caught:r.calculation_profile()
+            self.assertEqual(caught.exception.diagnostic['offset'],offset)
+        for prefix_value in (b'\x01\x02\x03',b'\x01\x02\xff\x03'):
+            for count in (-2,2147483647):
+                value=prefix_value+struct.pack('<i',count)+b'\xff'*8;r=Reader(value,'calc1-length',len(value))
+                with self.assertRaises(FrameError) as caught:r.calculation_profile()
+                self.assertEqual(caught.exception.diagnostic['offset'],len(prefix_value))
+        for value in (b'\x04',b'\x06',b'\xfa\x01\x01'):
+            r=Reader(value,'calc1-unknown',len(value))
+            with self.assertRaises(Unsupported) as caught:r.calculation_profile()
+            self.assertEqual((r.pos,caught.exception.diagnostic['offset']),(0,0))
+
+    def test_calculation1_parent_tail_and_trailing_sequence(self):
+        for calc in (b'\x01\xff',b'\x01\x02\xff\xff',b'\xfa\x01\x00\x02'+scalar_payload(b'left')+scalar_payload(b'right')):
+            child=tag9a(struct.pack('<i',1)+damage33(calc,b'\xff'),b'\xff')
+            raw=sequence(child);self.assertEqual(sequence_frame(raw)[-1]['end'],len(raw))
+            for cut in range(len(raw)):
+                with self.assertRaises(FrameError):sequence_frame(raw[:cut])
+            full=prefix(raw)
+            for cut in range(len(full)):
+                row=event_prefix(full,source='calc1-limit',limit=cut)
+                self.assertEqual(row['status'],'failed')
+                self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='calc1-limit',limit=cut))
+            for tail in (b'\xff',bytes(8)):
+                with self.assertRaises(FrameError) as caught:sequence_frame(raw+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+            row=event_prefix(prefix(sequence(child,b'\x59')),source='calc1-next')
+            self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['actual'],89)
+            self.assertIn(dict(start=19,end=19+len(child),kind='union',tag=154),row['completedRecords'])
+
     def test_calculation5_variants_raw_bits_and_required_dword(self):
         values=[b'\xff',b'\x05\xff',b'\x05\x04\xff'+b'\xff'*4+b'\xff'+b'\xff'*4]
         for val in (None,b'',b'\x00\xff'):
@@ -3692,7 +3749,7 @@ class BuffActionsTests(unittest.TestCase):
                 self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
 
     def test_calculation5_bad_header_payload_and_unknown_union(self):
-        for value in (b'\x01',b'\x04',b'\x06',b'\xfa\x05\x01'):
+        for value in (b'\x04',b'\x06',b'\xfa\x05\x01'):
             r=Reader(value,'calc5-unknown',len(value))
             with self.assertRaises(Unsupported) as caught:r.calculation_profile()
             self.assertEqual((r.pos,caught.exception.diagnostic['offset']),(0,0))

@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = '64B14C54898C9BE423E1FC54E9C9736DDF524B0DBAD16B0DE6D653419FF1394B'
+CORPUS_SHA = '8B400164A584641A14521837729AB582D8D49EAF9C1640D74BA9AE3DE0A34A17'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -2472,7 +2472,8 @@ def audit():
                Path(__file__).with_name('buff_12b_native.json'),
                Path(__file__).with_name('buff_2c_native.json'),
                Path(__file__).with_name('buff_damage_lists_native.json'),
-               Path(__file__).with_name('buff_calc5_native.json')]
+               Path(__file__).with_name('buff_calc5_native.json'),
+               Path(__file__).with_name('buff_calc1_native.json')]
     source_hashes = {str(p): sha(p) for p in sources}
     mapper = load('context_audit_mapper', mapper_path)
     catalog = load('context_audit_catalog', catalog_path)
@@ -3063,6 +3064,8 @@ def audit():
         contract_path=Path(__file__).with_name('buff_cf_native.json'))
     buff_12b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_12b_native.json'))
+    buff_calc1=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('buff_calc1_native.json'))
     buff_calc5=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_calc5_native.json'))
     buff_damage_lists=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -3387,6 +3390,7 @@ def audit():
         'selectedBuff2CReadOrder':buff_2c,
         'selectedBuffDamageListsReadOrder':buff_damage_lists,
         'selectedBuffCalc5ReadOrder':buff_calc5,
+        'selectedBuffCalc1ReadOrder':buff_calc1,
         'selectedNestedAdapterSlots':{'rows':nested_slots,'level':'exact static MethodSpec/VAR relation',
                                       'boundary':'Relative slots 3, 4 and 11 independently join DeserializeNotNull<T0,T1>, GetFormatter<T1> and CreateInstance<T1>. Every VAR reciprocally belongs to the adapter type; conditional concrete arguments come from the separately authenticated immediate registration. Method names do not establish serialization order, actual nested dispatch or source cursor.'},
         'selectedMethodCompanionConstruction': {'lookupRva':0x8D20,'constructorRva':0x84B0,
