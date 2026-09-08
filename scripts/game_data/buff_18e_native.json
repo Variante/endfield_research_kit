@@ -1,0 +1,85 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123737,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaArcheryChipDataAction_DataForMemoryPack+Beyond_Gameplay_Core_TyphoeaArcheryChipDataAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      70501984
+    ],
+    [
+      123736,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaArcheryChipDataAction_DataForMemoryPack",
+      "Deserialize",
+      70502080
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70501984,
+      "endRva": 70502077,
+      "sha256": "F8EF5DAD0A7A6CBC461A2CC7B05FDA9EFF8AC17142D8212B9502E1C2FF2B5CEB",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 70502080,
+      "endRva": 70502902,
+      "sha256": "E704CD146D4B1E012A6D24FCFB2DD0BCB6A2225B0C39A23D1B4CE7B8586699A8",
+      "boundary": "header18 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83557644,
+      "endRva": 83557657,
+      "sha256": "447C4B995764121B75D7F4637AE1FEE5928069EF604F52E355FF67EA17CEAA88",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83557713,
+      "endRva": 83557734,
+      "sha256": "B5855BCB6ADB932E8412FBACAB6F610ADA8AB086792F9171E75079AB9793D53D",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70502252,
+      "instructionHex": "488B15B5D6D408",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member18": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "nullable-byte-payload",
+      "nullable-byte-payload",
+      "nullable-byte-payload",
+      "nullable-byte-payload",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "byte",
+      "nullable-byte-payload",
+      "nullable-byte-payload",
+      "byte",
+      "nullable-byte-payload",
+      "nullable-byte-payload"
+    ]
+  },
+  "boundary": "Exact selected union398 dispatch, registered type usage and module/token joins identify TyphoeaArcheryChipDataAction_Data. Its header18 reader consumes the common byte and three DWORDs, four nullable byte payloads, five bytes, two nullable byte payloads, one byte and two required terminal nullable byte payloads. The single generic context identifies Priority. Every payload has its own signed nullable length; null and empty payloads do not remove later lengths or bytes. Payload content stays anonymous, without assuming text or a cross-file reference. FA8E01 is union398, distinct from short8E union142. An FF outer wrapper has no member body. Formatter, normal/init, existing-output and FF windows retain complete instructions; adjacent setters add no source bytes. Static identity is exact, source order direct and framing structural-only. Archery/chip behavior, payload meaning, field ownership, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}

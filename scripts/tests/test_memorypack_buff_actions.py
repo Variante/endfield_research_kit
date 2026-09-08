@@ -771,6 +771,13 @@ def tag37(nested=b'\xff',extended=False,last=b'\xff'*4,flag=b'\x80'):
     return (b'\xfa\x37\x00' if extended else b'\x37')+b'\x0a\xfe'+b'\xff'*12+b'\x80\xfe\xff'+nested+flag+last
 
 
+def tag18e(values=(None,)*8):
+    assert len(values)==8
+    return (b'\xfa\x8e\x01\x12\xfe'+struct.pack('<III',0x01020304,0x80000000,0xffffffff)+
+            b''.join(payload(v) for v in values[:4])+b'\x00\x80\xff\x12\x34'+
+            payload(values[4])+payload(values[5])+b'\xa5'+payload(values[6])+payload(values[7]))
+
+
 def tag102(word=b'\x04\x03\x02\x81'):
     return b'\xfa\x02\x01\x05\xfe'+struct.pack('<III',0x01020304,0x80000000,0xffffffff)+word
 
@@ -1430,6 +1437,73 @@ class BuffActionsTests(unittest.TestCase):
             for count in (-2,2147483647):
                 with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+child+bytes(2))
                 self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(caught.exception.diagnostic['offset'],1)
+
+    def test_18e_payload_states_order_and_boundaries(self):
+        for values in ((None,)*8,(b'',)*8,tuple(bytes([i,255,128])*i for i in range(8))):
+            child=tag18e(values);self.assertEqual(len(child),55+sum(len(v or b'') for v in values))
+            for tail in (b'\x00',b'\xff'):
+                for limit in (len(child),len(child)+1):
+                    q=Reader(child+tail,'18e',limit);q.action(0)
+                    self.assertEqual(q.pos,len(child));self.assertEqual(q.records[-1]['tag'],398)
+                    self.assertEqual(q.ranges[0]['start'],0);self.assertEqual(q.ranges[-1]['end'],len(child))
+                    self.assertTrue(all(a['end']==b['start'] for a,b in zip(q.ranges,q.ranges[1:])))
+        for child in (b'\xff',b'\xfa\x8e\x01\xff'):
+            q=Reader(child+b'\xa5','18e-null');q.action(0);self.assertEqual(q.pos,len(child))
+        q=Reader(b'\x8e\xff','18e-short');q.action(0);self.assertEqual(q.records[-1]['tag'],142)
+
+    def test_18e_every_cut_and_required_terminal_payloads(self):
+        for values in ((None,)*8,(b'',)*8,tuple(bytes([i,255,128]) for i in range(8))):
+            child=tag18e(values)
+            for cut in range(len(child)):
+                outcomes=[]
+                for data in (child[:cut],child,child[:cut]+b'\xff'*32):
+                    q=Reader(data,'18e-cut',cut)
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    self.assertLessEqual(q.pos,cut);self.assertFalse(any(v.get('tag')==398 for v in q.records))
+                    outcomes.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+                self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[0],outcomes[2])
+        child=tag18e()
+        for offset in (47,51):
+            for count_bytes in range(4):
+                q=Reader(child[:offset+count_bytes],'18e-length-cut')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],offset);self.assertEqual(q.pos,offset)
+
+    def test_18e_all_payload_length_guards_and_headers(self):
+        child=tag18e()
+        for offset in (17,21,25,29,38,42,47,51):
+            for count in (-2,2147483647):
+                q=Reader(child[:offset]+struct.pack('<i',count)+child[offset+4:],'18e-count')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+                self.assertEqual(caught.exception.diagnostic['offset'],offset);self.assertEqual(q.pos,offset+4)
+                self.assertFalse(any(v.get('tag')==398 for v in q.records))
+        for header in (0,17,19,254):
+            q=Reader(child[:3]+bytes([header])+child[4:],'18e-header')
+            with self.assertRaises(FrameError) as caught:q.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],3)
+
+    def test_18e_parent_counts_tails_and_unknown_next(self):
+        child=tag18e()
+        for parent in (b'\x03'+struct.pack('<i',-1)+b'\x80\xff',b'\x03'+struct.pack('<i',0)+b'\x80\xff',sequence(child)):
+            q=Reader(parent,'18e-parent');q.sequence();self.assertEqual(q.pos,len(parent))
+            for k in (1,2):
+                q=Reader(parent[:-k],'18e-parent-tail')
+                with self.assertRaises(FrameError) as caught:q.sequence()
+                self.assertEqual(caught.exception.diagnostic['offset'],len(parent)-k);self.assertEqual(q.pos,len(parent)-k)
+        for count in (-2,2147483647):
+            q=Reader(b'\x03'+struct.pack('<i',count)+child+bytes(2),'18e-parent-count')
+            with self.assertRaises(FrameError) as caught:q.sequence()
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(q.pos,5)
+        q=Reader(b'\x03'+struct.pack('<i',1)+b'\xff\x80','18e-reserve2')
+        with self.assertRaises(FrameError) as caught:q.sequence()
+        self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(q.pos,5)
+        for tail in (b'\x00',b'\xff'):
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        row=event_prefix(prefix(sequence(child,b'\xd0')),source='18e-next')
+        self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['actual'],208)
+        self.assertEqual(row['consumedEnd'],19+len(child));self.assertTrue(any(v.get('tag')==398 for v in row['completedRecords']))
 
     def test_102_scalar_order_bits_and_wrapper_identity(self):
         for word in (bytes(4),b'\xff'*4,bytes.fromhex('0100C07F'),bytes.fromhex('04030281')):

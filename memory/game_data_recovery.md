@@ -633,6 +633,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   bytes and a required raw float32 field close the record; null nested profiles
   do not remove that tail. Short and extended union encodings share this order.
   Continuous targeting behavior and payload ownership remain unresolved.
+  `scripts/game_data/buff_18e_native.json` joins TyphoeaArcheryChipDataAction
+  to header18: the common prefix, four nullable byte payloads, five bytes,
+  two payloads, one byte and two terminal payloads. Every payload retains its
+  own required signed nullable length; null or empty values do not remove later
+  fields. Payload encoding, reference ownership and archery behavior remain unresolved.
   `scripts/game_data/buff_102_native.json` joins OnSpellInflictionStart to
   header5, the common prefix and a required terminal DWORD. The exact final
   context identifies EnergyShardType, while its source width remains four
