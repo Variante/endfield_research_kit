@@ -171,6 +171,10 @@ only.
   and Unity texture validity. Keep these conditions separate and do not infer
   the final GPU binding without the live phase and later-publisher joins. The
   current source audit is `cloud_shadow_native_publishers.json`. Separately,
+  the CPP descriptor's enabled four-vector arithmetic now has a reusable pure
+  packer in the lab, with CPU checks for branch, range, projection and invalid
+  inputs. Native light selection, texture/time ownership and integration remain
+  separate; this is not an original-binary numeric or publication proof.
   `cloud_draw_inputs.json` proves neutral cloud modulation for the retained
   current-build shadow draws; it does not generalize to unsampled frames or
   establish live environment ownership.
