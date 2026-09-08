@@ -671,7 +671,55 @@ def tag16(items=(),extended=False,first=b'\xff',second=b'\xff',rich=False):
             (collider16() if rich else b'\xff')+target_filter16(query41((0,0xffffffff)))+bytes.fromhex('FFFFFFFF'))
 
 
+def tag178(value=b'\xff\x00wire',last=255):
+    return b'\xfa\x78\x01\x08\xff'+bytes.fromhex('FFFFFFFF000000800000C07F')+b'\x80\xff'+payload(value)+bytes([last])
+
+
 class BuffActionsTests(unittest.TestCase):
+    def test_tag178_payload_null_empty_binary_and_arbitrary_final_byte(self):
+        for value in (None,b'',b'\xff\x00wire'):
+            for last in (0,1,127,128,255):
+                child=tag178(value,last);self.assertEqual(len(child),24+len(value or b''))
+                r=Reader(child,'178');r.action(0);self.assertEqual(r.pos,len(child))
+                self.assertIn(dict(start=0,end=len(child),kind='union',tag=376),r.records)
+                payload_row=next(v for v in r.records if v['kind']=='anonymous-byte-payload')
+                self.assertEqual(payload_row['isNull'],value is None)
+                result=event_prefix(prefix(sequence(child,b'\x59')),source='178.bin')
+                self.assertEqual(result['diagnostic']['offset'],19+len(child))
+                self.assertEqual(result['diagnostic']['actual'],89);self.assertFalse(result['wholeSchemaExact'])
+
+    def test_tag178_all_cuts_hard_limits_null_wrapper_and_trailing(self):
+        for child in (tag178(),tag178(None),b'\xfa\x78\x01\xff'):
+            for cut in range(len(child)):
+                values=[]
+                for data in (child,child[:cut],child[:cut]+b'\xff'*20):
+                    r=Reader(data,'178-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut);self.assertFalse(any(v.get('tag')==376 for v in r.records))
+                    values.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(values[0],values[1]);self.assertEqual(values[0],values[2])
+            for tail in (b'\xff',b'\x00'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag178_bad_header_lengths_and_required_last_byte(self):
+        for header in (0,7,9,254):
+            child=bytearray(tag178());child[3]=header;r=Reader(child,'178-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],3)
+            self.assertEqual(caught.exception.diagnostic['expected'],8)
+        for length in (-2,0x7fffffff):
+            child=tag178()[:19]+struct.pack('<i',length)+bytes(8);r=Reader(child,'178-length')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],19)
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+        for value in (None,b'',b'wire'):
+            child=tag178(value);r=Reader(child[:-1],'178-tail')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],len(child)-1)
+            self.assertFalse(any(v.get('tag')==376 for v in r.records))
+
+
     def test_tag16_both_encodings_distinct_inputs_and_full_tail(self):
         assignment=b'\x06'+bytes(4)+payload(None)+bytes(4)+payload(b'\xff')+payload(b'')+b'\x80'
         for extended in (False,True):

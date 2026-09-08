@@ -656,6 +656,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   DWORD, distinct from BuffFilterSettings. The query helper has an output
   carrier, not a fixed sixteen-byte wire value. Preserve nested Sequence
   unknown stops, independent list null states and the minimum required tail.
+  `scripts/game_data/buff_178_native.json` pins the header-eight SwitchMode
+  action: common byte/three DWORDs, two bytes, nullable byte payload and a
+  required final byte. There are no nested objects or list elements. Keep
+  FF wrapper, null/empty payload and arbitrary terminal byte values distinct;
+  the static type name does not prove mode behavior or payload meaning.
   `scripts/game_data/finder_01_native.json` pins finder 1 to a zero-member
   wrapper. Its constructor consumes no source fields; short/extended tags,
   member-zero wrappers and FF nulls remain distinct. AllEnemyFinder identity

@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123392,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SwitchModeAction_DataForMemoryPack+Beyond_Gameplay_Core_SwitchModeAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      68405344
+    ],
+    [
+      123391,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SwitchModeAction_DataForMemoryPack",
+      "Deserialize",
+      68405440
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 68405344,
+      "endRva": 68405437,
+      "sha256": "22A670B8BEC3164504ECFE02D4009CEADE10D511A044D9B55D3E9BDC6D338685",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 68405440,
+      "endRva": 68405922,
+      "sha256": "04B50889C79AE594780D229BD3128D19424709F62398A1CCAC82BED9E4330E38",
+      "boundary": "header8 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83373704,
+      "endRva": 83373717,
+      "sha256": "D944C8BD9B14D0EFD84E71FA239CEE3BA9755B1B3F6CC26B0A374A9693632941",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83373773,
+      "endRva": 83373794,
+      "sha256": "DB71C0C3FB815D7323D1E9F01A3EA11C70AFEB5C046393D3D199090E50DE6B61",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 68405612,
+      "instructionHex": "488B15B5D4F408",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "byte-payload",
+      "byte"
+    ]
+  },
+  "boundary": "Exact selected union dispatch and module/token joins identify SwitchModeAction. Its header8 source order is the common byte/three DWORD prefix, two bytes, signed nullable byte payload, then a required final byte. The Priority MethodSpec adds no serialized header. No nested object, collection or reference width is inferred from the name. Preserve arbitrary byte values and opaque payload bytes, distinct FF wrapper versus null/empty payload, the final byte and the physical opaque remainder. Native identity is exact and selected source order direct; framing remains structural-only. Mode behavior, payload encoding/meaning, boolean interpretation, live formatter choice, complete refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
