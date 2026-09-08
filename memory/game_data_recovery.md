@@ -525,6 +525,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   Null and empty payloads stay distinct; no terminal scalar follows them.
   The extended union identity remains separate from the short low-byte tag.
   Payload encoding, text/identifier role and actual tip behavior remain unresolved.
+  `scripts/game_data/buff_c0_native.json` extends the existing GainCost identity
+  join to header7: common prefix, CastData.CostData and two terminal DWORDs.
+  CostData is FF or header3 followed by raw4, DWORD and raw4. Its exact generic
+  context selects this child despite sharing a helper address with TargetSettings.
+  CostType and the two separate ActionTargetType contexts add no nested headers.
+  Preserve raw bits and both terminal DWORDs when CostData is null; cost units,
+  enum meanings and runtime effects remain unresolved.
   A member-six child contains only a byte, four scalar32 values and scalar64.
   Its final helper reads and advances eight source bytes; that cursor evidence,
   pinned in `scripts/game_data/buff_5b_native.json`, establishes wire width.

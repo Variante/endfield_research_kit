@@ -1,0 +1,183 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120471,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_GainCostAction_DataForMemoryPack+Beyond_Gameplay_Core_GainCostAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      64134336
+    ],
+    [
+      120470,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_GainCostAction_DataForMemoryPack",
+      "Deserialize",
+      64134432
+    ],
+    [
+      107644,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CastData_CostDataForMemoryPack+Beyond_Gameplay_Core_CastData_CostDataForMemoryPackFormatter",
+      "Deserialize",
+      64263200
+    ],
+    [
+      107643,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CastData_CostDataForMemoryPack",
+      "Deserialize",
+      64263296
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 64134336,
+      "endRva": 64134425,
+      "sha256": "9D08841B19B86F3A3D7502BE06FB6B0CCC44FD649B4038FA92561E5D6BD3489C",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 64134432,
+      "endRva": 64134910,
+      "sha256": "CF6734F84DA9AC3E742E64D7F8C681CAA722A356BE82AD9281A739B9BE016080",
+      "boundary": "header7 initialization and normal return"
+    },
+    {
+      "startRva": 64263200,
+      "endRva": 64263293,
+      "sha256": "6BF4C183B180F594999D195AD400C00163ED3F4D37CD18165C0645697A125774",
+      "boundary": "CostData formatter forwarding and initialization"
+    },
+    {
+      "startRva": 64263296,
+      "endRva": 64263616,
+      "sha256": "5394425E36231CA202456249EED6ED7F2C493B5C01C88D883AB1EF90F15ECF40",
+      "boundary": "CostData inline header normal null and complete initialization"
+    },
+    {
+      "startRva": 82843568,
+      "endRva": 82843581,
+      "sha256": "4F36486B4716C1BF4E6C590248AD9C2A68C1300C3D265CA7759FAFC6D5479A45",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 82843637,
+      "endRva": 82843658,
+      "sha256": "E919545A308C62980A03F0EE12A48D24D82E319D5F085700F3FD3420C2D047A2",
+      "boundary": "FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 82867012,
+      "endRva": 82867034,
+      "sha256": "DAB422C76D6F9C6B42EA3844128C7BBCA2C6E7726CC75A587D06EF639B0A866A",
+      "boundary": "CostData header refill rejoin"
+    },
+    {
+      "startRva": 82867060,
+      "endRva": 82867111,
+      "sha256": "EE63D8D8735D369032EDBEB0EFF5BB59D4F201C98C173B064C8ADAF40E34E1AB",
+      "boundary": "CostData allocation rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 64134679,
+      "instructionHex": "488B150A003609",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64134785,
+      "instructionHex": "488B15F87B3309",
+      "cellVa": 6660954752,
+      "usageRawHex": "D7EB12C000000000",
+      "methodSpecIndex": 620011,
+      "methodSpec": [
+        428464,
+        -1,
+        17015
+      ],
+      "argumentRawHex": "65230000000000000000120000000000",
+      "typeDefinition": 9061,
+      "typeName": "Beyond.Gameplay.Core.CastData+CostData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 64134822,
+      "instructionHex": "488B15F38B3609",
+      "cellVa": 6661155488,
+      "usageRawHex": "CBE412C000000000",
+      "methodSpecIndex": 619109,
+      "methodSpec": [
+        428448,
+        -1,
+        42208
+      ],
+      "argumentRawHex": "7E050000000000000000118000000000",
+      "typeDefinition": 1406,
+      "typeName": "Beyond.Gameplay.ActionTargetType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64134858,
+      "instructionHex": "488B15CF8B3609",
+      "cellVa": 6661155488,
+      "usageRawHex": "CBE412C000000000",
+      "methodSpecIndex": 619109,
+      "methodSpec": [
+        428448,
+        -1,
+        42208
+      ],
+      "argumentRawHex": "7E050000000000000000118000000000",
+      "typeDefinition": 1406,
+      "typeName": "Beyond.Gameplay.ActionTargetType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 64263451,
+      "instructionHex": "488B1506CB2B09",
+      "cellVa": 6660579368,
+      "usageRawHex": "3FE512C000000000",
+      "methodSpecIndex": 619167,
+      "methodSpec": [
+        428448,
+        -1,
+        42249
+      ],
+      "argumentRawHex": "AD840000000000000000118000000000",
+      "typeDefinition": 33965,
+      "typeName": "Beyond.GEnums.CostType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "cost-profile",
+      "scalar32",
+      "scalar32"
+    ],
+    "costMember3": [
+      "raw4",
+      "scalar32",
+      "raw4"
+    ]
+  },
+  "boundary": "Exact union192 dispatch, static registration and registered type/module/token joins identify GainCostAction_DataForMemoryPack. Header7 reads common BYTE/three DWORD, CastData.CostData and two independent terminal DWORDs. The separately joined CostData formatter and reader admit FF or header3 followed by raw4, DWORD and raw4. The shared generic helper address does not select TargetSettings: its exact CostData context and child header/read order do. CostType and two separate ActionTargetType contexts consume DWORDs without additional headers. Null CostData retains both terminal DWORDs. ShortC0 andFAC000 minimum nonnull outer lengths are24/26 with null CostData and36/38 with nonnull CostData. FF union and FF wrapper are separate null forms. Full formatter/reader initialization, FF/existing-output and CostData header-refill/allocation rejoins exclude adjacent error bodies. Output stores and setters add no source fields. Static identity is exact, source order direct and framing structural-only. Cost values/units, enum value meanings, target ownership, gameplay effects, live provider choice, complete allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
