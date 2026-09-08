@@ -525,6 +525,10 @@ only.
   in the same report directory.
   The diagnostic now records CharacterPrePass and HGBuffer on one five-MRT/
   D32S8 surface, using the same character draw collector as canonical PreG.
+  Sphere's raster projection and motion history are separate: use the current
+  camera projection for raster coverage and nonjittered current/previous
+  projections for motion. Jitter must not enter history or manufacture motion.
+  This transport contract does not authenticate the retail jitter sequence.
   Punctual shadows belong to the camera's forward light loop even when no
   LitEffect particle is alive. Update the atlas and packed light-to-shadow map
   under the producer's own rig gate; a particle-dependent skip leaves stale
