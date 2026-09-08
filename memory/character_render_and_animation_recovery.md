@@ -173,8 +173,10 @@ only.
   current source audit is `cloud_shadow_native_publishers.json`. Separately,
   the CPP descriptor's enabled four-vector arithmetic now has a reusable pure
   packer in the lab, with CPU checks for branch, range, projection and invalid
-  inputs. Native light selection, texture/time ownership and integration remain
-  separate; this is not an original-binary numeric or publication proof.
+  inputs. Cloud light selection now preserves the computed direct quaternion or
+  converts custom pitch/yaw through Unity Euler conversion. Runtime direct-light
+  state, texture/time ownership and integration remain separate; this is not an
+  original-binary numeric or publication proof.
   `cloud_draw_inputs.json` proves neutral cloud modulation for the retained
   current-build shadow draws; it does not generalize to unsampled frames or
   establish live environment ownership.
