@@ -714,6 +714,14 @@ def tag2c(first=b'\xff',second=b'\xff',nested=b'\xff',value=None,last=None):
             b'\xff'+payload(value)+b'\x80'*4+nested+b'\xfe'+payload(last))
 
 
+def animator_param(raw4=b'\x00\x00\xc0\x7f',first=b'\xff'*4,flag=b'\xfe',last=b'\xff'*8):
+    return b'\x05'+first+flag+raw4+last
+
+
+def tag14a(first=b'\xff',second=b'\xff',value=None):
+    return b'\xfa\x4a\x01\x08\xfe'+b'\xff'*12+b'\x80'+first+second+payload(value)
+
+
 def tag133(nested=b'\xff',finder=b'\xff',value=None):
     return b'\xfa\x33\x01\x07\xfe'+b'\xff'*12+nested+finder+payload(value)
 
@@ -814,6 +822,75 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['status'],'unsupported')
         self.assertEqual(row['consumedEnd'],19+len(child))
         self.assertTrue(any(r.get('tag')==44 for r in row['completedRecords']))
+
+    def test_14a_independent_null_objects_payloads_and_distinct_short_tag(self):
+        profiles=(b'\xff',animator_param(),animator_param(b'\x00\x00\x80\xff',bytes(4),b'\x00',bytes(8)))
+        for first in profiles:
+            for second in profiles:
+                for value in (None,b'',b'\xff\xfe\x00wire'):
+                    child=tag14a(first,second,value);r=Reader(child+b'\xaa','14a');r.action(0)
+                    self.assertEqual(r.pos,len(child));self.assertEqual(r.records[-1]['tag'],330)
+                    nested=[v for v in r.records if v['kind']=='anonymous-animator-param-profile']
+                    self.assertEqual([(v['start'],v['end']) for v in nested],[(18,18+len(first)),(18+len(first),18+len(first)+len(second))])
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='14a-next')
+                    self.assertEqual(row['status'],'unsupported');self.assertEqual(row['diagnostic']['offset'],19+len(child))
+                    self.assertTrue(any(v.get('tag')==330 for v in row['completedRecords']))
+        for raw in (b'\xff',b'\xfa\x4a\x01\xff'):
+            r=Reader(raw+b'\xaa','14a-null');r.action(0);self.assertEqual(r.pos,len(raw))
+        q=Reader(b'\x4a\xff','14a-short')
+        with self.assertRaises(Unsupported) as caught:q.action(0)
+        self.assertEqual(caught.exception.diagnostic['actual'],74);self.assertEqual(q.pos,0)
+
+    def test_14a_all_cuts_required_nested_fields_and_terminal_length(self):
+        child=tag14a(animator_param(),animator_param(),b'\xff\x80wire')
+        for cut in range(len(child)):
+            results=[]
+            for raw in (child,child[:cut],child[:cut]+b'\xff'*20):
+                q=Reader(raw,'14a-cut',cut)
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertLessEqual(q.pos,cut);self.assertFalse(any(v.get('tag')==330 for v in q.records))
+                results.append((caught.exception.diagnostic,q.pos,q.ranges,q.records))
+            self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        for first,second in ((b'\xff',b'\xff'),(animator_param(),b'\xff'),(b'\xff',animator_param()),(animator_param(),animator_param())):
+            for value in (None,b''):
+                body=tag14a(first,second,value)
+                for n in range(1,5):
+                    q=Reader(body[:-n],'14a-length')
+                    with self.assertRaises(FrameError) as caught:q.action(0)
+                    self.assertEqual(caught.exception.diagnostic['expected'],{'bytes':4})
+                    self.assertEqual(caught.exception.diagnostic['offset'],len(body)-4)
+                    self.assertEqual(sum(v['kind']=='anonymous-animator-param-profile' for v in q.records),2)
+                    self.assertFalse(any(v.get('tag')==330 for v in q.records))
+        for cut,offset in ((50,50),(53,50),(36,36),(35,32)):
+            q=Reader(child,'14a-nested-tail',cut)
+            with self.assertRaises(FrameError) as caught:q.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],offset)
+            self.assertEqual(sum(v['kind']=='anonymous-animator-param-profile' for v in q.records),int(cut>=36))
+        full=prefix(sequence(child))
+        for cut in range(len(full)):
+            row=event_prefix(full,source='14a-limit',limit=cut)
+            self.assertEqual(row['status'],'failed')
+            self.assertEqual(row,event_prefix(full[:cut]+b'\xff'*(len(full)-cut),source='14a-limit',limit=cut))
+        for tail in (b'\x00',b'\xff'):
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_14a_headers_payload_lengths_and_parent_counts(self):
+        child=tag14a(animator_param(),animator_param(),b'wire');r=Reader(child,'14a-invalid');r.action(0)
+        for span in r.ranges:
+            if span['kind'] not in ('member-header','count-i32'):continue
+            for invalid in ((42,) if span['kind']=='member-header' else (-2,2147483647)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=invalid
+                else:struct.pack_into('<i',bad,at,invalid)
+                q=Reader(bad,'14a-invalid')
+                with self.assertRaises(FrameError) as caught:q.action(0)
+                self.assertEqual(caught.exception.diagnostic['offset'],at)
+                self.assertFalse(any(v.get('tag')==330 for v in q.records))
+                self.assertEqual(sum(v['kind']=='anonymous-animator-param-profile' for v in q.records),0 if at<=18 else 1 if at==36 else 2)
+        for count in (-2,2147483647):
+            with self.assertRaises(FrameError) as caught:sequence_frame(b'\x03'+struct.pack('<i',count)+child+bytes(2))
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds');self.assertEqual(caught.exception.diagnostic['offset'],1)
 
     def test_133_nested_nulls_payload_states_and_distinct_short_tag(self):
         for nested in (b'\xff',target(),target(direction_value=b'\xff')):

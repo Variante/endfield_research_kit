@@ -623,6 +623,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   with a required byte between the common prefix and terminal scalar payload.
   The byte remains required when the scalar is null; dash-energy recovery
   semantics remain unresolved.
+  `scripts/game_data/buff_14a_native.json` joins SetAnimatorParamAction to a
+  header8 reader with a byte, two independently nullable AnimatorParamAction
+  objects and a required signed-length payload. Each nested header5 consumes
+  DWORD, byte, raw4 and two DWORDs; null objects do not remove the terminal
+  length. Parameter behavior and payload meaning remain unresolved.
   `scripts/game_data/buff_133_native.json` joins SaveBuffLifeTime to a header7
   reader with TargetSettings, BuffFindSettings and a required signed-length
   byte payload. Both nested objects may be null independently; neither removes

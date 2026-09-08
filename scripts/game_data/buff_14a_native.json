@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122702,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAnimatorParamAction_DataForMemoryPack+Beyond_Gameplay_Core_SetAnimatorParamAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      67770288
+    ],
+    [
+      122701,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAnimatorParamAction_DataForMemoryPack",
+      "Deserialize",
+      67770384
+    ],
+    [
+      162806,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AnimatorParamActionForMemoryPack+Beyond_Gameplay_Core_AnimatorParamActionForMemoryPackFormatter",
+      "Deserialize",
+      68314528
+    ],
+    [
+      162805,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AnimatorParamActionForMemoryPack",
+      "Deserialize",
+      68314624
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67770288,
+      "endRva": 67770381,
+      "sha256": "EDD4D739BB1AC3F3A836A853BA99F64562B2C7EA2EB8EFD39B9F7883706BE9DE",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 67770384,
+      "endRva": 67770896,
+      "sha256": "7B9392D198BB4295ECC1F3ED04C33E97382BDDBB4453006A7896B827A7E3A1B6",
+      "boundary": "header8 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83306512,
+      "endRva": 83306525,
+      "sha256": "9C5CAAD156F701C8E9CCE0C62E1A0FD3B1E85FF4F94E890CCF398A567900D043",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83306581,
+      "endRva": 83306602,
+      "sha256": "36FA7AE3B0EC9E05337793CEFE77E64259F806C5983D9BEE4F40BBF6A7AE797F",
+      "boundary": "FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 68314528,
+      "endRva": 68314621,
+      "sha256": "D4D53C9777360FE9414E282697011085C2CCEC426E5C6FA173416F4040451A28",
+      "boundary": "AnimatorParamAction formatter forwarding and initialization"
+    },
+    {
+      "startRva": 68314624,
+      "endRva": 68314951,
+      "sha256": "D58F0E76C9428DB5A0FD8DBA5C8F9E7998A252E34E65D31676690532457B6CE6",
+      "boundary": "AnimatorParamAction header5 normal source reads and complete initialization rejoin"
+    },
+    {
+      "startRva": 83361054,
+      "endRva": 83361105,
+      "sha256": "DE7DCF94E503BB3271683FBA91C2C87D47B57743C40EF1802187E769824B7445",
+      "boundary": "AnimatorParamAction allocation and header rejoin"
+    },
+    {
+      "startRva": 83361161,
+      "endRva": 83361182,
+      "sha256": "CBDF1B54955E290C229A0A1C0E5069BC9F59C861FA68C0372D06AA1050D1A446",
+      "boundary": "AnimatorParamAction FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67770556,
+      "instructionHex": "488B156585FE08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67770696,
+      "instructionHex": "488B152989FF08",
+      "cellVa": 6661186168,
+      "usageRawHex": "93EA12C000000000",
+      "methodSpecIndex": 619849,
+      "methodSpec": [
+        428464,
+        -1,
+        13890
+      ],
+      "argumentRawHex": "72240000000000000000120000000000",
+      "typeDefinition": 9330,
+      "typeName": "Beyond.Gameplay.Core.AnimatorParamAction",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 67770737,
+      "instructionHex": "488B150089FF08",
+      "cellVa": 6661186168,
+      "usageRawHex": "93EA12C000000000",
+      "methodSpecIndex": 619849,
+      "methodSpec": [
+        428464,
+        -1,
+        13890
+      ],
+      "argumentRawHex": "72240000000000000000120000000000",
+      "typeDefinition": 9330,
+      "typeName": "Beyond.Gameplay.Core.AnimatorParamAction",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 68314839,
+      "instructionHex": "488B15123CEB08",
+      "cellVa": 6660399856,
+      "usageRawHex": "DDE412C000000000",
+      "methodSpecIndex": 619118,
+      "methodSpec": [
+        428448,
+        -1,
+        42216
+      ],
+      "argumentRawHex": "55D50000000000000000118000000000",
+      "typeDefinition": 54613,
+      "typeName": "UnityEngine.AnimatorControllerParameterType",
+      "generic": null,
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "animator-param-profile",
+      "animator-param-profile",
+      "byte-payload"
+    ],
+    "animatorParamHeader5": [
+      "scalar32",
+      "byte",
+      "raw4",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Exact selected union330 dispatch and module/token joins identify SetAnimatorParamAction_Data. The header8 reader consumes common byte/three DWORDs, an additional byte, two independently nullable AnimatorParamAction objects, and a required signed-length byte payload. Both nested context loads resolve to the same reference type. The separately token-joined nested reader requires header5 then DWORD, byte, raw4 through the float helper, DWORD and DWORD; the last context identifies AnimatorControllerParameterType. No float normalization or enum-value validation is inferred. Both null nested objects still require the terminal payload length; null and empty payloads remain distinct, and payload bytes remain opaque. FA 4A 01 is union330; short4A is a different union. Completed earlier nested objects are retained if a later object or terminal payload fails, without completing the outer action. Output setters add no source fields. Static identity is exact, selected source order direct and framing structural-only. Animator parameter behavior, payload encoding/ownership, live provider choice, allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
