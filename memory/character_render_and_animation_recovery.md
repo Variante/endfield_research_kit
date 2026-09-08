@@ -536,8 +536,12 @@ only.
   The matched GPU diagnosis is in `endminf_shadow_schedule_287_validation.json`.
   Contact, low-resolution directional, VisibilitySH, and screen-shadow producers
   consume that post-HG surface and its R32 depth copy. An active HG owner failure
-  cannot fall back to the independent character diagnostic. Default's paired
-  DSV is its t1 depth resource; t0 is the binning buffer. Native draw failure
+  cannot fall back to the independent character diagnostic. Default t1 need not
+  be the paired DSV resource: retained early packets copy its depth SRV into
+  a separate R32 texture before lighting; t0 is the binning buffer. The native
+  copy uses SampleLevel with explicit UV transform, mip and sampler. The lab's
+  integer texel copy requires those values to establish equivalence; endpoint
+  identity alone does not prove payload continuity. Native draw failure
   cannot certify content merely because the metadata shell produced finite pixels.
   Foreground HG geometry replaces classification only after passing shared
   depth. This does not establish every retail stencil writer. The shared surface
