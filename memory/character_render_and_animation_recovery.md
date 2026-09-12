@@ -748,7 +748,10 @@ disabled effects. The pinned CPP render-request producer inlines radial and
 chromatic parameter conversion; bridge snapshots retain those raw inputs with
 independent read/change failures. They do not establish native post execution,
 allocation continuity, or GPU consumption and cannot replace the post gate.
-See the capture environment observer guide for the snapshot contract.
+The native Uber packet carries these pointers into a separate preparation
+function with additional settings gates and a conditional two-vector output.
+Its bounded bridge-scoped observation remains diagnostic until actual calls and
+outputs are verified. See the capture environment observer guide for contracts.
 
 ## Reference and comparison policy
 
