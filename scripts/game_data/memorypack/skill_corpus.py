@@ -110,6 +110,82 @@ def _read_stream_rows(command: list[str]) -> tuple[list[dict[str, Any]], str]:
     return rows, process.stderr
 
 
+def _prefix_byte_ranges(common_prefix: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """List the ranges consumed by the anonymous envelope prefix parser."""
+    hard_end = int(common_prefix["cursorOffset"], 0)
+    counts: list[tuple[int, int, int]] = []
+    for row in common_prefix.get("recordLists", []):
+        raw_start = row.get("countOffset")
+        start = int(raw_start, 0) if isinstance(raw_start, str) else raw_start
+        if type(start) is not int or start < 0 or start + 4 > hard_end:
+            return [{"start": 0, "end": hard_end, "kind": "anonymous-structural-prefix"}]
+        counts.append((start, start + 4, int(row.get("index", len(counts)))))
+    ranges: list[dict[str, Any]] = []
+    cursor = 0
+    for start, end, index in sorted(counts):
+        if start < cursor:
+            return [{"start": 0, "end": hard_end, "kind": "anonymous-structural-prefix"}]
+        if cursor < start:
+            ranges.append({"start": cursor, "end": start, "kind": "anonymous-prefix-bytes"})
+        ranges.append({"start": start, "end": end, "kind": "anonymous-record-list-count", "index": index})
+        cursor = end
+    if cursor < hard_end:
+        ranges.append({"start": cursor, "end": hard_end, "kind": "anonymous-prefix-bytes"})
+    return ranges
+
+
+def _candidate_byte_ranges(candidate: Mapping[str, Any]) -> list[dict[str, Any]]:
+    ranges = []
+    for member in candidate.get("members", []):
+        span = member.get("range")
+        if not isinstance(span, Mapping):
+            continue
+        start, end = span.get("start"), span.get("end")
+        if type(start) is not int or type(end) is not int or start < 0 or end < start:
+            continue
+        ranges.append({
+            "start": start,
+            "end": end,
+            "kind": member.get("kind", "anonymous-terminal-member"),
+            "memberIndex": member.get("index"),
+        })
+    return ranges
+
+
+def _boundary_evidence_summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
+    candidates = [
+        candidate
+        for row in rows
+        for candidate in row.get("framing", {}).get("candidates", [])
+    ]
+    opaque_by_candidate = sum(
+        span["end"] - span["start"]
+        for candidate in candidates
+        for span in candidate.get("opaqueByteRanges", [])
+    )
+    opaque_at_file_level = sum(
+        span["end"] - span["start"]
+        for row in rows
+        for span in row.get("opaqueByteRanges", [])
+    )
+    class_counts = Counter(row.get("boundaryClass", "failed") for row in rows)
+    return {
+        "exactClosedRecords": sum(candidate.get("boundaryClass") == "exact-closed" for candidate in candidates),
+        "filesWithStructuralPrefix": sum(bool(row.get("commonPrefixFraming", {}).get("provenPrefixByteLength")) for row in rows),
+        "opaqueBytesByCandidate": opaque_by_candidate,
+        "opaqueBytesAtFileLevel": opaque_at_file_level,
+        "boundaryClassCounts": dict(sorted(class_counts.items())),
+        "unsupportedFiles": class_counts.get("unsupported", 0),
+        "failedFiles": class_counts.get("failed", 0),
+        "ambiguousFiles": class_counts.get("ambiguous", 0),
+        "boundary": (
+            "Exact closures count independently established records only; EOF-anchored grammar candidates are not promoted. "
+            "Files with structural prefixes may also be ambiguous. Opaque-by-candidate counts alternatives separately; "
+            "file-level opaque bytes are ranges outside the bounded prefix and candidate grammar."
+        ),
+    }
+
+
 def _join_and_frame(
     ledger_rows: list[Mapping[str, Any]],
     stream_rows: list[Mapping[str, Any]],
@@ -145,6 +221,7 @@ def _join_and_frame(
         if actual_md5 != ledger["recomputedFileDataMd5"]:
             _fail("stream-ledger-md5-mismatch", source=path, expected=ledger["recomputedFileDataMd5"], actual=actual_md5)
         identity_result = {
+            "inputSetSha256": str(ledger["inputSetSha256"]).upper(),
             "virtualPath": path,
             "blockName": ledger["blockName"],
             "blockTypeValue": ledger["blockTypeValue"],
@@ -159,13 +236,33 @@ def _join_and_frame(
             "physicalOffset": ledger["offset"],
             "encrypted": ledger["encrypted"],
         }
+        common_prefix = None
+        framed = None
         try:
             common_prefix = frame_skill_common_prefix(data)
             framed = frame_skill_memorypack(data, source=path)
         except Exception as exc:
             coverage_counts["failed-framing"] += 1
+            prefix_end = int(common_prefix["cursorOffset"], 0) if common_prefix is not None else 0
+            prefix_ranges = _prefix_byte_ranges(common_prefix) if common_prefix is not None else []
+            hard_limit = len(data)
+            opaque = [{"start": prefix_end, "end": hard_limit, "kind": "opaque-after-failed-frame"}] if prefix_end < hard_limit else []
             results.append({
                 **identity_result,
+                "boundaryClass": "failed",
+                "boundaryContext": {
+                    "inputSetSha256": identity_result["inputSetSha256"],
+                    "logicalFileIdentity": path,
+                    "logicalSha256": identity_result["logicalSha256"],
+                    "startOffset": 0,
+                    "hardLimit": hard_limit,
+                    "parserCursor": prefix_end if common_prefix is not None else None,
+                },
+                "parserCursor": prefix_end if common_prefix is not None else None,
+                "hardLimit": hard_limit,
+                "byteRanges": prefix_ranges,
+                "opaqueByteRanges": opaque,
+                "commonPrefixFraming": common_prefix,
                 "coverageStatus": "failed-framing",
                 "framingFailure": {
                     "code": "skill-framer-failed",
@@ -179,6 +276,10 @@ def _join_and_frame(
             continue
         status_counts[framed["status"]] += 1
         prefix_end = int(common_prefix["cursorOffset"], 0)
+        prefix_ranges = _prefix_byte_ranges(common_prefix)
+        common_prefix["parserCursor"] = prefix_end
+        common_prefix["hardLimit"] = len(data)
+        common_prefix["byteRanges"] = prefix_ranges
         candidate_coverage: list[dict[str, Any]] = []
         has_overlap = False
         for candidate_index, candidate in enumerate(framed["candidates"]):
@@ -204,9 +305,82 @@ def _join_and_frame(
             coverage_status = "ambiguous-disjoint-independent-ranges"
         else:
             coverage_status = "unique-disjoint-independent-ranges"
+        if coverage_status == "ambiguous-disjoint-independent-ranges":
+            boundary_class = "ambiguous"
+        elif coverage_status.startswith("unsupported-"):
+            boundary_class = "unsupported"
+        else:
+            # The candidate grammar is bounded and EOF-anchored, but no
+            # independent formatter cursor promotes it to an exact record.
+            boundary_class = "structural-prefix"
+        candidate_opaque_ranges: list[list[dict[str, Any]]] = []
+        for candidate_index, candidate in enumerate(framed["candidates"]):
+            candidate_start = int(candidate["startOffset"], 0)
+            candidate_end = int(candidate.get("endOffset", hex(len(data))), 0)
+            gap = candidate_coverage[candidate_index]["opaqueGap"]
+            opaque_ranges = [] if gap is None else [{
+                "start": gap["start"],
+                "end": gap["end"],
+                "kind": "opaque-between-prefix-and-terminal-candidate",
+            }]
+            if candidate_end < len(data):
+                opaque_ranges.append({
+                    "start": candidate_end,
+                    "end": len(data),
+                    "kind": "opaque-after-terminal-candidate",
+                })
+            candidate["boundaryClass"] = boundary_class
+            candidate["candidateRange"] = {"start": candidate_start, "end": candidate_end, "endExclusive": True}
+            candidate["parserCursor"] = candidate_end
+            candidate["hardLimit"] = len(data)
+            candidate["byteRanges"] = _candidate_byte_ranges(candidate)
+            candidate["opaqueByteRanges"] = opaque_ranges
+            candidate["boundaryContext"] = {
+                "inputSetSha256": identity_result["inputSetSha256"],
+                "logicalFileIdentity": path,
+                "logicalSha256": identity_result["logicalSha256"],
+                "startOffset": candidate_start,
+                "hardLimit": len(data),
+                "parserCursor": candidate_end,
+                "candidateRange": [candidate_start, candidate_end],
+            }
+            candidate_opaque_ranges.append(opaque_ranges)
+        if boundary_class == "ambiguous":
+            gaps = [candidate_coverage[index]["opaqueGap"] for index in range(len(candidate_coverage))]
+            common_gap = None
+            if gaps and all(gap is not None for gap in gaps):
+                common_start = max(gap["start"] for gap in gaps)
+                common_end = min(gap["end"] for gap in gaps)
+                if common_start < common_end:
+                    common_gap = {"start": common_start, "end": common_end, "kind": "opaque-common-to-all-candidates"}
+            row_opaque = [common_gap] if common_gap is not None else []
+        elif boundary_class == "unsupported":
+            row_opaque = [{"start": prefix_end, "end": len(data), "kind": "opaque-after-structural-prefix"}] if prefix_end < len(data) else []
+        elif candidate_opaque_ranges:
+            row_opaque = candidate_opaque_ranges[0]
+        else:
+            row_opaque = [{"start": prefix_end, "end": len(data), "kind": "opaque-after-structural-prefix"}] if prefix_end < len(data) else []
+        row_context = {
+            "inputSetSha256": identity_result["inputSetSha256"],
+            "logicalFileIdentity": path,
+            "logicalSha256": identity_result["logicalSha256"],
+            "startOffset": 0,
+            "hardLimit": len(data),
+            "parserCursor": prefix_end,
+        }
+        common_prefix["boundaryContext"] = row_context
+        for candidate, coverage in zip(framed["candidates"], candidate_coverage):
+            coverage["boundaryContext"] = candidate["boundaryContext"]
+            coverage["opaqueByteRanges"] = candidate["opaqueByteRanges"]
         coverage_counts[coverage_status] += 1
         results.append({
             **identity_result,
+            "boundaryClass": boundary_class,
+            "boundaryContext": row_context,
+            "parserCursor": prefix_end,
+            "hardLimit": len(data),
+            "byteRanges": prefix_ranges,
+            "opaqueByteRanges": row_opaque,
             "commonPrefixFraming": common_prefix,
             "framing": framed,
             "coverageStatus": coverage_status,
@@ -324,6 +498,7 @@ def build_current_census(
     ambiguous_count = coverage_counts.get("ambiguous-disjoint-independent-ranges", 0)
     failed_count = coverage_counts.get("failed-framing", 0)
     unsupported_count = len(rows) - unique_count - ambiguous_count - failed_count
+    boundary_evidence = _boundary_evidence_summary(rows)
     final_status = "failed" if failed_count else "partial" if partial else "complete"
     return {
         "format": SKILL_REPORT_FORMAT,
@@ -352,6 +527,7 @@ def build_current_census(
             "physicalChunkCount": len({row["physicalChunkPath"] for row in rows}),
             "framingStatusCounts": status_counts,
             "coverageStatusCounts": coverage_counts,
+            "byteBoundaryEvidence": boundary_evidence,
         },
         "identitySetSha256": _canonical_sha256(identity_rows),
         "wholeSchemaExact": False,
@@ -359,6 +535,7 @@ def build_current_census(
             "current outer-ledger identities plus AnimeStudio stream --verify-md5 decrypted bytes; "
             "the maintained framer proves only the 48-member envelope and anonymous EOF terminal "
             "candidate shapes, while prefix fields, candidate ownership, field order, and semantics remain unresolved"
+            ". Candidate parser cursors are grammar-relative and do not establish the active formatter cursor or exact EOF"
         ),
         "files": rows,
     }
@@ -374,6 +551,14 @@ def render_markdown(report: Mapping[str, Any]) -> str:
         f"unsupported: {summary['filesUnsupported']}.",
         f"Unique supported candidates: {summary['filesUnique']}; "
         f"ambiguous: {summary['filesAmbiguous']}; logical bytes: {summary['logicalBytes']}.", "",
+        "Boundary evidence: "
+        f"exact closed records {summary['byteBoundaryEvidence']['exactClosedRecords']}; "
+        f"files with structural prefixes {summary['byteBoundaryEvidence']['filesWithStructuralPrefix']}; "
+        f"ambiguous {summary['byteBoundaryEvidence']['ambiguousFiles']}; "
+        f"unsupported {summary['byteBoundaryEvidence']['unsupportedFiles']}; "
+        f"failed {summary['byteBoundaryEvidence']['failedFiles']}; "
+        f"opaque bytes by candidate {summary['byteBoundaryEvidence']['opaqueBytesByCandidate']}; "
+        f"opaque bytes at file level {summary['byteBoundaryEvidence']['opaqueBytesAtFileLevel']}.", "",
         report["evidenceBoundary"], "",
         "A candidate is not an independently proven formatter start. "
         "Whole-schema exactness and field semantics remain unresolved.", "",

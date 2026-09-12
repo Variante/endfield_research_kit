@@ -1,0 +1,130 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      121711,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PatrolTeleport_DataForMemoryPack+Beyond_Gameplay_Core_PatrolTeleport_DataForMemoryPackFormatter",
+      "Deserialize",
+      72321168
+    ],
+    [
+      121710,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PatrolTeleport_DataForMemoryPack",
+      "Deserialize",
+      72321264
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 59835828,
+      "endRva": 59835878,
+      "sha256": "B8B084F44354379BF999CBB4AA1376297C6FDFFB15F8B5901DAFF839E8EFD4F1",
+      "boundary": "tag 0x10C switch case through tail jump"
+    },
+    {
+      "startRva": 72321168,
+      "endRva": 72321261,
+      "sha256": "FA31595B51397A0A678962F0F1EBFD772B36FD40335D5436D29E2B6BAC9AB3C7",
+      "boundary": "formatter forwarder through tail transfer"
+    },
+    {
+      "startRva": 72321264,
+      "endRva": 72321618,
+      "sha256": "5D3ED0BC29F2761B905A51B47FD06C12D9586E5CE7C444E6F402DB77935B6FA7",
+      "boundary": "selected Deserialize normal source reads through RET"
+    },
+    {
+      "startRva": 46827616,
+      "endRva": 46827703,
+      "sha256": "CA6788FE028DC684758CD40833EFA107116A7BF664BFBF1746D792E52114639F",
+      "boundary": "member-header helper through RET"
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "one-byte helper through RET"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "four-byte helper through RET"
+    },
+    {
+      "startRva": 46827264,
+      "endRva": 46827438,
+      "sha256": "858A574FA7F4A7FEBDCEE95EDD3E823F2E07429DED10FF5A10D9C66092FF2F3A",
+      "boundary": "signed length-prefixed byte helper through RET"
+    },
+    {
+      "startRva": 46826272,
+      "endRva": 46827040,
+      "sha256": "F1DEBDBC44B808F6BCB187AF87BD560B22405DFD6B1576F6070E91066BD8055D",
+      "boundary": "signed-negative byte count error path"
+    },
+    {
+      "startRva": 46828048,
+      "endRva": 46828254,
+      "sha256": "88829578E23B03C5FD251FED5F646E350A629A03959BB381303F67CB91378B08",
+      "boundary": "positive byte-copy and cursor-advance helper"
+    },
+    {
+      "startRva": 46828464,
+      "endRva": 46828547,
+      "sha256": "F112A76BE9309585E435B359DBF7BD870995695419CF8FF36D6384EE27AB831C",
+      "boundary": "float32 helper through RET"
+    }
+  ],
+  "nestedContexts": [],
+  "anonymousReadOrder": {
+    "header6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "signed-i32-byte-payload",
+      "float32"
+    ],
+    "sourceCalls": [
+      {
+        "memberIndex": 1,
+        "targetRva": 46827712,
+        "sourceRead": "byte",
+        "resultNormalization": "raw byte != 0; zero=false, any nonzero byte=true"
+      },
+      {
+        "memberIndex": 2,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32"
+      },
+      {
+        "memberIndex": 3,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32"
+      },
+      {
+        "memberIndex": 4,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32"
+      },
+      {
+        "memberIndex": 5,
+        "targetRva": 46827264,
+        "sourceRead": "signed-i32-byte-payload-length"
+      },
+      {
+        "memberIndex": 5,
+        "targetRva": 46828048,
+        "sourceRead": "signed-length byte-payload helper dispatch",
+        "condition": "length != -1 and length != 0"
+      },
+      {
+        "memberIndex": 6,
+        "targetRva": 46828464,
+        "sourceRead": "float32"
+      }
+    ]
+  },
+  "boundary": "The exact-build switch route and token/module-joined reader independently select this header-six source order: one byte, three anonymous four-byte values, signed-i32 length-prefixed bytes, then Float32. The first byte reader returns false for zero and true for any nonzero byte; the structural parser preserves that byte without a value constraint. The payload helper treats -1 as null and zero as empty. Positive lengths are checked against remaining bytes, copied, and advanced by the selected cursor helper; values below -1 take the separately pinned signed-negative error path and are rejected by the structural parser as malformed counts. Current VFS samples close the action at their parsed endpoint; later bytes remain outside this action and do not establish suffix ownership or whole-BuffData EOF. The stored scalar and float bits remain anonymous; gameplay meanings and runtime formatter/provider selection are not established."
+}

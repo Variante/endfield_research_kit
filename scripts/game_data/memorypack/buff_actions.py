@@ -55,8 +55,10 @@ class Reader:
         self.header(3)
         count=self.count(1,reserve=2,nullable=True)
         for _ in range(max(0,count)):self.action(depth+1)
-        self.take(1,'anonymous-nonzero-byte')
-        self.take(1,'anonymous-nonzero-byte')
+        # The structural reader only records the terminal byte ranges; zero
+        # values are valid and are not rejected or assigned field semantics.
+        self.take(1,'anonymous-byte')
+        self.take(1,'anonymous-byte')
 
     def action(self,depth):
         start=self.pos
@@ -71,6 +73,17 @@ class Reader:
         # FA carries an unsigned little-endian tag, not a child-object header.
         # Keep unknown tags at their first byte; never search for a later tag.
         if tag==255 and width==1:self.take(1,'null-union');return
+        if tag==268:
+            # This selected header-six action reads a byte, three raw scalars,
+            # a bounded signed-length byte payload, then four float32 bytes.
+            self.take(width,'union-tag')
+            if self.peek()==255:self.take(1,'null-wrapper');return
+            self.header(6)
+            self.take(1,'anonymous-byte')
+            for _ in range(3):self.take(4,'anonymous-scalar32')
+            self.byte_payload(reserve=4)
+            self.take(4,'anonymous-float32-bits')
+            return
         # FC/FD/FE are authenticated only in their extended encodings.
         if (width==1 and tag>=251) or tag not in (201,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,372,65,169,98,316,144,187,11,12,43,277,337,319,320,152,374,147,373,252,131,314,134,99,107,119,392,64,391,313,394,309,290,92,387,47,348,367,5,58,76,336,167,414,8,288,159,27,135,82,142,293,292,335,113,112,345,22,376,193,257,199,411,296,356,207,299,44,295,171,246,380,390,185,244,307,330,349,55,298,324,347,7,395,412,138,331,358,370,40,258,398,402,206,23,173,408,407,145,148,388,223,31,183,240,85,54,32,168,35,362,111,353,192,284,140,78,364,133,344,346,377,188,334,224,13,38):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(width,'union-tag')
@@ -1009,9 +1022,9 @@ class Reader:
             self.scalar_payload();self.scalar_payload()
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-special-aim-shape',tag=tag))
 
-    def byte_payload(self):
+    def byte_payload(self,*,reserve=0):
         start=self.pos
-        n=self.count(1,nullable=True)
+        n=self.count(1,reserve=reserve,nullable=True)
         # The selected native helper advances by the supplied byte length.
         # Do not substitute standard MemoryPack UTF-16/negative-length layouts
         # or claim decoder parity; even non-UTF8 bytes are structurally valid.

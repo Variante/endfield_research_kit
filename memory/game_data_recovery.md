@@ -1290,6 +1290,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   the first scalar's `Priority` context does not assign a field meaning.
   Runtime formatter/provider selection, suffix ownership and whole-BuffData
   EOF remain unresolved.
+  Short tag `0x10C` has a header-six order of one byte, three anonymous
+  scalar32 values, a signed-i32 length-prefixed byte payload, and one 4-byte
+  Float32 bit pattern. Current VFS branch samples and the exact-build native
+  reader close this action at the same byte boundary. Bytes after the action
+  remain outside its frame and are accounted for only by independently bounded root
+  reads or opaque ranges. See the current corpus report for the input-bound
+  ranges; field meaning, suffix ownership and whole-BuffData EOF remain
+  unresolved.
   `scripts/game_data/buff_40_native.json` ends a member-six action with a
   DWORD and that same direct element list. Preserve each element header; the
   QueryType context belongs to the preceding DWORD, not an extra query wrapper.

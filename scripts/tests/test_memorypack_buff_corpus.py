@@ -75,6 +75,7 @@ class BuffCandidateTests(unittest.TestCase):
         self.assertEqual(row['coverageStatus'],'unique')
         self.assertFalse(row['wholeSchemaExact'])
         self.assertFalse(row['candidates'][0]['readerInternalOpaqueRangesCertified'])
+        self.assertIn(row['boundaryClass'],('structural-prefix','failed','unsupported'))
 
     def test_truncated_trailing_and_malformed_count(self):
         good=_normal()
@@ -88,6 +89,9 @@ class BuffCandidateTests(unittest.TestCase):
         row=self.frame(raw)
         self.assertEqual((row['anchorCount'],row['candidateCount']),(2,1))
         self.assertEqual(len(row['candidates']),2)
+        self.assertEqual(row['candidates'][0]['boundaryClass'],'rejected-anchor')
+        self.assertEqual(gate.boundary_evidence_summary([row])['unsupportedCandidates'],0)
+        self.assertEqual(gate.boundary_evidence_summary([row])['rejectedAnchorCandidates'],1)
 
     def test_ambiguity_is_preserved_not_arbitrarily_selected(self):
         raw=b'\x1e'+(struct.pack('<I',7)+b'fixture')*2
@@ -113,12 +117,58 @@ class BuffCandidateTests(unittest.TestCase):
         continued=candidate['currentRootContinuation']
         self.assertEqual(continued['startOffset'],candidate['currentEventPrefix']['consumedEnd'])
         self.assertEqual(continued['consumedEnd'],len(prefix+segment))
+        self.assertEqual(continued['boundaryClass'],'structural-prefix')
+        self.assertEqual(continued['parserCursor'],continued['consumedEnd'])
+        self.assertEqual(continued['hardLimit'],candidate['anchorOffset'])
+        self.assertEqual(candidate['boundaryClass'],'structural-prefix')
         self.assertEqual(continued['opaqueRemainderRange'],[len(prefix+segment),len(raw)])
         bad=prefix+b'\xff'+struct.pack('<i',-2)+_normal()[1:]
         row=self.frame(bad)
         self.assertEqual(row['eventPrefixStatus'],'success')
         self.assertEqual(row['rootContinuationStatus'],'failed')
         self.assertEqual(row['candidates'][0]['currentRootContinuation']['diagnostic']['category'],'count-bounds')
+
+    def test_boundary_summary_keeps_closed_prefix_opaque_and_uncertain_counts_separate(self):
+        rows=[
+            {'boundaryClass':'ambiguous','candidates':[
+                {'boundaryClass':'structural-prefix','exactClosedActionRecords':2,
+                 'opaqueByteRanges':[{'start':20,'end':30,'kind':'opaque-before-hard-limit'}]}]},
+            {'boundaryClass':'unsupported','candidates':[
+                {'boundaryClass':'unsupported','exactClosedActionRecords':1,
+                 'opaqueByteRanges':[{'start':8,'end':13,'kind':'opaque-before-hard-limit'},
+                                     {'start':13,'end':17,'kind':'opaque-after-hard-limit'}]}]},
+            {'boundaryClass':'failed','candidates':[
+                {'boundaryClass':'failed','exactClosedActionRecords':0,'opaqueByteRanges':[]}]},
+            {'boundaryClass':'unsupported','candidates':[
+                {'boundaryClass':'rejected-anchor','exactClosedActionRecords':0,'opaqueByteRanges':[]}]},
+        ]
+        summary=gate.boundary_evidence_summary(rows)
+        self.assertEqual(summary['exactClosedActionRecords'],3)
+        self.assertEqual(summary['structuralPrefixCandidates'],1)
+        self.assertEqual(summary['opaqueBytesByCandidate'],19)
+        self.assertEqual(summary['unsupportedCandidates'],1)
+        self.assertEqual(summary['failedCandidates'],1)
+        self.assertEqual(summary['rejectedAnchorCandidates'],1)
+        self.assertEqual(summary['ambiguousFiles'],1)
+        self.assertIn('whole-record',summary['boundary'])
+
+    def test_joined_boundaries_bind_input_identity_hash_and_hard_limit(self):
+        data=_normal()
+        with tempfile.TemporaryDirectory() as temp:
+            path=Path(temp)/'fixture.chk';path.write_bytes(data)
+            identity=_ledger_row(path,data)
+            rows=gate.join_and_frame([identity],[_stream_row(data)],stderr='Streamed 1 files\n')
+        candidate=rows[0]['candidates'][0]
+        context=candidate['boundaryContext']
+        self.assertEqual(context['inputSetSha256'],'A'*64)
+        self.assertEqual(context['logicalFileIdentity'],identity['virtualPath'])
+        self.assertEqual(context['logicalSha256'],rows[0]['logicalSha256'])
+        self.assertEqual(context['startOffset'],candidate['startOffset'])
+        self.assertEqual(context['hardLimit'],candidate['anchorOffset'])
+        profile=candidate.get('currentRootContinuation') or candidate['currentEventPrefix']
+        self.assertEqual(profile['boundaryContext'],context)
+        self.assertEqual(profile['parserCursor'],profile['consumedEnd'])
+        self.assertEqual(candidate['byteRanges'],profile['ranges'])
 
     def test_current_event_profile_has_independent_status_and_bounded_gap(self):
         raw=b'\x1e'+bytes(4)+_normal()[1:]
@@ -180,6 +230,53 @@ class BuffJoinTests(unittest.TestCase):
         self.assertEqual(rows[0]['coverageStatus'],'unique')
         self.assertEqual(rows[0]['logicalSha256'],hashlib.sha256(self.data).hexdigest().upper())
         self.assertEqual(gate.frame_candidates(_payload(),source='fixture.json')['coverageStatus'],'unsupported')
+
+    def test_tag10c_corpus_report_closes_frame_and_keeps_candidate_tail_opaque(self):
+        prefix=b'\x1e'+struct.pack('<i',0)
+        action=(b'\xfa\x0c\x01\x06'+b'\x01'+struct.pack('<III',1,2,3)+
+                struct.pack('<i',3)+b'xyz'+b'\x00\x00\xf0\x41')
+        root_before_action=(b'\xff'+struct.pack('<i',0)+b'\xff'+struct.pack('<i',0)+
+            struct.pack('<i',1)+b'\x02'+struct.pack('<i',1)+b'\x03'+struct.pack('<i',1))
+        action_start=len(prefix)+len(root_before_action)
+        anchor=prefix+root_before_action+action+b'\x00\x00'+bytes(4)
+        hard_limit=len(anchor)
+        marker=struct.pack('<I',7)+b'fixture'
+        self.data=anchor+marker+b'opaque-tail'
+        self.path.write_bytes(self.data)
+        self.ledger=_ledger_row(self.path,self.data)
+        with mock.patch.object(gate,'decode_buff_post_id_prefix_at',return_value={
+                'status':'parsed-through-exact-tail','endOffset':hex(len(self.data))}), \
+             mock.patch.object(gate,'buff_post_id_result_is_exact_tail',return_value=True):
+            report=self.build()
+
+        self.assertEqual(report['inputSetSha256'],'A'*64)
+        self.assertEqual(report['status'],'complete')
+        self.assertFalse(report['wholeSchemaExact'])
+        row=report['files'][0]
+        candidate=row['candidates'][0]
+        context=candidate['boundaryContext']
+        self.assertEqual(context['inputSetSha256'],'A'*64)
+        self.assertEqual(context['logicalFileIdentity'],self.ledger['virtualPath'])
+        self.assertEqual(context['logicalSha256'],hashlib.sha256(self.data).hexdigest().upper())
+        self.assertEqual(context['hardLimit'],hard_limit)
+        profile=candidate['currentRootContinuation']
+        self.assertEqual((profile['parserCursor'],profile['hardLimit']),(hard_limit,hard_limit))
+        self.assertEqual(profile['boundaryClass'],'structural-prefix')
+        closed=[record for record in profile['completedRecords']
+                if record.get('kind')=='union' and record.get('tag')==268]
+        self.assertEqual(len(closed),1)
+        self.assertEqual((closed[0]['start'],closed[0]['end']),
+                         (action_start,action_start+len(action)))
+        self.assertEqual(closed[0]['boundaryClass'],'exact-closed')
+        self.assertEqual(closed[0]['hardLimit'],hard_limit)
+        self.assertEqual(closed[0]['boundaryContext'],{
+            **context,'recordRange':[action_start,action_start+len(action)]})
+        self.assertEqual(profile['opaqueByteRanges'],[
+            {'start':hard_limit,'end':len(self.data),'kind':'opaque-after-hard-limit'}])
+        summary=report['summary']['byteBoundaryEvidence']
+        self.assertEqual(summary['exactClosedActionRecords'],1)
+        self.assertGreater(summary['opaqueBytesByCandidate'],0)
+        self.assertEqual(summary['structuralPrefixCandidates'],1)
 
     def test_ledger_identity_offset_count_and_fingerprint_failures(self):
         for change in ({'offset':1},{'length':True},{'inputSetSha256':'B'*64},{'encrypted':False},

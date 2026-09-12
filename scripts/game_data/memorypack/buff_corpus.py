@@ -28,6 +28,27 @@ BOUNDARY=('Authenticated current VFS logical bytes and a 30-member envelope witn
           'No field labels, runtime behavior or whole-schema exactness are promoted.')
 
 
+def _profile_boundary(profile, *, file_length):
+    if profile is None:return None
+    if not all(key in profile for key in ('status','consumedEnd','readLimit')):return profile
+    status=profile['status']
+    profile['boundaryClass']={'supported-prefix':'structural-prefix',
+        'unsupported':'unsupported','failed':'failed'}.get(status,'unsupported')
+    cursor=profile['consumedEnd'];hard_limit=profile['readLimit']
+    profile['parserCursor']=cursor;profile['hardLimit']=hard_limit
+    opaque=[]
+    if cursor<hard_limit:opaque.append({'start':cursor,'end':hard_limit,'kind':'opaque-before-hard-limit'})
+    if hard_limit<file_length:opaque.append({'start':hard_limit,'end':file_length,'kind':'opaque-after-hard-limit'})
+    profile['opaqueByteRanges']=opaque
+    for record in profile.get('completedRecords',[]):
+        if record.get('kind')=='union':
+            record['boundaryClass']='exact-closed'
+            record['hardLimit']=hard_limit
+    profile['exactClosedActionRecords']=sum(
+        record.get('kind')=='union' for record in profile.get('completedRecords',[]))
+    return profile
+
+
 def select_rows(rows, *, expected_input):
     return vfs.family_rows(rows,expected_input=expected_input,prefix=PREFIX,pattern=PATTERN,label='buff')
 
@@ -53,8 +74,10 @@ def frame_candidates(data: bytes, *, source: str) -> dict:
         prefix_probe=None;current_prefix=None;continuation=None
         if accepted:
             current_prefix=event_prefix(data,source=source,limit=at)
+            _profile_boundary(current_prefix,file_length=len(data))
             if current_prefix['status']=='supported-prefix':
                 continuation=root_continuation(data,source=source,start=current_prefix['consumedEnd'],limit=at)
+                _profile_boundary(continuation,file_length=len(data))
             prefix=decode_buff_pre_id_modifier_prefix(data,at)
             prefix_end=prefix.get('endOffset')
             stop=int(prefix_end,0) if isinstance(prefix_end,str) else None
@@ -65,11 +88,21 @@ def frame_candidates(data: bytes, *, source: str) -> dict:
                 'remainingGapRange':[stop,at] if stop is not None else None,
                 'diagnostic':prefix.get('error') or prefix.get('abilityEventActionDecodeError'),
                 'semanticStatus':'structural-only; legacy labels not promoted'}
+        selected_profile=continuation or current_prefix
+        candidate_class=(selected_profile or {}).get('boundaryClass','rejected-anchor')
         result['candidates'].append({'anchorOffset':at,'suffixStart':at+len(marker),
             'readerStatus':decoded.get('status'),'readerTailStatus':decoded.get('tailParseStatus'),
             'readerAcceptedThroughEof':accepted,'readerEndOffset':end,
             'opaquePrefixRange':[1,at],
             'readerInternalOpaqueRangesCertified':False,
+            'boundaryClass':candidate_class,
+            'startOffset':selected_profile.get('startOffset',0) if selected_profile else 0,
+            'hardLimit':at,
+            'parserCursor':selected_profile.get('parserCursor') if selected_profile else None,
+            'byteRanges':selected_profile.get('ranges',[]) if selected_profile else [],
+            'opaqueByteRanges':selected_profile.get('opaqueByteRanges',[]) if selected_profile else [],
+            'exactClosedActionRecords':sum(profile.get('exactClosedActionRecords',0)
+                for profile in (current_prefix,continuation) if profile),
             'prefixProbe':prefix_probe,
             'currentEventPrefix':current_prefix,
             'currentRootContinuation':continuation,
@@ -83,9 +116,12 @@ def frame_candidates(data: bytes, *, source: str) -> dict:
     root_status=('failed' if event_status=='failed' or any(c['status']=='failed' for c in continuations) else
                  'ambiguous' if count>1 else
                  'success' if count==1 and len(continuations)==1 and continuations[0]['status']=='supported-prefix' else 'unsupported')
+    boundary_class=('failed' if root_status=='failed' else 'ambiguous' if root_status=='ambiguous' else
+                    'structural-prefix' if root_status=='success' else 'unsupported')
     return {**result,'candidateCount':count,'anchorCount':len(positions),
         'eventPrefixStatus':event_status,
         'rootContinuationStatus':root_status,
+        'boundaryClass':boundary_class,
         'coverageStatus':'unsupported' if count==0 else 'ambiguous' if count>1 else 'unique'}
 
 
@@ -110,7 +146,20 @@ def join_and_frame(ledger, stream, *, stderr):
         except (ValueError,IndexError,KeyError,OverflowError,struct.error) as exc:
             framed={'coverageStatus':'failed','wholeSchemaExact':False,'candidateCount':0,
                 'diagnostic':getattr(exc,'diagnostic',{'source':path,'offset':None,'expected':'bounded suffix-candidate reader','actual':f'{type(exc).__name__}: {exc}'})}
-        results.append({'identity':identity,'logicalSha256':hashlib.sha256(data).hexdigest().upper(),**framed})
+        logical_sha=hashlib.sha256(data).hexdigest().upper()
+        for candidate in framed.get('candidates',[]):
+            context={'inputSetSha256':identity['inputSetSha256'],
+                'logicalFileIdentity':identity['virtualPath'],'logicalSha256':logical_sha,
+                'startOffset':candidate['startOffset'],'hardLimit':candidate['hardLimit']}
+            candidate['boundaryContext']=context
+            for profile in (candidate.get('currentEventPrefix'),candidate.get('currentRootContinuation')):
+                if profile is not None:
+                    profile['boundaryContext']=context
+                    for record in profile.get('completedRecords',[]):
+                        if record.get('boundaryClass')=='exact-closed':
+                            record['boundaryContext']={**context,
+                                'recordRange':[record['start'],record['end']]}
+        results.append({'identity':identity,'logicalSha256':logical_sha,**framed})
     missing=sorted(set(by_path)-seen)
     if missing:vfs._fail('stream-missing-identities',source='BuffData stream',actual=missing[:10])
     matches=re.findall(r'(?m)^Streamed ([0-9]+) files\s*$',stderr)
@@ -128,6 +177,25 @@ def _stream_command(cli_path: Path, outer) -> list[str]:
         '--verify-md5',
         '--file-regex', PATTERN.pattern,
     ]
+
+
+def boundary_evidence_summary(rows):
+    candidates=[candidate for row in rows for candidate in row.get('candidates',[])]
+    exact_closed=sum(candidate.get('exactClosedActionRecords',0) for candidate in candidates)
+    structural_prefix=sum(candidate.get('boundaryClass')=='structural-prefix' for candidate in candidates)
+    opaque_bytes=sum(span['end']-span['start'] for candidate in candidates
+        for span in candidate.get('opaqueByteRanges',[]))
+    return {'exactClosedActionRecords':exact_closed,
+        'structuralPrefixCandidates':structural_prefix,
+        'opaqueBytesByCandidate':opaque_bytes,
+        'unsupportedCandidates':sum(candidate.get('boundaryClass')=='unsupported' for candidate in candidates),
+        'failedCandidates':sum(candidate.get('boundaryClass')=='failed' for candidate in candidates),
+        'rejectedAnchorCandidates':sum(candidate.get('boundaryClass')=='rejected-anchor' for candidate in candidates),
+        'ambiguousFiles':sum(row.get('boundaryClass')=='ambiguous' for row in rows),
+        'boundary':'Ranges are zero-based and half-open. Exact closures count completed anonymous union records only. Structural-prefix candidates '
+        'do not establish whole-record or whole-file completion. Opaque bytes are unconsumed ranges from the '
+        'bounded candidate parsers; alternate ambiguous candidates are counted separately. Rejected filename anchors '
+        'with no current parser run are reported separately from unsupported parser results.'}
 
 
 def _read_stream_rows(command: list[str]) -> tuple[list[dict], str]:
@@ -197,7 +265,7 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
         for status in ('failed','unsupported')}
     root_summary={'total':len(rows),**{s:root_counts[s] for s in ('success','failed','unsupported','ambiguous')},
         'failureCategories':{s:dict(sorted(v.items())) for s,v in root_categories.items()},
-        'boundary':'Success requires a supported first collection followed by selected root members 2-6. '
+        'boundary':'Success means only a structural prefix: a supported first collection followed by selected root members 2-6. '
         'Continuation ranges begin at currentEventPrefix.consumedEnd. The remaining physical-file bytes '
         'stay opaque; neither suffix-anchor ownership nor whole-schema EOF is established.'}
     failed=bool(counts['failed'] or event_counts['failed'] or root_counts['failed'])
@@ -209,10 +277,11 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
             'filesFailed':counts['failed'],'filesUnsupported':counts['unsupported'],
             'filesUnique':counts['unique'],'filesAmbiguous':counts['ambiguous'],
             'filesWithMultipleAnchors':sum(row.get('anchorCount',0)>1 for row in rows),
-            'acceptedSuffixPrefixStatusCounts':dict(sorted(prefix_counts.items())),
-            'currentEventPrefix':event_summary,
-            'currentRootContinuation':root_summary,
-            'logicalBytes':sum(row['length'] for row in selected)},
+             'acceptedSuffixPrefixStatusCounts':dict(sorted(prefix_counts.items())),
+             'currentEventPrefix':event_summary,
+             'currentRootContinuation':root_summary,
+             'byteBoundaryEvidence':boundary_evidence_summary(rows),
+             'logicalBytes':sum(row['length'] for row in selected)},
         'identitySetSha256':vfs._canonical_sha256([{'identity':r['identity'],'logicalSha256':r['logicalSha256']} for r in rows]),'files':rows}
 
 

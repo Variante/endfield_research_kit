@@ -132,6 +132,12 @@ def tag26(first=b'\xfe',scalars=(0xffffffff,0x80000000,0x7fc00000),target_value=
     return tag+b'\x05'+first+struct.pack('<III',*scalars)+target_value
 
 
+def tag10c(first=b'\x01',scalars=(0xffffffff,0x80000000,0x7fc00000),payload=b'tarpoint',float_bits=b'\x00\x00\xf0\x41'):
+    payload_length=-1 if payload is None else len(payload)
+    payload_frame=struct.pack('<i',payload_length)+(b'' if payload is None else payload)
+    return b'\xfa\x0c\x01\x06'+first+struct.pack('<III',*scalars)+payload_frame+float_bits
+
+
 def tagbb(first=b'\xff',second=b'\xff'):
     return b'\xbb\x06\xfe'+b'\xff'*12+first+second
 
@@ -9589,6 +9595,90 @@ class BuffActionsTests(unittest.TestCase):
         with self.assertRaises(FrameError) as caught:r.action(0)
         self.assertEqual(caught.exception.diagnostic['category'],'truncated')
         self.assertFalse(any(v.get('tag')==38 for v in r.records))
+
+    def test_tag10c_signed_byte_payload_and_float32_frame(self):
+        for payload in (None,b'',b'tarpoint'):
+            for first in (0,1,255):
+                child=tag10c(first=bytes((first,)),payload=payload)
+                r=Reader(child,'10c-frame');r.action(0)
+                self.assertEqual(r.pos,len(child))
+                self.assertIn(dict(start=0,end=len(child),kind='union',tag=268),r.records)
+                self.assertIn(dict(start=4,end=5,kind='anonymous-byte'),r.ranges)
+                body=next(v for v in r.records if v['kind']=='anonymous-byte-payload')
+                self.assertEqual((body['start'],body['end'],body['isNull']),
+                                 (17,21+(0 if payload is None else len(payload)),payload is None))
+                self.assertEqual(r.ranges[-1],dict(start=len(child)-4,end=len(child),kind='anonymous-float32-bits'))
+                self.assertEqual([v for v in r.ranges if v['kind']=='anonymous-scalar32'],[
+                    dict(start=5,end=9,kind='anonymous-scalar32'),
+                    dict(start=9,end=13,kind='anonymous-scalar32'),
+                    dict(start=13,end=17,kind='anonymous-scalar32')])
+
+        null_wrapper=b'\xfa\x0c\x01\xff';r=Reader(null_wrapper,'10c-null-wrapper');r.action(0)
+        self.assertEqual(r.pos,len(null_wrapper))
+        self.assertIn(dict(start=0,end=4,kind='union',tag=268),r.records)
+
+    def test_tag10c_every_cut_header_count_bounds_and_trailing(self):
+        children=(tag10c(payload=None),tag10c(payload=b''),tag10c(),b'\xfa\x0c\x01\xff')
+        for child in children:
+            r=Reader(child,'10c-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'10c-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==268 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+
+        full=tag10c();bad=bytearray(full);bad[3]=5;r=Reader(bad,'10c-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,dict(source='10c-header',offset=3,expected=6,actual=5,category='member-count'))
+        self.assertFalse(any(v.get('tag')==268 for v in r.records))
+
+        for value in (-2,0x7fffffff):
+            bad=bytearray(full);struct.pack_into('<i',bad,17,value);r=Reader(bad,'10c-count')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['offset'],17)
+            self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+            self.assertFalse(any(v.get('tag')==268 for v in r.records))
+
+        r=Reader(full,'10c-tail-reserve',len(full)-4)
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['offset'],17)
+        self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+        self.assertFalse(any(v.get('tag')==268 for v in r.records))
+        for limit in (-1,len(full)+1,True):
+            with self.subTest(limit=limit),self.assertRaises(FrameError):Reader(full,'10c-invalid-limit',limit)
+        for tail in (b'\x00',b'\xff'):
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(full)+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag10c_nested_truncation_and_unknown_child_keep_parent_open(self):
+        child=tag10c();nested=sequence(child);child_start=5;child_end=child_start+len(child)
+        for limit in range(child_start,child_end):
+            outcomes=[]
+            for data in (nested,nested[:limit],nested[:limit]+b'\xff'*(len(nested)-limit)):
+                r=Reader(data,'10c-nested-cut',limit)
+                with self.assertRaises(FrameError) as caught:r.sequence()
+                self.assertFalse(any(v['kind']=='sequence' for v in r.records))
+                self.assertFalse(any(v.get('tag')==268 for v in r.records))
+                outcomes.append((caught.exception.diagnostic,r.pos,r.ranges))
+            self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[0],outcomes[2])
+
+        unknown=sequence(child,b'\xfe');r=Reader(unknown,'10c-unknown-child')
+        with self.assertRaises(Unsupported) as caught:r.sequence()
+        self.assertEqual(caught.exception.diagnostic['offset'],child_end)
+        self.assertEqual(caught.exception.diagnostic['category'],'union-tag')
+        self.assertTrue(any(v.get('tag')==268 for v in r.records))
+        self.assertFalse(any(v['kind']=='sequence' for v in r.records))
+
+    def test_sequence_zero_tail_bytes_are_recorded_without_value_constraints(self):
+        data=sequence(tag10c(),tail=b'\x00\x00')
+        r=Reader(data,'10c-sequence-tail');r.sequence()
+        self.assertEqual(r.pos,len(data))
+        self.assertEqual(r.ranges[-2:],[
+            dict(start=len(data)-2,end=len(data)-1,kind='anonymous-byte'),
+            dict(start=len(data)-1,end=len(data),kind='anonymous-byte')])
 
     def test_tagbb_two_independent_targets_end_before_next_union(self):
         for first in (b'\xff',target()):

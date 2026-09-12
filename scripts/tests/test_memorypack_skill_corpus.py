@@ -79,6 +79,52 @@ class SkillDataCurrentCorpusTests(unittest.TestCase):
         self.assertEqual({"start": 0, "end": 10, "endExclusive": True}, item["candidateCoverage"][0]["prefixCertifiedRange"])
         self.assertEqual({"start": 10, "end": 11, "length": 1}, item["candidateCoverage"][0]["opaqueGap"])
         self.assertFalse(item["wholeSchemaExact"])
+        self.assertEqual(item["boundaryClass"], "structural-prefix")
+        self.assertEqual(item["inputSetSha256"], "A" * 64)
+        self.assertEqual(item["boundaryContext"]["logicalFileIdentity"], item["virtualPath"])
+        self.assertEqual(item["boundaryContext"]["logicalSha256"], item["logicalSha256"])
+        self.assertEqual(item["boundaryContext"]["parserCursor"], 10)
+        self.assertEqual(item["boundaryContext"]["hardLimit"], len(self.data))
+        candidate = item["framing"]["candidates"][0]
+        self.assertEqual(candidate["boundaryClass"], "structural-prefix")
+        self.assertEqual(candidate["boundaryContext"]["startOffset"], 11)
+        self.assertEqual(candidate["boundaryContext"]["parserCursor"], len(self.data))
+        self.assertEqual(candidate["boundaryContext"]["hardLimit"], len(self.data))
+        self.assertEqual(candidate["byteRanges"][0]["start"], 11)
+        self.assertEqual(item["byteRanges"][-1]["end"], 10)
+        boundary = gate._boundary_evidence_summary(rows)
+        self.assertEqual(boundary["exactClosedRecords"], 0)
+        self.assertEqual(boundary["filesWithStructuralPrefix"], 1)
+        self.assertEqual(boundary["opaqueBytesByCandidate"], 1)
+        self.assertEqual(boundary["opaqueBytesAtFileLevel"], 1)
+
+    def test_one_byte_terminal_collision_stays_ambiguous_with_bound_candidate_cursors(self) -> None:
+        self.data = bytes([48, 2]) + struct.pack("<II", 0, 0) + b"\x00\x01" + struct.pack("<III", 0, 0, 0) + b"\x00"
+        self.chunk.write_bytes(self.data)
+        self.row = _ledger_row(self.chunk, self.data)
+        rows, statuses, coverage = gate._join_and_frame(
+            [self.row], [_stream_row(self.data)], stderr="Streamed 1 files\n"
+        )
+        self.assertEqual({"ambiguous-disjoint-independent-ranges": 1}, coverage)
+        item = rows[0]
+        self.assertEqual(item["boundaryClass"], "ambiguous")
+        candidates = item["framing"]["candidates"]
+        self.assertEqual([int(row["startOffset"], 0) for row in candidates], [10, 11])
+        for candidate in candidates:
+            self.assertEqual(candidate["boundaryClass"], "ambiguous")
+            self.assertEqual(candidate["parserCursor"], len(self.data))
+            self.assertEqual(candidate["hardLimit"], len(self.data))
+            self.assertEqual(candidate["boundaryContext"]["inputSetSha256"], "A" * 64)
+            self.assertEqual(candidate["boundaryContext"]["logicalFileIdentity"], item["virtualPath"])
+            self.assertEqual(candidate["boundaryContext"]["logicalSha256"], item["logicalSha256"])
+        self.assertEqual(item["opaqueByteRanges"], [])
+        boundary = gate._boundary_evidence_summary(rows)
+        self.assertEqual(boundary["exactClosedRecords"], 0)
+        self.assertEqual(boundary["filesWithStructuralPrefix"], 1)
+        self.assertEqual(boundary["ambiguousFiles"], 1)
+        self.assertEqual(boundary["unsupportedFiles"], 0)
+        self.assertEqual(boundary["opaqueBytesByCandidate"], 1)
+        self.assertEqual(boundary["opaqueBytesAtFileLevel"], 0)
 
     def test_overlap_is_reported_unsupported_not_filtered(self) -> None:
         fake_prefix = {"cursorOffset": "0xa"}

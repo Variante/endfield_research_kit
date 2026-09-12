@@ -274,8 +274,12 @@ branch with complete record ranges. The gate joins current decrypted stream
 bytes to every selected outer-ledger identity and checks overlay, raw chunks,
 CLI and parser provenance at both ends. Historical census rebinding is rejected.
 Unique, ambiguous, unsupported and failed rows remain explicit; no candidate
-establishes whole-schema ownership. Partial `--max-files` outputs must stay in
-`tmp/` or `scratch/`.
+establishes whole-schema ownership. Each prefix/candidate binds the input-set
+hash, logical identity/hash, `[start, hardLimit)`, grammar parser cursor, byte
+ranges and opaque ranges. The aggregate keeps independently closed records,
+structural-prefix evidence, ambiguity, unsupported/failed rows and opaque-byte
+counts distinct; candidate EOF cursors do not certify the active formatter.
+Partial `--max-files` outputs must stay in `tmp/` or `scratch/`.
 `memorypack.corpus_gate` owns shared outer-ledger, overlay, fingerprint and output
 guards. `memorypack.buff_corpus` joins the full current BuffData stream and retains
 every filename-string anchor and reader-accepted suffix candidate, without
@@ -285,6 +289,9 @@ The report partitions selected files into successful candidate framing, failed
 reader execution and unsupported shapes; uniqueness is only within that reader.
 Each accepted BuffData suffix also records a hard-bounded prefix-reader stop and
 remaining gap, with prefix support counted separately from suffix acceptance.
+The report binds its parser cursor and closed action ranges to current input-set
+and logical-file identities, and keeps exact action closures, structural
+prefixes, opaque bytes, rejected anchors and unsupported results separate.
 `memorypack.buff_actions` owns the independent anonymous event-prefix grammar;
 its per-candidate scalar/record spans and explicit opaque remainder have a separate
 success/failed/unsupported/ambiguous census. Malformed prefixes fail the corpus
