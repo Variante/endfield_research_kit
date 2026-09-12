@@ -743,6 +743,13 @@ pool exhaustion remains failed evidence. See the capture ECS guide for capacity
 and receipt contracts. A completed live graphics schedule alone is insufficient
 for sessions made before aggregate budget checks were shared.
 
+Managed post callback absence must remain distinct from window rejection or
+disabled effects. The pinned CPP render-request producer inlines radial and
+chromatic parameter conversion; bridge snapshots retain those raw inputs with
+independent read/change failures. They do not establish native post execution,
+allocation continuity, or GPU consumption and cannot replace the post gate.
+See the capture environment observer guide for the snapshot contract.
+
 ## Reference and comparison policy
 
 - Keep one named clean retail sequence as the primary visual reference and
