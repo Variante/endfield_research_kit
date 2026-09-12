@@ -1,0 +1,123 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123408,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TagQueryListenerAction_DataForMemoryPack+Beyond_Gameplay_Core_TagQueryListenerAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      58138064
+    ],
+    [
+      123407,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TagQueryListenerAction_DataForMemoryPack",
+      "Deserialize",
+      58138160
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58138064,
+      "endRva": 58138157,
+      "sha256": "E855B7C3F67A45C923570D9A8E56153ACB04711938275536218600CD18A2A213",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 58138160,
+      "endRva": 58138786,
+      "sha256": "0A93557AE19DC9A81A3F51A8DDB0BD106ECECA673BF42AD9EC72F0277091407F",
+      "boundary": "header-nine source reads, initialization and return"
+    },
+    {
+      "startRva": 81975408,
+      "endRva": 81975421,
+      "sha256": "4A3ADBEED2936C213EEC37A6596C2B063F54E0181A28ABB0EA0BDD769C8F26F3",
+      "boundary": "existing-output branch"
+    },
+    {
+      "startRva": 81975477,
+      "endRva": 81975498,
+      "sha256": "2872C1B30F9D26754D08229632754BF9E290CD6AE9B0AE959C16C8A7A42E364F",
+      "boundary": "FF-clear branch and rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58138438,
+      "instructionHex": "4C8B050B2F8809",
+      "cellVa": 6660509272,
+      "usageRawHex": "37CC0FC000000000",
+      "methodSpecIndex": 517659,
+      "methodSpec": [
+        428464,
+        -1,
+        12732
+      ],
+      "argumentRawHex": "AA2D0000000000000000118000000000",
+      "typeDefinition": 11690,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58138507,
+      "instructionHex": "488B15D62E8809",
+      "cellVa": 6660509288,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 58138582,
+      "instructionHex": "488B155B4C8B09",
+      "cellVa": 6660713528,
+      "usageRawHex": "6DE812C000000000",
+      "methodSpecIndex": 619574,
+      "methodSpec": [
+        428448,
+        -1,
+        42540
+      ],
+      "argumentRawHex": "B5260000000000000000118000000000",
+      "typeDefinition": 9909,
+      "typeName": "Beyond.Gameplay.Core.TagQueryListenerAction+TagQueryListenerType",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 58138622,
+      "instructionHex": "488B15434C8B09",
+      "cellVa": 6660713544,
+      "usageRawHex": "7FE612C000000000",
+      "methodSpecIndex": 619327,
+      "methodSpec": [
+        428448,
+        -1,
+        12752
+      ],
+      "argumentRawHex": "79050000000000000000118000000000",
+      "typeDefinition": 1401,
+      "typeName": "Beyond.Gameplay.PredefinedQuery",
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member9": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "GameplayTagQuery",
+      "SequenceActionData",
+      "byte",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Tag 0x179 routes to the registered TagQueryListenerAction reader. The header-nine selected source order is byte, three DWORD reads, GameplayTagQuery, SequenceActionData, byte, TagQueryListenerType DWORD, and PredefinedQuery DWORD. The direct tail values remain anonymous: matching MethodSpec contexts identify input types but do not establish enum value meanings or gameplay behavior. The maintained profile reuses separately bounded query and sequence readers; live generic-provider selection, successful runtime allocation/reuse, enclosing ownership, and whole-BuffData EOF remain unresolved."
+}

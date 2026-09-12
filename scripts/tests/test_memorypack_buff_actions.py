@@ -1034,6 +1034,12 @@ def tag85(first_scalar=b'\xff',second_scalar=b'\xff',last_target=b'\xff',*,exten
     return (tag+b'\x0a\xfe'+struct.pack('<IIIII',*words[:5])+first_scalar+
             struct.pack('<I',words[5])+second_scalar+last_target)
 
+
+def tag179(query=b'\xff',actions=b'\xff',flag=0x80,
+           dwords=(0xffffffff,0x80000000,0x7fc00000,0x01020304,0xfedcba98)):
+    return (b'\xfa\x79\x01\x09\xfe'+struct.pack('<III',*dwords[:3])+query+actions+
+            bytes([flag])+struct.pack('<II',*dwords[3:]))
+
 class BuffActionsTests(unittest.TestCase):
 
     def test_16c_keyword_edit_nested_states_and_terminal_targets(self):
@@ -1233,6 +1239,68 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic,
                          dict(source='85-target-header',offset=target_start,expected=13,actual=12,category='member-count'))
         self.assertFalse(any(x.get('tag')==133 for x in r.records))
+
+    def test_179_query_sequence_source_order_and_nested_states(self):
+        query_states=(b'\xff',query41(),query41((0xffffffff,0x80000000)),
+                      b'\x02'+struct.pack('<I',0xffffffff)+struct.pack('<i',-1))
+        sequence_states=(b'\xff',sequence(),sequence(tag85()))
+        for query in query_states:
+            for actions in sequence_states:
+                for flag in (0,1,255):
+                    data=tag179(query,actions,flag)
+                    r=Reader(data,'179-normal');r.action(0)
+                    self.assertEqual(r.pos,len(data))
+                    self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=377))
+                    query_start=17;sequence_start=query_start+len(query)
+                    self.assertIn(dict(start=query_start,end=sequence_start,kind='anonymous-query-profile'),r.records)
+                    sequence_end=sequence_start+len(actions)
+                    self.assertIn(dict(start=sequence_start,end=sequence_end,kind='sequence'),r.records)
+                    tail_ranges=[v for v in r.ranges if v['start']>=sequence_end]
+                    self.assertEqual([(v['start'],v['end'],v['kind']) for v in tail_ranges],
+                                     [(sequence_end,sequence_end+1,'anonymous-byte'),
+                                      (sequence_end+1,sequence_end+5,'anonymous-scalar32'),
+                                      (sequence_end+5,sequence_end+9,'anonymous-scalar32')])
+                    self.assertEqual(data[sequence_end],flag)
+
+    def test_179_all_cuts_headers_counts_unknown_children_and_tail(self):
+        data=tag179(query41((0,0xffffffff)),sequence(tag85()),flag=0)
+        for cut in range(len(data)):
+            outcomes=[]
+            for raw in (data,data[:cut],data[:cut]+b'\xff'*8):
+                r=Reader(raw,'179-cut',cut)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertLessEqual(r.pos,cut)
+                self.assertFalse(any(v.get('tag')==377 for v in r.records))
+                outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+            self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+
+        bad_header=bytearray(tag179());bad_header[3]=8
+        r=Reader(bad_header,'179-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,
+                         dict(source='179-header',offset=3,expected=9,actual=8,category='member-count'))
+
+        bad_query=b'\x02'+bytes(4)+struct.pack('<i',-2)
+        r=Reader(tag179(query=bad_query),'179-query-count')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+        self.assertEqual(caught.exception.diagnostic['offset'],22)
+
+        bad_sequence=b'\x03'+struct.pack('<i',-2)+bytes(2)
+        r=Reader(tag179(actions=bad_sequence),'179-sequence-count')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+        self.assertEqual(caught.exception.diagnostic['offset'],19)
+
+        bad_child=b'\x03'+struct.pack('<i',1)+b'\x59\x00\x00'
+        r=Reader(tag179(actions=bad_child),'179-unknown-child')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['actual'],0x59)
+        self.assertFalse(any(v.get('tag')==377 for v in r.records))
+
+        r=Reader(data+b'\xaa','179-tail',len(data));r.action(0)
+        self.assertEqual(r.pos,len(data))
+        self.assertEqual(r.data[r.pos:],b'\xaa')
 
     def test_4e_list_element_scalar_and_payload_states(self):
         groups=(None,(),(b'\xff',),(mapping4e(),),

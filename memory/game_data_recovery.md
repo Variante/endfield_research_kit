@@ -989,6 +989,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   condition semantics, runtime provider selection and whole-BuffData EOF
   remain unresolved. The scalar and target children reuse their existing
   finite structural readers.
+  `scripts/game_data/buff_179_native.json` pins decimal union tag 377
+  (`0x179`) to the header-nine TagQueryListenerAction reader. After the common
+  byte/three-DWORD prefix, the selected reader consumes bounded
+  GameplayTagQuery and SequenceActionData profiles, then an anonymous byte and
+  two raw DWORDs. MethodSpec joins identify the nested types but do not establish
+  enum ordinal meanings, gameplay behavior, active generic-provider selection,
+  enclosing ownership, or whole-BuffData EOF.
   `scripts/game_data/buff_128_native.json` pins header-eleven RecoverPoise:
   common prefix, byte, EffectActionCfg, DWORD, byte, DWORD, CalculationBase
   and target. Reuse the bounded member85 configuration and calculation union

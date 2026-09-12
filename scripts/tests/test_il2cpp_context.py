@@ -249,11 +249,14 @@ class BuffIfElseForwardingTests(unittest.TestCase):
 class BuffUnionRouteTests(unittest.TestCase):
     def setUp(self):
         self.base=0x180000000
+        self.instruction_targets={0x3910906,0x3910104}
         self.parts={at:bytes.fromhex(raw) for at,raw in (
             (0x390D974,'488D5424384533C06689742438488BCFE8F7FEFFFF84C00F8422BD55010FB774243881FE9F0100000F87E0BC5501488D1557266FFC8B8CB2185391034803CAFFE1'),
             (0x390D8D2,'4080FEFA731C66418936B001'),
             (0x390D8F4,'754B837B30020F8C208A5501488B43500FB700664189068B7B3083EF020F881F8A550148834350028343400283434402897B30EBB3'),
             (0x390D941,'33C066418906EB95'),
+            (0x3910906,'488B157B027309'),
+            (0x3910104,'488B150D6B7109'),
             (0x4E66320,'4533C0BA02000000488BCBE82C2E8A0490E9CE75AAFE'),
             (0x4E696B3,'48893333D2E92543AAFE'),
             (0x417E68A,'488B0DE70FF20833D2E85872C2FE488BCF488BD8E87D4DE8FB4C8B0D9E87E70841B8C9000000488BD3488BCFE8B1EE18FC'),
@@ -537,6 +540,7 @@ class BuffUnionRouteTests(unittest.TestCase):
             (0x5E,0x390EF70,106482,16621,'Conditions_CheckDamageTypeMask_Data',None),
             (0x13B,0x39105E6,107011,16397,'SaveDamageContext_Data',None),
             (0x84,0x390F614,106521,16713,'Conditions_CheckWeaponTypeCondition_Data',None),
+            (0x85,0x3910906,106522,16715,'Conditions_CompareDeckAttr_Data',None),
             (0x174,0x3910D84,107160,16505,'StoreEntityProperty_Data',None),
             (0x41,0x390F740,106442,16617,'CheckDamageTransferredSource_Data',None),
             (0xA9,0x390E002,106594,16095,'EnemyHurtAnimAction_Data',None),
@@ -648,7 +652,8 @@ class BuffUnionRouteTests(unittest.TestCase):
             (284,0x390E066,106956,16335,'PullAction_Data',None),
             (140,0x390E836,106530,16035,'ConvertToTargetContext_Data',None),
             (78,0x390E930,106459,16027,'ComboCacheAction_Data',None),
-            (364,0x3910D20,107147,16211,'SpeedupAction_Data',None)):
+            (364,0x3910D20,107147,16211,'SpeedupAction_Data',None),
+            (377,0x3910104,107177,16515,'TagQueryListenerAction_Data',None)):
             namespace='View' if tag==0x19E else 'Core'
             targets[tag]=target;types[definition]='Beyond.MemoryPack.Beyond_Gameplay_'+namespace+'_'+suffix+'ForMemoryPack'
             pointer=self.base+index*16
@@ -659,7 +664,7 @@ class BuffUnionRouteTests(unittest.TestCase):
                 self.parts[cell]=struct.pack('<Q',(kind<<29)|(index<<1)|1)
         self.parts[0x3915318]=struct.pack('<416I',*targets)
         def read(va,size):
-            raw=self.parts[va-self.base]
+            raw=self.parts.get(va-self.base,bytes(size))
             return raw[:7] if size==7 else raw
         self.pe=SimpleNamespace(image_base=self.base,bytes_at_va=read,u64_at_va=lambda va:self.ptrs[va])
         self.md=SimpleNamespace(types=types,type_full_name=lambda t:t)
@@ -670,16 +675,21 @@ class BuffUnionRouteTests(unittest.TestCase):
             return buff_union_routes(self.pe,self.md,self.reg,{},[],source='fixture.dll')
 
     def test_current_tag_routes_do_not_alias_old_names(self):
-        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,372,65,169,98,316,144,187,11,43,277,337,319,320,152,374,147,373,252,131,314,134,99,107,119,392,391,313,394,309,290,92,387,47,348,367,5,58,76,336,167,414,8,288,159,27,135,82,142,293,292,335,113,112,345,22,376,193,257,199,411,296,356,207,299,44,295,171,246,380,390,185,244,307,330,349,55,298,324,347,7,395,412,138,331,358,370,40,258,398,206,23,173,408,407,145,388,223,31,183,240,85,54,32,168,35,362,111,353,284,140,78,364])
+        row=self.decode();self.assertEqual([r['tag'] for r in row['rows']],[201,192,64,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,133,372,65,169,98,316,144,187,11,43,277,337,319,320,152,374,147,373,252,131,314,134,99,107,119,392,391,313,394,309,290,92,387,47,348,367,5,58,76,336,167,414,8,288,159,27,135,82,142,293,292,335,113,112,345,22,376,193,257,199,411,296,356,207,299,44,295,171,246,380,390,185,244,307,330,349,55,298,324,347,7,395,412,138,331,358,370,40,258,398,206,23,173,408,407,145,388,223,31,183,240,85,54,32,168,35,362,111,353,284,140,78,364,377])
         self.assertIn('IfElse',row['rows'][0]['wrapperName'])
         self.assertIn('GainCost',row['rows'][1]['wrapperName'])
         self.assertEqual(next(r for r in row['rows'] if r['tag']==364)['wrapperName'],
                          'Beyond.MemoryPack.Beyond_Gameplay_Core_SpeedupAction_DataForMemoryPack')
+        self.assertEqual(next(r for r in row['rows'] if r['tag']==133)['wrapperName'],
+                         'Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CompareDeckAttr_DataForMemoryPack')
+        self.assertEqual(next(r for r in row['rows'] if r['tag']==377)['wrapperName'],
+                         'Beyond.MemoryPack.Beyond_Gameplay_Core_TagQueryListenerAction_DataForMemoryPack')
         self.assertEqual(next(r for r in row['rows'] if r['tag']==0x19E)['wrapperName'],'Beyond.MemoryPack.Beyond_Gameplay_View_AddCameraControlStateAction_AddCameraControlStateActionDataForMemoryPack')
 
     def test_truncated_trailing_corrupt_table_and_operands(self):
         for at,good in list(self.parts.items()):
-            for bad in (good[:-1],good+b'!',bytes(len(good))):
+            bad_rows=(good[:-1],bytes(len(good))) if at in self.instruction_targets else (good[:-1],good+b'!',bytes(len(good)))
+            for bad in bad_rows:
                 self.parts[at]=bad
                 with self.subTest(at=at,length=len(bad)),self.assertRaises(ContextError):self.decode()
             self.parts[at]=good
