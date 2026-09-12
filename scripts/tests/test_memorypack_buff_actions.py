@@ -1095,6 +1095,20 @@ def tag_e0(*,curves=(b'\xff',b'\xff'),scalars=(b'\xff',)*5,
     if len(members)!=54:raise AssertionError(f'tag E0 fixture has {len(members)} members')
     return b'\xe0'+bytes([header])+b''.join(members)
 
+
+def tag0d(*,effect=b'\xff',direction_bytes=b'\xff',scalars=(b'\xff',b'\xff'),
+          targets=(b'\xff',b'\xff'),prefix=0xfe,
+          dwords=(0xffffffff,0x80000000,0x7fc00000),slot6=0x80000001,
+          slot13=0x7fc00000,raw4=(0xff800000,0xdeadbeef),
+          byte_values=(0x00,0x80),header=16):
+    members=[bytes([prefix])]
+    members.extend(struct.pack('<I',value) for value in dwords)
+    members.extend((effect,struct.pack('<I',slot6),direction_bytes,scalars[0],scalars[1],
+        bytes([byte_values[0]]),struct.pack('<I',raw4[0]),bytes([byte_values[1]]),
+        struct.pack('<I',slot13),targets[0],struct.pack('<I',raw4[1]),targets[1]))
+    if len(members)!=16:raise AssertionError(f'tag 0D fixture has {len(members)} members')
+    return b'\x0d'+bytes([header])+b''.join(members)
+
 class BuffActionsTests(unittest.TestCase):
 
     def test_16c_keyword_edit_nested_states_and_terminal_targets(self):
@@ -7003,6 +7017,100 @@ class BuffActionsTests(unittest.TestCase):
         r=Reader(tag14e(short_query,b'\xff'),'14e-query-element')
         with self.assertRaises(FrameError) as caught:r.action(0)
         self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+
+    def test_tag_0d_null_and_positive_nested_profiles(self):
+        null_child=tag0d()
+        r=Reader(null_child,'0d-null');r.action(0)
+        self.assertEqual(r.pos,len(null_child))
+        self.assertEqual(r.records[-1],dict(start=0,end=len(null_child),kind='union',tag=13))
+        self.assertEqual(sum(v.get('kind')=='anonymous-effect-configuration-profile' for v in r.records),1)
+        self.assertEqual(sum(v.get('kind')=='anonymous-direction-profile' for v in r.records),1)
+        self.assertEqual(sum(v.get('kind')=='anonymous-scalar-payload' for v in r.records),2)
+        self.assertEqual(sum(v.get('kind')=='anonymous-target-profile' for v in r.records),2)
+        self.assertEqual([v['end']-v['start'] for v in r.ranges if v['kind']=='anonymous-raw4'],[4,4])
+        self.assertEqual(sequence_frame(sequence(null_child))[-1]['end'],len(sequence(null_child)))
+
+        positive=tag0d(
+            effect=effect85(),direction_bytes=direction(),
+            scalars=(scalar_payload(None,flag=0),scalar_payload(b'',flag=128)),
+            targets=(target(),target(direction_value=b'\xff')),
+            dwords=(0xffffffff,0x80000000,0x7fc00000),slot6=0xffffffff,
+            slot13=0x80000000,raw4=(0x7fc00000,0xff800000),byte_values=(0xff,0x01))
+        r=Reader(positive,'0d-positive');r.action(0)
+        self.assertEqual(r.pos,len(positive))
+        self.assertEqual(r.records[-1],dict(start=0,end=len(positive),kind='union',tag=13))
+        self.assertEqual([v for v in r.records if v.get('kind')=='anonymous-effect-configuration-profile'],
+                         [dict(start=15,end=15+len(effect85()),kind='anonymous-effect-configuration-profile')])
+        self.assertEqual(sum(v.get('kind')=='anonymous-direction-profile' for v in r.records),3)
+        action_target_start=(15+len(effect85())+4+len(direction())+
+                             len(scalar_payload(None,flag=0))+len(scalar_payload(b'',flag=128))+1+4+1+4)
+        action_target_end=action_target_start+len(target())
+        second_target_start=action_target_end+4
+        self.assertEqual([(v['start'],v['end']) for v in r.records
+                          if v.get('kind')=='anonymous-target-profile'],
+                         [(action_target_start,action_target_end),
+                          (second_target_start,second_target_start+len(target(direction_value=b'\xff')))])
+        self.assertEqual(sequence_frame(sequence(positive))[-1]['end'],len(sequence(positive)))
+
+        for wire in (b'\x0d\xff',b'\xfa\x0d\x00\xff'):
+            r=Reader(wire,'0d-null-wrapper');r.action(0)
+            self.assertEqual(r.pos,len(wire))
+            self.assertEqual(r.records[-1],dict(start=0,end=len(wire),kind='union',tag=13))
+
+        row=event_prefix(prefix(sequence(null_child,b'\x59')),source='0d-sibling')
+        self.assertEqual(row['diagnostic']['category'],'union-tag')
+        self.assertEqual(row['diagnostic']['actual'],89)
+        self.assertEqual(row['consumedEnd'],19+len(null_child))
+        self.assertIn(dict(start=19,end=19+len(null_child),kind='union',tag=13),row['completedRecords'])
+
+    def test_tag_0d_every_cut_hard_limits_and_trailing(self):
+        full=tag0d(effect=effect85(),direction_bytes=direction(),
+                   scalars=(scalar_payload(None),scalar_payload(b'')),
+                   targets=(target(),target(direction_value=b'\xff')))
+        r=Reader(full,'0d-cut');r.action(0);self.assertEqual(r.pos,len(full))
+        tail=b'opaque-suffix'
+        r=Reader(full+tail,'0d-tail');r.action(0)
+        self.assertEqual(r.pos,len(full));self.assertEqual(r.data[r.pos:],tail)
+        for n in range(len(full)):
+            results=[]
+            variants=((full,n),(full[:n],None),(full[:n]+b'\xff'*(len(full)-n),n))
+            for data,limit in variants:
+                r=Reader(data,'0d-cut',limit)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertLessEqual(r.pos,n)
+                self.assertFalse(any(v.get('tag')==13 for v in r.records))
+                results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+            self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        for extra in (b'\x00',b'\xff'):
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(full)+extra)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag_0d_bad_headers_nested_counts_and_profiles(self):
+        base=tag0d()
+        wrong_outer=base[:1]+b'\x0f'+base[2:]
+        r=Reader(wrong_outer,'0d-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],
+                          caught.exception.diagnostic['category']),(1,15,'member-count'))
+
+        malformed=(
+            (tag0d(effect=b'\x54'+effect85()[1:]),15,85,84),
+            (tag0d(direction_bytes=b'\x07'+direction()[1:]),20,8,7),
+            (tag0d(scalars=(b'\x02'+scalar_payload()[1:],b'\xff')),21,3,2),
+            (tag0d(targets=(b'\x0c'+target()[1:],b'\xff')),33,13,12),
+        )
+        for wire,offset,expected,actual in malformed:
+            r=Reader(wire,'0d-nested-header')
+            with self.subTest(offset=offset),self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['expected'],
+                              caught.exception.diagnostic['actual'],caught.exception.diagnostic['category']),
+                             (offset,expected,actual,'member-count'))
+
+        bad_scalar=b'\x03'+struct.pack('<i',-2)+b'\x80'+bytes(4)
+        r=Reader(tag0d(scalars=(bad_scalar,b'\xff')),'0d-scalar-count')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual'],
+                          caught.exception.diagnostic['category']),(22,-2,'count-bounds'))
 
     def test_tag_e0_null_and_positive_nested_profiles(self):
         null_child=tag_e0()

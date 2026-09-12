@@ -303,6 +303,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   and live provider selection are not inferred. Preserve query/target null and
   failure boundaries, and leave following bytes opaque without suffix-ownership
   or whole-BuffData EOF claims.
+  Short tag `0x0D` routes to `AirborneActionDataForMemoryPack` with a pinned
+  header-16 source order in `scripts/game_data/buff_0d_native.json`. Its
+  EffectActionCfg, DirectionSettings, BlackboardDouble and TargetSettings
+  instances reuse their bounded profiles; typed DWORDs, direct bytes and raw
+  four-byte reads retain only their observed source shapes. The selected reader
+  endpoint leaves following bytes opaque and establishes neither field meaning,
+  gameplay behavior, suffix ownership nor whole-BuffData EOF.
   Short tag `0xE0` routes to `LockCameraAimActionData` and has a 54-member
   source order pinned in `scripts/game_data/buff_e0_native.json`. Its nested
   AnimationCurve, BlackboardDouble and TargetSettings values reuse the bounded
