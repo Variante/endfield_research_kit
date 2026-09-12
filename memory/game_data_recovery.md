@@ -1279,6 +1279,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   list from the GameplayTagList wrapper. Its counted FF/member-one elements
   follow a string profile and target; reserve the required final byte before
   accepting the count. Tag meaning and runtime selection remain unresolved.
+  `scripts/game_data/buff_0c_native.json` independently pins short tag `0x0C`
+  to AddTagToEntities: header eight, common byte/three-DWORD prefix,
+  BlackboardString, TargetSettings, direct List<GameplayTag>, terminal byte.
+  Reuse the 0x0B list frame and conditional 0xC5 element reader; the distinct
+  route/type identity does not establish provider selection or field meaning.
   `scripts/game_data/buff_40_native.json` ends a member-six action with a
   DWORD and that same direct element list. Preserve each element header; the
   QueryType context belongs to the preceding DWORD, not an extra query wrapper.

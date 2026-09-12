@@ -122,6 +122,11 @@ def tag0b(items=(),first=b'\xff',second=b'\xff',last=255):
             struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+bytes([last]))
 
 
+def tag0c(items=(),first=b'\xff',second=b'\xff',last=255):
+    return (b'\x0c\x08\xfe'+b'\xff'*12+first+second+
+            struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+bytes([last]))
+
+
 def tagbb(first=b'\xff',second=b'\xff'):
     return b'\xbb\x06\xfe'+b'\xff'*12+first+second
 
@@ -9476,6 +9481,56 @@ class BuffActionsTests(unittest.TestCase):
         with self.assertRaises(FrameError):r.action(0)
         self.assertEqual(sum(v['kind']=='anonymous-tag-element' for v in r.records),1)
         self.assertFalse(any(v.get('tag')==11 for v in r.records))
+
+    def test_tag0c_direct_list_null_empty_elements_and_final_byte(self):
+        for items in (None,(),(b'\xff',),(b'\x01'+b'\xff'*4,b'\xff',b'\x01'+b'\x80'*4)):
+            for first in (b'\xff',pair(None,b'wire',255),pair(b'',None,1)):
+                for second in (b'\xff',target()):
+                    child=tag0c(items,first,second);end=19+len(child)
+                    row=event_prefix(prefix(sequence(child,b'\x59')),source='0c.bin')
+                    self.assertEqual(row['diagnostic'],dict(source='0c.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                    self.assertIn(dict(start=19,end=end,kind='union',tag=12),row['completedRecords'])
+                    self.assertEqual(sum(r['kind']=='anonymous-tag-element' for r in row['completedRecords']),len(items or ()))
+                    self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag0c_every_cut_hard_limit_null_extended_trailing(self):
+        full=tag0c((b'\x01'+b'\xff'*4,b'\xff'),pair(None,b'wire',255),target())
+        for child in (full,tag0c(),b'\x0c\xff',b'\xfa\x0c\x00'+full[1:]):
+            r=Reader(child,'0c-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'0c-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==12 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+            for tail in (b'\x00',b'\xff'):
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(child)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag0c_bad_counts_headers_reserve_and_partial_elements(self):
+        child=tag0c((b'\x01'+b'\xff'*4,b'\xff'),pair(None,b'wire',255),target())
+        r=Reader(child,'0c-bounds');r.action(0)
+        spans=[v for v in r.ranges if v['kind'] in ('member-header','count-i32')]
+        self.assertGreater(len(spans),10)
+        for span in spans:
+            for value in ((0,254) if span['kind']=='member-header' else (-2,0x7fffffff)):
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'0c-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('0c-bounds',at,value))
+        bad=tag0c((b'\xff',))[:-1];r=Reader(bad,'0c-reserve')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),(17,1))
+        self.assertFalse(any(v['kind']=='anonymous-tag-element' for v in r.records))
+        bad=tag0c((b'\x01'+bytes(4),b'\x01'+bytes(4)))
+        r=Reader(bad,'0c-element',len(bad)-3)
+        with self.assertRaises(FrameError):r.action(0)
+        self.assertEqual(sum(v['kind']=='anonymous-tag-element' for v in r.records),1)
+        self.assertFalse(any(v.get('tag')==12 for v in r.records))
 
     def test_tagbb_two_independent_targets_end_before_next_union(self):
         for first in (b'\xff',target()):

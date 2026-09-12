@@ -1,0 +1,227 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      118440,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AddTagToEntities_DataForMemoryPack+Beyond_Gameplay_Core_AddTagToEntities_DataForMemoryPackFormatter",
+      "Deserialize",
+      63370000
+    ],
+    [
+      118439,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AddTagToEntities_DataForMemoryPack",
+      "Deserialize",
+      63368304
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63370000,
+      "endRva": 63370065,
+      "sha256": "8645081297CDB02B289A0631ECFA1DFFFCAECC92F398A9C8EB0B5F33E3C787E2",
+      "boundary": "formatter tail-JMP through full instruction to reader"
+    },
+    {
+      "startRva": 63370065,
+      "endRva": 63370093,
+      "sha256": "EF67D4EA6C1D858537E16E7B77D0FD4A51E490D4EB58D64C70BCA7CA4B89AE3D",
+      "boundary": "formatter init/retry block through full rejoin JMP; before INT3"
+    },
+    {
+      "startRva": 63368304,
+      "endRva": 63368751,
+      "sha256": "3FD4616C9F9220F2FC17BACC39E7A33B4BDB551695F03A0FB72AFC99EFFF4807",
+      "boundary": "normal reader entry and source path through RET"
+    },
+    {
+      "startRva": 63368751,
+      "endRva": 63368847,
+      "sha256": "9024DAF930268A47FC77BA79D9A20691217FA68381C8186E8D9036B2B45118F7",
+      "boundary": "lazy initialization through full rejoin JMP; before error helper"
+    },
+    {
+      "startRva": 82743042,
+      "endRva": 82743055,
+      "sha256": "670E05984448BA15322499820209661C10E449CF27E54BCDCD0DE6ADCC5099E0",
+      "boundary": "existing-output cold path with full rejoin JMP"
+    },
+    {
+      "startRva": 82743055,
+      "endRva": 82743110,
+      "sha256": "248E0622E4ECA6ADEAA9AA01924FA7A0F21720ADDFE6F8DED526EC63E494BEE3",
+      "boundary": "header mismatch error path through call; before INT3"
+    },
+    {
+      "startRva": 82743111,
+      "endRva": 82743132,
+      "sha256": "5011C6FD5F577981D0E34A46EE964606553F85F328AA247B1D1AF1AF0EBE3294",
+      "boundary": "header-false clear including complete rejoin JMP"
+    },
+    {
+      "startRva": 46827616,
+      "endRva": 46827703,
+      "sha256": "CA6788FE028DC684758CD40833EFA107116A7BF664BFBF1746D792E52114639F",
+      "boundary": "header helper through RET"
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "BYTE helper through RET"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "DWORD helper through RET"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63368476,
+      "instructionHex": "488B1505B14109",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63368582,
+      "instructionHex": "488B15EBAB4109",
+      "cellVa": 6661118328,
+      "usageRawHex": "CDEB12C000000000",
+      "methodSpecIndex": 620006,
+      "methodSpec": [
+        428464,
+        -1,
+        17007
+      ],
+      "argumentRawHex": "B1000000000000000000120000000000",
+      "typeDefinition": 177,
+      "typeName": "Beyond.Blackboard+BlackboardString",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63368623,
+      "instructionHex": "488B1552293F09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63368664,
+      "instructionHex": "488B1591523809",
+      "cellVa": 6660505712,
+      "usageRawHex": "55A312C000000000",
+      "methodSpecIndex": 610730,
+      "methodSpec": [
+        428462,
+        -1,
+        8486
+      ],
+      "argumentRawHex": "28B6258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000D03CFE8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 816,
+        "elementArguments": [
+          "A22D0000000000000000118000000000"
+        ]
+      },
+      "typeKind": 21
+    }
+  ],
+  "anonymousReadOrder": {
+    "member8": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "paired-payload",
+      "target",
+      "tag-elements",
+      "byte"
+    ],
+    "sourceCalls": [
+      {
+        "memberIndex": 1,
+        "callRva": 63368448,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 2,
+        "callRva": 63368489,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32",
+        "contextIndex": 1,
+        "typeContext": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+      },
+      {
+        "memberIndex": 3,
+        "callRva": 63368522,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32"
+      },
+      {
+        "memberIndex": 4,
+        "callRva": 63368555,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32"
+      },
+      {
+        "memberIndex": 5,
+        "callRva": 63368595,
+        "targetRva": 47864976,
+        "sourceRead": "generic-read",
+        "contextIndex": 2,
+        "typeContext": "Beyond.Blackboard+BlackboardString"
+      },
+      {
+        "memberIndex": 6,
+        "callRva": 63368636,
+        "targetRva": 47864976,
+        "sourceRead": "generic-read",
+        "contextIndex": 3,
+        "typeContext": "Beyond.Gameplay.Core.TargetSettings"
+      },
+      {
+        "memberIndex": 7,
+        "callRva": 63368677,
+        "targetRva": 58849520,
+        "sourceRead": "generic-list",
+        "contextIndex": 4,
+        "typeContext": "System.Collections.Generic.List`1"
+      },
+      {
+        "memberIndex": 8,
+        "callRva": 63368711,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      }
+    ]
+  },
+  "boundary": "The selected tag-0x0C reader consumes header 8 and the common byte/three-DWORD prefix, then BlackboardString, TargetSettings, a direct List<GameplayTag>, and one terminal byte. The paired payload and target retain their independent bounded profiles. The list framing reuses buff_0b_native.json and its GameplayTag elements reuse the conditional FF-or-header1 DWORD profile in buff_c5_native.json. Static generic identity does not establish live list provider selection. Payload/member meaning, suffix ownership, and whole-BuffData EOF remain unresolved."
+}
