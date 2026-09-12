@@ -529,6 +529,10 @@ only.
   unique camera/frame interval while rejecting competing owners and changed
   source bytes. This remains state correlation: request/allocation lifetime
   and allocation-to-D3D joins are open. See `cpp_bridge_camera_state_validation.json`.
+  The CPP snapshot also observes the minimum-cascade integer, converted vector
+  and packed copy with double-read consistency checks. Historical receipts lack
+  these optional fields; CPU consistency does not prove selected settings or GPU
+  consumption. See `cpp_cascade_observation_372.json`.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
