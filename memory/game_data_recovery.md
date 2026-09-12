@@ -190,6 +190,16 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
 - LipSync JsonData has an exact selected-build MemoryPack layout. Its float rows
   are native-proven Unity keyframe values. LipSync animation data remains
   distinct from language voice-audio availability.
+- SkillData's MemoryPack framing remains a structural prefix: the current
+  corpus report preserves all valid EOF-anchored terminal candidates, and the
+  native audit still lacks a runtime join from the selected formatter and
+  reader cursor to a current VFS file. Available TypeTrees do not cover this
+  JsonData, and EndfieldCapture has no SkillData deserialization event. Keep
+  candidates ambiguous until an exact-build, loss-accounted cursor receipt
+  joins the source base/limit and terminal start/end cursors to a logical file
+  identity and content hash in the same inputSet. Counts, hashes, and per-file
+  ranges belong in `reports/animestudio/skilldata_current_latest.*` and
+  `reports/animestudio/il2cpp_context_current_latest.*`.
 - Video has exact outer framing for the maintained corpus; codec/container
   validity does not prove narrative attachment or playback.
 
