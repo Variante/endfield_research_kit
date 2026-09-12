@@ -980,6 +980,15 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   target ends this reader with no DWORD tail. Preserve null/empty states;
   payload decoding, gameplay meaning, live generic-provider choice and full
   BuffData EOF remain unresolved.
+  `scripts/game_data/buff_85_native.json` pins decimal union tag 133 (`0x85`)
+  to the `CompareDeckAttr` header10 reader. After the shared byte/three-DWORD
+  prefix, it reads two DWORDs, a scalar payload, a DWORD, another scalar
+  payload and a terminal `TargetSettings`. Exact MethodSpec joins identify
+  `Priority`, `CompareType`, `DeckAttrOperand`, `BlackboardDouble` and
+  `TargetSettings`; the context-free DWORDs remain raw, and enum values,
+  condition semantics, runtime provider selection and whole-BuffData EOF
+  remain unresolved. The scalar and target children reuse their existing
+  finite structural readers.
   `scripts/game_data/buff_128_native.json` pins header-eleven RecoverPoise:
   common prefix, byte, EffectActionCfg, DWORD, byte, DWORD, CalculationBase
   and target. Reuse the bounded member85 configuration and calculation union

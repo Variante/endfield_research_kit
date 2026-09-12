@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = '62289C87E2A798CCD04F56E8DDE40AECAF3421BCF794A26A84BD9881C850D065'
+CORPUS_SHA = 'ED4BF390E5894DA9AD1C31B43830FFF30F807B40FFF70E95A344CE8A890A34E3'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -870,6 +870,7 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0x5E,0x390EF70,106482,16621,'Conditions_CheckDamageTypeMask_Data',None),
         (0x13B,0x39105E6,107011,16397,'SaveDamageContext_Data',None),
         (0x84,0x390F614,106521,16713,'Conditions_CheckWeaponTypeCondition_Data',None),
+        (0x85,0x3910906,106522,16715,'Conditions_CompareDeckAttr_Data',None),
         (0x174,0x3910D84,107160,16505,'StoreEntityProperty_Data',None),
         (0x41,0x390F740,106442,16617,'CheckDamageTransferredSource_Data',None),
         (0xA9,0x390E002,106594,16095,'EnemyHurtAnimAction_Data',None),
@@ -2593,6 +2594,7 @@ def audit():
                Path(__file__).with_name('buff_14b_native.json'),
                Path(__file__).with_name('buff_166_native.json'),
                Path(__file__).with_name('buff_16c_native.json'),
+               Path(__file__).with_name('buff_85_native.json'),
                Path(__file__).with_name('buff_172_native.json'),
                Path(__file__).with_name('buff_28_native.json'),
                Path(__file__).with_name('buff_102_native.json'),
@@ -3268,6 +3270,8 @@ def audit():
         contract_path=Path(__file__).with_name('buff_166_native.json'))
     buff_16c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_16c_native.json'))
+    buff_85=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('buff_85_native.json'))
     buff_172=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_172_native.json'))
     buff_28=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -3662,6 +3666,7 @@ def audit():
         'selectedBuff14BReadOrder':buff_14b,
         'selectedBuff166ReadOrder':buff_166,
         'selectedBuff16CReadOrder':buff_16c,
+        'selectedBuff85ReadOrder':buff_85,
         'selectedBuff172ReadOrder':buff_172,
         'selectedBuff28ReadOrder':buff_28,
         'selectedBuff102ReadOrder':buff_102,

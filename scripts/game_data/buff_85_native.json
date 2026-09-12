@@ -1,0 +1,172 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      124824,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CompareDeckAttr_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CompareDeckAttr_DataForMemoryPackFormatter",
+      "Deserialize",
+      72096736
+    ],
+    [
+      124823,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CompareDeckAttr_DataForMemoryPack",
+      "Deserialize",
+      72096832
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72096736,
+      "endRva": 72096825,
+      "sha256": "D2FCF51F89D532F14902DE8905A0135674DF3652BA921F80018DD88E89446302",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 72096832,
+      "endRva": 72097456,
+      "sha256": "013856F87F4B0F067EC528AB90BBEA1515F1A1D53E4C13D34107FC0A00FF556A",
+      "boundary": "header10 normal source reads, initialization and return"
+    },
+    {
+      "startRva": 83739654,
+      "endRva": 83739667,
+      "sha256": "7E775BC5E3BBFFE4BF0D115FDA9BA5148D7AE46BB45FA8C39BB5A98C468E3E6A",
+      "boundary": "existing-output rejoin"
+    },
+    {
+      "startRva": 83739723,
+      "endRva": 83739744,
+      "sha256": "503E29C5837E2D8CEC48F01CFBC2C5B8595E7BBEA4D51DFB0FE7FD8AF7456896",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72097103,
+      "instructionHex": "488B15D280BC08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72097209,
+      "instructionHex": "488B156880BD08",
+      "cellVa": 6661185064,
+      "usageRawHex": "37E512C000000000",
+      "methodSpecIndex": 619163,
+      "methodSpec": [
+        428448,
+        -1,
+        42245
+      ],
+      "argumentRawHex": "3B7B0000000000000000118000000000",
+      "typeDefinition": 31547,
+      "typeName": "Beyond.CompareType",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72097249,
+      "instructionHex": "488B15B0EDB708",
+      "cellVa": 6660819864,
+      "usageRawHex": "91E712C000000000",
+      "methodSpecIndex": 619464,
+      "methodSpec": [
+        428448,
+        -1,
+        42465
+      ],
+      "argumentRawHex": "0C350000000000000000118000000000",
+      "typeDefinition": 13580,
+      "typeName": "Beyond.Gameplay.Core.Conditions.CompareDeckAttr+DeckAttrOperand",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72097289,
+      "instructionHex": "488B151028B308",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 72097330,
+      "instructionHex": "488B155FEDB708",
+      "cellVa": 6660819864,
+      "usageRawHex": "91E712C000000000",
+      "methodSpecIndex": 619464,
+      "methodSpec": [
+        428448,
+        -1,
+        42465
+      ],
+      "argumentRawHex": "0C350000000000000000118000000000",
+      "typeDefinition": 13580,
+      "typeName": "Beyond.Gameplay.Core.Conditions.CompareDeckAttr+DeckAttrOperand",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72097366,
+      "instructionHex": "488B15C327B308",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 72097403,
+      "instructionHex": "488B1586F8B908",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member10": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "scalar-payload",
+      "scalar32",
+      "scalar-payload",
+      "target"
+    ]
+  },
+  "boundary": "Exact union tag 0x85 dispatch and current module/token joins identify the CompareDeckAttr reader. Its header10 direct order is byte, five four-byte reads, BlackboardDouble, one four-byte read, BlackboardDouble, and TargetSettings. The seven raw MethodSpec contexts pin Priority, CompareType, DeckAttrOperand twice, BlackboardDouble twice, and TargetSettings; two DWORD slots have no dedicated MethodSpec. The enum contexts use the same fixed-width direct reader; enum values and condition semantics remain unresolved. BlackboardDouble and TargetSettings reuse their separately audited finite structural profiles, without proving live generic-provider selection. Formatter forwarding, normal return, existing-output rejoin and FF-clear rejoin are hash-pinned. Nested unsupported shapes, refill/allocation parity, enclosing ownership and whole-BuffData EOF remain unresolved."
+}
