@@ -389,11 +389,9 @@ only.
   `_ContactShadow` UAV output, also sampled by the scene producer at t5.
   The legacy cross-backend screen-mask name is disproven. Dispatch-local
   constant-buffer slices and output bytes are authenticated in the combined
-  two-entry evidence package. Replay still needs the dispatch-local compute
-  sampler: Contact capture v2 now retains the bound s0 descriptor, while
-  legacy receipts explicitly leave
-  sampler evidence incomplete. New runtime data is required to replace the
-  earlier assumed replay sampler.
+  two-entry evidence package. Contact capture v2 retains the bound point/clamp
+  s0 descriptor, now reproduced by the lab and bounded original-kernel GPU
+  comparisons. Legacy receipts without that descriptor remain incomplete.
   Bounded isolated GPU comparisons support the recovered arithmetic, but
   current native publishers
   read interpolated environment settings and a camera frame counter; constructor
@@ -402,7 +400,7 @@ only.
   gates. Legacy HLSL bindings remain a different contract.
   The exact retained Default variant consumes only red from t7 and t11,
   confirmed by fresh DXBC disassembly and independent channel interventions.
-  Contact red remains nonneutral; green independence here does not apply to
+  Contact red is not universally neutral; green independence here does not apply to
   other consumers or close whole-texture publication. Prioritize the two live
   red producers and stencil population for this deferred path. See
   `deferred_shadow_channel_dependency.json` and the lab's maintained replay.
@@ -414,10 +412,11 @@ only.
   Contact settings now import the selected authored phase with independent
   provenance, native percent conversions and ignore-edge lane; the installed
   base feature getter gates intensity. Unknown settings fail closed.
-  The screen-shadow diagnostic joins attenuation/blend to that same phase by
+  The screen-shadow diagnostic sources directional visibility independently of
+  the retained contact/cloud defaults, joining its authored block by
   source path, PathID and raw hash, then uses the native manual-override policy;
   missing visibility rejects publication; inactive phases require stack resolution.
-  This replaces the diagnostic constant without selecting the migrated phase.
+  The selected authored migrated block reproduces the observed CharInfo bypass.
   This does not validate runtime blend/IFix state or refresh the legacy light/exposure
   snapshot's identity. Current authored exposure metadata is retained separately.
   The reusable shadow visibility interpolator now preserves inactive configs,
@@ -828,6 +827,11 @@ For a focused change:
 The reconstruction lab README owns exact operator commands. The AnimeStudio
 workflow owns exporter build/test commands. EndfieldCapture's README owns its
 build and collection procedure.
+
+Character-wide texture repair applies only exact source texture-contract
+entries. Recursive scans also reach effects and other importer-owned assets;
+they must not guess material roles from filenames and overwrite those settings.
+Fallback texture setup belongs to an import with actual material-slot context.
 
 ## Remaining gaps
 
