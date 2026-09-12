@@ -1,0 +1,122 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120418,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ForceTriggerWeakness_DataForMemoryPack+Beyond_Gameplay_Core_ForceTriggerWeakness_DataForMemoryPackFormatter",
+      "Deserialize",
+      72585392
+    ],
+    [
+      120417,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ForceTriggerWeakness_DataForMemoryPack",
+      "Deserialize",
+      72585488
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72585392,
+      "endRva": 72585481,
+      "sha256": "99BF0156C0F11A3E903C86C82FEC6B7EEB9F9AF68A2F101697E5EC40AF18D564",
+      "boundary": "formatter lazy initialization and complete forwarding JMP to reader"
+    },
+    {
+      "startRva": 72585488,
+      "endRva": 72585915,
+      "sha256": "AA7DBE8FF8BF7B0819CFEC06E47D2A3D7F70C013A95AE1BC37B384F3DEB9368C",
+      "boundary": "reader lazy initialization and normal path through RET"
+    },
+    {
+      "startRva": 83804778,
+      "endRva": 83804791,
+      "sha256": "45E2CAFA9252E5A92E9FE024BC088EF4595711CDEFC15FBD05A101A0F767CB8B",
+      "boundary": "existing-output handling and complete rejoin JMP"
+    },
+    {
+      "startRva": 83804847,
+      "endRva": 83804868,
+      "sha256": "1940F75BCD631138B08ECB56ABF42B2CDD0856B8C15E9C2EC419DE4847BBC70F",
+      "boundary": "header-false clear and complete rejoin JMP"
+    },
+    {
+      "startRva": 83804791,
+      "endRva": 83804846,
+      "sha256": "BBA62B3977F0951D7F82D32F3E42752AB373F13C9CECC3ECE1976112EAF3C9A3",
+      "boundary": "mismatch error dispatch, ending before INT3"
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "BYTE source helper"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "DWORD source helper"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72585723,
+      "instructionHex": "488B15260CB508",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72585825,
+      "instructionHex": "488B15A084B208",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 72585862,
+      "instructionHex": "488B157B84B208",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "TargetSettings",
+      "TargetSettings"
+    ]
+  },
+  "boundary": "Tag 0xBC selects the registered ForceTriggerWeakness_DataForMemoryPack wrapper. Its six source reads are BYTE, three DWORDs and two TargetSettings MethodSpec reads. Priority context is loaded for the first DWORD; the next two scalar slots have no separate MethodSpec context. Output setter and object-assignment calls are excluded from source order. Static nested types do not establish runtime provider choice. Field/gameplay meanings, allocation/refill/error parity and whole-BuffData EOF remain unresolved."
+}

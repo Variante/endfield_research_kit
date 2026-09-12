@@ -288,6 +288,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   contract is `scripts/game_data/buff_192_native.json`; the Priority MethodSpec
   identifies only one scalar's static context. Payload text, field meaning,
   suffix ownership and whole-BuffData EOF remain unresolved.
+  Short tag `0xBC` uses a separate header-six order: byte, three scalar32
+  values, then two independently bounded `TargetSettings` profiles. Its native
+  contract is `scripts/game_data/buff_bc_native.json`; the Priority MethodSpec
+  identifies only the first scalar, while each target has its own exact static
+  type join. Preserve the nested profiles' null and unsupported states. The
+  observed suffix remains opaque; no field meaning or whole-BuffData EOF is
+  established.
   `scripts/game_data/buff_4c_native.json` pins two independent targets with a
   nullable byte-payload list between them. Its list count reserves the terminal
   target minimum before iteration; null lists, null elements and target nulls

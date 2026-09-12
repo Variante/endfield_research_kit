@@ -1064,6 +1064,11 @@ def tag192(first=None,second=None,prefix=0xfe,
     return (b'\xfa\x92\x01'+bytes([header,prefix])+struct.pack('<III',*dwords)+
             payload(first)+payload(second))
 
+
+def tagbc(first=b'\xff',second=b'\xff',prefix=0xfe,
+          dwords=(0xffffffff,0x80000000,0x7fc00000),header=6):
+    return b'\xbc'+bytes([header,prefix])+struct.pack('<III',*dwords)+first+second
+
 class BuffActionsTests(unittest.TestCase):
 
     def test_16c_keyword_edit_nested_states_and_terminal_targets(self):
@@ -1526,6 +1531,70 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(caught.exception.diagnostic['offset'],17)
 
         r=Reader(data+b'\x00\xff','192-tail',len(data));r.action(0)
+        self.assertEqual(r.pos,len(data))
+        self.assertEqual(r.data[r.pos:],b'\x00\xff')
+
+    def test_bc_two_independent_bounded_target_settings_profiles(self):
+        cases=(
+            (b'\xff',b'\xff'),
+            (b'\xff',target()),
+            (target(),b'\xff'),
+            (target(direction_value=b'\xff'),target(selector=b'\xff')),
+            (target(selector=b'\x03\x00\x00'+bytes(8)),target(direction_value=b'\xff')),
+        )
+        for first,second in cases:
+            with self.subTest(first=first[:1].hex(),second=second[:1].hex()):
+                data=tagbc(first,second,prefix=1,dwords=(0,0x80000000,0x7fc00000))
+                r=Reader(data,'bc-normal');r.action(0)
+                self.assertEqual(r.pos,len(data))
+                self.assertEqual(r.target_depth,0)
+                self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=188))
+                self.assertEqual([q for q in r.records if q['kind']=='anonymous-target-profile'],[
+                    dict(start=15,end=15+len(first),kind='anonymous-target-profile'),
+                    dict(start=15+len(first),end=len(data),kind='anonymous-target-profile'),
+                ])
+                self.assertEqual([q for q in r.ranges if q['kind']=='anonymous-scalar32' and q['start'] in (3,7,11)],[
+                    dict(start=3,end=7,kind='anonymous-scalar32'),
+                    dict(start=7,end=11,kind='anonymous-scalar32'),
+                    dict(start=11,end=15,kind='anonymous-scalar32'),
+                ])
+
+    def test_bc_all_cuts_bad_headers_and_opaque_suffix(self):
+        first=target(direction_value=b'\xff')
+        second=target(selector=b'\xff')
+        data=tagbc(first,second,prefix=1,dwords=(0xffffffff,0x80000000,0x7fc00000))
+        for cut in range(len(data)):
+            outcomes=[]
+            for raw in (data[:cut],data,data[:cut]+b'\xff'*8):
+                r=Reader(raw,'bc-cut',cut)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertLessEqual(r.pos,cut)
+                self.assertFalse(any(q.get('tag')==188 for q in r.records))
+                outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+            self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+
+        bad_header=bytearray(data);bad_header[1]=5
+        r=Reader(bad_header,'bc-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,
+                         dict(source='bc-header',offset=1,expected=6,actual=5,category='member-count'))
+
+        bad_first=bytearray(data);bad_first[15]=12
+        r=Reader(bad_first,'bc-first-target-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,
+                         dict(source='bc-first-target-header',offset=15,expected=13,actual=12,category='member-count'))
+        self.assertFalse(any(q.get('tag')==188 for q in r.records))
+
+        second_start=15+len(first)
+        bad_second=bytearray(data);bad_second[second_start]=12
+        r=Reader(bad_second,'bc-second-target-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,
+                         dict(source='bc-second-target-header',offset=second_start,expected=13,actual=12,category='member-count'))
+        self.assertFalse(any(q.get('tag')==188 for q in r.records))
+
+        r=Reader(data+b'\x00\xff','bc-tail',len(data));r.action(0)
         self.assertEqual(r.pos,len(data))
         self.assertEqual(r.data[r.pos:],b'\x00\xff')
 
