@@ -283,6 +283,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   `scripts/game_data/buff_15a_native.json` pins its native route and nested
   static types; remaining bytes stay opaque, and runtime provider selection or
   field meaning is not inferred.
+  Extended tag `0x192` is another header-six reader: byte, three scalar32
+  values, then two independent bounded byte payloads. Its selected native
+  contract is `scripts/game_data/buff_192_native.json`; the Priority MethodSpec
+  identifies only one scalar's static context. Payload text, field meaning,
+  suffix ownership and whole-BuffData EOF remain unresolved.
   `scripts/game_data/buff_4c_native.json` pins two independent targets with a
   nullable byte-payload list between them. Its list count reserves the terminal
   target minimum before iteration; null lists, null elements and target nulls

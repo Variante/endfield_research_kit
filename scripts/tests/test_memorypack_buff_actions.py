@@ -1058,6 +1058,12 @@ def tag15a(paired=b'\xff',target_bytes=b'\xff',prefix=0xfe,
     return (b'\xfa\x5a\x01'+bytes([header,prefix])+struct.pack('<III',*dwords)+
             paired+target_bytes)
 
+
+def tag192(first=None,second=None,prefix=0xfe,
+           dwords=(0xffffffff,0x80000000,0x7fc00000),header=6):
+    return (b'\xfa\x92\x01'+bytes([header,prefix])+struct.pack('<III',*dwords)+
+            payload(first)+payload(second))
+
 class BuffActionsTests(unittest.TestCase):
 
     def test_16c_keyword_edit_nested_states_and_terminal_targets(self):
@@ -1472,6 +1478,56 @@ class BuffActionsTests(unittest.TestCase):
         r=Reader(data+b'\xaa\xff','15a-tail',len(data));r.action(0)
         self.assertEqual(r.pos,len(data))
         self.assertEqual(r.data[r.pos:],b'\xaa\xff')
+
+    def test_192_two_independent_bounded_byte_payloads(self):
+        known=bytes.fromhex('FA9201060100000000000000000700000000000000110000006973496E53686F6F74696E6752616E6765')
+        self.assertEqual(tag192(b'',b'isInShootingRange',prefix=1,dwords=(0,0,7)),known)
+        for first,second in ((None,None),(b'',b''),(b'\x00\xff',b'isInShootingRange')):
+            data=tag192(first,second)
+            r=Reader(data,'192-normal');r.action(0)
+            self.assertEqual(r.pos,len(data))
+            self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=402))
+            rows=[q for q in r.records if q['kind']=='anonymous-byte-payload']
+            self.assertEqual(len(rows),2)
+            expected=[];at=17
+            for value in (first,second):
+                end=at+4+(0 if value is None else len(value))
+                expected.append(dict(start=at,end=end,kind='anonymous-byte-payload',isNull=value is None))
+                at=end
+            self.assertEqual(rows,expected)
+            self.assertEqual([q for q in r.ranges if q['kind']=='anonymous-scalar32'],[
+                dict(start=5,end=9,kind='anonymous-scalar32'),
+                dict(start=9,end=13,kind='anonymous-scalar32'),
+                dict(start=13,end=17,kind='anonymous-scalar32'),
+            ])
+
+    def test_192_all_cuts_bad_header_and_opaque_suffix(self):
+        data=tag192(b'',b'isInShootingRange',prefix=1,dwords=(0,0,7))
+        for cut in range(len(data)):
+            outcomes=[]
+            for raw in (data[:cut],data,data[:cut]+b'\xff'*8):
+                r=Reader(raw,'192-cut',cut)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertLessEqual(r.pos,cut)
+                self.assertFalse(any(q.get('tag')==402 for q in r.records))
+                outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+            self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+
+        bad_header=bytearray(data);bad_header[3]=5
+        r=Reader(bad_header,'192-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,
+                         dict(source='192-header',offset=3,expected=6,actual=5,category='member-count'))
+
+        malformed=bytearray(tag192(None,None));malformed[17:21]=struct.pack('<i',-2)
+        r=Reader(malformed,'192-length')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+        self.assertEqual(caught.exception.diagnostic['offset'],17)
+
+        r=Reader(data+b'\x00\xff','192-tail',len(data));r.action(0)
+        self.assertEqual(r.pos,len(data))
+        self.assertEqual(r.data[r.pos:],b'\x00\xff')
 
     def test_4e_list_element_scalar_and_payload_states(self):
         groups=(None,(),(b'\xff',),(mapping4e(),),

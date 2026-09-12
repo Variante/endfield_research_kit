@@ -1,0 +1,96 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      123796,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaIsInShootingRangeAction_DataForMemoryPack+Beyond_Gameplay_Core_TyphoeaIsInShootingRangeAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      72821056
+    ],
+    [
+      123795,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaIsInShootingRangeAction_DataForMemoryPack",
+      "Deserialize",
+      72821152
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72821056,
+      "endRva": 72821145,
+      "sha256": "2950AB91C547DDC9CC46B96706015046634E2055A356A5A824A016CB4D3A2D88",
+      "boundary": "formatter init and complete forward JMP to reader"
+    },
+    {
+      "startRva": 72821152,
+      "endRva": 72821549,
+      "sha256": "61BBA08417FDD80A40DC4AB578B79ABACB8D428A63B3F49F7DECE8B61ABD37AD",
+      "boundary": "reader initialization and normal path through RET"
+    },
+    {
+      "startRva": 83834550,
+      "endRva": 83834563,
+      "sha256": "F8CAE5F6299F3265D03840DDA2C19903DC4AC69B5A5C256105413C92DF35B6A2",
+      "boundary": "existing output path and complete rejoin JMP"
+    },
+    {
+      "startRva": 83834619,
+      "endRva": 83834640,
+      "sha256": "FEE9DED8E4F4FB7FF0D9F13046B5EF7BEF7AD79B3AF68AB3409120A84DA59BA1",
+      "boundary": "header-false clear and complete rejoin JMP"
+    },
+    {
+      "startRva": 83834563,
+      "endRva": 83834618,
+      "sha256": "B672BF787601652AB745ADF44AEA78526A321A5E2C86B8D91EBBEC95C6B7ED37",
+      "boundary": "header mismatch error call, ending before INT3"
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "BYTE value read and one-byte cursor advance"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "DWORD value read and four-byte cursor advance"
+    },
+    {
+      "startRva": 46827264,
+      "endRva": 46827462,
+      "sha256": "B8944001C41E1AF65B44F7DDE366FCE5E4E8B35E2A32682E628C2E0A36145BEF",
+      "boundary": "signed-length byte payload read/advance helper path"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72821375,
+      "instructionHex": "488B15A273B108",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte-payload",
+      "byte-payload"
+    ]
+  },
+  "boundary": "Tag 0x192 selects the registered TyphoeaIsInShootingRangeAction_DataForMemoryPack wrapper. The six source members are BYTE, three DWORD reads, then two signed-length byte-payload reads. A Priority MethodSpec is loaded for the first DWORD; the remaining scalar slots have no separately decoded MethodSpec context. The payload helper provides bounded byte-payload structure only. No field or gameplay semantics, runtime provider choice, payload text interpretation, output-allocation/refill/error parity, or whole-BuffData EOF is established."
+}
