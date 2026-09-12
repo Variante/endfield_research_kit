@@ -971,6 +971,15 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   lists and null payloads remain distinct. The post-list scalar precedes two
   targets and the required DWORD; keyword and vulnerability meanings remain
   unresolved independently of these structural boundaries.
+  `scripts/game_data/buff_16c_native.json` pins current union364 SpeedupAction:
+  header13, common byte/three DWORDs, byte/byte, paired payload, scalar
+  payload, nullable KeywordEnhanceEdit list, byte, scalar payload and two
+  terminal TargetSettings. The outer list reserves four trailing bytes and
+  permits one-byte elements; each nonnull element reuses the 19B header-three
+  reader and its nullable payload list, DWORD and scalar profile. The second
+  target ends this reader with no DWORD tail. Preserve null/empty states;
+  payload decoding, gameplay meaning, live generic-provider choice and full
+  BuffData EOF remain unresolved.
   `scripts/game_data/buff_128_native.json` pins header-eleven RecoverPoise:
   common prefix, byte, EffectActionCfg, DWORD, byte, DWORD, CalculationBase
   and target. Reuse the bounded member85 configuration and calculation union

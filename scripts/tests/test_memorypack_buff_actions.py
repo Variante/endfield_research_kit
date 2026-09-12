@@ -1013,7 +1013,144 @@ def tag4e(items=(),*,extended=False):
             bytes.fromhex('FFFFFFFF0000008067452301')+
             struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ()))
 
+
+def keyword16c(items=None,operation=0x80000001,scalar=b'\xff'):
+    return (b'\x03'+struct.pack('<i',-1 if items is None else len(items))+
+            b''.join(payload(v) for v in (items or ()))+
+            struct.pack('<I',operation)+scalar)
+
+
+def tag16c(items=None,*,paired=b'\xff',first_scalar=b'\xff',tail_scalar=b'\xff',targets=(b'\xff',b'\xff'),last_byte=0x80):
+    data=(b'\xfa\x6c\x01\x0d\x80'+bytes.fromhex('FFFFFFFF0000008067452301')+
+          b'\x81\x7e'+paired+first_scalar+
+          struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+
+          bytes([last_byte])+tail_scalar+targets[0]+targets[1])
+    return data
+
 class BuffActionsTests(unittest.TestCase):
+
+    def test_16c_keyword_edit_nested_states_and_terminal_targets(self):
+        keyword_values=(
+            None,
+            (),
+            (b'\xff',),
+            (keyword16c(None),),
+            (keyword16c((),0xffffffff,b'\xff'),),
+            (keyword16c((None,b'',b'\x00\xff'),0x80000000,
+                        scalar_payload(b'\x80\xff',flag=0,bits=b'\x00\x00\x00\x80')),
+             b'\xff',keyword16c((b'keyword',),0,b'\xff')),
+        )
+        wrappers=(b'\xff',pair(None,b'',128),pair(b'\x00\xff',None,0))
+        scalars=(b'\xff',scalar_payload(None),scalar_payload(b'',flag=128),
+                 scalar_payload(b'\xff\x00',flag=0,bits=b'\xff'*4))
+        for items in keyword_values:
+            for paired_value in wrappers:
+                for first in scalars[:2]:
+                    for tail in scalars[:2]:
+                        for targets in ((b'\xff',b'\xff'),(target(),b'\xff')):
+                            data=tag16c(items,paired=paired_value,first_scalar=first,
+                                        tail_scalar=tail,targets=targets)
+                            r=Reader(data,'16c-normal');r.action(0)
+                            self.assertEqual(r.pos,len(data))
+                            self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=364))
+                            listing=next(q for q in r.records if q['kind']=='anonymous-keyword-edit-list')
+                            self.assertEqual(listing['start'],19+len(paired_value)+len(first))
+                            self.assertEqual(listing['end'],len(data)-len(targets[0])-len(targets[1])-1-len(tail))
+        minimal=tag16c();self.assertEqual(len(minimal),29)
+        # The extended tag consumes three bytes and has no one-byte alias.
+        r=Reader(minimal,'16c-minimum');r.action(0);self.assertEqual(r.pos,29)
+        for data,tag in ((b'\xff',255),(b'\xfa\x6c\x01\xff',364)):
+            r=Reader(data,'16c-null');r.action(0);self.assertEqual(r.pos,len(data))
+
+    def test_16c_all_cuts_limits_tails_and_sequence_parent(self):
+        fixtures=(tag16c(),tag16c((b'\xff',keyword16c((None,b'',b'\xff'),0x7fc00000,
+                         scalar_payload(b'last',flag=1,bits=b'\x01\x02\x03\x04'))),
+                         paired=pair(b'first',b'\x00\xff',255),
+                         first_scalar=scalar_payload(b'\x80',flag=0),
+                         tail_scalar=scalar_payload(b'\xff',flag=128),targets=(target(),b'\xff')))
+        for data in fixtures:
+            for cut in range(len(data)):
+                outcomes=[]
+                for raw in (data[:cut],data,data[:cut]+b'\xff\x00'*30):
+                    r=Reader(raw,'16c-cut',cut)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,cut)
+                    self.assertFalse(any(x.get('tag')==364 for x in r.records))
+                    outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+                self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+            for tail in (b'\x00',b'\xff'):
+                for limit in (len(data),len(data+tail)):
+                    r=Reader(data+tail,'16c-tail',limit);r.action(0)
+                    self.assertEqual(r.pos,len(data))
+                with self.assertRaises(FrameError) as caught:sequence_frame(sequence(data)+tail)
+                self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+        child=tag16c((b'\xff',));parent=sequence(child)
+        r=Reader(parent,'16c-parent');r.sequence();self.assertEqual(r.pos,len(parent))
+        for missing in (1,2):
+            r=Reader(parent,'16c-parent-tail',len(parent)-missing)
+            with self.assertRaises(FrameError) as caught:r.sequence()
+            self.assertEqual(caught.exception.diagnostic,dict(source='16c-parent-tail',offset=len(parent)-missing,
+                             expected={'bytes':1},actual={'remaining':0},category='truncated'))
+            self.assertEqual(r.pos,len(parent)-missing)
+
+    def test_16c_counts_headers_and_required_inner_scalar(self):
+        data=tag16c();outer_count=21
+        for value in (-2,1,2147483647):
+            malformed=data[:outer_count]+struct.pack('<i',value)+data[outer_count+4:]
+            r=Reader(malformed,'16c-outer-count')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='16c-outer-count',offset=outer_count,
+                             expected={'minimum':-1,'maximum':0},actual=value,category='count-bounds'))
+            self.assertEqual(r.pos,outer_count+4)
+        child=keyword16c(None);data=tag16c((child,));child_start=25;inner_count=child_start+1
+        for value in (-2,2147483647):
+            malformed=data[:inner_count]+struct.pack('<i',value)+data[inner_count+4:]
+            r=Reader(malformed,'16c-inner-count')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='16c-inner-count',offset=inner_count,
+                             expected={'minimum':-1,'maximum':1},actual=value,category='count-bounds'))
+            self.assertEqual(r.pos,inner_count+4)
+        for offset,expected in ((3,13),(25,3)):
+            malformed=bytearray(data);malformed[offset]=42;r=Reader(bytes(malformed),'16c-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic,dict(source='16c-header',offset=offset,expected=expected,actual=42,category='member-count'))
+            self.assertEqual(r.pos,offset)
+        # The inner DWORD and scalar wrapper remain required after a null/empty list.
+        child=keyword16c(None);data=tag16c((child,));
+        for cut in (len(data)-len(b'\xff\xff')-5,len(data)-len(b'\xff')-4):
+            r=Reader(data,'16c-inner-terminal',cut)
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertLessEqual(r.pos,cut)
+            self.assertEqual(caught.exception.diagnostic['category'],'truncated')
+
+    def test_16c_malformed_payload_target_and_unknown_following_action(self):
+        # Malformed signed length in the nested keyword byte-payload list.
+        child=keyword16c((b'X',));data=tag16c((child,));inner_len=30
+        bad=data[:inner_len]+struct.pack('<i',-2)+data[inner_len+4:]
+        r=Reader(bad,'16c-inner-bytes')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,dict(source='16c-inner-bytes',offset=inner_len,
+                         expected={'minimum':-1,'maximum':10},actual=-2,category='count-bounds'))
+        self.assertEqual(r.pos,inner_len+4)
+        # Unknown tag in the final TargetSettings selector stops before it.
+        # Replace the first nested finder tag after the selector header with an unsupported value.
+        bad_target=target(selector=b'\x03\x59'+struct.pack('<ii',-1,-1))
+        data=tag16c((b'\xff',),targets=(b'\xff',bytes(bad_target)))
+        r=Reader(data,'16c-unknown-target')
+        with self.assertRaises(Unsupported) as caught:r.action(0)
+        target_start=data.rfind(bad_target)
+        expected_offset=(target_start+1+len(direction())+len(payload(b'center'))+
+                         1+4+1+len(payload(None))+1)
+        self.assertEqual(caught.exception.diagnostic,dict(source='16c-unknown-target',offset=expected_offset,
+                         expected='supported nested-finder union tag',actual=0x59,category='nested-profile'))
+        self.assertEqual(r.pos,expected_offset)
+        # The next sequence action remains independently unknown after a closed record.
+        child=tag16c();parent=sequence(child,b'\x59')
+        r=Reader(parent,'16c-parent-unknown')
+        with self.assertRaises(Unsupported) as caught:r.sequence()
+        self.assertEqual(caught.exception.diagnostic,dict(source='16c-parent-unknown',offset=5+len(child),
+                         expected='supported current union tag',actual=89,category='union-tag'))
+        self.assertEqual(r.pos,5+len(child))
 
     def test_4e_list_element_scalar_and_payload_states(self):
         groups=(None,(),(b'\xff',),(mapping4e(),),

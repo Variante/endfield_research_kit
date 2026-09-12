@@ -1,0 +1,295 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120948,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SpeedupAction_DataForMemoryPack+Beyond_Gameplay_Core_SpeedupAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      63373056
+    ],
+    [
+      120947,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SpeedupAction_DataForMemoryPack",
+      "Deserialize",
+      63370544
+    ]
+  ],
+  "methodGroups": [
+    {
+      "image": "MemoryPack.Beyond.dll",
+      "methods": [
+        [
+          162982,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_KeywordEnhanceEditForMemoryPack+Beyond_Gameplay_Core_KeywordEnhanceEditForMemoryPackFormatter",
+          "Deserialize",
+          63626144
+        ],
+        [
+          162981,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_KeywordEnhanceEditForMemoryPack",
+          "Deserialize",
+          63626240
+        ]
+      ]
+    }
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63373056,
+      "endRva": 63373145,
+      "sha256": "A5FE1E250AF34388B4DBE1C1A5778723FCF21D64298090C856BCAAF693D6E66E",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 63370544,
+      "endRva": 63371273,
+      "sha256": "2CFBFB5C41321977C8A8B075065179308C041BB7E3592CA3C388FCD472F06AEE",
+      "boundary": "header13 normal source reads, initialization and return"
+    },
+    {
+      "startRva": 82743346,
+      "endRva": 82743359,
+      "sha256": "93B0363AD8952B0501010F14C687D16BF7EB39165F283BB3F9F229169F3D8B21",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 82743415,
+      "endRva": 82743436,
+      "sha256": "5D07F3B9ECE72537E484A4B01BCE2A6621528CB1449E1B0DB76F65D1633F1478",
+      "boundary": "FF clear and epilogue rejoin"
+    },
+    {
+      "startRva": 63626144,
+      "endRva": 63626237,
+      "sha256": "A528251C73AE7E553D85C9CA6AAC45A99768E3D1C05C283D5BCA810FBC9196E7",
+      "boundary": "element formatter initialization and forwarding"
+    },
+    {
+      "startRva": 63626240,
+      "endRva": 63626543,
+      "sha256": "396FEAAE8A3F2B085E47F4B0014A0A398A8BB91F0D597311075423D40027EC78",
+      "boundary": "header3 element reads and initialization through rejoin"
+    },
+    {
+      "startRva": 82772560,
+      "endRva": 82772611,
+      "sha256": "6ED3DD71194854892185BA4F876CDBC5587007F45D6C4A36C606E4171B471558",
+      "boundary": "element allocation and complete rejoin"
+    },
+    {
+      "startRva": 82772667,
+      "endRva": 82772688,
+      "sha256": "0C403972755BF01DF67287BCDD2AFE7C49C1C51102C768EE036A58EEABC7776E",
+      "boundary": "element FF clear and complete rejoin"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63370815,
+      "instructionHex": "488B15E2A74109",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63370989,
+      "instructionHex": "488B1584A24109",
+      "cellVa": 6661118328,
+      "usageRawHex": "CDEB12C000000000",
+      "methodSpecIndex": 620006,
+      "methodSpec": [
+        428464,
+        -1,
+        17007
+      ],
+      "argumentRawHex": "B1000000000000000000120000000000",
+      "typeDefinition": 177,
+      "typeName": "Beyond.Blackboard+BlackboardString",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63371030,
+      "instructionHex": "488B15034F3809",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63371071,
+      "instructionHex": "488B15BAE24209",
+      "cellVa": 6661200384,
+      "usageRawHex": "6FA312C000000000",
+      "methodSpecIndex": 610743,
+      "methodSpec": [
+        428462,
+        -1,
+        62553
+      ],
+      "argumentRawHex": "1896258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000005017E78A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 15098,
+        "elementArguments": [
+          "42250000000000000000120000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 63371146,
+      "instructionHex": "488B158F4E3809",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63371183,
+      "instructionHex": "488B15521F3F09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63371220,
+      "instructionHex": "488B152D1F3F09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63626325,
+      "instructionHex": "488B151C643409",
+      "cellVa": 6660505720,
+      "usageRawHex": "33A412C000000000",
+      "methodSpecIndex": 610841,
+      "methodSpec": [
+        428462,
+        -1,
+        1828
+      ],
+      "argumentRawHex": "387F258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D01000000C039FE8A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 891,
+        "elementArguments": [
+          "C78C00000000000000000E0000000000"
+        ]
+      },
+      "typeKind": 21
+    },
+    {
+      "instructionRva": 63626366,
+      "instructionHex": "488B1503943509",
+      "cellVa": 6660583560,
+      "usageRawHex": "A7E812C000000000",
+      "methodSpecIndex": 619603,
+      "methodSpec": [
+        428448,
+        -1,
+        42566
+      ],
+      "argumentRawHex": "6A250000000000000000118000000000",
+      "typeDefinition": 9578,
+      "typeName": "Beyond.Gameplay.Core.ModifyDynamicBlackboard+Data+OperationType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63626406,
+      "instructionHex": "488B1573693409",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member13": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "paired-payload",
+      "scalar-payload",
+      "keyword-edit-list",
+      "byte",
+      "scalar-payload",
+      "target",
+      "target"
+    ],
+    "keywordEditMember3": [
+      "nullable-byte-payload-list",
+      "scalar32",
+      "scalar-payload"
+    ]
+  },
+  "boundary": "Exact union364 dispatch, current registration and method module/token joins identify SpeedupAction. Header13 reads common BYTE/three DWORDs, BYTE/BYTE, paired payload, scalar payload, nullable list of KeywordEnhanceEdit, BYTE, scalar payload and two TargetSettings; the second target terminates the selected reader with no following DWORD. Seven reader MethodSpecs directly select Priority, BlackboardString, BlackboardDouble, List<KeywordEnhanceEdit>, BlackboardDouble and two TargetSettings. The nested KeywordEnhanceEdit list element reuses the independently audited header3 reader and method windows pinned in buff_19b_native.json: nullable list of byte payloads, DWORD, scalar payload. Outer count minimum is one byte per element and reserves four terminal bytes; nested count minimum four and reserves five. Null wrappers/lists, empty lists and null elements remain distinct. Source identity/order are exact and static; framing is structural-only. Gameplay meaning, payload decoding, live generic provider, complete allocation/refill/error parity, suffix-anchor ownership and whole-BuffData EOF remain unresolved."
+}
