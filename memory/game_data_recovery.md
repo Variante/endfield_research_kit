@@ -295,6 +295,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   type join. Preserve the nested profiles' null and unsupported states. The
   observed suffix remains opaque; no field meaning or whole-BuffData EOF is
   established.
+  Extended tag `0x14E` routes to `SetDamageTagImmuneRule_Data` and uses a
+  header-six order: byte, three scalar32 values, `GameplayTagQuery`, then
+  `TargetSettings`. Its native contract pins the outer route and contexts plus
+  a type-identified query reader with a nullable count and bounded count-times-
+  four-byte array. The array is raw fixed-width data; managed value semantics
+  and live provider selection are not inferred. Preserve query/target null and
+  failure boundaries, and leave following bytes opaque without suffix-ownership
+  or whole-BuffData EOF claims.
   `scripts/game_data/buff_4c_native.json` pins two independent targets with a
   nullable byte-payload list between them. Its list count reserves the terminal
   target minimum before iteration; null lists, null elements and target nulls

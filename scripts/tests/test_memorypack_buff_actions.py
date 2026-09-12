@@ -1069,6 +1069,12 @@ def tagbc(first=b'\xff',second=b'\xff',prefix=0xfe,
           dwords=(0xffffffff,0x80000000,0x7fc00000),header=6):
     return b'\xbc'+bytes([header,prefix])+struct.pack('<III',*dwords)+first+second
 
+
+def tag14e(query=b'\xff',target_bytes=b'\xff',prefix=0xfe,
+           dwords=(0xffffffff,0x80000000,0x7fc00000),header=6):
+    return (b'\xfa\x4e\x01'+bytes([header,prefix])+struct.pack('<III',*dwords)+
+            query+target_bytes)
+
 class BuffActionsTests(unittest.TestCase):
 
     def test_16c_keyword_edit_nested_states_and_terminal_targets(self):
@@ -6919,6 +6925,64 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(row['diagnostic']['actual'],89)
         self.assertFalse(any(v.get('tag')==392 for v in row['completedRecords']))
         self.assertIn(dict(start=38,end=38+len(target()),kind='anonymous-target-profile'),row['completedRecords'])
+
+    def test_tag14e_query_then_terminal_target(self):
+        queries=(b'\xff',query41(None),query41(()),query41((0,0xffffffff)))
+        targets=(b'\xff',target(),target(direction_value=b'\xff'))
+        for query in queries:
+            for target_bytes in targets:
+                child=tag14e(query,target_bytes)
+                end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='14e.bin')
+                self.assertEqual(row['diagnostic'],dict(source='14e.bin',offset=end,
+                    expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=334),row['completedRecords'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+                self.assertFalse(row['wholeSchemaExact'])
+        child=tag14e(query41((0xffffffff,)),target(selector=b'\x03\x59'))
+        row=event_prefix(prefix(sequence(child,b'\x59')),source='14e-unknown')
+        self.assertEqual(row['diagnostic']['category'],'nested-profile')
+        self.assertEqual(row['diagnostic']['actual'],89)
+        self.assertFalse(any(v.get('tag')==334 for v in row['completedRecords']))
+        self.assertTrue(any(v.get('kind')=='anonymous-query-profile' for v in row['completedRecords']))
+
+    def test_tag14e_every_cut_hard_limits_and_trailing(self):
+        full=tag14e(query41((0x01234567,0xffffffff)),target(direction_value=b'\xff'))
+        r=Reader(full,'14e-cut');r.action(0);self.assertEqual(r.pos,len(full))
+        for n in range(len(full)):
+            results=[]
+            for data in (full,full[:n],full[:n]+b'\xff'*(len(full)-n)):
+                r=Reader(data,'14e-cut',n)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertLessEqual(r.pos,n)
+                self.assertFalse(any(v.get('tag')==334 for v in r.records))
+                results.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+            self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        for tail in (b'\x00',b'\xff'):
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(full)+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag14e_bad_headers_query_counts_and_target_profile(self):
+        base=tag14e(query41(None),target())
+        for value in (0,5,7,254):
+            r=Reader(base[:3]+bytes([value])+base[4:],'14e-header')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),(3,value))
+        bad_query=tag14e(b'\x03'+query41(None)[1:],b'\xff')
+        r=Reader(bad_query,'14e-query-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),(17,3))
+        malformed_query=b'\x02'+bytes(4)+struct.pack('<i',-2)
+        r=Reader(tag14e(malformed_query,b'\xff'),'14e-query-count')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),(22,-2))
+        r=Reader(tag14e(b'\xff',b'\x0c'+target()[1:]),'14e-target-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual((caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),(18,12))
+        short_query=b'\x02'+bytes(4)+struct.pack('<i',1)
+        r=Reader(tag14e(short_query,b'\xff'),'14e-query-element')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
 
     def test_tag40_direct_nullable_member_one_list(self):
         for values in (None,(),(0,),(0xffffffff,0x80000000,0x7fc00000)):

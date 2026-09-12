@@ -1,0 +1,175 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122758,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetDamageTagImmuneRule_DataForMemoryPack+Beyond_Gameplay_Core_SetDamageTagImmuneRule_DataForMemoryPackFormatter",
+      "Deserialize",
+      72137072
+    ],
+    [
+      122757,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetDamageTagImmuneRule_DataForMemoryPack",
+      "Deserialize",
+      72137168
+    ]
+  ],
+  "methodGroups": [
+    {
+      "image": "MemoryPack.Beyond.dll",
+      "methods": [
+        [
+          104393,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagQueryForMemoryPack",
+          "Deserialize",
+          53284816
+        ]
+      ]
+    }
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72137072,
+      "endRva": 72137165,
+      "sha256": "59495C8CAC4EC7788BE5419CB4F9AB166A3E710200B5DA633BA2BAC6AE30C8CE",
+      "boundary": "formatter lazy initialization and complete forward/init JMPs, ending before INT3"
+    },
+    {
+      "startRva": 72137168,
+      "endRva": 72137568,
+      "sha256": "F42DC451B9AD60D218AC839FA6BAC8B99ECDD935CED420D74AC4F36FF87BB7BB",
+      "boundary": "reader lazy initialization and complete normal path through RET"
+    },
+    {
+      "startRva": 83744384,
+      "endRva": 83744397,
+      "sha256": "EFCD10DE79EA0D297E6D66932E5BEAE079A39B21946286E0650C115F6569C83A",
+      "boundary": "existing-output handling and complete rejoin JMP"
+    },
+    {
+      "startRva": 83744453,
+      "endRva": 83744474,
+      "sha256": "A004A699C2B15C364CFEE7E1B2114318BDCB676F3BD79AE68619AC2FAFAC8D0C",
+      "boundary": "header-false clear and complete rejoin JMP"
+    },
+    {
+      "startRva": 83744397,
+      "endRva": 83744452,
+      "sha256": "1C16BE2FC9ABC3E1BD6DA234ABFDC8B5B2134516B56DABE848276E096A43E101",
+      "boundary": "header mismatch error dispatcher, ending before INT3"
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "BYTE source helper"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "DWORD source helper"
+    },
+    {
+      "startRva": 64210464,
+      "endRva": 64210603,
+      "sha256": "88F608E0AA57E391C4E0F1E3E05FC64AA1A99B32BDE365B949D25A8E2E1EB031",
+      "boundary": "GameplayTagQuery return-carrier bridge through provider-selected dispatch and RET"
+    },
+    {
+      "startRva": 53284816,
+      "endRva": 53285059,
+      "sha256": "C63442B5D7B7DC1C4E030D2CAF6B9BE6AA3FD0A4A42339F45B5C006EC20A4F85",
+      "boundary": "type-identified GameplayTagQuery reader through normal RET"
+    },
+    {
+      "startRva": 63637120,
+      "endRva": 63637294,
+      "sha256": "55D4EE137FB6E409046F5424FCBF3C00985BEDE162EBBC4E81E9EAF078E4B7FE",
+      "boundary": "query array helper count-times-four bound and fixed-width copy through normal RET"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72137340,
+      "instructionHex": "488B15A5E3BB08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72137446,
+      "instructionHex": "4C8B056B93B208",
+      "cellVa": 6660509272,
+      "usageRawHex": "37CC0FC000000000",
+      "methodSpecIndex": 517659,
+      "methodSpec": [
+        428464,
+        -1,
+        12732
+      ],
+      "argumentRawHex": "AA2D0000000000000000118000000000",
+      "typeDefinition": 11690,
+      "typeName": "Beyond.Gameplay.Core.GameplayTagQuery",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72137515,
+      "instructionHex": "488B15D65BB908",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 53284996,
+      "instructionHex": "488B15F534D209",
+      "cellVa": 6660507008,
+      "usageRawHex": "FFCA0FC000000000",
+      "methodSpecIndex": 517503,
+      "methodSpec": [
+        428475,
+        -1,
+        816
+      ],
+      "argumentRawHex": "A22D0000000000000000118000000000",
+      "typeDefinition": 11682,
+      "typeName": "Beyond.Gameplay.Core.GameplayTag",
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "GameplayTagQuery",
+      "TargetSettings"
+    ],
+    "queryReader": [
+      "header2",
+      "scalar32",
+      "nullable count",
+      "count times four-byte array"
+    ]
+  },
+  "boundary": "Tag 0x14E selects the registered SetDamageTagImmuneRule_DataForMemoryPack wrapper. Header 6 direct source order is BYTE, three DWORD reads, GameplayTagQuery typed bridge, then TargetSettings. The first DWORD carries a Priority MethodSpec; the query bridge and final target read carry the identified generic contexts. A separately type-identified GameplayTagQuery reader is pinned through its normal RET and GameplayTag MethodSpec; its selected array helper bounds and copies count times four bytes. The bridge's live provider selection, managed value semantics, per-item reader invocation, allocation/refill/error parity, ownership, and enclosing EOF are not inferred."
+}
