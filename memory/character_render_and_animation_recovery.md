@@ -536,6 +536,10 @@ only.
   The native minimum originates in the supplied managed settings object through
   its CPP conversion; this static source chain does not choose the live setting.
   See `cpp_cascade_settings_source_373.json`.
+  The map observer serializes ordinary concurrent access; reentry and missing
+  lifetime observations still invalidate evidence. Inspect its loss-reason
+  ledger before treating downstream staging/backend failures as native-layout
+  mismatches. Capture diagnostics now surface that causal failure explicitly.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
