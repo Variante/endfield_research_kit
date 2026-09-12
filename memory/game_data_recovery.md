@@ -278,6 +278,11 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   target-ending action, including its lazy initialization and null rejoin.
   Short and extended union encodings preserve their distinct widths; the
   registered interruption name does not establish live skill behavior.
+  Extended tag `0x15A` has a separate header-six order: byte, three scalar32
+  values, the existing bounded paired-byte profile, then `TargetSettings`.
+  `scripts/game_data/buff_15a_native.json` pins its native route and nested
+  static types; remaining bytes stay opaque, and runtime provider selection or
+  field meaning is not inferred.
   `scripts/game_data/buff_4c_native.json` pins two independent targets with a
   nullable byte-payload list between them. Its list count reserves the terminal
   target minimum before iteration; null lists, null elements and target nulls

@@ -1052,6 +1052,12 @@ def tag94(prefix=0,dwords=(0xffffffff,0x80000000,0x7fc00000),
     return (bytes([0x94,header,prefix])+struct.pack('<III',*dwords)+
             struct.pack('<II',*float_bits)+struct.pack('<I',terminal))
 
+
+def tag15a(paired=b'\xff',target_bytes=b'\xff',prefix=0xfe,
+           dwords=(0xffffffff,0x80000000,0x7fc00000),header=6):
+    return (b'\xfa\x5a\x01'+bytes([header,prefix])+struct.pack('<III',*dwords)+
+            paired+target_bytes)
+
 class BuffActionsTests(unittest.TestCase):
 
     def test_16c_keyword_edit_nested_states_and_terminal_targets(self):
@@ -1403,6 +1409,69 @@ class BuffActionsTests(unittest.TestCase):
         r=Reader(data+b'\xaa','94-tail',len(data));r.action(0)
         self.assertEqual(r.pos,len(data))
         self.assertEqual(r.data[r.pos:],b'\xaa')
+
+    def test_15a_reuses_bounded_paired_and_target_profiles(self):
+        cases=(
+            (b'\xff',b'\xff'),
+            (pair(None,None,0),b'\xff'),
+            (pair(b'',b'',255),target(direction_value=b'\xff')),
+            (pair(b'\x00\xff',b'item_liquid_water',128),target()),
+        )
+        for paired,target_bytes in cases:
+            data=tag15a(paired,target_bytes)
+            r=Reader(data,'15a-normal');r.action(0)
+            self.assertEqual(r.pos,len(data))
+            self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=346))
+            paired_row=next(q for q in r.records if q['kind']=='anonymous-paired-payload')
+            self.assertEqual(paired_row,dict(start=17,end=17+len(paired),kind='anonymous-paired-payload'))
+            target_row=next(q for q in r.records if q['kind']=='anonymous-target-profile')
+            self.assertEqual(target_row,dict(start=17+len(paired),end=len(data),kind='anonymous-target-profile'))
+            self.assertIn(dict(start=4,end=5,kind='anonymous-nonzero-byte'),r.ranges)
+            self.assertEqual([q for q in r.ranges if q['kind']=='anonymous-scalar32' and q['start']<17],[
+                dict(start=5,end=9,kind='anonymous-scalar32'),
+                dict(start=9,end=13,kind='anonymous-scalar32'),
+                dict(start=13,end=17,kind='anonymous-scalar32'),
+            ])
+
+    def test_15a_all_cuts_nested_errors_and_opaque_suffix(self):
+        data=tag15a(pair(b'\x00\xff',b'item_liquid_xiranite',128),target())
+        for cut in range(len(data)):
+            outcomes=[]
+            for raw in (data[:cut],data,data[:cut]+b'\xff'*8):
+                r=Reader(raw,'15a-cut',cut)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertLessEqual(r.pos,cut)
+                self.assertFalse(any(q.get('tag')==346 for q in r.records))
+                outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+            self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+
+        bad_header=bytearray(tag15a());bad_header[3]=5
+        r=Reader(bad_header,'15a-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,
+                         dict(source='15a-header',offset=3,expected=6,actual=5,category='member-count'))
+
+        r=Reader(tag15a(paired=b'\x02'),'15a-paired-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,
+                         dict(source='15a-paired-header',offset=17,expected=3,actual=2,category='member-count'))
+
+        malformed=b'\x03'+struct.pack('<i',-2)+b'\x00'+payload(None)
+        r=Reader(tag15a(paired=malformed),'15a-paired-length')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'count-bounds')
+        self.assertEqual(caught.exception.diagnostic['offset'],18)
+
+        paired=pair()
+        r=Reader(tag15a(paired,target_bytes=b'\x59'),'15a-target-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,
+                         dict(source='15a-target-header',offset=17+len(paired),expected=13,actual=0x59,category='member-count'))
+        self.assertFalse(any(q.get('tag')==346 for q in r.records))
+
+        r=Reader(data+b'\xaa\xff','15a-tail',len(data));r.action(0)
+        self.assertEqual(r.pos,len(data))
+        self.assertEqual(r.data[r.pos:],b'\xaa\xff')
 
     def test_4e_list_element_scalar_and_payload_states(self):
         groups=(None,(),(b'\xff',),(mapping4e(),),

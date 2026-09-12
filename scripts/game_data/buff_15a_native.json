@@ -1,0 +1,165 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122940,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetWaterDroneItemModePersistLiquidIdAction_DataForMemoryPack+Beyond_Gameplay_Core_SetWaterDroneItemModePersistLiquidIdAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      63372864
+    ],
+    [
+      122939,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetWaterDroneItemModePersistLiquidIdAction_DataForMemoryPack",
+      "Deserialize",
+      63370096
+    ]
+  ],
+  "methodGroups": [
+    {
+      "image": "MemoryPack.Beyond.dll",
+      "methods": [
+        [
+          162686,
+          "Beyond.MemoryPack.Beyond_Blackboard_BlackboardStringForMemoryPack",
+          "Deserialize",
+          64600912
+        ],
+        [
+          162687,
+          "Beyond.MemoryPack.Beyond_Blackboard_BlackboardStringForMemoryPack+Beyond_Blackboard_BlackboardStringForMemoryPackFormatter",
+          "Deserialize",
+          64600816
+        ]
+      ]
+    }
+  ],
+  "codeWindows": [
+    {
+      "startRva": 63372864,
+      "endRva": 63372953,
+      "sha256": "2AF9657A2650F0D0C78EF768D13B3ABB7CE956394944F4EB1A42A41EDBEC7D94",
+      "boundary": "outer formatter initialization and forwarding"
+    },
+    {
+      "startRva": 63370096,
+      "endRva": 63370535,
+      "sha256": "43ED0EFF4C7D57F2B32C4FFDDFF4B6066FA9F22EBA727F9EE2122AA2D6E8F809",
+      "boundary": "outer reader normal path through RET"
+    },
+    {
+      "startRva": 82743256,
+      "endRva": 82743269,
+      "sha256": "5540E7055B4FD80B4F2AB635387685360C386ACFE23837D1F1673005B661846F",
+      "boundary": "existing-output branch and rejoin"
+    },
+    {
+      "startRva": 82743325,
+      "endRva": 82743346,
+      "sha256": "AD9D26E13C5B1D464C09DCB97C7184690DB0DAC2F58FF57854878B186C6DB1A3",
+      "boundary": "header-false clear and rejoin"
+    },
+    {
+      "startRva": 82743269,
+      "endRva": 82743324,
+      "sha256": "378708781820A918A7811F1C666F51FB059808F90A22D7E1B21575F8B708A93A",
+      "boundary": "header-mismatch error path, ending before trap"
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "BYTE source helper"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "DWORD source helper"
+    },
+    {
+      "startRva": 64600816,
+      "endRva": 64600909,
+      "sha256": "7C7BF6A31C88EA2D1D2925193F774396233F35465E56AFBAC2DFC756B3C2599D",
+      "boundary": "BlackboardString formatter forwarding and initialization"
+    },
+    {
+      "startRva": 64600912,
+      "endRva": 64601279,
+      "sha256": "28B9471C06BC651A2530E9716A5FC98C45504DD1B0EDB6B1ED4D0A45083CE5B1",
+      "boundary": "BlackboardString reader normal path through init and RET"
+    },
+    {
+      "startRva": 64601195,
+      "endRva": 64601207,
+      "sha256": "898E6C848117A652E1433803000942797917BAE3CF8A9555EF05C47D70C49695",
+      "boundary": "BlackboardString FF/null clear and rejoin"
+    },
+    {
+      "startRva": 46827264,
+      "endRva": 46827462,
+      "sha256": "B8944001C41E1AF65B44F7DDE366FCE5E4E8B35E2A32682E628C2E0A36145BEF",
+      "boundary": "signed-length payload helper normal/init window"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 63370343,
+      "instructionHex": "488B15BAA94109",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 63370445,
+      "instructionHex": "488B15A4A44109",
+      "cellVa": 6661118328,
+      "usageRawHex": "CDEB12C000000000",
+      "methodSpecIndex": 620006,
+      "methodSpec": [
+        428464,
+        -1,
+        17007
+      ],
+      "argumentRawHex": "B1000000000000000000120000000000",
+      "typeDefinition": 177,
+      "typeName": "Beyond.Blackboard+BlackboardString",
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 63370482,
+      "instructionHex": "488B150F223F09",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member6": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "BlackboardString",
+      "TargetSettings"
+    ]
+  },
+  "boundary": "Tag 0x15A selects the registered SetWaterDroneItemModePersistLiquidIdAction_DataForMemoryPack wrapper. Its header-6 source order is BYTE, three DWORD reads, BlackboardString, then TargetSettings. The first DWORD carries a Priority MethodSpec; the final two members carry the identified nested MethodSpecs. The BlackboardString reader structurally consumes nullable signed-length payload, BYTE, nullable signed-length payload. No field names or gameplay semantics are inferred. Runtime provider selection, string decoding/meaning, allocation/refill/error parity, and whole-BuffData EOF remain unresolved."
+}
