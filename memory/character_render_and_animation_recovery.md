@@ -275,6 +275,13 @@ only.
   before/after the engine call, reject read/change failures, and compare nested
   global-copy endpoints. Retail execution of this extension remains unobserved;
   endpoint equality cannot close allocation lifetime or draw consumption.
+  The retail CPP post path executes native preparation beneath the render
+  bridge while the managed post constructors remain uncalled. Environment
+  capture therefore uses an explicit CPP CPU receipt with two nonempty windows,
+  authenticated code, exact input/pointer/clock joins and conditional output
+  checks. Stored chromatic intensity alone does not mean chromatic activity.
+  This receipt does not prove final GPU consumption; legacy managed receipts
+  retain their original contract and earlier one-window runs remain diagnostic.
   Public Unity particle instance records require their own stream-layout
   contract. Refract selects its Custom1 record; BaseV2 selects Custom1 or
   Custom1+Custom2 and loads Custom1 from the procedural buffer. Both select
