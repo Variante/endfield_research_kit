@@ -533,6 +533,9 @@ only.
   and packed copy with double-read consistency checks. Historical receipts lack
   these optional fields; CPU consistency does not prove selected settings or GPU
   consumption. See `cpp_cascade_observation_372.json`.
+  The native minimum originates in the supplied managed settings object through
+  its CPP conversion; this static source chain does not choose the live setting.
+  See `cpp_cascade_settings_source_373.json`.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
