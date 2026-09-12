@@ -229,6 +229,10 @@ only.
   serialized prefab ownership, including fail-closed renderers, is the required
   shader-census starting point. The later overview_02 M27 and overview_02/03
   M28 owners remain separately gated.
+  Particle `moveWithTransform` is an integer simulation-space enum, not a
+  boolean. M27 preserves Local simulation; world-space expanded GPU vertices
+  do not imply world-space CPU particle positions. Apply the source parent
+  and mounting transforms before comparing those coordinate spaces.
 - Recovered LitEffect material handoff uses one character-neutral, fail-closed
   schema for the complete serialized texture, transform, color, and float
   surface shared by the compatibility and five-MRT shaders. Overview_01 now
