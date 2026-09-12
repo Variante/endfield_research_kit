@@ -175,8 +175,10 @@ only.
   packer in the lab, with CPU checks for branch, range, projection and invalid
   inputs. Cloud light selection now preserves the computed direct quaternion or
   converts custom pitch/yaw through Unity Euler conversion. Runtime direct-light
-  state, texture/time ownership and integration remain separate; this is not an
-  original-binary numeric or publication proof.
+  state and texture/time ownership remain separate. The camera-local authored
+  cloud owner now joins the contact phase by source identity and supplies live
+  diagnostic constants. Shader readiness remains off pending runtime phase-stack
+  and input ownership; this integration is not a GPU publication proof.
   The current ordinary VFX writer derives the cloud clock with
   `fmodf(_Time.y, 1024)`. Its reusable conversion accepts that global time lane;
   animation elapsed time is not a proven substitute. The ordinary render-time
