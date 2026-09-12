@@ -1,0 +1,859 @@
+{
+  "schemaVersion": 1,
+  "tag": 224,
+  "hexTag": "0xE0",
+  "unionRoute": {
+    "tableRva": 59855640,
+    "tag": 224,
+    "entryRva": 59828178,
+    "entryBytes": "488B1557277809",
+    "registeredTypeIndex": 106794,
+    "typeDefinition": 15961,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_LockCameraAimAction_LockCameraAimActionDataForMemoryPack"
+  },
+  "methods": [
+    [
+      118977,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_LockCameraAimAction_LockCameraAimActionDataForMemoryPack+Beyond_Gameplay_Core_LockCameraAimAction_LockCameraAimActionDataForMemoryPackFormatter",
+      "Deserialize",
+      54752016
+    ],
+    [
+      118976,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_LockCameraAimAction_LockCameraAimActionDataForMemoryPack",
+      "Deserialize",
+      54744560
+    ]
+  ],
+  "header": {
+    "memberCount": 54,
+    "readCall": {
+      "rva": 54744614,
+      "bytes": "E8353287FF",
+      "targetRva": 46827616
+    },
+    "compareRva": 54744698,
+    "compareBytes": "4080FE36"
+  },
+  "codeWindows": [
+    {
+      "startRva": 54752016,
+      "endRva": 54752109,
+      "sha256": "9DBD754CB5BDA269814D9C5ACD1107B2A1EDBB84372697E8BA09FAF83C2CA963",
+      "boundary": "formatter lazy init and full tail-forward to reader; ends before INT3"
+    },
+    {
+      "startRva": 54744560,
+      "endRva": 54746831,
+      "sha256": "B7E41ECA254B484235603B66B0D94EA212FBB78ABB4F4BE655BC5775A725D6D2",
+      "boundary": "normal source path including RET at 3435ECE"
+    },
+    {
+      "startRva": 54746831,
+      "endRva": 54746975,
+      "sha256": "2951B59563706105A16F91A974D51E03EA9E2F7F11019C5FDDD39740A30A0363",
+      "boundary": "lazy initialization path through rejoin JMP at 3435F5A"
+    },
+    {
+      "startRva": 81375476,
+      "endRva": 81375489,
+      "sha256": "978EC948105B281220D4483E38B3E8F23007D85BA2E32812BA3B06647019740B",
+      "boundary": "existing output branch through complete JMP"
+    },
+    {
+      "startRva": 81375567,
+      "endRva": 81375588,
+      "sha256": "6E79124163328ABA4E0913483F06ED3176A560CA1667E95D8D9537DCD9ECA86F",
+      "boundary": "header helper false/null clear through complete JMP"
+    },
+    {
+      "startRva": 81375511,
+      "endRva": 81375566,
+      "sha256": "A4C4253356BB0D6E4142220A224B44146319AF2E31DCD562D57E6C8477786D87",
+      "boundary": "header mismatch error path ends before INT3"
+    },
+    {
+      "startRva": 46827616,
+      "endRva": 46827703,
+      "sha256": "CA6788FE028DC684758CD40833EFA107116A7BF664BFBF1746D792E52114639F",
+      "boundary": "one-byte null/header read helper through RET"
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "BYTE consume helper through RET"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "DWORD consume helper through RET"
+    },
+    {
+      "startRva": 46828464,
+      "endRva": 46828547,
+      "sha256": "F112A76BE9309585E435B359DBF7BD870995695419CF8FF36D6384EE27AB831C",
+      "boundary": "float32 consume helper through RET"
+    },
+    {
+      "startRva": 46827968,
+      "endRva": 46828033,
+      "sha256": "1AC9D1CA96F68251C17CB7953A869C40B3C0CDD002EA1BE824D60A0757AF1BFD",
+      "boundary": "reader cursor advance helper through RET; source bytes are copied at callsite"
+    },
+    {
+      "startRva": 60610928,
+      "endRva": 60611024,
+      "sha256": "1ED1A00F806038CBF5D9D3A9A582505A31CBA91355AB3A7E0D77D270F333CC52",
+      "boundary": "Vector3 12-byte copy/cursor helper through RET"
+    },
+    {
+      "startRva": 79069846,
+      "endRva": 79069868,
+      "sha256": "E159B64D683CD557205845FDEDB9C096FDAA1B6251F6537CAF83C663FEDFB8A1",
+      "boundary": "Vector3 minimum-width ensure and full rejoin JMP"
+    },
+    {
+      "startRva": 79069868,
+      "endRva": 79069894,
+      "sha256": "D86337522205333A1794CCE86CB91C391BC3B9F93174AE071F9CF379F2807455",
+      "boundary": "Vector3 refill/check through full rejoin JMP"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 54744742,
+      "instructionHex": "488B157B47C509",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17,
+      "generic": null,
+      "memberIndex": 2,
+      "consumerCallRva": 54744755
+    },
+    {
+      "instructionRva": 54744916,
+      "instructionHex": "488B15ED7CCB09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "typeKind": 18,
+      "generic": null,
+      "memberIndex": 7,
+      "consumerCallRva": 54744929
+    },
+    {
+      "instructionRva": 54744957,
+      "instructionHex": "488B15AC64C509",
+      "cellVa": 6661127216,
+      "usageRawHex": "87E712C000000000",
+      "methodSpecIndex": 619459,
+      "methodSpec": [
+        428448,
+        -1,
+        26642
+      ],
+      "argumentRawHex": "A1CB0000000000000000118000000000",
+      "typeDefinition": 52129,
+      "typeName": "Cinemachine.CinemachineBlendDefinition+Style",
+      "typeKind": 17,
+      "generic": null,
+      "memberIndex": 8,
+      "consumerCallRva": 54744970
+    },
+    {
+      "instructionRva": 54745031,
+      "instructionHex": "488B157A7CCB09",
+      "cellVa": 6661526600,
+      "usageRawHex": "8DEA12C000000000",
+      "methodSpecIndex": 619846,
+      "methodSpec": [
+        428464,
+        -1,
+        1832
+      ],
+      "argumentRawHex": "FAA90000000000000000120000000000",
+      "typeDefinition": 43514,
+      "typeName": "UnityEngine.AnimationCurve",
+      "typeKind": 18,
+      "generic": null,
+      "memberIndex": 10,
+      "consumerCallRva": 54745044
+    },
+    {
+      "instructionRva": 54745072,
+      "instructionHex": "488B153964C509",
+      "cellVa": 6661127216,
+      "usageRawHex": "87E712C000000000",
+      "methodSpecIndex": 619459,
+      "methodSpec": [
+        428448,
+        -1,
+        26642
+      ],
+      "argumentRawHex": "A1CB0000000000000000118000000000",
+      "typeDefinition": 52129,
+      "typeName": "Cinemachine.CinemachineBlendDefinition+Style",
+      "typeKind": 17,
+      "generic": null,
+      "memberIndex": 11,
+      "consumerCallRva": 54745085
+    },
+    {
+      "instructionRva": 54745601,
+      "instructionHex": "488B1518ECBB09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "typeKind": 18,
+      "generic": null,
+      "memberIndex": 25,
+      "consumerCallRva": 54745614
+    },
+    {
+      "instructionRva": 54745676,
+      "instructionHex": "488B15CDEBBB09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "typeKind": 18,
+      "generic": null,
+      "memberIndex": 27,
+      "consumerCallRva": 54745689
+    },
+    {
+      "instructionRva": 54745887,
+      "instructionHex": "488B15FAEABB09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "typeKind": 18,
+      "generic": null,
+      "memberIndex": 33,
+      "consumerCallRva": 54745900
+    },
+    {
+      "instructionRva": 54745962,
+      "instructionHex": "488B15AFEABB09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "typeKind": 18,
+      "generic": null,
+      "memberIndex": 35,
+      "consumerCallRva": 54745975
+    },
+    {
+      "instructionRva": 54746037,
+      "instructionHex": "488B1564EABB09",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "typeKind": 18,
+      "generic": null,
+      "memberIndex": 37,
+      "consumerCallRva": 54746050
+    },
+    {
+      "instructionRva": 54746180,
+      "instructionHex": "4C8B05A508BC09",
+      "cellVa": 6660515056,
+      "usageRawHex": "D1CA0FC000000000",
+      "methodSpecIndex": 517480,
+      "methodSpec": [
+        428448,
+        -1,
+        908
+      ],
+      "argumentRawHex": "C5AA0000000000000000118000000000",
+      "typeDefinition": 43717,
+      "typeName": "UnityEngine.Vector3",
+      "typeKind": 17,
+      "generic": null,
+      "memberIndex": 41,
+      "consumerCallRva": 54746198
+    },
+    {
+      "instructionRva": 54746263,
+      "instructionHex": "4C8B055208BC09",
+      "cellVa": 6660515056,
+      "usageRawHex": "D1CA0FC000000000",
+      "methodSpecIndex": 517480,
+      "methodSpec": [
+        428448,
+        -1,
+        908
+      ],
+      "argumentRawHex": "C5AA0000000000000000118000000000",
+      "typeDefinition": 43717,
+      "typeName": "UnityEngine.Vector3",
+      "typeKind": 17,
+      "generic": null,
+      "memberIndex": 42,
+      "consumerCallRva": 54746273
+    },
+    {
+      "instructionRva": 54746338,
+      "instructionHex": "4C8B050708BC09",
+      "cellVa": 6660515056,
+      "usageRawHex": "D1CA0FC000000000",
+      "methodSpecIndex": 517480,
+      "methodSpec": [
+        428448,
+        -1,
+        908
+      ],
+      "argumentRawHex": "C5AA0000000000000000118000000000",
+      "typeDefinition": 43717,
+      "typeName": "UnityEngine.Vector3",
+      "typeKind": 17,
+      "generic": null,
+      "memberIndex": 43,
+      "consumerCallRva": 54746348
+    },
+    {
+      "instructionRva": 54746408,
+      "instructionHex": "488B1551DFBB09",
+      "cellVa": 6660504704,
+      "usageRawHex": "45E612C000000000",
+      "methodSpecIndex": 619298,
+      "methodSpec": [
+        428448,
+        -1,
+        8642
+      ],
+      "argumentRawHex": "80050000000000000000118000000000",
+      "typeDefinition": 1408,
+      "typeName": "Beyond.Gameplay.MountPoint",
+      "typeKind": 17,
+      "generic": null,
+      "memberIndex": 44,
+      "consumerCallRva": 54746418
+    },
+    {
+      "instructionRva": 54746445,
+      "instructionHex": "488B152CDFBB09",
+      "cellVa": 6660504704,
+      "usageRawHex": "45E612C000000000",
+      "methodSpecIndex": 619298,
+      "methodSpec": [
+        428448,
+        -1,
+        8642
+      ],
+      "argumentRawHex": "80050000000000000000118000000000",
+      "typeDefinition": 1408,
+      "typeName": "Beyond.Gameplay.MountPoint",
+      "typeKind": 17,
+      "generic": null,
+      "memberIndex": 45,
+      "consumerCallRva": 54746458
+    },
+    {
+      "instructionRva": 54746655,
+      "instructionHex": "488B15E2B8C209",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeKind": 18,
+      "generic": null,
+      "memberIndex": 51,
+      "consumerCallRva": 54746668
+    },
+    {
+      "instructionRva": 54746696,
+      "instructionHex": "488B15B9B8C209",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeKind": 18,
+      "generic": null,
+      "memberIndex": 52,
+      "consumerCallRva": 54746709
+    }
+  ],
+  "anonymousReadOrder": {
+    "memberCount": 54,
+    "memberSourceCalls": [
+      {
+        "memberIndex": 1,
+        "callRva": 54744714,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 2,
+        "callRva": 54744755,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32",
+        "typeContext": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+        "contextLoadRva": 54744742
+      },
+      {
+        "memberIndex": 3,
+        "callRva": 54744788,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32"
+      },
+      {
+        "memberIndex": 4,
+        "callRva": 54744821,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32"
+      },
+      {
+        "memberIndex": 5,
+        "callRva": 54744854,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 6,
+        "callRva": 54744888,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 7,
+        "callRva": 54744929,
+        "targetRva": 47864976,
+        "sourceRead": "generic-read",
+        "typeContext": "UnityEngine.AnimationCurve",
+        "contextLoadRva": 54744916
+      },
+      {
+        "memberIndex": 8,
+        "callRva": 54744970,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32",
+        "typeContext": "Cinemachine.CinemachineBlendDefinition+Style",
+        "contextLoadRva": 54744957
+      },
+      {
+        "memberIndex": 9,
+        "callRva": 54745003,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 10,
+        "callRva": 54745044,
+        "targetRva": 47864976,
+        "sourceRead": "generic-read",
+        "typeContext": "UnityEngine.AnimationCurve",
+        "contextLoadRva": 54745031
+      },
+      {
+        "memberIndex": 11,
+        "callRva": 54745085,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32",
+        "typeContext": "Cinemachine.CinemachineBlendDefinition+Style",
+        "contextLoadRva": 54745072
+      },
+      {
+        "memberIndex": 12,
+        "callRva": 54745118,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 13,
+        "callRva": 54745152,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 14,
+        "callRva": 54745186,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 15,
+        "callRva": 54745220,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 16,
+        "callRva": 54745254,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 17,
+        "callRva": 54745288,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 18,
+        "callRva": 54745322,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 19,
+        "callRva": 54745356,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 20,
+        "callRva": 54745390,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 21,
+        "callRva": 54745451,
+        "targetRva": 46827968,
+        "sourceRead": "raw24-manual-copy+advance",
+        "manualCopyInstructions": [
+          {
+            "rva": 54745431,
+            "bytes": "488B4750",
+            "mnemonic": "mov",
+            "op": "rax, qword ptr [rdi + 0x50]"
+          },
+          {
+            "rva": 54745435,
+            "bytes": "BA18000000",
+            "mnemonic": "mov",
+            "op": "edx, 0x18"
+          },
+          {
+            "rva": 54745440,
+            "bytes": "488BCF",
+            "mnemonic": "mov",
+            "op": "rcx, rdi"
+          },
+          {
+            "rva": 54745443,
+            "bytes": "0F1030",
+            "mnemonic": "movups",
+            "op": "xmm6, xmmword ptr [rax]"
+          },
+          {
+            "rva": 54745446,
+            "bytes": "F20F107810",
+            "mnemonic": "movsd",
+            "op": "xmm7, qword ptr [rax + 0x10]"
+          }
+        ]
+      },
+      {
+        "memberIndex": 22,
+        "callRva": 54745505,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 23,
+        "callRva": 54745539,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 24,
+        "callRva": 54745573,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 25,
+        "callRva": 54745614,
+        "targetRva": 47864976,
+        "sourceRead": "generic-read",
+        "typeContext": "Beyond.Blackboard+BlackboardDouble",
+        "contextLoadRva": 54745601
+      },
+      {
+        "memberIndex": 26,
+        "callRva": 54745648,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 27,
+        "callRva": 54745689,
+        "targetRva": 47864976,
+        "sourceRead": "generic-read",
+        "typeContext": "Beyond.Blackboard+BlackboardDouble",
+        "contextLoadRva": 54745676
+      },
+      {
+        "memberIndex": 28,
+        "callRva": 54745723,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 29,
+        "callRva": 54745757,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 30,
+        "callRva": 54745791,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 31,
+        "callRva": 54745825,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 32,
+        "callRva": 54745859,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 33,
+        "callRva": 54745900,
+        "targetRva": 47864976,
+        "sourceRead": "generic-read",
+        "typeContext": "Beyond.Blackboard+BlackboardDouble",
+        "contextLoadRva": 54745887
+      },
+      {
+        "memberIndex": 34,
+        "callRva": 54745934,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 35,
+        "callRva": 54745975,
+        "targetRva": 47864976,
+        "sourceRead": "generic-read",
+        "typeContext": "Beyond.Blackboard+BlackboardDouble",
+        "contextLoadRva": 54745962
+      },
+      {
+        "memberIndex": 36,
+        "callRva": 54746009,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 37,
+        "callRva": 54746050,
+        "targetRva": 47864976,
+        "sourceRead": "generic-read",
+        "typeContext": "Beyond.Blackboard+BlackboardDouble",
+        "contextLoadRva": 54746037
+      },
+      {
+        "memberIndex": 38,
+        "callRva": 54746084,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 39,
+        "callRva": 54746118,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 40,
+        "callRva": 54746152,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 41,
+        "callRva": 54746198,
+        "targetRva": 60610928,
+        "sourceRead": "raw12-vector3",
+        "typeContext": "UnityEngine.Vector3",
+        "contextLoadRva": 54746180
+      },
+      {
+        "memberIndex": 42,
+        "callRva": 54746273,
+        "targetRva": 60610928,
+        "sourceRead": "raw12-vector3",
+        "typeContext": "UnityEngine.Vector3",
+        "contextLoadRva": 54746263
+      },
+      {
+        "memberIndex": 43,
+        "callRva": 54746348,
+        "targetRva": 60610928,
+        "sourceRead": "raw12-vector3",
+        "typeContext": "UnityEngine.Vector3",
+        "contextLoadRva": 54746338
+      },
+      {
+        "memberIndex": 44,
+        "callRva": 54746418,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32",
+        "typeContext": "Beyond.Gameplay.MountPoint",
+        "contextLoadRva": 54746408
+      },
+      {
+        "memberIndex": 45,
+        "callRva": 54746458,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32",
+        "typeContext": "Beyond.Gameplay.MountPoint",
+        "contextLoadRva": 54746445
+      },
+      {
+        "memberIndex": 46,
+        "callRva": 54746491,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 47,
+        "callRva": 54746525,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 48,
+        "callRva": 54746559,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 49,
+        "callRva": 54746593,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 50,
+        "callRva": 54746627,
+        "targetRva": 46828464,
+        "sourceRead": "raw4"
+      },
+      {
+        "memberIndex": 51,
+        "callRva": 54746668,
+        "targetRva": 47864976,
+        "sourceRead": "generic-read",
+        "typeContext": "Beyond.Gameplay.Core.TargetSettings",
+        "contextLoadRva": 54746655
+      },
+      {
+        "memberIndex": 52,
+        "callRva": 54746709,
+        "targetRva": 47864976,
+        "sourceRead": "generic-read",
+        "typeContext": "Beyond.Gameplay.Core.TargetSettings",
+        "contextLoadRva": 54746696
+      },
+      {
+        "memberIndex": 53,
+        "callRva": 54746743,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 54,
+        "callRva": 54746777,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      }
+    ],
+    "sourceKindCounts": {
+      "byte": 19,
+      "generic-read": 9,
+      "raw12-vector3": 3,
+      "raw24-manual-copy+advance": 1,
+      "raw4": 15,
+      "scalar32": 7
+    },
+    "sharedNestedProfiles": {
+      "UnityEngine.AnimationCurve": "curve_profile",
+      "Beyond.Blackboard+BlackboardDouble": "scalar_payload",
+      "Beyond.Gameplay.Core.TargetSettings": "target_profile"
+    },
+    "boundary": "54 direct source-member reads in the selected LockCameraAimActionData reader. Static types only identify the selected nested profiles: AnimationCurve and BlackboardDouble reuse their bounded readers, UnityEngine.Vector3 is a direct 12-byte source helper, MountPoint/Style/Priority use direct DWORD reads, and TargetSettings reuses its separately pinned finite profile. The 24-byte member is copied inline and followed by a separately pinned cursor advance. Primitive bits and enum values have no inferred meaning."
+  },
+  "boundary": "Tag 0xE0 resolves to LockCameraAimActionDataForMemoryPack. Its header-54 normal reader consumes one BYTE, three DWORDs, then 50 further direct members in the source-call order pinned above. The typed nested profiles reuse independently pinned AnimationCurve, BlackboardDouble and TargetSettings readers; each UnityEngine.Vector3 call copies and advances exactly 12 source bytes. The one 24-byte inline copy is followed by the separate 24-byte cursor advance. This supports structural framing only: field names, camera/gameplay semantics, live provider selection, allocation/refill/error parity, suffix-anchor ownership, and whole-BuffData EOF are not inferred. Bytes after the selected reader's cursor remain opaque."
+}

@@ -303,6 +303,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   and live provider selection are not inferred. Preserve query/target null and
   failure boundaries, and leave following bytes opaque without suffix-ownership
   or whole-BuffData EOF claims.
+  Short tag `0xE0` routes to `LockCameraAimActionData` and has a 54-member
+  source order pinned in `scripts/game_data/buff_e0_native.json`. Its nested
+  AnimationCurve, BlackboardDouble and TargetSettings values reuse the bounded
+  profiles above; raw vector copies and mount-point enum reads retain only their
+  observed widths and static contexts. Leave the remaining suffix opaque: this
+  contract does not assign gameplay meanings, suffix ownership or whole-BuffData
+  EOF.
   `scripts/game_data/buff_4c_native.json` pins two independent targets with a
   nullable byte-payload list between them. Its list count reserves the terminal
   target minimum before iteration; null lists, null elements and target nulls
