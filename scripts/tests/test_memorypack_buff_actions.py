@@ -1046,6 +1046,12 @@ def tag158(target_bytes=b'\xff',prefix=0xfe,bytes_tail=(0,1),
     return (b'\xfa\x58\x01\x0a'+bytes([prefix])+struct.pack('<III',*dwords[:3])+bytes(bytes_tail)+
             struct.pack('<II',*dwords[3:])+target_bytes+raw4)
 
+
+def tag94(prefix=0,dwords=(0xffffffff,0x80000000,0x7fc00000),
+           float_bits=(0x7fc00001,0x3f800000),terminal=0xfedcba98,header=7):
+    return (bytes([0x94,header,prefix])+struct.pack('<III',*dwords)+
+            struct.pack('<II',*float_bits)+struct.pack('<I',terminal))
+
 class BuffActionsTests(unittest.TestCase):
 
     def test_16c_keyword_edit_nested_states_and_terminal_targets(self):
@@ -1355,6 +1361,46 @@ class BuffActionsTests(unittest.TestCase):
             self.assertFalse(any(v.get('tag')==344 for v in r.records))
 
         r=Reader(data+b'\xaa','158-tail',len(data));r.action(0)
+        self.assertEqual(r.pos,len(data))
+        self.assertEqual(r.data[r.pos:],b'\xaa')
+
+    def test_94_source_order_and_raw_float_bits(self):
+        data=tag94()
+        for prefix in (0,1,255):
+            r=Reader(tag94(prefix=prefix),'94-source-order');r.action(0)
+            self.assertEqual(r.pos,27)
+            self.assertEqual(r.records[-1],dict(start=0,end=27,kind='union',tag=148))
+            self.assertEqual([x for x in r.ranges if x['kind']=='anonymous-float32-bits'],[
+                dict(start=15,end=19,kind='anonymous-float32-bits'),
+                dict(start=19,end=23,kind='anonymous-float32-bits'),
+            ])
+            self.assertEqual([x for x in r.ranges if x['kind']=='anonymous-scalar32'][-1],
+                             dict(start=23,end=27,kind='anonymous-scalar32'))
+            self.assertEqual(r.data[15:23],struct.pack('<II',0x7fc00001,0x3f800000))
+
+        r=Reader(b'\x94\xff','94-null-wrapper');r.action(0)
+        self.assertEqual(r.pos,2)
+        self.assertEqual(r.records[-1],dict(start=0,end=2,kind='union',tag=148))
+
+    def test_94_all_cuts_header_and_opaque_suffix(self):
+        data=tag94()
+        for cut in range(len(data)):
+            outcomes=[]
+            for raw in (data,data[:cut],data[:cut]+b'\xff'*8):
+                r=Reader(raw,'94-cut',cut)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertLessEqual(r.pos,cut)
+                self.assertFalse(any(v.get('tag')==148 for v in r.records))
+                outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+            self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+
+        bad_header=bytearray(data);bad_header[1]=6
+        r=Reader(bad_header,'94-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,
+                         dict(source='94-header',offset=1,expected=7,actual=6,category='member-count'))
+
+        r=Reader(data+b'\xaa','94-tail',len(data));r.action(0)
         self.assertEqual(r.pos,len(data))
         self.assertEqual(r.data[r.pos:],b'\xaa')
 

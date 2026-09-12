@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119736,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateDynamicBattleShape_DataForMemoryPack+Beyond_Gameplay_Core_CreateDynamicBattleShape_DataForMemoryPackFormatter",
+      "Deserialize",
+      72676288
+    ],
+    [
+      119735,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateDynamicBattleShape_DataForMemoryPack",
+      "Deserialize",
+      72676384
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72676288,
+      "endRva": 72676377,
+      "sha256": "7A8136354A2CA2B45A5C5306697299A68A66FC291923E3192D5A601B47D9D47C",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 72676384,
+      "endRva": 72676833,
+      "sha256": "632AA251855F03523B911E4577313783F5F77D9F3ACA653B307A143DAF75EA34",
+      "boundary": "header-seven source reads, initialization and return"
+    },
+    {
+      "startRva": 83811548,
+      "endRva": 83811561,
+      "sha256": "A8A8B4B5136449599FABEF8B5E39F1B19B498A73FA4212BC557F9131E304381D",
+      "boundary": "existing-output rejoin"
+    },
+    {
+      "startRva": 83811617,
+      "endRva": 83811638,
+      "sha256": "55553702291692840D6A02732FD3B30C8E42ADDB47EB404A0FE6E6EC1CF9E935",
+      "boundary": "header-false-clear rejoin"
+    },
+    {
+      "startRva": 83811561,
+      "endRva": 83811616,
+      "sha256": "935A8B643D4F415F81E74010888AC910D290B2B71B910235BAC71F7F9E3FC373",
+      "boundary": "header-mismatch error branch"
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "byte primitive reader"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "DWORD primitive reader"
+    },
+    {
+      "startRva": 46828464,
+      "endRva": 46828547,
+      "sha256": "F112A76BE9309585E435B359DBF7BD870995695419CF8FF36D6384EE27AB831C",
+      "boundary": "float32 primitive reader"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72676619,
+      "instructionHex": "488B1516A9B308",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72676781,
+      "instructionHex": "488B157C9FB408",
+      "cellVa": 6661182768,
+      "usageRawHex": "9DE712C000000000",
+      "methodSpecIndex": 619470,
+      "methodSpec": [
+        428448,
+        -1,
+        42471
+      ],
+      "argumentRawHex": "A6080000000000000000118000000000",
+      "typeDefinition": 2214,
+      "typeName": "Beyond.Gameplay.DynamicBattleShapeComponent+DynamicBattleShapeType",
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member7": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "float32",
+      "float32",
+      "scalar32"
+    ]
+  },
+  "boundary": "Tag decimal 148 (0x94) routes to the registered CreateDynamicBattleShape_Data reader. Its header-seven order is a byte, three DWORDs, two ReadSingle/float32 primitives, and a terminal DWORD. MethodSpec contexts identify Priority at member two and DynamicBattleShapeType at member seven; the other slots remain anonymous. Hash-pinned consumer and primitive windows establish fixed-width reads only; field/gameplay meanings, live generic-provider selection, enclosing ownership, and whole-file EOF remain unresolved."
+}

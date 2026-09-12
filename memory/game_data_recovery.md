@@ -989,6 +989,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   condition semantics, runtime provider selection and whole-BuffData EOF
   remain unresolved. The scalar and target children reuse their existing
   finite structural readers.
+  `scripts/game_data/buff_94_native.json` pins decimal union tag 148 (`0x94`)
+  to the header-seven CreateDynamicBattleShape reader. After the common
+  byte/three-DWORD prefix, it consumes two float32 reads and a terminal DWORD.
+  MethodSpec contexts identify Priority and DynamicBattleShapeType; remaining
+  scalar slots stay anonymous and float bits remain raw. No child profile or
+  gameplay meaning is inferred; provider selection, enclosing ownership, and
+  whole-file EOF remain unresolved.
   `scripts/game_data/buff_158_native.json` pins decimal union tag 344
   (`0x158`) to the header-ten SetStrafeModeAction reader. After the common
   byte/three-DWORD prefix it consumes two bytes, two DWORDs, bounded
