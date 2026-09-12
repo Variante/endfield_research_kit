@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      122913,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetStrafeModeAction_DataForMemoryPack+Beyond_Gameplay_Core_SetStrafeModeAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      67626448
+    ],
+    [
+      122912,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SetStrafeModeAction_DataForMemoryPack",
+      "Deserialize",
+      67626928
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 67626448,
+      "endRva": 67626537,
+      "sha256": "A8070EAA83C10DA40F78C773B499515361A185895C5D379C04114716D10D48A0",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 67626928,
+      "endRva": 67627508,
+      "sha256": "3100025A48DB73AA35F4322F073080D472052279856682A5D37E9158DB28B9B3",
+      "boundary": "header-ten source reads, initialization and return"
+    },
+    {
+      "startRva": 83294080,
+      "endRva": 83294093,
+      "sha256": "98F4D5AE612024186A99FB7EBDCAF979059F6F5F5FBE1CCEF8FF299E2AFC38C5",
+      "boundary": "existing-output rejoin"
+    },
+    {
+      "startRva": 83294149,
+      "endRva": 83294170,
+      "sha256": "1548BEDB83D2B9BFC1D4ECCBC0A96270CD4CF7C53EEA7998C67B56309B42C4BC",
+      "boundary": "FF/null-clear rejoin"
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "byte primitive reader"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "DWORD primitive reader"
+    },
+    {
+      "startRva": 46828464,
+      "endRva": 46828547,
+      "sha256": "F112A76BE9309585E435B359DBF7BD870995695419CF8FF36D6384EE27AB831C",
+      "boundary": "float32 primitive reader"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 67627175,
+      "instructionHex": "488B157AB50009",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67627349,
+      "instructionHex": "488B1534E7F708",
+      "cellVa": 6660542608,
+      "usageRawHex": "F9E712C000000000",
+      "methodSpecIndex": 619516,
+      "methodSpec": [
+        428448,
+        -1,
+        26288
+      ],
+      "argumentRawHex": "B92F0000000000000000118000000000",
+      "typeDefinition": 12217,
+      "typeName": "Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67627389,
+      "instructionHex": "488B150CE7F708",
+      "cellVa": 6660542608,
+      "usageRawHex": "F9E712C000000000",
+      "methodSpecIndex": 619516,
+      "methodSpec": [
+        428448,
+        -1,
+        26288
+      ],
+      "argumentRawHex": "B92F0000000000000000118000000000",
+      "typeDefinition": 12217,
+      "typeName": "Beyond.Gameplay.Core.MovementComponent+GroundedMoveGait",
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 67627425,
+      "instructionHex": "488B15602DFE08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member10": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "byte",
+      "byte",
+      "scalar32",
+      "scalar32",
+      "TargetSettings",
+      "float32"
+    ]
+  },
+  "boundary": "Tag 0x158 routes to the registered SetStrafeModeAction_Data reader. Its header-ten source order is BYTE, three DWORDs, two BYTEs, two DWORDs, TargetSettings, and ReadSingle/float32. MethodSpec contexts identify Priority, GroundedMoveGait twice, and TargetSettings, but do not establish enum values or gameplay behavior; other scalar slots remain anonymous. Primitive reader windows pin fixed-width cursor advances, and the maintained parser preserves the final four bytes without interpreting them while reusing its bounded TargetSettings profile. Live generic-provider selection, runtime allocation/reuse, enclosing ownership, and whole-BuffData EOF remain unresolved."
+}

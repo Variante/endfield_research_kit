@@ -1040,6 +1040,12 @@ def tag179(query=b'\xff',actions=b'\xff',flag=0x80,
     return (b'\xfa\x79\x01\x09\xfe'+struct.pack('<III',*dwords[:3])+query+actions+
             bytes([flag])+struct.pack('<II',*dwords[3:]))
 
+
+def tag158(target_bytes=b'\xff',prefix=0xfe,bytes_tail=(0,1),
+           dwords=(0xffffffff,0x80000000,0x7fc00000,0x01020304,0xfedcba98),raw4=b'\x00\x00\x80\x3f'):
+    return (b'\xfa\x58\x01\x0a'+bytes([prefix])+struct.pack('<III',*dwords[:3])+bytes(bytes_tail)+
+            struct.pack('<II',*dwords[3:])+target_bytes+raw4)
+
 class BuffActionsTests(unittest.TestCase):
 
     def test_16c_keyword_edit_nested_states_and_terminal_targets(self):
@@ -1299,6 +1305,56 @@ class BuffActionsTests(unittest.TestCase):
         self.assertFalse(any(v.get('tag')==377 for v in r.records))
 
         r=Reader(data+b'\xaa','179-tail',len(data));r.action(0)
+        self.assertEqual(r.pos,len(data))
+        self.assertEqual(r.data[r.pos:],b'\xaa')
+
+    def test_158_target_states_source_order_and_raw_float_tail(self):
+        targets=(b'\xff',target(),target(direction_value=b'\xff'))
+        dwords=(0xffffffff,0x80000000,0x7fc00000,0x01020304,0xfedcba98)
+        for target_bytes in targets:
+            for prefix in (0,1,255):
+                for bytes_tail in ((0,1),(128,255)):
+                    raw4=b'\x00\x00\x80\x3f' if prefix==1 else b'\x00\x00\xc0\x7f'
+                    data=tag158(target_bytes,prefix,bytes_tail,dwords,raw4)
+                    r=Reader(data,'158-normal');r.action(0)
+                    self.assertEqual(r.pos,len(data))
+                    self.assertEqual(r.records[-1],dict(start=0,end=len(data),kind='union',tag=344))
+                    target_start=27;target_end=target_start+len(target_bytes)
+                    self.assertIn(dict(start=target_start,end=target_end,kind='anonymous-target-profile'),r.records)
+                    self.assertIn(dict(start=target_end,end=target_end+4,kind='anonymous-raw4'),r.ranges)
+                    self.assertEqual(data[target_end:],raw4)
+
+    def test_158_all_cuts_header_target_and_required_raw_tail(self):
+        data=tag158(target())
+        for cut in range(len(data)):
+            outcomes=[]
+            for raw in (data,data[:cut],data[:cut]+b'\xff'*8):
+                r=Reader(raw,'158-cut',cut)
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertLessEqual(r.pos,cut)
+                self.assertFalse(any(v.get('tag')==344 for v in r.records))
+                outcomes.append((caught.exception.diagnostic,r.pos,r.ranges,r.records))
+            self.assertEqual(outcomes[0],outcomes[1]);self.assertEqual(outcomes[1],outcomes[2])
+
+        bad_header=bytearray(data);bad_header[3]=9
+        r=Reader(bad_header,'158-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,
+                         dict(source='158-header',offset=3,expected=10,actual=9,category='member-count'))
+
+        r=Reader(tag158(b'\x59'),'158-unknown-target')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,
+                         dict(source='158-unknown-target',offset=27,expected=13,actual=0x59,category='member-count'))
+        self.assertFalse(any(v.get('tag')==344 for v in r.records))
+
+        for target_bytes in (b'\xff',target()):
+            r=Reader(tag158(target_bytes,raw4=b''),'158-missing-raw4')
+            with self.assertRaises(FrameError) as caught:r.action(0)
+            self.assertEqual(caught.exception.diagnostic['category'],'truncated')
+            self.assertFalse(any(v.get('tag')==344 for v in r.records))
+
+        r=Reader(data+b'\xaa','158-tail',len(data));r.action(0)
         self.assertEqual(r.pos,len(data))
         self.assertEqual(r.data[r.pos:],b'\xaa')
 

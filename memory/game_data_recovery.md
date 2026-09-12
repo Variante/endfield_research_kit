@@ -989,6 +989,14 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   condition semantics, runtime provider selection and whole-BuffData EOF
   remain unresolved. The scalar and target children reuse their existing
   finite structural readers.
+  `scripts/game_data/buff_158_native.json` pins decimal union tag 344
+  (`0x158`) to the header-ten SetStrafeModeAction reader. After the common
+  byte/three-DWORD prefix it consumes two bytes, two DWORDs, bounded
+  TargetSettings, and a required four-byte float read retained as raw bits.
+  MethodSpec contexts identify Priority, GroundedMoveGait twice, and
+  TargetSettings; the other scalar slots remain anonymous, without enum-value
+  or gameplay claims. Provider selection, enclosing ownership, and whole-file
+  EOF remain unresolved.
   `scripts/game_data/buff_179_native.json` pins decimal union tag 377
   (`0x179`) to the header-nine TagQueryListenerAction reader. After the common
   byte/three-DWORD prefix, the selected reader consumes bounded
