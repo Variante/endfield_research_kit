@@ -95,6 +95,15 @@ only.
 
 ## Animation boundary
 
+- Source-validated Overview Animator playback owns authored facial skeletal
+  channels as well as the body. The NPC neutral facial-pose fallback must yield
+  while that playback is active; otherwise LateUpdate erases authored jaw/lip
+  motion. Preserve the fallback when no validated Animator owns the pose.
+  Empty ordinary curves or mesh blend shapes do not imply absent facial
+  animation: the ACL tracks and weighted rig establish that source route.
+  Additional retail morph/blink behavior and face-draw GPU palette ownership
+  remain separate evidence requirements.
+
 - The playable Character Info scope uses the recovered humanoid Avatar and
   authored UI controller/clip relationships.
 - Endminf enters her start state and hands off to the loop through a generated
