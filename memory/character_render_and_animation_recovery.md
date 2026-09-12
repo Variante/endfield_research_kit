@@ -282,6 +282,9 @@ only.
   checks. Stored chromatic intensity alone does not mean chromatic activity.
   This receipt does not prove final GPU consumption; legacy managed receipts
   retain their original contract and earlier one-window runs remain diagnostic.
+  Palette capture assigns its owner before retaining the draw and derives final
+  locality after deferred mapping with the collector's copy/resource/draw checks.
+  Regression coverage must inspect the published packet, not just byte counts.
   Public Unity particle instance records require their own stream-layout
   contract. Refract selects its Custom1 record; BaseV2 selects Custom1 or
   Custom1+Custom2 and loads Custom1 from the procedural buffer. Both select
