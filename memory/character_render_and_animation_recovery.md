@@ -563,6 +563,12 @@ only.
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
   any unresolved source identity explicitly.
+  CharInfo's sampled directional-visibility fields match the migrated authored
+  profile and select the shader's simulation bypass. Import that subset with
+  independent provenance rather than inheriting the contact/cloud phase identity.
+  This reproduces the observed constant-white R channel; it does not identify
+  the live asset instance or establish G, stencil coverage or upload ownership.
+  See `reports/assets/character_recovery/directional_profile_387.json`.
   See `reports/assets/character_recovery/contact_shadow_runtime_source_join.json`.
   Offline execution of the original Default shader with authenticated draw-local
   inputs and the captured blend reproduces the retained pass output byte-for-byte.
