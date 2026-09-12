@@ -28,7 +28,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = '106E5319F0FFBB8EB3B11B44B577C7A67C1057931F3EA207E56806727CD2BB74'
+CORPUS_SHA = 'A9F479D07A7E9DB7DF5F111F85136F34BC5F93A28970994A70DC1ECA1F987BB5'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -881,6 +881,7 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (0xBB,0x390FA60,106636,16135,'ForceTargetInFightAction_Data',None),
         (0x0B,0x390E386,106285,15905,'AddTagAction_Data',None),
         (0x0C,0x390FDB2,106286,15907,'AddTagToEntities_Data',None),
+        (0x26,0x3910776,106361,15975,'CastPlungingAttack_Data',None),
         (0x2B,0x39107DA,106366,15985,'ChangeSeasonTowerEnergyAction_Data',None),
         (0x115,0x390DAEE,106937,16321,'PlayAnimationAction_PlayAnimationActionData',None),
         (0x151,0x39100A0,107091,16441,'SetHpFloor_Data',None),
@@ -2616,6 +2617,7 @@ def audit():
                Path(__file__).with_name('buff_14e_native.json'),
                Path(__file__).with_name('buff_0d_native.json'),
                Path(__file__).with_name('buff_0c_native.json'),
+               Path(__file__).with_name('buff_26_native.json'),
                Path(__file__).with_name('buff_e0_native.json'),
                Path(__file__).with_name('buff_172_native.json'),
                Path(__file__).with_name('buff_28_native.json'),
@@ -3104,6 +3106,8 @@ def audit():
         contract_path=Path(__file__).with_name('buff_0b_native.json'))
     buff_0c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_0c_native.json'))
+    buff_26=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('buff_26_native.json'))
     buff_2b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_2b_native.json'))
     buff_115=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -3618,6 +3622,7 @@ def audit():
         'selectedBuffBBReadOrder':buff_bb,
         'selectedBuff0BReadOrder':buff_0b,
         'selectedBuff0CReadOrder':buff_0c,
+        'selectedBuff26ReadOrder':buff_26,
         'selectedBuff2BReadOrder':buff_2b,
         'selectedBuff115ReadOrder':buff_115,
         'selectedBuff151ReadOrder':buff_151,

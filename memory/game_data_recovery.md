@@ -1284,6 +1284,12 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   BlackboardString, TargetSettings, direct List<GameplayTag>, terminal byte.
   Reuse the 0x0B list frame and conditional 0xC5 element reader; the distinct
   route/type identity does not establish provider selection or field meaning.
+  Short tag `0x26` has a header-five order of byte, three anonymous scalar32
+  values and the bounded `TargetSettings` profile. Its native route and exact
+  nested type joins are pinned in `scripts/game_data/buff_26_native.json`;
+  the first scalar's `Priority` context does not assign a field meaning.
+  Runtime formatter/provider selection, suffix ownership and whole-BuffData
+  EOF remain unresolved.
   `scripts/game_data/buff_40_native.json` ends a member-six action with a
   DWORD and that same direct element list. Preserve each element header; the
   QueryType context belongs to the preceding DWORD, not an extra query wrapper.

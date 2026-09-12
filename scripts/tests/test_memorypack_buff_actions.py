@@ -127,6 +127,11 @@ def tag0c(items=(),first=b'\xff',second=b'\xff',last=255):
             struct.pack('<i',-1 if items is None else len(items))+b''.join(items or ())+bytes([last]))
 
 
+def tag26(first=b'\xfe',scalars=(0xffffffff,0x80000000,0x7fc00000),target_value=b'\xff',extended=False):
+    tag=b'\xfa\x26\x00' if extended else b'\x26'
+    return tag+b'\x05'+first+struct.pack('<III',*scalars)+target_value
+
+
 def tagbb(first=b'\xff',second=b'\xff'):
     return b'\xbb\x06\xfe'+b'\xff'*12+first+second
 
@@ -9531,6 +9536,59 @@ class BuffActionsTests(unittest.TestCase):
         with self.assertRaises(FrameError):r.action(0)
         self.assertEqual(sum(v['kind']=='anonymous-tag-element' for v in r.records),1)
         self.assertFalse(any(v.get('tag')==12 for v in r.records))
+
+    def test_tag26_target_profile_and_exact_union_boundary(self):
+        for target_value in (b'\xff',target()):
+            for extended in (False,True):
+                child=tag26(target_value=target_value,extended=extended)
+                r=Reader(child,'26-frame');r.action(0)
+                self.assertEqual(r.pos,len(child))
+                self.assertIn(dict(start=0,end=len(child),kind='union',tag=38),r.records)
+                end=19+len(child)
+                row=event_prefix(prefix(sequence(child,b'\x59')),source='26.bin')
+                self.assertEqual(row['diagnostic'],dict(source='26.bin',offset=end,expected='supported current union tag',actual=89,category='union-tag'))
+                self.assertIn(dict(start=19,end=end,kind='union',tag=38),row['completedRecords'])
+                self.assertEqual(sequence_frame(sequence(child))[-1]['end'],len(sequence(child)))
+
+    def test_tag26_every_cut_hard_limit_null_wrapper_extended_and_trailing(self):
+        full=tag26(target_value=target())
+        children=(full,tag26(),tag26(target_value=target(),extended=True),b'\x26\xff',b'\xfa\x26\x00\xff')
+        for child in children:
+            r=Reader(child,'26-cut');r.action(0);self.assertEqual(r.pos,len(child))
+            for n in range(len(child)):
+                results=[]
+                for data in (child,child[:n],child[:n]+b'\xff'*(len(child)-n)):
+                    r=Reader(data,'26-cut',n)
+                    with self.assertRaises(FrameError) as caught:r.action(0)
+                    self.assertLessEqual(r.pos,n);self.assertFalse(any(v.get('tag')==38 for v in r.records))
+                    results.append((caught.exception.diagnostic,r.pos,r.ranges))
+                self.assertEqual(results[0],results[1]);self.assertEqual(results[0],results[2])
+        for tail in (b'\x00',b'\xff'):
+            with self.assertRaises(FrameError) as caught:sequence_frame(sequence(full)+tail)
+            self.assertEqual(caught.exception.diagnostic['category'],'trailing-byte')
+
+    def test_tag26_bad_header_nested_counts_and_truncated_target(self):
+        child=tag26(target_value=target())
+        r=Reader(child,'26-bounds');r.action(0)
+        spans=[v for v in r.ranges if v['kind'] in ('member-header','count-i32')]
+        self.assertGreater(len(spans),5)
+        for span in spans:
+            values=(0,254) if span['kind']=='member-header' else (-2,0x7fffffff)
+            for value in values:
+                bad=bytearray(child);at=span['start']
+                if span['kind']=='member-header':bad[at]=value
+                else:struct.pack_into('<i',bad,at,value)
+                r=Reader(bad,'26-bounds')
+                with self.assertRaises(FrameError) as caught:r.action(0)
+                self.assertEqual((caught.exception.diagnostic['source'],caught.exception.diagnostic['offset'],caught.exception.diagnostic['actual']),('26-bounds',at,value))
+                self.assertFalse(any(v.get('tag')==38 for v in r.records))
+        bad=bytearray(child);bad[1]=4;r=Reader(bad,'26-header')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic,dict(source='26-header',offset=1,expected=5,actual=4,category='member-count'))
+        bad=tag26(target_value=target()[:-1]);r=Reader(bad,'26-target')
+        with self.assertRaises(FrameError) as caught:r.action(0)
+        self.assertEqual(caught.exception.diagnostic['category'],'truncated')
+        self.assertFalse(any(v.get('tag')==38 for v in r.records))
 
     def test_tagbb_two_independent_targets_end_before_next_union(self):
         for first in (b'\xff',target()):

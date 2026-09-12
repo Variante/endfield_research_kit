@@ -1,0 +1,137 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      119153,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CastPlungingAttack_DataForMemoryPack+Beyond_Gameplay_Core_CastPlungingAttack_DataForMemoryPackFormatter",
+      "Deserialize",
+      72849696
+    ],
+    [
+      119152,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CastPlungingAttack_DataForMemoryPack",
+      "Deserialize",
+      72849792
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 59836278,
+      "endRva": 59836328,
+      "sha256": "5BA81269DCE73F19BF32A50C057F9B8D6C84DDA3D15F4C8A08B3A8C4AD4AC9FD",
+      "boundary": "tag-0x26 case window through full tail JMP"
+    },
+    {
+      "startRva": 72849696,
+      "endRva": 72849785,
+      "sha256": "7BCAB9C8591C8020A9A967D55E0524FD6669DC06CB6D8F752EAD12AC6179A9F4",
+      "boundary": "formatter forwarding and tail transfer"
+    },
+    {
+      "startRva": 72849792,
+      "endRva": 72850174,
+      "sha256": "D79D9BDAAF056CCE252A9025A639D8090F2E166B25D7FBCCB8305AD181E03CDC",
+      "boundary": "selected Deserialize normal source reads through RET"
+    },
+    {
+      "startRva": 46827616,
+      "endRva": 46827703,
+      "sha256": "CA6788FE028DC684758CD40833EFA107116A7BF664BFBF1746D792E52114639F",
+      "boundary": "member-header helper through RET"
+    },
+    {
+      "startRva": 46827712,
+      "endRva": 46827794,
+      "sha256": "636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E",
+      "boundary": "one-byte body helper through RET"
+    },
+    {
+      "startRva": 46827184,
+      "endRva": 46827264,
+      "sha256": "2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65",
+      "boundary": "four-byte body helper through RET"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 72850027,
+      "instructionHex": "488B15B603B108",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 72850121,
+      "instructionHex": "488B15387CAE08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "anonymousReadOrder": {
+    "member5": [
+      "byte",
+      "scalar32",
+      "scalar32",
+      "scalar32",
+      "target"
+    ],
+    "sourceCalls": [
+      {
+        "memberIndex": 1,
+        "callRva": 72849999,
+        "targetRva": 46827712,
+        "sourceRead": "byte"
+      },
+      {
+        "memberIndex": 2,
+        "callRva": 72850040,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32",
+        "contextIndex": 1,
+        "typeContext": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+      },
+      {
+        "memberIndex": 3,
+        "callRva": 72850069,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32"
+      },
+      {
+        "memberIndex": 4,
+        "callRva": 72850098,
+        "targetRva": 46827184,
+        "sourceRead": "scalar32"
+      },
+      {
+        "memberIndex": 5,
+        "callRva": 72850134,
+        "targetRva": 47864976,
+        "sourceRead": "generic-read",
+        "contextIndex": 2,
+        "typeContext": "Beyond.Gameplay.Core.TargetSettings"
+      }
+    ]
+  },
+  "boundary": "The selected tag-0x26 route resolves to CastPlungingAttack_DataForMemoryPack. Its exact-build selected reader checks member header 5, then performs one one-byte read, three four-byte reads, and a TargetSettings read in source order. Existing bounded TargetSettings framing is reused. These are structural-only anonymous fields; static type context does not establish field meaning, runtime provider/formatter selection, suffix ownership, or whole-BuffData EOF."
+}
