@@ -43,8 +43,10 @@ Current durable state:
 Character lighting import consumes the resolved active volume stack. A raw
 post-transfer profile still contains disabled values and cannot substitute for
 that stack; preserve its native transfer snapshot separately. Packed ambient
-vectors must not be recomputed from legacy authoring sliders. Correct import
-alone does not establish runtime scene-environment layer ownership.
+vectors must not be recomputed from legacy authoring sliders. CharInfo uses its
+prefab-linked CharInfo_Volume base, not GachaRoom_Volume; actor snapshot application
+must preserve the selected context instead of injecting another scene's defaults.
+The authored profile join does not establish live stack-generation ownership.
 
 Changing actor counts, shader hashes, frame metrics, session ids, and capture
 inventories belong in `reports/assets/character_recovery/`.
