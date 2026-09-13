@@ -211,6 +211,13 @@ only.
   stored CharacterBit through its comparison. Depth writes and other stencil
   bits must not be inferred from the later color pass. See lab PROGRESS findings
   142-143 and `reports/assets/character_recovery/depth_only_outline_validation.json`.
+- Skinned hair's pixel-stage strand basis comes from the palette header, not
+  necessarily Unity's renderer matrix. The retained header reconstructs as the
+  authored root-bone world transform from head skinning and bind-pose data.
+  `EndfieldRecoveredSkinRootBasis` publishes that matrix per renderer, including
+  cached viewer prefabs. Verify active shader-branch consumption separately;
+  property publication and matching VS/PS buffer views do not establish the
+  lifetime of bytes through a later draw. See lab PROGRESS finding 404.
 - ContactShadow captured-input replay needs repeat controls: original dispatches
   can differ at pixels with overlapping recovered output writes. Preserve the
   original dot-product instructions through distance quantization; scalar
