@@ -874,10 +874,13 @@ Fallback texture setup belongs to an import with actual material-slot context.
   native paths; join activation/release and tween identity before choosing
   whether lab selection resets or preserves camera state. Visible actor-switch
   gaps do not establish camera initialization timestamps.
-  The pose observer now retains bounded gyroscope lifecycle callbacks across
-  both visits, with before/after extension/tween state and QPC/Present clocks.
-  Use the complete raw receipt to test reuse; it does not establish allocation
-  lifetime or actor consumption by itself.
+  The pose observer retains separate bounded gyroscope lifecycle and Tick
+  receipts across both visits, including before/after target, offset and
+  extension/tween state with QPC/Present clocks. Collection requires both;
+  overflow and incomplete reads/callbacks fail closed. The camera auditor can
+  bracket draws with either standalone pose ticks or the environment stream.
+  Following observations remain later evidence, even if their values match;
+  neither stream alone establishes actor ownership or camera consumption.
   EndfieldCapture's
   dedicated pose-timing launcher preallocates a bounded dense palette sequence
   before readiness and arms on a new Animator/graphics trigger without waiting
