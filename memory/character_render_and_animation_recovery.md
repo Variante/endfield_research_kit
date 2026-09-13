@@ -622,6 +622,10 @@ history ownership/cadence, residual trails and burst composition remain open.
   The latest-per-resource ledger cannot reconstruct this history for older
   captures. A matching map generation still does not exclude GPU writes or
   prove resource creation/destruction lifetime.
+  Fullscreen chronology uses the observed Present clock even without a
+  resource-copy owner. Joined late frames retain post metadata separately
+  from their physical copy plan; retained bindings do not imply copied pixels
+  or authenticated post consumption.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
