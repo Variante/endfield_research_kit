@@ -977,7 +977,10 @@ newer source version must not silently replace the capture-matched texture.
   The environment-shadow render bridge now records this native member with
   input/layer pointer identities, repeated-read failures and request flags.
   Use the environment-shadow launcher, not plain combined capture, to collect
-  it; the final GPU packing and lifetime join remain separate.
+  it. Retail native code now confirms the 16-byte packing from the layer
+  member plus a separate profile-manager lookup. Selected request/manager
+  ownership, allocation lifetime and GPU consumption remain unproven; the
+  no-layer path binds an existing buffer whose contents are not established.
   Version the consumer and close selected-frame ownership before
   admitting presentation; preserve distinct payloads through GPU consumption.
   Material validation must cover every selected shader-read field and its
