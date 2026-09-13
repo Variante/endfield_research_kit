@@ -162,8 +162,12 @@ material mip bias and actual sampled texture payloads remain separate gaps.
 Camera-global and CPP otherData mip snapshots are now retained with matching
 copy endpoints; effective scale/getter inputs and draw-consumed upload lifetime
 remain unjoined. Sampler audits must query actual bound D3D samplers, not null
-sampler placeholders attached to separate texture descriptors. Lab quality
-overrides can change filtering despite correct texture import metadata.
+sampler placeholders attached to separate texture descriptors. The lab pipeline
+removes forced anisotropy so per-texture filtering survives the quality preset;
+actual cloth samplers now match native linear min/mag and point mip filtering.
+This has only a small visual effect. Continue comparing rendered frames against
+the original at fixed animation checkpoints after rendering changes, with
+clothes and light effects prioritized over mouse-driven background movement.
 
 - Direct3D11 is the authoritative lab backend because it matches the recovered
   retail shader binaries. D3D12 experiments remain labeled diagnostics.
