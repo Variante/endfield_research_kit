@@ -974,15 +974,15 @@ newer source version must not silently replace the capture-matched texture.
   use. The reusable ordinary CPP conversion preserves both flags and the
   native 20-byte layout; it does not replace the GPU publisher or prove its
   selected-frame inputs. Observe both before joining this structure to the GPU buffer.
-  The environment-shadow render bridge now records this native member with
-  input/layer pointer identities, repeated-read failures and request flags.
-  Use the environment-shadow launcher, not plain combined capture, to collect
-  it. Retail native code now confirms the 16-byte packing from the layer
-  member plus a separate profile-manager lookup. Selected request/manager
-  ownership, allocation lifetime and GPU consumption remain unproven; the
-  no-layer path binds an existing buffer whose contents are not established.
-  The ordinary producer assigns one layer to two neighboring inputs; native
-  execution reads the first while current snapshots observe the second.
+  The environment-shadow observer retains member snapshots and now hooks the
+  actual terrain packer, allocation helper and profile lookup. A fresh retail
+  receipt is needed for that new lane. It records unscoped execution rather
+  than assuming bridge containment, and samples both neighboring request
+  inputs when a bridge exists; native execution reads the first input.
+  Use the environment-shadow launcher to collect this bounded native trace.
+  Packing bytes and request endpoints do not establish allocation lifetime,
+  backend upload generation or GPU consumption. The no-layer path binds an
+  existing buffer whose contents remain unproven by the packer observer.
   Captured disabled/zero terrain values still produce M27 emission in exact
   packet replay, so those values alone do not explain missing live stones.
   Version the consumer and close selected-frame ownership before
