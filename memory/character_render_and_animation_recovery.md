@@ -881,6 +881,10 @@ Fallback texture setup belongs to an import with actual material-slot context.
   bracket draws with either standalone pose ticks or the environment stream.
   Following observations remain later evidence, even if their values match;
   neither stream alone establishes actor ownership or camera consumption.
+  Match the recorded state sequence separately from QPC brackets: a draw can
+  agree with a Tick whose callback overlaps the metadata observation, or with
+  a state retained after that Tick completed. Preserve repeated-value ambiguity;
+  nearest-clock selection alone can create false trajectory outliers.
   EndfieldCapture's
   dedicated pose-timing launcher preallocates a bounded dense palette sequence
   before readiness and arms on a new Animator/graphics trigger without waiting
