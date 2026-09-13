@@ -851,6 +851,13 @@ outputs are verified. See the capture environment observer guide for contracts.
   for collection and validation; this scope omits Streamline surfaces.
 - Report spatial, temporal, silhouette, effect, and color errors separately.
   One aggregate score can hide a regression in a critical layer.
+- Sparse saved checkpoints must still render intervening simulation frames.
+  The batch capture previously advanced animation while retaining color history
+  from the last saved checkpoint; motion history required consecutive frames.
+  Explicit capture now owns camera rendering at output resolution. Optional
+  bounded CPU receipts verify camera/history chronology; selected GPU captures
+  establish actual bindings separately. This fixes a capture defect, not native
+  temporal parity. The first-visible blank-frame/reset boundary remains open.
 - Captured resources and replayed lab outputs keep their color space, format,
   viewport, frame, camera, and producer provenance.
 - Reference videos and raw frames are evidence inputs, not repository memory
