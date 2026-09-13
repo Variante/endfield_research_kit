@@ -3,3 +3,6 @@ scripts/game_data/streaming_field2_native.json text eol=lf
 scripts/game_data/streaming_marker17_native.json text eol=lf
 scripts/game_data/streaming_marker13_native.json text eol=lf
 scripts/game_data/streaming_marker2_native.json text eol=lf
+# These linked visual-recovery reports retain exact evidence file hashes.
+reports/assets/character_recovery/effect_texture_native_source_inventory.json -text
+reports/assets/character_recovery/effect_native_textures_418.json -text

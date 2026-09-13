@@ -858,6 +858,12 @@ Character-wide texture repair applies only exact source texture-contract
 entries. Recursive scans also reach effects and other importer-owned assets;
 they must not guess material roles from filenames and overwrite those settings.
 Fallback texture setup belongs to an import with actual material-slot context.
+Effect texture contracts preserve source compression, color space, sampler
+settings and authored mip chains through the existing PNG asset identities.
+Equal decoded image bytes do not establish equal shader sampling: an sRGB
+view changes RGB values, and generated mips can change filtering. Compare
+actual GPU views and payloads after import. A same-name/PathID asset from a
+newer source version must not silently replace the capture-matched texture.
 
 ## Remaining gaps
 
