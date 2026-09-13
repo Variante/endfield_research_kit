@@ -40,6 +40,12 @@ Current durable state:
   palette bytes as draw-consumed data. Full capture's Streamline publication
   prerequisite can postpone dense palette sampling beyond the early pose gap.
 
+Character lighting import consumes the resolved active volume stack. A raw
+post-transfer profile still contains disabled values and cannot substitute for
+that stack; preserve its native transfer snapshot separately. Packed ambient
+vectors must not be recomputed from legacy authoring sliders. Correct import
+alone does not establish runtime scene-environment layer ownership.
+
 Changing actor counts, shader hashes, frame metrics, session ids, and capture
 inventories belong in `reports/assets/character_recovery/`.
 
