@@ -968,7 +968,11 @@ newer source version must not silently replace the capture-matched texture.
   enable, curvature scale, curvature offset and encoded profile. Reset disables
   the keyword and sets terrain stencil; it does not clear the block. A draw-local
   zero fixture does not establish manager lifecycle, active patch state or a
-  global default. Version the consumer and close selected-frame ownership before
+  global default. The native CPP terrain member is a separate 20-byte structure
+  with authored use, curvature, effective keyword and stencil; it has no profile
+  index. Device/feature policy can make its keyword flag differ from authored
+  use. Observe both before joining this structure to the GPU buffer.
+  Version the consumer and close selected-frame ownership before
   admitting presentation; preserve distinct payloads through GPU consumption.
   Material validation must cover every selected shader-read field and its
   explicit runtime copy owner; matching a destination default does not establish
@@ -987,6 +991,9 @@ newer source version must not silently replace the capture-matched texture.
   emphasizing cloth transparency, fabric detail and light effects.
   Native centered Halton jitter arithmetic now matches a selected c19 packet;
   camera phase advancement and projection/history integration remain separate.
+  CPP request mip bias has its own reusable gated evaluator; do not substitute
+  the camera material/resolution producer. Recorded request values still need
+  an upload-generation join before selecting the live draw route.
   Check actual draw-time shader hashes as well as compiler callbacks: a successful
   selected-pass compile and SetPass can still end in an error-shader draw.
   Clear the shader cache after independent CompileVariant and before runtime
