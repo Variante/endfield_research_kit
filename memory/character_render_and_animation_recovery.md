@@ -963,9 +963,13 @@ newer source version must not silently replace the capture-matched texture.
 - Expand converter and shader fixtures while preserving exact source bytes.
 - Version M27 terrain inputs with their selected shader program. A newer
   retained consumer gates the terrain profile with an additional enable lane
-  where the older generative shell declares padding. A draw-local zero fixture
-  does not establish the manager lifecycle or authorize a global zero. Recover
-  the new lane's producer before replacing the program or admitting presentation.
+  where the older generative shell declares padding. Exact shader metadata and
+  the current ordinary native producer identify the complete 16-byte block as
+  enable, curvature scale, curvature offset and encoded profile. Reset disables
+  the keyword and sets terrain stencil; it does not clear the block. A draw-local
+  zero fixture does not establish manager lifecycle, active patch state or a
+  global default. Version the consumer and close selected-frame ownership before
+  admitting presentation; preserve distinct payloads through GPU consumption.
 - Turn the validated Endminf solution into data-driven profiles for all
   playables without actor-specific renderer forks.
 - Keep capture tooling bounded, observation-only, exact-build gated, and
