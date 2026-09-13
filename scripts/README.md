@@ -308,6 +308,15 @@ supported first collection, beginning at `currentEventPrefix.consumedEnd`.
 Its independent status and ranges retain the remaining physical bytes as opaque;
 malformed continuation data also fails publication. This does not join the
 filename suffix to a proven root field or establish whole-schema EOF.
+`memorypack.lipsync_corpus` joins the full LipSync JsonData stream to current
+ledger identities and runs the strict 15-member reader through EOF, checking
+logical MD5 and source/tool/parser pins at both ends. It reads JSONL one row at a
+time and writes `reports/animestudio/lipsync_current_latest.json` plus `.md`:
+
+```bat
+python -m scripts.game_data.memorypack.lipsync_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+```
+
 `python -m scripts.game_data.il2cpp_context_audit` emits an exact-build native
 generic-instantiation audit as JSON on stdout. `il2cpp_context` owns bounded
 pointer-table/record/vector decoding and reciprocal method-parameter identity;

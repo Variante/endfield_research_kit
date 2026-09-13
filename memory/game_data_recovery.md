@@ -189,7 +189,11 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   complete byte layouts.
 - LipSync JsonData has an exact selected-build MemoryPack layout. Its float rows
   are native-proven Unity keyframe values. LipSync animation data remains
-  distinct from language voice-audio availability.
+  distinct from language voice-audio availability. The maintained
+  `memorypack.lipsync_corpus` gate binds every current family identity to
+  `AnimeStudio stream --verify-md5` bytes and requires the 15-member reader to
+  consume each file through EOF; changing coverage totals stay in its generated
+  report.
 - SkillData's MemoryPack framing remains a structural prefix: the current
   corpus report preserves all valid EOF-anchored terminal candidates. Exact-
   build native evidence resolves the resource type as `Core.SkillData` and
