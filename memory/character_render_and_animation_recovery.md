@@ -617,6 +617,11 @@ history ownership/cadence, residual trails and burst composition remain open.
   lifetime observations still invalidate evidence. Inspect its loss-reason
   ledger before treating downstream staging/backend failures as native-layout
   mismatches. Capture diagnostics now surface that causal failure explicitly.
+  Fullscreen bindings and indexed PS b4 retain immutable draw-local map state;
+  later maps must not replace its generation or completed unmap timestamps.
+  The latest-per-resource ledger cannot reconstruct this history for older
+  captures. A matching map generation still does not exclude GPU writes or
+  prove resource creation/destruction lifetime.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
@@ -983,9 +988,10 @@ newer source version must not silently replace the capture-matched texture.
   native 20-byte layout; it does not replace the GPU publisher or prove its
   selected-frame inputs. Observe both before joining this structure to the GPU buffer.
   The environment-shadow observer retains member snapshots and now hooks the
-  actual terrain packer, allocation helper and profile lookup. A fresh retail
-  receipt is needed for that new lane. It records unscoped execution rather
-  than assuming bridge containment, and samples both neighboring request
+  actual terrain packer, allocation helper and profile lookup. Validated retail
+  observations connect packed allocations through staging-copy source offsets
+  and mapped destinations to bound terrain ranges. It records unscoped
+  execution rather than assuming bridge containment, and samples both neighboring request
   inputs when a bridge exists; native execution reads the first input.
   Use the environment-shadow launcher to collect this bounded native trace.
   Packing bytes and request endpoints do not establish allocation lifetime,
