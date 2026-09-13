@@ -331,6 +331,30 @@ class SkillDataCurrentCorpusTests(unittest.TestCase):
         with self.assertRaisesRegex(gate.CensusGateError, "invalid-hash-directory"):
             gate._chunk_selection_snapshot([row], {"primaryAssets": str(self.root), "fallbackAssets": str(self.root / "f")})
 
+    def test_chunk_symlink_cannot_escape_selected_assets_root(self) -> None:
+        primary = self.root / "Persistent"
+        fallback = self.root / "StreamingAssets"
+        outside_target = self.root / "outside.chk"
+        outside_target.write_bytes(self.data)
+        chunk_file = "0123456789ABCDEF0123456789ABCDEF.chk"
+        selected_path = primary / "VFS" / self.row["hashDirectory"] / chunk_file
+        row = _ledger_row(outside_target, self.data)
+        row["chunkFile"] = chunk_file
+        row["physicalChunkPath"] = str(selected_path)
+        row["physicalChunkRoot"] = str(primary)
+        row["physicalChunkSource"] = "primary"
+        outer = {"primaryAssets": str(primary), "fallbackAssets": str(fallback)}
+        original_resolve = Path.resolve
+
+        def resolve_with_symlink_escape(path: Path, *args, **kwargs) -> Path:
+            if path == selected_path:
+                return original_resolve(outside_target)
+            return original_resolve(path, *args, **kwargs)
+
+        with mock.patch.object(Path, "resolve", new=resolve_with_symlink_escape):
+            with self.assertRaisesRegex(gate.CensusGateError, "chunk-path-outside-assets-root"):
+                gate._chunk_selection_snapshot([row], outer)
+
     def test_partial_output_cannot_replace_reports(self) -> None:
         with self.assertRaisesRegex(gate.CensusGateError, "partial-output-outside-scratch"):
             gate._guard_partial_output(gate.MODULE_REPO_ROOT / "reports/animestudio/skilldata_latest.json")

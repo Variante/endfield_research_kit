@@ -109,10 +109,17 @@ def _chunk_selection_snapshot(rows: Iterable[Mapping[str, Any]], outer: Mapping[
         if not re.fullmatch(r"[0-9A-Fa-f]{32}[.]chk", chunk_file):
             _fail("invalid-chunk-file", source=virtual_path, actual=chunk_file)
         identity = (hash_directory.upper(), chunk_file.upper())
-        candidates = {
-            role: (root / "VFS" / hash_directory / chunk_file).resolve()
-            for role, root in roots.items()
-        }
+        candidates: dict[str, Path] = {}
+        for role, root in roots.items():
+            candidate = (root / "VFS" / hash_directory / chunk_file).resolve()
+            if not candidate.is_relative_to(root):
+                _fail(
+                    "chunk-path-outside-assets-root",
+                    source=virtual_path,
+                    expected={"role": role, "root": str(root)},
+                    actual=str(candidate),
+                )
+            candidates[role] = candidate
         selected_role = "primary" if candidates["primary"].is_file() else "fallback" if candidates["fallback"].is_file() else None
         if selected_role is None:
             _fail("selected-chunk-missing", source=virtual_path, expected="primary or fallback chunk", actual={role: str(path) for role, path in candidates.items()})

@@ -517,10 +517,13 @@ Current durable boundaries:
   the rebuilt tool rather than rewriting old provenance pins.
   DummyDll population and setter declarations do not fill these gaps. Historical
   residual JsonData censuses supply family leads, not current denominators
-  without a ledger rejoin. SkillData still lacks whole-object cursor proof. The NPC
-  Montage reader exact-frames all 3,631 current rows, including both non-empty
-  counted collections and their nested member markers, while keeping UTF-8 and
-  fixed record bodies anonymous. StreamingChunkInfo exact-frames the anonymous
+  without a ledger rejoin. SkillData still lacks whole-object cursor proof. NPC
+  MontageNew now has a current ledger/stream gate in
+  `memorypack.npc_montage_corpus`; it binds each current identity by path,
+  length, and logical MD5 and records exact EOF only for supported frames in
+  `reports/animestudio/npc_montage_current_latest.{json,md}`. UTF-8 strings and
+  fixed record bodies remain anonymous, and field meaning or runtime use is not
+  inferred. StreamingChunkInfo exact-frames the anonymous
   table/vector graph in all 89 current files, including reused/forward vtables
   and 4/8/12-byte vector widths; every nonzero byte is owned and the sole
   four-byte gap is zero alignment. InitChunkData and StreamingChunkData also

@@ -167,7 +167,7 @@ The stable code and fixture entry points are:
 | Table / SparkBuffer | `AnimeStudio/Endfield/Extraction/EndfieldSparkBuffer.cs` | `EndfieldSparkBufferTests.cs` |
 | JsonData / LipSync | `scripts/game_data/memorypack/lipsync.py` | `scripts/tests/test_memorypack_lipsync.py` |
 | JsonData / gameplay subfamilies | `scripts/story_builder/*_binary.py`, `scripts/game_data/memorypack/`, routed per virtual-path family | matching `scripts/tests/test_*_binary.py`, including `test_jsondata_binary.py`; current SkillData/BuffData and LevelData/LevelScriptData partial framings stay non-exact |
-| JsonData / NPC Montage | `scripts/game_data/memorypack/npc_montage.py` | `scripts/tests/test_memorypack_npc_montage.py` (both counted collections and nested markers exact-frame the current family) |
+| JsonData / NPC Montage | `scripts/game_data/memorypack/npc_montage.py`, `scripts/game_data/memorypack/npc_montage_corpus.py` | `scripts/tests/test_memorypack_npc_montage.py`, `scripts/tests/test_memorypack_npc_montage_corpus.py` (authenticated current ledger/stream join; exact EOF gate; report: `reports/animestudio/npc_montage_current_latest.{json,md}`) |
 | ExtendData / CompressData | `AnimeStudio/Endfield/Extraction/EndfieldCompressData.cs`, `scripts/game_data/extend_data_binary.py` | AnimeStudio CLI fixtures and `scripts/tests/test_mmap_extend_data.py` |
 | Lua | `AnimeStudio/Endfield/Extraction/EndfieldLuaDecoder.cs` | AnimeStudio CLI fixtures plus the `lua-sweep` mode |
 | Video / USM | `AnimeStudio/Endfield/Extraction/EndfieldUsmConverter.cs` | AnimeStudio CLI USM framing fixtures |

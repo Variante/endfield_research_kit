@@ -194,6 +194,15 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   `AnimeStudio stream --verify-md5` bytes and requires the 15-member reader to
   consume each file through EOF; changing coverage totals stay in its generated
   report.
+- NPC MontageNew JsonData has a bounded three-member root and 24-member body;
+  member 3 and member 18 collections use explicit counts and nested member
+  markers. Strings, scalar values and fixed record bodies stay anonymous. The
+  `memorypack.npc_montage_corpus` gate joins current ledger identities to
+  `AnimeStudio stream --verify-md5` bytes by path, length and logical MD5, then
+  requires the maintained frame reader to consume supported records through
+  EOF. Coverage totals belong in
+  `reports/animestudio/npc_montage_current_latest.{json,md}`; exact framing does
+  not establish field meaning or runtime use.
 - SkillData's MemoryPack framing remains a structural prefix: the current
   corpus report preserves all valid EOF-anchored terminal candidates. Exact-
   build native evidence resolves the resource type as `Core.SkillData` and

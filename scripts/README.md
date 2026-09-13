@@ -214,6 +214,7 @@ python -m scripts.game_data.streaming_marker13_corpus --input-set-sha256 CURRENT
 python -m scripts.game_data.streaming_marker2_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.memorypack.skill_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --output reports/animestudio/skilldata_current_latest.json --output-md reports/animestudio/skilldata_current_latest.md
 python -m scripts.game_data.memorypack.skill_cursor_receipt --preflight
+python -m scripts.game_data.memorypack.npc_montage_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
 %ASCLI% audit-refs --index OBJECT_INDEX.jsonl
@@ -287,6 +288,14 @@ hashes, hard limits, and terminal candidates. It can promote only the observed
 terminal range, not the complete SkillData schema. Use its receipt mode from
 the exact-build workflow in `tools/EndfieldCapture/README.md`; `--preflight`
 prints the authenticated current input-set hash without launching the game.
+`memorypack.npc_montage_corpus` authenticates the complete current
+`Data/Json/NPC/MontageJson/MontageNew/*.json` family by joining each
+outer-ledger identity to AnimeStudio `stream --verify-md5` output, then frames
+supported records through EOF. It checks current chunks, CLI and parser
+fingerprints at both ends and writes
+`reports/animestudio/npc_montage_current_latest.json` and `.md`. Changing
+coverage belongs in that report; nested strings, scalars and fixed record bodies
+remain anonymous.
 `memorypack.corpus_gate` owns shared outer-ledger, overlay, fingerprint and output
 guards. `memorypack.buff_corpus` joins the full current BuffData stream and retains
 every filename-string anchor and reader-accepted suffix candidate, without
