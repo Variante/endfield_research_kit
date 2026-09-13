@@ -961,6 +961,11 @@ newer source version must not silently replace the capture-matched texture.
   attachment, and idle waiting before authenticated Play/draw; WARP bootstrap
   readiness and regular Present scheduling are not valid substitutes.
 - Expand converter and shader fixtures while preserving exact source bytes.
+- Version M27 terrain inputs with their selected shader program. A newer
+  retained consumer gates the terrain profile with an additional enable lane
+  where the older generative shell declares padding. A draw-local zero fixture
+  does not establish the manager lifecycle or authorize a global zero. Recover
+  the new lane's producer before replacing the program or admitting presentation.
 - Turn the validated Endminf solution into data-driven profiles for all
   playables without actor-specific renderer forks.
 - Keep capture tooling bounded, observation-only, exact-build gated, and
