@@ -979,6 +979,12 @@ newer source version must not silently replace the capture-matched texture.
   alone can select an unrelated shell, and distinct source files can compile
   to identical bytecode. Keep versioned replacement programs separately pinned;
   diagnostic shell sink instructions do not represent retail pixel shading.
+  The offline M27 selected-draw runner now reproduces all five captured targets
+  with nonzero shading and a failing emission perturbation control. After-draw
+  depth is an idempotence seed, not preceding scene history. This validates the
+  selected packet's shading while live producer ownership and submission remain
+  open. Continue full-scene original/render comparisons after runtime changes,
+  emphasizing cloth transparency, fabric detail and light effects.
 - Turn the validated Endminf solution into data-driven profiles for all
   playables without actor-specific renderer forks.
 - Keep capture tooling bounded, observation-only, exact-build gated, and
