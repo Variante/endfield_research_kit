@@ -974,6 +974,11 @@ newer source version must not silently replace the capture-matched texture.
   explicit runtime copy owner; matching a destination default does not establish
   source transfer. Synthetic compute/pixel readbacks verify buffer transport,
   independently of selected retail frame ownership.
+  Compiler callbacks carry no asset identity: require an explicit selected-pass
+  bytecode hash before joining an observed callback. Matching resource layouts
+  alone can select an unrelated shell, and distinct source files can compile
+  to identical bytecode. Keep versioned replacement programs separately pinned;
+  diagnostic shell sink instructions do not represent retail pixel shading.
 - Turn the validated Endminf solution into data-driven profiles for all
   playables without actor-specific renderer forks.
 - Keep capture tooling bounded, observation-only, exact-build gated, and
