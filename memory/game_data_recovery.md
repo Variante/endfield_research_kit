@@ -195,8 +195,10 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   current IL2CPP context resolves the resource type as `Core.SkillData` rather
   than the same-named AI nested type and establishes relative reader order, but
   does not join an absolute cursor to a current VFS file. Available TypeTrees
-  do not cover this JsonData, and wrapper declarations alone do not establish
-  formatter selection. A bounded exact-build `skilldata-cursor` observer is
+  do not cover these JsonData files. Static wrapper and adapter identities do
+  not establish which formatter consumed the payload or distinguish the
+  one-byte-shifted bool-versus-counted terminal candidates; neither candidate
+  is a proven record end. A bounded exact-build `skilldata-cursor` observer is
   available, but no receipt has yet verified a candidate. Cleanup now requires
   a post-disable thread-IP rendezvous over the detour and MinHook trampoline;
   incomplete enumeration, context reads, or thread resumption leaves the
