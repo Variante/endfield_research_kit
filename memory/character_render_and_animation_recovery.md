@@ -147,6 +147,13 @@ only.
 
 ## Rendering boundary
 
+Transparent character materials must remain admitted when the sceneMV compositor
+replaces ordinary pipeline submission: recovered cloth uses `ForwardBase`.
+Preserve authored main-pass `_ZWrite` independently of `_TransparentDepthWrite`;
+the latter is not permission to enable depth writes in the transparent color
+pass. Missing lower translucent cloth was a submission omission, independent of
+remaining cloth simulation and shading differences.
+
 - Direct3D11 is the authoritative lab backend because it matches the recovered
   retail shader binaries. D3D12 experiments remain labeled diagnostics.
 - CharacterNPR, LitEffect, deferred resolve, shadow, post-processing, temporal,
