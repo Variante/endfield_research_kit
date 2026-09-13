@@ -233,6 +233,12 @@ only.
   boolean. M27 preserves Local simulation; world-space expanded GPU vertices
   do not imply world-space CPU particle positions. Apply the source parent
   and mounting transforms before comparing those coordinate spaces.
+  Scalar particle rotation also needs `Particle.axisOfRotation` for mesh
+  expansion; treating `rotation3D.z` as a fixed Z-axis rotation loses the
+  authored-seed orientation. The isolated Unity probe records both. Compare
+  fingerprint-joined spacing and expanded mesh normals before changing emitter
+  timing or transforms; matching birth geometry does not authenticate the
+  runtime activation clock or renderer pointer.
 - Recovered LitEffect material handoff uses one character-neutral, fail-closed
   schema for the complete serialized texture, transform, color, and float
   surface shared by the compatibility and five-MRT shaders. Overview_01 now
