@@ -191,15 +191,32 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   are native-proven Unity keyframe values. LipSync animation data remains
   distinct from language voice-audio availability.
 - SkillData's MemoryPack framing remains a structural prefix: the current
-  corpus report preserves all valid EOF-anchored terminal candidates. The
-  current IL2CPP context resolves the resource type as `Core.SkillData` rather
-  than the same-named AI nested type and establishes relative reader order, but
-  does not join an absolute cursor to a current VFS file. Available TypeTrees
-  do not cover these JsonData files. Static wrapper and adapter identities do
-  not establish which formatter consumed the payload or distinguish the
-  one-byte-shifted bool-versus-counted terminal candidates; neither candidate
-  is a proven record end. A bounded exact-build `skilldata-cursor` observer is
-  available, but no receipt has yet verified a candidate. Cleanup now requires
+  corpus report preserves all valid EOF-anchored terminal candidates. Exact-
+  build native evidence resolves the resource type as `Core.SkillData` and
+  orders the first field as `actionGroupData`; its nested reader requests
+  `passiveEventActions` followed by `timelineActions`. Current VFS branches
+  cross-check those list counts and consumed prefix ranges. The empty-list
+  nested endpoint `[1,10)` remains conditional on both generic formatter
+  queries selecting the audited four-byte zero-count path. Provider/cache
+  state and an executed cursor are not available offline, so this does not
+  distinguish the one-byte-shifted bool-versus-counted terminal candidates or
+  prove a parent record end. The exact-build offline audit now binds raw bytes
+  for one terminal collision and selected nonempty Tag, ToggleBuffData and
+  UIRangeHintData branches to their current VFS identities, then matches the
+  nested parser cursors and member order to registered static reader bodies,
+  including the one-member GameplayTagList wrapper, its one-member GameplayTag
+  element reader, and the nested 21-member shape reader. The registered
+  GameplayTag path consumes one member-count byte and a four-byte field; its
+  `tagId` is `System.Int32`, while the current parser preserves the same bytes
+  as an unsigned id/hash view, so signed semantic interpretation remains open.
+  These branch records refine nested boundaries but do not resolve the
+  shifted whole-tail hypotheses: the intervening bytes stay opaque and provider
+  selection/cache state plus an executed reader cursor remain unavailable
+  offline. The report also verifies the observer's post-call return-address
+  coordinates, which are hook locations rather than a live cursor receipt.
+  Available TypeTrees do not cover these JsonData files.
+  A bounded exact-build `skilldata-cursor` observer is available, but no receipt
+  has yet verified a candidate. Cleanup now requires
   a post-disable thread-IP rendezvous over the detour and MinHook trampoline;
   incomplete enumeration, context reads, or thread resumption leaves the
   capture incomplete and transfers its owners to a cleanup worker that retries

@@ -16,6 +16,11 @@ from scripts.common import check_installed_native_inputs
 from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range, unresolved_usage_index, rip_qword_load_target
 from scripts.game_data.memorypack.skill_corpus import verify_current_report_inputs
 from scripts.game_data.memorypack.corpus_gate import verify_current_report_inputs as verify_family_report_inputs
+from scripts.game_data.memorypack.skill_terminal import TerminalError as SkillTerminalError
+from scripts.game_data.memorypack.skill_terminal import frame_skill_terminal_at
+from scripts.game_data.memorypack.buff import read_skill_gameplay_tag_list_field
+from scripts.game_data.memorypack.buff import read_skill_toggle_buff_data
+from scripts.game_data.memorypack.buff import read_skill_ui_range_hint_data
 from scripts.game_data.il2cpp_context import class_sharing_branch
 from scripts.game_data.il2cpp_context import named_top_level_type
 from scripts.game_data.il2cpp_context import object_type_comparison_key
@@ -28,7 +33,7 @@ ROOT = Path(__file__).resolve().parents[2]
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = 'FECD0B06A67555EE7D377E047F19E2BF4E6EF608ECC3F69DF588621CD0933670'
+CORPUS_SHA = '5E99DA85D21C03B4D5B840CB957971B7F43FB764F439D21DF9225AD6626B1174'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -1309,7 +1314,7 @@ def nested_reader_context(pe, md, modules, image_owners, reg, table, *, source, 
             'boundary':'The selected nested body retains its incoming reader and follows MethodInfo+0x38 slot zero three times before deriving a provider key. The corresponding independently image/token-joined ranges identify ReadPackable to ReadValue, ReadValue to GetFormatter, then the GetFormatter MVAR type. Each method edge has one open method argument whose reciprocal owner is the preceding method and whose ordinal is zero; the final type is a distinct ordinal-zero parameter owned by GetFormatter itself. These are three different parameter records, not interchangeable raw identities. Conditional on ordinary context inflation from the previously authenticated ReadPackable<List<...>> call, this chain carries that same concrete argument through the intermediate contexts. All three generic definition ordinary-pointer slots are null; static ranges do not select a shared body. The body passes the retained reader and separate output slot to dispatch, but actual initialized MethodInfos, substitution, provider key/cache contents, list formatter, source length and final cursor remain unobserved. No list framing, element meaning or terminal uniqueness follows.'}
 
 
-def wrapper_consumer(pe, md, reg, table, *, source):
+def wrapper_consumer(pe, md, modules, image_owners, reg, table, *, source):
     """Reviewed conditional wrapper path, not a source/EOF or dispatch receipt."""
     instruction=pe.bytes_at_va(pe.image_base+0x37DF6EC,7)
     require(instruction[:3],bytes.fromhex('488B15'),source,0x37DF6EC)
@@ -1340,8 +1345,31 @@ def wrapper_consumer(pe, md, reg, table, *, source):
     call=pe.bytes_at_va(pe.image_base+0x37DF6F9,5)
     require(call[0],0xE8,source,0x37DF6F9)
     require(pe.image_base+0x37DF6FE+struct.unpack_from('<i',call,1)[0],pe.image_base+0x381F8F0,source,0x37DF6F9)
+    wrapper_methods=module_methods(pe,md,modules,image_owners,
+        [(104357,'Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagListForMemoryPack','Deserialize',0x37DF680),
+         (104358,'Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagListForMemoryPack+Beyond_Gameplay_Core_GameplayTagListForMemoryPackFormatter','Deserialize',0x37DF620)],
+        source=source,expected_image='MemoryPack.Beyond.dll')
+    code_windows=[]
+    for rva,expected,role in (
+        (0x37DF6A8,'837B3001','compare remaining bytes to one-byte wrapper header'),
+        (0x37DF6B2,'488B43500FB630','read one wrapper header byte from reader cursor'),
+        (0x37DF6C5,'48FF4350FF4340FF4344897B30','advance cursor and consumed counters by one byte'),
+        (0x37DF6D2,'4080FEFF745649833E000F846CBB65014080FE010F8595BB6501',
+         'accept null header 0xFF or non-null member-count header 1'),
+    ):
+        raw=pe.bytes_at_va(pe.image_base+rva,len(bytes.fromhex(expected)))
+        require(raw,bytes.fromhex(expected),source,rva)
+        code_windows.append({'rva':rva,'rawHex':raw.hex().upper(),'role':role})
     return {'methodSpec':spec,'methodInstantiation':inst.as_dict(),
             'listCarrier':carrier,'elementInstantiation':element_inst.as_dict(),
+            'methodIdentities':wrapper_methods,'headerCodeWindows':code_windows,
+            'wrapperFraming':{
+                'headerByteWidth':1,'acceptedNonNullHeaderByte':1,'nullHeaderByte':0xFF,
+                'remainingOffset':0x30,'cursorOffset':0x50,
+                'consumedCounterOffsets':[0x40,0x44],
+                'nestedCallRva':0x37DF6F9,
+                'boundary':'The reviewed reader consumes exactly one header byte before the nested List<GameplayTag> read. Header 0xFF takes the null path; non-null header 1 reaches the nested read; other values leave the supported path. This is static wrapper code, not proof that the runtime provider selects it for the current file.',
+            },
             'formatterEntryRva':0x37DF620,'readerEntryRva':0x37DF680,'nestedCallRva':0x37DF6F9,
             'level':'direct conditional consumer; exact static usage/type relation',
             'boundary':'The formatter forwards its reader unchanged to the wrapper reader. The fast path consumes one byte using remaining+0x30, cursor+0x50 and counters+0x40/+0x44. Header 0xFF clears the output; non-null header 1 reaches the nested call with the same reader and the recorded List instantiation. Other headers reach a helper then INT3. Cold ensure/advance transitions are described separately in selectedReaderCursorConsumers; their descriptor helpers are not fully closed. No list element layout, actual provider selection, authenticated source allocation, source extent or final cursor is established.'}
@@ -1428,6 +1456,2121 @@ def skill_resource_context(pe, md, modules, image_owners, table, reg, code,
                              'boundary':'All 16-byte records and MethodSpec keys bounded; only selected triples decoded. Other triples remain opaque.'},
             'level':'exact static type/MethodSpec/code-table relations',
             'boundary':'Core.SkillData, not the same-named AI nested type. Generic definition module slots are null; code candidates come from the separate generic method table. Same-definition Object MethodSpecs do not establish actual sharing selection, method invocation, resource path/hash, reader ABI, consumed length or EOF. Preserve both terminal candidates.'}
+
+
+def skilldata_corpus_branch_evidence(corpus, *, source):
+    """Cross-check the already-authenticated current SkillData census branches.
+
+    This consumes report rows, not VFS bytes.  It keeps parser cursor and peek
+    positions separate and never turns a conditional empty-list endpoint into
+    an exact formatter cursor.
+    """
+    input_set = corpus.get('inputSetSha256')
+    if not isinstance(input_set, str) or len(input_set) != 64:
+        raise ContextError(source, 0, 'current 64-hex SkillData inputSetSha256', input_set)
+    files = corpus.get('files')
+    if not isinstance(files, list) or not files:
+        raise ContextError(source, 0, 'nonempty current SkillData file rows', type(files).__name__)
+    branch_counts = {'bothListsEmpty': 0, 'firstEmptySecondNonempty': 0, 'firstNonempty': 0}
+    samples = {}
+    def check_row(actual, expected, path, field):
+        if actual != expected:
+            raise ContextError(source, 0, f'{path}.{field} == {expected!r}', actual)
+
+    for row in files:
+        path = row.get('virtualPath')
+        if not isinstance(path, str) or not path.startswith('Data/Json/SkillData/'):
+            raise ContextError(source, 0, 'logical SkillData virtualPath', path)
+        context = row.get('boundaryContext')
+        prefix = row.get('commonPrefixFraming')
+        if not isinstance(context, dict) or not isinstance(prefix, dict):
+            raise ContextError(source, 0, 'bounded prefix and boundary context', path)
+        check_row(context.get('inputSetSha256'), input_set, path, 'boundaryContext.inputSetSha256')
+        check_row(context.get('logicalFileIdentity'), path, path, 'boundaryContext.logicalFileIdentity')
+        check_row(context.get('logicalSha256'), row.get('logicalSha256'), path, 'boundaryContext.logicalSha256')
+        check_row(context.get('parserCursor'), row.get('parserCursor'), path, 'boundaryContext.parserCursor')
+        check_row(context.get('hardLimit'), row.get('hardLimit'), path, 'boundaryContext.hardLimit')
+        lists = prefix.get('recordLists')
+        if not isinstance(lists, list) or not lists:
+            raise ContextError(source, 0, 'one or two current ActionGroupData list counts', path)
+        first = lists[0].get('count')
+        second = lists[1].get('count') if len(lists) > 1 else None
+        if type(first) is not int or first < 0 or (second is not None and (type(second) is not int or second < 0)):
+            raise ContextError(source, 0, 'nonnegative bounded list counts', {'path': path, 'counts': [first, second]})
+        if first:
+            branch = 'firstNonempty'
+            expected_cursor = 6
+            expected_stop = 0
+        elif second:
+            branch = 'firstEmptySecondNonempty'
+            expected_cursor = 10
+            expected_stop = 1
+        else:
+            branch = 'bothListsEmpty'
+            expected_cursor = 10
+            expected_stop = None
+        check_row(row.get('parserCursor'), expected_cursor, path, 'parserCursor')
+        check_row(prefix.get('cursorOffset'), f'0x{expected_cursor:x}', path, 'commonPrefixFraming.cursorOffset')
+        ranges = prefix.get('byteRanges')
+        if not isinstance(ranges, list):
+            raise ContextError(source, 0, f'{path}.commonPrefixFraming.byteRanges list', ranges)
+        range_cursor = 0
+        for range_index, span in enumerate(ranges):
+            start, end = span.get('start'), span.get('end')
+            if (type(start) is not int or type(end) is not int or start != range_cursor
+                    or end <= start or end > expected_cursor):
+                raise ContextError(source, range_cursor,
+                                   f'{path}.byteRanges[{range_index}] contiguous inside [0,{expected_cursor})',
+                                   span)
+            range_cursor = end
+        if range_cursor != expected_cursor:
+            raise ContextError(source, range_cursor,
+                               f'{path}.byteRanges tile [0,{expected_cursor})', range_cursor)
+        if expected_stop is not None:
+            check_row(prefix.get('stopListIndex'), expected_stop, path, 'commonPrefixFraming.stopListIndex')
+        else:
+            check_row(prefix.get('stopListIndex'), None, path, 'commonPrefixFraming.stopListIndex')
+        check_row(row.get('boundaryClass'), 'ambiguous', path, 'boundaryClass')
+        candidates = row.get('framing', {}).get('candidateCount')
+        check_row(type(candidates) is int and candidates >= 2, True, path, 'framing.candidateCount >= 2')
+        branch_counts[branch] += 1
+        sample = {
+            'inputSetSha256': input_set,
+            'logicalFileIdentity': path,
+            'logicalSha256': row.get('logicalSha256'),
+            'recordListCounts': [first] + ([] if second is None else [second]),
+            'parserCursor': expected_cursor,
+            'hardLimit': row.get('hardLimit'),
+            'consumedByteRanges': prefix.get('byteRanges', []),
+            'firstUnconsumedByteOffset': expected_cursor if branch != 'bothListsEmpty' else None,
+            'peekOnlyMemberCount': (
+                lists[0].get('firstRecordMemberCount') if branch == 'firstNonempty'
+                else lists[1].get('firstRecordMemberCount') if branch == 'firstEmptySecondNonempty'
+                else None
+            ),
+            'terminalCandidateStarts': [candidate.get('startOffset')
+                                        for candidate in row.get('framing', {}).get('candidates', [])],
+        }
+        previous = samples.get(branch)
+        sample_rank = (sum(sample['recordListCounts']), path)
+        previous_rank = (sum(previous['recordListCounts']), previous['logicalFileIdentity']) if previous else None
+        if previous_rank is None or sample_rank < previous_rank:
+            samples[branch] = sample
+    declared = corpus.get('summary', {}).get('filesSelected')
+    if declared != len(files):
+        raise ContextError(source, 0, 'summary.filesSelected equals report file row count',
+                           {'declared': declared, 'actual': len(files)})
+    return {
+        'inputSetSha256': input_set,
+        'filesSelected': len(files),
+        'branchCounts': branch_counts,
+        'representativeCurrentVfsSamples': samples,
+        'emptyActionGroupCandidateRange': {
+            'start': 1, 'end': 10, 'endExclusive': True,
+            'candidateFiles': branch_counts['bothListsEmpty'],
+            'conditionalOn': 'both List<T> reads taking the audited ListFormatter<T> candidate four-byte zero-count path',
+            'exactClosedRecords': 0,
+        },
+        'wholeFileBoundary': {
+            'ambiguousFiles': sum(1 for row in files if row.get('boundaryClass') == 'ambiguous'),
+            'exactClosedRecords': corpus.get('summary', {}).get('byteBoundaryEvidence', {}).get('exactClosedRecords'),
+            'boundary': 'The current report preserves all EOF candidates; these prefix branches do not choose the shifted terminal member.'
+        },
+        'boundary': 'Rows are cross-checked by inputSetSha256, logical identity/hash, parser cursor and hard limit. firstUnconsumedByteOffset is not consumed; peekOnlyMemberCount, where present, is a non-advancing peek. The current VFS report is authenticated but not re-streamed here.',
+    }
+
+
+def skilldata_terminal_collision_evidence(
+        corpus, *, source,
+        logical_path='Data/Json/SkillData/Potential_test.json'):
+    """Validate one current EOF collision and keep its candidate byte tilings.
+
+    This checks the authenticated VFS corpus report, not source bytes or a live
+    reader cursor.  It makes no decision between candidates.
+    """
+    input_set = corpus.get('inputSetSha256')
+    if not isinstance(input_set, str) or len(input_set) != 64:
+        raise ContextError(source, 0, 'current 64-hex SkillData inputSetSha256', input_set)
+    rows = [row for row in corpus.get('files', [])
+            if isinstance(row, dict) and row.get('virtualPath') == logical_path]
+    if len(rows) != 1:
+        raise ContextError(source, 0, f'exactly one current VFS row for {logical_path!r}',
+                           len(rows))
+    row = rows[0]
+
+    def check(actual, expected, field, offset=0):
+        if actual != expected:
+            raise ContextError(source, offset, f'{logical_path}.{field} == {expected!r}', actual)
+
+    def integer(value, field, offset=0):
+        if type(value) is int and value >= 0:
+            return value
+        if isinstance(value, str):
+            try:
+                parsed = int(value, 0)
+            except ValueError:
+                parsed = -1
+            if parsed >= 0:
+                return parsed
+        raise ContextError(source, offset, f'{logical_path}.{field} is a nonnegative byte offset',
+                           value)
+
+    def check_hash(value, field):
+        if (not isinstance(value, str) or len(value) != 64 or
+                any(ch not in '0123456789abcdefABCDEF' for ch in value)):
+            raise ContextError(source, 0, f'{logical_path}.{field} is a 64-hex SHA-256',
+                               value)
+
+    def check_context(context, field, *, start, cursor, hard_limit, logical_sha):
+        if not isinstance(context, dict):
+            raise ContextError(source, 0, f'{logical_path}.{field} is an identity context',
+                               type(context).__name__)
+        check(context.get('inputSetSha256'), input_set, f'{field}.inputSetSha256')
+        check(context.get('logicalFileIdentity'), logical_path,
+              f'{field}.logicalFileIdentity')
+        check(context.get('logicalSha256'), logical_sha, f'{field}.logicalSha256')
+        check(context.get('startOffset'), start, f'{field}.startOffset')
+        check(context.get('hardLimit'), hard_limit, f'{field}.hardLimit')
+        check(context.get('parserCursor'), cursor, f'{field}.parserCursor')
+
+    def tile(ranges, start, end, field):
+        if not isinstance(ranges, list):
+            raise ContextError(source, start, f'{logical_path}.{field} is a byte-range list',
+                               type(ranges).__name__)
+        cursor = start
+        for index, span in enumerate(ranges):
+            if not isinstance(span, dict):
+                raise ContextError(source, cursor,
+                                   f'{logical_path}.{field}[{index}] is a byte range', span)
+            range_start, range_end = span.get('start'), span.get('end')
+            if (type(range_start) is not int or type(range_end) is not int or
+                    range_start != cursor or range_end <= range_start or range_end > end):
+                raise ContextError(source, cursor,
+                                   f'{logical_path}.{field}[{index}] continues [{start},{end})',
+                                   span)
+            cursor = range_end
+        if cursor != end:
+            raise ContextError(source, cursor,
+                               f'{logical_path}.{field} tiles [{start},{end})', cursor)
+
+    logical_sha = row.get('logicalSha256')
+    check_hash(logical_sha, 'logicalSha256')
+    check(row.get('boundaryClass'), 'ambiguous', 'boundaryClass')
+    hard_limit = row.get('hardLimit')
+    if type(hard_limit) is not int or hard_limit <= 0:
+        raise ContextError(source, 0, f'{logical_path}.hardLimit is a positive byte limit',
+                           hard_limit)
+    parser_cursor = row.get('parserCursor')
+    if type(parser_cursor) is not int or not (0 < parser_cursor < hard_limit):
+        raise ContextError(source, 0,
+                           f'{logical_path}.parserCursor is inside [0,{hard_limit})',
+                           parser_cursor)
+    check_context(row.get('boundaryContext'), 'boundaryContext', start=0,
+                  cursor=parser_cursor, hard_limit=hard_limit, logical_sha=logical_sha)
+
+    prefix = row.get('commonPrefixFraming')
+    if not isinstance(prefix, dict):
+        raise ContextError(source, 0, f'{logical_path}.commonPrefixFraming is present',
+                           type(prefix).__name__)
+    check(prefix.get('parserCursor'), parser_cursor, 'commonPrefixFraming.parserCursor')
+    check(prefix.get('hardLimit'), hard_limit, 'commonPrefixFraming.hardLimit')
+    check(integer(prefix.get('cursorOffset'), 'commonPrefixFraming.cursorOffset'),
+          parser_cursor, 'commonPrefixFraming.cursorOffset')
+    check_context(prefix.get('boundaryContext'), 'commonPrefixFraming.boundaryContext',
+                  start=0, cursor=parser_cursor, hard_limit=hard_limit,
+                  logical_sha=logical_sha)
+    tile(prefix.get('byteRanges'), 0, parser_cursor, 'commonPrefixFraming.byteRanges')
+
+    framing = row.get('framing')
+    if not isinstance(framing, dict):
+        raise ContextError(source, 0, f'{logical_path}.framing is present',
+                           type(framing).__name__)
+    check(framing.get('status'), 'ambiguous-exact-terminal-shape', 'framing.status')
+    check(framing.get('memberCount'), 48, 'framing.memberCount')
+    check(framing.get('wholeSchemaExact'), False, 'framing.wholeSchemaExact')
+    check(framing.get('serializedFieldOrderStatus'), 'unresolved',
+          'framing.serializedFieldOrderStatus')
+    ambiguity = framing.get('ambiguity')
+    if not isinstance(ambiguity, dict):
+        raise ContextError(source, 0, f'{logical_path}.framing.ambiguity is present',
+                           type(ambiguity).__name__)
+    check(ambiguity.get('kind'), 'one-byte-bool-vs-counted-wrapper-collision',
+          'framing.ambiguity.kind')
+    check(ambiguity.get('resolutionStatus'), 'unresolved-both-exact-to-eof',
+          'framing.ambiguity.resolutionStatus')
+    check(ambiguity.get('sharedCountedRecordCounts'), [0, 0, 0],
+          'framing.ambiguity.sharedCountedRecordCounts')
+
+    candidates = framing.get('candidates')
+    if not isinstance(candidates, list) or len(candidates) != 2:
+        raise ContextError(source, parser_cursor,
+                           f'{logical_path}.framing.candidates has exactly two shapes',
+                           type(candidates).__name__ if not isinstance(candidates, list)
+                           else len(candidates))
+    check(framing.get('candidateCount'), len(candidates), 'framing.candidateCount')
+    evidence_candidates = []
+    normalized_starts = []
+    expected_shape = [
+        'bool', 'counted-member-record-list',
+        'counted-nested-object-list-a', 'counted-nested-object-list-b', 'bool',
+    ]
+    for index, candidate in enumerate(candidates):
+        field = f'framing.candidates[{index}]'
+        if not isinstance(candidate, dict):
+            raise ContextError(source, parser_cursor, f'{logical_path}.{field} is an object',
+                               type(candidate).__name__)
+        start = integer(candidate.get('startOffset'), f'{field}.startOffset', parser_cursor)
+        end = integer(candidate.get('endOffset'), f'{field}.endOffset', start)
+        expected_start = 518 + index
+        check(start, expected_start, f'{field}.startOffset', start)
+        if not (parser_cursor <= start < end == hard_limit):
+            raise ContextError(source, start,
+                               f'{logical_path}.{field} is EOF-anchored inside [{parser_cursor},{hard_limit})',
+                               [start, end])
+        check(candidate.get('status'), 'exact-eof-anchored-terminal-shape', f'{field}.status',
+              start)
+        check(candidate.get('exactToEof'), True, f'{field}.exactToEof', start)
+        check(candidate.get('byteLength'), end - start, f'{field}.byteLength', start)
+        check(candidate.get('parserCursor'), end, f'{field}.parserCursor', start)
+        check(candidate.get('hardLimit'), hard_limit, f'{field}.hardLimit', start)
+        check(candidate.get('boundaryClass'), 'ambiguous', f'{field}.boundaryClass', start)
+        candidate_range = candidate.get('candidateRange')
+        if not isinstance(candidate_range, dict):
+            raise ContextError(source, start, f'{logical_path}.{field}.candidateRange is an object',
+                               candidate_range)
+        check(candidate_range.get('start'), start, f'{field}.candidateRange.start', start)
+        check(candidate_range.get('end'), end, f'{field}.candidateRange.end', start)
+        check(candidate_range.get('endExclusive'), True,
+              f'{field}.candidateRange.endExclusive', start)
+        check_context(candidate.get('boundaryContext'), f'{field}.boundaryContext',
+                      start=start, cursor=end, hard_limit=hard_limit,
+                      logical_sha=logical_sha)
+        check(candidate.get('boundaryContext', {}).get('candidateRange'), [start, end],
+              f'{field}.boundaryContext.candidateRange', start)
+
+        shape = candidate.get('shape')
+        check(shape, expected_shape, f'{field}.shape', start)
+        members = candidate.get('members')
+        if not isinstance(members, list) or len(members) != len(expected_shape):
+            raise ContextError(source, start,
+                               f'{logical_path}.{field}.members has five entries',
+                               type(members).__name__ if not isinstance(members, list)
+                               else len(members))
+        byte_ranges = candidate.get('byteRanges')
+        tile(byte_ranges, start, end, f'{field}.byteRanges')
+        if len(byte_ranges) != len(members):
+            raise ContextError(source, start,
+                               f'{logical_path}.{field}.byteRanges has one range per member',
+                               [len(byte_ranges), len(members)])
+        expected_member_ranges = (
+            (start, start + 1),
+            (519 if index == 0 else 520, 524),
+            (524, 528),
+            (528, 532),
+            (532, 533),
+        )
+        for member_index, (member, byte_range) in enumerate(zip(members, byte_ranges)):
+            if not isinstance(member, dict) or not isinstance(byte_range, dict):
+                raise ContextError(source, start,
+                                   f'{logical_path}.{field}.members[{member_index}] and byte range are objects',
+                                   [type(member).__name__, type(byte_range).__name__])
+            member_range = member.get('range')
+            if not isinstance(member_range, dict):
+                raise ContextError(source, start,
+                                   f'{logical_path}.{field}.members[{member_index}].range is an object',
+                                   member_range)
+            expected_member_start, expected_member_end = expected_member_ranges[member_index]
+            expected_member_range = {
+                'start': expected_member_start,
+                'end': expected_member_end,
+                'byteLength': expected_member_end - expected_member_start,
+            }
+            check(member_range, expected_member_range,
+                  f'{field}.members[{member_index}].range', start)
+            check(byte_range.get('start'), member_range.get('start'),
+                  f'{field}.byteRanges[{member_index}].start', start)
+            check(byte_range.get('end'), member_range.get('end'),
+                  f'{field}.byteRanges[{member_index}].end', start)
+            check(byte_range.get('kind'), member.get('kind'),
+                  f'{field}.byteRanges[{member_index}].kind', start)
+            check(byte_range.get('memberIndex'), member_index,
+                  f'{field}.byteRanges[{member_index}].memberIndex', start)
+        check(members[0].get('kind'), 'bool', f'{field}.members[0].kind', start)
+        check(members[0].get('range'), {
+            'start': start, 'end': start + 1, 'byteLength': 1,
+        }, f'{field}.members[0].range', start)
+        check(members[0].get('value'), index == 1, f'{field}.members[0].value', start)
+        check(candidate.get('encoding'), 'one-member-wrapper' if index == 0 else 'counted',
+              f'{field}.encoding', start)
+        list_member = members[1]
+        check(list_member.get('kind'), 'counted-member-record-list',
+              f'{field}.members[1].kind', start)
+        check(list_member.get('count'), 0, f'{field}.members[1].count', start)
+        check(list_member.get('encoding'), 'one-member-wrapper' if index == 0 else 'counted',
+              f'{field}.members[1].encoding', start)
+        wrapper = list_member.get('wrapperRange')
+        if index == 0:
+            check(wrapper, {'start': start + 1, 'end': start + 2, 'byteLength': 1},
+                  f'{field}.members[1].wrapperRange', start)
+        else:
+            check(wrapper, None, f'{field}.members[1].wrapperRange', start)
+        count_range = list_member.get('countRange')
+        if not isinstance(count_range, dict):
+            raise ContextError(source, start, f'{logical_path}.{field}.members[1].countRange is an object',
+                               count_range)
+        check(count_range.get('start'), 520, f'{field}.members[1].countRange.start', start)
+        check(count_range.get('end'), 524, f'{field}.members[1].countRange.end', start)
+        for member_index in (2, 3):
+            nested = members[member_index]
+            check(nested.get('kind'), 'counted-nested-object-list',
+                  f'{field}.members[{member_index}].kind', start)
+            check(nested.get('count'), 0, f'{field}.members[{member_index}].count', start)
+            nested_range = nested.get('range')
+            nested_count_range = nested.get('countRange')
+            if not isinstance(nested_range, dict) or not isinstance(nested_count_range, dict):
+                raise ContextError(source, start,
+                                   f'{logical_path}.{field}.members[{member_index}] has bounded range objects',
+                                   [nested_range, nested_count_range])
+            check(nested_range, nested_count_range,
+                  f'{field}.members[{member_index}].range equals countRange', start)
+            check(nested_range.get('byteLength'), 4,
+                  f'{field}.members[{member_index}].range.byteLength', start)
+        final_member = members[4]
+        check(final_member.get('kind'), 'bool', f'{field}.members[4].kind', start)
+        check(final_member.get('value'), False, f'{field}.members[4].value', start)
+        check(final_member.get('range'), {
+            'start': hard_limit - 1, 'end': hard_limit, 'byteLength': 1,
+        }, f'{field}.members[4].range', start)
+        opaque = candidate.get('opaqueByteRanges')
+        check(opaque, [{
+            'start': parser_cursor, 'end': start,
+            'kind': 'opaque-between-prefix-and-terminal-candidate',
+        }], f'{field}.opaqueByteRanges', start)
+        normalized_starts.append(start)
+        evidence_candidates.append({
+            'encoding': candidate.get('encoding'),
+            'start': start,
+            'end': end,
+            'byteLength': end - start,
+            'parserCursor': end,
+            'hardLimit': hard_limit,
+            'boundaryContext': candidate.get('boundaryContext'),
+            'candidateRange': candidate_range,
+            'classification': candidate.get('boundaryClass'),
+            'byteRanges': byte_ranges,
+            'opaqueByteRanges': opaque,
+            'terminalMembers': members,
+        })
+
+    check(normalized_starts[1] - normalized_starts[0], 1,
+          'framing.candidates are shifted by one byte', normalized_starts[0])
+    starts_as_hex = [candidate.get('startOffset') for candidate in candidates]
+    check(ambiguity.get('candidateStartOffsets'), starts_as_hex,
+          'framing.ambiguity.candidateStartOffsets', normalized_starts[0])
+    if evidence_candidates[0]['terminalMembers'][2:] != evidence_candidates[1]['terminalMembers'][2:]:
+        raise ContextError(source, normalized_starts[0],
+                           f'{logical_path}.framing.candidates share the final three member ranges',
+                           'different suffix manifests')
+
+    envelope = framing.get('envelope')
+    if not isinstance(envelope, dict):
+        raise ContextError(source, 0, f'{logical_path}.framing.envelope is present',
+                           type(envelope).__name__)
+    check(integer(envelope.get('startOffset'), 'framing.envelope.startOffset'), 0,
+          'framing.envelope.startOffset')
+    check(integer(envelope.get('endOffset'), 'framing.envelope.endOffset'), hard_limit,
+          'framing.envelope.endOffset', hard_limit)
+    check(envelope.get('byteLength'), hard_limit, 'framing.envelope.byteLength')
+
+    return {
+        'inputSetSha256': input_set,
+        'logicalFileIdentity': logical_path,
+        'logicalSha256': logical_sha,
+        'sourceRange': {'start': 0, 'end': hard_limit, 'endExclusive': True},
+        'parserCursor': parser_cursor,
+        'hardLimit': hard_limit,
+        'consumedPrefixByteRanges': prefix.get('byteRanges'),
+        'candidates': evidence_candidates,
+        'classification': 'ambiguous',
+        'resolutionStatus': ambiguity.get('resolutionStatus'),
+        'sharedCountedRecordCounts': ambiguity.get('sharedCountedRecordCounts'),
+        'exactClosedRecords': 0,
+        'boundary': 'Both candidate byte tilings reach the same hard limit and remain ambiguous. This is a cross-check of the current VFS corpus report; it does not establish which terminal shape the selected runtime reader consumed.',
+    }
+
+
+def skilldata_terminal_sample_byte_witness(collision, raw, *, source):
+    """Recheck the selected logical file's terminal bytes against the report."""
+    logical_path = collision.get('logicalFileIdentity')
+    logical_sha = collision.get('logicalSha256')
+    hard_limit = collision.get('hardLimit')
+    input_set = collision.get('inputSetSha256')
+    if not isinstance(raw, bytes):
+        raise ContextError(source, 0, 'raw current SkillData logical bytes', type(raw).__name__)
+    if type(hard_limit) is not int or len(raw) != hard_limit:
+        raise ContextError(source, 0, f'{logical_path} byte length equals hardLimit {hard_limit}',
+                           len(raw))
+    digest = hashlib.sha256(raw).hexdigest().upper()
+    if digest != logical_sha:
+        raise ContextError(source, 0, f'{logical_path} SHA-256 equals corpus identity',
+                           digest)
+    candidates = collision.get('candidates')
+    if not isinstance(candidates, list) or len(candidates) != 2:
+        raise ContextError(source, 0, f'{logical_path} retains both terminal candidates',
+                           type(candidates).__name__ if not isinstance(candidates, list)
+                           else len(candidates))
+    first, shifted = candidates
+    start = first.get('start')
+    end = first.get('end')
+    if type(start) is not int or type(end) is not int or end != hard_limit or end - start != 15:
+        raise ContextError(source, 0, f'{logical_path} first candidate is 15 bytes to hardLimit',
+                           [start, end, hard_limit])
+    if shifted.get('start') != start + 1 or shifted.get('end') != hard_limit:
+        raise ContextError(source, start,
+                           f'{logical_path} second candidate begins one byte later and shares EOF',
+                           [shifted.get('start'), shifted.get('end')])
+    if end - start > len(raw) - start:
+        raise ContextError(source, start, f'{logical_path} candidate lies inside raw source',
+                           [start, end, len(raw)])
+
+    first_bool = raw[start]
+    wrapper_member_count = raw[start + 1]
+    count_offsets = [start + 2, start + 6, start + 10]
+    counts = []
+    for offset in count_offsets:
+        if offset + 4 > end:
+            raise ContextError(source, offset, 'four-byte terminal list count inside hardLimit',
+                               [offset, end])
+        counts.append(struct.unpack_from('<i', raw, offset)[0])
+    final_bool = raw[end - 1]
+    if first_bool not in (0, 1) or final_bool not in (0, 1):
+        raise ContextError(source, start,
+                           'terminal boolean bytes are normalized zero or one',
+                           [first_bool, final_bool])
+    if wrapper_member_count != 1:
+        raise ContextError(source, start + 1,
+                           'GameplayTagList member header is one',
+                           wrapper_member_count)
+    if counts != [0, 0, 0]:
+        raise ContextError(source, count_offsets[0],
+                           'current terminal sample contains three signed zero counts',
+                           counts)
+    members = first.get('terminalMembers')
+    if not isinstance(members, list) or len(members) != 5:
+        raise ContextError(source, start, 'first candidate preserves five terminal members',
+                           type(members).__name__ if not isinstance(members, list)
+                           else len(members))
+    if members[0].get('value') != bool(first_bool) or members[4].get('value') != bool(final_bool):
+        raise ContextError(source, start,
+                           'raw first/final booleans match the current candidate parse',
+                           [first_bool, final_bool])
+    shifted_members = shifted.get('terminalMembers')
+    if (not isinstance(shifted_members, list) or len(shifted_members) != 5 or
+            shifted_members[0].get('value') != bool(wrapper_member_count)):
+        raise ContextError(source, start + 1,
+                           'shifted candidate interprets the wrapper byte as its first boolean',
+                           shifted_members)
+    return {
+        'inputSetSha256': input_set,
+        'logicalFileIdentity': logical_path,
+        'logicalSha256': digest,
+        'byteLength': len(raw),
+        'hardLimit': hard_limit,
+        'candidateRange': {'start': start, 'end': end, 'endExclusive': True},
+        'parserCursor': end,
+        'terminalRawHex': raw[start:end].hex().upper(),
+        'firstBooleanByte': {'offset': start, 'value': bool(first_bool)},
+        'nestedMemberCountByte': {'offset': start + 1, 'value': wrapper_member_count},
+        'signedListCounts': [
+            {'offset': offset, 'value': count}
+            for offset, count in zip(count_offsets, counts)
+        ],
+        'finalBooleanByte': {'offset': end - 1, 'value': bool(final_bool)},
+        'boundary': 'The source bytes and corpus row agree for this logical identity and hard limit; this byte witness alone does not select a runtime formatter.',
+    }
+
+
+def select_skilldata_terminal_branch_samples(corpus, *, source):
+    """Choose deterministic current files that exercise each nonempty tail list."""
+    input_set = corpus.get('inputSetSha256')
+    if (not isinstance(input_set, str) or len(input_set) != 64 or
+            any(ch not in '0123456789abcdefABCDEF' for ch in input_set)):
+        raise ContextError(source, 0, '64-hex SkillData inputSetSha256', input_set)
+    requirements = [
+        {'fieldName': 'tagDuringAttach.predefinedTag', 'memberIndex': 1,
+         'count': 1},
+        {'fieldName': 'toggleBuffs', 'memberIndex': 2, 'count': 1},
+        {'fieldName': 'uiRangeHints', 'memberIndex': 3, 'count': 2},
+    ]
+    files = corpus.get('files')
+    if not isinstance(files, list):
+        raise ContextError(source, 0, 'current SkillData file row list', type(files).__name__)
+    selected = []
+    for requirement in requirements:
+        matches = []
+        for row in files:
+            if not isinstance(row, dict):
+                continue
+            candidates = row.get('framing', {}).get('candidates', [])
+            if not isinstance(candidates, list) or len(candidates) != 2:
+                continue
+            members = candidates[0].get('members', [])
+            index = requirement['memberIndex']
+            if (candidates[0].get('encoding') == 'one-member-wrapper' and
+                    isinstance(members, list) and len(members) == 5 and
+                    isinstance(members[index], dict) and
+                    members[index].get('count') == requirement['count']):
+                matches.append(row)
+        if not matches:
+            raise ContextError(source, 0,
+                               f'current corpus has a positive {requirement["fieldName"]} branch with count {requirement["count"]}',
+                               0)
+        selected.append({**requirement, 'row': matches[0]})
+    if len({sample['row'].get('virtualPath') for sample in selected}) != len(selected):
+        raise ContextError(source, 0, 'distinct current SkillData branch sample identities',
+                           [sample['row'].get('virtualPath') for sample in selected])
+    return selected
+
+
+def skilldata_terminal_branch_sample_witness(corpus, selection, raw, *, source):
+    """Reparse two EOF hypotheses from a byte-authenticated nonempty branch sample."""
+    if not isinstance(selection, dict) or not isinstance(selection.get('row'), dict):
+        raise ContextError(source, 0, 'selected SkillData branch row', selection)
+    row = selection['row']
+    logical_path = row.get('virtualPath')
+    logical_sha = row.get('logicalSha256')
+    input_set = corpus.get('inputSetSha256')
+    corpus_rows = [candidate for candidate in corpus.get('files', [])
+                   if isinstance(candidate, dict) and
+                   candidate.get('virtualPath') == logical_path]
+    if len(corpus_rows) != 1 or corpus_rows[0] != row:
+        raise ContextError(source, 0, 'selected row is the unique current corpus identity',
+                           [len(corpus_rows), logical_path])
+    if not isinstance(logical_path, str) or not logical_path.startswith(
+            'Data/Json/SkillData/'):
+        raise ContextError(source, 0, 'logical SkillData sample identity', logical_path)
+    if (not isinstance(input_set, str) or len(input_set) != 64 or
+            any(ch not in '0123456789abcdefABCDEF' for ch in input_set)):
+        raise ContextError(source, 0, '64-hex current SkillData inputSetSha256', input_set)
+    if (not isinstance(logical_sha, str) or len(logical_sha) != 64 or
+            any(ch not in '0123456789abcdefABCDEF' for ch in logical_sha)):
+        raise ContextError(source, 0, '64-hex logical sample SHA-256', logical_sha)
+    if (not isinstance(raw, bytes) or type(row.get('hardLimit')) is not int or
+            len(raw) != row['hardLimit']):
+        raise ContextError(source, 0, 'sample byte length equals current hardLimit',
+                           [len(raw) if isinstance(raw, bytes) else type(raw).__name__,
+                            row.get('hardLimit')])
+    digest = hashlib.sha256(raw).hexdigest().upper()
+    if digest != logical_sha:
+        raise ContextError(source, 0, 'sample bytes match current logical SHA-256',
+                           [logical_sha, digest])
+    hard_limit = row['hardLimit']
+    parser_cursor = row.get('parserCursor')
+    context = row.get('boundaryContext')
+    if type(parser_cursor) is not int or not 0 < parser_cursor < hard_limit:
+        raise ContextError(source, 0, 'current structural prefix cursor inside hardLimit',
+                           parser_cursor)
+    for field, expected in (
+            ('inputSetSha256', input_set), ('logicalFileIdentity', logical_path),
+            ('logicalSha256', logical_sha), ('parserCursor', parser_cursor),
+            ('hardLimit', hard_limit)):
+        if not isinstance(context, dict) or context.get(field) != expected:
+            raise ContextError(source, 0, f'boundaryContext.{field} matches current sample',
+                               context.get(field) if isinstance(context, dict) else context)
+    if row.get('boundaryClass') != 'ambiguous':
+        raise ContextError(source, 0, 'branch sample remains corpus-classified ambiguous',
+                           row.get('boundaryClass'))
+    framing = row.get('framing')
+    candidates = framing.get('candidates') if isinstance(framing, dict) else None
+    if not isinstance(candidates, list) or len(candidates) != 2:
+        raise ContextError(source, 0, 'two EOF-anchored branch candidates', candidates)
+    first, shifted = candidates
+    def offset(value, field):
+        if type(value) is int and value >= 0:
+            return value
+        if isinstance(value, str):
+            try:
+                parsed = int(value, 0)
+            except ValueError:
+                parsed = -1
+            if parsed >= 0:
+                return parsed
+        raise ContextError(source, 0, f'{field} is a bounded byte offset', value)
+
+    start = offset(first.get('startOffset'), 'candidate[0].startOffset')
+    shifted_start = offset(shifted.get('startOffset'), 'candidate[1].startOffset')
+    if (shifted_start != start + 1 or start < parser_cursor or
+            offset(first.get('endOffset'), 'candidate[0].endOffset') != hard_limit or
+            offset(shifted.get('endOffset'), 'candidate[1].endOffset') != hard_limit or
+            first.get('encoding') != 'one-member-wrapper' or
+            shifted.get('encoding') != 'counted'):
+        raise ContextError(source, start,
+                           'wrapper/count candidates are shifted one byte and share hardLimit',
+                           [first.get('startOffset'), shifted.get('startOffset'),
+                            first.get('endOffset'), shifted.get('endOffset'),
+                            first.get('encoding'), shifted.get('encoding')])
+    for candidate_index, (candidate, candidate_start) in enumerate(
+            ((first, start), (shifted, shifted_start))):
+        candidate_context = candidate.get('boundaryContext')
+        expected_candidate_range = [candidate_start, hard_limit]
+        for field, expected in (
+                ('inputSetSha256', input_set),
+                ('logicalFileIdentity', logical_path),
+                ('logicalSha256', logical_sha),
+                ('startOffset', candidate_start),
+                ('hardLimit', hard_limit),
+                ('parserCursor', hard_limit),
+                ('candidateRange', expected_candidate_range)):
+            if (not isinstance(candidate_context, dict) or
+                    candidate_context.get(field) != expected):
+                raise ContextError(source, candidate_start,
+                                   f'candidate[{candidate_index}].boundaryContext.{field} matches current sample',
+                                   candidate_context.get(field)
+                                   if isinstance(candidate_context, dict)
+                                   else candidate_context)
+
+    def tile(ranges, begin, end, label):
+        if not isinstance(ranges, list):
+            raise ContextError(source, begin, f'{label} is a bounded byte-range list',
+                               type(ranges).__name__)
+        cursor = begin
+        for index, span in enumerate(ranges):
+            if (not isinstance(span, dict) or type(span.get('start')) is not int or
+                    type(span.get('end')) is not int or span['start'] != cursor or
+                    span['end'] <= span['start'] or span['end'] > end):
+                raise ContextError(source, cursor, f'{label}[{index}] continues [{begin},{end})',
+                                   span)
+            cursor = span['end']
+        if cursor != end:
+            raise ContextError(source, cursor, f'{label} tiles [{begin},{end})', cursor)
+
+    def replay(candidate_report, candidate_start, expected_encoding):
+        try:
+            parsed_report = frame_skill_terminal_at(
+                raw, candidate_start, source=logical_path)
+        except SkillTerminalError as error:
+            raise ContextError(source, candidate_start,
+                               f'current raw sample reparses {expected_encoding} candidate',
+                               error.diagnostics) from error
+        parsed = [candidate for candidate in parsed_report.get('candidates', [])
+                  if candidate.get('encoding') == expected_encoding and
+                  candidate.get('end') == hard_limit]
+        if len(parsed) != 1:
+            raise ContextError(source, candidate_start,
+                               f'one raw-parsed {expected_encoding} candidate ends at hardLimit',
+                               [(candidate.get('encoding'), candidate.get('end'))
+                                for candidate in parsed_report.get('candidates', [])])
+        parsed_candidate = parsed[0]
+        if (candidate_report.get('boundaryClass') != 'ambiguous' or
+                candidate_report.get('exactToEof') is not True or
+                candidate_report.get('parserCursor') != hard_limit or
+                candidate_report.get('hardLimit') != hard_limit):
+            raise ContextError(source, candidate_start,
+                               'corpus candidate remains ambiguous and ends exactly at hardLimit',
+                               candidate_report)
+        candidate_range = candidate_report.get('candidateRange')
+        if (not isinstance(candidate_range, dict) or
+                candidate_range.get('start') != candidate_start or
+                candidate_range.get('end') != hard_limit or
+                candidate_range.get('endExclusive') is not True):
+            raise ContextError(source, candidate_start,
+                               'candidate range equals raw parser [start,hardLimit)',
+                               candidate_range)
+        if (parsed_candidate.get('start') != candidate_start or
+                parsed_candidate.get('byteLength') != hard_limit - candidate_start):
+            raise ContextError(source, candidate_start, 'raw parser candidate byte span',
+                               [parsed_candidate.get('start'), parsed_candidate.get('end')])
+        report_members = candidate_report.get('members')
+        parsed_members = parsed_candidate.get('members')
+        if (not isinstance(report_members, list) or len(report_members) != 5 or
+                not isinstance(parsed_members, list) or len(parsed_members) != 5):
+            raise ContextError(source, candidate_start,
+                               'five current terminal members in report and raw parse',
+                               [report_members, parsed_members])
+        for member_index, (reported, parsed_member) in enumerate(
+                zip(report_members, parsed_members)):
+            if reported.get('range') != parsed_member.get('range'):
+                raise ContextError(source, candidate_start,
+                                   f'candidate member {member_index} raw/report byte range',
+                                   [reported.get('range'), parsed_member.get('range')])
+            if 'count' in parsed_member and reported.get('count') != parsed_member.get('count'):
+                raise ContextError(source, candidate_start,
+                                   f'candidate member {member_index} raw/report count',
+                                   [reported.get('count'), parsed_member.get('count')])
+            report_records = reported.get('records', [])
+            parsed_records = parsed_member.get('records', [])
+            if len(report_records) != len(parsed_records):
+                raise ContextError(source, candidate_start,
+                                   f'candidate member {member_index} raw/report record count',
+                                   [len(report_records), len(parsed_records)])
+            for record_index, (reported_record, parsed_record) in enumerate(
+                    zip(report_records, parsed_records)):
+                if (reported_record.get('range') != parsed_record.get('range') or
+                        reported_record.get('memberCount') != parsed_record.get('memberCount')):
+                    raise ContextError(source, candidate_start,
+                                       f'candidate member {member_index} record {record_index} raw/report range/header',
+                                       [reported_record, parsed_record])
+        byte_ranges = candidate_report.get('byteRanges')
+        tile(byte_ranges, candidate_start, hard_limit,
+             f'{logical_path} {expected_encoding} candidate byteRanges')
+        if len(byte_ranges) != 5:
+            raise ContextError(source, candidate_start,
+                               'candidate byte-range manifest has five outer members',
+                               len(byte_ranges))
+        return parsed_candidate
+
+    parsed_first = replay(first, start, 'one-member-wrapper')
+    parsed_shifted = replay(shifted, shifted_start, 'counted')
+    wrapper_header = raw[start + 1]
+    if wrapper_header != 1:
+        raise ContextError(source, start + 1, 'GameplayTagList one-member raw header', wrapper_header)
+    if raw[start] not in (0, 1) or raw[hard_limit - 1] not in (0, 1):
+        raise ContextError(source, start, 'terminal bool bytes are zero or one',
+                           [raw[start], raw[hard_limit - 1]])
+    if (first['members'][0].get('value') != bool(raw[start]) or
+            first['members'][4].get('value') != bool(raw[hard_limit - 1]) or
+            shifted['members'][0].get('value') != bool(wrapper_header)):
+        raise ContextError(source, start, 'raw bool/header bytes match both shifted candidate parses',
+                           [first['members'][0], shifted['members'][0], first['members'][4]])
+
+    list_counts = []
+    for member_index in (1, 2, 3):
+        member = first['members'][member_index]
+        count_range = member.get('countRange')
+        if (not isinstance(count_range, dict) or type(count_range.get('start')) is not int or
+                count_range.get('end') != count_range.get('start') + 4 or
+                count_range['end'] > hard_limit):
+            raise ContextError(source, start,
+                               f'terminal member {member_index} has an in-limit four-byte count range',
+                               count_range)
+        raw_count = struct.unpack_from('<I', raw, count_range['start'])[0]
+        count_value = None if member_index == 1 and raw_count == 0xFFFFFFFF else raw_count
+        if count_value != member.get('count'):
+            raise ContextError(source, count_range['start'],
+                               f'terminal member {member_index} raw count matches report',
+                               [member.get('count'), count_value])
+        list_counts.append({
+            'memberIndex': member_index,
+            'fieldName': ('tagDuringAttach.predefinedTag' if member_index == 1 else
+                          'toggleBuffs' if member_index == 2 else 'uiRangeHints'),
+            'countRange': count_range,
+            'count': count_value,
+            'recordRanges': [record.get('range') for record in member.get('records', [])],
+            'recordHeaderMemberCounts': [
+                record.get('memberCount') for record in member.get('records', [])
+            ],
+        })
+    member_index = selection.get('memberIndex')
+    expected_count = selection.get('count')
+    if member_index not in (1, 2, 3) or type(expected_count) is not int or expected_count <= 0:
+        raise ContextError(source, 0, 'selected positive SkillData list branch',
+                           [member_index, expected_count])
+    branch_count = first['members'][member_index].get('count')
+    if branch_count != expected_count:
+        raise ContextError(source, start,
+                           f'selected {selection.get("fieldName")} count is {expected_count}',
+                           branch_count)
+    return {
+        'inputSetSha256': input_set,
+        'logicalFileIdentity': logical_path,
+        'logicalSha256': digest,
+        'sourceRange': {'start': 0, 'end': hard_limit, 'endExclusive': True},
+        'parserCursor': parser_cursor,
+        'hardLimit': hard_limit,
+        'terminalCandidateRanges': [
+            {'start': start, 'end': hard_limit, 'endExclusive': True},
+            {'start': shifted_start, 'end': hard_limit, 'endExclusive': True},
+        ],
+        'rawWrapperHeaderByte': {'offset': start + 1, 'value': wrapper_header},
+        'terminalBooleanBytes': [
+            {'offset': start, 'value': bool(raw[start])},
+            {'offset': hard_limit - 1, 'value': bool(raw[hard_limit - 1])},
+        ],
+        'listCounts': list_counts,
+        'positiveBranch': {
+            'fieldName': selection['fieldName'],
+            'memberIndex': member_index,
+            'count': branch_count,
+            'recordRanges': [record.get('range') for record in
+                             first['members'][member_index].get('records', [])],
+            'recordHeaderMemberCounts': [record.get('memberCount') for record in
+                                         first['members'][member_index].get('records', [])],
+        },
+        'rawParserReplay': {
+            'oneMemberWrapperCandidate': {
+                'start': parsed_first['start'], 'end': parsed_first['end'],
+                'encoding': parsed_first['encoding'],
+            },
+            'shiftedCountedCandidate': {
+                'start': parsed_shifted['start'], 'end': parsed_shifted['end'],
+                'encoding': parsed_shifted['encoding'],
+            },
+        },
+        'classification': 'ambiguous',
+        'staticShapeDisposition': 'wrapper candidate matches the exact SkillData tail order; shifted counted candidate conflicts with the one-member wrapper if registered paths are selected',
+        'exactClosedRecords': 0,
+        'boundary': 'Current raw bytes, parser replay and report ranges agree for this nonempty branch sample. Both shifted hypotheses still reach hardLimit; this does not observe provider selection or an executed native cursor, and record internals remain anonymous where noted.',
+    }
+
+
+def skilldata_positive_branch_reader_replay(sample, raw, *, source):
+    """Replay one positive terminal-list branch with its bounded nested reader."""
+    if not isinstance(sample, dict) or not isinstance(raw, bytes):
+        raise ContextError(source, 0, 'branch witness object and raw bytes',
+                           [type(sample).__name__, type(raw).__name__])
+    input_set = sample.get('inputSetSha256')
+    logical_path = sample.get('logicalFileIdentity')
+    digest = hashlib.sha256(raw).hexdigest().upper()
+    hard_limit = sample.get('hardLimit')
+    if not isinstance(input_set, str) or len(input_set) != 64:
+        raise ContextError(source, 0, '64-character current inputSetSha256', input_set)
+    if not isinstance(logical_path, str) or not logical_path.startswith('Data/Json/SkillData/'):
+        raise ContextError(source, 0, 'logical SkillData VFS identity', logical_path)
+    require(sample.get('logicalSha256'), digest, source)
+    require(hard_limit, len(raw), source)
+    require(sample.get('sourceRange'),
+            {'start': 0, 'end': hard_limit, 'endExclusive': True}, source)
+    require(sample.get('classification'), 'ambiguous', source)
+    require(sample.get('exactClosedRecords'), 0, source)
+
+    candidate_ranges = sample.get('terminalCandidateRanges')
+    if (not isinstance(candidate_ranges, list) or len(candidate_ranges) != 2 or
+            any(not isinstance(row, dict) for row in candidate_ranges)):
+        raise ContextError(source, 0, 'two bounded terminal candidate ranges', candidate_ranges)
+    start = candidate_ranges[0].get('start')
+    for ordinal, row in enumerate(candidate_ranges):
+        if (type(row.get('start')) is not int or row.get('end') != hard_limit or
+                row.get('endExclusive') is not True or
+                row.get('start') != start + ordinal):
+            raise ContextError(source, start if type(start) is int else 0,
+                               'two adjacent shifted [start, hardLimit) candidates', row)
+    if type(start) is not int or start < 0 or start + 1 >= hard_limit:
+        raise ContextError(source, 0, 'in-limit first terminal candidate start', start)
+
+    branch = sample.get('positiveBranch')
+    if not isinstance(branch, dict):
+        raise ContextError(source, start, 'positive branch evidence object', branch)
+    field_name = branch.get('fieldName')
+    member_index = branch.get('memberIndex')
+    count = branch.get('count')
+    record_ranges = branch.get('recordRanges')
+    header_counts = branch.get('recordHeaderMemberCounts')
+    if (field_name not in ('tagDuringAttach.predefinedTag', 'toggleBuffs', 'uiRangeHints') or
+            type(member_index) is not int or member_index not in (1, 2, 3) or
+            type(count) is not int or count <= 0 or
+            not isinstance(record_ranges, list) or len(record_ranges) != count or
+            not isinstance(header_counts, list) or len(header_counts) != count):
+        raise ContextError(source, start, 'positive bounded nested list branch',
+                           [field_name, member_index, count, record_ranges, header_counts])
+    expected_field_by_index = {
+        1: 'tagDuringAttach.predefinedTag', 2: 'toggleBuffs', 3: 'uiRangeHints'}
+    require(field_name, expected_field_by_index[member_index], source, start)
+    count_rows = [row for row in sample.get('listCounts', [])
+                  if isinstance(row, dict) and row.get('memberIndex') == member_index]
+    if len(count_rows) != 1:
+        raise ContextError(source, start, 'one raw count witness for selected list member',
+                           count_rows)
+    count_row = count_rows[0]
+    require(count_row.get('fieldName'), field_name, source, start)
+    require(count_row.get('count'), count, source, start)
+    require(count_row.get('recordRanges'), record_ranges, source, start)
+    require(count_row.get('recordHeaderMemberCounts'), header_counts, source, start)
+    for ordinal, span in enumerate(record_ranges):
+        if (not isinstance(span, dict) or type(span.get('start')) is not int or
+                type(span.get('end')) is not int or span['start'] < start or
+                span['end'] <= span['start'] or span['end'] > hard_limit):
+            raise ContextError(source, start, 'nested record range within hardLimit', span)
+        if ordinal and span['start'] != record_ranges[ordinal - 1].get('end'):
+            raise ContextError(source, span['start'],
+                               'selected sibling nested records are contiguous',
+                               [record_ranges[ordinal - 1], span])
+
+    replayed_records = []
+    if field_name == 'tagDuringAttach.predefinedTag':
+        count_range = count_row.get('countRange')
+        if (not isinstance(count_range, dict) or
+                type(count_range.get('start')) is not int or
+                count_range.get('end') != count_range['start'] + 4):
+            raise ContextError(source, start, 'four-byte wrapped GameplayTag count range',
+                               count_range)
+        reader_start = count_range['start'] - 1
+        require(reader_start, start + 1, source, reader_start)
+        require(raw[reader_start], 1, source, reader_start)
+        try:
+            parsed, cursor = read_skill_gameplay_tag_list_field(
+                raw, reader_start, 'tagDuringAttach')
+        except ValueError as error:
+            raise ContextError(source, reader_start,
+                               'bounded one-member GameplayTagList parser replay', str(error)) from error
+        require(parsed.get('branch'), 'one-member-wrapper', source, reader_start)
+        require(parsed.get('prefixMemberCount'), 1, source, reader_start)
+        require(parsed.get('count'), count, source, reader_start)
+        expected_cursor = record_ranges[-1]['end']
+        require(cursor, expected_cursor, source, reader_start)
+        parsed_tags = parsed.get('tags')
+        if not isinstance(parsed_tags, list) or len(parsed_tags) != count:
+            raise ContextError(source, reader_start, 'one parsed GameplayTag per bounded count',
+                               parsed_tags)
+        for ordinal, (tag, span, header) in enumerate(
+                zip(parsed_tags, record_ranges, header_counts)):
+            tag_start = int(tag.get('offset', '0'), 16)
+            tag_end = tag_start + tag.get('byteLength', 0)
+            require({'start': tag_start, 'end': tag_end},
+                    {'start': span['start'], 'end': span['end']}, source, tag_start)
+            require(tag.get('memberCount'), header, source, tag_start)
+            replayed_records.append({
+                'index': ordinal, 'recordRange': span,
+                'memberCount': tag.get('memberCount'),
+                'encoding': tag.get('encoding'),
+                'tagId': tag.get('tagId'), 'tagHash': tag.get('tagHash'),
+            })
+        reader_row = {
+            'reader': 'read_skill_gameplay_tag_list_field',
+            'readerRange': {'start': reader_start, 'end': cursor, 'endExclusive': True},
+            'wrapperMemberCount': parsed['prefixMemberCount'],
+            'elementCount': parsed['count'],
+            'elementRecords': replayed_records,
+        }
+    elif field_name == 'toggleBuffs':
+        parser_field_order = None
+        for ordinal, (span, header) in enumerate(zip(record_ranges, header_counts)):
+            try:
+                parsed, cursor = read_skill_toggle_buff_data(raw, span['start'], ordinal)
+            except ValueError as error:
+                raise ContextError(source, span['start'],
+                                   'bounded ToggleBuffData reader replay', str(error)) from error
+            require(cursor, span['end'], source, span['start'])
+            require(parsed.get('memberCount'), header, source, span['start'])
+            require(parsed.get('metadataFieldOrder'), ['buffs', 'conditions'],
+                    source, span['start'])
+            if parser_field_order is None:
+                parser_field_order = parsed['metadataFieldOrder']
+            else:
+                require(parsed['metadataFieldOrder'], parser_field_order,
+                        source, span['start'])
+            replayed_records.append({
+                'index': ordinal, 'recordRange': span,
+                'memberCount': parsed['memberCount'],
+                'byteLength': parsed['byteLength'],
+                'buffsCount': parsed['buffsCount'],
+                'conditionsCount': parsed['conditionsCount'],
+            })
+        reader_row = {
+            'reader': 'read_skill_toggle_buff_data',
+            'readerRange': {'start': record_ranges[0]['start'],
+                            'end': record_ranges[-1]['end'], 'endExclusive': True},
+            'parserFieldOrder': parser_field_order,
+            'elementRecords': replayed_records,
+        }
+    else:
+        for ordinal, (span, header) in enumerate(zip(record_ranges, header_counts)):
+            try:
+                parsed, cursor = read_skill_ui_range_hint_data(raw, span['start'], ordinal)
+            except ValueError as error:
+                raise ContextError(source, span['start'],
+                                   'bounded UIRangeHintData/SkillHintShapeData reader replay',
+                                   str(error)) from error
+            require(cursor, span['end'], source, span['start'])
+            require(parsed.get('memberCount'), header, source, span['start'])
+            shape = parsed.get('shapeData')
+            if not isinstance(shape, dict):
+                raise ContextError(source, span['start'], 'nested SkillHintShapeData parse', shape)
+            require(shape.get('memberCount'), 21, source, span['start'])
+            shape_start = int(shape.get('offset', '0'), 16)
+            shape_end = shape_start + shape.get('byteLength', 0)
+            replayed_records.append({
+                'index': ordinal, 'recordRange': span,
+                'memberCount': parsed['memberCount'],
+                'byteLength': parsed['byteLength'],
+                'selectAll': parsed['selectAll'],
+                'shapeData': {
+                    'recordRange': {'start': shape_start, 'end': shape_end,
+                                    'endExclusive': True},
+                    'memberCount': shape['memberCount'],
+                    'byteLength': shape['byteLength'],
+                    'shapeRaw': shape.get('shapeRaw'),
+                    'shapeName': shape.get('shapeName'),
+                },
+                'targetFactionRaw': parsed['targetFactionRaw'],
+            })
+        reader_row = {
+            'reader': 'read_skill_ui_range_hint_data',
+            'readerRange': {'start': record_ranges[0]['start'],
+                            'end': record_ranges[-1]['end'], 'endExclusive': True},
+            'parserFieldOrder': ['selectAll', 'shapeData', 'targetFaction'],
+            'nestedShapeParserFieldOrder': [
+                'angle', 'angleKey', 'centerBaseIsEndPoint', 'centerOffset',
+                'centerOffsetXKey', 'centerOffsetZKey', 'extent', 'extentXKey',
+                'extentZKey', 'fixedExtent', 'radius', 'radiusKey',
+                'restrictEndPointInRange', 'shape', 'useAngleKey',
+                'useCenterOffsetKey', 'useExtentKey', 'useRadiusKey',
+                'useWidthKey', 'width', 'widthKey'],
+            'elementRecords': replayed_records,
+        }
+    return {
+        'inputSetSha256': input_set,
+        'logicalFileIdentity': logical_path,
+        'logicalSha256': digest,
+        'hardLimit': hard_limit,
+        'positiveFieldName': field_name,
+        'conditionalOnTerminalCandidateStart': start,
+        'nestedReaderReplay': reader_row,
+        'wholeSkillDataClassification': 'ambiguous',
+        'wholeSkillDataExactClosedRecords': 0,
+        'boundary': 'The bounded nested reader reaches the reported positive-list element end in these authenticated raw bytes. This does not resolve the one-byte-shifted parent tail, select a runtime provider or observe a live cursor.',
+    }
+
+
+def skilldata_nested_branch_static_alignment(branch_replay, nested_readers,
+                                              gameplay_tag_list, *, source):
+    """Require positive raw nested replays to match exact static reader schemas."""
+    if not isinstance(branch_replay, dict) or not isinstance(nested_readers, dict):
+        raise ContextError(source, 0, 'branch replay and static nested-reader evidence',
+                           [type(branch_replay).__name__, type(nested_readers).__name__])
+    if branch_replay.get('wholeSkillDataClassification') != 'ambiguous':
+        raise ContextError(source, 0, 'whole SkillData sample remains ambiguous',
+                           branch_replay.get('wholeSkillDataClassification'))
+    if branch_replay.get('wholeSkillDataExactClosedRecords') != 0:
+        raise ContextError(source, 0, 'no whole SkillData record credited as closed',
+                           branch_replay.get('wholeSkillDataExactClosedRecords'))
+    field_name = branch_replay.get('positiveFieldName')
+    replay = branch_replay.get('nestedReaderReplay')
+    records = replay.get('elementRecords') if isinstance(replay, dict) else None
+    if not isinstance(records, list) or not records:
+        raise ContextError(source, 0, 'at least one raw nested element replay', records)
+    if field_name == 'tagDuringAttach.predefinedTag':
+        wrapper_members = gameplay_tag_list.get('memberCount')
+        require(wrapper_members, 1, source)
+        header = gameplay_tag_list.get('headerEvidence')
+        if not isinstance(header, dict):
+            raise ContextError(source, 0, 'static GameplayTagList header evidence', header)
+        require(header.get('acceptedNonNullHeaderByte'), 1, source)
+        require(replay.get('wrapperMemberCount'), wrapper_members, source)
+        require(replay.get('elementCount'), len(records), source)
+        require(replay.get('reader'), 'read_skill_gameplay_tag_list_field', source)
+        element_schema = nested_readers.get('gameplayTagElement')
+        if not isinstance(element_schema, dict):
+            raise ContextError(source, 0, 'registered GameplayTag element reader schema',
+                               element_schema)
+        native_element_count = element_schema.get('memberCountCheck', {}).get(
+            'acceptedMemberCount')
+        require(native_element_count, 1, source)
+        require(element_schema.get('tagIdField', {}).get('fieldType', {}).get('wireType'),
+                'System.Int32', source)
+        require(element_schema.get('readerCall', {}).get('targetRva'), 0x2CA86B0, source)
+        cursor_advancement = element_schema.get('cursorAdvancement')
+        if not isinstance(cursor_advancement, dict):
+            raise ContextError(source, 0, 'bounded int32/member-count cursor helper evidence',
+                               cursor_advancement)
+        native_record_width = cursor_advancement.get('validNormalPathByteWidth')
+        require(native_record_width, 5, source)
+        native_reader_method = element_schema.get('readerMethodIdentity', {})
+        require(native_reader_method.get('methodIndex'), 104467, source)
+        native_ranges = []
+        for ordinal, row in enumerate(records):
+            require(row.get('memberCount'), native_element_count, source, ordinal)
+            span = row.get('recordRange')
+            actual_width = span.get('end') - span.get('start') if isinstance(span, dict) else None
+            require(actual_width, native_record_width, source, ordinal)
+            native_ranges.append({
+                'recordRange': span,
+                'staticReaderEnd': span['start'] + native_record_width,
+                'cursorByteWidth': native_record_width,
+                'classification': 'exact-under-registered-reader-path',
+            })
+        raw_ids = []
+        for ordinal, row in enumerate(records):
+            raw_id = row.get('tagId')
+            if type(raw_id) is not int or not 0 <= raw_id <= 0xFFFFFFFF:
+                raise ContextError(source, ordinal,
+                                   'GameplayTag raw id as an unsigned 32-bit bit pattern', raw_id)
+            signed_id = raw_id if raw_id < 0x80000000 else raw_id - 0x100000000
+            raw_ids.append({'rawU32': raw_id, 'rawHex': f'0x{raw_id:08X}',
+                            'signedI32': signed_id})
+        alignment = {
+            'readerField': field_name,
+            'rawWrapperMemberCount': replay['wrapperMemberCount'],
+            'staticWrapperMemberCount': wrapper_members,
+            'rawElementCount': replay['elementCount'],
+            'staticSchema': gameplay_tag_list['typeName'],
+            'rawElementMemberCounts': [row.get('memberCount') for row in records],
+            'staticElementMemberCount': native_element_count,
+            'nativeElementIdWireType': 'System.Int32',
+            'staticReaderCursorDerivation': cursor_advancement['derivation'],
+            'conditionalExactNativeElementRanges': native_ranges,
+            'rawU32AndSignedI32Views': raw_ids,
+        }
+    elif field_name == 'toggleBuffs':
+        schema = nested_readers.get('toggleBuffData')
+        if not isinstance(schema, dict):
+            raise ContextError(source, 0, 'exact ToggleBuffData reader schema', schema)
+        member_count = schema.get('memberCountCompare', {}).get('memberCount')
+        require(member_count, 2, source)
+        field_order = [row.get('fieldName') for row in schema.get('members', [])]
+        require(replay.get('parserFieldOrder'), field_order, source)
+        require(replay.get('reader'), 'read_skill_toggle_buff_data', source)
+        for ordinal, row in enumerate(records):
+            require(row.get('memberCount'), member_count, source, ordinal)
+        alignment = {
+            'readerField': field_name,
+            'rawRecordMemberCounts': [row.get('memberCount') for row in records],
+            'staticMemberCount': member_count,
+            'rawAndStaticFieldOrder': field_order,
+        }
+    elif field_name == 'uiRangeHints':
+        schema = nested_readers.get('uiRangeHintData')
+        shape_schema = nested_readers.get('skillHintShapeData')
+        if not isinstance(schema, dict) or not isinstance(shape_schema, dict):
+            raise ContextError(source, 0, 'exact UIRangeHintData and nested shape schemas',
+                               [schema, shape_schema])
+        member_count = schema.get('memberCountCompare', {}).get('memberCount')
+        shape_count = shape_schema.get('memberCountCompare', {}).get('memberCount')
+        require(member_count, 3, source)
+        require(shape_count, 21, source)
+        field_order = [row.get('fieldName') for row in schema.get('members', [])]
+        shape_order = [row.get('fieldName') for row in shape_schema.get('serializedOrder', [])]
+        require(replay.get('parserFieldOrder'), field_order, source)
+        require(replay.get('nestedShapeParserFieldOrder'), shape_order, source)
+        require(replay.get('reader'), 'read_skill_ui_range_hint_data', source)
+        for ordinal, row in enumerate(records):
+            require(row.get('memberCount'), member_count, source, ordinal)
+            require(row.get('shapeData', {}).get('memberCount'), shape_count, source, ordinal)
+        alignment = {
+            'readerField': field_name,
+            'rawRecordMemberCounts': [row.get('memberCount') for row in records],
+            'staticMemberCount': member_count,
+            'rawAndStaticFieldOrder': field_order,
+            'nestedShapeMemberCounts': [row.get('shapeData', {}).get('memberCount')
+                                        for row in records],
+            'nestedShapeStaticMemberCount': shape_count,
+            'rawAndStaticShapeFieldOrder': shape_order,
+        }
+    else:
+        raise ContextError(source, 0, 'recognized positive SkillData nested reader field', field_name)
+    return {
+        'status': 'positive-raw-sample-matches-static-nested-reader-schema',
+        'alignment': alignment,
+        'wholeSkillDataClassification': 'ambiguous',
+        'exactClosedWholeSkillDataRecords': 0,
+        'boundary': ('For GameplayTag, the exact five-byte nested element endpoint follows from the registered reader plus its bounded one-byte/four-byte cursor helpers, and the source parser reaches the same end. Other nested endpoints are parser-to-schema cross-checks. All are conditional on the registered terminal path; none proves runtime provider selection or a live cursor.'),
+    }
+
+
+def skilldata_terminal_tail_layout(collision, sample_witness, tail_reads,
+                                   tag_list_wrapper, *, source):
+    """Compare exact terminal reader/type evidence to both current VFS shapes."""
+    expected_reads = [
+        (43, 'switchToCenterBeforeCast', 'bool', 0xA5, 0x37DE8C5, 0x2CA88C0, 0x37DE8E0),
+        (44, 'tagDuringAttach', 'Beyond.Gameplay.Core.GameplayTagList',
+         0xB8, 0x37DE8F3, 0x2DA5C90, 0x37DE90E),
+        (45, 'toggleBuffs',
+         'System.Collections.Generic.List`1<Beyond.Gameplay.Core.ToggleBuffData>',
+         0xD8, 0x37DE92E, 0x381F8F0, 0x37DE949),
+        (46, 'uiRangeHints',
+         'System.Collections.Generic.List`1<Beyond.Gameplay.Core.UIRangeHintData>',
+         0xC8, 0x37DE969, 0x381F8F0, 0x37DE984),
+        (47, 'useAIExclusiveFrame', 'bool', 0x58, 0x37DE99D, 0x2CA88C0, 0x37DE9C2),
+    ]
+    if not isinstance(tail_reads, list) or len(tail_reads) != len(expected_reads):
+        raise ContextError(source, 0, 'five exact terminal SkillData reader operations',
+                           type(tail_reads).__name__ if not isinstance(tail_reads, list)
+                           else len(tail_reads))
+    actual_reads = []
+    for row in tail_reads:
+        if not isinstance(row, dict) or not isinstance(row.get('objectField'), dict):
+            raise ContextError(source, 0, 'terminal SkillData reader rows include object fields',
+                               row)
+        actual_reads.append((
+            row.get('serializedOrderIndex'), row.get('fieldName'), row.get('wireType'),
+            row['objectField'].get('fieldOffset'), row.get('callInstructionRva'),
+            row.get('readerTargetRva'), row.get('storeInstructionRva'),
+        ))
+    if actual_reads != expected_reads:
+        raise ContextError(source, 0,
+                           'terminal SkillData type/order/call/store rows match exact expectations',
+                           actual_reads)
+
+    if not isinstance(sample_witness, dict):
+        raise ContextError(source, 0, 'authenticated current raw terminal byte witness',
+                           type(sample_witness).__name__)
+    for key in ('inputSetSha256', 'logicalFileIdentity', 'logicalSha256', 'hardLimit'):
+        if sample_witness.get(key) != collision.get(key):
+            raise ContextError(source, 0, f'terminal raw witness {key} equals corpus collision',
+                               [sample_witness.get(key), collision.get(key)])
+    if sample_witness.get('candidateRange') != collision['candidates'][0].get('candidateRange'):
+        raise ContextError(source, 0, 'raw witness candidate range equals first corpus hypothesis',
+                           sample_witness.get('candidateRange'))
+    header = sample_witness.get('nestedMemberCountByte')
+    if not isinstance(header, dict) or header.get('value') != 1:
+        raise ContextError(source, 0, 'first candidate raw wrapper header is one',
+                           header)
+
+    if not isinstance(tag_list_wrapper, dict):
+        raise ContextError(source, 0, 'exact GameplayTagList wrapper layout evidence',
+                           type(tag_list_wrapper).__name__)
+    expected_wrapper_type = 'Beyond.Gameplay.Core.GameplayTagList'
+    if (tag_list_wrapper.get('typeName') != expected_wrapper_type or
+            tag_list_wrapper.get('memberCount') != 1):
+        raise ContextError(source, 0,
+                           'GameplayTagList is the one-member SkillData tail wrapper',
+                           [tag_list_wrapper.get('typeName'), tag_list_wrapper.get('memberCount')])
+    member = tag_list_wrapper.get('member')
+    expected_member_type = (
+        'System.Collections.Generic.List`1<Beyond.Gameplay.Core.GameplayTag>')
+    if (not isinstance(member, dict) or member.get('name') != 'predefinedTag' or
+            member.get('wireType') != expected_member_type):
+        raise ContextError(source, 0,
+                           'GameplayTagList member is predefinedTag: List<GameplayTag>',
+                           member)
+    reader_identity = tag_list_wrapper.get('readerMethodIdentity')
+    if (not isinstance(reader_identity, dict) or
+            reader_identity.get('pointerVa') is None or
+            reader_identity.get('name') != 'Deserialize' or
+            reader_identity.get('declaringType') !=
+            'Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagListForMemoryPack'):
+        raise ContextError(source, 0,
+                           'wrapper reader method is the exact GameplayTagList Deserialize identity',
+                           reader_identity)
+    nested_type = tag_list_wrapper.get('nestedReadType')
+    if nested_type != expected_member_type:
+        raise ContextError(source, 0,
+                           'wrapper reader MethodSpec reads its exact List<GameplayTag> member',
+                           nested_type)
+    header_evidence = tag_list_wrapper.get('headerEvidence')
+    if (not isinstance(header_evidence, dict) or
+            header_evidence.get('headerByteWidth') != 1 or
+            header_evidence.get('acceptedNonNullHeaderByte') != 1 or
+            header_evidence.get('nullHeaderByte') != 0xFF):
+        raise ContextError(source, 0,
+                           'wrapper reader consumes one header byte and accepts member count one',
+                           header_evidence)
+
+    candidates = collision.get('candidates')
+    if not isinstance(candidates, list) or len(candidates) != 2:
+        raise ContextError(source, 0, 'two terminal candidates remain available for comparison',
+                           type(candidates).__name__ if not isinstance(candidates, list)
+                           else len(candidates))
+    first, shifted = candidates
+    first_members = first.get('terminalMembers')
+    shifted_members = shifted.get('terminalMembers')
+    if not isinstance(first_members, list) or len(first_members) != 5:
+        raise ContextError(source, 0, 'first terminal candidate has five member rows',
+                           first_members)
+    if not isinstance(shifted_members, list) or len(shifted_members) != 5:
+        raise ContextError(source, 0, 'shifted terminal candidate has five member rows',
+                           shifted_members)
+    if (first.get('encoding') != 'one-member-wrapper' or
+            first_members[1].get('wrapperRange') is None):
+        raise ContextError(source, first.get('start', 0),
+                           'first candidate carries the one-member GameplayTagList wrapper',
+                           first.get('encoding'))
+    if shifted.get('encoding') != 'counted' or shifted_members[1].get('wrapperRange') is not None:
+        raise ContextError(source, shifted.get('start', 0),
+                           'shifted candidate omits the required GameplayTagList wrapper',
+                           shifted.get('encoding'))
+    return {
+        'tailReads': tail_reads,
+        'nestedWrapperMemberCount': tag_list_wrapper.get('memberCount'),
+        'gameplayTagListWrapper': tag_list_wrapper,
+        'rawSampleByteWitness': sample_witness,
+        'candidateComparison': [
+            {
+                'candidateRange': first.get('candidateRange'),
+                'status': 'static-type-and-reader-order match, conditional on registered reader paths being selected',
+                'fieldSequence': [name for _, name, *_ in expected_reads],
+                'rawWrapperHeaderByte': header,
+            },
+            {
+                'candidateRange': shifted.get('candidateRange'),
+                'status': 'statically incompatible with the one-member GameplayTagList wrapper if its registered reader path is selected',
+                'conflict': 'The shifted candidate treats the raw wrapper header byte 1 as switchToCenterBeforeCast and omits the nested wrapper header.',
+            },
+        ],
+        'wholeFileBoundary': 'The terminal field group is independently matched to the current source bytes, but the bytes between the proven [0,10) prefix and this tail remain opaque. Do not classify the whole SkillData file as closed.',
+        'runtimeProviderSelection': 'unobserved',
+        'runtimeCursor': 'unobserved',
+        'classification': 'static-terminal-shape-match-with-conditional-shifted-candidate-conflict',
+        'exactClosedRecords': 0,
+    }
+
+
+def skilldata_cursor_hook_call_sites(pe, *, source):
+    """Verify exact SkillData E8 edges and the post-CALL return RVAs.
+
+    The native observer classifies the return address from _ReturnAddress(),
+    not the start of the E8 instruction.
+    """
+    sites = []
+    for name, instruction_rva in (
+            ('firstTerminalByte', 0x37DE8C5),
+            ('finalTerminalByte', 0x37DE99D)):
+        raw = pe.bytes_at_va(pe.image_base + instruction_rva, 5)
+        require(raw[:1], b'\xE8', source, instruction_rva)
+        target = relative_branch_target(
+            raw, pe.image_base + instruction_rva, source=source)
+        require(target, pe.image_base + 0x2CA88C0, source, instruction_rva)
+        return_rva = instruction_rva + len(raw)
+        sites.append({
+            'name': name,
+            'callInstructionRva': instruction_rva,
+            'instructionByteLength': len(raw),
+            'rawHex': raw.hex().upper(),
+            'targetRva': target - pe.image_base,
+            'returnAddressRva': return_rva,
+            'classificationBasis': '_ReturnAddress() after the five-byte E8 rel32 call',
+        })
+    return {
+        'sites': sites,
+        'level': 'exact selected-build direct helper call and post-CALL return address',
+        'boundary': 'These checks validate the observer allow-list coordinates against the selected SkillData body. They do not prove that either call executes for a current VFS file or provide its runtime cursor.',
+    }
+
+
+def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, specs_raw,
+                                  corpus, representative_sample_raw, wrapper_evidence,
+                                  *, source):
+    """Pin the first SkillData reader field and nested ActionGroupData order.
+
+    Static AOT method, MethodSpec, field-offset and bounded-code joins are
+    exact-build evidence. They do not establish which formatter/provider ran
+    for a VFS file, so the empty-list end stays conditional.
+    """
+    selected_methods = module_methods(pe, md, modules, image_owners, [
+        (102566, 'Beyond.MemoryPack.Beyond_Gameplay_Core_SkillDataForMemoryPack', 'Deserialize', 0x37DE060),
+        (102567, 'Beyond.MemoryPack.Beyond_Gameplay_Core_SkillDataForMemoryPack+Beyond_Gameplay_Core_SkillDataForMemoryPackFormatter', 'Deserialize', 0x37DDF70),
+        (104262, 'Beyond.MemoryPack.Beyond_Gameplay_Core_ActionGroupDataForMemoryPack', 'Deserialize', 0x3E3FFE0),
+        (104263, 'Beyond.MemoryPack.Beyond_Gameplay_Core_ActionGroupDataForMemoryPack+Beyond_Gameplay_Core_ActionGroupDataForMemoryPackFormatter', 'Deserialize', 0x3E3FF80),
+    ], source=source, expected_image='MemoryPack.Beyond.dll')
+    code_windows = []
+    for rva, length, expected in (
+        (0x37DE060, 0x5B, '0926899BA44C601CEBAC2B4E70580B397CDDAB4FC60060C1E8DC0EF99A2555FB'),
+        (0x37DE0BB, 0x90A, 'FEA359985EBF5DF75CC58D871469481F0F692B1768D84724FF5941D47CAD8132'),
+        (0x3E3FFE0, 0x13F, 'D2C4A8B7F40CDB99154F7EE9EFA9FB85CD8F2F086932F03C1BC2FF8568E1AB4E'),
+    ):
+        raw = pe.bytes_at_va(pe.image_base + rva, length)
+        digest = hashlib.sha256(raw).hexdigest().upper()
+        require(digest, expected, source, rva)
+        code_windows.append({'rva': rva, 'byteLength': length, 'sha256': digest})
+    instruction_windows = []
+    for rva, raw_hex, role in (
+        (0x37DE0CF, '4080FD30', 'SkillData member-count comparison against 48'),
+        (0x37DE101, '488981C0000000', 'store first SkillData result at object offset +0xC0'),
+        (0x3E40045, '4080FD02', 'ActionGroupData member-count comparison against 2'),
+        (0x3E40077, '48894118', 'store passiveEventActions result at object offset +0x18'),
+        (0x3E400A4, '48894110', 'store timelineActions result at object offset +0x10'),
+    ):
+        raw = pe.bytes_at_va(pe.image_base + rva, len(bytes.fromhex(raw_hex)))
+        require(raw, bytes.fromhex(raw_hex), source, rva)
+        instruction_windows.append({'rva': rva, 'rawHex': raw.hex().upper(), 'role': role})
+    formatter_thunks = []
+    for rva, target in ((0x37DDFAC, 0x37DE060), (0x3E3FFBC, 0x3E3FFE0)):
+        raw = pe.bytes_at_va(pe.image_base + rva, 5)
+        actual = relative_branch_target(raw, pe.image_base + rva, source=source) - pe.image_base
+        require(actual, target, source, rva)
+        formatter_thunks.append({'rva': rva, 'rawHex': raw.hex().upper(),
+                                 'targetRva': target, 'kind': 'conditional tail jump after formatter initialization'})
+
+    def type_index(full_name, expected_image):
+        matches = [index for index, item in enumerate(md.types) if md.type_full_name(item) == full_name]
+        if len(matches) != 1:
+            raise ContextError(source, 0, f'one metadata type definition named {full_name}', matches)
+        index = matches[0]
+        image_name = md.string(md.images[image_owners[index]].name_index)
+        require(image_name, expected_image, source, index)
+        return index
+
+    def field_layout(type_def_index, field_names):
+        require(reg['fieldOffsetsCount'], len(md.types), source, int(reg['fieldOffsets'], 16))
+        definition = md.types[type_def_index]
+        table_base = int(reg['fieldOffsets'], 16)
+        vector = pe.u64_at_va(table_base + type_def_index * 8)
+        require(vector != 0, True, source, table_base + type_def_index * 8)
+        result = {}
+        for local_index in range(definition.field_count):
+            field_index = definition.field_start + local_index
+            field = md.fields[field_index]
+            name = md.string(field.name_index)
+            if name not in field_names:
+                continue
+            raw_offset = pe.bytes_at_va(vector + local_index * 4, 4)
+            offset = struct.unpack('<i', raw_offset)[0]
+            result[name] = {'metadataFieldIndex': field_index, 'fieldOffset': offset,
+                            'metadataTypeIndex': field.type_index}
+        for name in field_names:
+            if name not in result:
+                raise ContextError(source, type_def_index,
+                                   f'field {name!r} in type definition {type_def_index}', 'missing')
+        return result
+
+    def field_wire_identity(field_name, layout):
+        field = md.fields[layout['metadataFieldIndex']]
+        type_index = field.type_index
+        if type(type_index) is not int or not 0 <= type_index < reg['typesCount']:
+            raise ContextError(source, layout['metadataFieldIndex'],
+                               'field type index inside registered IL2CPP type table', type_index)
+        type_slot = int(reg['types'], 16) + type_index * 8
+        type_pointer = pe.u64_at_va(type_slot)
+        if type_pointer == 0:
+            raise ContextError(source, type_slot, 'non-null field type pointer', type_pointer)
+        raw = pe.bytes_at_va(type_pointer, 16)
+        kind = raw[10]
+        identity = {
+            'metadataTypeIndex': type_index,
+            'typePointerVa': type_pointer,
+            'typeRawHex': raw.hex().upper(),
+            'typeKind': kind,
+        }
+        primitive_names = {
+            0x02: 'bool', 0x03: 'System.Char',
+            0x04: 'System.SByte', 0x05: 'System.Byte',
+            0x06: 'System.Int16', 0x07: 'System.UInt16',
+            0x08: 'System.Int32', 0x09: 'System.UInt32',
+            0x0A: 'System.Int64', 0x0B: 'System.UInt64',
+            0x0C: 'System.Single', 0x0D: 'System.Double',
+            0x0E: 'System.String',
+        }
+        if kind in primitive_names:
+            identity['wireType'] = primitive_names[kind]
+        elif kind in (0x11, 0x12):
+            definition = struct.unpack_from('<Q', raw)[0]
+            if definition >= len(md.types):
+                raise ContextError(source, type_pointer,
+                                   'bounded direct field type definition', definition)
+            identity.update({
+                'typeDefinitionIndex': definition,
+                'wireType': md.type_full_name(md.types[definition]),
+            })
+        elif kind == 0x15:
+            carrier_pointer = struct.unpack_from('<Q', raw)[0]
+            carrier_raw = pe.bytes_at_va(carrier_pointer, 32)
+            base_pointer = struct.unpack_from('<Q', carrier_raw)[0]
+            base_raw = pe.bytes_at_va(base_pointer, 16)
+            carrier = generic_type_carrier(
+                raw, carrier_raw, base_raw, type_pointer=type_pointer,
+                type_count=len(md.types), source=source)
+            inst = table.resolve_pointer(carrier['classInstantiationPointerVa'])
+            if len(inst.arguments) != 1:
+                raise ContextError(source, inst.record_va,
+                                   'one concrete generic list element type', len(inst.arguments))
+            element = inst.arguments[0]
+            element_raw = bytes.fromhex(element.raw_type_record_hex)
+            element_kind = element_raw[10]
+            element_definition = struct.unpack_from('<Q', element_raw)[0]
+            if element_kind not in (0x11, 0x12) or element_definition >= len(md.types):
+                raise ContextError(source, element.type_pointer_va,
+                                   'bounded direct class/value list element type',
+                                   [element_kind, element_definition])
+            base_name = md.type_full_name(md.types[carrier['baseDefinitionIndex']])
+            element_name = md.type_full_name(md.types[element_definition])
+            identity.update({
+                'typeDefinitionIndex': carrier['baseDefinitionIndex'],
+                'typeName': base_name,
+                'wireType': f'{base_name}<{element_name}>',
+                'classCarrier': carrier,
+                'genericInstantiation': inst.as_dict(),
+                'elementTypeDefinitionIndex': element_definition,
+                'elementTypeName': element_name,
+                'elementRawTypeRecordHex': element.raw_type_record_hex,
+            })
+        else:
+            raise ContextError(source, type_pointer,
+                               'boolean, direct class/value or generic-list field type',
+                               hex(kind))
+        return identity
+
+    skill_type = type_index('Beyond.Gameplay.Core.SkillData', 'Gameplay.Beyond.dll')
+    action_group_type = type_index('Beyond.Gameplay.Core.ActionGroupData', 'Gameplay.Beyond.dll')
+    skill_fields = field_layout(skill_type, {
+        'actionGroupData', 'switchToCenterBeforeCast', 'tagDuringAttach',
+        'toggleBuffs', 'uiRangeHints', 'useAIExclusiveFrame',
+    })
+    action_fields = field_layout(action_group_type, {'passiveEventActions', 'timelineActions'})
+    require(skill_fields['actionGroupData']['fieldOffset'], 0xC0, source, skill_fields['actionGroupData']['metadataFieldIndex'])
+    require(action_fields['passiveEventActions']['fieldOffset'], 0x18, source, action_fields['passiveEventActions']['metadataFieldIndex'])
+    require(action_fields['timelineActions']['fieldOffset'], 0x10, source, action_fields['timelineActions']['metadataFieldIndex'])
+
+    def call_method_spec(load_rva, call_rva, expected_method_index, expected_method_name, expected_target_rva):
+        instruction = pe.bytes_at_va(pe.image_base + load_rva, 7)
+        cell = rip_qword_load_target(instruction, pe.image_base + load_rva, source=source)
+        raw_usage = pe.bytes_at_va(cell, 8)
+        context = usage_method_spec(
+            raw_usage, specs_raw, len(md.methods), table.count, source=source,
+            usage_offset=cell, records_offset=int(reg['methodSpecs'], 16))
+        require(context['definition'], expected_method_index, source, cell)
+        method = md.methods[context['definition']]
+        owner = md.types[method.declaring_type]
+        require((md.type_full_name(owner), md.string(method.name_index)),
+                ('MemoryPack.MemoryPackReader', expected_method_name), source, cell)
+        target = relative_branch_target(
+            pe.bytes_at_va(pe.image_base + call_rva, 5), pe.image_base + call_rva, source=source)
+        require(target, pe.image_base + expected_target_rva, source, call_rva)
+        context['methodIdentity'] = {
+            'methodIndex': context['definition'], 'token': method.token,
+            'declaringType': md.type_full_name(owner), 'name': md.string(method.name_index),
+        }
+        context['loadRva'] = load_rva
+        context['callRva'] = call_rva
+        context['targetRva'] = expected_target_rva
+        inst = table.resolve(context['methodInstantiationIndex'])
+        require(len(inst.arguments), 1, source, inst.record_va)
+        type_arg = inst.arguments[0]
+        type_raw = bytes.fromhex(type_arg.raw_type_record_hex)
+        type_kind = type_raw[10]
+        type_index_or_pointer = struct.unpack_from('<Q', type_raw)[0]
+        if type_kind in (0x11, 0x12):
+            require(type_index_or_pointer < len(md.types), True, source, type_arg.type_pointer_va)
+            context['genericType'] = {
+                'typeDefinitionIndex': type_index_or_pointer,
+                'typeName': md.type_full_name(md.types[type_index_or_pointer]),
+                'rawTypeRecordHex': type_arg.raw_type_record_hex,
+            }
+        elif type_kind == 0x15:
+            carrier_raw = pe.bytes_at_va(type_index_or_pointer, 32)
+            base_pointer = struct.unpack_from('<Q', carrier_raw)[0]
+            base_raw = pe.bytes_at_va(base_pointer, 16)
+            carrier = generic_type_carrier(
+                type_raw, carrier_raw, base_raw, type_pointer=type_arg.type_pointer_va,
+                type_count=len(md.types), source=source)
+            base_name = md.type_full_name(md.types[carrier['baseDefinitionIndex']])
+            require(base_name, 'System.Collections.Generic.List`1', source, base_pointer)
+            element_inst = table.resolve_pointer(carrier['classInstantiationPointerVa'])
+            require(len(element_inst.arguments), 1, source, element_inst.record_va)
+            element_arg = element_inst.arguments[0]
+            element_raw = bytes.fromhex(element_arg.raw_type_record_hex)
+            element_kind = element_raw[10]
+            element_index = struct.unpack_from('<Q', element_raw)[0]
+            require(element_kind in (0x11, 0x12), True, source, element_arg.type_pointer_va)
+            require(element_index < len(md.types), True, source, element_arg.type_pointer_va)
+            context['genericType'] = {
+                'typeDefinitionIndex': carrier['baseDefinitionIndex'],
+                'typeName': base_name,
+                'elementTypeDefinitionIndex': element_index,
+                'elementTypeName': md.type_full_name(md.types[element_index]),
+                'rawTypeRecordHex': type_arg.raw_type_record_hex,
+                'elementRawTypeRecordHex': element_arg.raw_type_record_hex,
+            }
+        else:
+            raise ContextError(source, type_arg.type_pointer_va,
+                               'direct class or List<T> generic type argument', hex(type_kind))
+        return context
+
+    action_group_call = call_method_spec(0x37DE0D9, 0x37DE0E6, 428464, 'ReadValue', 0x2DA5C90)
+    require(action_group_call['index'], 619840, source, action_group_call['usageVa'])
+    require(action_group_call['genericType']['typeName'], 'Beyond.Gameplay.Core.ActionGroupData',
+            source, action_group_call['usageVa'])
+    require(action_group_call['genericType']['typeDefinitionIndex'], action_group_type,
+            source, action_group_call['usageVa'])
+    list_calls = [
+        call_method_spec(0x3E4004F, 0x3E4005C, 428462, 'ReadPackable', 0x381F8F0),
+        call_method_spec(0x3E40084, 0x3E40091, 428462, 'ReadPackable', 0x381F8F0),
+    ]
+    require([row['index'] for row in list_calls], [610662, 610915], source)
+    for row in list_calls:
+        require(row['genericType']['typeName'], 'System.Collections.Generic.List`1', source, row['usageVa'])
+    require(list_calls[0]['genericType']['elementTypeName'],
+            'Beyond.Gameplay.Core.AbilityActionMap', source)
+    require(list_calls[1]['genericType']['elementTypeName'],
+            'Beyond.Gameplay.Core.TimelineAction+TimelineActionData', source)
+    require(action_group_call['genericType']['typeName'], 'Beyond.Gameplay.Core.ActionGroupData', source)
+
+    terminal_method_calls = {
+        'tagDuringAttach': call_method_spec(
+            0x37DE8E9, 0x37DE8F3, 428464, 'ReadValue', 0x2DA5C90),
+        'toggleBuffs': call_method_spec(
+            0x37DE921, 0x37DE92E, 428462, 'ReadPackable', 0x381F8F0),
+        'uiRangeHints': call_method_spec(
+            0x37DE95C, 0x37DE969, 428462, 'ReadPackable', 0x381F8F0),
+    }
+    require(terminal_method_calls['tagDuringAttach']['genericType']['typeName'],
+            'Beyond.Gameplay.Core.GameplayTagList', source)
+    for field_name, element_name in (
+            ('toggleBuffs', 'Beyond.Gameplay.Core.ToggleBuffData'),
+            ('uiRangeHints', 'Beyond.Gameplay.Core.UIRangeHintData')):
+        generic = terminal_method_calls[field_name]['genericType']
+        require(generic['typeName'], 'System.Collections.Generic.List`1',
+                source, terminal_method_calls[field_name]['usageVa'])
+        require(generic['elementTypeName'], element_name,
+                source, terminal_method_calls[field_name]['usageVa'])
+
+    cursor_hook_sites = skilldata_cursor_hook_call_sites(pe, source=source)
+    tail_field_expectations = [
+        (43, 'switchToCenterBeforeCast', 'bool', 0xA5, 0x37DE8C5,
+         0x2CA88C0, 0x37DE8E0, '8881A5000000', None),
+        (44, 'tagDuringAttach', 'Beyond.Gameplay.Core.GameplayTagList', 0xB8,
+         0x37DE8F3, 0x2DA5C90, 0x37DE90E, '488981B8000000',
+         terminal_method_calls['tagDuringAttach']),
+        (45, 'toggleBuffs',
+         'System.Collections.Generic.List`1<Beyond.Gameplay.Core.ToggleBuffData>',
+         0xD8, 0x37DE92E, 0x381F8F0, 0x37DE949, '488981D8000000',
+         terminal_method_calls['toggleBuffs']),
+        (46, 'uiRangeHints',
+         'System.Collections.Generic.List`1<Beyond.Gameplay.Core.UIRangeHintData>',
+         0xC8, 0x37DE969, 0x381F8F0, 0x37DE984, '488981C8000000',
+         terminal_method_calls['uiRangeHints']),
+        (47, 'useAIExclusiveFrame', 'bool', 0x58, 0x37DE99D,
+         0x2CA88C0, 0x37DE9C2, '884158', None),
+    ]
+    tail_reads = []
+    for order_index, field_name, expected_wire_type, expected_offset, call_rva, target_rva, store_rva, store_hex, method_spec in tail_field_expectations:
+        field = skill_fields[field_name]
+        require(field['fieldOffset'], expected_offset, source,
+                field['metadataFieldIndex'])
+        field_type = field_wire_identity(field_name, field)
+        require(field_type['wireType'], expected_wire_type, source,
+                field['metadataFieldIndex'])
+        if method_spec is not None:
+            generic = method_spec['genericType']
+            if field_type['typeKind'] == 0x15:
+                require(field_type['typeDefinitionIndex'], generic['typeDefinitionIndex'],
+                        source, field['metadataFieldIndex'])
+                require(field_type['elementTypeDefinitionIndex'],
+                        generic['elementTypeDefinitionIndex'], source,
+                        field['metadataFieldIndex'])
+            else:
+                require(field_type['typeDefinitionIndex'],
+                        generic['typeDefinitionIndex'], source,
+                        field['metadataFieldIndex'])
+        store_raw = pe.bytes_at_va(pe.image_base + store_rva, len(bytes.fromhex(store_hex)))
+        require(store_raw, bytes.fromhex(store_hex), source, store_rva)
+        call_raw = pe.bytes_at_va(pe.image_base + call_rva, 5)
+        if method_spec is None:
+            helper_site = next(site for site in cursor_hook_sites['sites']
+                               if site['callInstructionRva'] == call_rva)
+            require(helper_site['targetRva'], target_rva, source, call_rva)
+        else:
+            require(method_spec['targetRva'], target_rva, source, call_rva)
+        tail_reads.append({
+            'serializedOrderIndex': order_index,
+            'fieldName': field_name,
+            'wireType': field_type['wireType'],
+            'fieldType': field_type,
+            'objectField': {
+                'metadataFieldIndex': field['metadataFieldIndex'],
+                'fieldOffset': field['fieldOffset'],
+                'metadataTypeIndex': field['metadataTypeIndex'],
+            },
+            'callInstructionRva': call_rva,
+            'callInstructionHex': call_raw.hex().upper(),
+            'readerTargetRva': target_rva,
+            'readerOperation': ('native-bool-read-helper' if method_spec is None else
+                                method_spec['methodIdentity']['name']),
+            'readerMethodSpec': method_spec,
+            'storeInstructionRva': store_rva,
+            'storeInstructionHex': store_raw.hex().upper(),
+        })
+
+    gameplay_tag_list_type = type_index(
+        'Beyond.Gameplay.Core.GameplayTagList', 'Gameplay.Beyond.dll')
+    gameplay_tag_list_definition = md.types[gameplay_tag_list_type]
+    require(gameplay_tag_list_definition.field_count, 1, source, gameplay_tag_list_type)
+    wrapper_fields = field_layout(gameplay_tag_list_type, {'predefinedTag'})
+    wrapper_member_field = wrapper_fields['predefinedTag']
+    wrapper_member_type = field_wire_identity('predefinedTag', wrapper_member_field)
+    if wrapper_member_type['typeKind'] != 0x15:
+        raise ContextError(source, wrapper_member_field['metadataFieldIndex'],
+                           'GameplayTagList.predefinedTag is a generic List<GameplayTag>',
+                           wrapper_member_type)
+    require(wrapper_member_type['wireType'],
+            'System.Collections.Generic.List`1<Beyond.Gameplay.Core.GameplayTag>',
+            source, wrapper_member_field['metadataFieldIndex'])
+    wrapper_nested_arguments = wrapper_evidence.get('elementInstantiation', {}).get('arguments')
+    if (not isinstance(wrapper_nested_arguments, (list, tuple)) or
+            len(wrapper_nested_arguments) != 1):
+        raise ContextError(source, 0, 'wrapper reader nested list has one generic element argument',
+                           wrapper_nested_arguments)
+    require(wrapper_member_type['elementRawTypeRecordHex'],
+            wrapper_nested_arguments[0].get('raw_type_record_hex'),
+            source, wrapper_member_field['metadataFieldIndex'])
+    wrapper_method_identities = wrapper_evidence.get('methodIdentities')
+    if not isinstance(wrapper_method_identities, list) or len(wrapper_method_identities) != 2:
+        raise ContextError(source, 0, 'both exact GameplayTagList reader and formatter identities',
+                           wrapper_method_identities)
+    gameplay_tag_wrapper = {
+        'typeDefinitionIndex': gameplay_tag_list_type,
+        'typeName': md.type_full_name(gameplay_tag_list_definition),
+        'memberCount': gameplay_tag_list_definition.field_count,
+        'member': {
+            'name': 'predefinedTag',
+            'metadataFieldIndex': wrapper_member_field['metadataFieldIndex'],
+            'fieldOffset': wrapper_member_field['fieldOffset'],
+            'wireType': wrapper_member_type['wireType'],
+            'fieldType': wrapper_member_type,
+        },
+        'readerMethodIdentity': wrapper_method_identities[0],
+        'formatterMethodIdentity': wrapper_method_identities[1],
+        'nestedReadType': wrapper_member_type['wireType'],
+        'nestedReadInstantiation': wrapper_evidence['elementInstantiation'],
+        'headerEvidence': wrapper_evidence['wrapperFraming'],
+        'headerCodeWindows': wrapper_evidence['headerCodeWindows'],
+    }
+
+    nested_reader_methods = module_methods(pe, md, modules, image_owners, [
+        (104420, 'Beyond.MemoryPack.Beyond_Gameplay_Core_ToggleBuffDataForMemoryPack',
+         'Deserialize', 0x4438A40),
+        (104433, 'Beyond.MemoryPack.Beyond_Gameplay_Core_UIRangeHintDataForMemoryPack',
+         'Deserialize', 0x3A60AE0),
+        (107721, 'Beyond.MemoryPack.Beyond_Gameplay_SkillHintShapeDataForMemoryPack',
+         'Deserialize', 0x3997B70),
+        (104467, 'Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayTagForMemoryPack',
+         'Deserialize', 0x40EFC30),
+    ], source=source, expected_image='MemoryPack.Beyond.dll')
+    nested_code_windows = []
+    for rva, length, expected in (
+            (0x4438A40, 0xB3, '79E10BB093386D263DED64AF51B082F0CDEF758DCB7C779AAAB6411839036CC1'),
+            (0x3A60AE0, 0xD4, '98CCCC5E6DB50926C87C91CD5465CFAF1FB033DF01AD43ED3490BF760EDE3204'),
+            (0x3997B70, 0x33F, '07D6FE9927BF0D51DC1B5BAC8E185C68B695890BCCEF3B780B3F7960AAAAC299'),
+            (0x40EFC30, 0x66, '20E91A6A12C8F0744F68C6B10AF26032F7030FA75C62AD17CDCFDF986A18EF89')):
+        raw = pe.bytes_at_va(pe.image_base + rva, length)
+        digest = hashlib.sha256(raw).hexdigest().upper()
+        require(digest, expected, source, rva)
+        nested_code_windows.append({'rva': rva, 'byteLength': length,
+                                    'sha256': digest, 'includesNormalReturn': True})
+
+    def direct_reader_call(call_rva, target_rva, role):
+        raw = pe.bytes_at_va(pe.image_base + call_rva, 5)
+        require(raw[:1], b'\xE8', source, call_rva)
+        target = relative_branch_target(raw, pe.image_base + call_rva, source=source)
+        require(target, pe.image_base + target_rva, source, call_rva)
+        return {'callInstructionRva': call_rva, 'callInstructionHex': raw.hex().upper(),
+                'targetRva': target_rva, 'role': role}
+
+    def nested_field(type_def_index, field_rows, field_name, expected_offset, expected_wire):
+        field = field_rows[field_name]
+        require(field['fieldOffset'], expected_offset, source,
+                field['metadataFieldIndex'])
+        identity = field_wire_identity(field_name, field)
+        require(identity['wireType'], expected_wire, source,
+                field['metadataFieldIndex'])
+        return {'typeDefinitionIndex': type_def_index,
+                'metadataFieldIndex': field['metadataFieldIndex'],
+                'metadataTypeIndex': field['metadataTypeIndex'],
+                'fieldOffset': field['fieldOffset'], 'fieldType': identity}
+
+    toggle_type = type_index('Beyond.Gameplay.Core.ToggleBuffData',
+                             'Gameplay.Beyond.dll')
+    toggle_definition = md.types[toggle_type]
+    require(toggle_definition.field_count, 2, source, toggle_type)
+    toggle_fields = field_layout(toggle_type, {'buffs', 'conditions'})
+    toggle_buff_field = nested_field(
+        toggle_type, toggle_fields, 'buffs', 0x18,
+        'System.Collections.Generic.List`1<Beyond.Gameplay.Core.BuffInput>')
+    toggle_condition_field = nested_field(
+        toggle_type, toggle_fields, 'conditions', 0x10,
+        'System.Collections.Generic.List`1<Beyond.Gameplay.Core.Abilities.Condition.ConditionBase>')
+    toggle_buff_read = call_method_spec(
+        0x4438A95, 0x4438AA2, 428462, 'ReadPackable', 0x381F8F0)
+    toggle_condition_read = call_method_spec(
+        0x4438ABE, 0x4438ACB, 428462, 'ReadPackable', 0x381F8F0)
+    for name, read, element_name in (
+            ('buffs', toggle_buff_read, 'Beyond.Gameplay.Core.BuffInput'),
+            ('conditions', toggle_condition_read,
+             'Beyond.Gameplay.Core.Abilities.Condition.ConditionBase')):
+        require(read['genericType']['typeName'],
+                'System.Collections.Generic.List`1', source, read['usageVa'])
+        require(read['genericType']['elementTypeName'], element_name,
+                source, read['usageVa'])
+    toggle_schema = {
+        'typeDefinitionIndex': toggle_type,
+        'typeName': md.type_full_name(toggle_definition),
+        'memberCountCompare': {
+            'rva': 0x4438A8B, 'rawHex': '4080FD02', 'memberCount': 2},
+        'members': [
+            {'serializedOrderIndex': 0, 'fieldName': 'buffs',
+             'objectField': toggle_buff_field, 'readerMethodSpec': toggle_buff_read,
+             'setterCall': direct_reader_call(0x4438AB9, 0x3209E50, 'store buffs result')},
+            {'serializedOrderIndex': 1, 'fieldName': 'conditions',
+             'objectField': toggle_condition_field,
+             'readerMethodSpec': toggle_condition_read,
+             'setterCall': direct_reader_call(0x4438ADE, 0x3207AC0,
+                                               'store conditions result')},
+        ],
+        'sourceParserOrder': ['buffs', 'conditions'],
+    }
+
+    gameplay_tag_type = type_index('Beyond.Gameplay.Core.GameplayTag',
+                                   'Gameplay.Beyond.dll')
+    gameplay_tag_definition = md.types[gameplay_tag_type]
+    require(gameplay_tag_definition.field_count, 4, source, gameplay_tag_type)
+    gameplay_tag_fields = field_layout(gameplay_tag_type, {'tagId'})
+    gameplay_tag_id_field = nested_field(
+        gameplay_tag_type, gameplay_tag_fields, 'tagId', 0x10, 'System.Int32')
+    tag_cursor_helper_windows = []
+    for rva, length, expected in (
+            (0x2CA8860, 0x57,
+             'CA6788FE028DC684758CD40833EFA107116A7BF664BFBF1746D792E52114639F'),
+            (0x2CA86B0, 0x50,
+             '2358C208F5DDD372AF9E5401907272C1FB2A6E4C49E211689FFC047A2872BB65')):
+        raw = pe.bytes_at_va(pe.image_base + rva, length)
+        digest = hashlib.sha256(raw).hexdigest().upper()
+        require(digest, expected, source, rva)
+        tag_cursor_helper_windows.append({'rva': rva, 'byteLength': length,
+                                          'sha256': digest})
+    tag_cursor_instruction_rows = []
+    for rva, raw_hex, operation, byte_width in (
+            (0x2CA886F, '83793001', 'require at least one remaining byte', 0),
+            (0x2CA8883, '0FB608', 'load one member-count byte', 1),
+            (0x2CA8894, '48FF4350', 'advance cursor pointer by one byte', 1),
+            (0x2CA8898, 'FF4340', 'increment consumed counter by one byte', 0),
+            (0x2CA889B, 'FF4344', 'increment total counter by one byte', 0),
+            (0x2CA889E, '897B30', 'store remaining length after subtracting one', 0),
+            (0x2CA86BF, '83793004', 'require at least four remaining bytes', 0),
+            (0x2CA86D0, '8B30', 'load one little-endian int32', 4),
+            (0x2CA86DE, '4883435004', 'advance cursor pointer by four bytes', 4),
+            (0x2CA86E3, '83434004', 'increment consumed counter by four bytes', 0),
+            (0x2CA86E7, '83434404', 'increment total counter by four bytes', 0),
+            (0x2CA86EB, '897B30', 'store remaining length after subtracting four', 0)):
+        expected_raw = bytes.fromhex(raw_hex)
+        actual_raw = pe.bytes_at_va(pe.image_base + rva, len(expected_raw))
+        require(actual_raw, expected_raw, source, rva)
+        tag_cursor_instruction_rows.append({
+            'rva': rva, 'rawHex': actual_raw.hex().upper(),
+            'operation': operation, 'byteWidth': byte_width,
+        })
+    gameplay_tag_reader = {
+        'typeDefinitionIndex': gameplay_tag_type,
+        'typeName': md.type_full_name(gameplay_tag_definition),
+        'fieldCount': gameplay_tag_definition.field_count,
+        'readerMethodIdentity': next(
+            row for row in nested_reader_methods if row['methodIndex'] == 104467),
+        'memberCountCheck': {
+            'rva': 0x40EFC6D, 'rawHex': '807C243001',
+            'acceptedMemberCount': 1,
+        },
+        'tagIdField': gameplay_tag_id_field,
+        'readerCall': direct_reader_call(0x40EFC7E, 0x2CA86B0,
+                                         'read int32/unmanaged tagId'),
+        'storeInstruction': {
+            'rva': 0x40EFC88, 'rawHex': '894310',
+            'objectFieldOffset': 0x10,
+            'wireType': gameplay_tag_id_field['fieldType']['wireType'],
+        },
+        'cursorAdvancement': {
+            'helperCodeWindows': tag_cursor_helper_windows,
+            'verifiedInstructions': tag_cursor_instruction_rows,
+            'validNormalPathByteWidth': 5,
+            'derivation': 'The count helper reads and advances one byte; the int32 helper requires four remaining bytes, reads a four-byte value, and advances cursor/consumed/total by four. The generated reader accepts count one before calling the int32 helper.',
+        },
+        'normalReturnPathWindow': {
+            'rva': 0x40EFC30, 'byteLength': 0x66,
+            'sha256': nested_code_windows[-1]['sha256'],
+            'normalReturnRva': 0x40EFC95,
+            'coldFailureTargetsOutsideWindow': [0xF7A932, 0xF7A95D, 0xF7A997],
+        },
+        'boundary': 'The registered generated GameplayTag reader accepts member count one on this normal path, consumes a raw int32 and stores it to tagId. Cold malformed-header handlers are outside the pinned normal-return window; this is not runtime list-element dispatch evidence.',
+    }
+    header_read = direct_reader_call(0x40EFC56, 0x2CA8860,
+                                     'read one-byte member count')
+    require(pe.bytes_at_va(pe.image_base + 0x40EFC6D, 5),
+            bytes.fromhex('807C243001'), source, 0x40EFC6D)
+    require(pe.bytes_at_va(pe.image_base + 0x40EFC88, 3),
+            bytes.fromhex('894310'), source, 0x40EFC88)
+    gameplay_tag_reader['memberCountReadCall'] = header_read
+
+    ui_range_type = type_index('Beyond.Gameplay.Core.UIRangeHintData',
+                               'Gameplay.Beyond.dll')
+    ui_range_definition = md.types[ui_range_type]
+    require(ui_range_definition.field_count, 3, source, ui_range_type)
+    ui_range_fields = field_layout(ui_range_type, {'selectAll', 'shapeData', 'targetFaction'})
+    ui_select_field = nested_field(ui_range_type, ui_range_fields, 'selectAll', 0x14, 'bool')
+    ui_shape_field = nested_field(ui_range_type, ui_range_fields, 'shapeData', 0x18,
+                                  'Beyond.Gameplay.SkillHintShapeData')
+    ui_faction_field = nested_field(ui_range_type, ui_range_fields, 'targetFaction', 0x10,
+                                    'Beyond.Gameplay.Core.FactionType')
+    ui_shape_read = call_method_spec(
+        0x3A60B57, 0x3A60B64, 428464, 'ReadValue', 0x2DA5C90)
+    ui_faction_read = call_method_spec(
+        0x3A60B80, 0x3A60B8D, 428448, 'ReadUnmanaged', 0x2CA86B0)
+    require(ui_shape_read['genericType']['typeName'],
+            'Beyond.Gameplay.SkillHintShapeData', source, ui_shape_read['usageVa'])
+    require(ui_faction_read['genericType']['typeName'],
+            'Beyond.Gameplay.Core.FactionType', source, ui_faction_read['usageVa'])
+    ui_range_schema = {
+        'typeDefinitionIndex': ui_range_type,
+        'typeName': md.type_full_name(ui_range_definition),
+        'memberCountCompare': {
+            'rva': 0x3A60B2B, 'rawHex': '4080FD03', 'memberCount': 3},
+        'members': [
+            {'serializedOrderIndex': 0, 'fieldName': 'selectAll',
+             'objectField': ui_select_field,
+             'readerCall': direct_reader_call(0x3A60B3B, 0x2CA88C0,
+                                               'read boolean member'),
+             'setterCall': direct_reader_call(0x3A60B52, 0x50816CC,
+                                               'store selectAll')},
+            {'serializedOrderIndex': 1, 'fieldName': 'shapeData',
+             'objectField': ui_shape_field, 'readerMethodSpec': ui_shape_read,
+             'setterCall': direct_reader_call(0x3A60B7B, 0x3209E50,
+                                               'store shapeData')},
+            {'serializedOrderIndex': 2, 'fieldName': 'targetFaction',
+             'objectField': ui_faction_field, 'readerMethodSpec': ui_faction_read,
+             'setterCall': direct_reader_call(0x3A60B9F, 0x507E454,
+                                               'store targetFaction')},
+        ],
+        'sourceParserOrder': ['selectAll', 'shapeData', 'targetFaction'],
+    }
+
+    shape_type = type_index('Beyond.Gameplay.SkillHintShapeData',
+                            'Gameplay.Beyond.dll')
+    shape_definition = md.types[shape_type]
+    require(shape_definition.field_count, 21, source, shape_type)
+    shape_field_names = {
+        'angle', 'angleKey', 'centerBaseIsEndPoint', 'centerOffset',
+        'centerOffsetXKey', 'centerOffsetZKey', 'extent', 'extentXKey',
+        'extentZKey', 'fixedExtent', 'radius', 'radiusKey',
+        'restrictEndPointInRange', 'shape', 'useAngleKey',
+        'useCenterOffsetKey', 'useExtentKey', 'useRadiusKey',
+        'useWidthKey', 'width', 'widthKey'}
+    shape_fields = field_layout(shape_type, shape_field_names)
+    shape_field_layout = {
+        'shape': (0x10, 'Beyond.Gameplay.SkillHintShape'),
+        'fixedExtent': (0x14, 'bool'),
+        'centerBaseIsEndPoint': (0x15, 'bool'),
+        'restrictEndPointInRange': (0x16, 'bool'),
+        'useCenterOffsetKey': (0x17, 'bool'),
+        'centerOffset': (0x18, 'UnityEngine.Vector2'),
+        'centerOffsetXKey': (0x20, 'System.String'),
+        'centerOffsetZKey': (0x28, 'System.String'),
+        'useExtentKey': (0x30, 'bool'),
+        'extent': (0x34, 'UnityEngine.Vector2'),
+        'extentXKey': (0x40, 'System.String'),
+        'extentZKey': (0x48, 'System.String'),
+        'useWidthKey': (0x50, 'bool'),
+        'width': (0x54, 'System.Single'),
+        'widthKey': (0x58, 'System.String'),
+        'useRadiusKey': (0x60, 'bool'),
+        'radius': (0x64, 'System.Single'),
+        'radiusKey': (0x68, 'System.String'),
+        'useAngleKey': (0x70, 'bool'),
+        'angle': (0x74, 'System.Single'),
+        'angleKey': (0x78, 'System.String'),
+    }
+    shape_field_contracts = {}
+    for name, (offset, wire_type) in shape_field_layout.items():
+        shape_field_contracts[name] = nested_field(
+            shape_type, shape_fields, name, offset, wire_type)
+
+    shape_operations = [
+        ('angle', 'System.Single', 0x3997BCB, 0x2CA8BB0, 0x3997BE2, 0x507E524, None, None),
+        ('angleKey', 'System.String', 0x3997BED, 0x2CA8700, 0x3997C04, 0x320C9C0, None, None),
+        ('centerBaseIsEndPoint', 'bool', 0x3997C0F, 0x2CA88C0, 0x3997C26, 0x50816E8, None, None),
+        ('centerOffset', 'UnityEngine.Vector2', 0x3997C38, 0x3D7E030, 0x3997C4F, 0x5081704,
+         0x3997C2B, 'UnityEngine.Vector2'),
+        ('centerOffsetXKey', 'System.String', 0x3997C5A, 0x2CA8700, 0x3997C71, 0x3207A90, None, None),
+        ('centerOffsetZKey', 'System.String', 0x3997C7C, 0x2CA8700, 0x3997C93, 0x320AC10, None, None),
+        ('extent', 'UnityEngine.Vector2', 0x3997CA5, 0x3D7E030, 0x3997CBC, 0x508160C,
+         0x3997C98, 'UnityEngine.Vector2'),
+        ('extentXKey', 'System.String', 0x3997CC7, 0x2CA8700, 0x3997CDE, 0x3209DF0, None, None),
+        ('extentZKey', 'System.String', 0x3997CE9, 0x2CA8700, 0x3997D00, 0x320BA00, None, None),
+        ('fixedExtent', 'bool', 0x3997D0B, 0x2CA88C0, 0x3997D22, 0x50816CC, None, None),
+        ('radius', 'System.Single', 0x3997D2D, 0x2CA8BB0, 0x3997D44, 0x5081400, None, None),
+        ('radiusKey', 'System.String', 0x3997D4F, 0x2CA8700, 0x3997D66, 0x320C900, None, None),
+        ('restrictEndPointInRange', 'bool', 0x3997D71, 0x2CA88C0, 0x3997D88, 0x50816B0, None, None),
+        ('shape', 'Beyond.Gameplay.SkillHintShape', 0x3997D9A, 0x2CA86B0, 0x3997DB0, 0x507E454,
+         0x3997D8D, 'Beyond.Gameplay.SkillHintShape'),
+        ('useAngleKey', 'bool', 0x3997DBB, 0x2CA88C0, 0x3997DD2, 0x507E544, None, None),
+        ('useCenterOffsetKey', 'bool', 0x3997DDD, 0x2CA88C0, 0x3997DF4, 0x5081694, None, None),
+        ('useExtentKey', 'bool', 0x3997DFF, 0x2CA88C0, 0x3997E16, 0x507DEC8, None, None),
+        ('useRadiusKey', 'bool', 0x3997E21, 0x2CA88C0, 0x3997E38, 0x507E5F8, None, None),
+        ('useWidthKey', 'bool', 0x3997E43, 0x2CA88C0, 0x3997E5A, 0x507EFF0, None, None),
+        ('width', 'System.Single', 0x3997E65, 0x2CA8BB0, 0x3997E7C, 0x5081674, None, None),
+        ('widthKey', 'System.String', 0x3997E87, 0x2CA8700, 0x3997E9A, 0x320BA60, None, None),
+    ]
+    shape_serialized_rows = []
+    for order_index, (name, wire_type, read_rva, read_target, store_rva,
+                      store_target, spec_load_rva, spec_type_name) in enumerate(shape_operations):
+        field_contract = shape_field_contracts[name]
+        require(field_contract['fieldType']['wireType'], wire_type, source,
+                field_contract['metadataFieldIndex'])
+        method_spec = None
+        if spec_load_rva is not None:
+            method_spec = call_method_spec(
+                spec_load_rva, read_rva, 428448, 'ReadUnmanaged', read_target)
+            require(method_spec['genericType']['typeName'], spec_type_name,
+                    source, method_spec['usageVa'])
+        else:
+            direct_reader_call(read_rva, read_target, f'read {name}')
+        setter = direct_reader_call(store_rva, store_target, f'store {name}')
+        shape_serialized_rows.append({
+            'serializedOrderIndex': order_index,
+            'fieldName': name,
+            'wireType': wire_type,
+            'objectField': field_contract,
+            'readerMethodSpec': method_spec,
+            'readerCall': {'callInstructionRva': read_rva,
+                           'targetRva': read_target,
+                           'role': 'MemoryPackReader.ReadUnmanaged generic' if method_spec else
+                                   'primitive reader helper'},
+            'setterCall': setter,
+        })
+    shape_schema = {
+        'typeDefinitionIndex': shape_type,
+        'typeName': md.type_full_name(shape_definition),
+        'memberCountCompare': {
+            'rva': 0x3997BBB, 'rawHex': '4080FD15', 'memberCount': 21},
+        'serializedOrder': shape_serialized_rows,
+        'metadataStorageOrder': [
+            md.string(md.fields[shape_definition.field_start + index].name_index)
+            for index in range(shape_definition.field_count)],
+        'sourceParserOrder': [row[0] for row in shape_operations],
+    }
+    nested_terminal_readers = {
+        'status': 'static-registered-reader-layout',
+        'methods': nested_reader_methods,
+        'codeWindows': nested_code_windows,
+        'gameplayTagElement': gameplay_tag_reader,
+        'toggleBuffData': toggle_schema,
+        'uiRangeHintData': ui_range_schema,
+        'skillHintShapeData': shape_schema,
+        'boundary': 'The exact generated nested reader bodies, MethodSpecs, declared field types/offsets and parser order align for the authenticated build. The GameplayTag element path accepts member count one, then bounded helpers advance one header byte and four System.Int32 bytes; its five-byte endpoint agrees with the source parser under this static path. The parser preserves the id bytes as unsigned raw/hash and signed views. Other rows are static registered paths too; current per-file live selection and parent cursor remain unobserved.',
+    }
+
+    crosscheck = skilldata_corpus_branch_evidence(corpus, source='reports/animestudio/skilldata_current_latest.json')
+    terminal_collision = skilldata_terminal_collision_evidence(
+        corpus, source='reports/animestudio/skilldata_current_latest.json')
+    terminal_sample = skilldata_terminal_sample_byte_witness(
+        terminal_collision, representative_sample_raw,
+        source='export_full/structured/StreamingAssets/Data/Json/SkillData/Potential_test.json')
+    terminal_tail_layout = skilldata_terminal_tail_layout(
+        terminal_collision, terminal_sample, tail_reads, gameplay_tag_wrapper,
+        source=source)
+    empty_count = crosscheck['branchCounts']['bothListsEmpty']
+    return {
+        'status': 'static-reader-order-conditional-cursor',
+        'inputSetSha256': crosscheck['inputSetSha256'],
+        'methods': selected_methods,
+        'codeWindows': code_windows,
+        'verifiedInstructionWindows': instruction_windows,
+        'formatterThunkEdges': formatter_thunks,
+        'firstSkillDataField': {
+            'serializedOrderIndex': 0,
+            'fieldName': 'actionGroupData',
+            'objectField': {'typeDefinitionIndex': skill_type, **skill_fields['actionGroupData']},
+            'readerMethodSpec': action_group_call,
+            'staticEvidence': 'SkillData Deserialize validates top-level header 48, calls ReadValue<Core.ActionGroupData>, then stores the returned object to Core.SkillData+0xC0 before the next member reader call.',
+        },
+        'actionGroupDataMembers': [
+            {'serializedOrderIndex': index, 'fieldName': name,
+             'objectField': {'typeDefinitionIndex': action_group_type, **action_fields[name]},
+             'readerMethodSpec': call}
+            for index, (name, call) in enumerate((('passiveEventActions', list_calls[0]),
+                                                   ('timelineActions', list_calls[1])))
+        ],
+        'currentVfsBranchCrossCheck': crosscheck,
+        'representativeTerminalShapeCollision': terminal_collision,
+        'representativeTerminalSampleByteWitness': terminal_sample,
+        'representativeTerminalTailLayout': terminal_tail_layout,
+        'nestedTerminalReaders': nested_terminal_readers,
+        'cursorHookCallSites': cursor_hook_sites,
+        'conditionalEmptyObjectRange': {
+            'start': 1, 'end': 10, 'endExclusive': True,
+            'candidateFiles': empty_count,
+            'status': 'conditional-on-provider-selection',
+            'formatterCandidateReportKey': 'selectedListFormatterCandidate',
+            'condition': 'The ordinary provider resolves both List<T> queries to the audited MemoryPack.Formatters.ListFormatter<T> candidate; each zero count consumes its four-byte collection header and returns without an element body.',
+        },
+        'exactClosedActionGroupDataRecords': 0,
+        'level': 'exact selected-build generated-reader module/token, body-window, MethodSpec, generic field type, object-field-offset and current positive-branch byte-range joins',
+        'boundary': 'The five terminal SkillData reads and the nested GameplayTag, ToggleBuffData, UIRangeHintData and SkillHintShapeData readers now join exact registered static bodies, MethodSpecs, declared IL2CPP field types/offsets and selected current source bytes. For the positive GameplayTag branch, the generated reader and bounded cursor helpers establish a five-byte element under that registered path; the local parser reaches the same [503,508) end. Other nested positive element parsers replay to their reported ends, including nonempty BuffInput/condition rows and both UIRangeHintData/SkillHintShapeData records. This ranks the offline tail hypotheses but does not establish provider/cache selection or an executed parent cursor. The intervening [10,518) bytes stay opaque, [1,10) remains conditional on the two generic list formatter paths, no whole SkillData record is closed, and all 2,621 whole-file terminal candidates remain ambiguous. The authenticated SkillData corpus is not re-streamed by this audit.',
+    }
 
 
 def stream_source_identity(pe,md,modules,image_owners,reg,code,spec_records,methods_raw,*,source):
@@ -2418,6 +4561,19 @@ def audit():
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     corpus = json.loads(corpus_path.read_text(encoding='utf-8'))
     verify_current_report_inputs(corpus)
+    terminal_branch_selections = select_skilldata_terminal_branch_samples(
+        corpus, source=str(corpus_path))
+    skill_sample_path = (ROOT / 'export_full/structured/StreamingAssets/Data/Json/'
+                         'SkillData/Potential_test.json')
+    skill_sample_raw = skill_sample_path.read_bytes()
+    terminal_branch_sample_paths = [
+        ROOT / 'export_full/structured/StreamingAssets' /
+        Path(*selection['row']['virtualPath'].split('/'))
+        for selection in terminal_branch_selections
+    ]
+    skill_terminal_path = Path(__file__).with_name('memorypack') / 'skill_terminal.py'
+    skill_buff_path = Path(__file__).with_name('memorypack') / 'buff.py'
+    skill_core_path = Path(__file__).with_name('memorypack') / 'core.py'
     buff_path=ROOT/'reports/animestudio/buffdata_current_latest.json'
     buff_sha=sha(buff_path);buff_corpus=json.loads(buff_path.read_text(encoding='utf-8'))
     verify_family_report_inputs(buff_corpus,expected_format='animestudio-buffdata-current-vfs-corpus',label='BuffData')
@@ -2427,6 +4583,8 @@ def audit():
     catalog_path = ROOT / 'tools/endfield-il2cpp/catalog_option_flow_metadata.py'
     sources = [Path(__file__), Path(__file__).with_name('il2cpp_context.py'),
                mapper_path, catalog_path, ROOT / 'scripts/common.py',
+               skill_terminal_path, skill_buff_path, skill_core_path,
+               skill_sample_path, *terminal_branch_sample_paths,
                Path(__file__).with_name('buff_ec_native.json'),
                Path(__file__).with_name('buff_50_native.json'),
                Path(__file__).with_name('buff_11f_native.json'),
@@ -2967,11 +5125,33 @@ def audit():
         source=str(gate.gameassembly))
     construction_evidence=reader_construction(pe,md,modules,image_owners,source=str(gate.gameassembly))
     cursor_evidence=reader_cursor_consumers(pe,source=str(gate.gameassembly))
-    wrapper_evidence=wrapper_consumer(pe,md,reg,table,source=str(gate.gameassembly))
+    wrapper_evidence=wrapper_consumer(pe,md,modules,image_owners,reg,table,
+                                      source=str(gate.gameassembly))
     nested_context=nested_reader_context(pe,md,modules,image_owners,reg,table,
                                          source=str(gate.gameassembly),metadata_source=str(gate.metadata))
     list_candidate=list_formatter_candidate(pe,md,modules,image_owners,reg,code,table,spec_records,methods_raw,
                                             source=str(gate.gameassembly))
+    skilldata_reader_order=skilldata_static_reader_order(
+        pe,md,modules,image_owners,table,reg,specs_raw,corpus,skill_sample_raw,
+        wrapper_evidence,source=str(gate.gameassembly))
+    branch_sample_rows = []
+    for selection, path in zip(terminal_branch_selections,
+                               terminal_branch_sample_paths):
+        raw = path.read_bytes()
+        source_name = str(path.relative_to(ROOT))
+        sample = skilldata_terminal_branch_sample_witness(
+            corpus, selection, raw, source=source_name)
+        nested_replay = skilldata_positive_branch_reader_replay(
+            sample, raw, source=source_name)
+        native_alignment = skilldata_nested_branch_static_alignment(
+            nested_replay,
+            skilldata_reader_order['nestedTerminalReaders'],
+            skilldata_reader_order['representativeTerminalTailLayout']['gameplayTagListWrapper'],
+            source=source_name)
+        sample['nestedReaderReplay'] = nested_replay
+        sample['nativeNestedReaderAlignment'] = native_alignment
+        branch_sample_rows.append(sample)
+    skilldata_reader_order['representativeTerminalBranchSamples'] = branch_sample_rows
     list_dispatch=list_element_dispatch(pe,source=str(gate.gameassembly))
     list_shared=list_element_shared_context(pe,table,reg,code,spec_records,methods_raw,source=str(gate.gameassembly))
     list_null_probe=list_element_null_probe(pe,source=str(gate.gameassembly))
@@ -3527,6 +5707,7 @@ def audit():
         'selectedReaderCursorConsumers':cursor_evidence,
         'selectedWrapperConsumer':wrapper_evidence,
         'selectedNestedReaderContext':nested_context,
+        'selectedSkillDataReaderOrder':skilldata_reader_order,
         'selectedListFormatterCandidate':list_candidate,
         'selectedListElementDispatch':list_dispatch,
         'selectedListElementSharedContext':list_shared,
@@ -3839,7 +6020,17 @@ def main():
     try:
         report = audit()
     except (ContextError, OSError, ValueError) as error:
-        print(json.dumps({'status': 'failed', 'diagnostic': getattr(error, 'diagnostics', getattr(error, 'diagnostic', str(error)))}), file=sys.stderr)
+        def diagnostic_default(value):
+            if isinstance(value, bytes):
+                return {'byteLength': len(value), 'hex': value.hex().upper()}
+            if isinstance(value, Path):
+                return str(value)
+            return repr(value)
+        print(json.dumps(
+            {'status': 'failed',
+             'diagnostic': getattr(error, 'diagnostics',
+                                   getattr(error, 'diagnostic', str(error)))},
+            default=diagnostic_default), file=sys.stderr)
         return 1
     print(json.dumps(report, ensure_ascii=False))
     return int(report['status'] == 'failed')

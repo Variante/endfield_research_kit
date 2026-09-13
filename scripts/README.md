@@ -315,7 +315,12 @@ the audit checks selected native inputs and consumer pins, scans all registered
 instances, validates metadata image ownership and unique module-name joins, and
 rechecks the saved SkillData corpus's live input/tool/parser/chunk pins through
 `memorypack.skill_corpus.verify_current_report_inputs`. It does not
-re-stream VFS bytes or establish runtime formatter/cursor identity.
+re-stream the full corpus or establish runtime formatter/cursor identity. Its
+SkillData section re-reads one terminal sample and three selected positive
+branches, binds them to current logical identities/hashes/limits, and replays
+the terminal plus nested element parsers against exact-build reader order and
+field types. Nested record endpoints remain conditional on the static reader
+path; runtime provider/cache selection and an executed cursor remain unobserved.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,
