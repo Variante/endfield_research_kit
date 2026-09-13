@@ -981,6 +981,10 @@ newer source version must not silently replace the capture-matched texture.
   member plus a separate profile-manager lookup. Selected request/manager
   ownership, allocation lifetime and GPU consumption remain unproven; the
   no-layer path binds an existing buffer whose contents are not established.
+  The ordinary producer assigns one layer to two neighboring inputs; native
+  execution reads the first while current snapshots observe the second.
+  Captured disabled/zero terrain values still produce M27 emission in exact
+  packet replay, so those values alone do not explain missing live stones.
   Version the consumer and close selected-frame ownership before
   admitting presentation; preserve distinct payloads through GPU consumption.
   Material validation must cover every selected shader-read field and its
