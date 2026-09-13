@@ -972,6 +972,10 @@ newer source version must not silently replace the capture-matched texture.
   with authored use, curvature, effective keyword and stencil; it has no profile
   index. Device/feature policy can make its keyword flag differ from authored
   use. Observe both before joining this structure to the GPU buffer.
+  The environment-shadow render bridge now records this native member with
+  input/layer pointer identities, repeated-read failures and request flags.
+  Use the environment-shadow launcher, not plain combined capture, to collect
+  it; the final GPU packing and lifetime join remain separate.
   Version the consumer and close selected-frame ownership before
   admitting presentation; preserve distinct payloads through GPU consumption.
   Material validation must cover every selected shader-read field and its
