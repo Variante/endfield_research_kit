@@ -971,7 +971,9 @@ newer source version must not silently replace the capture-matched texture.
   global default. The native CPP terrain member is a separate 20-byte structure
   with authored use, curvature, effective keyword and stencil; it has no profile
   index. Device/feature policy can make its keyword flag differ from authored
-  use. Observe both before joining this structure to the GPU buffer.
+  use. The reusable ordinary CPP conversion preserves both flags and the
+  native 20-byte layout; it does not replace the GPU publisher or prove its
+  selected-frame inputs. Observe both before joining this structure to the GPU buffer.
   The environment-shadow render bridge now records this native member with
   input/layer pointer identities, repeated-read failures and request flags.
   Use the environment-shadow launcher, not plain combined capture, to collect
