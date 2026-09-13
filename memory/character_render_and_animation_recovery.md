@@ -970,6 +970,10 @@ newer source version must not silently replace the capture-matched texture.
   zero fixture does not establish manager lifecycle, active patch state or a
   global default. Version the consumer and close selected-frame ownership before
   admitting presentation; preserve distinct payloads through GPU consumption.
+  Material validation must cover every selected shader-read field and its
+  explicit runtime copy owner; matching a destination default does not establish
+  source transfer. Synthetic compute/pixel readbacks verify buffer transport,
+  independently of selected retail frame ownership.
 - Turn the validated Endminf solution into data-driven profiles for all
   playables without actor-specific renderer forks.
 - Keep capture tooling bounded, observation-only, exact-build gated, and
