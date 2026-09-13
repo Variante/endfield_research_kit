@@ -860,6 +860,11 @@ outputs are verified. See the capture environment observer guide for contracts.
   temporal parity. The first-visible blank-frame/reset boundary remains open.
 - Captured resources and replayed lab outputs keep their color space, format,
   viewport, frame, camera, and producer provenance.
+  Normalize raw-surface row orientation before assigning upright anatomical
+  regions; preserve the transform in the report. Sharper diagnostic output is
+  not automatically more faithful: isolated radial removal sharpens cloth but
+  worsens the retained original-frame comparison. Join native post ownership
+  before changing that behavior.
 - Reference videos and raw frames are evidence inputs, not repository memory
   prose.
 
