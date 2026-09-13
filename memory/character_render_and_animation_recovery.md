@@ -173,7 +173,11 @@ well as effects. Cloth color, normal and packed inputs retain their original
 BC7/BC5 formats and authored mip chains through the actual color draw, preserving
 PNG GUIDs and material references. This closes texture reconstruction for those
 selected inputs, but leaves the broad sleeve highlight, deformation and burst
-smearing unresolved. Prioritize post-effect inputs and composition next.
+smearing unresolved. Temporal resolve must use its explicitly published image
+extent for neighborhood and history-filter taps; the unused `_MainTex` implicit
+texel-size binding was zero in the actual draw. Publish the extent independently
+of optional dilation. Restored filtering improves the measured comparison, but
+history ownership/cadence, residual trails and burst composition remain open.
 
 - Direct3D11 is the authoritative lab backend because it matches the recovered
   retail shader binaries. D3D12 experiments remain labeled diagnostics.
