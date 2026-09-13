@@ -159,6 +159,11 @@ until the mapped world normal is assembled and normalized. Unit vertex vectors
 do not justify normalizing the interpolants first. This correction has only a
 small measured effect on the sleeve and does not resolve its broad highlight;
 material mip bias and actual sampled texture payloads remain separate gaps.
+Camera-global and CPP otherData mip snapshots are now retained with matching
+copy endpoints; effective scale/getter inputs and draw-consumed upload lifetime
+remain unjoined. Sampler audits must query actual bound D3D samplers, not null
+sampler placeholders attached to separate texture descriptors. Lab quality
+overrides can change filtering despite correct texture import metadata.
 
 - Direct3D11 is the authoritative lab backend because it matches the recovered
   retail shader binaries. D3D12 experiments remain labeled diagnostics.
