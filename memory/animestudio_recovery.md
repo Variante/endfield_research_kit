@@ -55,6 +55,12 @@ After extraction, page builders consume `export_full/`; see
 
 ## Build and direct CLI use
 
+Targeted Texture2D native-payload export preserves authored compressed mip chains.
+BC5 and BC7 layouts validate block-rounded mip ranges and exact payload length;
+malformed supported layouts fail closed. Other formats may retain raw bytes with
+an explicitly unvalidated layout. A decoded top-level PNG alone is insufficient
+for render parity; consumers must verify the manifest and imported mip bytes.
+
 ```bat
 git submodule update --init tools/AnimeStudio
 .\scripts\animestudio\setup_dotnet9.bat

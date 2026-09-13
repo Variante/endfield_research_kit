@@ -168,6 +168,12 @@ actual cloth samplers now match native linear min/mag and point mip filtering.
 This has only a small visual effect. Continue comparing rendered frames against
 the original at fixed animation checkpoints after rendering changes, with
 clothes and light effects prioritized over mouse-driven background movement.
+The shared native Texture2D importer now admits explicit material selections as
+well as effects. Cloth color, normal and packed inputs retain their original
+BC7/BC5 formats and authored mip chains through the actual color draw, preserving
+PNG GUIDs and material references. This closes texture reconstruction for those
+selected inputs, but leaves the broad sleeve highlight, deformation and burst
+smearing unresolved. Prioritize post-effect inputs and composition next.
 
 - Direct3D11 is the authoritative lab backend because it matches the recovered
   retail shader binaries. D3D12 experiments remain labeled diagnostics.
