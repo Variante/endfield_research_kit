@@ -985,6 +985,10 @@ newer source version must not silently replace the capture-matched texture.
   selected packet's shading while live producer ownership and submission remain
   open. Continue full-scene original/render comparisons after runtime changes,
   emphasizing cloth transparency, fabric detail and light effects.
+  Native centered Halton jitter arithmetic now matches a selected c19 packet;
+  camera phase advancement and projection/history integration remain separate.
+  Check actual draw-time shader hashes as well as compiler callbacks: a successful
+  selected-pass compile and SetPass can still end in an error-shader draw.
 - Turn the validated Endminf solution into data-driven profiles for all
   playables without actor-specific renderer forks.
 - Keep capture tooling bounded, observation-only, exact-build gated, and
