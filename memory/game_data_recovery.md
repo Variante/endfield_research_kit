@@ -214,7 +214,12 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   accepted-header path or the bounded list reader's remaining-byte check. This
   ranks the tail hypotheses offline, but provider/cache selection and an
   executed parent cursor remain unavailable, so no whole SkillData record is
-  closed. The bytes between the structural prefix and terminal tail stay opaque.
+  closed. A separate ActionGroupData branch probe conditionally matches a
+  `passiveEventActions` AbilityActionMap element to its registered reader: an
+  empty SequenceActionData array reaches the map's static end, while a
+  nonempty sequence stops before its first non-null action-union payload. This
+  does not close the parent list or ActionGroupData; bytes outside these
+  sample-local ranges and before the terminal tail remain opaque.
   The report also verifies the observer's post-call return-address coordinates,
   which are hook locations rather than a live cursor receipt.
   Available TypeTrees do not cover these JsonData files.

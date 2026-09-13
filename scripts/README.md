@@ -323,6 +323,11 @@ exact-build reader order and field types. It also checks the shifted candidate
 against the registered GameplayTagList header and matching List<GameplayTag>
 remaining-byte guard. These are conditional static-path checks; runtime
 provider/cache selection and an executed cursor remain unobserved.
+Its ActionGroupData section also cross-checks empty and nonempty
+`passiveEventActions` sequence branches against the registered AbilityActionMap
+and SequenceActionData readers. The empty-array branch reaches the map's
+conditional static end; the nonempty branch stops before its first non-null
+action-union byte, leaving its parent list incomplete.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,

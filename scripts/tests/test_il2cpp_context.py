@@ -3,6 +3,7 @@ import struct
 import io
 import json
 from contextlib import redirect_stderr
+from pathlib import Path
 import unittest
 from types import SimpleNamespace
 
@@ -15,9 +16,13 @@ from scripts.game_data.il2cpp_context_audit import (
     skilldata_positive_branch_reader_replay, skilldata_shifted_terminal_wrapper_probe,
     skilldata_shifted_candidate_reader_assessment, select_skilldata_terminal_branch_samples,
     skilldata_nested_branch_static_alignment,
+    skilldata_actiongroup_branch_sample_witness,
+    skilldata_actiongroup_branch_static_alignment,
 )
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
 from scripts.game_data.memorypack.skill_terminal import frame_skill_terminal_at
+from scripts.game_data.memorypack.buff_actions import Reader as BuffActionReader
+from scripts.game_data.memorypack.buff_actions import Unsupported as BuffActionUnsupported
 from scripts.game_data.il2cpp_context import unresolved_usage_index, rip_qword_load_target
 from scripts.game_data.il2cpp_context import class_sharing_branch
 from scripts.game_data.il2cpp_context import named_top_level_type
@@ -2889,6 +2894,249 @@ class SkillDataCorpusBranchEvidenceTests(unittest.TestCase):
             [(1, 1), (1, 3), (2, 1), (2, 2), (3, 1), (3, 2)],
         )
         self.assertEqual(len({row['row']['virtualPath'] for row in selected}), 6)
+
+
+class SkillDataActionGroupBranchTests(unittest.TestCase):
+    input_set = 'A' * 64
+
+    @staticmethod
+    def empty_sequence_array_raw():
+        return (b'\x30\x02' + struct.pack('<i', 1) + b'\x02' +
+                struct.pack('<i', 0x12345678) + struct.pack('<i', 0) +
+                struct.pack('<i', 0) + b'\x99')
+
+    @staticmethod
+    def nonempty_sequence_unknown_action_raw():
+        return (b'\x30\x02' + struct.pack('<i', 2) + b'\x02' +
+                struct.pack('<i', 0x12345678) + struct.pack('<i', 1) +
+                b'\x03' + struct.pack('<i', 1) + b'\xD5opaque-tail')
+
+    def corpus_for(self, raw, path='Data/Json/SkillData/fixture_actiongroup.json'):
+        logical_sha = hashlib.sha256(raw).hexdigest().upper()
+        list_count = struct.unpack_from('<i', raw, 2)[0]
+        row = {
+            'inputSetSha256': self.input_set,
+            'virtualPath': path,
+            'logicalSha256': logical_sha,
+            'hardLimit': len(raw),
+            'boundaryClass': 'ambiguous',
+            'boundaryContext': {
+                'inputSetSha256': self.input_set,
+                'logicalFileIdentity': path,
+                'logicalSha256': logical_sha,
+                'hardLimit': len(raw),
+            },
+            'commonPrefixFraming': {'recordLists': [{'count': list_count}]},
+            'framing': {'candidateCount': 2, 'candidates': [{}, {}]},
+        }
+        return {'inputSetSha256': self.input_set, 'files': [row]}, row
+
+    def static_evidence(self):
+        return (
+            {
+                'inputSetSha256': self.input_set,
+                'firstSkillDataField': {'fieldName': 'actionGroupData'},
+                'actionGroupDataMembers': [
+                    {
+                        'serializedOrderIndex': 0,
+                        'fieldName': 'passiveEventActions',
+                        'readerMethodSpec': {
+                            'index': 610662,
+                            'genericType': {
+                                'typeName': 'System.Collections.Generic.List`1',
+                                'elementTypeName': 'Beyond.Gameplay.Core.AbilityActionMap',
+                            },
+                        },
+                    },
+                    {
+                        'serializedOrderIndex': 1,
+                        'fieldName': 'timelineActions',
+                        'readerMethodSpec': {
+                            'index': 610915,
+                            'genericType': {
+                                'typeName': 'System.Collections.Generic.List`1',
+                                'elementTypeName': 'Beyond.Gameplay.Core.TimelineAction+TimelineActionData',
+                            },
+                        },
+                    },
+                ],
+                'codeWindows': [{
+                    'rva': 58581179,
+                    'byteLength': 2314,
+                    'sha256': 'FEA359985EBF5DF75CC58D871469481F0F692B1768D84724FF5941D47CAD8132',
+                }],
+                'verifiedInstructionWindows': [
+                    {'rva': 65273925, 'rawHex': '4080FD02',
+                     'role': 'ActionGroupData member-count comparison against 2'},
+                    {'rva': 65273975, 'rawHex': '48894118',
+                     'role': 'store passiveEventActions result at object offset +0x18'},
+                    {'rva': 65274020, 'rawHex': '48894110',
+                     'role': 'store timelineActions result at object offset +0x10'},
+                ],
+            },
+            {
+                'methods': [{'methodIndex': 104445}, {'methodIndex': 104446}],
+                'anonymousReadOrder': {'mapMember2': ['scalar32', 'nullable-sequence-array']},
+                'codeWindows': [{
+                    'startRva': 63974160,
+                    'endRva': 63974463,
+                    'sha256': 'ADDDF617D14CF2A723E7E6CDD2978D46BC6557DEE539EA28A21A12619CCF42BB',
+                }],
+                'nestedContexts': [{
+                    'typeName': 'Beyond.Gameplay.Core.SequenceActionData',
+                    'methodSpecIndex': 610597,
+                }],
+            },
+            {
+                'contractPath': str(Path(__file__).resolve().parents[1] /
+                                    'game_data' / 'buff_b4_native.json'),
+                'contractSha256': hashlib.sha256(
+                    (Path(__file__).resolve().parents[1] /
+                     'game_data' / 'buff_b4_native.json').read_bytes()).hexdigest().upper(),
+                'methods': [{}],
+                'codeWindows': [{
+                    'startRva': 46828560,
+                    'endRva': 46829514,
+                    'sha256': 'CD9E5FC3BAB5502AC7D168F445CA3DC207C39D61A9CFF7D7F52F51A1F447B7C5',
+                }],
+            },
+            {
+                'methods': [{'methodIndex': 104346}, {'methodIndex': 104347}],
+                'windows': [{'rva': 0x39C6B82,
+                             'rawHex': '4080FE030F85DD030000'}],
+                'boundary': 'Header 3 takes a signed DWORD count after the one-byte header.',
+            },
+        )
+
+    def witness(self, raw, *, path='Data/Json/SkillData/fixture_actiongroup.json'):
+        corpus, _ = self.corpus_for(raw, path)
+        return skilldata_actiongroup_branch_sample_witness(
+            corpus, path, raw, source='fixture-actiongroup.json')
+
+    def test_empty_and_nonempty_branches_bind_ranges_and_keep_parents_open(self):
+        empty = self.witness(self.empty_sequence_array_raw())
+        self.assertEqual(empty['boundaryClass'], 'structural-prefix')
+        self.assertEqual(empty['parserCursor'], 15)
+        self.assertEqual(empty['consumedByteRanges'][-1],
+                         {'start': 11, 'end': 15, 'kind': 'count-i32'})
+        self.assertEqual(empty['completedNestedRecords'], [
+            {'start': 6, 'end': 15, 'kind': 'anonymous-ability-action-map'},
+            {'start': 2, 'end': 15, 'kind': 'anonymous-ability-action-map-list'},
+        ])
+        self.assertEqual(empty['nextMemberCountPeekOnly'], {
+            'fieldName': 'timelineActions.count', 'offset': 15,
+            'signedI32': 0, 'consumed': False,
+        })
+        self.assertEqual(empty['wholeSkillDataClassification'], 'ambiguous')
+        self.assertEqual(empty['wholeSkillDataExactClosedRecords'], 0)
+
+        nonempty = self.witness(self.nonempty_sequence_unknown_action_raw())
+        self.assertEqual(nonempty['boundaryClass'], 'opaque')
+        self.assertEqual(nonempty['parserCursor'], 20)
+        self.assertEqual(nonempty['countI32Fields'], [
+            {'offset': 2, 'end': 6, 'signedI32': 2},
+            {'offset': 11, 'end': 15, 'signedI32': 1},
+            {'offset': 16, 'end': 20, 'signedI32': 1},
+        ])
+        self.assertEqual(nonempty['firstUnconsumedActionUnionByte'], {
+            'offset': 20, 'firstByte': 0xD5, 'consumed': False,
+        })
+        self.assertEqual(nonempty['completedNestedRecords'], [])
+        self.assertEqual(nonempty['opaqueByteRanges'][0]['start'], 20)
+        self.assertEqual(nonempty['wholeSkillDataExactClosedRecords'], 0)
+
+    def test_static_native_alignment_covers_both_branches_but_closes_no_parent(self):
+        skilldata_reader, ability_map_reader, shared_list_reader, sequence_reader = (
+            self.static_evidence())
+        for raw in (self.empty_sequence_array_raw(),
+                    self.nonempty_sequence_unknown_action_raw()):
+            witness = self.witness(raw)
+            aligned = skilldata_actiongroup_branch_static_alignment(
+                witness, skilldata_reader, ability_map_reader, shared_list_reader,
+                sequence_reader, source='fixture-actiongroup.json')
+            self.assertEqual(aligned['status'], 'conditional-static-reader-alignment')
+            self.assertEqual(aligned['actionGroupDataExactClosedRecords'], 0)
+            self.assertEqual(aligned['wholeSkillDataClassification'], 'ambiguous')
+            self.assertEqual(aligned['wholeSkillDataExactClosedRecords'], 0)
+            self.assertEqual(aligned['runtimeProviderCacheSelection'], 'unobserved')
+
+    def test_ordinary_reader_stops_on_unknown_union_tag_without_completing_parent(self):
+        raw = self.nonempty_sequence_unknown_action_raw()
+        reader = BuffActionReader(raw, 'fixture-actiongroup.json', limit=len(raw))
+        reader.pos = 2
+        with self.assertRaises(BuffActionUnsupported) as caught:
+            reader.ability_action_map_collection_profile(0)
+        self.assertEqual(caught.exception.diagnostic['category'], 'union-tag')
+        self.assertEqual(caught.exception.diagnostic['offset'], 20)
+        self.assertEqual(reader.pos, 20)
+        self.assertFalse(any(row['kind'] in (
+            'anonymous-ability-action-map', 'anonymous-ability-action-map-list', 'sequence')
+            for row in reader.records))
+
+    def test_truncation_bad_headers_and_counts_preserve_first_unconsumed_byte(self):
+        bad_actiongroup_header = bytearray(self.empty_sequence_array_raw())
+        bad_actiongroup_header[1] = 3
+        with self.assertRaises(ContextError):
+            self.witness(bytes(bad_actiongroup_header))
+
+        bad_map_header = bytearray(self.empty_sequence_array_raw())
+        bad_map_header[6] = 3
+        malformed_map = self.witness(bytes(bad_map_header))
+        self.assertEqual(malformed_map['parserCursor'], 6)
+        self.assertEqual(malformed_map['parserError']['category'], 'member-count')
+        self.assertEqual(malformed_map['boundaryClass'], 'malformed')
+        self.assertEqual(malformed_map['opaqueByteRanges'][0]['start'], 6)
+
+        bad_nested_count = bytearray(self.empty_sequence_array_raw())
+        struct.pack_into('<i', bad_nested_count, 11, -2)
+        malformed_count = self.witness(bytes(bad_nested_count))
+        self.assertEqual(malformed_count['parserCursor'], 15)
+        self.assertEqual(malformed_count['parserError']['category'], 'count-bounds')
+        self.assertEqual(malformed_count['boundaryClass'], 'malformed')
+
+        truncated_sequence = (b'\x30\x02' + struct.pack('<i', 1) + b'\x02' +
+                              struct.pack('<i', 0x12345678) + struct.pack('<i', 1) +
+                              b'\x03\x01\x00')
+        truncated = self.witness(truncated_sequence)
+        self.assertEqual(truncated['parserCursor'], 16)
+        self.assertEqual(truncated['parserError']['category'], 'truncated')
+        self.assertEqual(truncated['boundaryClass'], 'structural-prefix')
+        self.assertEqual(truncated['opaqueByteRanges'][0]['start'], 16)
+
+    def test_trailing_bytes_stay_opaque_and_bad_identity_or_limit_fails_closed(self):
+        raw = self.empty_sequence_array_raw()
+        witness = self.witness(raw)
+        self.assertEqual(witness['parserCursor'], 15)
+        self.assertEqual(witness['opaqueByteRanges'], [{
+            'start': 15, 'end': len(raw),
+            'kind': 'unconsumed-actiongroup-and-skilldata-bytes',
+        }])
+
+        corpus, row = self.corpus_for(raw)
+        with self.assertRaises(ContextError):
+            skilldata_actiongroup_branch_sample_witness(
+                corpus, row['virtualPath'], raw[:-1] + b'\x98',
+                source='fixture-actiongroup.json')
+        row['hardLimit'] += 1
+        with self.assertRaises(ContextError):
+            skilldata_actiongroup_branch_sample_witness(
+                corpus, row['virtualPath'], raw, source='fixture-actiongroup.json')
+        row['hardLimit'] = len(raw)
+        row['boundaryContext']['inputSetSha256'] = 'B' * 64
+        with self.assertRaises(ContextError):
+            skilldata_actiongroup_branch_sample_witness(
+                corpus, row['virtualPath'], raw, source='fixture-actiongroup.json')
+
+    def test_native_alignment_rejects_reader_window_drift(self):
+        raw = self.empty_sequence_array_raw()
+        witness = self.witness(raw)
+        skilldata_reader, ability_map_reader, shared_list_reader, sequence_reader = (
+            self.static_evidence())
+        shared_list_reader['codeWindows'][0]['sha256'] = '0' * 64
+        with self.assertRaises(ContextError):
+            skilldata_actiongroup_branch_static_alignment(
+                witness, skilldata_reader, ability_map_reader, shared_list_reader,
+                sequence_reader, source='fixture-actiongroup.json')
 
 
 class SkillDataCursorHookCallSiteTests(unittest.TestCase):

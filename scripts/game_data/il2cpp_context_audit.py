@@ -1602,6 +1602,328 @@ def skilldata_corpus_branch_evidence(corpus, *, source):
     }
 
 
+def skilldata_actiongroup_branch_sample_witness(corpus, logical_path, raw, *, source):
+    """Replay one current passiveEventActions list, stopping at unverified unions."""
+    input_set = corpus.get('inputSetSha256')
+    if (not isinstance(input_set, str) or len(input_set) != 64 or
+            any(ch not in '0123456789abcdefABCDEF' for ch in input_set)):
+        raise ContextError(source, 0, 'current 64-hex SkillData inputSetSha256', input_set)
+    rows = [row for row in corpus.get('files', [])
+            if isinstance(row, dict) and row.get('virtualPath') == logical_path]
+    if len(rows) != 1:
+        raise ContextError(source, 0,
+                           f'exactly one current VFS SkillData row for {logical_path!r}',
+                           len(rows))
+    row = rows[0]
+    if (not isinstance(logical_path, str) or
+            not logical_path.startswith('Data/Json/SkillData/')):
+        raise ContextError(source, 0, 'logical SkillData virtualPath', logical_path)
+    if not isinstance(raw, bytes):
+        raise ContextError(source, 0, 'current raw SkillData sample bytes', type(raw).__name__)
+
+    hard_limit = row.get('hardLimit')
+    if type(hard_limit) is not int or hard_limit != len(raw):
+        raise ContextError(source, 0, 'sample hardLimit equals raw file length',
+                           [hard_limit, len(raw)])
+    logical_sha = hashlib.sha256(raw).hexdigest().upper()
+    require(row.get('logicalSha256'), logical_sha, source, 0)
+    require(row.get('inputSetSha256'), input_set, source, 0)
+    boundary_context = row.get('boundaryContext')
+    if not isinstance(boundary_context, dict):
+        raise ContextError(source, 0, 'current sample boundaryContext', boundary_context)
+    require(boundary_context.get('inputSetSha256'), input_set, source, 0)
+    require(boundary_context.get('logicalFileIdentity'), logical_path, source, 0)
+    require(boundary_context.get('logicalSha256'), logical_sha, source, 0)
+    require(boundary_context.get('hardLimit'), hard_limit, source, 0)
+    require(row.get('boundaryClass'), 'ambiguous', source, 0)
+    candidate_count = row.get('framing', {}).get('candidateCount')
+    require(type(candidate_count) is int and candidate_count >= 2, True, source, 0)
+    prefix = row.get('commonPrefixFraming')
+    record_lists = prefix.get('recordLists') if isinstance(prefix, dict) else None
+    if not isinstance(record_lists, list) or not record_lists:
+        raise ContextError(source, 0, 'one current ActionGroupData list count', record_lists)
+    expected_list_count = record_lists[0].get('count')
+    if type(expected_list_count) is not int or expected_list_count <= 0:
+        raise ContextError(source, 2, 'positive current passiveEventActions list count',
+                           expected_list_count)
+    if len(raw) < 2:
+        raise ContextError(source, 0, 'complete SkillData and ActionGroupData headers', len(raw))
+    require(raw[0], 48, source, 0)
+    require(raw[1], 2, source, 1)
+    if len(raw) >= 6:
+        actual_list_count = struct.unpack_from('<i', raw, 2)[0]
+        require(actual_list_count, expected_list_count, source, 2)
+
+    from scripts.game_data.memorypack.buff_actions import Reader, Unsupported
+
+    class StopBeforeNonNullUnionReader(Reader):
+        def action(self, depth):
+            start = self.pos
+            lead = self.peek()
+            if lead == 0xFF:
+                self.take(1, 'null-union')
+                self.records.append({'start': start, 'end': self.pos,
+                                     'kind': 'union', 'tag': 0xFF})
+                return
+            raise Unsupported(self.source, start,
+                              'non-null AbilityActionData payload remains opaque',
+                              lead, 'opaque-union')
+
+    reader = StopBeforeNonNullUnionReader(raw, source, limit=hard_limit)
+    reader.pos = 2
+    parser_error = None
+    try:
+        reader.ability_action_map_collection_profile(0)
+        parse_status = 'passive-list-consumed-to-conditional-static-end'
+        boundary_class = 'structural-prefix'
+    except Exception as exc:
+        diagnostic = getattr(exc, 'diagnostic', None)
+        if not isinstance(diagnostic, dict):
+            raise
+        parser_error = diagnostic
+        if diagnostic.get('category') == 'opaque-union':
+            parse_status = 'stopped-before-first-nonnull-action-union'
+            boundary_class = 'opaque'
+        elif diagnostic.get('category') == 'truncated':
+            parse_status = 'truncated-structural-prefix'
+            boundary_class = 'structural-prefix'
+        elif diagnostic.get('category') in ('member-count', 'count-bounds', 'malformed'):
+            parse_status = 'invalid-structural-prefix'
+            boundary_class = 'malformed'
+        else:
+            parse_status = 'unsupported-structural-prefix'
+            boundary_class = 'unsupported'
+
+    consumed_ranges = [
+        {'start': 0, 'end': 1, 'kind': 'SkillData.memberCount', 'value': raw[0]},
+        {'start': 1, 'end': 2, 'kind': 'ActionGroupData.memberCount', 'value': raw[1]},
+        *reader.ranges,
+    ]
+    range_cursor = 0
+    for index, span in enumerate(consumed_ranges):
+        start, end = span.get('start'), span.get('end')
+        if (type(start) is not int or type(end) is not int or start != range_cursor or
+                end <= start or end > reader.pos):
+            raise ContextError(source, range_cursor,
+                               f'byteRanges[{index}] contiguous inside [0,{reader.pos})', span)
+        range_cursor = end
+    require(range_cursor, reader.pos, source, range_cursor)
+
+    count_fields = []
+    for span in consumed_ranges:
+        if span.get('kind') == 'count-i32':
+            count_fields.append({
+                'offset': span['start'],
+                'end': span['end'],
+                'signedI32': struct.unpack_from('<i', raw, span['start'])[0],
+            })
+    unconsumed_union = None
+    if parser_error and parser_error.get('category') == 'opaque-union':
+        offset = reader.pos
+        unconsumed_union = {'offset': offset, 'firstByte': raw[offset], 'consumed': False}
+    next_member_count_peek = None
+    if (parse_status == 'passive-list-consumed-to-conditional-static-end' and
+            reader.pos + 4 <= hard_limit):
+        next_member_count_peek = {
+            'fieldName': 'timelineActions.count',
+            'offset': reader.pos,
+            'signedI32': struct.unpack_from('<i', raw, reader.pos)[0],
+            'consumed': False,
+        }
+    return {
+        'inputSetSha256': input_set,
+        'logicalFileIdentity': logical_path,
+        'logicalSha256': logical_sha,
+        'hardLimit': hard_limit,
+        'parserCursor': reader.pos,
+        'passiveEventActionsListCount': expected_list_count,
+        'status': parse_status,
+        'boundaryClass': boundary_class,
+        'consumedByteRanges': consumed_ranges,
+        'countI32Fields': count_fields,
+        'completedNestedRecords': reader.records,
+        'nextMemberCountPeekOnly': next_member_count_peek,
+        'opaqueByteRanges': ([] if reader.pos == hard_limit else [
+            {'start': reader.pos, 'end': hard_limit, 'kind': 'unconsumed-actiongroup-and-skilldata-bytes'}
+        ]),
+        'firstUnconsumedActionUnionByte': unconsumed_union,
+        'parserError': parser_error,
+        'wholeSkillDataClassification': 'ambiguous',
+        'wholeSkillDataExactClosedRecords': 0,
+        'boundary': ('Only the first ActionGroupData passiveEventActions list is replayed. A non-null nested '
+                     'action union stops at its first byte. timelineActions, the rest of ActionGroupData, '
+                     'and the whole SkillData endpoint are not consumed.'),
+    }
+
+
+def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
+                                                   ability_map_reader,
+                                                   shared_list_reader,
+                                                   sequence_reader, *, source):
+    """Align current ActionGroupData samples with separately audited native readers."""
+    if not all(isinstance(value, dict) for value in
+               (witness, skilldata_reader, ability_map_reader,
+                shared_list_reader, sequence_reader)):
+        raise ContextError(source, 0,
+                           'sample plus SkillData, AbilityActionMap, List<T> and Sequence static evidence',
+                           [type(value).__name__ for value in
+                            (witness, skilldata_reader, ability_map_reader,
+                             shared_list_reader, sequence_reader)])
+    require(skilldata_reader.get('firstSkillDataField', {}).get('fieldName'),
+            'actionGroupData', source, 0)
+    require(skilldata_reader.get('inputSetSha256'), witness.get('inputSetSha256'), source, 0)
+    members = skilldata_reader.get('actionGroupDataMembers')
+    if not isinstance(members, list) or len(members) != 2:
+        raise ContextError(source, 0, 'two native ActionGroupData member reads', members)
+    require([row.get('fieldName') for row in members],
+            ['passiveEventActions', 'timelineActions'], source, 0)
+    require([row.get('serializedOrderIndex') for row in members], [0, 1], source, 0)
+    require([row.get('readerMethodSpec', {}).get('index') for row in members],
+            [610662, 610915], source, 0)
+    first_generic = members[0].get('readerMethodSpec', {}).get('genericType', {})
+    require(first_generic.get('typeName'), 'System.Collections.Generic.List`1', source, 0)
+    require(first_generic.get('elementTypeName'),
+            'Beyond.Gameplay.Core.AbilityActionMap', source, 0)
+    skilldata_code_windows = skilldata_reader.get('codeWindows')
+    if not isinstance(skilldata_code_windows, list):
+        raise ContextError(source, 0, 'current SkillData/ActionGroupData code windows',
+                           skilldata_code_windows)
+    require(any((row.get('rva'), row.get('byteLength'), row.get('sha256')) ==
+                (58581179, 2314,
+                 'FEA359985EBF5DF75CC58D871469481F0F692B1768D84724FF5941D47CAD8132')
+                for row in skilldata_code_windows), True, source, 0)
+    skilldata_instructions = skilldata_reader.get('verifiedInstructionWindows')
+    if not isinstance(skilldata_instructions, list):
+        raise ContextError(source, 0, 'current SkillData verified instruction windows',
+                           skilldata_instructions)
+    expected_skilldata_instructions = {
+        (65273925, '4080FD02', 'ActionGroupData member-count comparison against 2'),
+        (65273975, '48894118', 'store passiveEventActions result at object offset +0x18'),
+        (65274020, '48894110', 'store timelineActions result at object offset +0x10'),
+    }
+    actual_skilldata_instructions = {
+        (row.get('rva'), row.get('rawHex'), row.get('role'))
+        for row in skilldata_instructions
+    }
+    require(expected_skilldata_instructions <= actual_skilldata_instructions,
+            True, source, 0)
+
+    ability_methods = ability_map_reader.get('methods')
+    if not isinstance(ability_methods, list):
+        raise ContextError(source, 0, 'native AbilityActionMap method identities', ability_methods)
+    ability_reader_methods = [row for row in ability_methods
+                              if row.get('methodIndex') in (104445, 104446)]
+    require(sorted(row['methodIndex'] for row in ability_reader_methods),
+            [104445, 104446], source, 0)
+    require(ability_map_reader.get('anonymousReadOrder', {}).get('mapMember2'),
+            ['scalar32', 'nullable-sequence-array'], source, 0)
+    ability_map_windows = ability_map_reader.get('codeWindows')
+    if not isinstance(ability_map_windows, list):
+        raise ContextError(source, 0, 'current AbilityActionMap code windows', ability_map_windows)
+    require(any((row.get('startRva'), row.get('endRva'), row.get('sha256')) ==
+                (63974160, 63974463,
+                 'ADDDF617D14CF2A723E7E6CDD2978D46BC6557DEE539EA28A21A12619CCF42BB')
+                for row in ability_map_windows), True, source, 0)
+    sequence_contexts = [row for row in ability_map_reader.get('nestedContexts', [])
+                         if row.get('typeName') == 'Beyond.Gameplay.Core.SequenceActionData']
+    require(len(sequence_contexts), 1, source, 0)
+    require(sequence_contexts[0].get('methodSpecIndex'), 610597, source, 0)
+
+    expected_shared_contract = Path(__file__).with_name('buff_b4_native.json').resolve()
+    shared_contract = Path(shared_list_reader.get('contractPath', '')).resolve()
+    require(shared_contract, expected_shared_contract, source, 0)
+    shared_contract_sha = hashlib.sha256(expected_shared_contract.read_bytes()).hexdigest().upper()
+    require(shared_list_reader.get('contractSha256'), shared_contract_sha, source, 0)
+    shared_code_windows = shared_list_reader.get('codeWindows')
+    if not isinstance(shared_code_windows, list):
+        raise ContextError(source, 0, 'current shared List<T> native code windows',
+                           shared_code_windows)
+    require(any((row.get('startRva'), row.get('endRva'), row.get('sha256')) ==
+                (46828560, 46829514,
+                 'CD9E5FC3BAB5502AC7D168F445CA3DC207C39D61A9CFF7D7F52F51A1F447B7C5')
+                for row in shared_code_windows), True, source, 0)
+    if not shared_list_reader.get('methods'):
+        raise ContextError(source, 0, 'current shared list reader method identities',
+                           shared_list_reader.get('methods'))
+    sequence_methods = sequence_reader.get('methods')
+    if not isinstance(sequence_methods, list):
+        raise ContextError(source, 0, 'native SequenceActionData method identities', sequence_methods)
+    require(sorted(row.get('methodIndex') for row in sequence_methods),
+            [104346, 104347], source, 0)
+    sequence_header_window = [row for row in sequence_reader.get('windows', [])
+                             if row.get('rva') == 0x39C6B82]
+    if len(sequence_header_window) != 1:
+        raise ContextError(source, 0, 'one exact SequenceActionData count window',
+                           len(sequence_header_window))
+    require(sequence_header_window[0].get('rawHex'),
+            '4080FE030F85DD030000', source, 0)
+    if 'header 3 takes a signed dword count after the one-byte header' not in sequence_reader.get('boundary', '').lower():
+        raise ContextError(source, 0, 'SequenceActionData header/count boundary statement',
+                           sequence_reader.get('boundary'))
+
+    require(witness.get('wholeSkillDataClassification'), 'ambiguous', source, 0)
+    require(witness.get('wholeSkillDataExactClosedRecords'), 0, source, 0)
+    count_fields = {row['offset']: row['signedI32']
+                    for row in witness.get('countI32Fields', [])}
+    map_records = [row for row in witness.get('completedNestedRecords', [])
+                   if row.get('kind') == 'anonymous-ability-action-map']
+    if witness.get('status') == 'passive-list-consumed-to-conditional-static-end':
+        require(len(map_records), witness.get('passiveEventActionsListCount'), source, 0)
+        require(witness.get('parserCursor'), 15, source, 0)
+        require(count_fields.get(11), 0, source, 11)
+        next_count = witness.get('nextMemberCountPeekOnly')
+        if not isinstance(next_count, dict):
+            raise ContextError(source, 15, 'non-advancing timelineActions count peek', next_count)
+        require(next_count.get('fieldName'), 'timelineActions.count', source, 15)
+        require(next_count.get('offset'), 15, source, 15)
+        require(next_count.get('signedI32'), 0, source, 15)
+        require(next_count.get('consumed'), False, source, 15)
+        expected_disposition = 'first passiveEventActions list reaches its static end; timelineActions remains unread'
+    elif witness.get('status') == 'stopped-before-first-nonnull-action-union':
+        require(witness.get('parserCursor'), 20, source, 20)
+        require(count_fields.get(11), 1, source, 11)
+        require(count_fields.get(16), 1, source, 16)
+        first_union = witness.get('firstUnconsumedActionUnionByte')
+        if not isinstance(first_union, dict):
+            raise ContextError(source, 20, 'first unconsumed nested action-union byte', first_union)
+        require(first_union.get('offset'), 20, source, 20)
+        require(first_union.get('firstByte'), 0xD5, source, 20)
+        require(first_union.get('consumed'), False, source, 20)
+        require(len(map_records), 0, source, 20)
+        expected_disposition = 'SequenceActionData prefix ends before its first non-null action tag; parent list remains incomplete'
+    else:
+        raise ContextError(source, 0,
+                           'one recognized closed-list or opaque-union ActionGroupData branch',
+                           witness.get('status'))
+    return {
+        'status': 'conditional-static-reader-alignment',
+        'inputSetSha256': witness.get('inputSetSha256'),
+        'logicalFileIdentity': witness.get('logicalFileIdentity'),
+        'logicalSha256': witness.get('logicalSha256'),
+        'hardLimit': witness.get('hardLimit'),
+        'parserCursor': witness.get('parserCursor'),
+        'consumedByteRanges': witness.get('consumedByteRanges'),
+        'opaqueByteRanges': witness.get('opaqueByteRanges'),
+        'actionGroupDataMemberOrder': ['passiveEventActions', 'timelineActions'],
+        'passiveEventActionsElementType': 'Beyond.Gameplay.Core.AbilityActionMap',
+        'abilityActionMapMemberOrder': ['scalar32', 'nullable-sequence-array'],
+        'sequenceActionDataReaderEvidence': {
+            'methodSpecIndex': sequence_contexts[0]['methodSpecIndex'],
+            'headerCountWindowRva': sequence_header_window[0]['rva'],
+            'headerCountWindowRawHex': sequence_header_window[0]['rawHex'],
+        },
+        'conditionalDisposition': expected_disposition,
+        'runtimeProviderCacheSelection': 'unobserved',
+        'actionGroupDataExactClosedRecords': 0,
+        'wholeSkillDataClassification': 'ambiguous',
+        'wholeSkillDataExactClosedRecords': 0,
+        'boundary': ('The raw ActionGroupData passive-action samples align with a separately validated current-build '
+                     'AbilityActionMap reader and SequenceActionData path. This is conditional static-reader evidence; '
+                     'provider/cache selection is unobserved, timelineActions or the parent are not promoted, and '
+                     'non-null action-union payloads remain opaque.'),
+    }
+
+
 def skilldata_terminal_collision_evidence(
         corpus, *, source,
         logical_path='Data/Json/SkillData/Potential_test.json'):
@@ -4813,6 +5135,14 @@ def audit():
         Path(*selection['row']['virtualPath'].split('/'))
         for selection in terminal_branch_selections
     ]
+    actiongroup_branch_sample_identities = [
+        'Data/Json/SkillData/eny_0045_agtrinit_state0_passive.json',
+        'Data/Json/SkillData/abilityentity_int_doodad_passive.json',
+    ]
+    actiongroup_branch_sample_paths = [
+        ROOT / 'export_full/structured/StreamingAssets' / Path(*logical_path.split('/'))
+        for logical_path in actiongroup_branch_sample_identities
+    ]
     skill_terminal_path = Path(__file__).with_name('memorypack') / 'skill_terminal.py'
     skill_buff_path = Path(__file__).with_name('memorypack') / 'buff.py'
     skill_core_path = Path(__file__).with_name('memorypack') / 'core.py'
@@ -4827,6 +5157,7 @@ def audit():
                mapper_path, catalog_path, ROOT / 'scripts/common.py',
                skill_terminal_path, skill_buff_path, skill_core_path,
                skill_sample_path, *terminal_branch_sample_paths,
+               *actiongroup_branch_sample_paths,
                Path(__file__).with_name('buff_ec_native.json'),
                Path(__file__).with_name('buff_50_native.json'),
                Path(__file__).with_name('buff_11f_native.json'),
@@ -5771,6 +6102,23 @@ def audit():
         contract_path=Path(__file__).with_name('buff_17_native.json'))
     buff_ad=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_ad_native.json'))
+    actiongroup_branch_sample_rows = []
+    for logical_path, path in zip(actiongroup_branch_sample_identities,
+                                  actiongroup_branch_sample_paths):
+        raw = path.read_bytes()
+        source_name = str(path.relative_to(ROOT))
+        witness = skilldata_actiongroup_branch_sample_witness(
+            corpus, logical_path, raw, source=source_name)
+        witness['nativeReaderAlignment'] = skilldata_actiongroup_branch_static_alignment(
+            witness, skilldata_reader_order, buff_ad, buff_b4, buff_sequence,
+            source=source_name)
+        actiongroup_branch_sample_rows.append(witness)
+    skilldata_reader_order['representativeActionGroupBranchSamples'] = actiongroup_branch_sample_rows
+    skilldata_reader_order['actionGroupBranchSampleBoundary'] = (
+        'The first passiveEventActions list has a conditional static end in the empty SequenceActionData-array '
+        'branch. A separate nonempty-sequence branch stops before its first non-null action-union byte; the '
+        'parent list, timelineActions field and whole SkillData record remain incomplete or ambiguous.'
+    )
     buff_198=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_198_native.json'))
     buff_197=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
