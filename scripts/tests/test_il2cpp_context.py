@@ -12,7 +12,8 @@ from scripts.game_data.il2cpp_context_audit import (
     skilldata_corpus_branch_evidence, skilldata_terminal_collision_evidence,
     skilldata_cursor_hook_call_sites, skilldata_terminal_sample_byte_witness,
     skilldata_terminal_tail_layout, skilldata_terminal_branch_sample_witness,
-    skilldata_positive_branch_reader_replay,
+    skilldata_positive_branch_reader_replay, skilldata_shifted_terminal_wrapper_probe,
+    skilldata_shifted_candidate_reader_assessment, select_skilldata_terminal_branch_samples,
     skilldata_nested_branch_static_alignment,
 )
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
@@ -993,9 +994,11 @@ class ListFormatterCandidateTests(unittest.TestCase):
             0x200:struct.pack('<QQQQ',self.base+0x300,self.base+0x400,0,0),
             0x300:struct.pack('<QII',54057,0x120000,0)}
         for at,raw in ((0x3BA410E,'488B47508B30'),(0x3BA4120,'48834750048347400483474404895F30'),
-            (0x3BA4130,'48634744488B4F18482BC84863C6483BC8'),(0x3BA4147,'83FEFF0F842F010000'),
+            (0x3BA4130,'48634744488B4F18482BC84863C6483BC8'),
+            (0x3BA4141,'0F8CB4653201'),(0x3BA4147,'83FEFF0F842F010000'),
             (0x3BA415F,'49833E00488B4520488B88C00000000F8518653201'),(0x3BA41C1,'85F60F881F653201'),
-            (0x3BA4282,'49C70600000000'),(0x4ECA6AB,'FF431CC7431800000000E9799BCDFE'),
+            (0x3BA4282,'49C70600000000'),(0x4ECA6FB,'33D28BCEE8900A8404CCCC'),
+            (0x4ECA6AB,'FF431CC7431800000000E9799BCDFE'),
             (0x3BA4261,'85F67F4D'),(0x3BA42C3,'4C8D4C24584C8BC7498BD7E8FD494FFC'),
             (0x3BA4312,'41FFC4443BE60F8D47FFFFFFEB92')):self.parts[at]=bytes.fromhex(raw)
         self.pointers={self.base+0x10000+209879*8:self.base+0x100,self.base+0x20000:self.base+0x3BA40F0}
@@ -2863,6 +2866,30 @@ class SkillDataCorpusBranchEvidenceTests(unittest.TestCase):
                 skilldata_terminal_branch_sample_witness(
                     corpus, chosen, bad, source='fixture-tag-list.json')
 
+    def test_selector_covers_every_positive_terminal_list_count(self):
+        rows = []
+        for ordinal, (member_index, count) in enumerate(
+                ((1, 1), (1, 3), (2, 1), (2, 2), (3, 1), (3, 2))):
+            members = [{'count': 0} for _ in range(5)]
+            members[member_index]['count'] = count
+            path = f'Data/Json/SkillData/branch_{ordinal}.json'
+            rows.append({
+                'virtualPath': path,
+                'logicalSha256': f'{ordinal:064X}',
+                'framing': {'candidates': [
+                    {'encoding': 'one-member-wrapper', 'members': members},
+                    {'encoding': 'counted', 'members': members},
+                ]},
+            })
+        corpus = {'inputSetSha256': 'A' * 64, 'files': rows}
+        selected = select_skilldata_terminal_branch_samples(
+            corpus, source='fixture-corpus.json')
+        self.assertEqual(
+            [(row['memberIndex'], row['count']) for row in selected],
+            [(1, 1), (1, 3), (2, 1), (2, 2), (3, 1), (3, 2)],
+        )
+        self.assertEqual(len({row['row']['virtualPath'] for row in selected}), 6)
+
 
 class SkillDataCursorHookCallSiteTests(unittest.TestCase):
     def setUp(self):
@@ -3729,6 +3756,8 @@ class SkillDataPositiveNestedReaderReplayTests(unittest.TestCase):
                 {'start': terminal_start, 'end': hard_limit, 'endExclusive': True},
                 {'start': terminal_start + 1, 'end': hard_limit, 'endExclusive': True},
             ],
+            'shiftedCandidateTypeProbe': skilldata_shifted_terminal_wrapper_probe(
+                raw, terminal_start, hard_limit, source='fixture.json'),
             'listCounts': [{
                 'memberIndex': member_index, 'fieldName': field_name,
                 'countRange': count_range, 'count': count,
@@ -3744,13 +3773,17 @@ class SkillDataPositiveNestedReaderReplayTests(unittest.TestCase):
             'exactClosedRecords': 0,
         }
 
-    def tag_fixture(self):
-        terminal = (b'\x00\x01' + struct.pack('<I', 1) +
-                    b'\x01' + struct.pack('<I', 0x8CF01A14))
+    def tag_fixture(self, count=1):
+        tags = b''.join(
+            b'\x01' + struct.pack('<I', 0x8CF01A14 + index)
+            for index in range(count))
+        terminal = (b'\x00\x01' + struct.pack('<I', count) + tags +
+                    struct.pack('<I', 0) + struct.pack('<I', 0) + b'\x00')
         raw = bytes(10) + terminal
         row = self.sample(
-            raw, 'tagDuringAttach.predefinedTag', 1, 1,
-            [{'start': 16, 'end': 21, 'endExclusive': True}], [1],
+            raw, 'tagDuringAttach.predefinedTag', 1, count,
+            [{'start': 16 + index * 5, 'end': 21 + index * 5,
+              'endExclusive': True} for index in range(count)], [1] * count,
             {'start': 12, 'end': 16})
         return raw, row
 
@@ -3825,6 +3858,25 @@ class SkillDataPositiveNestedReaderReplayTests(unittest.TestCase):
             },
         }
 
+    @staticmethod
+    def static_list_formatter():
+        return {
+            'classInstantiation': {'index': 816},
+            'methodSpecIndices': [215461],
+            'fastHeaderGuard': {
+                'countWidthBytes': 4,
+                'signedCount': True,
+                'remainingBytesComparedToCount': True,
+                'rangeFailureCondition': 'remaining < signed count',
+                'comparisonRva': 0x3BA4130,
+                'comparisonRawHex': '48634744488B4F18482BC84863C6483BC8',
+                'rangeFailureBranchRva': 0x3BA4141,
+                'rangeFailureBranchRawHex': '0F8CB4653201',
+                'rangeFailureTargetRva': 0x4ECA6FB,
+                'rangeFailureBodyRawHex': '33D28BCEE8900A8404CCCC',
+            },
+        }
+
     def test_positive_tag_toggle_and_nested_shape_ranges_replay_to_hard_limits(self):
         cases = [self.tag_fixture(), self.toggle_fixture(), self.ui_range_fixture()]
         expected = [
@@ -3842,6 +3894,94 @@ class SkillDataPositiveNestedReaderReplayTests(unittest.TestCase):
                 self.assertEqual(replay['nestedReaderReplay']['reader'], reader)
                 self.assertEqual(replay['wholeSkillDataClassification'], 'ambiguous')
                 self.assertEqual(replay['wholeSkillDataExactClosedRecords'], 0)
+
+    def test_shifted_candidate_uses_wrapper_header_or_bounded_list_count_guard(self):
+        gameplay_tag = {
+            'typeName': 'Beyond.Gameplay.Core.GameplayTagList',
+            'memberCount': 1,
+            'nestedReadInstantiation': {'index': 816},
+            'headerEvidence': {
+                'headerByteWidth': 1,
+                'acceptedNonNullHeaderByte': 1,
+                'nullHeaderByte': 0xFF,
+            },
+        }
+        list_formatter = self.static_list_formatter()
+        schemas = self.static_nested_schemas()
+
+        raw, sample = self.tag_fixture(count=1)
+        replay = skilldata_positive_branch_reader_replay(
+            sample, raw, source='fixture-tag-one.json')
+        aligned = skilldata_nested_branch_static_alignment(
+            replay, schemas, gameplay_tag, list_formatter=list_formatter,
+            source='fixture-tag-one.json')
+        shifted = aligned['shiftedCandidateAssessment']
+        self.assertEqual(shifted['gameplayTagListHeaderByte']['value'], 1)
+        self.assertEqual(shifted['nestedListCount']['signedI32'], 0x01000000)
+        self.assertEqual(shifted['nestedListCount']['remainingAfterCount'], 13)
+        self.assertEqual(shifted['status'], 'rejected-by-registered-list-count-bound')
+        self.assertEqual(aligned['wholeSkillDataClassification'], 'ambiguous')
+        self.assertEqual(aligned['exactClosedWholeSkillDataRecords'], 0)
+
+        raw, sample = self.tag_fixture(count=3)
+        replay = skilldata_positive_branch_reader_replay(
+            sample, raw, source='fixture-tag-three.json')
+        aligned = skilldata_nested_branch_static_alignment(
+            replay, schemas, gameplay_tag, list_formatter=list_formatter,
+            source='fixture-tag-three.json')
+        shifted = aligned['shiftedCandidateAssessment']
+        self.assertEqual(shifted['gameplayTagListHeaderByte']['value'], 3)
+        self.assertEqual(shifted['status'],
+                         'outside-registered-GameplayTagList-header-path')
+
+        for fixture, source in ((self.toggle_fixture(), 'fixture-toggle.json'),
+                                (self.ui_range_fixture(), 'fixture-ui.json')):
+            raw, sample = fixture
+            replay = skilldata_positive_branch_reader_replay(sample, raw, source=source)
+            aligned = skilldata_nested_branch_static_alignment(
+                replay, schemas, gameplay_tag, list_formatter=list_formatter,
+                source=source)
+            shifted = aligned['shiftedCandidateAssessment']
+            self.assertEqual(shifted['gameplayTagListHeaderByte']['value'], 0)
+            self.assertEqual(shifted['status'],
+                             'outside-registered-GameplayTagList-header-path')
+
+    def test_shifted_candidate_count_guard_requires_exact_matching_formatter(self):
+        raw, sample = self.tag_fixture(count=1)
+        replay = skilldata_positive_branch_reader_replay(
+            sample, raw, source='fixture-tag-one.json')
+        gameplay_tag = {
+            'typeName': 'Beyond.Gameplay.Core.GameplayTagList',
+            'memberCount': 1,
+            'nestedReadInstantiation': {'index': 816},
+            'headerEvidence': {
+                'headerByteWidth': 1,
+                'acceptedNonNullHeaderByte': 1,
+                'nullHeaderByte': 0xFF,
+            },
+        }
+        without_formatter = skilldata_nested_branch_static_alignment(
+            replay, self.static_nested_schemas(), gameplay_tag,
+            source='fixture-tag-one.json')
+        self.assertEqual(without_formatter['shiftedCandidateAssessment']['status'],
+                         'unresolved-list-formatter-selection')
+        wrong_formatter = self.static_list_formatter()
+        wrong_formatter['classInstantiation']['index'] = 815
+        with self.assertRaises(ContextError):
+            skilldata_nested_branch_static_alignment(
+                replay, self.static_nested_schemas(), gameplay_tag,
+                list_formatter=wrong_formatter, source='fixture-tag-one.json')
+
+    def test_shifted_wrapper_probe_preserves_truncated_count_as_prefix(self):
+        probe = skilldata_shifted_terminal_wrapper_probe(
+            b'\x00\x01\x01', 0, 3, source='fixture-truncated.json')
+        self.assertEqual(probe['gameplayTagListHeaderByte'],
+                         {'offset': 2, 'value': 1})
+        self.assertEqual(probe['nestedListCount']['availableByteLength'], 0)
+        self.assertFalse(probe['nestedListCount']['complete'])
+        with self.assertRaises(ContextError):
+            skilldata_shifted_terminal_wrapper_probe(
+                b'\x00', 0, 2, source='fixture-overflow.json')
 
     def test_nested_reader_replay_rejects_bad_outer_and_inner_headers(self):
         raw, sample = self.toggle_fixture()
@@ -3866,10 +4006,16 @@ class SkillDataPositiveNestedReaderReplayTests(unittest.TestCase):
         gameplay_tag = {
             'typeName': 'Beyond.Gameplay.Core.GameplayTagList',
             'memberCount': 1,
-            'headerEvidence': {'acceptedNonNullHeaderByte': 1, 'nullHeaderByte': 0xFF},
+            'nestedReadInstantiation': {'index': 816},
+            'headerEvidence': {
+                'headerByteWidth': 1,
+                'acceptedNonNullHeaderByte': 1,
+                'nullHeaderByte': 0xFF,
+            },
         }
         aligned = skilldata_nested_branch_static_alignment(
-            replay, self.static_nested_schemas(), gameplay_tag, source='fixture-tag.json')
+            replay, self.static_nested_schemas(), gameplay_tag,
+            list_formatter=self.static_list_formatter(), source='fixture-tag.json')
         self.assertEqual(aligned['status'],
                          'positive-raw-sample-matches-static-nested-reader-schema')
         self.assertEqual(aligned['exactClosedWholeSkillDataRecords'], 0)
@@ -3881,13 +4027,15 @@ class SkillDataPositiveNestedReaderReplayTests(unittest.TestCase):
             'validNormalPathByteWidth'] = 4
         with self.assertRaises(ContextError):
             skilldata_nested_branch_static_alignment(
-                replay, bad_tag_schema, gameplay_tag, source='fixture-tag.json')
+                replay, bad_tag_schema, gameplay_tag,
+                list_formatter=self.static_list_formatter(), source='fixture-tag.json')
 
         raw, sample = self.toggle_fixture()
         replay = skilldata_positive_branch_reader_replay(
             sample, raw, source='fixture-toggle.json')
         aligned = skilldata_nested_branch_static_alignment(
             replay, self.static_nested_schemas(), gameplay_tag,
+            list_formatter=self.static_list_formatter(),
             source='fixture-toggle.json')
         self.assertEqual(aligned['alignment']['rawAndStaticFieldOrder'],
                          ['buffs', 'conditions'])
@@ -3895,7 +4043,8 @@ class SkillDataPositiveNestedReaderReplayTests(unittest.TestCase):
         raw, sample = self.ui_range_fixture()
         replay = skilldata_positive_branch_reader_replay(sample, raw, source='fixture-ui.json')
         aligned = skilldata_nested_branch_static_alignment(
-            replay, self.static_nested_schemas(), gameplay_tag, source='fixture-ui.json')
+            replay, self.static_nested_schemas(), gameplay_tag,
+            list_formatter=self.static_list_formatter(), source='fixture-ui.json')
         self.assertEqual(aligned['alignment']['rawAndStaticShapeFieldOrder'],
                          [row['fieldName'] for row in self.static_nested_schemas()
                           ['skillHintShapeData']['serializedOrder']])
@@ -3903,6 +4052,7 @@ class SkillDataPositiveNestedReaderReplayTests(unittest.TestCase):
         schemas['skillHintShapeData']['serializedOrder'].reverse()
         with self.assertRaises(ContextError):
             skilldata_nested_branch_static_alignment(replay, schemas, gameplay_tag,
+                                                     list_formatter=self.static_list_formatter(),
                                                      source='fixture-ui.json')
 
 

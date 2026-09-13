@@ -199,21 +199,24 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   nested endpoint `[1,10)` remains conditional on both generic formatter
   queries selecting the audited four-byte zero-count path. Provider/cache
   state and an executed cursor are not available offline, so this does not
-  distinguish the one-byte-shifted bool-versus-counted terminal candidates or
-  prove a parent record end. The exact-build offline audit now binds raw bytes
-  for one terminal collision and selected nonempty Tag, ToggleBuffData and
-  UIRangeHintData branches to their current VFS identities, then matches the
-  nested parser cursors and member order to registered static reader bodies,
-  including the one-member GameplayTagList wrapper, its one-member GameplayTag
-  element reader, and the nested 21-member shape reader. The registered
+  establish which formatter path ran or prove a parent record end. The
+  exact-build offline audit now binds raw bytes
+  for one terminal collision and branch samples covering every positive
+  count shape of the three terminal lists to their current VFS identities,
+  hashes and hard limits, then matches nested parser cursors and member order
+  to registered static reader bodies. This includes the one-member
+  GameplayTagList wrapper, its GameplayTag element reader, ToggleBuffData, and
+  UIRangeHintData with its nested 21-member shape reader. The registered
   GameplayTag path consumes one member-count byte and a four-byte field; its
-  `tagId` is `System.Int32`, while the current parser preserves the same bytes
-  as an unsigned id/hash view, so signed semantic interpretation remains open.
-  These branch records refine nested boundaries but do not resolve the
-  shifted whole-tail hypotheses: the intervening bytes stay opaque and provider
-  selection/cache state plus an executed reader cursor remain unavailable
-  offline. The report also verifies the observer's post-call return-address
-  coordinates, which are hook locations rather than a live cursor receipt.
+  `tagId` is `System.Int32`, while the parser preserves the same bytes as an
+  unsigned id/hash view, so signed semantic interpretation remains open.
+  Under these registered paths, the shifted tail fails either the wrapper's
+  accepted-header path or the bounded list reader's remaining-byte check. This
+  ranks the tail hypotheses offline, but provider/cache selection and an
+  executed parent cursor remain unavailable, so no whole SkillData record is
+  closed. The bytes between the structural prefix and terminal tail stay opaque.
+  The report also verifies the observer's post-call return-address coordinates,
+  which are hook locations rather than a live cursor receipt.
   Available TypeTrees do not cover these JsonData files.
   A bounded exact-build `skilldata-cursor` observer is available, but no receipt
   has yet verified a candidate. Cleanup now requires

@@ -1233,17 +1233,39 @@ def list_formatter_candidate(pe,md,modules,image_owners,reg,code,table,spec_reco
     for at,expected in ((0x3BA410E,'488B47508B30'),
         (0x3BA4120,'48834750048347400483474404895F30'),
         (0x3BA4130,'48634744488B4F18482BC84863C6483BC8'),
+        (0x3BA4141,'0F8CB4653201'),
         (0x3BA4147,'83FEFF0F842F010000'),(0x3BA415F,'49833E00488B4520488B88C00000000F8518653201'),
         (0x3BA41C1,'85F60F881F653201'),(0x3BA4282,'49C70600000000'),
+        (0x4ECA6FB,'33D28BCEE8900A8404CCCC'),
         (0x4ECA6AB,'FF431CC7431800000000E9799BCDFE'),
         (0x3BA4261,'85F67F4D'),(0x3BA42C3,'4C8D4C24584C8BC7498BD7E8FD494FFC'),
         (0x3BA4312,'41FFC4443BE60F8D47FFFFFFEB92')):
         chunk=bytes.fromhex(expected)
         require(pe.bytes_at_va(pe.image_base+at,len(chunk)),chunk,source,at)
         windows.append({'rva':at,'rawHex':expected})
+    range_failure_branch_rva=0x3BA4141
+    range_failure_branch_raw=pe.bytes_at_va(pe.image_base+range_failure_branch_rva,6)
+    require(range_failure_branch_raw,bytes.fromhex('0F8CB4653201'),source,
+            range_failure_branch_rva)
+    range_failure_target_rva=(range_failure_branch_rva+6+
+                              struct.unpack_from('<i',range_failure_branch_raw,2)[0])
+    require(range_failure_target_rva,0x4ECA6FB,source,range_failure_branch_rva)
     return {'methodIdentities':identities,'registeredTypeIndex':index,'typeCarrier':carrier,
             'classInstantiation':inst.as_dict(),'methodSpecIndices':sorted(selected),'codeCandidates':candidates,
             'windows':windows,'level':'exact static candidate identity; direct conditional header and loop flow',
+            'fastHeaderGuard':{
+                'countWidthBytes':4,
+                'signedCount':True,
+                'remainingBytesComparedToCount':True,
+                'comparisonRva':0x3BA4130,
+                'comparisonRawHex':'48634744488B4F18482BC84863C6483BC8',
+                'rangeFailureCondition':'remaining < signed count',
+                'rangeFailureBranchRva':range_failure_branch_rva,
+                'rangeFailureBranchRawHex':range_failure_branch_raw.hex().upper(),
+                'rangeFailureTargetRva':range_failure_target_rva,
+                'rangeFailureBodyRawHex':'33D28BCEE8900A8404CCCC',
+                'boundary':'The four-byte signed count is compared with remaining bytes after the header. A signed remaining<count branch reaches a helper call followed by INT3 if the helper returns; it does not enter the normal positive-element loop.',
+            },
             'boundary':'The registered ListFormatter type and Deserialize MethodSpec share the same one-argument instantiation as the previously joined List carrier. The complete selected MethodSpec/code-table join yields one static code candidate, not proof of provider selection. This body receives the reader in RDX, output-slot pointer in R8 and companion in R9. Its fast header path reads a signed DWORD, advances cursor and both counters by four, and compares total-minus-consumed with the sign-extended count without multiplying by an element width. Header -1 clears the output. With a null output, other negative counts reach a helper followed by INT3; with an existing output, the reviewed reuse branch instead increments object+0x1C, clears object+0x18 and reaches a loop guarded by count>0. Thus this body does not universally reject all counts below -1. Each positive iteration passes the same reader and a zeroed four-byte output slot to element dispatch, then forwards the output word to another helper and increments its loop index. A four-byte output slot does not prove four serialized bytes per element. Cold header paths call the separately reviewed ensure/advance helpers. Element formatter identity, helper effects, successful allocation/reuse, actual MethodInfo/provider selection, authenticated source span and final cursor/EOF remain unresolved. Keep both terminal grammars.'}
 
 
@@ -1991,20 +2013,42 @@ def skilldata_terminal_sample_byte_witness(collision, raw, *, source):
 
 
 def select_skilldata_terminal_branch_samples(corpus, *, source):
-    """Choose deterministic current files that exercise each nonempty tail list."""
+    """Choose deterministic current files for every observed positive tail-list count."""
     input_set = corpus.get('inputSetSha256')
     if (not isinstance(input_set, str) or len(input_set) != 64 or
             any(ch not in '0123456789abcdefABCDEF' for ch in input_set)):
         raise ContextError(source, 0, '64-hex SkillData inputSetSha256', input_set)
-    requirements = [
-        {'fieldName': 'tagDuringAttach.predefinedTag', 'memberIndex': 1,
-         'count': 1},
-        {'fieldName': 'toggleBuffs', 'memberIndex': 2, 'count': 1},
-        {'fieldName': 'uiRangeHints', 'memberIndex': 3, 'count': 2},
-    ]
     files = corpus.get('files')
     if not isinstance(files, list):
         raise ContextError(source, 0, 'current SkillData file row list', type(files).__name__)
+    branch_fields = {
+        1: 'tagDuringAttach.predefinedTag',
+        2: 'toggleBuffs',
+        3: 'uiRangeHints',
+    }
+    requirements = []
+    for member_index, field_name in branch_fields.items():
+        observed_counts = set()
+        for row in files:
+            if not isinstance(row, dict):
+                continue
+            candidates = row.get('framing', {}).get('candidates', [])
+            if (not isinstance(candidates, list) or len(candidates) != 2 or
+                    candidates[0].get('encoding') != 'one-member-wrapper'):
+                continue
+            members = candidates[0].get('members', [])
+            if not isinstance(members, list) or len(members) != 5:
+                continue
+            count = members[member_index].get('count')
+            if type(count) is int and count > 0:
+                observed_counts.add(count)
+        if not observed_counts:
+            raise ContextError(source, 0,
+                               f'current corpus has a positive {field_name} branch', 0)
+        requirements.extend(
+            {'fieldName': field_name, 'memberIndex': member_index, 'count': count}
+            for count in sorted(observed_counts)
+        )
     selected = []
     for requirement in requirements:
         matches = []
@@ -2030,6 +2074,53 @@ def select_skilldata_terminal_branch_samples(corpus, *, source):
         raise ContextError(source, 0, 'distinct current SkillData branch sample identities',
                            [sample['row'].get('virtualPath') for sample in selected])
     return selected
+
+
+def skilldata_shifted_terminal_wrapper_probe(raw, first_candidate_start,
+                                             hard_limit, *, source):
+    """Record how a one-byte-shifted SkillData tail reaches GameplayTagList."""
+    if not isinstance(raw, bytes):
+        raise ContextError(source, 0, 'raw sample bytes', type(raw).__name__)
+    if (type(first_candidate_start) is not int or first_candidate_start < 0 or
+            type(hard_limit) is not int or hard_limit != len(raw) or
+            first_candidate_start + 1 >= hard_limit):
+        raise ContextError(source, first_candidate_start
+                           if type(first_candidate_start) is int else 0,
+                           'first candidate start and hardLimit bound the raw sample',
+                           [first_candidate_start, hard_limit, len(raw)])
+    shifted_start = first_candidate_start + 1
+    wrapper_offset = shifted_start + 1
+    if wrapper_offset >= hard_limit:
+        raise ContextError(source, wrapper_offset,
+                           'shifted candidate has an in-limit GameplayTagList header',
+                           hard_limit)
+    header = raw[wrapper_offset]
+    result = {
+        'shiftedCandidateStart': shifted_start,
+        'shiftedBooleanByte': {'offset': shifted_start,
+                               'value': raw[shifted_start]},
+        'gameplayTagListHeaderByte': {'offset': wrapper_offset,
+                                      'value': header},
+        'nestedListCount': None,
+    }
+    if header == 1:
+        count_offset = wrapper_offset + 1
+        count_end = count_offset + 4
+        available = max(0, min(4, hard_limit - count_offset))
+        count_bytes = raw[count_offset:count_offset + available]
+        count_row = {
+            'offset': count_offset,
+            'availableByteLength': available,
+            'rawHex': count_bytes.hex().upper(),
+            'complete': available == 4,
+        }
+        if available == 4:
+            count_row.update({
+                'signedI32': struct.unpack('<i', count_bytes)[0],
+                'remainingAfterCount': hard_limit - count_end,
+            })
+        result['nestedListCount'] = count_row
+    return result
 
 
 def skilldata_terminal_branch_sample_witness(corpus, selection, raw, *, source):
@@ -2281,6 +2372,8 @@ def skilldata_terminal_branch_sample_witness(corpus, selection, raw, *, source):
             {'start': start, 'end': hard_limit, 'endExclusive': True},
             {'start': shifted_start, 'end': hard_limit, 'endExclusive': True},
         ],
+        'shiftedCandidateTypeProbe': skilldata_shifted_terminal_wrapper_probe(
+            raw, start, hard_limit, source=source),
         'rawWrapperHeaderByte': {'offset': start + 1, 'value': wrapper_header},
         'terminalBooleanBytes': [
             {'offset': start, 'value': bool(raw[start])},
@@ -2514,6 +2607,8 @@ def skilldata_positive_branch_reader_replay(sample, raw, *, source):
         'hardLimit': hard_limit,
         'positiveFieldName': field_name,
         'conditionalOnTerminalCandidateStart': start,
+        'terminalCandidateRanges': candidate_ranges,
+        'shiftedCandidateTypeProbe': sample.get('shiftedCandidateTypeProbe'),
         'nestedReaderReplay': reader_row,
         'wholeSkillDataClassification': 'ambiguous',
         'wholeSkillDataExactClosedRecords': 0,
@@ -2521,8 +2616,152 @@ def skilldata_positive_branch_reader_replay(sample, raw, *, source):
     }
 
 
+def skilldata_shifted_candidate_reader_assessment(branch_replay,
+                                                  gameplay_tag_list,
+                                                  list_formatter, *, source):
+    """Evaluate the shifted hypothesis against registered wrapper/count guards."""
+    if not isinstance(branch_replay, dict) or not isinstance(gameplay_tag_list, dict):
+        raise ContextError(source, 0, 'branch replay and GameplayTagList static evidence',
+                           [type(branch_replay).__name__, type(gameplay_tag_list).__name__])
+    hard_limit = branch_replay.get('hardLimit')
+    start = branch_replay.get('conditionalOnTerminalCandidateStart')
+    ranges = branch_replay.get('terminalCandidateRanges')
+    probe = branch_replay.get('shiftedCandidateTypeProbe')
+    if (type(hard_limit) is not int or type(start) is not int or
+            not isinstance(ranges, list) or len(ranges) != 2 or
+            not isinstance(probe, dict)):
+        raise ContextError(source, 0, 'identity-bound shifted candidate byte probe',
+                           [hard_limit, start, ranges, probe])
+    expected_ranges = [
+        {'start': start, 'end': hard_limit, 'endExclusive': True},
+        {'start': start + 1, 'end': hard_limit, 'endExclusive': True},
+    ]
+    input_set = branch_replay.get('inputSetSha256')
+    logical_path = branch_replay.get('logicalFileIdentity')
+    logical_sha = branch_replay.get('logicalSha256')
+    if (not isinstance(input_set, str) or len(input_set) != 64 or
+            not isinstance(logical_path, str) or
+            not logical_path.startswith('Data/Json/SkillData/') or
+            not isinstance(logical_sha, str) or len(logical_sha) != 64):
+        raise ContextError(source, start,
+                           'current SkillData inputSet, logical identity and SHA-256',
+                           [input_set, logical_path, logical_sha])
+    require(ranges, expected_ranges, source, start)
+    require(probe.get('shiftedCandidateStart'), start + 1, source, start + 1)
+    header = gameplay_tag_list.get('headerEvidence')
+    if not isinstance(header, dict):
+        raise ContextError(source, start + 2, 'static GameplayTagList header evidence', header)
+    header_width = header.get('headerByteWidth')
+    accepted = header.get('acceptedNonNullHeaderByte')
+    null_header = header.get('nullHeaderByte')
+    require(header_width, 1, source, start + 2)
+    require(accepted, 1, source, start + 2)
+    require(null_header, 0xFF, source, start + 2)
+    raw_header = probe.get('gameplayTagListHeaderByte')
+    if (not isinstance(raw_header, dict) or
+            raw_header.get('offset') != start + 2 or
+            type(raw_header.get('value')) is not int or
+            not 0 <= raw_header['value'] <= 0xFF):
+        raise ContextError(source, start + 2,
+                           'shifted candidate GameplayTagList header byte and offset',
+                           raw_header)
+    value = raw_header['value']
+    assessment = {
+        'inputSetSha256': input_set,
+        'logicalFileIdentity': logical_path,
+        'logicalSha256': logical_sha,
+        'parserCursor': hard_limit,
+        'hardLimit': hard_limit,
+        'shiftedCandidateRange': expected_ranges[1],
+        'readerFieldAfterShiftedBoolean': 'tagDuringAttach',
+        'gameplayTagListHeaderByte': raw_header,
+        'acceptedWrapperHeaders': [accepted, null_header],
+        'runtimeProviderSelection': 'unobserved',
+        'classification': 'conditional-on-registered-reader-and-provider-path',
+    }
+    if value not in (accepted, null_header):
+        assessment.update({
+            'status': 'outside-registered-GameplayTagList-header-path',
+            'boundary': 'The registered GameplayTagList reader accepts only header 1 or null header 0xFF; this shifted byte is outside that path.',
+        })
+        return assessment
+    if value == null_header:
+        assessment.update({
+            'status': 'not-rejected-by-null-wrapper-header',
+            'boundary': 'The shifted candidate reaches the registered null-wrapper path; this probe alone does not distinguish it.',
+        })
+        return assessment
+
+    count = probe.get('nestedListCount')
+    if not isinstance(count, dict):
+        raise ContextError(source, start + 3,
+                           'one-byte wrapper header followed by bounded signed list count', count)
+    if count.get('complete') is not True:
+        assessment.update({
+            'nestedListCount': count,
+            'status': 'truncated-registered-list-count',
+            'boundary': 'The registered non-null wrapper path requires a complete four-byte list count inside hardLimit.',
+        })
+        return assessment
+    if (type(count.get('offset')) is not int or count.get('offset') != start + 3 or
+            count.get('availableByteLength') != 4 or
+            type(count.get('signedI32')) is not int or
+            type(count.get('remainingAfterCount')) is not int or
+            count['remainingAfterCount'] < 0):
+        raise ContextError(source, start + 3,
+                           'complete bounded signed list count and remaining byte budget', count)
+    assessment['nestedListCount'] = count
+    if list_formatter is None:
+        assessment.update({
+            'status': 'unresolved-list-formatter-selection',
+            'boundary': 'The wrapper header is accepted, but no matching registered List<GameplayTag> count guard was supplied.',
+        })
+        return assessment
+    if not isinstance(list_formatter, dict):
+        raise ContextError(source, start + 3, 'registered List<GameplayTag> formatter evidence',
+                           type(list_formatter).__name__)
+    wrapper_inst = gameplay_tag_list.get('nestedReadInstantiation')
+    formatter_inst = list_formatter.get('classInstantiation')
+    if not isinstance(wrapper_inst, dict) or not isinstance(formatter_inst, dict):
+        raise ContextError(source, start + 3,
+                           'wrapper and formatter generic-instantiation evidence',
+                           [wrapper_inst, formatter_inst])
+    require(formatter_inst.get('index'), wrapper_inst.get('index'), source, start + 3)
+    guard = list_formatter.get('fastHeaderGuard')
+    if not isinstance(guard, dict):
+        raise ContextError(source, start + 3, 'audited signed List<T> remaining-byte guard', guard)
+    require(guard.get('countWidthBytes'), 4, source, start + 3)
+    require(guard.get('signedCount'), True, source, start + 3)
+    require(guard.get('remainingBytesComparedToCount'), True, source, start + 3)
+    require(guard.get('rangeFailureCondition'), 'remaining < signed count', source, start + 3)
+    require(guard.get('comparisonRva'), 0x3BA4130, source, start + 3)
+    require(guard.get('comparisonRawHex'),
+            '48634744488B4F18482BC84863C6483BC8', source, start + 3)
+    require(guard.get('rangeFailureBranchRva'), 0x3BA4141, source, start + 3)
+    require(guard.get('rangeFailureBranchRawHex'), '0F8CB4653201', source, start + 3)
+    require(guard.get('rangeFailureTargetRva'), 0x4ECA6FB, source, start + 3)
+    require(guard.get('rangeFailureBodyRawHex'),
+            '33D28BCEE8900A8404CCCC', source, start + 3)
+    if count['signedI32'] > count['remainingAfterCount']:
+        assessment.update({
+            'status': 'rejected-by-registered-list-count-bound',
+            'listFormatterMethodSpecIndices': list_formatter.get('methodSpecIndices'),
+            'listFormatterInstantiationIndex': formatter_inst.get('index'),
+            'rangeFailureBranchRva': guard.get('rangeFailureBranchRva'),
+            'rangeFailureTargetRva': guard.get('rangeFailureTargetRva'),
+            'boundary': 'The shifted path reads a signed count greater than the bytes remaining after that count; the matching registered List<GameplayTag> body takes its bounded range-failure path before element iteration.',
+        })
+    else:
+        assessment.update({
+            'status': 'not-rejected-by-registered-list-count-bound',
+            'boundary': 'The shifted path passes this bounded count comparison; more reader evidence is required.',
+        })
+    return assessment
+
+
 def skilldata_nested_branch_static_alignment(branch_replay, nested_readers,
-                                              gameplay_tag_list, *, source):
+                                              gameplay_tag_list, *,
+                                              list_formatter=None, source):
     """Require positive raw nested replays to match exact static reader schemas."""
     if not isinstance(branch_replay, dict) or not isinstance(nested_readers, dict):
         raise ContextError(source, 0, 'branch replay and static nested-reader evidence',
@@ -2533,6 +2772,8 @@ def skilldata_nested_branch_static_alignment(branch_replay, nested_readers,
     if branch_replay.get('wholeSkillDataExactClosedRecords') != 0:
         raise ContextError(source, 0, 'no whole SkillData record credited as closed',
                            branch_replay.get('wholeSkillDataExactClosedRecords'))
+    shifted_assessment = skilldata_shifted_candidate_reader_assessment(
+        branch_replay, gameplay_tag_list, list_formatter, source=source)
     field_name = branch_replay.get('positiveFieldName')
     replay = branch_replay.get('nestedReaderReplay')
     records = replay.get('elementRecords') if isinstance(replay, dict) else None
@@ -2650,6 +2891,7 @@ def skilldata_nested_branch_static_alignment(branch_replay, nested_readers,
     return {
         'status': 'positive-raw-sample-matches-static-nested-reader-schema',
         'alignment': alignment,
+        'shiftedCandidateAssessment': shifted_assessment,
         'wholeSkillDataClassification': 'ambiguous',
         'exactClosedWholeSkillDataRecords': 0,
         'boundary': ('For GameplayTag, the exact five-byte nested element endpoint follows from the registered reader plus its bounded one-byte/four-byte cursor helpers, and the source parser reaches the same end. Other nested endpoints are parser-to-schema cross-checks. All are conditional on the registered terminal path; none proves runtime provider selection or a live cursor.'),
@@ -3569,7 +3811,7 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
         },
         'exactClosedActionGroupDataRecords': 0,
         'level': 'exact selected-build generated-reader module/token, body-window, MethodSpec, generic field type, object-field-offset and current positive-branch byte-range joins',
-        'boundary': 'The five terminal SkillData reads and the nested GameplayTag, ToggleBuffData, UIRangeHintData and SkillHintShapeData readers now join exact registered static bodies, MethodSpecs, declared IL2CPP field types/offsets and selected current source bytes. For the positive GameplayTag branch, the generated reader and bounded cursor helpers establish a five-byte element under that registered path; the local parser reaches the same [503,508) end. Other nested positive element parsers replay to their reported ends, including nonempty BuffInput/condition rows and both UIRangeHintData/SkillHintShapeData records. This ranks the offline tail hypotheses but does not establish provider/cache selection or an executed parent cursor. The intervening [10,518) bytes stay opaque, [1,10) remains conditional on the two generic list formatter paths, no whole SkillData record is closed, and all 2,621 whole-file terminal candidates remain ambiguous. The authenticated SkillData corpus is not re-streamed by this audit.',
+        'boundary': 'The five terminal SkillData reads and nested GameplayTag, ToggleBuffData, UIRangeHintData and SkillHintShapeData readers join exact registered static bodies, MethodSpecs, declared IL2CPP field types/offsets and current source bytes. Selected branches cover every positive list-count shape observed in the authenticated corpus. GameplayTag elements match five-byte native paths; other nested parsers match their reported ends and field order. Under the registered wrapper/List<GameplayTag> path, shifted candidates with wrapper bytes 0 or 3 leave the supported header path, while the count-one case produces a signed list count of 0x01000000 with only 13 bytes remaining and takes the pinned count-range failure path. Runtime provider/cache selection and an executed parent cursor are still unobserved, so this is conditional static evidence, not a promoted whole-file endpoint. The intervening [10,518) bytes stay opaque, [1,10) remains conditional on the two generic list formatter paths, no whole SkillData record is closed, and all 2,621 whole-file terminal candidates remain ambiguous. The authenticated SkillData corpus is not re-streamed by this audit.',
     }
 
 
@@ -5147,11 +5389,24 @@ def audit():
             nested_replay,
             skilldata_reader_order['nestedTerminalReaders'],
             skilldata_reader_order['representativeTerminalTailLayout']['gameplayTagListWrapper'],
+            list_formatter=list_candidate,
             source=source_name)
         sample['nestedReaderReplay'] = nested_replay
         sample['nativeNestedReaderAlignment'] = native_alignment
         branch_sample_rows.append(sample)
     skilldata_reader_order['representativeTerminalBranchSamples'] = branch_sample_rows
+    skilldata_reader_order['terminalListBranchSampleCoverage'] = [
+        {
+            'fieldName': selection['fieldName'],
+            'memberIndex': selection['memberIndex'],
+            'count': selection['count'],
+            'logicalFileIdentity': selection['row']['virtualPath'],
+            'logicalSha256': selection['row']['logicalSha256'],
+            'hardLimit': selection['row']['hardLimit'],
+            'candidateRange': selection['row']['framing']['candidates'][0].get('candidateRange'),
+        }
+        for selection in terminal_branch_selections
+    ]
     list_dispatch=list_element_dispatch(pe,source=str(gate.gameassembly))
     list_shared=list_element_shared_context(pe,table,reg,code,spec_records,methods_raw,source=str(gate.gameassembly))
     list_null_probe=list_element_null_probe(pe,source=str(gate.gameassembly))

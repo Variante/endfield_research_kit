@@ -316,11 +316,13 @@ instances, validates metadata image ownership and unique module-name joins, and
 rechecks the saved SkillData corpus's live input/tool/parser/chunk pins through
 `memorypack.skill_corpus.verify_current_report_inputs`. It does not
 re-stream the full corpus or establish runtime formatter/cursor identity. Its
-SkillData section re-reads one terminal sample and three selected positive
-branches, binds them to current logical identities/hashes/limits, and replays
-the terminal plus nested element parsers against exact-build reader order and
-field types. Nested record endpoints remain conditional on the static reader
-path; runtime provider/cache selection and an executed cursor remain unobserved.
+SkillData section re-reads one terminal sample and selected branches covering
+every positive terminal-list count shape in the saved census. Each sample is
+bound to its current logical identity/hash/hard limit and replayed against the
+exact-build reader order and field types. It also checks the shifted candidate
+against the registered GameplayTagList header and matching List<GameplayTag>
+remaining-byte guard. These are conditional static-path checks; runtime
+provider/cache selection and an executed cursor remain unobserved.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,
