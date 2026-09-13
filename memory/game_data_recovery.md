@@ -191,14 +191,25 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   are native-proven Unity keyframe values. LipSync animation data remains
   distinct from language voice-audio availability.
 - SkillData's MemoryPack framing remains a structural prefix: the current
-  corpus report preserves all valid EOF-anchored terminal candidates, and the
-  native audit still lacks a runtime join from the selected formatter and
-  reader cursor to a current VFS file. Available TypeTrees do not cover this
-  JsonData, and EndfieldCapture has no SkillData deserialization event. Keep
-  candidates ambiguous until an exact-build, loss-accounted cursor receipt
-  joins the source base/limit and terminal start/end cursors to a logical file
-  identity and content hash in the same inputSet. Counts, hashes, and per-file
-  ranges belong in `reports/animestudio/skilldata_current_latest.*` and
+  corpus report preserves all valid EOF-anchored terminal candidates. The
+  current IL2CPP context resolves the resource type as `Core.SkillData` rather
+  than the same-named AI nested type and establishes relative reader order, but
+  does not join an absolute cursor to a current VFS file. Available TypeTrees
+  do not cover this JsonData, and wrapper declarations alone do not establish
+  formatter selection. A bounded exact-build `skilldata-cursor` observer is
+  available, but no receipt has yet verified a candidate. Cleanup now requires
+  a post-disable thread-IP rendezvous over the detour and MinHook trampoline;
+  incomplete enumeration, context reads, or thread resumption leaves the
+  capture incomplete and transfers its owners to a cleanup worker that retries
+  until teardown is proven or the process exits; later cleanup cannot upgrade
+  the published receipt. Each cleanup attempt is bounded; a failed
+  `ResumeThread` keeps its handle for later worker retries rather than dropping
+  the cleanup responsibility.
+  Keep candidates ambiguous until a loss-accounted
+  receipt joins source bytes, start/end cursors, hard limit, and logical
+  identity/hash to the same inputSet. Counts,
+  hashes, and per-file ranges belong in
+  `reports/animestudio/skilldata_current_latest.*` and
   `reports/animestudio/il2cpp_context_current_latest.*`.
 - Video has exact outer framing for the maintained corpus; codec/container
   validity does not prove narrative attachment or playback.
