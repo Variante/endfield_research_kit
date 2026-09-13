@@ -154,6 +154,12 @@ the latter is not permission to enable depth writes in the transparent color
 pass. Missing lower translucent cloth was a submission omission, independent of
 remaining cloth simulation and shading differences.
 
+Cloth normal mapping preserves raw raster-interpolated normal/tangent weights
+until the mapped world normal is assembled and normalized. Unit vertex vectors
+do not justify normalizing the interpolants first. This correction has only a
+small measured effect on the sleeve and does not resolve its broad highlight;
+material mip bias and actual sampled texture payloads remain separate gaps.
+
 - Direct3D11 is the authoritative lab backend because it matches the recovered
   retail shader binaries. D3D12 experiments remain labeled diagnostics.
 - CharacterNPR, LitEffect, deferred resolve, shadow, post-processing, temporal,
