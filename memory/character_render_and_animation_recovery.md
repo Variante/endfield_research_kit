@@ -989,6 +989,10 @@ newer source version must not silently replace the capture-matched texture.
   camera phase advancement and projection/history integration remain separate.
   Check actual draw-time shader hashes as well as compiler callbacks: a successful
   selected-pass compile and SetPass can still end in an error-shader draw.
+  Clear the shader cache after independent CompileVariant and before runtime
+  warm-up. The synthetic draw fixture verifies both selected shell hashes and
+  nonzero shading. On the validated Unity D3D11 path, ShaderLab LEqual submits
+  native GREATER_EQUAL; GEqual submits LESS_EQUAL under reversed depth.
 - Turn the validated Endminf solution into data-driven profiles for all
   playables without actor-specific renderer forks.
 - Keep capture tooling bounded, observation-only, exact-build gated, and
