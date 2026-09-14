@@ -1588,6 +1588,32 @@ Stable conclusions:
   adding a further type is a lane declaration plus a framer, and the shared
   residual list is published identically by every lane. Corpus detail is in
   [`reports/animestudio/hirc_type05_body_current_latest.md`](../reports/animestudio/hirc_type05_body_current_latest.md).
+- The shared node frame's group H **state is variable-length**: a four-byte key
+  plus its own `u16`-counted vector of six-byte elements. A fixed twelve bytes
+  survived three whole corpora because every one of their 1,546 states carries
+  exactly one element; type `0x09` bodies carry two and disprove it. This is the
+  second latent fixed width of the same class, after the group I variable-size
+  key. The six-byte element is determined, not fitted: a `u32` count is rejected
+  because the two-element sample would then declare 65,538 elements, and element
+  widths 3 or 12 are rejected because they contradict the count bytes the
+  one-element sample carries. Take the pattern seriously: a width that a
+  one-dimension sweep reports as
+  *uniquely determined* can still be a degenerate case, because uniqueness is
+  only ever over the shapes the corpus happens to contain. Both lanes now publish
+  `groupHStateWidth_*` and `groupIKeyWidth_*` histograms so the degenerate case
+  is visible rather than inferred, and the gate requires each histogram to match
+  both its count and its byte total. Type `0x02`, `0x05` and `0x07` still close
+  exactly after the correction, so no published count changed.
+- Numeric HIRC type `0x09` is **not** a closed lane and is deliberately not
+  shipped as one. Its bodies are the shared node frame, a counted four-byte
+  reference vector, a counted layer vector and one trailing byte, where a layer
+  is a fifteen-byte header plus a counted list of per-reference twelve-byte graph
+  points. That frames 5,154 of 5,158 current objects. The other 4 carry a
+  nonempty `u16`-counted sub-list inside the layer header that the rest never
+  exercise, and its element width cannot be separated from the surrounding
+  fields without guessing, so the grammar stays unresolved rather than being
+  fitted to four samples. Do not publish a type `0x09` lane until those four
+  parse; the gate would refuse it anyway.
 - A bounded read-only probe shows how far the node frame reaches: it consumes
   cleanly from byte 0 for every type `0x06` (4,573) body and for 5,155/5,158
   type `0x09` bodies, each leaving a regular type-specific suffix, while types

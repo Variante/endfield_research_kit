@@ -282,10 +282,13 @@ extend those rather than adding a parallel copy. Widths that stay unresolved mus
 no nonempty sample in any framed type, and group E's selector `0x02` is
 unobserved, so bit-1-only and both-bits-set tie. Selector `0x01` does occur and
 disproves a bit-0 rule, but in only 4 of 48,740 type `0x07` objects. The group I
-anonymous key is variable-size, not a fixed byte: a corpus where every key fits
-in one byte cannot settle that, so re-check a new type before trusting a fixed
-width, and read the published `groupIKeyWidth_*` histogram rather than assuming
-the inherited five-byte cap is a corpus fact. Exact consumption is byte extent only;
+anonymous key is variable-size, not a fixed byte, and the group H state is a key
+plus its own counted six-byte elements, not a fixed twelve. Both fixed widths
+survived whole corpora as degenerate cases, so a one-dimension sweep reporting a
+width as uniquely determined proves only that no observed shape contradicts it.
+Re-check every width when a new type enters, and read the published
+`groupIKeyWidth_*` and `groupHStateWidth_*` histograms rather than assuming the
+inherited five-byte varint cap is a corpus fact. Exact consumption is byte extent only;
 keep group letters, selector bits, keys, values, and reference targets anonymous
 until a serializer or consumer witness assigns them.
 

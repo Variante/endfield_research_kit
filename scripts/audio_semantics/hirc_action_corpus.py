@@ -670,6 +670,27 @@ def _read_hirc_body_metrics(
             f"entries={entries} keyBytes={key_bytes} "
             f"maxPerEntry={HIRC_VARIABLE_SIZE_MAX_BYTES}"
         )
+    state_width_total = sum(
+        count for name, count in metrics["selectorCounts"].items()
+        if name.startswith("groupHStateWidth_")
+    )
+    states = groups.get("groupHStates", 0)
+    if state_width_total != states:
+        raise ValueError(
+            f"{type_label} group H state width histogram does not match its state count: "
+            f"{label} widths={state_width_total} states={states}"
+        )
+    state_width_bytes = sum(
+        int(name.rsplit("_", 1)[1]) * count
+        for name, count in metrics["selectorCounts"].items()
+        if name.startswith("groupHStateWidth_")
+    )
+    expected_state_bytes = 6 * states + 6 * groups.get("groupHStateElements", 0)
+    if state_width_bytes != expected_state_bytes:
+        raise ValueError(
+            f"{type_label} group H state width histogram does not sum to its element "
+            f"total: {label} histogram={state_width_bytes} expected={expected_state_bytes}"
+        )
     width_total = sum(
         count for name, count in metrics["selectorCounts"].items()
         if name.startswith("groupIKeyWidth_")
@@ -1067,7 +1088,10 @@ SHARED_NODE_FRAME_ELEMENT_WIDTHS = {
     "groupDEntries": 9,
     "groupEVertices": 16,
     "groupEItems": 20,
-    "groupHStates": 12,
+    # A state is a four-byte key plus its own counted six-byte elements, so the
+    # state itself is at least six bytes and each element adds six more.
+    "groupHStates": 6,
+    "groupHStateElements": 6,
     "groupIEntries": 14,
     "groupIPoints": 12,
 }
