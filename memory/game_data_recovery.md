@@ -1486,6 +1486,13 @@ Stable conclusions:
 
 - `build_audio.py` owns decode, bank/HIRC indexing, relinking, and Gameplay
   sidecars. Shared SFX/music and language voice remain separate physical roots.
+- Numeric HIRC type `0x03` Action bodies now have an input-set-bound structural
+  cursor gate. It joins verified package hashes/chunks/physical sources to the
+  authenticated outer ledger and reconciles per-bank with package totals;
+  unsupported bodies stay unsupported. Exact framing does not establish
+  operation names, field ownership, targets, runtime execution, selection, or
+  audibility. Current corpus details belong in
+  [`reports/animestudio/hirc_action_current_latest.md`](../reports/animestudio/hirc_action_current_latest.md).
 - AKPK entries, Wwise numeric media ids, Events, containers, switches, random
   nodes, RTPC curves, and authored consumers keep their native identities.
   Same-id files in different roots are not collapsed by filename stem.

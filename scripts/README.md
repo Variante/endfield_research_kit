@@ -115,6 +115,7 @@ a degraded reason instead of using them as direct evidence.
 | Assets | `build_assets.py` | asset indexes and media lookup |
 | Audio | `build_audio.py` | decoded/relinked audio data |
 | Audio semantics | `build_audio_semantics.py` | compact Audio page evidence and shards |
+| Audio HIRC cursor gate | `audio_semantics/hirc_action_corpus.py` | `reports/animestudio/hirc_action_current_latest.{json,md}` |
 | Updates | `build_updates.py` | `webui/data/updates/latest.json`, `webui/data/updates/characters.json` |
 | Packaging | `pack_webui.py` | distributable static package |
 
@@ -520,6 +521,15 @@ HIRC candidates separately in
 Use `--skip-decode --refresh-hirc` when parser/schema work needs a fresh HIRC
 bank pass while decoded audio files are already current; plain `--skip-decode`
 reuses the existing event-media/HIRC cache.
+For a structural-only current-corpus cursor audit of numeric HIRC type `0x03`,
+pass the exact `inputSetSha256` from
+`reports/animestudio/vfs_understanding_latest.json` with the required
+`--expected-input-set-sha256` argument to
+`python -m scripts.audio_semantics.hirc_action_corpus`.
+The gate binds verified package MD5/chunk/source identities and per-bank cursor
+totals to the outer ledger, then writes
+`reports/animestudio/hirc_action_current_latest.{json,md}`. It does not assign
+operation names or runtime behavior.
 Its v150 HIRC parser also publishes exact NodeBase effect slots and output-bus
 IDs. Effect definitions retain physical PCK/bank scope, built-in plug-in class
 identity, and parameter hashes. Fingerprinted shipped `SetParamsBlock` layouts
