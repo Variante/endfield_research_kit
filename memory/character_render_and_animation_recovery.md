@@ -306,6 +306,10 @@ history ownership/cadence, residual trails and burst composition remain open.
   particle clock. Disabling its brightness preserves position and radius;
   recover the scene manager's lifecycle and prior updates before publishing it
   for late effects. See `reports/assets/character_recovery/native_hgvfx_anchor_476.json`.
+- Shared camera constant-buffer uploads must be recorded in the same command
+  stream as their bindings and consumers. Immediate uploads allow a later camera
+  to overwrite earlier queued inputs. The lab's queued-camera GPU verifier covers
+  both transform/global publishers, two cameras and both command-buffer layouts.
 - Material keywords, pass/queue selection, constant-buffer values, textures,
   depth, motion vectors, shadows, exposure, and history are accepted only from
   their exact serialized or observed owner.
