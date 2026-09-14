@@ -1649,6 +1649,40 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **The music types `0x0A`-`0x0D` are attempted and NOT framed. Read this before
+  trying again.** They do not open with the shared node frame, and the ways they
+  fail are per-type: at offset 0 the frame dies on `range_groupHStateElements` for
+  `0x0A` (2,505/4,158) and `0x0D` (912/2,431), on `unsupported_groupB_nonempty`
+  for `0x0B` (4,217/4,325), while `0x0C` "succeeds" on 586/742 but leaves 143-303
+  bytes over. Those successes are not evidence: see the next point.
+- **Do not try to locate the frame by searching for a start offset.** Every music
+  body admits many offsets at which the node frame parses cleanly -- typically 2
+  to 12, and up to 12 for `0x0B`. The frame is permissive enough that "it parsed"
+  carries almost no information here, which is a stronger version of the ambiguity
+  that type `0x0E` had. A structural predictor is required, as with the `0x0E`
+  flag byte.
+- Anchors that do exist, and their exact limits. Types `0x0A` and `0x0D` share an
+  opening: nine bytes (usually zero) then a 32-bit word at offset 9. That word
+  names an object in its own bank in 4,047/4,158 `0x0A` bodies and 2,321/2,431
+  `0x0D` bodies; the rest are zero (92 and 78) or name nothing at all (19 and 32).
+  The non-resolving ones were checked against **every** bank, not just their own,
+  so they are not cross-bank references -- this corpus still has no cross-bank
+  evidence. **97.3% is not a reference claim**; the bar this repo holds is every
+  value resolving, so offset 9 stays an anchor for probing and nothing more.
+- Type `0x0A` also carries a counted run of same-bank object ids, and byte 14 is a
+  count of five-byte elements: the run starts at exactly `32 + 5 * byte14` for the
+  clean cases. But a fit of `base + w14*byte14 + w17*byte17` only reaches 96.8%,
+  and byte 17 takes values like 95 and 110, so it is not a second count and the
+  correlation is partly spurious. At least one further variable-length interior
+  region is unisolated, so **no `0x0A` layout is established and no lane exists.**
+- `0x0B` is *not* yet the witness that would resolve the node frame's group B
+  width. Its bodies would only make group B nonempty if the frame starts at offset
+  0, which is exactly what is not established. Group B remains unresolved.
+- Method that paid off and is worth reusing: mirror the C# node frame in Python
+  under `tmp/`, then **prove the mirror first** against an already-closed type.
+  The mirror reproduced all 48,740 type `0x07` bodies exactly before it was used
+  on anything, which is what makes its music-type failures trustworthy. Iterating
+  in Python avoids a C# rebuild per hypothesis; nothing from the mirror ships.
 - **Numeric HIRC type `0x0E` is framed byte-exact, and it does not use the shared
   node frame.** 24,145 bodies / 5,143,855 bytes, every one consumed from its first
   byte to its declared object-body end. Layout: a fixed 21-byte head, an optional

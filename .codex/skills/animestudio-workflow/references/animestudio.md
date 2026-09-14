@@ -321,6 +321,19 @@ lanes use, so a miscount breaks an equation instead of being absorbed. Before
 extending it, check the minority branch the way this one was checked -- 164 bodies
 across 89 banks with 21 distinct blocks, not one sample repeated.
 
+The music types `0x0A`-`0x0D` are attempted and unframed; do not restart from
+scratch. They do not open with the node frame, and searching for an offset where
+the frame parses is worthless because every music body admits several such
+offsets -- the frame is permissive, so "it parsed" is nearly no evidence. A
+structural predictor is needed, the way byte 1 predicts the `0x0E` prefix.
+Types `0x0A` and `0x0D` open with nine bytes and a 32-bit word at offset 9 that
+names a same-bank object in about 97% of bodies; the remainder name nothing in
+any bank, so this is an anchor for probing and **not** a reference claim, which
+here requires every value to resolve. When probing them, mirror the node frame in
+Python under `tmp/` and prove the mirror against an already-closed type first --
+the current mirror reproduces all 48,740 type `0x07` bodies exactly, which is why
+its music-type failures can be believed.
+
 One endpoint now has a witness. `scripts/audio_semantics/hirc_named_reach.py`
 hashes the exact audio-like `stringLiteral` rows out of `global-metadata.dat`
 with FNV-1 over UTF-16 code units and joins them to HIRC object identities. Every
