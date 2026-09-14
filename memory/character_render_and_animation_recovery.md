@@ -1050,7 +1050,11 @@ newer source version must not silently replace the capture-matched texture.
   Native centered Halton jitter arithmetic now matches a selected c19 packet;
   its mode-dependent cycle, increment/wrap and positive forced-phase policy
   are also implemented. The opt-in NGX proxy generates its retained diagnostic
-  cycle from that arithmetic. Camera initialization, live mode ownership and
+  cycle from that arithmetic. Native camera state is retained by camera plus
+  XR multipass ID. Its update precedes culling-parameter acquisition, so failed
+  culling must not stall the camera counter. Reset clears that counter without
+  resetting jitter phase; neither animation entry nor the resettable count can
+  establish the phase. Camera initialization, live mode ownership and consistent
   projection/history integration remain separate.
   CPP request mip bias has its own reusable gated evaluator; do not substitute
   the camera material/resolution producer. Recorded request values still need
