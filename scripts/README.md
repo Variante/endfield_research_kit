@@ -543,6 +543,20 @@ reconciling every type `0x02` object count and its bounded source-prefix bytes
 plus opaque-tail bytes against package and bank body totals. The type `0x02`
 report leaves the opaque tail unparsed; neither report assigns Action operation
 names or runtime behavior.
+The same run writes
+`reports/animestudio/hirc_type04_u32_vector_current_latest.{json,md}` after
+reconciling type `0x04` candidate count-byte/32-bit-entry framing against
+declared bodies and bank/package totals. It keeps incomplete vectors and opaque
+tails explicit; the anonymous entries are not assigned field names or meanings.
+Before and after the audit, the gate hashes a sorted path/length/SHA-256 manifest
+of the CLI output directory and records it with the report. It hashes the exact
+intermediate JSON bytes it parses.
+The same run also writes
+`reports/animestudio/hirc_type02_body_current_latest.{json,md}`, which takes the
+type `0x02` lane past its opaque tail: after the bounded source prefix the reader
+consumes nine anonymous groups and must reach the declared object-body end.
+Its unresolved widths are reported rather than guessed, and any nonempty group B
+vector or ambiguous group E selector is held `unsupported` instead of parsed.
 Its v150 HIRC parser also publishes exact NodeBase effect slots and output-bus
 IDs. Effect definitions retain physical PCK/bank scope, built-in plug-in class
 identity, and parameter hashes. Fingerprinted shipped `SetParamsBlock` layouts

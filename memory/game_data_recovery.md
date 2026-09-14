@@ -1504,6 +1504,48 @@ Stable conclusions:
   prefix-plus-opaque-tail body bytes per bank/package against the authenticated
   outer ledger. The remaining body stays opaque and has no full cursor claim.
   See [`reports/animestudio/hirc_type02_prefix_current_latest.md`](../reports/animestudio/hirc_type02_prefix_current_latest.md).
+- Numeric HIRC type `0x04` bodies have a third current-corpus structural gate.
+  It checks an anonymous one-byte-count/32-bit-entry candidate against declared
+  body lengths and bank/package totals, preserving short bodies and trailing
+  bytes as explicit failures or opaque tails. Its report binds the current CLI
+  output-directory manifest and the exact intermediate bytes it parsed,
+  separately from the outer audit's apphost fingerprint. Exact framing does not
+  identify entry values, fields, Action relationships, runtime execution,
+  selection, or audibility. Current corpus detail belongs in
+  [`reports/animestudio/hirc_type04_u32_vector_current_latest.md`](../reports/animestudio/hirc_type04_u32_vector_current_latest.md).
+- Numeric HIRC type `0x02` bodies are now consumed **whole** by a fourth
+  current-corpus gate, which supersedes the prefix lane's opaque-tail
+  statement without retracting it. After the bounded source prefix the
+  maintained reader frames nine anonymous groups: two flag/count slot
+  vectors, two parallel one-byte-key/value bundles (4- and 8-byte values), a
+  selector-directed vector pair, a selector-directed fixed block, a fixed
+  six-byte block, a nested property/group/state directory, and a counted
+  entry list with counted 12-byte points. Every current body reaches its
+  declared end with no trailing bytes. A one-dimension-at-a-time candidate
+  sweep pins twelve of fourteen widths uniquely against whole-corpus exact
+  closure; two stay unresolved and fail closed instead of guessing: group
+  B's element width (no current body carries a nonempty vector) and group
+  E's selector predicate (its two low bits never disagree, so bit0-only,
+  bit1-only, and both-bits cannot be separated). The group A split between
+  a shared mask byte plus 6-byte slots and no mask byte plus 7-byte slots
+  rests on one counterexample object plus non-boolean trailing bytes under
+  the rejected reading; treat it as the weakest link in the frame. Group
+  letters, selector bits, keys, and values stay anonymous: exact
+  consumption is not field ownership, source/effect/bus/parent identity,
+  cross-object relationships, runtime execution, event selection, or
+  audibility. Two things about this gate must not be over-read. The
+  constraining checks are that framed body bytes equal the declared object
+  bytes minus object ids and that every exact body ends at its declared
+  end; the `exactCursorBytes + nonExactBodyBytes = bodyBytes` identity is an
+  internal assert that cannot fail, because a short read is never labelled
+  exact. And `failed = 0` is partly upstream luck: a malformed source prefix
+  throws in the preceding prefix census and aborts the whole package, so it
+  never reaches this lane as a counted failure. The lane now enforces its
+  own result -- any failed, unsupported, or ambiguous body publishes
+  `incomplete` and exits nonzero -- so a future client update that
+  introduces a nonempty group B vector stops the gate instead of quietly
+  lowering the number. Current corpus detail belongs in
+  [`reports/animestudio/hirc_type02_body_current_latest.md`](../reports/animestudio/hirc_type02_body_current_latest.md).
 - AKPK entries, Wwise numeric media ids, Events, containers, switches, random
   nodes, RTPC curves, and authored consumers keep their native identities.
   Same-id files in different roots are not collapsed by filename stem.

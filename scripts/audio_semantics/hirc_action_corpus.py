@@ -1,4 +1,4 @@
-"""Bind the AnimeStudio HIRC Action-body cursor audit to the current VFS set."""
+"""Bind AnimeStudio HIRC structural audits to the current authenticated VFS set."""
 
 from __future__ import annotations
 
@@ -21,9 +21,40 @@ DEFAULT_LEDGER = ROOT / "reports/animestudio/vfs_understanding_files_latest.json
 DEFAULT_CLI = ROOT / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe"
 DEFAULT_OUTPUT = ROOT / "reports/animestudio/hirc_action_current_latest.json"
 DEFAULT_TYPE02_OUTPUT = ROOT / "reports/animestudio/hirc_type02_prefix_current_latest.json"
+DEFAULT_TYPE04_OUTPUT = ROOT / "reports/animestudio/hirc_type04_u32_vector_current_latest.json"
+DEFAULT_TYPE02_BODY_OUTPUT = ROOT / "reports/animestudio/hirc_type02_body_current_latest.json"
 DEFAULT_TEMP_AUDIT = ROOT / "tmp/audio/hirc_action_current/audio_audit.json"
 INPUT_SET_RE = re.compile(r"^[0-9A-F]{64}$")
 HIRC_OBJECT_ID_BYTES = 4
+TYPE04_FRAME_FIELDS = (
+    "count",
+    "exact",
+    "unsupported",
+    "failed",
+    "ambiguous",
+    "bodyBytes",
+    "candidatePrefixBytes",
+    "unsupportedCandidatePrefixBytes",
+    "exactCursorBytes",
+    "opaqueTailBytes",
+    "failedBodyBytes",
+    "candidateEntryCount",
+)
+TYPE02_BODY_FRAME_FIELDS = (
+    "count",
+    "exact",
+    "unsupported",
+    "failed",
+    "ambiguous",
+    "bodyBytes",
+    "exactCursorBytes",
+    "nonExactBodyBytes",
+)
+TYPE02_BODY_RANGE_FIELDS = ("minExactBodyBytes", "maxExactBodyBytes")
+# 14-byte source prefix, two flag/count pairs, nine anonymous scalars, two empty
+# bundles, two empty selectors, the fixed six-byte block, an empty directory and
+# an empty entry count.
+TYPE02_BODY_MINIMUM_FRAME_BYTES = 45
 AUDIO_BLOCKS = frozenset(
     {
         "InitAudio",
@@ -44,6 +75,53 @@ def sha256_file(path: Path) -> str:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest().upper()
+
+
+def sha256_bytes(data: bytes) -> str:
+    return hashlib.sha256(data).hexdigest().upper()
+
+
+def _load_json_with_sha256(path: Path) -> tuple[dict[str, Any], str]:
+    raw = path.read_bytes()
+    value = json.loads(raw.decode("utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError(f"JSON report root must be an object: {path}")
+    return value, sha256_bytes(raw)
+
+
+def _capture_cli_output_closure(cli_path: Path) -> dict[str, Any]:
+    root = cli_path.resolve().parent
+    if not root.is_dir():
+        raise ValueError(f"AnimeStudio CLI output directory is missing: {root}")
+    paths = sorted(
+        (path for path in root.rglob("*") if path.is_file()),
+        key=lambda path: path.relative_to(root).as_posix().casefold(),
+    )
+    files: list[dict[str, Any]] = []
+    cli_relative = cli_path.resolve().relative_to(root).as_posix()
+    for path in paths:
+        relative = path.relative_to(root).as_posix()
+        before = path.stat()
+        digest = sha256_file(path)
+        after = path.stat()
+        if before.st_size != after.st_size or before.st_mtime_ns != after.st_mtime_ns:
+            raise ValueError(f"AnimeStudio CLI output file changed while hashing: {path}")
+        files.append({"path": relative, "length": after.st_size, "sha256": digest})
+    if not any(row["path"].casefold() == cli_relative.casefold() for row in files):
+        raise ValueError(f"AnimeStudio CLI apphost is absent from its output closure: {cli_path}")
+    manifest_bytes = json.dumps(
+        files,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return {
+        "root": str(root),
+        "manifestFormat": "relative-path-length-sha256-v1",
+        "fileCount": len(files),
+        "manifestSha256": sha256_bytes(manifest_bytes),
+        "files": files,
+    }
 
 
 def load_current_outer(
@@ -394,6 +472,314 @@ def _read_type02_prefix_metrics(
     return metrics
 
 
+def _read_type02_body_metrics(
+    frame: Any,
+    type_stats: Any,
+    expected_count: int,
+    label: str,
+) -> dict[str, Any]:
+    if expected_count < 0:
+        raise ValueError(f"negative type 0x02 object count: {label}")
+    if frame is None and expected_count == 0:
+        frame = {key: 0 for key in TYPE02_BODY_FRAME_FIELDS + TYPE02_BODY_RANGE_FIELDS}
+        frame.update(
+            {
+                "groupCounts": {},
+                "selectorCounts": {},
+                "failureCategories": {},
+                "unsupportedCategories": {},
+                "nonExactExamples": [],
+            }
+        )
+    if not isinstance(frame, dict):
+        raise ValueError(f"missing type 0x02 body-frame result: {label}")
+    if type_stats is None and expected_count == 0:
+        type_stats = {"count": 0, "declaredLengthBytes": 0}
+    if not isinstance(type_stats, dict):
+        raise ValueError(f"missing type 0x02 object-length stats: {label}")
+
+    metrics: dict[str, Any] = {}
+    for key in TYPE02_BODY_FRAME_FIELDS + TYPE02_BODY_RANGE_FIELDS:
+        try:
+            value = int(frame[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x02 body-frame result has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x02 body-frame result has negative {key}: {label}")
+        metrics[key] = value
+
+    if metrics["count"] != expected_count:
+        raise ValueError(
+            f"type 0x02 body-frame count mismatch: {label} "
+            f"objects={expected_count} framed={metrics['count']}"
+        )
+    if metrics["count"] != sum(
+        metrics[key] for key in ("exact", "unsupported", "failed", "ambiguous")
+    ):
+        raise ValueError(f"type 0x02 body outcome partition mismatch: {label}")
+    if metrics["ambiguous"] != 0:
+        raise ValueError(f"unexpected ambiguous type 0x02 body-frame result: {label}")
+    if metrics["exactCursorBytes"] + metrics["nonExactBodyBytes"] != metrics["bodyBytes"]:
+        raise ValueError(
+            f"type 0x02 exact/non-exact body accounting mismatch: {label} "
+            f"exact={metrics['exactCursorBytes']} nonExact={metrics['nonExactBodyBytes']} "
+            f"body={metrics['bodyBytes']}"
+        )
+    if metrics["exact"] == 0:
+        if metrics["exactCursorBytes"] or any(
+            metrics[key] for key in TYPE02_BODY_RANGE_FIELDS
+        ):
+            raise ValueError(f"type 0x02 exact cursor bytes exist without exact bodies: {label}")
+    else:
+        # The smallest possible frame is a real per-object bound, unlike the mean.
+        if metrics["minExactBodyBytes"] < TYPE02_BODY_MINIMUM_FRAME_BYTES:
+            raise ValueError(
+                f"type 0x02 exact body falls below the minimum frame: {label} "
+                f"min={metrics['minExactBodyBytes']} "
+                f"required={TYPE02_BODY_MINIMUM_FRAME_BYTES}"
+            )
+        if metrics["minExactBodyBytes"] > metrics["maxExactBodyBytes"]:
+            raise ValueError(f"type 0x02 exact-length minimum exceeds maximum: {label}")
+        if not (
+            metrics["minExactBodyBytes"] * metrics["exact"]
+            <= metrics["exactCursorBytes"]
+            <= metrics["maxExactBodyBytes"] * metrics["exact"]
+        ):
+            raise ValueError(f"type 0x02 exact-length range does not bound its total: {label}")
+    if metrics["exact"] + metrics["unsupported"] + metrics["failed"] == 0 and metrics["bodyBytes"]:
+        raise ValueError(f"type 0x02 body bytes exist without framed bodies: {label}")
+
+    try:
+        stats_count = int(type_stats.get("count", 0))
+        declared_length_bytes = int(type_stats.get("declaredLengthBytes", 0))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"type 0x02 object-length stats are invalid: {label}") from exc
+    if stats_count != expected_count:
+        raise ValueError(
+            f"type 0x02 body object-stat count mismatch: {label} "
+            f"objects={expected_count} stats={stats_count}"
+        )
+    object_id_bytes = HIRC_OBJECT_ID_BYTES * expected_count
+    if declared_length_bytes < object_id_bytes:
+        raise ValueError(
+            f"type 0x02 declared object bytes are smaller than object ids: {label} "
+            f"declared={declared_length_bytes} idBytes={object_id_bytes}"
+        )
+    declared_body_bytes = declared_length_bytes - object_id_bytes
+    if metrics["bodyBytes"] != declared_body_bytes:
+        raise ValueError(
+            f"type 0x02 body bytes differ from declared HIRC object bodies: {label} "
+            f"framed={metrics['bodyBytes']} declared={declared_body_bytes}"
+        )
+
+    for key, expected_category_count in (
+        ("failureCategories", metrics["failed"]),
+        ("unsupportedCategories", metrics["unsupported"]),
+    ):
+        raw_counts = frame.get(key)
+        if not isinstance(raw_counts, dict):
+            raise ValueError(f"type 0x02 body-frame result has invalid {key}: {label}")
+        normalized: dict[str, int] = {}
+        for name, raw_count in raw_counts.items():
+            try:
+                count = int(raw_count)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"type 0x02 body-frame result has invalid {key} entry: {label}") from exc
+            if count < 0:
+                raise ValueError(f"type 0x02 body-frame result has negative {key} entry: {label}")
+            if count:
+                normalized[str(name)] = count
+        if sum(normalized.values()) != expected_category_count:
+            raise ValueError(
+                f"type 0x02 body {key} do not match outcome counts: {label} "
+                f"categories={sum(normalized.values())} outcomes={expected_category_count}"
+            )
+        metrics[key] = dict(sorted(normalized.items()))
+
+    for key in ("groupCounts", "selectorCounts"):
+        raw_counts = frame.get(key)
+        if not isinstance(raw_counts, dict):
+            raise ValueError(f"type 0x02 body-frame result has invalid {key}: {label}")
+        normalized = {}
+        for name, raw_count in raw_counts.items():
+            try:
+                count = int(raw_count)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"type 0x02 body-frame result has invalid {key} entry: {label}") from exc
+            if count < 0:
+                raise ValueError(f"type 0x02 body-frame result has negative {key} entry: {label}")
+            normalized[str(name)] = count
+        metrics[key] = dict(sorted(normalized.items()))
+    # Every exactly framed body contributes exactly one observation to each
+    # unconditional selector family; the group E branch family is conditional.
+    for prefix in ("groupAFlag_", "groupBFlag_", "groupESelector_", "groupFSelector_"):
+        selector_total = sum(
+            count for name, count in metrics["selectorCounts"].items() if name.startswith(prefix)
+        )
+        if selector_total != metrics["exact"]:
+            raise ValueError(
+                f"type 0x02 selector family {prefix} does not match exact bodies: {label} "
+                f"selectors={selector_total} exact={metrics['exact']}"
+            )
+    branch_total = sum(
+        count for name, count in metrics["selectorCounts"].items() if name.startswith("groupEBranch_")
+    )
+    if branch_total > metrics["exact"]:
+        raise ValueError(f"type 0x02 group E branch observations exceed exact bodies: {label}")
+
+    examples = frame.get("nonExactExamples")
+    if not isinstance(examples, list):
+        raise ValueError(f"type 0x02 body-frame result has invalid nonExactExamples: {label}")
+    metrics["nonExactExamples"] = examples
+    return metrics
+
+
+def _read_type04_u32_vector_metrics(
+    frame: Any,
+    type_stats: Any,
+    expected_count: int,
+    label: str,
+) -> dict[str, Any]:
+    if expected_count < 0:
+        raise ValueError(f"negative type 0x04 object count: {label}")
+    if frame is None and expected_count == 0:
+        frame = {
+            "count": 0,
+            "exact": 0,
+            "unsupported": 0,
+            "failed": 0,
+            "ambiguous": 0,
+            "bodyBytes": 0,
+            "candidatePrefixBytes": 0,
+            "unsupportedCandidatePrefixBytes": 0,
+            "exactCursorBytes": 0,
+            "opaqueTailBytes": 0,
+            "failedBodyBytes": 0,
+            "candidateEntryCount": 0,
+            "failureCategories": {},
+            "unsupportedCategories": {},
+            "nonExactExamples": [],
+        }
+    if not isinstance(frame, dict):
+        raise ValueError(f"missing type 0x04 candidate-vector result: {label}")
+    if type_stats is None and expected_count == 0:
+        type_stats = {"count": 0, "declaredLengthBytes": 0}
+    if not isinstance(type_stats, dict):
+        raise ValueError(f"missing type 0x04 object-length stats: {label}")
+
+    metrics: dict[str, Any] = {}
+    for key in TYPE04_FRAME_FIELDS:
+        try:
+            value = int(frame[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x04 candidate-vector result has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x04 candidate-vector result has negative {key}: {label}")
+        metrics[key] = value
+
+    if metrics["count"] != expected_count:
+        raise ValueError(
+            f"type 0x04 candidate-vector count mismatch: {label} "
+            f"objects={expected_count} framed={metrics['count']}"
+        )
+    if metrics["count"] != sum(
+        metrics[key] for key in ("exact", "unsupported", "failed", "ambiguous")
+    ):
+        raise ValueError(f"type 0x04 outcome partition mismatch: {label}")
+    if metrics["ambiguous"] != 0:
+        raise ValueError(f"unexpected ambiguous type 0x04 candidate-vector result: {label}")
+    if metrics["exactCursorBytes"] < metrics["exact"]:
+        raise ValueError(f"type 0x04 exact candidate bodies are shorter than their count bytes: {label}")
+    if metrics["unsupported"] == 0:
+        if metrics["unsupportedCandidatePrefixBytes"] or metrics["opaqueTailBytes"]:
+            raise ValueError(f"type 0x04 unsupported bytes exist without unsupported bodies: {label}")
+    elif (
+        metrics["unsupportedCandidatePrefixBytes"] < metrics["unsupported"]
+        or metrics["opaqueTailBytes"] < metrics["unsupported"]
+    ):
+        raise ValueError(f"type 0x04 unsupported bodies lack a count prefix or opaque tail: {label}")
+    if metrics["failed"] == 0 and metrics["failedBodyBytes"] != 0:
+        raise ValueError(f"type 0x04 failed-body bytes exist without failed bodies: {label}")
+    if metrics["exactCursorBytes"] > metrics["candidatePrefixBytes"]:
+        raise ValueError(f"type 0x04 exact cursor bytes exceed candidate prefix bytes: {label}")
+    if (
+        metrics["unsupportedCandidatePrefixBytes"] + metrics["exactCursorBytes"]
+        != metrics["candidatePrefixBytes"]
+    ):
+        raise ValueError(f"type 0x04 exact and unsupported candidate-prefix bytes do not reconcile: {label}")
+    if (
+        metrics["candidatePrefixBytes"]
+        + metrics["opaqueTailBytes"]
+        + metrics["failedBodyBytes"]
+        != metrics["bodyBytes"]
+    ):
+        raise ValueError(
+            f"type 0x04 candidate-prefix/tail/failed body accounting mismatch: {label} "
+            f"prefix={metrics['candidatePrefixBytes']} opaqueTail={metrics['opaqueTailBytes']} "
+            f"failedBody={metrics['failedBodyBytes']} body={metrics['bodyBytes']}"
+        )
+    candidate_frame_count = metrics["exact"] + metrics["unsupported"]
+    if metrics["candidatePrefixBytes"] != candidate_frame_count + 4 * metrics["candidateEntryCount"]:
+        raise ValueError(
+            f"type 0x04 candidate prefix does not match count-byte/u32-entry arithmetic: {label} "
+            f"prefix={metrics['candidatePrefixBytes']} frames={candidate_frame_count} "
+            f"entries={metrics['candidateEntryCount']}"
+        )
+
+    try:
+        stats_count = int(type_stats.get("count", 0))
+        declared_length_bytes = int(type_stats.get("declaredLengthBytes", 0))
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"type 0x04 object-length stats are invalid: {label}") from exc
+    if stats_count != expected_count:
+        raise ValueError(
+            f"type 0x04 object-stat count mismatch: {label} objects={expected_count} stats={stats_count}"
+        )
+    object_id_bytes = HIRC_OBJECT_ID_BYTES * expected_count
+    if declared_length_bytes < object_id_bytes:
+        raise ValueError(
+            f"type 0x04 declared object bytes are smaller than object ids: {label} "
+            f"declared={declared_length_bytes} idBytes={object_id_bytes}"
+        )
+    declared_body_bytes = declared_length_bytes - object_id_bytes
+    if metrics["bodyBytes"] != declared_body_bytes:
+        raise ValueError(
+            f"type 0x04 body bytes differ from declared HIRC object bodies: {label} "
+            f"framed={metrics['bodyBytes']} declared={declared_body_bytes}"
+        )
+
+    categories: dict[str, dict[str, int]] = {}
+    for key, expected_category_count in (
+        ("failureCategories", metrics["failed"]),
+        ("unsupportedCategories", metrics["unsupported"]),
+    ):
+        raw_counts = frame.get(key)
+        if not isinstance(raw_counts, dict):
+            raise ValueError(f"type 0x04 candidate-vector result has invalid {key}: {label}")
+        normalized: dict[str, int] = {}
+        for name, raw_count in raw_counts.items():
+            try:
+                count = int(raw_count)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"type 0x04 candidate-vector result has invalid {key} entry: {label}") from exc
+            if count < 0:
+                raise ValueError(f"type 0x04 candidate-vector result has negative {key} entry: {label}")
+            if count:
+                normalized[str(name)] = count
+        if sum(normalized.values()) != expected_category_count:
+            raise ValueError(
+                f"type 0x04 {key} do not match outcome counts: {label} "
+                f"categories={sum(normalized.values())} outcomes={expected_category_count}"
+            )
+        categories[key] = dict(sorted(normalized.items()))
+    metrics.update(categories)
+    examples = frame.get("nonExactExamples")
+    if not isinstance(examples, list):
+        raise ValueError(f"type 0x04 candidate-vector result has invalid nonExactExamples: {label}")
+    metrics["nonExactExamples"] = examples
+    return metrics
+
+
 def aggregate_current_hirc_actions(
     outer: dict[str, Any],
     expected_files: list[dict[str, Any]],
@@ -506,6 +892,26 @@ def aggregate_current_hirc_actions(
     type02_banks_with_objects = 0
     type02_min_opaque_tail: int | None = None
     type02_max_opaque_tail = 0
+    type04_totals: Counter[str] = Counter()
+    type04_failure_categories: Counter[str] = Counter()
+    type04_unsupported_categories: Counter[str] = Counter()
+    type04_package_counts_by_block: Counter[str] = Counter()
+    type04_bank_version_counts: Counter[str] = Counter()
+    type04_packages_with_objects = 0
+    type04_banks_with_objects = 0
+    type04_non_exact_examples: list[dict[str, Any]] = []
+    type02_body_totals: Counter[str] = Counter()
+    type02_body_groups: Counter[str] = Counter()
+    type02_body_selectors: Counter[str] = Counter()
+    type02_body_failure_categories: Counter[str] = Counter()
+    type02_body_unsupported_categories: Counter[str] = Counter()
+    type02_body_counts_by_block: Counter[str] = Counter()
+    type02_body_bank_version_counts: Counter[str] = Counter()
+    type02_body_packages_with_objects = 0
+    type02_body_banks_with_objects = 0
+    type02_body_min_exact: int | None = None
+    type02_body_max_exact = 0
+    type02_body_non_exact_examples: list[dict[str, Any]] = []
     for row in verified_rows:
         package = row.get("package") or {}
         type_counts = package.get("hircObjectTypeCounts") or {}
@@ -533,6 +939,73 @@ def aggregate_current_hirc_actions(
             type02_max_opaque_tail = max(type02_max_opaque_tail, package_type02["maxOpaqueTailBytes"])
         for plugin_type, count in package_type02["pluginTypeCounts"].items():
             type02_plugin_counts[plugin_type] += count
+
+        package_type02_body = _read_type02_body_metrics(
+            package.get("hircType02BodyFrame"),
+            package_type_stats.get("0x02"),
+            expected_type02,
+            package_label,
+        )
+        package_type02_body_bank_totals: Counter[str] = Counter()
+        package_type02_body_bank_groups: Counter[str] = Counter()
+        package_type02_body_bank_selectors: Counter[str] = Counter()
+        package_type02_body_bank_failures: Counter[str] = Counter()
+        package_type02_body_bank_unsupported: Counter[str] = Counter()
+        package_type02_body_bank_mins: list[int] = []
+        package_type02_body_bank_maxes: list[int] = []
+        for key in TYPE02_BODY_FRAME_FIELDS:
+            type02_body_totals[key] += package_type02_body[key]
+        type02_body_groups.update(package_type02_body["groupCounts"])
+        type02_body_selectors.update(package_type02_body["selectorCounts"])
+        type02_body_failure_categories.update(package_type02_body["failureCategories"])
+        type02_body_unsupported_categories.update(package_type02_body["unsupportedCategories"])
+        if expected_type02:
+            type02_body_packages_with_objects += 1
+            type02_body_counts_by_block[str(row.get("block"))] += expected_type02
+        if package_type02_body["exact"]:
+            if (
+                type02_body_min_exact is None
+                or package_type02_body["minExactBodyBytes"] < type02_body_min_exact
+            ):
+                type02_body_min_exact = package_type02_body["minExactBodyBytes"]
+            type02_body_max_exact = max(
+                type02_body_max_exact, package_type02_body["maxExactBodyBytes"]
+            )
+        for example in package_type02_body["nonExactExamples"]:
+            if len(type02_body_non_exact_examples) >= 32:
+                break
+            type02_body_non_exact_examples.append(
+                {"block": row.get("block"), "package": row.get("path"), **example}
+            )
+
+        expected_type04 = int(type_counts.get("0x04") or 0)
+        package_type04_stats = package_type_stats.get("0x04")
+        package_type04 = _read_type04_u32_vector_metrics(
+            package.get("hircType04U32VectorFrame"),
+            package_type04_stats,
+            expected_type04,
+            package_label,
+        )
+        package_type04_bank_totals: Counter[str] = Counter()
+        package_type04_bank_failures: Counter[str] = Counter()
+        package_type04_bank_unsupported: Counter[str] = Counter()
+        for key in TYPE04_FRAME_FIELDS:
+            type04_totals[key] += package_type04[key]
+        if expected_type04:
+            type04_packages_with_objects += 1
+            type04_package_counts_by_block[str(row.get("block"))] += expected_type04
+        type04_failure_categories.update(package_type04["failureCategories"])
+        type04_unsupported_categories.update(package_type04["unsupportedCategories"])
+        for example in package_type04["nonExactExamples"]:
+            if len(type04_non_exact_examples) >= 32:
+                break
+            type04_non_exact_examples.append(
+                {
+                    "block": row.get("block"),
+                    "package": row.get("path"),
+                    **example,
+                }
+            )
 
         expected_type03 = int(type_counts.get("0x03") or 0)
         frame = package.get("hircType03ActionFrame")
@@ -602,6 +1075,41 @@ def aggregate_current_hirc_actions(
                 type02_bank_version_counts[str(version) if version is not None else "unknown"] += 1
                 package_type02_bank_mins.append(bank_type02["minOpaqueTailBytes"])
                 package_type02_bank_maxes.append(bank_type02["maxOpaqueTailBytes"])
+            bank_type02_body = _read_type02_body_metrics(
+                bank.get("hircType02BodyFrame"),
+                bank_type02_stats,
+                bank_type02_count,
+                bank_name,
+            )
+            for key in TYPE02_BODY_FRAME_FIELDS:
+                package_type02_body_bank_totals[key] += bank_type02_body[key]
+            if bank_type02_body["exact"]:
+                package_type02_body_bank_mins.append(bank_type02_body["minExactBodyBytes"])
+                package_type02_body_bank_maxes.append(bank_type02_body["maxExactBodyBytes"])
+            package_type02_body_bank_groups.update(bank_type02_body["groupCounts"])
+            package_type02_body_bank_selectors.update(bank_type02_body["selectorCounts"])
+            package_type02_body_bank_failures.update(bank_type02_body["failureCategories"])
+            package_type02_body_bank_unsupported.update(bank_type02_body["unsupportedCategories"])
+            if bank_type02_count:
+                type02_body_banks_with_objects += 1
+                type02_body_bank_version_counts[
+                    str(version) if version is not None else "unknown"
+                ] += 1
+            bank_type04_stats = bank_type_stats.get("0x04")
+            bank_type04_count = int((bank_type04_stats or {}).get("count") or 0)
+            bank_type04 = _read_type04_u32_vector_metrics(
+                bank.get("hircType04U32VectorFrame"),
+                bank_type04_stats,
+                bank_type04_count,
+                bank_name,
+            )
+            for key in TYPE04_FRAME_FIELDS:
+                package_type04_bank_totals[key] += bank_type04[key]
+            package_type04_bank_failures.update(bank_type04["failureCategories"])
+            package_type04_bank_unsupported.update(bank_type04["unsupportedCategories"])
+            if bank_type04_count:
+                type04_banks_with_objects += 1
+                type04_bank_version_counts[str(version) if version is not None else "unknown"] += 1
             bank_type03_count = int(
                 ((bank.get("hircObjectTypeStats") or {}).get("0x03") or {}).get("count") or 0
             )
@@ -646,6 +1154,46 @@ def aggregate_current_hirc_actions(
                 f"package={package_type02['minOpaqueTailBytes']}..{package_type02['maxOpaqueTailBytes']}"
             )
 
+        for key in TYPE02_BODY_FRAME_FIELDS:
+            if package_type02_body_bank_totals[key] != package_type02_body[key]:
+                raise ValueError(
+                    "per-bank/package type 0x02 body-frame total mismatch: "
+                    f"{package_label} field={key} banks={package_type02_body_bank_totals[key]} "
+                    f"package={package_type02_body[key]}"
+                )
+        if {k: v for k, v in sorted(package_type02_body_bank_groups.items())} != package_type02_body["groupCounts"]:
+            raise ValueError(f"per-bank/package type 0x02 group inventory mismatch: {package_label}")
+        if {k: v for k, v in sorted(package_type02_body_bank_selectors.items())} != package_type02_body["selectorCounts"]:
+            raise ValueError(f"per-bank/package type 0x02 selector inventory mismatch: {package_label}")
+        if dict(sorted(package_type02_body_bank_failures.items())) != package_type02_body["failureCategories"]:
+            raise ValueError(f"per-bank/package type 0x02 body failure categories mismatch: {package_label}")
+        if dict(sorted(package_type02_body_bank_unsupported.items())) != package_type02_body["unsupportedCategories"]:
+            raise ValueError(f"per-bank/package type 0x02 body unsupported categories mismatch: {package_label}")
+        bank_min_exact = min(package_type02_body_bank_mins) if package_type02_body_bank_mins else 0
+        bank_max_exact = max(package_type02_body_bank_maxes) if package_type02_body_bank_maxes else 0
+        if (
+            bank_min_exact != package_type02_body["minExactBodyBytes"]
+            or bank_max_exact != package_type02_body["maxExactBodyBytes"]
+        ):
+            raise ValueError(
+                f"per-bank/package type 0x02 exact-length range mismatch: {package_label} "
+                f"banks={bank_min_exact}..{bank_max_exact} "
+                f"package={package_type02_body['minExactBodyBytes']}.."
+                f"{package_type02_body['maxExactBodyBytes']}"
+            )
+
+        for key in TYPE04_FRAME_FIELDS:
+            if package_type04_bank_totals[key] != package_type04[key]:
+                raise ValueError(
+                    "per-bank/package type 0x04 candidate-vector total mismatch: "
+                    f"{package_label} field={key} banks={package_type04_bank_totals[key]} "
+                    f"package={package_type04[key]}"
+                )
+        if dict(sorted(package_type04_bank_failures.items())) != package_type04["failureCategories"]:
+            raise ValueError(f"per-bank/package type 0x04 failure categories mismatch: {package_label}")
+        if dict(sorted(package_type04_bank_unsupported.items())) != package_type04["unsupportedCategories"]:
+            raise ValueError(f"per-bank/package type 0x04 unsupported categories mismatch: {package_label}")
+
         for key in ("count", "exact", "unsupported", "failed", "ambiguous", "bodyBytes", "exactCursorBytes"):
             if bank_metrics[key] != package_metrics[key]:
                 raise ValueError(
@@ -672,6 +1220,24 @@ def aggregate_current_hirc_actions(
         )
 
     frame_closure = "exact" if totals["exact"] == totals["count"] else "incomplete"
+    type02_body_count = int(type02_body_totals["count"])
+    type02_body_exact = int(type02_body_totals["exact"])
+    type02_body_closure = (
+        "no-objects"
+        if type02_body_count == 0
+        else "all-bodies-exact"
+        if type02_body_exact == type02_body_count
+        else "incomplete"
+    )
+    type04_count = int(type04_totals["count"])
+    type04_exact = int(type04_totals["exact"])
+    type04_frame_closure = (
+        "no-objects"
+        if type04_count == 0
+        else "all-candidate-vectors-exact"
+        if type04_exact == type04_count
+        else "incomplete"
+    )
     return {
         "packageCount": expected_packages,
         "verifiedPackageCount": len(verified_rows),
@@ -680,6 +1246,7 @@ def aggregate_current_hirc_actions(
             "verifiedPackagesMatchedToOuterLedger": True,
             "excludedBlocksMatchedToOuterLedger": True,
             "perBankFramesMatchedToPackageFrames": True,
+            "perBankType04FramesMatchedToPackageFrames": True,
         },
         "type03Objects": {
             "count": int(totals["count"]),
@@ -712,6 +1279,72 @@ def aggregate_current_hirc_actions(
             "bankVersionCounts": dict(sorted(type02_bank_version_counts.items())),
             "wholeBodyCursor": "not-claimed-opaque-tail-remains",
         },
+        "type02BodyFrames": {
+            "count": type02_body_count,
+            "exact": type02_body_exact,
+            "unsupported": int(type02_body_totals["unsupported"]),
+            "failed": int(type02_body_totals["failed"]),
+            "ambiguous": int(type02_body_totals["ambiguous"]),
+            "packagesWithObjects": type02_body_packages_with_objects,
+            "banksWithObjects": type02_body_banks_with_objects,
+            "bodyBytes": int(type02_body_totals["bodyBytes"]),
+            "exactCursorBytes": int(type02_body_totals["exactCursorBytes"]),
+            "nonExactBodyBytes": int(type02_body_totals["nonExactBodyBytes"]),
+            "frameClosure": type02_body_closure,
+            "minExactBodyBytes": type02_body_min_exact or 0,
+            "maxExactBodyBytes": type02_body_max_exact,
+            "bodyAccounting": (
+                "framedBodyBytesEqualDeclaredHircObjectBodiesMinusObjectIds; "
+                "every exact body ends at its declared body end"
+            ),
+            "anonymousGroupCounts": dict(sorted(type02_body_groups.items())),
+            "anonymousSelectorCounts": dict(sorted(type02_body_selectors.items())),
+            "failureCategories": dict(sorted(type02_body_failure_categories.items())),
+            "unsupportedCategories": dict(sorted(type02_body_unsupported_categories.items())),
+            "nonExactExamples": type02_body_non_exact_examples,
+            "objectCountsByBlock": dict(sorted(type02_body_counts_by_block.items())),
+            "bankVersionCounts": dict(sorted(type02_body_bank_version_counts.items())),
+            "unresolvedWidths": [
+                "group B element width: the current corpus carries no nonempty vector",
+                "group E selector predicate: the two low selector bits never disagree",
+                "group A slot split: only one corpus object separates a shared mask byte "
+                "plus six-byte slots from no mask byte plus seven-byte slots",
+                "group F selector bits other than 0x08 gate no observed payload, and "
+                "values 0x10 and 0x18 occur once each",
+                "group A and group B flag bytes gate nothing in this frame",
+                "the fixed six-byte group G block is consumed without internal structure",
+                "group E branch 2 occurs in exactly one corpus object",
+            ],
+            "upstreamAbortsNotCountedHere": (
+                "a malformed 14-byte source prefix or plugin parameter range throws in "
+                "the preceding prefix census and aborts the whole package, so it is "
+                "never counted as a failed body by this lane"
+            ),
+        },
+        "type04U32VectorCandidates": {
+            "count": type04_count,
+            "exact": type04_exact,
+            "unsupported": int(type04_totals["unsupported"]),
+            "failed": int(type04_totals["failed"]),
+            "ambiguous": int(type04_totals["ambiguous"]),
+            "packagesWithObjects": type04_packages_with_objects,
+            "banksWithObjects": type04_banks_with_objects,
+            "bodyBytes": int(type04_totals["bodyBytes"]),
+            "candidatePrefixBytes": int(type04_totals["candidatePrefixBytes"]),
+            "unsupportedCandidatePrefixBytes": int(type04_totals["unsupportedCandidatePrefixBytes"]),
+            "exactCursorBytes": int(type04_totals["exactCursorBytes"]),
+            "opaqueTailBytes": int(type04_totals["opaqueTailBytes"]),
+            "failedBodyBytes": int(type04_totals["failedBodyBytes"]),
+            "candidateEntryCount": int(type04_totals["candidateEntryCount"]),
+            "nonExactBodyBytes": int(type04_totals["bodyBytes"] - type04_totals["exactCursorBytes"]),
+            "frameClosure": type04_frame_closure,
+            "bodyAccounting": "candidatePrefixBytesPlusOpaqueTailBytesPlusFailedBodyBytesEqualsDeclaredHircObjectBodies",
+            "failureCategories": dict(sorted(type04_failure_categories.items())),
+            "unsupportedCategories": dict(sorted(type04_unsupported_categories.items())),
+            "nonExactExamples": type04_non_exact_examples,
+            "objectCountsByBlock": dict(sorted(type04_package_counts_by_block.items())),
+            "bankVersionCounts": dict(sorted(type04_bank_version_counts.items())),
+        },
         "audioAuditSummary": audio_summary,
     }
 
@@ -732,6 +1365,7 @@ def _markdown(report: dict[str, Any]) -> str:
             f"- Current VFS input set: `{report['inputSetSha256']}`.",
             f"- Authenticated outer ledger: `{report['outer']['ledgerSha256']}`.",
             f"- Current AnimeStudio CLI matches the outer audit fingerprint: `{report['outer']['animeStudioCliFingerprint']['matchesOuterAudit']}`.",
+            _tool_closure_markdown(report),
             f"- Verified AKPK packages: {report['corpus']['verifiedPackageCount']:,}/{report['corpus']['packageCount']:,}; excluded audio blocks: {report['corpus']['excludedBlockCount']:,}.",
             "- Outer-ledger package checksum/chunk/source identities, exclusion status/multiplicity, and per-bank/package frame totals reconciled.",
             f"- Type `0x03` objects: {actions['count']:,}; exact {actions['exact']:,}; unsupported {actions['unsupported']:,}; failed {actions['failed']:,}; ambiguous {actions['ambiguous']:,}.",
@@ -772,6 +1406,7 @@ def _type02_markdown(report: dict[str, Any]) -> str:
             f"- Current VFS input set: `{report['inputSetSha256']}`.",
             f"- Authenticated outer ledger: `{report['outer']['ledgerSha256']}`.",
             f"- Current AnimeStudio CLI matches the outer audit fingerprint: `{cli_fingerprint['matchesOuterAudit']}` (outer `{cli_fingerprint['outerAuditSha256']}`, current `{cli_fingerprint['currentSha256']}`).",
+            _tool_closure_markdown(report),
             f"- Verified AKPK packages: {report['corpus']['verifiedPackageCount']:,}/{report['corpus']['packageCount']:,}; excluded audio blocks: {report['corpus']['excludedBlockCount']:,}.",
             "- Outer-ledger package checksum/chunk/source identities, exclusions, and per-bank/package prefix totals reconciled.",
             f"- Type `0x02` objects: {prefixes['count']:,} across {prefixes['packagesWithObjects']:,} packages and {prefixes['banksWithObjects']:,} banks.",
@@ -799,6 +1434,173 @@ def _type02_markdown(report: dict[str, Any]) -> str:
     )
 
 
+def _type04_markdown(report: dict[str, Any]) -> str:
+    vectors = report["corpus"]["type04U32VectorCandidates"]
+    cli_fingerprint = report["outer"]["animeStudioCliFingerprint"]
+    block_rows = "\n".join(
+        f"| `{block}` | {count:,} |"
+        for block, count in vectors["objectCountsByBlock"].items()
+    ) or "| _none_ | 0 |"
+    failure_rows = "\n".join(
+        f"| `{category}` | {count:,} |"
+        for category, count in vectors["failureCategories"].items()
+    ) or "| _none_ | 0 |"
+    unsupported_rows = "\n".join(
+        f"| `{category}` | {count:,} |"
+        for category, count in vectors["unsupportedCategories"].items()
+    ) or "| _none_ | 0 |"
+    return "\n".join(
+        [
+            "# Wwise HIRC numeric type `0x04` candidate-vector frame census",
+            "",
+            f"- Status: `{report['status']}`; candidate-vector closure: `{vectors['frameClosure']}`.",
+            f"- Current VFS input set: `{report['inputSetSha256']}`.",
+            f"- Authenticated outer ledger: `{report['outer']['ledgerSha256']}`.",
+            f"- Current AnimeStudio CLI matches the outer audit fingerprint: `{cli_fingerprint['matchesOuterAudit']}` (outer `{cli_fingerprint['outerAuditSha256']}`, current `{cli_fingerprint['currentSha256']}`).",
+            _tool_closure_markdown(report),
+            f"- Verified AKPK packages: {report['corpus']['verifiedPackageCount']:,}/{report['corpus']['packageCount']:,}; excluded audio blocks: {report['corpus']['excludedBlockCount']:,}.",
+            "- Outer-ledger package checksum/chunk/source identities, exclusions, and per-bank/package type `0x04` metrics reconciled.",
+            f"- Type `0x04` objects: {vectors['count']:,}; exact candidate frames {vectors['exact']:,}; unsupported {vectors['unsupported']:,}; failed {vectors['failed']:,}; ambiguous {vectors['ambiguous']:,}.",
+            f"- Object bodies: {vectors['bodyBytes']:,} bytes; candidate prefix {vectors['candidatePrefixBytes']:,}; exact cursor {vectors['exactCursorBytes']:,}; opaque tail {vectors['opaqueTailBytes']:,}; failed bodies {vectors['failedBodyBytes']:,}.",
+            f"- Fully available anonymous candidate entries: {vectors['candidateEntryCount']:,}; packages with objects: {vectors['packagesWithObjects']:,}; banks with objects: {vectors['banksWithObjects']:,}.",
+            "- Body accounting: `candidatePrefixBytes + opaqueTailBytes + failedBodyBytes = declared HIRC type 0x04 body bytes`.",
+            "",
+            "## Failure categories",
+            "",
+            "| Category | Objects |",
+            "|---|---:|",
+            failure_rows,
+            "",
+            "## Unsupported categories",
+            "",
+            "| Category | Objects |",
+            "|---|---:|",
+            unsupported_rows,
+            "",
+            "## Object counts by audio block",
+            "",
+            "| Audio block | Objects |",
+            "|---|---:|",
+            block_rows,
+            "",
+            "The structural candidate is a one-byte count followed by that many 32-bit-width entries. Exact status means this candidate framing reaches the declared object-body end. Entry values remain unnamed; this census does not establish serialized field ownership, entry identity or meaning, Action relationships, runtime execution, event selection, or audibility.",
+            "",
+            f"Corpus gate SHA-256: `{report['corpusGate']['sha256']}`; AnimeStudio CLI SHA-256 `{report['audioAudit']['toolSha256']}`.",
+            f"Raw AnimeStudio package audit: `{report['audioAudit']['intermediatePath']}` (SHA-256 `{report['audioAudit']['sha256']}`).",
+            "",
+        ]
+    )
+
+
+def _type02_body_markdown(report: dict[str, Any]) -> str:
+    bodies = report["corpus"]["type02BodyFrames"]
+    cli_fingerprint = report["outer"]["animeStudioCliFingerprint"]
+    group_rows = "\n".join(
+        f"| `{group}` | {count:,} |" for group, count in bodies["anonymousGroupCounts"].items()
+    ) or "| _none_ | 0 |"
+    selector_rows = "\n".join(
+        f"| `{selector}` | {count:,} |" for selector, count in bodies["anonymousSelectorCounts"].items()
+    ) or "| _none_ | 0 |"
+    block_rows = "\n".join(
+        f"| `{block}` | {count:,} |" for block, count in bodies["objectCountsByBlock"].items()
+    ) or "| _none_ | 0 |"
+    failure_rows = "\n".join(
+        f"| `{category}` | {count:,} |" for category, count in bodies["failureCategories"].items()
+    ) or "| _none_ | 0 |"
+    unsupported_rows = "\n".join(
+        f"| `{category}` | {count:,} |" for category, count in bodies["unsupportedCategories"].items()
+    ) or "| _none_ | 0 |"
+    unresolved_rows = "\n".join(f"- {item}" for item in bodies["unresolvedWidths"]) or "- none"
+    return "\n".join(
+        [
+            "# Wwise HIRC numeric type `0x02` whole-body cursor audit",
+            "",
+            f"- Status: `{report['status']}`; body closure: `{bodies['frameClosure']}`.",
+            f"- Current VFS input set: `{report['inputSetSha256']}`.",
+            f"- Authenticated outer ledger: `{report['outer']['ledgerSha256']}`.",
+            f"- Current AnimeStudio CLI matches the outer audit fingerprint: `{cli_fingerprint['matchesOuterAudit']}` (outer `{cli_fingerprint['outerAuditSha256']}`, current `{cli_fingerprint['currentSha256']}`).",
+            _tool_closure_markdown(report),
+            f"- Verified AKPK packages: {report['corpus']['verifiedPackageCount']:,}/{report['corpus']['packageCount']:,}; excluded audio blocks: {report['corpus']['excludedBlockCount']:,}.",
+            "- Outer-ledger package checksum/chunk/source identities, exclusions, and per-bank/package type `0x02` body metrics reconciled.",
+            f"- Type `0x02` objects: {bodies['count']:,}; exact {bodies['exact']:,}; unsupported {bodies['unsupported']:,}; failed {bodies['failed']:,}; ambiguous {bodies['ambiguous']:,}.",
+            f"- Object bodies: {bodies['bodyBytes']:,} bytes; exact cursor {bodies['exactCursorBytes']:,}; non-exact {bodies['nonExactBodyBytes']:,}.",
+            f"- Packages with objects: {bodies['packagesWithObjects']:,}; banks with objects: {bodies['banksWithObjects']:,}.",
+            f"- Exact body lengths range from {bodies['minExactBodyBytes']:,} to {bodies['maxExactBodyBytes']:,} bytes; the smallest possible frame is 45.",
+            "- The constraining check is that framed body bytes equal the declared HIRC object bytes minus object ids, and that every exact body ends at its declared body end. The `exactCursorBytes + nonExactBodyBytes = bodyBytes` identity is an internal consistency assert, not independent evidence: a short read is never labelled exact, so that identity cannot fail.",
+            f"- Closure is enforced: any failed, unsupported, or ambiguous body makes this report `incomplete` and the gate exit nonzero. Current status: `{report['status']}`.",
+            "",
+            "## Anonymous group inventory",
+            "",
+            "| Group | Elements |",
+            "|---|---:|",
+            group_rows,
+            "",
+            "## Anonymous selector inventory",
+            "",
+            "| Selector | Observations |",
+            "|---|---:|",
+            selector_rows,
+            "",
+            "## Failure categories",
+            "",
+            "| Category | Objects |",
+            "|---|---:|",
+            failure_rows,
+            "",
+            "## Unsupported categories",
+            "",
+            "| Category | Objects |",
+            "|---|---:|",
+            unsupported_rows,
+            "",
+            "## Object counts by audio block",
+            "",
+            "| Audio block | Objects |",
+            "|---|---:|",
+            block_rows,
+            "",
+            "## What this corpus does not resolve",
+            "",
+            unresolved_rows,
+            "",
+            "## Failures this lane cannot count",
+            "",
+            f"- {bodies['upstreamAbortsNotCountedHere']}",
+            "",
+            "The reader consumes the bounded source prefix and then nine anonymous groups: two flag/count slot vectors, two parallel key/value bundles, a selector-directed vector pair, a selector-directed fixed block, a fixed six-byte block, a nested property/group/state directory, and a counted entry list with counted 12-byte points. Exact status means this framing reaches the declared object-body end. Group letters, selector bits, entry contents, and every value stay anonymous; this census does not establish serialized field ownership, field names, source or effect identity, cross-object relationships, runtime execution, event selection, or audibility.",
+            "",
+            f"Corpus gate SHA-256: `{report['corpusGate']['sha256']}`; AnimeStudio CLI SHA-256 `{report['audioAudit']['toolSha256']}`.",
+            f"Raw AnimeStudio package audit: `{report['audioAudit']['intermediatePath']}` (SHA-256 `{report['audioAudit']['sha256']}`).",
+            "",
+        ]
+    )
+
+
+def type02_body_corpus_is_closed(corpus: dict[str, Any]) -> bool:
+    """Return whether the type 0x02 body lane consumed the whole current corpus.
+
+    Anything else -- a failed body, an unsupported body, or a single unaccounted
+    byte -- is a regression a person has to resolve, so the caller must refuse to
+    publish a `complete` report or a zero exit code for it.
+    """
+    return (
+        corpus.get("frameClosure") == "all-bodies-exact"
+        and int(corpus.get("count") or 0) == int(corpus.get("exact") or 0)
+        and int(corpus.get("unsupported") or 0) == 0
+        and int(corpus.get("failed") or 0) == 0
+        and int(corpus.get("ambiguous") or 0) == 0
+        and int(corpus.get("nonExactBodyBytes") or 0) == 0
+    )
+
+
+def _tool_closure_markdown(report: dict[str, Any]) -> str:
+    closure = report["audioAudit"]["toolClosure"]
+    return (
+        f"- Current AnimeStudio CLI output closure: {closure['fileCount']:,} files; "
+        f"manifest SHA-256 **{closure['manifestSha256']}**."
+    )
+
+
 def run_current_corpus_audit(
     *,
     expected_input_set_sha256: str,
@@ -810,6 +1612,10 @@ def run_current_corpus_audit(
     output_markdown: Path | None = None,
     type02_output_json: Path = DEFAULT_TYPE02_OUTPUT,
     type02_output_markdown: Path | None = None,
+    type04_output_json: Path = DEFAULT_TYPE04_OUTPUT,
+    type04_output_markdown: Path | None = None,
+    type02_body_output_json: Path = DEFAULT_TYPE02_BODY_OUTPUT,
+    type02_body_output_markdown: Path | None = None,
 ) -> dict[str, Any]:
     outer, source_auth = load_current_outer(outer_path, ledger_path, expected_input_set_sha256)
     input_set = str(outer["inputSetSha256"]).upper()
@@ -830,8 +1636,15 @@ def run_current_corpus_audit(
     type02_output_json.parent.mkdir(parents=True, exist_ok=True)
     type02_output_markdown = type02_output_markdown or type02_output_json.with_suffix(".md")
     type02_output_markdown.parent.mkdir(parents=True, exist_ok=True)
+    type04_output_json.parent.mkdir(parents=True, exist_ok=True)
+    type04_output_markdown = type04_output_markdown or type04_output_json.with_suffix(".md")
+    type04_output_markdown.parent.mkdir(parents=True, exist_ok=True)
+    type02_body_output_json.parent.mkdir(parents=True, exist_ok=True)
+    type02_body_output_markdown = type02_body_output_markdown or type02_body_output_json.with_suffix(".md")
+    type02_body_output_markdown.parent.mkdir(parents=True, exist_ok=True)
 
     cli_sha_before = sha256_file(cli_path)
+    tool_closure_before = _capture_cli_output_closure(cli_path)
     outer_cli_fingerprint = _outer_cli_fingerprint(outer, cli_path, cli_sha_before)
     command = [
         str(cli_path),
@@ -855,6 +1668,12 @@ def run_current_corpus_audit(
         raise ValueError(
             f"AnimeStudio CLI changed during audio-audit: before={cli_sha_before} after={cli_sha_after}"
         )
+    tool_closure_after = _capture_cli_output_closure(cli_path)
+    if tool_closure_after["manifestSha256"] != tool_closure_before["manifestSha256"]:
+        raise ValueError(
+            "AnimeStudio CLI output closure changed during audio-audit: "
+            f"before={tool_closure_before['manifestSha256']} after={tool_closure_after['manifestSha256']}"
+        )
     gate_sha_after = sha256_file(corpus_gate_path)
     if gate_sha_after != corpus_gate_sha:
         raise ValueError(
@@ -862,10 +1681,16 @@ def run_current_corpus_audit(
         )
     if not intermediate_path.is_file():
         raise ValueError(f"AnimeStudio audio-audit did not write its report: {intermediate_path}")
-    audio_audit = json.loads(intermediate_path.read_text(encoding="utf-8"))
+    audio_audit, intermediate_sha = _load_json_with_sha256(intermediate_path)
     corpus = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
     type02_prefix_corpus = corpus["type02SourcePrefixes"]
-    action_corpus = {key: value for key, value in corpus.items() if key != "type02SourcePrefixes"}
+    type04_vector_corpus = corpus["type04U32VectorCandidates"]
+    type02_body_corpus = corpus["type02BodyFrames"]
+    action_corpus = {
+        key: value
+        for key, value in corpus.items()
+        if key not in {"type02SourcePrefixes", "type04U32VectorCandidates", "type02BodyFrames"}
+    }
 
     report = {
         "format": "animestudio-wwise-hirc-type03-corpus-audit",
@@ -890,8 +1715,9 @@ def run_current_corpus_audit(
         "audioAudit": {
             "tool": str(cli_path),
             "toolSha256": cli_sha_before,
+            "toolClosure": tool_closure_before,
             "intermediatePath": str(intermediate_path),
-            "sha256": sha256_file(intermediate_path),
+            "sha256": intermediate_sha,
             "hircOnly": True,
             "fileDataMd5VerifiedByAnimeStudio": True,
         },
@@ -951,6 +1777,104 @@ def run_current_corpus_audit(
         json.dumps(type02_report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
     type02_output_markdown.write_text(_type02_markdown(type02_report), encoding="utf-8")
+
+    type04_report = {
+        "format": "animestudio-wwise-hirc-type04-u32-vector-candidate-corpus-audit",
+        "schemaVersion": 1,
+        "generatedUtc": report["generatedUtc"],
+        "status": "complete",
+        "inputSetSha256": input_set,
+        "outer": report["outer"],
+        "audioAudit": report["audioAudit"],
+        "corpusGate": report["corpusGate"],
+        "corpus": {
+            "packageCount": corpus["packageCount"],
+            "verifiedPackageCount": corpus["verifiedPackageCount"],
+            "excludedBlockCount": corpus["excludedBlockCount"],
+            "identityReconciliation": {
+                "verifiedPackagesMatchedToOuterLedger": True,
+                "excludedBlocksMatchedToOuterLedger": True,
+                "perBankCandidateFramesMatchedToPackageTotals": True,
+            },
+            "type04U32VectorCandidates": type04_vector_corpus,
+            "audioAuditSummary": corpus["audioAuditSummary"],
+        },
+        "evidenceBoundary": {
+            "layer": 3,
+            "claim": (
+                "numeric HIRC type 0x04 bodies are classified against an anonymous "
+                "one-byte-count plus 32-bit-width-entry candidate frame; exact rows reach body end"
+            ),
+            "semanticStatus": "structural-only",
+            "nonClaims": [
+                "serialized field ownership or names",
+                "entry identities or meanings",
+                "Action relationships or cross-bank resolution",
+                "runtime execution, event selection, or audibility",
+            ],
+        },
+    }
+    type04_output_json.write_text(
+        json.dumps(type04_report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    type04_output_markdown.write_text(_type04_markdown(type04_report), encoding="utf-8")
+
+    type02_body_closed = type02_body_corpus_is_closed(type02_body_corpus)
+    type02_body_report = {
+        "format": "animestudio-wwise-hirc-type02-body-corpus-audit",
+        "schemaVersion": 1,
+        "generatedUtc": report["generatedUtc"],
+        "status": "complete" if type02_body_closed else "incomplete",
+        "closureEnforced": True,
+        "inputSetSha256": input_set,
+        "outer": report["outer"],
+        "audioAudit": report["audioAudit"],
+        "corpusGate": report["corpusGate"],
+        "corpus": {
+            "packageCount": corpus["packageCount"],
+            "verifiedPackageCount": corpus["verifiedPackageCount"],
+            "excludedBlockCount": corpus["excludedBlockCount"],
+            "identityReconciliation": {
+                "verifiedPackagesMatchedToOuterLedger": True,
+                "excludedBlocksMatchedToOuterLedger": True,
+                "perBankBodyFramesMatchedToPackageTotals": True,
+            },
+            "type02BodyFrames": type02_body_corpus,
+            "audioAuditSummary": corpus["audioAuditSummary"],
+        },
+        "evidenceBoundary": {
+            "layer": 3,
+            "claim": (
+                "numeric HIRC type 0x02 object bodies are consumed by an anonymous nine-group "
+                "frame whose cursor reaches the declared body end when status is exact"
+            ),
+            "semanticStatus": "structural-only",
+            "nonClaims": [
+                "serialized field ownership or field names",
+                "group, selector, key, or value meanings",
+                "source, effect, bus, or parent object identity",
+                "cross-object or cross-bank relationships",
+                "runtime execution, event selection, or audibility",
+            ],
+            "unresolved": type02_body_corpus["unresolvedWidths"],
+        },
+    }
+    type02_body_output_json.write_text(
+        json.dumps(type02_body_report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    type02_body_output_markdown.write_text(
+        _type02_body_markdown(type02_body_report), encoding="utf-8"
+    )
+    if not type02_body_closed:
+        raise ValueError(
+            "type 0x02 body corpus did not close exactly: "
+            f"exact={type02_body_corpus['exact']} "
+            f"count={type02_body_corpus['count']} "
+            f"unsupported={type02_body_corpus['unsupported']} "
+            f"failed={type02_body_corpus['failed']} "
+            f"nonExactBodyBytes={type02_body_corpus['nonExactBodyBytes']}; "
+            f"report={type02_body_output_json}"
+        )
     return report
 
 
@@ -965,6 +1889,10 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output-markdown", type=Path, default=None)
     parser.add_argument("--type02-output-json", type=Path, default=DEFAULT_TYPE02_OUTPUT)
     parser.add_argument("--type02-output-markdown", type=Path, default=None)
+    parser.add_argument("--type04-output-json", type=Path, default=DEFAULT_TYPE04_OUTPUT)
+    parser.add_argument("--type04-output-markdown", type=Path, default=None)
+    parser.add_argument("--type02-body-output-json", type=Path, default=DEFAULT_TYPE02_BODY_OUTPUT)
+    parser.add_argument("--type02-body-output-markdown", type=Path, default=None)
     args = parser.parse_args(argv)
     try:
         report = run_current_corpus_audit(
@@ -977,8 +1905,14 @@ def main(argv: list[str] | None = None) -> int:
             output_markdown=args.output_markdown,
             type02_output_json=args.type02_output_json,
             type02_output_markdown=args.type02_output_markdown,
+            type04_output_json=args.type04_output_json,
+            type04_output_markdown=args.type04_output_markdown,
+            type02_body_output_json=args.type02_body_output_json,
+            type02_body_output_markdown=args.type02_body_output_markdown,
         )
         type02_report = json.loads(args.type02_output_json.read_text(encoding="utf-8"))
+        type04_report = json.loads(args.type04_output_json.read_text(encoding="utf-8"))
+        type02_body_report = json.loads(args.type02_body_output_json.read_text(encoding="utf-8"))
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"HIRC Action current-corpus audit failed: {exc}", file=sys.stderr)
         return 1
@@ -997,6 +1931,22 @@ def main(argv: list[str] | None = None) -> int:
         f"opaqueTail={prefixes['opaqueTailBytes']:,} bytes; inputSetSha256={report['inputSetSha256']}"
     )
     print(f"Type 0x02 report: {args.type02_output_json}")
+    vectors = type04_report["corpus"]["type04U32VectorCandidates"]
+    print(
+        "HIRC type 0x04 anonymous-vector current corpus: "
+        f"{vectors['exact']:,}/{vectors['count']:,} exact; "
+        f"unsupported={vectors['unsupported']:,} failed={vectors['failed']:,}; "
+        f"opaqueTail={vectors['opaqueTailBytes']:,} bytes; inputSetSha256={report['inputSetSha256']}"
+    )
+    print(f"Type 0x04 report: {args.type04_output_json}")
+    bodies = type02_body_report["corpus"]["type02BodyFrames"]
+    print(
+        "HIRC type 0x02 whole-body current corpus: "
+        f"{bodies['exact']:,}/{bodies['count']:,} exact; "
+        f"unsupported={bodies['unsupported']:,} failed={bodies['failed']:,}; "
+        f"nonExactBody={bodies['nonExactBodyBytes']:,} bytes; inputSetSha256={report['inputSetSha256']}"
+    )
+    print(f"Type 0x02 body report: {args.type02_body_output_json}")
     return 0
 
 

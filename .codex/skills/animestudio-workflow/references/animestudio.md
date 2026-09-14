@@ -270,8 +270,15 @@ but still authenticates the selected VFS files and requires exact BNK section
 and HIRC object consumption. Preserve numeric HIRC type IDs; object-envelope
 framing is not object behavior, event selection, or audibility.
 Numeric HIRC type `0x02` additionally has a bounded 14-byte source prefix and,
-for plugin type `0x02`, a checked length-prefixed parameter range. Keep its
-NodeBase and remaining tail bytes opaque until separately proven.
+for plugin type `0x02`, a checked length-prefixed parameter range. Its body is
+now consumed whole by a separate anonymous nine-group frame that must reach the
+declared object-body end; run it through the same corpus gate and read
+`reports/animestudio/hirc_type02_body_current_latest.md` before assuming the tail
+is still unframed. Two widths stay unresolved and must keep failing closed: group
+B's element width has no nonempty sample, and group E's two low selector bits
+never disagree in the current corpus. Exact consumption is byte extent only;
+keep group letters, selector bits, keys, and values anonymous until a serializer
+or consumer witness assigns them.
 
 For IV recovery, region, index filename-table, and index-directed payload
 framing are distinct claims. `parse_index_bytes` proves one unambiguous count-
