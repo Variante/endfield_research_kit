@@ -623,9 +623,12 @@ history ownership/cadence, residual trails and burst composition remain open.
   captures. A matching map generation still does not exclude GPU writes or
   prove resource creation/destruction lifetime.
   Fullscreen chronology uses the observed Present clock even without a
-  resource-copy owner. Joined late frames retain post metadata separately
-  from their physical copy plan; retained bindings do not imply copied pixels
-  or authenticated post consumption.
+  resource-copy owner. Joined late frames retain unowned post chronology.
+  Combined capture publishes the completed post inputs and output separately,
+  moving staging ownership without new GPU copies and reusing the CPU buffer
+  after acknowledgement of the joined packet. The packet preserves the draw's
+  owner, call and Present; collection requires its declared inputs and output.
+  This does not close the native packed-allocation-to-upload ownership gap.
   Per-window completeness and exact camera bytes must validate before using
   a runtime phase to explain a captured draw; raw instance IDs are not source
   asset names. Follow the EndfieldCapture README's opt-in procedure and retain
