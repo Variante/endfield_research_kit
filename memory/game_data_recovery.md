@@ -1593,10 +1593,16 @@ Stable conclusions:
   survived three whole corpora because every one of their 1,546 states carries
   exactly one element; type `0x09` bodies carry two and disprove it. This is the
   second latent fixed width of the same class, after the group I variable-size
-  key. The six-byte element is determined, not fitted: a `u32` count is rejected
-  because the two-element sample would then declare 65,538 elements, and element
-  widths 3 or 12 are rejected because they contradict the count bytes the
-  one-element sample carries. Take the pattern seriously: a width that a
+  key. Within the field family `{key, count at +4, count elements, fixed tail}`
+  the six-byte element is forced, not fitted: a `u32` count would make the
+  two-element sample declare 65,538 elements, and widths 3, 4 or 12 contradict
+  the count the one-element sample carries. That uniqueness is only inside that
+  family -- a fixed twelve-byte state followed by a separately gated six-byte
+  structure is **not** excluded, which is precisely the failure mode being
+  corrected, so the census carries it as a residual. Note also that the shipped
+  reports alone cannot settle this: every state they publish is one element wide,
+  and the only non-degenerate witness is type `0x09`, which is not a shipped
+  lane. Take the pattern seriously: a width that a
   one-dimension sweep reports as
   *uniquely determined* can still be a degenerate case, because uniqueness is
   only ever over the shapes the corpus happens to contain. Both lanes now publish
@@ -1615,8 +1621,9 @@ Stable conclusions:
   fitted to four samples. Do not publish a type `0x09` lane until those four
   parse; the gate would refuse it anyway.
 - A bounded read-only probe shows how far the node frame reaches: it consumes
-  cleanly from byte 0 for every type `0x06` (4,573) body and for 5,155/5,158
-  type `0x09` bodies, each leaving a regular type-specific suffix, while types
+  cleanly from byte 0 for every type `0x06` (4,573) body and, after the counted
+  state correction, for all 5,158 type `0x09` bodies, each leaving a regular
+  type-specific suffix, while types
   `0x0B`, `0x0E`, `0x12`, `0x16` and `0x08` reject it outright and
   `0x0A`/`0x0C`/`0x0D` match only in part. Type `0x09`'s suffix looks like a
   counted four-byte reference vector followed by a second counted section and

@@ -52,6 +52,11 @@ SHARED_NODE_FRAME_RESIDUALS = (
     "selector values occur only a handful of times",
     "group A and group B flag bytes gate nothing in this frame",
     "the fixed six-byte group G block is consumed without internal structure",
+    "group H state element width: every state in every shipped lane carries exactly "
+    "one element, so the corpus these reports publish cannot distinguish the counted "
+    "state from a fixed twelve-byte one. The only non-degenerate witness is numeric "
+    "type 0x09, which is not a shipped lane, and a fixed twelve-byte state followed by "
+    "a separately gated six-byte structure is not excluded",
     "the group I key is consumed by extent only; its value is unnamed, and the "
     "five-byte cap plus 32-bit range are inherited from the type 0x03 Action reader "
     "rather than proven here -- see the published groupIKeyWidth_* histogram for the "
@@ -500,6 +505,15 @@ def _read_type02_prefix_metrics(
     return metrics
 
 
+def _histogram_label_value(name: str, prefix: str, label: str) -> int:
+    suffix = name[len(prefix):]
+    if not suffix.isdigit():
+        raise ValueError(
+            f"histogram key is not a plain width: {label} key={name!r}"
+        )
+    return int(suffix)
+
+
 def _read_hirc_body_metrics(
     frame: Any,
     type_stats: Any,
@@ -670,6 +684,15 @@ def _read_hirc_body_metrics(
             f"entries={entries} keyBytes={key_bytes} "
             f"maxPerEntry={HIRC_VARIABLE_SIZE_MAX_BYTES}"
         )
+    over_widths = sum(
+        count for name, count in metrics["selectorCounts"].items()
+        if name.startswith("groupHStateWidth_over_")
+    )
+    if over_widths:
+        raise ValueError(
+            f"{type_label} group H state width histogram is bucketed, so its element "
+            f"total cannot be reconciled: {label} bucketed={over_widths}"
+        )
     state_width_total = sum(
         count for name, count in metrics["selectorCounts"].items()
         if name.startswith("groupHStateWidth_")
@@ -680,11 +703,21 @@ def _read_hirc_body_metrics(
             f"{type_label} group H state width histogram does not match its state count: "
             f"{label} widths={state_width_total} states={states}"
         )
-    state_width_bytes = sum(
-        int(name.rsplit("_", 1)[1]) * count
+    state_widths = {
+        name: count
         for name, count in metrics["selectorCounts"].items()
-        if name.startswith("groupHStateWidth_")
-    )
+        if name.startswith("groupHStateWidth_") and not name.startswith("groupHStateWidth_over_")
+    }
+    state_width_bytes = 0
+    for name, count in state_widths.items():
+        width = _histogram_label_value(name, "groupHStateWidth_", label)
+        # A state is a four-byte key, a two-byte count and whole six-byte elements.
+        if width < 6 or (width - 6) % 6:
+            raise ValueError(
+                f"{type_label} group H state width is not a key plus whole elements: "
+                f"{label} width={width}"
+            )
+        state_width_bytes += width * count
     expected_state_bytes = 6 * states + 6 * groups.get("groupHStateElements", 0)
     if state_width_bytes != expected_state_bytes:
         raise ValueError(
@@ -700,11 +733,17 @@ def _read_hirc_body_metrics(
             f"{type_label} group I key width histogram does not match its entry count: {label} "
             f"widths={width_total} entries={entries}"
         )
-    width_bytes = sum(
-        int(name.rsplit("_", 1)[1]) * count
-        for name, count in metrics["selectorCounts"].items()
-        if name.startswith("groupIKeyWidth_")
-    )
+    width_bytes = 0
+    for name, count in metrics["selectorCounts"].items():
+        if not name.startswith("groupIKeyWidth_"):
+            continue
+        width = _histogram_label_value(name, "groupIKeyWidth_", label)
+        if not 1 <= width <= HIRC_VARIABLE_SIZE_MAX_BYTES:
+            raise ValueError(
+                f"{type_label} group I key width is outside the reader's range: "
+                f"{label} width={width} max={HIRC_VARIABLE_SIZE_MAX_BYTES}"
+            )
+        width_bytes += width * count
     if width_bytes != key_bytes:
         raise ValueError(
             f"{type_label} group I key width histogram does not sum to its byte total: {label} "

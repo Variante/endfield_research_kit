@@ -65,7 +65,7 @@ def valid_action_fixture():
         "pluginTypeCounts": {"0x1": 1, "0x2": 1},
     }
     type02_stats = {"count": 2, "declaredLengthBytes": 108}
-    type07_stats = {"count": 2, "declaredLengthBytes": 88}
+    type07_stats = {"count": 2, "declaredLengthBytes": 248}
     type05_stats = {"count": 2, "declaredLengthBytes": 148}
     type05_body = {
         "count": 2,
@@ -101,12 +101,18 @@ def valid_action_fixture():
         "unsupported": 0,
         "failed": 0,
         "ambiguous": 0,
-        "bodyBytes": 80,
-        "exactCursorBytes": 80,
+        "bodyBytes": 240,
+        "exactCursorBytes": 240,
         "nonExactBodyBytes": 0,
-        "minExactBodyBytes": 35,
-        "maxExactBodyBytes": 45,
-        "groupCounts": {"childEntries": 4, "groupIEntries": 2, "groupIKeyBytes": 3},
+        "minExactBodyBytes": 110,
+        "maxExactBodyBytes": 130,
+        "groupCounts": {
+            "childEntries": 4,
+            "groupIEntries": 2,
+            "groupIKeyBytes": 3,
+            "groupHStates": 2,
+            "groupHStateElements": 3,
+        },
         "selectorCounts": {
             "groupAFlag_00": 2,
             "groupBFlag_00": 2,
@@ -114,6 +120,8 @@ def valid_action_fixture():
             "groupFSelector_00": 2,
             "groupIKeyWidth_1": 1,
             "groupIKeyWidth_2": 1,
+            "groupHStateWidth_12": 1,
+            "groupHStateWidth_18": 1,
         },
         "failureCategories": {},
         "unsupportedCategories": {},
@@ -470,7 +478,7 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertEqual(bodies["anonymousSelectorCounts"]["groupBFlag_00"], 2)
         # Both lanes publish the shared framer's residuals, so neither can quietly
         # carry a shorter list than the other.
-        self.assertEqual(len(bodies["unresolvedWidths"]), 8)
+        self.assertEqual(len(bodies["unresolvedWidths"]), 9)
         joined = " ".join(bodies["unresolvedWidths"])
         self.assertIn("group A slot split", joined)
         self.assertIn("group E branch 2", joined)
@@ -673,6 +681,87 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertIn("does not establish serialized field ownership", markdown)
         self.assertIn("Corpus gate SHA-256: `" + "F" * 64, markdown)
 
+    def test_histogram_labels_must_be_physically_possible_widths(self) -> None:
+        # A sum-only check accepts impossible buckets: width 0, or {12,12} standing in
+        # for {6,18}. The label itself has to be a key plus whole six-byte elements.
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+
+        impossible = copy.deepcopy(audio_audit)
+        for scope in (
+            impossible["rows"][0]["package"],
+            impossible["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            selectors = scope["hircType07BodyFrame"]["selectorCounts"]
+            del selectors["groupHStateWidth_12"]
+            del selectors["groupHStateWidth_18"]
+            selectors["groupHStateWidth_0"] = 2
+            selectors["groupHStateWidth_30"] = 1
+            scope["hircType07BodyFrame"]["groupCounts"]["groupHStates"] = 3
+            scope["hircType07BodyFrame"]["groupCounts"]["groupHStateElements"] = 2
+        with self.assertRaisesRegex(ValueError, "not a key plus whole elements"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, impossible)
+
+        malformed = copy.deepcopy(audio_audit)
+        for scope in (
+            malformed["rows"][0]["package"],
+            malformed["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            selectors = scope["hircType07BodyFrame"]["selectorCounts"]
+            # Swap, not add: the count check would otherwise fire first.
+            del selectors["groupIKeyWidth_1"]
+            selectors["groupIKeyWidth_x"] = 1
+        with self.assertRaisesRegex(ValueError, "histogram key is not a plain width"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, malformed)
+
+        out_of_range = copy.deepcopy(audio_audit)
+        for scope in (
+            out_of_range["rows"][0]["package"],
+            out_of_range["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            selectors = scope["hircType07BodyFrame"]["selectorCounts"]
+            del selectors["groupIKeyWidth_2"]
+            selectors["groupIKeyWidth_9"] = 1
+        with self.assertRaisesRegex(ValueError, "key width is outside the reader's range"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, out_of_range)
+
+        bucketed = copy.deepcopy(audio_audit)
+        for scope in (
+            bucketed["rows"][0]["package"],
+            bucketed["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircType07BodyFrame"]["selectorCounts"]["groupHStateWidth_over_54"] = 1
+        with self.assertRaisesRegex(ValueError, "histogram is bucketed"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, bucketed)
+
+    def test_group_h_state_widths_must_reconcile_with_their_elements(self) -> None:
+        # The state was read as a fixed twelve bytes until a two-element sample
+        # disproved it, so the census must keep the width histogram honest rather
+        # than let a degenerate corpus hide the variable part again.
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        bodies = result["type07BodyFrames"]
+        self.assertEqual(bodies["anonymousGroupCounts"]["groupHStates"], 2)
+        self.assertEqual(bodies["anonymousGroupCounts"]["groupHStateElements"], 3)
+        self.assertEqual(bodies["anonymousSelectorCounts"]["groupHStateWidth_18"], 1)
+
+        miscounted = copy.deepcopy(audio_audit)
+        for scope in (
+            miscounted["rows"][0]["package"],
+            miscounted["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircType07BodyFrame"]["selectorCounts"]["groupHStateWidth_12"] = 2
+        with self.assertRaisesRegex(ValueError, "state width histogram does not match its state count"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, miscounted)
+
+        inconsistent = copy.deepcopy(audio_audit)
+        for scope in (
+            inconsistent["rows"][0]["package"],
+            inconsistent["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircType07BodyFrame"]["groupCounts"]["groupHStateElements"] = 4
+        with self.assertRaisesRegex(ValueError, "state width histogram does not sum to its element total"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, inconsistent)
+
     def test_type05_body_lane_frames_two_independent_vectors(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
         result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
@@ -742,7 +831,7 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertEqual(bodies["bodyBytes"], bodies["exactCursorBytes"])
         self.assertEqual(bodies["nonExactBodyBytes"], 0)
         self.assertEqual(bodies["anonymousGroupCounts"]["childEntries"], 4)
-        self.assertEqual(bodies["minExactBodyBytes"], 35)
+        self.assertEqual(bodies["minExactBodyBytes"], 110)
         self.assertIn("same ones proven on type 0x02", bodies["sharedNodeFrame"])
         self.assertTrue(body_lane_corpus_is_closed(bodies))
 
@@ -759,8 +848,8 @@ class HircActionCorpusTests(unittest.TestCase):
             bad_declared["rows"][0]["package"],
             bad_declared["rows"][0]["package"]["bnkStructures"][0],
         ):
-            scope["hircType07BodyFrame"]["bodyBytes"] = 76
-            scope["hircType07BodyFrame"]["exactCursorBytes"] = 76
+            scope["hircType07BodyFrame"]["bodyBytes"] = 236
+            scope["hircType07BodyFrame"]["exactCursorBytes"] = 236
         with self.assertRaisesRegex(ValueError, "type 0x07 body bytes differ from declared"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, bad_declared)
 
@@ -771,7 +860,7 @@ class HircActionCorpusTests(unittest.TestCase):
             short_body["rows"][0]["package"]["bnkStructures"][0],
         ):
             scope["hircType07BodyFrame"].update(
-                {"minExactBodyBytes": 34, "maxExactBodyBytes": 46}
+                {"minExactBodyBytes": 34, "maxExactBodyBytes": 130}
             )
         with self.assertRaisesRegex(ValueError, "type 0x07 exact body falls below the minimum frame"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, short_body)
@@ -823,6 +912,8 @@ class HircActionCorpusTests(unittest.TestCase):
                 "groupESelector_00": 2,
                 "groupFSelector_00": 2,
                 "groupIKeyWidth_1": 2,
+                "groupHStateWidth_12": 1,
+                "groupHStateWidth_18": 1,
             }
         with self.assertRaisesRegex(ValueError, "key width histogram does not sum to its byte total"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, mismatched)
