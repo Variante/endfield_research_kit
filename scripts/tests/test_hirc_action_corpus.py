@@ -158,6 +158,35 @@ def valid_action_fixture():
         "unsupportedCategories": {},
         "nonExactExamples": [],
     }
+    type14_body = {
+        "count": 2,
+        "exact": 2,
+        "unsupported": 0,
+        "failed": 0,
+        "ambiguous": 0,
+        "bodyBytes": 137,
+        "exactCursorBytes": 137,
+        "nonExactBodyBytes": 0,
+        "minExactBodyBytes": 51,
+        "maxExactBodyBytes": 86,
+        "groupCounts": {
+            "listEntries": 3,
+            "listElements": 5,
+            "optionalBlock": 1,
+        },
+        "selectorCounts": {
+            "headByte_00": 1,
+            "headByte_01": 1,
+            "optionalBlockFlag_00": 1,
+            "optionalBlockFlag_01": 1,
+            "listEntrySelector_00": 2,
+            "listEntrySelector_02": 1,
+        },
+        "failureCategories": {},
+        "unsupportedCategories": {},
+        "nonExactExamples": [],
+    }
+    type14_stats = {"count": 2, "declaredLengthBytes": 145}
     type04_vector = {
         "count": 2,
         "exact": 1,
@@ -224,16 +253,18 @@ def valid_action_fixture():
                 "source": r"D:\Persistent\VFS\AA\bank.chk",
                 "status": "verified",
                 "package": {
-                    "hircObjectTypeCounts": {"0x02": 2, "0x03": 2, "0x04": 2, "0x05": 2, "0x07": 2},
+                    "hircObjectTypeCounts": {"0x02": 2, "0x03": 2, "0x04": 2, "0x05": 2, "0x07": 2, "0x0E": 2},
                     "hircObjectTypeStats": {
                         "0x02": copy.deepcopy(type02_stats),
                         "0x04": copy.deepcopy(type04_stats),
                         "0x07": copy.deepcopy(type07_stats),
                         "0x05": copy.deepcopy(type05_stats),
+                        "0x0E": copy.deepcopy(type14_stats),
                     },
                     "hircType02Prefix": copy.deepcopy(type02_prefix),
                     "hircType02BodyFrame": copy.deepcopy(type02_body),
                     "hircType07BodyFrame": copy.deepcopy(type07_body),
+                    "hircType14BodyFrame": copy.deepcopy(type14_body),
                     "hircType05BodyFrame": copy.deepcopy(type05_body),
                     "hircReferenceCensus": copy.deepcopy(reference_census),
                     "hircType03ActionFrame": copy.deepcopy(frame),
@@ -247,10 +278,12 @@ def valid_action_fixture():
                                 "0x04": copy.deepcopy(type04_stats),
                                 "0x07": copy.deepcopy(type07_stats),
                                 "0x05": copy.deepcopy(type05_stats),
+                                "0x0E": copy.deepcopy(type14_stats),
                             },
                             "hircType02Prefix": copy.deepcopy(type02_prefix),
                             "hircType02BodyFrame": copy.deepcopy(type02_body),
                             "hircType07BodyFrame": copy.deepcopy(type07_body),
+                            "hircType14BodyFrame": copy.deepcopy(type14_body),
                             "hircType05BodyFrame": copy.deepcopy(type05_body),
                             "hircReferenceCensus": copy.deepcopy(reference_census),
                             "hircType03ActionFrame": copy.deepcopy(frame),
@@ -687,6 +720,7 @@ class HircActionCorpusTests(unittest.TestCase):
                     "upstreamAbortsNotCountedHere": "a malformed source prefix aborts the package",
                 },
             },
+            "evidenceBoundary": {"nonClaims": ["serialized field ownership or field names", "group, selector, key, or value meanings"]},
         }
 
         markdown = _body_lane_markdown(report, "type02BodyFrames", "0x02")
@@ -698,8 +732,9 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertIn("aborts the package", markdown)
         self.assertIn("internal consistency assert, not independent evidence", markdown)
         self.assertIn("Closure is enforced", markdown)
-        self.assertIn("stay anonymous", markdown)
-        self.assertIn("does not establish serialized field ownership", markdown)
+        self.assertIn("stays anonymous", markdown)
+        self.assertIn("does not establish:", markdown)
+        self.assertIn("- serialized field ownership or field names", markdown)
         self.assertIn("Corpus gate SHA-256: `" + "F" * 64, markdown)
 
     def test_reference_graph_joins_every_reference_to_one_same_bank_object(self) -> None:
@@ -950,7 +985,7 @@ class HircActionCorpusTests(unittest.TestCase):
         from scripts.audio_semantics.hirc_action_corpus import _build_body_lanes
 
         lanes = _build_body_lanes()
-        self.assertEqual(sorted(lanes), ["0x02", "0x05", "0x06", "0x07"])
+        self.assertEqual(sorted(lanes), ["0x02", "0x05", "0x06", "0x07", "0x0E"])
         layouts = {key: lane.layout for key, lane in lanes.items()}
         self.assertEqual(len(set(layouts.values())), len(lanes))
         self.assertIn("counted list of groups", layouts["0x06"])
@@ -987,6 +1022,77 @@ class HircActionCorpusTests(unittest.TestCase):
             scope["hircType05BodyFrame"]["groupCounts"]["recordEntries"] = 1_000_000
         with self.assertRaisesRegex(ValueError, "anonymous element bytes exceed the framed bodies"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, oversized)
+
+    def test_type14_body_is_framed_without_the_shared_node_frame(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        bodies = result["type14BodyFrames"]
+        self.assertEqual(bodies["count"], 2)
+        self.assertEqual(bodies["exact"], 2)
+        self.assertEqual(bodies["frameClosure"], "all-bodies-exact")
+        self.assertEqual(bodies["bodyBytes"], bodies["exactCursorBytes"])
+        self.assertEqual(bodies["anonymousGroupCounts"]["listElements"], 5)
+        self.assertEqual(bodies["anonymousGroupCounts"]["optionalBlock"], 1)
+        self.assertTrue(body_lane_corpus_is_closed(bodies))
+
+        # This lane must not inherit the node frame's open questions: they are
+        # statements about groups its bodies never contain.
+        residuals = " ".join(bodies["unresolvedWidths"])
+        self.assertNotIn("group B", residuals)
+        self.assertNotIn("group E", residuals)
+        self.assertIn("optional-block flag", residuals)
+        self.assertIn("two closing bytes", residuals)
+
+    def test_type14_closed_form_byte_identity_is_enforced(self) -> None:
+        # 24 fixed bytes a body, plus 12 an element, 3 an entry, 20 an optional
+        # block. This is an equation, so a miscount cannot hide inside slack.
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        for field, value in (("listElements", 6), ("listEntries", 4), ("optionalBlock", 2)):
+            broken = copy.deepcopy(audio_audit)
+            for scope in (
+                broken["rows"][0]["package"],
+                broken["rows"][0]["package"]["bnkStructures"][0],
+            ):
+                scope["hircType14BodyFrame"]["groupCounts"][field] = value
+            with self.assertRaisesRegex(ValueError, "closed-form total"):
+                aggregate_current_hirc_actions(outer, expected_files, excluded_files, broken)
+
+    def test_type14_selector_families_must_cover_every_exact_body(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        for family in ("headByte_00", "optionalBlockFlag_00"):
+            broken = copy.deepcopy(audio_audit)
+            for scope in (
+                broken["rows"][0]["package"],
+                broken["rows"][0]["package"]["bnkStructures"][0],
+            ):
+                del scope["hircType14BodyFrame"]["selectorCounts"][family]
+            with self.assertRaisesRegex(ValueError, "selector family"):
+                aggregate_current_hirc_actions(outer, expected_files, excluded_files, broken)
+
+    def test_type14_closure_is_enforced_not_just_reported(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        leaky = copy.deepcopy(audio_audit)
+        for scope in (
+            leaky["rows"][0]["package"],
+            leaky["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            frame = scope["hircType14BodyFrame"]
+            frame["exact"] = 1
+            frame["failed"] = 1
+            frame["exactCursorBytes"] = 51
+            frame["nonExactBodyBytes"] = 86
+            frame["failureCategories"] = {"nonzero_listTerminator": 1}
+            frame["groupCounts"] = {"listEntries": 1, "listElements": 2, "optionalBlock": 0}
+            frame["selectorCounts"] = {
+                "headByte_00": 1,
+                "optionalBlockFlag_00": 1,
+                "listEntrySelector_00": 1,
+            }
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, leaky)
+        bodies = result["type14BodyFrames"]
+        self.assertEqual(bodies["failed"], 1)
+        self.assertNotEqual(bodies["frameClosure"], "all-bodies-exact")
+        self.assertFalse(body_lane_corpus_is_closed(bodies))
 
     def test_type07_body_frames_reuse_the_shared_node_frame(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
@@ -1164,6 +1270,7 @@ class HircActionCorpusTests(unittest.TestCase):
                     "upstreamAbortsNotCountedHere": "every malformed body reaches this lane",
                 },
             },
+            "evidenceBoundary": {"nonClaims": ["serialized field ownership or field names", "container membership, selection, or ordering behaviour"]},
         }
 
         markdown = _body_lane_markdown(report, "type07BodyFrames", "0x07")
@@ -1171,8 +1278,12 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertIn("all-bodies-exact", markdown)
         self.assertIn("same ones proven on type 0x02", markdown)
         self.assertIn("What this corpus does not resolve", markdown)
-        self.assertIn("stay anonymous", markdown)
-        self.assertIn("does not establish serialized field ownership", markdown)
+        # The non-claims must come from the lane, so a lane with different limits
+        # cannot inherit another lane's disclaimer text.
+        self.assertIn("container membership, selection, or ordering behaviour", markdown)
+        self.assertIn("stays anonymous", markdown)
+        self.assertIn("does not establish:", markdown)
+        self.assertIn("- serialized field ownership or field names", markdown)
         self.assertIn("Closure is enforced", markdown)
 
     def test_type04_candidate_vector_gate_rejects_structural_mismatches(self) -> None:

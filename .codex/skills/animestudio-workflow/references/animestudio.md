@@ -305,6 +305,22 @@ target. That is not parenthood, containment, membership, a tree or a root. Befor
 re-run the gate: it refuses to publish unless every reference names exactly one
 unambiguous same-bank object, duplicate-id targets included.
 
+Numeric type `0x0E` is framed byte-exact too, but on its own terms: it does not
+use the node frame at all, so it must not inherit the node frame's residual list,
+its group widths, or its unconditional selector families -- the lane framework now
+takes all three as parameters, and reusing the node-frame defaults for `0x0E`
+would publish claims about groups its bodies never contain. Layout: a fixed
+21-byte head, a 20-byte block present only when body byte 1 is 1, 19 opaque bytes,
+a byte-counted list of entries each carrying a selector byte, a `u16` element
+count and that many 12-byte elements, then two closing bytes that must read as
+zero. The prefix length is **read from that flag byte, never searched for**: a
+shape sweep alone leaves thousands of bodies with two offsets that both consume
+exactly, and only the flag removes the ambiguity. This lane also carries a
+closed-form byte identity rather than the containment inequality the node-frame
+lanes use, so a miscount breaks an equation instead of being absorbed. Before
+extending it, check the minority branch the way this one was checked -- 164 bodies
+across 89 banks with 21 distinct blocks, not one sample repeated.
+
 One endpoint now has a witness. `scripts/audio_semantics/hirc_named_reach.py`
 hashes the exact audio-like `stringLiteral` rows out of `global-metadata.dat`
 with FNV-1 over UTF-16 code units and joins them to HIRC object identities. Every

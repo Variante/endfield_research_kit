@@ -1649,6 +1649,34 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **Numeric HIRC type `0x0E` is framed byte-exact, and it does not use the shared
+  node frame.** 24,145 bodies / 5,143,855 bytes, every one consumed from its first
+  byte to its declared object-body end. Layout: a fixed 21-byte head, an optional
+  20-byte block, 19 opaque bytes, a byte-counted list whose entries each carry one
+  selector byte plus a `u16` element count plus that many 12-byte elements, and two
+  closing bytes that read as zero everywhere.
+- The branch is decided by a byte, not by a search. The candidate layout was found
+  by sweeping shapes, which left 6,218 of the bodies with two start offsets that
+  both consumed exactly -- so the sweep alone could not fix the prefix. Byte 1 of
+  the body settles it: it is 0 or 1 across the whole corpus, and it predicts prefix
+  21 versus prefix 41 in every single body. The framer therefore reads the flag and
+  computes the prefix; it never searches, and any other flag value fails closed.
+  **Do not weaken this to "take the earliest offset that parses"** -- that would
+  reintroduce the ambiguity the flag byte removes.
+- The minority branch is real, not a degenerate fit: its 164 bodies span 37 distinct
+  bodies, 89 banks, 130 object ids, 3 files, 23 lengths and 21 distinct optional
+  blocks. That check is the standing lesson from the group I and group H fixed
+  widths, applied before publishing rather than after being caught.
+- This lane carries a **closed-form byte identity** the other lanes cannot: framed
+  bytes must equal `24 * bodies + 12 * elements + 3 * entries + 20 * optionalBlocks`.
+  It holds exactly at 5,143,855. That is an equation, not the containment inequality
+  the node-frame lanes use, so a miscounted element or entry cannot hide in slack.
+  See [`reports/animestudio/hirc_type14_body_current_latest.md`](../reports/animestudio/hirc_type14_body_current_latest.md).
+- What stays open on `0x0E`: the 21-byte head and 20-byte block are consumed by
+  extent only; the 12-byte element is not split internally (only its trailing word
+  is published as a histogram, bounded 0..9); and the two closing zero bytes cannot
+  be distinguished from an always-empty counted list in this corpus. The 12-byte
+  elements are **not** claimed to be points, curves, or samples of anything.
 - **Layer 5 opens: numeric HIRC type `0x04` is the object that shipped managed
   code addresses by name.** The evidence is a unique cross-table reference, not a
   label. `global-metadata.dat` `stringLiteral` rows give 221 exact audio-like

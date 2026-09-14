@@ -41,6 +41,15 @@ TYPE04_FRAME_FIELDS = (
     "failedBodyBytes",
     "candidateEntryCount",
 )
+# Families the shared node frame reads on every body, and the one it reads only on
+# some. A lane that does not use the node frame supplies its own.
+SHARED_NODE_FRAME_SELECTOR_FAMILIES = (
+    "groupAFlag_",
+    "groupBFlag_",
+    "groupESelector_",
+    "groupFSelector_",
+)
+SHARED_NODE_FRAME_CONDITIONAL_SELECTORS = ("groupEBranch_",)
 SHARED_NODE_FRAME_RESIDUALS = (
     "group B element width: no body of any framed type carries a nonempty vector",
     "group E selector predicate: selector 0x01 disproves a bit-0 rule, but selector "
@@ -80,6 +89,33 @@ TYPE02_BODY_RANGE_FIELDS = ("minExactBodyBytes", "maxExactBodyBytes")
 # an empty entry count.
 TYPE02_BODY_MINIMUM_FRAME_BYTES = 45
 # The same node groups without a source prefix, plus an empty four-byte child count.
+# The fixed head, the list-count byte and the two closing bytes. This is both the
+# smallest body that can frame and the per-body constant in the closed-form total,
+# because everything else in this layout is counted: the two uses are the same
+# quantity by construction, not a coincidence to be split apart.
+TYPE14_BODY_MINIMUM_FRAME_BYTES = 24
+TYPE14_BODY_FIXED_HEAD_BYTES = 21
+TYPE14_BODY_OPTIONAL_BLOCK_BYTES = 20
+TYPE14_BODY_ELEMENT_BYTES = 12
+TYPE14_BODY_ENTRY_HEADER_BYTES = 3
+# Numeric type 0x0E is framed on its own terms, so none of the node frame's open
+# widths are statements about it. What stays open here is different and shorter.
+TYPE14_BODY_RESIDUALS = (
+    "the twenty-one byte fixed head and the twenty-byte optional block are consumed "
+    "by extent only; no field inside either is separated or named",
+    "the optional-block flag is a byte with exactly two observed values, so the "
+    "branch is a two-way choice witnessed by the corpus rather than a decoded "
+    "predicate, and the long branch rests on 164 of 24,145 bodies",
+    "searching for a start offset that consumes a body exactly does not by itself "
+    "determine the prefix: 6,218 bodies admit two such offsets. The flag byte is "
+    "what removes that ambiguity, so this framing depends on the flag rule holding "
+    "and not merely on the list parsing cleanly",
+    "the twelve-byte element is consumed whole; its internal split is not "
+    "established here, only the published trailing-word histogram",
+    "the two closing bytes read as zero in every body, so a terminator and an "
+    "always-empty counted list are indistinguishable in this corpus",
+)
+
 TYPE07_BODY_MINIMUM_FRAME_BYTES = 35
 # Seven-bit continuation groups capped at five bytes. The cap and the 32-bit range
 # are inherited from the type 0x03 Action reader, not proven by any framed corpus.
@@ -108,6 +144,7 @@ REFERENCE_CENSUS_FIELDS = (
 # Depth is a maximum across banks, not a sum, so it is aggregated separately.
 REFERENCE_DEPTH_FIELD = "maximumReferenceDepth"
 DEFAULT_TYPE07_BODY_OUTPUT = ROOT / "reports/animestudio/hirc_type07_body_current_latest.json"
+DEFAULT_TYPE14_BODY_OUTPUT = ROOT / "reports/animestudio/hirc_type14_body_current_latest.json"
 AUDIO_BLOCKS = frozenset(
     {
         "InitAudio",
@@ -543,6 +580,9 @@ def _read_hirc_body_metrics(
     type_label: str,
     minimum_frame_bytes: int,
     element_widths: dict[str, int],
+    unconditional_selectors: tuple[str, ...] = SHARED_NODE_FRAME_SELECTOR_FAMILIES,
+    conditional_selectors: tuple[str, ...] = SHARED_NODE_FRAME_CONDITIONAL_SELECTORS,
+    fixed_bytes_per_body: int | None = None,
 ) -> dict[str, Any]:
     if expected_count < 0:
         raise ValueError(f"negative {type_label} object count: {label}")
@@ -678,7 +718,7 @@ def _read_hirc_body_metrics(
         metrics[key] = dict(sorted(normalized.items()))
     # Every exactly framed body contributes exactly one observation to each
     # unconditional selector family; the group E branch family is conditional.
-    for prefix in ("groupAFlag_", "groupBFlag_", "groupESelector_", "groupFSelector_"):
+    for prefix in unconditional_selectors:
         selector_total = sum(
             count for name, count in metrics["selectorCounts"].items() if name.startswith(prefix)
         )
@@ -687,11 +727,15 @@ def _read_hirc_body_metrics(
                 f"{type_label} selector family {prefix} does not match exact bodies: {label} "
                 f"selectors={selector_total} exact={metrics['exact']}"
             )
-    branch_total = sum(
-        count for name, count in metrics["selectorCounts"].items() if name.startswith("groupEBranch_")
-    )
-    if branch_total > metrics["exact"]:
-        raise ValueError(f"{type_label} group E branch observations exceed exact bodies: {label}")
+    for prefix in conditional_selectors:
+        branch_total = sum(
+            count for name, count in metrics["selectorCounts"].items() if name.startswith(prefix)
+        )
+        if branch_total > metrics["exact"]:
+            raise ValueError(
+                f"{type_label} conditional selector family {prefix} exceeds exact bodies: {label} "
+                f"selectors={branch_total} exact={metrics['exact']}"
+            )
 
     # The anonymous inventories are the one place a reader-side regression could grow
     # unnoticed, so bound every counter that a variable-length read can inflate.
@@ -788,6 +832,15 @@ def _read_hirc_body_metrics(
             f"{type_label} anonymous element bytes exceed the framed bodies: {label} "
             f"elements={element_bytes} exactCursor={metrics['exactCursorBytes']}"
         )
+    if fixed_bytes_per_body is not None:
+        # A closed body: its framed bytes are the fixed part of every body plus the
+        # declared width of everything counted. Equality, not containment.
+        predicted = fixed_bytes_per_body * metrics["exact"] + element_bytes
+        if predicted != metrics["exactCursorBytes"]:
+            raise ValueError(
+                f"{type_label} framed bytes do not equal their closed-form total: {label} "
+                f"predicted={predicted} framed={metrics['exactCursorBytes']}"
+            )
 
     examples = frame.get("nonExactExamples")
     if not isinstance(examples, list):
@@ -1020,6 +1073,11 @@ class _BodyLane:
         extra_non_claims: tuple[str, ...] = (),
         extra_residuals: tuple[str, ...] = (),
         extra_element_widths: dict[str, int] | None = None,
+        base_residuals: tuple[str, ...] = SHARED_NODE_FRAME_RESIDUALS,
+        base_element_widths: dict[str, int] | None = None,
+        unconditional_selectors: tuple[str, ...] = SHARED_NODE_FRAME_SELECTOR_FAMILIES,
+        conditional_selectors: tuple[str, ...] = SHARED_NODE_FRAME_CONDITIONAL_SELECTORS,
+        fixed_bytes_per_body: int | None = None,
         upstream_note: str = "",
         shared_note: str = "",
     ) -> None:
@@ -1033,7 +1091,27 @@ class _BodyLane:
         self.layout = layout
         self.non_claims = SHARED_NODE_FRAME_NON_CLAIMS + extra_non_claims
         self.extra_residuals = extra_residuals
-        self.element_widths = dict(SHARED_NODE_FRAME_ELEMENT_WIDTHS)
+        # A lane that does not share the node frame must not inherit its residuals:
+        # they are statements about groups this body never contains.
+        self.base_residuals = base_residuals
+        self.unconditional_selectors = unconditional_selectors
+        self.conditional_selectors = conditional_selectors
+        self.fixed_bytes_per_body = fixed_bytes_per_body
+        self.closed_form_total = (
+            None
+            if fixed_bytes_per_body is None
+            else (
+                f"framed body bytes equal {fixed_bytes_per_body} bytes a body plus "
+                + ", ".join(
+                    f"{width} a `{name}`"
+                    for name, width in sorted((base_element_widths or {}).items())
+                )
+                + "; this is an equality, so a miscounted element or entry breaks it"
+            )
+        )
+        self.element_widths = dict(
+            SHARED_NODE_FRAME_ELEMENT_WIDTHS if base_element_widths is None else base_element_widths
+        )
         self.element_widths.update(extra_element_widths or {})
         self.upstream_note = upstream_note
         self.shared_note = shared_note
@@ -1059,6 +1137,9 @@ class _BodyLane:
             type_label=self.type_label,
             minimum_frame_bytes=self.minimum_frame_bytes,
             element_widths=self.element_widths,
+            unconditional_selectors=self.unconditional_selectors,
+            conditional_selectors=self.conditional_selectors,
+            fixed_bytes_per_body=self.fixed_bytes_per_body,
         )
 
     def add_package(
@@ -1112,7 +1193,8 @@ class _BodyLane:
                 else "all-bodies-exact" if exact == count
                 else "incomplete"
             ),
-            "bodyAccounting": (
+            "closedFormTotal": self.closed_form_total,
+        "bodyAccounting": (
                 "framedBodyBytesEqualDeclaredHircObjectBodiesMinusObjectIds; "
                 "every exact body ends at its declared body end"
             ),
@@ -1123,7 +1205,7 @@ class _BodyLane:
             "nonExactExamples": self.examples,
             "objectCountsByBlock": dict(sorted(self.counts_by_block.items())),
             "bankVersionCounts": dict(sorted(self.bank_versions.items())),
-            "unresolvedWidths": list(SHARED_NODE_FRAME_RESIDUALS) + list(self.extra_residuals),
+            "unresolvedWidths": list(self.base_residuals) + list(self.extra_residuals),
         }
         published["frameLayout"] = self.layout
         if self.shared_note:
@@ -1200,6 +1282,46 @@ def _build_body_lanes() -> dict[str, "_BodyLane"]:
                 "a malformed 14-byte source prefix or plugin parameter range throws in "
                 "the preceding prefix census and aborts the whole package, so it is "
                 "never counted as a failed body by this lane"
+            ),
+        ),
+        "0x0E": _BodyLane(
+            "0x0E",
+            "hircType14BodyFrame",
+            TYPE14_BODY_MINIMUM_FRAME_BYTES,
+            "numeric type 0x0E bodies are consumed whole, from the first byte to the "
+            "declared object-body end, without the shared node frame",
+            layout=(
+                "The reader consumes a fixed twenty-one byte head, then a twenty-byte "
+                "optional block present only when the second byte of the body is 1, then "
+                "a byte-counted list whose entries each carry one selector byte, a "
+                "sixteen-bit element count, and that many twelve-byte elements, and "
+                "finally two closing bytes that must read as zero. The branch is decided "
+                "by a byte rather than by searching for an offset that happens to fit: "
+                "that byte is 0 or 1 in every body and predicts the prefix length in "
+                "every body, and any other value fails closed."
+            ),
+            extra_non_claims=(
+                "that the twelve-byte elements are points, curves, or samples of anything",
+                "that the optional block and the flag byte that selects it are related "
+                "to each other in any way beyond the flag deciding whether it is present",
+                "an ordering, interpolation, or evaluation rule over the elements",
+            ),
+            base_residuals=TYPE14_BODY_RESIDUALS,
+            base_element_widths={
+                "listElements": TYPE14_BODY_ELEMENT_BYTES,
+                "optionalBlock": TYPE14_BODY_OPTIONAL_BLOCK_BYTES,
+                # Each entry's own header: one selector byte and a sixteen-bit count.
+                "listEntries": TYPE14_BODY_ENTRY_HEADER_BYTES,
+            },
+            # Fixed head, list count byte and the two closing bytes: 21 + 1 + 2.
+            fixed_bytes_per_body=TYPE14_BODY_MINIMUM_FRAME_BYTES,
+            # Both bytes are read on every body, so both must be observed once per
+            # exactly framed body. The optional block itself is conditional.
+            unconditional_selectors=("headByte_", "optionalBlockFlag_"),
+            conditional_selectors=(),
+            shared_note=(
+                "This lane does not share the node frame with the other body lanes, so "
+                "its residual list is its own"
             ),
         ),
         "0x07": _BodyLane(
@@ -1854,6 +1976,7 @@ def aggregate_current_hirc_actions(
         "type07BodyFrames": body_lanes["0x07"].publish(),
         "type05BodyFrames": body_lanes["0x05"].publish(),
         "type06BodyFrames": body_lanes["0x06"].publish(),
+        "type14BodyFrames": body_lanes["0x0E"].publish(),
         "type04U32VectorCandidates": {
             "count": type04_count,
             "exact": type04_exact,
@@ -2049,7 +2172,9 @@ def _body_lane_markdown(report: dict[str, Any], corpus_key: str, type_key: str) 
         f"- Packages with objects: {bodies['packagesWithObjects']:,}; banks with objects: {bodies['banksWithObjects']:,}.",
     ]
     if bodies.get("sharedNodeFrame"):
-        lines.append(f"- Shared frame: {bodies['sharedNodeFrame']}.")
+        lines.append(f"- Shared frame: {bodies['sharedNodeFrame'].rstrip('.')}.")
+    if bodies.get("closedFormTotal"):
+        lines.append(f"- Closed-form check: {bodies['closedFormTotal']}.")
     lines += [
         "- The constraining check is that framed body bytes equal the declared HIRC object bytes minus object ids, and that every exact body ends at its declared body end. The `exactCursorBytes + nonExactBodyBytes = bodyBytes` identity is an internal consistency assert, not independent evidence: a short read is never labelled exact, so that identity cannot fail.",
         f"- Closure is enforced: any failed, unsupported, or ambiguous body makes this report `incomplete` and the gate exit nonzero. Current status: `{report['status']}`.",
@@ -2099,7 +2224,9 @@ def _body_lane_markdown(report: dict[str, Any], corpus_key: str, type_key: str) 
     lines += [
         bodies["frameLayout"],
         "",
-        "Exact status means the framing reaches the declared object-body end. Group letters, selector bits, keys, values, and reference targets stay anonymous; this census does not establish serialized field ownership, field names, parent or child identity, container membership, selection, ordering, runtime execution, event selection, or audibility.",
+        "Exact status means the framing reaches the declared object-body end, and nothing more. Every key, value, selector bit and counted element stays anonymous. This census does not establish:",
+        "",
+        *(f"- {claim}" for claim in report["evidenceBoundary"]["nonClaims"]),
         "",
         f"Corpus gate SHA-256: `{report['corpusGate']['sha256']}`; AnimeStudio CLI SHA-256 `{report['audioAudit']['toolSha256']}`.",
         f"Raw AnimeStudio package audit: `{report['audioAudit']['intermediatePath']}` (SHA-256 `{report['audioAudit']['sha256']}`).",
@@ -2318,6 +2445,8 @@ def run_current_corpus_audit(
     type05_body_output_markdown: Path | None = None,
     type06_body_output_json: Path = DEFAULT_TYPE06_BODY_OUTPUT,
     type06_body_output_markdown: Path | None = None,
+    type14_body_output_json: Path = DEFAULT_TYPE14_BODY_OUTPUT,
+    type14_body_output_markdown: Path | None = None,
     reference_output_json: Path = DEFAULT_REFERENCE_OUTPUT,
     reference_output_markdown: Path | None = None,
 ) -> dict[str, Any]:
@@ -2355,6 +2484,9 @@ def run_current_corpus_audit(
     type06_body_output_json.parent.mkdir(parents=True, exist_ok=True)
     type06_body_output_markdown = type06_body_output_markdown or type06_body_output_json.with_suffix(".md")
     type06_body_output_markdown.parent.mkdir(parents=True, exist_ok=True)
+    type14_body_output_json.parent.mkdir(parents=True, exist_ok=True)
+    type14_body_output_markdown = type14_body_output_markdown or type14_body_output_json.with_suffix(".md")
+    type14_body_output_markdown.parent.mkdir(parents=True, exist_ok=True)
     reference_output_json.parent.mkdir(parents=True, exist_ok=True)
     reference_output_markdown = reference_output_markdown or reference_output_json.with_suffix(".md")
     reference_output_markdown.parent.mkdir(parents=True, exist_ok=True)
@@ -2598,6 +2730,7 @@ def run_current_corpus_audit(
         ("0x07", "type07BodyFrames", type07_body_output_json, type07_body_output_markdown),
         ("0x05", "type05BodyFrames", type05_body_output_json, type05_body_output_markdown),
         ("0x06", "type06BodyFrames", type06_body_output_json, type06_body_output_markdown),
+        ("0x0E", "type14BodyFrames", type14_body_output_json, type14_body_output_markdown),
     )
     lane_failures = [
         failure
@@ -2677,6 +2810,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--type02-body-output-json", type=Path, default=DEFAULT_TYPE02_BODY_OUTPUT)
     parser.add_argument("--type02-body-output-markdown", type=Path, default=None)
     parser.add_argument("--type07-body-output-json", type=Path, default=DEFAULT_TYPE07_BODY_OUTPUT)
+    parser.add_argument("--type14-body-output-json", type=Path, default=DEFAULT_TYPE14_BODY_OUTPUT)
+    parser.add_argument("--type14-body-output-markdown", type=Path, default=None)
     parser.add_argument("--type07-body-output-markdown", type=Path, default=None)
     parser.add_argument("--type05-body-output-json", type=Path, default=DEFAULT_TYPE05_BODY_OUTPUT)
     parser.add_argument("--type05-body-output-markdown", type=Path, default=None)
@@ -2706,6 +2841,8 @@ def main(argv: list[str] | None = None) -> int:
             type05_body_output_markdown=args.type05_body_output_markdown,
             type06_body_output_json=args.type06_body_output_json,
             type06_body_output_markdown=args.type06_body_output_markdown,
+            type14_body_output_json=args.type14_body_output_json,
+            type14_body_output_markdown=args.type14_body_output_markdown,
             reference_output_json=args.reference_output_json,
             reference_output_markdown=args.reference_output_markdown,
         )
@@ -2757,6 +2894,15 @@ def main(argv: list[str] | None = None) -> int:
         f"nonExactBody={bodies07['nonExactBodyBytes']:,} bytes; inputSetSha256={report['inputSetSha256']}"
     )
     print(f"Type 0x07 body report: {args.type07_body_output_json}")
+    type14_body_report = json.loads(args.type14_body_output_json.read_text(encoding="utf-8"))
+    bodies14 = type14_body_report["corpus"]["type14BodyFrames"]
+    print(
+        "HIRC type 0x0E whole-body current corpus: "
+        f"{bodies14['exact']:,}/{bodies14['count']:,} exact; "
+        f"unsupported={bodies14['unsupported']:,} failed={bodies14['failed']:,}; "
+        f"nonExactBody={bodies14['nonExactBodyBytes']:,} bytes; inputSetSha256={report['inputSetSha256']}"
+    )
+    print(f"Type 0x0E body report: {args.type14_body_output_json}")
     bodies05 = type05_body_report["corpus"]["type05BodyFrames"]
     print(
         "HIRC type 0x05 whole-body current corpus: "

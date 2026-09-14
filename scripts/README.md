@@ -582,6 +582,13 @@ never reported as a full one.
 python -m scripts.audio_semantics.hirc_named_reach --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 ```
 
+The `0x0E` lane is the one body lane that does not share the node frame, so it
+supplies its own residual list, its own unconditional selector families, and a
+closed-form byte identity (`24 * bodies + 12 * elements + 3 * entries + 20 *
+optionalBlocks`) that must hold as an equality. Its prefix length is read from a
+flag byte rather than searched for; a flag value outside the two observed ones
+fails closed rather than guessing a branch.
+
 `hirc_named_reach` is the one audio lane that carries a name. It hashes the exact
 audio-like `stringLiteral` rows from `global-metadata.dat` and joins them to HIRC
 object identities; every current match lands on numeric type `0x04`, which is what
