@@ -62,7 +62,12 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
 
 - DynamicStreaming is a generated FlatBuffers family with validated version,
   grid, string, resource/state, and area accessors. The deeper meaning of its
-  DataMask and several record fields remains unresolved.
+  DataMask and several record fields remains unresolved. The maintained
+  `stream_area` gate rejoins current `FBStreamArea.bytes` files to the
+  authenticated outer VFS ledger and requires the final vector to reach payload
+  EOF; its six vector widths and one inline root field are framing evidence,
+  not field names or runtime semantics. Current corpus details are in
+  [`dynamic_stream_area_current_latest.md`](../reports/animestudio/dynamic_stream_area_current_latest.md).
 - StreamingChunkInfo has an exact anonymous EOF graph and slot partitions
   derived from actual vtable positions. Standard rows provide one inline
   eight-byte pair and a counted vector of eight-byte pairs. Their anonymous

@@ -30,6 +30,14 @@ current native consumer contract, and writes
 `reports/animestudio/terrain_tret_latest.{json,md}`. It is a focused recovery
 command, not part of normal WebUI export.
 
+The maintained DynamicStreaming `stream_area` gate is
+`python -m scripts.game_data.dynamic_stream_area_corpus --expected-input-set-sha256 INPUT_SET_SHA256`.
+It revalidates the authenticated outer VFS inputs, streams only current
+`FBStreamArea.bytes` files, checks every payload against its ledger identity,
+and writes `reports/animestudio/dynamic_stream_area_current_latest.{json,md}`.
+It bounds the root fields and requires the greatest vector end to equal payload
+EOF; gaps between offsets and record contents remain unassigned.
+
 For the recovery path and evidence boundary of an individual WebUI page, use
 [`memory/webui/README.md`](../memory/webui/README.md). This file remains the
 command and module-ownership map.
@@ -116,6 +124,7 @@ a degraded reason instead of using them as direct evidence.
 | Audio | `build_audio.py` | decoded/relinked audio data |
 | Audio semantics | `build_audio_semantics.py` | compact Audio page evidence and shards |
 | Audio HIRC cursor gate | `audio_semantics/hirc_action_corpus.py` | `reports/animestudio/hirc_action_current_latest.{json,md}` |
+| DynamicStreaming stream-area gate | `game_data/dynamic_stream_area_corpus.py` | `reports/animestudio/dynamic_stream_area_current_latest.{json,md}` |
 | Updates | `build_updates.py` | `webui/data/updates/latest.json`, `webui/data/updates/characters.json` |
 | Packaging | `pack_webui.py` | distributable static package |
 
