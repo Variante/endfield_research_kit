@@ -1571,13 +1571,32 @@ Stable conclusions:
   Reference targets, container membership, ordering and selection are not
   claimed. See
   [`reports/animestudio/hirc_type07_body_current_latest.md`](../reports/animestudio/hirc_type07_body_current_latest.md).
+- Numeric HIRC type `0x05` is the third type on the shared node frame: node
+  groups, then a fixed 24-byte opaque block, one counted vector of four-byte
+  anonymous references and one counted vector of eight-byte anonymous records.
+  All 30,352 current objects / 3,652,971 body bytes consume exactly. The two
+  terminal counts are **independent**: 130,591 references against 130,655
+  records, and the reader publishes `referenceRecordCountMismatch` (39) so that
+  per-object claim is a measurement in the report rather than prose nobody can
+  check. Neither vector is a projection of the other and no relationship between
+  them is claimed. When unifying lanes, keep each lane's own layout sentence and
+  its own non-claims: collapsing them once silently dropped type `0x02`'s
+  source-identity and cross-bank disclaimers and every lane's description of what
+  its framer consumes, which the counts alone could not reveal. With three lanes sharing
+  one framer, the maintained code now carries one census object, one metrics
+  reader, one accumulator, one markdown renderer and one report publisher;
+  adding a further type is a lane declaration plus a framer, and the shared
+  residual list is published identically by every lane. Corpus detail is in
+  [`reports/animestudio/hirc_type05_body_current_latest.md`](../reports/animestudio/hirc_type05_body_current_latest.md).
 - A bounded read-only probe shows how far the node frame reaches: it consumes
-  cleanly from byte 0 for every type `0x05` (30,352) and `0x06` (4,573) body
-  and for 5,155/5,158 type `0x09` bodies, each leaving a regular type-specific
-  suffix, while types `0x0B`, `0x0E`, `0x12`, `0x16` and `0x08` reject it
-  outright and `0x0A`/`0x0C`/`0x0D` match only in part. Treat that as a
-  prioritisation signal, not a framing claim: no suffix is parsed and no
-  maintained reader accepts those types yet.
+  cleanly from byte 0 for every type `0x06` (4,573) body and for 5,155/5,158
+  type `0x09` bodies, each leaving a regular type-specific suffix, while types
+  `0x0B`, `0x0E`, `0x12`, `0x16` and `0x08` reject it outright and
+  `0x0A`/`0x0C`/`0x0D` match only in part. Type `0x09`'s suffix looks like a
+  counted four-byte reference vector followed by a second counted section and
+  one trailing byte; type `0x06`'s is more varied and not yet decoded. Treat
+  this as a prioritisation signal, not a framing claim: no suffix is parsed and
+  no maintained reader accepts those types yet.
 - AKPK entries, Wwise numeric media ids, Events, containers, switches, random
   nodes, RTPC curves, and authored consumers keep their native identities.
   Same-id files in different roots are not collapsed by filename stem.

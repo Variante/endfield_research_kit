@@ -11,14 +11,12 @@ from pathlib import Path
 from scripts.audio_semantics.hirc_action_corpus import (
     _capture_cli_output_closure,
     _load_json_with_sha256,
-    _type02_body_markdown,
+    _body_lane_markdown,
     _type02_markdown,
     _type04_markdown,
     aggregate_current_hirc_actions,
     load_current_outer,
-    type02_body_corpus_is_closed,
-    type07_body_corpus_is_closed,
-    _type07_body_markdown,
+    body_lane_corpus_is_closed,
 )
 
 
@@ -68,6 +66,35 @@ def valid_action_fixture():
     }
     type02_stats = {"count": 2, "declaredLengthBytes": 108}
     type07_stats = {"count": 2, "declaredLengthBytes": 88}
+    type05_stats = {"count": 2, "declaredLengthBytes": 148}
+    type05_body = {
+        "count": 2,
+        "exact": 2,
+        "unsupported": 0,
+        "failed": 0,
+        "ambiguous": 0,
+        "bodyBytes": 140,
+        "exactCursorBytes": 140,
+        "nonExactBodyBytes": 0,
+        "minExactBodyBytes": 61,
+        "maxExactBodyBytes": 79,
+        "groupCounts": {
+            "referenceEntries": 3,
+            "recordEntries": 2,
+            "referenceRecordCountMismatch": 1,
+            "groupIEntries": 0,
+            "groupIKeyBytes": 0,
+        },
+        "selectorCounts": {
+            "groupAFlag_00": 2,
+            "groupBFlag_00": 2,
+            "groupESelector_00": 2,
+            "groupFSelector_00": 2,
+        },
+        "failureCategories": {},
+        "unsupportedCategories": {},
+        "nonExactExamples": [],
+    }
     type07_body = {
         "count": 2,
         "exact": 2,
@@ -103,12 +130,19 @@ def valid_action_fixture():
         "nonExactBodyBytes": 0,
         "minExactBodyBytes": 45,
         "maxExactBodyBytes": 55,
-        "groupCounts": {"groupAEntries": 0, "groupCEntries": 3, "groupIPoints": 4},
+        "groupCounts": {
+            "groupAEntries": 0,
+            "groupCEntries": 3,
+            "groupIEntries": 1,
+            "groupIKeyBytes": 1,
+            "groupIPoints": 4,
+        },
         "selectorCounts": {
             "groupAFlag_00": 2,
             "groupBFlag_00": 2,
             "groupESelector_00": 2,
             "groupFSelector_00": 2,
+            "groupIKeyWidth_1": 1,
         },
         "failureCategories": {},
         "unsupportedCategories": {},
@@ -163,15 +197,17 @@ def valid_action_fixture():
                 "source": r"D:\Persistent\VFS\AA\bank.chk",
                 "status": "verified",
                 "package": {
-                    "hircObjectTypeCounts": {"0x02": 2, "0x03": 2, "0x04": 2, "0x07": 2},
+                    "hircObjectTypeCounts": {"0x02": 2, "0x03": 2, "0x04": 2, "0x05": 2, "0x07": 2},
                     "hircObjectTypeStats": {
                         "0x02": copy.deepcopy(type02_stats),
                         "0x04": copy.deepcopy(type04_stats),
                         "0x07": copy.deepcopy(type07_stats),
+                        "0x05": copy.deepcopy(type05_stats),
                     },
                     "hircType02Prefix": copy.deepcopy(type02_prefix),
                     "hircType02BodyFrame": copy.deepcopy(type02_body),
                     "hircType07BodyFrame": copy.deepcopy(type07_body),
+                    "hircType05BodyFrame": copy.deepcopy(type05_body),
                     "hircType03ActionFrame": copy.deepcopy(frame),
                     "hircType04U32VectorFrame": copy.deepcopy(type04_vector),
                     "bnkStructures": [
@@ -182,10 +218,12 @@ def valid_action_fixture():
                                 "0x03": {"count": 2},
                                 "0x04": copy.deepcopy(type04_stats),
                                 "0x07": copy.deepcopy(type07_stats),
+                                "0x05": copy.deepcopy(type05_stats),
                             },
                             "hircType02Prefix": copy.deepcopy(type02_prefix),
                             "hircType02BodyFrame": copy.deepcopy(type02_body),
                             "hircType07BodyFrame": copy.deepcopy(type07_body),
+                            "hircType05BodyFrame": copy.deepcopy(type05_body),
                             "hircType03ActionFrame": copy.deepcopy(frame),
                             "hircType04U32VectorFrame": copy.deepcopy(type04_vector),
                         }
@@ -553,7 +591,7 @@ class HircActionCorpusTests(unittest.TestCase):
         closed = aggregate_current_hirc_actions(
             outer, expected_files, excluded_files, audio_audit
         )["type02BodyFrames"]
-        self.assertTrue(type02_body_corpus_is_closed(closed))
+        self.assertTrue(body_lane_corpus_is_closed(closed))
 
         # Every way of not closing must be refused, including a lane that reports
         # itself exact while leaving bytes unaccounted.
@@ -568,7 +606,7 @@ class HircActionCorpusTests(unittest.TestCase):
             regressed = dict(closed)
             regressed[field] = value
             self.assertFalse(
-                type02_body_corpus_is_closed(regressed),
+                body_lane_corpus_is_closed(regressed),
                 f"{field}={value} must not count as a closed corpus",
             )
 
@@ -613,6 +651,8 @@ class HircActionCorpusTests(unittest.TestCase):
                     "unsupportedCategories": {},
                     "minExactBodyBytes": 45,
                     "maxExactBodyBytes": 45,
+                    "minimumPossibleFrameBytes": 45,
+                    "frameLayout": "The reader consumes the bounded source prefix and the node groups.",
                     "objectCountsByBlock": {"Audio": 1},
                     "unresolvedWidths": ["group B element width: no nonempty vector"],
                     "upstreamAbortsNotCountedHere": "a malformed source prefix aborts the package",
@@ -620,7 +660,7 @@ class HircActionCorpusTests(unittest.TestCase):
             },
         }
 
-        markdown = _type02_body_markdown(report)
+        markdown = _body_lane_markdown(report, "type02BodyFrames", "0x02")
 
         self.assertIn("all-bodies-exact", markdown)
         self.assertIn("What this corpus does not resolve", markdown)
@@ -632,6 +672,65 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertIn("stay anonymous", markdown)
         self.assertIn("does not establish serialized field ownership", markdown)
         self.assertIn("Corpus gate SHA-256: `" + "F" * 64, markdown)
+
+    def test_type05_body_lane_frames_two_independent_vectors(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        bodies = result["type05BodyFrames"]
+        self.assertEqual(bodies["count"], 2)
+        self.assertEqual(bodies["exact"], 2)
+        self.assertEqual(bodies["frameClosure"], "all-bodies-exact")
+        self.assertEqual(bodies["minimumPossibleFrameBytes"], 61)
+        # The two vectors are counted separately and the mismatch count is measured,
+        # not asserted in prose.
+        self.assertEqual(bodies["anonymousGroupCounts"]["referenceEntries"], 3)
+        self.assertEqual(bodies["anonymousGroupCounts"]["recordEntries"], 2)
+        self.assertEqual(bodies["anonymousGroupCounts"]["referenceRecordCountMismatch"], 1)
+        self.assertTrue(body_lane_corpus_is_closed(bodies))
+        self.assertIn("eight-byte anonymous records", bodies["frameLayout"])
+
+    def test_every_lane_publishes_its_own_layout_and_non_claims(self) -> None:
+        # The shared publisher must not flatten what each lane actually consumes, and
+        # the type 0x02 lane must keep disclaiming source and cross-bank identity.
+        from scripts.audio_semantics.hirc_action_corpus import _build_body_lanes
+
+        lanes = _build_body_lanes()
+        self.assertEqual(sorted(lanes), ["0x02", "0x05", "0x07"])
+        layouts = {key: lane.layout for key, lane in lanes.items()}
+        self.assertEqual(len(set(layouts.values())), 3)
+        self.assertIn("source prefix", layouts["0x02"])
+        self.assertIn("four-byte anonymous references.", layouts["0x07"])
+        self.assertIn("twenty-four-byte opaque", layouts["0x05"])
+        self.assertIn("source, effect, bus, or parent object identity", lanes["0x02"].non_claims)
+        self.assertIn("cross-object or cross-bank relationships", lanes["0x02"].non_claims)
+        for lane in lanes.values():
+            for shared in (
+                "serialized field ownership or field names",
+                "runtime execution, event selection, or audibility",
+            ):
+                self.assertIn(shared, lane.non_claims)
+
+    def test_every_counted_element_has_a_declared_byte_width(self) -> None:
+        # A lane that forgets to declare its terminal vector would leave that counter
+        # unbounded, which is exactly how a reader-side over-count could hide.
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        undeclared = copy.deepcopy(audio_audit)
+        for scope in (
+            undeclared["rows"][0]["package"],
+            undeclared["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircType05BodyFrame"]["groupCounts"]["mysteryEntries"] = 4
+        with self.assertRaisesRegex(ValueError, "no declared byte width"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, undeclared)
+
+        oversized = copy.deepcopy(audio_audit)
+        for scope in (
+            oversized["rows"][0]["package"],
+            oversized["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircType05BodyFrame"]["groupCounts"]["recordEntries"] = 1_000_000
+        with self.assertRaisesRegex(ValueError, "anonymous element bytes exceed the framed bodies"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, oversized)
 
     def test_type07_body_frames_reuse_the_shared_node_frame(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
@@ -645,7 +744,7 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertEqual(bodies["anonymousGroupCounts"]["childEntries"], 4)
         self.assertEqual(bodies["minExactBodyBytes"], 35)
         self.assertIn("same ones proven on type 0x02", bodies["sharedNodeFrame"])
-        self.assertTrue(type07_body_corpus_is_closed(bodies))
+        self.assertTrue(body_lane_corpus_is_closed(bodies))
 
     def test_type07_body_gate_rejects_partition_and_byte_mismatches(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
@@ -742,7 +841,7 @@ class HircActionCorpusTests(unittest.TestCase):
         closed = aggregate_current_hirc_actions(
             outer, expected_files, excluded_files, audio_audit
         )["type07BodyFrames"]
-        self.assertTrue(type07_body_corpus_is_closed(closed))
+        self.assertTrue(body_lane_corpus_is_closed(closed))
         for field, value in (
             ("frameClosure", "incomplete"),
             ("exact", 1),
@@ -754,7 +853,7 @@ class HircActionCorpusTests(unittest.TestCase):
             regressed = dict(closed)
             regressed[field] = value
             self.assertFalse(
-                type07_body_corpus_is_closed(regressed),
+                body_lane_corpus_is_closed(regressed),
                 f"{field}={value} must not count as a closed corpus",
             )
 
@@ -793,6 +892,8 @@ class HircActionCorpusTests(unittest.TestCase):
                     "nonExactBodyBytes": 0,
                     "minExactBodyBytes": 35,
                     "maxExactBodyBytes": 35,
+                    "minimumPossibleFrameBytes": 35,
+                    "frameLayout": "The reader consumes the node groups and one counted reference vector.",
                     "packagesWithObjects": 1,
                     "banksWithObjects": 1,
                     "sharedNodeFrame": "the nine anonymous groups are the same ones proven on type 0x02 bodies",
@@ -807,7 +908,7 @@ class HircActionCorpusTests(unittest.TestCase):
             },
         }
 
-        markdown = _type07_body_markdown(report)
+        markdown = _body_lane_markdown(report, "type07BodyFrames", "0x07")
 
         self.assertIn("all-bodies-exact", markdown)
         self.assertIn("same ones proven on type 0x02", markdown)

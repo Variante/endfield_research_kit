@@ -557,11 +557,15 @@ type `0x02` lane past its opaque tail: after the bounded source prefix the reade
 consumes nine anonymous groups and must reach the declared object-body end.
 Its unresolved widths are reported rather than guessed, and any nonempty group B
 vector or ambiguous group E selector is held `unsupported` instead of parsed.
-The same nine groups are shared with numeric type `0x07`, whose lane writes
-`reports/animestudio/hirc_type07_body_current_latest.{json,md}` after consuming
-the node frame plus one terminal counted vector of four-byte anonymous
-references. Both lanes enforce their own closure: a failed, unsupported, or
-ambiguous body publishes `incomplete` and exits nonzero.
+The same nine groups are shared with numeric types `0x07` and `0x05`, whose
+lanes write `reports/animestudio/hirc_type07_body_current_latest.{json,md}` and
+`reports/animestudio/hirc_type05_body_current_latest.{json,md}`. Type `0x07`
+adds one terminal counted vector of four-byte anonymous references; type `0x05`
+adds a fixed 24-byte opaque block plus two independently counted vectors. Every
+lane enforces its own closure -- a failed, unsupported, or ambiguous body
+publishes `incomplete` and exits nonzero -- and every lane publishes the same
+shared-framer residual list. Adding another type on this frame means declaring
+one more lane and one more framer, not another copy of the census.
 Its v150 HIRC parser also publishes exact NodeBase effect slots and output-bus
 IDs. Effect definitions retain physical PCK/bank scope, built-in plug-in class
 identity, and parameter hashes. Fingerprinted shipped `SetParamsBlock` layouts

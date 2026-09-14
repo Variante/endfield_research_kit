@@ -274,10 +274,11 @@ for plugin type `0x02`, a checked length-prefixed parameter range. Its body is
 now consumed whole by a separate anonymous nine-group frame that must reach the
 declared object-body end; run it through the same corpus gate and read
 `reports/animestudio/hirc_type02_body_current_latest.md` before assuming the tail
-is still unframed. The same nine groups are shared with numeric type `0x07`,
-which adds one terminal counted vector of four-byte anonymous references; one
-maintained reader frames both, so extend that reader rather than adding a
-parallel one. Widths that stay unresolved must keep failing closed: group B has
+is still unframed. The same nine groups are shared with numeric types `0x07`
+and `0x05`: `0x07` adds one terminal counted vector of four-byte anonymous
+references, `0x05` adds a fixed 24-byte opaque block plus two independently
+counted vectors. One maintained reader and one corpus lane frame all three, so
+extend those rather than adding a parallel copy. Widths that stay unresolved must keep failing closed: group B has
 no nonempty sample in any framed type, and group E's selector `0x02` is
 unobserved, so bit-1-only and both-bits-set tie. Selector `0x01` does occur and
 disproves a bit-0 rule, but in only 4 of 48,740 type `0x07` objects. The group I
