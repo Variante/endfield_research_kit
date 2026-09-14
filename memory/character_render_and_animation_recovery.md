@@ -826,6 +826,14 @@ actor identifier. Observer storage must remain bounded and off large callback
 stack frames. Cleanup may not invalidate function pointers retained by the
 client.
 
+A graphics packet directory is named `<present>` or `<present>-lane<N>`, and
+several physical lanes can publish at one Present. Every reader must parse it
+through `endfield_reconstruction_lab/tools/endfield_capture_frames.py`, order
+packets by Present then lane, and fail when a directory name and its metadata
+`frame` disagree. A bare `int()` on the directory name aborts on any
+lane-suffixed session before it reads any evidence, and reads as a broken
+capture when the capture is fine.
+
 Failed or partially collected retail sessions remain under scratch as
 diagnostics. Their observations may justify a tool fix, but never become parity
 evidence retroactively.
@@ -879,6 +887,16 @@ outputs are verified. See the capture environment observer guide for contracts.
   generated report.
 - Comparison frames must join exact no-frame-generation source frames and the
   corresponding Unity clock/state. Do not align by appearance alone.
+- An extracted reference sequence is numbered from its own first frame, not
+  from the source video. Convert with
+  `extracted index = source frame - startFrame + 1` before pairing anything by
+  hand; for the clean Endminf segment that is `source frame - 87`. Skipping the
+  conversion misaligns the pairing by 1.45 s and makes correctly matched poses
+  look like a whole-body animation defect.
+- A byte-exact original-DXBC replay of a captured post draw yields encode-free
+  retail pixels at a known, bracketed body phase. Prefer that image over a video
+  frame for any question about field brightness, gradient shape, or thin-line
+  contrast, and keep the video sequence for motion, lifecycle, and timing.
 - Annotate visible pointer/controller changes and split input-stable frames
   from camera-motion-affected frames. Deterministic animation renders use the
   actor's serialized camera entry state; capture-specific input endpoints or
@@ -1065,6 +1083,25 @@ newer source version must not silently replace the capture-matched texture.
   graphics-quality application also updates the main camera directly. Preserve
   these producers separately from authored startup defaults and history resets.
   Mode mutation history and consistent projection/history integration remain open.
+  The late overview_02 M27 stones are absent from the lab for a reason upstream
+  of every constant-buffer gate. With the compiler-substitution gate armed, the
+  exact route still never calls TryBindDraw, because no active M27 row resolves
+  in the burst window: the generated `suikuai (2)` renderer is serialized
+  disabled with no material slots and only lives while the transient
+  overview_02 root does, and the resolver also returns a null renderer, without
+  logging, when a row is active but has no live particles. The authored `_02`
+  orb systems serialize start delays in the 4.40-4.45 s window with sub-second
+  lifetimes, so sample that window densely rather than at one checkpoint.
+  Recover the root's spawn and destroy times, the system's play window and its
+  live particle count against the body clock before returning to terrain
+  publication, b1 TAA jitter or the late VFX anchor. Forcing renderer.enabled is
+  not a recovery.
+  Retail's final post draw is now closed end to end from a live capture: the
+  original VS/PS bytecode on the captured scene-colour, bloom and LUT inputs
+  with both captured constant buffers reproduces the retained 4K output byte for
+  byte, and the recovered production Unity post shader matches that same output
+  to a maximum channel error of 5. Final post arithmetic therefore no longer
+  explains any remaining visible difference; look upstream at scene composition.
   CPP request mip bias has its own reusable gated evaluator; do not substitute
   the camera material/resolution producer. Recorded request values still need
   an upload-generation join before selecting the live draw route.
