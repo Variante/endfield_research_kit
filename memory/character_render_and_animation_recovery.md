@@ -429,8 +429,14 @@ history ownership/cadence, residual trails and burst composition remain open.
   retail target byte-for-byte with original DXBC and independently proven full
   coverage. This closes isolated post-draw replay, not the separate environment
   CPP upload ownership or Unity rendering gaps. The draw-consumed LUT agrees
-  with the lab's retained CharInfo LUT. See the lab's original_dxbc_exact README
-  for preparation commands and the generated post replay report for evidence.
+  with the lab's retained CharInfo LUT. On those same captured inputs, the
+  recovered production Unity post shader preserves the geometry, fragments and
+  blur placement with small, nonzero channel differences. This isolated result
+  shifts the large full-scene gaps toward upstream content and live input
+  publication; it does not prove all post variants or parameter modes. Packed
+  bloom upload must round-trip to the original GPU bytes before comparison.
+  See the lab's original_dxbc_exact README for preparation commands and the
+  generated native/Unity post replay reports for evidence.
   Original Uber bytecode omits RDEF resource metadata; bound-input requirements
   come from executable declarations, not a zero reflection resource count.
   Isolated replay must also prove full target coverage before a cleared target
