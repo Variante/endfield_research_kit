@@ -893,6 +893,15 @@ outputs are verified. See the capture environment observer guide for contracts.
   hand; for the clean Endminf segment that is `source frame - 87`. Skipping the
   conversion misaligns the pairing by 1.45 s and makes correctly matched poses
   look like a whole-body animation defect.
+- Establish phase alignment before quoting any effect-region number. The
+  Endminf burst signal changes by roughly 3x per two frames, so a two-frame
+  misalignment can invert a conclusion, and it has. The burst flash is itself
+  the best phase instrument: it is high-contrast and free of the entrance
+  ghosting that makes raw sweeps unsafe there.
+- Never compare two lab renders made with different capture profiles. The
+  viewer capture applies its 2/60 s clip lead only to video-export,
+  pre/post-HDR and default runs, not to explicit requested-times runs, so the
+  same nominal time is a different instant in each.
 - A byte-exact original-DXBC replay of a captured post draw yields encode-free
   retail pixels at a known, bracketed body phase. Prefer that image over a video
   frame for any question about field brightness, gradient shape, or thin-line
