@@ -1132,3 +1132,43 @@ newer source version must not silently replace the capture-matched texture.
   playables without actor-specific renderer forks.
 - Keep capture tooling bounded, observation-only, exact-build gated, and
   reproducible across client updates.
+
+## Verifying recovered lighting against retail's DXBC (session 2026-09-14)
+
+- `_CharacterParams[N]` is `ShaderVariablesGlobal cb1[107 + N]` in retail's
+  D3D11 `HGRP_CharacterNPR` pixel shader. Established by the reference range
+  being exactly `cb1[107]`-`cb1[122]` with zero references immediately outside
+  on both sides, plus three independent expression matches (ambient lobe
+  CP6/CP7, `shadowStrength` CP1.y, diffuse-band range bias CP11.w*CP12.x).
+  Use it to check any `CharacterParams` claim directly against the
+  disassembly. The lab's HGCharacterVolume recovery came from Vulkan
+  fragments, so this is an independent cross-backend confirmation.
+- Retail's character ambient tint is selected by
+  `if (CharacterParams1.y < 0.5)` - irradiance-volume L1 SH, HSV
+  saturation-clamped - `else CharacterParams2.rgb`. `CharacterParams1.y` is
+  `(float)shadowTintMode`, enum `Auto = 0, CustomTintColor = 1`, so the test
+  is "is the shadow tint mode Auto?". CP1.y is also a multiplier in
+  `shadowStrength`; retail does the same, so that dual use is faithful.
+- Endminf's CharInfo scene carries `shadowTintMode: 1`, imported from the
+  captured `charShadowTintControl` through the required `Resolved()` accessor.
+  Retail therefore takes the authored-tint branch there too: **implementing
+  the irradiance volume clipmap would not change that render.** It IS needed
+  for actors whose scenes carry `shadowTintMode: 0` (several generated
+  ability-prop, ambient-NPC and enemy viewers do).
+- `HGCompatRenderPipeline` is **never instantiated** - the asset's
+  `CreatePipeline()` returns `new HDRenderPipeline(this)`. The subclass
+  survives only as a name for inherited statics, so it greps as alive while
+  any instance-level code added to it silently does nothing. Put per-frame or
+  per-instance pipeline behaviour in `HDRenderPipeline`.
+- The canonical render sets `ENDFIELD_RECOVERED_SOURCE_ENERGY_CORE=1`, which
+  forces `diffuseAuditMode = 5`, and mode 5 executes `color = recoveredDiffuse`
+  - discarding the `diffuseColor * illumination` built from
+  `environmentIllumination`. The `(0.2 + ShadeSH9) * _RecoveredAmbientStrength`
+  block in the cloth and hair shaders is **dead code in that profile**. The
+  live canonical diffuse is `EndfieldHGRPRecoveredSourceDiffuse` /
+  `EndfieldHGRPRecoveredLiveShadowEnergy`.
+- **A byte-identical ablation is a broken or inert instrument until proven
+  otherwise, never evidence that the ablated term does not matter.** Confirm
+  the lever moved pixels before interpreting any null result. Two independent
+  causes produced a null in one experiment here, and reporting either as a
+  finding would have been wrong.
