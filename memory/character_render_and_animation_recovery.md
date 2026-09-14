@@ -302,6 +302,10 @@ history ownership/cadence, residual trails and burst composition remain open.
   promoted through a hashed Resource plus active source-marker join, preserving
   readiness separately from the zero value. That scope does not authorize the
   later overview_02 M27 globals or either path's final deferred presentation.
+  The native anchor vector belongs to the world anchor-wave manager, not the
+  particle clock. Disabling its brightness preserves position and radius;
+  recover the scene manager's lifecycle and prior updates before publishing it
+  for late effects. See `reports/assets/character_recovery/native_hgvfx_anchor_476.json`.
 - Material keywords, pass/queue selection, constant-buffer values, textures,
   depth, motion vectors, shadows, exposure, and history are accepted only from
   their exact serialized or observed owner.
