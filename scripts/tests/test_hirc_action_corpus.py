@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from scripts.audio_semantics.hirc_action_corpus import (
+    _type02_markdown,
     aggregate_current_hirc_actions,
     load_current_outer,
 )
@@ -50,6 +51,15 @@ def valid_action_fixture():
         "failureCategories": {},
         "nonExactExamples": [],
     }
+    type02_prefix = {
+        "count": 2,
+        "prefixBytes": 36,
+        "opaqueTailBytes": 32,
+        "minOpaqueTailBytes": 16,
+        "maxOpaqueTailBytes": 16,
+        "pluginTypeCounts": {"0x1": 1, "0x2": 1},
+    }
+    type02_stats = {"count": 2, "declaredLengthBytes": 76}
     audio_audit = {
         "streamingAssets": "D:/Persistent",
         "fallbackAssets": "D:/StreamingAssets",
@@ -70,12 +80,18 @@ def valid_action_fixture():
                 "source": r"D:\Persistent\VFS\AA\bank.chk",
                 "status": "verified",
                 "package": {
-                    "hircObjectTypeCounts": {"0x03": 2},
+                    "hircObjectTypeCounts": {"0x02": 2, "0x03": 2},
+                    "hircObjectTypeStats": {"0x02": copy.deepcopy(type02_stats)},
+                    "hircType02Prefix": copy.deepcopy(type02_prefix),
                     "hircType03ActionFrame": copy.deepcopy(frame),
                     "bnkStructures": [
                         {
                             "version": 150,
-                            "hircObjectTypeStats": {"0x03": {"count": 2}},
+                            "hircObjectTypeStats": {
+                                "0x02": copy.deepcopy(type02_stats),
+                                "0x03": {"count": 2},
+                            },
+                            "hircType02Prefix": copy.deepcopy(type02_prefix),
                             "hircType03ActionFrame": copy.deepcopy(frame),
                         }
                     ],
@@ -94,6 +110,52 @@ def valid_action_fixture():
 
 
 class HircActionCorpusTests(unittest.TestCase):
+    def test_type02_markdown_reports_gate_and_evidence_boundary(self) -> None:
+        report = {
+            "status": "complete",
+            "inputSetSha256": "A" * 64,
+            "outer": {
+                "ledgerSha256": "B" * 64,
+                "animeStudioCliFingerprint": {
+                    "matchesOuterAudit": False,
+                    "outerAuditSha256": "C" * 64,
+                    "currentSha256": "D" * 64,
+                },
+            },
+            "audioAudit": {
+                "toolSha256": "D" * 64,
+                "intermediatePath": "tmp/audio-audit.json",
+                "sha256": "E" * 64,
+            },
+            "corpusGate": {"sha256": "F" * 64},
+            "corpus": {
+                "packageCount": 1,
+                "verifiedPackageCount": 1,
+                "excludedBlockCount": 0,
+                "type02SourcePrefixes": {
+                    "wholeBodyCursor": "not-claimed-opaque-tail-remains",
+                    "count": 1,
+                    "packagesWithObjects": 1,
+                    "banksWithObjects": 1,
+                    "prefixBytes": 14,
+                    "opaqueTailBytes": 8,
+                    "bodyBytes": 22,
+                    "minOpaqueTailBytes": 8,
+                    "maxOpaqueTailBytes": 8,
+                    "pluginTypeCounts": {"0x1": 1},
+                    "objectCountsByBlock": {"Audio": 1},
+                },
+            },
+        }
+
+        markdown = _type02_markdown(report)
+
+        self.assertIn("not-claimed-opaque-tail-remains", markdown)
+        self.assertIn("opaque tail bytes: 8", markdown)
+        self.assertIn("Corpus gate SHA-256: `" + "F" * 64, markdown)
+        self.assertIn("Low-nibble type", markdown)
+        self.assertIn("Remaining body bytes stay opaque", markdown)
+
     def test_outer_gate_binds_expected_set_ledger_and_physical_metadata(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -154,6 +216,35 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertTrue(result["identityReconciliation"]["verifiedPackagesMatchedToOuterLedger"])
         self.assertTrue(result["identityReconciliation"]["excludedBlocksMatchedToOuterLedger"])
         self.assertTrue(result["identityReconciliation"]["perBankFramesMatchedToPackageFrames"])
+        prefixes = result["type02SourcePrefixes"]
+        self.assertEqual(prefixes["count"], 2)
+        self.assertEqual(prefixes["prefixBytes"], 36)
+        self.assertEqual(prefixes["opaqueTailBytes"], 32)
+        self.assertEqual(prefixes["bodyBytes"], 68)
+        self.assertEqual(prefixes["pluginTypeCounts"], {"0x1": 1, "0x2": 1})
+        self.assertEqual(prefixes["wholeBodyCursor"], "not-claimed-opaque-tail-remains")
+
+    def test_type02_prefix_gate_rejects_byte_count_and_bank_mismatches(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        bad_tail = copy.deepcopy(audio_audit)
+        bad_tail["rows"][0]["package"]["hircType02Prefix"]["opaqueTailBytes"] = 31
+        with self.assertRaisesRegex(ValueError, "prefix-plus-tail body accounting mismatch"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, bad_tail)
+
+        bad_plugins = copy.deepcopy(audio_audit)
+        bad_plugins["rows"][0]["package"]["hircType02Prefix"]["pluginTypeCounts"]["0x2"] = 0
+        with self.assertRaisesRegex(ValueError, "plugin-type count mismatch"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, bad_plugins)
+
+        bad_bank = copy.deepcopy(audio_audit)
+        bank_prefix = bad_bank["rows"][0]["package"]["bnkStructures"][0]["hircType02Prefix"]
+        bank_prefix.update({
+            "prefixBytes": 35,
+            "opaqueTailBytes": 33,
+            "maxOpaqueTailBytes": 17,
+        })
+        with self.assertRaisesRegex(ValueError, "per-bank/package type 0x02"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, bad_bank)
 
     def test_package_identity_includes_checksum_chunk_and_physical_source(self) -> None:
         mutations = (

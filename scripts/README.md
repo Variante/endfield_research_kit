@@ -123,7 +123,7 @@ a degraded reason instead of using them as direct evidence.
 | Assets | `build_assets.py` | asset indexes and media lookup |
 | Audio | `build_audio.py` | decoded/relinked audio data |
 | Audio semantics | `build_audio_semantics.py` | compact Audio page evidence and shards |
-| Audio HIRC cursor gate | `audio_semantics/hirc_action_corpus.py` | `reports/animestudio/hirc_action_current_latest.{json,md}` |
+| Audio HIRC structural gates | `audio_semantics/hirc_action_corpus.py` | Action cursors and type `0x02` source prefixes under `reports/animestudio/` |
 | DynamicStreaming stream-area gate | `game_data/dynamic_stream_area_corpus.py` | `reports/animestudio/dynamic_stream_area_current_latest.{json,md}` |
 | Updates | `build_updates.py` | `webui/data/updates/latest.json`, `webui/data/updates/characters.json` |
 | Packaging | `pack_webui.py` | distributable static package |
@@ -537,8 +537,12 @@ pass the exact `inputSetSha256` from
 `python -m scripts.audio_semantics.hirc_action_corpus`.
 The gate binds verified package MD5/chunk/source identities and per-bank cursor
 totals to the outer ledger, then writes
-`reports/animestudio/hirc_action_current_latest.{json,md}`. It does not assign
-operation names or runtime behavior.
+`reports/animestudio/hirc_action_current_latest.{json,md}`. It also writes
+`reports/animestudio/hirc_type02_prefix_current_latest.{json,md}` after
+reconciling every type `0x02` object count and its bounded source-prefix bytes
+plus opaque-tail bytes against package and bank body totals. The type `0x02`
+report leaves the opaque tail unparsed; neither report assigns Action operation
+names or runtime behavior.
 Its v150 HIRC parser also publishes exact NodeBase effect slots and output-bus
 IDs. Effect definitions retain physical PCK/bank scope, built-in plug-in class
 identity, and parameter hashes. Fingerprinted shipped `SetParamsBlock` layouts

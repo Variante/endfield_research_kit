@@ -1498,6 +1498,12 @@ Stable conclusions:
   operation names, field ownership, targets, runtime execution, selection, or
   audibility. Current corpus details belong in
   [`reports/animestudio/hirc_action_current_latest.md`](../reports/animestudio/hirc_action_current_latest.md).
+- Numeric HIRC type `0x02` source prefixes have a companion current-corpus
+  gate. The maintained parser bounds the 14-byte prefix and the optional
+  plugin-type-`0x02` parameter range; the gate reconciles object counts and
+  prefix-plus-opaque-tail body bytes per bank/package against the authenticated
+  outer ledger. The remaining body stays opaque and has no full cursor claim.
+  See [`reports/animestudio/hirc_type02_prefix_current_latest.md`](../reports/animestudio/hirc_type02_prefix_current_latest.md).
 - AKPK entries, Wwise numeric media ids, Events, containers, switches, random
   nodes, RTPC curves, and authored consumers keep their native identities.
   Same-id files in different roots are not collapsed by filename stem.
