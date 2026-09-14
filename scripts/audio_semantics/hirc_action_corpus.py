@@ -40,6 +40,24 @@ TYPE04_FRAME_FIELDS = (
     "failedBodyBytes",
     "candidateEntryCount",
 )
+SHARED_NODE_FRAME_RESIDUALS = (
+    "group B element width: no body of any framed type carries a nonempty vector",
+    "group E selector predicate: selector 0x01 disproves a bit-0 rule, but selector "
+    "0x02 is still unobserved, so bit-1-only and both-bits-set tie",
+    "group A slot split: one corpus object separates a shared mask byte plus six-byte "
+    "slots from no mask byte plus seven-byte slots",
+    "group E branch 2 is accepted on the strength of a single corpus object and has no "
+    "fixture; branch 3 beside it is fenced as unsupported",
+    "group F selector bits other than 0x08 gate no observed payload, and several "
+    "selector values occur only a handful of times",
+    "group A and group B flag bytes gate nothing in this frame",
+    "the fixed six-byte group G block is consumed without internal structure",
+    "the group I key is consumed by extent only; its value is unnamed, and the "
+    "five-byte cap plus 32-bit range are inherited from the type 0x03 Action reader "
+    "rather than proven here -- see the published groupIKeyWidth_* histogram for the "
+    "widths this corpus actually witnesses",
+)
+
 TYPE02_BODY_FRAME_FIELDS = (
     "count",
     "exact",
@@ -55,6 +73,12 @@ TYPE02_BODY_RANGE_FIELDS = ("minExactBodyBytes", "maxExactBodyBytes")
 # bundles, two empty selectors, the fixed six-byte block, an empty directory and
 # an empty entry count.
 TYPE02_BODY_MINIMUM_FRAME_BYTES = 45
+# The same node groups without a source prefix, plus an empty four-byte child count.
+TYPE07_BODY_MINIMUM_FRAME_BYTES = 35
+# Seven-bit continuation groups capped at five bytes. The cap and the 32-bit range
+# are inherited from the type 0x03 Action reader, not proven by any framed corpus.
+HIRC_VARIABLE_SIZE_MAX_BYTES = 5
+DEFAULT_TYPE07_BODY_OUTPUT = ROOT / "reports/animestudio/hirc_type07_body_current_latest.json"
 AUDIO_BLOCKS = frozenset(
     {
         "InitAudio",
@@ -472,14 +496,17 @@ def _read_type02_prefix_metrics(
     return metrics
 
 
-def _read_type02_body_metrics(
+def _read_hirc_body_metrics(
     frame: Any,
     type_stats: Any,
     expected_count: int,
     label: str,
+    *,
+    type_label: str,
+    minimum_frame_bytes: int,
 ) -> dict[str, Any]:
     if expected_count < 0:
-        raise ValueError(f"negative type 0x02 object count: {label}")
+        raise ValueError(f"negative {type_label} object count: {label}")
     if frame is None and expected_count == 0:
         frame = {key: 0 for key in TYPE02_BODY_FRAME_FIELDS + TYPE02_BODY_RANGE_FIELDS}
         frame.update(
@@ -492,36 +519,36 @@ def _read_type02_body_metrics(
             }
         )
     if not isinstance(frame, dict):
-        raise ValueError(f"missing type 0x02 body-frame result: {label}")
+        raise ValueError(f"missing {type_label} body-frame result: {label}")
     if type_stats is None and expected_count == 0:
         type_stats = {"count": 0, "declaredLengthBytes": 0}
     if not isinstance(type_stats, dict):
-        raise ValueError(f"missing type 0x02 object-length stats: {label}")
+        raise ValueError(f"missing {type_label} object-length stats: {label}")
 
     metrics: dict[str, Any] = {}
     for key in TYPE02_BODY_FRAME_FIELDS + TYPE02_BODY_RANGE_FIELDS:
         try:
             value = int(frame[key])
         except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError(f"type 0x02 body-frame result has invalid {key}: {label}") from exc
+            raise ValueError(f"{type_label} body-frame result has invalid {key}: {label}") from exc
         if value < 0:
-            raise ValueError(f"type 0x02 body-frame result has negative {key}: {label}")
+            raise ValueError(f"{type_label} body-frame result has negative {key}: {label}")
         metrics[key] = value
 
     if metrics["count"] != expected_count:
         raise ValueError(
-            f"type 0x02 body-frame count mismatch: {label} "
+            f"{type_label} body-frame count mismatch: {label} "
             f"objects={expected_count} framed={metrics['count']}"
         )
     if metrics["count"] != sum(
         metrics[key] for key in ("exact", "unsupported", "failed", "ambiguous")
     ):
-        raise ValueError(f"type 0x02 body outcome partition mismatch: {label}")
+        raise ValueError(f"{type_label} body outcome partition mismatch: {label}")
     if metrics["ambiguous"] != 0:
-        raise ValueError(f"unexpected ambiguous type 0x02 body-frame result: {label}")
+        raise ValueError(f"unexpected ambiguous {type_label} body-frame result: {label}")
     if metrics["exactCursorBytes"] + metrics["nonExactBodyBytes"] != metrics["bodyBytes"]:
         raise ValueError(
-            f"type 0x02 exact/non-exact body accounting mismatch: {label} "
+            f"{type_label} exact/non-exact body accounting mismatch: {label} "
             f"exact={metrics['exactCursorBytes']} nonExact={metrics['nonExactBodyBytes']} "
             f"body={metrics['bodyBytes']}"
         )
@@ -529,46 +556,46 @@ def _read_type02_body_metrics(
         if metrics["exactCursorBytes"] or any(
             metrics[key] for key in TYPE02_BODY_RANGE_FIELDS
         ):
-            raise ValueError(f"type 0x02 exact cursor bytes exist without exact bodies: {label}")
+            raise ValueError(f"{type_label} exact cursor bytes exist without exact bodies: {label}")
     else:
         # The smallest possible frame is a real per-object bound, unlike the mean.
-        if metrics["minExactBodyBytes"] < TYPE02_BODY_MINIMUM_FRAME_BYTES:
+        if metrics["minExactBodyBytes"] < minimum_frame_bytes:
             raise ValueError(
-                f"type 0x02 exact body falls below the minimum frame: {label} "
+                f"{type_label} exact body falls below the minimum frame: {label} "
                 f"min={metrics['minExactBodyBytes']} "
-                f"required={TYPE02_BODY_MINIMUM_FRAME_BYTES}"
+                f"required={minimum_frame_bytes}"
             )
         if metrics["minExactBodyBytes"] > metrics["maxExactBodyBytes"]:
-            raise ValueError(f"type 0x02 exact-length minimum exceeds maximum: {label}")
+            raise ValueError(f"{type_label} exact-length minimum exceeds maximum: {label}")
         if not (
             metrics["minExactBodyBytes"] * metrics["exact"]
             <= metrics["exactCursorBytes"]
             <= metrics["maxExactBodyBytes"] * metrics["exact"]
         ):
-            raise ValueError(f"type 0x02 exact-length range does not bound its total: {label}")
+            raise ValueError(f"{type_label} exact-length range does not bound its total: {label}")
     if metrics["exact"] + metrics["unsupported"] + metrics["failed"] == 0 and metrics["bodyBytes"]:
-        raise ValueError(f"type 0x02 body bytes exist without framed bodies: {label}")
+        raise ValueError(f"{type_label} body bytes exist without framed bodies: {label}")
 
     try:
         stats_count = int(type_stats.get("count", 0))
         declared_length_bytes = int(type_stats.get("declaredLengthBytes", 0))
     except (TypeError, ValueError) as exc:
-        raise ValueError(f"type 0x02 object-length stats are invalid: {label}") from exc
+        raise ValueError(f"{type_label} object-length stats are invalid: {label}") from exc
     if stats_count != expected_count:
         raise ValueError(
-            f"type 0x02 body object-stat count mismatch: {label} "
+            f"{type_label} body object-stat count mismatch: {label} "
             f"objects={expected_count} stats={stats_count}"
         )
     object_id_bytes = HIRC_OBJECT_ID_BYTES * expected_count
     if declared_length_bytes < object_id_bytes:
         raise ValueError(
-            f"type 0x02 declared object bytes are smaller than object ids: {label} "
+            f"{type_label} declared object bytes are smaller than object ids: {label} "
             f"declared={declared_length_bytes} idBytes={object_id_bytes}"
         )
     declared_body_bytes = declared_length_bytes - object_id_bytes
     if metrics["bodyBytes"] != declared_body_bytes:
         raise ValueError(
-            f"type 0x02 body bytes differ from declared HIRC object bodies: {label} "
+            f"{type_label} body bytes differ from declared HIRC object bodies: {label} "
             f"framed={metrics['bodyBytes']} declared={declared_body_bytes}"
         )
 
@@ -578,20 +605,20 @@ def _read_type02_body_metrics(
     ):
         raw_counts = frame.get(key)
         if not isinstance(raw_counts, dict):
-            raise ValueError(f"type 0x02 body-frame result has invalid {key}: {label}")
+            raise ValueError(f"{type_label} body-frame result has invalid {key}: {label}")
         normalized: dict[str, int] = {}
         for name, raw_count in raw_counts.items():
             try:
                 count = int(raw_count)
             except (TypeError, ValueError) as exc:
-                raise ValueError(f"type 0x02 body-frame result has invalid {key} entry: {label}") from exc
+                raise ValueError(f"{type_label} body-frame result has invalid {key} entry: {label}") from exc
             if count < 0:
-                raise ValueError(f"type 0x02 body-frame result has negative {key} entry: {label}")
+                raise ValueError(f"{type_label} body-frame result has negative {key} entry: {label}")
             if count:
                 normalized[str(name)] = count
         if sum(normalized.values()) != expected_category_count:
             raise ValueError(
-                f"type 0x02 body {key} do not match outcome counts: {label} "
+                f"{type_label} body {key} do not match outcome counts: {label} "
                 f"categories={sum(normalized.values())} outcomes={expected_category_count}"
             )
         metrics[key] = dict(sorted(normalized.items()))
@@ -599,15 +626,15 @@ def _read_type02_body_metrics(
     for key in ("groupCounts", "selectorCounts"):
         raw_counts = frame.get(key)
         if not isinstance(raw_counts, dict):
-            raise ValueError(f"type 0x02 body-frame result has invalid {key}: {label}")
+            raise ValueError(f"{type_label} body-frame result has invalid {key}: {label}")
         normalized = {}
         for name, raw_count in raw_counts.items():
             try:
                 count = int(raw_count)
             except (TypeError, ValueError) as exc:
-                raise ValueError(f"type 0x02 body-frame result has invalid {key} entry: {label}") from exc
+                raise ValueError(f"{type_label} body-frame result has invalid {key} entry: {label}") from exc
             if count < 0:
-                raise ValueError(f"type 0x02 body-frame result has negative {key} entry: {label}")
+                raise ValueError(f"{type_label} body-frame result has negative {key} entry: {label}")
             normalized[str(name)] = count
         metrics[key] = dict(sorted(normalized.items()))
     # Every exactly framed body contributes exactly one observation to each
@@ -618,21 +645,96 @@ def _read_type02_body_metrics(
         )
         if selector_total != metrics["exact"]:
             raise ValueError(
-                f"type 0x02 selector family {prefix} does not match exact bodies: {label} "
+                f"{type_label} selector family {prefix} does not match exact bodies: {label} "
                 f"selectors={selector_total} exact={metrics['exact']}"
             )
     branch_total = sum(
         count for name, count in metrics["selectorCounts"].items() if name.startswith("groupEBranch_")
     )
     if branch_total > metrics["exact"]:
-        raise ValueError(f"type 0x02 group E branch observations exceed exact bodies: {label}")
+        raise ValueError(f"{type_label} group E branch observations exceed exact bodies: {label}")
+
+    # The anonymous inventories are the one place a reader-side regression could grow
+    # unnoticed, so bound every counter that a variable-length read can inflate.
+    groups = metrics["groupCounts"]
+    entries = groups.get("groupIEntries", 0)
+    key_bytes = groups.get("groupIKeyBytes", 0)
+    if not entries <= key_bytes <= HIRC_VARIABLE_SIZE_MAX_BYTES * entries:
+        raise ValueError(
+            f"{type_label} group I key bytes are not bounded by their entry count: {label} "
+            f"entries={entries} keyBytes={key_bytes} "
+            f"maxPerEntry={HIRC_VARIABLE_SIZE_MAX_BYTES}"
+        )
+    width_total = sum(
+        count for name, count in metrics["selectorCounts"].items()
+        if name.startswith("groupIKeyWidth_")
+    )
+    if width_total != entries:
+        raise ValueError(
+            f"{type_label} group I key width histogram does not match its entry count: {label} "
+            f"widths={width_total} entries={entries}"
+        )
+    width_bytes = sum(
+        int(name.rsplit("_", 1)[1]) * count
+        for name, count in metrics["selectorCounts"].items()
+        if name.startswith("groupIKeyWidth_")
+    )
+    if width_bytes != key_bytes:
+        raise ValueError(
+            f"{type_label} group I key width histogram does not sum to its byte total: {label} "
+            f"histogram={width_bytes} keyBytes={key_bytes}"
+        )
+    # Every counted element must fit inside the bodies that were actually framed.
+    element_bytes = (
+        4 * groups.get("childEntries", 0)
+        + 5 * groups.get("groupCEntries", 0)
+        + 9 * groups.get("groupDEntries", 0)
+        + 12 * groups.get("groupIPoints", 0)
+        + 12 * groups.get("groupHStates", 0)
+    )
+    if element_bytes > metrics["exactCursorBytes"]:
+        raise ValueError(
+            f"{type_label} anonymous element bytes exceed the framed bodies: {label} "
+            f"elements={element_bytes} exactCursor={metrics['exactCursorBytes']}"
+        )
 
     examples = frame.get("nonExactExamples")
     if not isinstance(examples, list):
-        raise ValueError(f"type 0x02 body-frame result has invalid nonExactExamples: {label}")
+        raise ValueError(f"{type_label} body-frame result has invalid nonExactExamples: {label}")
     metrics["nonExactExamples"] = examples
     return metrics
 
+
+def _read_type02_body_metrics(
+    frame: Any,
+    type_stats: Any,
+    expected_count: int,
+    label: str,
+) -> dict[str, Any]:
+    return _read_hirc_body_metrics(
+        frame,
+        type_stats,
+        expected_count,
+        label,
+        type_label="type 0x02",
+        minimum_frame_bytes=TYPE02_BODY_MINIMUM_FRAME_BYTES,
+    )
+
+
+def _read_type07_body_metrics(
+    frame: Any,
+    type_stats: Any,
+    expected_count: int,
+    label: str,
+) -> dict[str, Any]:
+    return _read_hirc_body_metrics(
+        frame,
+        type_stats,
+        expected_count,
+        label,
+        type_label="type 0x07",
+        minimum_frame_bytes=TYPE07_BODY_MINIMUM_FRAME_BYTES,
+    )
 
 def _read_type04_u32_vector_metrics(
     frame: Any,
@@ -912,6 +1014,18 @@ def aggregate_current_hirc_actions(
     type02_body_min_exact: int | None = None
     type02_body_max_exact = 0
     type02_body_non_exact_examples: list[dict[str, Any]] = []
+    type07_body_totals: Counter[str] = Counter()
+    type07_body_groups: Counter[str] = Counter()
+    type07_body_selectors: Counter[str] = Counter()
+    type07_body_failure_categories: Counter[str] = Counter()
+    type07_body_unsupported_categories: Counter[str] = Counter()
+    type07_body_counts_by_block: Counter[str] = Counter()
+    type07_body_bank_version_counts: Counter[str] = Counter()
+    type07_body_packages_with_objects = 0
+    type07_body_banks_with_objects = 0
+    type07_body_min_exact: int | None = None
+    type07_body_max_exact = 0
+    type07_body_non_exact_examples: list[dict[str, Any]] = []
     for row in verified_rows:
         package = row.get("package") or {}
         type_counts = package.get("hircObjectTypeCounts") or {}
@@ -975,6 +1089,45 @@ def aggregate_current_hirc_actions(
             if len(type02_body_non_exact_examples) >= 32:
                 break
             type02_body_non_exact_examples.append(
+                {"block": row.get("block"), "package": row.get("path"), **example}
+            )
+
+        expected_type07 = int(type_counts.get("0x07") or 0)
+        package_type07_body = _read_type07_body_metrics(
+            package.get("hircType07BodyFrame"),
+            package_type_stats.get("0x07"),
+            expected_type07,
+            package_label,
+        )
+        package_type07_bank_totals: Counter[str] = Counter()
+        package_type07_bank_groups: Counter[str] = Counter()
+        package_type07_bank_selectors: Counter[str] = Counter()
+        package_type07_bank_failures: Counter[str] = Counter()
+        package_type07_bank_unsupported: Counter[str] = Counter()
+        package_type07_bank_mins: list[int] = []
+        package_type07_bank_maxes: list[int] = []
+        for key in TYPE02_BODY_FRAME_FIELDS:
+            type07_body_totals[key] += package_type07_body[key]
+        type07_body_groups.update(package_type07_body["groupCounts"])
+        type07_body_selectors.update(package_type07_body["selectorCounts"])
+        type07_body_failure_categories.update(package_type07_body["failureCategories"])
+        type07_body_unsupported_categories.update(package_type07_body["unsupportedCategories"])
+        if expected_type07:
+            type07_body_packages_with_objects += 1
+            type07_body_counts_by_block[str(row.get("block"))] += expected_type07
+        if package_type07_body["exact"]:
+            if (
+                type07_body_min_exact is None
+                or package_type07_body["minExactBodyBytes"] < type07_body_min_exact
+            ):
+                type07_body_min_exact = package_type07_body["minExactBodyBytes"]
+            type07_body_max_exact = max(
+                type07_body_max_exact, package_type07_body["maxExactBodyBytes"]
+            )
+        for example in package_type07_body["nonExactExamples"]:
+            if len(type07_body_non_exact_examples) >= 32:
+                break
+            type07_body_non_exact_examples.append(
                 {"block": row.get("block"), "package": row.get("path"), **example}
             )
 
@@ -1095,6 +1248,28 @@ def aggregate_current_hirc_actions(
                 type02_body_bank_version_counts[
                     str(version) if version is not None else "unknown"
                 ] += 1
+            bank_type07_stats = bank_type_stats.get("0x07")
+            bank_type07_count = int((bank_type07_stats or {}).get("count") or 0)
+            bank_type07_body = _read_type07_body_metrics(
+                bank.get("hircType07BodyFrame"),
+                bank_type07_stats,
+                bank_type07_count,
+                bank_name,
+            )
+            for key in TYPE02_BODY_FRAME_FIELDS:
+                package_type07_bank_totals[key] += bank_type07_body[key]
+            package_type07_bank_groups.update(bank_type07_body["groupCounts"])
+            package_type07_bank_selectors.update(bank_type07_body["selectorCounts"])
+            package_type07_bank_failures.update(bank_type07_body["failureCategories"])
+            package_type07_bank_unsupported.update(bank_type07_body["unsupportedCategories"])
+            if bank_type07_body["exact"]:
+                package_type07_bank_mins.append(bank_type07_body["minExactBodyBytes"])
+                package_type07_bank_maxes.append(bank_type07_body["maxExactBodyBytes"])
+            if bank_type07_count:
+                type07_body_banks_with_objects += 1
+                type07_body_bank_version_counts[
+                    str(version) if version is not None else "unknown"
+                ] += 1
             bank_type04_stats = bank_type_stats.get("0x04")
             bank_type04_count = int((bank_type04_stats or {}).get("count") or 0)
             bank_type04 = _read_type04_u32_vector_metrics(
@@ -1180,6 +1355,34 @@ def aggregate_current_hirc_actions(
                 f"banks={bank_min_exact}..{bank_max_exact} "
                 f"package={package_type02_body['minExactBodyBytes']}.."
                 f"{package_type02_body['maxExactBodyBytes']}"
+            )
+
+        for key in TYPE02_BODY_FRAME_FIELDS:
+            if package_type07_bank_totals[key] != package_type07_body[key]:
+                raise ValueError(
+                    "per-bank/package type 0x07 body-frame total mismatch: "
+                    f"{package_label} field={key} banks={package_type07_bank_totals[key]} "
+                    f"package={package_type07_body[key]}"
+                )
+        if {k: v for k, v in sorted(package_type07_bank_groups.items())} != package_type07_body["groupCounts"]:
+            raise ValueError(f"per-bank/package type 0x07 group inventory mismatch: {package_label}")
+        if {k: v for k, v in sorted(package_type07_bank_selectors.items())} != package_type07_body["selectorCounts"]:
+            raise ValueError(f"per-bank/package type 0x07 selector inventory mismatch: {package_label}")
+        if dict(sorted(package_type07_bank_failures.items())) != package_type07_body["failureCategories"]:
+            raise ValueError(f"per-bank/package type 0x07 body failure categories mismatch: {package_label}")
+        if dict(sorted(package_type07_bank_unsupported.items())) != package_type07_body["unsupportedCategories"]:
+            raise ValueError(f"per-bank/package type 0x07 body unsupported categories mismatch: {package_label}")
+        bank07_min = min(package_type07_bank_mins) if package_type07_bank_mins else 0
+        bank07_max = max(package_type07_bank_maxes) if package_type07_bank_maxes else 0
+        if (
+            bank07_min != package_type07_body["minExactBodyBytes"]
+            or bank07_max != package_type07_body["maxExactBodyBytes"]
+        ):
+            raise ValueError(
+                f"per-bank/package type 0x07 exact-length range mismatch: {package_label} "
+                f"banks={bank07_min}..{bank07_max} "
+                f"package={package_type07_body['minExactBodyBytes']}.."
+                f"{package_type07_body['maxExactBodyBytes']}"
             )
 
         for key in TYPE04_FRAME_FIELDS:
@@ -1304,21 +1507,53 @@ def aggregate_current_hirc_actions(
             "nonExactExamples": type02_body_non_exact_examples,
             "objectCountsByBlock": dict(sorted(type02_body_counts_by_block.items())),
             "bankVersionCounts": dict(sorted(type02_body_bank_version_counts.items())),
-            "unresolvedWidths": [
-                "group B element width: the current corpus carries no nonempty vector",
-                "group E selector predicate: the two low selector bits never disagree",
-                "group A slot split: only one corpus object separates a shared mask byte "
-                "plus six-byte slots from no mask byte plus seven-byte slots",
-                "group F selector bits other than 0x08 gate no observed payload, and "
-                "values 0x10 and 0x18 occur once each",
-                "group A and group B flag bytes gate nothing in this frame",
-                "the fixed six-byte group G block is consumed without internal structure",
-                "group E branch 2 occurs in exactly one corpus object",
-            ],
+            "unresolvedWidths": list(SHARED_NODE_FRAME_RESIDUALS),
             "upstreamAbortsNotCountedHere": (
                 "a malformed 14-byte source prefix or plugin parameter range throws in "
                 "the preceding prefix census and aborts the whole package, so it is "
                 "never counted as a failed body by this lane"
+            ),
+        },
+        "type07BodyFrames": {
+            "count": int(type07_body_totals["count"]),
+            "exact": int(type07_body_totals["exact"]),
+            "unsupported": int(type07_body_totals["unsupported"]),
+            "failed": int(type07_body_totals["failed"]),
+            "ambiguous": int(type07_body_totals["ambiguous"]),
+            "packagesWithObjects": type07_body_packages_with_objects,
+            "banksWithObjects": type07_body_banks_with_objects,
+            "bodyBytes": int(type07_body_totals["bodyBytes"]),
+            "exactCursorBytes": int(type07_body_totals["exactCursorBytes"]),
+            "nonExactBodyBytes": int(type07_body_totals["nonExactBodyBytes"]),
+            "minExactBodyBytes": type07_body_min_exact or 0,
+            "maxExactBodyBytes": type07_body_max_exact,
+            "frameClosure": (
+                "no-objects"
+                if int(type07_body_totals["count"]) == 0
+                else "all-bodies-exact"
+                if int(type07_body_totals["exact"]) == int(type07_body_totals["count"])
+                else "incomplete"
+            ),
+            "bodyAccounting": (
+                "framedBodyBytesEqualDeclaredHircObjectBodiesMinusObjectIds; "
+                "every exact body ends at its declared body end"
+            ),
+            "sharedNodeFrame": "the nine anonymous groups are the same ones proven on type 0x02 bodies",
+            "anonymousGroupCounts": dict(sorted(type07_body_groups.items())),
+            "anonymousSelectorCounts": dict(sorted(type07_body_selectors.items())),
+            "failureCategories": dict(sorted(type07_body_failure_categories.items())),
+            "unsupportedCategories": dict(sorted(type07_body_unsupported_categories.items())),
+            "nonExactExamples": type07_body_non_exact_examples,
+            "objectCountsByBlock": dict(sorted(type07_body_counts_by_block.items())),
+            "bankVersionCounts": dict(sorted(type07_body_bank_version_counts.items())),
+            "unresolvedWidths": list(SHARED_NODE_FRAME_RESIDUALS)
+            + [
+                "the terminal counted vector holds four-byte anonymous references with "
+                "no proven target namespace",
+            ],
+            "upstreamAbortsNotCountedHere": (
+                "type 0x07 has no preceding per-object census, so unlike type 0x02 every "
+                "malformed body reaches this lane as a counted failure"
             ),
         },
         "type04U32VectorCandidates": {
@@ -1525,7 +1760,7 @@ def _type02_body_markdown(report: dict[str, Any]) -> str:
             f"- Type `0x02` objects: {bodies['count']:,}; exact {bodies['exact']:,}; unsupported {bodies['unsupported']:,}; failed {bodies['failed']:,}; ambiguous {bodies['ambiguous']:,}.",
             f"- Object bodies: {bodies['bodyBytes']:,} bytes; exact cursor {bodies['exactCursorBytes']:,}; non-exact {bodies['nonExactBodyBytes']:,}.",
             f"- Packages with objects: {bodies['packagesWithObjects']:,}; banks with objects: {bodies['banksWithObjects']:,}.",
-            f"- Exact body lengths range from {bodies['minExactBodyBytes']:,} to {bodies['maxExactBodyBytes']:,} bytes; the smallest possible frame is 45.",
+            f"- Exact body lengths range from {bodies['minExactBodyBytes']:,} to {bodies['maxExactBodyBytes']:,} bytes; the smallest possible frame is {TYPE02_BODY_MINIMUM_FRAME_BYTES}.",
             "- The constraining check is that framed body bytes equal the declared HIRC object bytes minus object ids, and that every exact body ends at its declared body end. The `exactCursorBytes + nonExactBodyBytes = bodyBytes` identity is an internal consistency assert, not independent evidence: a short read is never labelled exact, so that identity cannot fail.",
             f"- Closure is enforced: any failed, unsupported, or ambiguous body makes this report `incomplete` and the gate exit nonzero. Current status: `{report['status']}`.",
             "",
@@ -1593,6 +1828,103 @@ def type02_body_corpus_is_closed(corpus: dict[str, Any]) -> bool:
     )
 
 
+def _type07_body_markdown(report: dict[str, Any]) -> str:
+    bodies = report["corpus"]["type07BodyFrames"]
+    cli_fingerprint = report["outer"]["animeStudioCliFingerprint"]
+    group_rows = "\n".join(
+        f"| `{group}` | {count:,} |" for group, count in bodies["anonymousGroupCounts"].items()
+    ) or "| _none_ | 0 |"
+    selector_rows = "\n".join(
+        f"| `{selector}` | {count:,} |" for selector, count in bodies["anonymousSelectorCounts"].items()
+    ) or "| _none_ | 0 |"
+    block_rows = "\n".join(
+        f"| `{block}` | {count:,} |" for block, count in bodies["objectCountsByBlock"].items()
+    ) or "| _none_ | 0 |"
+    failure_rows = "\n".join(
+        f"| `{category}` | {count:,} |" for category, count in bodies["failureCategories"].items()
+    ) or "| _none_ | 0 |"
+    unsupported_rows = "\n".join(
+        f"| `{category}` | {count:,} |" for category, count in bodies["unsupportedCategories"].items()
+    ) or "| _none_ | 0 |"
+    unresolved_rows = "\n".join(f"- {item}" for item in bodies["unresolvedWidths"]) or "- none"
+    return "\n".join(
+        [
+            "# Wwise HIRC numeric type `0x07` whole-body cursor audit",
+            "",
+            f"- Status: `{report['status']}`; body closure: `{bodies['frameClosure']}`.",
+            f"- Current VFS input set: `{report['inputSetSha256']}`.",
+            f"- Authenticated outer ledger: `{report['outer']['ledgerSha256']}`.",
+            f"- Current AnimeStudio CLI matches the outer audit fingerprint: `{cli_fingerprint['matchesOuterAudit']}` (outer `{cli_fingerprint['outerAuditSha256']}`, current `{cli_fingerprint['currentSha256']}`).",
+            _tool_closure_markdown(report),
+            f"- Verified AKPK packages: {report['corpus']['verifiedPackageCount']:,}/{report['corpus']['packageCount']:,}; excluded audio blocks: {report['corpus']['excludedBlockCount']:,}.",
+            "- Outer-ledger package checksum/chunk/source identities, exclusions, and per-bank/package type `0x07` body metrics reconciled.",
+            f"- Type `0x07` objects: {bodies['count']:,}; exact {bodies['exact']:,}; unsupported {bodies['unsupported']:,}; failed {bodies['failed']:,}; ambiguous {bodies['ambiguous']:,}.",
+            f"- Object bodies: {bodies['bodyBytes']:,} bytes; exact cursor {bodies['exactCursorBytes']:,}; non-exact {bodies['nonExactBodyBytes']:,}.",
+            f"- Exact body lengths range from {bodies['minExactBodyBytes']:,} to {bodies['maxExactBodyBytes']:,} bytes; the smallest possible frame is {TYPE07_BODY_MINIMUM_FRAME_BYTES}.",
+            f"- Packages with objects: {bodies['packagesWithObjects']:,}; banks with objects: {bodies['banksWithObjects']:,}.",
+            f"- Shared frame: {bodies['sharedNodeFrame']}.",
+            "- The constraining check is that framed body bytes equal the declared HIRC object bytes minus object ids, and that every exact body ends at its declared body end.",
+            f"- Closure is enforced: any failed, unsupported, or ambiguous body makes this report `incomplete` and the gate exit nonzero. Current status: `{report['status']}`.",
+            "",
+            "## Anonymous group inventory",
+            "",
+            "| Group | Elements |",
+            "|---|---:|",
+            group_rows,
+            "",
+            "## Anonymous selector inventory",
+            "",
+            "| Selector | Observations |",
+            "|---|---:|",
+            selector_rows,
+            "",
+            "## Failure categories",
+            "",
+            "| Category | Objects |",
+            "|---|---:|",
+            failure_rows,
+            "",
+            "## Unsupported categories",
+            "",
+            "| Category | Objects |",
+            "|---|---:|",
+            unsupported_rows,
+            "",
+            "## Object counts by audio block",
+            "",
+            "| Audio block | Objects |",
+            "|---|---:|",
+            block_rows,
+            "",
+            "## What this corpus does not resolve",
+            "",
+            unresolved_rows,
+            "",
+            "## Failures this lane cannot count",
+            "",
+            f"- {bodies['upstreamAbortsNotCountedHere']}",
+            "",
+            "The reader consumes the nine anonymous node groups shared with type `0x02` and then one counted vector of four-byte anonymous references. Exact status means this framing reaches the declared object-body end. Group letters, selector bits, keys, values, and reference targets stay anonymous; this census does not establish serialized field ownership, field names, parent or child identity, container selection, runtime execution, event selection, or audibility.",
+            "",
+            f"Corpus gate SHA-256: `{report['corpusGate']['sha256']}`; AnimeStudio CLI SHA-256 `{report['audioAudit']['toolSha256']}`.",
+            f"Raw AnimeStudio package audit: `{report['audioAudit']['intermediatePath']}` (SHA-256 `{report['audioAudit']['sha256']}`).",
+            "",
+        ]
+    )
+
+
+def type07_body_corpus_is_closed(corpus: dict[str, Any]) -> bool:
+    """Return whether the type 0x07 body lane consumed the whole current corpus."""
+    return (
+        corpus.get("frameClosure") == "all-bodies-exact"
+        and int(corpus.get("count") or 0) == int(corpus.get("exact") or 0)
+        and int(corpus.get("unsupported") or 0) == 0
+        and int(corpus.get("failed") or 0) == 0
+        and int(corpus.get("ambiguous") or 0) == 0
+        and int(corpus.get("nonExactBodyBytes") or 0) == 0
+    )
+
+
 def _tool_closure_markdown(report: dict[str, Any]) -> str:
     closure = report["audioAudit"]["toolClosure"]
     return (
@@ -1616,6 +1948,8 @@ def run_current_corpus_audit(
     type04_output_markdown: Path | None = None,
     type02_body_output_json: Path = DEFAULT_TYPE02_BODY_OUTPUT,
     type02_body_output_markdown: Path | None = None,
+    type07_body_output_json: Path = DEFAULT_TYPE07_BODY_OUTPUT,
+    type07_body_output_markdown: Path | None = None,
 ) -> dict[str, Any]:
     outer, source_auth = load_current_outer(outer_path, ledger_path, expected_input_set_sha256)
     input_set = str(outer["inputSetSha256"]).upper()
@@ -1642,6 +1976,9 @@ def run_current_corpus_audit(
     type02_body_output_json.parent.mkdir(parents=True, exist_ok=True)
     type02_body_output_markdown = type02_body_output_markdown or type02_body_output_json.with_suffix(".md")
     type02_body_output_markdown.parent.mkdir(parents=True, exist_ok=True)
+    type07_body_output_json.parent.mkdir(parents=True, exist_ok=True)
+    type07_body_output_markdown = type07_body_output_markdown or type07_body_output_json.with_suffix(".md")
+    type07_body_output_markdown.parent.mkdir(parents=True, exist_ok=True)
 
     cli_sha_before = sha256_file(cli_path)
     tool_closure_before = _capture_cli_output_closure(cli_path)
@@ -1686,10 +2023,16 @@ def run_current_corpus_audit(
     type02_prefix_corpus = corpus["type02SourcePrefixes"]
     type04_vector_corpus = corpus["type04U32VectorCandidates"]
     type02_body_corpus = corpus["type02BodyFrames"]
+    type07_body_corpus = corpus["type07BodyFrames"]
     action_corpus = {
         key: value
         for key, value in corpus.items()
-        if key not in {"type02SourcePrefixes", "type04U32VectorCandidates", "type02BodyFrames"}
+        if key not in {
+            "type02SourcePrefixes",
+            "type04U32VectorCandidates",
+            "type02BodyFrames",
+            "type07BodyFrames",
+        }
     }
 
     report = {
@@ -1865,6 +2208,63 @@ def run_current_corpus_audit(
     type02_body_output_markdown.write_text(
         _type02_body_markdown(type02_body_report), encoding="utf-8"
     )
+    type07_body_closed = type07_body_corpus_is_closed(type07_body_corpus)
+    type07_body_report = {
+        "format": "animestudio-wwise-hirc-type07-body-corpus-audit",
+        "schemaVersion": 1,
+        "generatedUtc": report["generatedUtc"],
+        "status": "complete" if type07_body_closed else "incomplete",
+        "closureEnforced": True,
+        "inputSetSha256": input_set,
+        "outer": report["outer"],
+        "audioAudit": report["audioAudit"],
+        "corpusGate": report["corpusGate"],
+        "corpus": {
+            "packageCount": corpus["packageCount"],
+            "verifiedPackageCount": corpus["verifiedPackageCount"],
+            "excludedBlockCount": corpus["excludedBlockCount"],
+            "identityReconciliation": {
+                "verifiedPackagesMatchedToOuterLedger": True,
+                "excludedBlocksMatchedToOuterLedger": True,
+                "perBankBodyFramesMatchedToPackageTotals": True,
+            },
+            "type07BodyFrames": type07_body_corpus,
+            "audioAuditSummary": corpus["audioAuditSummary"],
+        },
+        "evidenceBoundary": {
+            "layer": 3,
+            "claim": (
+                "numeric HIRC type 0x07 object bodies are consumed by the shared anonymous "
+                "node frame followed by one counted four-byte reference vector, reaching "
+                "the declared body end when status is exact"
+            ),
+            "semanticStatus": "structural-only",
+            "nonClaims": [
+                "serialized field ownership or field names",
+                "group, selector, key, or value meanings",
+                "parent, child, bus, or effect object identity",
+                "container membership, selection, or ordering behaviour",
+                "runtime execution, event selection, or audibility",
+            ],
+            "unresolved": type07_body_corpus["unresolvedWidths"],
+        },
+    }
+    type07_body_output_json.write_text(
+        json.dumps(type07_body_report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    type07_body_output_markdown.write_text(
+        _type07_body_markdown(type07_body_report), encoding="utf-8"
+    )
+    if not type07_body_closed:
+        raise ValueError(
+            "type 0x07 body corpus did not close exactly: "
+            f"exact={type07_body_corpus['exact']} "
+            f"count={type07_body_corpus['count']} "
+            f"unsupported={type07_body_corpus['unsupported']} "
+            f"failed={type07_body_corpus['failed']} "
+            f"nonExactBodyBytes={type07_body_corpus['nonExactBodyBytes']}; "
+            f"report={type07_body_output_json}"
+        )
     if not type02_body_closed:
         raise ValueError(
             "type 0x02 body corpus did not close exactly: "
@@ -1893,6 +2293,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--type04-output-markdown", type=Path, default=None)
     parser.add_argument("--type02-body-output-json", type=Path, default=DEFAULT_TYPE02_BODY_OUTPUT)
     parser.add_argument("--type02-body-output-markdown", type=Path, default=None)
+    parser.add_argument("--type07-body-output-json", type=Path, default=DEFAULT_TYPE07_BODY_OUTPUT)
+    parser.add_argument("--type07-body-output-markdown", type=Path, default=None)
     args = parser.parse_args(argv)
     try:
         report = run_current_corpus_audit(
@@ -1909,10 +2311,13 @@ def main(argv: list[str] | None = None) -> int:
             type04_output_markdown=args.type04_output_markdown,
             type02_body_output_json=args.type02_body_output_json,
             type02_body_output_markdown=args.type02_body_output_markdown,
+            type07_body_output_json=args.type07_body_output_json,
+            type07_body_output_markdown=args.type07_body_output_markdown,
         )
         type02_report = json.loads(args.type02_output_json.read_text(encoding="utf-8"))
         type04_report = json.loads(args.type04_output_json.read_text(encoding="utf-8"))
         type02_body_report = json.loads(args.type02_body_output_json.read_text(encoding="utf-8"))
+        type07_body_report = json.loads(args.type07_body_output_json.read_text(encoding="utf-8"))
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"HIRC Action current-corpus audit failed: {exc}", file=sys.stderr)
         return 1
@@ -1947,6 +2352,14 @@ def main(argv: list[str] | None = None) -> int:
         f"nonExactBody={bodies['nonExactBodyBytes']:,} bytes; inputSetSha256={report['inputSetSha256']}"
     )
     print(f"Type 0x02 body report: {args.type02_body_output_json}")
+    bodies07 = type07_body_report["corpus"]["type07BodyFrames"]
+    print(
+        "HIRC type 0x07 whole-body current corpus: "
+        f"{bodies07['exact']:,}/{bodies07['count']:,} exact; "
+        f"unsupported={bodies07['unsupported']:,} failed={bodies07['failed']:,}; "
+        f"nonExactBody={bodies07['nonExactBodyBytes']:,} bytes; inputSetSha256={report['inputSetSha256']}"
+    )
+    print(f"Type 0x07 body report: {args.type07_body_output_json}")
     return 0
 
 

@@ -1546,6 +1546,38 @@ Stable conclusions:
   introduces a nonempty group B vector stops the gate instead of quietly
   lowering the number. Current corpus detail belongs in
   [`reports/animestudio/hirc_type02_body_current_latest.md`](../reports/animestudio/hirc_type02_body_current_latest.md).
+- Those nine groups are **not** type-`0x02`-specific. Numeric HIRC type `0x07`
+  reuses them with no source prefix and one terminal counted vector of
+  four-byte anonymous references, and all 48,740 current objects / 3,572,927
+  body bytes consume exactly. One maintained reader now frames both types, so
+  the guards and the fail-closed rules cannot drift apart. Type `0x07` also
+  corrected two things the type `0x02` corpus could not. The group I entry
+  carries a **variable-size** anonymous key, not a fixed byte: type `0x02`
+  bodies spend one byte on all 475 of theirs, so a fixed width survived that
+  corpus and would have silently mis-framed exactly the 90 type-`0x07` objects
+  that contain a wider key. And group E selector `0x01` appears with no
+  extension, which disproves a bit-0 branch predicate — though that rests on
+  4 objects out of 48,740, so treat it as thin. Selector `0x02` is still
+  unobserved everywhere, so bit-1-only and both-bits-set remain tied and fail
+  closed. Say the refactor result precisely: the type `0x02` **counts** are
+  unchanged and its report diffs clean, but two **behaviours** changed on paths
+  that corpus never exercises, so a fixture now pins a continued key on the
+  type `0x02` path too. The key's five-byte cap and 32-bit range are inherited
+  from the type `0x03` Action reader, not proven here; both lanes publish a
+  `groupIKeyWidth_*` histogram so the widths actually witnessed stay auditable
+  (today: only 1 and 2). Group B is still empty in every framed body of both
+  types, so its element width stays unresolved, and both lanes now publish the
+  same shared-framer residual list rather than each carrying a shorter one.
+  Reference targets, container membership, ordering and selection are not
+  claimed. See
+  [`reports/animestudio/hirc_type07_body_current_latest.md`](../reports/animestudio/hirc_type07_body_current_latest.md).
+- A bounded read-only probe shows how far the node frame reaches: it consumes
+  cleanly from byte 0 for every type `0x05` (30,352) and `0x06` (4,573) body
+  and for 5,155/5,158 type `0x09` bodies, each leaving a regular type-specific
+  suffix, while types `0x0B`, `0x0E`, `0x12`, `0x16` and `0x08` reject it
+  outright and `0x0A`/`0x0C`/`0x0D` match only in part. Treat that as a
+  prioritisation signal, not a framing claim: no suffix is parsed and no
+  maintained reader accepts those types yet.
 - AKPK entries, Wwise numeric media ids, Events, containers, switches, random
   nodes, RTPC curves, and authored consumers keep their native identities.
   Same-id files in different roots are not collapsed by filename stem.

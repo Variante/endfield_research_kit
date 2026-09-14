@@ -274,11 +274,19 @@ for plugin type `0x02`, a checked length-prefixed parameter range. Its body is
 now consumed whole by a separate anonymous nine-group frame that must reach the
 declared object-body end; run it through the same corpus gate and read
 `reports/animestudio/hirc_type02_body_current_latest.md` before assuming the tail
-is still unframed. Two widths stay unresolved and must keep failing closed: group
-B's element width has no nonempty sample, and group E's two low selector bits
-never disagree in the current corpus. Exact consumption is byte extent only;
-keep group letters, selector bits, keys, and values anonymous until a serializer
-or consumer witness assigns them.
+is still unframed. The same nine groups are shared with numeric type `0x07`,
+which adds one terminal counted vector of four-byte anonymous references; one
+maintained reader frames both, so extend that reader rather than adding a
+parallel one. Widths that stay unresolved must keep failing closed: group B has
+no nonempty sample in any framed type, and group E's selector `0x02` is
+unobserved, so bit-1-only and both-bits-set tie. Selector `0x01` does occur and
+disproves a bit-0 rule, but in only 4 of 48,740 type `0x07` objects. The group I
+anonymous key is variable-size, not a fixed byte: a corpus where every key fits
+in one byte cannot settle that, so re-check a new type before trusting a fixed
+width, and read the published `groupIKeyWidth_*` histogram rather than assuming
+the inherited five-byte cap is a corpus fact. Exact consumption is byte extent only;
+keep group letters, selector bits, keys, values, and reference targets anonymous
+until a serializer or consumer witness assigns them.
 
 For IV recovery, region, index filename-table, and index-directed payload
 framing are distinct claims. `parse_index_bytes` proves one unambiguous count-
