@@ -574,7 +574,9 @@ and refuses to publish `complete` unless every reference names exactly one
 unambiguous same-bank object. Edges are numeric type pairs; the report names
 neither endpoint. The only direction it establishes is physical -- which object's
 body holds the value -- and that licenses no parenthood, containment, ordering or
-playback reading.
+playback reading. Words framed beside a reference vector that do not all resolve
+are published as `candidateWords` rather than joined, so a partial match is
+never reported as a full one.
 Its v150 HIRC parser also publishes exact NodeBase effect slots and output-bus
 IDs. Effect definitions retain physical PCK/bank scope, built-in plug-in class
 identity, and parameter hashes. Fingerprinted shipped `SetParamsBlock` layouts

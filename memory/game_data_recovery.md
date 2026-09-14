@@ -1633,6 +1633,22 @@ Stable conclusions:
   Seventeen object ids repeat inside a bank, 17 distinct ids over 17 repeat
   occurrences, so each appears exactly twice; **no reference targets a duplicated
   id**, so that ambiguity does not touch the claim.
+- Numeric HIRC type `0x06` is the fourth type on the shared node frame: node
+  groups, a fixed ten-byte opaque header, one counted four-byte reference vector,
+  one counted group list where each group carries a four-byte key and its own
+  counted vector, and one counted vector of fourteen-byte records. All 4,573
+  current objects / 1,334,519 body bytes consume exactly, and every suffix width
+  is uniquely determined by whole-corpus closure.
+- Type `0x06` is also where the reference join first had to say no. Only its
+  child vector resolves completely (20,290/20,290). Of the other framed words,
+  432 of 22,234 group items and 573 of 20,863 record leading words match no
+  object in their bank, so those words are **not** established as identities and
+  are not joined. Excluding them silently would have been cherry-picking -- a 98%
+  rate reported as 100% -- so the census publishes them as `candidateWords` with
+  the number that do match, and the gate requires that count to cover every
+  framed word held out. The gate caught this: the first attempt claimed all three
+  vectors as references and failed with 1,005 unresolved. Believe the counter and
+  narrow the claim, never the reverse.
 - Be precise about what the reference graph is. The only direction it establishes
   is physical: which object's body holds the four-byte value. Over that byte-level
   direction the relation is acyclic with at most one holder per target, which is

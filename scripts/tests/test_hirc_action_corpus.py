@@ -196,6 +196,8 @@ def valid_action_fixture():
         "targetsWithMultipleReferrers": 0,
         "duplicateObjectIds": 0,
         "referencesToDuplicateIds": 0,
+        "candidateWords": 0,
+        "candidateWordsMatchingAnObject": 0,
         "referenceCycleOrFeedingNodes": 0,
         "distinctDuplicateObjectIds": 0,
         "maximumReferenceDepth": 3,
@@ -822,6 +824,8 @@ class HircActionCorpusTests(unittest.TestCase):
                     "targetsWithMultipleReferrers": 0,
                     "duplicateObjectIds": 0,
                     "referencesToDuplicateIds": 0,
+                    "candidateWords": 0,
+                    "candidateWordsMatchingAnObject": 0,
                     "referenceCycleOrFeedingNodes": 0,
                     "distinctDuplicateObjectIds": 0,
                     "entriesNotReachingCensus": 0,
@@ -946,9 +950,10 @@ class HircActionCorpusTests(unittest.TestCase):
         from scripts.audio_semantics.hirc_action_corpus import _build_body_lanes
 
         lanes = _build_body_lanes()
-        self.assertEqual(sorted(lanes), ["0x02", "0x05", "0x07"])
+        self.assertEqual(sorted(lanes), ["0x02", "0x05", "0x06", "0x07"])
         layouts = {key: lane.layout for key, lane in lanes.items()}
-        self.assertEqual(len(set(layouts.values())), 3)
+        self.assertEqual(len(set(layouts.values())), len(lanes))
+        self.assertIn("counted list of groups", layouts["0x06"])
         self.assertIn("source prefix", layouts["0x02"])
         self.assertIn("four-byte anonymous references.", layouts["0x07"])
         self.assertIn("twenty-four-byte opaque", layouts["0x05"])

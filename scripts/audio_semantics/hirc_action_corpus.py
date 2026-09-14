@@ -87,8 +87,11 @@ HIRC_VARIABLE_SIZE_MAX_BYTES = 5
 # The 31-byte node frame with no source prefix, a fixed 24-byte block, an empty
 # four-byte reference count and an empty two-byte record count.
 TYPE05_BODY_MINIMUM_FRAME_BYTES = 61
+# The node frame, a fixed ten-byte header and three empty four-byte counts.
+TYPE06_BODY_MINIMUM_FRAME_BYTES = 53
 DEFAULT_TYPE05_BODY_OUTPUT = ROOT / "reports/animestudio/hirc_type05_body_current_latest.json"
 DEFAULT_REFERENCE_OUTPUT = ROOT / "reports/animestudio/hirc_reference_graph_current_latest.json"
+DEFAULT_TYPE06_BODY_OUTPUT = ROOT / "reports/animestudio/hirc_type06_body_current_latest.json"
 REFERENCE_CENSUS_FIELDS = (
     "references",
     "resolvedSameBank",
@@ -97,6 +100,8 @@ REFERENCE_CENSUS_FIELDS = (
     "targetsWithMultipleReferrers",
     "duplicateObjectIds",
     "referencesToDuplicateIds",
+    "candidateWords",
+    "candidateWordsMatchingAnObject",
     "referenceCycleOrFeedingNodes",
     "distinctDuplicateObjectIds",
 )
@@ -1221,6 +1226,44 @@ def _build_body_lanes() -> dict[str, "_BodyLane"]:
             ),
             shared_note=SHARED_NODE_FRAME_NOTE,
         ),
+        "0x06": _BodyLane(
+            "0x06",
+            "hircType06BodyFrame",
+            TYPE06_BODY_MINIMUM_FRAME_BYTES,
+            claim=(
+                "numeric HIRC type 0x06 object bodies are consumed by the shared anonymous "
+                "node frame, a fixed ten-byte opaque header, one counted four-byte "
+                "reference vector, one counted group list each carrying its own counted "
+                "reference vector, and one counted fourteen-byte record vector, reaching "
+                "the declared body end when status is exact"
+            ),
+            layout=(
+                "The reader consumes " + NODE_FRAME_LAYOUT + ", a fixed ten-byte opaque "
+                "header, one counted vector of four-byte anonymous references, one counted "
+                "list of groups each holding a four-byte key and its own counted reference "
+                "vector, and one counted vector of fourteen-byte records that each open "
+                "with a reference."
+            ),
+            extra_residuals=(
+                "the fixed ten-byte header carries two id-shaped words that match no object "
+                "in their bank; they are consumed opaquely and never offered to the "
+                "reference join",
+                "each group's four-byte key likewise matches no bank object and stays opaque",
+                "the ten bytes after each record's leading reference are consumed without "
+                "internal structure",
+            ),
+            extra_element_widths={
+                "childEntries": 4,
+                "groupEntries": 8,
+                "groupItemEntries": 4,
+                "recordEntries": 14,
+            },
+            upstream_note=(
+                "type 0x06 has no preceding per-object census, so every malformed body "
+                "reaches this lane as a counted failure"
+            ),
+            shared_note=SHARED_NODE_FRAME_NOTE,
+        ),
         "0x05": _BodyLane(
             "0x05",
             "hircType05BodyFrame",
@@ -1684,6 +1727,7 @@ def aggregate_current_hirc_actions(
         int(type04_totals["exactEntryCount"])
         + int(body_lanes["0x05"].groups.get("referenceEntries", 0))
         + int(body_lanes["0x07"].groups.get("childEntries", 0))
+        + int(body_lanes["0x06"].groups.get("childEntries", 0))
     )
     if int(reference_totals["references"]) != framed_vector_entries:
         raise ValueError(
@@ -1693,6 +1737,18 @@ def aggregate_current_hirc_actions(
         )
     # Edges must also reconcile with their source lane, so a mislabelled source type
     # cannot hide inside a correct grand total.
+    # Words framed inside type 0x06 that are deliberately not joined. They must be
+    # accounted for exactly, so excluding them cannot quietly become cherry-picking.
+    unjoined_candidate_words = (
+        int(body_lanes["0x06"].groups.get("groupItemEntries", 0))
+        + int(body_lanes["0x06"].groups.get("recordEntries", 0))
+    )
+    if int(reference_totals["candidateWords"]) != unjoined_candidate_words:
+        raise ValueError(
+            "HIRC candidate words do not cover every unjoined framed word: "
+            f"candidateWords={int(reference_totals['candidateWords'])} "
+            f"framedUnjoined={unjoined_candidate_words}"
+        )
     entries_not_reaching_census = (
         int(type04_totals["candidateEntryCount"]) - int(type04_totals["exactEntryCount"])
     )
@@ -1706,6 +1762,7 @@ def aggregate_current_hirc_actions(
         ("type04", int(type04_totals["exactEntryCount"])),
         ("type05", int(body_lanes["0x05"].groups.get("referenceEntries", 0))),
         ("type07", int(body_lanes["0x07"].groups.get("childEntries", 0))),
+        ("type06", int(body_lanes["0x06"].groups.get("childEntries", 0))),
     ):
         edge_total = sum(
             count
@@ -1796,6 +1853,7 @@ def aggregate_current_hirc_actions(
         "type02BodyFrames": body_lanes["0x02"].publish(),
         "type07BodyFrames": body_lanes["0x07"].publish(),
         "type05BodyFrames": body_lanes["0x05"].publish(),
+        "type06BodyFrames": body_lanes["0x06"].publish(),
         "type04U32VectorCandidates": {
             "count": type04_count,
             "exact": type04_exact,
@@ -2079,6 +2137,10 @@ def _read_reference_census(census: Any, label: str) -> dict[str, Any]:
         raise ValueError(f"HIRC self references exceed total references: {label}")
     if metrics["referencesToDuplicateIds"] > metrics["references"]:
         raise ValueError(f"HIRC duplicate-id references exceed total references: {label}")
+    if metrics["candidateWordsMatchingAnObject"] > metrics["candidateWords"]:
+        raise ValueError(
+            f"HIRC candidate words matching an object exceed the candidate total: {label}"
+        )
     if metrics["targetsWithMultipleReferrers"] > metrics["references"]:
         raise ValueError(f"HIRC multi-referrer targets exceed total references: {label}")
     if metrics["referenceCycleOrFeedingNodes"] > metrics["references"]:
@@ -2196,6 +2258,7 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             f"- Self references: {graph['selfReferences']:,}; targets carrying more than one referrer: {graph['targetsWithMultipleReferrers']:,}.",
             f"- Nodes on or feeding a reference cycle: {graph['referenceCycleOrFeedingNodes']:,}; longest chain of references traversed: {graph['maximumReferenceDepth']:,} (counted in references, so a chain of {graph['maximumReferenceDepth']:,} links {graph['maximumReferenceDepth'] + 1:,} objects).",
             f"- Framed vector entries that never reached this census: {graph['entriesNotReachingCensus']:,}.",
+            f"- Words framed beside a reference vector but deliberately not joined: {graph['candidateWords']:,}, of which {graph['candidateWordsMatchingAnObject']:,} do match an object in their bank. They are excluded because they do not all match, so they are not established as identities -- the shortfall is published here rather than dropped.",
             "- With no target carrying more than one referrer, the references into a numeric type are that many distinct objects of it, so the table below is directly comparable to the object population beside it.",
             f"- Object ids that repeat inside a bank: {graph['distinctDuplicateObjectIds']:,} distinct ids over {graph['duplicateObjectIds']:,} repeat occurrences.",
             f"- References into a duplicated id: {graph['referencesToDuplicateIds']:,}.",
@@ -2253,6 +2316,8 @@ def run_current_corpus_audit(
     type07_body_output_markdown: Path | None = None,
     type05_body_output_json: Path = DEFAULT_TYPE05_BODY_OUTPUT,
     type05_body_output_markdown: Path | None = None,
+    type06_body_output_json: Path = DEFAULT_TYPE06_BODY_OUTPUT,
+    type06_body_output_markdown: Path | None = None,
     reference_output_json: Path = DEFAULT_REFERENCE_OUTPUT,
     reference_output_markdown: Path | None = None,
 ) -> dict[str, Any]:
@@ -2287,6 +2352,9 @@ def run_current_corpus_audit(
     type05_body_output_json.parent.mkdir(parents=True, exist_ok=True)
     type05_body_output_markdown = type05_body_output_markdown or type05_body_output_json.with_suffix(".md")
     type05_body_output_markdown.parent.mkdir(parents=True, exist_ok=True)
+    type06_body_output_json.parent.mkdir(parents=True, exist_ok=True)
+    type06_body_output_markdown = type06_body_output_markdown or type06_body_output_json.with_suffix(".md")
+    type06_body_output_markdown.parent.mkdir(parents=True, exist_ok=True)
     reference_output_json.parent.mkdir(parents=True, exist_ok=True)
     reference_output_markdown = reference_output_markdown or reference_output_json.with_suffix(".md")
     reference_output_markdown.parent.mkdir(parents=True, exist_ok=True)
@@ -2529,6 +2597,7 @@ def run_current_corpus_audit(
         ("0x02", "type02BodyFrames", type02_body_output_json, type02_body_output_markdown),
         ("0x07", "type07BodyFrames", type07_body_output_json, type07_body_output_markdown),
         ("0x05", "type05BodyFrames", type05_body_output_json, type05_body_output_markdown),
+        ("0x06", "type06BodyFrames", type06_body_output_json, type06_body_output_markdown),
     )
     lane_failures = [
         failure
@@ -2611,6 +2680,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--type07-body-output-markdown", type=Path, default=None)
     parser.add_argument("--type05-body-output-json", type=Path, default=DEFAULT_TYPE05_BODY_OUTPUT)
     parser.add_argument("--type05-body-output-markdown", type=Path, default=None)
+    parser.add_argument("--type06-body-output-json", type=Path, default=DEFAULT_TYPE06_BODY_OUTPUT)
+    parser.add_argument("--type06-body-output-markdown", type=Path, default=None)
     parser.add_argument("--reference-output-json", type=Path, default=DEFAULT_REFERENCE_OUTPUT)
     parser.add_argument("--reference-output-markdown", type=Path, default=None)
     args = parser.parse_args(argv)
@@ -2633,6 +2704,8 @@ def main(argv: list[str] | None = None) -> int:
             type07_body_output_markdown=args.type07_body_output_markdown,
             type05_body_output_json=args.type05_body_output_json,
             type05_body_output_markdown=args.type05_body_output_markdown,
+            type06_body_output_json=args.type06_body_output_json,
+            type06_body_output_markdown=args.type06_body_output_markdown,
             reference_output_json=args.reference_output_json,
             reference_output_markdown=args.reference_output_markdown,
         )
