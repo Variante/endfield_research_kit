@@ -1048,7 +1048,10 @@ newer source version must not silently replace the capture-matched texture.
   open. Continue full-scene original/render comparisons after runtime changes,
   emphasizing cloth transparency, fabric detail and light effects.
   Native centered Halton jitter arithmetic now matches a selected c19 packet;
-  camera phase advancement and projection/history integration remain separate.
+  its mode-dependent cycle, increment/wrap and positive forced-phase policy
+  are also implemented. The opt-in NGX proxy generates its retained diagnostic
+  cycle from that arithmetic. Camera initialization, live mode ownership and
+  projection/history integration remain separate.
   CPP request mip bias has its own reusable gated evaluator; do not substitute
   the camera material/resolution producer. Recorded request values still need
   an upload-generation join before selecting the live draw route.
