@@ -295,6 +295,13 @@ and perform no final cursor/EOF comparison. Their numeric magic values recur
 inside the same payloads, so signature scanning cannot substitute for those
 missing bounds or establish a record start.
 
+For BuffData tag `0x1B`, run `python -m scripts.game_data.memorypack.buff_1b_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256`.
+It rebuilds the current BuffData census, verifies the selected tag byte against
+its authenticated VFS logical file, and joins the exact-build selected action
+reader. Runtime provider selection, action meaning, suffix ownership and whole
+BuffData EOF remain unresolved. Negative coverage lives in
+`scripts/tests/test_memorypack_buff_1b_corpus.py`.
+
 For SkillData work, run `python -m scripts.game_data.memorypack.skill_corpus`
 against the current outer summary, ledger, and input-set SHA. Historical
 export-backed censuses cannot be rebound by supplying a newer boundary report.

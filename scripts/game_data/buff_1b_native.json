@@ -1,5 +1,23 @@
 {
   "schemaVersion": 1,
+  "nativeInputs": {
+    "gameassemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "unionRoute": {
+    "tag": 27,
+    "switchTargetRva": 59829078,
+    "typeDefinition": 15937,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BlowOffAction_DataForMemoryPack",
+    "dataReaderMethodIndex": 118712,
+    "operands": [
+      {
+        "instructionRva": 59829078,
+        "usageTag": 1,
+        "registeredTypeIndex": 106327
+      }
+    ]
+  },
   "methods": [
     [
       118713,

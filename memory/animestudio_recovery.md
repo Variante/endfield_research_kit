@@ -678,6 +678,12 @@ pass license and target-framework review for AnimeStudio's .NET targets.
   cannot borrow suffix bytes. The corpus records its accepted prefix endpoint or
   unsupported-action stop and the remaining gap for every accepted suffix; this
   does not certify the legacy field labels or close that gap.
+  `memorypack.buff_1b_corpus` rebuilds the authenticated census and checks exact
+  root-continuation tag `0x1B` ranges against re-streamed logical bytes, then
+  joins the record to the current exact-build selected action reader. This
+  continuation profile does not prove root-field ownership. The
+  SequenceActionData provider remains unresolved; the anonymous action reader
+  does not close BuffData suffix ownership or whole-file EOF.
 - Continue Streaming nested element/byte-body framing using the bottom-up
   queue in `game_data_recovery.md`; concrete runtime paths and field names
   follow structural closure, not the reverse.

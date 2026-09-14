@@ -215,6 +215,7 @@ python -m scripts.game_data.streaming_marker2_corpus --input-set-sha256 CURRENT_
 python -m scripts.game_data.memorypack.skill_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --output reports/animestudio/skilldata_current_latest.json --output-md reports/animestudio/skilldata_current_latest.md
 python -m scripts.game_data.memorypack.skill_cursor_receipt --preflight
 python -m scripts.game_data.memorypack.npc_montage_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.game_data.memorypack.buff_1b_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
 %ASCLI% audit-refs --index OBJECT_INDEX.jsonl
@@ -317,6 +318,12 @@ supported first collection, beginning at `currentEventPrefix.consumedEnd`.
 Its independent status and ranges retain the remaining physical bytes as opaque;
 malformed continuation data also fails publication. This does not join the
 filename suffix to a proven root field or establish whole-schema EOF.
+`memorypack.buff_1b_corpus` rebuilds that full current census, selects only
+exact-closed tag `0x1B` records from root continuation, and re-streams matching
+files to verify their literal tag byte against ledger MD5 and logical SHA-256.
+It joins the tag to the exact-build selected `BlowOffAction_Data` reader order
+and writes `reports/animestudio/buff_1b_current_latest.{json,md}`. Provider
+selection, action semantics and whole-BuffData EOF remain unresolved.
 `memorypack.lipsync_corpus` joins the full LipSync JsonData stream to current
 ledger identities and runs the strict 15-member reader through EOF, checking
 logical MD5 and source/tool/parser pins at both ends. It reads JSONL one row at a

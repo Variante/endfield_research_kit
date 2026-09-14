@@ -294,6 +294,13 @@ selected native enum contracts, Assets, Audio, and the curated graph.
   on malformed prefixes even when the legacy suffix reader succeeds. Current
   Sequence consumer evidence places the counted indirect child array before
   two nonzero-normalized bytes; child output-slot width does not bound payloads.
+  `memorypack.buff_1b_corpus` joins exact-closed root-continuation tag `0x1B`
+  records to re-streamed current logical bytes and the exact-build selected
+  `BlowOffAction_Data` reader contract. This keeps the action body anonymous;
+  the continuation profile does not authenticate root-field ownership. Live
+  provider selection, action semantics and whole-BuffData EOF remain unresolved.
+  Changing coverage belongs in
+  `reports/animestudio/buff_1b_current_latest.{json,md}`.
   `scripts/game_data/buff_184_native.json` joins TogglableAction to header6:
   the common prefix followed by two independent SequenceActionData records.
   Null or empty first sequences retain the second, and each count reserves
