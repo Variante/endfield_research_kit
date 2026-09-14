@@ -1083,23 +1083,27 @@ newer source version must not silently replace the capture-matched texture.
   graphics-quality application also updates the main camera directly. Preserve
   these producers separately from authored startup defaults and history resets.
   Mode mutation history and consistent projection/history integration remain open.
-  The late overview_02 stones are absent for a reason upstream of every
-  constant-buffer gate: the whole effect instance is never simulated. Its M27
-  row is active and correctly bound, yet all 18 of its ParticleSystems hold
-  time at 0.000 for the entire run, while the ten overview_01 rock systems
-  advance normally in the same scene and the same frame. That control is what
-  makes the zeros meaningful rather than a measurement artifact. Excluded by
-  measurement: culling pause (forcing AlwaysSimulate changed nothing), time
-  scale, authored simulation speed, inactive objects, stopped or paused
-  systems, a disabled component (ParticleSystem is a Component, not a
-  Behaviour) and late spawning - the instance is bound at unityFrame 1. The
-  consequence is broader than the stones: the fragments, stone, ring, halo,
-  flash and smoke all contribute nothing, so whatever ring and halo the lab
-  does draw at the burst come from a different producer. Find what pins those
-  clocks before returning to terrain publication, b1 TAA jitter or the late VFX
-  anchor. Forcing renderer.enabled or emitting particles manually is not a
-  recovery. A resolver that reports absence by succeeding with a null output
-  hides this class of defect; name the reason where the caller can see it.
+  The late overview_02 stones were absent because the deferred sidecar's
+  activation gate starved their producer. The gate required the renderer to be
+  inside the camera's culling mask, while the exact M27 route requires the
+  opposite - isolation on layer 31, excluded from that mask - so the late
+  producer could never satisfy the gate deciding whether its own render path
+  runs. The gate therefore held only while the early overview_01 rocks had live
+  particles, ending at body ~4.37 s, and the overview_02 authored delays elapse
+  at body 4.49 s. Admitting the isolated row under the opposite visibility rule
+  makes the producer reachable: it now resolves with 15 live particles at body
+  4.500 s, matching the authored 4.49 s delay, the body 4.5223-4.5390 s bracket
+  of retail's captured M27 packet, and the 15 authored-seed particle
+  fingerprints already recovered from that draw. Canonical output is
+  byte-identical across the change. Presentation is still a separate boundary.
+  Three durable lessons from the diagnosis, all general. Unity holds
+  ParticleSystem.time at 0 through a start delay, so a zero clock is not
+  evidence of a stalled system - read the authored delays first, and pick a
+  control whose delays are comparable. The capture defines its own time zero at
+  its restart edge, so body time = play time minus that edge; any sampler must
+  state which clock it is on. And a resolver that signals absence by succeeding
+  with a null output, or a one-shot log latch shared by two different facts,
+  hides exactly this class of defect.
   Retail's final post draw is now closed end to end from a live capture: the
   original VS/PS bytecode on the captured scene-colour, bloom and LUT inputs
   with both captured constant buffers reproduces the retained 4K output byte for
