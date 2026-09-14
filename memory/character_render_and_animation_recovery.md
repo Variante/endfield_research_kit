@@ -1057,8 +1057,14 @@ newer source version must not silently replace the capture-matched texture.
   establish the phase. In contrast, UpdateAntialiasing clears phase when jitter
   is not required, before the later increment. Its temporal-mode requirement
   includes the MetalFX platform capability, not just a nonzero mode value.
-  Camera initialization, live mode ownership and consistent
-  projection/history integration remain separate.
+  Combined validation now exposes the already-recorded raw camera AA flags,
+  additional-camera identities and read/change failures. Inspect these before
+  requesting another capture for mode evidence; raw fields still do not prove
+  IFix getter results, phase initialization or upload consumption. Table settings
+  reach a camera through ApplyTableCameraSettings and its one-update flag;
+  graphics-quality application also updates the main camera directly. Preserve
+  these producers separately from authored startup defaults and history resets.
+  Mode mutation history and consistent projection/history integration remain open.
   CPP request mip bias has its own reusable gated evaluator; do not substitute
   the camera material/resolution producer. Recorded request values still need
   an upload-generation join before selecting the live draw route.
