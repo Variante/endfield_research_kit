@@ -277,7 +277,12 @@ history ownership/cadence, residual trails and burst composition remain open.
   `_PARALLAX_MAP` M01/M38 with a companion VFXBaseV2 particle cohort. Complete
   serialized prefab ownership, including fail-closed renderers, is the required
   shader-census starting point. The later overview_02 M27 and overview_02/03
-  M28 owners remain separately gated.
+  M28 owners remain separately gated. Canonical burst-frame GPU inspection
+  confirms no M27/LitEffect stone draw while the late source-enabled renderer
+  remains disabled with no material slots. Early one-time sidecar activation
+  logs do not establish later submission. Close the live late-stone producer
+  and deferred handoff before enabling presentation; post-shader changes cannot
+  restore a draw that was never submitted.
   Particle `moveWithTransform` is an integer simulation-space enum, not a
   boolean. M27 preserves Local simulation; world-space expanded GPU vertices
   do not imply world-space CPU particle positions. Apply the source parent
