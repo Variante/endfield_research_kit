@@ -1054,7 +1054,10 @@ newer source version must not silently replace the capture-matched texture.
   XR multipass ID. Its update precedes culling-parameter acquisition, so failed
   culling must not stall the camera counter. Reset clears that counter without
   resetting jitter phase; neither animation entry nor the resettable count can
-  establish the phase. Camera initialization, live mode ownership and consistent
+  establish the phase. In contrast, UpdateAntialiasing clears phase when jitter
+  is not required, before the later increment. Its temporal-mode requirement
+  includes the MetalFX platform capability, not just a nonzero mode value.
+  Camera initialization, live mode ownership and consistent
   projection/history integration remain separate.
   CPP request mip bias has its own reusable gated evaluator; do not substitute
   the camera material/resolution producer. Recorded request values still need
