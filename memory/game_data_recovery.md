@@ -1624,26 +1624,35 @@ Stable conclusions:
   framed terminal vectors of numeric types `0x04`, `0x05` and `0x07` are object
   identities. All 209,957 of them resolve, every one to exactly one HIRC object
   declared by the **same bank**: zero unresolved, zero crossing a bank or package
-  boundary, zero self references, and zero targets carrying more than one
-  referrer. The relation is therefore a forest, not a general graph; an
-  independent walk finds no cycles and a maximum depth of 7. All 28,379 type
-  `0x03` objects are referenced exactly once, and no type `0x04` object is ever
-  referenced, so `0x04` sits only at a root. Seventeen object ids repeat inside a
-  bank, which would make a reference to them ambiguous; the census measures that
-  too and **no reference targets a duplicated id**, so the ambiguity does not
-  touch the claim. Numeric edge counts live in
+  boundary, zero self references, zero targets carrying more than one referrer,
+  zero framed entries that never reached the census, and zero nodes on or feeding
+  a cycle, at a longest traversed chain of 7 references (8 objects). Every one of
+  those numbers is computed and published by the maintained reader; none is prose.
+  Numeric edge counts and a per-type referenced-versus-population table are in
   [`reports/animestudio/hirc_reference_graph_current_latest.md`](../reports/animestudio/hirc_reference_graph_current_latest.md).
-  Resolution is an identity fact and nothing else: it does not establish
-  direction, parenthood, containment, membership, ordering, selection, playback,
-  or any name for either endpoint, and the type pairs stay numeric on both sides.
-  The absence of a cross-bank edge is a property of this corpus, not a proven
-  rule. A random 32-bit value would resolve about sixteen times in 209,957 draws
-  against ~323k ids, so the resolution rate is not a coincidence -- but that
-  argues the values *are* identities, not what the edges mean. Two further
-  properties follow from the published numbers without extra work: with zero
-  multi-referrer targets, the 28,379 `type04_to_type03` edges must reach 28,379
-  distinct type `0x03` objects, which is all of them; and no edge anywhere has a
-  type `0x04` target, so `0x04` only ever sits at a root.
+  Seventeen object ids repeat inside a bank, 17 distinct ids over 17 repeat
+  occurrences, so each appears exactly twice; **no reference targets a duplicated
+  id**, so that ambiguity does not touch the claim.
+- Be precise about what the reference graph is. The only direction it establishes
+  is physical: which object's body holds the four-byte value. Over that byte-level
+  direction the relation is acyclic with at most one holder per target, which is
+  why the reader can walk it and report a depth. Do **not** promote that to
+  parenthood, containment, membership, a tree, or a root: those are semantic
+  readings the join does not license, and neither endpoint of an edge has a name.
+  Ordering, selection, mixing and playback are equally unclaimed. The absence of a
+  cross-bank edge is a property of this corpus, not a proven rule.
+- Two further properties are readable straight off the published table, because
+  with zero multi-referrer targets the references into a type are that many
+  distinct objects of it: type `0x03` shows 28,379 referenced against 28,379
+  objects, so every one is referenced exactly once; type `0x04` shows 0 referenced
+  against 22,910 objects, so no type `0x04` object is ever the target of a
+  reference.
+- The null model for that result is per bank, not corpus-wide, because resolution
+  only ever looks inside one bank. With 323,034 objects over 20,873 banks the
+  reference-weighted expectation is about **0.15** chance resolutions, not the
+  ~16 a corpus-wide pool would suggest. The finding is roughly two orders of
+  magnitude stronger than a whole-corpus null implies -- but it argues the values
+  *are* identities, still not what the edges mean.
 - A bounded read-only probe shows how far the node frame reaches: it consumes
   cleanly from byte 0 for every type `0x06` (4,573) body and, after the counted
   state correction, for all 5,158 type `0x09` bodies, each leaving a regular

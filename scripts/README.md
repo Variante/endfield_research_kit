@@ -572,7 +572,9 @@ declared by the same bank. It reports resolution, self references, targets with
 more than one referrer, duplicate object ids and references into a duplicated id,
 and refuses to publish `complete` unless every reference names exactly one
 unambiguous same-bank object. Edges are numeric type pairs; the report names
-neither endpoint and claims no direction or meaning.
+neither endpoint. The only direction it establishes is physical -- which object's
+body holds the value -- and that licenses no parenthood, containment, ordering or
+playback reading.
 Its v150 HIRC parser also publishes exact NodeBase effect slots and output-bus
 IDs. Effect definitions retain physical PCK/bank scope, built-in plug-in class
 identity, and parameter hashes. Fingerprinted shipped `SetParamsBlock` layouts

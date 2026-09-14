@@ -196,8 +196,10 @@ def valid_action_fixture():
         "targetsWithMultipleReferrers": 0,
         "duplicateObjectIds": 0,
         "referencesToDuplicateIds": 0,
-        "referenceCycleNodes": 0,
+        "referenceCycleOrFeedingNodes": 0,
+        "distinctDuplicateObjectIds": 0,
         "maximumReferenceDepth": 3,
+        "objectCountsByType": {"type02": 20, "type03": 10, "type04": 5, "type05": 8, "type07": 8},
         "edgeCounts": {"type07_to_type02": 4, "type04_to_type03": 1, "type05_to_type02": 3},
     }
     audio_audit = {
@@ -706,9 +708,10 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertEqual(graph["references"], 8)
         self.assertEqual(graph["resolvedSameBank"], 8)
         self.assertEqual(graph["framedVectorEntries"], 8)
-        self.assertEqual(graph["closure"], "every-reference-names-one-same-bank-object")
+        # One type 0x04 body is unsupported, so one framed entry never resolves.
+        self.assertEqual(graph["entriesNotReachingCensus"], 1)
+        self.assertFalse(reference_graph_is_closed(graph))
         self.assertEqual(graph["semanticStatus"], "structural-only")
-        self.assertTrue(reference_graph_is_closed(graph))
         # The edges stay numeric on both sides.
         self.assertEqual(
             sorted(graph["edgeCounts"]),
@@ -768,15 +771,17 @@ class HircActionCorpusTests(unittest.TestCase):
         closed = aggregate_current_hirc_actions(
             outer, expected_files, excluded_files, audio_audit
         )["referenceGraph"]
+        closed = dict(closed, entriesNotReachingCensus=0)
         self.assertTrue(reference_graph_is_closed(closed))
         for field, value in (
+            ("entriesNotReachingCensus", 1),
             ("references", 0),
             ("unresolvedInBank", 1),
             ("selfReferences", 1),
             ("targetsWithMultipleReferrers", 1),
             ("referencesToDuplicateIds", 1),
             ("resolvedSameBank", 7),
-            ("referenceCycleNodes", 1),
+            ("referenceCycleOrFeedingNodes", 1),
         ):
             regressed = dict(closed)
             regressed[field] = value
@@ -817,8 +822,12 @@ class HircActionCorpusTests(unittest.TestCase):
                     "targetsWithMultipleReferrers": 0,
                     "duplicateObjectIds": 0,
                     "referencesToDuplicateIds": 0,
-                    "referenceCycleNodes": 0,
+                    "referenceCycleOrFeedingNodes": 0,
+                    "distinctDuplicateObjectIds": 0,
+                    "entriesNotReachingCensus": 0,
                     "maximumReferenceDepth": 3,
+                    "referenceTargetsByType": {"type03": 2},
+                    "objectCountsByType": {"type03": 10, "type04": 5},
                     "edgeCounts": {"type04_to_type03": 2},
                 },
             },

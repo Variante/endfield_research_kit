@@ -97,7 +97,8 @@ REFERENCE_CENSUS_FIELDS = (
     "targetsWithMultipleReferrers",
     "duplicateObjectIds",
     "referencesToDuplicateIds",
-    "referenceCycleNodes",
+    "referenceCycleOrFeedingNodes",
+    "distinctDuplicateObjectIds",
 )
 # Depth is a maximum across banks, not a sum, so it is aggregated separately.
 REFERENCE_DEPTH_FIELD = "maximumReferenceDepth"
@@ -1393,6 +1394,8 @@ def aggregate_current_hirc_actions(
     body_lanes = _build_body_lanes()
     reference_totals: Counter[str] = Counter()
     reference_edges: Counter[str] = Counter()
+    reference_objects: Counter[str] = Counter()
+    reference_targets: Counter[str] = Counter()
     reference_depth = 0
     for row in verified_rows:
         package = row.get("package") or {}
@@ -1429,6 +1432,8 @@ def aggregate_current_hirc_actions(
             reference_totals[key] += package_reference[key]
         reference_depth = max(reference_depth, package_reference[REFERENCE_DEPTH_FIELD])
         reference_edges.update(package_reference["edgeCounts"])
+        reference_objects.update(package_reference["objectCountsByType"])
+        reference_targets.update(package_reference["referenceTargetsByType"])
         bank_reference_totals: Counter[str] = Counter()
         bank_reference_edges: Counter[str] = Counter()
         bank_reference_depth = 0
@@ -1669,9 +1674,12 @@ def aggregate_current_hirc_actions(
         )
 
     frame_closure = "exact" if totals["exact"] == totals["count"] else "incomplete"
-    # Every framed vector entry must reach the reference census. References are only
-    # collected from bodies that framed exactly, so a body that stopped being exact
-    # would otherwise quietly shrink the denominator instead of failing.
+    # The accounting equation uses the entries that can actually reach the census.
+    # The type 0x04 lane tolerates unsupported bodies whose vectors are framed but
+    # never resolved; that gap is published separately below and blocks closure, so
+    # it is visible rather than silently shrinking the denominator. The type 0x05 and
+    # 0x07 terms are exact-path-only like the census and cannot fire on their own;
+    # their lanes' closure gates already refuse any body that is not exact.
     framed_vector_entries = (
         int(type04_totals["exactEntryCount"])
         + int(body_lanes["0x05"].groups.get("referenceEntries", 0))
@@ -1683,6 +1691,32 @@ def aggregate_current_hirc_actions(
             f"references={int(reference_totals['references'])} "
             f"framedEntries={framed_vector_entries}"
         )
+    # Edges must also reconcile with their source lane, so a mislabelled source type
+    # cannot hide inside a correct grand total.
+    entries_not_reaching_census = (
+        int(type04_totals["candidateEntryCount"]) - int(type04_totals["exactEntryCount"])
+    )
+    if entries_not_reaching_census < 0:
+        raise ValueError(
+            "type 0x04 exact entries exceed its candidate entries: "
+            f"exact={int(type04_totals['exactEntryCount'])} "
+            f"candidate={int(type04_totals['candidateEntryCount'])}"
+        )
+    for source, expected_entries in (
+        ("type04", int(type04_totals["exactEntryCount"])),
+        ("type05", int(body_lanes["0x05"].groups.get("referenceEntries", 0))),
+        ("type07", int(body_lanes["0x07"].groups.get("childEntries", 0))),
+    ):
+        edge_total = sum(
+            count
+            for edge, count in reference_edges.items()
+            if edge.startswith(source + "_to_")
+        )
+        if edge_total != expected_entries:
+            raise ValueError(
+                "HIRC reference edges do not match their source lane: "
+                f"source={source} edges={edge_total} laneEntries={expected_entries}"
+            )
     type04_count = int(type04_totals["count"])
     type04_exact = int(type04_totals["exact"])
     type04_frame_closure = (
@@ -1736,8 +1770,11 @@ def aggregate_current_hirc_actions(
         "referenceGraph": {
             **{key: int(reference_totals[key]) for key in REFERENCE_CENSUS_FIELDS},
             "framedVectorEntries": framed_vector_entries,
+            "entriesNotReachingCensus": entries_not_reaching_census,
             REFERENCE_DEPTH_FIELD: reference_depth,
             "edgeCounts": dict(sorted(reference_edges.items())),
+            "objectCountsByType": dict(sorted(reference_objects.items())),
+            "referenceTargetsByType": dict(sorted(reference_targets.items())),
             "closure": (
                 "every-reference-names-one-same-bank-object"
                 if reference_graph_is_closed(
@@ -2019,9 +2056,8 @@ def _read_reference_census(census: Any, label: str) -> dict[str, Any]:
     Resolution is an identity fact: a reference either names exactly one object in
     the same bank or it does not. Nothing here claims what the relation means.
     """
-    if census is None:
-        census = {key: 0 for key in REFERENCE_CENSUS_FIELDS}
-        census["edgeCounts"] = {}
+    # A silent zero default is the wrong default in a gate: an absent census would
+    # otherwise read as a clean bank with nothing to resolve.
     if not isinstance(census, dict):
         raise ValueError(f"missing HIRC reference census: {label}")
     metrics: dict[str, Any] = {}
@@ -2045,8 +2081,8 @@ def _read_reference_census(census: Any, label: str) -> dict[str, Any]:
         raise ValueError(f"HIRC duplicate-id references exceed total references: {label}")
     if metrics["targetsWithMultipleReferrers"] > metrics["references"]:
         raise ValueError(f"HIRC multi-referrer targets exceed total references: {label}")
-    if metrics["referenceCycleNodes"] > metrics["references"]:
-        raise ValueError(f"HIRC reference cycle nodes exceed total references: {label}")
+    if metrics["referenceCycleOrFeedingNodes"] > metrics["references"]:
+        raise ValueError(f"HIRC reference cycle-or-feeding nodes exceed total references: {label}")
     try:
         depth = int(census[REFERENCE_DEPTH_FIELD])
     except (KeyError, TypeError, ValueError) as exc:
@@ -2079,6 +2115,42 @@ def _read_reference_census(census: Any, label: str) -> dict[str, Any]:
             f"edges={sum(edges.values())} resolved={metrics['resolvedSameBank']}"
         )
     metrics["edgeCounts"] = dict(sorted(edges.items()))
+
+    raw_objects = census.get("objectCountsByType")
+    if not isinstance(raw_objects, dict):
+        raise ValueError(f"HIRC reference census has invalid objectCountsByType: {label}")
+    object_counts: dict[str, int] = {}
+    for name, raw_count in raw_objects.items():
+        key = str(name)
+        if re.fullmatch(r"type[0-9A-F]{2}", key) is None:
+            raise ValueError(f"HIRC object type key is not numeric: {label} key={key!r}")
+        count = int(raw_count)
+        if count < 0:
+            raise ValueError(f"HIRC object type count is negative: {label} type={key}")
+        object_counts[key] = count
+    metrics["objectCountsByType"] = dict(sorted(object_counts.items()))
+
+    # Both endpoints of every edge must be a type this corpus actually declares, and
+    # no type may receive more references than it has objects: with at most one
+    # referrer per target, edges into a type are distinct targets of that type.
+    target_totals: Counter[str] = Counter()
+    for edge, count in metrics["edgeCounts"].items():
+        source, target = edge.split("_to_")
+        for endpoint in (source, target):
+            if endpoint not in object_counts:
+                raise ValueError(
+                    f"HIRC reference edge names a type the bank does not declare: "
+                    f"{label} edge={edge} type={endpoint}"
+                )
+        target_totals[target] += count
+    if metrics["targetsWithMultipleReferrers"] == 0:
+        for target, total in target_totals.items():
+            if total > object_counts[target]:
+                raise ValueError(
+                    f"HIRC references into a type exceed its object population: "
+                    f"{label} type={target} references={total} objects={object_counts[target]}"
+                )
+    metrics["referenceTargetsByType"] = dict(sorted(target_totals.items()))
     return metrics
 
 
@@ -2097,7 +2169,10 @@ def reference_graph_is_closed(corpus: dict[str, Any]) -> bool:
         and int(corpus.get("referencesToDuplicateIds") or 0) == 0
         and int(corpus.get("references") or 0) == int(corpus.get("resolvedSameBank") or 0)
         # A cycle would make the relation something other than a forest.
-        and int(corpus.get("referenceCycleNodes") or 0) == 0
+        and int(corpus.get("referenceCycleOrFeedingNodes") or 0) == 0
+        # A framed vector entry that never reached the census is an unresolved
+        # reference by another name.
+        and int(corpus.get("entriesNotReachingCensus") or 0) == 0
     )
 
 
@@ -2119,14 +2194,26 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             f"- Verified AKPK packages: {report['corpus']['verifiedPackageCount']:,}/{report['corpus']['packageCount']:,}; excluded audio blocks: {report['corpus']['excludedBlockCount']:,}.",
             f"- References framed: {graph['references']:,}; resolved in the same bank: {graph['resolvedSameBank']:,}; unresolved: {graph['unresolvedInBank']:,}.",
             f"- Self references: {graph['selfReferences']:,}; targets carrying more than one referrer: {graph['targetsWithMultipleReferrers']:,}.",
-            f"- Nodes lying on a reference cycle: {graph['referenceCycleNodes']:,}; deepest reference chain: {graph['maximumReferenceDepth']:,}.",
-            f"- Duplicate object ids inside a bank: {graph['duplicateObjectIds']:,}; references into a duplicated id: {graph['referencesToDuplicateIds']:,}.",
+            f"- Nodes on or feeding a reference cycle: {graph['referenceCycleOrFeedingNodes']:,}; longest chain of references traversed: {graph['maximumReferenceDepth']:,} (counted in references, so a chain of {graph['maximumReferenceDepth']:,} links {graph['maximumReferenceDepth'] + 1:,} objects).",
+            f"- Framed vector entries that never reached this census: {graph['entriesNotReachingCensus']:,}.",
+            "- With no target carrying more than one referrer, the references into a numeric type are that many distinct objects of it, so the table below is directly comparable to the object population beside it.",
+            f"- Object ids that repeat inside a bank: {graph['distinctDuplicateObjectIds']:,} distinct ids over {graph['duplicateObjectIds']:,} repeat occurrences.",
+            f"- References into a duplicated id: {graph['referencesToDuplicateIds']:,}.",
             "",
             "## Numeric type-pair edges",
             "",
             "| Edge | References |",
             "|---|---:|",
             edge_rows,
+            "",
+            "## References into each numeric type, against that type's population",
+            "",
+            "| Type | Referenced | Objects |",
+            "|---|---:|---:|",
+            "\n".join(
+                f"| `{name}` | {graph['referenceTargetsByType'].get(name, 0):,} | {count:,} |"
+                for name, count in graph["objectCountsByType"].items()
+            ) or "| _none_ | 0 | 0 |",
             "",
             "Every reference is a four-byte value inside a counted vector that the body framers already consume exactly. This report joins those values to the object identities declared by the same bank and reports where each one lands.",
             "",
@@ -2469,7 +2556,7 @@ def run_current_corpus_audit(
             "identityReconciliation": {
                 "verifiedPackagesMatchedToOuterLedger": True,
                 "excludedBlocksMatchedToOuterLedger": True,
-                "perBankReferenceCensusMatchedToPackageTotals": True,
+                "perBankCensusRowsSumToPackageRow": True,
             },
             "referenceGraph": reference_corpus,
             "audioAuditSummary": corpus["audioAuditSummary"],
