@@ -1621,8 +1621,8 @@ Stable conclusions:
   fitted to four samples. Do not publish a type `0x09` lane until those four
   parse; the gate would refuse it anyway.
 - **Layer 4 opens for audio.** The anonymous four-byte values inside the exactly
-  framed terminal vectors of numeric types `0x04`, `0x05` and `0x07` are object
-  identities. All 209,957 of them resolve, every one to exactly one HIRC object
+  framed terminal vectors of numeric types `0x04`, `0x05`, `0x06` and `0x07` are object
+  identities. All 230,247 of them resolve, every one to exactly one HIRC object
   declared by the **same bank**: zero unresolved, zero crossing a bank or package
   boundary, zero self references, zero targets carrying more than one referrer,
   zero framed entries that never reached the census, and zero nodes on or feeding
@@ -1649,6 +1649,32 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **Layer 5 opens: numeric HIRC type `0x04` is the object that shipped managed
+  code addresses by name.** The evidence is a unique cross-table reference, not a
+  label. `global-metadata.dat` `stringLiteral` rows give 221 exact audio-like
+  strings the game's own code contains; 151 of their FNV-1/UTF-16 hashes equal a
+  HIRC object identity, and **all 151 land on type `0x04` and none on any other
+  type**. Type `0x04` is 22,910 of the 323,034 objects (7.09%), so coincidence
+  would scatter about 140 of those 151 matches onto other types; none did. That
+  share is measured from the reader's own type histogram by `named_type_share`,
+  not asserted in prose. The gate refuses to
+  publish if a single match ever lands elsewhere, because that would dissolve the
+  identification rather than weaken it -- never turn this into a percentage.
+- Walking from a named type `0x04` object through reference vectors alone reaches
+  numeric type `0x02` objects, whose bounded 14-byte prefix yields a source id:
+  63 of the 151 named objects reach at least one, 134 source ids in total. The
+  other 88 reach none, almost always because the walk hits an edge leaving the
+  bank -- 98 such edges, counted and never followed. The walk also uses the type
+  `0x03` target word, which is **not** a gated reference vector (only about three
+  quarters of those words name an object in their own bank), so it is reported as
+  what it is rather than folded in.
+  See [`reports/animestudio/hirc_named_reach_current_latest.md`](../reports/animestudio/hirc_named_reach_current_latest.md).
+- What Layer 5 does **not** license, even now. A reached source id does not mean
+  posting the identifier plays that media; nothing here establishes ordering,
+  selection, mixing, audibility, or that the media is ever decoded. Only the type
+  `0x04` entry point has a name -- every other object on the path is still
+  anonymous, and an edge leaving the bank still resolves to nothing this corpus
+  can see.
 - Be precise about what the reference graph is. The only direction it establishes
   is physical: which object's body holds the four-byte value. Over that byte-level
   direction the relation is acyclic with at most one holder per target, which is

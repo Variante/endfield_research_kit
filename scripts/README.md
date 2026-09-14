@@ -557,7 +557,7 @@ type `0x02` lane past its opaque tail: after the bounded source prefix the reade
 consumes nine anonymous groups and must reach the declared object-body end.
 Its unresolved widths are reported rather than guessed, and any nonempty group B
 vector or ambiguous group E selector is held `unsupported` instead of parsed.
-The same nine groups are shared with numeric types `0x07` and `0x05`, whose
+The same nine groups are shared with numeric types `0x07`, `0x05` and `0x06`, whose
 lanes write `reports/animestudio/hirc_type07_body_current_latest.{json,md}` and
 `reports/animestudio/hirc_type05_body_current_latest.{json,md}`. Type `0x07`
 adds one terminal counted vector of four-byte anonymous references; type `0x05`
@@ -577,6 +577,19 @@ body holds the value -- and that licenses no parenthood, containment, ordering o
 playback reading. Words framed beside a reference vector that do not all resolve
 are published as `candidateWords` rather than joined, so a partial match is
 never reported as a full one.
+
+```bat
+python -m scripts.audio_semantics.hirc_named_reach --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+```
+
+`hirc_named_reach` is the one audio lane that carries a name. It hashes the exact
+audio-like `stringLiteral` rows from `global-metadata.dat` and joins them to HIRC
+object identities; every current match lands on numeric type `0x04`, which is what
+identifies that type as the object managed code addresses by name. It then walks
+reference vectors to the type `0x02` source ids a named object reaches, counting
+edges that leave the bank rather than following them. The gate refuses to publish
+if a match ever lands on another type. It claims no playback, ordering, selection
+or audibility, and names no object other than the entry point.
 Its v150 HIRC parser also publishes exact NodeBase effect slots and output-bus
 IDs. Effect definitions retain physical PCK/bank scope, built-in plug-in class
 identity, and parameter hashes. Fingerprinted shipped `SetParamsBlock` layouts

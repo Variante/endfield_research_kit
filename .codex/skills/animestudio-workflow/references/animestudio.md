@@ -277,7 +277,10 @@ declared object-body end; run it through the same corpus gate and read
 is still unframed. The same nine groups are shared with numeric types `0x07`
 and `0x05`: `0x07` adds one terminal counted vector of four-byte anonymous
 references, `0x05` adds a fixed 24-byte opaque block plus two independently
-counted vectors. One maintained reader and one corpus lane frame all three, so
+counted vectors. Numeric type `0x06` shares them too and adds three counted
+vectors, of which only the first resolves whole-corpus to same-bank identities;
+the other two are published as `candidateWords` with their shortfall, never
+joined. One maintained reader and one corpus lane frame all four, so
 extend those rather than adding a parallel copy. Widths that stay unresolved must keep failing closed: group B has
 no nonempty sample in any framed type, and group E's selector `0x02` is
 unobserved, so bit-1-only and both-bits-set tie. Selector `0x01` does occur and
@@ -291,17 +294,31 @@ Re-check every width when a new type enters, and read the published
 inherited five-byte varint cap is a corpus fact. Exact consumption is byte extent only;
 keep group letters, selector bits, keys, values, and reference targets anonymous
 until a serializer or consumer witness assigns them.
-The reference vectors of numeric types `0x04`, `0x05` and `0x07` are the one
-place this corpus reaches layer 4: every value resolves to exactly one object
+The reference vectors of numeric types `0x04`, `0x05`, `0x06` and `0x07` are the
+one place this corpus reaches layer 4: every value resolves to exactly one object
 identity declared by the same bank, and
 `hirc_reference_graph_current_latest.md` carries the numeric edge counts plus a
 per-type referenced-versus-population table. Treat that as identity resolution
 only. The one direction it establishes is physical -- which object's body holds
 the value -- and over that the relation is acyclic with at most one holder per
-target. That is not parenthood, containment, membership, a tree or a root, and a
-name for either endpoint still needs a serializer or consumer witness. Before extending it,
+target. That is not parenthood, containment, membership, a tree or a root. Before extending it,
 re-run the gate: it refuses to publish unless every reference names exactly one
 unambiguous same-bank object, duplicate-id targets included.
+
+One endpoint now has a witness. `scripts/audio_semantics/hirc_named_reach.py`
+hashes the exact audio-like `stringLiteral` rows out of `global-metadata.dat`
+with FNV-1 over UTF-16 code units and joins them to HIRC object identities. Every
+current match lands on numeric type `0x04` and none on any other type, which is
+what identifies `0x04` as the object shipped managed code addresses by name; the
+type is only about seven percent of the corpus, and the gate measures that share
+from the reader's own histogram rather than asserting it. Treat a single match on
+another type as dissolving the identification, not lowering a rate -- the gate
+refuses to publish in that case. Walking reference vectors from a named object
+reaches the type `0x02` source ids, but the walk also crosses the type `0x03`
+target word, which is *not* a gated reference vector, so report it separately.
+Edges leaving the bank are counted and never followed. Nothing here names any
+object but the `0x04` entry point, and none of it establishes playback,
+ordering, selection, mixing, or audibility.
 
 For IV recovery, region, index filename-table, and index-directed payload
 framing are distinct claims. `parse_index_bytes` proves one unambiguous count-
