@@ -291,6 +291,15 @@ Re-check every width when a new type enters, and read the published
 inherited five-byte varint cap is a corpus fact. Exact consumption is byte extent only;
 keep group letters, selector bits, keys, values, and reference targets anonymous
 until a serializer or consumer witness assigns them.
+The reference vectors of numeric types `0x04`, `0x05` and `0x07` are the one
+place this corpus reaches layer 4: every value resolves to exactly one object
+identity declared by the same bank, the relation is a forest, and
+`hirc_reference_graph_current_latest.md` carries the numeric edge counts. Treat
+that as identity resolution only. It licenses no direction, parenthood,
+containment, ordering, selection or playback reading, and a name for either
+endpoint still needs a serializer or consumer witness. Before extending it,
+re-run the gate: it refuses to publish unless every reference names exactly one
+unambiguous same-bank object, duplicate-id targets included.
 
 For IV recovery, region, index filename-table, and index-directed payload
 framing are distinct claims. `parse_index_bytes` proves one unambiguous count-

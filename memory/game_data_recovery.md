@@ -1620,6 +1620,30 @@ Stable conclusions:
   fields without guessing, so the grammar stays unresolved rather than being
   fitted to four samples. Do not publish a type `0x09` lane until those four
   parse; the gate would refuse it anyway.
+- **Layer 4 opens for audio.** The anonymous four-byte values inside the exactly
+  framed terminal vectors of numeric types `0x04`, `0x05` and `0x07` are object
+  identities. All 209,957 of them resolve, every one to exactly one HIRC object
+  declared by the **same bank**: zero unresolved, zero crossing a bank or package
+  boundary, zero self references, and zero targets carrying more than one
+  referrer. The relation is therefore a forest, not a general graph; an
+  independent walk finds no cycles and a maximum depth of 7. All 28,379 type
+  `0x03` objects are referenced exactly once, and no type `0x04` object is ever
+  referenced, so `0x04` sits only at a root. Seventeen object ids repeat inside a
+  bank, which would make a reference to them ambiguous; the census measures that
+  too and **no reference targets a duplicated id**, so the ambiguity does not
+  touch the claim. Numeric edge counts live in
+  [`reports/animestudio/hirc_reference_graph_current_latest.md`](../reports/animestudio/hirc_reference_graph_current_latest.md).
+  Resolution is an identity fact and nothing else: it does not establish
+  direction, parenthood, containment, membership, ordering, selection, playback,
+  or any name for either endpoint, and the type pairs stay numeric on both sides.
+  The absence of a cross-bank edge is a property of this corpus, not a proven
+  rule. A random 32-bit value would resolve about sixteen times in 209,957 draws
+  against ~323k ids, so the resolution rate is not a coincidence -- but that
+  argues the values *are* identities, not what the edges mean. Two further
+  properties follow from the published numbers without extra work: with zero
+  multi-referrer targets, the 28,379 `type04_to_type03` edges must reach 28,379
+  distinct type `0x03` objects, which is all of them; and no edge anywhere has a
+  type `0x04` target, so `0x04` only ever sits at a root.
 - A bounded read-only probe shows how far the node frame reaches: it consumes
   cleanly from byte 0 for every type `0x06` (4,573) body and, after the counted
   state correction, for all 5,158 type `0x09` bodies, each leaving a regular

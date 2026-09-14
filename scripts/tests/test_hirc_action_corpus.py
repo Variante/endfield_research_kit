@@ -17,6 +17,8 @@ from scripts.audio_semantics.hirc_action_corpus import (
     aggregate_current_hirc_actions,
     load_current_outer,
     body_lane_corpus_is_closed,
+    reference_graph_is_closed,
+    _reference_graph_markdown,
 )
 
 
@@ -169,6 +171,7 @@ def valid_action_fixture():
         "opaqueTailBytes": 1,
         "failedBodyBytes": 0,
         "candidateEntryCount": 2,
+        "exactEntryCount": 1,
         "failureCategories": {},
         "unsupportedCategories": {"opaque_tail_after_candidate_vector": 1},
         "nonExactExamples": [
@@ -185,6 +188,18 @@ def valid_action_fixture():
         ],
     }
     type04_stats = {"count": 2, "declaredLengthBytes": 19}
+    reference_census = {
+        "references": 8,
+        "resolvedSameBank": 8,
+        "unresolvedInBank": 0,
+        "selfReferences": 0,
+        "targetsWithMultipleReferrers": 0,
+        "duplicateObjectIds": 0,
+        "referencesToDuplicateIds": 0,
+        "referenceCycleNodes": 0,
+        "maximumReferenceDepth": 3,
+        "edgeCounts": {"type07_to_type02": 4, "type04_to_type03": 1, "type05_to_type02": 3},
+    }
     audio_audit = {
         "streamingAssets": "D:/Persistent",
         "fallbackAssets": "D:/StreamingAssets",
@@ -216,6 +231,7 @@ def valid_action_fixture():
                     "hircType02BodyFrame": copy.deepcopy(type02_body),
                     "hircType07BodyFrame": copy.deepcopy(type07_body),
                     "hircType05BodyFrame": copy.deepcopy(type05_body),
+                    "hircReferenceCensus": copy.deepcopy(reference_census),
                     "hircType03ActionFrame": copy.deepcopy(frame),
                     "hircType04U32VectorFrame": copy.deepcopy(type04_vector),
                     "bnkStructures": [
@@ -232,6 +248,7 @@ def valid_action_fixture():
                             "hircType02BodyFrame": copy.deepcopy(type02_body),
                             "hircType07BodyFrame": copy.deepcopy(type07_body),
                             "hircType05BodyFrame": copy.deepcopy(type05_body),
+                            "hircReferenceCensus": copy.deepcopy(reference_census),
                             "hircType03ActionFrame": copy.deepcopy(frame),
                             "hircType04U32VectorFrame": copy.deepcopy(type04_vector),
                         }
@@ -681,6 +698,142 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertIn("does not establish serialized field ownership", markdown)
         self.assertIn("Corpus gate SHA-256: `" + "F" * 64, markdown)
 
+    def test_reference_graph_joins_every_reference_to_one_same_bank_object(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        graph = aggregate_current_hirc_actions(
+            outer, expected_files, excluded_files, audio_audit
+        )["referenceGraph"]
+        self.assertEqual(graph["references"], 8)
+        self.assertEqual(graph["resolvedSameBank"], 8)
+        self.assertEqual(graph["framedVectorEntries"], 8)
+        self.assertEqual(graph["closure"], "every-reference-names-one-same-bank-object")
+        self.assertEqual(graph["semanticStatus"], "structural-only")
+        self.assertTrue(reference_graph_is_closed(graph))
+        # The edges stay numeric on both sides.
+        self.assertEqual(
+            sorted(graph["edgeCounts"]),
+            ["type04_to_type03", "type05_to_type02", "type07_to_type02"],
+        )
+
+    def test_reference_graph_rejects_every_way_of_not_naming_one_object(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+
+        for field, value, pattern in (
+            ("unresolvedInBank", 1, "reference outcome partition mismatch"),
+            ("selfReferences", 99, "self references exceed total references"),
+            ("referencesToDuplicateIds", 99, "duplicate-id references exceed total"),
+            ("targetsWithMultipleReferrers", 99, "multi-referrer targets exceed total"),
+        ):
+            broken = copy.deepcopy(audio_audit)
+            for scope in (
+                broken["rows"][0]["package"],
+                broken["rows"][0]["package"]["bnkStructures"][0],
+            ):
+                scope["hircReferenceCensus"][field] = value
+            with self.assertRaisesRegex(ValueError, pattern):
+                aggregate_current_hirc_actions(outer, expected_files, excluded_files, broken)
+
+        unaccounted = copy.deepcopy(audio_audit)
+        for scope in (
+            unaccounted["rows"][0]["package"],
+            unaccounted["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircReferenceCensus"]["edgeCounts"]["type04_to_type03"] = 2
+        with self.assertRaisesRegex(ValueError, "edges do not account for every resolved"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, unaccounted)
+
+        named = copy.deepcopy(audio_audit)
+        for scope in (
+            named["rows"][0]["package"],
+            named["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            edges = scope["hircReferenceCensus"]["edgeCounts"]
+            del edges["type04_to_type03"]
+            edges["event_to_action"] = 2
+        with self.assertRaisesRegex(ValueError, "edge is not a numeric type pair"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, named)
+
+        # Drift the bank totals while keeping each census internally consistent, so the
+        # per-bank reconciliation is what fires rather than a local partition check.
+        bank_drift = copy.deepcopy(audio_audit)
+        bank_census = bank_drift["rows"][0]["package"]["bnkStructures"][0]["hircReferenceCensus"]
+        bank_census["references"] = 7
+        bank_census["resolvedSameBank"] = 7
+        bank_census["edgeCounts"] = {"type07_to_type02": 3, "type04_to_type03": 1, "type05_to_type02": 3}
+        with self.assertRaisesRegex(ValueError, "per-bank/package HIRC reference census mismatch"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, bank_drift)
+
+    def test_reference_graph_closure_is_enforced_not_just_reported(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        closed = aggregate_current_hirc_actions(
+            outer, expected_files, excluded_files, audio_audit
+        )["referenceGraph"]
+        self.assertTrue(reference_graph_is_closed(closed))
+        for field, value in (
+            ("references", 0),
+            ("unresolvedInBank", 1),
+            ("selfReferences", 1),
+            ("targetsWithMultipleReferrers", 1),
+            ("referencesToDuplicateIds", 1),
+            ("resolvedSameBank", 7),
+            ("referenceCycleNodes", 1),
+        ):
+            regressed = dict(closed)
+            regressed[field] = value
+            self.assertFalse(
+                reference_graph_is_closed(regressed),
+                f"{field}={value} must not count as a closed reference graph",
+            )
+
+    def test_reference_graph_markdown_refuses_to_name_the_relation(self) -> None:
+        report = {
+            "status": "complete",
+            "inputSetSha256": "A" * 64,
+            "outer": {
+                "ledgerSha256": "B" * 64,
+                "animeStudioCliFingerprint": {
+                    "matchesOuterAudit": False,
+                    "outerAuditSha256": "C" * 64,
+                    "currentSha256": "D" * 64,
+                },
+            },
+            "audioAudit": {
+                "toolSha256": "D" * 64,
+                "toolClosure": {"fileCount": 79, "manifestSha256": "G" * 64},
+                "intermediatePath": "tmp/audio-audit.json",
+                "sha256": "E" * 64,
+            },
+            "corpusGate": {"sha256": "F" * 64},
+            "corpus": {
+                "packageCount": 1,
+                "verifiedPackageCount": 1,
+                "excludedBlockCount": 0,
+                "referenceGraph": {
+                    "closure": "every-reference-names-one-same-bank-object",
+                    "references": 6,
+                    "resolvedSameBank": 6,
+                    "unresolvedInBank": 0,
+                    "selfReferences": 0,
+                    "targetsWithMultipleReferrers": 0,
+                    "duplicateObjectIds": 0,
+                    "referencesToDuplicateIds": 0,
+                    "referenceCycleNodes": 0,
+                    "maximumReferenceDepth": 3,
+                    "edgeCounts": {"type04_to_type03": 2},
+                },
+            },
+        }
+
+        markdown = _reference_graph_markdown(report)
+
+        self.assertIn("Resolution is an identity fact and nothing more", markdown)
+        self.assertIn("does not establish direction", markdown)
+        self.assertIn("The type pairs are numeric on both sides", markdown)
+        self.assertIn("a property of this corpus, not a rule", markdown)
+        # No edge may be rendered with a domain name.
+        for word in ("event", "action", "parent", "child", "container", "playlist"):
+            self.assertNotIn(f"`{word}", markdown.lower())
+
     def test_histogram_labels_must_be_physically_possible_widths(self) -> None:
         # A sum-only check accepts impossible buckets: width 0, or {12,12} standing in
         # for {6,18}. The label itself has to be a key plus whole six-byte elements.
@@ -1038,6 +1191,7 @@ class HircActionCorpusTests(unittest.TestCase):
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
         failed_frame = {
             "count": 2,
+            "exactEntryCount": 1,
             "exact": 1,
             "unsupported": 0,
             "failed": 1,

@@ -566,6 +566,13 @@ lane enforces its own closure -- a failed, unsupported, or ambiguous body
 publishes `incomplete` and exits nonzero -- and every lane publishes the same
 shared-framer residual list. Adding another type on this frame means declaring
 one more lane and one more framer, not another copy of the census.
+The same run writes `reports/animestudio/hirc_reference_graph_current_latest.{json,md}`,
+which joins every four-byte value in those framed vectors to the object identities
+declared by the same bank. It reports resolution, self references, targets with
+more than one referrer, duplicate object ids and references into a duplicated id,
+and refuses to publish `complete` unless every reference names exactly one
+unambiguous same-bank object. Edges are numeric type pairs; the report names
+neither endpoint and claims no direction or meaning.
 Its v150 HIRC parser also publishes exact NodeBase effect slots and output-bus
 IDs. Effect definitions retain physical PCK/bank scope, built-in plug-in class
 identity, and parameter hashes. Fingerprinted shipped `SetParamsBlock` layouts

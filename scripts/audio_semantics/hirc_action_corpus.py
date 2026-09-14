@@ -27,6 +27,7 @@ DEFAULT_TEMP_AUDIT = ROOT / "tmp/audio/hirc_action_current/audio_audit.json"
 INPUT_SET_RE = re.compile(r"^[0-9A-F]{64}$")
 HIRC_OBJECT_ID_BYTES = 4
 TYPE04_FRAME_FIELDS = (
+    "exactEntryCount",
     "count",
     "exact",
     "unsupported",
@@ -87,6 +88,19 @@ HIRC_VARIABLE_SIZE_MAX_BYTES = 5
 # four-byte reference count and an empty two-byte record count.
 TYPE05_BODY_MINIMUM_FRAME_BYTES = 61
 DEFAULT_TYPE05_BODY_OUTPUT = ROOT / "reports/animestudio/hirc_type05_body_current_latest.json"
+DEFAULT_REFERENCE_OUTPUT = ROOT / "reports/animestudio/hirc_reference_graph_current_latest.json"
+REFERENCE_CENSUS_FIELDS = (
+    "references",
+    "resolvedSameBank",
+    "unresolvedInBank",
+    "selfReferences",
+    "targetsWithMultipleReferrers",
+    "duplicateObjectIds",
+    "referencesToDuplicateIds",
+    "referenceCycleNodes",
+)
+# Depth is a maximum across banks, not a sum, so it is aggregated separately.
+REFERENCE_DEPTH_FIELD = "maximumReferenceDepth"
 DEFAULT_TYPE07_BODY_OUTPUT = ROOT / "reports/animestudio/hirc_type07_body_current_latest.json"
 AUDIO_BLOCKS = frozenset(
     {
@@ -1377,6 +1391,9 @@ def aggregate_current_hirc_actions(
     type04_banks_with_objects = 0
     type04_non_exact_examples: list[dict[str, Any]] = []
     body_lanes = _build_body_lanes()
+    reference_totals: Counter[str] = Counter()
+    reference_edges: Counter[str] = Counter()
+    reference_depth = 0
     for row in verified_rows:
         package = row.get("package") or {}
         type_counts = package.get("hircObjectTypeCounts") or {}
@@ -1404,6 +1421,17 @@ def aggregate_current_hirc_actions(
             type02_max_opaque_tail = max(type02_max_opaque_tail, package_type02["maxOpaqueTailBytes"])
         for plugin_type, count in package_type02["pluginTypeCounts"].items():
             type02_plugin_counts[plugin_type] += count
+
+        package_reference = _read_reference_census(
+            package.get("hircReferenceCensus"), package_label
+        )
+        for key in REFERENCE_CENSUS_FIELDS:
+            reference_totals[key] += package_reference[key]
+        reference_depth = max(reference_depth, package_reference[REFERENCE_DEPTH_FIELD])
+        reference_edges.update(package_reference["edgeCounts"])
+        bank_reference_totals: Counter[str] = Counter()
+        bank_reference_edges: Counter[str] = Counter()
+        bank_reference_depth = 0
 
         lane_packages = {
             key: lane.add_package(
@@ -1514,6 +1542,13 @@ def aggregate_current_hirc_actions(
                 type02_bank_version_counts[str(version) if version is not None else "unknown"] += 1
                 package_type02_bank_mins.append(bank_type02["minOpaqueTailBytes"])
                 package_type02_bank_maxes.append(bank_type02["maxOpaqueTailBytes"])
+            bank_reference = _read_reference_census(
+                bank.get("hircReferenceCensus"), bank_name
+            )
+            for key in REFERENCE_CENSUS_FIELDS:
+                bank_reference_totals[key] += bank_reference[key]
+            bank_reference_depth = max(bank_reference_depth, bank_reference[REFERENCE_DEPTH_FIELD])
+            bank_reference_edges.update(bank_reference["edgeCounts"])
             for key, lane_package in lane_packages.items():
                 lane_package.add_bank(
                     bank, bank_type_stats.get(key), bank_name, version
@@ -1577,6 +1612,22 @@ def aggregate_current_hirc_actions(
                 f"package={package_type02['minOpaqueTailBytes']}..{package_type02['maxOpaqueTailBytes']}"
             )
 
+        for key in REFERENCE_CENSUS_FIELDS:
+            if bank_reference_totals[key] != package_reference[key]:
+                raise ValueError(
+                    "per-bank/package HIRC reference census mismatch: "
+                    f"{package_label} field={key} banks={bank_reference_totals[key]} "
+                    f"package={package_reference[key]}"
+                )
+        if dict(sorted(bank_reference_edges.items())) != package_reference["edgeCounts"]:
+            raise ValueError(f"per-bank/package HIRC reference edges mismatch: {package_label}")
+        if bank_reference_depth != package_reference[REFERENCE_DEPTH_FIELD]:
+            raise ValueError(
+                "per-bank/package HIRC reference depth mismatch: "
+                f"{package_label} banks={bank_reference_depth} "
+                f"package={package_reference[REFERENCE_DEPTH_FIELD]}"
+            )
+
         for lane_package in lane_packages.values():
             lane_package.reconcile(package_label)
 
@@ -1618,6 +1669,20 @@ def aggregate_current_hirc_actions(
         )
 
     frame_closure = "exact" if totals["exact"] == totals["count"] else "incomplete"
+    # Every framed vector entry must reach the reference census. References are only
+    # collected from bodies that framed exactly, so a body that stopped being exact
+    # would otherwise quietly shrink the denominator instead of failing.
+    framed_vector_entries = (
+        int(type04_totals["exactEntryCount"])
+        + int(body_lanes["0x05"].groups.get("referenceEntries", 0))
+        + int(body_lanes["0x07"].groups.get("childEntries", 0))
+    )
+    if int(reference_totals["references"]) != framed_vector_entries:
+        raise ValueError(
+            "HIRC reference census does not cover every framed vector entry: "
+            f"references={int(reference_totals['references'])} "
+            f"framedEntries={framed_vector_entries}"
+        )
     type04_count = int(type04_totals["count"])
     type04_exact = int(type04_totals["exact"])
     type04_frame_closure = (
@@ -1667,6 +1732,29 @@ def aggregate_current_hirc_actions(
             "objectCountsByBlock": dict(sorted(type02_package_counts_by_block.items())),
             "bankVersionCounts": dict(sorted(type02_bank_version_counts.items())),
             "wholeBodyCursor": "not-claimed-opaque-tail-remains",
+        },
+        "referenceGraph": {
+            **{key: int(reference_totals[key]) for key in REFERENCE_CENSUS_FIELDS},
+            "framedVectorEntries": framed_vector_entries,
+            REFERENCE_DEPTH_FIELD: reference_depth,
+            "edgeCounts": dict(sorted(reference_edges.items())),
+            "closure": (
+                "every-reference-names-one-same-bank-object"
+                if reference_graph_is_closed(
+                    {
+                        **{key: int(reference_totals[key]) for key in REFERENCE_CENSUS_FIELDS},
+                    }
+                )
+                else "incomplete"
+            ),
+            "semanticStatus": "structural-only",
+            "nonClaims": [
+                "reference direction, parenthood, containment or membership",
+                "ordering, selection, mixing or playback behaviour",
+                "any name for either endpoint of an edge",
+                "that a cross-bank relation is impossible; its absence is a property "
+                "of this corpus, not a proven rule",
+            ],
         },
         "type02BodyFrames": body_lanes["0x02"].publish(),
         "type07BodyFrames": body_lanes["0x07"].publish(),
@@ -1925,6 +2013,132 @@ def _body_lane_markdown(report: dict[str, Any], corpus_key: str, type_key: str) 
     return "\n".join(lines)
 
 
+def _read_reference_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's or bank's anonymous reference join.
+
+    Resolution is an identity fact: a reference either names exactly one object in
+    the same bank or it does not. Nothing here claims what the relation means.
+    """
+    if census is None:
+        census = {key: 0 for key in REFERENCE_CENSUS_FIELDS}
+        census["edgeCounts"] = {}
+    if not isinstance(census, dict):
+        raise ValueError(f"missing HIRC reference census: {label}")
+    metrics: dict[str, Any] = {}
+    for key in REFERENCE_CENSUS_FIELDS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"HIRC reference census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"HIRC reference census has negative {key}: {label}")
+        metrics[key] = value
+    if metrics["references"] != metrics["resolvedSameBank"] + metrics["unresolvedInBank"]:
+        raise ValueError(
+            f"HIRC reference outcome partition mismatch: {label} "
+            f"references={metrics['references']} resolved={metrics['resolvedSameBank']} "
+            f"unresolved={metrics['unresolvedInBank']}"
+        )
+    if metrics["selfReferences"] > metrics["references"]:
+        raise ValueError(f"HIRC self references exceed total references: {label}")
+    if metrics["referencesToDuplicateIds"] > metrics["references"]:
+        raise ValueError(f"HIRC duplicate-id references exceed total references: {label}")
+    if metrics["targetsWithMultipleReferrers"] > metrics["references"]:
+        raise ValueError(f"HIRC multi-referrer targets exceed total references: {label}")
+    if metrics["referenceCycleNodes"] > metrics["references"]:
+        raise ValueError(f"HIRC reference cycle nodes exceed total references: {label}")
+    try:
+        depth = int(census[REFERENCE_DEPTH_FIELD])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(f"HIRC reference census has invalid {REFERENCE_DEPTH_FIELD}: {label}") from exc
+    if depth < 0 or depth > metrics["references"]:
+        raise ValueError(f"HIRC reference depth is outside its reference count: {label}")
+    metrics[REFERENCE_DEPTH_FIELD] = depth
+    if metrics["references"] and not depth:
+        raise ValueError(f"HIRC references exist with no measured depth: {label}")
+
+    raw_edges = census.get("edgeCounts")
+    if not isinstance(raw_edges, dict):
+        raise ValueError(f"HIRC reference census has invalid edgeCounts: {label}")
+    edges: dict[str, int] = {}
+    for name, raw_count in raw_edges.items():
+        key = str(name)
+        if re.fullmatch(r"type[0-9A-F]{2}_to_type[0-9A-F]{2}", key) is None:
+            raise ValueError(f"HIRC reference edge is not a numeric type pair: {label} edge={key!r}")
+        try:
+            count = int(raw_count)
+        except (TypeError, ValueError) as exc:
+            raise ValueError(f"HIRC reference edge count is invalid: {label} edge={key}") from exc
+        if count < 0:
+            raise ValueError(f"HIRC reference edge count is negative: {label} edge={key}")
+        if count:
+            edges[key] = count
+    if sum(edges.values()) != metrics["resolvedSameBank"]:
+        raise ValueError(
+            f"HIRC reference edges do not account for every resolved reference: {label} "
+            f"edges={sum(edges.values())} resolved={metrics['resolvedSameBank']}"
+        )
+    metrics["edgeCounts"] = dict(sorted(edges.items()))
+    return metrics
+
+
+def reference_graph_is_closed(corpus: dict[str, Any]) -> bool:
+    """Return whether every reference names exactly one unambiguous same-bank object.
+
+    An unresolved reference, a self reference, a target with more than one referrer,
+    or a reference into a duplicated id each break a different part of the claim, so
+    any of them must stop the gate rather than lower a percentage.
+    """
+    return (
+        int(corpus.get("references") or 0) > 0
+        and int(corpus.get("unresolvedInBank") or 0) == 0
+        and int(corpus.get("selfReferences") or 0) == 0
+        and int(corpus.get("targetsWithMultipleReferrers") or 0) == 0
+        and int(corpus.get("referencesToDuplicateIds") or 0) == 0
+        and int(corpus.get("references") or 0) == int(corpus.get("resolvedSameBank") or 0)
+        # A cycle would make the relation something other than a forest.
+        and int(corpus.get("referenceCycleNodes") or 0) == 0
+    )
+
+
+def _reference_graph_markdown(report: dict[str, Any]) -> str:
+    graph = report["corpus"]["referenceGraph"]
+    cli_fingerprint = report["outer"]["animeStudioCliFingerprint"]
+    edge_rows = "\n".join(
+        f"| `{edge}` | {count:,} |" for edge, count in graph["edgeCounts"].items()
+    ) or "| _none_ | 0 |"
+    return "\n".join(
+        [
+            "# Wwise HIRC anonymous reference-graph join",
+            "",
+            f"- Status: `{report['status']}`; join closure: `{graph['closure']}`.",
+            f"- Current VFS input set: `{report['inputSetSha256']}`.",
+            f"- Authenticated outer ledger: `{report['outer']['ledgerSha256']}`.",
+            f"- Current AnimeStudio CLI matches the outer audit fingerprint: `{cli_fingerprint['matchesOuterAudit']}` (outer `{cli_fingerprint['outerAuditSha256']}`, current `{cli_fingerprint['currentSha256']}`).",
+            _tool_closure_markdown(report),
+            f"- Verified AKPK packages: {report['corpus']['verifiedPackageCount']:,}/{report['corpus']['packageCount']:,}; excluded audio blocks: {report['corpus']['excludedBlockCount']:,}.",
+            f"- References framed: {graph['references']:,}; resolved in the same bank: {graph['resolvedSameBank']:,}; unresolved: {graph['unresolvedInBank']:,}.",
+            f"- Self references: {graph['selfReferences']:,}; targets carrying more than one referrer: {graph['targetsWithMultipleReferrers']:,}.",
+            f"- Nodes lying on a reference cycle: {graph['referenceCycleNodes']:,}; deepest reference chain: {graph['maximumReferenceDepth']:,}.",
+            f"- Duplicate object ids inside a bank: {graph['duplicateObjectIds']:,}; references into a duplicated id: {graph['referencesToDuplicateIds']:,}.",
+            "",
+            "## Numeric type-pair edges",
+            "",
+            "| Edge | References |",
+            "|---|---:|",
+            edge_rows,
+            "",
+            "Every reference is a four-byte value inside a counted vector that the body framers already consume exactly. This report joins those values to the object identities declared by the same bank and reports where each one lands.",
+            "",
+            "Resolution is an identity fact and nothing more. A resolved reference does not establish direction, parenthood, containment, membership, ordering, selection, playback, or any name for either endpoint; it establishes only that the value equals the identity of exactly one object declared in the same bank. The type pairs are numeric on both sides. No cross-bank or cross-package relation is claimed, and absence of one here is a property of this corpus, not a rule.",
+            "",
+            f"Corpus gate SHA-256: `{report['corpusGate']['sha256']}`; AnimeStudio CLI SHA-256 `{report['audioAudit']['toolSha256']}`.",
+            f"Raw AnimeStudio package audit: `{report['audioAudit']['intermediatePath']}` (SHA-256 `{report['audioAudit']['sha256']}`).",
+            "",
+        ]
+    )
+
+
 def _tool_closure_markdown(report: dict[str, Any]) -> str:
     closure = report["audioAudit"]["toolClosure"]
     return (
@@ -1952,6 +2166,8 @@ def run_current_corpus_audit(
     type07_body_output_markdown: Path | None = None,
     type05_body_output_json: Path = DEFAULT_TYPE05_BODY_OUTPUT,
     type05_body_output_markdown: Path | None = None,
+    reference_output_json: Path = DEFAULT_REFERENCE_OUTPUT,
+    reference_output_markdown: Path | None = None,
 ) -> dict[str, Any]:
     outer, source_auth = load_current_outer(outer_path, ledger_path, expected_input_set_sha256)
     input_set = str(outer["inputSetSha256"]).upper()
@@ -1984,6 +2200,9 @@ def run_current_corpus_audit(
     type05_body_output_json.parent.mkdir(parents=True, exist_ok=True)
     type05_body_output_markdown = type05_body_output_markdown or type05_body_output_json.with_suffix(".md")
     type05_body_output_markdown.parent.mkdir(parents=True, exist_ok=True)
+    reference_output_json.parent.mkdir(parents=True, exist_ok=True)
+    reference_output_markdown = reference_output_markdown or reference_output_json.with_suffix(".md")
+    reference_output_markdown.parent.mkdir(parents=True, exist_ok=True)
 
     cli_sha_before = sha256_file(cli_path)
     tool_closure_before = _capture_cli_output_closure(cli_path)
@@ -2231,6 +2450,56 @@ def run_current_corpus_audit(
             type_key, corpus_key, lanes[type_key], lane_json, lane_markdown
         )) is not None
     ]
+    reference_corpus = corpus["referenceGraph"]
+    reference_closed = reference_graph_is_closed(reference_corpus)
+    reference_report = {
+        "format": "animestudio-wwise-hirc-reference-graph-audit",
+        "schemaVersion": 1,
+        "generatedUtc": report["generatedUtc"],
+        "status": "complete" if reference_closed else "incomplete",
+        "closureEnforced": True,
+        "inputSetSha256": input_set,
+        "outer": report["outer"],
+        "audioAudit": report["audioAudit"],
+        "corpusGate": report["corpusGate"],
+        "corpus": {
+            "packageCount": corpus["packageCount"],
+            "verifiedPackageCount": corpus["verifiedPackageCount"],
+            "excludedBlockCount": corpus["excludedBlockCount"],
+            "identityReconciliation": {
+                "verifiedPackagesMatchedToOuterLedger": True,
+                "excludedBlocksMatchedToOuterLedger": True,
+                "perBankReferenceCensusMatchedToPackageTotals": True,
+            },
+            "referenceGraph": reference_corpus,
+            "audioAuditSummary": corpus["audioAuditSummary"],
+        },
+        "evidenceBoundary": {
+            "layer": 4,
+            "claim": (
+                "every four-byte value in the exactly framed anonymous reference vectors "
+                "equals the identity of exactly one HIRC object declared by the same bank"
+            ),
+            "semanticStatus": "structural-only",
+            "nonClaims": reference_corpus["nonClaims"],
+        },
+    }
+    reference_output_json.write_text(
+        json.dumps(reference_report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
+    reference_output_markdown.write_text(
+        _reference_graph_markdown(reference_report), encoding="utf-8"
+    )
+    if not reference_closed:
+        lane_failures.append(
+            "HIRC reference graph did not close: "
+            f"references={reference_corpus['references']} "
+            f"unresolved={reference_corpus['unresolvedInBank']} "
+            f"self={reference_corpus['selfReferences']} "
+            f"multiReferrer={reference_corpus['targetsWithMultipleReferrers']} "
+            f"duplicateIdRefs={reference_corpus['referencesToDuplicateIds']}; "
+            f"report={reference_output_json}"
+        )
     if lane_failures:
         raise ValueError("; ".join(lane_failures))
     return report
@@ -2255,6 +2524,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--type07-body-output-markdown", type=Path, default=None)
     parser.add_argument("--type05-body-output-json", type=Path, default=DEFAULT_TYPE05_BODY_OUTPUT)
     parser.add_argument("--type05-body-output-markdown", type=Path, default=None)
+    parser.add_argument("--reference-output-json", type=Path, default=DEFAULT_REFERENCE_OUTPUT)
+    parser.add_argument("--reference-output-markdown", type=Path, default=None)
     args = parser.parse_args(argv)
     try:
         report = run_current_corpus_audit(
@@ -2275,12 +2546,15 @@ def main(argv: list[str] | None = None) -> int:
             type07_body_output_markdown=args.type07_body_output_markdown,
             type05_body_output_json=args.type05_body_output_json,
             type05_body_output_markdown=args.type05_body_output_markdown,
+            reference_output_json=args.reference_output_json,
+            reference_output_markdown=args.reference_output_markdown,
         )
         type02_report = json.loads(args.type02_output_json.read_text(encoding="utf-8"))
         type04_report = json.loads(args.type04_output_json.read_text(encoding="utf-8"))
         type02_body_report = json.loads(args.type02_body_output_json.read_text(encoding="utf-8"))
         type07_body_report = json.loads(args.type07_body_output_json.read_text(encoding="utf-8"))
         type05_body_report = json.loads(args.type05_body_output_json.read_text(encoding="utf-8"))
+        reference_report = json.loads(args.reference_output_json.read_text(encoding="utf-8"))
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"HIRC Action current-corpus audit failed: {exc}", file=sys.stderr)
         return 1
@@ -2331,6 +2605,15 @@ def main(argv: list[str] | None = None) -> int:
         f"nonExactBody={bodies05['nonExactBodyBytes']:,} bytes; inputSetSha256={report['inputSetSha256']}"
     )
     print(f"Type 0x05 body report: {args.type05_body_output_json}")
+    graph = reference_report["corpus"]["referenceGraph"]
+    print(
+        "HIRC anonymous reference graph: "
+        f"{graph['resolvedSameBank']:,}/{graph['references']:,} name one same-bank object; "
+        f"unresolved={graph['unresolvedInBank']:,} self={graph['selfReferences']:,} "
+        f"multiReferrer={graph['targetsWithMultipleReferrers']:,}; "
+        f"inputSetSha256={report['inputSetSha256']}"
+    )
+    print(f"Reference graph report: {args.reference_output_json}")
     return 0
 
 
