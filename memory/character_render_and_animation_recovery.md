@@ -423,9 +423,14 @@ history ownership/cadence, residual trails and burst composition remain open.
   path, object lifetime, or consumption of the recorded payload by a draw.
   Exact replay additionally requires the consumer's fresh t0 contents, t1/t2,
   ranged VS b0 and PS b0/b1, and actual pipeline state. Capture v4 retains those
-  inputs; v3 cannot establish them from resource identity alone. Initial
-  destination/depth dependence remains a separate replay gate. Follow the
-  capture README and lab progress log for validation and collection.
+  inputs; v3 cannot establish them from resource identity alone. Combined
+  capture also publishes a separate draw-owned post packet. Its authenticated
+  textures, exact constant ranges and fixed state now reproduce the retained
+  retail target byte-for-byte with original DXBC and independently proven full
+  coverage. This closes isolated post-draw replay, not the separate environment
+  CPP upload ownership or Unity rendering gaps. The draw-consumed LUT agrees
+  with the lab's retained CharInfo LUT. See the lab's original_dxbc_exact README
+  for preparation commands and the generated post replay report for evidence.
   Original Uber bytecode omits RDEF resource metadata; bound-input requirements
   come from executable declarations, not a zero reflection resource count.
   Isolated replay must also prove full target coverage before a cleared target
