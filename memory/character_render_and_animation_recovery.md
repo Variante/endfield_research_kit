@@ -1083,19 +1083,23 @@ newer source version must not silently replace the capture-matched texture.
   graphics-quality application also updates the main camera directly. Preserve
   these producers separately from authored startup defaults and history resets.
   Mode mutation history and consistent projection/history integration remain open.
-  The late overview_02 M27 stones are absent from the lab for a reason upstream
-  of every constant-buffer gate. With the compiler-substitution gate armed, the
-  exact route still never calls TryBindDraw, because no active M27 row resolves
-  in the burst window: the generated `suikuai (2)` renderer is serialized
-  disabled with no material slots and only lives while the transient
-  overview_02 root does, and the resolver also returns a null renderer, without
-  logging, when a row is active but has no live particles. The authored `_02`
-  orb systems serialize start delays in the 4.40-4.45 s window with sub-second
-  lifetimes, so sample that window densely rather than at one checkpoint.
-  Recover the root's spawn and destroy times, the system's play window and its
-  live particle count against the body clock before returning to terrain
-  publication, b1 TAA jitter or the late VFX anchor. Forcing renderer.enabled is
-  not a recovery.
+  The late overview_02 stones are absent for a reason upstream of every
+  constant-buffer gate: the whole effect instance is never simulated. Its M27
+  row is active and correctly bound, yet all 18 of its ParticleSystems hold
+  time at 0.000 for the entire run, while the ten overview_01 rock systems
+  advance normally in the same scene and the same frame. That control is what
+  makes the zeros meaningful rather than a measurement artifact. Excluded by
+  measurement: culling pause (forcing AlwaysSimulate changed nothing), time
+  scale, authored simulation speed, inactive objects, stopped or paused
+  systems, a disabled component (ParticleSystem is a Component, not a
+  Behaviour) and late spawning - the instance is bound at unityFrame 1. The
+  consequence is broader than the stones: the fragments, stone, ring, halo,
+  flash and smoke all contribute nothing, so whatever ring and halo the lab
+  does draw at the burst come from a different producer. Find what pins those
+  clocks before returning to terrain publication, b1 TAA jitter or the late VFX
+  anchor. Forcing renderer.enabled or emitting particles manually is not a
+  recovery. A resolver that reports absence by succeeding with a null output
+  hides this class of defect; name the reason where the caller can see it.
   Retail's final post draw is now closed end to end from a live capture: the
   original VS/PS bytecode on the captured scene-colour, bloom and LUT inputs
   with both captured constant buffers reproduces the retained 4K output byte for
