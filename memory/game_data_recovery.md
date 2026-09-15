@@ -2231,7 +2231,15 @@ Stable conclusions:
   function of `tail+20`**: 12 of the 72 distinct `tail+20` values carry more than one
   `tail+8`, and no ratio, product or log relation between them is constant. Whatever
   it is, it is independent.
-- `tail+12`, `tail+16` and `tail+24` are zero in nearly every body.
+- **The tail's first 29 bytes are now fully accounted for** (tail-69 bodies, 3,321):
+  `+0` the `0x0B` reference; `+4` a `u32` zero in 1,886 and taking 50 other values;
+  `+8` the never-whole float; `+12` and `+16` `u32`s zero in 3,317 of 3,321; `+20`
+  the authored float; `+24..27` four bytes reading `04 04 <0|1> 00` -- only **5
+  distinct** 32-bit values across the corpus, so a packed flag record and not a
+  number; `+28` constant zero. Seven 32-bit fields and a byte.
+- That closes the region the 4-byte optional insertion was localized to. The
+  insertion has to displace one of those seven fields, and the two `u32`s at `+12`
+  and `+16` that are zero in 3,317 of 3,321 are the natural suspects.
 - **The tail's optional 4-byte field is localized, and it is not counted.** Aligning
   the 3,321 tail-69 bodies against the 217 tail-73 bodies: from the **end** their
   constant profiles agree at **every one of 69 positions**, so the longer tail is the
