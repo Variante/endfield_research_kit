@@ -86,6 +86,33 @@ unique binding.
   incorrectly folded `chenpast` into `chen` has been removed.
 - Selected static world placements and gameplay/entity associations.
 
+## CABMap container index
+
+- **AnimeStudio's `Maps/*.bin` are CABMaps, not asset maps, and the format is now
+  read byte-exact.** The framing comes from the writer itself --
+  `AssetsHelper.DumpCABMap` in the submodule -- not from guessing at bytes: a
+  .NET `BinaryWriter` stream of `string BaseFolder`, `int32 count`, then per entry
+  a CAB name, a path, an `int64` offset, an `int32` dependency count and that many
+  CAB names, with .NET's 7-bit encoded string length prefixes.
+- Both current maps consume exactly to EOF: `endfield_persistent_assets.bin`
+  (1,946 entries, 2,571,560 bytes) and `endfield_streamingassets_assets.bin`
+  (254,723 entries, 47,318,490 bytes). Every CAB name is unique inside its file,
+  which is what makes each map a map.
+- **The dependency graph closes across the two maps, not within either.** Of
+  661,808 edges only **3** name a CAB that appears nowhere. The persistent map is
+  the reason to resolve across maps rather than within one: 10,025 of its distinct
+  targets live in the streaming map and only 570 in its own, so a per-map check
+  would report it as 95% dangling. 1,939 of its 1,946 CAB names also appear in the
+  streaming map.
+- Read by `scripts/asset_builder/cabmap.py`; report at
+  [`reports/assets/cabmap_current_latest.json`](../reports/assets/cabmap_current_latest.json).
+  This is a container index only -- it says nothing about the objects inside a CAB,
+  their types, names or path ids, and an offset is not a readable object without
+  the container format that sits at it.
+- Note for anyone wanting a texture or asset inventory: this map does **not**
+  provide one. That needs an AnimeStudio export; the `.bin` maps only locate
+  containers.
+
 ## Remaining gaps
 
 - Exact runtime prefab assembly and entity-to-renderable ownership.
