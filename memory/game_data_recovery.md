@@ -6921,6 +6921,34 @@ one-byte read that silently produced a plausible-looking wrong answer. *A misrea
 returns garbage gets caught; a misread that returns a small tidy number gets believed* --
 and "max 128, non-sequential" was tidy enough to found an argument on.
 
+##### The element's other fields: one characterised, one degenerate test caught
+
+With the mask reading proven for field 0, the obvious move is to try it on field 1, whose
+commonest values are 1, 2 and 4. **It is not a mask.**
+
+| | |
+| --- | --- |
+| every bit <= 10, i.e. "fits `StreamingLayer`" | 99.61% |
+| **values below 2048** | **99.61%** |
+
+*The two are the same test.* The bound a `StreamingLayer` mask would satisfy is satisfied
+for free by any small integer, and the tell was the bit frequencies: 10,150 / 8,381 /
+6,899 / 5,223 / 4,151 / 2,963 / ... a smooth geometric decay, which is what small integers
+give and a mask over distinct concepts does not.
+
+**Field 1 is a count.** Its values are dense over the small integers with no gaps --
+`1`:3,455, `2`:1,905, `3`:1,154, `4`:1,113, `5`:734, `6`:574, `7`:463, `8`:405 -- **never
+zero**, with 60.9% of reads landing on non-powers-of-two. 964 distinct values, a long tail
+past 2048 in 0.39%.
+
+**Field 4 is the constant 4** in all 18,391 reads. **Field 3** has 3,311 distinct values
+(top: 100, 180, 528, 340) and remains unidentified.
+
+*Worth noting what made the difference:* field 0's mask reading survived because its bits
+were **not** the bits a small integer sets -- bits 0-5 always on, one-hot in 8-14 -- which
+no magnitude distribution produces. The same test on field 1 returned a high number and
+meant nothing.
+
 ***A degenerate fit, caught by fitting four rivals at once.*** `s4 == 24 + 24*n7` scores
 **100.00%** on the Streaming family, which reads like a decoded record stride -- until the
 rivals are run beside it. `24 + 32*n7`, `24 + 40*n7` and `24 + 44*n7` **all score
