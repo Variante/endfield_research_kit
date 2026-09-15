@@ -5033,6 +5033,32 @@ must carry their geometry some other way.
 That closes the gap flagged last batch: knowing a struct exactly is not the same as
 knowing it is in the file, and here it is not.
 
+#### WHY it is not: the payload parser is native, the index handler is managed
+
+The method flags say exactly where the boundary runs.
+
+| type | methods | `iflags` | kind |
+| --- | --- | --- | --- |
+| `HGIrradianceVolume`, `HGIrradianceVolumeV2` | `SetMap`, `SetMapV3`, `PipelineUpdate`, `StreamingInCabin`, `SetActiveSceneStateMask`, ... | **0x1000** | **InternalCall -- native C++** |
+| `HGIrradianceVolumeManager` | `ReloadIndexFileV3`, `GetStateNameList`, `UpdateSceneStateMask`, `StreamingInNewMap`, ... | **0** | **managed C#** |
+
+- **The `.bytes` payload is parsed in native code**, reached through internal calls. IL2CPP
+  metadata cannot describe its layout because no managed type exists for it -- the
+  managed side passes a path and a config struct and nothing else crosses.
+- **That is why the config is not in the file.** It is the managed-to-native *parameter*,
+  not serialised content. The two findings are the same fact seen from both sides.
+- **The index handling is managed and therefore readable.** `ReloadIndexFileV3` and
+  `GetStateNameList` are ordinary C# with method bodies in `GameAssembly.dll`, which the
+  existing bridge can locate.
+
+**So the lane splits cleanly by reachability.** The index frame at 86 of 92 can be
+checked against the game's own parser. The payload layout cannot be reached this way at
+all; it needs the native loader disassembled, and the project's existing note that
+static work on `GameAssembly.dll` is constrained by HGP applies.
+
+*Knowing that a thing is out of reach, and why, is worth more than another sweep that
+was never going to find it.*
+
 **Where this lane stands:** the index is framed and shipped at 86 of 92 with 20 tests;
 the payload's container is **identified** rather than guessed, with every one of the
 seven byte-statistic eliminations explained by the identification; the remaining work is
