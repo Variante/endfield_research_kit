@@ -3439,6 +3439,31 @@ turned up something that qualifies a lot of numbers in this file.
   sides of a question can land in different `.pck` files, the question belongs in the
   pass that unions them.*
 
+#### Where the remaining 210 actually go wrong, and one methodological trap
+
+Applying the content checks that found the four-byte step-back to the residue.
+
+- **206 of the 210 failing bodies have a first entry header that passes both checks.**
+  The walk starts in the right place and loses synchronisation later.
+- **The 111 trailer-flag fences are a symptom, not a cause.** At the point of failure
+  the trailing block's opening byte is scattered noise -- 4, 129, 2, 0, 100, 247, 82,
+  15 -- so the walk is already lost before it reads the flag. The 36 that fail at a run
+  count and the 21 at an element head are earlier detections of the same loss.
+- **The zero-element entry advance is confirmed at 48.** Sweeping it from 17 to 52,
+  only 48 reaches 4,115; every other value drops to 3,861.
+
+**The trap, which nearly cost a batch.** Scanning *every* offset of a body for a window
+passing both content checks produces coincidences: **130 failing bodies show a second
+window exactly 17 bytes after the first**, consistently enough to look like a real
+17-byte entry header. Sweeping that as a rule closes **3,861** -- below the baseline --
+so it is a false positive of the scan, not a layout.
+
+*The `-4` finding was clean because the scan was restricted to `[-32, +32]` and had a
+unique answer.* A content check strong enough to locate a field within a restricted
+window is not automatically strong enough to survive scanning a whole body. **When a
+scan widens, its coincidence rate widens with it, and consistency across bodies is not
+proof -- the same coincidence recurs for the same structural reason.**
+
 #### Two exhaustive searches over `0x0B`'s 388, both negative
 
 The method that settled STMG's middle block -- enumerate every shape and let closure
