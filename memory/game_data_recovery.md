@@ -2733,6 +2733,30 @@ u32 terminator, always 100
   **ten bytes from the terminator**, which is where an element's short trailer puts
   its own marker.
 
+#### The fixed-point fraction is in two types, and they are NOT the same quantity
+
+Three measurements, and the conclusion is a negative worth keeping.
+
+1. **The `0x0A` fraction reading is much stronger than previously recorded.** Under
+   the reader's own tolerance (16 parts in 2^32, denominators to 64): **1,435 of
+   2,130** nonzero values are small fractions, the control word four bytes further
+   on manages **121 of 3,748**, and **0 of 2,130 random 32-bit words** pass. The
+   random control is the one that settles it -- a test that admitted arbitrary words
+   would not have been evidence at all.
+2. **`0x0A` -> `0x0B` does not carry the fraction.** For the 1,864 `0x0A` bodies with
+   a nonzero fraction whose reference resolves to a framed `0x0B`, the value equals
+   one of that `0x0B`'s two entry-header fractions in **58** cases. Shuffling the
+   pairing gives **52**. That is chance, on the one edge in this format known to be
+   one-to-one.
+3. **The value distributions differ in kind.** `0x0B`'s entry fractions are a tight
+   set -- 0, 1/3, 2/3, 1/2, 1/6. `0x0A`'s spread across 7/13, 1/3, 10/11, 2/3, 4/9,
+   27/49, 4/7 and more, with denominators 7, 9, 11, 13, 49.
+
+So the two types share an **encoding**, not a **meaning**. *A representation found in
+two places is a lead, not a link -- test whether the values actually travel along the
+reference before treating it as one.* The cheapest such test is the shuffle: score the
+real pairing against a permuted one, and a difference of 58 against 52 says stop.
+
 #### Four fields read in the 48-byte entry header -- and one caveat about the frame
 
 Censused over the 3,715 entries of closing bodies only; an entry header from a body
