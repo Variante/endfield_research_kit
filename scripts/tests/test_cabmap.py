@@ -4,6 +4,8 @@ import struct
 import unittest
 
 from scripts.asset_builder.cabmap import (
+    dependency_graph_is_acyclic,
+    dependency_graph_shape,
     cab_join_is_essentially_one_to_one,
     join_cabs_to_logical_files,
     blocks_missing_from_ledger,
@@ -179,6 +181,41 @@ class CabMapTests(unittest.TestCase):
         join = join_cabs_to_logical_files(entries, spans)
         self.assertEqual(join["maximumCabsInOneLogicalFile"], 5)
         self.assertFalse(cab_join_is_essentially_one_to_one(join))
+
+    def test_dependency_graph_shape_counts_and_detects_cycles(self) -> None:
+        entries = {
+            "m.bin": [
+                CabEntry("A", "p", 0, ("B", "C")),
+                CabEntry("B", "p", 1, ("C",)),
+                CabEntry("C", "p", 2, ()),
+            ]
+        }
+        shape = dependency_graph_shape(entries)
+        self.assertEqual(shape["nodes"], 3)
+        self.assertEqual(shape["distinctEdges"], 3)
+        self.assertEqual(shape["nodesNothingDependsOn"], 1)   # A
+        self.assertEqual(shape["nodesWithNoDependency"], 1)   # C
+        self.assertTrue(dependency_graph_is_acyclic(shape))
+
+        # A cycle leaves load order undefined, so it must be caught rather than
+        # walked forever.
+        cyclic = {"m.bin": [CabEntry("A", "p", 0, ("B",)), CabEntry("B", "p", 1, ("A",))]}
+        self.assertFalse(dependency_graph_is_acyclic(dependency_graph_shape(cyclic)))
+
+        # An empty graph is acyclic in the trivial sense and must not pass.
+        self.assertFalse(
+            dependency_graph_is_acyclic(dependency_graph_shape({"m.bin": [CabEntry("A", "p", 0, ())]}))
+        )
+
+    def test_repeated_dependency_entries_are_counted_not_hidden(self) -> None:
+        # A CAB listing the same dependency twice is one edge but two entries, and
+        # reporting only one of those numbers would misstate either the graph or
+        # the file.
+        entries = {"m.bin": [CabEntry("A", "p", 0, ("B", "B", "C"))]}
+        shape = dependency_graph_shape(entries)
+        self.assertEqual(shape["rawDependencyEntries"], 3)
+        self.assertEqual(shape["distinctEdges"], 2)
+        self.assertEqual(shape["duplicateDependencyEntries"], 1)
 
 
 if __name__ == "__main__":

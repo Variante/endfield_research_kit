@@ -298,6 +298,62 @@ def cab_join_is_essentially_one_to_one(join: dict[str, Any]) -> bool:
     )
 
 
+def dependency_graph_shape(entries_by_map: dict[str, list[CabEntry]]) -> dict[str, Any]:
+    """Shape of the CAB dependency relation: acyclicity, roots, leaves, duplicates.
+
+    Acyclicity is the load-bearing part. A cycle would leave load order undefined,
+    so it is measured rather than assumed, with an iterative walk because the graph
+    is deep enough to blow a recursive one.
+    """
+    edges: dict[str, set[str]] = {}
+    raw_edges = 0
+    for entries in entries_by_map.values():
+        for entry in entries:
+            raw_edges += len(entry.dependencies)
+            edges.setdefault(entry.cab, set()).update(entry.dependencies)
+    nodes = set(edges) | {dep for targets in edges.values() for dep in targets}
+    distinct_edges = sum(len(targets) for targets in edges.values())
+    in_degree: Counter[str] = Counter()
+    for targets in edges.values():
+        for target in targets:
+            in_degree[target] += 1
+    colour: dict[str, int] = {}
+    back_edges = 0
+    for start in edges:
+        if colour.get(start):
+            continue
+        colour[start] = 1
+        stack = [(start, iter(edges.get(start, ())))]
+        while stack:
+            node, walker = stack[-1]
+            nxt = next(walker, None)
+            if nxt is None:
+                colour[node] = 2
+                stack.pop()
+                continue
+            state = colour.get(nxt, 0)
+            if state == 1:
+                back_edges += 1
+            elif state == 0:
+                colour[nxt] = 1
+                stack.append((nxt, iter(edges.get(nxt, ()))))
+    return {
+        "nodes": len(nodes),
+        "rawDependencyEntries": raw_edges,
+        "distinctEdges": distinct_edges,
+        "duplicateDependencyEntries": raw_edges - distinct_edges,
+        "nodesNothingDependsOn": sum(1 for node in nodes if not in_degree.get(node)),
+        "nodesWithNoDependency": sum(1 for node in nodes if not edges.get(node)),
+        "backEdges": back_edges,
+        "acyclic": back_edges == 0,
+    }
+
+
+def dependency_graph_is_acyclic(shape: dict[str, Any]) -> bool:
+    """A cycle would make load order undefined, so it must be observed absent."""
+    return bool(shape.get("acyclic")) and int(shape.get("distinctEdges") or 0) > 0
+
+
 def iter_maps(directory: Path) -> Iterator[Path]:
     yield from sorted(directory.glob("*.bin"))
 
@@ -347,6 +403,11 @@ def run(
         }
     ledger = ledger_block_names(ledger_path)
     join = join_cabs_to_logical_files(parsed, ledger_spans_by_chunk(ledger_path))
+    graph = dependency_graph_shape(parsed)
+    if not dependency_graph_is_acyclic(graph):
+        problems.append(
+            f"the CAB dependency graph is not acyclic: {graph['backEdges']} back edges"
+        )
     if join["distinctLogicalFiles"] and not cab_join_is_essentially_one_to_one(join):
         problems.append(
             "the CAB-to-logical-file join is not one to one: "
@@ -367,6 +428,7 @@ def run(
             "blocksReferencedButNotEnumerated": missing_blocks,
         },
         "logicalFileJoin": join,
+        "dependencyGraphShape": graph,
         "dependencyResolution": {
             "distinctCabNames": len(everything),
             "dependencyEdges": edge_total,
@@ -383,7 +445,8 @@ def run(
             "semanticStatus": "structural-only",
             "nonClaims": [
                 "what objects a CAB contains, or their types, names or path ids",
-                "that a dependency edge implies load order, ownership or containment",
+                "that a dependency edge implies load order, ownership or containment; "
+                "the graph being acyclic makes a load order possible, not actual",
                 "that the three targets naming nothing are errors; this corpus simply "
                 "does not contain whatever declares them",
                 "that a chunk filename absent from the ledger means missing coverage; "

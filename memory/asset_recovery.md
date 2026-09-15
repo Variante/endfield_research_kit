@@ -140,6 +140,16 @@ unique binding.
   looking number and a fabricated structure. The gate bounds both the one-to-one
   shape and the per-file maximum, since either bound alone passes a case it should
   not.
+- **The CAB dependency graph is acyclic.** 254,732 nodes, 600,272 distinct edges,
+  **zero back edges**, measured with an iterative walk rather than assumed.
+  160,839 nodes have nothing depending on them and 141,896 depend on nothing. That
+  a load order *exists* follows from this; which order the game actually uses does
+  not, and is not claimed.
+- 661,808 raw dependency entries reduce to 600,272 distinct edges, so **61,536
+  entries repeat a dependency the same CAB already lists**. Both numbers are
+  published: quoting only the distinct count misstates the file, quoting only the
+  raw count misstates the graph. This is also why an earlier note said "661,808
+  edges" -- that was the entry count, not the edge count.
 - Read by `scripts/asset_builder/cabmap.py`; report at
   [`reports/assets/cabmap_current_latest.json`](../reports/assets/cabmap_current_latest.json).
   This is a container index only -- it says nothing about the objects inside a CAB,
