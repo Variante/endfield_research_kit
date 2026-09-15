@@ -4688,10 +4688,48 @@ bytes of UTF-16. The 980-byte index carries `u32 24` followed by `iv_0_0.bytes`.
 - A `u32` at `+20` equals the name count in **86 of 92**, so it is a **candidate**
   count offset rather than an established one, and is recorded that way.
 
-**Next step:** close the index header -- the 20 bytes before the count, and whatever
-follows each name -- since it is small, there are 92 of them, and the name join already
-gives an independent check on any framing. The volume payload itself should wait for
-the index to be read, because the index is what describes it.
+#### The index IS framed: 86 of 92, and the other 6 are fenced by name
+
+`scripts/asset_builder/irradiance_index.py`, with
+`scripts/tests/test_irradiance_index.py`:
+
+```
+u32 magic            0x03000003 x82, 0x01000043 x2, 0x03000002 x2
+u32 stateCount       the scene states GetStateNameList returns
+stateCount x name    u32 byteLength, then that many bytes of UTF-16LE
+u32 u32 u32          three words: 1, 0, 0 in every framed file
+u32 volumeCount
+volumeCount x name   the volume files in this directory
+... remainder        the clipmap description, not framed
+```
+
+| | |
+| --- | --- |
+| indexes | **92** |
+| framed exactly | **86** |
+| fenced as unsupported | **6** |
+| failed | **0** |
+| volume names read | 103 |
+| **volume sets matching the directory** | **86 of 86** |
+
+- **The content check is the volume-name join, and it is strict on purpose.** Each
+  index names between one and a few dozen files, so "the whole set, every time" is a far
+  stronger statement than a percentage over a large population. A single name that is
+  not there, or one missing, means the name table has been misread.
+- **The three middle words are discriminated by closure.** At three words 86 files
+  frame; at **zero, one, two, four or five words, not one file frames at all**. A width
+  that framed fewer would be weak evidence; a width that frames none is the whole
+  discrimination. Their values are constants -- 1, 0, 0 -- in all 86.
+- **The 6 fenced files declare scene states**, and their names are what the engine's
+  `GetStateNameList` returns: `Afternoon`, `Evening`, `001_damaged`, `001_normal`,
+  `001_overcast_rainy`, `Map02_lv009_night`, `under_construction`. After those names the
+  gap before the volume count is `3 + 3 x stateCount` words in three of them and
+  something else in the other three, so **the variant is refused rather than guessed
+  at** -- reported as `unsupported`, which cannot be mistaken for a defect.
+
+**Next:** the remainder after the name table is the clipmap. `ToggleDebugUpdateClipmap`
+and `...Lod0` say what it is; the index's own name table now gives a fixed starting
+offset for it in 86 files.
 
 *Asking the shipped code what a format is called cost one metadata scan and moved this
 further than two batches of byte-pattern search.*
