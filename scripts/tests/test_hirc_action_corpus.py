@@ -340,7 +340,14 @@ def valid_action_fixture():
     }
     type0a_head = {
         "bodies": 10,
+        "bodiesWhereTheRuleApplies": 9,
         "namesTheSourceType": {
+            "predicted": 9,
+            "fixedOffset": 3,
+            "predictedPlusFour": 1,
+            "predictedMinusFour": 0,
+        },
+        "namesTheSourceTypeWhereTheRuleApplies": {
             "predicted": 9,
             "fixedOffset": 3,
             "predictedPlusFour": 1,
@@ -1617,12 +1624,25 @@ class HircActionCorpusTests(unittest.TestCase):
             )
         )
         self.assertFalse(the_type0a_head_rule_beats_its_controls({**head, "bodies": 0}))
+        # The unconditioned rate can clear its bar while the conditioned one does not,
+        # and the conditioned one is the claim.
+        self.assertFalse(
+            the_type0a_head_rule_beats_its_controls(
+                {**head, "namesTheSourceTypeWhereTheRuleApplies":
+                    {**head["namesTheSourceTypeWhereTheRuleApplies"], "predicted": 4}}
+            )
+        )
+        self.assertFalse(
+            the_type0a_head_rule_beats_its_controls({**head, "bodiesWhereTheRuleApplies": 0})
+        )
 
     def test_a_type0a_head_census_scoring_above_its_bodies_is_refused(self) -> None:
         _, _, _, audio_audit = valid_action_fixture()
         census = audio_audit["rows"][0]["package"]["hircType0AHead"]
-        with self.assertRaisesRegex(ValueError, "above its body count"):
-            _read_type0a_head_census({**census, "bodies": 2}, "unit")
+        with self.assertRaisesRegex(ValueError, "above its bodies"):
+            _read_type0a_head_census({**census, "bodies": 2, "bodiesWhereTheRuleApplies": 2}, "unit")
+        with self.assertRaisesRegex(ValueError, "applies to more bodies than it has"):
+            _read_type0a_head_census({**census, "bodiesWhereTheRuleApplies": 99}, "unit")
 
     def test_the_music_reference_position_must_be_concentrated_to_be_an_anchor(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

@@ -2136,8 +2136,20 @@ Stable conclusions:
   reading at a fixed 36 scores **31.1%**; the position four bytes later scores
   **7.5%**; four bytes earlier scores **0.0%**. So the count is what places the
   reference, not proximity.
+- **Byte 17 says whether the rule applies, and it is near-perfect.** Where
+  `body[17] == 0` the rule places the reference in **3,744 of the 3,745** bodies
+  that have one to place. Where it is nonzero: 6 of 144. Those 144 have longer
+  heads, at `36 + 7 + 5k` (43, 48, 53) and a second family (52, 54, 59).
+- **Mind the denominator.** Of the 394 bodies the rule "misses", **255 carry no
+  `0x0B` reference at all** -- there is nothing there to find and nothing the rule
+  got wrong. The real miss count is 139. The gate uses the denominator it can
+  actually derive (bodies with `body[17] == 0`, which still includes those 255), so
+  its threshold is 0.90 while the measurement against applicable bodies is 0.9997.
+  The two numbers are not in conflict; they count different things, and the gate
+  says which.
 - That is the first framing rule `0x0A` has. What it leaves: the 36 fixed bytes, the
-  five-byte elements, and the 394 bodies the rule does not predict.
+  five-byte elements, the 144 bodies with a nonzero byte 17, and the 255 with no
+  reference.
 - **Conditioning on the anchor makes the tail legible.** Restricted to the 3,419
   `0x0A` bodies with exactly one `0x0B` reference and it at -69, **21 of the last 69
   byte positions are constant** -- against **6 of 101** over the unconditioned

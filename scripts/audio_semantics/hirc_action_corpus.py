@@ -1699,6 +1699,7 @@ def aggregate_current_hirc_actions(
     music_ref_places: Counter[str] = Counter()
     type0a_head_totals: Counter[str] = Counter()
     type0a_head_scores: Counter[str] = Counter()
+    type0a_head_conditioned: Counter[str] = Counter()
     music_head_by_type: Counter[str] = Counter()
     music_head_offsets: Counter[str] = Counter()
     music_head_discriminants: Counter[str] = Counter()
@@ -1876,7 +1877,9 @@ def aggregate_current_hirc_actions(
             package.get("hircType0AHead"), package_label
         )
         type0a_head_totals["bodies"] += package_head0a["bodies"]
+        type0a_head_totals["bodiesWhereTheRuleApplies"] += package_head0a["bodiesWhereTheRuleApplies"]
         type0a_head_scores.update(package_head0a["namesTheSourceType"])
+        type0a_head_conditioned.update(package_head0a["namesTheSourceTypeWhereTheRuleApplies"])
 
         package_reference = _read_reference_census(
             package.get("hircReferenceCensus"), package_label
@@ -2335,7 +2338,9 @@ def aggregate_current_hirc_actions(
         },
         "type0AHead": {
             "bodies": int(type0a_head_totals["bodies"]),
+            "bodiesWhereTheRuleApplies": int(type0a_head_totals["bodiesWhereTheRuleApplies"]),
             "namesTheSourceType": dict(sorted(type0a_head_scores.items())),
+            "namesTheSourceTypeWhereTheRuleApplies": dict(sorted(type0a_head_conditioned.items())),
         },
         "musicReferences": {
             **{key: int(music_ref_totals[key]) for key in MUSIC_REFERENCE_SCALARS},
@@ -2866,6 +2871,13 @@ def _read_music_reference_census(census: Any, label: str) -> dict[str, Any]:
 # Numeric type 0x0A's head-length rule must beat every control by this much. The
 # rule is worth nothing unless the count is what places the reference.
 TYPE0A_HEAD_RULE_MINIMUM = 0.75
+# Conditioned on the discriminant the bar is higher, but not as high as the rule
+# itself measures. The denominator the reader can compute -- bodies whose byte 17 is
+# zero -- includes 255 that carry no type 0x0B reference at all, so there is nothing
+# there for the rule to find and nothing it got wrong. Measured against the bodies
+# that do carry one, the rule places it in 3,744 of 3,745; measured here it is
+# 3,744 of 4,000. The gate uses the number it can actually derive.
+TYPE0A_HEAD_CONDITIONED_MINIMUM = 0.90
 TYPE0A_HEAD_CONTROL_MAXIMUM = 0.50
 
 
@@ -2875,22 +2887,32 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
         return {"bodies": 0, "namesTheSourceType": {}}
     if not isinstance(census, dict):
         raise ValueError(f"type 0x0A head census is not an object: {label}")
-    try:
-        bodies = int(census["bodies"])
-    except (KeyError, TypeError, ValueError) as exc:
-        raise ValueError(f"type 0x0A head census has invalid bodies: {label}") from exc
-    if bodies < 0:
-        raise ValueError(f"type 0x0A head census has negative bodies: {label}")
-    raw = census.get("namesTheSourceType")
-    if not isinstance(raw, dict):
-        raise ValueError(f"type 0x0A head census has invalid namesTheSourceType: {label}")
-    scores = {str(name): int(count) for name, count in raw.items()}
-    for name, count in scores.items():
-        if count > bodies:
-            raise ValueError(
-                f"type 0x0A head census scores {name} above its body count: {label}"
-            )
-    return {"bodies": bodies, "namesTheSourceType": scores}
+    out: dict[str, Any] = {}
+    for key in ("bodies", "bodiesWhereTheRuleApplies"):
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x0A head census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x0A head census has negative {key}: {label}")
+        out[key] = value
+    if out["bodiesWhereTheRuleApplies"] > out["bodies"]:
+        raise ValueError(f"type 0x0A head census applies to more bodies than it has: {label}")
+    for key, ceiling in (
+        ("namesTheSourceType", "bodies"),
+        ("namesTheSourceTypeWhereTheRuleApplies", "bodiesWhereTheRuleApplies"),
+    ):
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"type 0x0A head census has invalid {key}: {label}")
+        scores = {str(name): int(count) for name, count in raw.items()}
+        for name, count in scores.items():
+            if count > out[ceiling]:
+                raise ValueError(
+                    f"type 0x0A head census scores {name} above its {ceiling}: {label}"
+                )
+        out[key] = scores
+    return out
 
 
 def the_type0a_head_rule_beats_its_controls(corpus: dict[str, Any]) -> bool:
@@ -2916,7 +2938,14 @@ def the_type0a_head_rule_beats_its_controls(corpus: dict[str, Any]) -> bool:
     for control in ("fixedOffset", "predictedPlusFour", "predictedMinusFour"):
         if int(scores.get(control) or 0) / bodies > TYPE0A_HEAD_CONTROL_MAXIMUM:
             return False
-    return True
+    # Byte 17 says whether the rule applies at all, and conditioning on it is what
+    # separates "the rule is wrong here" from "there was nothing here to find".
+    applies = int(corpus.get("bodiesWhereTheRuleApplies") or 0)
+    if applies <= 0:
+        return False
+    conditioned = corpus.get("namesTheSourceTypeWhereTheRuleApplies") or {}
+    hit = int(conditioned.get("predicted") or 0)
+    return hit / applies >= TYPE0A_HEAD_CONDITIONED_MINIMUM
 
 
 # The one music edge whose targets are partitioned rather than merely reached.
