@@ -2103,6 +2103,23 @@ Stable conclusions:
   `0x0A` (2,505/4,158) and `0x0D` (912/2,431), on `unsupported_groupB_nonempty`
   for `0x0B` (4,217/4,325), while `0x0C` "succeeds" on 586/742 but leaves 143-303
   bytes over. Those successes are not evidence: see the next point.
+- **The twelve-byte curve record is NOT in the music types.** Scanning every offset
+  of all 7,331 bodies for a `u32` count followed by that many `(float, float,
+  interp <= 9)` records finds it in 33 of 4,158 `0x0A`, 18 of 742 `0x0C` and **0 of
+  2,431 `0x0D`**. At those rates, over a scan of every offset, these are chance
+  fits. The record is in `0x08`, `0x12` and `0x0B`; the music types are the first
+  miss, so the cross-type heuristic has a boundary.
+- **The trap that nearly made this a finding, and it is the second time this
+  session.** The same scan without a variation requirement reports the record in
+  **2,423 of 2,431** `0x0D` bodies. Every one of those is a run of **zero bytes**:
+  zeros are finite floats and zero is a valid interpolation code, so a zero-filled
+  region satisfies every bound for free. The earlier music-type tail match failed
+  the same way with `entries_0`.
+- **General rule, now written down because it has cost two false results.** Before a
+  structural test's hit rate means anything, check it against the degenerate input
+  that satisfies it trivially -- a run of zeros, a count of zero, a single-element
+  list. If the degenerate case passes, the rate is measuring how much of the corpus
+  is degenerate, not how well the structure fits.
 - **Two fresh eliminations on the music types (2026-09-15). Read these before
   trying the next idea.**
   (a) *Their head is not a fixed skeleton.* Tabulating every byte position across
