@@ -1958,6 +1958,17 @@ Stable conclusions:
   reads as a float and takes values like -180, -96, -75, -48, -36, -18, 0, 0.6, 1,
   75, 100 and 180 -- recorded as an observation, not a claim; nothing establishes
   what any of them measures.
+- **The tail block is framed, and both types now use it.** After the entry run a
+  body either ends on the five zero bytes or carries this block, which finishes it:
+  a 15-byte head, a record count, one byte, that many 12-byte records, and a zero
+  `u16`. That took `0x08` from 96 to **109 of 161** exact and `0x12` from 213 to
+  **245 of 251**.
+- The head, over all 45 instances of both types: `[0]`, `[2]` and `[7]` are zero and
+  `[1]` is 1 in **every** body of **both** types -- those four are checked. `[8]`,
+  `[9]` and `[14]` are constant *within* a type (`0x08` -> `02 00 02`, `0x12` ->
+  `04 31 00`) and are published as a selector rather than checked, because a corpus
+  where each type is homogeneous cannot tell "depends on the type" from "is whatever
+  this type happens to carry". Two 32-bit values sit at `[3]` and `[10]`.
 - **The 15-byte head's first word is a reference, and it names a numeric type
   `0x12` object.** 13 of the 27 located tails have a head of that width. Its word at
   offset 3 resolves to a same-bank object 5 times; the other 8 name objects the

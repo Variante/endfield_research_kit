@@ -1662,6 +1662,7 @@ def aggregate_current_hirc_actions(
     type11_plugins: Counter[str] = Counter()
     type11_terminators: Counter[str] = Counter()
     type08_body_totals: Counter[str] = Counter()
+    type08_body_selectors: Counter[str] = Counter()
     type12_body_totals: Counter[str] = Counter()
     type12_body_failures: Counter[str] = Counter()
     type12_body_unsupported: Counter[str] = Counter()
@@ -1778,6 +1779,9 @@ def aggregate_current_hirc_actions(
         for key in TYPE08_BODY_FIELDS:
             type08_body_totals[key] += package_type08_body[key]
         type08_body_failures.update(package_type08_body["failureCategories"])
+        type08_body_selectors.update(
+            (package.get("hircType08BodyFrame") or {}).get("selectorCounts") or {}
+        )
         package_type12_body = _read_type12_body_frame(
             package.get("hircType12BodyFrame"), package_label
         )
@@ -2260,6 +2264,7 @@ def aggregate_current_hirc_actions(
             **{key: int(type08_body_totals[key]) for key in TYPE08_BODY_FIELDS},
             "failureCategories": dict(sorted(type08_body_failures.items())),
             "unsupportedCategories": dict(sorted(type08_body_unsupported.items())),
+            "selectorCounts": dict(sorted(type08_body_selectors.items())),
         },
         "type02MediaJoin": _summarise_media_join(media_ids, source_ids_by_plugin),
         "smallTypeBodies": {

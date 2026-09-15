@@ -249,6 +249,7 @@ def valid_action_fixture():
         "bodyBytes": 180,
         "failureCategories": {"trailer_is_not_five_bytes": 1},
         "unsupportedCategories": {},
+        "selectorCounts": {"tailBlockSelector_020002": 1},
     }
     type08_tail = {
         "bodies": 3,
