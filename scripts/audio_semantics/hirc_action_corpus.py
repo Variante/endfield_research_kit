@@ -1696,6 +1696,7 @@ def aggregate_current_hirc_actions(
     music_ref_distinct: Counter[str] = Counter()
     music_ref_twice: Counter[str] = Counter()
     music_ref_population: Counter[str] = Counter()
+    music_ref_places: Counter[str] = Counter()
     music_head_by_type: Counter[str] = Counter()
     music_head_offsets: Counter[str] = Counter()
     music_head_discriminants: Counter[str] = Counter()
@@ -1868,6 +1869,7 @@ def aggregate_current_hirc_actions(
         music_ref_distinct.update(package_music_refs["distinctTargets"])
         music_ref_twice.update(package_music_refs["targetsReachedTwice"])
         music_ref_population.update(package_music_refs["targetPopulation"])
+        music_ref_places.update(package_music_refs["edgeDistanceFromEnd"])
 
         package_reference = _read_reference_census(
             package.get("hircReferenceCensus"), package_label
@@ -2331,6 +2333,7 @@ def aggregate_current_hirc_actions(
             "distinctTargets": dict(sorted(music_ref_distinct.items())),
             "targetsReachedTwice": dict(sorted(music_ref_twice.items())),
             "targetPopulation": dict(sorted(music_ref_population.items())),
+            "edgeDistanceFromEnd": dict(sorted(music_ref_places.items())),
         },
         "musicHeadReferences": {
             **{key: int(music_head_totals[key]) for key in MUSIC_HEAD_SCALARS},
@@ -2819,6 +2822,7 @@ def _read_music_reference_census(census: Any, label: str) -> dict[str, Any]:
         return {key: 0 for key in MUSIC_REFERENCE_SCALARS} | {
             "referencesPerBody": {}, "edgeCounts": {}, "distinctTargets": {},
             "targetsReachedTwice": {}, "targetPopulation": {},
+            "edgeDistanceFromEnd": {},
         }
     if not isinstance(census, dict):
         raise ValueError(f"music reference census is not an object: {label}")
@@ -2833,7 +2837,7 @@ def _read_music_reference_census(census: Any, label: str) -> dict[str, Any]:
         out[key] = value
     for key in (
         "referencesPerBody", "edgeCounts", "distinctTargets", "targetsReachedTwice",
-        "targetPopulation",
+        "targetPopulation", "edgeDistanceFromEnd",
     ):
         raw = census.get(key)
         if not isinstance(raw, dict):
@@ -2850,6 +2854,35 @@ def _read_music_reference_census(census: Any, label: str) -> dict[str, Any]:
 
 # The one music edge whose targets are partitioned rather than merely reached.
 MUSIC_PARTITIONING_EDGE = "type0A_to_type0B"
+# How concentrated that edge's position must be. These types have no comparable
+# coordinate from the front, so a distance from the end is the only anchor a future
+# framing attempt can use -- and it is only an anchor if it is concentrated.
+MUSIC_EDGE_POSITION_SHARE = 0.75
+MUSIC_EDGE_POSITION_PLACES = 4
+
+
+def the_music_partition_edge_sits_at_a_few_places(corpus: dict[str, Any]) -> bool:
+    """The one-to-one music reference sits at a handful of distances from the end.
+
+    The music heads are variable, so a distance from the front is not comparable
+    across bodies and an offset measured there says nothing. Measured from the end,
+    this edge concentrates: a few distances account for the large majority.
+
+    The check is that a small number of places carry most of the references. A
+    reference scattered over dozens of distances would still be a reference and
+    would still pass every other music gate -- it just would not be an anchor, and
+    an anchor is what this measurement exists to provide.
+    """
+    places = {
+        name.split("_at", 1)[1]: int(count)
+        for name, count in (corpus.get("edgeDistanceFromEnd") or {}).items()
+        if name.startswith(MUSIC_PARTITIONING_EDGE + "_at")
+    }
+    total = sum(places.values())
+    if total <= 0:
+        return False
+    top = sorted(places.values(), reverse=True)[:MUSIC_EDGE_POSITION_PLACES]
+    return sum(top) / total >= MUSIC_EDGE_POSITION_SHARE
 
 
 def the_music_partition_edge_is_one_to_one(corpus: dict[str, Any]) -> bool:
@@ -4761,6 +4794,9 @@ def run_current_corpus_audit(
         report["corpus"].get("type08BodyFrames") or {}
     )
     # True when no names were supplied: see the check's own note.
+    music_anchor = the_music_partition_edge_sits_at_a_few_places(
+        report["corpus"].get("musicReferences") or {}
+    )
     music_partition = the_music_partition_edge_is_one_to_one(
         report["corpus"].get("musicReferences") or {}
     )
@@ -4786,6 +4822,7 @@ def run_current_corpus_audit(
         and music_named
         and music_refs_ok
         and music_partition
+        and music_anchor
         and type08_body_named
         and type08_tail_located
         and type08_head_named
@@ -4935,6 +4972,14 @@ def run_current_corpus_audit(
             f"count={body08.get('count')} exact={body08.get('exact')} "
             f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
             f"ambiguous={body08.get('ambiguous')}"
+        )
+    if not music_anchor:
+        refs = report["corpus"].get("musicReferences") or {}
+        places = {k: v for k, v in (refs.get("edgeDistanceFromEnd") or {}).items()
+                  if k.startswith(MUSIC_PARTITIONING_EDGE + "_at")}
+        lane_failures.append(
+            "the music partition edge is not concentrated: "
+            f"places={len(places)} top={sorted(places.items(), key=lambda x: -x[1])[:4]}"
         )
     if not music_partition:
         refs = report["corpus"].get("musicReferences") or {}

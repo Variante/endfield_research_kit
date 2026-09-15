@@ -21,6 +21,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     music_tail_words_are_named,
     music_bodies_all_carry_references,
     the_music_partition_edge_is_one_to_one,
+    the_music_partition_edge_sits_at_a_few_places,
     _read_music_reference_census,
     type08_bodies_are_exact_or_named,
     type12_bodies_are_exact_or_named,
@@ -346,6 +347,11 @@ def valid_action_fixture():
         "distinctTargets": {"type0C_to_type0D": 3, "type0A_to_type0B": 4},
         "targetsReachedTwice": {"type0C_to_type0D": 2, "type0A_to_type0B": 0},
         "targetPopulation": {"type0C_to_type0D": 3, "type0A_to_type0B": 4},
+        "edgeDistanceFromEnd": {
+            "type0A_to_type0B_at-69": 3,
+            "type0A_to_type0B_at-73": 1,
+            "type0C_to_type0D_at-40": 5,
+        },
     }
     music_head = {
         "tailWordsTested": 8,
@@ -1570,6 +1576,28 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(type11_sources_share_the_type02_plugin_space(sources, {}))
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
+        )
+
+    def test_the_music_reference_position_must_be_concentrated_to_be_an_anchor(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        refs = result["musicReferences"]
+        self.assertTrue(the_music_partition_edge_sits_at_a_few_places(refs))
+
+        # A reference scattered over dozens of distances is still a reference and
+        # still passes every other music check. It is just not an anchor, and an
+        # anchor is the only thing this measurement exists to provide.
+        scattered = {f"type0A_to_type0B_at-{n}": 1 for n in range(40)}
+        self.assertFalse(
+            the_music_partition_edge_sits_at_a_few_places(
+                {**refs, "edgeDistanceFromEnd": scattered}
+            )
+        )
+        # Positions recorded for other edges must not be counted toward this one.
+        self.assertFalse(
+            the_music_partition_edge_sits_at_a_few_places(
+                {**refs, "edgeDistanceFromEnd": {"type0C_to_type0D_at-40": 5}}
+            )
         )
 
     def test_the_one_to_one_music_edge_needs_all_three_conditions(self) -> None:

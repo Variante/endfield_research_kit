@@ -2119,6 +2119,15 @@ Stable conclusions:
 - **`0x0A` -> `0x0B` is one-to-one, and it is the only music edge that is.** 4,325
   edges reaching 4,325 distinct objects, none twice, out of a population of 4,325:
   every `0x0B` object is named by exactly one `0x0A` reference and none is missed.
+- **The `0x0A` -> `0x0B` reference has a fixed place, measured from the END.** It
+  sits **69 bytes from the end** in 3,707 of 4,325 cases, then -73 (288), -77 (59),
+  -82 (52): four distances cover **94.9%**. Measured from the *front* the same
+  references spread over 41, 36, 46, 45, 40, 48, 52, ... with no concentration at
+  all. This is the first anchor the music types have had, and it only exists in
+  end-coordinates.
+- The secondary distances are 4 apart (-69, -73, -77), so an optional 4-byte field
+  shifts the anchor -- the same kind of optional field `0x0D`'s lengths and `0x0B`'s
+  entry widths both show.
 - **The two edges that looked the same are eliminated.** `0x0D`->`0x0C` has an edge
   total of exactly 2,431 -- the `0x0D` body count, which is what made it look like a
   bijection -- and reaches **578 of 742** objects, 382 of them repeatedly.
