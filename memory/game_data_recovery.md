@@ -5270,16 +5270,47 @@ Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid   (278 methods)
   `DomainType`), `FBDynamicSceneSingleGridDescriptor` (`Scene`, `Ranges`),
   `FBDynamicSceneVersionData` (`Entries`, `Major`, `Minor`).
 
-**What is proven and what is named, kept apart.** Proven from the bytes: the container
-(312/312), the FlatBuffers validity (312/312), the 8-slot root. Named from metadata:
-the schema above. **Not yet proven: that the root table IS
-`FBDynamicSceneChunkData`** -- it declares 5 fields against 8 observed slots, which is
-ordinary for FlatBuffers with deprecated slots but is not the same as a match.
+#### TESTED AND DISPROVED: the root is not `FBDynamicSceneChunkData`
 
-**Next:** read the 8 slots against the declared field order. A FlatBuffers vtable gives
-each field's offset, so the `Grids` vector can be walked and its element count compared
-with the grid coordinates in the filename -- a join the schema predicts and the bytes
-can confirm.
+The previous paragraph said the schema was *named*, not matched, and flagged the match
+as unproven. It is now tested, and it fails.
+
+- **Reading the 8 slots as the declared field order does not work.** `Grids` and
+  `TotalStr` produce **identical** length distributions -- 1 in 46 files, 5 in 16, 3 in
+  16, 4 in 15 -- which two independent vectors would not. And walking the supposed
+  `Grids` elements, **0 of them resolve to a table**, in every file.
+- **No declared root type has 8 fields.** The whole image contains exactly **six**
+  FlatBuffers types with a `GetRootAs*`: `FBDynamicSceneChunkData` (5),
+  `FBDynamicSceneSingleGrid` (61), `FBDynamicSceneSingleGridDescriptor` (2),
+  `FBDynamicSceneVersionData` (3), `FBFactoryChunkData` (5) and
+  `FBStreamAreaTotalData` (7). **None is 8.**
+- The root's inline object is **40 bytes** in all 312 files, consistent with eight
+  4-byte fields plus the vtable offset -- so the 8 slots are real fields, not deprecated
+  holes.
+
+**So `InitChunkData` is a FlatBuffer whose schema has no generated C# accessor.** Like
+the IrradianceVolume payload, it is read natively; the `FBDynamicScene*` classes are a
+different family that happens to sit in the same namespace.
+
+***A schema that fits the subject matter is not thereby the schema of the file.*** The
+sixty component names -- conveyor belts, nav-mesh obstacles, sludge, POI control --
+described a scene grid so plausibly that it read as a match. The vtable disagreed in
+two independent ways within one test.
+
+**What survives, all of it measured from the bytes:**
+
+| | |
+| --- | --- |
+| terrain codec decodes | **312 / 312**, each to its declared length |
+| decoded payload is a valid FlatBuffer | **312 / 312** |
+| root vtable slots | **8**, in every file |
+| root inline object size | **40 bytes**, in every file |
+| slot 0 | **constant 47** across all 312 -- a version, on any reading |
+
+**Next:** the schema is not in managed metadata, so the field order has to come from
+the bytes. Eight 4-byte slots over 312 files with varying content is enough of a
+population to type each slot by what it points at -- which is how `0x0B`'s entry header
+was read, and it does not need a schema at all.
 
 ## Remaining gaps
 
