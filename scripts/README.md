@@ -635,6 +635,12 @@ optionalBlocks`) that must hold as an equality. Its prefix length is read from a
 flag byte rather than searched for; a flag value outside the two observed ones
 fails closed rather than guessing a branch.
 
+`hirc_named_reach` also runs a second, broader pass that drops the audio prefix
+vocabulary and judges each numeric type against its computed coincidence rate
+(`literals * population / 2**32`). Types clearing 100x the expectation are named;
+those at their own rate are reported and not claimed. That is how type `0x08` and
+type `0x15` gained names while type `0x02` was rejected.
+
 `hirc_named_reach` is the one audio lane that carries a name. It hashes the exact
 audio-like `stringLiteral` rows from `global-metadata.dat` and joins them to HIRC
 object identities; every current match lands on numeric type `0x04`, which is what

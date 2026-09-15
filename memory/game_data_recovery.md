@@ -1664,6 +1664,30 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **Naming now extends past type `0x04`, and the test is a computed coincidence
+  rate rather than a vocabulary.** The prefix filter (`au_`/`bark_`/`radio_`/`vo_`)
+  exists because unfiltered literals resolve generic words by chance -- sound
+  reasoning that cannot be checked from inside the filter. Dropping the vocabulary,
+  keeping a structural identifier shape, and using the shipped folded hash
+  (`AudioHashGenerator`, which lowercases A-Z) gives 24,868 literals and a
+  measurable answer.
+- Because the hash is 32 bits, chance is computable: a literal hits a type by
+  chance with probability `population / 2**32`. Observed against expected:
+  `type15` 4 matches on 5 objects (**138,000x** chance), `type08` 3 on 161
+  (**3,218x**), `type04` 204 on 22,910 (**1,538x**), `type02` 2 on 142,815
+  (**2.4x** -- its own coincidence rate).
+- So type `0x02` is reported and **not** claimed, which is the point of the test:
+  its two matches read like names (`on_threst_timer_finish`) and are noise. The
+  gate requires the bar to be applied to every type, not just the convenient ones,
+  and refuses a pass where nothing clears it.
+- Concretely gained: type `0x04` goes from 151 to **204** named objects, and two
+  new types get names -- `type08` (`Character`, `Effect`, `object`) and `type15`
+  (`SYSTEM`, `System_3D`, `Controller_Speaker`, `Wwise_Motion`), the latter naming
+  **4 of its 5 objects**. The type `0x15` names are device-shaped and the `0x08`
+  names bus-shaped, but that is an observation about the strings, not a claim
+  about what either type does.
+- The narrow prefix claim is untouched and still gated separately, so widening the
+  filter cannot weaken it.
 - **The chain is closed end to end: shipped identifier -> media file.** 57 of the
   151 named type `0x04` objects reach at least one media file this corpus ships,
   reaching 127 distinct files between them. The report lists them per identifier,

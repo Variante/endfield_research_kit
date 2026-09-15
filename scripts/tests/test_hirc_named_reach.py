@@ -3,6 +3,8 @@ from __future__ import annotations
 import unittest
 
 from scripts.audio_semantics.hirc_named_reach import (
+    broad_naming_is_discriminated,
+    coincidence_table,
     media_ids_from_audit,
     check_identification,
     fnv1_utf16,
@@ -107,6 +109,9 @@ class HircNamedReachTests(unittest.TestCase):
             "metadata": {"path": "meta.dat", "sha256": "B" * 64, "audioLiteralCount": 221},
             "summary": summary,
             "identifiers": {"au_example": 3},
+            "broadNaming": coincidence_table(
+                {"type04": 200, "type02": 2}, {"type04": 22910, "type02": 142815}, 24868
+            ),
             "mediaSummary": {
                 "declaredMediaIds": 5,
                 "identifiersReachingMedia": 1,
@@ -127,6 +132,11 @@ class HircNamedReachTests(unittest.TestCase):
         # be reported rather than quietly dropped.
         self.assertIn("chain is now complete end to end", text)
         self.assertIn("name no shipped media", text)
+        # The coincidence test must be visible in the report, including the type it
+        # rejects -- publishing only the accepted types would hide the discrimination.
+        self.assertIn("judged against chance", text)
+        self.assertIn("Expected by chance", text)
+        self.assertIn("Indistinguishable from chance", text)
 
     def test_reached_lists_and_counts_must_describe_the_same_walk(self) -> None:
         summary = summarise([census()])
@@ -161,6 +171,37 @@ class HircNamedReachTests(unittest.TestCase):
             media_ids_from_audit(
                 {"rows": [{"status": "verified", "package": {"hircMediaJoin": {"mediaIds": 7}}}]}
             )
+
+    def test_coincidence_table_separates_names_from_chance(self) -> None:
+        # A 32-bit hash makes chance computable: literals * population / 2**32.
+        table = coincidence_table(
+            {"type15": 4, "type08": 3, "type02": 2},
+            {"type15": 5, "type08": 161, "type02": 142815, "type07": 48740},
+            24868,
+        )
+        self.assertEqual(sorted(table["typesNamedAboveChance"]), ["type08", "type15"])
+        self.assertEqual(table["typesIndistinguishableFromChance"], ["type02"])
+        # A type with no matches is absent rather than reported as a zero claim.
+        self.assertNotIn("type07", table["byType"])
+        # Type 0x02's two matches sit at its own coincidence rate despite looking
+        # like names, which is the case the whole test exists for.
+        self.assertLess(table["byType"]["type02"]["ratio"], 10)
+        self.assertGreater(table["byType"]["type15"]["ratio"], 1000)
+        self.assertTrue(broad_naming_is_discriminated(table))
+
+    def test_broad_naming_requires_the_rule_to_be_applied_to_every_type(self) -> None:
+        table = coincidence_table({"type15": 4, "type02": 2}, {"type15": 5, "type02": 142815}, 24868)
+        # Claiming a type the rule rejects, or omitting one it accepts, must fail:
+        # otherwise the bar could be quietly applied only where convenient.
+        self.assertFalse(
+            broad_naming_is_discriminated({**table, "typesNamedAboveChance": ["type15", "type02"]})
+        )
+        self.assertFalse(
+            broad_naming_is_discriminated({**table, "typesNamedAboveChance": []})
+        )
+        # Nothing clearing the bar means the section claims nothing.
+        empty = coincidence_table({"type02": 2}, {"type02": 142815}, 24868)
+        self.assertFalse(broad_naming_is_discriminated(empty))
 
 
 if __name__ == "__main__":
