@@ -5939,10 +5939,76 @@ question needs a *native* body, it moves into a `.tvm0` section and the evidence
 **The boundary is not "IL2CPP vs native"; it is "packed vs not", and it runs through
 GameAssembly itself.**
 
-So the ceiling here is the same one the IrradianceVolume `v3` payload hit, and it is now
-measured rather than inferred: *every remaining question in this family needs code that is
-28 MB of entropy-7.6 bytes.* Static recovery will not reach it; a bounded runtime
-observation would.
+##### CORRECTION: THE CEILING ABOVE IS WRONG -- I MEASURED THE WRONG MODULE
+
+The paragraph this replaces concluded that every remaining question needs 28 MB of
+entropy-7.6 bytes and that static recovery cannot reach it. **That is false, and the error
+was testing `EndfieldBase.dll` because it looked like the right module rather than
+following the evidence to the module that actually holds the code.**
+
+**`UnityPlayer.dll` -- 33.1 MB, `.text` 25,530,880 bytes at entropy 6.52, not packed**
+(its `.tvm0` is only 1.49 MB). This is a *heavily modified* Unity player carrying the
+engine-side HyperGryph code with readable symbols:
+
+| evidence in `UnityPlayer.dll` | count |
+| --- | --- |
+| `HyperGryph` symbols | **866** |
+| `FlatBufferConvertContext` | 14 |
+| `HG_ALWAYS_ASSERT failed on expression: '...'` | many, expression text intact |
+| mangled `BindProxyEntityConvertFuncFromScript@HGStreamingSceneManager@HyperGryph@@...W4ProxyEntityType@3@` | present |
+| `PropertySerializeId::GetComponentIndexFromType` | present |
+
+#### AND THE FILENAMES ARE BUILT HERE, WHICH CORRECTS A SECOND CONCLUSION
+
+The earlier note reasoned that because no complete `InitChunkData_` literal exists in
+`global-metadata.dat` or `GameAssembly.dll`, the files must be "addressed by catalogue id
+or hash". **The premise was right and the conclusion was wrong.** The format strings are
+in `UnityPlayer.dll`, immediately beside the literals `Init` and `Streaming` that fill
+their `{1}` slot:
+
+```
+{0}/{1}{2}ChunkData_{3}_{4}_{5}_{6}.bytes
+{0}/{1}{2}ChunkData_Global_{3}_{4}.bytes
+   ... adjacent literals: "Streaming", "Init"
+```
+
+*A search for `InitChunkData_` could never have found this, because the name does not
+exist anywhere as one string.* **A negative string search bounds where a literal is, not
+where the behaviour is** -- and I turned the first into the second.
+
+So the native reader is **not** behind the virtualiser. `EndfieldBase.dll` (79% `.tvm0`
+at 7.60) and `HGP.dll` (92% at 7.56) are packed and stay unreadable, but they are not
+where this code lives. **The route is open, via `UnityPlayer.dll` and the
+`UnityEngine.HyperGryph.Streaming` namespace.**
+
+#### THE NEW SOURCE: `UnityEngine.HyperGryph.Streaming`
+
+35 types in the IL2CPP metadata, engine-level rather than game-level, including the enums
+a chunk record would plausibly reference:
+
+| enum | members |
+| --- | --- |
+| `StreamingLayer` | Default, Persistent, HLOD0, HLOD1, HLOD2, Collider, Tiny, Water, Lighting, Audio, RendererWithCollider, Count |
+| `ProxyEntityType` | IrradianceVolume, AudioVolume, AudioEmitter, AudioRoom, TerrainSurfaceTypeData, AudioPortal, SOCChunk, GrassGrid, GpuClothGroup, TreeGrid, GPUParticleSystem, TypeCount |
+| `StreamingComponentType` | 45 members |
+| `StreamingMode` | Stream, Pause, Teleport, Unload, TeleportUnload, TeleportLoad |
+| `StreamingStatus` | Idle, Loading, Unloading, Empty |
+
+***And `ProxyEntityType` is refused as the slot-5 kind code, despite reading perfectly.***
+Its members are exactly the things a chunk places, which is the most seductive name match
+in this whole family. It has an external anchor, so it is testable: the `iv` block
+independently gives each level's IrradianceVolume count. Scoring **all 28** kind codes:
+
+| | result |
+| --- | --- |
+| codes whose per-level total equals the IV count | **0 of 28, on 0 of 88 levels** |
+| **positive control**: levels where *some* code equals the IV count | **17 of 88** -- the test can fire |
+| slot-5 entries per level | median **4,861**, max 535,440 |
+| IrradianceVolumes per level | median **1**, max 14 |
+
+Three orders of magnitude apart. **Slot 5 is not a placement list at all**, whatever its
+codes mean. *The positive control is what makes the zero worth anything: without it, a
+test that cannot fire and a hypothesis that is false look identical.*
 
 ***A degenerate fit, caught by fitting four rivals at once.*** `s4 == 24 + 24*n7` scores
 **100.00%** on the Streaming family, which reads like a decoded record stride -- until the
