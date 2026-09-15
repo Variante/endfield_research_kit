@@ -5059,6 +5059,36 @@ static work on `GameAssembly.dll` is constrained by HGP applies.
 *Knowing that a thing is out of reach, and why, is worth more than another sweep that
 was never going to find it.*
 
+#### `ReloadIndexFileV3` does not parse the index either
+
+The one reachable check turned out not to exist. `ReloadIndexFileV3` is managed, its
+body is at `0x188fc27d8` in `HG.RenderPipelines.Runtime.dll` (local method #2222 of
+9,473), and it is **40 instructions long**:
+
+```
+class-init guard (0x75a)
+if [this+0x10] != 0:  release it, null it, store a value at [this+0x18]
+store the path argument at [this+0x20]        <- m_irradianceDataPathV3
+return
+```
+
+It **releases the current volume and stores the new path**. No file is opened, no bytes
+are read, nothing is parsed. The load happens later, natively.
+
+- So **the entire IrradianceVolume format -- index as well as payload -- is parsed in
+  native code.** The managed surface is paths, a config struct, and lifetime calls.
+- **The index frame therefore cannot be cross-checked against the game's own parser**,
+  which was the reachable next step identified last batch. It is not reachable after
+  all.
+- That is acceptable rather than fatal, because the frame's evidence does not depend on
+  it: 86 of 92 files framed, **86 of 86 naming exactly the volume files present in
+  their directory**, and every rival middle-word width framing zero. *A name join that
+  gets the whole set right in every file is evidence in its own right.*
+
+**The lane's boundary, stated once:** everything the shipped bytes and the IL2CPP
+metadata can say has been said. Further progress on the payload needs the native loader,
+and the project's existing note about HGP applies to that.
+
 **Where this lane stands:** the index is framed and shipped at 86 of 92 with 20 tests;
 the payload's container is **identified** rather than guessed, with every one of the
 seven byte-statistic eliminations explained by the identification; the remaining work is
