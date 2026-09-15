@@ -222,57 +222,71 @@ unique binding.
   Terrain rows are `encrypted=False`, which is why a plain span read works here
   and not on the manifest.
 
-## Terrain stream: the codec is LZ4 with big-endian match offsets
+## Terrain stream: LZ4 with big-endian offsets and a bit-interleaved token
 
-- **The stream is an LZ4 block starting at offset 4, and its first literal run is
-  the `TRET` record itself.** Everything is ordinary LZ4 -- token high nibble is the
-  literal length, low nibble the match length, `0xFF` extension bytes summed with
-  their terminator included, match base 4, a closing literal run -- **except that
-  the two-byte match offset is big-endian.**
-- That was not guessed. The grid of conventions (offset endianness x which nibble
-  carries the literal length x whether the extension terminator is added x match
-  base x tail rule) was searched exhaustively; only the big-endian reading produces
-  files that close at all, and the little-endian reading closes zero.
-- **6,442 of 46,164 files decode to the byte**: output exactly the declared size
-  *and* input exactly consumed. Both halves matter -- a decoder that stops early
-  has not decoded anything.
-- The decodes are corroborated from outside themselves. All 6,442 agree with the
-  file on the payload size in three independent places (the leading word, the
-  decoded header, the header legible in the file), and **6,090 decode to a payload
-  that repeats with period 1, 2 or 4** -- flat tiles, which is what a terrain field
-  mostly contains and what random bytes never produce.
-- **What is unresolved: streams with more than one sequence.** They stop at the
-  second match, whose offset field is only sensible *little*-endian -- the opposite
-  of the first. Both cannot be true, so one of the two sequence boundaries is
-  misplaced. 39,377 files fence on exactly this, and none is partially decoded into
-  a result.
-- **Two explanations are eliminated. Do not spend the next attempt on either.**
-  (a) *Not a preset dictionary*: priming the window with 64 KB does not raise the
-  closure count by a single file; the failures turn into offset-zero desyncs, which
-  is what a wrong boundary looks like and not what a missing dictionary looks like.
-  (b) *Not a misread of endianness, nibble role or tail length*: an exhaustive
-  per-file search for **any** closing parse -- every sequence free to pick its own
-  offset endianness, the literal length free to come from either nibble, the
-  closing literal run free in length -- closed the same 16 single-sequence files out
-  of 400 and **zero** of the 384 others.
-- So the grammar itself is wrong after the first match. These streams contain an
-  operation that a token, a literal run, a two-byte offset and an extended match
-  length cannot express. That is where the next attempt has to look, and it should
-  look for a *new op*, not a new parameter.
-- Worked example of the contradiction, kept because the next attempt starts here.
-  In `Terrain_4_2_2_C.bytes`: token `ff` ext `04` gives 19 literals, offset
-  `00 01` big-endian is 1, the match extension `ff x8` + `0x76` gives 2,158, so the
-  first sequence closes at 2,196 of 2,332. The next token `0x05` then wants offset
-  `10 00`, which is 4,096 big-endian and 16 little-endian -- and only 16 is
-  possible. Searching the first literal run over 0..95 under a little-endian
-  reading closes **zero** files, so the fix is not a shifted first sequence.
-- Every observed stream ends `<token 0x11> <five literals>`. That is LZ4's
-  minimum closing literal run, which is why the decoder treats a six-byte
-  remainder as the tail.
-- **A warning about the shape of this problem.** Payload counts look *almost*
-  reconcilable by hand and it is very easy to find an arithmetic that fits one
-  file. Do not accept a formula that works on one or two samples -- accept one that
-  closes thousands, exactly, and agrees with the file.
+- **The stream is an LZ4 block starting at offset 4, and its first literal run
+  begins with the `TRET` record.** Ordinary LZ4 in every respect -- `0xFF`
+  extension bytes summed with their terminator, match base 4, two-byte offset, a
+  closing literal run no offset follows -- **except for two deviations: the match
+  offset is big-endian, and the token's two 4-bit fields are bit-interleaved
+  rather than split into nibbles.**
+- The token byte `b7..b0` carries `literal length = b5 b4 b1 b0` and
+  `match length = b7 b6 b3 b2`. The two fields are interleaved two bits at a time.
+- **46,163 of 46,164 files decode to the byte** -- output exactly the declared
+  size *and* input exactly consumed -- and all 46,163 agree with the file on the
+  payload size and on the head of the record it carries in the clear. The
+  remaining file is **stored uncompressed** and says so: magic at offset 0 and a
+  payload size that accounts for the file exactly. Nothing is fenced.
+- The payloads are real data, not flat fill: **27,524 carry nine or more distinct
+  byte values** and 40,061 are aperiodic. That matters as evidence, for the reason
+  below.
+- The reading is discriminated, not merely workable. Scored identically over 4,000
+  files against four controls -- offset little-endian, both plain-nibble readings,
+  and the interleave with the fields swapped -- it closes 4,000 and **no control
+  closes more than one**.
+
+### Retraction: the nibble reading, and why 6,442 closures were worth nothing
+
+- The previous conclusion here -- plain LZ4 nibbles, big-endian offset, 6,442 of
+  46,164 closing -- **was wrong about the token**, and the closure count was not
+  the partial success it looked like.
+- **Every one of those 6,442 files was a flat tile**: 12 of the first 16 examined
+  had a payload of one repeated byte, the other 4 of two. A flat tile is one
+  literal run and one long match. Its sequence token is `0xFF`, and `0xFF` is one
+  of only **four** byte values (`0x00`, `0x55`, `0xAA`, `0xFF`) on which the two
+  readings agree. So the corpus that "validated" the grammar was exactly the
+  corpus that cannot tell it from the alternative.
+- The old decoder also never read the closing token. It hardcoded a six-byte
+  remainder as `<token> <five literals>`. Five literals is precisely what `0x11`
+  means **under the interleave** -- so a hardcoded constant stood in for the one
+  token that would have exposed the reading. It was wrong wherever the closing run
+  is not five bytes, which is about one file in five (5: 6,536 of 8,000; but also
+  6, 7, 8, 9, 10, 11 and 12).
+- Two eliminations recorded here previously were sound and are kept: it was **not**
+  a preset dictionary, and **not** a free choice of endianness, nibble role or tail
+  length per sequence. Both were correct. The conclusion drawn from them -- "the
+  grammar contains an op that a token, literal run, offset and match length cannot
+  express" -- was **wrong**: the grammar was complete, the token decode was not.
+
+### How the interleave was actually found
+
+- Not by enumerating conventions. By **measuring the unknown op**: parse the first
+  sequence and the closing run, then tabulate (middle bytes -> output bytes still
+  owed) across near-flat files, where the middle is a handful of bytes.
+- Twenty rows were enough. `cc 08 c6 2c` owes 63; `cd 80 00 02 68` owes 124;
+  `ce 0c 0c 00 44 6e` owes 131. Each parses as an ordinary sequence once you read
+  `cc` as 0 literals, `cd` as 1, `ce` as 2, `cf` as 3 -- and `dc` as 4, which is
+  what breaks the nibble hypothesis and forces the bit layout. Every row then
+  closes to the byte with no residue.
+- **The lesson, and it is the general one.** A structural claim validated only on
+  the inputs that satisfy it trivially has not been validated at all. Before
+  reporting a partial success rate, check what the *successes* have in common. If
+  they are all degenerate, the rate is a measure of how much degenerate data the
+  corpus holds -- not of how right the parser is. This is the second time the trap
+  has been recorded in this repo and the first time it caught a live finding.
+- **A warning about the shape of this problem, kept:** payload counts look almost
+  reconcilable by hand and it is easy to fit one file. Accept a formula that closes
+  thousands, exactly, and agrees with the file.
 - Read by `scripts/asset_builder/terrain_stream.py`; report at
   [`reports/assets/terrain_stream_current_latest.json`](../reports/assets/terrain_stream_current_latest.json).
 
