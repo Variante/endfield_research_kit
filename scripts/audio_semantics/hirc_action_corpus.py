@@ -1890,6 +1890,7 @@ def aggregate_current_hirc_actions(
             "neighbourFloats", "neighbourFloatsWhole",
             "fractionCandidates", "fractionsWithASmallDenominator",
             "fractionControls", "fractionControlsWithASmallDenominator",
+            "decibelBodies", "decibelsInRange", "decibelsWhole", "decibelControlsInRange",
         ):
             type0a_head_totals[key] += package_head0a[key]
         type0a_element_values.update(package_head0a["elementValueCounts"])
@@ -2370,6 +2371,10 @@ def aggregate_current_hirc_actions(
             "fractionsWithASmallDenominator": int(type0a_head_totals["fractionsWithASmallDenominator"]),
             "fractionControls": int(type0a_head_totals["fractionControls"]),
             "fractionControlsWithASmallDenominator": int(type0a_head_totals["fractionControlsWithASmallDenominator"]),
+            "decibelBodies": int(type0a_head_totals["decibelBodies"]),
+            "decibelsInRange": int(type0a_head_totals["decibelsInRange"]),
+            "decibelsWhole": int(type0a_head_totals["decibelsWhole"]),
+            "decibelControlsInRange": int(type0a_head_totals["decibelControlsInRange"]),
         },
         "musicReferences": {
             **{key: int(music_ref_totals[key]) for key in MUSIC_REFERENCE_SCALARS},
@@ -2922,6 +2927,8 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
             "neighbourFloats": 0, "neighbourFloatsWhole": 0,
             "fractionCandidates": 0, "fractionsWithASmallDenominator": 0,
             "fractionControls": 0, "fractionControlsWithASmallDenominator": 0,
+            "decibelBodies": 0, "decibelsInRange": 0, "decibelsWhole": 0,
+            "decibelControlsInRange": 0,
         }
     if not isinstance(census, dict):
         raise ValueError(f"type 0x0A head census is not an object: {label}")
@@ -2933,6 +2940,7 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
         "neighbourFloats", "neighbourFloatsWhole",
         "fractionCandidates", "fractionsWithASmallDenominator",
         "fractionControls", "fractionControlsWithASmallDenominator",
+        "decibelBodies", "decibelsInRange", "decibelsWhole", "decibelControlsInRange",
     ):
         try:
             value = int(census[key])
@@ -3019,6 +3027,39 @@ def the_type0a_tail_float_is_an_authored_value(corpus: dict[str, Any]) -> bool:
     if neighbour_whole > neighbours:
         return False
     return neighbour_whole / neighbours <= TYPE0A_NEIGHBOUR_WHOLE_CEILING
+
+
+# Inside the fixed head: a bounded whole-numbered float, against an overlapping
+# control window that must not behave the same way.
+TYPE0A_DECIBEL_SHARE = 0.30
+TYPE0A_DECIBEL_CONTROL_CEILING = 0.01
+
+
+def the_type0a_head_carries_a_bounded_whole_float(corpus: dict[str, Any]) -> bool:
+    """A float inside the fixed head is bounded and whole-numbered.
+
+    Its range runs from -96 to 98 and its values are whole: 98, 2, -10, -15, -6.
+    The floor is the same -96 the numeric type 0x08 and 0x12 middle block carries,
+    which is why the band is stated rather than fitted.
+
+    The control window overlaps this one by two bytes. That is deliberate: a nearby
+    window that shares most of its bytes is the hardest control to pass, and it
+    carries no nonzero whole value in range at all. Zero is not a constant is a
+    claim, it is a bare check, and it is judged on the same two properties as the
+    candidate -- a denormal near zero is trivially inside any band, so range alone
+    would accept everything.
+    """
+    bodies = int(corpus.get("decibelBodies") or 0)
+    if bodies <= 0:
+        return False
+    whole = int(corpus.get("decibelsWhole") or 0)
+    controls = int(corpus.get("decibelControlsInRange") or 0)
+    if whole > bodies or controls > bodies:
+        return False
+    return (
+        whole / bodies >= TYPE0A_DECIBEL_SHARE
+        and controls / bodies <= TYPE0A_DECIBEL_CONTROL_CEILING
+    )
 
 
 # Four bytes past the reference: a fixed-point fraction, tested against the same
@@ -5133,6 +5174,9 @@ def run_current_corpus_audit(
         report["corpus"].get("type08BodyFrames") or {}
     )
     # True when no names were supplied: see the check's own note.
+    type0a_decibel = the_type0a_head_carries_a_bounded_whole_float(
+        report["corpus"].get("type0AHead") or {}
+    )
     type0a_fraction = the_type0a_tail_word_is_a_fixed_point_fraction(
         report["corpus"].get("type0AHead") or {}
     )
@@ -5186,6 +5230,7 @@ def run_current_corpus_audit(
         and type0a_optional
         and type0a_float
         and type0a_fraction
+        and type0a_decibel
         and type08_body_named
         and type08_tail_located
         and type08_head_named
@@ -5336,6 +5381,14 @@ def run_current_corpus_audit(
             f"count={body08.get('count')} exact={body08.get('exact')} "
             f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
             f"ambiguous={body08.get('ambiguous')}"
+        )
+    if not type0a_decibel:
+        head0a = report["corpus"].get("type0AHead") or {}
+        lane_failures.append(
+            "the type 0x0A head does not carry a bounded whole float: "
+            f"bodies={head0a.get('decibelBodies')} whole={head0a.get('decibelsWhole')} "
+            f"inRange={head0a.get('decibelsInRange')} "
+            f"control={head0a.get('decibelControlsInRange')}"
         )
     if not type0a_fraction:
         head0a = report["corpus"].get("type0AHead") or {}

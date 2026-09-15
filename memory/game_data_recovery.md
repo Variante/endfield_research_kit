@@ -2204,6 +2204,16 @@ Stable conclusions:
   **constant zero** bytes of the fixed head, so the second term vanishes and the
   general rule reduces to the special one. *A count that is zero in the population
   you are looking at is indistinguishable from padding.*
+- **`float@16` in the fixed head is a bounded, whole-numbered value with a -96
+  floor.** Range **[-96, 98]**, whole in 3,146 of the 3,594 in range, modes 0.0
+  (1,622), 98.0 (192), 2.0 (176), -10.0 (175), -15.0 (122). The floor is the same
+  -96 the `0x08`/`0x12` middle block carries. Gated at 1,856 nonzero whole values
+  against an **overlapping** control window at offset 14 that carries **0**.
+- The control overlaps the field by two bytes on purpose -- a window sharing most of
+  its bytes is the hardest one to beat -- and it had to be judged on *both*
+  properties, not just the range: at offset 14 the bytes read as a denormal near
+  zero, which is trivially inside any band. **A range test alone accepts everything;
+  the control has to be scored exactly like the candidate.**
 - **What the 20 varying bytes of the fixed head actually hold** (conditioned on
   `byte17 == 0` and the rule confirmed, 3,744 bodies): `u32@5` takes only **5
   distinct values** and is zero in 3,624 -- an enumeration or a rare id, not a

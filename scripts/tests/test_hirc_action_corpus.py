@@ -28,6 +28,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_type0a_reference_is_an_optional_four_byte_field,
     the_type0a_tail_float_is_an_authored_value,
     the_type0a_tail_word_is_a_fixed_point_fraction,
+    the_type0a_head_carries_a_bounded_whole_float,
     _read_type0a_head_census,
     _read_music_reference_census,
     type08_bodies_are_exact_or_named,
@@ -373,6 +374,10 @@ def valid_action_fixture():
         "fractionsWithASmallDenominator": 78,
         "fractionControls": 200,
         "fractionControlsWithASmallDenominator": 6,
+        "decibelBodies": 100,
+        "decibelsInRange": 96,
+        "decibelsWhole": 50,
+        "decibelControlsInRange": 0,
     }
     music_refs = {
         "bodies": 4,
@@ -1615,6 +1620,29 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(type11_sources_share_the_type02_plugin_space(sources, {}))
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
+        )
+
+    def test_the_type0a_head_float_beats_an_overlapping_control_window(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        head = result["type0AHead"]
+        self.assertTrue(the_type0a_head_carries_a_bounded_whole_float(head))
+
+        # The control window overlaps the field by two bytes, which is the hardest
+        # control to pass. If it carried whole values in range too, the reader would
+        # be finding a property of the neighbourhood rather than of the field.
+        self.assertFalse(
+            the_type0a_head_carries_a_bounded_whole_float({**head, "decibelControlsInRange": 40})
+        )
+        self.assertFalse(
+            the_type0a_head_carries_a_bounded_whole_float({**head, "decibelsWhole": 5})
+        )
+        # Counting more whole values than bodies is incoherent.
+        self.assertFalse(
+            the_type0a_head_carries_a_bounded_whole_float({**head, "decibelsWhole": 101})
+        )
+        self.assertFalse(
+            the_type0a_head_carries_a_bounded_whole_float({**head, "decibelBodies": 0})
         )
 
     def test_the_type0a_tail_word_reads_as_a_fraction_and_its_control_does_not(self) -> None:
