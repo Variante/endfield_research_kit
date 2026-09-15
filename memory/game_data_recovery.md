@@ -2494,6 +2494,32 @@ from there the counts fall out. Widening a range would never have found either.
   end lands on *something* in every body, so a hit count says nothing. Every distance
   within five bytes that is *not* an anchor -- `-64` to `-68`, `-70`, `-71`, `-72`,
   `-74`, `-75` -- names a type `0x0B` object in **zero** bodies.
+#### The rule is ALIGNMENT, not a list of anchor distances
+
+- Enumerating anchors would have been fitting, and I nearly did it. Scanning every
+  end distance shows **30** at which some body carries a `0x0B` reference, most with
+  a handful of bodies: 81:9, 84:2, 85:4, 86:6, 87:6, 91:2, 112:2, 165:2. Adding those
+  to an "anchor set" is just recording where the references happened to be.
+- **The structure is that the distance from the end is 4-byte aligned.** 4,161 of the
+  4,325 `0x0A` -> `0x0B` references -- **96.2%** -- sit at a distance congruent to 1
+  modulo 4, with `-69` carrying 3,707 of them and the rest trailing off through 73,
+  77, 81, 85, 89, 93, 97, 101.
+- **Two controls, and both are needed.**
+  1. *Aligned from the FRONT instead*: **47.7%**. Body lengths are spread across all
+     four residues (2:1844, 1:1612, 3:635, 0:67), so the two questions are genuinely
+     different and the end is the one that answers.
+  2. *Every other music edge kind, measured identically in the same bodies*:
+     `0C`->`0D` **3.9%**, `0C`->`0A` **4.5%**, `0D`->`0C` 14.7%, `0D`->`0A` 47.3%,
+     `0A`->`0D` 43.0%. Corpus-wide 36.9%. So alignment is a property of **this edge**,
+     not of the format or of the measurement.
+- The generalisation I hoped for -- that all music references are end-aligned --
+  **fails**, and its failure is what makes the `0A`->`0B` number mean something. *An
+  attempted generalisation that fails is worth as much as one that succeeds: the
+  cases it fails on become the control the original claim never had.*
+- Read off `edgeDistanceFromEnd`, which the reader had been publishing all along.
+  **The question was answerable from data already in the report**; no new collection
+  was needed, only the idea of taking each distance modulo four.
+
 - **A neighbouring offset is only a control if it is not itself part of the
   structure.** The first version of this gate scored `-73` as a control and failed on
   correct data. The head rule's own distance distribution -- 69, 73, 77, 82, 93, 125

@@ -3655,6 +3655,65 @@ def _read_type0a_anchor_census(census: Any, label: str) -> dict[str, Any]:
     return out
 
 
+# The edge whose distance from the end is four-byte aligned, and the residue its
+# aligned distances share. Named rather than inlined so the gate reads as a claim.
+TYPE0A_TO_TYPE0B_EDGE = "type0A_to_type0B"
+END_ALIGNMENT_RESIDUE = 1
+
+
+def end_distance_alignment(distances: dict[str, Any]) -> dict[str, dict[str, int]]:
+    """Per edge kind, how many of its references sit at a 4-byte-aligned distance.
+
+    Read off the census the reader already publishes, which records every resolved
+    music reference as ``<edge kind>_at-<distance>``. No new collection: the question
+    was answerable from data that had been sitting in the report unexamined.
+    """
+    out: dict[str, dict[str, int]] = {}
+    for key, count in distances.items():
+        kind, _, tail = str(key).rpartition("_at-")
+        if not kind or not tail.isdigit():
+            continue
+        row = out.setdefault(kind, {"aligned": 0, "total": 0})
+        row["total"] += int(count)
+        if int(tail) % 4 == END_ALIGNMENT_RESIDUE:
+            row["aligned"] += int(count)
+    return out
+
+
+def the_type0a_to_type0b_edge_is_aligned_to_the_body_end(corpus: dict[str, Any]) -> bool:
+    """This one edge sits at a 4-byte-aligned distance from the end; others do not.
+
+    96.2% of the 4,325 ``0x0A`` -> ``0x0B`` references are at a distance from the end
+    congruent to 1 modulo 4. Two independent controls say that is a property of the
+    edge rather than of the measurement:
+
+    * **Aligned from the front instead** gives 47.7%. Body lengths are spread across
+      all four residues -- 1,844, 1,612, 635 and 67 -- so end-alignment and
+      start-alignment are genuinely different questions here.
+    * **Every other music edge kind**, measured the same way in the same bodies, runs
+      between 3.9% and 61.9%: ``0C``->``0D`` 3.9%, ``0C``->``0A`` 4.5%, ``0D``->``0C``
+      14.7%. The overall rate across all edges is 36.9%.
+
+    So the gate asks for this edge to be strongly aligned **and** for the corpus as a
+    whole not to be, because a format in which every reference happened to be aligned
+    would make the observation vacuous.
+    """
+    rows = end_distance_alignment(corpus.get("edgeDistanceFromEnd") or {})
+    mine = rows.get(TYPE0A_TO_TYPE0B_EDGE)
+    if not mine or mine["total"] <= 0:
+        return False
+    if mine["aligned"] * 10 < mine["total"] * 9:
+        return False
+    everything = sum(row["total"] for row in rows.values())
+    aligned = sum(row["aligned"] for row in rows.values())
+    if everything <= mine["total"]:
+        return False
+    # The rest of the corpus must be far less aligned, or this says nothing.
+    others_total = everything - mine["total"]
+    others_aligned = aligned - mine["aligned"]
+    return others_aligned * 2 < others_total
+
+
 def the_type0a_end_anchor_beats_every_neighbouring_distance(corpus: dict[str, Any]) -> bool:
     """A fixed distance from the end is only a rule if its neighbours find nothing.
 
@@ -6270,6 +6329,9 @@ def run_current_corpus_audit(
     thin_groups = thinly_seen_groups(body_lane_corpus)
     type0a_anchor_corpus = corpus["type0AEndAnchor"]
     anchor_ok = the_type0a_end_anchor_beats_every_neighbouring_distance(type0a_anchor_corpus)
+    edge_aligned = the_type0a_to_type0b_edge_is_aligned_to_the_body_end(
+        corpus["musicReferences"]
+    )
     music_mutuality_corpus = corpus["musicMutuality"]
     music_symmetric = the_music_relation_is_symmetric(music_mutuality_corpus)
     music_scope = music_references_resolve_inside_their_own_bank(
@@ -6404,6 +6466,7 @@ def run_current_corpus_audit(
         and hierarchy_direction
         and music_symmetric
         and anchor_ok
+        and edge_aligned
         and music_scope
         and music_partition
         and music_anchor
@@ -6659,6 +6722,15 @@ def run_current_corpus_audit(
             f"control={h.get('rangeControlIsSymmetric')}/{h.get('rangeControlTested')} "
             f"fractions={h.get('fractionsAreSmall')}/{h.get('fractionsTested')} "
             f"fractionControl={h.get('fractionControlsAreSmall')}/{h.get('fractionControlsTested')}"
+        )
+    if not edge_aligned:
+        rows = end_distance_alignment(
+            (report["corpus"].get("musicReferences") or {}).get("edgeDistanceFromEnd") or {}
+        )
+        lane_failures.append(
+            "the 0x0A to 0x0B edge is no longer aligned to the body end, or the rest "
+            f"of the corpus has become aligned too: {rows.get(TYPE0A_TO_TYPE0B_EDGE)} "
+            f"of {len(rows)} edge kinds"
         )
     if not anchor_ok:
         a = report["corpus"].get("type0AEndAnchor") or {}

@@ -20,7 +20,9 @@ from scripts.audio_semantics.hirc_action_corpus import (
     _read_hierarchy_census,
     _read_music_mutuality_census,
     _read_type0a_anchor_census,
+    end_distance_alignment,
     the_type0a_end_anchor_beats_every_neighbouring_distance,
+    the_type0a_to_type0b_edge_is_aligned_to_the_body_end,
     music_references_resolve_inside_their_own_bank,
     the_music_relation_is_symmetric,
     _read_type11_header_census,
@@ -3586,3 +3588,70 @@ class Type0AEndAnchorTests(unittest.TestCase):
             _read_type0a_anchor_census(
                 self.census(anchorHits={"minus_69": 3707}), "pkg"
             )
+
+
+class Type0AEdgeAlignmentTests(unittest.TestCase):
+    """One edge is aligned to the body end; the rest of the corpus is not."""
+
+    def census(self, **overrides):
+        # Two edge kinds: the aligned one, and a scattered one standing in for the
+        # rest of the corpus.
+        base = {
+            "edgeDistanceFromEnd": {
+                "type0A_to_type0B_at-69": 3707,
+                "type0A_to_type0B_at-73": 288,
+                "type0A_to_type0B_at-82": 52,
+                "type0C_to_type0D_at-190": 900,
+                "type0C_to_type0D_at-163": 800,
+                "type0C_to_type0D_at-101": 174,
+            },
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(
+            the_type0a_to_type0b_edge_is_aligned_to_the_body_end(self.census())
+        )
+
+    def test_the_alignment_is_read_off_the_published_distances(self) -> None:
+        rows = end_distance_alignment(self.census()["edgeDistanceFromEnd"])
+        self.assertEqual(rows["type0A_to_type0B"]["total"], 4047)
+        self.assertEqual(rows["type0A_to_type0B"]["aligned"], 3995)
+        # -190 and -163 are not 1 mod 4; -101 is.
+        self.assertEqual(rows["type0C_to_type0D"]["aligned"], 174)
+
+    def test_an_unaligned_edge_fails(self) -> None:
+        census = self.census(edgeDistanceFromEnd={
+            "type0A_to_type0B_at-70": 3707,
+            "type0C_to_type0D_at-190": 900,
+        })
+        self.assertFalse(
+            the_type0a_to_type0b_edge_is_aligned_to_the_body_end(census)
+        )
+
+    def test_a_corpus_where_everything_is_aligned_fails(self) -> None:
+        # If every reference were aligned, the observation would be vacuous -- it
+        # would be a property of the format's field widths, not of this edge.
+        census = self.census(edgeDistanceFromEnd={
+            "type0A_to_type0B_at-69": 3707,
+            "type0C_to_type0D_at-101": 900,
+            "type0D_to_type0A_at-97": 800,
+        })
+        self.assertFalse(
+            the_type0a_to_type0b_edge_is_aligned_to_the_body_end(census)
+        )
+
+    def test_a_corpus_with_only_this_edge_fails(self) -> None:
+        # Nothing to compare against is not evidence.
+        self.assertFalse(the_type0a_to_type0b_edge_is_aligned_to_the_body_end(
+            {"edgeDistanceFromEnd": {"type0A_to_type0B_at-69": 3707}}
+        ))
+
+    def test_an_empty_census_fails(self) -> None:
+        self.assertFalse(the_type0a_to_type0b_edge_is_aligned_to_the_body_end({}))
+        self.assertEqual(end_distance_alignment({}), {})
+
+    def test_malformed_keys_are_skipped_rather_than_crashing(self) -> None:
+        rows = end_distance_alignment({"nonsense": 5, "type0A_to_type0B_at-x": 7})
+        self.assertEqual(rows, {})
