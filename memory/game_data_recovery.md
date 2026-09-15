@@ -4727,9 +4727,31 @@ volumeCount x name   the volume files in this directory
   something else in the other three, so **the variant is refused rather than guessed
   at** -- reported as `unsupported`, which cannot be mistaken for a defect.
 
-**Next:** the remainder after the name table is the clipmap. `ToggleDebugUpdateClipmap`
-and `...Lod0` say what it is; the index's own name table now gives a fixed starting
-offset for it in 86 files.
+#### The remainder after the name table: measured, not framed
+
+With a fixed start offset in 86 files the remainder can be characterised, and what it
+is *not* is worth recording as clearly as what it is.
+
+- **It begins with a run of small signed integers.** In **63 of the 86** files all
+  sixteen leading words satisfy `|v| <= 4096`; the rest break sooner. First words are
+  `(4,3)`, `(5,3)`, `(5,2)`, `(9,5)`, `(7,5)`, `(11,7)`, `(5,3)`, `(11,9)` -- 23
+  distinct openings over 86 files.
+- **The `gacha` pair opens `24, -32, -32, -32, 0, 0`**, which reads as a size followed
+  by a negative corner. Reading these words as **signed** matters: unsigned they are
+  `4294967264` and look like garbage.
+- **They are not floats.** Every one of the leading words is `0.0` or `NaN` when read
+  as float32.
+- **No grid product predicts the remainder size.** Testing `w0*w1`, `w0*w1*w2` and
+  `w0*w1*w2*w3` against remainder minus a header of 8, 12, 16, 20 or 24 bytes, for a
+  record size between 1 and 4,096: **every combination that divides does so for exactly
+  one file of 86.** A record array would divide for many.
+- So the remainder is **not** `header + grid x record`, and the leading words are not a
+  dimension triple that sizes it. They are recorded as small signed integers and
+  nothing more.
+
+**Next:** the clipmap description needs the volume payload read alongside it -- the
+index's remainder and the `iv_*.bytes` content are the two halves of one structure, and
+neither has framed on its own.
 
 *Asking the shipped code what a format is called cost one metadata scan and moved this
 further than two batches of byte-pattern search.*
