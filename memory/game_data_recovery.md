@@ -2710,6 +2710,28 @@ count x u32 at 36 + 5*body[14]   -- object ids
   hangs off it. Nothing here says what it means.
 - *A constant's distribution across types is evidence about which types share a
   concept. It costs one query and does not require framing anything.*
+
+**The region's internal layout, from where its sentinels sit.** The four-byte `-1`
+values land at region `+35` and `+43` in **700 of 704** bodies, and **every one is at
+an offset congruent to 3 mod 4**. The floats at `+4` and `+16` are at `0 mod 4`. Two
+grids, three bytes apart, so:
+
+```
+5 x u32      at  0 .. 19     -- includes the 4.4766 and 120.0 constants
+3-byte field at 20 .. 22     -- `04 04 00` in most bodies
+18 x u32     at 23 .. 94     -- includes the two -1 sentinels at 35 and 43
+1 byte       at 95
+flag         at 96           -- gates the 27-byte block
+```
+
+- 23 + 4x18 = 95 exactly, so the 3-byte field at 20 is what shifts the grid and the
+  region divides with nothing left over.
+- **38 of the 96 bytes are constant across all 704 regions**, in runs at 7-17, 24-26,
+  40-42, 49-50, 52-54, 57-58, 64-66, 73-74, 80-82 and 84-87.
+- *Misaligned-looking words are a symptom, not a fact. Reading this region as u32s
+  from its start produced values like `0x01FFFFFF` and `0x00FFFFFF`, which are not
+  values at all -- they are a `-1` seen through a three-byte shift. Finding where a
+  known sentinel actually sits is the cheapest way to recover a grid.*
 - So `0x0C` is better described than "a variable-length list": a parent at 9, a
   counted array at `36 + 5k`, and a further block at a position computed from the
   array's length. What that block contains, and what chooses 135 over 162, are open.
