@@ -3970,3 +3970,39 @@ class Type0ACountedArrayTests(unittest.TestCase):
 
     def test_an_absent_census_reads_as_empty(self) -> None:
         self.assertEqual(_read_type0a_array_census(None, "pkg")["bodies"], 0)
+
+
+class Type11EntryCountTests(unittest.TestCase):
+    """The entry count is as untested as the element count, and for the same reason."""
+
+    def base(self, **overrides):
+        c = {"elementCountValues": {"elements_1": 3715},
+             "entryCountValues": {"entries_1": 3715}}
+        c.update(overrides)
+        return c
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_type11_element_count_is_not_yet_a_count(self.base()))
+
+    def test_a_body_closing_with_two_entries_fails_the_gate(self) -> None:
+        # The good news case: it would mean the entry count has finally been read at
+        # a second value, and the note saying the multi-entry layout is unparsed
+        # would need revising.
+        self.assertFalse(the_type11_element_count_is_not_yet_a_count(
+            self.base(entryCountValues={"entries_1": 3700, "entries_2": 15})
+        ))
+
+    def test_an_absent_entry_census_does_not_break_the_gate(self) -> None:
+        # Older reports carry no entry census; the element half still applies.
+        self.assertTrue(the_type11_element_count_is_not_yet_a_count(
+            {"elementCountValues": {"elements_1": 3715}}
+        ))
+
+    def test_the_reader_defaults_the_entry_census_when_absent(self) -> None:
+        got = _read_type11_header_census(
+            {key: 0 for key in TYPE11_HEADER_SCALARS}
+            | {"elementCountValues": {}, "curveCodes": {}},
+            "pkg",
+        )
+        self.assertEqual(got["entryCountValues"], {})
+        self.assertEqual(_read_type11_header_census(None, "pkg")["entryCountValues"], {})

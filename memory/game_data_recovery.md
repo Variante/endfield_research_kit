@@ -3266,6 +3266,34 @@ the 12-vs-17 selector is undetermined. *Check a length model's Frobenius number 
 quoting it -- this is the second length family in this format where most of the range
 is free.*
 
+### THE 218 ARE MOSTLY NOT AN ELEMENT PROBLEM AT ALL
+
+Reading one failing body against a closing one -- the method that cracked `0x08`,
+rather than the ten enumerations that did not -- settles where the problem lives.
+
+- **Every one of the 3,715 bodies that frames has exactly ONE entry carrying exactly
+  ONE element.** No exceptions. The entry/element shape `(1, (1,))` is the only shape
+  the reader has ever parsed successfully.
+- **142 of the 218 declare an entry with ZERO elements**, in shapes like `(2, (0,0))`
+  54 times, `(2, (0,2))` 32, `(2, (0,1))` 24, `(3, (0,0,0))` 22. **No closing body has
+  that shape.** Four more declare zero entries.
+- So for most of this bucket the element walk is not at fault. **The multi-entry
+  layout has never been parsed**, the 48-byte header width is verified only for the
+  single-entry case, and the entry count -- like the element count already gated -- has
+  never been read at any value but 1 by a successful walk.
+- **The remaining 70** have the same `(1, (1,))` shape as every closing body. Those,
+  and only those, are a genuine element-level mystery.
+
+*Ten hypotheses about element widths failed because the residue was never mostly an
+element problem. When a residue resists every reading of structure X, check whether
+the failing bodies even have the same shape at level X-1 as the ones that work.* Here
+one query -- the distribution of (entryCount, elementCounts) over closing versus
+failing bodies -- would have redirected the whole investigation.
+
+Gated: `the_type11_element_count_is_not_yet_a_count` now also refuses if the entry
+count is ever read at another value in a closing body, which would mean the
+multi-entry layout had finally been parsed and this note needed revising.
+
 #### The 218 are a PARTIAL ELEMENT, mis-entered by exactly four bytes
 
 Applying the lesson that closed `0x08` -- when a walk desynchronises, look for the

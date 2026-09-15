@@ -1748,6 +1748,7 @@ def aggregate_current_hirc_actions(
     hierarchy_maps: dict[str, Counter] = {key: Counter() for key in HIERARCHY_MAPS}
     type11_header_totals: Counter[str] = Counter()
     type11_header_elements: Counter[str] = Counter()
+    type11_header_entries: Counter[str] = Counter()
     type11_header_codes: Counter[str] = Counter()
     type11_element_totals: Counter[str] = Counter()
     type11_element_maps: dict[str, Counter] = {
@@ -1999,6 +2000,7 @@ def aggregate_current_hirc_actions(
         for key in TYPE11_HEADER_SCALARS:
             type11_header_totals[key] += package_t11hdr[key]
         type11_header_elements.update(package_t11hdr["elementCountValues"])
+        type11_header_entries.update(package_t11hdr["entryCountValues"])
         type11_header_codes.update(package_t11hdr["curveCodes"])
         package_t11el = _read_type11_element_census(
             package.get("hircType11Elements"), package_label
@@ -2544,6 +2546,7 @@ def aggregate_current_hirc_actions(
         "type11EntryHeaders": {
             **{key: int(type11_header_totals[key]) for key in TYPE11_HEADER_SCALARS},
             "elementCountValues": dict(sorted(type11_header_elements.items())),
+            "entryCountValues": dict(sorted(type11_header_entries.items())),
             "curveCodes": dict(sorted(type11_header_codes.items())),
         },
         "type11Elements": {
@@ -3417,7 +3420,7 @@ def _read_type11_header_census(census: Any, label: str) -> dict[str, Any]:
     """Validate one package's numeric type 0x0B entry-header census."""
     if census is None:
         return ({key: 0 for key in TYPE11_HEADER_SCALARS}
-                | {"elementCountValues": {}, "curveCodes": {}})
+                | {"elementCountValues": {}, "entryCountValues": {}, "curveCodes": {}})
     if not isinstance(census, dict):
         raise ValueError(f"type 0x0B entry header census is not an object: {label}")
     out: dict[str, Any] = {}
@@ -3440,10 +3443,13 @@ def _read_type11_header_census(census: Any, label: str) -> dict[str, Any]:
         raise ValueError(
             f"type 0x0B curve code histogram does not cover the codes in range: {label}"
         )
-    raw = census.get("elementCountValues")
-    if not isinstance(raw, dict):
-        raise ValueError(f"type 0x0B entry header census has invalid elementCountValues: {label}")
-    out["elementCountValues"] = {str(name): int(value) for name, value in raw.items()}
+    for key in ("elementCountValues", "entryCountValues"):
+        raw = census.get(key)
+        if raw is None and key == "entryCountValues":
+            raw = {}
+        if not isinstance(raw, dict):
+            raise ValueError(f"type 0x0B entry header census has invalid {key}: {label}")
+        out[key] = {str(name): int(value) for name, value in raw.items()}
     if sum(out["elementCountValues"].values()) != out["entries"]:
         raise ValueError(
             f"type 0x0B element count histogram does not cover its entries: {label}"
@@ -4240,10 +4246,22 @@ def the_type11_element_count_is_not_yet_a_count(corpus: dict[str, Any]) -> bool:
     count and reading it as the constant 1 produce the same 3,715 bodies, so nothing
     in the corpus distinguishes them and the "count" is a hypothesis.
 
+    The same is true one level up, and it is worse there. **Every body that frames has
+    exactly one entry**, so the entry count has never been read at another value
+    either, and the 48-byte header width is verified only for the single-entry case.
+    Of the 218 bodies that leave unread content, **142 declare an entry with zero
+    elements** -- a shape no closing body has -- so most of that residue is not a
+    defect in the element walk at all. It is a layout the reader has never parsed.
+
     The gate holds while that is true. If a body ever closes with an entry declaring
     two elements, this fails -- and that failure is the good news, because it means
     the reading has finally been tested. Change it then, not before.
     """
+    entries = corpus.get("entryCountValues") or {}
+    if entries:
+        total_entries = sum(int(v) for v in entries.values())
+        if total_entries > 0 and int(entries.get("entries_1") or 0) != total_entries:
+            return False
     values = corpus.get("elementCountValues") or {}
     if not values:
         return False
