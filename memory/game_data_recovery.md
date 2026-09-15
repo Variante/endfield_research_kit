@@ -6059,6 +6059,60 @@ impression that index entries and chunk files stand 1:1. **The index carries one
 reading was not, which is a failure mode worth naming: set equality proves set equality,
 and nothing about multiplicity.*
 
+#### SLOT 5's KIND CODES, IDENTIFIED: `StreamingLayer` AND `ECSEntityType`
+
+Four independent lines agree, and each could have failed.
+
+***1. Range exclusivity.*** Over **1,602,882** elements, `f2` takes `{0..10, 12, 13}`:
+
+| candidate enum | verdict for `f2` |
+| --- | --- |
+| `StreamingLayer` (11) | **out of range** -- 12, 13 |
+| `ProxyEntityType` (11) | **out of range** -- 12, 13 |
+| **`ECSEntityType` (14)** | **in range, 13 of 14 values used (93%)** |
+| `StreamingComponentType` (44) | in range but only 30% used |
+
+*Two candidates are excluded outright by two values.* `StreamingComponentType` survives
+the range test and fails the coverage one: 30 of its 44 members never appearing across 1.6
+million elements is not what a live discriminator looks like. `ECSEntityType` uses every
+value but index 11 (`TerrainSplineDecal`), and its maximum is exactly `TypeCount - 1`.
+
+`f1` takes `0..10` -- exactly 100% of `StreamingLayer`'s eleven, and of
+`ProxyEntityType`'s eleven.
+
+***2. A cross-block join that had to be earned.*** The `terrain` block gives terrain
+presence per level independently. Scoring every `(f1, f2)` pair over 38 terrain levels and
+50 without:
+
+| pair | terrain | non-terrain | separation |
+| --- | --- | --- | --- |
+| **`(5, 7)`** | **37/38** | **0/50** | **+97.37%** |
+| `(0, 4)` | 38/38 | 0/50 | +100.00% |
+| everything else | -- | -- | +52% or below, most near 0 |
+
+Under the reading, `(5, 7)` is **`StreamingLayer.Collider` + `ECSEntityType.TerrainCollider`**
+-- a terrain collider on the collider layer, present in essentially every terrain level and
+**no** level without terrain. *The name and the statistic were derived from different
+files and agree.*
+
+***3. An earlier negative becomes positive evidence.*** `ProxyEntityType` is the rival for
+`f1`, and it was already refused: if `f1` were `ProxyEntityType`, then `f1 == 0` would be
+`IrradianceVolume` and its per-level count had to equal the `iv` block's -- it matched on
+**0 of 88 levels**, with a positive control confirming the test could fire. Under
+`StreamingLayer`, `f1 == 0` is `Default`, which makes no such prediction. **The failed test
+does not merely leave the question open; it discriminates between the two survivors.**
+
+***4. Absence behaves like a default.*** `f2` is *absent* on 405,611 elements, and
+FlatBuffers omits any field equal to its default. `ECSEntityType.Render` is 0 -- the
+commonest thing in a chunk -- so the commonest record carries no type word at all.
+
+**What is not claimed.** `(0, 4)` separates terrain at 100% but reads as
+`Default + SphereCollider`, which is not a terrain concept; terrain levels are the outdoor
+maps, so that separation plausibly tracks *outdoors*, not terrain. **One pair fitting the
+statistic without fitting the name is a reason to hold the mapping as strongly supported
+rather than settled** -- the enum values themselves are read from declaration order, not
+from `fieldDefaultValues`, and that remains unverified.
+
 ***A degenerate fit, caught by fitting four rivals at once.*** `s4 == 24 + 24*n7` scores
 **100.00%** on the Streaming family, which reads like a decoded record stride -- until the
 rivals are run beside it. `24 + 32*n7`, `24 + 40*n7` and `24 + 44*n7` **all score
