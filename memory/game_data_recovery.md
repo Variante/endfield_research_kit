@@ -4567,6 +4567,60 @@ reports/story/recovery/
 Revisitable format probes belong in `scratch/<topic>/`; disposable extraction
 and before/after evidence belongs in `tmp/<topic>/`.
 
+## IrradianceVolume: the largest unread VFS-native family
+
+The audio lane's three open items are all blocked on evidence outside the shipped
+audio data, so this batch triaged the whole VFS by byte volume to find where the
+unread data actually is.
+
+**The whole installed set is 67.5 GB over 455,691 ledger rows**, and by extension:
+
+| extension | bytes | share |
+| --- | --- | --- |
+| `.ab` (Unity asset bundles) | 42.07 GB | **62.3%** |
+| `.pck` (audio) | 11.49 GB | 17.0% |
+| `.usm` (video) | 6.56 GB | 9.7% |
+| **`.bytes` (VFS-native)** | **6.33 GB** | **9.4%** |
+| `.json` | 827 MB | 1.2% |
+
+Within `.bytes`, one family dominates:
+
+| family | files | bytes | share of `.bytes` |
+| --- | --- | --- | --- |
+| **`iv_*.bytes`** | **132** | **4.16 GB** | **65.6%** |
+| `LAYER_N_*` | 345 | 469 MB | 7.4% |
+| `LAYER_D_*` | 345 | 414 MB | 6.5% |
+| `InitChunkData_*` | 26,520 | 624 MB | 9.9% |
+| `Terrain_*` | 30,280 | 245 MB | 3.9% |
+
+### What is measured so far
+
+- The family is **`Data/IrradianceVolume/PC/<scene>/v3/iv_<x>_<y>.bytes`**, streamed
+  through the maintained CLI as `--block-type iv` (block value **14**); the `AuditIV`
+  block is 8. Streaming every `iv_*.bytes` yields **138 files**, 16,064 bytes to
+  70,032,579 bytes.
+- The first two `u32` take **49 distinct pairs** across the 138 files. The most common
+  is **`(3, 2)` in 34 files**; the rest are `(n, 512)`, `(n, 768)`, `(n, 1280)` with
+  `n` in the 990-2,270 range, and `(12291, 8)` / `(12291, 6)` in the four smallest.
+- The two 16,064-byte files (`gacha/character` and `gacha/weapon`) show a clear
+  **16-byte repeat**: one word, then three `RGB 00` triples. Colour triples at a fixed
+  stride are what an irradiance probe grid looks like, but that is a shape observation
+  and nothing is claimed from it yet.
+
+### What was measured and is WRONG
+
+A first reading of one `(3, 2)` file showed `03 03 03 00` at `+40` and `472` at `+44`,
+which looked like a 3x3x3 probe grid and a count. **Across the 34 files that share the
+header, those offsets hold `(3,3,3)`/472, `(15,15,15)`/472, `(3,3,0)`/472 and
+`(255,255,255)`/`0xFFFFFFFF`** -- the last being an all-`FF` region that starts at
+different places. So `+40` is not a fixed field; what precedes it is variable-length.
+*A tidy-looking triple in one file is a coincidence until the same offset is read in
+every file that should share the layout.*
+
+**Next step:** frame the header properly -- find where the variable-length leading
+region ends -- starting from the four smallest files, where the whole payload is
+16-44 KB.
+
 ## Remaining gaps
 
 - Streaming's next advance requires independent record-end evidence or a
