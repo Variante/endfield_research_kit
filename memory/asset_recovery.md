@@ -172,6 +172,32 @@ unique binding.
   provide one. That needs an AnimeStudio export; the `.bin` maps only locate
   containers.
 
+## Terrain header
+
+- **Every terrain file carries the ASCII magic `TRET`**, and where it sits at
+  offset 6 -- 44,059 of 46,164 files -- a fixed 26-byte header follows: a `u32`
+  declared total, `0xFF`, a channel-selector byte, the magic, `u32` 1, `u16` width,
+  `u16` height, `u16` 1, `u16` 6, and a `u32` payload size. The two size words are
+  two statements about the same file and must agree: `declaredTotal == payload + 20`.
+- **The channel letter in the filename decides bytes per pixel, with no
+  exceptions.** `A`, `N` and `T` are one byte, `C` and `H` two, `S` four --
+  checked against the header's own `payload / (width * height)` on every framed
+  file, 0 disagreements. It is a join between the name and the header, so neither
+  side establishes it alone, and the gate refuses on a single mismatch rather than
+  reporting a rate.
+- The six channels are exactly balanced: 7,570 files each across 37 scenes, so
+  every tile ships all six.
+- **Nothing after the header is framed.** The file is far smaller than
+  `payload` declares, so the payload is encoded or compressed; this is not
+  decoded, and the `ff`-prefixed bytes before some magics look like a
+  literal-length encoding but that is an observation, not a claim. The 1,361 files
+  whose magic is not at offset 6 are fenced rather than read with a layout that
+  does not fit them, and 744 names are not `Terrain_a_b_c_X.bytes` shaped at all.
+- Read by `scripts/asset_builder/terrain_header.py`; report at
+  [`reports/assets/terrain_header_current_latest.json`](../reports/assets/terrain_header_current_latest.json).
+  Terrain rows are `encrypted=False`, which is why a plain span read works here
+  and not on the manifest.
+
 ## Reading VFS logical files: three things that look like corruption and are not
 
 - **A raw span read is only valid for `encrypted=False` rows.** The audio probe's
