@@ -3034,6 +3034,38 @@ u32 terminator, always 100
   internal split before suspecting the claim -- and settle it on content, because
   length cannot.
 
+#### QUALIFIED: `0x0A`'s "fraction" is a mixed value set, not a fraction field
+
+The discriminator that separates a real fixed-point field from a test artefact is
+**how many denominators it uses**, and applying it to `0x0A` qualifies a finding I
+strengthened two batches ago.
+
+| field | passes `IsSmallFraction` | distinct fractions | denominators |
+|---|---|---:|---|
+| `0x0B` `+28` | 100% | **5** | **3, 6, 2** |
+| `0x0B` `+36` | 96.3% | **18** | **3, 6, 2**, then a tail |
+| `0x0A` fraction | 67.4% | **42** | 3, **13, 11, 7, 23, 9, 19, 49** |
+| `0x0B` `+12` | 42.0% | **76** | 13, 17, 7, 3, 23, 19 -- no family |
+
+- `0x0B`'s established fields use a **tight, authored family**: 1/3, 2/3, 1/6, 1/2,
+  5/6. `0x0A`'s spreads across denominators 13, 11, 49, 23 and 19, which no one
+  authors.
+- **The field's real shape is a small repeated value set**: only **237 distinct
+  values** over 2,130 bodies, the ten commonest covering **50%**. Its top value is
+  `0x408F4000`, which is the **float 4.4766**, seen 203 times -- and the control word
+  four bytes on holds that same value **1,565** times. So the field mixes
+  float-shaped and fraction-shaped members.
+- **What survives**: the field is still sharply different from its control -- 67.4%
+  against 3.2%, a 20x margin, and random words pass at 0 of 2,130. Something real is
+  there. **What does not survive**: calling it a fixed-point fraction. That reading
+  over-reads a permissive test.
+- *`IsSmallFraction` with denominators to 64 is too generous for structured data. It
+  passes 42% of `0x0B`'s `+12`, which is definitely not a fraction field. The
+  discriminating question is not "is this value a small rational" but "does this field
+  use a handful of denominators".*
+- `0x0B` `+44` is confirmed as the element count from the other side: raw values `1`
+  in 3,903 entries, `2` in 133, `3` in 14, `4` in 1.
+
 #### The fixed-point fraction is in two types, and they are NOT the same quantity
 
 Three measurements, and the conclusion is a negative worth keeping.
