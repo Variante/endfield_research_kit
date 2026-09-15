@@ -1701,6 +1701,7 @@ def aggregate_current_hirc_actions(
     type0a_head_scores: Counter[str] = Counter()
     type0a_head_conditioned: Counter[str] = Counter()
     type0a_head_words: Counter[str] = Counter()
+    type0a_element_values: Counter[str] = Counter()
     music_head_by_type: Counter[str] = Counter()
     music_head_offsets: Counter[str] = Counter()
     music_head_discriminants: Counter[str] = Counter()
@@ -1882,6 +1883,9 @@ def aggregate_current_hirc_actions(
         type0a_head_scores.update(package_head0a["namesTheSourceType"])
         type0a_head_conditioned.update(package_head0a["namesTheSourceTypeWhereTheRuleApplies"])
         type0a_head_words.update(package_head0a["headWordTargets"])
+        for key in ("elementTotal", "elementLeadingByteNotZero", "elementPadNotZero"):
+            type0a_head_totals[key] += package_head0a[key]
+        type0a_element_values.update(package_head0a["elementValueCounts"])
 
         package_reference = _read_reference_census(
             package.get("hircReferenceCensus"), package_label
@@ -2344,6 +2348,10 @@ def aggregate_current_hirc_actions(
             "namesTheSourceType": dict(sorted(type0a_head_scores.items())),
             "namesTheSourceTypeWhereTheRuleApplies": dict(sorted(type0a_head_conditioned.items())),
             "headWordTargets": dict(sorted(type0a_head_words.items())),
+            "elementTotal": int(type0a_head_totals["elementTotal"]),
+            "elementLeadingByteNotZero": int(type0a_head_totals["elementLeadingByteNotZero"]),
+            "elementPadNotZero": int(type0a_head_totals["elementPadNotZero"]),
+            "elementValueCounts": dict(sorted(type0a_element_values.items())),
         },
         "musicReferences": {
             **{key: int(music_ref_totals[key]) for key in MUSIC_REFERENCE_SCALARS},
@@ -2887,11 +2895,19 @@ TYPE0A_HEAD_CONTROL_MAXIMUM = 0.50
 def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
     """Validate one package's type 0x0A head-rule census."""
     if census is None:
-        return {"bodies": 0, "namesTheSourceType": {}}
+        return {
+            "bodies": 0, "bodiesWhereTheRuleApplies": 0, "elementTotal": 0,
+            "elementLeadingByteNotZero": 0, "elementPadNotZero": 0,
+            "namesTheSourceType": {}, "namesTheSourceTypeWhereTheRuleApplies": {},
+            "headWordTargets": {}, "elementValueCounts": {},
+        }
     if not isinstance(census, dict):
         raise ValueError(f"type 0x0A head census is not an object: {label}")
     out: dict[str, Any] = {}
-    for key in ("bodies", "bodiesWhereTheRuleApplies"):
+    for key in (
+        "bodies", "bodiesWhereTheRuleApplies", "elementTotal",
+        "elementLeadingByteNotZero", "elementPadNotZero",
+    ):
         try:
             value = int(census[key])
         except (KeyError, TypeError, ValueError) as exc:
@@ -2916,7 +2932,52 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
                     f"type 0x0A head census scores {name} above its {ceiling}: {label}"
                 )
         out[key] = scores
+    raw = census.get("elementValueCounts")
+    if not isinstance(raw, dict):
+        raise ValueError(f"type 0x0A head census has invalid elementValueCounts: {label}")
+    out["elementValueCounts"] = {str(name): int(count) for name, count in raw.items()}
+    if sum(out["elementValueCounts"].values()) != out["elementTotal"]:
+        raise ValueError(
+            f"type 0x0A element values do not cover its elements: {label}"
+        )
     return out
+
+
+# The five-byte head element: a zero byte, a 16-bit value and two zero pad bytes.
+# The value is a small enumeration, never an id or a length.
+TYPE0A_ELEMENT_VALUE_CEILING = 16
+
+
+def the_type0a_head_elements_are_padded_small_values(corpus: dict[str, Any]) -> bool:
+    """Each five-byte head element is a zero byte, a small value and two zero bytes.
+
+    This accounts for the whole `5k` part of the head, which the head-length rule
+    only measured the size of. Three things have to hold together, and each rules out
+    a different misreading: the leading byte is zero in every element, the two bytes
+    after the value are zero in every element, and the value itself stays inside a
+    small range rather than being an id or a length that happens to be short.
+
+    A single element breaking any of them means the element boundary is wrong, so
+    these are equalities rather than rates.
+    """
+    total = int(corpus.get("elementTotal") or 0)
+    if total <= 0:
+        return False
+    if int(corpus.get("elementLeadingByteNotZero") or 0):
+        return False
+    if int(corpus.get("elementPadNotZero") or 0):
+        return False
+    values = corpus.get("elementValueCounts") or {}
+    if not values:
+        return False
+    for name in values:
+        try:
+            value = int(str(name).split("_", 1)[1])
+        except (IndexError, ValueError):
+            return False
+        if value > TYPE0A_ELEMENT_VALUE_CEILING:
+            return False
+    return sum(int(v) for v in values.values()) == total
 
 
 # The only two numeric types the word inside numeric type 0x0A's head ever names.
@@ -4926,6 +4987,9 @@ def run_current_corpus_audit(
         report["corpus"].get("type08BodyFrames") or {}
     )
     # True when no names were supplied: see the check's own note.
+    type0a_elements = the_type0a_head_elements_are_padded_small_values(
+        report["corpus"].get("type0AHead") or {}
+    )
     type0a_word = the_type0a_head_word_always_names_one_of_two_types(
         report["corpus"].get("type0AHead") or {}
     )
@@ -4963,6 +5027,7 @@ def run_current_corpus_audit(
         and music_anchor
         and type0a_head
         and type0a_word
+        and type0a_elements
         and type08_body_named
         and type08_tail_located
         and type08_head_named
@@ -5113,6 +5178,15 @@ def run_current_corpus_audit(
             f"count={body08.get('count')} exact={body08.get('exact')} "
             f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
             f"ambiguous={body08.get('ambiguous')}"
+        )
+    if not type0a_elements:
+        head0a = report["corpus"].get("type0AHead") or {}
+        lane_failures.append(
+            "the type 0x0A head elements are not padded small values: "
+            f"elements={head0a.get('elementTotal')} "
+            f"leadNotZero={head0a.get('elementLeadingByteNotZero')} "
+            f"padNotZero={head0a.get('elementPadNotZero')} "
+            f"values={sorted(head0a.get('elementValueCounts') or {})}"
         )
     if not type0a_word:
         head0a = report["corpus"].get("type0AHead") or {}

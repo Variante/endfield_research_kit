@@ -24,6 +24,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_music_partition_edge_sits_at_a_few_places,
     the_type0a_head_rule_beats_its_controls,
     the_type0a_head_word_always_names_one_of_two_types,
+    the_type0a_head_elements_are_padded_small_values,
     _read_type0a_head_census,
     _read_music_reference_census,
     type08_bodies_are_exact_or_named,
@@ -355,6 +356,10 @@ def valid_action_fixture():
             "predictedMinusFour": 0,
         },
         "headWordTargets": {"type0D": 7, "type0C": 2},
+        "elementTotal": 6,
+        "elementLeadingByteNotZero": 0,
+        "elementPadNotZero": 0,
+        "elementValueCounts": {"value_0": 2, "value_1": 3, "value_2": 1},
     }
     music_refs = {
         "bodies": 4,
@@ -1597,6 +1602,40 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(type11_sources_share_the_type02_plugin_space(sources, {}))
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
+        )
+
+    def test_the_type0a_head_elements_are_a_zero_byte_a_small_value_and_padding(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        head = result["type0AHead"]
+        self.assertEqual(head["elementTotal"], 6)
+        self.assertTrue(the_type0a_head_elements_are_padded_small_values(head))
+
+        # One element breaking the shape means the element boundary is wrong, so
+        # these are equalities and not rates.
+        self.assertFalse(
+            the_type0a_head_elements_are_padded_small_values(
+                {**head, "elementLeadingByteNotZero": 1}
+            )
+        )
+        self.assertFalse(
+            the_type0a_head_elements_are_padded_small_values({**head, "elementPadNotZero": 1})
+        )
+        # A value outside the small range would mean the field is an id or a length
+        # rather than the enumeration it looks like.
+        self.assertFalse(
+            the_type0a_head_elements_are_padded_small_values(
+                {**head, "elementValueCounts": {"value_0": 2, "value_1": 3, "value_46456": 1}}
+            )
+        )
+        # The histogram has to cover every element the census counted.
+        self.assertFalse(
+            the_type0a_head_elements_are_padded_small_values({**head, "elementTotal": 9})
+        )
+        self.assertFalse(
+            the_type0a_head_elements_are_padded_small_values(
+                {**head, "elementTotal": 0, "elementValueCounts": {}}
+            )
         )
 
     def test_the_type0a_head_word_names_exactly_two_types(self) -> None:

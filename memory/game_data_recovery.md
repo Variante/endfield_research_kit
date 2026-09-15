@@ -2155,9 +2155,21 @@ Stable conclusions:
   positions fall in runs at 1, 5..12, 14..16, 18..20, 23..24, 28 and 32..33 -- the
   8-byte run at 5..12 contains the offset-9 reference, and `u32@1` and `u32@5` are
   zero in 3,736 and 3,624 of 3,744 bodies respectively.
-- That is the first framing rule `0x0A` has. What it leaves: the five-byte elements,
-  the remaining varying head fields, the 144 bodies with a nonzero byte 17, and the
-  255 with no `0x0B` reference.
+- **The five-byte head element is fully read: a zero byte, a 16-bit value and two
+  zero pad bytes.** Over the 3,052 elements in confirmed bodies: **0** with a
+  nonzero leading byte, **0** with nonzero padding, and the value takes only
+  **0, 1, 2, 3, 4** (598 / 2,240 / 186 / 26 / 2). So each element carries one small
+  enumeration and nothing else.
+- **The element census must be conditioned on the rule being confirmed, not merely
+  on the discriminant.** Under `body[17] == 0` alone the same measurement gives 61
+  nonzero leading bytes, 77 nonzero pads and 31 distinct values -- because a body
+  whose reference is not where the rule says has no element boundary, so those bytes
+  are being read at arbitrary offsets. Condition on the confirmed rule and every
+  violation disappears.
+- So `0x0A`'s head now reads end to end: 36 fixed bytes (16 of them constant zeros),
+  then `body[14]` elements of `00 <u16 0..4> 00 00`, then the `0x0B` reference.
+  What it leaves: the remaining varying fields inside the 36, the 144 bodies with a
+  nonzero byte 17, and the 255 with no `0x0B` reference.
 - **Conditioning on the anchor makes the tail legible.** Restricted to the 3,419
   `0x0A` bodies with exactly one `0x0B` reference and it at -69, **21 of the last 69
   byte positions are constant** -- against **6 of 101** over the unconditioned
