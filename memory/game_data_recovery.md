@@ -2728,6 +2728,27 @@ flag         at 96           -- gates the 27-byte block
   region divides with nothing left over.
 - **38 of the 96 bytes are constant across all 704 regions**, in runs at 7-17, 24-26,
   40-42, 49-50, 52-54, 57-58, 64-66, 73-74, 80-82 and 84-87.
+**Read at the recovered alignment, the region's 23 words are legible:**
+
+| offset | reading | evidence |
+|---|---|---|
+| `+4` | **float** | plausible in **704 of 704**; 4.4766 in 670 |
+| `+16` | **float** | plausible in **704 of 704**; 120.0 in 670 |
+| `+8`, `+12` | **constant zero** | 704 of 704 each |
+| `+31`, `+35` | **`1` then `-1`** | 700 each -- a value/sentinel pair |
+| `+39`, `+43` | **`1` then `-1`** | 700 each -- a second pair |
+| `+27` | small int, 30 distinct | 698 of 704 are <= 64 |
+| `+51` | small int, `4` | 558 |
+| `+71` | `0x400` = 1024 | 646 |
+| `+91` | `0x100` = 256 | 698 |
+| `+23`, `+63`, `+75`, `+79`, `+83`, `+87` | zero in almost all | |
+
+- The float test has its control built in: at `+4` and `+16` it passes **704 of 704**,
+  and at `+0`, `+8` and `+12` -- the same grid, four bytes away -- it passes **none**,
+  because those hold zero. Two float fields, not twenty-three.
+- The two `(1, -1)` pairs eight bytes apart are the clearest structure in the region.
+  Nothing here says what they select.
+
 - *Misaligned-looking words are a symptom, not a fact. Reading this region as u32s
   from its start produced values like `0x01FFFFFF` and `0x00FFFFFF`, which are not
   values at all -- they are a `-1` seen through a three-byte shift. Finding where a
