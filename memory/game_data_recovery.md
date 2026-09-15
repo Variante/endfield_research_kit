@@ -1699,12 +1699,27 @@ Stable conclusions:
   `9a 99 c0 c2` sat exactly 21 bytes from the end in both -- and is **wrong**: only
   100 of 251 bodies have it there. Two samples agreeing on an offset is not
   evidence; this corpus has now punished that three times.
-- What the end-aligned census does support, as a shape hypothesis that is **not**
-  yet a framing: counting back from EOF, bytes -5, -4 and -3 are zero in every
-  body, byte -6 takes only seven small values, and bytes -12 and -11 take six and
-  eight values that look like the high half of a float. That is consistent with a
-  fixed trailer of roughly `[f32][u32][u32][u16]`, and the next attempt should try
-  to confirm or kill that before touching the head again.
+- What the end-aligned census supports as a *shape hypothesis* only: counting back
+  from EOF, bytes -5, -4 and -3 are zero in every body, byte -6 takes seven small
+  values, and bytes -12 and -11 look like the high half of a float.
+- **The fixed-trailer reading that hypothesis suggests has now been tested and
+  fails.** Sweeping every trailer width from 0 to 39 against a four-byte lead and
+  a block chain of any depth, the best is 33 bytes explaining 143 of 251. So the
+  bytes before the trailer are not a block chain, or the trailer is not fixed, or
+  both.
+- Four further readings are eliminated, bringing the total to eight. Group I does
+  not appear: scanning every offset, only 34 bodies have one landing within eight
+  bytes of EOF and those start at two fixed offsets, which is coincidence rather
+  than structure. TLV records -- a key byte, a size of one, two or four bytes, then
+  that many bytes, with zero to two bytes of padding -- reach 84 of 251 at best.
+  And the length is not predicted by flags: the best single byte fixes it for 26%
+  of bodies and the best pair for 26%, against 100% for the `0x0E` flag byte, so
+  `0x12` is not a fixed layout with flag-gated optional parts either.
+- Taken together these say the body is **not** a linear sequence of self-describing
+  records, which is what every model tried so far assumes. A ninth attempt should
+  start from a different premise -- for example that some field earlier in the body
+  sizes a later region, as in `0x10`/`0x11` -- rather than sweeping another record
+  shape.
 - **Numeric types `0x13`, `0x14` and `0x15` are framed byte-exact: 18 bodies, 685
   bytes, all of them.** `0x13` and `0x14` are a counted block of four-byte values,
   a counted block of **eight**-byte values, then two bytes; keys and values are
