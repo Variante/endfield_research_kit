@@ -3907,6 +3907,69 @@ Detailed changing investigations live under `reports/story/recovery/audio/`.
 Page behavior and focused publication belong in
 [`webui/audio.md`](webui/audio.md).
 
+### Types `0x02` and `0x0B` share one source record, and it accounts for the media
+
+This is the first result in this lane that is about the corpus rather than about a
+body layout, so its evidence is stated in full.
+
+**The record.** Numeric type `0x02` carries exactly one 14-byte source record at body
+offset 0. Numeric type `0x0B` carries a counted array of the same record after its
+leading flag and count. That they are the same record is shown twice:
+
+- **The word at `+0` is a plugin id from a closed set.** `0x0B` uses two values --
+  `0x00040001` (3,506 records) and `0x00140001` (941) -- and **140,121 of `0x02`'s
+  142,815** bodies open with one of exactly those two. `0x02` uses five more
+  (`0x00080001`, `0x00650002`, `0x00640002`, `0x00940002`, `0x01990002`), so it is a
+  superset rather than a different field.
+- **The word at `+5` names a declared media id in 4,447 of `0x0B`'s 4,447 records,
+  and in 0 of them at any other offset in the record.** That contrast is what makes
+  `+5` the id field. A bare hit rate would not.
+
+**The attribution.** Pooled over every package, **61,325 of the 61,333 declared media
+ids are named by some source record** -- 60,049 by `0x02`, 1,279 by `0x0B`, 3 by both,
+and **8 by no record at all**. The words one byte either side of the id field name
+**0 and 2**. Before `0x0B` was allowed to contribute, 1,284 media had no owner; it
+closed 1,276 of them.
+
+**The join has to cross a file boundary, and that is a trap worth recording.** A
+source record names media that a *different* package declares. The first version of
+this census joined inside one package and scored **12 of 147,262** -- not a weak
+result, a meaningless one. `media_ids_from_audit` already carried the warning in its
+own docstring: *"joining inside one package answers a question nobody asked."* The
+census is published from C# as distinct value sets and joined in Python, where the
+packages are already pooled.
+
+### The music subgraph is not reachable from any named event
+
+- **Actions almost never address music.** Of the 23,455 action target words that
+  resolve to an object in the package, the types are `0x05` 7,709, `0x02` 7,466,
+  `0x09` 3,869, `0x06` 3,826, `0x04` 393, `0x07` 126, `0x08` 46, `0x15` 12 -- and
+  **`0x0C` 8**. None at all reach `0x0A`, `0x0B` or `0x0D`.
+- **The named walk confirms it from the other side.** Starting at the 199 named
+  `0x04` objects and following gated reference vectors, the walk arrives at types
+  `0x03` (310), `0x02` (225), `0x09` (127), `0x05` (91), `0x06` (18), `0x07` (4) and
+  `0x04` (1). **It never arrives at a music type.**
+- So the **1,279 media owned by `0x0B` are reached by no named event**, and the 163
+  media a named event does reach are all owned by `0x02`. Extending the walk to read
+  `0x0B`'s source records changed the reach numbers by **nothing** -- 120 identifiers
+  reaching 218 source ids, before and after -- which is itself the measurement.
+- What this does **not** say: that music is unreachable at runtime. It says the
+  music types are not addressed through the action target word or through any gated
+  reference vector, so whatever addresses them is not in this graph.
+
+### How much of the audio corpus is actually named
+
+| | count | share of declared media |
+| --- | --- | --- |
+| media ids declared by the packages | 61,333 | 100% |
+| named by some source record | 61,325 | **99.99%** |
+| reachable from a named `0x04` event | 163 | **0.27%** |
+
+The gap is not a defect in the walk. Only **221** audio-shaped literals survive in
+`global-metadata.dat`, matching 199 objects; the event names for the rest are not
+shipped as managed literals. *Coverage of the structure and coverage of the names are
+different numbers, and quoting one for the other would overstate both.*
+
 ## Asset and spatial semantics
 
 AssetMap rows, PPtrs, prefab/component dependencies, material slots, textures,

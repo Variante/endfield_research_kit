@@ -3,6 +3,9 @@ from __future__ import annotations
 import unittest
 
 from scripts.audio_semantics.hirc_named_reach import (
+    media_attribution,
+    media_attribution_is_discriminated,
+    source_values_from_audit,
     broad_naming_is_discriminated,
     coincidence_table,
     media_ids_from_audit,
@@ -219,3 +222,95 @@ class HircNamedReachTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class MediaAttributionTests(unittest.TestCase):
+    """Two numeric types share one 14-byte source record, and it names the media."""
+
+    MEASURED = {
+        "mediaIdsDeclared": 61333,
+        "mediaIdsNamedBySomeRecord": 61325,
+        "mediaIdsNamedByNoRecord": 8,
+        "mediaIdsNamedByType": {"type02": 60049, "type0B": 1279},
+        "controlMediaIdsNamedByNeighbouringWords": {
+            "idValuesAfterByType": 2, "idValuesBeforeByType": 0},
+    }
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(media_attribution_is_discriminated(self.MEASURED))
+
+    def test_a_neighbouring_word_that_resolves_as_well_fails(self) -> None:
+        # Without this the census would say only that 32-bit values in this region
+        # often look like media ids, which is a fact about the id space rather than
+        # about the field.
+        self.assertFalse(media_attribution_is_discriminated(
+            dict(self.MEASURED, controlMediaIdsNamedByNeighbouringWords={
+                "idValuesAfterByType": 40000, "idValuesBeforeByType": 0})
+        ))
+
+    def test_a_single_contributing_type_fails(self) -> None:
+        # One type cannot show that the record is shared, which is the whole content
+        # of this census. This is the state the reader was in before numeric type
+        # 0x0B was allowed to contribute source ids.
+        self.assertFalse(media_attribution_is_discriminated(
+            dict(self.MEASURED, mediaIdsNamedBySomeRecord=60049,
+                 mediaIdsNamedByType={"type02": 60049})
+        ))
+
+    def test_coverage_below_ninety_nine_percent_fails(self) -> None:
+        self.assertFalse(media_attribution_is_discriminated(
+            dict(self.MEASURED, mediaIdsNamedBySomeRecord=60000)
+        ))
+
+    def test_a_type_contributing_nothing_fails(self) -> None:
+        self.assertFalse(media_attribution_is_discriminated(
+            dict(self.MEASURED, mediaIdsNamedByType={"type02": 60049, "type0B": 0})
+        ))
+
+    def test_an_empty_attribution_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(media_attribution_is_discriminated({}))
+        self.assertFalse(media_attribution_is_discriminated(
+            {"mediaIdsDeclared": 0, "mediaIdsNamedBySomeRecord": 0}
+        ))
+        self.assertFalse(media_attribution_is_discriminated(None))
+
+    def test_the_join_is_pooled_across_packages(self) -> None:
+        # The trap this census fell into first. A source record names media that a
+        # DIFFERENT package declares, so a package-local join scored 12 of 147,262.
+        # Here package A's records name package B's media and nothing else.
+        audit = {"rows": [
+            {"status": "verified", "package": {"hircMediaJoin": {
+                "hircSourceRecords": {
+                    "idValuesByType": {"type02": [10, 11], "type0B": [20]},
+                    "idValuesBeforeByType": {"type02": [900]},
+                    "idValuesAfterByType": {"type02": [901]},
+                }}}},
+            {"status": "verified", "package": {"hircMediaJoin": {
+                "hircSourceRecords": {
+                    "idValuesByType": {"type02": [12]},
+                    "idValuesBeforeByType": {"type02": [902]},
+                    "idValuesAfterByType": {"type02": [903]},
+                }}}},
+        ]}
+        values = source_values_from_audit(audit)
+        self.assertEqual(values["type02"]["idValuesByType"], {10, 11, 12})
+        self.assertEqual(values["type0B"]["idValuesByType"], {20})
+        out = media_attribution({10, 11, 12, 20}, values)
+        self.assertEqual(out["mediaIdsNamedBySomeRecord"], 4)
+        self.assertEqual(out["mediaIdsNamedByNoRecord"], 0)
+        self.assertEqual(out["mediaIdsNamedByType"], {"type02": 3, "type0B": 1})
+
+    def test_an_unverified_package_contributes_nothing(self) -> None:
+        audit = {"rows": [
+            {"status": "failed", "package": {"hircMediaJoin": {
+                "hircSourceRecords": {"idValuesByType": {"type02": [10]}}}}},
+        ]}
+        self.assertEqual(source_values_from_audit(audit), {})
+
+    def test_a_malformed_census_fails_closed(self) -> None:
+        for bad in ({"idValuesByType": "ten"}, {"idValuesByType": {"type02": 10}}):
+            with self.assertRaises(ValueError):
+                source_values_from_audit({"rows": [
+                    {"status": "verified",
+                     "package": {"hircMediaJoin": {"hircSourceRecords": bad}}},
+                ]})

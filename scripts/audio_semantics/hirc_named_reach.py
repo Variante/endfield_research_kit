@@ -127,6 +127,104 @@ NAMED_TYPE_MINIMUM_RATIO = 100.0
 HASH_SPACE = float(1 << 32)
 
 
+def source_values_from_audit(audit: dict[str, Any]) -> dict[str, dict[str, set[int]]]:
+    """Distinct source-record values per type, at the id field and either side of it.
+
+    Unioned across packages for the same reason the media are: a source record names
+    media that a different package declares, so the join has to cross the file
+    boundary. Joining inside one package scores 12 of 147,262 and answers nothing.
+    """
+    out: dict[str, dict[str, set[int]]] = {}
+    keys = ("idValuesByType", "idValuesBeforeByType", "idValuesAfterByType")
+    for row in audit.get("rows", []):
+        if row.get("status") != "verified":
+            continue
+        package = row.get("package")
+        if not isinstance(package, dict):
+            continue
+        # The census is published inside the media-join block, next to the media ids
+        # it has to be joined against. Read it from there rather than moving it: the
+        # two belong together and the audit shape is already committed.
+        join = package.get("hircMediaJoin")
+        census = join.get("hircSourceRecords") if isinstance(join, dict) else None
+        if not isinstance(census, dict):
+            continue
+        for key in keys:
+            block = census.get(key)
+            if block is None:
+                continue
+            if not isinstance(block, dict):
+                raise ValueError(f"source record census has invalid {key}")
+            for type_key, values in block.items():
+                if not isinstance(values, list):
+                    raise ValueError(f"source record census has invalid {key}")
+                out.setdefault(str(type_key), {}).setdefault(key, set()).update(
+                    int(value) for value in values)
+    return out
+
+
+def media_attribution(
+    media: set[int], by_type: dict[str, dict[str, set[int]]]
+) -> dict[str, Any]:
+    """How much of the shipped media some source record accounts for.
+
+    The id field is scored against the words one byte either side, over the same
+    pooled media. A field that resolves at one offset and nowhere near it is located;
+    a field that resolves at several is a coincidence with a wide net.
+    """
+    owned: set[int] = set()
+    per_type: dict[str, int] = {}
+    controls = {"idValuesBeforeByType": 0, "idValuesAfterByType": 0}
+    for type_key, blocks in sorted(by_type.items()):
+        hit = blocks.get("idValuesByType", set()) & media
+        per_type[type_key] = len(hit)
+        owned |= hit
+        for control in controls:
+            controls[control] += len(blocks.get(control, set()) & media)
+    return {
+        "mediaIdsDeclared": len(media),
+        "mediaIdsNamedBySomeRecord": len(owned),
+        "mediaIdsNamedByNoRecord": len(media - owned),
+        "mediaIdsNamedByType": per_type,
+        "controlMediaIdsNamedByNeighbouringWords": dict(sorted(controls.items())),
+    }
+
+
+def media_attribution_is_discriminated(attribution: dict[str, Any]) -> bool:
+    """The attribution is a located field, not a wide net, and it covers the corpus.
+
+    Two things must hold and they guard different failures.
+
+    The id field must account for essentially all of the shipped media. It does:
+    61,325 of 61,333, with 60,049 named by numeric type 0x02 and 1,279 by 0x0B, and
+    only 8 named by no record at all.
+
+    And the words one byte either side must not. If a shifted read resolved to media
+    at a comparable rate the join would be telling us that 32-bit values in this
+    region often look like media ids, which is a fact about the id space rather than
+    about the field.
+    """
+    if not isinstance(attribution, dict):
+        return False
+    declared = int(attribution.get("mediaIdsDeclared") or 0)
+    named = int(attribution.get("mediaIdsNamedBySomeRecord") or 0)
+    if declared <= 0 or named <= 0:
+        return False
+    if named * 100 < declared * 99:
+        return False
+    by_type = attribution.get("mediaIdsNamedByType")
+    if not isinstance(by_type, dict) or len(by_type) < 2:
+        # One contributing type cannot show that the record is shared, which is the
+        # whole content of this census.
+        return False
+    if any(int(value) <= 0 for value in by_type.values()):
+        return False
+    controls = attribution.get("controlMediaIdsNamedByNeighbouringWords")
+    if not isinstance(controls, dict) or not controls:
+        return False
+    return all(int(value) * 100 < named for value in controls.values())
+
+
 def broad_literals(metadata_path: Path) -> list[str]:
     """Identifier-shaped managed literals, without the audio prefix vocabulary."""
     from scripts.audio_semantics.identifiers import (  # noqa: PLC0415
@@ -487,6 +585,8 @@ def run(
     )
     problems = check_identification(summary)
     media = media_ids_from_audit(audit)
+    source_values = source_values_from_audit(audit)
+    attribution = media_attribution(media, source_values)
     if not media:
         problems.append("the audit declares no media ids, so the media join cannot be checked")
 
@@ -578,6 +678,14 @@ def run(
     table["populationsWithNoMatch"] = sorted(
         name for name, size in populations.items() if size and not wide_matches.get(name)
     )
+    if not media_attribution_is_discriminated(attribution):
+        problems.append(
+            "the media attribution is not discriminated: "
+            f"named={attribution['mediaIdsNamedBySomeRecord']} of "
+            f"{attribution['mediaIdsDeclared']} "
+            f"byType={attribution['mediaIdsNamedByType']} "
+            f"controls={attribution['controlMediaIdsNamedByNeighbouringWords']}"
+        )
     if not broad_naming_is_discriminated(table):
         problems.append(
             "the broad naming pass does not discriminate: "
@@ -609,6 +717,7 @@ def run(
         "mediaReachedByIdentifier": media_reached,
         "reachedSourceIdsNamingNoMedia": unmatched_reached,
         "broadNaming": table,
+        "mediaAttribution": attribution,
         "mediaSummary": {
             "declaredMediaIds": len(media),
             "identifiersReachingMedia": sum(1 for v in media_reached.values() if v),
