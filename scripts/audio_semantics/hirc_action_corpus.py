@@ -1662,6 +1662,10 @@ def aggregate_current_hirc_actions(
     type11_plugins: Counter[str] = Counter()
     type11_terminators: Counter[str] = Counter()
     type08_body_totals: Counter[str] = Counter()
+    type12_body_totals: Counter[str] = Counter()
+    type12_body_failures: Counter[str] = Counter()
+    type12_body_unsupported: Counter[str] = Counter()
+    type12_body_selectors: Counter[str] = Counter()
     type08_tail_totals: Counter[str] = Counter()
     type08_tail_counts: Counter[str] = Counter()
     type08_tail_codes: Counter[str] = Counter()
@@ -1768,6 +1772,16 @@ def aggregate_current_hirc_actions(
         for key in TYPE08_BODY_FIELDS:
             type08_body_totals[key] += package_type08_body[key]
         type08_body_failures.update(package_type08_body["failureCategories"])
+        package_type12_body = _read_type12_body_frame(
+            package.get("hircType12BodyFrame"), package_label
+        )
+        for key in TYPE08_BODY_FIELDS:
+            type12_body_totals[key] += package_type12_body[key]
+        type12_body_failures.update(package_type12_body["failureCategories"])
+        type12_body_unsupported.update(package_type12_body["unsupportedCategories"])
+        type12_body_selectors.update(
+            (package.get("hircType12BodyFrame") or {}).get("selectorCounts") or {}
+        )
         package_type08_tail = _read_type08_tail_census(
             package.get("hircType08Tail"), package_label
         )
@@ -2200,6 +2214,12 @@ def aggregate_current_hirc_actions(
             **{key: int(type08_tail_totals[key]) for key in TYPE08_TAIL_SCALARS},
             "recordCountCounts": dict(sorted(type08_tail_counts.items())),
             "thirdFieldCounts": dict(sorted(type08_tail_codes.items())),
+        },
+        "type12BodyFrames": {
+            **{key: int(type12_body_totals[key]) for key in TYPE08_BODY_FIELDS},
+            "failureCategories": dict(sorted(type12_body_failures.items())),
+            "unsupportedCategories": dict(sorted(type12_body_unsupported.items())),
+            "selectorCounts": dict(sorted(type12_body_selectors.items())),
         },
         "type08BodyFrames": {
             **{key: int(type08_body_totals[key]) for key in TYPE08_BODY_FIELDS},
@@ -3274,8 +3294,8 @@ def type08_tail_records_are_located_by_a_unique_count(corpus: dict[str, Any]) ->
     return sum(int(value) for value in codes.values()) == int(corpus.get("records") or 0)
 
 
-def _read_type08_body_frame(container: Any, label: str) -> dict[str, Any]:
-    """Validate one package's or bank's type 0x08 whole-body census.
+def _read_partial_body_frame(container: Any, label: str, type_label: str) -> dict[str, Any]:
+    """Validate one package's or bank's whole-body census for a type that does not close.
 
     Type 0x08 does not close, so it is read here rather than through the lane
     framework: a lane that cannot account for every body has no business
@@ -3289,32 +3309,40 @@ def _read_type08_body_frame(container: Any, label: str) -> dict[str, Any]:
             "failureCategories": {}, "unsupportedCategories": {},
         }
     if not isinstance(container, dict):
-        raise ValueError(f"type 0x08 body census is not an object: {label}")
+        raise ValueError(f"type {type_label} body census is not an object: {label}")
     out: dict[str, Any] = {}
     for key in TYPE08_BODY_FIELDS:
         try:
             value = int(container[key])
         except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError(f"type 0x08 body census has invalid {key}: {label}") from exc
+            raise ValueError(f"type {type_label} body census has invalid {key}: {label}") from exc
         if value < 0:
-            raise ValueError(f"type 0x08 body census has negative {key}: {label}")
+            raise ValueError(f"type {type_label} body census has negative {key}: {label}")
         out[key] = value
     for key in ("failureCategories", "unsupportedCategories"):
         raw = container.get(key)
         if not isinstance(raw, dict):
-            raise ValueError(f"type 0x08 body census has invalid {key}: {label}")
+            raise ValueError(f"type {type_label} body census has invalid {key}: {label}")
         out[key] = {str(name): int(count) for name, count in raw.items()}
     if out["exact"] + out["unsupported"] + out["failed"] + out["ambiguous"] != out["count"]:
-        raise ValueError(f"type 0x08 body outcomes do not partition its bodies: {label}")
+        raise ValueError(f"type {type_label} body outcomes do not partition its bodies: {label}")
     if sum(out["failureCategories"].values()) != out["failed"]:
-        raise ValueError(f"type 0x08 failure categories do not cover its failures: {label}")
+        raise ValueError(f"type {type_label} failure categories do not cover its failures: {label}")
     if sum(out["unsupportedCategories"].values()) != out["unsupported"]:
-        raise ValueError(f"type 0x08 unsupported categories do not cover its bodies: {label}")
+        raise ValueError(f"type {type_label} unsupported categories do not cover its bodies: {label}")
     return out
 
 
-def type08_bodies_are_exact_or_named(corpus: dict[str, Any]) -> bool:
-    """Every type 0x08 body is either framed byte-exact or fenced by a named reason.
+def _read_type08_body_frame(container: Any, label: str) -> dict[str, Any]:
+    return _read_partial_body_frame(container, label, "0x08")
+
+
+def _read_type12_body_frame(container: Any, label: str) -> dict[str, Any]:
+    return _read_partial_body_frame(container, label, "0x12")
+
+
+def partial_bodies_are_exact_or_named(corpus: dict[str, Any]) -> bool:
+    """Every body is either framed byte-exact or fenced by a named reason.
 
     This type is **not** closed and the gate does not pretend otherwise. What it
     forbids is the thing that would make a partial framing untrustworthy: a body
@@ -3341,6 +3369,12 @@ def type08_bodies_are_exact_or_named(corpus: dict[str, Any]) -> bool:
         and sum(int(v) for v in (corpus.get("unsupportedCategories") or {}).values())
         == int(corpus.get("unsupported") or 0)
     )
+
+
+# Numeric types 0x08 and 0x12 share one layout, so they share one gate. Keeping the
+# two names is deliberate: a failure message has to say which type broke.
+type08_bodies_are_exact_or_named = partial_bodies_are_exact_or_named
+type12_bodies_are_exact_or_named = partial_bodies_are_exact_or_named
 
 
 def _read_type11_source_census(census: Any, label: str) -> dict[str, Any]:
@@ -3782,6 +3816,58 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             "nothing here establishes what any of them measures.",
         ]
 
+    body12 = report["corpus"].get("type12BodyFrames") or {}
+    body12_lines = []
+    if body12.get("count"):
+        selectors12 = body12.get("selectorCounts") or {}
+        body12_lines = [
+            "",
+            "## Numeric type `0x12` shares numeric type `0x08`'s layout",
+            "",
+            f"- Bodies: {body12['count']:,}; framed to the declared body end: "
+            f"{body12['exact']:,}; fenced: {body12['failed'] + body12['unsupported']:,}; "
+            f"ambiguous: {body12['ambiguous']:,}.",
+            "",
+            "| Fence reason | Bodies |",
+            "|---|---:|",
+            *(
+                f"| `{name}` | {count:,} |"
+                for name, count in sorted((body12.get("failureCategories") or {}).items())
+            ),
+            "",
+            "| Second-list key | Bodies |",
+            "|---|---:|",
+            *(
+                f"| `{name}` | {count:,} |"
+                for name, count in sorted(selectors12.items())
+                if name.startswith("secondListKey_")
+            ),
+            "",
+            "The layout is the one numeric type `0x08` already uses: a reference, a "
+            "counted key/value block, a second list whose key sizes its value, nine "
+            "bytes, a zero word, the counted run of six-byte entries with its extra "
+            "byte when the count is nonzero, and five zero bytes. Two of the three "
+            "second-list keys and their widths -- `0x15` at 11 bytes and `0x1D` at 27 "
+            "-- are `0x08`'s.",
+            "",
+            "The widths were **solved for, not guessed**. Everything after the second "
+            "list is deterministic, so each body was asked which value width makes it "
+            "close exactly; every body that closes has exactly one such width, and the "
+            "width is a function of the key alone.",
+            "",
+            "One thing this does **not** decide. Key `0x0A` always arrives with a list "
+            "count of 3 and a twelve-byte value, and the other two keys always arrive "
+            "with a count of 1. So \"the key decides the width\" and \"the count "
+            "multiplies a per-key width of 4, 11 and 27\" predict the same bytes "
+            "everywhere in this corpus. The simpler rule is implemented; the ambiguity "
+            "is recorded rather than resolved, and a body with a count this corpus has "
+            "not shown would separate them.",
+            "",
+            "Numeric type `0x08` reaches into this type: the first word of `0x08`'s "
+            "tail head names a `0x12` object. The two were framed together for that "
+            "reason, and neither would have closed as fast alone.",
+        ]
+
     words08 = report["corpus"].get("type08TailHeadWords") or {}
     words08_lines = []
     if words08.get("heads"):
@@ -3979,6 +4065,7 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             *body08_lines,
             *tail08_lines,
             *words08_lines,
+            *body12_lines,
             *source_lines,
             *head_lines,
             "",
@@ -4348,9 +4435,13 @@ def run_current_corpus_audit(
     type17_closed = type17_is_framed_except_the_tied_block(type17_corpus)
     type08_corpus = corpus["type08HeadWords"]
     type08_body_corpus = corpus["type08BodyFrames"]
+    type12_body_corpus = corpus["type12BodyFrames"]
     type08_tail_corpus = corpus["type08TailRecords"]
     type08_word_corpus = corpus["type08TailHeadWords"]
     type08_closed = type08_head_words_are_null_or_resolve(type08_corpus)
+    type12_body_named = type12_bodies_are_exact_or_named(
+        report["corpus"].get("type12BodyFrames") or {}
+    )
     type08_head_named = type08_tail_head_names_one_object_type(
         report["corpus"].get("type08TailHeadWords") or {}
     )
@@ -4374,6 +4465,7 @@ def run_current_corpus_audit(
         and type08_body_named
         and type08_tail_located
         and type08_head_named
+        and type12_body_named
         and type08_closed
         and type17_closed
         and type09_closed
@@ -4405,6 +4497,7 @@ def run_current_corpus_audit(
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
             "type08BodyFrames": type08_body_corpus,
+            "type12BodyFrames": type12_body_corpus,
             "type08TailRecords": type08_tail_corpus,
             "type08TailHeadWords": type08_word_corpus,
             "type17Bodies": type17_corpus,
@@ -4473,6 +4566,14 @@ def run_current_corpus_audit(
             f"bodies={type08_corpus['bodies']} resolved={type08_corpus['resolved']} "
             f"null={type08_corpus['null']} unresolved={type08_corpus['unresolved']} "
             f"tooShort={type08_corpus['tooShort']}"
+        )
+    if not type12_body_named:
+        body12 = report["corpus"].get("type12BodyFrames") or {}
+        lane_failures.append(
+            "type 0x12 bodies are not all exact or named: "
+            f"count={body12.get('count')} exact={body12.get('exact')} "
+            f"failed={body12.get('failed')} unsupported={body12.get('unsupported')} "
+            f"ambiguous={body12.get('ambiguous')}"
         )
     if not type08_head_named:
         words08 = report["corpus"].get("type08TailHeadWords") or {}

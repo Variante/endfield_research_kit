@@ -18,6 +18,8 @@ from scripts.audio_semantics.hirc_action_corpus import (
     type11_sources_share_the_type02_plugin_space,
     type11_bodies_share_one_terminator,
     type08_bodies_are_exact_or_named,
+    type12_bodies_are_exact_or_named,
+    _read_type12_body_frame,
     type08_tail_records_are_located_by_a_unique_count,
     type08_tail_head_names_one_object_type,
     _read_type08_tail_word_census,
@@ -262,6 +264,17 @@ def valid_action_fixture():
         "headsOfTheObservedWidth": 1,
         "headIsNotTheObservedWidth": 0,
     }
+    type12_body = {
+        "count": 4,
+        "exact": 3,
+        "unsupported": 0,
+        "failed": 1,
+        "ambiguous": 0,
+        "bodyBytes": 240,
+        "failureCategories": {"trailer_is_not_five_bytes": 1},
+        "unsupportedCategories": {},
+        "selectorCounts": {"secondListKey_15": 2, "secondListKey_0A": 1},
+    }
     type08_tail_words = {
         "heads": 1,
         "packagePopulation": 200,
@@ -451,6 +464,7 @@ def valid_action_fixture():
                     "hircType08BodyFrame": copy.deepcopy(type08_body),
                     "hircType08Tail": copy.deepcopy(type08_tail),
                     "hircType08TailWords": copy.deepcopy(type08_tail_words),
+                    "hircType12BodyFrame": copy.deepcopy(type12_body),
                     "hircType17": copy.deepcopy(type17_bodies),
                     "hircType09": copy.deepcopy(type09_bodies),
                     "hircType03Targets": copy.deepcopy(type03_targets),
@@ -1635,6 +1649,38 @@ class HircActionCorpusTests(unittest.TestCase):
             _read_type08_tail_census({**census, "recordCountCounts": {}}, "unit")
         with self.assertRaisesRegex(ValueError, "do not cover its records"):
             _read_type08_tail_census({**census, "thirdFieldCounts": {"code_4": 1}}, "unit")
+
+    def test_type12_bodies_must_be_framed_or_named(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        body = result["type12BodyFrames"]
+        self.assertEqual((body["count"], body["exact"], body["failed"]), (4, 3, 1))
+        self.assertTrue(type12_bodies_are_exact_or_named(body))
+        # The second-list keys this type uses are published so the width table is
+        # visible in the report rather than only in the reader.
+        self.assertEqual(body["selectorCounts"]["secondListKey_0A"], 1)
+
+        # 0x12 shares 0x08's gate because it shares 0x08's layout; it must reject the
+        # same three shapes -- a body neither framed nor accounted for, an ambiguous
+        # body, and a corpus where nothing framed.
+        self.assertFalse(type12_bodies_are_exact_or_named({**body, "count": 5}))
+        self.assertFalse(type12_bodies_are_exact_or_named({**body, "ambiguous": 1, "count": 5}))
+        self.assertFalse(
+            type12_bodies_are_exact_or_named(
+                {**body, "exact": 0, "failed": 4,
+                 "failureCategories": {"trailer_is_not_five_bytes": 4}}
+            )
+        )
+
+    def test_a_type12_body_census_that_loses_a_body_is_refused(self) -> None:
+        _, _, _, audio_audit = valid_action_fixture()
+        census = audio_audit["rows"][0]["package"]["hircType12BodyFrame"]
+        # The message has to name the type: two types share this reader, and a failure
+        # that does not say which one broke is not actionable.
+        with self.assertRaisesRegex(ValueError, "type 0x12 body outcomes do not partition"):
+            _read_type12_body_frame({**census, "count": 9}, "unit")
+        with self.assertRaisesRegex(ValueError, "type 0x12 failure categories"):
+            _read_type12_body_frame({**census, "failureCategories": {}}, "unit")
 
     def test_type08_bodies_must_be_framed_or_named(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

@@ -608,6 +608,12 @@ parse. Failures are forbidden; fencing everything is refused.
 It gates numeric type `0x08`'s leading word too: null, or exactly one same-bank
 object, never a non-null value naming nothing.
 
+Numeric type `0x12` shares that layout and frames byte-exact in 213 of its 251
+bodies; its second-list keys are `0x08`'s `0x15` (11 bytes) and `0x1D` (27) plus
+`0x0A` (12). The widths were solved for rather than guessed -- everything after the
+second list is deterministic, so each body was asked which width closes it, and
+every body that closes has exactly one. Both types share one reader and one gate.
+
 Numeric type `0x08`'s **body** is now framed byte-exact in 96 of its 161 bodies:
 a reference, the counted key/value block `0x16` uses, a one-entry list whose key
 sizes its value, a fixed nine-byte signature, a zero word, a counted run of

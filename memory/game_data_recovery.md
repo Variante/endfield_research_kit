@@ -1980,6 +1980,28 @@ Stable conclusions:
   null-reference bodies frames under it. It was fitted to nothing. The general
   lesson: when a special case is suggested by a handful of bodies, check that
   removing it changes the count before keeping it.
+- **Numeric type `0x12` shares `0x08`'s layout, and 213 of its 251 bodies now frame
+  byte-exact.** Reference, counted key/value block, a second list whose key sizes
+  its value, nine bytes, a zero word, the counted run of six-byte entries with its
+  extra byte when the count is nonzero, five zero bytes. Two of the three
+  second-list keys are `0x08`'s own: `0x15` -> 11 bytes, `0x1D` -> 27, plus `0x0A`
+  -> 12. All 38 fenced bodies carry one reason, `trailer_is_not_five_bytes`.
+- **How the widths were found, and why it is not a guess.** Everything after the
+  second list is deterministic, so each body was asked which value width closes it
+  exactly. Every body that closes has **exactly one** such width, and the width is a
+  function of the key alone. Do not fit widths by eye; solve for them this way.
+- **The nine bytes are a field, not a signature.** In `0x08` they are always
+  `02 e8 03 00 00 00 00 c0 c2`; in `0x12` they are `00 00 00 00 00 9a 99 c0 c2`.
+  Both read as a byte, a `u32` and a float near -96. The `0x08` framer still matches
+  them literally, which is a fence that happens to hold for that type.
+- **An ambiguity left open on purpose.** Key `0x0A` always arrives with a list count
+  of 3 and a 12-byte value; the other keys always arrive with a count of 1. So "the
+  key decides the width" and "the count multiplies a per-key width of 4, 11 and 27"
+  predict the same bytes everywhere in this corpus. The simpler rule is implemented.
+- **What made this fast**: `0x08`'s tail head names a `0x12` object, so the two were
+  attacked together. The reusable lesson is the one `0x16` already taught, now
+  twice confirmed -- *when a small type resists, look for a structure another type
+  already closes*, and here the whole layout was shared, not just a block.
 - The other small types do **not** share `0x08`'s head. Their leading word names
   nothing in 119 of 251 `0x12` bodies, all 453 `0x10` bodies, and all 2,645 `0x11`
   bodies, so offset 0 is simply not a reference field for them. `0x12`'s first
