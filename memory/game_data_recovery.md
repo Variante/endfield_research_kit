@@ -3340,11 +3340,17 @@ that later fails says nothing, because the walk that reached it may be desynchro
   single hit would have been decisive. Finding none is a narrow but real elimination,
   not a failed experiment. **A test with a tiny false-positive rate is powerful for
   confirming and weak for refuting; say which of the two you got.**
-- **The stronger test has not been run.** The 221 is the reader's *audio-filtered*
-  subset (`metadata.audioLiteralCount = 221`); `global-metadata.dat` holds **49,324**
-  distinct literals. Even at that size the expected chance matches are **0.05**, so
-  testing `+12`, `+20` and `+32` against the full set would be decisive either way and
-  is the obvious next move on these words.
+- **The stronger test has now been run, and it is decisively negative.** Against the
+  **24,231** distinct hashes of every identifier-shaped literal in
+  `global-metadata.dat` -- not the 221 audio-filtered ones -- **all twelve offsets
+  score 0**. Expected chance matches are **0.024**, so a single hit would have been
+  conclusive and there are none.
+- `scripts/audio_semantics/hirc_named_reach.py` already exposes `broad_literals()` for
+  exactly this: identifier-shaped literals without the audio prefix vocabulary. **The
+  population I said I would need was already a function in the repo.**
+- So `0x0B`'s `+12`, `+20` and `+32` are eliminated as object references (same-bank
+  and corpus-wide), source and media ids, floats, fixed-point fractions, **and name
+  hashes**. Five populations, all negative, all properly powered.
 - **None of the header words is a source id either.** Scored against the full
   source-id population, every offset including `+12`, `+20` and `+32` matches **zero**
   -- so those remain unread, now eliminated as object references, name hashes, floats,
