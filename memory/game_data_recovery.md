@@ -2116,6 +2116,19 @@ Stable conclusions:
   4,158 bodies; `0x0C` holds the constant bytes `0x64` (100) at -2 and `0x32` (50)
   at -4 in all 742; `0x0D` has **30** constant byte positions in its last 120, and
   every one of them is `0x00`. *When a type's head resists, tabulate from the end.*
+- **Type `0x0D`'s body lengths are `165 + 34a + 5b`.** 2,273 of 2,431 fit, 130 do
+  not, 28 are ambiguous; the modal `(a, b)` are `(1,0)` 906, `(1,1)` 410, `(2,0)`
+  352, `(2,1)` 239, `(1,2)` 78, `(0,0)` 41. So this type has a **34-byte repeating
+  element** and a **5-byte optional field** -- and that 5-byte optional field is the
+  same one `0x0B`'s entry widths show (84/89, 132/137, 168/173).
+- **The arithmetic check that makes this worth believing.** 34 and 5 are coprime, so
+  every `d >= 132` is representable for free (Frobenius number 131) and a fit there
+  means nothing. Only **91** of the 2,431 bodies are in that range; **2,210** fit
+  uniquely with `d < 132`, where roughly half the integers are representable at all.
+  And it is type-specific: `0x0A` does **not** fit this shape (3,807 of 4,158 fail
+  against base 101), so it is not just small-coefficient coverage.
+- Still **not** a frame for `0x0D`: no 34-byte element has been located in the bytes,
+  only inferred from the length distribution. Find one before framing it.
 - **Count the constants, and do not read a distinct-value count as a byte value.**
   The first version of this tabulation printed a constant as two hex digits and a
   varying position as its number of distinct values, in the same column. A position
