@@ -2185,6 +2185,35 @@ caller and skipped by the deserializer; a `[vt+0x78]` tag check gates entry with
 
 plus `0x0A`-`0x0D`, which are not parsed at all. **The obstacle recorded for these was a
 licence; it was never the licence.**
+
+#### THE SHARED SUB-PARSER, AND THE REGISTRY BOTH TYPES RESOLVE AGAINST
+
+`0x1800dcfd0` -- what `0x09` delegates to -- is the common block:
+
+```
+call qword ptr [rax + 0x1f8]     ; per-class step 1, must return 1
+test bl, bl ; jne done           ; the flag the caller passes in r9b (0x09 passes 0)
+call qword ptr [rax + 0x200]     ; per-class step 2, cursor by reference
+mov  ebp, [rcx] ; add rcx,4 ; mov [r15], rcx      ; read a u32
+test ebp, ebp ; je skip                            ; 0 == none
+mov  rbx, [rip+0x267983]         ; global object manager
+lock cmpxchg [rbx+0x58] ...      ; refcount
+div  dword ptr [rbx+0xa0]        ; id % bucketCount, then walk the chain
+```
+
+So the shared block reads **one u32 object reference, resolved through the global node
+registry**, bracketed by two per-class virtuals at `[vt+0x1f8]` and `[vt+0x200]`.
+
+***The registries are the same one, which is checkable rather than assumed.*** `0x12`'s
+parser reaches it as `[rip+0x23b911]` from `0x1801090c7` and the shared block as
+`[rip+0x267983]` from `0x1800dd055`. Both resolve to **`0x1803449d8`**. *Two different
+displacements from two different call sites landing on one address is the kind of
+arithmetic that either agrees exactly or is wrong* -- and it agrees.
+
+**So `0x09` and `0x12` both carry an outbound object reference as their first parsed field
+after the node id, and both resolve it against the same registry.** The per-class detail
+lives behind `[vt+0x1f8]` / `[vt+0x200]` for `0x09` and `[vt+0x1f0]` for `0x12`, which is
+where the remaining field sequences are.
 - **Numeric type `0x12` is the one HIRC type with no framing at all, and these
   readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
   grammar -- its word at offset 4 fails `range_section` on all 251. It is not the
