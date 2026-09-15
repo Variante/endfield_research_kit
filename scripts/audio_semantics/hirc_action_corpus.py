@@ -1702,6 +1702,7 @@ def aggregate_current_hirc_actions(
     type0a_head_conditioned: Counter[str] = Counter()
     type0a_head_words: Counter[str] = Counter()
     type0a_element_values: Counter[str] = Counter()
+    type0a_tail_bytes: Counter[str] = Counter()
     music_head_by_type: Counter[str] = Counter()
     music_head_offsets: Counter[str] = Counter()
     music_head_discriminants: Counter[str] = Counter()
@@ -1886,6 +1887,7 @@ def aggregate_current_hirc_actions(
         for key in ("elementTotal", "elementLeadingByteNotZero", "elementPadNotZero"):
             type0a_head_totals[key] += package_head0a[key]
         type0a_element_values.update(package_head0a["elementValueCounts"])
+        type0a_tail_bytes.update(package_head0a["tailBytesByOutcome"])
 
         package_reference = _read_reference_census(
             package.get("hircReferenceCensus"), package_label
@@ -2352,6 +2354,7 @@ def aggregate_current_hirc_actions(
             "elementLeadingByteNotZero": int(type0a_head_totals["elementLeadingByteNotZero"]),
             "elementPadNotZero": int(type0a_head_totals["elementPadNotZero"]),
             "elementValueCounts": dict(sorted(type0a_element_values.items())),
+            "tailBytesByOutcome": dict(sorted(type0a_tail_bytes.items())),
         },
         "musicReferences": {
             **{key: int(music_ref_totals[key]) for key in MUSIC_REFERENCE_SCALARS},
@@ -2899,7 +2902,7 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
             "bodies": 0, "bodiesWhereTheRuleApplies": 0, "elementTotal": 0,
             "elementLeadingByteNotZero": 0, "elementPadNotZero": 0,
             "namesTheSourceType": {}, "namesTheSourceTypeWhereTheRuleApplies": {},
-            "headWordTargets": {}, "elementValueCounts": {},
+            "headWordTargets": {}, "elementValueCounts": {}, "tailBytesByOutcome": {},
         }
     if not isinstance(census, dict):
         raise ValueError(f"type 0x0A head census is not an object: {label}")
@@ -2932,6 +2935,10 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
                     f"type 0x0A head census scores {name} above its {ceiling}: {label}"
                 )
         out[key] = scores
+    raw = census.get("tailBytesByOutcome")
+    if not isinstance(raw, dict):
+        raise ValueError(f"type 0x0A head census has invalid tailBytesByOutcome: {label}")
+    out["tailBytesByOutcome"] = {str(name): int(count) for name, count in raw.items()}
     raw = census.get("elementValueCounts")
     if not isinstance(raw, dict):
         raise ValueError(f"type 0x0A head census has invalid elementValueCounts: {label}")
@@ -2941,6 +2948,42 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
             f"type 0x0A element values do not cover its elements: {label}"
         )
     return out
+
+
+# The reference is an optional four-byte field, so a body without it is exactly
+# four bytes shorter after the head.
+TYPE0A_REFERENCE_FIELD_BYTES = 4
+# 255 of the 263 bodies without a reference share one tail length; the rest come
+# from the flagged families where the head rule lands elsewhere.
+TYPE0A_REFERENCE_ABSENT_SHARE = 0.90
+
+
+def the_type0a_reference_is_an_optional_four_byte_field(corpus: dict[str, Any]) -> bool:
+    """Bodies without the reference are exactly four bytes shorter after the head.
+
+    The 255 bodies that carry no type 0x0B reference are not anomalies and this is
+    what shows it: measured from the end of the head they are all one length, and
+    that length is four less than the commonest length of the bodies that do carry
+    one. The reference is an optional field and its absence is the whole difference.
+
+    The dominant length has to carry nearly all of the bodies without a reference:
+    255 of the 263 sit at one value, and the eight that do not come from the flagged
+    families where the head rule lands elsewhere. Bodies *with* a reference are
+    allowed many lengths, because the tail beyond the reference is not claimed here.
+    """
+    outcomes = {
+        str(k): int(v) for k, v in (corpus.get("tailBytesByOutcome") or {}).items()
+    }
+    without = {k: v for k, v in outcomes.items() if k.startswith("withoutReference_")}
+    with_ref = {k: v for k, v in outcomes.items() if k.startswith("withReference_")}
+    if not without or not with_ref:
+        return False
+    dominant = max(without, key=lambda k: without[k])
+    if without[dominant] / sum(without.values()) < TYPE0A_REFERENCE_ABSENT_SHARE:
+        return False
+    absent = int(dominant.rsplit("_", 1)[1])
+    present = int(max(with_ref, key=lambda k: with_ref[k]).rsplit("_", 1)[1])
+    return present - absent == TYPE0A_REFERENCE_FIELD_BYTES
 
 
 # The five-byte head element: a zero byte, a 16-bit value and two zero pad bytes.
@@ -4987,6 +5030,9 @@ def run_current_corpus_audit(
         report["corpus"].get("type08BodyFrames") or {}
     )
     # True when no names were supplied: see the check's own note.
+    type0a_optional = the_type0a_reference_is_an_optional_four_byte_field(
+        report["corpus"].get("type0AHead") or {}
+    )
     type0a_elements = the_type0a_head_elements_are_padded_small_values(
         report["corpus"].get("type0AHead") or {}
     )
@@ -5028,6 +5074,7 @@ def run_current_corpus_audit(
         and type0a_head
         and type0a_word
         and type0a_elements
+        and type0a_optional
         and type08_body_named
         and type08_tail_located
         and type08_head_named
@@ -5178,6 +5225,12 @@ def run_current_corpus_audit(
             f"count={body08.get('count')} exact={body08.get('exact')} "
             f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
             f"ambiguous={body08.get('ambiguous')}"
+        )
+    if not type0a_optional:
+        head0a = report["corpus"].get("type0AHead") or {}
+        lane_failures.append(
+            "the type 0x0A reference is not an optional four-byte field: "
+            f"tails={head0a.get('tailBytesByOutcome')}"
         )
     if not type0a_elements:
         head0a = report["corpus"].get("type0AHead") or {}

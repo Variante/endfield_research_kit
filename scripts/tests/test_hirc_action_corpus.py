@@ -25,6 +25,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_type0a_head_rule_beats_its_controls,
     the_type0a_head_word_always_names_one_of_two_types,
     the_type0a_head_elements_are_padded_small_values,
+    the_type0a_reference_is_an_optional_four_byte_field,
     _read_type0a_head_census,
     _read_music_reference_census,
     type08_bodies_are_exact_or_named,
@@ -360,6 +361,7 @@ def valid_action_fixture():
         "elementLeadingByteNotZero": 0,
         "elementPadNotZero": 0,
         "elementValueCounts": {"value_0": 2, "value_1": 3, "value_2": 1},
+        "tailBytesByOutcome": {"withReference_69": 8, "withoutReference_65": 2},
     }
     music_refs = {
         "bodies": 4,
@@ -1602,6 +1604,40 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(type11_sources_share_the_type02_plugin_space(sources, {}))
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
+        )
+
+    def test_the_type0a_reference_is_an_optional_four_byte_field(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        head = result["type0AHead"]
+        self.assertTrue(the_type0a_reference_is_an_optional_four_byte_field(head))
+
+        # The whole point is the four-byte difference. Any other gap means the bodies
+        # without a reference differ in something else as well.
+        self.assertFalse(
+            the_type0a_reference_is_an_optional_four_byte_field(
+                {**head, "tailBytesByOutcome": {"withReference_69": 8, "withoutReference_61": 2}}
+            )
+        )
+        # Bodies with a reference may take many tail lengths -- the tail past the
+        # reference is not claimed -- so several must not break it.
+        self.assertTrue(
+            the_type0a_reference_is_an_optional_four_byte_field(
+                {**head, "tailBytesByOutcome":
+                    {"withReference_69": 8, "withReference_73": 3, "withoutReference_65": 2}}
+            )
+        )
+        # Bodies without one must concentrate on a single length.
+        self.assertFalse(
+            the_type0a_reference_is_an_optional_four_byte_field(
+                {**head, "tailBytesByOutcome":
+                    {"withReference_69": 8, "withoutReference_65": 2, "withoutReference_39": 2}}
+            )
+        )
+        self.assertFalse(
+            the_type0a_reference_is_an_optional_four_byte_field(
+                {**head, "tailBytesByOutcome": {"withReference_69": 8}}
+            )
         )
 
     def test_the_type0a_head_elements_are_a_zero_byte_a_small_value_and_padding(self) -> None:

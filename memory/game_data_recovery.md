@@ -2178,6 +2178,15 @@ Stable conclusions:
   `7 + 5k` family, all 56 with a nonzero count included. Over the whole type the
   generalised rule predicts the reference in **3,833 of 3,841** applicable bodies --
   **99.79%** -- against 3,744 for the single-run form.
+- **The `0x0B` reference is an OPTIONAL four-byte field, and the 255 bodies without
+  one are not anomalies.** Measured from the end of the head, **all 255 have a tail
+  of exactly 65 bytes**, while the bodies that carry a reference sit at 69 (3,383)
+  and longer. 69 - 65 = 4: the reference itself. Those bodies still carry the
+  offset-9 head word (247 to `0x0D`, 8 to `0x0C`), so they are ordinary bodies with
+  one field absent.
+- That closes the last population the head rule had excluded. The bodies it could
+  not predict were: 144 with a second counted run (now framed), and 255 with the
+  reference simply absent (now explained).
 - Why byte 21 was invisible before: in the single-run family it is one of the 16
   **constant zero** bytes of the fixed head, so the second term vanishes and the
   general rule reduces to the special one. *A count that is zero in the population
