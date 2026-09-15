@@ -2666,6 +2666,19 @@ count x u32 at 36 + 5*body[14]   -- object ids
   match is worth nothing. The gap from the array's end to the next reference is also
   large and variable -- 99 bytes in 406 bodies, 126 in 240, 107 in 32 -- so whatever
   holds the remaining references is not adjacent to the array.
+- **The remaining references are NOT scattered either -- they start at a computed
+  position.** Measuring the first reference after the array as
+  `offset - 4*arrayLength - 5*selector` gives **135 in 406 bodies and 162 in 240** --
+  **646 of 704, or 92%** -- with every other value in single digits. So the next block
+  begins at `135 + 4n + 5k` or `162 + 4n + 5k`, the two differing by 27.
+- **No selector found.** Nothing in the first 32 bytes separates the two groups.
+  Bytes 9 to 12 look 86% pure, but those *are* the parent reference, so that is
+  objects under a common parent sharing a layout rather than a flag. *A "selector"
+  that turns out to be an identifier is not a selector; check what a candidate byte
+  already is before reading it as a discriminant.*
+- So `0x0C` is better described than "a variable-length list": a parent at 9, a
+  counted array at `36 + 5k`, and a further block at a position computed from the
+  array's length. What that block contains, and what chooses 135 over 162, are open.
 - *The move that found the array is the same move that produced this false positive.
   What separates them is the length spread: the first array's lengths run 1 to 9 and
   the second's are all 1. A counted-array claim is only as good as the variation in
