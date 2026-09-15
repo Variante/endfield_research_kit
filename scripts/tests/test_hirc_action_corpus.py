@@ -16,6 +16,9 @@ from scripts.audio_semantics.hirc_action_corpus import (
     _read_type11_element_census,
     TYPE11_BODY_MINIMUM_EXACT,
     the_type11_body_frame_covers_most_of_its_corpus,
+    the_extended_trailer_is_opened_by_the_trailing_block,
+    the_trailer_branches_partition_the_framed_bodies,
+    the_trailer_close_block_ends_in_eight_zeros,
     TYPE11_HEADER_SCALARS,
     _read_hierarchy_census,
     _read_music_mutuality_census,
@@ -3196,6 +3199,154 @@ class Type11ElementFrameTests(unittest.TestCase):
         base["frameClosesWithRuns"] = {"frame_5_11_7_12": 6}
         with self.assertRaises(ValueError):
             _read_type11_element_census(base, "pkg")
+
+
+SELECTORS = {
+    "leadingFlag_00": 3861,
+    "elementTrailerFlag_0": 3108,
+    "elementTrailerFlag_1": 575,
+    "elementTrailerFlag_2": 32,
+    "extendedTrailerFlag_0": 98,
+    "extendedTrailerFlag_1": 48,
+    "extendedTrailerPlainFlag_0": 146,
+}
+
+
+class Type11ExtendedTrailerTests(unittest.TestCase):
+    """Numeric type 0x0B's second element-trailer shape, and what opens it."""
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(
+            the_extended_trailer_is_opened_by_the_trailing_block(SELECTORS)
+        )
+
+    def test_one_observed_flag_is_a_point_not_a_line(self) -> None:
+        # The whole reason the maximum extended flag is 1 and not larger. With only
+        # k = 0 seen there is nothing to establish a step from, and the gate must not
+        # let a single value stand in for a rule.
+        one = dict(SELECTORS)
+        one.pop("extendedTrailerFlag_1")
+        one["extendedTrailerPlainFlag_0"] = 98
+        self.assertFalse(the_extended_trailer_is_opened_by_the_trailing_block(one))
+
+    def test_an_unexercised_flag_fails(self) -> None:
+        self.assertFalse(the_extended_trailer_is_opened_by_the_trailing_block(
+            dict(SELECTORS, extendedTrailerFlag_1=0)
+        ))
+
+    def test_an_extended_element_carrying_another_plain_flag_fails(self) -> None:
+        # The observation the reader records but does not enforce. If an element ever
+        # takes the extended branch at plain flag 1, the branch is selected by
+        # something this reading does not know about and the gate must say so.
+        self.assertFalse(the_extended_trailer_is_opened_by_the_trailing_block(
+            dict(SELECTORS, extendedTrailerPlainFlag_0=140,
+                 extendedTrailerPlainFlag_1=6)
+        ))
+
+    def test_plain_and_extended_counts_that_disagree_fail(self) -> None:
+        self.assertFalse(the_extended_trailer_is_opened_by_the_trailing_block(
+            dict(SELECTORS, extendedTrailerPlainFlag_0=145)
+        ))
+
+    def test_an_absent_branch_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_extended_trailer_is_opened_by_the_trailing_block({}))
+        self.assertFalse(the_extended_trailer_is_opened_by_the_trailing_block(
+            {"elementTrailerFlag_0": 3108}
+        ))
+
+    def test_a_malformed_selector_map_fails(self) -> None:
+        self.assertFalse(the_extended_trailer_is_opened_by_the_trailing_block(None))
+        self.assertFalse(
+            the_extended_trailer_is_opened_by_the_trailing_block([("a", 1)])
+        )
+
+
+class Type11TrailerPartitionTests(unittest.TestCase):
+    """The second trailer shape must add bodies rather than poach them."""
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_trailer_branches_partition_the_framed_bodies(
+            SELECTORS, {"count": 4325, "exact": 3861}
+        ))
+
+    def test_a_clean_transfer_between_branches_is_not_detected(self) -> None:
+        # The limit of this check, asserted rather than left implicit. If the
+        # extended branch took 100 bodies the plain branch used to close, the sum
+        # would be unchanged and this gate would pass. It is here so that nobody
+        # reads the passing gate as evidence the coverage gain was real -- that
+        # comes from the plain flag counts being unmoved, not from this sum.
+        transferred = dict(
+            SELECTORS, elementTrailerFlag_0=3008,
+            extendedTrailerFlag_0=198, extendedTrailerPlainFlag_0=246,
+        )
+        self.assertTrue(the_trailer_branches_partition_the_framed_bodies(
+            transferred, {"count": 4325, "exact": 3861}
+        ))
+
+    def test_a_body_counted_in_neither_branch_fails(self) -> None:
+        self.assertFalse(the_trailer_branches_partition_the_framed_bodies(
+            dict(SELECTORS, elementTrailerFlag_0=3100),
+            {"count": 4325, "exact": 3861},
+        ))
+
+    def test_a_body_counted_in_both_branches_fails(self) -> None:
+        self.assertFalse(the_trailer_branches_partition_the_framed_bodies(
+            dict(SELECTORS, extendedTrailerFlag_1=58),
+            {"count": 4325, "exact": 3861},
+        ))
+
+    def test_an_empty_branch_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_trailer_branches_partition_the_framed_bodies(
+            {"elementTrailerFlag_0": 3715}, {"count": 4325, "exact": 3715}
+        ))
+        self.assertFalse(the_trailer_branches_partition_the_framed_bodies({}, {}))
+
+    def test_malformed_input_fails(self) -> None:
+        self.assertFalse(
+            the_trailer_branches_partition_the_framed_bodies(None, {"exact": 1})
+        )
+        self.assertFalse(
+            the_trailer_branches_partition_the_framed_bodies(SELECTORS, None)
+        )
+
+
+class Type11CloseBlockTests(unittest.TestCase):
+    """Every element trailer ends with four variable bytes and eight zero ones."""
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_trailer_close_block_ends_in_eight_zeros(
+            {"closeBlocks": 3861,
+             "closeBlocksEndingInEightZeros": 3861,
+             "closeBlockControlsEndingInEightZeros": 0}
+        ))
+
+    def test_a_single_block_without_the_zeros_fails(self) -> None:
+        self.assertFalse(the_trailer_close_block_ends_in_eight_zeros(
+            {"closeBlocks": 3861,
+             "closeBlocksEndingInEightZeros": 3860,
+             "closeBlockControlsEndingInEightZeros": 0}
+        ))
+
+    def test_a_control_that_scores_as_well_fails(self) -> None:
+        # The check that stops this being a statement about long zero runs in
+        # general. If the same width four bytes earlier is also mostly zeros, the
+        # eight zeros say nothing about this particular block.
+        self.assertFalse(the_trailer_close_block_ends_in_eight_zeros(
+            {"closeBlocks": 3861,
+             "closeBlocksEndingInEightZeros": 3861,
+             "closeBlockControlsEndingInEightZeros": 3400}
+        ))
+
+    def test_an_empty_census_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_trailer_close_block_ends_in_eight_zeros({}))
+        self.assertFalse(the_trailer_close_block_ends_in_eight_zeros(
+            {"closeBlocks": 0, "closeBlocksEndingInEightZeros": 0,
+             "closeBlockControlsEndingInEightZeros": 0}
+        ))
+
+    def test_malformed_input_fails(self) -> None:
+        self.assertFalse(the_trailer_close_block_ends_in_eight_zeros(None))
+        self.assertFalse(the_trailer_close_block_ends_in_eight_zeros("blocks"))
 
 
 class Type11BodyLaneTests(unittest.TestCase):

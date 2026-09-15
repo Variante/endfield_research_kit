@@ -1752,6 +1752,7 @@ def aggregate_current_hirc_actions(
     type11_header_elements: Counter[str] = Counter()
     type11_header_entries: Counter[str] = Counter()
     type11_header_codes: Counter[str] = Counter()
+    type11_header_close_heads: Counter[str] = Counter()
     type11_element_totals: Counter[str] = Counter()
     type11_element_maps: dict[str, Counter] = {
         key: Counter() for key in TYPE11_ELEMENT_MAPS
@@ -2011,6 +2012,7 @@ def aggregate_current_hirc_actions(
         type11_header_elements.update(package_t11hdr["elementCountValues"])
         type11_header_entries.update(package_t11hdr["entryCountValues"])
         type11_header_codes.update(package_t11hdr["curveCodes"])
+        type11_header_close_heads.update(package_t11hdr["closeBlockHeads"])
         package_t11el = _read_type11_element_census(
             package.get("hircType11Elements"), package_label
         )
@@ -2561,6 +2563,7 @@ def aggregate_current_hirc_actions(
             "elementCountValues": dict(sorted(type11_header_elements.items())),
             "entryCountValues": dict(sorted(type11_header_entries.items())),
             "curveCodes": dict(sorted(type11_header_codes.items())),
+            "closeBlockHeads": dict(sorted(type11_header_close_heads.items())),
         },
         "type11Elements": {
             **{key: int(type11_element_totals[key]) for key in TYPE11_ELEMENT_SCALARS},
@@ -3417,6 +3420,110 @@ def the_type11_body_frame_covers_most_of_its_corpus(corpus: dict[str, Any]) -> b
     return exact >= count * TYPE11_BODY_MINIMUM_EXACT
 
 
+def the_extended_trailer_is_opened_by_the_trailing_block(
+    selectors: dict[str, Any],
+) -> bool:
+    """Numeric type 0x0B has a second element-trailer shape, and something opens it.
+
+    The plain trailer is 7 + 5 * flag bytes plus a fixed 12-byte close. 3,715 bodies
+    framed under it and 610 did not, and among the failures one group was exact about
+    what it wanted: 98 bodies were 7 bytes short and 48 were 12 bytes short, at flag
+    0, where the flag says the trailer should be 19.
+
+    The first byte of the element's trailing block is 1 in exactly those 146 elements
+    and 0 in the 3,108 that frame at flag 0 -- a clean split, not a majority. When it
+    is 1 the head is 14 + 5 * k with k the byte seven into the trailer.
+
+    Scored against controls in every part, corpus-wide rather than per package. The
+    opening byte: position 0 reaches 3,861 bodies, the other eleven at most 3,719.
+    The base: 14 reaches 3,861, while 10, 12, 13, 15, 16 and 19 reach 3,715 and so add
+    nothing whatever. The selector: byte 7 reaches 3,861 where the bytes that happen
+    to be zero in this group reach 3,813 -- they close the k = 0 bodies and fail the
+    k = 1 ones, which is what a wrong selector looks like.
+
+    The gate asserts the shape the reader publishes, not the search that found it:
+    both extended flags must be exercised, every extended element must also carry
+    plain flag 0, and the two must agree on the total.
+    """
+    if not isinstance(selectors, dict):
+        return False
+    extended = {
+        name: int(value) for name, value in selectors.items()
+        if name.startswith("extendedTrailerFlag_")
+    }
+    if len(extended) < 2:
+        # One observed value is a point, not a line. Refuse to call it a rule.
+        return False
+    if any(value <= 0 for value in extended.values()):
+        return False
+    plain = {
+        name: int(value) for name, value in selectors.items()
+        if name.startswith("extendedTrailerPlainFlag_")
+    }
+    if sum(plain.values()) != sum(extended.values()):
+        return False
+    # Every element that takes the extended branch carries plain flag 0. If that ever
+    # stops being true the branch is selected by something this reading does not know
+    # about, and the gate should say so rather than let it pass.
+    return set(plain) == {"extendedTrailerPlainFlag_0"}
+
+
+def the_trailer_branches_partition_the_framed_bodies(
+    selectors: dict[str, Any], corpus: dict[str, Any]
+) -> bool:
+    """The two element-trailer shapes must partition the bodies that frame.
+
+    Every framed body in this corpus carries exactly one element, so each one takes
+    exactly one branch and the two branch totals must add up to the framed count.
+    That catches a body counted twice and a body counted in neither -- the two ways
+    a second branch goes wrong when it is bolted onto a working one.
+
+    It does **not** catch the third way, and saying so is the point of this note: if
+    the extended branch simply took bodies the plain branch used to close, the sum
+    would be unchanged and this check would pass. What rules that out here is
+    separate evidence, not this arithmetic -- the plain flag counts are still 3,108,
+    575 and 32, the same three numbers that summed to 3,715 before the branch
+    existed, so the extended branch's 146 are bodies that framed under neither.
+    """
+    if not isinstance(selectors, dict) or not isinstance(corpus, dict):
+        return False
+    plain = sum(
+        int(value) for name, value in selectors.items()
+        if name.startswith("elementTrailerFlag_")
+    )
+    extended = sum(
+        int(value) for name, value in selectors.items()
+        if name.startswith("extendedTrailerFlag_")
+    )
+    if plain <= 0 or extended <= 0:
+        return False
+    exact = int(corpus.get("exact") or 0)
+    # Every framed body carries exactly one element in this corpus, so the two branch
+    # totals must account for the framed bodies exactly. A body counted in both, or
+    # in neither, breaks the sum.
+    return plain + extended == exact
+
+
+def the_trailer_close_block_ends_in_eight_zeros(totals: dict[str, Any]) -> bool:
+    """Every element trailer ends with four variable bytes and eight zero ones.
+
+    Read only from bodies that frame, because a close block reached by a walk that
+    later fails is a block the walk may never have been standing on.
+
+    The control is the same width read four bytes earlier. If long zero runs were
+    simply common here, the shifted window would score as well; it does not, so the
+    eight zeros are a property of this block and not of the neighbourhood.
+    """
+    if not isinstance(totals, dict):
+        return False
+    blocks = int(totals.get("closeBlocks") or 0)
+    zeroed = int(totals.get("closeBlocksEndingInEightZeros") or 0)
+    control = int(totals.get("closeBlockControlsEndingInEightZeros") or 0)
+    if blocks <= 0 or zeroed != blocks:
+        return False
+    return control * 2 < blocks
+
+
 TYPE11_HEADER_SCALARS = (
     "entries", "rangeTested", "rangeIsSymmetric", "rangeIsOrdered",
     "rangeControlTested", "rangeControlIsSymmetric", "rangeControlIsOrdered",
@@ -3427,6 +3534,8 @@ TYPE11_HEADER_SCALARS = (
     "boundedFloatsTested", "boundedFloatsInBand",
     "floatControlsTested", "floatControlsInBand",
     "sourceJoinTested", "sourceJoinMatched",
+    "closeBlocks", "closeBlocksEndingInEightZeros",
+    "closeBlockControlsEndingInEightZeros",
 )
 
 
@@ -3434,7 +3543,8 @@ def _read_type11_header_census(census: Any, label: str) -> dict[str, Any]:
     """Validate one package's numeric type 0x0B entry-header census."""
     if census is None:
         return ({key: 0 for key in TYPE11_HEADER_SCALARS}
-                | {"elementCountValues": {}, "entryCountValues": {}, "curveCodes": {}})
+                | {"elementCountValues": {}, "entryCountValues": {},
+                   "curveCodes": {}, "closeBlockHeads": {}})
     if not isinstance(census, dict):
         raise ValueError(f"type 0x0B entry header census is not an object: {label}")
     out: dict[str, Any] = {}
@@ -3448,6 +3558,18 @@ def _read_type11_header_census(census: Any, label: str) -> dict[str, Any]:
         if value < 0:
             raise ValueError(f"type 0x0B entry header census has negative {key}: {label}")
         out[key] = value
+    rawh = census.get("closeBlockHeads")
+    if rawh is None:
+        rawh = {}
+    if not isinstance(rawh, dict):
+        raise ValueError(
+            f"type 0x0B entry header census has invalid closeBlockHeads: {label}"
+        )
+    out["closeBlockHeads"] = {str(name): int(value) for name, value in rawh.items()}
+    if sum(out["closeBlockHeads"].values()) != out["closeBlocks"]:
+        raise ValueError(
+            f"type 0x0B close block heads do not cover the blocks: {label}"
+        )
     for key in ("curveCodes",):
         rawc = census.get(key)
         if not isinstance(rawc, dict):
@@ -6918,6 +7040,16 @@ def run_current_corpus_audit(
     type08_body_corpus = corpus["type08BodyFrames"]
     type11_body_corpus = corpus["type11BodyFrames"]
     t11_body_ok = the_type11_body_frame_covers_most_of_its_corpus(type11_body_corpus)
+    type11_body_selectors = type11_body_corpus.get("selectorCounts") or {}
+    t11_ext_ok = the_extended_trailer_is_opened_by_the_trailing_block(
+        type11_body_selectors
+    )
+    t11_ext_free = the_trailer_branches_partition_the_framed_bodies(
+        type11_body_selectors, type11_body_corpus
+    )
+    t11_close_ok = the_trailer_close_block_ends_in_eight_zeros(
+        report["corpus"].get("type11EntryHeaders") or {}
+    )
     type12_body_corpus = corpus["type12BodyFrames"]
     type08_tail_corpus = corpus["type08TailRecords"]
     type08_word_corpus = corpus["type08TailHeadWords"]
@@ -6999,6 +7131,9 @@ def run_current_corpus_audit(
         and t11_frame_ok
         and t11_frame_control
         and t11_body_ok
+        and t11_ext_ok
+        and t11_ext_free
+        and t11_close_ok
         and t11_header_ok
         and t11_count_untested
         and t11_curves_ok
@@ -7416,6 +7551,27 @@ def run_current_corpus_audit(
             "the type 0x0B body frame no longer covers most of its corpus: "
             f"count={t11b.get('count')} exact={t11b.get('exact')} "
             f"fences={t11b.get('failureCategories')}"
+        )
+    if not t11_ext_ok:
+        lane_failures.append(
+            "the type 0x0B extended element trailer no longer has two exercised "
+            "flags whose elements all carry plain flag 0: "
+            f"{ {k: v for k, v in type11_body_selectors.items() if 'xtended' in k} }"
+        )
+    if not t11_ext_free:
+        lane_failures.append(
+            "the type 0x0B trailer branches no longer partition the framed bodies, "
+            "so a body is being counted in both branches or in neither: "
+            f"selectors={type11_body_selectors} exact={type11_body_corpus.get('exact')}"
+        )
+    if not t11_close_ok:
+        h11 = report["corpus"].get("type11EntryHeaders") or {}
+        lane_failures.append(
+            "the type 0x0B element trailer no longer ends with eight zero bytes, or "
+            "the shifted control now scores as well: "
+            f"blocks={h11.get('closeBlocks')} "
+            f"zeroed={h11.get('closeBlocksEndingInEightZeros')} "
+            f"control={h11.get('closeBlockControlsEndingInEightZeros')}"
         )
     if not t11_frame_ok:
         t11 = report["corpus"].get("type11Elements") or {}

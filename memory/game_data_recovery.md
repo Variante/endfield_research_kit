@@ -3159,7 +3159,7 @@ preceding content leaves it.
   against rivals sharing **neither** endpoint. *When scoring a two-part reading
   against rivals, rivals that share a part inherit its score; hold only the
   genuinely different ones to the wide margin.*
-### `0x0B` has a whole-body frame: 3,715 of 4,325
+### `0x0B` has a whole-body frame: 3,861 of 4,325
 
 ```
 u8  flag
@@ -3179,16 +3179,23 @@ u32 terminator, always 100
 - **This type had no frame at all before.** Every counted run in it is a count the
   body declares, and every width was settled by scoring rivals the same way rather
   than by whether the parse closed.
+- **Run the managed suite with `dotnet run --project
+  tools/AnimeStudio/AnimeStudio.CLI.Tests`, never `dotnet test`.** That project is a
+  console `Exe`, not a test-SDK project, so `dotnet test` finds no tests, prints no
+  counts and **exits 0**. A green exit there means nothing ran. The real run ends
+  with `Managed-reference and VFS recovery tests passed.`, and the `Error:` lines
+  above it are its own negative cases.
 - **The trailer length is `19 + 5 * flag`, and flags 0, 1 and 2 are each observed
   closing bodies exactly** -- 3,108, 575 and 32 elements. Three points on the line,
   not two and an extrapolation. Flag 2 was worth the check: adding it took the body
   frame from 3,683 to 3,715, and all 32 of the bodies it gained had failed on
   exactly `trailerFlag_02`. Anything above the highest observed flag is refused
   rather than assumed to continue.
-- **The 610 fenced bodies, by reason:** `entries_do_not_reach_the_terminator` 218,
-  `range_element_trailer_flag` 119, `trailing_zero_run_before_the_terminator` 104,
-  `range_element_runs` 102, `range_elements` 46, `range_element_head` 21. None is
-  partially framed into a result.
+- **The 464 fenced bodies, by reason:** `entries_do_not_reach_the_terminator` 170,
+  `range_element_trailer_flag` 119, `range_element_runs` 102, `range_elements` 46,
+  `range_element_head` 21, `trailing_zero_run_before_the_terminator` 6. None is
+  partially framed into a result. (Before the extended trailer below: 610, with 218
+  and 104 in the first and third buckets.)
 - **The largest bucket was two different things and is now named apart.** Of the 322
   bodies that stopped short of the terminator, **104 leave nothing but a run of
   zeros** -- 7 bytes in 98 of them, 5 in the other 6 -- and **218 leave real
@@ -3201,6 +3208,68 @@ u32 terminator, always 100
   leftovers carry an object id at +8. And every leftover of both sizes has `01`
   **ten bytes from the terminator**, which is where an element's short trailer puts
   its own marker.
+
+#### `0x0B` has a SECOND element trailer, opened by the trailing block: 3,861 of 4,325
+
+The residue was not noise, and it said exactly what it wanted. Of the bodies that
+walked all their entries and stopped short, **98 were 7 bytes short and 48 were 12
+bytes short, all at flag 0** -- where the flag says the trailer should be 19.
+
+- **The first byte of the element's trailing block is a second flag.** It is `1` in
+  exactly those 146 elements and `0` in the 3,108 that frame at flag 0. A clean
+  split, not a majority. When it is 1 the head is **`14 + 5 * k`**, with `k` the byte
+  seven into the trailer: `k = 0` in 98 elements and `k = 1` in 48.
+- **Every part beats its rivals corpus-wide, scored by whole-body closure.**
+
+  | part | chosen | rivals |
+  | --- | --- | --- |
+  | which block byte opens it | `block[0]`: **3,861** | the other eleven positions: at most 3,719 |
+  | the extended base | `14`: **3,861** | 10, 12, 13, 15, 16, 19: **3,715 each** -- they add nothing at all |
+  | which byte scales it | `trailer[7]`: **3,861** | bytes that are merely zero in this group: 3,813, closing the `k = 0` bodies and failing the `k = 1` ones |
+  | the step | `5`: **3,861** | 0, 3, 4, 6, 7, 8: 3,206 -- a wrong step loses bodies the plain branch had |
+
+- **Coverage rises 3,715 -> 3,861 of 4,325 (85.9% -> 89.3%)**, and the plain flag
+  counts are **unchanged at 3,108, 575 and 32**. The 146 are bodies that framed under
+  neither branch, not bodies moved between them.
+- **The step of 5 is borrowed, not established.** Only `k = 0` and `k = 1` occur,
+  which is two points; the reader refuses anything above 1 rather than extrapolating.
+  This is weaker evidence than the plain flag, where three values are each observed
+  closing bodies, and the reader says so.
+- **Every element that takes the extended branch carries plain flag 0** -- all 146.
+  Recorded rather than required: making it a rule would hide the day it stops holding.
+
+#### `0x0B`'s body ends with a fixed 12-byte block
+
+- **4,141 of 4,325 bodies (95.7%) end with `00 00 01 00 00 00 00 00 00 00 00 00`
+  immediately before the u32 terminator**, and so do 3,713 of the 3,715 that framed
+  before this batch. The two exceptions carry `00 04 01 01` in the first four bytes
+  with the same eight zeros, so the shape is **four bytes that vary and eight that are
+  zero**. Over the 3,861 close blocks the frame now reaches, the eight zeros hold
+  **3,861 of 3,861**, against **0** for the same width read four bytes earlier.
+- The trailer is therefore written as a head of `7 + 5 * flag` plus this 12-byte
+  close (19 = 7 + 12, 24 = 12 + 12, 29 = 17 + 12). **For these bodies that split is
+  not an independent fact** -- the trailer is the last thing before the terminator,
+  so "the trailer ends with the block" and "the body ends with the block" say the
+  same thing. It is written that way because the block is the same 12 bytes whether
+  or not the body frames, which makes it a property of the format rather than of the
+  walk.
+- **This is why the extended head is `14 + 5k` and not `26 + 5k`:** the close is
+  accounted for once, separately, in both branches.
+- **The residue always ends at this block**, in every failing class. So the 464
+  remaining failures misread body *interiors*; none of them has a different ending.
+
+#### `0x0B`'s residue, measured rather than guessed
+
+Of the 4,325 bodies, **306 declare more than one entry** (240 declare 2, 34 declare
+3, 16 declare 4, 2 declare 5, 10 declare 6 or more) and **4 declare none**. Among the
+4,019 single-entry bodies, **128 declare more than one element** (113 declare 2, 14
+declare 3, 1 declares 4).
+
+- **146 of the multi-entry bodies walk every entry and leave residue**; 100 more
+  desynchronise at a run count, which is what a wrong entry-header width looks like.
+  The entry header is not known to be 48 bytes for entries after the first.
+- The multi-entry residues **contain curve records** -- `0.75, 1.0, code 9` and
+  `float, 1.0, code 4` among them -- so they are unread element data, not padding.
 
 #### Correction: `0x0B`'s run splits 11 + 12n + 1, and its records ARE curve records
 
