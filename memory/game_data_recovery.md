@@ -1661,17 +1661,26 @@ Stable conclusions:
   carries almost no information here, which is a stronger version of the ambiguity
   that type `0x0E` had. A structural predictor is required, as with the `0x0E`
   flag byte.
-- Anchors that do exist, and their exact limits. Types `0x0A` and `0x0D` share an
-  opening: nine bytes (usually zero) then a 32-bit word at offset 9. That word
-  names an object in its own bank in 4,047/4,158 `0x0A` bodies and 2,321/2,431
-  `0x0D` bodies; the rest are zero (92 and 78) or name nothing at all (19 and 32).
-  The non-resolving ones were checked against **every** bank, not just their own,
-  so they are not cross-bank references -- this corpus still has no cross-bank
-  evidence. **97.3% is not a reference claim**; the bar this repo holds is every
-  value resolving, so offset 9 stays an anchor for probing and nothing more.
-- Type `0x0A` also carries a counted run of same-bank object ids, and byte 14 is a
-  count of five-byte elements: the run starts at exactly `32 + 5 * byte14` for the
-  clean cases. But a fit of `base + w14*byte14 + w17*byte17` only reaches 96.8%,
+- **Types `0x0A` and `0x0D` each name exactly one same-bank object, in every
+  body.** Body byte 2 selects where the 32-bit word sits: zero puts it at offset
+  9, nonzero at offset 5. Under that rule all 4,158 `0x0A` and all 2,431 `0x0D`
+  bodies resolve -- 6,589 of 6,589, with zero unresolved, zero null, and no
+  unobserved discriminant. Observed byte 2 values are 0 (6,368), 1 (194) and 2
+  (27); anything else must fail closed, because a fourth value has no branch.
+  This is gated inside the reference-graph report and is a Layer-4 identity fact
+  only: it says nothing about direction, containment, or meaning.
+- That corrects an earlier reading in this file. Fixing the word at offset 9 for
+  every body resolves only 97.3% of `0x0A` and 95.5% of `0x0D`, and the shortfall
+  looks like missing references. It is not: those bodies put the word at offset 5,
+  and the byte that says so is right there. **A rule that is "nearly always right"
+  is worth one more look for the byte that makes it always right** -- the same
+  lesson type `0x0E` taught. The residue really did name nothing in any bank, so
+  there is still no cross-bank evidence anywhere in this corpus.
+- Type `0x0A` also carries a *second* group of references: a counted run of
+  same-bank object ids, and byte 14 is a count of five-byte elements -- the run
+  starts at exactly `32 + 5 * byte14` for the clean cases. This run is **not**
+  gated and is not in the reference graph, because it cannot be located in 255 of
+  4,158 bodies. But a fit of `base + w14*byte14 + w17*byte17` only reaches 96.8%,
   and byte 17 takes values like 95 and 110, so it is not a second count and the
   correlation is partly spurious. At least one further variable-length interior
   region is unisolated, so **no `0x0A` layout is established and no lane exists.**

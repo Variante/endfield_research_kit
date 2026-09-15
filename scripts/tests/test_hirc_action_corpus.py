@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from scripts.audio_semantics.hirc_action_corpus import (
+    music_head_references_are_closed,
     _capture_cli_output_closure,
     _load_json_with_sha256,
     _body_lane_markdown,
@@ -158,6 +159,17 @@ def valid_action_fixture():
         "unsupportedCategories": {},
         "nonExactExamples": [],
     }
+    music_head = {
+        "bodies": 3,
+        "resolved": 3,
+        "unresolved": 0,
+        "zero": 0,
+        "unknownDiscriminant": 0,
+        "tooShort": 0,
+        "bodiesByType": {"type0A": 2, "type0D": 1},
+        "offsetCounts": {"offset_5": 1, "offset_9": 2},
+        "discriminantCounts": {"byte2_00": 2, "byte2_01": 1},
+    }
     type14_body = {
         "count": 2,
         "exact": 2,
@@ -265,6 +277,7 @@ def valid_action_fixture():
                     "hircType02BodyFrame": copy.deepcopy(type02_body),
                     "hircType07BodyFrame": copy.deepcopy(type07_body),
                     "hircType14BodyFrame": copy.deepcopy(type14_body),
+                    "hircMusicHeadReferences": copy.deepcopy(music_head),
                     "hircType05BodyFrame": copy.deepcopy(type05_body),
                     "hircReferenceCensus": copy.deepcopy(reference_census),
                     "hircType03ActionFrame": copy.deepcopy(frame),
@@ -284,6 +297,7 @@ def valid_action_fixture():
                             "hircType02BodyFrame": copy.deepcopy(type02_body),
                             "hircType07BodyFrame": copy.deepcopy(type07_body),
                             "hircType14BodyFrame": copy.deepcopy(type14_body),
+                            "hircMusicHeadReferences": copy.deepcopy(music_head),
                             "hircType05BodyFrame": copy.deepcopy(type05_body),
                             "hircReferenceCensus": copy.deepcopy(reference_census),
                             "hircType03ActionFrame": copy.deepcopy(frame),
@@ -1022,6 +1036,73 @@ class HircActionCorpusTests(unittest.TestCase):
             scope["hircType05BodyFrame"]["groupCounts"]["recordEntries"] = 1_000_000
         with self.assertRaisesRegex(ValueError, "anonymous element bytes exceed the framed bodies"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, oversized)
+
+    def test_music_head_references_resolve_for_every_body(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        head = result["musicHeadReferences"]
+        self.assertEqual(head["bodies"], 3)
+        self.assertEqual(head["resolved"], 3)
+        self.assertEqual(head["bodiesByType"], {"type0A": 2, "type0D": 1})
+        self.assertTrue(music_head_references_are_closed(head))
+
+    def test_a_single_unnamed_body_stops_the_music_head_claim(self) -> None:
+        # The claim is that every body names a same-bank object. One that does not
+        # falsifies it outright, so none of these outcomes may be tolerated.
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        for field in ("unresolved", "zero", "unknownDiscriminant", "tooShort"):
+            broken = copy.deepcopy(audio_audit)
+            for scope in (
+                broken["rows"][0]["package"],
+                broken["rows"][0]["package"]["bnkStructures"][0],
+            ):
+                scope["hircMusicHeadReferences"]["resolved"] = 2
+                scope["hircMusicHeadReferences"][field] = 1
+            head = aggregate_current_hirc_actions(
+                outer, expected_files, excluded_files, broken
+            )["musicHeadReferences"]
+            self.assertFalse(music_head_references_are_closed(head), field)
+
+    def test_music_head_outcomes_must_partition_and_offsets_must_follow_the_byte(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+
+        dropped = copy.deepcopy(audio_audit)
+        for scope in (
+            dropped["rows"][0]["package"],
+            dropped["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircMusicHeadReferences"]["resolved"] = 2
+        with self.assertRaisesRegex(ValueError, "do not partition"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, dropped)
+
+        # The offset histogram is not free-standing: it must be derivable from the
+        # discriminant byte, or the "offset follows from a byte" claim is untested.
+        drifted = copy.deepcopy(audio_audit)
+        for scope in (
+            drifted["rows"][0]["package"],
+            drifted["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircMusicHeadReferences"]["offsetCounts"] = {"offset_5": 2, "offset_9": 1}
+        with self.assertRaisesRegex(ValueError, "do not follow from the discriminant"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, drifted)
+
+        unobserved = copy.deepcopy(audio_audit)
+        for scope in (
+            unobserved["rows"][0]["package"],
+            unobserved["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircMusicHeadReferences"]["discriminantCounts"] = {"byte2_00": 2, "byte2_07": 1}
+        with self.assertRaisesRegex(ValueError, "unobserved discriminant"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, unobserved)
+
+        mismatched = copy.deepcopy(audio_audit)
+        for scope in (
+            mismatched["rows"][0]["package"],
+            mismatched["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircMusicHeadReferences"]["bodiesByType"] = {"type0A": 2}
+        with self.assertRaisesRegex(ValueError, "per-type counts disagree"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, mismatched)
 
     def test_type14_body_is_framed_without_the_shared_node_frame(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

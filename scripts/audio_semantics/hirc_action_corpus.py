@@ -1557,6 +1557,10 @@ def aggregate_current_hirc_actions(
     type04_banks_with_objects = 0
     type04_non_exact_examples: list[dict[str, Any]] = []
     body_lanes = _build_body_lanes()
+    music_head_totals: Counter[str] = Counter()
+    music_head_by_type: Counter[str] = Counter()
+    music_head_offsets: Counter[str] = Counter()
+    music_head_discriminants: Counter[str] = Counter()
     reference_totals: Counter[str] = Counter()
     reference_edges: Counter[str] = Counter()
     reference_objects: Counter[str] = Counter()
@@ -1589,6 +1593,15 @@ def aggregate_current_hirc_actions(
             type02_max_opaque_tail = max(type02_max_opaque_tail, package_type02["maxOpaqueTailBytes"])
         for plugin_type, count in package_type02["pluginTypeCounts"].items():
             type02_plugin_counts[plugin_type] += count
+
+        package_music_head = _read_music_head_census(
+            package.get("hircMusicHeadReferences"), package_label
+        )
+        for key in MUSIC_HEAD_SCALARS:
+            music_head_totals[key] += package_music_head[key]
+        music_head_by_type.update(package_music_head["bodiesByType"])
+        music_head_offsets.update(package_music_head["offsetCounts"])
+        music_head_discriminants.update(package_music_head["discriminantCounts"])
 
         package_reference = _read_reference_census(
             package.get("hircReferenceCensus"), package_label
@@ -1977,6 +1990,12 @@ def aggregate_current_hirc_actions(
         "type05BodyFrames": body_lanes["0x05"].publish(),
         "type06BodyFrames": body_lanes["0x06"].publish(),
         "type14BodyFrames": body_lanes["0x0E"].publish(),
+        "musicHeadReferences": {
+            **{key: int(music_head_totals[key]) for key in MUSIC_HEAD_SCALARS},
+            "bodiesByType": dict(sorted(music_head_by_type.items())),
+            "offsetCounts": dict(sorted(music_head_offsets.items())),
+            "discriminantCounts": dict(sorted(music_head_discriminants.items())),
+        },
         "type04U32VectorCandidates": {
             "count": type04_count,
             "exact": type04_exact,
@@ -2343,6 +2362,84 @@ def _read_reference_census(census: Any, label: str) -> dict[str, Any]:
     return metrics
 
 
+MUSIC_HEAD_SCALARS = (
+    "bodies",
+    "resolved",
+    "unresolved",
+    "zero",
+    "unknownDiscriminant",
+    "tooShort",
+)
+# Byte 2 chooses where the word sits. Only these values are observed, and an
+# unobserved one must be counted as unknown rather than assigned a branch.
+MUSIC_HEAD_DISCRIMINANTS = {"byte2_00": 9, "byte2_01": 5, "byte2_02": 5}
+
+
+def _read_music_head_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's or bank's type 0x0A / 0x0D head-reference census."""
+    if census is None:
+        return {key: 0 for key in MUSIC_HEAD_SCALARS} | {
+            "bodiesByType": {}, "offsetCounts": {}, "discriminantCounts": {}
+        }
+    if not isinstance(census, dict):
+        raise ValueError(f"music head reference census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in MUSIC_HEAD_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"music head census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"music head census has negative {key}: {label}")
+        out[key] = value
+    for key in ("bodiesByType", "offsetCounts", "discriminantCounts"):
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"music head census has invalid {key}: {label}")
+        out[key] = {str(name): int(count) for name, count in raw.items()}
+    # Every body must land in exactly one outcome, or a body has been double
+    # counted or dropped somewhere in the reader.
+    outcomes = out["resolved"] + out["unresolved"] + out["zero"] + out["unknownDiscriminant"] + out["tooShort"]
+    if outcomes != out["bodies"]:
+        raise ValueError(
+            f"music head outcomes do not partition the bodies: {label} "
+            f"outcomes={outcomes} bodies={out['bodies']}"
+        )
+    if sum(out["bodiesByType"].values()) != out["bodies"]:
+        raise ValueError(f"music head per-type counts disagree with the body total: {label}")
+    for name in out["discriminantCounts"]:
+        if name not in MUSIC_HEAD_DISCRIMINANTS:
+            raise ValueError(f"music head census reports an unobserved discriminant: {label} {name}")
+    # The offset histogram must follow from the discriminant histogram, not float free.
+    expected: dict[str, int] = {}
+    for name, count in out["discriminantCounts"].items():
+        key = f"offset_{MUSIC_HEAD_DISCRIMINANTS[name]}"
+        expected[key] = expected.get(key, 0) + count
+    if out["offsetCounts"] and out["offsetCounts"] != expected:
+        raise ValueError(
+            f"music head offsets do not follow from the discriminant byte: {label} "
+            f"offsets={out['offsetCounts']} expected={expected}"
+        )
+    return out
+
+
+def music_head_references_are_closed(corpus: dict[str, Any]) -> bool:
+    """Every type 0x0A and 0x0D body must name exactly one same-bank object.
+
+    The claim is that the offset follows from a byte and the word always resolves.
+    A single body that is zero, unresolved, short, or carries an unobserved
+    discriminant falsifies that, so none of them may be tolerated.
+    """
+    return (
+        int(corpus.get("bodies") or 0) > 0
+        and int(corpus.get("bodies") or 0) == int(corpus.get("resolved") or 0)
+        and int(corpus.get("unresolved") or 0) == 0
+        and int(corpus.get("zero") or 0) == 0
+        and int(corpus.get("unknownDiscriminant") or 0) == 0
+        and int(corpus.get("tooShort") or 0) == 0
+    )
+
+
 def reference_graph_is_closed(corpus: dict[str, Any]) -> bool:
     """Return whether every reference names exactly one unambiguous same-bank object.
 
@@ -2367,6 +2464,34 @@ def reference_graph_is_closed(corpus: dict[str, Any]) -> bool:
 
 def _reference_graph_markdown(report: dict[str, Any]) -> str:
     graph = report["corpus"]["referenceGraph"]
+    head = report["corpus"].get("musicHeadReferences") or {}
+    head_lines = []
+    if head:
+        head_lines = [
+            "",
+            "## Numeric types `0x0A` and `0x0D`: one named object per body",
+            "",
+            f"- Bodies: {head['bodies']:,}; naming exactly one same-bank object: {head['resolved']:,}.",
+            f"- Unresolved {head['unresolved']:,}; zero {head['zero']:,}; unknown discriminant "
+            f"{head['unknownDiscriminant']:,}; too short {head['tooShort']:,}.",
+            "",
+            "| Body byte 2 | Bodies | Word offset |",
+            "|---|---:|---:|",
+            *(
+                f"| `{name}` | {count:,} | {9 if name.endswith('00') else 5} |"
+                for name, count in sorted(head["discriminantCounts"].items())
+            ),
+            "",
+            "These two types are **not framed**: a variable-length region inside them is "
+            "still unisolated, so no layout is claimed here. What is claimed is narrower "
+            "and is gated the same way as the vectors above: body byte 2 selects where a "
+            "single 32-bit word sits, and that word names exactly one object declared by "
+            "the same bank in every body. The offset is computed from the byte and never "
+            "searched for, the offset histogram is required to follow from the byte "
+            "histogram, and an unobserved byte value is counted as unknown rather than "
+            "assigned a branch. Nothing here says what the relation means.",
+        ]
+
     cli_fingerprint = report["outer"]["animeStudioCliFingerprint"]
     edge_rows = "\n".join(
         f"| `{edge}` | {count:,} |" for edge, count in graph["edgeCounts"].items()
@@ -2404,6 +2529,8 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
                 f"| `{name}` | {graph['referenceTargetsByType'].get(name, 0):,} | {count:,} |"
                 for name, count in graph["objectCountsByType"].items()
             ) or "| _none_ | 0 | 0 |",
+            "",
+            *head_lines,
             "",
             "Every reference is a four-byte value inside a counted vector that the body framers already consume exactly. This report joins those values to the object identities declared by the same bank and reports where each one lands.",
             "",
@@ -2740,7 +2867,9 @@ def run_current_corpus_audit(
         )) is not None
     ]
     reference_corpus = corpus["referenceGraph"]
-    reference_closed = reference_graph_is_closed(reference_corpus)
+    music_head_corpus = corpus["musicHeadReferences"]
+    music_head_closed = music_head_references_are_closed(music_head_corpus)
+    reference_closed = reference_graph_is_closed(reference_corpus) and music_head_closed
     reference_report = {
         "format": "animestudio-wwise-hirc-reference-graph-audit",
         "schemaVersion": 1,
@@ -2761,13 +2890,16 @@ def run_current_corpus_audit(
                 "perBankCensusRowsSumToPackageRow": True,
             },
             "referenceGraph": reference_corpus,
+            "musicHeadReferences": music_head_corpus,
             "audioAuditSummary": corpus["audioAuditSummary"],
         },
         "evidenceBoundary": {
             "layer": 4,
             "claim": (
                 "every four-byte value in the exactly framed anonymous reference vectors "
-                "equals the identity of exactly one HIRC object declared by the same bank"
+                "equals the identity of exactly one HIRC object declared by the same bank, "
+                "and every numeric type 0x0A and 0x0D body names one same-bank object at "
+                "an offset selected by its third byte"
             ),
             "semanticStatus": "structural-only",
             "nonClaims": reference_corpus["nonClaims"],
@@ -2779,6 +2911,14 @@ def run_current_corpus_audit(
     reference_output_markdown.write_text(
         _reference_graph_markdown(reference_report), encoding="utf-8"
     )
+    if not music_head_closed:
+        lane_failures.append(
+            "type 0x0A/0x0D head references are not closed: "
+            f"bodies={music_head_corpus['bodies']} resolved={music_head_corpus['resolved']} "
+            f"unresolved={music_head_corpus['unresolved']} zero={music_head_corpus['zero']} "
+            f"unknownDiscriminant={music_head_corpus['unknownDiscriminant']} "
+            f"tooShort={music_head_corpus['tooShort']}"
+        )
     if not reference_closed:
         lane_failures.append(
             "HIRC reference graph did not close: "

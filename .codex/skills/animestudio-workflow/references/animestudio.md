@@ -326,10 +326,12 @@ scratch. They do not open with the node frame, and searching for an offset where
 the frame parses is worthless because every music body admits several such
 offsets -- the frame is permissive, so "it parsed" is nearly no evidence. A
 structural predictor is needed, the way byte 1 predicts the `0x0E` prefix.
-Types `0x0A` and `0x0D` open with nine bytes and a 32-bit word at offset 9 that
-names a same-bank object in about 97% of bodies; the remainder name nothing in
-any bank, so this is an anchor for probing and **not** a reference claim, which
-here requires every value to resolve. When probing them, mirror the node frame in
+Types `0x0A` and `0x0D` do carry one gated reference each: body byte 2 selects the
+offset of a 32-bit word (0 -> offset 9, nonzero -> offset 5), and under that rule
+all 6,589 bodies name exactly one same-bank object. Fixing the offset at 9 instead
+resolves only ~97%, which looked like missing references and was not -- when a
+rule is nearly always right, look for the byte that makes it always right before
+recording a limit. When probing them, mirror the node frame in
 Python under `tmp/` and prove the mirror against an already-closed type first --
 the current mirror reproduces all 48,740 type `0x07` bodies exactly, which is why
 its music-type failures can be believed.

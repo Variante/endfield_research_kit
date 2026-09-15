@@ -582,6 +582,13 @@ never reported as a full one.
 python -m scripts.audio_semantics.hirc_named_reach --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 ```
 
+The reference-graph report also gates a narrower claim about numeric types `0x0A`
+and `0x0D`, which are *not* framed: body byte 2 selects an offset (0 -> 9, nonzero
+-> 5) at which a single 32-bit word names exactly one same-bank object, and all
+6,589 such bodies resolve. The offset histogram must follow from the byte
+histogram, and an unobserved byte value counts as unknown rather than being
+assigned a branch.
+
 The `0x0E` lane is the one body lane that does not share the node frame, so it
 supplies its own residual list, its own unconditional selector families, and a
 closed-form byte identity (`24 * bodies + 12 * elements + 3 * entries + 20 *
