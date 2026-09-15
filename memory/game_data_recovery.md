@@ -4768,9 +4768,38 @@ framing should start from `iv_*.bytes` rather than waiting on the index.
 *A plan built on "the index describes the payload" survived exactly as long as it took
 to test the join.*
 
-**Next:** frame `iv_*.bytes` directly. The four `gacha` files are the place to start --
-they are 16 KB to 101 KB, they have a real 4-byte record by the phase test, and
-`UpdateGachaIV` is a separate engine entry point so their layout stands on its own.
+#### The `gacha` volume header: a candidate relation on four files, not a frame
+
+The volume filenames are `iv_<lod>_<x>_<y>.bytes`, and size falls with the first
+number -- `iv_0_0_0` is 2.25 MB, `iv_1_0_0` is 84.8 KB, `iv_3_0_0` is 16.1 KB. That is
+the clipmap LOD `ToggleDebugUpdateClipmapLod0` refers to.
+
+Six files carry magic **`0x00003003`**, and in **four of them** the first eight words
+line up:
+
+| file | w1 | w2 | w3 | w4 | w5 | w6 | w7 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| `character/iv_0_0_0` | 58 | **2000** | 140 | **604** | 5 | 3 | **32** |
+| `weapon/iv_0_0_0` | 60 | **2000** | 140 | **620** | 4 | 3 | **32** |
+| `character/iv_1_0_0` | 6 | **2000** | 64 | **112** | 3 | 2 | **32** |
+| `weapon/iv_1_0_0` | 6 | **2000** | 64 | **112** | 5 | 2 | **32** |
+
+- **`w4 = w1 x 8 + w3`** in all four: 58x8+140=604, 60x8+140=620, 6x8+64=112. So `w3`
+  is a header size and `w1` counts 8-byte entries that follow it, ending at `w4`.
+- `w2` is **2000** and `w7` is **32** in all four; `w6` is 3 at LOD 0 and 2 at LOD 1.
+- **The two `iv_3_0_0` files share the magic and do not follow it**: their `w2` and `w3`
+  are arbitrary 32-bit values. Either the deepest LOD has no header, or the magic is
+  not what selects the layout.
+
+***Four files is thin, and this is recorded as a candidate relation rather than a
+frame.*** It is not in a maintained reader and has no gate. Three constants and one
+arithmetic identity over four samples is the kind of pattern that has already failed
+twice in this lane once the whole population was checked -- the stride-4 periodicity and
+the clipmap grid extents both looked at least this good.
+
+**Next:** the 132 `v3` files do not share this header at all -- their leading words are
+arbitrary and the relation fails in every one. They are 4.16 GB and the thing actually
+worth framing; the `gacha` files are 6 files and 6.9 MB.
 
 *Asking the shipped code what a format is called cost one metadata scan and moved this
 further than two batches of byte-pattern search.*
