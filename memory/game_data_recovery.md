@@ -6997,6 +6997,51 @@ fails in its twin was never a fact about the byte layout.*
 **What this rules out:** decoding the records from these files. Their content is not here
 to decode -- only their sizes and the offsets that will address them once built.
 
+## STATUS AFTER THE ENGINE-READING PASS (2026-09-15)
+
+Findings from this pass are spread across many entries above. This is the consolidated
+state, so the next session does not re-derive it.
+
+### `InitChunkData` / `StreamingChunkData` -- the slot-7 element, complete
+
+| field | meaning | evidence |
+| --- | --- | --- |
+| 0 | **`StreamingComponentType` mask** -- bits 0-5 always set, bits 6-7 optional (`SphereCollider`, `CapsuleCollider`), one-hot in 8-14 naming the component kind | 12,932/12,932 in range; one-hot counts reproduce an earlier blind census exactly |
+| 1 | a **count**, 1-based, never zero | dense over small integers, 60.9% non-powers-of-two |
+| 2 | **centre + extents**, `(x, height, z)` world space | centre in its own chunk 73.96% vs 1.28% control; extents never negative in 21,336 components |
+| 3 | **byte offset** into the region `s4` sizes | 4-aligned 18,391/18,391; `max+24 <= s4` 6,002/6,002 |
+| 4 | the constant **4** | 18,391/18,391 |
+
+Root: slot 0 = version **47**; slot 1 = chunk origin `(x*128, y*128)`; slots 2/3/4 =
+**runtime allocation sizes**, not file offsets; slot 5 = entries keyed by
+`StreamingLayer` x `ECSEntityType`; slot 6 = one constant per placement; slot 7 = the
+placements.
+
+### Audio -- the HIRC types the notes called SDK-only
+
+| type | how reached | state |
+| --- | --- | --- |
+| `0x02`, `0x05`, `0x09` | one shared class; `[+0x1f0]`/`[+0x1f8]`/`[+0x200]` | **field sequence read** |
+| `0x0A`-`0x0D` | one shared arm | **not parsed at all** -- skipped as opaque payload |
+| `0x10`, `0x11` | `vtable[+0x28]` -> `0x18014c250` | 12-byte prefix, then a plug-in tail |
+| `0x12` | `vtable[+0x278]` -> `0x180109030` | **complete**: ref, word, `N`/bytes/dwords, ms duration |
+
+### Still open, accurately
+
+- **`LAYER_C`'s consumer.** The recorded answer is *disconfirmed* (`m_colorVariationTex`
+  is a `Texture2D`, one per terrain, so the argument that eliminated the control map
+  eliminates it too) and the mask-map rival is excluded by the binding list.
+- **`0x0B`'s `+12`/`+20` words.** Needs an external anchor of the kind that resolved the
+  source records; no engine evidence can exist, since the engine never parses `0x0B`.
+- **The 1 of 8 unowned media** that is not Init-bank embedded.
+- **Slot-7 field 3's record contents**, which are not in these files at all.
+
+*Three blockers recorded before this pass turned out to be misdiagnosed:* the chunk
+reader's "packed native code" (it is in unpacked `UnityPlayer.dll`), the audio types'
+"licensed SDK" (the parser ships with the game), and `StreamingComponentType`'s exclusion
+(a one-byte read of a `ulong` enum). **Re-testing inherited blockers was the
+highest-yield activity of the session.**
+
 *Worth noting what made the difference:* field 0's mask reading survived because its bits
 were **not** the bits a small integer sets -- bits 0-5 always on, one-hot in 8-14 -- which
 no magnitude distribution produces. The same test on field 1 returned a high number and
