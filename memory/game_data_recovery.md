@@ -2958,15 +2958,25 @@ gate rather than buried in the field's name.*
   greedily after the declared ones -- taking every element that parses until the
   terminator -- takes **zero** extra elements in **every** body, and closes exactly
   the same 3,715. The residue does not parse as an element at all.
-- **A variant element with a one-byte head is a fit, not a finding, and is not
-  adopted.** `1 head + runs + 12 + trailer` closes **66 of 218** outright. Allowing a
-  free number of leading twelve-byte records before it raises that to 100 -- but the
-  number of records is then chosen per body after seeing the length, which is fitting,
-  not evidence. Recorded because the 66 is real and because the next attempt should
-  start from a rule that *predicts* the record count rather than absorbing it.
-- The control that makes the 66 worth noting at all: the established five-byte head
-  closes **4** of the 218. So the residue genuinely is a different shape from an
-  element, rather than an element the walk mis-entered.
+- **RETRACTED: the "66 of 218" one-byte-head reading is a length coincidence.**
+  I recorded it as "a fixed rule with no free parameter" and it is not evidence at
+  all. Every one of those 66 residues declares a **run count of zero**, so the
+  reading consumes only its fixed parts: `1 + 12 + 19 = 32` and `1 + 12 + 24 = 37`,
+  which are exactly the two residue sizes that close. It produces **zero records**,
+  so the interpolation-code test -- the thing that settled the run split -- has
+  nothing to test. Same trap as the flat terrain tiles, in a third costume.
+- What the residue sizes actually are: `32`:58, `12`:48, `44`:32, `112`:16, `49`:10,
+  `16`:10, `37`:8, then singles. Only **92** are of the form `32 + 12k` and **20** of
+  `37 + 12k`; **106 fit neither**, so most of the residue is not even the right length
+  to be a trailing element of the known shape.
+- **Also eliminated: the 17-byte trailing block does not explain the 218.** Allowing
+  it takes the frame to 3,804 and drops the trailer-flag fences from 119 to 6, but
+  the `entries_do_not_reach_the_terminator` bucket *grows* from 218 to 236. So the
+  two fence buckets have independent causes, and a reading that fixes one is not
+  corroborated by the other.
+- *When a candidate reading closes a residue, check what it exercised. A rule whose
+  counted runs are all zero has been confirmed by arithmetic on its constants, not by
+  the data.*
 - Not a closure-gated lane, for the same reason `0x08` is not. The gate is a floor
   at 80% -- there to catch a regression, not to assert the frame is complete, which
   it is not.
