@@ -559,6 +559,16 @@ def _read_type02_prefix_metrics(
             f"objects={expected_count} pluginCounts={sum(plugin_counts.values())}"
         )
     metrics["pluginTypeCounts"] = dict(sorted(plugin_counts.items()))
+    raw_plugin_ids = frame.get("pluginIdCounts")
+    if not isinstance(raw_plugin_ids, dict):
+        raise ValueError(f"type 0x02 pluginIdCounts is invalid: {label}")
+    plugin_ids = {str(name): int(count) for name, count in raw_plugin_ids.items()}
+    if sum(plugin_ids.values()) != expected_count:
+        raise ValueError(
+            f"type 0x02 plugin-id count mismatch: {label} "
+            f"objects={expected_count} pluginIdCounts={sum(plugin_ids.values())}"
+        )
+    metrics["pluginIdCounts"] = dict(sorted(plugin_ids.items()))
     return metrics
 
 
@@ -1542,6 +1552,7 @@ def aggregate_current_hirc_actions(
     package_type03_counts: Counter[str] = Counter()
     type02_totals: Counter[str] = Counter()
     type02_plugin_counts: Counter[str] = Counter()
+    type02_plugin_ids: Counter[str] = Counter()
     type02_package_counts_by_block: Counter[str] = Counter()
     type02_bank_version_counts: Counter[str] = Counter()
     type02_packages_with_objects = 0
@@ -1557,6 +1568,10 @@ def aggregate_current_hirc_actions(
     type04_banks_with_objects = 0
     type04_non_exact_examples: list[dict[str, Any]] = []
     body_lanes = _build_body_lanes()
+    type11_totals: Counter[str] = Counter()
+    type11_plugins: Counter[str] = Counter()
+    type11_streams: Counter[str] = Counter()
+    type11_record_counts: Counter[str] = Counter()
     music_head_totals: Counter[str] = Counter()
     music_head_by_type: Counter[str] = Counter()
     music_head_offsets: Counter[str] = Counter()
@@ -1593,6 +1608,17 @@ def aggregate_current_hirc_actions(
             type02_max_opaque_tail = max(type02_max_opaque_tail, package_type02["maxOpaqueTailBytes"])
         for plugin_type, count in package_type02["pluginTypeCounts"].items():
             type02_plugin_counts[plugin_type] += count
+        for plugin_id, count in package_type02["pluginIdCounts"].items():
+            type02_plugin_ids[plugin_id] += count
+
+        package_type11 = _read_type11_source_census(
+            package.get("hircType11Sources"), package_label
+        )
+        for key in TYPE11_SOURCE_SCALARS:
+            type11_totals[key] += package_type11[key]
+        type11_plugins.update(package_type11["pluginIdCounts"])
+        type11_streams.update(package_type11["streamTypeCounts"])
+        type11_record_counts.update(package_type11["recordCountCounts"])
 
         package_music_head = _read_music_head_census(
             package.get("hircMusicHeadReferences"), package_label
@@ -1955,6 +1981,7 @@ def aggregate_current_hirc_actions(
             "minOpaqueTailBytes": type02_min_opaque_tail or 0,
             "maxOpaqueTailBytes": type02_max_opaque_tail,
             "pluginTypeCounts": dict(sorted(type02_plugin_counts.items())),
+            "pluginIdCounts": dict(sorted(type02_plugin_ids.items())),
             "objectCountsByBlock": dict(sorted(type02_package_counts_by_block.items())),
             "bankVersionCounts": dict(sorted(type02_bank_version_counts.items())),
             "wholeBodyCursor": "not-claimed-opaque-tail-remains",
@@ -1990,6 +2017,12 @@ def aggregate_current_hirc_actions(
         "type05BodyFrames": body_lanes["0x05"].publish(),
         "type06BodyFrames": body_lanes["0x06"].publish(),
         "type14BodyFrames": body_lanes["0x0E"].publish(),
+        "type11SourceRecords": {
+            **{key: int(type11_totals[key]) for key in TYPE11_SOURCE_SCALARS},
+            "pluginIdCounts": dict(sorted(type11_plugins.items())),
+            "streamTypeCounts": dict(sorted(type11_streams.items())),
+            "recordCountCounts": dict(sorted(type11_record_counts.items())),
+        },
         "musicHeadReferences": {
             **{key: int(music_head_totals[key]) for key in MUSIC_HEAD_SCALARS},
             "bodiesByType": dict(sorted(music_head_by_type.items())),
@@ -2440,6 +2473,62 @@ def music_head_references_are_closed(corpus: dict[str, Any]) -> bool:
     )
 
 
+TYPE11_SOURCE_SCALARS = ("bodies", "bodiesWithRecords", "records", "recordsOutOfRange", "tooShort")
+
+
+def _read_type11_source_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's or bank's type 0x0B source-record census."""
+    if census is None:
+        return {key: 0 for key in TYPE11_SOURCE_SCALARS} | {
+            "pluginIdCounts": {}, "streamTypeCounts": {}, "recordCountCounts": {}
+        }
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x0B source census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in TYPE11_SOURCE_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x0B source census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x0B source census has negative {key}: {label}")
+        out[key] = value
+    for key in ("pluginIdCounts", "streamTypeCounts", "recordCountCounts"):
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"type 0x0B source census has invalid {key}: {label}")
+        out[key] = {str(name): int(count) for name, count in raw.items()}
+    for key in ("pluginIdCounts", "streamTypeCounts"):
+        if sum(out[key].values()) != out["records"]:
+            raise ValueError(
+                f"type 0x0B {key} do not sum to the record total: {label} "
+                f"histogram={sum(out[key].values())} records={out['records']}"
+            )
+    if out["bodiesWithRecords"] > out["bodies"]:
+        raise ValueError(f"type 0x0B bodies with records exceed the body total: {label}")
+    return out
+
+
+def type11_sources_share_the_type02_plugin_space(
+    corpus: dict[str, Any], type02_plugin_counts: dict[str, Any]
+) -> bool:
+    """Every type 0x0B source record must use a plug-in id type 0x02 also uses.
+
+    The claim only has force because plug-in ids are sparse 32-bit values: a wrong
+    record stride would put garbage in this field and it would leave the set at
+    once. So a single record outside the set falsifies the stride, and the gate
+    must refuse rather than report a rate.
+    """
+    if int(corpus.get("records") or 0) <= 0:
+        return False
+    if int(corpus.get("recordsOutOfRange") or 0) or int(corpus.get("tooShort") or 0):
+        return False
+    known = set(type02_plugin_counts)
+    if not known:
+        return False
+    return all(name in known for name in (corpus.get("pluginIdCounts") or {}))
+
+
 def reference_graph_is_closed(corpus: dict[str, Any]) -> bool:
     """Return whether every reference names exactly one unambiguous same-bank object.
 
@@ -2464,6 +2553,39 @@ def reference_graph_is_closed(corpus: dict[str, Any]) -> bool:
 
 def _reference_graph_markdown(report: dict[str, Any]) -> str:
     graph = report["corpus"]["referenceGraph"]
+    sources11 = report["corpus"].get("type11SourceRecords") or {}
+    known_plugins = report["corpus"].get("type02PluginIdCounts") or {}
+    source_lines = []
+    if sources11.get("records"):
+        source_lines = [
+            "",
+            "## Numeric type `0x0B`: a counted run of source records",
+            "",
+            f"- Bodies: {sources11['bodies']:,}; declaring at least one record: {sources11['bodiesWithRecords']:,}.",
+            f"- Records: {sources11['records']:,}; out of range {sources11['recordsOutOfRange']:,}; too short {sources11['tooShort']:,}.",
+            "",
+            "| Plug-in id | Records in `0x0B` | Objects in `0x02` |",
+            "|---|---:|---:|",
+            *(
+                f"| `{name}` | {count:,} | {known_plugins.get(name, 0):,} |"
+                for name, count in sorted(sources11["pluginIdCounts"].items())
+            ),
+            "",
+            "Numeric type `0x0B` opens with a byte, a 32-bit record count, and that many "
+            "fourteen-byte records whose first word is a plug-in id. Every one of those ids "
+            "is an id numeric type `0x02` also uses. That is the evidence for the record "
+            "stride, and it carries weight because plug-in ids are sparse 32-bit values "
+            "rather than small integers: a wrong stride would put arbitrary bytes in this "
+            "field and they would leave the set immediately. Records after the first are "
+            "what actually test the stride, and they are in the counts above.",
+            "",
+            "This is **not** a frame for type `0x0B`. Only the counted run is read; what "
+            "follows it is untouched and unclaimed. The bytes after the run do continue "
+            "with a second counted structure whose entries repeat one of these source ids, "
+            "but 248 of those entries name something else, so it is not established and is "
+            "deliberately absent from this report.",
+        ]
+
     head = report["corpus"].get("musicHeadReferences") or {}
     head_lines = []
     if head:
@@ -2530,6 +2652,7 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
                 for name, count in graph["objectCountsByType"].items()
             ) or "| _none_ | 0 | 0 |",
             "",
+            *source_lines,
             *head_lines,
             "",
             "Every reference is a four-byte value inside a counted vector that the body framers already consume exactly. This report joins those values to the object identities declared by the same bank and reports where each one lands.",
@@ -2869,7 +2992,13 @@ def run_current_corpus_audit(
     reference_corpus = corpus["referenceGraph"]
     music_head_corpus = corpus["musicHeadReferences"]
     music_head_closed = music_head_references_are_closed(music_head_corpus)
-    reference_closed = reference_graph_is_closed(reference_corpus) and music_head_closed
+    type11_corpus = corpus["type11SourceRecords"]
+    type11_closed = type11_sources_share_the_type02_plugin_space(
+        type11_corpus, corpus["type02SourcePrefixes"]["pluginIdCounts"]
+    )
+    reference_closed = (
+        reference_graph_is_closed(reference_corpus) and music_head_closed and type11_closed
+    )
     reference_report = {
         "format": "animestudio-wwise-hirc-reference-graph-audit",
         "schemaVersion": 1,
@@ -2891,6 +3020,8 @@ def run_current_corpus_audit(
             },
             "referenceGraph": reference_corpus,
             "musicHeadReferences": music_head_corpus,
+            "type11SourceRecords": type11_corpus,
+            "type02PluginIdCounts": corpus["type02SourcePrefixes"]["pluginIdCounts"],
             "audioAuditSummary": corpus["audioAuditSummary"],
         },
         "evidenceBoundary": {
@@ -2911,6 +3042,12 @@ def run_current_corpus_audit(
     reference_output_markdown.write_text(
         _reference_graph_markdown(reference_report), encoding="utf-8"
     )
+    if not type11_closed:
+        lane_failures.append(
+            "type 0x0B source records do not share the type 0x02 plug-in space: "
+            f"records={type11_corpus['records']} outOfRange={type11_corpus['recordsOutOfRange']} "
+            f"tooShort={type11_corpus['tooShort']} plugins={sorted(type11_corpus['pluginIdCounts'])}"
+        )
     if not music_head_closed:
         lane_failures.append(
             "type 0x0A/0x0D head references are not closed: "

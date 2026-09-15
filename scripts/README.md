@@ -582,6 +582,12 @@ never reported as a full one.
 python -m scripts.audio_semantics.hirc_named_reach --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 ```
 
+It also gates numeric type `0x0B`'s head: a byte, a 32-bit record count, and that
+many fourteen-byte source records whose plug-in id must be one type `0x02` also
+uses. Both sides of that comparison are raw 32-bit ids produced by the same
+reader, so the check is like-for-like. Type `0x0B` is not framed -- only the
+counted run is read, and the rest of the body is untouched.
+
 The reference-graph report also gates a narrower claim about numeric types `0x0A`
 and `0x0D`, which are *not* framed: body byte 2 selects an offset (0 -> 9, nonzero
 -> 5) at which a single 32-bit word names exactly one same-bank object, and all

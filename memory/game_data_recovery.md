@@ -1684,6 +1684,29 @@ Stable conclusions:
   and byte 17 takes values like 95 and 110, so it is not a second count and the
   correlation is partly spurious. At least one further variable-length interior
   region is unisolated, so **no `0x0A` layout is established and no lane exists.**
+- **Type `0x0B` opens with a counted run of 14-byte source records, and they share
+  numeric type `0x02`'s plug-in id space.** Layout of the head: one byte, a 32-bit
+  record count, then that many records of plug-in id (`u32`), stream-type byte,
+  source id (`u32`), and five further bytes. All 4,447 records across 4,325 bodies
+  carry a plug-in id type `0x02` also uses -- only `0x00040001` (3,506) and
+  `0x00140001` (941), both from type `0x02`'s seven-value set.
+- Why that is evidence for the 14-byte stride rather than a coincidence: plug-in
+  ids are sparse 32-bit values, not small integers, so a wrong stride would put
+  arbitrary bytes in that field and they would leave the set immediately. The
+  records *after the first* are what actually test it -- 106 bodies declare 2 to 4
+  records, contributing 230 such records, and every one landed in the set.
+- What is **not** established for `0x0B`, and must not be published as if it were.
+  After the record run comes a second counted structure of 88-byte entries whose
+  second word repeats one of the body's own source ids. That framing consumes
+  2,221 of 4,325 bodies exactly to EOF, but 248 entries name something other than
+  a declared source, and 2,010 bodies still have a tail afterwards. The node frame
+  does not explain that tail either: walking it from the end of the entries
+  reaches EOF in 2 bodies out of 4,325. So `0x0B` has no lane.
+- Type `0x0B` carries **no** same-bank object references at all -- it is pointed to
+  by `0x0A`, and points at media instead. The corpus has only 7 DIDX entries in
+  total, so its media is streamed rather than embedded, and `0x0B`'s source ids
+  match neither the DIDX ids nor type `0x02`'s source ids. Those are simply
+  disjoint id sets, which is not evidence against the layout.
 - `0x0B` is *not* yet the witness that would resolve the node frame's group B
   width. Its bodies would only make group B nonempty if the frame starts at offset
   0, which is exactly what is not established. Group B remains unresolved.

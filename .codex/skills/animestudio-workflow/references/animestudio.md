@@ -326,6 +326,14 @@ scratch. They do not open with the node frame, and searching for an offset where
 the frame parses is worthless because every music body admits several such
 offsets -- the frame is permissive, so "it parsed" is nearly no evidence. A
 structural predictor is needed, the way byte 1 predicts the `0x0E` prefix.
+Type `0x0B` opens with a byte, a 32-bit record count, and that many fourteen-byte
+source records; every one of the 4,447 records carries a plug-in id numeric type
+`0x02` also uses, which is what evidences the stride -- plug-in ids are sparse, so
+a wrong stride leaves the set at once, and the 230 records after a body's first
+are the ones that test it. Do not extend this to a frame: the 88-byte entries that
+follow consume only 2,221 of 4,325 bodies exactly, 248 of their words name no
+declared source, and the node frame reaches EOF from there in 2 bodies.
+
 Types `0x0A` and `0x0D` do carry one gated reference each: body byte 2 selects the
 offset of a 32-bit word (0 -> offset 9, nonzero -> offset 5), and under that rule
 all 6,589 bodies name exactly one same-bank object. Fixing the offset at 9 instead

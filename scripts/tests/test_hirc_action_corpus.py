@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from scripts.audio_semantics.hirc_action_corpus import (
+    type11_sources_share_the_type02_plugin_space,
     music_head_references_are_closed,
     _capture_cli_output_closure,
     _load_json_with_sha256,
@@ -66,6 +67,7 @@ def valid_action_fixture():
         "minOpaqueTailBytes": 32,
         "maxOpaqueTailBytes": 32,
         "pluginTypeCounts": {"0x1": 1, "0x2": 1},
+        "pluginIdCounts": {"plugin_00040001": 1, "plugin_00140001": 1},
     }
     type02_stats = {"count": 2, "declaredLengthBytes": 108}
     type07_stats = {"count": 2, "declaredLengthBytes": 248}
@@ -158,6 +160,16 @@ def valid_action_fixture():
         "failureCategories": {},
         "unsupportedCategories": {},
         "nonExactExamples": [],
+    }
+    type11_sources = {
+        "bodies": 2,
+        "bodiesWithRecords": 2,
+        "records": 3,
+        "recordsOutOfRange": 0,
+        "tooShort": 0,
+        "pluginIdCounts": {"plugin_00040001": 2, "plugin_00140001": 1},
+        "streamTypeCounts": {"streamType_02": 3},
+        "recordCountCounts": {"records_1": 1, "records_2": 1},
     }
     music_head = {
         "bodies": 3,
@@ -278,6 +290,7 @@ def valid_action_fixture():
                     "hircType07BodyFrame": copy.deepcopy(type07_body),
                     "hircType14BodyFrame": copy.deepcopy(type14_body),
                     "hircMusicHeadReferences": copy.deepcopy(music_head),
+                    "hircType11Sources": copy.deepcopy(type11_sources),
                     "hircType05BodyFrame": copy.deepcopy(type05_body),
                     "hircReferenceCensus": copy.deepcopy(reference_census),
                     "hircType03ActionFrame": copy.deepcopy(frame),
@@ -298,6 +311,7 @@ def valid_action_fixture():
                             "hircType07BodyFrame": copy.deepcopy(type07_body),
                             "hircType14BodyFrame": copy.deepcopy(type14_body),
                             "hircMusicHeadReferences": copy.deepcopy(music_head),
+                            "hircType11Sources": copy.deepcopy(type11_sources),
                             "hircType05BodyFrame": copy.deepcopy(type05_body),
                             "hircReferenceCensus": copy.deepcopy(reference_census),
                             "hircType03ActionFrame": copy.deepcopy(frame),
@@ -1036,6 +1050,43 @@ class HircActionCorpusTests(unittest.TestCase):
             scope["hircType05BodyFrame"]["groupCounts"]["recordEntries"] = 1_000_000
         with self.assertRaisesRegex(ValueError, "anonymous element bytes exceed the framed bodies"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, oversized)
+
+    def test_type11_sources_must_use_a_plugin_id_type02_also_uses(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        sources = result["type11SourceRecords"]
+        known = result["type02SourcePrefixes"]["pluginIdCounts"]
+        self.assertEqual(sources["records"], 3)
+        self.assertTrue(type11_sources_share_the_type02_plugin_space(sources, known))
+
+        # A plug-in id outside the set means the record stride is wrong, because a
+        # correct stride cannot land arbitrary bytes on a sparse 32-bit id.
+        self.assertFalse(
+            type11_sources_share_the_type02_plugin_space(
+                {**sources, "pluginIdCounts": {**sources["pluginIdCounts"], "plugin_DEADBEEF": 1}},
+                known,
+            )
+        )
+        for field in ("recordsOutOfRange", "tooShort"):
+            self.assertFalse(
+                type11_sources_share_the_type02_plugin_space({**sources, field: 1}, known)
+            )
+        self.assertFalse(type11_sources_share_the_type02_plugin_space(sources, {}))
+        self.assertFalse(
+            type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
+        )
+
+    def test_type11_histograms_must_sum_to_the_record_total(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        for field in ("pluginIdCounts", "streamTypeCounts"):
+            broken = copy.deepcopy(audio_audit)
+            for scope in (
+                broken["rows"][0]["package"],
+                broken["rows"][0]["package"]["bnkStructures"][0],
+            ):
+                scope["hircType11Sources"][field] = {"x_01": 1}
+            with self.assertRaisesRegex(ValueError, "do not sum to the record total"):
+                aggregate_current_hirc_actions(outer, expected_files, excluded_files, broken)
 
     def test_music_head_references_resolve_for_every_body(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
