@@ -175,8 +175,18 @@ unique binding.
 - **`manifest.hgmmap` is a Brotli stream**, so XOR-decrypting it yields no UTF-16
   and looks like a failed decrypt. `scripts/game_data/bundle_manifest.py` already
   frames it end to end -- headers, three fixed-width row regions, a variable region
-  with counted UTF-16 fragments. Do not re-derive it; a CAB-to-manifest-name join
-  should call that module.
+  with counted UTF-16 fragments. Do not re-derive it.
+- **There is no Python VFS decryption path, by design.** Encrypted blocks are
+  decrypted by the AnimeStudio CLI during `dump`, and Python reads the structured
+  output; that is why no script takes an `ivSeed`. Hand-rolling the XOR with the
+  ledger's seed does not reproduce the file -- I tried, and the result is not a
+  Brotli stream.
+- So **naming bundles is not the cheap step I called it.** The current structured
+  export covers only `table` and `json-data`, so the decrypted manifest is not on
+  disk. The recipe is: dump with `--block-type BundleManifest` (the CLI's `list`
+  confirms that name), then feed the decrypted `.hgmmap` to
+  `scripts/game_data/bundle_manifest.py`, then join its names to the CAB-to-bundle
+  relation above. The join is cheap; producing its input is an export run.
 - All three cost time here because a wrong tool produced a plausible failure rather
   than an obvious one. **When a read fails, check whether the reader was valid for
   that row before believing the bytes are wrong.**
