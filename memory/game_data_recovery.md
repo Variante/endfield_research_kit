@@ -2001,10 +2001,17 @@ Stable conclusions:
   second list is deterministic, so each body was asked which value width closes it
   exactly. Every body that closes has **exactly one** such width, and the width is a
   function of the key alone. Do not fit widths by eye; solve for them this way.
-- **The nine bytes are a field, not a signature.** In `0x08` they are always
-  `02 e8 03 00 00 00 00 c0 c2`; in `0x12` they are `00 00 00 00 00 9a 99 c0 c2`.
-  Both read as a byte, a `u32` and a float near -96. The `0x08` framer still matches
-  them literally, which is a fence that happens to hold for that type.
+- **The nine bytes are a field, not a signature -- and `0x08` proves it inside its
+  own type.** Read as `(u8 flag, u32, float)` the corpus carries four variants:
+  `0x08` -> `(2, 1000, -96.0)` in 148 bodies, `(2, 0, -96.0)` in 8 and
+  `(2, 500, -96.0)` in 1; `0x12` -> `(0, 0, -96.3)` in all 251. A magic does not vary
+  in exactly one 32-bit slot, and the values are round decimals.
+- **The two framers are now one.** Dropping the literal signature match and the
+  "second list declares one entry" rule -- neither of which the shared layout
+  justifies -- took `0x08` from 109 to **115 of 161** without moving `0x12`. Both
+  the middle block's value and the second-list count are *published as selectors*
+  rather than checked, because each type is uniform in them and a uniform corpus
+  cannot tell a rule from a habit.
 - **An ambiguity left open on purpose.** Key `0x0A` always arrives with a list count
   of 3 and a 12-byte value; the other keys always arrive with a count of 1. So "the
   key decides the width" and "the count multiplies a per-key width of 4, 11 and 27"
