@@ -1848,6 +1848,28 @@ Stable conclusions:
   `AkBankMgr`/`AkMusic*`/`AkParameterNode` source paths, so the asserts that would
   have named them are not compiled in. Do not expect to recover layouts by
   string-mining this binary; the version is what it gives you.
+- **The DLL is not packed, and that now matters.** Measured sections: `.text`
+  2,662,400 B at entropy **6.39**, `.rdata` 652,288 at 6.61, and **no `.tvm0`**
+  section at all. Set against `EndfieldBase.dll` (79% `.tvm0` at 7.60) and
+  `HGP.dll` (92% at 7.56), the Wwise reader is in the *readable* half of this
+  game's binaries. Its RTTI is stripped -- only **12** `.?AV` type descriptors,
+  every one a `std::` exception class -- so no `CAk*` names, consistent with the
+  string-mining warning above.
+- The six chunk-tag constants sit clustered in **`0xf4b74`-`0xf67a0`**, which is
+  the section-dispatch region of the bank parser.
+- ***So the blocker is weaker than recorded.*** The note above says the deciding
+  witness is the licensed SDK and that obtaining it is the owner's call. That
+  stands as the *cheap* route, but it is not the only one: the same structs are
+  compiled into an unpacked 2.66 MB `.text` that ships with the game, with the
+  parser's entry region located. **"Blocked on a licence" and "blocked on
+  disassembly effort" are different states**, and only the second is true here.
+
+  *A process note, since it cost a batch.* This DLL was already identified in these
+  notes, with its SHA-256 and version string, **and with an explicit warning not to
+  string-mine it** -- which is exactly what I then did. The recovery memory is the
+  index of what is already known; **reading it first is cheaper than re-deriving
+  it**, and the only reason this batch was not pure waste is that entropy and RTTI
+  were questions the earlier pass had not asked.
 - **Numeric type `0x12` is the one HIRC type with no framing at all, and these
   readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
   grammar -- its word at offset 4 fails `range_section` on all 251. It is not the
