@@ -4749,9 +4749,28 @@ is *not* is worth recording as clearly as what it is.
   dimension triple that sizes it. They are recorded as small signed integers and
   nothing more.
 
-**Next:** the clipmap description needs the volume payload read alongside it -- the
-index's remainder and the `iv_*.bytes` content are the two halves of one structure, and
-neither has framed on its own.
+#### The index carries NO sizing for the volume payload, so the payload is self-describing
+
+I said last batch that the volume payload should wait for the index, because the index
+is what describes it. **Three joins say that is wrong, and the correction changes the
+plan.**
+
+| join tested | result |
+| --- | --- |
+| the volume file's byte length appears anywhere in its index | **0 of 86** |
+| the sum of volume lengths, or length minus 8, or length over 4 | **0 of 86** |
+| some remainder word divides the volume length into 1..4,096 parts | **2 of 71**, at record sizes 2,700 and 3,398 |
+
+The index names its volume files and nothing more that this can find: no offset table,
+no byte count, no probe count. **So the volume payload has to be self-describing**, and
+framing should start from `iv_*.bytes` rather than waiting on the index.
+
+*A plan built on "the index describes the payload" survived exactly as long as it took
+to test the join.*
+
+**Next:** frame `iv_*.bytes` directly. The four `gacha` files are the place to start --
+they are 16 KB to 101 KB, they have a real 4-byte record by the phase test, and
+`UpdateGachaIV` is a separate engine entry point so their layout stands on its own.
 
 *Asking the shipped code what a format is called cost one metadata scan and moved this
 further than two batches of byte-pattern search.*
