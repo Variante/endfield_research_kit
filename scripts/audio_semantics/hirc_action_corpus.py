@@ -1887,6 +1887,7 @@ def aggregate_current_hirc_actions(
         for key in (
             "elementTotal", "elementLeadingByteNotZero", "elementPadNotZero",
             "tailFloats", "tailFloatsInBand", "tailFloatsWhole",
+            "neighbourFloats", "neighbourFloatsWhole",
         ):
             type0a_head_totals[key] += package_head0a[key]
         type0a_element_values.update(package_head0a["elementValueCounts"])
@@ -2361,6 +2362,8 @@ def aggregate_current_hirc_actions(
             "tailFloats": int(type0a_head_totals["tailFloats"]),
             "tailFloatsInBand": int(type0a_head_totals["tailFloatsInBand"]),
             "tailFloatsWhole": int(type0a_head_totals["tailFloatsWhole"]),
+            "neighbourFloats": int(type0a_head_totals["neighbourFloats"]),
+            "neighbourFloatsWhole": int(type0a_head_totals["neighbourFloatsWhole"]),
         },
         "musicReferences": {
             **{key: int(music_ref_totals[key]) for key in MUSIC_REFERENCE_SCALARS},
@@ -2910,6 +2913,7 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
             "namesTheSourceType": {}, "namesTheSourceTypeWhereTheRuleApplies": {},
             "headWordTargets": {}, "elementValueCounts": {}, "tailBytesByOutcome": {},
             "tailFloats": 0, "tailFloatsInBand": 0, "tailFloatsWhole": 0,
+            "neighbourFloats": 0, "neighbourFloatsWhole": 0,
         }
     if not isinstance(census, dict):
         raise ValueError(f"type 0x0A head census is not an object: {label}")
@@ -2918,6 +2922,7 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
         "bodies", "bodiesWhereTheRuleApplies", "elementTotal",
         "elementLeadingByteNotZero", "elementPadNotZero",
         "tailFloats", "tailFloatsInBand", "tailFloatsWhole",
+        "neighbourFloats", "neighbourFloatsWhole",
     ):
         try:
             value = int(census[key])
@@ -2962,6 +2967,9 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
 # nearly every one is a whole number.
 TYPE0A_TAIL_FLOAT_WHOLE_SHARE = 0.98
 TYPE0A_TAIL_FLOAT_BAND_SHARE = 0.85
+# Its neighbour twelve bytes earlier is the opposite kind of field. The gap between
+# the two whole-number rates is the evidence that the offset is the right one.
+TYPE0A_NEIGHBOUR_WHOLE_CEILING = 0.25
 
 
 def the_type0a_tail_float_is_an_authored_value(corpus: dict[str, Any]) -> bool:
@@ -2975,6 +2983,12 @@ def the_type0a_tail_float_is_an_authored_value(corpus: dict[str, Any]) -> bool:
     The band is the weaker property and is checked at a lower bar, because the
     outliers are real: 309 bodies sit outside it. Nothing here says what the value
     measures, only that it is authored and bounded.
+
+    The third check is the neighbour twelve bytes earlier, and it is what says the
+    offset is right rather than merely productive. That field is the opposite kind:
+    whole in 202 of 3,744 against this one's 3,727. Two adjacent floats behaving
+    that differently is what a real field boundary looks like; if the reader were
+    slicing the same quantity at two arbitrary places they would behave alike.
     """
     total = int(corpus.get("tailFloats") or 0)
     if total <= 0:
@@ -2983,10 +2997,18 @@ def the_type0a_tail_float_is_an_authored_value(corpus: dict[str, Any]) -> bool:
     band = int(corpus.get("tailFloatsInBand") or 0)
     if whole > total or band > total:
         return False
-    return (
+    if not (
         whole / total >= TYPE0A_TAIL_FLOAT_WHOLE_SHARE
         and band / total >= TYPE0A_TAIL_FLOAT_BAND_SHARE
-    )
+    ):
+        return False
+    neighbours = int(corpus.get("neighbourFloats") or 0)
+    if neighbours <= 0:
+        return False
+    neighbour_whole = int(corpus.get("neighbourFloatsWhole") or 0)
+    if neighbour_whole > neighbours:
+        return False
+    return neighbour_whole / neighbours <= TYPE0A_NEIGHBOUR_WHOLE_CEILING
 
 
 # The reference is an optional four-byte field, so a body without it is exactly

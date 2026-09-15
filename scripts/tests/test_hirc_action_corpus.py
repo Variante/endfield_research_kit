@@ -366,6 +366,8 @@ def valid_action_fixture():
         "tailFloats": 100,
         "tailFloatsInBand": 92,
         "tailFloatsWhole": 99,
+        "neighbourFloats": 100,
+        "neighbourFloatsWhole": 5,
     }
     music_refs = {
         "bodies": 4,
@@ -1632,6 +1634,15 @@ class HircActionCorpusTests(unittest.TestCase):
             the_type0a_tail_float_is_an_authored_value({**head, "tailFloatsWhole": 101})
         )
         self.assertFalse(the_type0a_tail_float_is_an_authored_value({**head, "tailFloats": 0}))
+        # The neighbour twelve bytes earlier is the control for the offset itself. If
+        # it behaved the same way, the reader would be slicing one quantity at two
+        # arbitrary places rather than reading two fields.
+        self.assertFalse(
+            the_type0a_tail_float_is_an_authored_value({**head, "neighbourFloatsWhole": 99})
+        )
+        self.assertFalse(
+            the_type0a_tail_float_is_an_authored_value({**head, "neighbourFloats": 0})
+        )
 
     def test_the_type0a_reference_is_an_optional_four_byte_field(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

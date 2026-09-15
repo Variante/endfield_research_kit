@@ -2221,8 +2221,17 @@ Stable conclusions:
   that is the gated claim. That its range and modes are those of musical tempo, in
   the music object hierarchy, is recorded as an **observation**: it is the obvious
   reading and nothing here proves it.
-- Two neighbours read as floats too: `tail+8` is 3.366 to 6.533 (mode 4.477) and
-  `tail+12`, `tail+16`, `tail+24` are zero in nearly every body.
+- **`tail+8` is the opposite kind of field, and that contrast is the proof the
+  offsets are right.** Whole in **202 of 3,744** against `tail+20`'s 3,727. Over the
+  tail-69 subset it is whole in **0 of 3,321**. Two adjacent floats behaving that
+  differently is what a real field boundary looks like; a reader slicing one
+  quantity at two arbitrary places would get similar behaviour from both. The gate
+  checks the contrast, not just the field.
+- `tail+8` runs 3.366 to 6.533 with 85 distinct values (mode 4.477) and is **not a
+  function of `tail+20`**: 12 of the 72 distinct `tail+20` values carry more than one
+  `tail+8`, and no ratio, product or log relation between them is constant. Whatever
+  it is, it is independent.
+- `tail+12`, `tail+16` and `tail+24` are zero in nearly every body.
 - **The tail's optional 4-byte field is localized, and it is not counted.** Aligning
   the 3,321 tail-69 bodies against the 217 tail-73 bodies: from the **end** their
   constant profiles agree at **every one of 69 positions**, so the longer tail is the
