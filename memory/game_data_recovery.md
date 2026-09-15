@@ -2186,15 +2186,20 @@ Stable conclusions:
   one field absent.
 - That closes two of the three populations the head rule had excluded: 144 with a
   second counted run (framed), 255 with the reference absent (explained).
-- **The third is 62 bodies where the rule overshoots the body end, and they are a
-  THIRD shape.** Their `body[21]` takes values like 243, 111, 97 and 65 -- not
-  counts -- so the second-run formula does not apply, and for some of them
-  `body[14]` is not a count either (the implied extra comes out negative). Searching
-  every head byte for a count that explains their extra under `base + width*byte`
-  for base 0/7/12 and width 1/5 finds **nothing** above 80%.
-- What they do show: of the 47 with exactly one `0x0B` reference, **31 sit at
-  `head + 16`** and 6 at `head + 0`. So a 16-byte block, not a counted run. Do not
-  look for a count in these bodies; look for what makes the block present.
+- **The third shape is a fixed 16-byte block, and `body[21]`'s MAGNITUDE selects
+  it.** Where byte 17 is nonzero, byte 21 read as a count gives the five-byte run --
+  but in some bodies it is part of a 32-bit value instead, taking 65, 97, 111 or
+  243, and those carry a fixed 16-byte block. A count here is never above a handful,
+  so the magnitude separates them cleanly: `byte21 <= 16` gives the run in 76 of 76
+  bodies, `byte21 > 16` gives the block in 31 of 37.
+- The complete rule:
+  `head = 36 + 5*body[14] + (0 if body[17]==0 else 7 + 5*body[21] if body[21] <= 16 else 16)`.
+  It predicts the reference in **3,875 of 3,903** applicable bodies, and the
+  population it cannot reach at all drops from 62 to **14**.
+- Searching for a *count* in those bodies found nothing above 80% under
+  `base + width*byte` for base 0/7/12 and width 1/5. The answer was not a count --
+  it was a fixed block selected by how big a byte is. *When "find the count" stops
+  working, ask what the byte is when it is not a count.*
 - Why byte 21 was invisible before: in the single-run family it is one of the 16
   **constant zero** bytes of the fixed head, so the second term vanishes and the
   general rule reduces to the special one. *A count that is zero in the population
