@@ -2211,9 +2211,47 @@ displacements from two different call sites landing on one address is the kind o
 arithmetic that either agrees exactly or is wrong* -- and it agrees.
 
 **So `0x09` and `0x12` both carry an outbound object reference as their first parsed field
-after the node id, and both resolve it against the same registry.** The per-class detail
-lives behind `[vt+0x1f8]` / `[vt+0x200]` for `0x09` and `[vt+0x1f0]` for `0x12`, which is
-where the remaining field sequences are.
+after the node id, and both resolve it against the same registry.**
+
+#### THE PER-CLASS BLOCKS, AND `0x12`'s LAYOUT IN FULL
+
+Both per-class virtuals open identically -- `movzx <r>, byte ptr [rax] ; inc rax ;
+mov [rdx], rax` -- a **u8** taken from the shared cursor.
+
+**`0x09`, `[vt+0x1f8]` -> `0x1800ffb50`.** The byte is a boolean: the object's 64-bit flag
+word at `[rcx+0x90]` is masked with `0xffbfffffffffffff` or OR-ed with `0x40000000000000`,
+i.e. **bit 54 is cleared or set from it**.
+
+**`0x12`, `[vt+0x1f0]` -> `0x180108d10`.** The byte is a **count**, and what follows is a
+parallel-array block:
+
+```
+movzx ebx, byte [rax] ; inc rax          ; N
+lea  r15d,[rbx+4] ; and r15d, 0xfffffffc ; align = (N+4) & ~3
+lea  r8d,[r15 + rbx*4] ; call alloc      ; block size = align + N*4   (0x34 on failure)
+mov  byte ptr [rax], bl                  ; N stored at the block head
+memcpy(block + 1,     cursor, N)     ; cursor += N        ; N x u8
+memcpy(block + align, cursor, N*4)   ; cursor += N*4      ; N x u32
+mov  [rdi+0x88], r14                     ; block stored on the object
+```
+
+**`u8 N`, then `N` bytes, then `N` dwords** -- two parallel arrays of equal length, which is
+a shape no amount of staring at body lengths would have separated from a single array of
+5-byte records.
+
+##### HIRC `0x12` complete
+
+| order | field | width |
+| --- | --- | --- |
+| 1 | node id | u32 *(consumed by the caller)* |
+| 2 | object reference, `0` = none | u32 |
+| 3 | word stored at object `+0x188` | u32 |
+| 4 | `N` | u8 |
+| 5 | `N` x byte | N |
+| 6 | `N` x dword | 4N |
+| 7 | duration, `x rate / 1000` -- **milliseconds** | i32 |
+
+*Read end to end from the engine's own deserializer.*
 - **Numeric type `0x12` is the one HIRC type with no framing at all, and these
   readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
   grammar -- its word at offset 4 fails `range_section` on all 251. It is not the
