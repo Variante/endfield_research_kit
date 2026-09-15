@@ -6973,6 +6973,30 @@ a different order from the order those records are stored. **Anyone walking the 
 following elements in order will read it out of sequence in one file in four** -- which is
 the kind of thing that makes a parser look almost right.
 
+##### The region is not in the file, which unifies all three scalars
+
+Trying to *find* the records, the two natural bases both fail. At `len - s4` the bytes at
+`base + f3` are inconsistent across files -- small integers in one, a fragment of a name
+string (`_4_0_0#0_31D97B9`) in another, zeros in a third. At `root + 40`, likewise nothing
+that repeats. **There is no base in this file at which field 3's offsets land on a
+consistent record.**
+
+*That negative is the answer rather than a dead end.* `s2` and `s3` were already shown to
+be **sizes of something outside the file** -- every test against the buffer's own offsets
+scored 0.00%. Field 3 is bounded by `s4` and 4-byte aligned, `s4` grows with the
+placements, and the gaps between offsets are variable -- **so `s4` sizes a runtime
+allocation and field 3 is an offset within it**, exactly as `s2` and `s3` size runtime
+structures.
+
+**All three scalars describe the image the loader builds, not the file it reads.** That is
+why `s2 == len - root - 20` held for `InitChunkData` and scored **0.00%** for
+`StreamingChunkData`: in the Init case the payload happens to map one-to-one onto the
+allocation, and in the Streaming case it does not. *A relation that holds in one family and
+fails in its twin was never a fact about the byte layout.*
+
+**What this rules out:** decoding the records from these files. Their content is not here
+to decode -- only their sizes and the offsets that will address them once built.
+
 *Worth noting what made the difference:* field 0's mask reading survived because its bits
 were **not** the bits a small integer sets -- bits 0-5 always on, one-hot in 8-14 -- which
 no magnitude distribution produces. The same test on field 1 returned a high number and
