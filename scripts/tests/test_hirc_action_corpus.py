@@ -37,6 +37,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_hierarchy_runs_opposite_to_the_main_reference_graph,
     the_shared_hierarchy_is_a_forest,
     the_type11_curve_records_carry_interpolation_codes,
+    the_type11_entry_header_carries_a_bounded_float,
     the_type11_element_count_is_not_yet_a_count,
     the_type11_element_frame_beats_its_rivals,
     the_type11_entry_header_fields_beat_their_controls,
@@ -3864,3 +3865,50 @@ class ParentFieldInverseTests(unittest.TestCase):
 
     def test_an_absent_census_reads_as_empty(self) -> None:
         self.assertEqual(_read_parent_field_census(None, "pkg")["checkable"], 0)
+
+
+class Type11BoundedFloatTests(unittest.TestCase):
+    """A float field is established by its neighbours failing, not by its own values."""
+
+    def census(self, **overrides):
+        base = {
+            "boundedFloatsTested": 3715, "boundedFloatsInBand": 3715,
+            "floatControlsTested": 4806, "floatControlsInBand": 420,
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(
+            the_type11_entry_header_carries_a_bounded_float(self.census())
+        )
+
+    def test_controls_that_also_look_like_floats_fail(self) -> None:
+        # Almost any 32-bit word is a finite float, so the claim rests entirely on
+        # the neighbouring words not landing in the band.
+        self.assertFalse(the_type11_entry_header_carries_a_bounded_float(
+            self.census(floatControlsInBand=4000)
+        ))
+
+    def test_a_field_that_often_leaves_the_band_fails(self) -> None:
+        self.assertFalse(the_type11_entry_header_carries_a_bounded_float(
+            self.census(boundedFloatsInBand=2000)
+        ))
+
+    def test_an_untested_census_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_type11_entry_header_carries_a_bounded_float({}))
+        self.assertFalse(the_type11_entry_header_carries_a_bounded_float(
+            self.census(boundedFloatsTested=0, boundedFloatsInBand=0)
+        ))
+        self.assertFalse(the_type11_entry_header_carries_a_bounded_float(
+            self.census(floatControlsTested=0, floatControlsInBand=0)
+        ))
+
+    def test_the_reader_rejects_more_in_band_than_tested(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_type11_header_census(
+                {key: 0 for key in TYPE11_HEADER_SCALARS}
+                | {"elementCountValues": {}, "curveCodes": {},
+                   "boundedFloatsTested": 1, "boundedFloatsInBand": 5},
+                "pkg",
+            )

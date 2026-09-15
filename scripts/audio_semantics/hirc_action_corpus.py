@@ -3396,6 +3396,8 @@ TYPE11_HEADER_SCALARS = (
     "fractionControlsTested", "fractionControlsAreSmall",
     "curveRecords", "curveCodesInRange",
     "curveControlsTested", "curveControlsInRange",
+    "boundedFloatsTested", "boundedFloatsInBand",
+    "floatControlsTested", "floatControlsInBand",
 )
 
 
@@ -3442,6 +3444,8 @@ def _read_type11_header_census(census: Any, label: str) -> dict[str, Any]:
         ("fractionControlsTested", "fractionControlsAreSmall"),
         ("curveRecords", "curveCodesInRange"),
         ("curveControlsTested", "curveControlsInRange"),
+        ("boundedFloatsTested", "boundedFloatsInBand"),
+        ("floatControlsTested", "floatControlsInBand"),
     ):
         if out[hits] > out[tested]:
             raise ValueError(f"type 0x0B entry header {hits} exceeds {tested}: {label}")
@@ -4120,6 +4124,35 @@ def the_type11_curve_records_carry_interpolation_codes(corpus: dict[str, Any]) -
     if tested <= 0:
         return False
     return int(corpus.get("curveControlsInRange") or 0) * 4 < tested
+
+
+def the_type11_entry_header_carries_a_bounded_float(corpus: dict[str, Any]) -> bool:
+    """The word at entry-header offset 40 is a float in a narrow authored band.
+
+    It is present and nonzero in **every** one of the 4,321 entries, reads as a float
+    between 3.951 and 10.1 with a median of 7.548 across 889 distinct values, and
+    **100%** of its values fall in 1e-3 to 1e4.
+
+    A float field is not established by its own values being finite -- almost any
+    32-bit word is a finite float. It is established by neighbouring words read the
+    same way *not* being plausible. The source id at offset 4 lands in that band
+    **9.1%** of the time, reading as denormals around 1e-18; the opaque word at 12
+    lands there **2.0%** of the time, ranging over plus and minus 5e37.
+
+    Nothing here claims what the value measures.
+    """
+    tested = int(corpus.get("boundedFloatsTested") or 0)
+    if tested <= 0:
+        return False
+    in_band = int(corpus.get("boundedFloatsInBand") or 0)
+    if in_band * 10 < tested * 9:
+        return False
+    control_tested = int(corpus.get("floatControlsTested") or 0)
+    if control_tested <= 0:
+        return False
+    control = int(corpus.get("floatControlsInBand") or 0)
+    # The controls must fail clearly, or "it reads as a float" says nothing.
+    return control * 2 < control_tested
 
 
 def the_type11_element_count_is_not_yet_a_count(corpus: dict[str, Any]) -> bool:
@@ -6620,6 +6653,7 @@ def run_current_corpus_audit(
     t11_header_ok = the_type11_entry_header_fields_beat_their_controls(type11_header_corpus)
     t11_count_untested = the_type11_element_count_is_not_yet_a_count(type11_header_corpus)
     t11_curves_ok = the_type11_curve_records_carry_interpolation_codes(type11_header_corpus)
+    t11_float_ok = the_type11_entry_header_carries_a_bounded_float(type11_header_corpus)
     type11_element_corpus = corpus["type11Elements"]
     t11_anchor_ok = the_type11_trailer_anchor_beats_its_rivals(type11_element_corpus)
     t11_anchor_control = the_type11_trailer_is_not_settled_by_parsing(type11_element_corpus)
@@ -6732,6 +6766,7 @@ def run_current_corpus_audit(
         and t11_header_ok
         and t11_count_untested
         and t11_curves_ok
+        and t11_float_ok
         and hierarchy_forest
         and hierarchy_rooted
         and hierarchy_leaf
@@ -7082,6 +7117,13 @@ def run_current_corpus_audit(
             "numeric type 0x12 is no longer a leaf beneath 0x08: "
             f"internal={h.get('internalTypes')} leaves={h.get('leafTypes')} "
             f"roots={h.get('rootTypes')}"
+        )
+    if not t11_float_ok:
+        h = report["corpus"].get("type11EntryHeaders") or {}
+        lane_failures.append(
+            "the type 0x0B entry header's bounded float no longer beats its controls: "
+            f"inBand={h.get('boundedFloatsInBand')}/{h.get('boundedFloatsTested')} "
+            f"control={h.get('floatControlsInBand')}/{h.get('floatControlsTested')}"
         )
     if not t11_curves_ok:
         h = report["corpus"].get("type11EntryHeaders") or {}

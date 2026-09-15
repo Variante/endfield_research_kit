@@ -3069,7 +3069,20 @@ that later fails says nothing, because the walk that reached it may be desynchro
 | `+4` | source id | 1,132 distinct | -- |
 | `+16`, `+24` | a **symmetric float pair** | `low == -high` in **1,218 of 1,404** nonzero pairs; `low <= high` in 1,264 | the neighbouring word at `+12`: **0 of 1,391** |
 | `+28`, `+36` | **fixed-point fractions of 2^32** | small rationals in **2,735 of 2,804** | the word at `+40`: **0 of 3,715** |
+| `+40` | a **bounded float**, in every entry | 3,715 of 3,715 in 1e-3..1e4; range 3.951 to 10.1, median 7.548, 889 distinct | `+4` and `+12`: **420 of 4,806** |
 | `+44` | element count | see below | -- |
+
+- **The opaque words are not references.** Tested against the same-bank id set and the
+  corpus-wide one, **none** of the twelve header words resolves to an object -- `+4`
+  matches 8 ids out of 4,321 and the rest match zero. That confirms the standing note
+  that `0x0B` points at media rather than objects, and closes "reference" as a reading
+  for `+12`, `+20`, `+32` and `+44`.
+- **`+12` and `+20` are not floats either**: only **2.0%** of their values land in
+  1e-3..1e4, and they range over plus and minus 5e37. They remain unread.
+- *A float field is not established by its own values being finite -- almost any
+  32-bit word is a finite float. It is established by neighbouring words read the same
+  way not being plausible.* Here `+40` is 100% in band against 8.7% for its
+  neighbours.
 
 - The float pair sits around plus or minus five: `(-5.16, +5.16)`, `(-4.84, +4.84)`,
   `(-5.48, +5.48)`. What it bounds is not claimed.
