@@ -1940,6 +1940,30 @@ Stable conclusions:
   resolve, 4 are null, 0 unresolved. Null is a real outcome for this type, so the
   gate permits it and forbids only the third case; an all-null corpus would make
   the claim vacuous and does not count as closed either.
+- **What that reference points AT, measured: `0x12` mostly names `0x08`.** Over both
+  types' 412 bodies: `0x12` -> `0x08` **201**, `0x08` -> `0x08` **154**, `0x12` ->
+  `0x12` **48**, plus 3 and 2 naming type `0x15` and 4 nulls. So the two types form a
+  hierarchy with `0x08` beneath `0x12`, and `0x08` also nests within itself. No edge
+  from either to `0x0B`.
+
+#### The curve record's values cannot be tested for propagation in this corpus
+
+- The shuffle test that retired the fraction link has **no power** on the curve
+  record, and this is a property of the corpus rather than a result about the data.
+  Of the 408 reference edges inside `0x08`/`0x12`, only **17** have curve records at
+  *both* ends.
+- Worse, the obvious statistic is degenerate: "the two ends share an interpolation
+  code" scores **17 of 17 on the real pairing and 17 of 17 shuffled**, because the
+  alphabet is ten values of which two (9 and 4) cover about 87% of all records. Any
+  two bodies share a code. Requiring a whole matching record gives 15 against 13 --
+  seventeen samples, no power.
+- *Before running a shuffle control, check that the statistic can tell the pairings
+  apart at all. A test that scores identically on shuffled data has not produced a
+  negative result; it has produced no result.*
+- What the distributions do show, as corroboration rather than a link: the codes have
+  the same two dominant values everywhere. `0x08`/`0x12` tail units run 9 at 44.9%
+  and 4 at 41.7% of 314 records; `0x0B` element runs 9 at 49.4% and 4 at 24.5% of
+  4,086. Same enum, same defaults, different mix.
 - **`0x08` now frames byte-exact in 96 of its 161 bodies.** Layout, end to end:
   a 32-bit reference, the counted key/value block type `0x16` uses (a count, that
   many one-byte keys, that many four-byte values as parallel runs), a one-entry
