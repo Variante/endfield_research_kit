@@ -6758,9 +6758,21 @@ decoding them confirms it:
 | `StreamingComponentType` | **NOT sequential** -- max value **128** | `Count` = 43 | -- |
 
 `ECSEntityType`'s valid range ends at exactly **13**, which is exactly `f2`'s observed
-maximum. And the fourth candidate is now excluded on a second, stronger ground: `f2`'s
-values are **contiguous 0..13**, which a non-sequential enum carrying a 128 does not
-produce. *The coverage argument against it was suggestive; this one is structural.*
+maximum.
+
+***A caveat on the method, found by pushing it further.*** The read above takes **one byte**
+per entry from `fieldAndParameterDefaultValueData`. For these three enums the result is
+self-consistent -- strictly sequential `0..N-1` with the terminator landing exactly on the
+member count -- which a misaligned read would not produce. **But the method is not generally
+sound**: applied to flag enums it returns incoherent sequences, e.g.
+`HGFactoryDirtyFlags` as `1, 2, 4, 16, 32, 1`, which is not a power-of-two ladder and
+cannot be right. Entries wider than a byte are not read correctly.
+
+**So the `StreamingComponentType` exclusion should lean on coverage, not on its values.**
+That enum read as "non-sequential, max 128", and that reading is exactly the kind the
+caveat above calls unreliable. *The exclusion still holds* -- `f2` uses 13 of 14
+`ECSEntityType` values against 30% of `StreamingComponentType`'s 44, and its values are
+contiguous `0..13` -- **but the structural argument from a 128 is withdrawn.**
 
 **A read that failed usefully.** The values are stored as **single bytes**, and reading
 them as int32 produced `0x03020100`, `0x04030201`, `0x05040302` -- consecutive overlapping
