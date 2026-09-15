@@ -5505,10 +5505,53 @@ the time and inside slots 6 and 7 **never**. Field 1 scores 90.45% against slot 
 is not evidence either -- its values are 1, 2 and 4, and *any* small integer clears that
 bound. **A containment test only discriminates when the candidate could plausibly fail.**
 
-**Still not known:** what a slot-7 element *is*. The placement is located, its category
-is isolated to a 6-valued one-hot code, and the code is confirmed twice over -- but
-nothing in the shipped bytes says what the six categories *are*, and that needs a name
-from outside. Slots 5 and 6's integer tables are likewise unindexed.
+#### THE 24-BYTE FIELD IS `FBDynamicSceneBounds`, AND THE NAME COMES FROM IL2CPP
+
+The name from outside arrived. IL2CPP carries **73 generated FlatBuffers types**, 65 of
+them in **`Beyond.Gameplay.Core.DynamicScene`** -- so InitChunkData belongs to the
+DynamicScene family, and its generated vocabulary is readable:
+
+| type | components | bytes |
+| --- | --- | --- |
+| `FBDynamicSceneVector3` | X, Y, Z (Single) | 12 |
+| **`FBDynamicSceneBounds`** | **Center, Extents (Vector3)** | **24** |
+| `FBDynamicSceneVisibilityInfo` | Center, BaseRadius, MinDis, Importance | 24 |
+| `FBDynamicSceneTransform` | Pos, Rot, Scl (Vector3) | 36 |
+| `FBDynamicSceneLodGridChain` | Lod0Grid, Lod1Grid, Lod2Grid (UInt32) | 12 |
+| `FBDynamicSceneDataIndex` | IsInvalid, Type, Grid, Index | 13 |
+
+**`Bounds` explains every byte-side observation at once**, and it was found by matching
+the *shape* -- a 24-byte inline struct of six floats -- not by matching a name:
+
+- **Center** is the first triple: a world position, in its own chunk 73.96% against a
+  1.28% control
+- **Extents** is the second triple, and an extent is a **half-size, so never negative** --
+  which is exactly the 0-of-21,336 result, an invariant that had no explanation until
+  the type supplied one
+- `min <= max` had to fail: this is centre-and-extents, *not* a min/max pair. **The
+  reading that the control killed was the reading the type was never going to support.**
+- centre + extents lands in the chunk 32.94% of the time, which is what an AABB's far
+  corner does -- it leaves the chunk whenever the object is large
+
+**`VisibilityInfo` is ruled out, and it had to be ruled out** -- it is also 24 bytes, also
+starts with a `Center`. The two differ in one place: its final component is
+`Importance:Int32`, which read as a float would be a denormal.
+
+| | share of 7,112 |
+| --- | --- |
+| f5 is a normal float | **7,112 / 7,112 = 100.00%** |
+| f5 as Int32 in an Importance-like range | **0 / 7,112 = 0.00%** |
+
+***`FBDynamicSceneModel` was also ruled out, by width.*** Its five fields match the
+element's five exactly and its names are tempting -- `Guid, Trans, GridChain, PathHash,
+VisInfo` -- but its slot 3 is `Int64`, eight bytes, where the data measures four. *A
+five-field type with a plausible name is not a match; the widths are the match.*
+
+**Still not known:** what a slot-7 element *is* as a whole. Its category is isolated to a
+6-valued one-hot code confirmed twice over, and its bounds are now named, but the element
+table itself has not been matched to one of the 72 generated tables -- the two candidates
+that fit its field count were both excluded above. Slots 5 and 6's integer tables are
+likewise unindexed.
 
 ## Remaining gaps
 
