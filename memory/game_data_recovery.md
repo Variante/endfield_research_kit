@@ -2037,6 +2037,29 @@ the kind that resolved the source records.* Ten populations have already been el
 against the bytes alone; the lesson from the source-record success is that the missing
 ingredient is a second table to join against, not a better sweep of the same bodies.
 
+##### What *is* established about those words, pooled over the corpus
+
+"Ten populations eliminated" understates the positive characterisation. Pooling the
+type-`0x0B` entry-header census across all 25 packages:
+
+| property | holds | control |
+| --- | --- | --- |
+| the two words are **equal to each other** | **78.98%** | -- |
+| read as floats, **inside the bounded band** | **4,371 / 4,371 = 100%** | 480 / 5,932 = **8.09%** |
+| plausible as **gains** | **2,123 / 2,123 = 100%** | 150 / 3,530 = **4.25%** |
+| **fractions are small** | 3,405 / 3,530 = 96.46% | **0.00%** |
+| the pair forms a **symmetric range** | 1,466 / 2,004 = 73.15% | **0.00%** |
+
+**Every control is at or near zero while every claim is at or near 100%**, so the words are
+not unstructured: they are floats in a bounded band, frequently equal, and when unequal they
+form a symmetric range about their centre. *That is a full description of their values -- it
+is only their referent that is missing.*
+
+**Which sharpens what an anchor has to supply.** Not "what are these bytes" -- that is
+answered -- but *which quantity in this engine is a symmetric float range, usually
+degenerate to a point, attached to a source entry inside a node type the runtime never
+reads.* A table keyed by that shape is what would close it.
+
 ##### The chunk switch in full, and what it says about the "unowned" media
 
 Disassembled properly, the bank dispatch is a flat fourcc chain:
