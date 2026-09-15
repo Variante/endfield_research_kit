@@ -2690,6 +2690,39 @@ from there the counts fall out. Widening a range would never have found either.
   against rivals sharing **neither** endpoint. *When scoring a two-part reading
   against rivals, rivals that share a part inherit its score; hold only the
   genuinely different ones to the wide margin.*
+### `0x0B` has a whole-body frame: 3,715 of 4,325
+
+```
+u8  flag
+u32 sourceCount, that many 14-byte source records
+u32 entryCount
+entryCount x entry:
+    48 header bytes, the element count at +44
+    elementCount x element:
+        5 head bytes, the run count at +0
+        runCount x run: 12 header bytes, the record count at +7,
+                        then that many 12-byte records
+        12 trailing bytes
+        a trailer of 19 + 5 * flag bytes
+u32 terminator, always 100
+```
+
+- **This type had no frame at all before.** Every counted run in it is a count the
+  body declares, and every width was settled by scoring rivals the same way rather
+  than by whether the parse closed.
+- **The trailer length is `19 + 5 * flag`, and flags 0, 1 and 2 are each observed
+  closing bodies exactly** -- 3,108, 575 and 32 elements. Three points on the line,
+  not two and an extrapolation. Flag 2 was worth the check: adding it took the body
+  frame from 3,683 to 3,715, and all 32 of the bodies it gained had failed on
+  exactly `trailerFlag_02`. Anything above the highest observed flag is refused
+  rather than assumed to continue.
+- **The 610 fenced bodies, by reason:** `entries_do_not_reach_the_terminator` 322,
+  `range_element_trailer_flag` 119, `range_element_runs` 102, `range_elements` 46,
+  `range_element_head` 21. None is partially framed into a result.
+- Not a closure-gated lane, for the same reason `0x08` is not. The gate is a floor
+  at 80% -- there to catch a regression, not to assert the frame is complete, which
+  it is not.
+
 ### `0x0B`'s element is now a forward frame
 
 ```

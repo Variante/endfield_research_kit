@@ -1729,6 +1729,10 @@ def aggregate_current_hirc_actions(
     music_ref_totals: Counter[str] = Counter()
     music_ref_per_body: Counter[str] = Counter()
     music_ref_edges: Counter[str] = Counter()
+    type11_body_totals: Counter[str] = Counter()
+    type11_body_failures: Counter[str] = Counter()
+    type11_body_groups: Counter[str] = Counter()
+    type11_body_selectors: Counter[str] = Counter()
     type11_element_totals: Counter[str] = Counter()
     type11_element_maps: dict[str, Counter] = {
         key: Counter() for key in TYPE11_ELEMENT_MAPS
@@ -1842,6 +1846,18 @@ def aggregate_current_hirc_actions(
         type08_body_failures.update(package_type08_body["failureCategories"])
         type08_body_selectors.update(
             (package.get("hircType08BodyFrame") or {}).get("selectorCounts") or {}
+        )
+        package_type11_body = _read_type08_body_frame(
+            package.get("hircType11BodyFrame"), package_label
+        )
+        for key in TYPE08_BODY_FIELDS:
+            type11_body_totals[key] += package_type11_body[key]
+        type11_body_failures.update(package_type11_body["failureCategories"])
+        type11_body_groups.update(
+            (package.get("hircType11BodyFrame") or {}).get("groupCounts") or {}
+        )
+        type11_body_selectors.update(
+            (package.get("hircType11BodyFrame") or {}).get("selectorCounts") or {}
         )
         package_type12_body = _read_type12_body_frame(
             package.get("hircType12BodyFrame"), package_label
@@ -2391,6 +2407,12 @@ def aggregate_current_hirc_actions(
             "failureCategories": dict(sorted(type12_body_failures.items())),
             "unsupportedCategories": dict(sorted(type12_body_unsupported.items())),
             "selectorCounts": dict(sorted(type12_body_selectors.items())),
+        },
+        "type11BodyFrames": {
+            **{key: int(type11_body_totals[key]) for key in TYPE08_BODY_FIELDS},
+            "failureCategories": dict(sorted(type11_body_failures.items())),
+            "groupCounts": dict(sorted(type11_body_groups.items())),
+            "selectorCounts": dict(sorted(type11_body_selectors.items())),
         },
         "type08BodyFrames": {
             **{key: int(type08_body_totals[key]) for key in TYPE08_BODY_FIELDS},
@@ -3256,6 +3278,34 @@ def the_type11_trailer_is_not_settled_by_parsing(corpus: dict[str, Any]) -> bool
         int(value) >= chosen for name, value in selects.items()
         if name != TYPE11_CHOSEN_ANCHOR
     )
+
+
+# Numeric type 0x0B does not close, so it is not a closure-gated lane. The gate
+# below is a floor with a little slack, there to catch a regression rather than to
+# assert the frame is complete: it is not, and 610 bodies say so.
+TYPE11_BODY_MINIMUM_EXACT = 0.80
+
+
+def the_type11_body_frame_covers_most_of_its_corpus(corpus: dict[str, Any]) -> bool:
+    """Numeric type 0x0B's body frame must keep covering the bulk of its bodies.
+
+    This type had no frame at all until now, so there is no closure to demand and
+    none is demanded: 3,715 of 4,325 bodies close and the remaining 610 are fenced
+    by reason, never partially framed into a result.
+
+    What the gate protects is the floor. A change that quietly halved the coverage
+    would otherwise look like a passing run, because nothing else in the report
+    reads this number. The threshold is deliberately below the measured rate --
+    a gate set at exactly today's value fails on the next legitimate improvement to
+    a neighbouring reader and teaches nothing when it does.
+    """
+    count = int(corpus.get("count") or 0)
+    exact = int(corpus.get("exact") or 0)
+    if count <= 0 or exact <= 0:
+        return False
+    if int(corpus.get("ambiguous") or 0):
+        return False
+    return exact >= count * TYPE11_BODY_MINIMUM_EXACT
 
 
 def the_type11_element_frame_beats_its_rivals(corpus: dict[str, Any]) -> bool:
@@ -5732,6 +5782,8 @@ def run_current_corpus_audit(
     type17_closed = type17_is_framed_except_the_tied_block(type17_corpus)
     type08_corpus = corpus["type08HeadWords"]
     type08_body_corpus = corpus["type08BodyFrames"]
+    type11_body_corpus = corpus["type11BodyFrames"]
+    t11_body_ok = the_type11_body_frame_covers_most_of_its_corpus(type11_body_corpus)
     type12_body_corpus = corpus["type12BodyFrames"]
     type08_tail_corpus = corpus["type08TailRecords"]
     type08_word_corpus = corpus["type08TailHeadWords"]
@@ -5812,6 +5864,7 @@ def run_current_corpus_audit(
         and t11_anchor_control
         and t11_frame_ok
         and t11_frame_control
+        and t11_body_ok
         and music_partition
         and music_anchor
         and type0a_head
@@ -5863,6 +5916,7 @@ def run_current_corpus_audit(
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
             "type08BodyFrames": type08_body_corpus,
+            "type11BodyFrames": type11_body_corpus,
             "type12BodyFrames": type12_body_corpus,
             "type08TailRecords": type08_tail_corpus,
             "type08TailHeadWords": type08_word_corpus,
@@ -6052,6 +6106,13 @@ def run_current_corpus_audit(
             f"distinct={(refs.get('distinctTargets') or {}).get(MUSIC_PARTITIONING_EDGE)} "
             f"twice={(refs.get('targetsReachedTwice') or {}).get(MUSIC_PARTITIONING_EDGE)} "
             f"population={(refs.get('targetPopulation') or {}).get(MUSIC_PARTITIONING_EDGE)}"
+        )
+    if not t11_body_ok:
+        t11b = report["corpus"].get("type11BodyFrames") or {}
+        lane_failures.append(
+            "the type 0x0B body frame no longer covers most of its corpus: "
+            f"count={t11b.get('count')} exact={t11b.get('exact')} "
+            f"fences={t11b.get('failureCategories')}"
         )
     if not t11_frame_ok:
         t11 = report["corpus"].get("type11Elements") or {}

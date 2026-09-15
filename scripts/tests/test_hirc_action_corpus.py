@@ -14,6 +14,8 @@ from scripts.audio_semantics.hirc_action_corpus import (
     TYPE11_ELEMENT_SCALARS,
     _rank_shared_constants,
     _read_type11_element_census,
+    TYPE11_BODY_MINIMUM_EXACT,
+    the_type11_body_frame_covers_most_of_its_corpus,
     the_type11_element_frame_beats_its_rivals,
     the_type11_element_frame_is_not_settled_by_empty_elements,
     the_type11_trailer_anchor_beats_its_rivals,
@@ -3162,3 +3164,38 @@ class Type11ElementFrameTests(unittest.TestCase):
         base["frameClosesWithRuns"] = {"frame_5_12_7_12": 6}
         with self.assertRaises(ValueError):
             _read_type11_element_census(base, "pkg")
+
+
+class Type11BodyLaneTests(unittest.TestCase):
+    """Numeric type 0x0B's body frame has a floor, not a closure requirement."""
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_type11_body_frame_covers_most_of_its_corpus(
+            {"count": 4325, "exact": 3715, "failed": 610, "ambiguous": 0}
+        ))
+
+    def test_a_halved_coverage_fails(self) -> None:
+        # The regression this gate exists to catch. Nothing else in the report reads
+        # this number, so a change that quietly halved it would look like a pass.
+        self.assertFalse(the_type11_body_frame_covers_most_of_its_corpus(
+            {"count": 4325, "exact": 1800, "failed": 2525, "ambiguous": 0}
+        ))
+
+    def test_an_ambiguous_body_fails_outright(self) -> None:
+        self.assertFalse(the_type11_body_frame_covers_most_of_its_corpus(
+            {"count": 4325, "exact": 3715, "ambiguous": 1}
+        ))
+
+    def test_an_empty_lane_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_type11_body_frame_covers_most_of_its_corpus({}))
+        self.assertFalse(the_type11_body_frame_covers_most_of_its_corpus(
+            {"count": 0, "exact": 0}
+        ))
+        self.assertFalse(the_type11_body_frame_covers_most_of_its_corpus(
+            {"count": 100, "exact": 0}
+        ))
+
+    def test_the_floor_sits_below_the_measured_rate(self) -> None:
+        # A gate set at exactly today's value fails on the next legitimate change to
+        # a neighbouring reader and teaches nothing when it does.
+        self.assertLess(TYPE11_BODY_MINIMUM_EXACT, 3715 / 4325)
