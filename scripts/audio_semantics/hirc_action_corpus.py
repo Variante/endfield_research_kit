@@ -1733,6 +1733,8 @@ def aggregate_current_hirc_actions(
     type11_body_failures: Counter[str] = Counter()
     type11_body_groups: Counter[str] = Counter()
     type11_body_selectors: Counter[str] = Counter()
+    type11_header_totals: Counter[str] = Counter()
+    type11_header_elements: Counter[str] = Counter()
     type11_element_totals: Counter[str] = Counter()
     type11_element_maps: dict[str, Counter] = {
         key: Counter() for key in TYPE11_ELEMENT_MAPS
@@ -1937,6 +1939,12 @@ def aggregate_current_hirc_actions(
         music_ref_twice.update(package_music_refs["targetsReachedTwice"])
         music_ref_population.update(package_music_refs["targetPopulation"])
         music_ref_places.update(package_music_refs["edgeDistanceFromEnd"])
+        package_t11hdr = _read_type11_header_census(
+            package.get("hircType11EntryHeaders"), package_label
+        )
+        for key in TYPE11_HEADER_SCALARS:
+            type11_header_totals[key] += package_t11hdr[key]
+        type11_header_elements.update(package_t11hdr["elementCountValues"])
         package_t11el = _read_type11_element_census(
             package.get("hircType11Elements"), package_label
         )
@@ -2452,6 +2460,10 @@ def aggregate_current_hirc_actions(
             "tailEntryCountCounts": dict(sorted(type11_tail_counts.items())),
             "interpolationCounts": dict(sorted(type11_interps.items())),
             "firstTailEntryLeadingWordCounts": dict(sorted(type11_lead_words.items())),
+        },
+        "type11EntryHeaders": {
+            **{key: int(type11_header_totals[key]) for key in TYPE11_HEADER_SCALARS},
+            "elementCountValues": dict(sorted(type11_header_elements.items())),
         },
         "type11Elements": {
             **{key: int(type11_element_totals[key]) for key in TYPE11_ELEMENT_SCALARS},
@@ -3306,6 +3318,105 @@ def the_type11_body_frame_covers_most_of_its_corpus(corpus: dict[str, Any]) -> b
     if int(corpus.get("ambiguous") or 0):
         return False
     return exact >= count * TYPE11_BODY_MINIMUM_EXACT
+
+
+TYPE11_HEADER_SCALARS = (
+    "entries", "rangeTested", "rangeIsSymmetric", "rangeIsOrdered",
+    "rangeControlTested", "rangeControlIsSymmetric", "rangeControlIsOrdered",
+    "fractionsTested", "fractionsAreSmall",
+    "fractionControlsTested", "fractionControlsAreSmall",
+)
+
+
+def _read_type11_header_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's numeric type 0x0B entry-header census."""
+    if census is None:
+        return {key: 0 for key in TYPE11_HEADER_SCALARS} | {"elementCountValues": {}}
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x0B entry header census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in TYPE11_HEADER_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(
+                f"type 0x0B entry header census has invalid {key}: {label}"
+            ) from exc
+        if value < 0:
+            raise ValueError(f"type 0x0B entry header census has negative {key}: {label}")
+        out[key] = value
+    raw = census.get("elementCountValues")
+    if not isinstance(raw, dict):
+        raise ValueError(f"type 0x0B entry header census has invalid elementCountValues: {label}")
+    out["elementCountValues"] = {str(name): int(value) for name, value in raw.items()}
+    if sum(out["elementCountValues"].values()) != out["entries"]:
+        raise ValueError(
+            f"type 0x0B element count histogram does not cover its entries: {label}"
+        )
+    for tested, hits in (
+        ("rangeTested", "rangeIsSymmetric"), ("rangeTested", "rangeIsOrdered"),
+        ("rangeControlTested", "rangeControlIsSymmetric"),
+        ("rangeControlTested", "rangeControlIsOrdered"),
+        ("fractionsTested", "fractionsAreSmall"),
+        ("fractionControlsTested", "fractionControlsAreSmall"),
+    ):
+        if out[hits] > out[tested]:
+            raise ValueError(f"type 0x0B entry header {hits} exceeds {tested}: {label}")
+    return out
+
+
+def the_type11_entry_header_fields_beat_their_controls(corpus: dict[str, Any]) -> bool:
+    """Two readings of the entry header must each beat a neighbouring word.
+
+    The words at 16 and 24 read as a symmetric float pair, and those at 28 and 36 as
+    fixed-point fractions of 2^32 -- the same encoding numeric type 0x0A carries.
+    Neither claim is worth anything unless a word read at a nearby offset, scored the
+    same way, fails: a header full of small numbers could satisfy either property by
+    accident, and only the control can say whether it does.
+
+    Entries where both range words are zero are excluded, and a fraction word of zero
+    is excluded, because zero satisfies both properties for free and there are
+    thousands of them.
+    """
+    if int(corpus.get("entries") or 0) <= 0:
+        return False
+    tested = int(corpus.get("rangeTested") or 0)
+    control_tested = int(corpus.get("rangeControlTested") or 0)
+    if tested <= 0 or control_tested <= 0:
+        return False
+    symmetric = int(corpus.get("rangeIsSymmetric") or 0) / tested
+    control = int(corpus.get("rangeControlIsSymmetric") or 0) / control_tested
+    if symmetric < 0.5 or symmetric <= control * 2:
+        return False
+    fractions = int(corpus.get("fractionsTested") or 0)
+    fraction_control = int(corpus.get("fractionControlsTested") or 0)
+    if fractions <= 0 or fraction_control <= 0:
+        return False
+    small = int(corpus.get("fractionsAreSmall") or 0) / fractions
+    small_control = int(corpus.get("fractionControlsAreSmall") or 0) / fraction_control
+    return small >= 0.9 and small > small_control * 2
+
+
+def the_type11_element_count_is_not_yet_a_count(corpus: dict[str, Any]) -> bool:
+    """Report, as a gate, that the element count is never exercised.
+
+    This is a statement about the reader rather than the format, and it is here so
+    that it cannot be forgotten. The word at entry header offset 44 is read as an
+    element count, and in **every** entry the frame closes it is 1. Reading it as a
+    count and reading it as the constant 1 produce the same 3,715 bodies, so nothing
+    in the corpus distinguishes them and the "count" is a hypothesis.
+
+    The gate holds while that is true. If a body ever closes with an entry declaring
+    two elements, this fails -- and that failure is the good news, because it means
+    the reading has finally been tested. Change it then, not before.
+    """
+    values = corpus.get("elementCountValues") or {}
+    if not values:
+        return False
+    total = sum(int(v) for v in values.values())
+    if total <= 0:
+        return False
+    return int(values.get("elements_1") or 0) == total
 
 
 def the_type11_element_frame_beats_its_rivals(corpus: dict[str, Any]) -> bool:
@@ -5756,6 +5867,9 @@ def run_current_corpus_audit(
     }
     group_bodies_ok = every_group_reports_the_bodies_behind_it(body_lane_corpus)
     thin_groups = thinly_seen_groups(body_lane_corpus)
+    type11_header_corpus = corpus["type11EntryHeaders"]
+    t11_header_ok = the_type11_entry_header_fields_beat_their_controls(type11_header_corpus)
+    t11_count_untested = the_type11_element_count_is_not_yet_a_count(type11_header_corpus)
     type11_element_corpus = corpus["type11Elements"]
     t11_anchor_ok = the_type11_trailer_anchor_beats_its_rivals(type11_element_corpus)
     t11_anchor_control = the_type11_trailer_is_not_settled_by_parsing(type11_element_corpus)
@@ -5865,6 +5979,8 @@ def run_current_corpus_audit(
         and t11_frame_ok
         and t11_frame_control
         and t11_body_ok
+        and t11_header_ok
+        and t11_count_untested
         and music_partition
         and music_anchor
         and type0a_head
@@ -5912,6 +6028,7 @@ def run_current_corpus_audit(
             "type0AHead": type0a_head_corpus,
             "sharedFrameConstants": shared_const_corpus,
             "type11Elements": type11_element_corpus,
+            "type11EntryHeaders": type11_header_corpus,
             "thinlySeenGroups": thin_groups,
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
@@ -6106,6 +6223,22 @@ def run_current_corpus_audit(
             f"distinct={(refs.get('distinctTargets') or {}).get(MUSIC_PARTITIONING_EDGE)} "
             f"twice={(refs.get('targetsReachedTwice') or {}).get(MUSIC_PARTITIONING_EDGE)} "
             f"population={(refs.get('targetPopulation') or {}).get(MUSIC_PARTITIONING_EDGE)}"
+        )
+    if not t11_header_ok:
+        h = report["corpus"].get("type11EntryHeaders") or {}
+        lane_failures.append(
+            "a type 0x0B entry header field no longer beats its control: "
+            f"symmetric={h.get('rangeIsSymmetric')}/{h.get('rangeTested')} "
+            f"control={h.get('rangeControlIsSymmetric')}/{h.get('rangeControlTested')} "
+            f"fractions={h.get('fractionsAreSmall')}/{h.get('fractionsTested')} "
+            f"fractionControl={h.get('fractionControlsAreSmall')}/{h.get('fractionControlsTested')}"
+        )
+    if not t11_count_untested:
+        h = report["corpus"].get("type11EntryHeaders") or {}
+        lane_failures.append(
+            "the type 0x0B element count is no longer 1 in every entry the frame "
+            "closes, so the count reading is finally under test and the note saying "
+            f"it is not must be revised: {h.get('elementCountValues')}"
         )
     if not t11_body_ok:
         t11b = report["corpus"].get("type11BodyFrames") or {}

@@ -2733,6 +2733,42 @@ u32 terminator, always 100
   **ten bytes from the terminator**, which is where an element's short trailer puts
   its own marker.
 
+#### Four fields read in the 48-byte entry header -- and one caveat about the frame
+
+Censused over the 3,715 entries of closing bodies only; an entry header from a body
+that later fails says nothing, because the walk that reached it may be desynchronised.
+
+| offset | reading | evidence | control |
+|---|---|---|---|
+| `+0`, `+8` | constant zero | 3,715 each | -- |
+| `+4` | source id | 1,132 distinct | -- |
+| `+16`, `+24` | a **symmetric float pair** | `low == -high` in **1,218 of 1,404** nonzero pairs; `low <= high` in 1,264 | the neighbouring word at `+12`: **0 of 1,391** |
+| `+28`, `+36` | **fixed-point fractions of 2^32** | small rationals in **2,735 of 2,804** | the word at `+40`: **0 of 3,715** |
+| `+44` | element count | see below | -- |
+
+- The float pair sits around plus or minus five: `(-5.16, +5.16)`, `(-4.84, +4.84)`,
+  `(-5.48, +5.48)`. What it bounds is not claimed.
+- The fractions read 0, 1/3, 2/3, 1/2 and 1/6 -- **the same fixed-point encoding
+  `0x0A` carries**, which is now confirmed in two numeric types. Entries where both
+  range words are zero are excluded, and a zero fraction is excluded, because zero
+  satisfies both properties for free.
+- **Both controls score exactly zero.** A word read one field away satisfies neither
+  property in a single entry.
+
+**The caveat, and it is about this reader rather than the format.** The word at `+44`
+is read as an element count, and it is **1 in every one of the 3,715 entries the frame
+closes**. Reading it as a count and reading it as the constant 1 produce the same
+3,715 bodies, so **nothing in the corpus distinguishes them** and the "count" is a
+hypothesis. Entries declaring 0, 2, 3 or 4 exist -- 370, 221, 48 and 7 of them -- and
+every one is in a body that fails to frame.
+
+This is stated as a gate, `the_type11_element_count_is_not_yet_a_count`, which holds
+while the count is 1 everywhere. **When a body finally closes with two elements the
+gate fails, and that failure is the good news**: the reading will have been tested for
+the first time. *A field named as a count in a frame that never sees it take another
+value has been assumed, not measured -- and the assumption should be visible in the
+gate rather than buried in the field's name.*
+
 #### The 119 trailer-flag fences: the size is found, the selector is not
 
 - **A 17-byte trailing block instead of 12 closes 89 of the 119**, taking the body

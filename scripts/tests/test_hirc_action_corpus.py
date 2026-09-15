@@ -16,7 +16,10 @@ from scripts.audio_semantics.hirc_action_corpus import (
     _read_type11_element_census,
     TYPE11_BODY_MINIMUM_EXACT,
     the_type11_body_frame_covers_most_of_its_corpus,
+    _read_type11_header_census,
+    the_type11_element_count_is_not_yet_a_count,
     the_type11_element_frame_beats_its_rivals,
+    the_type11_entry_header_fields_beat_their_controls,
     the_type11_element_frame_is_not_settled_by_empty_elements,
     the_type11_trailer_anchor_beats_its_rivals,
     the_type11_trailer_is_not_settled_by_parsing,
@@ -3199,3 +3202,72 @@ class Type11BodyLaneTests(unittest.TestCase):
         # A gate set at exactly today's value fails on the next legitimate change to
         # a neighbouring reader and teaches nothing when it does.
         self.assertLess(TYPE11_BODY_MINIMUM_EXACT, 3715 / 4325)
+
+
+class Type11EntryHeaderTests(unittest.TestCase):
+    """Entry-header readings must each beat a neighbouring word."""
+
+    def census(self, **overrides):
+        base = {
+            "entries": 3715,
+            "rangeTested": 1404, "rangeIsSymmetric": 1218, "rangeIsOrdered": 1264,
+            "rangeControlTested": 1391, "rangeControlIsSymmetric": 0,
+            "rangeControlIsOrdered": 1078,
+            "fractionsTested": 2804, "fractionsAreSmall": 2735,
+            "fractionControlsTested": 3715, "fractionControlsAreSmall": 0,
+            "elementCountValues": {"elements_1": 3715},
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_type11_entry_header_fields_beat_their_controls(self.census()))
+        self.assertTrue(the_type11_element_count_is_not_yet_a_count(self.census()))
+
+    def test_a_control_that_scores_as_well_fails(self) -> None:
+        self.assertFalse(the_type11_entry_header_fields_beat_their_controls(
+            self.census(rangeControlIsSymmetric=1200)
+        ))
+        self.assertFalse(the_type11_entry_header_fields_beat_their_controls(
+            self.census(fractionControlsAreSmall=3000)
+        ))
+
+    def test_a_reading_that_holds_for_a_minority_fails(self) -> None:
+        self.assertFalse(the_type11_entry_header_fields_beat_their_controls(
+            self.census(rangeIsSymmetric=400)
+        ))
+        self.assertFalse(the_type11_entry_header_fields_beat_their_controls(
+            self.census(fractionsAreSmall=1500)
+        ))
+
+    def test_an_untested_reading_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_type11_entry_header_fields_beat_their_controls({}))
+        self.assertFalse(the_type11_entry_header_fields_beat_their_controls(
+            self.census(rangeTested=0, rangeIsSymmetric=0)
+        ))
+        self.assertFalse(the_type11_entry_header_fields_beat_their_controls(
+            self.census(fractionControlsTested=0)
+        ))
+
+    def test_the_element_count_gate_states_what_is_untested(self) -> None:
+        # It holds while the count is 1 everywhere. When a body finally closes with
+        # two elements the gate fails, and that failure is the good news: the
+        # reading has been tested for the first time.
+        self.assertTrue(the_type11_element_count_is_not_yet_a_count(self.census()))
+        self.assertFalse(the_type11_element_count_is_not_yet_a_count(
+            self.census(elementCountValues={"elements_1": 3700, "elements_2": 15})
+        ))
+        self.assertFalse(the_type11_element_count_is_not_yet_a_count({}))
+
+    def test_the_reader_rejects_hits_above_what_was_tested(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_type11_header_census(self.census(rangeIsSymmetric=9999), "pkg")
+
+    def test_the_reader_rejects_a_histogram_that_misses_entries(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_type11_header_census(
+                self.census(elementCountValues={"elements_1": 3}), "pkg"
+            )
+
+    def test_an_absent_census_reads_as_empty(self) -> None:
+        self.assertEqual(_read_type11_header_census(None, "pkg")["entries"], 0)
