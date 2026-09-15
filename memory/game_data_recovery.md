@@ -3939,6 +3939,55 @@ own docstring: *"joining inside one package answers a question nobody asked."* T
 census is published from C# as distinct value sets and joined in Python, where the
 packages are already pooled.
 
+### The bank has four sections nothing parsed, and STMG is one of them
+
+Censusing the section tags was overdue. Across 20,873 bank payloads there are exactly
+two tags everywhere -- `BKHD` (834,940 bytes) and `HIRC` (26,995,526) -- and **one
+bank carries five more**: `DATA` 5,913,232, **`STMG` 10,118**, `INIT` 347, `ENVS` 216,
+`PLAT` 8, `DIDX` 84. *A section census costs nothing and should have been the first
+thing done to this format.*
+
+#### `STMG`'s leading block is framed: 3,722 bytes of 10,118
+
+```
+u16                      observed 0
+f32                      observed -60.0
+u16                      observed 256
+u16                      observed 50
+u32 count                309
+count x 12-byte record:  u32 id, u16 value, 6 bytes (all zero)
+```
+
+- **One instance in the whole corpus, so closure is not available as evidence and
+  none is claimed from it.** Two checks stand in, neither needing the section to
+  close:
+  - **Distinctness.** At stride 12 the 309 ids are **all different**. At every other
+    stride from 8 to 20 they collapse to between **107 and 220**. A stride that is not
+    the record width reads each id from a sliding mix of two fields, and those
+    collide. 12 rivals scored, **0** give distinct ids.
+  - **What follows.** At 12 the word after the run is **15** -- a small count opening a
+    further block. Every other stride lands on zero or an arbitrary large value.
+- The record value is **1000 in 306**, and 3500, 500 and 0 once each.
+- **6,396 bytes remain unframed** and are reported as such. With one instance there is
+  nothing to check a guess against.
+
+#### NOTHING outside HIRC references a music object either
+
+Sliding a 32-bit window over all four unparsed sections -- 10,677 words -- **63 name a
+HIRC object against 0.59 expected by chance**, so the references are real. Every one
+is a **bus**: numeric type `0x12` 62 times and `0x08` once, all inside `STMG`. `INIT`,
+`ENVS` and `PLAT` name nothing at all.
+
+- Unaligned offsets were included deliberately. The source id inside the 14-byte
+  source record sits at `+5`, which is not four-byte aligned, and testing only aligned
+  words is exactly how that field stayed unidentified for so long.
+- **Together with the object graph this closes the question.** Across every byte of
+  the bank format -- the reference graph, the parent field, the `0x08`/`0x12` forest,
+  every music relation, the action target word, and all four unparsed sections --
+  **nothing references a music object from outside the music family.**
+- Gated with its expiry in mind: a music type appearing here fails the audit. **That
+  failure is the good news.**
+
 ### NOTHING in the HIRC object graph reaches the music family's media
 
 The previous batch asked what addresses the music subgraph. The answer, over every

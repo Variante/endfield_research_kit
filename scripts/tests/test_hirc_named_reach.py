@@ -4,6 +4,9 @@ import unittest
 
 from scripts.audio_semantics.hirc_named_reach import (
     media_attribution,
+    stmg_from_audit,
+    the_stmg_record_stride_beats_its_rivals,
+    the_unparsed_sections_name_only_buses,
     music_reach_from_audit,
     the_music_family_is_not_entered_from_the_object_graph,
     media_attribution_is_discriminated,
@@ -387,3 +390,99 @@ class MusicIsolationTests(unittest.TestCase):
                     {"status": "verified",
                      "package": {"hircType03Targets": {"hircMusicReach": bad}}},
                 ]})
+
+
+class StmgFrameTests(unittest.TestCase):
+    """One instance in the whole corpus, so the stride carries the evidence."""
+
+    MEASURED = {
+        "sections": 1, "sectionBytes": 10118, "sectionsTooShort": 0,
+        "countOutOfRange": 0, "runPastTheEnd": 0, "sectionsFramed": 1,
+        "declaredRecords": 309, "distinctRecordIds": 309,
+        "rivalStridesTested": 12, "rivalStridesWithDistinctIds": 0,
+        "runsFollowedByAPlausibleCount": 1, "bytesFramed": 3722,
+        "bytesUnframed": 6396,
+    }
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_stmg_record_stride_beats_its_rivals(self.MEASURED))
+
+    def test_a_rival_stride_that_also_gives_distinct_ids_fails(self) -> None:
+        # The whole discrimination. With one instance there is no closure to appeal
+        # to, so if another width read the ids as cleanly this says nothing.
+        self.assertFalse(the_stmg_record_stride_beats_its_rivals(
+            dict(self.MEASURED, rivalStridesWithDistinctIds=1)
+        ))
+
+    def test_no_rival_scored_at_all_fails(self) -> None:
+        self.assertFalse(the_stmg_record_stride_beats_its_rivals(
+            dict(self.MEASURED, rivalStridesTested=0)
+        ))
+
+    def test_colliding_record_ids_fail(self) -> None:
+        self.assertFalse(the_stmg_record_stride_beats_its_rivals(
+            dict(self.MEASURED, distinctRecordIds=308)
+        ))
+
+    def test_a_run_followed_by_nothing_plausible_fails(self) -> None:
+        self.assertFalse(the_stmg_record_stride_beats_its_rivals(
+            dict(self.MEASURED, runsFollowedByAPlausibleCount=0)
+        ))
+
+    def test_a_section_that_is_neither_framed_nor_fenced_fails(self) -> None:
+        # Fail-closed: every section must be accounted for on one side or the other.
+        self.assertFalse(the_stmg_record_stride_beats_its_rivals(
+            dict(self.MEASURED, sections=2)
+        ))
+
+    def test_an_empty_census_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_stmg_record_stride_beats_its_rivals({}))
+        self.assertFalse(the_stmg_record_stride_beats_its_rivals(None))
+
+    def test_a_malformed_census_fails_closed(self) -> None:
+        with self.assertRaises(ValueError):
+            stmg_from_audit({"rows": [
+                {"status": "verified", "package": {"stmg": {"sections": "one"}}},
+            ]})
+
+
+class UnparsedSectionWordTests(unittest.TestCase):
+    """Nothing outside HIRC references a music object either."""
+
+    MEASURED = {
+        "sections": 4, "sectionBytes": 10689, "hircObjects": 238807,
+        "wordsTested": 10677, "wordsNamingAnObject": 63,
+        "typesNamed": {"STMG_type08": 1, "STMG_type12": 62},
+    }
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_unparsed_sections_name_only_buses(self.MEASURED))
+
+    def test_a_music_type_appearing_fails_the_gate(self) -> None:
+        # The good-news case. A music type here would be the entry point the object
+        # graph does not have, and the claim that none exists would have expired.
+        self.assertFalse(the_unparsed_sections_name_only_buses(
+            dict(self.MEASURED, wordsNamingAnObject=64,
+                 typesNamed={"STMG_type08": 1, "STMG_type12": 62,
+                             "STMG_type0C": 1})
+        ))
+
+    def test_a_hit_rate_at_chance_fails(self) -> None:
+        # 10,677 words against 238,807 objects over a 32-bit space is 0.59 expected
+        # matches. One hit is not a reference, it is a coincidence.
+        self.assertFalse(the_unparsed_sections_name_only_buses(
+            dict(self.MEASURED, wordsNamingAnObject=1,
+                 typesNamed={"STMG_type12": 1})
+        ))
+
+    def test_a_histogram_that_does_not_cover_the_hits_fails(self) -> None:
+        self.assertFalse(the_unparsed_sections_name_only_buses(
+            dict(self.MEASURED, typesNamed={"STMG_type12": 62})
+        ))
+
+    def test_no_references_at_all_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_unparsed_sections_name_only_buses(
+            dict(self.MEASURED, wordsNamingAnObject=0, typesNamed={})
+        ))
+        self.assertFalse(the_unparsed_sections_name_only_buses({}))
+        self.assertFalse(the_unparsed_sections_name_only_buses(None))

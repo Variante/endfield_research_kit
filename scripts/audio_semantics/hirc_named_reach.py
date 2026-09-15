@@ -311,6 +311,137 @@ def the_music_family_is_not_entered_from_the_object_graph(
     return int(reach.get("entryEdges") or 0) * 1000 < objects
 
 
+STMG_SCALARS = (
+    "sections", "sectionBytes", "sectionsTooShort", "countOutOfRange",
+    "runPastTheEnd", "sectionsFramed", "declaredRecords", "distinctRecordIds",
+    "rivalStridesTested", "rivalStridesWithDistinctIds",
+    "runsFollowedByAPlausibleCount", "bytesFramed", "bytesUnframed",
+)
+STMG_WORD_SCALARS = (
+    "sections", "sectionBytes", "hircObjects", "wordsTested",
+    "wordsNamingAnObject",
+)
+# Numeric types 0x08 and 0x12 are the two that form the bus forest. Nothing else may
+# appear among the objects the unparsed sections name without this being revisited.
+BUS_TYPES = ("type08", "type12")
+
+
+def _sum_census(audit: dict[str, Any], key: str, scalars: tuple[str, ...],
+                maps: tuple[str, ...]) -> dict[str, Any]:
+    """Sum one per-package census over every verified package."""
+    totals: dict[str, Any] = {name: 0 for name in scalars}
+    merged = {name: Counter() for name in maps}
+    for row in audit.get("rows", []):
+        if row.get("status") != "verified":
+            continue
+        package = row.get("package")
+        if not isinstance(package, dict):
+            continue
+        census = package.get(key)
+        if census is None:
+            continue
+        if not isinstance(census, dict):
+            raise ValueError(f"{key} census is not an object")
+        for name in scalars:
+            try:
+                value = int(census[name])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ValueError(f"{key} census has invalid {name}") from exc
+            if value < 0:
+                raise ValueError(f"{key} census has negative {name}")
+            totals[name] += value
+        for name in maps:
+            merged[name].update(census.get(name) or {})
+    for name in maps:
+        totals[name] = dict(sorted(merged[name].items()))
+    return totals
+
+
+def stmg_from_audit(audit: dict[str, Any]) -> dict[str, Any]:
+    return _sum_census(audit, "stmg", STMG_SCALARS, ("recordValues",))
+
+
+def stmg_words_from_audit(audit: dict[str, Any]) -> dict[str, Any]:
+    return _sum_census(
+        audit, "stmgWords", STMG_WORD_SCALARS, ("typesNamed", "wordsTestedByTag"))
+
+
+def the_stmg_record_stride_beats_its_rivals(stmg: dict[str, Any]) -> bool:
+    """STMG's first record run is 12 bytes wide, and the width is discriminated.
+
+    STMG appears **once** in the whole corpus, so closure is not available as evidence
+    and none is claimed from it. Two checks stand in for it, and neither needs the
+    section to close:
+
+    - **Distinctness.** At a stride of 12 the 309 record ids are all different. At
+      every other stride from 8 to 20 they collapse, to between 107 and 220 distinct
+      values. A stride that is not the record width reads each id from a sliding mix
+      of two fields, and those collide.
+    - **What follows.** At 12 the word directly after the run is 15 -- a small count
+      that begins a further block. Every other stride lands on zero or on an arbitrary
+      large value.
+
+    Only the leading block is framed: 3,722 bytes of 10,118. The remaining 6,396 are
+    reported as unframed rather than guessed at, because with one instance there is
+    nothing to check a guess against.
+    """
+    if not isinstance(stmg, dict):
+        return False
+    framed = int(stmg.get("sectionsFramed") or 0)
+    declared = int(stmg.get("declaredRecords") or 0)
+    if framed <= 0 or declared <= 0:
+        return False
+    if int(stmg.get("distinctRecordIds") or 0) != declared:
+        return False
+    tested = int(stmg.get("rivalStridesTested") or 0)
+    if tested <= 0:
+        # No rival was scored, so "12 is right" is an assertion rather than a result.
+        return False
+    if int(stmg.get("rivalStridesWithDistinctIds") or 0) != 0:
+        return False
+    if int(stmg.get("runsFollowedByAPlausibleCount") or 0) != framed:
+        return False
+    # Fail-closed: a section that could not be framed must be counted somewhere.
+    fences = sum(int(stmg.get(name) or 0) for name in
+                 ("sectionsTooShort", "countOutOfRange", "runPastTheEnd"))
+    return framed + fences == int(stmg.get("sections") or 0)
+
+
+def the_unparsed_sections_name_only_buses(words: dict[str, Any]) -> bool:
+    """The sections nothing parses reference buses, and no music object at all.
+
+    Every byte of the bank format that is not HIRC lives in four sections: STMG,
+    INIT, ENVS and PLAT. Sliding a 32-bit window over all of them, 63 words name a
+    HIRC object against **0.59 expected by chance** -- so the references are real --
+    and every one of them is a bus, numeric type 0x08 or 0x12. All 63 are in STMG;
+    INIT, ENVS and PLAT name nothing.
+
+    Together with the object graph this closes the question the previous batch left
+    open. Nothing anywhere in the bank format references a music object from outside
+    the music family.
+
+    Written so that its expiry fires: if a music type ever appears here, the entry
+    point has been found and this fails. **That failure is the good news.**
+    """
+    if not isinstance(words, dict):
+        return False
+    tested = int(words.get("wordsTested") or 0)
+    objects = int(words.get("hircObjects") or 0)
+    named = int(words.get("wordsNamingAnObject") or 0)
+    if tested <= 0 or objects <= 0 or named <= 0:
+        return False
+    # Chance is computable here rather than a matter of taste.
+    chance = tested * objects / float(1 << 32)
+    if named < chance * 10:
+        return False
+    types = words.get("typesNamed")
+    if not isinstance(types, dict) or not types:
+        return False
+    if sum(int(value) for value in types.values()) != named:
+        return False
+    return all(name.rsplit("_", 1)[-1] in BUS_TYPES for name in types)
+
+
 def broad_literals(metadata_path: Path) -> list[str]:
     """Identifier-shaped managed literals, without the audio prefix vocabulary."""
     from scripts.audio_semantics.identifiers import (  # noqa: PLC0415
@@ -674,6 +805,8 @@ def run(
     source_values = source_values_from_audit(audit)
     attribution = media_attribution(media, source_values)
     music_reach = music_reach_from_audit(audit)
+    stmg = stmg_from_audit(audit)
+    stmg_words = stmg_words_from_audit(audit)
     if not media:
         problems.append("the audit declares no media ids, so the media join cannot be checked")
 
@@ -765,6 +898,23 @@ def run(
     table["populationsWithNoMatch"] = sorted(
         name for name, size in populations.items() if size and not wide_matches.get(name)
     )
+    if not the_stmg_record_stride_beats_its_rivals(stmg):
+        problems.append(
+            "the STMG record run no longer discriminates its stride: "
+            f"framed={stmg.get('sectionsFramed')} of {stmg.get('sections')} "
+            f"declared={stmg.get('declaredRecords')} "
+            f"distinct={stmg.get('distinctRecordIds')} "
+            f"rivals={stmg.get('rivalStridesWithDistinctIds')}"
+            f"/{stmg.get('rivalStridesTested')}"
+        )
+    if not the_unparsed_sections_name_only_buses(stmg_words):
+        problems.append(
+            "the unparsed sections no longer name only buses, which means either the "
+            "references have gone or a music entry point has finally been found: "
+            f"named={stmg_words.get('wordsNamingAnObject')} of "
+            f"{stmg_words.get('wordsTested')} words; "
+            f"types={stmg_words.get('typesNamed')}"
+        )
     if not the_music_family_is_not_entered_from_the_object_graph(music_reach):
         problems.append(
             "the music family's isolation no longer holds, which means either the "
@@ -815,6 +965,8 @@ def run(
         "broadNaming": table,
         "mediaAttribution": attribution,
         "musicReach": music_reach,
+        "stmg": stmg,
+        "unparsedSectionWords": stmg_words,
         "mediaSummary": {
             "declaredMediaIds": len(media),
             "identifiersReachingMedia": sum(1 for v in media_reached.values() if v),
