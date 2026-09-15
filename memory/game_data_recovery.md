@@ -7033,7 +7033,8 @@ placements.
   eliminates it too) and the mask-map rival is excluded by the binding list.
 - **`0x0B`'s `+12`/`+20` words.** Needs an external anchor of the kind that resolved the
   source records; no engine evidence can exist, since the engine never parses `0x0B`.
-- **The 1 of 8 unowned media** that is not Init-bank embedded.
+- ~~**The 1 of 8 unowned media** that is not Init-bank embedded.~~ **IDENTIFIED** -- see
+  below.
 
   *Reconciling two figures that look contradictory.* Pooling `hircMediaJoin` across all
   25 audited packages gives **61,333 declared media, 60,049 named, 1,284 unowned** --
@@ -7044,6 +7045,27 @@ placements.
   contradiction are the before and after of one step, and the arithmetic closes to the
   unit.* The pooled join also shows **948 source ids naming no declared media**, the
   reverse direction, which the cross-package trap predicts.
+
+  ***The 8 named, and a correction.*** Pooling `idValuesByType` -- which carries `type02`
+  (60,997 ids) **and** `type0B` (1,279) -- against the 61,333 declared media leaves
+  **exactly 8**, reproducing the recorded figure from the raw data:
+
+  | media id | declared in |
+  | --- | --- |
+  | 67918417, 133192886, 213132781, 792360875, 934360813, 1028758860 | `default_banks.pck` + `default_stream_0.pck` |
+  | **624424588** | `default_banks.pck` + **`default_stream_2.pck`** |
+  | **1041213772** | **`default_stream_0.pck` only -- no bank entry** |
+
+  **The note above says "the same 7 ids are also declared as streamed copies in
+  `default_stream_0.pck`. The 8th is in `default_stream_2.pck` only." Both halves are
+  wrong.** Seven ids are in `default_banks.pck` -- the Init bank's `DIDX` media, as
+  recorded -- but one of those seven streams from `default_stream_2.pck`, not
+  `default_stream_0.pck`. And the odd one out is **`1041213772`**, which is in
+  `default_stream_0.pck` *only* and has **no bank entry at all** -- so it is the media
+  that is genuinely not Init-bank embedded, and it is not the one the note points at.
+
+  *The characterisation was right in shape and wrong in both particulars, which is what
+  happens when a set is described from its summary rather than enumerated.*
 - **Slot-7 field 3's record contents**, which are not in these files at all.
 
 *Three blockers recorded before this pass turned out to be misdiagnosed:* the chunk
