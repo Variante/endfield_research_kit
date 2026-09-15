@@ -1972,6 +1972,49 @@ Stable conclusions:
   *Before checking any field as a constant in this layout, look at its value
   distribution over both types -- a field that is 0 in 96% of bodies and small
   elsewhere is a count.*
+### What "142,815 of 142,815 exact" does and does not establish
+
+- **Six body lanes report 100% exact. That rate is real, but it is not one claim --
+  it is a dozen claims of very different strength sharing a number.** The nine-group
+  frame is optional almost everywhere: most bodies skip most groups, so a lane can
+  frame every body exactly while one of its groups has been seen a handful of times.
+- The reports published **group entry totals** and nothing else, and an entry total
+  cannot be read on its own. `groupAEntries: 11` in type `0x06` might be eleven
+  bodies with one entry or one body with eleven. Those are completely different
+  amounts of evidence and only the first says anything about a layout.
+- So every lane now also publishes **how many exact bodies exercise each group** and
+  **the largest count any single body declares**, recorded at the one choke-point
+  every framer passes through (`RecordHircBodyFrame`), so no lane can be added
+  without it.
+- **Pooled across all six lanes, nothing is thin.** The least-seen real group is
+  group E at **324 bodies**; group C is at 85,397. The nine-group frame is well
+  supported.
+- **Per lane, several groups are very thin:**
+
+  | lane | group | bodies |
+  |---|---|---:|
+  | `0x07` | group E items/vertices | **4** |
+  | `0x06` | group A entries | **11** |
+  | `0x05` | group H states/state elements | **12** |
+  | `0x06` | group H groups/props/states | **14** |
+
+- **Both numbers are true and the second is the one a reader needs.** Pooling is
+  legitimate *only because* the nine groups are the same layout wherever they appear
+  -- which is itself the claim under test, not a premise. "Group E's layout is
+  established" rests on 324 bodies. "Type `0x07` frames group E correctly" rests on
+  **four**. The `widestSingleBodyPerGroup` column is what rules out the one-fat-body
+  case: group H's states are widest-1 or widest-2, so the 12 and 14 really are that
+  many separate observations.
+- Gated by `every_group_reports_the_bodies_behind_it`: a lane that counts group
+  entries without counting the bodies behind them is refused, and a report with no
+  groups at all fails rather than passing vacuously. The thin groups themselves are
+  **reported, not gated** -- the corpus contains what it contains, and the point is
+  to make the weak claim legible rather than to fail on it.
+- **The rule this adds.** A completion rate over a corpus of mostly-optional
+  structure is an average of claims, not a claim. Before reading one as evidence,
+  ask which parts of the layout the passing bodies actually exercised -- and count
+  bodies, not entries, because one body can carry a whole total.
+
 ### The shared frame's constants: closure never settled three of the four
 
 - **Audited every constant in the shared framer by scoring it against every rival

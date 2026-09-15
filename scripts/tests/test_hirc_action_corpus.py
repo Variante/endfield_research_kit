@@ -11,6 +11,9 @@ from pathlib import Path
 from scripts.audio_semantics.hirc_action_corpus import (
     _read_shared_constant_census,
     _rank_shared_constants,
+    every_group_reports_the_bodies_behind_it,
+    summarise_group_evidence,
+    thinly_seen_groups,
     every_shared_constant_beats_its_rivals,
     the_shared_constants_are_not_settled_by_closure,
     type03_targets_cross_bank_boundaries,
@@ -2936,3 +2939,63 @@ class SharedFrameConstantTests(unittest.TestCase):
 
     def test_an_absent_census_reads_as_empty_rather_than_raising(self) -> None:
         self.assertEqual(_read_shared_constant_census(None, "pkg")["bodies"], 0)
+
+
+class GroupEvidenceTests(unittest.TestCase):
+    """An entry total is not evidence until the bodies behind it are counted."""
+
+    def lanes(self, **overrides):
+        base = {
+            "type07": {
+                "anonymousGroupCounts": {"groupEItems": 20, "groupCEntries": 83014},
+                "anonymousGroupBodies": {"groupEItems": 4, "groupCEntries": 33202},
+                "anonymousGroupMaxInOneBody": {"groupEItems": 9, "groupCEntries": 11},
+            },
+            "type05": {
+                "anonymousGroupCounts": {"groupEItems": 1118, "groupCEntries": 24348},
+                "anonymousGroupBodies": {"groupEItems": 165, "groupCEntries": 14653},
+                "anonymousGroupMaxInOneBody": {"groupEItems": 19, "groupCEntries": 9},
+            },
+        }
+        base.update(overrides)
+        return base
+
+    def test_a_lane_counting_groups_must_count_their_bodies(self) -> None:
+        self.assertTrue(every_group_reports_the_bodies_behind_it(self.lanes()))
+        stale = self.lanes()
+        stale["type07"] = {"anonymousGroupCounts": {"groupEItems": 20}}
+        self.assertFalse(every_group_reports_the_bodies_behind_it(stale))
+
+    def test_a_lane_with_no_groups_is_not_required_to_report_bodies(self) -> None:
+        lanes = self.lanes(type08={"anonymousGroupCounts": {}})
+        self.assertTrue(every_group_reports_the_bodies_behind_it(lanes))
+
+    def test_a_report_with_no_groups_at_all_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(every_group_reports_the_bodies_behind_it({}))
+        self.assertFalse(every_group_reports_the_bodies_behind_it(
+            {"type08": {"anonymousGroupCounts": {"groupEItems": 0}}}
+        ))
+
+    def test_thin_groups_are_named_per_lane(self) -> None:
+        # Group E's layout is well established corpus-wide and has been seen four
+        # times in type 0x07. Both are true and the second is the one a reader
+        # judging that lane needs.
+        thin = thinly_seen_groups(self.lanes())
+        self.assertEqual(thin, {"type07": {"groupEItems": 4}})
+
+    def test_the_pooled_total_can_be_healthy_while_a_lane_is_thin(self) -> None:
+        summary = summarise_group_evidence(self.lanes())
+        self.assertEqual(summary["bodiesPerGroupPooled"]["groupEItems"], 169)
+        self.assertEqual(summary["thinlySeenPooled"], {})
+        self.assertEqual(summary["thinlySeenByLane"], {"type07": {"groupEItems": 4}})
+
+    def test_the_widest_single_body_is_a_maximum_not_a_sum(self) -> None:
+        # The number that distinguishes "a hundred bodies with one entry" from
+        # "one body with a hundred entries" must not be added up across lanes.
+        summary = summarise_group_evidence(self.lanes())
+        self.assertEqual(summary["widestSingleBodyPerGroup"]["groupEItems"], 19)
+
+    def test_an_empty_lane_set_summarises_without_raising(self) -> None:
+        summary = summarise_group_evidence({})
+        self.assertEqual(summary["bodiesPerGroupPooled"], {})
+        self.assertEqual(summary["thinlySeenByLane"], {})

@@ -617,6 +617,8 @@ def _read_hirc_body_metrics(
         frame.update(
             {
                 "groupCounts": {},
+                "groupBodies": {},
+                "groupMaxInOneBody": {},
                 "selectorCounts": {},
                 "failureCategories": {},
                 "unsupportedCategories": {},
@@ -728,8 +730,15 @@ def _read_hirc_body_metrics(
             )
         metrics[key] = dict(sorted(normalized.items()))
 
-    for key in ("groupCounts", "selectorCounts"):
+    for key in (
+        "groupCounts", "groupBodies", "groupMaxInOneBody", "selectorCounts",
+    ):
+        # The two body-scoped maps are additive diagnostics, so an older frame that
+        # omits them is read as empty -- but a frame that reports groups and not the
+        # bodies behind them is a stale writer, and that is refused below.
         raw_counts = frame.get(key)
+        if raw_counts is None and key in ("groupBodies", "groupMaxInOneBody"):
+            raw_counts = {}
         if not isinstance(raw_counts, dict):
             raise ValueError(f"{type_label} body-frame result has invalid {key}: {label}")
         normalized = {}
@@ -742,6 +751,26 @@ def _read_hirc_body_metrics(
                 raise ValueError(f"{type_label} body-frame result has negative {key} entry: {label}")
             normalized[str(name)] = count
         metrics[key] = dict(sorted(normalized.items()))
+    # Consistency of the body-scoped maps against the entry totals. Whether they are
+    # present at all is a corpus-level gate rather than a per-package error, because
+    # absence means an older writer; the checks here are about coherence.
+    for name, bodies in metrics["groupBodies"].items():
+        if bodies > metrics["exact"]:
+            raise ValueError(
+                f"{type_label} group {name} is exercised by more bodies than framed "
+                f"exactly: {label} bodies={bodies} exact={metrics['exact']}"
+            )
+        if bodies > metrics["groupCounts"].get(name, 0):
+            raise ValueError(
+                f"{type_label} group {name} is exercised by more bodies than it has "
+                f"entries: {label}"
+            )
+    for name, widest in metrics["groupMaxInOneBody"].items():
+        if widest > metrics["groupCounts"].get(name, 0):
+            raise ValueError(
+                f"{type_label} group {name} has one body declaring more than the "
+                f"group's total: {label}"
+            )
     # Every exactly framed body contributes exactly one observation to each
     # unconditional selector family; the group E branch family is conditional.
     for prefix in unconditional_selectors:
@@ -1158,6 +1187,8 @@ class _BodyLane:
         self.shared_note = shared_note
         self.totals: Counter[str] = Counter()
         self.groups: Counter[str] = Counter()
+        self.group_bodies: Counter[str] = Counter()
+        self.group_widest: dict[str, int] = {}
         self.selectors: Counter[str] = Counter()
         self.failures: Counter[str] = Counter()
         self.unsupported: Counter[str] = Counter()
@@ -1197,6 +1228,9 @@ class _BodyLane:
         for key in TYPE02_BODY_FRAME_FIELDS:
             self.totals[key] += metrics[key]
         self.groups.update(metrics["groupCounts"])
+        self.group_bodies.update(metrics.get("groupBodies") or {})
+        for name, widest in (metrics.get("groupMaxInOneBody") or {}).items():
+            self.group_widest[name] = max(self.group_widest.get(name, 0), int(widest))
         self.selectors.update(metrics["selectorCounts"])
         self.failures.update(metrics["failureCategories"])
         self.unsupported.update(metrics["unsupportedCategories"])
@@ -1241,6 +1275,8 @@ class _BodyLane:
                 "every exact body ends at its declared body end"
             ),
             "anonymousGroupCounts": dict(sorted(self.groups.items())),
+            "anonymousGroupBodies": dict(sorted(self.group_bodies.items())),
+            "anonymousGroupMaxInOneBody": dict(sorted(self.group_widest.items())),
             "anonymousSelectorCounts": dict(sorted(self.selectors.items())),
             "failureCategories": dict(sorted(self.failures.items())),
             "unsupportedCategories": dict(sorted(self.unsupported.items())),
@@ -2309,6 +2345,15 @@ def aggregate_current_hirc_actions(
         "type06BodyFrames": body_lanes["0x06"].publish(),
         "type14BodyFrames": body_lanes["0x0E"].publish(),
         "type22BodyFrames": body_lanes["0x16"].publish(),
+        # Which groups rest on very few bodies, per lane and pooled across lanes.
+        # Reported, not gated: the corpus contains what it contains. But a lane that
+        # frames 142,815 bodies exactly while one of its groups has been seen in
+        # eleven of them is making two claims of very different strength under one
+        # number, and the weaker one has to be legible.
+        "groupEvidence": summarise_group_evidence({
+            f"type{label[2:]}": lane.publish()
+            for label, lane in body_lanes.items()
+        }),
         "type08HeadWords": {key: int(type08_totals[key]) for key in TYPE08_HEAD_SCALARS},
         "type12TailHeadWords": {
             **{key: int(type12_word_totals[key]) for key in TYPE08_TAIL_WORD_SCALARS},
@@ -3037,6 +3082,89 @@ def _rank_shared_constants(corpus: dict[str, Any]) -> dict[str, dict[str, int]]:
             "rivalsThatCloseEveryBody": rivals_that_close,
         }
     return ranked
+
+
+# How many exact bodies must exercise a group before its layout counts as seen in
+# more than one place. Not a statistical threshold -- just the line below which a
+# claim is an anecdote and should be labelled one.
+GROUP_THINLY_SEEN_BODIES = 32
+
+
+def every_group_reports_the_bodies_behind_it(lanes: dict[str, Any]) -> bool:
+    """A lane that counts group entries must also count the bodies producing them.
+
+    An entry total cannot be read on its own. A hundred entries seen once and a
+    hundred entries seen across a hundred bodies are very different amounts of
+    evidence, and only the second says anything about a layout. This gate refuses a
+    report that publishes the first without the second -- which is what a stale
+    writer produces, and what every one of these lanes published until now.
+    """
+    seen = False
+    for lane in lanes.values():
+        groups = lane.get("anonymousGroupCounts") or {}
+        if not any(int(value) > 0 for value in groups.values()):
+            continue
+        seen = True
+        if not (lane.get("anonymousGroupBodies") or {}):
+            return False
+    return seen
+
+
+def summarise_group_evidence(lanes: dict[str, Any]) -> dict[str, Any]:
+    """How many bodies stand behind each group, per lane and pooled.
+
+    The pooled figure is the one that carries a layout claim, and it is only
+    legitimate because the nine groups are the *same* layout wherever they appear --
+    which is itself the claim under test. So both numbers are published: a group may
+    be well established across the corpus and still have been seen four times in a
+    particular type, and a reader deciding how far to trust one type's framing needs
+    the second number, not the first.
+    """
+    pooled: Counter[str] = Counter()
+    widest: dict[str, int] = {}
+    per_lane: dict[str, dict[str, int]] = {}
+    for name, lane in lanes.items():
+        bodies = {
+            group: int(count)
+            for group, count in (lane.get("anonymousGroupBodies") or {}).items()
+        }
+        if bodies:
+            per_lane[name] = dict(sorted(bodies.items()))
+        pooled.update(bodies)
+        for group, count in (lane.get("anonymousGroupMaxInOneBody") or {}).items():
+            widest[group] = max(widest.get(group, 0), int(count))
+    return {
+        "bodiesPerGroupPooled": dict(sorted(pooled.items())),
+        "bodiesPerGroupByLane": dict(sorted(per_lane.items())),
+        "widestSingleBodyPerGroup": dict(sorted(widest.items())),
+        "thinlySeenPooled": dict(sorted(
+            (group, count) for group, count in pooled.items()
+            if count < GROUP_THINLY_SEEN_BODIES
+        )),
+        "thinlySeenByLane": thinly_seen_groups(lanes),
+        "thinThresholdBodies": GROUP_THINLY_SEEN_BODIES,
+    }
+
+
+def thinly_seen_groups(lanes: dict[str, Any]) -> dict[str, dict[str, int]]:
+    """Per lane, the groups whose layout rests on very few bodies.
+
+    Reported rather than gated. A thin group is not an error -- the corpus contains
+    what it contains -- but a lane that frames 142,815 bodies exactly while one of
+    its groups has been seen in eleven of them is making two claims of very
+    different strength under one number, and the weaker one should be legible.
+    """
+    thin: dict[str, dict[str, int]] = {}
+    for name, lane in lanes.items():
+        bodies = lane.get("anonymousGroupBodies") or {}
+        rows = {
+            group: int(count)
+            for group, count in bodies.items()
+            if 0 < int(count) < GROUP_THINLY_SEEN_BODIES
+        }
+        if rows:
+            thin[name] = dict(sorted(rows.items()))
+    return thin
 
 
 def every_shared_constant_beats_its_rivals(corpus: dict[str, Any]) -> bool:
@@ -5352,6 +5480,14 @@ def run_current_corpus_audit(
     music_head_corpus = corpus["musicHeadReferences"]
     music_ref_corpus = corpus["musicReferences"]
     type0a_head_corpus = corpus["type0AHead"]
+    body_lane_corpus = {
+        name: corpus[name] for name in (
+            "type02BodyFrames", "type07BodyFrames", "type05BodyFrames",
+            "type06BodyFrames", "type14BodyFrames", "type22BodyFrames",
+        )
+    }
+    group_bodies_ok = every_group_reports_the_bodies_behind_it(body_lane_corpus)
+    thin_groups = thinly_seen_groups(body_lane_corpus)
     shared_const_corpus = corpus["sharedFrameConstants"]
     shared_const_ok = every_shared_constant_beats_its_rivals(shared_const_corpus)
     shared_const_control = the_shared_constants_are_not_settled_by_closure(
@@ -5446,6 +5582,7 @@ def run_current_corpus_audit(
         and music_refs_ok
         and shared_const_ok
         and shared_const_control
+        and group_bodies_ok
         and music_partition
         and music_anchor
         and type0a_head
@@ -5492,6 +5629,7 @@ def run_current_corpus_audit(
             "musicReferences": music_ref_corpus,
             "type0AHead": type0a_head_corpus,
             "sharedFrameConstants": shared_const_corpus,
+            "thinlySeenGroups": thin_groups,
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
             "type08BodyFrames": type08_body_corpus,
@@ -5684,6 +5822,11 @@ def run_current_corpus_audit(
             f"distinct={(refs.get('distinctTargets') or {}).get(MUSIC_PARTITIONING_EDGE)} "
             f"twice={(refs.get('targetsReachedTwice') or {}).get(MUSIC_PARTITIONING_EDGE)} "
             f"population={(refs.get('targetPopulation') or {}).get(MUSIC_PARTITIONING_EDGE)}"
+        )
+    if not group_bodies_ok:
+        lane_failures.append(
+            "a body lane counts group entries without counting the bodies behind "
+            "them, so its entry totals cannot be read as evidence"
         )
     if not shared_const_ok:
         const = report["corpus"].get("sharedFrameConstants") or {}
