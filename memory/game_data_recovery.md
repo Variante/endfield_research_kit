@@ -5582,10 +5582,63 @@ Note also that `FBDynamicSceneGuid` is **16 bytes** (V0..V3, UInt32) -- exactly 
 width. It is still not a match: a GUID does not take **34 distinct values** across 11,016
 records.
 
-**Still not known:** what a slot-7 element *is* as a whole. Its category is isolated to a
-6-valued one-hot code confirmed twice over and its 24-byte field is read, but the table
-is outside the managed schema set entirely, so a name for it will not come from IL2CPP's
-generated accessors. Slots 5 and 6's integer tables are likewise unindexed.
+#### WHY SLOTS 5 AND 6 STAY UNINDEXED: THE CORPUS HAS NO VARIATION TO INDEX
+
+Not "not yet decoded" -- **decoded, and almost empty.** Establishing that is what stops
+this being mined forever.
+
+**The root layout is one shape, everywhere.** Offsets `(4, 8, 16, 20, 24, 28, 32, 36)`,
+object size 40, in **7,433 of 7,433** files. A single layout, no variants.
+
+**Slots 6 and 7 are genuinely parallel, and that was worth proving rather than assuming.**
+`len(slot6) == len(slot7)` in **7,433 of 7,433** files with identical length
+distributions -- which is exactly what reading *one* vector twice would also produce. It
+is not that: resolving every root slot and comparing landing offsets, slots 6 and 7 never
+coincide, and they **share zero element tables**. (Only slots 1&4 and 1&2 ever alias, in
+10 and 1 files.) *Two vectors agreeing that precisely is a reason to check for aliasing,
+not a finding.*
+
+**Slot 6 carries no information at all.** Its elements have exactly one vtable layout,
+`((4,), 8)` -- a single four-byte field -- in **11,016 of 11,016**, and that field holds
+**4 in every element of every file**: one distinct value corpus-wide, across 349 distinct
+chunk coordinates.
+
+***A vacuous test, caught by running the control both ways.*** The natural reading of a
+vector parallel to the placements is an offset table into slot 5, which predicts
+non-decreasing values. That scored **100%** -- and so did **non-increasing**. Both
+directions at 100% means the values never change, and the hypothesis was never under
+test. **When a claim and its opposite both pass, the corpus is degenerate, not
+confirming.** The slot-6 constant is why.
+
+**Slot 5 is a real table vector -- checked, not assumed.** Its scalar fields hold values
+like 36, 32 and 40, which are also the object sizes in its own vtable layouts, and that
+coincidence is what reading a vtable *as* a table produces. The discriminator is that
+FlatBuffers shares one vtable across same-shaped tables, so a genuine table vector has far
+fewer vtable addresses than elements:
+
+| slot | elements | distinct vtable addresses | per element |
+| --- | --- | --- | --- |
+| 5 | 185,063 | 18,480 | **0.100** |
+| 6 | 11,016 | 3,979 | 0.361 |
+| 7 | 11,016 | 5,207 | 0.473 |
+
+All far below 1.0, with forward uoffsets at 100.0%. The reading holds.
+
+**But slot 5's variation is almost nil**: across 185,063 element tables its scalar fields
+carry only **5 to 29 distinct values** each, and its 16/20-byte field is **all zeros in
+156,058 of 156,058 reads**.
+
+***One more coincidence declined.*** Slot 5's wide field is 16 or 20 bytes -- the same
+signature as slot 7's 34-value descriptor, which invites treating them as one vocabulary.
+They **share 0 values**: slot 5's is a single all-zero constant. *Matching field widths
+are not a shared type.*
+
+**Still not known, and now with a reason:** what a slot-7 element *is* as a whole. Its
+category is isolated to a 6-valued one-hot code confirmed twice over and its 24-byte
+field is read, but the table is outside the managed schema set entirely, so a name will
+not come from IL2CPP's generated accessors. Slots 5 and 6 are not unindexed for want of
+effort -- **at this `inputSetSha256` they contain no variation to index against**, and
+further mining of them needs a different corpus, not a better test.
 
 ## Remaining gaps
 
