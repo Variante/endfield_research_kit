@@ -5801,8 +5801,40 @@ exceptions. Since a FlatBuffers vector occupies `4 + 4n` bytes, the gap between 
 scalars is exactly slot 5's serialized footprint plus four of alignment.
 
 They are **not** offsets into the buffer: `s3 == slot-5 vector base`, `s2 == buffer
-length` and every related test score **0.00%**. Two sizes of something outside the file,
-whose difference is a structure inside it.
+length` and every related test score **0.00%**.
+
+##### SOLVED: they are payload sizes, and the formula is exact
+
+Chasing the residual rather than the value settled it. `len(buffer) - s2` takes **exactly
+two values** across all 7,433 Init files -- **44** (4,220) and **48** (3,213) -- and each
+is fully determined by where the root table sits:
+
+```
+residual 44  <->  root at 24     4,220 of 4,220
+residual 48  <->  root at 28     3,213 of 3,213
+```
+
+which is `rootOffset + 20`, and 20 is the root vtable's own size (4 header + 2x8 slots).
+So:
+
+| | Init | Streaming |
+| --- | --- | --- |
+| **`s2 == len - root - 20`** | **7,433 / 7,433 = 100.00%** | **0.00%** |
+| **`s3 == len - root - 28 - 4*n5`** | **7,433 / 7,433 = 100.00%** | **0.00%** |
+| control: `len - root - 16` / `- 24` | 0.00% | 0.00% |
+| control: `len - 20`, dropping the root term | 0.00% | 0.00% |
+
+**`s2` is the size of everything past the root vtable -- the serialized payload -- and
+`s3` is that same size minus slot 5's vector footprint** (`4 + 4n` for the vector, plus 4
+of alignment). The earlier exact relation `s2 = s3 + 8 + 4*n5` was these two formulas
+seen from the side, with the length and root terms cancelling.
+
+***That the same field means nothing of the sort in `StreamingChunkData` is the sharper
+half.*** Every formula and control scores **0.00%** there, and `len - s2` spreads over
+**845** distinct residuals. The two families share a root *layout*, a version constant and
+a chunk origin -- and still do not agree on what slot 2 counts. *A shared schema does not
+guarantee a shared meaning per field, and nothing short of testing the second family would
+have shown it.*
 
 ***A degenerate fit, caught by fitting four rivals at once.*** `s4 == 24 + 24*n7` scores
 **100.00%** on the Streaming family, which reads like a decoded record stride -- until the
