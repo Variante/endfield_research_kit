@@ -199,10 +199,20 @@ unique binding.
   at the **first token** having emitted **zero** bytes, because that token asks for
   a match against empty history. So the stream does not begin with an LZ4 token at
   all, and hunting for a better start offset will not help either.
-- Compression is heavy -- around 18 bytes expanding to 2,312 -- over data that is
-  near-constant. Combined with the many possible first bytes, that points away from
-  a byte-oriented LZ77 codec and toward something bit-oriented or hierarchical.
-  That is a direction, not a claim.
+- **No standard codec either.** zlib, raw deflate, gzip, bzip2, lzma and brotli
+  were all tried at five payload start offsets across 25 files: zero successful
+  decompressions. Combined with the LZ4 result the payload is a bespoke encoding,
+  so the next attempt should be deriving it from bytes rather than identifying it.
+- Compression is heavy -- around 18 bytes expanding to 2,312 -- over near-constant
+  data, and the first payload byte takes at least five common values. That points
+  away from a byte-oriented LZ77 codec and toward something bit-oriented or
+  hierarchical. A direction, not a claim.
+- **A warning about the shape of this problem.** Payload counts look *almost*
+  reconcilable by hand -- eight `0xFF` plus `0xF7` plus `0x11` lands within a few
+  bytes of the declared 2,312 -- and it is very easy to find an arithmetic that
+  fits one file. I stopped at that point deliberately. Do not accept a formula that
+  works on one or two samples: the earlier sweeps in this repo were wrong at 96.8%,
+  and a codec that is close on one tile is worth nothing.
 - What is measured about it, as leads rather than a layout: two files with
   identical headers differ **only** in one repeated byte value, which is what makes
   a run encoding the obvious reading. `0xFF` appears in long early runs. `0xCC`,
