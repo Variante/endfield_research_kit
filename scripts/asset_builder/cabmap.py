@@ -44,6 +44,8 @@ DEFAULT_OUTPUT = ROOT / "reports/assets/cabmap_current_latest.json"
 MAX_LENGTH_BYTES = 5
 # A single entry is at least two empty strings, an int64 and an int32.
 MINIMUM_ENTRY_BYTES = 1 + 1 + 8 + 4
+# A logical file holds one CAB; two is the most this corpus shows.
+MAXIMUM_CABS_PER_LOGICAL_FILE = 2
 
 
 class CabMapError(ValueError):
@@ -209,6 +211,93 @@ def blocks_missing_from_ledger(
     return out
 
 
+def ledger_spans_by_chunk(ledger_path: Path) -> dict[str, list[tuple[int, int, str]]]:
+    """Logical-file spans per chunk file, sorted by offset.
+
+    Keyed on the **chunk file**, deliberately. Coverage is keyed on the block --
+    see ``ledger_block_names`` -- but an offset only means anything inside one
+    chunk, and a block can hold forty of them. Sharing one key between the two
+    questions merges unrelated offset spaces and invents matches.
+    """
+    import gzip  # noqa: PLC0415
+
+    spans: dict[str, list[tuple[int, int, str]]] = {}
+    if not ledger_path.is_file():
+        return spans
+    with gzip.open(ledger_path, "rt", encoding="utf-8") as handle:
+        handle.readline()
+        for line in handle:
+            row = json.loads(line)
+            if row.get("recordType") != "file" or row.get("status") != "verified":
+                continue
+            physical = row.get("physicalChunkPath")
+            offset, length = row.get("offset"), row.get("length")
+            if not physical or offset is None or length is None:
+                continue
+            spans.setdefault(Path(physical).name.upper(), []).append(
+                (int(offset), int(offset) + int(length), str(row.get("fileName")))
+            )
+    for values in spans.values():
+        values.sort()
+    return spans
+
+
+def join_cabs_to_logical_files(
+    entries_by_map: dict[str, list[CabEntry]],
+    spans: dict[str, list[tuple[int, int, str]]],
+) -> dict[str, Any]:
+    """Name each CAB by the logical file its offset falls inside."""
+    import bisect  # noqa: PLC0415
+
+    outcomes: Counter[str] = Counter()
+    per_file: Counter[str] = Counter()
+    starts = {key: [start for start, _, _ in value] for key, value in spans.items()}
+    for entries in entries_by_map.values():
+        for entry in entries:
+            key = Path(entry.path).name.upper()
+            value = spans.get(key)
+            if not value:
+                # The block is enumerated from the other VFS root under a different
+                # chunk file, so this chunk's offsets cannot be checked here.
+                outcomes["chunkNotEnumeratedInThisRoot"] += 1
+                continue
+            index = bisect.bisect_right(starts[key], entry.offset) - 1
+            if index >= 0 and entry.offset < value[index][1]:
+                outcomes["namedByALogicalFile"] += 1
+                per_file[value[index][2]] += 1
+            else:
+                outcomes["insideNoLogicalFile"] += 1
+    shape = Counter(per_file.values())
+    return {
+        "outcomes": dict(outcomes.most_common()),
+        "distinctLogicalFiles": len(per_file),
+        "logicalFilesHoldingOneCab": shape.get(1, 0),
+        "maximumCabsInOneLogicalFile": max(shape, default=0),
+    }
+
+
+def cab_join_is_essentially_one_to_one(join: dict[str, Any]) -> bool:
+    """Each logical file holds one CAB, give or take a countable few.
+
+    Stated as a gate rather than an observation because the 1:1 shape is what a
+    caller would rely on, and because a wrong join key produced a "42 CABs in one
+    bundle" result that looked like structure and was an artifact.
+    """
+    named = int((join.get("outcomes") or {}).get("namedByALogicalFile") or 0)
+    files = int(join.get("distinctLogicalFiles") or 0)
+    single = int(join.get("logicalFilesHoldingOneCab") or 0)
+    # Two bounds, because either alone passes a case it should not. Allowing one
+    # non-single file is meaningless on a corpus of one file, so the per-file
+    # maximum is bounded as well: a bundle holding many CABs is the artifact shape
+    # a wrong join key produces.
+    return (
+        named > 0
+        and files > 0
+        and single >= files - 1
+        and int(join.get("maximumCabsInOneLogicalFile") or 0) <= MAXIMUM_CABS_PER_LOGICAL_FILE
+    )
+
+
 def iter_maps(directory: Path) -> Iterator[Path]:
     yield from sorted(directory.glob("*.bin"))
 
@@ -257,6 +346,13 @@ def run(
             "namingNothingAnywhere": len(unresolved),
         }
     ledger = ledger_block_names(ledger_path)
+    join = join_cabs_to_logical_files(parsed, ledger_spans_by_chunk(ledger_path))
+    if join["distinctLogicalFiles"] and not cab_join_is_essentially_one_to_one(join):
+        problems.append(
+            "the CAB-to-logical-file join is not one to one: "
+            f"{join['logicalFilesHoldingOneCab']} of {join['distinctLogicalFiles']} "
+            f"files hold a single CAB, maximum {join['maximumCabsInOneLogicalFile']}"
+        )
     missing_blocks = blocks_missing_from_ledger(parsed, ledger)
     report = {
         "format": "animestudio-cabmap-container-index",
@@ -270,6 +366,7 @@ def run(
             "ledgerEnumeratesBlocks": len(ledger),
             "blocksReferencedButNotEnumerated": missing_blocks,
         },
+        "logicalFileJoin": join,
         "dependencyResolution": {
             "distinctCabNames": len(everything),
             "dependencyEdges": edge_total,

@@ -4,6 +4,8 @@ import struct
 import unittest
 
 from scripts.asset_builder.cabmap import (
+    cab_join_is_essentially_one_to_one,
+    join_cabs_to_logical_files,
     blocks_missing_from_ledger,
     CabEntry,
     CabMapError,
@@ -132,6 +134,51 @@ class CabMapTests(unittest.TestCase):
         # With no ledger at all the check cannot run, and must not claim everything
         # is missing.
         self.assertEqual(blocks_missing_from_ledger(entries, set()), {})
+
+    def test_the_offset_join_keys_on_the_chunk_not_the_block(self) -> None:
+        # One block can hold dozens of chunk files. Keying the offset join on the
+        # block merges their offset spaces and invents matches, so the same offset
+        # in two chunks of one block must resolve to two different files.
+        spans = {
+            "AAA.CHK": [(0, 100, "bundle-a.ab")],
+            "BBB.CHK": [(0, 100, "bundle-b.ab")],
+        }
+        entries = {
+            "m.bin": [
+                CabEntry("CAB-1", "VFS/X/AAA.chk", 10, ()),
+                CabEntry("CAB-2", "VFS/X/BBB.chk", 10, ()),
+            ]
+        }
+        join = join_cabs_to_logical_files(entries, spans)
+        self.assertEqual(join["outcomes"]["namedByALogicalFile"], 2)
+        self.assertEqual(join["distinctLogicalFiles"], 2)
+        self.assertTrue(cab_join_is_essentially_one_to_one(join))
+
+    def test_the_join_reports_its_two_kinds_of_miss_separately(self) -> None:
+        spans = {"AAA.CHK": [(0, 100, "bundle-a.ab")]}
+        entries = {
+            "m.bin": [
+                CabEntry("CAB-1", "VFS/X/AAA.chk", 500, ()),   # past every span
+                CabEntry("CAB-2", "VFS/X/ZZZ.chk", 0, ()),     # chunk not enumerated
+            ]
+        }
+        join = join_cabs_to_logical_files(entries, spans)
+        # A chunk enumerated from the other VFS root is not the same failure as an
+        # offset landing outside every span, so they must not be pooled.
+        self.assertEqual(join["outcomes"]["insideNoLogicalFile"], 1)
+        self.assertEqual(join["outcomes"]["chunkNotEnumeratedInThisRoot"], 1)
+        self.assertFalse(cab_join_is_essentially_one_to_one(join))
+
+    def test_a_many_to_one_join_is_refused(self) -> None:
+        # A wrong key once produced 42 CABs in one bundle, which looked like
+        # structure. The gate has to reject that shape rather than publish it.
+        spans = {"AAA.CHK": [(0, 100, "bundle-a.ab")]}
+        entries = {
+            "m.bin": [CabEntry(f"CAB-{i}", "VFS/X/AAA.chk", i, ()) for i in range(5)]
+        }
+        join = join_cabs_to_logical_files(entries, spans)
+        self.assertEqual(join["maximumCabsInOneLogicalFile"], 5)
+        self.assertFalse(cab_join_is_essentially_one_to_one(join))
 
 
 if __name__ == "__main__":

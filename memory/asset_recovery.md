@@ -126,6 +126,20 @@ unique binding.
   most obvious identifier rather than the one the data is organised by. And I
   escalated it as a foundational problem before checking the sibling root, which
   is one `ls` away. **Check the cheap explanation before reporting a deep one.**
+- **Every CAB is named by the logical bundle it sits in, and the relation is
+  one to one.** Joining CABMap offsets to the ledger's logical-file spans names
+  254,729 of 256,669 CABs, across 254,728 distinct bundles, of which **254,727
+  hold exactly one CAB** and one holds two. The remainder split into 1,053 whose
+  chunk is enumerated from the other VFS root and 887 whose offset falls inside no
+  span; those two are counted separately because they are different situations.
+- **Coverage and offsets need different join keys, and sharing one corrupts both.**
+  Coverage keys on the *block*, because a block ships a different chunk file per
+  root. Offsets key on the *chunk file*, because one block (`7064D8E2`) holds more
+  than forty of them and merging their offset spaces invents matches. Keyed on the
+  block, the join reported 256,601 names and "42 CABs in one bundle" -- a better
+  looking number and a fabricated structure. The gate bounds both the one-to-one
+  shape and the per-file maximum, since either bound alone passes a case it should
+  not.
 - Read by `scripts/asset_builder/cabmap.py`; report at
   [`reports/assets/cabmap_current_latest.json`](../reports/assets/cabmap_current_latest.json).
   This is a container index only -- it says nothing about the objects inside a CAB,
