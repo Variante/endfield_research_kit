@@ -5189,10 +5189,38 @@ corpus had already swallowed. *A file-name family and a block are different
 partitions, and a new name for an old set is not a new set.*
 
 **What IS new here** is the naming. The terrain report calls that group
-`exact_anonymous_record_tiling` -- exact, and anonymous. `VirtualTextureRenderer`'s
-fields say what the records are: `LAYER_D` is `m_splatsDiffuseArray`, `LAYER_N` is
-`m_splatsNormalArray`, and `LAYER_C` is a control or colour map. **690 anonymous
-records now have a name, and the 940 MB they hold has a purpose.**
+`exact_anonymous_record_tiling` -- exact, and anonymous -- and its header report already
+carries the formats:
+
+| family | format | files | `VirtualTextureRenderer` field |
+| --- | --- | --- | --- |
+| `LAYER_D` | `mips11_format108` | 345 | **`m_splatsDiffuseArray`** |
+| `LAYER_N` | `mips11_format109` | 345 | **`m_splatsNormalArray`** |
+| `LAYER_C` | `mips11_format5` | 53 | see below |
+
+`frontier108And109` in `terrain_tret_latest.json` is exactly **formats 108 and 109**,
+which is exactly `LAYER_D` and `LAYER_N`. **690 anonymous records now have a name, and
+the 940 MB they hold has a purpose.**
+
+#### `LAYER_C` is per-layer and optional, which rules out the control map
+
+Across the **38 directories** that hold LAYER files:
+
+- **`D` and `N` carry identical index sets in all 38** -- strictly paired, one diffuse
+  and one normal per splat layer. That confirms the pairing rather than assuming it from
+  the equal totals.
+- **`C` appears in only 22 of the 38**, and sparsely where it does: 1 `C` against 4
+  `D`/`N`, 4 against 18, 2 against 27, 1 against 7. Its indices run to 34, the same
+  layer-index shape as `D` and `N`.
+
+An **optional, per-layer** texture is `m_colorVariationTex`. It is **not**
+`m_splatControlMap`: a control map is one per terrain, always present, and would not
+carry a layer index nor be absent from 16 directories. *The distribution settles which
+of the two candidates it is without needing to read a byte of its content.*
+
+`LAYER_C` also uses format **5** where `D` and `N` use 108 and 109 -- a low, presumably
+standard format against two engine-specific ones, which is consistent, though the format
+numbers themselves are not decoded.
 
 *Two batches were spent eliminating containers for IrradianceVolume before asking the
 metadata. This family got asked first, and the answer arrived in one read.*
