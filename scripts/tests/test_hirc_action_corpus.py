@@ -20,7 +20,9 @@ from scripts.audio_semantics.hirc_action_corpus import (
     _read_hierarchy_census,
     _read_music_mutuality_census,
     _read_type0a_anchor_census,
+    edges_per_distinct_distance,
     end_distance_alignment,
+    the_music_types_split_into_located_and_scattered_references,
     the_type0a_end_anchor_beats_every_neighbouring_distance,
     the_type0a_to_type0b_edge_is_aligned_to_the_body_end,
     music_references_resolve_inside_their_own_bank,
@@ -3655,3 +3657,79 @@ class Type0AEdgeAlignmentTests(unittest.TestCase):
     def test_malformed_keys_are_skipped_rather_than_crashing(self) -> None:
         rows = end_distance_alignment({"nonsense": 5, "type0A_to_type0B_at-x": 7})
         self.assertEqual(rows, {})
+
+
+class MusicEdgeLocationTests(unittest.TestCase):
+    """Types 0x0A and 0x0D place their references in fields; 0x0C uses a list."""
+
+    def census(self, **overrides):
+        # Three located edge kinds and two scattered ones, at the measured ratios.
+        distances = {}
+        for i in range(32):
+            distances[f"type0A_to_type0B_at-{69 + 4 * i}"] = 135
+        for i in range(83):
+            distances[f"type0D_to_type0A_at-{163 + i}"] = 43
+        for i in range(56):
+            distances[f"type0D_to_type0C_at-{190 + i}"] = 43
+        for i in range(2131):
+            distances[f"type0C_to_type0D_at-{150 + i}"] = 2
+        for i in range(2089):
+            distances[f"type0C_to_type0A_at-{218 + i}"] = 2
+        base = {"edgeDistanceFromEnd": distances}
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(
+            the_music_types_split_into_located_and_scattered_references(self.census())
+        )
+
+    def test_the_ratio_is_read_off_the_published_distances(self) -> None:
+        rows = edges_per_distinct_distance(self.census()["edgeDistanceFromEnd"])
+        self.assertEqual(rows["type0A_to_type0B"]["distances"], 32)
+        self.assertEqual(rows["type0C_to_type0D"]["distances"], 2131)
+        self.assertAlmostEqual(
+            rows["type0C_to_type0D"]["edges"] / rows["type0C_to_type0D"]["distances"],
+            2.0,
+        )
+
+    def test_a_located_edge_becoming_scattered_fails(self) -> None:
+        census = self.census()
+        for key in list(census["edgeDistanceFromEnd"]):
+            if key.startswith("type0A_to_type0B"):
+                del census["edgeDistanceFromEnd"][key]
+        for i in range(2000):
+            census["edgeDistanceFromEnd"][f"type0A_to_type0B_at-{69 + i}"] = 2
+        self.assertFalse(
+            the_music_types_split_into_located_and_scattered_references(census)
+        )
+
+    def test_a_scattered_edge_becoming_located_fails(self) -> None:
+        census = self.census()
+        for key in list(census["edgeDistanceFromEnd"]):
+            if key.startswith("type0C_to_type0D"):
+                del census["edgeDistanceFromEnd"][key]
+        census["edgeDistanceFromEnd"]["type0C_to_type0D_at-150"] = 4429
+        self.assertFalse(
+            the_music_types_split_into_located_and_scattered_references(census)
+        )
+
+    def test_small_edge_kinds_are_excluded_rather_than_forced(self) -> None:
+        # The two edges into type 0x11 score about 6 per distance, between the
+        # groups. A hundred-odd samples cannot say which side they belong to.
+        census = self.census()
+        for i in range(19):
+            census["edgeDistanceFromEnd"][f"type0A_to_type11_at-{112 + i}"] = 6
+        self.assertTrue(
+            the_music_types_split_into_located_and_scattered_references(census)
+        )
+
+    def test_an_empty_or_one_sided_census_fails(self) -> None:
+        self.assertFalse(the_music_types_split_into_located_and_scattered_references({}))
+        self.assertEqual(edges_per_distinct_distance({}), {})
+        one_sided = {"edgeDistanceFromEnd": {
+            f"type0A_to_type0B_at-{69 + 4 * i}": 135 for i in range(32)
+        }}
+        self.assertFalse(
+            the_music_types_split_into_located_and_scattered_references(one_sided)
+        )

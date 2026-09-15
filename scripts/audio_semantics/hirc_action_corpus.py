@@ -3680,6 +3680,86 @@ def end_distance_alignment(distances: dict[str, Any]) -> dict[str, dict[str, int
     return out
 
 
+# Edges from these source types sit at a few fixed distances; edges from 0x0C do
+# not. The two groups are separated by more than an order of magnitude, so the
+# threshold between them is not a tuned number.
+LOCATED_EDGE_SOURCES = ("type0A", "type0D")
+SCATTERED_EDGE_SOURCE = "type0C"
+EDGES_PER_DISTANCE_FLOOR = 20
+EDGES_PER_DISTANCE_CEILING = 5
+# An edge kind needs this many references before the ratio means anything. The two
+# edges into type 0x11 have 118 and 130 across 19 and 22 distances, which gives about
+# 6 per distance -- a number that sits between the two groups and cannot be read as
+# either. They are excluded rather than forced into whichever group the threshold
+# happens to put them in.
+EDGE_KIND_MINIMUM_FOR_CLASSIFICATION = 500
+
+
+def edges_per_distinct_distance(distances: dict[str, Any]) -> dict[str, dict[str, int]]:
+    """Per edge kind, how many references it has and how many distinct positions.
+
+    The ratio is the useful number. A reference read from a fixed field lands at the
+    same distance in body after body, so its edges pile up on a few distances; a
+    reference inside a variable-length list lands wherever the preceding content
+    leaves it, so nearly every edge gets its own distance.
+    """
+    out: dict[str, dict[str, int]] = {}
+    for key, count in distances.items():
+        kind, _, tail = str(key).rpartition("_at-")
+        if not kind or not tail.isdigit():
+            continue
+        row = out.setdefault(kind, {"edges": 0, "distances": 0})
+        row["edges"] += int(count)
+        row["distances"] += 1
+    return out
+
+
+def the_music_types_split_into_located_and_scattered_references(
+    corpus: dict[str, Any]
+) -> bool:
+    """Types 0x0A and 0x0D place their references; 0x0C does not.
+
+    This is read off a census the reader has published for many runs, by asking a
+    question nobody had asked of it: how many distinct end distances does each edge
+    kind use?
+
+    * `0x0A` carries **2.1** references per body across **112** distinct distances --
+      77.7 edges per distance.
+    * `0x0D` carries **2.5** per body across **162** -- 38.1 per distance.
+    * `0x0C` carries **13.0** per body across **5,021** -- **1.9** per distance.
+
+    So `0x0C`'s references are in a variable-length list, which is why no fixed-offset
+    rule has ever been found for them, while `0x0A`'s and `0x0D`'s sit in fields. Among
+    edge kinds large enough to classify the separation is 1.6-2.5 against 43-135 with
+    nothing in between, so the thresholds are not tuned; they are placed in an empty
+    gap.
+
+    The two edges into type `0x11` are deliberately not classified. With 118 and 130
+    references across 19 and 22 distances they score about 6 per distance, which is
+    between the groups, and a hundred-odd samples cannot say which side they belong
+    to. Forcing them would be inventing a result.
+    """
+    rows = edges_per_distinct_distance(corpus.get("edgeDistanceFromEnd") or {})
+    if not rows:
+        return False
+    located = []
+    scattered = []
+    for kind, row in rows.items():
+        if row["edges"] < EDGE_KIND_MINIMUM_FOR_CLASSIFICATION or row["distances"] <= 0:
+            continue
+        ratio = row["edges"] / row["distances"]
+        source = kind.split("_to_")[0]
+        if source in LOCATED_EDGE_SOURCES:
+            located.append(ratio)
+        elif source == SCATTERED_EDGE_SOURCE:
+            scattered.append(ratio)
+    if len(located) < 3 or len(scattered) < 2:
+        return False
+    if min(located) < EDGES_PER_DISTANCE_FLOOR:
+        return False
+    return max(scattered) < EDGES_PER_DISTANCE_CEILING
+
+
 def the_type0a_to_type0b_edge_is_aligned_to_the_body_end(corpus: dict[str, Any]) -> bool:
     """This one edge sits at a 4-byte-aligned distance from the end; others do not.
 
@@ -6332,6 +6412,9 @@ def run_current_corpus_audit(
     edge_aligned = the_type0a_to_type0b_edge_is_aligned_to_the_body_end(
         corpus["musicReferences"]
     )
+    edge_located = the_music_types_split_into_located_and_scattered_references(
+        corpus["musicReferences"]
+    )
     music_mutuality_corpus = corpus["musicMutuality"]
     music_symmetric = the_music_relation_is_symmetric(music_mutuality_corpus)
     music_scope = music_references_resolve_inside_their_own_bank(
@@ -6467,6 +6550,7 @@ def run_current_corpus_audit(
         and music_symmetric
         and anchor_ok
         and edge_aligned
+        and edge_located
         and music_scope
         and music_partition
         and music_anchor
@@ -6722,6 +6806,18 @@ def run_current_corpus_audit(
             f"control={h.get('rangeControlIsSymmetric')}/{h.get('rangeControlTested')} "
             f"fractions={h.get('fractionsAreSmall')}/{h.get('fractionsTested')} "
             f"fractionControl={h.get('fractionControlsAreSmall')}/{h.get('fractionControlsTested')}"
+        )
+    if not edge_located:
+        rows = edges_per_distinct_distance(
+            (report["corpus"].get("musicReferences") or {}).get("edgeDistanceFromEnd") or {}
+        )
+        lane_failures.append(
+            "the music types no longer split into located and scattered references: "
+            + ", ".join(
+                f"{kind}={row['edges'] / max(row['distances'], 1):.1f}"
+                for kind, row in sorted(rows.items())
+                if row["edges"] >= 100
+            )
         )
     if not edge_aligned:
         rows = end_distance_alignment(

@@ -2494,6 +2494,37 @@ from there the counts fall out. Widening a range would never have found either.
   end lands on *something* in every body, so a hit count says nothing. Every distance
   within five bytes that is *not* an anchor -- `-64` to `-68`, `-70`, `-71`, `-72`,
   `-74`, `-75` -- names a type `0x0B` object in **zero** bodies.
+### `0x0C` keeps its references in a list; `0A` and `0D` keep theirs in fields
+
+Asked of a census the reader has published for many runs: **how many distinct end
+distances does each edge kind use?** A reference read from a fixed field lands at the
+same distance body after body; one inside a variable-length list lands wherever the
+preceding content leaves it.
+
+| source | edges | bodies | edges/body | distinct distances | **edges per distance** |
+|---|---:|---:|---:|---:|---:|
+| `0x0A` | 8,701 | 4,158 | 2.1 | 112 | **77.7** |
+| `0x0D` | 6,173 | 2,431 | 2.5 | 162 | **38.1** |
+| `0x0C` | 9,641 | **742** | **13.0** | **5,021** | **1.9** |
+
+- Per edge kind the separation is total and has an empty middle: `0A`->`0B` 135.2,
+  `0A`->`0D` 81.1, `0A`->`0C` 73.5, `0D`->`0A` 43.5, `0D`->`0C` 43.4 --- then nothing
+  --- `0C`->`0C` 2.5, `0C`->`0D` 2.1, `0C`->`0A` 1.6.
+- **So `0x0C` carries a variable-length list of references, about 13 per body, and
+  `0x0A` and `0x0D` carry roughly two each in fields.** That is why a fixed-offset
+  rule was findable for `0A`->`0B` and has never been findable for anything out of
+  `0C`: there is no offset to find.
+- **The two edges into type `0x11` are NOT classified.** 118 and 130 references across
+  19 and 22 distances gives about 6 per distance, which is between the groups. A
+  hundred-odd samples cannot say which side they belong to, and the first version of
+  this gate failed on correct data by trying to force them. *A discriminator with an
+  empty middle still needs a minimum sample size, or the small cases land in the gap
+  and get assigned by the threshold rather than by the data.*
+- Read off `edgeDistanceFromEnd` again. **Two findings in a row have come from asking
+  new questions of an unchanged census rather than from new probes** -- alignment
+  modulo four, and now distinct-distance counts. When a lead runs dry, re-read what is
+  already published before collecting more.
+
 #### The rule is ALIGNMENT, not a list of anchor distances
 
 - Enumerating anchors would have been fitting, and I nearly did it. Scanning every
