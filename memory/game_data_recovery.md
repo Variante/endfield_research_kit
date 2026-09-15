@@ -5101,6 +5101,45 @@ exceptions in a candidate relation. **When a format has a reader, read the reade
 *Asking the shipped code what a format is called cost one metadata scan and moved this
 further than two batches of byte-pattern search.*
 
+## `LAYER_D`/`LAYER_N`: the terrain splat arrays, named by the engine
+
+The second-largest `.bytes` family after IrradianceVolume, and untouched until now:
+**345 `LAYER_N_*` (469 MB) + 345 `LAYER_D_*` (414 MB) + 54 `LAYER_C_*` (57 MB)**, 940 MB
+in all. Asking the metadata first this time, rather than after seven byte-statistic
+eliminations.
+
+`HG.Rendering.Runtime.VirtualTextureRenderer` has 93 fields, and four of them settle it:
+
+```
+m_splatsDiffuseArray      m_splatIndexMap        m_terrainNormalMap
+m_splatsNormalArray       m_splatControlMap      m_terrainHeightmap
+                          m_colorVariationTex    m_deformableControlMap
+VT_CLIPMAP_BASE_WIDTH, VT_CACHE_PAGE_RESOLUTION, VT_CACHE_PAGE_BUFFER_SIDE_SIZE,
+VT_INDIRECT_TEX_BUFFER_COUNT, VT_GPU_FEEDBACK_BUFFER_COUNT, VT_WORK_GROUP_COUNT
+```
+
+- **`LAYER_D` is the splat diffuse array and `LAYER_N` the splat normal array.** The
+  counts agree: **345 each, exactly paired**, which is what two texture arrays over the
+  same layer set look like. `LAYER_C` at 54 files is a control or colour map --
+  `m_splatControlMap` and `m_colorVariationTex` are both candidates and it is not
+  settled which.
+- The surrounding machinery is named too: `HGASMVirtualTextureAllocator` with
+  `AllocateTile` and `GetVTData`, `ASMTileManager` with an LRU tile cache,
+  `HGTerrainGroundLayerClipmap` with `Initialize`/`Render`/`SetPlayerCenter`, and
+  `HGTerrainGroundLayer` carrying `TEXTURE_SIZE` and
+  `TERRAIN_GROUND_LAYER_CLIPMAP_NUM` with base, normal, wet and height render targets.
+- So this family is **GPU texture data for a virtual-texture terrain splat system**,
+  the same shape of answer the IrradianceVolume payload turned out to have.
+
+**Next:** confirm from the bytes -- these are 345 paired files, so slice sizes and any
+per-file header can be checked across a real population, unlike IrradianceVolume's
+single `STMG`-style samples. The `TEXTURE_SIZE` and `VT_CACHE_PAGE_RESOLUTION` constants
+are readable from the binary the same way the IV config was, which would give expected
+slice sizes to test against.
+
+*Two batches were spent eliminating containers for IrradianceVolume before asking the
+metadata. This family got asked first, and the answer arrived in one read.*
+
 ## Remaining gaps
 
 - Streaming's next advance requires independent record-end evidence or a
