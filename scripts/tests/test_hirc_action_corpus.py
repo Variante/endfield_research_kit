@@ -29,6 +29,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_type0a_tail_float_is_an_authored_value,
     the_type0a_tail_word_is_a_fixed_point_fraction,
     the_type0a_head_carries_a_bounded_whole_float,
+    the_type0a_word_five_points_outside_its_package,
     _read_type0a_head_census,
     _read_music_reference_census,
     type08_bodies_are_exact_or_named,
@@ -378,6 +379,9 @@ def valid_action_fixture():
         "decibelsInRange": 96,
         "decibelsWhole": 50,
         "decibelControlsInRange": 0,
+        "wordFiveNonZero": 6,
+        "wordFiveInPackage": 0,
+        "wordFiveValues": {"word_F1339B46": 4, "word_4106E10A": 2},
     }
     music_refs = {
         "bodies": 4,
@@ -1620,6 +1624,29 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(type11_sources_share_the_type02_plugin_space(sources, {}))
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
+        )
+
+    def test_the_type0a_word_five_never_names_a_local_object(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        head = result["type0AHead"]
+        self.assertTrue(the_type0a_word_five_points_outside_its_package(head))
+
+        # One local resolution would make this an ordinary reference rather than the
+        # cross-package one the corpus join shows it to be.
+        self.assertFalse(
+            the_type0a_word_five_points_outside_its_package({**head, "wordFiveInPackage": 1})
+        )
+        # No nonzero words means nothing was tested, which is not the same as a
+        # negative result.
+        self.assertFalse(
+            the_type0a_word_five_points_outside_its_package(
+                {**head, "wordFiveNonZero": 0, "wordFiveValues": {}}
+            )
+        )
+        # The histogram has to account for every nonzero word.
+        self.assertFalse(
+            the_type0a_word_five_points_outside_its_package({**head, "wordFiveNonZero": 9})
         )
 
     def test_the_type0a_head_float_beats_an_overlapping_control_window(self) -> None:

@@ -2204,6 +2204,15 @@ Stable conclusions:
   **constant zero** bytes of the fixed head, so the second term vanishes and the
   general rule reduces to the special one. *A count that is zero in the population
   you are looking at is indistinguishable from padding.*
+- **`u32@5` is a CROSS-PACKAGE reference, and it names numeric type `0x08`
+  objects.** It is zero in almost every body; the 120 nonzero words take **four**
+  distinct values and **none of them resolves inside its own package** -- which is
+  why an earlier pass recorded it as "resolves nowhere". Joined against the whole
+  corpus every one resolves: `0xF1339B46` (62), `0x4106E10A` (26), `0xEB239E75` (24)
+  and `0xFD63C75F` (8) are all type `0x08` objects, plus one `0x0B` in a variant.
+- **The lesson: "resolves nowhere" may mean the wrong id set was used.** The reader
+  works per package, so a package-local set cannot see a cross-package edge. Before
+  concluding a word is not a reference, try the corpus-wide set.
 - **`float@16` in the fixed head is a bounded, whole-numbered value with a -96
   floor.** Range **[-96, 98]**, whole in 3,146 of the 3,594 in range, modes 0.0
   (1,622), 98.0 (192), 2.0 (176), -10.0 (175), -15.0 (122). The floor is the same

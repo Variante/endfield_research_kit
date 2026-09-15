@@ -1703,6 +1703,7 @@ def aggregate_current_hirc_actions(
     type0a_head_words: Counter[str] = Counter()
     type0a_element_values: Counter[str] = Counter()
     type0a_tail_bytes: Counter[str] = Counter()
+    type0a_word_five_values: Counter[str] = Counter()
     music_head_by_type: Counter[str] = Counter()
     music_head_offsets: Counter[str] = Counter()
     music_head_discriminants: Counter[str] = Counter()
@@ -1891,10 +1892,12 @@ def aggregate_current_hirc_actions(
             "fractionCandidates", "fractionsWithASmallDenominator",
             "fractionControls", "fractionControlsWithASmallDenominator",
             "decibelBodies", "decibelsInRange", "decibelsWhole", "decibelControlsInRange",
+            "wordFiveNonZero", "wordFiveInPackage",
         ):
             type0a_head_totals[key] += package_head0a[key]
         type0a_element_values.update(package_head0a["elementValueCounts"])
         type0a_tail_bytes.update(package_head0a["tailBytesByOutcome"])
+        type0a_word_five_values.update(package_head0a["wordFiveValues"])
 
         package_reference = _read_reference_census(
             package.get("hircReferenceCensus"), package_label
@@ -2375,6 +2378,9 @@ def aggregate_current_hirc_actions(
             "decibelsInRange": int(type0a_head_totals["decibelsInRange"]),
             "decibelsWhole": int(type0a_head_totals["decibelsWhole"]),
             "decibelControlsInRange": int(type0a_head_totals["decibelControlsInRange"]),
+            "wordFiveNonZero": int(type0a_head_totals["wordFiveNonZero"]),
+            "wordFiveInPackage": int(type0a_head_totals["wordFiveInPackage"]),
+            "wordFiveValues": dict(sorted(type0a_word_five_values.items())),
         },
         "musicReferences": {
             **{key: int(music_ref_totals[key]) for key in MUSIC_REFERENCE_SCALARS},
@@ -2928,7 +2934,8 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
             "fractionCandidates": 0, "fractionsWithASmallDenominator": 0,
             "fractionControls": 0, "fractionControlsWithASmallDenominator": 0,
             "decibelBodies": 0, "decibelsInRange": 0, "decibelsWhole": 0,
-            "decibelControlsInRange": 0,
+            "decibelControlsInRange": 0, "wordFiveNonZero": 0, "wordFiveInPackage": 0,
+            "wordFiveValues": {},
         }
     if not isinstance(census, dict):
         raise ValueError(f"type 0x0A head census is not an object: {label}")
@@ -2941,6 +2948,7 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
         "fractionCandidates", "fractionsWithASmallDenominator",
         "fractionControls", "fractionControlsWithASmallDenominator",
         "decibelBodies", "decibelsInRange", "decibelsWhole", "decibelControlsInRange",
+        "wordFiveNonZero", "wordFiveInPackage",
     ):
         try:
             value = int(census[key])
@@ -2966,6 +2974,14 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
                     f"type 0x0A head census scores {name} above its {ceiling}: {label}"
                 )
         out[key] = scores
+    raw = census.get("wordFiveValues")
+    if not isinstance(raw, dict):
+        raise ValueError(f"type 0x0A head census has invalid wordFiveValues: {label}")
+    out["wordFiveValues"] = {str(name): int(count) for name, count in raw.items()}
+    if sum(out["wordFiveValues"].values()) != out["wordFiveNonZero"]:
+        raise ValueError(
+            f"type 0x0A word-five values do not cover its nonzero words: {label}"
+        )
     raw = census.get("tailBytesByOutcome")
     if not isinstance(raw, dict):
         raise ValueError(f"type 0x0A head census has invalid tailBytesByOutcome: {label}")
@@ -3027,6 +3043,35 @@ def the_type0a_tail_float_is_an_authored_value(corpus: dict[str, Any]) -> bool:
     if neighbour_whole > neighbours:
         return False
     return neighbour_whole / neighbours <= TYPE0A_NEIGHBOUR_WHOLE_CEILING
+
+
+# The word five bytes into the head never names an object its own package ships.
+TYPE0A_WORD_FIVE_MAXIMUM_VALUES = 16
+
+
+def the_type0a_word_five_points_outside_its_package(corpus: dict[str, Any]) -> bool:
+    """The word five bytes into the head names objects, but never local ones.
+
+    Where it is nonzero it takes a handful of values, and **not one of them** names
+    an object the package it sits in declares. That is not the absence of a
+    relationship: over the whole corpus every one of those values resolves, and to a
+    numeric type 0x08 object. It is the first cross-package reference these types
+    have shown.
+
+    What this checks is the local half, because that is what a per-package reader can
+    see: nonzero words exist, they are few, and none resolves locally. The
+    corpus-wide join that gives them meaning is recorded in the recovery notes, not
+    re-derived here.
+    """
+    nonzero = int(corpus.get("wordFiveNonZero") or 0)
+    if nonzero <= 0:
+        return False
+    if int(corpus.get("wordFiveInPackage") or 0):
+        return False
+    values = corpus.get("wordFiveValues") or {}
+    if not values or len(values) > TYPE0A_WORD_FIVE_MAXIMUM_VALUES:
+        return False
+    return sum(int(v) for v in values.values()) == nonzero
 
 
 # Inside the fixed head: a bounded whole-numbered float, against an overlapping
@@ -5174,6 +5219,9 @@ def run_current_corpus_audit(
         report["corpus"].get("type08BodyFrames") or {}
     )
     # True when no names were supplied: see the check's own note.
+    type0a_word_five = the_type0a_word_five_points_outside_its_package(
+        report["corpus"].get("type0AHead") or {}
+    )
     type0a_decibel = the_type0a_head_carries_a_bounded_whole_float(
         report["corpus"].get("type0AHead") or {}
     )
@@ -5231,6 +5279,7 @@ def run_current_corpus_audit(
         and type0a_float
         and type0a_fraction
         and type0a_decibel
+        and type0a_word_five
         and type08_body_named
         and type08_tail_located
         and type08_head_named
@@ -5381,6 +5430,14 @@ def run_current_corpus_audit(
             f"count={body08.get('count')} exact={body08.get('exact')} "
             f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
             f"ambiguous={body08.get('ambiguous')}"
+        )
+    if not type0a_word_five:
+        head0a = report["corpus"].get("type0AHead") or {}
+        lane_failures.append(
+            "the type 0x0A word five does not point outside its package: "
+            f"nonzero={head0a.get('wordFiveNonZero')} "
+            f"inPackage={head0a.get('wordFiveInPackage')} "
+            f"values={sorted(head0a.get('wordFiveValues') or {})}"
         )
     if not type0a_decibel:
         head0a = report["corpus"].get("type0AHead") or {}
