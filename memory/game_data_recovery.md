@@ -4834,10 +4834,56 @@ compression, no block-mode structure.** The byte census is dominated by `00`, th
 `FF`, `04`, `80`, `CC`, `40`, `30`, `01` -- round values and `0xCC`, which is the
 repeating bit pattern `11001100`.
 
-**Next:** this needs the reader's own code, not more statistics. The audio lane's three
-open items are blocked on evidence outside the shipped data; this one is not -- the
-IL2CPP image contains `HGIrradianceVolumeManager` and its methods, and the decode path
-is in there.
+#### THE FORMAT IS DESCRIBED BY ITS OWN TYPE: `HGIrradianceVolumeConfigV2`
+
+Seven eliminations by byte statistics had not identified the container. The IL2CPP type
+layout identifies it in one read, using the metadata parser already in
+`tools/endfield-il2cpp/catalog_option_flow_metadata.py`.
+
+**`UnityEngine.HyperGryph.HGIrradianceVolumeConfigV2`, 34 fields:**
+
+```
+clipMapTextureSizeX / Y / Z          maxRegionCount
+basisBaseGridDim, basisVoxelDataDim  perBasisLodBudget,  perBasisTextureOffset
+coeffBaseGridDim, coeffVoxelDataDim  perCoeffLodBudget,  perCoeffTextureOffset
+lod3BaseGridDim, lod3VoxelDataDim, lod3Budget
+rawDataSize, modelBufferBudget, perLOD
+perHalfStreamingChunkCountsX / Y / Z
+perRawBufferOffsets, perRawBufferCounts
+perBlockInfoBufferOffsets, perBlockInfoSize
+perBasisTextureBlockCounts, perCoeffTextureBlockCounts
+perFrameMaxLoadingByteCount, perFrameMaxUploadChunkCount
+```
+
+**`HGIrradianceVolumePipelineUpdateResultV2`:** `clipmapTextureALod0`, `BLod0`,
+`ALod1`, `BLod1`, `ALod3`, `BLod3`.
+
+So the payload is **GPU texture data for two textures per LOD** -- a **basis** and a
+**coefficient** set, which is spherical-harmonic lighting -- uploaded to a clipmap.
+***That is why no byte statistic found a record: there is no record.*** It is texture
+upload data, and the block structure belongs to the GPU format, not to a file layout.
+
+#### The LODs are 0, 1 and 3, and that explains the two exceptions
+
+The config names exactly `Lod0`, `Lod1` and `Lod3`, and gives **LOD 3 its own fields**
+(`lod3BaseGridDim`, `lod3VoxelDataDim`, `lod3Budget`) where the others share
+`basis*`/`coeff*` ones. The filenames agree: the six `iv_<lod>_<x>_<y>.bytes` files are
+**two each at LOD 0, 1 and 3** and nothing else.
+
+That settles the candidate relation recorded last batch. `w4 = w1 x 8 + w3` holds for
+LOD 0 and LOD 1, which share `w2 = 2000` and `w3` of 140 and 64 -- and fails for the two
+LOD 3 files, **because the engine declares LOD 3 as a separate case**. The exceptions
+were not noise in a thin sample; they are a documented variant. *A relation with
+unexplained exceptions and a relation whose exceptions the vendor's own config explains
+are different things.*
+
+**Still open:** the `v3` scene files use `iv_<x>_<y>.bytes` with no LOD in the name, and
+117 of them start with `x = 0`. How the LOD dimension is carried there is not yet read,
+and the texture formats behind `clipmapTextureA`/`B` are not identified.
+
+*Two batches of byte statistics eliminated seven containers and identified none. One
+read of the type layout named the format, explained the residue, and resolved the
+exceptions in a candidate relation. **When a format has a reader, read the reader.***
 
 *Asking the shipped code what a format is called cost one metadata scan and moved this
 further than two batches of byte-pattern search.*
