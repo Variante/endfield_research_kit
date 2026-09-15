@@ -1664,6 +1664,29 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **The serializer is on disk, and it is Wwise SDK v2023.1.17.** The shipped
+  `Endfield_Data/Plugins/x86_64/AkSoundEngine.dll` (3,586,536 bytes, SHA-256
+  `FD75D48813DC5B6497F0FD18B1AEE1912B8383FFA0AC229AD45A147A7ED052C6`) carries
+  compiled-in assert paths naming its build tree. The string `wwise_v2023.1.17`
+  occurs 28 times and is the **only** version string in the binary, so the
+  identification is not an inference from bank version 150 -- it comes from the
+  reader itself.
+- Two build roots appear: stock `C:\Jenkins\ws\wwise_v2023.1.17\Wwise\SDK\...`
+  and a vendored tree at `E:\Engine\RM42.Beyond\Audio\Wwise\SDK\...`. So the
+  engine is Wwise 2023.1.17 with in-house modifications, and a stock-SDK layout
+  should be treated as a strong prior rather than ground truth.
+- **This retires the claim that the stuck cases are undecidable.** They are
+  undecidable *from the bank bytes alone* -- that part stands, and the reasoning
+  for each still holds -- but the deciding witness exists and is now named: the
+  Wwise 2023.1.17 SDK headers define every HIRC struct exactly, which would settle
+  `0x11`'s 21-versus-27 tie, `0x09`'s second run, `0x10`'s `0x7F` variant and
+  `0x12` outright. That SDK is licensed from Audiokinetic and is not in this repo;
+  obtaining it is a decision for the project owner, not something to work around.
+- The DLL does **not** name the bank structures directly: its only chunk-tag
+  strings are `BKHD`, `DIDX`, `DATA`, `HIRC`, `STID`, `STMG`, and it carries no
+  `AkBankMgr`/`AkMusic*`/`AkParameterNode` source paths, so the asserts that would
+  have named them are not compiled in. Do not expect to recover layouts by
+  string-mining this binary; the version is what it gives you.
 - **Numeric type `0x12` is the one HIRC type with no framing at all, and these
   readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
   grammar -- its word at offset 4 fails `range_section` on all 251. It is not the

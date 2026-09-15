@@ -335,6 +335,15 @@ scratch. They do not open with the node frame, and searching for an offset where
 the frame parses is worthless because every music body admits several such
 offsets -- the frame is permissive, so "it parsed" is nearly no evidence. A
 structural predictor is needed, the way byte 1 predicts the `0x0E` prefix.
+The HIRC serializer ships with the game: `Endfield_Data/Plugins/x86_64/
+AkSoundEngine.dll` is built from **Wwise SDK v2023.1.17** (that string occurs 28
+times and is the only version in the binary), against a vendored tree at
+`E:\Engine\RM42.Beyond\Audio\Wwise\SDK`. Treat a stock 2023.1.17 layout as a
+strong prior, not ground truth. The binary names no bank structures -- only the
+chunk tags -- so string-mining it further will not yield layouts; its value is the
+version. Where this corpus leaves a width genuinely tied, that SDK is the witness
+that would settle it.
+
 Numeric type `0x12` remains unframed and several readings are already eliminated:
 not the `0x10`/`0x11` grammar (all 251 fail on the section size), not the `0x16`
 shape, and chained counted blocks close only 8 of 251. Its leading word is not a
