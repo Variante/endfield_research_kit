@@ -1737,6 +1737,8 @@ def aggregate_current_hirc_actions(
     parent_field_maps: dict[str, Counter] = {k: Counter() for k in PARENT_FIELD_MAPS}
     type0c_hier_totals: Counter[str] = Counter()
     type0c_hier_maps: dict[str, Counter] = {k: Counter() for k in TYPE0C_HIERARCHY_MAPS}
+    type0a_array_totals: Counter[str] = Counter()
+    type0a_array_runs: Counter[str] = Counter()
     type0a_anchor_totals: Counter[str] = Counter()
     type0a_anchor_controls: Counter[str] = Counter()
     type0a_anchor_hits: Counter[str] = Counter()
@@ -1951,6 +1953,12 @@ def aggregate_current_hirc_actions(
         music_ref_twice.update(package_music_refs["targetsReachedTwice"])
         music_ref_population.update(package_music_refs["targetPopulation"])
         music_ref_places.update(package_music_refs["edgeDistanceFromEnd"])
+        package_array = _read_type0a_array_census(
+            package.get("hircType0ACountedArray"), package_label
+        )
+        for key in TYPE0A_ARRAY_SCALARS:
+            type0a_array_totals[key] += package_array[key]
+        type0a_array_runs.update(package_array["runLengths"])
         package_anchor = _read_type0a_anchor_census(
             package.get("hircType0AEndAnchor"), package_label
         )
@@ -2515,6 +2523,10 @@ def aggregate_current_hirc_actions(
         "type0CHierarchy": {
             **{k: int(type0c_hier_totals[k]) for k in TYPE0C_HIERARCHY_SCALARS},
             **{k: dict(sorted(type0c_hier_maps[k].items())) for k in TYPE0C_HIERARCHY_MAPS},
+        },
+        "type0ACountedArray": {
+            **{k: int(type0a_array_totals[k]) for k in TYPE0A_ARRAY_SCALARS},
+            "runLengths": dict(sorted(type0a_array_runs.items())),
         },
         "type0AEndAnchor": {
             **{key: int(type0a_anchor_totals[key]) for key in TYPE0A_ANCHOR_SCALARS},
@@ -3981,6 +3993,70 @@ def the_type0a_to_type0b_edge_is_aligned_to_the_body_end(corpus: dict[str, Any])
     others_total = everything - mine["total"]
     others_aligned = aligned - mine["aligned"]
     return others_aligned * 2 < others_total
+
+
+TYPE0A_ARRAY_SCALARS = (
+    "bodies", "bodiesWithNoReference", "noRoomForACount",
+    "checkable", "countMatchesTheRun", "countDoesNotMatch",
+)
+
+
+def _read_type0a_array_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's numeric type 0x0A counted-array census."""
+    if census is None:
+        return {key: 0 for key in TYPE0A_ARRAY_SCALARS} | {"runLengths": {}}
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x0A array census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in TYPE0A_ARRAY_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x0A array census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x0A array census has negative {key}: {label}")
+        out[key] = value
+    raw = census.get("runLengths")
+    if not isinstance(raw, dict):
+        raise ValueError(f"type 0x0A array census has invalid runLengths: {label}")
+    out["runLengths"] = {str(name): int(value) for name, value in raw.items()}
+    if out["countMatchesTheRun"] + out["countDoesNotMatch"] != out["checkable"]:
+        raise ValueError(f"type 0x0A array outcomes do not cover the checkable: {label}")
+    if (out["checkable"] + out["bodiesWithNoReference"] + out["noRoomForACount"]
+            != out["bodies"]):
+        raise ValueError(f"type 0x0A array census does not partition its bodies: {label}")
+    if sum(out["runLengths"].values()) != out["countMatchesTheRun"]:
+        raise ValueError(f"type 0x0A run lengths do not cover the matches: {label}")
+    return out
+
+
+def the_type0a_reference_is_a_counted_array(corpus: dict[str, Any]) -> bool:
+    """The word before the reference is a count, and it is right every time.
+
+    This supersedes the three-branch head rule and the two end anchors rather than
+    competing with them: each was locating the first element of an array whose length
+    they had no way to see. Counts are 1 in 3,565 bodies, 2 in 271, 3 in 58, 4 in 9.
+
+    With it, numeric type 0x0A has **no unexplained bodies** -- 3,903 counted arrays
+    plus 255 carrying no reference is its whole population of 4,158, and the residue
+    that stood at 28 and then at 3 is now zero.
+
+    The gate is equality. A count read from a wrongly chosen offset would give a
+    number unrelated to how many references follow, so agreeing 3,903 times out of
+    3,903 is the evidence; a single disagreement would mean the step-back is not the
+    count's home. The run-length spread is required too, because a corpus where every
+    array held one element would not distinguish a count from the constant 1.
+    """
+    checkable = int(corpus.get("checkable") or 0)
+    if checkable <= 0:
+        return False
+    if int(corpus.get("countDoesNotMatch") or 0) != 0:
+        return False
+    if int(corpus.get("countMatchesTheRun") or 0) != checkable:
+        return False
+    runs = corpus.get("runLengths") or {}
+    longer = sum(int(v) for k, v in runs.items() if k != "references_1")
+    return longer > 0 and len({k for k, v in runs.items() if int(v) > 0}) >= 3
 
 
 def the_type0a_end_anchor_beats_every_neighbouring_distance(corpus: dict[str, Any]) -> bool:
@@ -6631,6 +6707,7 @@ def run_current_corpus_audit(
     t0c_shape = the_type0c_parent_relation_repeats_the_same_shape(type0c_hier_corpus)
     type0a_anchor_corpus = corpus["type0AEndAnchor"]
     anchor_ok = the_type0a_end_anchor_beats_every_neighbouring_distance(type0a_anchor_corpus)
+    array_ok = the_type0a_reference_is_a_counted_array(corpus["type0ACountedArray"])
     edge_aligned = the_type0a_to_type0b_edge_is_aligned_to_the_body_end(
         corpus["musicReferences"]
     )
@@ -6773,6 +6850,7 @@ def run_current_corpus_audit(
         and hierarchy_direction
         and music_symmetric
         and anchor_ok
+        and array_ok
         and edge_aligned
         and edge_located
         and t0c_shape
@@ -6829,6 +6907,7 @@ def run_current_corpus_audit(
             "sharedHierarchy": hierarchy_corpus,
             "musicMutuality": music_mutuality_corpus,
             "type0AEndAnchor": type0a_anchor_corpus,
+            "type0ACountedArray": corpus["type0ACountedArray"],
             "type0CHierarchy": type0c_hier_corpus,
             "parentField": parent_field_corpus,
             "thinlySeenGroups": thin_groups,
@@ -7070,6 +7149,13 @@ def run_current_corpus_audit(
             "the 0x0A to 0x0B edge is no longer aligned to the body end, or the rest "
             f"of the corpus has become aligned too: {rows.get(TYPE0A_TO_TYPE0B_EDGE)} "
             f"of {len(rows)} edge kinds"
+        )
+    if not array_ok:
+        a = report["corpus"].get("type0ACountedArray") or {}
+        lane_failures.append(
+            "the type 0x0A reference is not a counted array: "
+            f"checkable={a.get('checkable')} matches={a.get('countMatchesTheRun')} "
+            f"mismatches={a.get('countDoesNotMatch')} runs={a.get('runLengths')}"
         )
     if not anchor_ok:
         a = report["corpus"].get("type0AEndAnchor") or {}

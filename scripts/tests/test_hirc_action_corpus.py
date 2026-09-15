@@ -20,6 +20,8 @@ from scripts.audio_semantics.hirc_action_corpus import (
     _read_hierarchy_census,
     _read_music_mutuality_census,
     _read_type0a_anchor_census,
+    _read_type0a_array_census,
+    the_type0a_reference_is_a_counted_array,
     _read_parent_field_census,
     _read_type0c_hierarchy_census,
     the_parent_field_inverts_the_reference_graph,
@@ -3912,3 +3914,59 @@ class Type11BoundedFloatTests(unittest.TestCase):
                    "boundedFloatsTested": 1, "boundedFloatsInBand": 5},
                 "pkg",
             )
+
+
+class Type0ACountedArrayTests(unittest.TestCase):
+    """The reference is a counted array, and the count is right every time."""
+
+    def census(self, **overrides):
+        base = {
+            "bodies": 4158, "bodiesWithNoReference": 255, "noRoomForACount": 0,
+            "checkable": 3903, "countMatchesTheRun": 3903, "countDoesNotMatch": 0,
+            "runLengths": {"references_1": 3565, "references_2": 271,
+                           "references_3": 58, "references_4": 5, "references_6": 4},
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_type0a_reference_is_a_counted_array(self.census()))
+
+    def test_a_single_mismatch_fails(self) -> None:
+        # A count read from a wrongly chosen offset gives a number unrelated to how
+        # many references follow, so one disagreement means the step-back is wrong.
+        self.assertFalse(the_type0a_reference_is_a_counted_array(self.census(
+            countMatchesTheRun=3902, countDoesNotMatch=1
+        )))
+
+    def test_an_all_single_element_corpus_fails(self) -> None:
+        # If every array held one element, a count and the constant 1 would be
+        # indistinguishable -- which is the degenerate case for this claim.
+        self.assertFalse(the_type0a_reference_is_a_counted_array(self.census(
+            countMatchesTheRun=3903, runLengths={"references_1": 3903}
+        )))
+
+    def test_two_run_lengths_are_not_enough(self) -> None:
+        self.assertFalse(the_type0a_reference_is_a_counted_array(self.census(
+            countMatchesTheRun=3903,
+            runLengths={"references_1": 3600, "references_2": 303},
+        )))
+
+    def test_an_empty_census_fails(self) -> None:
+        self.assertFalse(the_type0a_reference_is_a_counted_array({}))
+        self.assertFalse(the_type0a_reference_is_a_counted_array(
+            self.census(checkable=0, countMatchesTheRun=0, runLengths={})
+        ))
+
+    def test_the_reader_rejects_a_census_that_does_not_partition_its_bodies(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_type0a_array_census(self.census(bodies=99), "pkg")
+
+    def test_the_reader_rejects_run_lengths_that_do_not_cover_the_matches(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_type0a_array_census(
+                self.census(runLengths={"references_1": 3}), "pkg"
+            )
+
+    def test_an_absent_census_reads_as_empty(self) -> None:
+        self.assertEqual(_read_type0a_array_census(None, "pkg")["bodies"], 0)

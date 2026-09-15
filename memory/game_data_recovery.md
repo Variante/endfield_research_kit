@@ -2481,6 +2481,32 @@ from there the counts fall out. Widening a range would never have found either.
   zero in 7 of them even though the head is long, and their actual head offsets
   cluster at 48, 51, 53, 54 and 59. A fourth shape, or variant bodies.
 
+### `0x0A` IS CLOSED: the reference is a counted array, and the count is always right
+
+```
+u32 count
+count x u32  -- type 0x0B object ids, four bytes apart
+```
+
+- **The word immediately before the first reference is a count, and it equals the
+  number of references that follow in ALL 3,903 bodies that carry one.** Zero
+  mismatches. Run lengths: 1 in 3,565 bodies, 2 in 271, 3 in 58, 4 in 5, 6 in 4.
+- **Numeric type `0x0A` now has no unexplained bodies**: 3,903 counted arrays plus 255
+  carrying no reference is its whole population of 4,158. The residue that stood at
+  28, then at 3, is **zero**.
+- **This supersedes the three-branch head rule and the two end anchors rather than
+  competing with them.** Each was locating the first element of an array whose length
+  it had no way to see; where they disagreed or reached nothing, the array was simply
+  longer than one. The 28-body residue and the 3 that survived the anchors were
+  bodies with 2 and 3 references.
+- The gate is equality, and it also requires the run lengths to vary: a corpus where
+  every array held one element could not tell a count from the constant 1 -- the same
+  trap that left `0x0B`'s element count untested.
+- *Three separate rules, each partly right, were describing one simpler thing. When
+  rules accumulate around a field -- a head rule with three branches, then two end
+  anchors, then a residue -- suspect that the field is a different shape, not that
+  the rules need a fourth case.*
+
 #### The end anchor takes the 28-body residue down to 3
 
 - **The reference sits at one of a small set of distances from the END: `-69` in
