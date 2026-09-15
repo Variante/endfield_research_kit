@@ -3731,7 +3731,7 @@ TYPE0C_HIERARCHY_SCALARS = (
     "banks", "objects", "objectsNamingAParent", "rootsWithNoParent",
     "parentsOutsideTheBank", "cycles", "parentsWithSeveralChildren",
 )
-TYPE0C_HIERARCHY_MAPS = ("depths", "childrenPerParent")
+TYPE0C_HIERARCHY_MAPS = ("depths", "childrenPerParent", "edgeTypes")
 
 
 def _read_type0c_hierarchy_census(census: Any, label: str) -> dict[str, Any]:
@@ -3767,13 +3767,16 @@ def _read_type0c_hierarchy_census(census: Any, label: str) -> dict[str, Any]:
 def the_type0c_parent_relation_repeats_the_same_shape(corpus: dict[str, Any]) -> bool:
     """A fourth located relation, with the shape the 0x08/0x12 one has.
 
-    Numeric type 0x0C names another 0x0C at front offset 9 in 716 of its 742 bodies.
-    Walked per bank the relation is a forest -- no cycles, depth running to 7 -- and
-    many children name one parent, up to 19, which is the child-to-parent direction
-    rather than the main reference graph's one-referrer-per-target.
+    **Every** music type names another object at front offset 9 -- `0x0A` in 97% of
+    its bodies, `0x0C` in 96%, `0x0D` in 95% -- and the targets chain:
+    `0x0A` -> `0x0D` -> `0x0C` -> `0x0C`. Walked per bank the whole relation is a
+    forest: no cycles, depth running past 7, and many children naming one parent,
+    which is the child-to-parent direction rather than the main reference graph's
+    one-referrer-per-target.
 
     That the same shape appears in an unrelated family of types, at a different
-    offset, is the finding. What it means is still not claimed.
+    offset, and spanning three types rather than one, is the finding. What it means is
+    still not claimed.
 
     The gate asks for all of it: the relation must relate most of its objects, be
     acyclic, reach past depth one, and keep parents with several children. Acyclicity
@@ -3795,7 +3798,13 @@ def the_type0c_parent_relation_repeats_the_same_shape(corpus: dict[str, Any]) ->
     counts = corpus.get("childrenPerParent") or {}
     total = sum(int(v) for v in counts.values())
     several = int(corpus.get("parentsWithSeveralChildren") or 0)
-    return total > 0 and several * 2 > total
+    if total <= 0 or several * 2 <= total:
+        return False
+    # It must span the types rather than being one type's self-nesting: the chain is
+    # 0x0A -> 0x0D -> 0x0C -> 0x0C, and a relation confined to one pair would be a
+    # much weaker claim than the one recorded here.
+    edges = corpus.get("edgeTypes") or {}
+    return len({name for name, value in edges.items() if int(value) > 0}) >= 3
 
 
 def the_music_types_split_into_located_and_scattered_references(

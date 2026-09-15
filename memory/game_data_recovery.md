@@ -2494,15 +2494,33 @@ from there the counts fall out. Widening a range would never have found either.
   end lands on *something* in every body, so a hit count says nothing. Every distance
   within five bytes that is *not* an anchor -- `-64` to `-68`, `-70`, `-71`, `-72`,
   `-74`, `-75` -- names a type `0x0B` object in **zero** bodies.
-### `0x0C` has a parent at front offset 9: the same shape, a fourth time
+### THE MUSIC HIERARCHY: every music type has a parent at front offset 9
 
-- **716 of `0x0C`'s 742 bodies name another `0x0C` object at front offset 9.** Walked
-  per bank: **zero cycles**, 22 roots with no parent, 4 whose parent is in another
-  bank, depth to **7** (mode 2-3), and **138 of 226 parents have several children**,
-  up to 16 or more.
-- **That is the shape the `0x08`/`0x12` relation has**, in an unrelated family of
-  types and at a different offset. A forest, child-to-parent, many children per
-  parent. What it means is still not claimed; that the pattern recurs is the finding.
+**All four music types name another object at front offset 9**, and the targets
+chain:
+
+```
+0x0A --(3,461)--> 0x0D --(2,321)--> 0x0C --(716)--> 0x0C
+  |                                   ^
+  +--------------(586)----------------+
+```
+
+- Coverage: `0x0A` 97% of its bodies, `0x0C` 96%, `0x0D` 95%. Over the whole music
+  corpus **7,084 of 7,331 objects (96.6%) name a parent**, 192 have none, 55 name one
+  in another bank.
+- Walked per bank: **zero cycles**, depth to **9** with a mode of 4, and **1,538 of
+  3,066 parents named by several children** apiece (up to 16+).
+- **That is the shape the `0x08`/`0x12` relation has** -- a forest, child-to-parent,
+  many children per parent -- in an unrelated family of types, at a different offset,
+  and spanning three types rather than one. What it means is still not claimed; that
+  the pattern recurs is the finding.
+- **`0x0B` completes the picture from the other side**: 2,713 of its 4,325 bodies
+  name a `0x0A` at front offset **83**, which is the reverse of the `0A`->`0B` edge
+  the head rule and end anchor place. The mutual music edges measured earlier are that
+  pairing, seen from the aggregate.
+- The sweep that found all of this is one measurement: **for each type, which front
+  offsets carry a reference in more than 30% of bodies?** It took minutes and answered
+  a question three previous passes had got wrong by measuring from the end.
 - **How it was found, and it corrects the framing of the previous entry.** The census
   measures distance from the **end**, and from the end `0x0C` looks entirely unlocated
   -- 3,757 distinct distances for 9,634 references. Measured from the **front** it is

@@ -3742,15 +3742,17 @@ class Type0CHierarchyTests(unittest.TestCase):
 
     def census(self, **overrides):
         base = {
-            "banks": 5, "objects": 742, "objectsNamingAParent": 716,
-            "rootsWithNoParent": 22, "parentsOutsideTheBank": 4, "cycles": 0,
-            "parentsWithSeveralChildren": 138,
-            "depths": {"depth_0": 26, "depth_1": 38, "depth_2": 266, "depth_3": 250,
-                       "depth_4": 130, "depth_5": 18, "depth_6": 10, "depth_7": 4},
-            "childrenPerParent": {"children_1": 88, "children_2": 56, "children_3": 34,
-                                  "children_4": 18, "children_5": 4, "children_6": 8,
-                                  "children_7": 2, "children_9": 2, "children_10": 2,
-                                  "children_14": 4, "children_16": 8},
+            "banks": 5, "objects": 7331, "objectsNamingAParent": 7084,
+            "rootsWithNoParent": 192, "parentsOutsideTheBank": 55, "cycles": 0,
+            "parentsWithSeveralChildren": 1538,
+            "depths": {"depth_0": 247, "depth_1": 361, "depth_2": 1006,
+                       "depth_3": 1626, "depth_4": 1916, "depth_5": 1560,
+                       "depth_6": 485, "depth_7": 96, "depth_8": 24, "depth_9": 10},
+            "childrenPerParent": {"children_1": 1528, "children_2": 1014,
+                                  "children_3": 285, "children_4": 71,
+                                  "children_5": 37, "children_16": 131},
+            "edgeTypes": {"type0A_to_type0D": 3461, "type0D_to_type0C": 2321,
+                          "type0C_to_type0C": 716, "type0A_to_type0C": 586},
         }
         base.update(overrides)
         return base
@@ -3769,25 +3771,32 @@ class Type0CHierarchyTests(unittest.TestCase):
         # Acyclicity is free when nothing is connected, so the relation must reach
         # past depth one for most of its objects.
         self.assertFalse(the_type0c_parent_relation_repeats_the_same_shape(
-            self.census(depths={"depth_0": 700, "depth_1": 42})
+            self.census(depths={"depth_0": 7000, "depth_1": 331})
         ))
 
     def test_one_child_per_parent_fails(self) -> None:
         # That would be the main reference graph's direction, not this one's.
         self.assertFalse(the_type0c_parent_relation_repeats_the_same_shape(
             self.census(parentsWithSeveralChildren=0,
-                        childrenPerParent={"children_1": 226})
+                        childrenPerParent={"children_1": 3066})
         ))
 
     def test_a_relation_most_objects_do_not_use_fails(self) -> None:
         self.assertFalse(the_type0c_parent_relation_repeats_the_same_shape(
-            self.census(objectsNamingAParent=100, rootsWithNoParent=638)
+            self.census(objectsNamingAParent=100, rootsWithNoParent=7176)
         ))
 
     def test_an_empty_census_fails(self) -> None:
         self.assertFalse(the_type0c_parent_relation_repeats_the_same_shape({}))
         self.assertFalse(the_type0c_parent_relation_repeats_the_same_shape(
             self.census(objects=0)
+        ))
+
+    def test_a_relation_confined_to_one_type_pair_fails(self) -> None:
+        # 0x0C nesting inside itself alone would be a far weaker claim than the
+        # chain 0x0A -> 0x0D -> 0x0C -> 0x0C that the corpus actually shows.
+        self.assertFalse(the_type0c_parent_relation_repeats_the_same_shape(
+            self.census(edgeTypes={"type0C_to_type0C": 7084})
         ))
 
     def test_the_reader_rejects_parent_kinds_that_do_not_partition(self) -> None:
