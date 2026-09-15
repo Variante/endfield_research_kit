@@ -2216,6 +2216,32 @@ u8 entryCount
 
 **Result.** `0x08` 142 -> **160 of 161**; `0x12` 247 -> **251 of 251, complete**.
 
+### `0x08` IS CLOSED TOO: 161 of 161, and `0x12` 251 of 251
+
+The last body's tail unit carries **three** bytes after its 12-byte head rather than
+two, with the record count in the **middle**. The flag is the **high bit on head byte
+6**: 111 units read `(count, pad)` with the bit clear, 1 reads `(pad, count, pad)`
+with it set, and there are no counter-examples either way.
+
+**One unit is thin evidence and the closure is not what carries this.** What does is
+the content. Under the wide reading that body's **eight records all become curve
+records** -- interpolation codes 9, 9, 9, 9, 5, 4, 4, 4, with values like (0.0, 1.0),
+(0.005, 0.0), (100.0, 0.0), (60.0, 0.0) and (1.0, 0.0) -- and the body lands exactly
+on its two-byte absent section. Under the narrow reading they are noise. *Eight
+independent twelve-byte windows agreeing on a ten-value enum is the evidence; the one
+unit is not.*
+
+How it was finally found, after several wrong attempts: **the unit heads repeat.**
+Unit 0's head begins `48 6a 10 56` and so does unit 1's -- and under the narrow
+reading unit 1 appeared to start one byte earlier, at a `00` followed by those same
+four bytes. A walk that lands one byte before a structure it has already seen is off
+by one, and the repeated head is what makes that visible. *When a walk desynchronises,
+look for the next occurrence of something it has already parsed correctly.*
+
+Superseded by this: the earlier guesses that the head is 13 bytes, and that the count
+is "whichever of the two bytes is nonzero". The head is 12 bytes and the gap is what
+widens.
+
 **The one body left, now characterised by content rather than by guesswork.**
 
 - The two bytes after each tail unit's 12-byte head are a record count and a pad.
