@@ -4617,9 +4617,43 @@ different places. So `+40` is not a fixed field; what precedes it is variable-le
 *A tidy-looking triple in one file is a coincidence until the same offset is read in
 every file that should share the layout.*
 
-**Next step:** frame the header properly -- find where the variable-length leading
-region ends -- starting from the four smallest files, where the whole payload is
-16-44 KB.
+### The family splits in two, and the stride-4 peak is an artefact
+
+Autocorrelating byte i against byte i+stride over each payload puts **stride 4** on top
+in most files (0.14 to 0.42 agreement against a 0.03 to 0.09 mean), with 16, 32, 48 and
+64 following as its harmonics. That reads as 4-byte records. **It is only half true,
+and a per-phase content test says which half.**
+
+Splitting each payload into its four byte phases and measuring each one separately:
+
+| file | phase 0 | phase 1 | phase 2 | phase 3 | phase 3 zero |
+| --- | --- | --- | --- | --- | --- |
+| `gacha/character/iv_3_0_0` | 7.44 | 7.30 | 7.16 | **3.51** | **52.0%** |
+| `gacha/weapon/iv_3_0_0` | 4.66 | 4.71 | 4.08 | **1.30** | **75.1%** |
+| `indie_dg008/v3/iv_0_0` | 6.25 | 6.22 | 6.25 | 6.19 | 19.3% |
+| `dung02_cdg012/v3/iv_0_0` | 7.30 | 7.28 | 7.28 | 7.18 | 14.5% |
+
+(entropy in bits per byte)
+
+- **The `gacha/*` files have a real 4-byte record.** Phase 3 carries a fraction of the
+  entropy of phases 0 to 2 and is zero in half to three quarters of records -- the
+  shape of three colour channels plus a shared exponent or alpha. Four such files, 16
+  KB to 101 KB.
+- **The `v3/*` files have no byte-phase structure at all.** All four phases have the
+  same entropy to two decimal places and the same top byte values. **A file with
+  4-byte records cannot look like that**, so the stride-4 peak there is an artefact of
+  something else and not a record width. Those are 134 files and essentially the whole
+  4.16 GB.
+- *An autocorrelation peak says a distance matters; it does not say a record lives
+  there. The phase test is what separates the two.*
+- Entropy 6.2 to 7.3 with no phase structure is what compressed or block-packed data
+  looks like. **The terrain container's codec does not apply** -- that reader needs the
+  file's leading word to be the decoded size, and here the leading word is 3, 990,
+  1,182 or 12,291 for files of 16 KB to 70 MB.
+
+**Next step:** the `v3` files need their container identified before any record
+framing is worth attempting; the four `gacha` files are framable now and are the place
+to establish what a probe record contains.
 
 ## Remaining gaps
 
