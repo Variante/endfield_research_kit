@@ -4815,15 +4815,29 @@ payload were probe values laid out on a grid, differencing at the record stride 
 *drop* the entropy. It rises at every stride from 1 to 64. **There is no byte stride at
 which consecutive values resemble each other.**
 
-What is left fits **bit-packed block-compressed data**: moderate entropy (5.0 to 6.9
-bits per byte, not the 7.9 of a real compressor), no byte alignment, no delta
-coherence. GPU block formats have exactly that profile, and a clipmap of HDR probes is
-what they would be storing. *That is a shape argument and not evidence* -- it is
-written down as the next thing to test, not as a finding.
+Two more, from content tests rather than statistics:
 
-**Next:** test a block-compression decode directly rather than inferring it. If the
-payload is BC-style blocks, decoding a known-size region and checking the result for
-plausible HDR colour is a content test the byte statistics cannot give.
+| hypothesis | test | result |
+| --- | --- | --- |
+| **BC6H blocks** (HDR, the natural choice for probes) | four 5-bit mode values are reserved, so real BC6H never lands on them | **7.9% to 11.1% reserved**, against **11.7% for the same bytes shuffled** -- no signal at all, at any block start from 0 to 63 |
+| run-length or sparse encoding | share of bytes in runs of 4 or more | **0.0% to 8.3%**, against 0.4% shuffled; one file has none whatever |
+
+**The BC6H test is the one that mattered**, because bit-packed block compression was
+the shape argument left standing after the other eliminations. It fails completely: the
+mode field carries no more structure than shuffled bytes do. *A shape argument survives
+exactly until someone tests the thing it predicts.*
+
+So after seven eliminations the `v3` container is still unidentified, and the profile it
+has to satisfy is now quite specific: **entropy 5.0-6.9 bits per byte, all four byte
+phases identical, no delta coherence at any stride 1-64, no runs, no standard
+compression, no block-mode structure.** The byte census is dominated by `00`, then
+`FF`, `04`, `80`, `CC`, `40`, `30`, `01` -- round values and `0xCC`, which is the
+repeating bit pattern `11001100`.
+
+**Next:** this needs the reader's own code, not more statistics. The audio lane's three
+open items are blocked on evidence outside the shipped data; this one is not -- the
+IL2CPP image contains `HGIrradianceVolumeManager` and its methods, and the decode path
+is in there.
 
 *Asking the shipped code what a format is called cost one metadata scan and moved this
 further than two batches of byte-pattern search.*
