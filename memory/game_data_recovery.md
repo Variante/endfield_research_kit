@@ -5131,11 +5131,49 @@ VT_INDIRECT_TEX_BUFFER_COUNT, VT_GPU_FEEDBACK_BUFFER_COUNT, VT_WORK_GROUP_COUNT
 - So this family is **GPU texture data for a virtual-texture terrain splat system**,
   the same shape of answer the IrradianceVolume payload turned out to have.
 
-**Next:** confirm from the bytes -- these are 345 paired files, so slice sizes and any
-per-file header can be checked across a real population, unlike IrradianceVolume's
-single `STMG`-style samples. The `TEXTURE_SIZE` and `VT_CACHE_PAGE_RESOLUTION` constants
-are readable from the binary the same way the IV config was, which would give expected
-slice sizes to test against.
+### The engine's constants are readable, and they decode as compressed integers
+
+`fieldDefaultValues` in `global-metadata.dat` holds every `const` in the image, and the
+blob is **ECMA-335 compressed unsigned integers** -- not raw 4-byte values. Reading it
+as raw int32 gives garbage like `TEXTURE_SIZE = 262280`; decoded properly:
+
+| constant | value | | constant | value |
+| --- | --- | --- | --- | --- |
+| `HGTerrainGroundLayer.TEXTURE_SIZE` | **2048** | | `VT_CACHE_PAGE_RESOLUTION` | **512** |
+| `TERRAIN_GROUND_LAYER_CLIPMAP_NUM` | **4** | | `VT_CACHE_PAGE_BUFFER_SIDE_SIZE` | **128** |
+| `ASMTileManager.MAX_TILE_COUNT` | **512** | | `VT_CACHE_PAGE_BUFFER_SIZE` | **8192** |
+| `VT_CLIPMAP_BASE_WIDTH` | **16** | | `VT_INDIRECT_TEX_BUFFER_COUNT` | **6** |
+| `VT_WORK_GROUP_COUNT` | **64** | | `VT_GPU_FEEDBACK_BUFFER_COUNT` | **8** |
+| `VT_COMPRESS_LOCAL_THREAD_COUNT` | **32** | | `VT_CPU_FEEDBACK_RAYCAST_DIST` | **1000.0f** |
+
+**Three things check the decoder at once.** Every integer comes out a power of two or a
+small round number; the one float reads exactly `1000.0`; and each field's `dataIndex`
+advances by exactly the width the decoder consumed -- 1 byte for values under 0x80, 2
+above. A wrong decoding satisfies none of those. *This is reusable: any `const` in the
+image is now readable the same way.*
+
+### The `LAYER_*` files are NOT raw texture slices
+
+With `TEXTURE_SIZE = 2048` in hand the prediction was testable, and it fails:
+
+| family | files | distinct sizes | typical |
+| --- | --- | --- | --- |
+| `LAYER_N` | 345 | **67** | ~1.33 MiB |
+| `LAYER_D` | 345 | ~60 | ~1.20 MiB |
+| `LAYER_C` | 54 | 9 | 0.86-1.11 MiB |
+
+No size is a multiple of a 2048x2048 surface at any block rate -- the ratios land on
+0.32, 0.64, 0.55 and similar, never a whole number or a mip chain. **Sizes that vary
+file by file are not raw slices**, so the payload is compressed or variably encoded,
+exactly as the IrradianceVolume payload turned out to be.
+
+*The constant gave the prediction a number to fail against. Without it "about 1.3 MB" would have looked like agreement with almost anything.*
+
+**Next:** the names are `LAYER_D_<n>.bytes` with a single index and repeat across
+directories, so the per-scene layer set is the unit. Whether the container is the same
+one the terrain lane already decoded -- the custom LZ4 with big-endian offsets and
+bit-interleaved tokens in `scripts/asset_builder/terrain_stream.py` -- is the first
+thing to test, and unlike IrradianceVolume there are 345 files to test it on.
 
 *Two batches were spent eliminating containers for IrradianceVolume before asking the
 metadata. This family got asked first, and the answer arrived in one read.*
