@@ -5337,9 +5337,51 @@ scalars and two vectors. This root is **three scalars (one of them 64-bit) and f
 vectors, three of which hold tables**. They are not the same shape, which is a second,
 structural reason beyond the failed vector walk.
 
-**Next:** the three vector-of-tables slots are where the content lives. Their element
-tables have their own vtables, readable the same way, and 312 files give a population
-for every one of them.
+#### The element tables, also read from the bytes
+
+Walking the three vector-of-tables slots and collecting every element's vtable:
+
+**Root slot 5 -- 7,272 element tables**, three layouts:
+
+| slots | inline object | field widths | count |
+| --- | --- | --- | --- |
+| 6 | 40 | 4, 4, 4, 4, **16**, 4 | 4,294 |
+| 4 | 20 | 4, 4, 4, 4 | 733 |
+| 6 | 44 | 4, 4, 4, 4, **20**, 4 | 675 |
+
+**Root slot 6 -- 642 element tables**, a single layout: **1 slot, 8-byte object, one
+4-byte field.** No variation at all.
+
+**Root slot 7 -- 642 element tables**, two layouts:
+
+| slots | inline object | field widths | count |
+| --- | --- | --- | --- |
+| 5 | 60 | **20**, 4, **24**, 4, 4 | 430 |
+| 5 | 56 | **16**, 4, **24**, 4, 4 | 212 |
+
+- **Slots 6 and 7 are parallel arrays.** Identical vector-length distributions in every
+  file -- 0 in 48 files, 1 in 166, 2 in 49, 3 in 14, 4 in 5 -- and **exactly 642 elements
+  each**. Two vectors that agree on length in all 312 files are indexed together.
+- **The 16, 20 and 24-byte fields are inline structs**, which is the only thing a
+  FlatBuffers field of that width can be -- four, five or six 32-bit values held in the
+  table rather than behind an offset. The 16-versus-20 variation in slot 5 and the
+  16-versus-20 in slot 7 are the same choice appearing twice.
+- Slot 5's population is a different scale entirely: 7,272 elements against 642, with
+  its own length distribution.
+
+**Where this family now stands**, all from the bytes and none of it from a schema:
+
+| | |
+| --- | --- |
+| container | terrain codec, **312 / 312** |
+| format | valid FlatBuffers, **312 / 312** |
+| root | 8 fields: 3 scalars (one 64-bit), 2 vectors, 3 vectors-of-tables -- one layout in all 312 |
+| element tables | typed for all three vector slots, 8,556 tables read |
+| managed schema | **excluded twice** -- failed vector walk, and no declared root has 8 fields |
+
+**Still not known:** what any field *means*. The widths and the parallelism are
+structure; nothing here says what a slot-5 element *is*. That needs either a name from
+outside or a join to something already understood.
 
 ## Remaining gaps
 
