@@ -105,11 +105,35 @@ def named_type_share(type_counts: Iterable[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
+def media_ids_from_audit(audit: dict[str, Any]) -> set[int]:
+    """Every media id the corpus declares, unioned across packages.
+
+    A bank's media usually lives in a different package, so this has to be a union;
+    joining inside one package answers a question nobody asked.
+    """
+    media: set[int] = set()
+    for row in audit.get("rows", []):
+        if row.get("status") != "verified":
+            continue
+        package = row.get("package")
+        if not isinstance(package, dict):
+            continue
+        join = package.get("hircMediaJoin")
+        if not isinstance(join, dict):
+            continue
+        ids = join.get("mediaIds")
+        if not isinstance(ids, list):
+            raise ValueError("media join census has invalid mediaIds")
+        media.update(int(value) for value in ids)
+    return media
+
+
 def summarise(census_rows: Iterable[dict[str, Any]]) -> dict[str, Any]:
     """Aggregate the reader's per-package named-reach census."""
     totals: Counter[str] = Counter()
     matches: Counter[str] = Counter()
     reached_by_identity: dict[str, int] = {}
+    reached_ids: dict[str, set[int]] = {}
     scalar_fields = (
         "matchedObjects",
         "matchedNamedType",
@@ -137,6 +161,17 @@ def summarise(census_rows: Iterable[dict[str, Any]]) -> dict[str, Any]:
             if re.fullmatch(r"type[0-9A-F]{2}", name) is None:
                 raise ValueError(f"named-reach match key is not a numeric type: {name!r}")
             matches[name] += int(count)
+        raw_list = census.get("reachedSourceIdListByIdentity")
+        if not isinstance(raw_list, dict):
+            raise ValueError("named-reach census has invalid reachedSourceIdListByIdentity")
+        for key, values in raw_list.items():
+            identity = str(key)
+            if re.fullmatch(r"[0-9A-F]{8}", identity) is None:
+                raise ValueError(f"named-reach identity is not a 32-bit hex id: {identity!r}")
+            if not isinstance(values, list):
+                raise ValueError(f"named-reach reached list is not a list: {identity}")
+            reached_ids.setdefault(identity, set()).update(int(value) for value in values)
+
         raw_reach = census.get("reachedSourceIdsByIdentity")
         if not isinstance(raw_reach, dict):
             raise ValueError("named-reach census has invalid reachedSourceIdsByIdentity")
@@ -154,6 +189,9 @@ def summarise(census_rows: Iterable[dict[str, Any]]) -> dict[str, Any]:
         "reachedSourceIdTotal": int(totals["reachedSourceIds"]),
         "walkEdgesLeavingTheBank": int(totals["walkEdgesLeavingTheBank"]),
         "reachedSourceIdsByIdentity": dict(sorted(reached_by_identity.items())),
+        "reachedSourceIdListByIdentity": {
+            identity: sorted(values) for identity, values in sorted(reached_ids.items())
+        },
     }
 
 
@@ -180,6 +218,12 @@ def check_identification(summary: dict[str, Any]) -> list[str]:
         problems.append("named object reach outcomes do not partition their instances")
     # One identity may occur in several banks, so identities are at most instances.
     # More identities than instances would mean the reader keyed a row it never matched.
+    listed = summary.get("reachedSourceIdListByIdentity") or {}
+    if set(listed) != set(summary["reachedSourceIdsByIdentity"]):
+        problems.append("the reached-id lists and the reached counts cover different identities")
+    for identity, values in listed.items():
+        if len(values) < summary["reachedSourceIdsByIdentity"].get(identity, 0):
+            problems.append(f"identity {identity} lists fewer source ids than it counted")
     identities = len(summary["reachedSourceIdsByIdentity"])
     if identities > summary["namedObjectInstances"]:
         problems.append(
@@ -212,6 +256,8 @@ def markdown(report: dict[str, Any]) -> str:
             f"- Audio-like managed string literals recovered: {report['metadata']['audioLiteralCount']:,}.",
             f"- Literal hash matches: {sum(summary['literalHashMatchesByObjectType'].values()):,}, all on numeric type `{NAMED_OBJECT_TYPE:#04x}`.",
             f"- Distinct named identifiers: {len(report['identifiers']):,}; reaching at least one source: {sum(1 for count in report['identifiers'].values() if count):,}.",
+            f"- Reaching at least one media file this corpus ships: {report['mediaSummary']['identifiersReachingMedia']:,}; distinct media files reached: {report['mediaSummary']['distinctMediaReached']:,}.",
+            f"- Reached source ids that name no shipped media: {report['mediaSummary']['reachedIdsNamingNoMedia']:,} (the plug-in partition says some never do).",
             f"- Named object instances: {summary['namedObjectInstances']:,}; reaching a source: {summary['namedObjectsReachingASource']:,}; reaching none: {summary['namedObjectsReachingNoSource']:,}.",
             f"- Walk edges leaving the bank and therefore not followed: {summary['walkEdgesLeavingTheBank']:,}.",
             "",
@@ -242,6 +288,13 @@ def markdown(report: dict[str, Any]) -> str:
             "about three quarters of those words name an object in their own bank. Edges that "
             "leave the bank are counted above and not followed, which is the main reason a "
             "named identifier can reach no source here.",
+            "",
+            "The chain is now complete end to end: a shipped identifier hashes to a numeric "
+            "type `0x04` object, reference vectors lead from it to numeric type `0x02` "
+            "objects, and their source ids are joined against the media this corpus ships. "
+            "Each link is gated on its own terms. A reached id that names no media is "
+            "reported rather than dropped, because the plug-in partition establishes that "
+            "some source ids never name shipped media.",
             "",
             "A reached source id is the value inside the bounded 14-byte prefix of a numeric "
             "type `0x02` object. This report does not establish that posting the identifier "
@@ -317,10 +370,15 @@ def run(
         )
     )
     problems = check_identification(summary)
+    media = media_ids_from_audit(audit)
+    if not media:
+        problems.append("the audit declares no media ids, so the media join cannot be checked")
 
     # Map identities back to the literals that produced them. A hash collision between
     # two shipped literals would make the name ambiguous, so it is reported, not picked.
     identifiers: dict[str, int] = {}
+    media_reached: dict[str, list[int]] = {}
+    unmatched_reached: dict[str, list[int]] = {}
     ambiguous: dict[str, list[str]] = {}
     for identity, count in summary["reachedSourceIdsByIdentity"].items():
         names = sorted(literal_index.get(int(identity, 16), ()))
@@ -336,6 +394,14 @@ def run(
             )
             continue
         identifiers[names[0]] = count
+        reached = set(summary["reachedSourceIdListByIdentity"].get(identity, ()))
+        media_reached[names[0]] = sorted(reached & media)
+        unmatched = reached - media
+        if unmatched:
+            # A reached source id that names no shipped media is a real outcome --
+            # the plug-in partition says some never do -- so it is reported, not
+            # treated as an error, and never silently dropped.
+            unmatched_reached[names[0]] = sorted(unmatched)
 
     report = {
         "format": "animestudio-wwise-hirc-named-reach-audit",
@@ -358,6 +424,14 @@ def run(
         },
         "summary": summary,
         "identifiers": identifiers,
+        "mediaReachedByIdentifier": media_reached,
+        "reachedSourceIdsNamingNoMedia": unmatched_reached,
+        "mediaSummary": {
+            "declaredMediaIds": len(media),
+            "identifiersReachingMedia": sum(1 for v in media_reached.values() if v),
+            "distinctMediaReached": len({m for v in media_reached.values() for m in v}),
+            "reachedIdsNamingNoMedia": len({m for v in unmatched_reached.values() for m in v}),
+        },
         "problems": problems,
         "evidenceBoundary": {
             "layer": 5,

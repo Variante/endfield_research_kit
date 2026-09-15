@@ -3,6 +3,7 @@ from __future__ import annotations
 import unittest
 
 from scripts.audio_semantics.hirc_named_reach import (
+    media_ids_from_audit,
     check_identification,
     fnv1_utf16,
     index_literals,
@@ -22,6 +23,7 @@ def census(**overrides):
         "walkEdgesLeavingTheBank": 4,
         "matchesByObjectType": {"type04": 2},
         "reachedSourceIdsByIdentity": {"0000000A": 3, "0000000B": 0},
+        "reachedSourceIdListByIdentity": {"0000000A": [10, 11, 12], "0000000B": []},
     }
     row.update(overrides)
     return row
@@ -105,6 +107,12 @@ class HircNamedReachTests(unittest.TestCase):
             "metadata": {"path": "meta.dat", "sha256": "B" * 64, "audioLiteralCount": 221},
             "summary": summary,
             "identifiers": {"au_example": 3},
+            "mediaSummary": {
+                "declaredMediaIds": 5,
+                "identifiersReachingMedia": 1,
+                "distinctMediaReached": 2,
+                "reachedIdsNamingNoMedia": 1,
+            },
         }
         text = markdown(report)
         self.assertIn("This table is the identification", text)
@@ -115,6 +123,44 @@ class HircNamedReachTests(unittest.TestCase):
         self.assertIn("does not establish that posting the identifier", text)
         self.assertIn("Edges that leave the bank are counted above and not followed", text)
         self.assertIn("au_example", text)
+        # The chain must be stated end to end, and the ids that name no media must
+        # be reported rather than quietly dropped.
+        self.assertIn("chain is now complete end to end", text)
+        self.assertIn("name no shipped media", text)
+
+    def test_reached_lists_and_counts_must_describe_the_same_walk(self) -> None:
+        summary = summarise([census()])
+        self.assertEqual(
+            summary["reachedSourceIdListByIdentity"], {"0000000A": [10, 11, 12], "0000000B": []}
+        )
+        self.assertEqual(check_identification(summary), [])
+
+        # A count with no list, or a list shorter than its count, is a reader bug
+        # rather than a weaker result, so it must stop publication.
+        missing = summarise([census(reachedSourceIdListByIdentity={"0000000A": [10, 11, 12]})])
+        self.assertTrue(
+            any("cover different identities" in p for p in check_identification(missing))
+        )
+        short = summarise([census(reachedSourceIdListByIdentity={"0000000A": [10], "0000000B": []})])
+        self.assertTrue(
+            any("lists fewer source ids" in p for p in check_identification(short))
+        )
+
+    def test_media_ids_come_from_every_verified_package(self) -> None:
+        audit = {
+            "rows": [
+                {"status": "verified", "package": {"hircMediaJoin": {"mediaIds": [1, 2]}}},
+                {"status": "verified", "package": {"hircMediaJoin": {"mediaIds": [2, 3]}}},
+                {"status": "failed", "package": {"hircMediaJoin": {"mediaIds": [99]}}},
+            ]
+        }
+        # A union, because a bank's media usually lives in another package; and an
+        # unverified package contributes nothing.
+        self.assertEqual(media_ids_from_audit(audit), {1, 2, 3})
+        with self.assertRaisesRegex(ValueError, "invalid mediaIds"):
+            media_ids_from_audit(
+                {"rows": [{"status": "verified", "package": {"hircMediaJoin": {"mediaIds": 7}}}]}
+            )
 
 
 if __name__ == "__main__":

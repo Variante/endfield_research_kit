@@ -1664,6 +1664,18 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **The chain is closed end to end: shipped identifier -> media file.** 57 of the
+  151 named type `0x04` objects reach at least one media file this corpus ships,
+  reaching 127 distinct files between them. The report lists them per identifier,
+  so `au_int_erosion_sludge_recover_loop` resolves to 6 files, `au_int_box_touch`
+  to 5, and so on.
+- Three reached source ids name **no** shipped media, and that is reported per
+  identifier rather than dropped, because the plug-in partition establishes that
+  some source ids never name media at all. A reached id missing from the media
+  table is an expected outcome here, not a defect.
+- The named-reach walk now publishes the reached ids themselves, not just how many,
+  and the gate requires the id lists and the counts to describe the same walk: a
+  count with no list, or a list shorter than its count, stops publication.
 - **The audio chain now reaches shipped media, and the plug-in id decides whether
   it does.** Joining the source id in a numeric type `0x02` bounded prefix against
   the media ids in the AKPK bank and sound sectors: 60,049 of 60,997 distinct
