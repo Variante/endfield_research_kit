@@ -2684,6 +2684,32 @@ count x u32 at 36 + 5*body[14]   -- object ids
   than counting them, and the gate refuses values above 1 instead of extrapolating.
 - The 40 misses are all flag 0 with gaps of 107, 190 or 355 -- the rule places the
   block, but something else can lengthen the region further.
+
+#### What the 96-byte region holds, and a constant shared across three types
+
+| offset | distinct | commonest |
+|---|---:|---|
+| `+0` | 11 | `0` in 674 |
+| `+4` | 13 | **`0x408F4000` = float 4.4766 in 670** |
+| `+8`, `+12` | **1** | constant `0` in all 704 |
+| `+16` | 12 | **`0x42F00000` = float 120.0 in 670** |
+| `+20` | 4 | bytes `04 04 00 00` in 666 |
+| `+84` | **1** | constant `0` in all 704 |
+
+- From offset **27** the region carries a run of 32-bit words -- 4, 1, **-1**, 1,
+  **-1**, 0, 4, 0, 7, 0, 1 -- so the region is **not aligned throughout**: an aligned
+  prefix, then a run starting at a 3-byte offset. Reading it as u32s from 0 gives
+  nonsense like `0x01FFFFFF`, which is a misaligned view of `01 00 00 00 ff ff ff ff`.
+- **`0x408F4000` is a constant shared across the music hierarchy and absent from its
+  leaf**: `0x0C`'s region `+4` **670 of 704**, `0x0A`'s `+8` **1,565 of 4,144**, and
+  it appears somewhere in **2,056 of 2,431** `0x0D` bodies -- but in only **4 of
+  4,325** `0x0B` bodies.
+- That is the same value that dominates `0x0A`'s float block and appears as the top
+  value of its `+4` field. So a single authored default is reused by `0x0A`, `0x0C`
+  and `0x0D` -- the three types that form the parent chain -- and not by `0x0B`, which
+  hangs off it. Nothing here says what it means.
+- *A constant's distribution across types is evidence about which types share a
+  concept. It costs one query and does not require framing anything.*
 - So `0x0C` is better described than "a variable-length list": a parent at 9, a
   counted array at `36 + 5k`, and a further block at a position computed from the
   array's length. What that block contains, and what chooses 135 over 162, are open.
