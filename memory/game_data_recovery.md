@@ -6135,6 +6135,51 @@ maps, so that separation plausibly tracks *outdoors*, not terrain. **One pair fi
 statistic without fitting the name keeps the mapping at strongly supported rather than
 settled.**
 
+#### SLOT 7's DESCRIPTOR: THREE CANDIDATES REFUSED, AND MY OWN "6-VALUED" CORRECTED
+
+The method that worked on slot 5 does not transfer, and saying so precisely is the result.
+
+***The category is 7-valued, not 6.*** Corpus-wide the one-hot invariant **strengthens** --
+byte 1 is a single set bit in **12,859 of 12,859** non-zero descriptors, no exceptions --
+but `k` runs **0..6**, with `k = 6` present on 2 descriptors (0.016%). **The earlier
+"6-valued" figure was an artefact of the single-digit coordinate slice.** Two descriptors
+out of 12,859 is thin, and it is enough: a range claim is settled by its rarest member.
+
+| k | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| descriptors | 2,956 | 1,980 | **3,305** | 2,250 | 1,536 | 830 | **2** |
+
+***Refused 1 -- a mask over `ECSEntityType`.*** The word is 14 bits wide and
+`ECSEntityType` has exactly 14 values, which is the same coincidence that identified slot
+5's `f2`. Testing it *within* each file, against the types that chunk's slot 5 actually
+contains:
+
+| | share of 18,391 descriptors |
+| --- | --- |
+| mask is a subset of the chunk's types | 41.42% |
+| **control: the mask shifted right** | **45.37%** |
+| control: the mask shifted left | 37.37% |
+| control: subset of a *different* chunk's types | 40.53% |
+
+**A control beat the claim.** The same reasoning that succeeded one slot over fails here,
+and it fails against three controls at once.
+
+***Refused 2 -- `ECSExplicitEntityType` and `StreamingMode`.*** Both have exactly 6
+members, which is why the corrected range matters: `k` reaches **6**, so seven values, and
+both are excluded outright.
+
+***Refused 3 -- a cross-slot join on the one name both enums share.***
+`HGDecalProjector` appears as `ECSExplicitEntityType` position 5 *and* `ECSEntityType`
+value 10, so `k = 5` records should co-occur with slot-5 `f2 = 10`. They do, at 65.88% --
+and `k = 4` does at 61.27%, `k = 1` at 59.49%, `k = 2` at 27.43%. *Highest is not
+isolated*, and a spread of 27-66% across the categories discriminates nothing.
+
+**What the descriptor is made of, precisely.** The low byte takes only four values --
+`0xFF` (12,638), `0x00` (5,459), `0xBF` (283), `0x3F` (11) -- so only bits 6 and 7 vary
+there, while bits 8..14 carry the one-hot category. *The structure is fully framed and the
+referent is unidentified*, which is a different and more useful state than either half
+alone.
+
 ***A degenerate fit, caught by fitting four rivals at once.*** `s4 == 24 + 24*n7` scores
 **100.00%** on the Streaming family, which reads like a decoded record stride -- until the
 rivals are run beside it. `24 + 32*n7`, `24 + 40*n7` and `24 + 44*n7` **all score
