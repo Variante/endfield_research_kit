@@ -9,6 +9,8 @@ from scripts.audio_semantics.hirc_named_reach import (
     the_stmg_tail_run_is_located_by_its_count,
     the_stmg_section_closes_byte_exactly,
     init_from_audit,
+    bank_duplication_from_audit,
+    the_corpus_reports_its_duplication,
     the_envs_curves_carry_interpolation_codes,
     the_init_table_names_the_plugins_the_records_use,
     the_unparsed_sections_name_only_buses,
@@ -692,3 +694,68 @@ class EnvsCurveTests(unittest.TestCase):
         self.assertFalse(the_envs_curves_carry_interpolation_codes(None))
         self.assertFalse(the_envs_curves_carry_interpolation_codes(
             dict(self.MEASURED, curves=0, points=0)))
+
+
+class BankDuplicationTests(unittest.TestCase):
+    """One bank shipped in two packages inflates every count it contributes to."""
+
+    MEASURED = {
+        "banks": 20863, "banksInMoreThanOnePackage": 1,
+        "objectsCounted": 323049, "objectsDistinct": 316945,
+        "objectsDuplicated": 6104,
+        "sharedBanks": {"266542773": {
+            "packages": ["Data/Audio/PCK/Windows/Audit/audit_banks.pck",
+                         "Data/Audio/PCK/Windows/Hotfix/hotfix_main_b75.pck"],
+            "objects": 6052}},
+    }
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_corpus_reports_its_duplication(self.MEASURED))
+
+    def test_arithmetic_that_does_not_add_up_fails(self) -> None:
+        self.assertFalse(the_corpus_reports_its_duplication(
+            dict(self.MEASURED, objectsDuplicated=0)))
+        self.assertFalse(the_corpus_reports_its_duplication(
+            dict(self.MEASURED, objectsDistinct=400000)))
+
+    def test_a_shared_bank_naming_one_package_fails(self) -> None:
+        # A bank is only shared if it appears in more than one place, and the census
+        # has to name them or the number cannot be checked.
+        self.assertFalse(the_corpus_reports_its_duplication(
+            dict(self.MEASURED, sharedBanks={"266542773": {
+                "packages": ["a.pck"], "objects": 6052}})))
+
+    def test_a_count_that_disagrees_with_the_listing_fails(self) -> None:
+        self.assertFalse(the_corpus_reports_its_duplication(
+            dict(self.MEASURED, banksInMoreThanOnePackage=2)))
+
+    def test_an_empty_census_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_corpus_reports_its_duplication({}))
+        self.assertFalse(the_corpus_reports_its_duplication(None))
+
+    def test_the_census_sees_a_bank_in_two_packages(self) -> None:
+        # The whole point: a per-package census cannot see this, because each package
+        # reports the bank once and looks unremarkable.
+        audit = {"rows": [
+            {"status": "verified", "path": "a.pck",
+             "package": {"bnkBankObjectCounts": {"7": 100, "8": 5}}},
+            {"status": "verified", "path": "b.pck",
+             "package": {"bnkBankObjectCounts": {"7": 100}}},
+            {"status": "failed", "path": "c.pck",
+             "package": {"bnkBankObjectCounts": {"9": 999}}},
+        ]}
+        out = bank_duplication_from_audit(audit)
+        self.assertEqual(out["banks"], 2)
+        self.assertEqual(out["banksInMoreThanOnePackage"], 1)
+        self.assertEqual(out["objectsCounted"], 205)
+        self.assertEqual(out["objectsDistinct"], 105)
+        self.assertEqual(out["objectsDuplicated"], 100)
+        self.assertEqual(out["sharedBanks"]["7"]["packages"], ["a.pck", "b.pck"])
+
+    def test_a_malformed_census_fails_closed(self) -> None:
+        for bad in ({"7": -1}, "counts"):
+            with self.assertRaises(ValueError):
+                bank_duplication_from_audit({"rows": [
+                    {"status": "verified", "path": "a.pck",
+                     "package": {"bnkBankObjectCounts": bad}},
+                ]})

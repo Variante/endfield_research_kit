@@ -646,6 +646,86 @@ def the_envs_curves_carry_interpolation_codes(envs: dict[str, Any]) -> bool:
     return int(envs.get("curvesWithRisingX") or 0) == curves
 
 
+def bank_duplication_from_audit(audit: dict[str, Any]) -> dict[str, Any]:
+    """How much of the HIRC corpus is the same bank shipped in more than one package.
+
+    A per-package census cannot see this, which makes it the fourth field in this
+    format whose two sides sit in different files, after the media ids, the source
+    ids and the plugin names. Here the two sides are the same bank in two packages.
+    """
+    per_bank: dict[str, set[str]] = {}
+    objects: dict[str, int] = {}
+    for row in audit.get("rows", []):
+        if row.get("status") != "verified":
+            continue
+        package = row.get("package") or {}
+        counts = package.get("bnkBankObjectCounts")
+        if counts is None:
+            continue
+        if not isinstance(counts, dict):
+            raise ValueError("bank object counts census is not an object")
+        path = str(row.get("path"))
+        for bank, count in counts.items():
+            value = int(count)
+            if value < 0:
+                raise ValueError("bank object counts census has a negative count")
+            per_bank.setdefault(str(bank), set()).add(path)
+            objects[str(bank)] = value
+    total = sum(objects.get(bank, 0) * len(paths) for bank, paths in per_bank.items())
+    distinct = sum(objects.values())
+    shared = {bank: sorted(paths) for bank, paths in per_bank.items() if len(paths) > 1}
+    return {
+        "banks": len(per_bank),
+        "banksInMoreThanOnePackage": len(shared),
+        "objectsCounted": total,
+        "objectsDistinct": distinct,
+        "objectsDuplicated": total - distinct,
+        "sharedBanks": {
+            bank: {"packages": paths, "objects": objects.get(bank, 0)}
+            for bank, paths in sorted(shared.items())
+        },
+    }
+
+
+def the_corpus_reports_its_duplication(duplication: dict[str, Any]) -> bool:
+    """Totals must be published next to the distinct counts behind them.
+
+    One bank is shipped byte-identically in two packages -- audit_banks.pck and
+    hotfix_main_b75.pck -- and it holds 99.7% of the music objects. So the music
+    types' counts are inflated by about half: type 0x0B is 4,325 bodies but 2,195
+    distinct, 0x0A 4,158 but 2,112, 0x0C 742 but 373, 0x0D 2,431 but 1,230. Every
+    other type is within 0.2% of its distinct count.
+
+    The closure RATE is unaffected, because an exact copy closes exactly when its
+    original does -- 3,937 of 4,325 and 1,998 of 2,195 are both 91.0%. What changes is
+    the evidence base: 197 distinct bodies are unexplained, not 388.
+
+    *A percentage over duplicated data is still the right percentage and the wrong
+    sample size.* This gate exists so the distinct count is always published beside
+    the total, and so the day a second bank starts being shipped twice is a day
+    something says so.
+    """
+    if not isinstance(duplication, dict):
+        return False
+    counted = int(duplication.get("objectsCounted") or 0)
+    distinct = int(duplication.get("objectsDistinct") or 0)
+    if counted <= 0 or distinct <= 0 or distinct > counted:
+        return False
+    if int(duplication.get("objectsDuplicated") or 0) != counted - distinct:
+        return False
+    shared = duplication.get("sharedBanks")
+    if not isinstance(shared, dict):
+        return False
+    if len(shared) != int(duplication.get("banksInMoreThanOnePackage") or -1):
+        return False
+    # Every shared bank must name the packages it appears in, or the census is
+    # reporting a number nobody can check.
+    return all(
+        isinstance(entry, dict) and len(entry.get("packages") or ()) > 1
+        for entry in shared.values()
+    )
+
+
 def the_unparsed_sections_name_only_buses(words: dict[str, Any]) -> bool:
     """The sections nothing parses reference buses, and no music object at all.
 
@@ -1048,6 +1128,7 @@ def run(
     stmg_words = stmg_words_from_audit(audit)
     init = init_from_audit(audit)
     envs = envs_from_audit(audit)
+    duplication = bank_duplication_from_audit(audit)
     if not media:
         problems.append("the audit declares no media ids, so the media join cannot be checked")
 
@@ -1166,6 +1247,13 @@ def run(
             f"marker={stmg.get('entryRecordsCarryingTheMarker')}"
             f"/{stmg.get('entryRecords')}"
         )
+    if not the_corpus_reports_its_duplication(duplication):
+        problems.append(
+            "the corpus duplication census is inconsistent: "
+            f"counted={duplication.get('objectsCounted')} "
+            f"distinct={duplication.get('objectsDistinct')} "
+            f"shared={duplication.get('banksInMoreThanOnePackage')}"
+        )
     if not the_envs_curves_carry_interpolation_codes(envs):
         problems.append(
             "the ENVS curves no longer close or no longer carry interpolation codes: "
@@ -1245,6 +1333,7 @@ def run(
         "unparsedSectionWords": stmg_words,
         "initPluginTable": init,
         "envsCurves": envs,
+        "bankDuplication": duplication,
         "mediaSummary": {
             "declaredMediaIds": len(media),
             "identifiersReachingMedia": sum(1 for v in media_reached.values() if v),

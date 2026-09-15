@@ -3320,6 +3320,42 @@ distinguish the claim from a weaker one, so the claim looked exact.**
   exactly what happened, so it was replaced rather than relaxed. *Write the tripwire
   that tells you when your own caveat has expired.*
 
+#### CORPUS PROVENANCE: 10 banks ship twice, and one of them is the music bank
+
+Looking at `0x0B`'s residue along a **provenance** axis instead of a grammar one
+turned up something that qualifies a lot of numbers in this file.
+
+- **All 4,325 type `0x0B` bodies live in 4 banks**, and bank **266542773** holds 4,260
+  of them -- 2,130 in `audit_banks.pck` and 2,130 in `hotfix_main_b75.pck`, **byte-
+  identical, all 2,130 of them**.
+- Corpus-wide, **10 banks appear in more than one package**, duplicating **6,104 of
+  323,049 objects (1.9%)**. Bank 266542773 alone accounts for 6,052 of those.
+- **The duplication is concentrated in exactly the music types:**
+
+  | type | counted | distinct | duplicated |
+  | --- | --- | --- | --- |
+  | `0x0A` | 4,158 | **2,112** | 49.2% |
+  | `0x0B` | 4,325 | **2,195** | 49.2% |
+  | `0x0C` | 742 | **373** | 49.7% |
+  | `0x0D` | 2,431 | **1,230** | 49.4% |
+  | `0x11` | 2,645 | 2,427 | 8.2% |
+  | every other type | -- | -- | **under 0.2%** |
+
+- **99.7% of music objects (11,507 of 11,656) live in that one bank.** The music family
+  is one authored bank, shipped twice.
+- **The closure RATE is unaffected**, because an exact copy closes exactly when its
+  original does: `0x0B` is 3,937 of 4,325 and 1,998 of 2,195, both **91.0%**. What
+  changes is the evidence base -- **197 distinct bodies are unexplained, not 388** --
+  and the music-family size, **5,910 distinct rather than 11,656**.
+- *A percentage over duplicated data is still the right percentage and the wrong
+  sample size.* The audit now publishes the distinct count beside the total and gates
+  their arithmetic, so the day a second bank starts shipping twice, something says so.
+- **This is the cross-package trap for the FOURTH time.** A per-package census cannot
+  see it: each package reports the bank once and looks unremarkable. After the media
+  ids, the source ids and the plugin names, the rule is now unavoidable -- *if two
+  sides of a question can land in different `.pck` files, the question belongs in the
+  pass that unions them.*
+
 #### Two exhaustive searches over `0x0B`'s 388, both negative
 
 The method that settled STMG's middle block -- enumerate every shape and let closure
