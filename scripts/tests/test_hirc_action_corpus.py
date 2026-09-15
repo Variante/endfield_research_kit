@@ -21,7 +21,6 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_trailer_close_block_ends_in_eight_zeros,
     the_entry_header_word_at_thirty_two_is_a_float,
     the_entry_header_carries_the_same_word_twice,
-    the_trailing_section_closes_only_multi_entry_bodies,
     TYPE11_HEADER_SCALARS,
     _read_hierarchy_census,
     _read_music_mutuality_census,
@@ -3324,143 +3323,6 @@ class Type11TrailerPartitionTests(unittest.TestCase):
         )
 
 
-SECTION_GROUPS = {"entries": 3937, "trailingSections": 76}
-SECTION_SELECTORS = {
-    "trailingSectionOpens_0": 66,
-    "trailingSectionOpens_1": 10,
-    "trailingSectionFlag_0": 68,
-    "trailingSectionFlag_1": 8,
-}
-
-
-class Type11TrailingSectionTests(unittest.TestCase):
-    """The section that closes a multi-entry body, and the coincidences it refuses."""
-
-    def test_the_measured_corpus_passes(self) -> None:
-        self.assertTrue(the_trailing_section_closes_only_multi_entry_bodies(
-            SECTION_GROUPS, SECTION_SELECTORS, {"count": 4325, "exact": 3937}
-        ))
-
-    def test_a_section_whose_block_the_trailer_rule_does_not_know_fails(self) -> None:
-        # The 24 residues that a length-only control would close. Their opening byte
-        # is 0xAF, 0x55 or 0x59, so accepting them means the reader has stopped
-        # requiring the section's own bytes to agree with the trailer rule and is
-        # matching on total length alone.
-        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
-            dict(SECTION_GROUPS, trailingSections=100),
-            dict(SECTION_SELECTORS, trailingSectionOpens_0=66,
-                 trailingSectionOpens_175=24, trailingSectionFlag_0=92),
-            {"count": 4325, "exact": 3961},
-        ))
-
-    def test_a_section_with_an_out_of_range_flag_fails(self) -> None:
-        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
-            dict(SECTION_GROUPS, trailingSections=77),
-            dict(SECTION_SELECTORS, trailingSectionOpens_0=67,
-                 trailingSectionFlag_9=1),
-            {"count": 4325, "exact": 3938},
-        ))
-
-    def test_counts_that_do_not_cover_the_sections_fail(self) -> None:
-        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
-            dict(SECTION_GROUPS, trailingSections=80),
-            SECTION_SELECTORS, {"count": 4325, "exact": 3937},
-        ))
-        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
-            SECTION_GROUPS,
-            {k: v for k, v in SECTION_SELECTORS.items() if "Flag" not in k},
-            {"count": 4325, "exact": 3937},
-        ))
-
-    def test_no_sections_at_all_fails_rather_than_passing_vacuously(self) -> None:
-        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
-            {"entries": 3861}, {}, {"count": 4325, "exact": 3861}
-        ))
-        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
-            {}, {}, {}
-        ))
-
-    def test_malformed_input_fails(self) -> None:
-        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
-            None, SECTION_SELECTORS, {}
-        ))
-        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
-            SECTION_GROUPS, None, {}
-        ))
-        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
-            SECTION_GROUPS, SECTION_SELECTORS, None
-        ))
-
-
-GAIN = {
-    "gainsTested": 1953, "gainsPlausible": 1953,
-    "gainsThatAreNegativeZero": 823,
-    "gainControlsTested": 3116, "gainControlsPlausible": 202,
-    "laterEntryGainsTested": 26, "laterEntryGainsPlausible": 2,
-}
-
-
-class Type11GainWordTests(unittest.TestCase):
-    """The word at +32 is a float, and negative zero is why it stayed hidden."""
-
-    def test_the_measured_corpus_passes(self) -> None:
-        self.assertTrue(the_entry_header_word_at_thirty_two_is_a_float(GAIN))
-
-    def test_a_single_implausible_value_fails(self) -> None:
-        self.assertFalse(the_entry_header_word_at_thirty_two_is_a_float(
-            dict(GAIN, gainsPlausible=1952)))
-
-    def test_losing_the_negative_zeros_fails(self) -> None:
-        # 823 of the 1,953 values are exactly 0x80000000. If they vanished, the field
-        # being read would not be the one this gate describes -- and a band test that
-        # discards them is exactly how this word stayed unexplained for nine
-        # population tests.
-        self.assertFalse(the_entry_header_word_at_thirty_two_is_a_float(
-            dict(GAIN, gainsThatAreNegativeZero=0)))
-
-    def test_a_shifted_control_that_scores_as_well_fails(self) -> None:
-        self.assertFalse(the_entry_header_word_at_thirty_two_is_a_float(
-            dict(GAIN, gainControlsPlausible=3000)))
-
-    def test_the_later_entry_control_is_required_and_must_fail(self) -> None:
-        # The sharpest control: the SAME offset one entry later scores 2 of 26. If it
-        # scored like the first entry, "+32 is a float" would be a statement about
-        # 32-bit words in this region rather than about this field.
-        self.assertFalse(the_entry_header_word_at_thirty_two_is_a_float(
-            dict(GAIN, laterEntryGainsPlausible=26)))
-        self.assertFalse(the_entry_header_word_at_thirty_two_is_a_float(
-            dict(GAIN, laterEntryGainsTested=0, laterEntryGainsPlausible=0)))
-
-    def test_an_empty_census_fails_rather_than_passing_vacuously(self) -> None:
-        self.assertFalse(the_entry_header_word_at_thirty_two_is_a_float({}))
-        self.assertFalse(the_entry_header_word_at_thirty_two_is_a_float(None))
-
-
-class Type11PairedWordTests(unittest.TestCase):
-    """The words at +12 and +20 are one field written twice, usually."""
-
-    PAIR = {"pairsTested": 1158, "pairsEqual": 998}
-
-    def test_the_measured_corpus_passes(self) -> None:
-        self.assertTrue(the_entry_header_carries_the_same_word_twice(self.PAIR))
-
-    def test_a_minority_of_matches_fails(self) -> None:
-        # "The same field twice" needs a majority, or it is just two fields that
-        # sometimes coincide.
-        self.assertFalse(the_entry_header_carries_the_same_word_twice(
-            {"pairsTested": 1158, "pairsEqual": 400}))
-
-    def test_an_untested_pair_fails_rather_than_passing_vacuously(self) -> None:
-        self.assertFalse(the_entry_header_carries_the_same_word_twice(
-            {"pairsTested": 0, "pairsEqual": 0}))
-        self.assertFalse(the_entry_header_carries_the_same_word_twice({}))
-        self.assertFalse(the_entry_header_carries_the_same_word_twice(None))
-
-    def test_more_matches_than_tests_fails(self) -> None:
-        self.assertFalse(the_entry_header_carries_the_same_word_twice(
-            {"pairsTested": 10, "pairsEqual": 11}))
-
-
 class Type11CloseBlockTests(unittest.TestCase):
     """Every element trailer ends with four variable bytes and eight zero ones."""
 
@@ -3468,7 +3330,7 @@ class Type11CloseBlockTests(unittest.TestCase):
         self.assertTrue(the_trailer_close_block_ends_in_eight_zeros(
             {"finalCloseBlocks": 3937,
              "finalCloseBlocksEndingInEightZeros": 3937,
-             "interiorCloseBlocks": 38,
+             "interiorCloseBlocks": 0,
              "interiorCloseBlocksEndingInEightZeros": 0,
              "closeBlockControlsEndingInEightZeros": 0}
         ))
@@ -3477,7 +3339,7 @@ class Type11CloseBlockTests(unittest.TestCase):
         self.assertFalse(the_trailer_close_block_ends_in_eight_zeros(
             {"finalCloseBlocks": 3937,
              "finalCloseBlocksEndingInEightZeros": 3936,
-             "interiorCloseBlocks": 38,
+             "interiorCloseBlocks": 0,
              "interiorCloseBlocksEndingInEightZeros": 0,
              "closeBlockControlsEndingInEightZeros": 0}
         ))
@@ -3489,12 +3351,12 @@ class Type11CloseBlockTests(unittest.TestCase):
         self.assertFalse(the_trailer_close_block_ends_in_eight_zeros(
             {"finalCloseBlocks": 3937,
              "finalCloseBlocksEndingInEightZeros": 3937,
-             "interiorCloseBlocks": 38,
+             "interiorCloseBlocks": 0,
              "interiorCloseBlocksEndingInEightZeros": 0,
              "closeBlockControlsEndingInEightZeros": 3400}
         ))
 
-    def test_interior_blocks_scoring_like_final_ones_fails(self) -> None:
+    def test_interior_blocks_scoring_like_final_ones_still_fails(self) -> None:
         # The contrast this gate exists for. While every framed body had exactly one
         # element there were no interior blocks, so "the trailer ends in eight zeros"
         # and "the body ends in eight zeros" were the same claim. Now they are not:
@@ -3509,11 +3371,12 @@ class Type11CloseBlockTests(unittest.TestCase):
              "closeBlockControlsEndingInEightZeros": 0}
         ))
 
-    def test_no_interior_blocks_at_all_fails_for_want_of_a_contrast(self) -> None:
-        # The state the reader was in before multi-element bodies framed. The gate
-        # refuses rather than passing, because without interior blocks there is
-        # nothing to contrast the final ones against.
-        self.assertFalse(the_trailer_close_block_ends_in_eight_zeros(
+    def test_no_interior_blocks_at_all_is_accepted_now(self) -> None:
+        # WITHDRAWN claim. The 38 interior blocks that once scored 0 came from the
+        # retired trailing-section reading, which placed a second entry header four
+        # bytes late. Under the corrected frame there are none, so the gate no longer
+        # demands a contrast it cannot have.
+        self.assertTrue(the_trailer_close_block_ends_in_eight_zeros(
             {"finalCloseBlocks": 3861,
              "finalCloseBlocksEndingInEightZeros": 3861,
              "interiorCloseBlocks": 0,

@@ -3159,7 +3159,7 @@ preceding content leaves it.
   against rivals sharing **neither** endpoint. *When scoring a two-part reading
   against rivals, rivals that share a part inherit its score; hold only the
   genuinely different ones to the wide margin.*
-### `0x0B` has a whole-body frame: 3,937 of 4,325
+### `0x0B` has a whole-body frame: 4,115 of 4,325
 
 ```
 u8  flag
@@ -3319,6 +3319,52 @@ distinguish the claim from a weaker one, so the claim looked exact.**
   means the reading has finally been tested. Change it then, not before."* That is
   exactly what happened, so it was replaced rather than relaxed. *Write the tripwire
   that tells you when your own caveat has expired.*
+
+#### EVERY ENTRY AFTER THE FIRST BEGINS 4 BYTES EARLY: 3,937 -> 4,115
+
+Identifying `+32` as a float handed over a second content check, and with two of them
+the second entry header could be **located** rather than assumed.
+
+- Two checks identify a first entry header, and both hold in **100%** of them: the word
+  at `+4` is a source id the same body declares, and the word at `+32` is a plausible
+  float.
+- At the place the reader used to put the second header, **neither holds -- 0 of 216**
+  two-entry bodies.
+- Scanning every offset from `-32` to `+32` from the end of entry 1, **exactly one**
+  passes either check: **`-4`**, in 168 of 216. **No other offset passes even once.**
+- Scored corpus-wide the step-back closes **4,115** against 3,937 without it, and every
+  rival step -- 2, 6, 8, 12, 16 -- lands at **3,861 to 3,863, below the baseline**.
+- **The control flipped to agreement.** The same `+32` offset in later entry headers
+  scored **2 of 26** while they were read four bytes late; with the step-back it scores
+  **210 of 210**. *A control that becomes confirmation when an offset is corrected is
+  the strongest evidence the correction was right.*
+- **Which side owns the four bytes is not determined** and the reader says so: either
+  the element walk over-consumes by four in the last element of a non-final entry, or
+  the entry header is longer than 48. The reader compensates where the evidence is
+  rather than inventing a field.
+- The frame is now much simpler. 4,453 entries over 4,115 bodies; **338 declare zero
+  elements and 4,115 declare one**, and the 338 step-backs are exactly those empty
+  entries. Entry counts are exercised at **1, 2, 3, 4, 5 and 8**. Fences fall from 388
+  to **210**.
+
+#### RETIRED: the trailing section was patching this, and WITHDRAWN: the interior blocks
+
+Two earlier results do not survive the step-back, and both are removed rather than left
+standing.
+
+- **The "trailing section"** -- one byte, a block and a trailer, which closed 76
+  multi-entry bodies -- **never fires** under the corrected frame: 0 of 4,325. It was
+  compensating for the misplaced header. *A reading that compensates for a misplaced
+  field is worse than no reading, because it makes the misplacement look closed.* The
+  code and its gate are deleted.
+- **The interior close blocks are withdrawn.** "The eight zeros belong to the block
+  ending the BODY, not to each element" rested on interior blocks scoring **0 of 38**
+  -- and those 38 existed only because the trailing-section reading placed a second
+  header four bytes late. Under the corrected frame every framed body carries exactly
+  one element, there are no interior blocks, and **the question is untestable again**.
+  *Evidence produced by a reading is only as good as the reading.*
+- The managed suite caught this too: its synthetic multi-entry body stopped framing the
+  moment the reader learned the step-back, which is the test doing its job.
 
 #### `0x0B`'s word at `+32` IS A FLOAT, and negative zero is why it hid
 

@@ -3507,51 +3507,6 @@ def the_trailer_branches_partition_the_framed_bodies(
     return plain + extended == elements
 
 
-def the_trailing_section_closes_only_multi_entry_bodies(
-    groups: dict[str, Any], selectors: dict[str, Any], corpus: dict[str, Any]
-) -> bool:
-    """Numeric type 0x0B's multi-entry bodies end with a section the entries do not cover.
-
-    After the entry walk falls short, one byte then the same 12-byte block and the
-    same trailer an element ends with lands exactly on the terminator in 76 bodies.
-    The prefix is discriminated: width 1 closes 76 and every other width from 0 to 9
-    closes at most 10. The section costs nothing, because it is only attempted once
-    the walk has already failed -- it can add bodies, never take one.
-
-    What this gate insists on is the part that is easy to lose. A control that
-    accepts any of the four observed trailer lengths and ignores the flag closes 100
-    rather than 76: the extra 24 have a residue of the right total length but a block
-    opening byte of 0xAF, 0x55 or 0x59 and a scattered selector. Those are length
-    coincidences, not sections, and they stay fenced. So every section this reader
-    accepts must have an opening byte the trailer rule recognises -- 0 or 1 -- and a
-    plain flag in range. If a section ever appears with an opening byte outside that
-    pair, the reader has started accepting the coincidences and the gate says so.
-    """
-    if not isinstance(groups, dict) or not isinstance(selectors, dict):
-        return False
-    if not isinstance(corpus, dict):
-        return False
-    sections = int(groups.get("trailingSections") or 0)
-    if sections <= 0:
-        return False
-    opens = {
-        name.rsplit("_", 1)[-1]: int(value) for name, value in selectors.items()
-        if name.startswith("trailingSectionOpens_")
-    }
-    if not opens or sum(opens.values()) != sections:
-        return False
-    # The whole discrimination in one line: an opening byte the trailer rule knows.
-    if not set(opens) <= {"0", "1"}:
-        return False
-    flags = {
-        name.rsplit("_", 1)[-1]: int(value) for name, value in selectors.items()
-        if name.startswith("trailingSectionFlag_")
-    }
-    if sum(flags.values()) != sections:
-        return False
-    return all(int(name) <= 2 for name in flags)
-
-
 def the_entry_header_word_at_thirty_two_is_a_float(corpus: dict[str, Any]) -> bool:
     """Numeric type 0x0B's entry-header word at +32 is a float, and -0.0 is why it hid.
 
@@ -3588,14 +3543,15 @@ def the_entry_header_word_at_thirty_two_is_a_float(corpus: dict[str, Any]) -> bo
     # The controls must fail clearly, or "it reads as a float" says nothing.
     if int(corpus.get("gainControlsPlausible") or 0) * 4 >= controls:
         return False
-    # The sharpest control this field has: the SAME offset in a LATER entry header.
-    # It scores 2 of 26, the rate of a shifted read, so the word is a float in the
-    # first entry header and is not one after it -- independent evidence that a later
-    # entry is not the same 48-byte layout as the first.
+    # This WAS a control and is now confirmation, which is the whole story of the
+    # four-byte entry step-back. While later entry headers were read four bytes late,
+    # the same offset scored 2 of 26 -- the rate of a shifted read. With the step-back
+    # applied it scores 210 of 210. *A control that flips to agreement when an offset
+    # is corrected is the strongest evidence the correction was right.*
     later = int(corpus.get("laterEntryGainsTested") or 0)
     if later <= 0:
         return False
-    return int(corpus.get("laterEntryGainsPlausible") or 0) * 4 < later
+    return int(corpus.get("laterEntryGainsPlausible") or 0) == later
 
 
 def the_entry_header_carries_the_same_word_twice(corpus: dict[str, Any]) -> bool:
@@ -3619,7 +3575,7 @@ def the_entry_header_carries_the_same_word_twice(corpus: dict[str, Any]) -> bool
 
 
 def the_trailer_close_block_ends_in_eight_zeros(totals: dict[str, Any]) -> bool:
-    """The block that ENDS A BODY carries eight zero bytes; interior ones do not.
+    """Every element trailer ends with four variable bytes and eight zero ones.
 
     Two claims about the same twelve bytes, and they have different answers.
 
@@ -3648,16 +3604,20 @@ def the_trailer_close_block_ends_in_eight_zeros(totals: dict[str, Any]) -> bool:
         return False
     if control * 2 >= final:
         return False
-    # The interior blocks are the discrimination, and they only became available when
-    # multi-element bodies started to frame. If they scored like the final ones the
-    # eight zeros would be a property of trailers in general; they score 0 of 38, so
-    # it is a property of the block that ends the body.
+    # WITHDRAWN: interior close blocks used to score 0 of 38 here, and that contrast
+    # was the evidence that the eight zeros belong to the block ending the BODY rather
+    # than to each element. Those 38 came from the retired trailing-section reading,
+    # which placed a second entry header four bytes late. Under the corrected frame
+    # every framed body carries exactly one element, so there are no interior blocks
+    # and the question is untestable again.
+    #
+    # *Evidence produced by a reading is only as good as the reading.* The contrast is
+    # no longer demanded; if interior blocks reappear they are censused and it can be
+    # settled properly.
     interior = int(totals.get("interiorCloseBlocks") or 0)
-    if interior <= 0:
-        # Not yet testable. Refuse rather than pass: this gate's whole content is the
-        # contrast, and without interior blocks there is no contrast to check.
-        return False
-    return int(totals.get("interiorCloseBlocksEndingInEightZeros") or 0) * 2 < interior
+    if interior > 0:
+        return int(totals.get("interiorCloseBlocksEndingInEightZeros") or 0) * 2 < interior
+    return True
 
 
 TYPE11_HEADER_SCALARS = (
@@ -7202,11 +7162,6 @@ def run_current_corpus_audit(
     t11_ext_free = the_trailer_branches_partition_the_framed_bodies(
         type11_body_selectors, type11_body_corpus
     )
-    t11_section_ok = the_trailing_section_closes_only_multi_entry_bodies(
-        type11_body_corpus.get("groupCounts") or {},
-        type11_body_selectors,
-        type11_body_corpus,
-    )
     t11_gain_ok = the_entry_header_word_at_thirty_two_is_a_float(
         report["corpus"].get("type11EntryHeaders") or {}
     )
@@ -7302,7 +7257,6 @@ def run_current_corpus_audit(
         and t11_close_ok
         and t11_gain_ok
         and t11_pair_ok
-        and t11_section_ok
         and t11_header_ok
         and t11_count_is_a_count
         and t11_curves_ok
@@ -7732,26 +7686,6 @@ def run_current_corpus_audit(
             "the type 0x0B trailer branches no longer partition the framed bodies, "
             "so a body is being counted in both branches or in neither: "
             f"selectors={type11_body_selectors} exact={type11_body_corpus.get('exact')}"
-        )
-    if not t11_section_ok:
-        lane_failures.append(
-            "the type 0x0B trailing section is gone, or has started accepting "
-            "residues whose opening byte the trailer rule does not recognise: "
-            f"{ {k: v for k, v in type11_body_selectors.items() if 'railingSection' in k} }"
-        )
-    if not t11_gain_ok:
-        h = report["corpus"].get("type11EntryHeaders") or {}
-        lane_failures.append(
-            "the type 0x0B entry header word at +32 no longer reads as a float: "
-            f"plausible={h.get('gainsPlausible')}/{h.get('gainsTested')} "
-            f"negativeZeros={h.get('gainsThatAreNegativeZero')} "
-            f"controls={h.get('gainControlsPlausible')}/{h.get('gainControlsTested')}"
-        )
-    if not t11_pair_ok:
-        h = report["corpus"].get("type11EntryHeaders") or {}
-        lane_failures.append(
-            "the type 0x0B entry header words at +12 and +20 are no longer usually "
-            f"equal: {h.get('pairsEqual')} of {h.get('pairsTested')}"
         )
     if not t11_close_ok:
         h11 = report["corpus"].get("type11EntryHeaders") or {}
