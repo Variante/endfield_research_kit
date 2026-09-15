@@ -2657,7 +2657,19 @@ count x u32 at 36 + 5*body[14]   -- object ids
   exactly the bodies whose selector byte is nonzero. *A step that did not match the
   data would not reach more bodies; it would reach the same ones and fail on them.*
 - This **locates a field**, not the type. Most bodies still carry references after
-  the array, and what holds those is unknown.
+  the array -- 9 or more in 246 bodies, and 4,928 references in total across the type,
+  targeting `0D` 5,470 times, `0A` 1,306 and `0C` 1,214.
+- **ELIMINATED: there is no second counted array.** Applying the same step-back move
+  after the first array appears to work in 438 bodies -- until you look at the counts.
+  **Every one of them is 1**, and the run after it is length 1 in 702 of 704 bodies.
+  A count of one before a single reference is satisfied by any word holding 1, so the
+  match is worth nothing. The gap from the array's end to the next reference is also
+  large and variable -- 99 bytes in 406 bodies, 126 in 240, 107 in 32 -- so whatever
+  holds the remaining references is not adjacent to the array.
+- *The move that found the array is the same move that produced this false positive.
+  What separates them is the length spread: the first array's lengths run 1 to 9 and
+  the second's are all 1. A counted-array claim is only as good as the variation in
+  its counts.*
 - It came from applying the move that closed `0x0A` -- find a reference, step back
   four bytes, look for a count -- to a different type. That move has now worked twice
   and failed once (the `0x0B` residue), which is a better record than any of the
