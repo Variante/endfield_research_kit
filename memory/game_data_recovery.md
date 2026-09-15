@@ -5772,6 +5772,39 @@ An **optional, per-layer** texture is `m_colorVariationTex`. It is **not**
 carry a layer index nor be absent from 16 directories. *The distribution settles which
 of the two candidates it is without needing to read a byte of its content.*
 
+##### REOPENED: a rival candidate the distribution argument could not have weighed
+
+The argument above chose `m_colorVariationTex` by eliminating `m_splatControlMap`. The
+engine, read since, offers a **third** candidate with the same profile, and the choice is
+no longer forced.
+
+**A per-layer mask map is a first-class concept here.** `maskMapRemapOffset` and
+`maskMapRemapScale` sit inside **`TerrainLayerInfo`** and **`SplatLayerData`** -- the
+*per-layer* structs -- and the shader side carries `_MaskMapTexture`,
+`_MaskMapRemapMin/Max/Offset/Scale`. An optional, layer-indexed third texture is exactly
+what a mask map is.
+
+**And the typing mildly favours the rival.** `VirtualTextureRenderer` binds three:
+
+| field | type index |
+| --- | --- |
+| `m_splatsDiffuseArray` | **144608** |
+| `m_splatsNormalArray` | **144608** |
+| `m_colorVariationTex` | **144600** *(different)* |
+
+*The two per-layer arrays share one type; the colour-variation binding has another* -- the
+shape of `Texture2DArray` twice and `Texture2D` once. A single non-array binding is an odd
+consumer for files that carry layer indices running to 34, whereas the mask map's
+parameters are stored per layer.
+
+**The census is reproduced, not disputed.** An independent count gives `C` in 22 of 38
+directories, 54 files against 345 each of `D` and `N`, with `D` and `N` equal in every
+directory -- matching the numbers above exactly.
+
+***So `LAYER_C`'s purpose is reopened, with a discriminator rather than a shrug:*** resolve
+type indices 144608 and 144600 to their declared types. If the colour-variation binding is
+a plain `Texture2D`, the identification above is wrong and the mask map is the answer.
+
 `LAYER_C` also uses format **5** where `D` and `N` use 108 and 109 -- a low, presumably
 standard format against two engine-specific ones, which is consistent, though the format
 numbers themselves are not decoded.
