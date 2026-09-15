@@ -1664,6 +1664,24 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **Numeric type `0x12` is the one HIRC type with no framing at all, and these
+  readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
+  grammar -- its word at offset 4 fails `range_section` on all 251. It is not the
+  `0x16` shape (0 of 251). Chained counted blocks after a four-byte lead close only
+  8 of 251 at any chain depth from 1 to 4.
+- Its leading 32-bit word names a same-bank object in 132 of 251 bodies and names
+  nothing in the other 119, so unlike types `0x08`, `0x0A`, `0x0C` and `0x0D` it is
+  **not** a reference field and must not be gated as one.
+- A "fixed 21-byte tail" reading looked convincing on two sample bodies -- the float
+  `9a 99 c0 c2` sat exactly 21 bytes from the end in both -- and is **wrong**: only
+  100 of 251 bodies have it there. Two samples agreeing on an offset is not
+  evidence; this corpus has now punished that three times.
+- What the end-aligned census does support, as a shape hypothesis that is **not**
+  yet a framing: counting back from EOF, bytes -5, -4 and -3 are zero in every
+  body, byte -6 takes only seven small values, and bytes -12 and -11 take six and
+  eight values that look like the high half of a float. That is consistent with a
+  fixed trailer of roughly `[f32][u32][u32][u16]`, and the next attempt should try
+  to confirm or kill that before touching the head again.
 - **Numeric types `0x13`, `0x14` and `0x15` are framed byte-exact: 18 bodies, 685
   bytes, all of them.** `0x13` and `0x14` are a counted block of four-byte values,
   a counted block of **eight**-byte values, then two bytes; keys and values are

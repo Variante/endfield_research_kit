@@ -335,6 +335,14 @@ scratch. They do not open with the node frame, and searching for an offset where
 the frame parses is worthless because every music body admits several such
 offsets -- the frame is permissive, so "it parsed" is nearly no evidence. A
 structural predictor is needed, the way byte 1 predicts the `0x0E` prefix.
+Numeric type `0x12` remains unframed and several readings are already eliminated:
+not the `0x10`/`0x11` grammar (all 251 fail on the section size), not the `0x16`
+shape, and chained counted blocks close only 8 of 251. Its leading word is not a
+reference field -- it names nothing in 119 of 251 bodies -- so do not gate it like
+the `0x08`/`0x0A`/`0x0C`/`0x0D` heads. A fixed-21-byte-tail reading fits two sample
+bodies and fails on the corpus; work from the end-aligned census instead, where
+bytes -5..-3 are zero everywhere.
+
 Numeric types `0x13`, `0x14` and `0x15` are framed byte-exact but on 4, 9 and 5
 bodies respectively, so read their report before relying on them: `0x13`/`0x14`
 are a four-byte-value block, an eight-byte-value block, then two bytes, and `0x15`
