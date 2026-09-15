@@ -4960,10 +4960,50 @@ exception:
   a `Vector3` rather than per-LOD -- *a size alone does not say what a buffer is for,
   and these two are the reminder.*
 
-**The `v3` container, as far as the evidence now goes:** an indirection texture and a
-hash table addressing physical texture blocks, with **three** per-LOD offset/count
-pairs and three per-LOD block sizes, all held in fixed buffers inside a blittable
-config struct.
+#### The exact config layouts, read from `Il2CppFieldOffsets`
+
+Both structs, byte-exact. Offsets below are struct-relative; the binary reports them
+object-relative, so each is 16 higher there (the managed header), and the last field
+lands on the struct size exactly -- which is the check that the table was read right.
+
+**`HGIrradianceVolumeConfig` -- the V3 scheme, 192 bytes:**
+
+```
++0   enableLowQualityMode    4     +96  perFrameMaxLoadingByteCount   12
++4   indirectionTextureSize  4     +108 perFrameMaxUploadChunkCount   12
++8   blockCountX             4     +120 perFrameMaxLoadingByteCountV3  4
++12  blockCountY             4     +124 perFrameMaxUploadChunkCountV3  4
++16  blockCountZ             4     +128 maxHashTableSize               4
++20  hashTableSize           4     +132 maxInactiveFrameCount          4
++24  perLOD                 12     +136 ClipmapTextureSize            12
++36  perHalfChunkCounts     12     +148 blockSizesV3                  12
++48  perHashTableOffsets    12     +160 cameraForwardBiasForYAxis     12
++60  perHashTableSizes      12     +172 maxRegionCount                 4
++72  perPhysicalTextureOffsets     12   +176 regionAtlasSizeX          4
++84  perPhysicalTextureBlockCounts 12   +180 regionAtlasSizeY          4
+                                        +184 regionAtlasSizeZ          4
+                                        +188 enableLowMemoryMode       4
+```
+
+**`HGIrradianceVolumeConfigV2` -- the clipmap scheme, 312 bytes:** same method;
+`clipMapTextureSizeX/Y/Z` at +4/+8/+12, `basisBaseGridDim` +16 (24 bytes),
+`basisVoxelDataDim` +40 (24), `coeffBaseGridDim` +64, `coeffVoxelDataDim` +68,
+`perCoeffLodBudget` +72, `perBasisLodBudget` +84, `lod3BaseGridDim` +96,
+`lod3VoxelDataDim` +100, `lod3Budget` +104, `rawDataSize` +108,
+`modelBufferBudget` +112, `perLOD` +116, then the `perHalfStreamingChunkCounts{X,Y,Z}`,
+`perRawBuffer{Offsets,Counts}`, `perBlockInfo{BufferOffsets,Size}`,
+`perBasisTexture{Offset,BlockCounts}`, `perCoeffTexture{Offset,BlockCounts}` and
+`perFrameMax{LoadingByteCount,UploadChunkCount}` buffers at 12 bytes each,
+`maxRegionCount` +284, `regionAtlasSizeX/Y/Z` +288/+292/+296,
+`streamingCenterBias` +300.
+
+**The `v3` container, as far as the evidence goes:** an indirection texture and a hash
+table addressing physical texture blocks, with **three** per-LOD offset/count pairs and
+three per-LOD block sizes, all in fixed buffers inside these blittable structs.
+
+**Not claimed:** that either struct appears verbatim in a shipped file. These are the
+runtime configs the engine holds; whether the `.bytes` payload embeds one, and where, is
+untested. *Knowing a struct exactly is not the same as knowing it is in the file.*
 
 **Where this lane stands:** the index is framed and shipped at 86 of 92 with 20 tests;
 the payload's container is **identified** rather than guessed, with every one of the
