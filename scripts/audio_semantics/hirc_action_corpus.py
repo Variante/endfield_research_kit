@@ -1733,6 +1733,9 @@ def aggregate_current_hirc_actions(
     type11_body_failures: Counter[str] = Counter()
     type11_body_groups: Counter[str] = Counter()
     type11_body_selectors: Counter[str] = Counter()
+    type0a_anchor_totals: Counter[str] = Counter()
+    type0a_anchor_controls: Counter[str] = Counter()
+    type0a_anchor_hits: Counter[str] = Counter()
     music_mutuality_totals: Counter[str] = Counter()
     music_mutuality_kinds: Counter[str] = Counter()
     hierarchy_totals: Counter[str] = Counter()
@@ -1944,6 +1947,13 @@ def aggregate_current_hirc_actions(
         music_ref_twice.update(package_music_refs["targetsReachedTwice"])
         music_ref_population.update(package_music_refs["targetPopulation"])
         music_ref_places.update(package_music_refs["edgeDistanceFromEnd"])
+        package_anchor = _read_type0a_anchor_census(
+            package.get("hircType0AEndAnchor"), package_label
+        )
+        for key in TYPE0A_ANCHOR_SCALARS:
+            type0a_anchor_totals[key] += package_anchor[key]
+        type0a_anchor_controls.update(package_anchor["controlHits"])
+        type0a_anchor_hits.update(package_anchor["anchorHits"])
         package_mut = _read_music_mutuality_census(
             package.get("hircMusicMutuality"), package_label
         )
@@ -2479,6 +2489,11 @@ def aggregate_current_hirc_actions(
             "tailEntryCountCounts": dict(sorted(type11_tail_counts.items())),
             "interpolationCounts": dict(sorted(type11_interps.items())),
             "firstTailEntryLeadingWordCounts": dict(sorted(type11_lead_words.items())),
+        },
+        "type0AEndAnchor": {
+            **{key: int(type0a_anchor_totals[key]) for key in TYPE0A_ANCHOR_SCALARS},
+            "anchorHits": dict(sorted(type0a_anchor_hits.items())),
+            "controlHits": dict(sorted(type0a_anchor_controls.items())),
         },
         "musicMutuality": {
             **{key: int(music_mutuality_totals[key]) for key in MUSIC_MUTUALITY_SCALARS},
@@ -3598,6 +3613,78 @@ def _read_music_mutuality_census(census: Any, label: str) -> dict[str, Any]:
             f"music mutual edge kinds do not cover the mutual edges: {label}"
         )
     return out
+
+
+TYPE0A_ANCHOR_SCALARS = (
+    "bodies", "anchorNamesTheTargetType", "controlsNameTheTargetType",
+)
+
+
+def _read_type0a_anchor_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's numeric type 0x0A end-anchor census."""
+    if census is None:
+        return ({key: 0 for key in TYPE0A_ANCHOR_SCALARS}
+                | {"anchorHits": {}, "controlHits": {}})
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x0A anchor census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in TYPE0A_ANCHOR_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x0A anchor census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x0A anchor census has negative {key}: {label}")
+        out[key] = value
+    for key in ("anchorHits", "controlHits"):
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"type 0x0A anchor census has invalid {key}: {label}")
+        out[key] = {str(name): int(value) for name, value in raw.items()}
+    if sum(out["anchorHits"].values()) != out["anchorNamesTheTargetType"]:
+        raise ValueError(f"type 0x0A anchor hits do not add up: {label}")
+    # Not a total: a body can carry a reference at more than one anchor distance,
+    # so the sum may exceed the body count. Each distance individually cannot.
+    for name, value in out["anchorHits"].items():
+        if value > out["bodies"]:
+            raise ValueError(
+                f"type 0x0A anchor {name} names more bodies than exist: {label}"
+            )
+    if sum(out["controlHits"].values()) != out["controlsNameTheTargetType"]:
+        raise ValueError(f"type 0x0A anchor control hits do not add up: {label}")
+    return out
+
+
+def the_type0a_end_anchor_beats_every_neighbouring_distance(corpus: dict[str, Any]) -> bool:
+    """A fixed distance from the end is only a rule if its neighbours find nothing.
+
+    Numeric type 0x0A carries its type 0x0B reference at one of a small set of
+    distances from the end: 69 in 3,707 bodies and 73 in 288. A fixed distance lands
+    on *something* in every body, so a hit count alone says nothing; what makes this a
+    rule is that the distances that are NOT in the set name an object of that type in
+    no body at all.
+
+    The first version of this gate treated 73 as a control and failed on correct data.
+    A neighbouring offset is only a control if it is not itself part of the structure,
+    and the head rule's own distance distribution -- 69, 73, 77, 82, 93, 125 -- was
+    already saying that 73 belongs.
+
+    This anchor matters because it reaches what the head rule cannot. The head rule
+    works from the front and needs three of the body's bytes to be counts; where any
+    is not, it predicts into the wrong place. The anchor needs nothing, and places 25
+    of the 28 bodies the head rule leaves behind -- taking the type from 3,875 placed
+    with a 28-body residue to 3,900 placed with a residue of three.
+    """
+    bodies = int(corpus.get("bodies") or 0)
+    anchor = int(corpus.get("anchorNamesTheTargetType") or 0)
+    if bodies <= 0 or anchor <= 0:
+        return False
+    if anchor * 2 <= bodies:
+        return False
+    controls = int(corpus.get("controlsNameTheTargetType") or 0)
+    # The margin is not a ratio here. The controls are expected to be zero, and a
+    # handful would already mean the distance is not doing the work it appears to.
+    return controls * 100 < anchor
 
 
 def the_music_relation_is_symmetric(corpus: dict[str, Any]) -> bool:
@@ -6181,6 +6268,8 @@ def run_current_corpus_audit(
     }
     group_bodies_ok = every_group_reports_the_bodies_behind_it(body_lane_corpus)
     thin_groups = thinly_seen_groups(body_lane_corpus)
+    type0a_anchor_corpus = corpus["type0AEndAnchor"]
+    anchor_ok = the_type0a_end_anchor_beats_every_neighbouring_distance(type0a_anchor_corpus)
     music_mutuality_corpus = corpus["musicMutuality"]
     music_symmetric = the_music_relation_is_symmetric(music_mutuality_corpus)
     music_scope = music_references_resolve_inside_their_own_bank(
@@ -6314,6 +6403,7 @@ def run_current_corpus_audit(
         and hierarchy_leaf
         and hierarchy_direction
         and music_symmetric
+        and anchor_ok
         and music_scope
         and music_partition
         and music_anchor
@@ -6365,6 +6455,7 @@ def run_current_corpus_audit(
             "type11EntryHeaders": type11_header_corpus,
             "sharedHierarchy": hierarchy_corpus,
             "musicMutuality": music_mutuality_corpus,
+            "type0AEndAnchor": type0a_anchor_corpus,
             "thinlySeenGroups": thin_groups,
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
@@ -6568,6 +6659,13 @@ def run_current_corpus_audit(
             f"control={h.get('rangeControlIsSymmetric')}/{h.get('rangeControlTested')} "
             f"fractions={h.get('fractionsAreSmall')}/{h.get('fractionsTested')} "
             f"fractionControl={h.get('fractionControlsAreSmall')}/{h.get('fractionControlsTested')}"
+        )
+    if not anchor_ok:
+        a = report["corpus"].get("type0AEndAnchor") or {}
+        lane_failures.append(
+            "the type 0x0A end anchor no longer beats its neighbouring distances: "
+            f"anchor={a.get('anchorNamesTheTargetType')} of {a.get('bodies')} "
+            f"controls={a.get('controlsNameTheTargetType')} {a.get('controlHits')}"
         )
     if not music_symmetric:
         m = report["corpus"].get("musicMutuality") or {}

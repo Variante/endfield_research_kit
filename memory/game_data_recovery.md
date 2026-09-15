@@ -2479,8 +2479,26 @@ from there the counts fall out. Widening a range would never have found either.
 - The 28 are characterised, not just counted: their `body[14]` takes values like 35
   and 61 that are not counts (the implied extra comes out negative), `body[17]` is
   zero in 7 of them even though the head is long, and their actual head offsets
-  cluster at 48, 51, 53, 54 and 59. A fourth shape, or variant bodies; 0.67% of the
-  type either way.
+  cluster at 48, 51, 53, 54 and 59. A fourth shape, or variant bodies.
+
+#### The end anchor takes the 28-body residue down to 3
+
+- **The reference sits at one of a small set of distances from the END: `-69` in
+  3,707 bodies and `-73` in 288.** The head rule works from the front and needs three
+  of the body's bytes to be counts; the anchor needs nothing, so it reaches what the
+  head rule cannot.
+- **Combined, the type is accounted for: 3,875 placed by the head rule, 25 more by
+  the anchor alone, 255 with no reference at all (the absent optional field), and
+  three left.** The 28-body residue is now **3**.
+- **The control is the whole evidence, and it is perfect.** A fixed distance from the
+  end lands on *something* in every body, so a hit count says nothing. Every distance
+  within five bytes that is *not* an anchor -- `-64` to `-68`, `-70`, `-71`, `-72`,
+  `-74`, `-75` -- names a type `0x0B` object in **zero** bodies.
+- **A neighbouring offset is only a control if it is not itself part of the
+  structure.** The first version of this gate scored `-73` as a control and failed on
+  correct data. The head rule's own distance distribution -- 69, 73, 77, 82, 93, 125
+  -- was already saying `-73` belongs to the family; I had the evidence and used it
+  as its own refutation.
 - **`u32@5` is a CROSS-PACKAGE reference, and it names numeric type `0x08`
   objects.** It is zero in almost every body; the 120 nonzero words take **four**
   distinct values and **none of them resolves inside its own package** -- which is

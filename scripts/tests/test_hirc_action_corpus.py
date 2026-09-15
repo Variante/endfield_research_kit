@@ -19,6 +19,8 @@ from scripts.audio_semantics.hirc_action_corpus import (
     TYPE11_HEADER_SCALARS,
     _read_hierarchy_census,
     _read_music_mutuality_census,
+    _read_type0a_anchor_census,
+    the_type0a_end_anchor_beats_every_neighbouring_distance,
     music_references_resolve_inside_their_own_bank,
     the_music_relation_is_symmetric,
     _read_type11_header_census,
@@ -3525,3 +3527,62 @@ class MusicMutualityTests(unittest.TestCase):
             _read_music_mutuality_census(self.census(sameBankEdges=99), "pkg")
         with self.assertRaises(ValueError):
             _read_music_mutuality_census(self.census(mutualEdges=99999), "pkg")
+
+
+class Type0AEndAnchorTests(unittest.TestCase):
+    """A fixed distance from the end is a rule only if the non-anchors find nothing."""
+
+    def census(self, **overrides):
+        base = {
+            "bodies": 4158,
+            "anchorNamesTheTargetType": 3995,
+            "controlsNameTheTargetType": 0,
+            "anchorHits": {"minus_69": 3707, "minus_73": 288},
+            "controlHits": {},
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(
+            the_type0a_end_anchor_beats_every_neighbouring_distance(self.census())
+        )
+
+    def test_controls_finding_references_fail(self) -> None:
+        self.assertFalse(the_type0a_end_anchor_beats_every_neighbouring_distance(
+            self.census(controlsNameTheTargetType=900, controlHits={"minus_70": 900})
+        ))
+
+    def test_an_anchor_covering_a_minority_fails(self) -> None:
+        self.assertFalse(the_type0a_end_anchor_beats_every_neighbouring_distance(
+            self.census(anchorNamesTheTargetType=900,
+                        anchorHits={"minus_69": 900})
+        ))
+
+    def test_an_empty_census_fails(self) -> None:
+        self.assertFalse(the_type0a_end_anchor_beats_every_neighbouring_distance({}))
+        self.assertFalse(the_type0a_end_anchor_beats_every_neighbouring_distance(
+            self.census(bodies=0)
+        ))
+
+    def test_the_anchor_total_may_exceed_the_body_count(self) -> None:
+        # A body can carry a reference at more than one anchor distance, so the sum
+        # is not a per-body total. Each distance individually cannot exceed it, and
+        # that is what the reader checks.
+        c = self.census()
+        self.assertGreater(sum(c["anchorHits"].values()), 0)
+        self.assertLess(max(c["anchorHits"].values()), c["bodies"])
+        _read_type0a_anchor_census(c, "pkg")
+
+    def test_the_reader_rejects_one_distance_exceeding_the_body_count(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_type0a_anchor_census(
+                self.census(anchorNamesTheTargetType=9000,
+                            anchorHits={"minus_69": 9000}), "pkg"
+            )
+
+    def test_the_reader_rejects_hits_that_do_not_add_up(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_type0a_anchor_census(
+                self.census(anchorHits={"minus_69": 3707}), "pkg"
+            )
