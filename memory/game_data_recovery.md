@@ -4930,11 +4930,40 @@ of the byte-statistic negatives explained: there is no single record stride in a
 payload because the physical texture blocks are sized per LOD, and one file holds every
 LOD for its chunk.
 
-**The `v3` container, stated as far as the evidence goes:** an indirection texture and a
-hash table addressing physical texture blocks, per-LOD offsets and counts held in fixed
-buffers, block sizes per LOD. Not framed byte-by-byte -- the buffer *lengths* live in
-the `FixedBuffer` attribute rather than in metadata, so the per-LOD array extents still
-need the binary's type table or the `HGIrradianceVolume` method bodies.
+#### THE EXTENTS: every per-LOD buffer is 3 x 4 bytes, so there are THREE LODs
+
+`Il2CppTypeDefinitionSizes` in `GameAssembly.dll` gives each generated
+`e__FixedBuffer` type's size, and that size *is* the buffer. Reached through the
+existing bridge in `tools/endfield-il2cpp` -- CodeRegistration at `0x18a88e640`,
+MetadataRegistration at `0x18a88e860`, 58,110 size entries.
+
+**Every per-LOD buffer in both configs is `native 12` = 3 x 4 bytes**, without
+exception:
+
+| | buffers | native size | elements |
+| --- | --- | --- | --- |
+| `HGIrradianceVolumeConfig` (V3) | 11 | **12** each | **3** |
+| `HGIrradianceVolumeConfigV2` | 17 of 19 | **12** each | **3** |
+| `basisBaseGridDim`, `basisVoxelDataDim` | 2 | **24** | **6** |
+
+- **Three LOD slots, and 28 independent fields agree on it.** That is not one
+  measurement: `perLOD`, `perHashTableOffsets`, `perHashTableSizes`,
+  `perPhysicalTextureOffsets`, `perPhysicalTextureBlockCounts`, `blockSizesV3`,
+  `perRawBufferOffsets`, `perBlockInfoSize`, `perBasisTextureOffset`,
+  `perCoeffTextureOffset` and the rest are all 12 bytes.
+- **It matches the names.** `HGIrradianceVolumePipelineUpdateResultV2` exposes
+  `Lod0`, `Lod1` and `Lod3` -- three textures per set, indices 0, 1 and 3, three slots.
+- The two 24-byte buffers, `basisBaseGridDim` and `basisVoxelDataDim`, hold **six**
+  words where the matching `coeff*` fields are plain scalars. Three LODs x two values,
+  or two triples; that is not settled and is not claimed.
+- `streamingCenterBias` and `cameraForwardBiasForYAxis` are also 12 bytes, but they are
+  a `Vector3` rather than per-LOD -- *a size alone does not say what a buffer is for,
+  and these two are the reminder.*
+
+**The `v3` container, as far as the evidence now goes:** an indirection texture and a
+hash table addressing physical texture blocks, with **three** per-LOD offset/count
+pairs and three per-LOD block sizes, all held in fixed buffers inside a blittable
+config struct.
 
 **Where this lane stands:** the index is framed and shipped at 86 of 92 with 20 tests;
 the payload's container is **identified** rather than guessed, with every one of the
