@@ -6941,8 +6941,37 @@ give and a mask over distinct concepts does not.
 zero**, with 60.9% of reads landing on non-powers-of-two. 964 distinct values, a long tail
 past 2048 in 0.39%.
 
-**Field 4 is the constant 4** in all 18,391 reads. **Field 3** has 3,311 distinct values
-(top: 100, 180, 528, 340) and remains unidentified.
+**Field 4 is the constant 4** in all 18,391 reads.
+
+##### Field 3 is a byte offset into the slot-4 region
+
+Its values are multiples of four -- 100, 180, 528, 340 -- which is a hint worth following
+rather than a coincidence:
+
+| check | result |
+| --- | --- |
+| divisible by 4 | **18,391 / 18,391 = 100.00%** |
+| `max(f3) < s4` | **6,002 / 6,002 = 100.00%** |
+| `max(f3) + 24 <= s4` | **6,002 / 6,002 = 100.00%** |
+| distinct within a file | 5,970 / 6,002 = 99.47% |
+
+**`s4` is the size of the region field 3 indexes into.** That closes a loop: `s4` was
+established earlier as *"a byte size over variable-length records, not a count times a
+stride"* -- with no idea what the records were. Field 3 points at them, and the gaps
+between consecutive sorted offsets take **5,163 distinct values**, which is exactly the
+variable-length structure `s4`'s growth implied. *Two findings made separately, each
+half of one mechanism.*
+
+**Two details that constrain the region.** The lowest offset in a file is never 24 and
+varies widely (100, 180, 340, 528...), so the records start after a header of variable
+size; and `s4 - max(f3)` is 136-448 bytes, so the last record is followed by a tail rather
+than ending the region exactly.
+
+***The offsets are not in element order.*** Only **74.36%** of files have field 3
+non-decreasing across the slot-7 vector, so a quarter of chunks reference their records in
+a different order from the order those records are stored. **Anyone walking the region by
+following elements in order will read it out of sequence in one file in four** -- which is
+the kind of thing that makes a parser look almost right.
 
 *Worth noting what made the difference:* field 0's mask reading survived because its bits
 were **not** the bits a small integer sets -- bits 0-5 always on, one-hot in 8-14 -- which
