@@ -2024,6 +2024,47 @@ concatenations. Splitting them needs the RTTI `type_info` pointer that precedes 
 vtable -- and this binary's RTTI is stripped to 12 `std::` descriptors, so that boundary is
 not available either. **The remaining route is to follow the nested constructors, not to
 scan for vtables.**
+
+#### THE CHAIN COMPLETED, AND HIRC `0x11`'s LAYOUT READ FROM THE ENGINE
+
+Following the constructors rather than scanning did work, in four hops:
+
+1. the `0x11` arm looks a node up in an **id-keyed chain** (`cmp [rbx+0x10], esi` /
+   `mov rbx, [rbx+8]`, refcount at `+0x14`, vtable at `+0x0`);
+2. when absent it calls the **type-`0x11` factory at `0x18014af30`**, which allocates
+   **`0xa8` bytes** from pool 2, runs a base constructor, and **stores vtable
+   `0x180299200`** at `[rbx]` (plus a secondary at `[rbx+0x18]`);
+3. `vtable[+0x28]` is therefore `0x18014c250`;
+4. that function is the deserializer, and it is short enough to read outright.
+
+```
+add  qword ptr [rdx], 4     ; cursor += 4   -- the node id, already consumed
+mov  ebp, [rax]             ; FIELD A : u32
+mov  [rdx], rsi             ; cursor += 4
+mov  r14d, [rsi]            ; FIELD B : u32
+add  rsi, 4 ; mov [rdx], rsi
+cmp  ebp, -1 ; je done      ; A == 0xFFFFFFFF -> read nothing further
+lea  rcx, [rip+0x1e38a5] ; mov edx, ebp ; call 0x18011e060    ; look A up
+mov  rcx,[rsp+0x68] ; mov rax,[rcx] ; mov r9d, r14d ; mov r8, rsi
+call qword ptr [rax + 0x18]  ; hand the REST of the payload to the plug-in
+```
+
+**So the engine parses exactly twelve bytes of a `0x11` body** -- the node id, then `A`,
+then `B` -- and everything after that is passed to a plug-in **selected by `A`**, with `B`
+handed over as a parameter. `A == 0xFFFFFFFF` means no plug-in and no further reading.
+
+***This settles the `0x11` tie.*** The open item was a 21-versus-27 ambiguity in the body
+length, undecidable from the bank bytes. It is undecidable *because the format does not fix
+it*: **the engine-defined part is 12 bytes and the tail length is whatever the selected
+plug-in consumes.** Two body lengths are not two candidate readings of one structure -- they
+are two plug-ins. *A tie that will not break under more corpus evidence is often a tie the
+format never had a side in.*
+
+**The method that got here, for the other stuck types.** `0x09`, `0x10` and `0x12` have
+arms at the same jump table, and the same four hops apply: arm -> factory (allocation size
+and vtable store) -> `vtable[+0x28]` -> read the field sequence. The factory is found by
+following the arm's node-creation branch, which is the call whose result immediately takes
+`mov [rax+0x10], <id>`.
 - **Numeric type `0x12` is the one HIRC type with no framing at all, and these
   readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
   grammar -- its word at offset 4 fails `range_section` on all 251. It is not the
