@@ -3939,6 +3939,44 @@ own docstring: *"joining inside one package answers a question nobody asked."* T
 census is published from C# as distinct value sets and joined in Python, where the
 packages are already pooled.
 
+### NOTHING in the HIRC object graph reaches the music family's media
+
+The previous batch asked what addresses the music subgraph. The answer, over every
+relation this reader has resolved, is **nothing** -- and the evidence is now complete
+rather than suggestive, because the relations can be enumerated.
+
+| relation | edges | any music type at either end? |
+| --- | --- | --- |
+| main reference graph | 230,247 | **no** -- sources `04/05/06/07`, targets `02/05/06/07/09` |
+| parent field (its inverse) | 199,445 | **no** -- 13 type pairs, all in `02/05/06/07/09` |
+| `0x08`/`0x12` forest | 412 | no |
+| music hierarchy at `+9` | 7,084 | internal only: `0A->0C`, `0A->0D`, `0C->0C`, `0D->0C` |
+| `0x0C`'s counted array | 2,980 | internal only: `->0A`, `->0C`, `->0D` |
+| `0x0A`'s counted array | 3,903 | internal only: `->0B` |
+| **action target word** | 23,455 resolvable | **8 land on `0x0C`; none on `0A`, `0B` or `0D`** |
+
+- **The family is large and well connected internally**: 11,656 objects, 7,305
+  downward edges from 4,607 sources, 4,351 objects with no incoming edge (3,764
+  `0x0A`, 489 `0x0D`, 98 `0x0C`). **Every `0x0B` has an incoming edge** -- none is a
+  root -- so the tracks are owned.
+- **Entering it from outside there are 5 edges in the whole corpus**, all
+  `action_03 -> type0C`, resolved within the same bank. All 5 land on objects that are
+  **roots**, **none of the 5 has an outgoing edge**, and together they reach **0**
+  source ids.
+- So the family's **1,279 media are reached by nothing**. Extending the named walk to
+  read `0x0B`'s source records changed the reach numbers by exactly nothing --
+  120 identifiers, 218 source ids, before and after.
+- *This is written as a gate, not a note.* If a later reading reaches even one source
+  id through the music family, `reachedSourceIdCount` becomes positive and the audit
+  fails. **That failure is the good news.** The same pattern retired the `0x0B`
+  element-count caveat two batches ago.
+- The gate also refuses when the walk has **no edges**, because an empty edge set
+  reaches nothing and looks exactly like isolation. *A negative result needs proof
+  that the instrument was working.*
+- What this does **not** say: that music is unreachable at runtime. It says no
+  relation resolved here reaches it, so whatever drives music is **outside the HIRC
+  object graph**. That bounds the search rather than ending it.
+
 ### The music subgraph is not reachable from any named event
 
 - **Actions almost never address music.** Of the 23,455 action target words that

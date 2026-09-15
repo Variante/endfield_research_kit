@@ -4,6 +4,8 @@ import unittest
 
 from scripts.audio_semantics.hirc_named_reach import (
     media_attribution,
+    music_reach_from_audit,
+    the_music_family_is_not_entered_from_the_object_graph,
     media_attribution_is_discriminated,
     source_values_from_audit,
     broad_naming_is_discriminated,
@@ -313,4 +315,75 @@ class MediaAttributionTests(unittest.TestCase):
                 source_values_from_audit({"rows": [
                     {"status": "verified",
                      "package": {"hircMediaJoin": {"hircSourceRecords": bad}}},
+                ]})
+
+
+class MusicIsolationTests(unittest.TestCase):
+    """A negative result stated as a gate, so its expiry fires rather than passes."""
+
+    MEASURED = {
+        "musicObjects": 11656, "entryEdges": 5, "banksWithAnEntry": 5,
+        "reachedObjects": 5, "reachedSourceIdCount": 0, "edges": 7305,
+        "edgeSources": 4607, "rootsWithNoIncomingEdge": 4351,
+        "entriesWithOutgoingEdges": 0, "entriesThatAreRoots": 5,
+    }
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(
+            the_music_family_is_not_entered_from_the_object_graph(self.MEASURED)
+        )
+
+    def test_finding_a_real_entry_point_fails_the_gate(self) -> None:
+        # The good-news case, and the reason this is written as a gate at all. If a
+        # later reading reaches even one source id through the music family, the
+        # isolation claim has expired and must be rewritten rather than relaxed.
+        self.assertFalse(the_music_family_is_not_entered_from_the_object_graph(
+            dict(self.MEASURED, reachedSourceIdCount=1)
+        ))
+
+    def test_a_walk_with_no_edges_fails_rather_than_passing(self) -> None:
+        # Without this the gate would pass most loudly when the walk was broken:
+        # an empty edge set reaches nothing, which looks exactly like isolation.
+        self.assertFalse(the_music_family_is_not_entered_from_the_object_graph(
+            dict(self.MEASURED, edges=0, edgeSources=0)
+        ))
+        self.assertFalse(the_music_family_is_not_entered_from_the_object_graph(
+            dict(self.MEASURED, musicObjects=0)
+        ))
+
+    def test_entry_edges_on_the_scale_of_the_family_fail(self) -> None:
+        self.assertFalse(the_music_family_is_not_entered_from_the_object_graph(
+            dict(self.MEASURED, entryEdges=200)
+        ))
+
+    def test_an_empty_census_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_music_family_is_not_entered_from_the_object_graph({}))
+        self.assertFalse(the_music_family_is_not_entered_from_the_object_graph(None))
+
+    def test_the_census_sums_only_verified_packages(self) -> None:
+        base = {k: 0 for k in (
+            "musicObjects", "entryEdges", "banksWithAnEntry", "reachedObjects",
+            "reachedSourceIdCount", "edges", "edgeSources",
+            "rootsWithNoIncomingEdge", "entriesWithOutgoingEdges",
+            "entriesThatAreRoots")}
+        audit = {"rows": [
+            {"status": "verified", "package": {"hircType03Targets": {
+                "hircMusicReach": dict(base, musicObjects=10, edges=4,
+                                       entryKinds={"action_03_to_type0C": 2})}}},
+            {"status": "verified", "package": {"hircType03Targets": {
+                "hircMusicReach": dict(base, musicObjects=5, edges=1)}}},
+            {"status": "failed", "package": {"hircType03Targets": {
+                "hircMusicReach": dict(base, musicObjects=999)}}},
+        ]}
+        out = music_reach_from_audit(audit)
+        self.assertEqual(out["musicObjects"], 15)
+        self.assertEqual(out["edges"], 5)
+        self.assertEqual(out["entryKinds"], {"action_03_to_type0C": 2})
+
+    def test_a_malformed_census_fails_closed(self) -> None:
+        for bad in ({"musicObjects": "ten"}, {"musicObjects": -1}, "census"):
+            with self.assertRaises(ValueError):
+                music_reach_from_audit({"rows": [
+                    {"status": "verified",
+                     "package": {"hircType03Targets": {"hircMusicReach": bad}}},
                 ]})

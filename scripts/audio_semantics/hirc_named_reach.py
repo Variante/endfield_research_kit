@@ -225,6 +225,92 @@ def media_attribution_is_discriminated(attribution: dict[str, Any]) -> bool:
     return all(int(value) * 100 < named for value in controls.values())
 
 
+MUSIC_REACH_SCALARS = (
+    "musicObjects", "entryEdges", "banksWithAnEntry", "reachedObjects",
+    "reachedSourceIdCount", "edges", "edgeSources", "rootsWithNoIncomingEdge",
+    "entriesWithOutgoingEdges", "entriesThatAreRoots",
+)
+
+
+def music_reach_from_audit(audit: dict[str, Any]) -> dict[str, Any]:
+    """Sum the music-reach census over every verified package."""
+    totals = {key: 0 for key in MUSIC_REACH_SCALARS}
+    kinds: Counter[str] = Counter()
+    roots: Counter[str] = Counter()
+    reached: Counter[str] = Counter()
+    for row in audit.get("rows", []):
+        if row.get("status") != "verified":
+            continue
+        package = row.get("package")
+        if not isinstance(package, dict):
+            continue
+        # Published inside the action-target block, because the only edges that enter
+        # the music family are action target words and the two are read together.
+        targets = package.get("hircType03Targets")
+        census = targets.get("hircMusicReach") if isinstance(targets, dict) else None
+        if census is None:
+            continue
+        if not isinstance(census, dict):
+            raise ValueError("music reach census is not an object")
+        for key in MUSIC_REACH_SCALARS:
+            try:
+                value = int(census[key])
+            except (KeyError, TypeError, ValueError) as exc:
+                raise ValueError(f"music reach census has invalid {key}") from exc
+            if value < 0:
+                raise ValueError(f"music reach census has negative {key}")
+            totals[key] += value
+        kinds.update(census.get("entryKinds") or {})
+        roots.update(census.get("rootTypes") or {})
+        reached.update(census.get("reachedTypes") or {})
+    totals["entryKinds"] = dict(sorted(kinds.items()))
+    totals["rootTypes"] = dict(sorted(roots.items()))
+    totals["reachedTypes"] = dict(sorted(reached.items()))
+    return totals
+
+
+def the_music_family_is_not_entered_from_the_object_graph(
+    reach: dict[str, Any]
+) -> bool:
+    """Nothing in the HIRC object graph reaches the music family's media.
+
+    This is a negative result stated as a gate, so that the day it stops being true
+    is a day something fires rather than a day nobody notices.
+
+    The music types are their own component. The main reference graph's 230,247 edges
+    carry no music type at either end; the parent field's 199,445 carry none either.
+    The family has 11,656 objects and 7,305 downward edges of its own, so a walk
+    inside it has plenty to follow -- that is what makes the next number meaningful
+    rather than an artefact of an empty edge set.
+
+    Entering it from outside there are **5** edges in the whole corpus, all of them an
+    action target word landing on numeric type 0x0C. All 5 land on objects that are
+    roots, none of the 5 has an outgoing edge, and together they reach **0** source
+    ids. The family's 1,279 media are reached by nothing.
+
+    The gate therefore asserts three things at once: the walk has edges to follow, the
+    entry count is negligible against the family's size, and no media are reached. If
+    a later reading finds the real entry point, `reachedSourceIdCount` becomes
+    positive and this fails. **That failure is the good news** -- change this then,
+    and not before.
+
+    What it does not say: that music is unreachable at runtime. It says no relation
+    this reader has resolved reaches it, which is a smaller claim and the only one
+    the bytes support.
+    """
+    if not isinstance(reach, dict):
+        return False
+    objects = int(reach.get("musicObjects") or 0)
+    edges = int(reach.get("edges") or 0)
+    if objects <= 0 or edges <= 0:
+        # An empty family, or one with no internal edges, cannot support the claim:
+        # "nothing reaches it" would then be a statement about the walk.
+        return False
+    if int(reach.get("reachedSourceIdCount") or 0) != 0:
+        return False
+    return int(reach.get("entryEdges") or 0) * 1000 < objects
+
+
 def broad_literals(metadata_path: Path) -> list[str]:
     """Identifier-shaped managed literals, without the audio prefix vocabulary."""
     from scripts.audio_semantics.identifiers import (  # noqa: PLC0415
@@ -587,6 +673,7 @@ def run(
     media = media_ids_from_audit(audit)
     source_values = source_values_from_audit(audit)
     attribution = media_attribution(media, source_values)
+    music_reach = music_reach_from_audit(audit)
     if not media:
         problems.append("the audit declares no media ids, so the media join cannot be checked")
 
@@ -678,6 +765,15 @@ def run(
     table["populationsWithNoMatch"] = sorted(
         name for name, size in populations.items() if size and not wide_matches.get(name)
     )
+    if not the_music_family_is_not_entered_from_the_object_graph(music_reach):
+        problems.append(
+            "the music family's isolation no longer holds, which means either the "
+            "walk lost its edges or an entry point has finally been found: "
+            f"objects={music_reach.get('musicObjects')} "
+            f"edges={music_reach.get('edges')} "
+            f"entryEdges={music_reach.get('entryEdges')} "
+            f"reachedSourceIds={music_reach.get('reachedSourceIdCount')}"
+        )
     if not media_attribution_is_discriminated(attribution):
         problems.append(
             "the media attribution is not discriminated: "
@@ -718,6 +814,7 @@ def run(
         "reachedSourceIdsNamingNoMedia": unmatched_reached,
         "broadNaming": table,
         "mediaAttribution": attribution,
+        "musicReach": music_reach,
         "mediaSummary": {
             "declaredMediaIds": len(media),
             "identifiersReachingMedia": sum(1 for v in media_reached.values() if v),
