@@ -1644,6 +1644,10 @@ def aggregate_current_hirc_actions(
     small_totals: Counter[str] = Counter()
     small_by_type: Counter[str] = Counter()
     small_failures: Counter[str] = Counter()
+    t03_totals: Counter[str] = Counter()
+    t03_same: Counter[str] = Counter()
+    t03_other: Counter[str] = Counter()
+    t03_outside: Counter[str] = Counter()
     type09_totals: Counter[str] = Counter()
     type09_failures: Counter[str] = Counter()
     type09_flags: Counter[str] = Counter()
@@ -1708,6 +1712,13 @@ def aggregate_current_hirc_actions(
             small_totals[key] += package_small[key]
         small_by_type.update(package_small["bodiesByType"])
         small_failures.update(package_small["failureCounts"])
+
+        package_t03 = _read_type03_targets(package.get("hircType03Targets"), package_label)
+        for key in TYPE03_TARGET_SCALARS:
+            t03_totals[key] += package_t03[key]
+        t03_same.update(package_t03["sameBankByActionByte"])
+        t03_other.update(package_t03["otherBankByActionByte"])
+        t03_outside.update(package_t03["outsideByActionByte"])
 
         package_type09 = _read_type09_census(package.get("hircType09"), package_label)
         for key in TYPE09_SCALARS:
@@ -2142,6 +2153,12 @@ def aggregate_current_hirc_actions(
             **{key: int(small_totals[key]) for key in SMALL_TYPE_SCALARS},
             "bodiesByType": dict(sorted(small_by_type.items())),
             "failureCounts": dict(sorted(small_failures.items())),
+        },
+        "type03Targets": {
+            **{key: int(t03_totals[key]) for key in TYPE03_TARGET_SCALARS},
+            "sameBankByActionByte": dict(sorted(t03_same.items())),
+            "otherBankByActionByte": dict(sorted(t03_other.items())),
+            "outsideByActionByte": dict(sorted(t03_outside.items())),
         },
         "type09Bodies": {
             **{key: int(type09_totals[key]) for key in TYPE09_SCALARS},
@@ -2679,6 +2696,61 @@ def small_types_are_closed(corpus: dict[str, Any]) -> bool:
     )
 
 
+TYPE03_TARGET_SCALARS = ("objects", "zero", "sameBank", "otherBankInPackage", "outsidePackage")
+
+
+def _read_type03_targets(census: Any, label: str) -> dict[str, Any]:
+    if census is None:
+        return {key: 0 for key in TYPE03_TARGET_SCALARS} | {
+            "sameBankByActionByte": {}, "otherBankByActionByte": {}, "outsideByActionByte": {}
+        }
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x03 target census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in TYPE03_TARGET_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x03 target census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x03 target census has negative {key}: {label}")
+        out[key] = value
+    for key in ("sameBankByActionByte", "otherBankByActionByte", "outsideByActionByte"):
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"type 0x03 target census has invalid {key}: {label}")
+        out[key] = {str(k): int(v) for k, v in raw.items()}
+    landed = out["zero"] + out["sameBank"] + out["otherBankInPackage"] + out["outsidePackage"]
+    if landed != out["objects"]:
+        raise ValueError(
+            f"type 0x03 target outcomes do not partition the objects: {label} "
+            f"landed={landed} objects={out['objects']}"
+        )
+    for key, total in (
+        ("sameBankByActionByte", out["sameBank"]),
+        ("otherBankByActionByte", out["otherBankInPackage"]),
+        ("outsideByActionByte", out["outsidePackage"]),
+    ):
+        if sum(out[key].values()) != total:
+            raise ValueError(f"type 0x03 {key} does not sum to its outcome: {label}")
+    return out
+
+
+def type03_targets_cross_bank_boundaries(corpus: dict[str, Any]) -> bool:
+    """Action targets must be shown to leave their bank, not assumed not to.
+
+    The gated reference vectors are all same-bank, and that was once recorded as a
+    property of the corpus. It is a property of those vectors: action targets do
+    cross banks. This asserts the crossing is observed rather than letting a future
+    reader quietly report zero and leave the old conclusion standing.
+    """
+    return (
+        int(corpus.get("objects") or 0) > 0
+        and int(corpus.get("sameBank") or 0) > 0
+        and int(corpus.get("otherBankInPackage") or 0) > 0
+    )
+
+
 TYPE09_SCALARS = (
     "bodies", "exact", "unestablishedSecondRun", "failed",
     "exactBytes", "bodyBytes", "runEntries",
@@ -3087,6 +3159,47 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             "would be unwitnessed and the layout merely fitted.",
         ]
 
+    t03 = report["corpus"].get("type03Targets") or {}
+    t03_lines = []
+    if t03.get("objects"):
+        t03_lines = [
+            "",
+            "## Numeric type `0x03`: the one relation that leaves its bank",
+            "",
+            f"- Target words: {t03['objects']:,}; naming an object in the same bank: "
+            f"{t03['sameBank']:,}; in **another bank of the same package**: "
+            f"{t03['otherBankInPackage']:,}.",
+            f"- Naming nothing this package declares: {t03['outsidePackage']:,}; null: "
+            f"{t03['zero']:,}.",
+            "",
+            "| Action byte | Same bank | Other bank | Outside the package |",
+            "|---|---:|---:|---:|",
+            *(
+                f"| `{name}` | {t03['sameBankByActionByte'].get(name, 0):,} | "
+                f"{t03['otherBankByActionByte'].get(name, 0):,} | "
+                f"{t03['outsideByActionByte'].get(name, 0):,} |"
+                for name in sorted(
+                    set(t03["sameBankByActionByte"])
+                    | set(t03["otherBankByActionByte"])
+                    | set(t03["outsideByActionByte"])
+                )
+            ),
+            "",
+            "**This corrects a conclusion stated elsewhere in these reports.** The gated "
+            "reference vectors never leave their bank, and that was described as a "
+            "property of the corpus. It is a property of those vectors: action target "
+            "words do leave, and the crossing is not marginal -- a random 32-bit word "
+            "would land on a declared object about once across all 28,379 targets, and "
+            "1,499 land in another bank of the same package alone.",
+            "",
+            "The first byte of the body clearly matters -- `action_03` almost always "
+            "resolves while `action_04` almost never does -- but it is reported and not "
+            "claimed as a decider: none of these classes is clean the way the type "
+            "`0x02` plug-in partition is, so a rule would be fitted rather than found. "
+            "Targets outside the package are counted as such rather than as unresolved, "
+            "because this reader sees one package and cannot speak for the others.",
+        ]
+
     type09 = report["corpus"].get("type09Bodies") or {}
     type09_lines = []
     if type09.get("bodies"):
@@ -3283,6 +3396,7 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             "",
             *media_lines,
             *small_lines,
+            *t03_lines,
             *type09_lines,
             *type17_lines,
             *head08_lines,
@@ -3637,6 +3751,8 @@ def run_current_corpus_audit(
     media_closed = media_join_is_decided_by_the_plugin_id(media_corpus)
     small_corpus = corpus["smallTypeBodies"]
     small_closed = small_types_are_closed(small_corpus)
+    t03_corpus = corpus["type03Targets"]
+    t03_closed = type03_targets_cross_bank_boundaries(t03_corpus)
     type09_corpus = corpus["type09Bodies"]
     type09_closed = type09_is_framed_except_the_second_run(type09_corpus)
     type17_corpus = corpus["type17Bodies"]
@@ -3655,6 +3771,7 @@ def run_current_corpus_audit(
         and type09_closed
         and small_closed
         and media_closed
+        and t03_closed
     )
     reference_report = {
         "format": "animestudio-wwise-hirc-reference-graph-audit",
@@ -3681,6 +3798,7 @@ def run_current_corpus_audit(
             "type08HeadWords": type08_corpus,
             "type17Bodies": type17_corpus,
             "type09Bodies": type09_corpus,
+            "type03Targets": t03_corpus,
             "smallTypeBodies": small_corpus,
             "type02MediaJoin": media_corpus,
             "type02PluginIdCounts": corpus["type02SourcePrefixes"]["pluginIdCounts"],
@@ -3717,6 +3835,12 @@ def run_current_corpus_audit(
             f"bodies={small_corpus['bodies']} exact={small_corpus['exact']} "
             f"failed={small_corpus['failed']} "
             f"secondBlockWitnesses={small_corpus['bodiesWithSecondBlock']}"
+        )
+    if not t03_closed:
+        lane_failures.append(
+            "type 0x03 targets do not show the cross-bank relation: "
+            f"objects={t03_corpus['objects']} sameBank={t03_corpus['sameBank']} "
+            f"otherBankInPackage={t03_corpus['otherBankInPackage']}"
         )
     if not type09_closed:
         lane_failures.append(

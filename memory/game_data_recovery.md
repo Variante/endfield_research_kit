@@ -1701,6 +1701,28 @@ Stable conclusions:
   about what either type does.
 - The narrow prefix claim is untouched and still gated separately, so widening the
   filter cannot weaken it.
+- **Correction: this corpus DOES contain cross-bank references.** The numeric type
+  `0x03` target word leaves its bank routinely -- of 28,379 targets, 21,956 name an
+  object in the same bank, **1,499 name one in another bank of the same package**,
+  4,907 name nothing the package declares, and 17 are null. A Python probe that can
+  see every package classifies 739 of those 4,907 as objects in a *different
+  package*, so the relation crosses package boundaries too.
+- This is not marginal and not a coincidence: a random 32-bit word lands on one of
+  the 231,693 declared object ids about **1.53 times** across all 28,379 targets,
+  against 2,238 observed crossings -- roughly 1,463x chance.
+- **What was wrong was the generalisation, not the measurement.** The gated
+  reference vectors of types `0x04`/`0x05`/`0x06`/`0x07` really are all same-bank,
+  and that is still true. Recording it as "this corpus has no cross-bank evidence"
+  extended a fact about those vectors to the whole corpus, and several notes in
+  this file repeated it. Actions are a different relation and behave differently.
+- The first body byte clearly matters -- `action_03` resolves 21,894 times in-bank
+  while `action_04` resolves 17 times in 3,578 -- but it is **reported and not
+  claimed as a decider**, because no class is clean the way the type `0x02`
+  plug-in partition is. A rule here would be fitted rather than found.
+- Targets outside the package are counted as outside rather than unresolved: the
+  reader sees one package and cannot speak for the others. The gate asserts that
+  the crossing is *observed*, so a future reader reporting zero cannot quietly
+  restore the old conclusion.
 - **The chain is closed end to end: shipped identifier -> media file.** 57 of the
   151 named type `0x04` objects reach at least one media file this corpus ships,
   reaching 127 distinct files between them. The report lists them per identifier,
@@ -1925,8 +1947,10 @@ Stable conclusions:
   looks like missing references. It is not: those bodies put the word at offset 5,
   and the byte that says so is right there. **A rule that is "nearly always right"
   is worth one more look for the byte that makes it always right** -- the same
-  lesson type `0x0E` taught. The residue really did name nothing in any bank, so
-  there is still no cross-bank evidence anywhere in this corpus.
+  lesson type `0x0E` taught. The residue really did name nothing in any bank --
+  which is a fact about those words only. **Do not read it as "no cross-bank
+  evidence anywhere"**, as this note once did: the numeric type `0x03` target word
+  crosses banks routinely, and that is recorded above.
 - Type `0x0A` also carries a *second* group of references: a counted run of
   same-bank object ids, and byte 14 is a count of five-byte elements -- the run
   starts at exactly `32 + 5 * byte14` for the clean cases. This run is **not**

@@ -335,6 +335,12 @@ scratch. They do not open with the node frame, and searching for an offset where
 the frame parses is worthless because every music body admits several such
 offsets -- the frame is permissive, so "it parsed" is nearly no evidence. A
 structural predictor is needed, the way byte 1 predicts the `0x0E` prefix.
+The numeric type `0x03` target word crosses bank boundaries -- 1,499 of 28,379
+name an object in another bank of the same package, and a cross-package probe adds
+739 more, against 1.53 expected by chance. Do **not** repeat the older note that
+this corpus has no cross-bank evidence: that is true of the gated reference
+vectors and was over-generalised to the corpus. Actions are a different relation.
+
 Only numeric types `0x04`, `0x08` and `0x15` carry names, plus bank ids; the other
 sixteen HIRC types match no shipped literal at all and media ids match none either
 (0 of 61,333 against an expectation of 0.36). Those zeros are measured, so treat

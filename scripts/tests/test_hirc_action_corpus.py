@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from scripts.audio_semantics.hirc_action_corpus import (
+    type03_targets_cross_bank_boundaries,
     media_join_is_decided_by_the_plugin_id,
     small_types_are_closed,
     type09_is_framed_except_the_second_run,
@@ -184,6 +185,16 @@ def valid_action_fixture():
         "secondBlockEntries": 3,
         "bodiesByType": {"type13": 1, "type14": 2, "type15": 1},
         "failureCounts": {},
+    }
+    type03_targets = {
+        "objects": 10,
+        "zero": 1,
+        "sameBank": 6,
+        "otherBankInPackage": 2,
+        "outsidePackage": 1,
+        "sameBankByActionByte": {"action_03": 6},
+        "otherBankByActionByte": {"action_02": 2},
+        "outsideByActionByte": {"action_04": 1},
     }
     type09_bodies = {
         "bodies": 5,
@@ -381,6 +392,7 @@ def valid_action_fixture():
                     "hircType08Head": copy.deepcopy(type08_head),
                     "hircType17": copy.deepcopy(type17_bodies),
                     "hircType09": copy.deepcopy(type09_bodies),
+                    "hircType03Targets": copy.deepcopy(type03_targets),
                     "hircSmallTypes": copy.deepcopy(small_types),
                     "hircMediaJoin": copy.deepcopy(media_join),
                     "hircType05BodyFrame": copy.deepcopy(type05_body),
@@ -409,6 +421,7 @@ def valid_action_fixture():
                             "hircType08Head": copy.deepcopy(type08_head),
                             "hircType17": copy.deepcopy(type17_bodies),
                             "hircType09": copy.deepcopy(type09_bodies),
+                            "hircType03Targets": copy.deepcopy(type03_targets),
                             "hircSmallTypes": copy.deepcopy(small_types),
                             "hircMediaJoin": copy.deepcopy(media_join),
                             "hircType05BodyFrame": copy.deepcopy(type05_body),
@@ -1236,6 +1249,37 @@ class HircActionCorpusTests(unittest.TestCase):
                 broken["rows"][0]["package"]["bnkStructures"][0],
             ):
                 scope["hircSmallTypes"][field] = value
+            with self.assertRaisesRegex(ValueError, pattern):
+                aggregate_current_hirc_actions(outer, expected_files, excluded_files, broken)
+
+    def test_type03_targets_are_shown_to_cross_bank_boundaries(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        t03 = result["type03Targets"]
+        self.assertEqual(t03["sameBank"], 6)
+        self.assertEqual(t03["otherBankInPackage"], 2)
+        self.assertTrue(type03_targets_cross_bank_boundaries(t03))
+
+        # The reference vectors never leave their bank and that was once recorded as
+        # a property of the corpus. If a future reader reports no crossing here, the
+        # old conclusion must not quietly come back.
+        self.assertFalse(
+            type03_targets_cross_bank_boundaries({**t03, "otherBankInPackage": 0})
+        )
+        self.assertFalse(type03_targets_cross_bank_boundaries({**t03, "sameBank": 0}))
+
+    def test_type03_target_outcomes_must_partition_and_sum(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        for field, value, pattern in (
+            ("sameBank", 5, "do not partition"),
+            ("sameBankByActionByte", {"action_03": 1}, "does not sum to its outcome"),
+        ):
+            broken = copy.deepcopy(audio_audit)
+            for scope in (
+                broken["rows"][0]["package"],
+                broken["rows"][0]["package"]["bnkStructures"][0],
+            ):
+                scope["hircType03Targets"][field] = value
             with self.assertRaisesRegex(ValueError, pattern):
                 aggregate_current_hirc_actions(outer, expected_files, excluded_files, broken)
 
