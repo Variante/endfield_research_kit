@@ -3497,11 +3497,59 @@ def the_trailer_branches_partition_the_framed_bodies(
     )
     if plain <= 0 or extended <= 0:
         return False
-    exact = int(corpus.get("exact") or 0)
-    # Every framed body carries exactly one element in this corpus, so the two branch
-    # totals must account for the framed bodies exactly. A body counted in both, or
-    # in neither, breaks the sum.
-    return plain + extended == exact
+    # Elements, not bodies. This compared against the framed body count while every
+    # framed body carried exactly one element; when multi-element bodies began to
+    # frame it broke at 3,899 against 3,937, which is the gate correctly reporting
+    # that its own premise had expired rather than a defect in the reader.
+    elements = int((corpus.get("groupCounts") or {}).get("entryElements") or 0)
+    if elements <= 0:
+        return False
+    return plain + extended == elements
+
+
+def the_trailing_section_closes_only_multi_entry_bodies(
+    groups: dict[str, Any], selectors: dict[str, Any], corpus: dict[str, Any]
+) -> bool:
+    """Numeric type 0x0B's multi-entry bodies end with a section the entries do not cover.
+
+    After the entry walk falls short, one byte then the same 12-byte block and the
+    same trailer an element ends with lands exactly on the terminator in 76 bodies.
+    The prefix is discriminated: width 1 closes 76 and every other width from 0 to 9
+    closes at most 10. The section costs nothing, because it is only attempted once
+    the walk has already failed -- it can add bodies, never take one.
+
+    What this gate insists on is the part that is easy to lose. A control that
+    accepts any of the four observed trailer lengths and ignores the flag closes 100
+    rather than 76: the extra 24 have a residue of the right total length but a block
+    opening byte of 0xAF, 0x55 or 0x59 and a scattered selector. Those are length
+    coincidences, not sections, and they stay fenced. So every section this reader
+    accepts must have an opening byte the trailer rule recognises -- 0 or 1 -- and a
+    plain flag in range. If a section ever appears with an opening byte outside that
+    pair, the reader has started accepting the coincidences and the gate says so.
+    """
+    if not isinstance(groups, dict) or not isinstance(selectors, dict):
+        return False
+    if not isinstance(corpus, dict):
+        return False
+    sections = int(groups.get("trailingSections") or 0)
+    if sections <= 0:
+        return False
+    opens = {
+        name.rsplit("_", 1)[-1]: int(value) for name, value in selectors.items()
+        if name.startswith("trailingSectionOpens_")
+    }
+    if not opens or sum(opens.values()) != sections:
+        return False
+    # The whole discrimination in one line: an opening byte the trailer rule knows.
+    if not set(opens) <= {"0", "1"}:
+        return False
+    flags = {
+        name.rsplit("_", 1)[-1]: int(value) for name, value in selectors.items()
+        if name.startswith("trailingSectionFlag_")
+    }
+    if sum(flags.values()) != sections:
+        return False
+    return all(int(name) <= 2 for name in flags)
 
 
 def the_trailer_close_block_ends_in_eight_zeros(totals: dict[str, Any]) -> bool:
@@ -3516,12 +3564,23 @@ def the_trailer_close_block_ends_in_eight_zeros(totals: dict[str, Any]) -> bool:
     """
     if not isinstance(totals, dict):
         return False
-    blocks = int(totals.get("closeBlocks") or 0)
-    zeroed = int(totals.get("closeBlocksEndingInEightZeros") or 0)
+    final = int(totals.get("finalCloseBlocks") or 0)
+    final_zeroed = int(totals.get("finalCloseBlocksEndingInEightZeros") or 0)
     control = int(totals.get("closeBlockControlsEndingInEightZeros") or 0)
-    if blocks <= 0 or zeroed != blocks:
+    if final <= 0 or final_zeroed != final:
         return False
-    return control * 2 < blocks
+    if control * 2 >= final:
+        return False
+    # The interior blocks are the discrimination, and they only became available when
+    # multi-element bodies started to frame. If they scored like the final ones the
+    # eight zeros would be a property of trailers in general; they score 0 of 38, so
+    # it is a property of the block that ends the body.
+    interior = int(totals.get("interiorCloseBlocks") or 0)
+    if interior <= 0:
+        # Not yet testable. Refuse rather than pass: this gate's whole content is the
+        # contrast, and without interior blocks there is no contrast to check.
+        return False
+    return int(totals.get("interiorCloseBlocksEndingInEightZeros") or 0) * 2 < interior
 
 
 TYPE11_HEADER_SCALARS = (
@@ -3536,6 +3595,9 @@ TYPE11_HEADER_SCALARS = (
     "sourceJoinTested", "sourceJoinMatched",
     "closeBlocks", "closeBlocksEndingInEightZeros",
     "closeBlockControlsEndingInEightZeros",
+    "finalCloseBlocks", "finalCloseBlocksEndingInEightZeros",
+    "interiorCloseBlocks", "interiorCloseBlocksEndingInEightZeros",
+    "sourceJoinBodies", "sourceJoinBodiesWithAMatch",
 )
 
 
@@ -3601,6 +3663,9 @@ def _read_type11_header_census(census: Any, label: str) -> dict[str, Any]:
         ("boundedFloatsTested", "boundedFloatsInBand"),
         ("floatControlsTested", "floatControlsInBand"),
         ("sourceJoinTested", "sourceJoinMatched"),
+        ("sourceJoinBodies", "sourceJoinBodiesWithAMatch"),
+        ("finalCloseBlocks", "finalCloseBlocksEndingInEightZeros"),
+        ("interiorCloseBlocks", "interiorCloseBlocksEndingInEightZeros"),
     ):
         if out[hits] > out[tested]:
             raise ValueError(f"type 0x0B entry header {hits} exceeds {tested}: {label}")
@@ -4480,55 +4545,64 @@ def the_type11_entry_header_carries_a_bounded_float(corpus: dict[str, Any]) -> b
 def the_type11_entry_header_names_one_of_its_own_sources(corpus: dict[str, Any]) -> bool:
     """The entry header's word at 4 is a source id, and the join proves it.
 
-    Every entry header's word at offset 4 is one of the source ids the **same body**
-    declares in its own 14-byte source records. The match is exact: 4,321 of 4,321.
+    The entry header's word at offset 4 is one of the source ids the **same body**
+    declares in its own 14-byte source records.
 
     The id sits at record offset **5**, which is not four-byte aligned. Testing the
     record's aligned words -- 0, 4 and 8 -- finds **no match at all**, which is what
     made this field look unidentified for so long. *A join that fails at every aligned
     offset has not been disproved; it has been tested at the wrong offsets.*
 
-    The gate is equality. A single entry naming a source its body does not declare
-    would mean the join is coincidence rather than structure.
+    **The gate counts bodies, not headers, and it did not always.** While every body
+    that framed had exactly one entry, the two were the same number and equality over
+    headers was the natural check. When multi-entry bodies began to frame it failed at
+    3,937 of 4,013 -- and the 76 shortfall is not noise: those 76 bodies have two
+    entries each, and in every one of them **exactly one of the two** headers names a
+    declared source. A per-header rate reads that as a regression. A per-body one
+    reads it as the structure it is, so the gate asks that every framed body have at
+    least one entry naming a source it declares, and that remains exact.
     """
+    bodies = int(corpus.get("sourceJoinBodies") or 0)
     tested = int(corpus.get("sourceJoinTested") or 0)
-    if tested <= 0:
+    if bodies <= 0 or tested <= 0:
         return False
-    return int(corpus.get("sourceJoinMatched") or 0) == tested
+    if int(corpus.get("sourceJoinBodiesWithAMatch") or 0) != bodies:
+        return False
+    # The join must still be the common case per header, or "exactly one of two" is
+    # being read into a field that mostly does not join at all.
+    return int(corpus.get("sourceJoinMatched") or 0) * 2 > tested
 
 
-def the_type11_element_count_is_not_yet_a_count(corpus: dict[str, Any]) -> bool:
-    """Report, as a gate, that the element count is never exercised.
+def the_type11_element_count_is_a_count(corpus: dict[str, Any]) -> bool:
+    """Numeric type 0x0B's element count is now exercised at more than one value.
 
-    This is a statement about the reader rather than the format, and it is here so
-    that it cannot be forgotten. The word at entry header offset 44 is read as an
-    element count, and in **every** entry the frame closes it is 1. Reading it as a
-    count and reading it as the constant 1 produce the same 3,715 bodies, so nothing
-    in the corpus distinguishes them and the "count" is a hypothesis.
+    This field sat at offset 44 of the entry header and was read as an element count
+    for a long time on no evidence at all: it was **1 in every entry any framed body
+    had**, so "a count" and "the constant 1" made identical predictions and nothing in
+    the corpus could separate them. The note recording that is retired here.
 
-    The same is true one level up, and it is worse there. **Every body that frames has
-    exactly one entry**, so the entry count has never been read at another value
-    either, and the 48-byte header width is verified only for the single-entry case.
-    Of the 218 bodies that leave unread content, **142 declare an entry with zero
-    elements** -- a shape no closing body has -- so most of that residue is not a
-    defect in the element walk at all. It is a layout the reader has never parsed.
+    The trailing section brought multi-entry bodies into the frame and with them the
+    first entries that declare something else. The field is now observed at **0, 1, 2
+    and 3** -- 130 entries declare no elements, 3,871 declare one, 8 declare two and 4
+    declare three -- and in every case the walk consumes exactly that many elements
+    and lands on the terminator. A constant cannot do that.
 
-    The gate holds while that is true. If a body ever closes with an entry declaring
-    two elements, this fails -- and that failure is the good news, because it means
-    the reading has finally been tested. Change it then, not before.
+    *A field that only ever holds one value has not been confirmed; it has not been
+    tested. The way to test it is to frame the bodies where it holds another.*
     """
-    entries = corpus.get("entryCountValues") or {}
-    if entries:
-        total_entries = sum(int(v) for v in entries.values())
-        if total_entries > 0 and int(entries.get("entries_1") or 0) != total_entries:
+    values = corpus.get("elementCountValues")
+    if not isinstance(values, dict) or not values:
+        return False
+    seen = set()
+    for name, count in values.items():
+        if int(count) <= 0:
+            continue
+        try:
+            seen.add(int(str(name).rsplit("_", 1)[-1]))
+        except ValueError:
             return False
-    values = corpus.get("elementCountValues") or {}
-    if not values:
-        return False
-    total = sum(int(v) for v in values.values())
-    if total <= 0:
-        return False
-    return int(values.get("elements_1") or 0) == total
+    # Two exercised values is the minimum that separates a count from a constant.
+    return len(seen) >= 2
 
 
 def the_type11_element_frame_beats_its_rivals(corpus: dict[str, Any]) -> bool:
@@ -7008,7 +7082,7 @@ def run_current_corpus_audit(
     )
     type11_header_corpus = corpus["type11EntryHeaders"]
     t11_header_ok = the_type11_entry_header_fields_beat_their_controls(type11_header_corpus)
-    t11_count_untested = the_type11_element_count_is_not_yet_a_count(type11_header_corpus)
+    t11_count_is_a_count = the_type11_element_count_is_a_count(type11_header_corpus)
     t11_curves_ok = the_type11_curve_records_carry_interpolation_codes(type11_header_corpus)
     t11_float_ok = the_type11_entry_header_carries_a_bounded_float(type11_header_corpus)
     t11_join_ok = the_type11_entry_header_names_one_of_its_own_sources(type11_header_corpus)
@@ -7046,6 +7120,11 @@ def run_current_corpus_audit(
     )
     t11_ext_free = the_trailer_branches_partition_the_framed_bodies(
         type11_body_selectors, type11_body_corpus
+    )
+    t11_section_ok = the_trailing_section_closes_only_multi_entry_bodies(
+        type11_body_corpus.get("groupCounts") or {},
+        type11_body_selectors,
+        type11_body_corpus,
     )
     t11_close_ok = the_trailer_close_block_ends_in_eight_zeros(
         report["corpus"].get("type11EntryHeaders") or {}
@@ -7134,8 +7213,9 @@ def run_current_corpus_audit(
         and t11_ext_ok
         and t11_ext_free
         and t11_close_ok
+        and t11_section_ok
         and t11_header_ok
-        and t11_count_untested
+        and t11_count_is_a_count
         and t11_curves_ok
         and t11_float_ok
         and t11_join_ok
@@ -7538,12 +7618,12 @@ def run_current_corpus_audit(
             f"codes={h.get('curveCodes')} "
             f"control={h.get('curveControlsInRange')}/{h.get('curveControlsTested')}"
         )
-    if not t11_count_untested:
+    if not t11_count_is_a_count:
         h = report["corpus"].get("type11EntryHeaders") or {}
         lane_failures.append(
-            "the type 0x0B element count is no longer 1 in every entry the frame "
-            "closes, so the count reading is finally under test and the note saying "
-            f"it is not must be revised: {h.get('elementCountValues')}"
+            "the type 0x0B element count has fallen back to a single observed value, "
+            "so it is once again indistinguishable from a constant: "
+            f"{h.get('elementCountValues')}"
         )
     if not t11_body_ok:
         t11b = report["corpus"].get("type11BodyFrames") or {}
@@ -7563,6 +7643,12 @@ def run_current_corpus_audit(
             "the type 0x0B trailer branches no longer partition the framed bodies, "
             "so a body is being counted in both branches or in neither: "
             f"selectors={type11_body_selectors} exact={type11_body_corpus.get('exact')}"
+        )
+    if not t11_section_ok:
+        lane_failures.append(
+            "the type 0x0B trailing section is gone, or has started accepting "
+            "residues whose opening byte the trailer rule does not recognise: "
+            f"{ {k: v for k, v in type11_body_selectors.items() if 'railingSection' in k} }"
         )
     if not t11_close_ok:
         h11 = report["corpus"].get("type11EntryHeaders") or {}

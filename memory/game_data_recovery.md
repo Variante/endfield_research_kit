@@ -3159,7 +3159,7 @@ preceding content leaves it.
   against rivals sharing **neither** endpoint. *When scoring a two-part reading
   against rivals, rivals that share a part inherit its score; hold only the
   genuinely different ones to the wide margin.*
-### `0x0B` has a whole-body frame: 3,861 of 4,325
+### `0x0B` has a whole-body frame: 3,937 of 4,325
 
 ```
 u8  flag
@@ -3191,11 +3191,11 @@ u32 terminator, always 100
   frame from 3,683 to 3,715, and all 32 of the bodies it gained had failed on
   exactly `trailerFlag_02`. Anything above the highest observed flag is refused
   rather than assumed to continue.
-- **The 464 fenced bodies, by reason:** `entries_do_not_reach_the_terminator` 170,
-  `range_element_trailer_flag` 119, `range_element_runs` 102, `range_elements` 46,
-  `range_element_head` 21, `trailing_zero_run_before_the_terminator` 6. None is
-  partially framed into a result. (Before the extended trailer below: 610, with 218
-  and 104 in the first and third buckets.)
+- **The 388 fenced bodies, by reason:** `range_element_trailer_flag` 119,
+  `range_element_runs` 102, `entries_do_not_reach_the_terminator` 94,
+  `range_elements` 46, `range_element_head` 21,
+  `trailing_zero_run_before_the_terminator` 6. None is partially framed into a
+  result. (610 before the extended trailer, 464 before the trailing section.)
 - **The largest bucket was two different things and is now named apart.** Of the 322
   bodies that stopped short of the terminator, **104 leave nothing but a run of
   zeros** -- 7 bytes in 98 of them, 5 in the other 6 -- and **218 leave real
@@ -3258,9 +3258,63 @@ bytes short, all at flag 0** -- where the flag says the trailer should be 19.
 - **The residue always ends at this block**, in every failing class. So the 464
   remaining failures misread body *interiors*; none of them has a different ending.
 
+#### `0x0B` has a trailing section, and it brought the multi-entry layout into the frame
+
+After the entry walk falls short, **one byte then the same 12-byte block and the same
+trailer an element ends with** lands exactly on the terminator in **76 bodies**, all
+of them multi-entry. Coverage **3,861 -> 3,937 of 4,325 (89.3% -> 91.0%)**.
+
+- **The prefix is discriminated:** width 1 closes 76 and every other width from 0 to 9
+  closes at most 10. The section costs nothing, because it is only attempted once the
+  walk has already failed -- it can add bodies, never take one.
+- **A length-only control closes 100, not 76, and the extra 24 are refused.** Accept
+  any of the four observed trailer lengths and ignore the flag, and 24 more residues
+  land exactly; but their block opening byte is `0xAF`, `0x55` or `0x59` and their
+  selector is scattered. That is a total-length coincidence, not a section. *When a
+  reading closes more cases than the rule that motivated it, the excess is the thing
+  to look at, not the win.*
+- The residue sizes made this findable: **32, 37, 39 and 44 are `13 + {19, 24, 26,
+  31}`** -- 13 bytes plus each of the four trailer lengths already established on
+  single-entry bodies.
+- **The layouts that do NOT explain it, ruled out first.** A uniform wider entry
+  header: no width from 8 to 200 closes any multi-entry body. All headers first and
+  then all elements: likewise none. The element count somewhere other than `+44`: the
+  sweep gives 3,861 at `+44` and at most 69 at every other offset. And the residue does
+  not parse as more elements -- 122 of 142 stop at the first one. *Single-entry bodies
+  cannot tell the interleaved layout from the headers-first one; both score 3,861. A
+  corpus that cannot distinguish two readings is not evidence for either.*
+
+#### Four of my own claims were true only because every framed body had one element
+
+The coverage gain broke four gates at once, and every one of them was right to break.
+**This is the degenerate-input trap in its purest form: the corpus could not
+distinguish the claim from a weaker one, so the claim looked exact.**
+
+| claim | how it looked | what it is |
+| --- | --- | --- |
+| the element count is a count | untestable -- **1 in every framed entry** | now read at **0, 1, 2 and 3** (130, 3,871, 8, 4) with the walk consuming exactly that many |
+| the entry count is a count | untestable -- **1 in every framed body** | now **1 in 3,861 and 2 in 76** |
+| the word at header `+4` is a source id | **3,715 of 3,715** headers | **3,937 of 4,013** headers, but **3,937 of 3,937 bodies**: in a two-entry body **exactly one of the two** entries names a declared source |
+| the 12-byte close ends in eight zeros | **3,861 of 3,861** trailers | it is a **body** property, not a trailer one: **3,937 of 3,937 final** blocks, **0 of 38 interior** ones |
+
+- **The last of these is the one worth keeping.** Before this batch I could not tell
+  whether the 12-byte close belonged to the element or to the body, because every
+  framed body had exactly one element and the two readings made identical
+  predictions. Interior blocks scoring **0 of 38** settles it: the block closes the
+  **body**.
+- The source join is now counted **per body**, not per header. Per header the same
+  data reads as a regression from 100% to 98.1%; per body it is exact, and the 76
+  "misses" are one half of each two-entry body.
+- The retired element-count gate had said: *"If a body ever closes with an entry
+  declaring two elements, this fails -- and that failure is the good news, because it
+  means the reading has finally been tested. Change it then, not before."* That is
+  exactly what happened, so it was replaced rather than relaxed. *Write the tripwire
+  that tells you when your own caveat has expired.*
+
 #### `0x0B`'s residue, measured rather than guessed
 
-Of the 4,325 bodies, **306 declare more than one entry** (240 declare 2, 34 declare
+(Superseded in part by the section above: 76 of these now frame.) Of the 4,325
+bodies, **306 declare more than one entry** (240 declare 2, 34 declare
 3, 16 declare 4, 2 declare 5, 10 declare 6 or more) and **4 declare none**. Among the
 4,019 single-entry bodies, **128 declare more than one element** (113 declare 2, 14
 declare 3, 1 declares 4).

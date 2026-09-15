@@ -19,6 +19,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_extended_trailer_is_opened_by_the_trailing_block,
     the_trailer_branches_partition_the_framed_bodies,
     the_trailer_close_block_ends_in_eight_zeros,
+    the_trailing_section_closes_only_multi_entry_bodies,
     TYPE11_HEADER_SCALARS,
     _read_hierarchy_census,
     _read_music_mutuality_census,
@@ -49,7 +50,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_type11_curve_records_carry_interpolation_codes,
     the_type11_entry_header_carries_a_bounded_float,
     the_type11_entry_header_names_one_of_its_own_sources,
-    the_type11_element_count_is_not_yet_a_count,
+    the_type11_element_count_is_a_count,
     the_type11_element_frame_beats_its_rivals,
     the_type11_entry_header_fields_beat_their_controls,
     the_type11_element_frame_is_not_settled_by_empty_elements,
@@ -3264,9 +3265,12 @@ class Type11ExtendedTrailerTests(unittest.TestCase):
 class Type11TrailerPartitionTests(unittest.TestCase):
     """The second trailer shape must add bodies rather than poach them."""
 
+    CORPUS = {"count": 4325, "exact": 3937,
+              "groupCounts": {"entryElements": 3899}}
+
     def test_the_measured_corpus_passes(self) -> None:
         self.assertTrue(the_trailer_branches_partition_the_framed_bodies(
-            SELECTORS, {"count": 4325, "exact": 3861}
+            dict(SELECTORS, elementTrailerFlag_0=3146), self.CORPUS
         ))
 
     def test_a_clean_transfer_between_branches_is_not_detected(self) -> None:
@@ -3276,28 +3280,36 @@ class Type11TrailerPartitionTests(unittest.TestCase):
         # reads the passing gate as evidence the coverage gain was real -- that
         # comes from the plain flag counts being unmoved, not from this sum.
         transferred = dict(
-            SELECTORS, elementTrailerFlag_0=3008,
+            SELECTORS, elementTrailerFlag_0=3046,
             extendedTrailerFlag_0=198, extendedTrailerPlainFlag_0=246,
         )
         self.assertTrue(the_trailer_branches_partition_the_framed_bodies(
-            transferred, {"count": 4325, "exact": 3861}
+            transferred, self.CORPUS
         ))
 
-    def test_a_body_counted_in_neither_branch_fails(self) -> None:
+    def test_an_element_counted_in_neither_branch_fails(self) -> None:
         self.assertFalse(the_trailer_branches_partition_the_framed_bodies(
-            dict(SELECTORS, elementTrailerFlag_0=3100),
-            {"count": 4325, "exact": 3861},
+            dict(SELECTORS, elementTrailerFlag_0=3100), self.CORPUS
         ))
 
-    def test_a_body_counted_in_both_branches_fails(self) -> None:
+    def test_a_corpus_without_an_element_count_fails(self) -> None:
+        # The premise this gate stands on. It used to compare against the framed body
+        # count, which was the same number only while every body had one element.
         self.assertFalse(the_trailer_branches_partition_the_framed_bodies(
-            dict(SELECTORS, extendedTrailerFlag_1=58),
-            {"count": 4325, "exact": 3861},
+            dict(SELECTORS, elementTrailerFlag_0=3146), {"count": 4325, "exact": 3937}
+        ))
+
+    def test_an_element_counted_in_both_branches_fails(self) -> None:
+        self.assertFalse(the_trailer_branches_partition_the_framed_bodies(
+            dict(SELECTORS, elementTrailerFlag_0=3146, extendedTrailerFlag_1=58),
+            self.CORPUS,
         ))
 
     def test_an_empty_branch_fails_rather_than_passing_vacuously(self) -> None:
         self.assertFalse(the_trailer_branches_partition_the_framed_bodies(
-            {"elementTrailerFlag_0": 3715}, {"count": 4325, "exact": 3715}
+            {"elementTrailerFlag_0": 3715},
+            {"count": 4325, "exact": 3715,
+             "groupCounts": {"entryElements": 3715}},
         ))
         self.assertFalse(the_trailer_branches_partition_the_framed_bodies({}, {}))
 
@@ -3310,20 +3322,92 @@ class Type11TrailerPartitionTests(unittest.TestCase):
         )
 
 
+SECTION_GROUPS = {"entries": 3937, "trailingSections": 76}
+SECTION_SELECTORS = {
+    "trailingSectionOpens_0": 66,
+    "trailingSectionOpens_1": 10,
+    "trailingSectionFlag_0": 68,
+    "trailingSectionFlag_1": 8,
+}
+
+
+class Type11TrailingSectionTests(unittest.TestCase):
+    """The section that closes a multi-entry body, and the coincidences it refuses."""
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_trailing_section_closes_only_multi_entry_bodies(
+            SECTION_GROUPS, SECTION_SELECTORS, {"count": 4325, "exact": 3937}
+        ))
+
+    def test_a_section_whose_block_the_trailer_rule_does_not_know_fails(self) -> None:
+        # The 24 residues that a length-only control would close. Their opening byte
+        # is 0xAF, 0x55 or 0x59, so accepting them means the reader has stopped
+        # requiring the section's own bytes to agree with the trailer rule and is
+        # matching on total length alone.
+        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
+            dict(SECTION_GROUPS, trailingSections=100),
+            dict(SECTION_SELECTORS, trailingSectionOpens_0=66,
+                 trailingSectionOpens_175=24, trailingSectionFlag_0=92),
+            {"count": 4325, "exact": 3961},
+        ))
+
+    def test_a_section_with_an_out_of_range_flag_fails(self) -> None:
+        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
+            dict(SECTION_GROUPS, trailingSections=77),
+            dict(SECTION_SELECTORS, trailingSectionOpens_0=67,
+                 trailingSectionFlag_9=1),
+            {"count": 4325, "exact": 3938},
+        ))
+
+    def test_counts_that_do_not_cover_the_sections_fail(self) -> None:
+        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
+            dict(SECTION_GROUPS, trailingSections=80),
+            SECTION_SELECTORS, {"count": 4325, "exact": 3937},
+        ))
+        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
+            SECTION_GROUPS,
+            {k: v for k, v in SECTION_SELECTORS.items() if "Flag" not in k},
+            {"count": 4325, "exact": 3937},
+        ))
+
+    def test_no_sections_at_all_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
+            {"entries": 3861}, {}, {"count": 4325, "exact": 3861}
+        ))
+        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
+            {}, {}, {}
+        ))
+
+    def test_malformed_input_fails(self) -> None:
+        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
+            None, SECTION_SELECTORS, {}
+        ))
+        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
+            SECTION_GROUPS, None, {}
+        ))
+        self.assertFalse(the_trailing_section_closes_only_multi_entry_bodies(
+            SECTION_GROUPS, SECTION_SELECTORS, None
+        ))
+
+
 class Type11CloseBlockTests(unittest.TestCase):
     """Every element trailer ends with four variable bytes and eight zero ones."""
 
     def test_the_measured_corpus_passes(self) -> None:
         self.assertTrue(the_trailer_close_block_ends_in_eight_zeros(
-            {"closeBlocks": 3861,
-             "closeBlocksEndingInEightZeros": 3861,
+            {"finalCloseBlocks": 3937,
+             "finalCloseBlocksEndingInEightZeros": 3937,
+             "interiorCloseBlocks": 38,
+             "interiorCloseBlocksEndingInEightZeros": 0,
              "closeBlockControlsEndingInEightZeros": 0}
         ))
 
     def test_a_single_block_without_the_zeros_fails(self) -> None:
         self.assertFalse(the_trailer_close_block_ends_in_eight_zeros(
-            {"closeBlocks": 3861,
-             "closeBlocksEndingInEightZeros": 3860,
+            {"finalCloseBlocks": 3937,
+             "finalCloseBlocksEndingInEightZeros": 3936,
+             "interiorCloseBlocks": 38,
+             "interiorCloseBlocksEndingInEightZeros": 0,
              "closeBlockControlsEndingInEightZeros": 0}
         ))
 
@@ -3332,15 +3416,46 @@ class Type11CloseBlockTests(unittest.TestCase):
         # general. If the same width four bytes earlier is also mostly zeros, the
         # eight zeros say nothing about this particular block.
         self.assertFalse(the_trailer_close_block_ends_in_eight_zeros(
-            {"closeBlocks": 3861,
-             "closeBlocksEndingInEightZeros": 3861,
+            {"finalCloseBlocks": 3937,
+             "finalCloseBlocksEndingInEightZeros": 3937,
+             "interiorCloseBlocks": 38,
+             "interiorCloseBlocksEndingInEightZeros": 0,
              "closeBlockControlsEndingInEightZeros": 3400}
+        ))
+
+    def test_interior_blocks_scoring_like_final_ones_fails(self) -> None:
+        # The contrast this gate exists for. While every framed body had exactly one
+        # element there were no interior blocks, so "the trailer ends in eight zeros"
+        # and "the body ends in eight zeros" were the same claim. Now they are not:
+        # final blocks score 3,937 of 3,937 and interior ones 0 of 38, which makes it
+        # a property of the block that closes the body. If interior blocks scored the
+        # same way the claim would be about trailers in general and this must fail.
+        self.assertFalse(the_trailer_close_block_ends_in_eight_zeros(
+            {"finalCloseBlocks": 3937,
+             "finalCloseBlocksEndingInEightZeros": 3937,
+             "interiorCloseBlocks": 38,
+             "interiorCloseBlocksEndingInEightZeros": 38,
+             "closeBlockControlsEndingInEightZeros": 0}
+        ))
+
+    def test_no_interior_blocks_at_all_fails_for_want_of_a_contrast(self) -> None:
+        # The state the reader was in before multi-element bodies framed. The gate
+        # refuses rather than passing, because without interior blocks there is
+        # nothing to contrast the final ones against.
+        self.assertFalse(the_trailer_close_block_ends_in_eight_zeros(
+            {"finalCloseBlocks": 3861,
+             "finalCloseBlocksEndingInEightZeros": 3861,
+             "interiorCloseBlocks": 0,
+             "interiorCloseBlocksEndingInEightZeros": 0,
+             "closeBlockControlsEndingInEightZeros": 0}
         ))
 
     def test_an_empty_census_fails_rather_than_passing_vacuously(self) -> None:
         self.assertFalse(the_trailer_close_block_ends_in_eight_zeros({}))
         self.assertFalse(the_trailer_close_block_ends_in_eight_zeros(
-            {"closeBlocks": 0, "closeBlocksEndingInEightZeros": 0,
+            {"finalCloseBlocks": 0, "finalCloseBlocksEndingInEightZeros": 0,
+             "interiorCloseBlocks": 0,
+             "interiorCloseBlocksEndingInEightZeros": 0,
              "closeBlockControlsEndingInEightZeros": 0}
         ))
 
@@ -3402,8 +3517,6 @@ class Type11EntryHeaderTests(unittest.TestCase):
 
     def test_the_measured_corpus_passes(self) -> None:
         self.assertTrue(the_type11_entry_header_fields_beat_their_controls(self.census()))
-        self.assertTrue(the_type11_element_count_is_not_yet_a_count(self.census()))
-
     def test_a_control_that_scores_as_well_fails(self) -> None:
         self.assertFalse(the_type11_entry_header_fields_beat_their_controls(
             self.census(rangeControlIsSymmetric=1200)
@@ -3429,15 +3542,19 @@ class Type11EntryHeaderTests(unittest.TestCase):
             self.census(fractionControlsTested=0)
         ))
 
-    def test_the_element_count_gate_states_what_is_untested(self) -> None:
-        # It holds while the count is 1 everywhere. When a body finally closes with
-        # two elements the gate fails, and that failure is the good news: the
-        # reading has been tested for the first time.
-        self.assertTrue(the_type11_element_count_is_not_yet_a_count(self.census()))
-        self.assertFalse(the_type11_element_count_is_not_yet_a_count(
-            self.census(elementCountValues={"elements_1": 3700, "elements_2": 15})
+    def test_the_element_count_is_exercised_at_more_than_one_value(self) -> None:
+        # The gate this replaced held while the count was 1 in every framed entry and
+        # said that the failure would be the good news. It was: the trailing section
+        # brought multi-entry bodies into the frame, the count is now read at 0, 1, 2
+        # and 3, and the walk consumes exactly that many elements each time.
+        self.assertFalse(the_type11_element_count_is_a_count(self.census()))
+        self.assertTrue(the_type11_element_count_is_a_count(
+            self.census(elementCountValues={
+                "elements_0": 130, "elements_1": 3871,
+                "elements_2": 8, "elements_3": 4,
+            })
         ))
-        self.assertFalse(the_type11_element_count_is_not_yet_a_count({}))
+        self.assertFalse(the_type11_element_count_is_a_count({}))
 
     def test_the_reader_rejects_hits_above_what_was_tested(self) -> None:
         with self.assertRaises(ValueError):
@@ -4138,32 +4255,29 @@ class Type11EntryCountTests(unittest.TestCase):
         c.update(overrides)
         return c
 
-    def test_the_measured_corpus_passes(self) -> None:
-        self.assertTrue(the_type11_element_count_is_not_yet_a_count(self.base()))
+    def test_a_single_observed_value_is_a_constant_not_a_count(self) -> None:
+        # The whole content of the replacement. One value cannot separate "a count"
+        # from "the constant 1", so it must not pass.
+        self.assertFalse(the_type11_element_count_is_a_count(self.base()))
 
-    def test_a_body_closing_with_two_entries_fails_the_gate(self) -> None:
-        # The good news case: it would mean the entry count has finally been read at
-        # a second value, and the note saying the multi-entry layout is unparsed
-        # would need revising.
-        self.assertFalse(the_type11_element_count_is_not_yet_a_count(
-            self.base(entryCountValues={"entries_1": 3700, "entries_2": 15})
+    def test_two_observed_values_separate_a_count_from_a_constant(self) -> None:
+        self.assertTrue(the_type11_element_count_is_a_count(
+            self.base(elementCountValues={"elements_0": 130, "elements_1": 3871})
         ))
 
-    def test_an_absent_entry_census_does_not_break_the_gate(self) -> None:
-        # Older reports carry no entry census; the element half still applies.
-        self.assertTrue(the_type11_element_count_is_not_yet_a_count(
-            {"elementCountValues": {"elements_1": 3715}}
+    def test_a_second_value_that_is_never_seen_does_not_count(self) -> None:
+        # A histogram entry of zero is a name, not an observation.
+        self.assertFalse(the_type11_element_count_is_a_count(
+            self.base(elementCountValues={"elements_1": 3871, "elements_2": 0})
         ))
 
-    def test_the_reader_defaults_the_entry_census_when_absent(self) -> None:
-        got = _read_type11_header_census(
-            {key: 0 for key in TYPE11_HEADER_SCALARS}
-            | {"elementCountValues": {}, "curveCodes": {}},
-            "pkg",
-        )
-        self.assertEqual(got["entryCountValues"], {})
-        self.assertEqual(_read_type11_header_census(None, "pkg")["entryCountValues"], {})
-
+    def test_a_malformed_histogram_fails(self) -> None:
+        self.assertFalse(the_type11_element_count_is_a_count(
+            self.base(elementCountValues={"elements_many": 4})
+        ))
+        self.assertFalse(the_type11_element_count_is_a_count(
+            self.base(elementCountValues=[])
+        ))
 
 class Type0CReferenceArrayTests(unittest.TestCase):
     """The array is located; the rival bases are what make that a location."""
@@ -4282,22 +4396,44 @@ class Type0CRegionFlagTests(unittest.TestCase):
 class Type11SourceJoinTests(unittest.TestCase):
     """The entry header's word at 4 names a source the same body declares."""
 
+    MEASURED = {"sourceJoinTested": 4013, "sourceJoinMatched": 3937,
+                "sourceJoinBodies": 3937, "sourceJoinBodiesWithAMatch": 3937}
+
     def test_the_measured_corpus_passes(self) -> None:
-        self.assertTrue(the_type11_entry_header_names_one_of_its_own_sources(
-            {"sourceJoinTested": 3715, "sourceJoinMatched": 3715}
+        self.assertTrue(
+            the_type11_entry_header_names_one_of_its_own_sources(self.MEASURED)
+        )
+
+    def test_the_old_per_header_equality_would_now_read_as_a_regression(self) -> None:
+        # The reason this gate counts bodies. Per header it is 3,937 of 4,013, and
+        # the 76 shortfall is exactly the 76 two-entry bodies in which one of the two
+        # headers names a declared source and the other does not. That is structure,
+        # not decay, and an equality gate over headers would hide it as a failure.
+        self.assertNotEqual(
+            self.MEASURED["sourceJoinMatched"], self.MEASURED["sourceJoinTested"]
+        )
+        self.assertTrue(
+            the_type11_entry_header_names_one_of_its_own_sources(self.MEASURED)
+        )
+
+    def test_a_body_with_no_entry_naming_a_source_fails(self) -> None:
+        self.assertFalse(the_type11_entry_header_names_one_of_its_own_sources(
+            dict(self.MEASURED, sourceJoinBodiesWithAMatch=3936)
         ))
 
-    def test_a_single_miss_fails(self) -> None:
-        # Equality, because one entry naming a source its body does not declare
-        # would make the join coincidence rather than structure.
+    def test_a_join_that_is_the_minority_per_header_fails(self) -> None:
+        # Every body having one match is not enough on its own: if most headers did
+        # not join, "exactly one of two" would be being read into a field that mostly
+        # does not join at all.
         self.assertFalse(the_type11_entry_header_names_one_of_its_own_sources(
-            {"sourceJoinTested": 3715, "sourceJoinMatched": 3714}
+            dict(self.MEASURED, sourceJoinTested=40000, sourceJoinMatched=3937)
         ))
 
     def test_an_untested_join_fails_rather_than_passing_vacuously(self) -> None:
         self.assertFalse(the_type11_entry_header_names_one_of_its_own_sources({}))
         self.assertFalse(the_type11_entry_header_names_one_of_its_own_sources(
-            {"sourceJoinTested": 0, "sourceJoinMatched": 0}
+            {"sourceJoinTested": 0, "sourceJoinMatched": 0,
+             "sourceJoinBodies": 0, "sourceJoinBodiesWithAMatch": 0}
         ))
 
     def test_the_reader_rejects_more_matches_than_tests(self) -> None:
