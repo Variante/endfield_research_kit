@@ -5466,8 +5466,49 @@ cleanest possible refutation, and it cost one run.* The `f3..f5 >= 0` check scor
 denominator; it only became evidence once the population was restricted to the 7,112 and
 the position triple supplied the contrast.
 
-**Still not known:** what a slot-7 element *is* -- the placement is located but the thing
-being placed is not named; and what slots 5 and 6's integer tables index.
+#### THE ELEMENT'S FIRST FIELD IS A DESCRIPTOR THAT STATES ITS OWN CATEGORY TWICE
+
+Field 0 is 16 bytes at offset +4 and takes only **34 distinct values** across 11,016
+elements -- a vocabulary, so a type or flag word, not a per-instance identifier. Read as
+eight u16 it comes apart cleanly.
+
+**It partitions the placements perfectly.** Of the 34 values, **0 occur both placed and
+unset**: 2 values are unset-only (3,831 + 73 = exactly the 3,904 unset records) and 32
+are placed-only. Byte 1 alone carries it -- non-zero for **7,112 of 7,112** populated and
+zero for **3,904 of 3,904** unset.
+
+**Byte 1 is one-hot, without exception**: 7,112 of 7,112 are a single set bit, drawn from
+`{01, 02, 04, 08, 10, 20}`. A byte that happened to be one-hot would manage it 8 times in
+256.
+
+**The fifth u16 restates the same category, shifted four bits.** Writing `byte1 = 2^k`,
+that word carries the bits `8 | 2^(k+4)`:
+
+| test | share |
+| --- | --- |
+| **w4 carries the bits for k** | **6,570 / 6,570 = 100.00%** |
+| same test with k+1 (control) | **0.00%** |
+| same test with k-1 (control) | **0.00%** |
+
+*Both shifted controls at exactly zero is the strongest form this evidence takes:* the
+relation is not merely frequent, its neighbours are impossible. The census is conditioned
+on the `w1 == 0x2024` family (6,570 elements); the other families, `0x0820` (393) and
+`0x1020` (149), leave w4 zero. Eight elements carry the predicted bits *plus* one extra
+bit (73 = 72|1, 137 = 136|1, 4360 = 264|4096), which is why the relation is a **subset**
+test and not equality -- as equality it would have shown 8 spurious counter-examples.
+
+**Field 4 is the constant 4** in all 11,016 elements.
+
+***Disproved:*** field 3 as an index into a sibling vector. Its 2,136 distinct small
+integers look exactly like indices, but they fall inside slot 5's length only 4.37% of
+the time and inside slots 6 and 7 **never**. Field 1 scores 90.45% against slot 5, which
+is not evidence either -- its values are 1, 2 and 4, and *any* small integer clears that
+bound. **A containment test only discriminates when the candidate could plausibly fail.**
+
+**Still not known:** what a slot-7 element *is*. The placement is located, its category
+is isolated to a 6-valued one-hot code, and the code is confirmed twice over -- but
+nothing in the shipped bytes says what the six categories *are*, and that needs a name
+from outside. Slots 5 and 6's integer tables are likewise unindexed.
 
 ## Remaining gaps
 
