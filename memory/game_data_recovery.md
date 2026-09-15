@@ -1991,6 +1991,32 @@ why none of them was found in the reader's own behaviour: *there is no `0x0B` la
 this engine to recover.* Whatever structure those bodies have is imposed by the optional
 hook or by the authoring tool, not by the runtime.
 
+##### AND IT ANSWERS "WHERE IS MUSIC DRIVEN FROM" -- IN THE NEGATIVE
+
+`0x0A`-`0x0D` are precisely the four music types this document has analysed at length
+elsewhere: the offset-9 parent rule, the one-to-one `0x0A` -> `0x0B` edge, the symmetric
+same-bank reference relation, the tempo-ranged floats. **All of that structure is real and
+none of it is read by this engine.** The four share one jump-table arm that consults an
+optional global hook and otherwise *skips the payload wholesale*.
+
+Two independent lines now agree:
+
+| line | finding |
+| --- | --- |
+| corpus (earlier) | the music family is **unreachable** from anything in the bank format |
+| **reader (here)** | the music family is **not parsed** by the bank reader |
+
+*Unreachable and unparsed are different claims from different evidence, and they point the
+same way.* **The bank's music hierarchy does not drive music in this build.** The bodies
+carry authored structure -- the corpus work established that beyond doubt -- but the
+runtime path that would consume it is absent.
+
+**The honest boundary.** The arm does call a registered hook first, so a plug-in *could*
+parse these types at runtime; what is shown is that **no built-in parser exists**, not that
+nothing can ever read them. That distinction matters because it names exactly what a
+future answer would have to be: a registered handler, discovered at runtime, not a
+structure recoverable from the bank bytes.
+
 **Incidentally recovered:** the HIRC item header is `u8 type` at `[rbp-0x14]` followed by
 `u32 size` at `[rbp-0x13]`, with the section's item count at `[rbp-0x1c]` and the loop
 index in `r14d` -- which is exactly the framing this project's reader already uses,
