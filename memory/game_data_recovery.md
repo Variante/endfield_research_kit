@@ -2216,12 +2216,23 @@ u8 entryCount
 
 **Result.** `0x08` 142 -> **160 of 161**; `0x12` 247 -> **251 of 251, complete**.
 
-**The one body left.** A `0x08` body whose first unit has `0x84` at head byte 6 --
-high bit set -- where every other unit has a value below `0x80`. The head appears to
-be 13 bytes rather than 12 there, which would match the entry rule above. **One
-observation, so it stays fenced rather than fitted.** If a second ever appears, the
-rule to test is "high bit on unit head byte 6 adds a byte", scored against bodies
-whose byte 6 is below `0x80`.
+**The one body left, now characterised by content rather than by guesswork.**
+
+- The two bytes after each tail unit's 12-byte head are a record count and a pad.
+  Across all **110** units in the corpus: **109** read `(n, 0)` and **one** reads
+  `(0, 3)`. Neither order is ever ambiguous -- **no unit has both bytes nonzero and
+  none has both zero** -- so in 109 units the count is first and in one it is second.
+- **The `(0, 3)` unit's three records are genuine curve records**, which is what makes
+  the reading content-verified rather than size-fitted: `(0.0, 1.0, code 9)`,
+  `(0.005, 0.0, code 9)`, `(100.0, 0.0, code 9)`. Reading the count as 0 skips them.
+- **But "the count is whichever byte is nonzero" does not close the body.** It fixes
+  the first unit and then the *second* unit's head fails its `b[+4] == 0` check, so
+  the body needs more than the count. The corpus goes 160/161 either way, with the
+  fence merely moving from `truncated_tailSectionEntry` to `unit_shape`.
+- The earlier guess -- a 13-byte head signalled by the high bit on head byte 6 -- is
+  superseded: the head is 12 bytes and the pair after it is what varies.
+- *A rule that fixes the symptom you were looking at and breaks the next check has not
+  been validated by the thing it fixed. Re-run the whole walk, not the failing step.*
 
 **How these were found**, because the method is reusable: dump each fenced body
 from its failure cursor to the end and read the bytes. Both structures were legible
