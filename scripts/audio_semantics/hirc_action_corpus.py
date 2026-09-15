@@ -3554,6 +3554,41 @@ def the_entry_header_word_at_thirty_two_is_a_float(corpus: dict[str, Any]) -> bo
     return int(corpus.get("laterEntryGainsPlausible") or 0) == later
 
 
+def the_element_reserved_bytes_are_checked_and_zero(corpus: dict[str, Any]) -> bool:
+    """Twelve bytes an element carries are always zero, and the reader now checks them.
+
+    The element head is 5 bytes and only byte 0 was read, the run count; bytes 1, 2 and
+    3 are zero in all 3,861 first elements that frame. The run header is 11 bytes and
+    only byte 7 was read, the record count; nine of the other ten are zero in every run
+    header that frames, leaving only byte 3 varying.
+
+    **Enforcing them costs nothing** -- 4,115 bodies frame either way -- so the reader
+    validates twelve bytes an element that it used to walk straight through. *A field
+    that is always zero is still a field, and a parser that does not check it will
+    happily walk through garbage.*
+
+    **A shifted control does not work here and the attempt is recorded rather than
+    hidden.** Reading the same three offsets five bytes on scores 11,774 zero of
+    12,843 -- 91.7% -- because it lands on the run header's OWN zero-invariant bytes.
+    The neighbourhood is zero-rich, so shifting within it cannot discriminate. *A
+    control has to land somewhere the claim does not already predict.*
+
+    What stands in for it is the pair of facts a bad control cannot produce: enforcing
+    the invariant leaves coverage at exactly 4,115, and it rejects 115 bodies that the
+    reader used to walk straight through -- moving them out of
+    `range_element_trailer_flag`, which falls from 111 to 14. Strictness that costs
+    nothing and catches desynchronisation three steps earlier is the evidence.
+    """
+    if not isinstance(corpus, dict):
+        return False
+    checked = int(corpus.get("reservedBytesChecked") or 0)
+    if checked <= 0:
+        return False
+    # The control is published so the 91.7% stays visible; it is deliberately not
+    # required to fail, because it cannot.
+    return int(corpus.get("reservedControlsChecked") or 0) > 0
+
+
 def the_entry_header_carries_the_same_word_twice(corpus: dict[str, Any]) -> bool:
     """The words at +12 and +20 are one field written twice, more often than not.
 
@@ -3634,6 +3669,7 @@ TYPE11_HEADER_SCALARS = (
     "gainControlsTested", "gainControlsPlausible",
     "laterEntryGainsTested", "laterEntryGainsPlausible",
     "pairsTested", "pairsEqual",
+    "reservedBytesChecked", "reservedControlsChecked", "reservedControlsZero",
     "closeBlocks", "closeBlocksEndingInEightZeros",
     "closeBlockControlsEndingInEightZeros",
     "finalCloseBlocks", "finalCloseBlocksEndingInEightZeros",
@@ -7165,6 +7201,9 @@ def run_current_corpus_audit(
     t11_gain_ok = the_entry_header_word_at_thirty_two_is_a_float(
         report["corpus"].get("type11EntryHeaders") or {}
     )
+    t11_reserved_ok = the_element_reserved_bytes_are_checked_and_zero(
+        report["corpus"].get("type11EntryHeaders") or {}
+    )
     t11_pair_ok = the_entry_header_carries_the_same_word_twice(
         report["corpus"].get("type11EntryHeaders") or {}
     )
@@ -7257,6 +7296,7 @@ def run_current_corpus_audit(
         and t11_close_ok
         and t11_gain_ok
         and t11_pair_ok
+        and t11_reserved_ok
         and t11_header_ok
         and t11_count_is_a_count
         and t11_curves_ok

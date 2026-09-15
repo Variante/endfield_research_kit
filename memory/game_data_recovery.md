@@ -3439,6 +3439,32 @@ turned up something that qualifies a lot of numbers in this file.
   sides of a question can land in different `.pck` files, the question belongs in the
   pass that unions them.*
 
+#### TWELVE BYTES AN ELEMENT that are always zero, and were never checked
+
+Looking for a condition that could drive a conditional element rule meant looking at
+the element bytes nobody had read.
+
+- The element head is 5 bytes and **only byte 0 was used** (the run count). Bytes
+  **1, 2 and 3 are zero in all 3,861** first elements that frame.
+- The run header is 11 bytes and **only byte 7 was used** (the record count). **Nine of
+  the other ten are zero** in every run header that frames -- only byte 3 varies.
+- **Enforcing all twelve costs nothing: 4,115 bodies frame either way.** 30,582
+  reserved bytes are now validated where the reader used to walk straight through
+  them. *A field that is always zero is still a field, and a parser that does not check
+  it will happily walk through garbage.*
+- **It moves the fences to where the problem is.** 115 bodies are now rejected at
+  `element_head_reserved_byte_is_not_zero`, and `range_element_trailer_flag` falls
+  from **111 to 14** -- the desynchronisation is caught three steps earlier, at its
+  cause instead of its symptom.
+
+**A control that could not work, recorded rather than hidden.** Reading the same three
+offsets five bytes on scores **11,774 zero of 12,843 (91.7%)**, because it lands on the
+run header's *own* zero-invariant bytes. The neighbourhood is zero-rich, so shifting
+within it cannot discriminate. ***A control has to land somewhere the claim does not
+already predict.*** The gate publishes the number instead of pretending it
+discriminates, and the evidence it rests on is the pair a bad control cannot produce:
+coverage unchanged at 4,115, and 115 bodies caught that were previously walked through.
+
 #### Where the remaining 210 actually go wrong, and one methodological trap
 
 Applying the content checks that found the four-byte step-back to the residue.

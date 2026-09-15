@@ -21,6 +21,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_trailer_close_block_ends_in_eight_zeros,
     the_entry_header_word_at_thirty_two_is_a_float,
     the_entry_header_carries_the_same_word_twice,
+    the_element_reserved_bytes_are_checked_and_zero,
     TYPE11_HEADER_SCALARS,
     _read_hierarchy_census,
     _read_music_mutuality_census,
@@ -3321,6 +3322,37 @@ class Type11TrailerPartitionTests(unittest.TestCase):
         self.assertFalse(
             the_trailer_branches_partition_the_framed_bodies(SELECTORS, None)
         )
+
+
+class Type11ReservedByteTests(unittest.TestCase):
+    """Twelve bytes an element carries are always zero, and are now checked."""
+
+    MEASURED = {"reservedBytesChecked": 30582,
+                "reservedControlsChecked": 12843,
+                "reservedControlsZero": 11774}
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(
+            the_element_reserved_bytes_are_checked_and_zero(self.MEASURED))
+
+    def test_checking_nothing_fails(self) -> None:
+        self.assertFalse(the_element_reserved_bytes_are_checked_and_zero(
+            dict(self.MEASURED, reservedBytesChecked=0)))
+
+    def test_the_control_is_published_but_not_required_to_fail(self) -> None:
+        # Recorded deliberately. The shifted control scores 91.7% zero because it
+        # lands on the run header's own zero-invariant bytes -- the neighbourhood is
+        # zero-rich, so shifting within it cannot discriminate. A control has to land
+        # somewhere the claim does not already predict, and this one does not, so the
+        # gate publishes it instead of pretending it discriminates.
+        self.assertTrue(the_element_reserved_bytes_are_checked_and_zero(
+            dict(self.MEASURED, reservedControlsZero=12843)))
+        self.assertFalse(the_element_reserved_bytes_are_checked_and_zero(
+            dict(self.MEASURED, reservedControlsChecked=0)))
+
+    def test_an_empty_census_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_element_reserved_bytes_are_checked_and_zero({}))
+        self.assertFalse(the_element_reserved_bytes_are_checked_and_zero(None))
 
 
 class Type11CloseBlockTests(unittest.TestCase):
