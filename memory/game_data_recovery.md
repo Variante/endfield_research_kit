@@ -1931,6 +1931,31 @@ variant and `0x12` outright. Those four constructors are at `0x1800f2460`, `0x18
 `[rbp+0x58]` value is a per-type constant handed to a shared tail; **calling it a class
 selector is a reading, and only the grouping is a fact of the code.** No struct field has
 been recovered here.
+
+##### The address map, and where hand-decoding stops being reliable
+
+Everything above lives in `.text`, where `VA = file + 0x180000C00`. **That delta is
+section-specific and does not generalise** -- applying it to a `.data` reference put a
+global 0xC00 bytes wrong and landed it in `.pdata`, i.e. in exception-unwind data, which
+is how the error announced itself. The real section map:
+
+| section | VA | file | raw |
+| --- | --- | --- | --- |
+| `.text` | `0x180001000` | `0x400` | 2,662,400 |
+| `.rdata` | `0x18028b000` | `0x28a400` | 652,288 |
+| `.data` | `0x18032b000` | `0x329800` | 72,192 |
+| `.pdata` | `0x18034b000` | `0x33b200` | 150,528 |
+
+The dispatch table above is unaffected -- every address in it is a `.text` address and each
+target was confirmed against a real function prologue.
+
+***Where this stops.*** Reading the *bodies* of these handlers by hand goes wrong quietly.
+The shared `0x0A`-`0x0D` arm consults a function pointer in `.data`, and following it
+requires exactly the mapping that was wrong; a first pass also mis-read a rip-relative
+operand as a `call` because the scan started mid-instruction. **The dispatch is a
+compare-and-jump chain and hand-decoding is adequate for it; the handler bodies are not,
+and a tentative reading of what `0x0A`-`0x0D` do with their payload was discarded rather
+than recorded.** Going further needs a real disassembler, not more care.
 - **Numeric type `0x12` is the one HIRC type with no framing at all, and these
   readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
   grammar -- its word at offset 4 fails `range_section` on all 251. It is not the
