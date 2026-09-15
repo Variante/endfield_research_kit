@@ -23,6 +23,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_music_partition_edge_is_one_to_one,
     the_music_partition_edge_sits_at_a_few_places,
     the_type0a_head_rule_beats_its_controls,
+    the_type0a_head_word_always_names_one_of_two_types,
     _read_type0a_head_census,
     _read_music_reference_census,
     type08_bodies_are_exact_or_named,
@@ -353,6 +354,7 @@ def valid_action_fixture():
             "predictedPlusFour": 1,
             "predictedMinusFour": 0,
         },
+        "headWordTargets": {"type0D": 7, "type0C": 2},
     }
     music_refs = {
         "bodies": 4,
@@ -1595,6 +1597,43 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(type11_sources_share_the_type02_plugin_space(sources, {}))
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
+        )
+
+    def test_the_type0a_head_word_names_exactly_two_types(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        head = result["type0AHead"]
+        self.assertTrue(the_type0a_head_word_always_names_one_of_two_types(head))
+
+        # A third target type is a wider finding than this one, so it fails here
+        # rather than being absorbed into it.
+        self.assertFalse(
+            the_type0a_head_word_always_names_one_of_two_types(
+                {**head, "headWordTargets": {"type0D": 6, "type0C": 2, "type0B": 1}}
+            )
+        )
+        # Unresolved words are permitted -- the corpus has 1 in 4,000 -- but only at
+        # that rate. At this fixture's scale one unresolved body is more than 1%, so
+        # the same shape that passes on the corpus fails here, which is the threshold
+        # doing its job rather than a quirk.
+        self.assertFalse(
+            the_type0a_head_word_always_names_one_of_two_types(
+                {**head, "headWordTargets": {"type0D": 7, "type0C": 1, "nothing": 1}}
+            )
+        )
+        self.assertTrue(
+            the_type0a_head_word_always_names_one_of_two_types(
+                {**head, "bodiesWhereTheRuleApplies": 1000,
+                 "headWordTargets": {"type0D": 900, "type0C": 99, "nothing": 1}}
+            )
+        )
+        self.assertFalse(
+            the_type0a_head_word_always_names_one_of_two_types(
+                {**head, "headWordTargets": {"type0D": 3, "nothing": 6}}
+            )
+        )
+        self.assertFalse(
+            the_type0a_head_word_always_names_one_of_two_types({**head, "headWordTargets": {}})
         )
 
     def test_the_type0a_head_rule_must_beat_a_fixed_offset_and_its_neighbours(self) -> None:

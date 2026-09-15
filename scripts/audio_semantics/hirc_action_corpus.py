@@ -1700,6 +1700,7 @@ def aggregate_current_hirc_actions(
     type0a_head_totals: Counter[str] = Counter()
     type0a_head_scores: Counter[str] = Counter()
     type0a_head_conditioned: Counter[str] = Counter()
+    type0a_head_words: Counter[str] = Counter()
     music_head_by_type: Counter[str] = Counter()
     music_head_offsets: Counter[str] = Counter()
     music_head_discriminants: Counter[str] = Counter()
@@ -1880,6 +1881,7 @@ def aggregate_current_hirc_actions(
         type0a_head_totals["bodiesWhereTheRuleApplies"] += package_head0a["bodiesWhereTheRuleApplies"]
         type0a_head_scores.update(package_head0a["namesTheSourceType"])
         type0a_head_conditioned.update(package_head0a["namesTheSourceTypeWhereTheRuleApplies"])
+        type0a_head_words.update(package_head0a["headWordTargets"])
 
         package_reference = _read_reference_census(
             package.get("hircReferenceCensus"), package_label
@@ -2341,6 +2343,7 @@ def aggregate_current_hirc_actions(
             "bodiesWhereTheRuleApplies": int(type0a_head_totals["bodiesWhereTheRuleApplies"]),
             "namesTheSourceType": dict(sorted(type0a_head_scores.items())),
             "namesTheSourceTypeWhereTheRuleApplies": dict(sorted(type0a_head_conditioned.items())),
+            "headWordTargets": dict(sorted(type0a_head_words.items())),
         },
         "musicReferences": {
             **{key: int(music_ref_totals[key]) for key in MUSIC_REFERENCE_SCALARS},
@@ -2901,6 +2904,7 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
     for key, ceiling in (
         ("namesTheSourceType", "bodies"),
         ("namesTheSourceTypeWhereTheRuleApplies", "bodiesWhereTheRuleApplies"),
+        ("headWordTargets", "bodiesWhereTheRuleApplies"),
     ):
         raw = census.get(key)
         if not isinstance(raw, dict):
@@ -2913,6 +2917,37 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
                 )
         out[key] = scores
     return out
+
+
+# The only two numeric types the word inside numeric type 0x0A's head ever names.
+TYPE0A_HEAD_WORD_TARGETS = ("type0C", "type0D")
+# It resolves in 3,999 of 4,000 conditioned bodies. Near-total, not total.
+TYPE0A_HEAD_WORD_MINIMUM = 0.99
+
+
+def the_type0a_head_word_always_names_one_of_two_types(corpus: dict[str, Any]) -> bool:
+    """The word at offset 9 of a type 0x0A head names a 0x0C or 0x0D object.
+
+    This is a second reference, distinct from the one the head-length rule places.
+    Over the bodies the discriminant selects it resolves in 3,999 of 4,000 -- not
+    all of them, and the claim is written to say so rather than round up.
+
+    What is exact is the target set: every word that resolves names one of exactly
+    two numeric types. A third would be a different and wider finding, so it fails
+    here rather than being absorbed.
+    """
+    applies = int(corpus.get("bodiesWhereTheRuleApplies") or 0)
+    if applies <= 0:
+        return False
+    targets = {str(k): int(v) for k, v in (corpus.get("headWordTargets") or {}).items()}
+    if not targets:
+        return False
+    if set(targets) - set(TYPE0A_HEAD_WORD_TARGETS) - {"nothing"}:
+        return False
+    resolved = sum(v for k, v in targets.items() if k != "nothing")
+    if resolved <= 0 or sum(targets.values()) != applies:
+        return False
+    return resolved / applies >= TYPE0A_HEAD_WORD_MINIMUM
 
 
 def the_type0a_head_rule_beats_its_controls(corpus: dict[str, Any]) -> bool:
@@ -4891,6 +4926,9 @@ def run_current_corpus_audit(
         report["corpus"].get("type08BodyFrames") or {}
     )
     # True when no names were supplied: see the check's own note.
+    type0a_word = the_type0a_head_word_always_names_one_of_two_types(
+        report["corpus"].get("type0AHead") or {}
+    )
     type0a_head = the_type0a_head_rule_beats_its_controls(
         report["corpus"].get("type0AHead") or {}
     )
@@ -4924,6 +4962,7 @@ def run_current_corpus_audit(
         and music_partition
         and music_anchor
         and type0a_head
+        and type0a_word
         and type08_body_named
         and type08_tail_located
         and type08_head_named
@@ -5074,6 +5113,13 @@ def run_current_corpus_audit(
             f"count={body08.get('count')} exact={body08.get('exact')} "
             f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
             f"ambiguous={body08.get('ambiguous')}"
+        )
+    if not type0a_word:
+        head0a = report["corpus"].get("type0AHead") or {}
+        lane_failures.append(
+            "the type 0x0A head word does not always name one of two types: "
+            f"applies={head0a.get('bodiesWhereTheRuleApplies')} "
+            f"targets={head0a.get('headWordTargets')}"
         )
     if not type0a_head:
         head0a = report["corpus"].get("type0AHead") or {}
