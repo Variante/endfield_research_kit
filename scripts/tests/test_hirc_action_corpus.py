@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from scripts.audio_semantics.hirc_action_corpus import (
+    type17_is_framed_except_the_tied_block,
     type08_head_words_are_null_or_resolve,
     type11_sources_share_the_type02_plugin_space,
     music_head_references_are_closed,
@@ -161,6 +162,17 @@ def valid_action_fixture():
         "failureCategories": {},
         "unsupportedCategories": {},
         "nonExactExamples": [],
+    }
+    type17_bodies = {
+        "bodies": 5,
+        "exact": 4,
+        "tiedOptionalBlock": 1,
+        "failed": 0,
+        "exactBytes": 80,
+        "bodyBytes": 100,
+        "runElements": 3,
+        "groupIEntries": 2,
+        "failureCounts": {},
     }
     type08_head = {
         "bodies": 3,
@@ -332,6 +344,7 @@ def valid_action_fixture():
                     "hircMusicHeadReferences": copy.deepcopy(music_head),
                     "hircType11Sources": copy.deepcopy(type11_sources),
                     "hircType08Head": copy.deepcopy(type08_head),
+                    "hircType17": copy.deepcopy(type17_bodies),
                     "hircType05BodyFrame": copy.deepcopy(type05_body),
                     "hircReferenceCensus": copy.deepcopy(reference_census),
                     "hircType03ActionFrame": copy.deepcopy(frame),
@@ -356,6 +369,7 @@ def valid_action_fixture():
                             "hircMusicHeadReferences": copy.deepcopy(music_head),
                             "hircType11Sources": copy.deepcopy(type11_sources),
                             "hircType08Head": copy.deepcopy(type08_head),
+                            "hircType17": copy.deepcopy(type17_bodies),
                             "hircType05BodyFrame": copy.deepcopy(type05_body),
                             "hircReferenceCensus": copy.deepcopy(reference_census),
                             "hircType03ActionFrame": copy.deepcopy(frame),
@@ -1094,6 +1108,50 @@ class HircActionCorpusTests(unittest.TestCase):
             scope["hircType05BodyFrame"]["groupCounts"]["recordEntries"] = 1_000_000
         with self.assertRaisesRegex(ValueError, "anonymous element bytes exceed the framed bodies"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, oversized)
+
+    def test_type17_is_framed_or_fenced_never_failed(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        bodies = result["type17Bodies"]
+        self.assertEqual(bodies["exact"], 4)
+        # A tied width is its own outcome, not a failure and not a pass.
+        self.assertEqual(bodies["tiedOptionalBlock"], 1)
+        self.assertTrue(type17_is_framed_except_the_tied_block(bodies))
+
+        # A real failure is never acceptable, even one.
+        self.assertFalse(
+            type17_is_framed_except_the_tied_block({**bodies, "exact": 3, "failed": 1})
+        )
+        # Fencing everything would make the claim vacuous.
+        self.assertFalse(
+            type17_is_framed_except_the_tied_block(
+                {**bodies, "exact": 0, "tiedOptionalBlock": 5}
+            )
+        )
+
+    def test_type17_outcomes_must_partition_and_bytes_must_fit(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        for field, value, pattern in (
+            ("exact", 3, "do not partition"),
+            ("exactBytes", 500, "exact bytes exceed"),
+        ):
+            broken = copy.deepcopy(audio_audit)
+            for scope in (
+                broken["rows"][0]["package"],
+                broken["rows"][0]["package"]["bnkStructures"][0],
+            ):
+                scope["hircType17"][field] = value
+            with self.assertRaisesRegex(ValueError, pattern):
+                aggregate_current_hirc_actions(outer, expected_files, excluded_files, broken)
+
+        mismatched = copy.deepcopy(audio_audit)
+        for scope in (
+            mismatched["rows"][0]["package"],
+            mismatched["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircType17"]["failureCounts"] = {"trailing_bytes": 2}
+        with self.assertRaisesRegex(ValueError, "do not sum to the failures"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, mismatched)
 
     def test_type08_head_word_is_null_or_names_one_object(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

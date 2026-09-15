@@ -582,6 +582,11 @@ never reported as a full one.
 python -m scripts.audio_semantics.hirc_named_reach --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 ```
 
+It gates numeric type `0x11` as well: 2,553 of 2,645 bodies consumed exactly, and
+92 fenced because an optional block's width ties between 21 and 27 bytes with
+nothing in the corpus able to separate them. Failures are forbidden; fencing is a
+distinct outcome from both success and failure, and fencing everything is refused.
+
 It gates numeric type `0x08`'s leading word too: null, or exactly one same-bank
 object, never a non-null value naming nothing. `0x08` is not framed.
 

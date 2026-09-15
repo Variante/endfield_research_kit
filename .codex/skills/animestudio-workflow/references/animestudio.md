@@ -335,6 +335,14 @@ scratch. They do not open with the node frame, and searching for an offset where
 the frame parses is worthless because every music body admits several such
 offsets -- the frame is permissive, so "it parsed" is nearly no evidence. A
 structural predictor is needed, the way byte 1 predicts the `0x0E` prefix.
+Numeric type `0x11` is an eight-byte header whose second word sizes an opaque
+section, one byte, group I, a 16-bit flag, then a counted run of six-byte
+elements -- 2,553 of 2,645 bodies close exactly. Do not try to close the other 92:
+when the flag is set, block widths 21 and 27 both consume every flagged body
+exactly (27 swallows the run's single element and reads a zero count), and the
+flag is never above 1, so nothing in this corpus separates them. That is a tie,
+not a gap, and it is fenced as its own outcome rather than failed or guessed.
+
 Numeric type `0x08`'s leading word is null or names exactly one same-bank object
 (157 resolve, 4 null, 0 unresolved over 161 bodies); null is an allowed outcome
 for this type, unlike the music head where it is not. `0x08` is not framed: its

@@ -1639,6 +1639,8 @@ def aggregate_current_hirc_actions(
     type04_banks_with_objects = 0
     type04_non_exact_examples: list[dict[str, Any]] = []
     body_lanes = _build_body_lanes()
+    type17_totals: Counter[str] = Counter()
+    type17_failures: Counter[str] = Counter()
     type08_totals: Counter[str] = Counter()
     type11_totals: Counter[str] = Counter()
     type11_plugins: Counter[str] = Counter()
@@ -1683,6 +1685,11 @@ def aggregate_current_hirc_actions(
             type02_plugin_counts[plugin_type] += count
         for plugin_id, count in package_type02["pluginIdCounts"].items():
             type02_plugin_ids[plugin_id] += count
+
+        package_type17 = _read_type17_census(package.get("hircType17"), package_label)
+        for key in TYPE17_SCALARS:
+            type17_totals[key] += package_type17[key]
+        type17_failures.update(package_type17["failureCounts"])
 
         package_type08 = _read_type08_head_census(
             package.get("hircType08Head"), package_label
@@ -2099,6 +2106,10 @@ def aggregate_current_hirc_actions(
         "type14BodyFrames": body_lanes["0x0E"].publish(),
         "type22BodyFrames": body_lanes["0x16"].publish(),
         "type08HeadWords": {key: int(type08_totals[key]) for key in TYPE08_HEAD_SCALARS},
+        "type17Bodies": {
+            **{key: int(type17_totals[key]) for key in TYPE17_SCALARS},
+            "failureCounts": dict(sorted(type17_failures.items())),
+        },
         "type11SourceRecords": {
             **{key: int(type11_totals[key]) for key in TYPE11_SOURCE_SCALARS},
             "pluginIdCounts": dict(sorted(type11_plugins.items())),
@@ -2566,6 +2577,59 @@ def music_head_references_are_closed(corpus: dict[str, Any]) -> bool:
     )
 
 
+TYPE17_SCALARS = (
+    "bodies", "exact", "tiedOptionalBlock", "failed",
+    "exactBytes", "bodyBytes", "runElements", "groupIEntries",
+)
+
+
+def _read_type17_census(census: Any, label: str) -> dict[str, Any]:
+    if census is None:
+        return {key: 0 for key in TYPE17_SCALARS} | {"failureCounts": {}}
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x11 census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in TYPE17_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x11 census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x11 census has negative {key}: {label}")
+        out[key] = value
+    raw = census.get("failureCounts")
+    if not isinstance(raw, dict):
+        raise ValueError(f"type 0x11 census has invalid failureCounts: {label}")
+    out["failureCounts"] = {str(k): int(v) for k, v in raw.items()}
+    if out["exact"] + out["tiedOptionalBlock"] + out["failed"] != out["bodies"]:
+        raise ValueError(
+            f"type 0x11 outcomes do not partition the bodies: {label} "
+            f"exact={out['exact']} tied={out['tiedOptionalBlock']} "
+            f"failed={out['failed']} bodies={out['bodies']}"
+        )
+    if sum(out["failureCounts"].values()) != out["failed"]:
+        raise ValueError(f"type 0x11 failure categories do not sum to the failures: {label}")
+    if out["exactBytes"] > out["bodyBytes"]:
+        raise ValueError(f"type 0x11 exact bytes exceed the body bytes: {label}")
+    return out
+
+
+def type17_is_framed_except_the_tied_block(corpus: dict[str, Any]) -> bool:
+    """Every type 0x11 body is either consumed exactly or fenced for the tied width.
+
+    A failure is not tolerated: the only body this reader is allowed to leave
+    unframed is one whose optional-block width the corpus genuinely cannot
+    determine, and that has to be a distinct outcome rather than a failure bucket.
+    """
+    return (
+        int(corpus.get("bodies") or 0) > 0
+        and int(corpus.get("failed") or 0) == 0
+        and int(corpus.get("exact") or 0) > 0
+        and int(corpus.get("exact") or 0) + int(corpus.get("tiedOptionalBlock") or 0)
+        == int(corpus.get("bodies") or 0)
+    )
+
+
 TYPE08_HEAD_SCALARS = ("bodies", "resolved", "null", "unresolved", "tooShort")
 
 
@@ -2688,6 +2752,34 @@ def reference_graph_is_closed(corpus: dict[str, Any]) -> bool:
 
 def _reference_graph_markdown(report: dict[str, Any]) -> str:
     graph = report["corpus"]["referenceGraph"]
+    type17 = report["corpus"].get("type17Bodies") or {}
+    type17_lines = []
+    if type17.get("bodies"):
+        type17_lines = [
+            "",
+            "## Numeric type `0x11`: framed, except where a width ties",
+            "",
+            f"- Bodies: {type17['bodies']:,}; consumed exactly to the declared body end: "
+            f"{type17['exact']:,} ({type17['exactBytes']:,} of {type17['bodyBytes']:,} bytes).",
+            f"- Fenced because an optional block's width cannot be determined: "
+            f"{type17['tiedOptionalBlock']:,}. Failures: {type17['failed']:,}.",
+            f"- Group I entries: {type17['groupIEntries']:,}; six-byte run elements: "
+            f"{type17['runElements']:,}.",
+            "",
+            "The layout is an eight-byte header whose second word sizes an opaque "
+            "section, one byte, the node frame's group I structure, a sixteen-bit flag, "
+            "and a counted run of six-byte elements. Group I is reused, not re-derived.",
+            "",
+            "The fenced bodies are the honest part. When the flag is set an extra block "
+            "appears, and **two widths consume every flagged body exactly**: 21 and 27. "
+            "They are the same bytes read two ways, with 27 swallowing the run's single "
+            "element and reading a zero count. The flag is never greater than 1 anywhere "
+            "in this corpus, so no body can separate the two readings, and the width is "
+            "underdetermined rather than merely unknown. Those bodies are therefore not "
+            "framed at all; picking either width would be a coin flip presented as a "
+            "result.",
+        ]
+
     head08 = report["corpus"].get("type08HeadWords") or {}
     head08_lines = []
     if head08.get("bodies"):
@@ -2818,6 +2910,7 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
                 for name, count in graph["objectCountsByType"].items()
             ) or "| _none_ | 0 | 0 |",
             "",
+            *type17_lines,
             *head08_lines,
             *source_lines,
             *head_lines,
@@ -3166,6 +3259,8 @@ def run_current_corpus_audit(
     music_head_corpus = corpus["musicHeadReferences"]
     music_head_closed = music_head_references_are_closed(music_head_corpus)
     type11_corpus = corpus["type11SourceRecords"]
+    type17_corpus = corpus["type17Bodies"]
+    type17_closed = type17_is_framed_except_the_tied_block(type17_corpus)
     type08_corpus = corpus["type08HeadWords"]
     type08_closed = type08_head_words_are_null_or_resolve(type08_corpus)
     type11_closed = type11_sources_share_the_type02_plugin_space(
@@ -3176,6 +3271,7 @@ def run_current_corpus_audit(
         and music_head_closed
         and type11_closed
         and type08_closed
+        and type17_closed
     )
     reference_report = {
         "format": "animestudio-wwise-hirc-reference-graph-audit",
@@ -3200,6 +3296,7 @@ def run_current_corpus_audit(
             "musicHeadReferences": music_head_corpus,
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
+            "type17Bodies": type17_corpus,
             "type02PluginIdCounts": corpus["type02SourcePrefixes"]["pluginIdCounts"],
             "audioAuditSummary": corpus["audioAuditSummary"],
         },
@@ -3221,6 +3318,13 @@ def run_current_corpus_audit(
     reference_output_markdown.write_text(
         _reference_graph_markdown(reference_report), encoding="utf-8"
     )
+    if not type17_closed:
+        lane_failures.append(
+            "type 0x11 bodies are neither framed nor fenced: "
+            f"bodies={type17_corpus['bodies']} exact={type17_corpus['exact']} "
+            f"tied={type17_corpus['tiedOptionalBlock']} failed={type17_corpus['failed']} "
+            f"categories={sorted(type17_corpus['failureCounts'])}"
+        )
     if not type08_closed:
         lane_failures.append(
             "type 0x08 head words are not null-or-resolved: "

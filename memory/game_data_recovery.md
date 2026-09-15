@@ -1649,6 +1649,24 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **Numeric type `0x11` is framed for 2,553 of its 2,645 bodies (208,891 of
+  213,491 bytes); the other 92 are fenced because a width genuinely ties.**
+  Layout: an eight-byte header whose second word sizes an opaque section, one
+  byte, the node frame's group I structure, a 16-bit flag, then a counted run of
+  six-byte elements. Group I is reused, not re-derived -- the third type now to
+  end with it, after `0x16` and the node-frame types.
+- **The tie is the important part, and it must not be broken by picking.** When
+  the flag is set an extra block appears, and two widths consume *every* flagged
+  body exactly: 21 and 27. They are the same bytes read two ways -- 27 swallows
+  the run's single element and reads a zero count, 21 leaves it as one element.
+  The flag is never greater than 1 anywhere in the corpus, so no body can separate
+  them; a body with flag 2 would, and none exists. This is underdetermined in the
+  same sense as type `0x09`, not merely undecoded, so those 92 bodies are not
+  framed at all.
+- The gate for this type forbids failures outright and allows only the fenced
+  outcome, which is counted separately from both success and failure. Fencing
+  everything would make the claim vacuous and is rejected too.
+  See [`reports/animestudio/hirc_reference_graph_current_latest.md`](../reports/animestudio/hirc_reference_graph_current_latest.md).
 - **Numeric type `0x08`'s leading 32-bit word is null or names exactly one
   same-bank object -- never a non-null value that names nothing.** 161 bodies: 157
   resolve, 4 are null, 0 unresolved. Null is a real outcome for this type, so the
