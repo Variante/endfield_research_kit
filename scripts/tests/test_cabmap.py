@@ -4,6 +4,7 @@ import struct
 import unittest
 
 from scripts.asset_builder.cabmap import (
+    cab_coverage_across_maps,
     dependency_graph_is_acyclic,
     dependency_graph_shape,
     cab_join_is_essentially_one_to_one,
@@ -216,6 +217,34 @@ class CabMapTests(unittest.TestCase):
         self.assertEqual(shape["rawDependencyEntries"], 3)
         self.assertEqual(shape["distinctEdges"], 2)
         self.assertEqual(shape["duplicateDependencyEntries"], 1)
+
+    def test_coverage_is_judged_per_cab_name_not_per_occurrence(self) -> None:
+        # A CAB appears once per VFS root. The ledger enumerates each block from
+        # one root only, so one occurrence can sit in an unenumerated gap while the
+        # other is covered. Judging occurrences in isolation invents uncovered
+        # containers; judging names reports the truth.
+        spans = {"AAA.CHK": [(0, 100, "bundle-a.ab")]}
+        entries = {
+            "primary.bin": [CabEntry("CAB-1", "VFS/X/AAA.chk", 10, ())],
+            "fallback.bin": [
+                CabEntry("CAB-1", "VFS/X/AAA.chk", 900, ()),   # same name, in a gap
+                CabEntry("CAB-2", "VFS/X/AAA.chk", 900, ()),   # covered nowhere
+            ],
+        }
+        coverage = cab_coverage_across_maps(entries, spans)
+        self.assertEqual(coverage["occurrencesInNoSpan"], 2)
+        self.assertEqual(coverage["occurrencesCoveredElsewhere"], 1)
+        self.assertEqual(coverage["cabNamesCoveredNowhere"], 1)
+        self.assertEqual(coverage["uncoveredCabNames"], ["CAB-2"])
+
+    def test_a_chunk_the_ledger_never_saw_is_not_counted_as_uncovered(self) -> None:
+        # No span for the chunk means the check cannot speak, which is different
+        # from the offset falling outside every span it can see.
+        coverage = cab_coverage_across_maps(
+            {"m.bin": [CabEntry("CAB-1", "VFS/X/ZZZ.chk", 0, ())]}, {"AAA.CHK": [(0, 10, "b")]}
+        )
+        self.assertEqual(coverage["occurrencesInNoSpan"], 0)
+        self.assertEqual(coverage["cabNamesCoveredNowhere"], 0)
 
 
 if __name__ == "__main__":

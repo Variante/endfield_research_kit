@@ -276,6 +276,47 @@ def join_cabs_to_logical_files(
     }
 
 
+def cab_coverage_across_maps(
+    entries_by_map: dict[str, list[CabEntry]],
+    spans: dict[str, list[tuple[int, int, str]]],
+) -> dict[str, Any]:
+    """Whether each CAB *name* is covered somewhere, not just at each location.
+
+    A CAB can appear in both maps, once per VFS root. One occurrence may sit in a
+    gap the ledger does not enumerate while the other sits inside an enumerated
+    span, because the ledger enumerates each block from one root only. Judging an
+    occurrence in isolation reports hundreds of uncovered containers; judging the
+    name reports the truth.
+    """
+    import bisect  # noqa: PLC0415
+
+    starts = {key: [start for start, _, _ in value] for key, value in spans.items()}
+
+    def inside(entry: CabEntry) -> bool | None:
+        value = spans.get(Path(entry.path).name.upper())
+        if not value:
+            return None
+        index = bisect.bisect_right(starts[Path(entry.path).name.upper()], entry.offset) - 1
+        return index >= 0 and entry.offset < value[index][1]
+
+    covered: set[str] = set()
+    occurrences: list[CabEntry] = []
+    for entries in entries_by_map.values():
+        for entry in entries:
+            state = inside(entry)
+            if state:
+                covered.add(entry.cab)
+            elif state is False:
+                occurrences.append(entry)
+    uncovered = {entry.cab for entry in occurrences if entry.cab not in covered}
+    return {
+        "occurrencesInNoSpan": len(occurrences),
+        "occurrencesCoveredElsewhere": sum(1 for e in occurrences if e.cab in covered),
+        "cabNamesCoveredNowhere": len(uncovered),
+        "uncoveredCabNames": sorted(uncovered)[:8],
+    }
+
+
 def cab_join_is_essentially_one_to_one(join: dict[str, Any]) -> bool:
     """Each logical file holds one CAB, give or take a countable few.
 
@@ -403,6 +444,7 @@ def run(
         }
     ledger = ledger_block_names(ledger_path)
     join = join_cabs_to_logical_files(parsed, ledger_spans_by_chunk(ledger_path))
+    coverage = cab_coverage_across_maps(parsed, ledger_spans_by_chunk(ledger_path))
     graph = dependency_graph_shape(parsed)
     if not dependency_graph_is_acyclic(graph):
         problems.append(
@@ -429,6 +471,7 @@ def run(
         },
         "logicalFileJoin": join,
         "dependencyGraphShape": graph,
+        "cabCoverage": coverage,
         "dependencyResolution": {
             "distinctCabNames": len(everything),
             "dependencyEdges": edge_total,

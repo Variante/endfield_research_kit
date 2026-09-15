@@ -150,6 +150,19 @@ unique binding.
   published: quoting only the distinct count misstates the file, quoting only the
   raw count misstates the graph. This is also why an earlier note said "661,808
   edges" -- that was the entry count, not the edge count.
+- **Every CAB is accounted for, with exactly one documented exception.** 887 CAB
+  *occurrences* sit at an offset the ledger does not enumerate; 886 of them are the
+  same CAB *name* covered at its other occurrence, because a CAB appears once per
+  VFS root and the ledger enumerates each block from one root only. One name is
+  covered nowhere: `CAB-5dd5c779c787d592fb5184669bce5df9`, and it lives in
+  `5B4A9EC7...chk` -- the chunk named by the ledger's single `shadowed_fallback`
+  row. So the exception is a recorded shadowing decision, not a gap.
+- **Judge coverage per CAB name, never per occurrence.** Per occurrence the same
+  data reports 887 uncovered containers sitting in 865 unenumerated gaps, which
+  reads like a large hole and is an artifact of the two roots. That is the third
+  time in this domain that the two-root layout turned a correct measurement into a
+  wrong conclusion; the other two were chunk-vs-block coverage and the CABMap
+  offset join.
 - Read by `scripts/asset_builder/cabmap.py`; report at
   [`reports/assets/cabmap_current_latest.json`](../reports/assets/cabmap_current_latest.json).
   This is a container index only -- it says nothing about the objects inside a CAB,
