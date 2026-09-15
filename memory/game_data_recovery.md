@@ -2191,8 +2191,24 @@ Stable conclusions:
   the *modal* 84-byte entry, not a stride; entry widths are 84, 89, 120, 132, 168,
   137, ... The "248 entries name something other than a declared source" figure
   came from that same wrong stride and is withdrawn with it.
-- Still **not** established for `0x0B`: anything inside an entry past its first two
-  words, and therefore the entry widths themselves. Eleven readings of the entry
+- **Inside a `0x0B` entry, three more fields are count-shaped.** Tabulating every
+  32-bit slot across the 4,019 single-entry bodies (the entry is everything between
+  the entry count and the terminator):
+  `u32@0` is the flag (0 in 4,005, 1 in 14), `u32@4` is the source id, **`u32@8` is
+  zero in all 4,019**, and then `u32@44` is 1/2/3 and never 0 (3,891/113/14),
+  `u32@48` is 0/1/2/3 (2,833/903/253/...) and `u32@56` is 0/3/4/... -- the same
+  "mostly one small value" shape that turned out to be a count three times in the
+  `0x08`/`0x12` layout.
+- **The elements they count are variable-length, so this is not yet a frame.**
+  Solving `48 + c44 * w == entryWidth` gives a unique `w` for 3,618 of 4,019 bodies
+  but `w` itself ranges over 36, 41, 43, 47, 72, 77, 84, 89, 96, 108 -- so `u32@44`
+  counts something whose size is decided inside it, exactly like the tail's units.
+- Two regularities worth carrying in: entry widths come in pairs five bytes apart
+  (84/89, 132/137, 168/173) with identical counts, so some five-byte field is
+  optional; and once a base is chosen the remaining widths differ by multiples of 12,
+  which is the record size the `0x08`/`0x12` tail also uses.
+- Still **not** established for `0x0B`: the entry element layout, and therefore the
+  entry widths themselves. Eleven readings of the entry
   interior have been eliminated. The latest: the entry does not end with a node
   frame (768 of 4,019 single-entry bodies admit no closing frame at any offset),
   and the 53 + 12k head widths that *do* close are a fit rather than a layout --
