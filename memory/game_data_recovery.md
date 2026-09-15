@@ -5907,6 +5907,43 @@ selects -- **cannot be settled from the shipped data at all**. They need the nat
 reader. *That is a different statement from "not yet found", and it is the one the
 evidence supports.*
 
+#### WHERE THE NATIVE READER LIVES, AND WHY IT IS NOT READABLE
+
+"Needs the native reader" is worth replacing with a measurement. The game ships
+**`EndfieldBase.dll`, 35.8 MB**, which is the module that would hold a C++ FlatBuffers
+reader -- and it yields **nothing**:
+
+| probe | ASCII | UTF-16 |
+| --- | --- | --- |
+| `InitChunkData`, `StreamingChunkData`, `StreamingChunkInfo` | 0 | 0 |
+| `ChunkData`, `Terrain`, `IrradianceVolume` | 0 | 0 |
+| `flatbuffers`, `FlatBuffer` | 0 | 0 |
+
+Section entropy says why:
+
+| module | section | raw bytes | entropy |
+| --- | --- | --- | --- |
+| **`EndfieldBase.dll`** | **`.tvm0`** | **28,246,016** (79% of the file) | **7.60** |
+| `HGP.dll` | `.tvm0` | 9,003,008 (92%) | **7.56** |
+| `GameAssembly.dll` | `.tvm0` | 13,463,552 | 6.94 |
+| `GameAssembly.dll` | `.text` / `il2cpp` | 11.2 MB / 165 MB | 6.46 / 6.35 |
+
+**`EndfieldBase` is four fifths virtualised**, with the leftover `.rdata` at entropy 4.93
+and odd companion sections (`.BNN`, `.i,9`) typical of a code virtualiser. `HGP.dll` is
+the same construction plus `.detourc`/`.detourd` -- a detour engine, itself virtualised.
+
+*This also explains the shape of every success so far.* `GameAssembly.dll`'s `.text` and
+`il2cpp` sections are **not** packed, which is exactly why the managed metadata work keeps
+paying -- 73 generated FlatBuffers types, field widths, `Il2CppFieldOffsets`. The moment a
+question needs a *native* body, it moves into a `.tvm0` section and the evidence stops.
+**The boundary is not "IL2CPP vs native"; it is "packed vs not", and it runs through
+GameAssembly itself.**
+
+So the ceiling here is the same one the IrradianceVolume `v3` payload hit, and it is now
+measured rather than inferred: *every remaining question in this family needs code that is
+28 MB of entropy-7.6 bytes.* Static recovery will not reach it; a bounded runtime
+observation would.
+
 ***A degenerate fit, caught by fitting four rivals at once.*** `s4 == 24 + 24*n7` scores
 **100.00%** on the Streaming family, which reads like a decoded record stride -- until the
 rivals are run beside it. `24 + 32*n7`, `24 + 40*n7` and `24 + 44*n7` **all score
