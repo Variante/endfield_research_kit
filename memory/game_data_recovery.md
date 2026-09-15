@@ -1723,12 +1723,27 @@ Stable conclusions:
   reader sees one package and cannot speak for the others. The gate asserts that
   the crossing is *observed*, so a future reader reporting zero cannot quietly
   restore the old conclusion.
-- **The chain is closed end to end: shipped identifier -> media file.** 57 of the
-  151 named type `0x04` objects reach at least one media file this corpus ships,
-  reaching 127 distinct files between them. The report lists them per identifier,
+- **The chain is closed end to end: shipped identifier -> media file.** 97 of the
+  194 named identifiers reach at least one media file this corpus ships, reaching
+  163 distinct files between them. The report lists them per identifier,
   so `au_int_erosion_sludge_recover_loop` resolves to 6 files, `au_int_box_touch`
   to 5, and so on.
-- Three reached source ids name **no** shipped media, and that is reported per
+- **The named-reach walk crosses banks now, and that was worth 14 identifiers.**
+  It used to run once per bank, so any edge pointing at a sibling bank was counted
+  as leaving and abandoned -- the same over-generalisation the type `0x03`
+  classification exposed, except compiled in rather than written down. Walking the
+  whole package at once takes reaching-a-source from 109 to 120, source ids from
+  181 to 218, identifiers reaching media from 83 to 97, and distinct media from
+  150 to 163. Abandoned edges drop from 102 to 47, so more than half of them were
+  sibling-bank all along.
+- The counter is now `walkEdgesLeavingThePackage`, not `...TheBank`. Renaming it
+  mattered: a package-wide walk reporting "edges leaving the bank" would have
+  described itself in the vocabulary of the bug it just fixed.
+- Matched objects (199) exceed distinct identifiers (194) because 5 named objects
+  are declared in two packages each. That is expected, not a defect -- the gate
+  checks identities never exceed instances, which is the direction that would
+  indicate one.
+- Five reached source ids name **no** shipped media, and that is reported per
   identifier rather than dropped, because the plug-in partition establishes that
   some source ids never name media at all. A reached id missing from the media
   table is an expected outcome here, not a defect.

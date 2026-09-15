@@ -21,7 +21,7 @@ def census(**overrides):
         "reachingASource": 1,
         "reachingNoSource": 1,
         "reachedSourceIds": 3,
-        "walkEdgesLeavingTheBank": 4,
+        "walkEdgesLeavingThePackage": 4,
         "matchesByObjectType": {"type04": 2},
         "reachedSourceIdsByIdentity": {"0000000A": 3, "0000000B": 0},
         "reachedSourceIdListByIdentity": {"0000000A": [10, 11, 12], "0000000B": []},
@@ -51,7 +51,7 @@ class HircNamedReachTests(unittest.TestCase):
         self.assertEqual(summary["namedObjectsReachingASource"], 2)
         self.assertEqual(summary["namedObjectsReachingNoSource"], 2)
         self.assertEqual(summary["reachedSourceIdTotal"], 6)
-        self.assertEqual(summary["walkEdgesLeavingTheBank"], 8)
+        self.assertEqual(summary["walkEdgesLeavingThePackage"], 8)
         # Per-identity reach is a maximum across banks, never a sum.
         self.assertEqual(summary["reachedSourceIdsByIdentity"], {"0000000A": 3, "0000000B": 0})
         self.assertEqual(check_identification(summary), [])

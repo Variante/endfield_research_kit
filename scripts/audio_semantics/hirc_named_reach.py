@@ -206,7 +206,7 @@ def summarise(census_rows: Iterable[dict[str, Any]]) -> dict[str, Any]:
         "reachingASource",
         "reachingNoSource",
         "reachedSourceIds",
-        "walkEdgesLeavingTheBank",
+        "walkEdgesLeavingThePackage",
     )
     for census in census_rows:
         if not isinstance(census, dict):
@@ -253,7 +253,7 @@ def summarise(census_rows: Iterable[dict[str, Any]]) -> dict[str, Any]:
         "namedObjectsReachingASource": int(totals["reachingASource"]),
         "namedObjectsReachingNoSource": int(totals["reachingNoSource"]),
         "reachedSourceIdTotal": int(totals["reachedSourceIds"]),
-        "walkEdgesLeavingTheBank": int(totals["walkEdgesLeavingTheBank"]),
+        "walkEdgesLeavingThePackage": int(totals["walkEdgesLeavingThePackage"]),
         "reachedSourceIdsByIdentity": dict(sorted(reached_by_identity.items())),
         "reachedSourceIdListByIdentity": {
             identity: sorted(values) for identity, values in sorted(reached_ids.items())
@@ -325,7 +325,7 @@ def markdown(report: dict[str, Any]) -> str:
             f"- Reaching at least one media file this corpus ships: {report['mediaSummary']['identifiersReachingMedia']:,}; distinct media files reached: {report['mediaSummary']['distinctMediaReached']:,}.",
             f"- Reached source ids that name no shipped media: {report['mediaSummary']['reachedIdsNamingNoMedia']:,} (the plug-in partition says some never do).",
             f"- Named object instances: {summary['namedObjectInstances']:,}; reaching a source: {summary['namedObjectsReachingASource']:,}; reaching none: {summary['namedObjectsReachingNoSource']:,}.",
-            f"- Walk edges leaving the bank and therefore not followed: {summary['walkEdgesLeavingTheBank']:,}.",
+            f"- Walk edges leaving the package and therefore not followed: {summary['walkEdgesLeavingThePackage']:,}.",
             "",
             "## Literal hash matches by numeric object type",
             "",
