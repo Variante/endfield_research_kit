@@ -1639,6 +1639,8 @@ def aggregate_current_hirc_actions(
     type04_banks_with_objects = 0
     type04_non_exact_examples: list[dict[str, Any]] = []
     body_lanes = _build_body_lanes()
+    media_ids: set[int] = set()
+    source_ids_by_plugin: dict[str, set[int]] = {}
     small_totals: Counter[str] = Counter()
     small_by_type: Counter[str] = Counter()
     small_failures: Counter[str] = Counter()
@@ -1693,6 +1695,13 @@ def aggregate_current_hirc_actions(
             type02_plugin_counts[plugin_type] += count
         for plugin_id, count in package_type02["pluginIdCounts"].items():
             type02_plugin_ids[plugin_id] += count
+
+        package_media, package_sources = _read_media_join(
+            package.get("hircMediaJoin"), package_label
+        )
+        media_ids |= package_media
+        for plugin_key, plugin_sources in package_sources.items():
+            source_ids_by_plugin.setdefault(plugin_key, set()).update(plugin_sources)
 
         package_small = _read_small_type_census(package.get("hircSmallTypes"), package_label)
         for key in SMALL_TYPE_SCALARS:
@@ -2128,6 +2137,7 @@ def aggregate_current_hirc_actions(
         "type14BodyFrames": body_lanes["0x0E"].publish(),
         "type22BodyFrames": body_lanes["0x16"].publish(),
         "type08HeadWords": {key: int(type08_totals[key]) for key in TYPE08_HEAD_SCALARS},
+        "type02MediaJoin": _summarise_media_join(media_ids, source_ids_by_plugin),
         "smallTypeBodies": {
             **{key: int(small_totals[key]) for key in SMALL_TYPE_SCALARS},
             "bodiesByType": dict(sorted(small_by_type.items())),
@@ -2793,6 +2803,97 @@ def type17_is_framed_except_the_tied_block(corpus: dict[str, Any]) -> bool:
     )
 
 
+def _read_media_join(census: Any, label: str) -> tuple[set[int], dict[str, set[int]]]:
+    """One package's media ids and its type 0x02 source ids per plug-in id.
+
+    The reader deliberately does not join these: a bank's media usually lives in a
+    different package, so the join only means anything once every package is in
+    hand. This returns the raw sets for that union.
+    """
+    if census is None:
+        return set(), {}
+    if not isinstance(census, dict):
+        raise ValueError(f"media join census is not an object: {label}")
+    raw_ids = census.get("mediaIds")
+    if not isinstance(raw_ids, list):
+        raise ValueError(f"media join census has invalid mediaIds: {label}")
+    media = {int(value) for value in raw_ids}
+    declared = int(census.get("mediaEntries") or 0)
+    if declared != len(media):
+        raise ValueError(
+            f"media join entry count disagrees with the id list: {label} "
+            f"declared={declared} ids={len(media)}"
+        )
+    raw_sources = census.get("sourceIdsByPlugin")
+    if not isinstance(raw_sources, dict):
+        raise ValueError(f"media join census has invalid sourceIdsByPlugin: {label}")
+    sources: dict[str, set[int]] = {}
+    for key, values in raw_sources.items():
+        name = str(key)
+        if re.fullmatch(r"plugin_[0-9A-F]{8}", name) is None:
+            raise ValueError(f"media join plug-in key is malformed: {label} {name!r}")
+        if not isinstance(values, list):
+            raise ValueError(f"media join source list is not a list: {label} {name}")
+        sources[name] = {int(value) for value in values}
+    return media, sources
+
+
+def _summarise_media_join(
+    media_ids: set[int], source_ids_by_plugin: dict[str, set[int]]
+) -> dict[str, Any]:
+    """Union the per-package sets and partition the plug-in ids by the outcome."""
+    always: list[str] = []
+    never: list[str] = []
+    split: list[str] = []
+    named_total = 0
+    per_plugin: dict[str, dict[str, int]] = {}
+    all_sources: set[int] = set()
+    for plugin_key in sorted(source_ids_by_plugin):
+        sources = source_ids_by_plugin[plugin_key]
+        all_sources |= sources
+        named = len(sources & media_ids)
+        unnamed = len(sources) - named
+        named_total += named
+        per_plugin[plugin_key] = {"namingMedia": named, "namingNothing": unnamed}
+        if named and unnamed:
+            split.append(plugin_key)
+        elif named:
+            always.append(plugin_key)
+        else:
+            never.append(plugin_key)
+    return {
+        "mediaIds": len(media_ids),
+        "sourceIds": len(all_sources),
+        "sourceIdsNamingMedia": len(all_sources & media_ids),
+        "mediaIdsNeverNamed": len(media_ids - all_sources),
+        "pluginIdsAlwaysNamingMedia": len(always),
+        "pluginIdsNeverNamingMedia": len(never),
+        "pluginIdsSplitAcrossBothOutcomes": split,
+        "byPluginId": per_plugin,
+    }
+
+
+def media_join_is_decided_by_the_plugin_id(corpus: dict[str, Any]) -> bool:
+    """Every plug-in id must be wholly in the media table or wholly out of it.
+
+    A rate would be worthless here. The claim is that the plug-in id decides
+    whether a source id names shipped media, so each plug-in id has to be all
+    named or all unnamed; one plug-in id split across both falsifies it. Both
+    outcomes must also actually occur, or the partition is vacuous.
+    """
+    split = corpus.get("pluginIdsSplitAcrossBothOutcomes")
+    if not isinstance(split, list) or split:
+        return False
+    named = int(corpus.get("pluginIdsAlwaysNamingMedia") or 0)
+    unnamed = int(corpus.get("pluginIdsNeverNamingMedia") or 0)
+    return (
+        named > 0
+        and unnamed > 0
+        and int(corpus.get("sourceIds") or 0) > 0
+        and int(corpus.get("mediaIds") or 0) > 0
+    )
+
+
 TYPE08_HEAD_SCALARS = ("bodies", "resolved", "null", "unresolved", "tooShort")
 
 
@@ -2915,6 +3016,46 @@ def reference_graph_is_closed(corpus: dict[str, Any]) -> bool:
 
 def _reference_graph_markdown(report: dict[str, Any]) -> str:
     graph = report["corpus"]["referenceGraph"]
+    media = report["corpus"].get("type02MediaJoin") or {}
+    media_lines = []
+    if media.get("sourceIds"):
+        media_lines = [
+            "",
+            "## Numeric type `0x02` source ids against the shipped media",
+            "",
+            f"- Distinct source ids: {media['sourceIds']:,}; naming a media file this "
+            f"corpus ships: {media['sourceIdsNamingMedia']:,}.",
+            f"- Media files declared: {media['mediaIds']:,}; never named by any source "
+            f"id: {media['mediaIdsNeverNamed']:,}.",
+            "",
+            "| Plug-in id | Source ids naming media | Naming nothing |",
+            "|---|---:|---:|",
+            *(
+                f"| `{name}` | {row['namingMedia']:,} | {row['namingNothing']:,} |"
+                for name, row in sorted(media["byPluginId"].items())
+            ),
+            "",
+            "The overall rate is about 98 percent and is the wrong number to read. "
+            "**The plug-in id decides it, with no exceptions**: "
+            f"{media['pluginIdsAlwaysNamingMedia']} plug-in ids name shipped media in "
+            f"every case and {media['pluginIdsNeverNamingMedia']} name it in none, and "
+            "no plug-in id appears on both sides. The gate requires that partition to "
+            "be exact and refuses a corpus where either side is empty, since a "
+            "partition with nothing on one side claims nothing.",
+            "",
+            "The join is between two independently parsed structures: the source id "
+            "comes from the bounded prefix of a numeric type `0x02` body, the media ids "
+            "from the AKPK bank and sound sectors. It is computed across the whole "
+            "corpus rather than per package, and that matters -- a bank's media almost "
+            "always lives in a *different* package, so a same-package join reports 12 "
+            "matches of 75,958 and means nothing.",
+            "",
+            "What this does not say: which plug-in ids these are, what the ones that "
+            "name no media do instead, or that any of this audio is ever decoded or "
+            "played. It says only that the plug-in id determines whether the source id "
+            "resolves to a file this corpus ships.",
+        ]
+
     small = report["corpus"].get("smallTypeBodies") or {}
     small_lines = []
     if small.get("bodies"):
@@ -3140,6 +3281,7 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
                 for name, count in graph["objectCountsByType"].items()
             ) or "| _none_ | 0 | 0 |",
             "",
+            *media_lines,
             *small_lines,
             *type09_lines,
             *type17_lines,
@@ -3491,6 +3633,8 @@ def run_current_corpus_audit(
     music_head_corpus = corpus["musicHeadReferences"]
     music_head_closed = music_head_references_are_closed(music_head_corpus)
     type11_corpus = corpus["type11SourceRecords"]
+    media_corpus = corpus["type02MediaJoin"]
+    media_closed = media_join_is_decided_by_the_plugin_id(media_corpus)
     small_corpus = corpus["smallTypeBodies"]
     small_closed = small_types_are_closed(small_corpus)
     type09_corpus = corpus["type09Bodies"]
@@ -3510,6 +3654,7 @@ def run_current_corpus_audit(
         and type17_closed
         and type09_closed
         and small_closed
+        and media_closed
     )
     reference_report = {
         "format": "animestudio-wwise-hirc-reference-graph-audit",
@@ -3537,6 +3682,7 @@ def run_current_corpus_audit(
             "type17Bodies": type17_corpus,
             "type09Bodies": type09_corpus,
             "smallTypeBodies": small_corpus,
+            "type02MediaJoin": media_corpus,
             "type02PluginIdCounts": corpus["type02SourcePrefixes"]["pluginIdCounts"],
             "audioAuditSummary": corpus["audioAuditSummary"],
         },
@@ -3558,6 +3704,13 @@ def run_current_corpus_audit(
     reference_output_markdown.write_text(
         _reference_graph_markdown(reference_report), encoding="utf-8"
     )
+    if not media_closed:
+        lane_failures.append(
+            "the type 0x02 media join is not decided by the plug-in id: "
+            f"split={media_corpus['pluginIdsSplitAcrossBothOutcomes']} "
+            f"always={media_corpus['pluginIdsAlwaysNamingMedia']} "
+            f"never={media_corpus['pluginIdsNeverNamingMedia']}"
+        )
     if not small_closed:
         lane_failures.append(
             "numeric types 0x13/0x14/0x15 are not closed: "

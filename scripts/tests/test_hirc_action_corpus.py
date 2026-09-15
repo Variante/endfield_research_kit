@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from scripts.audio_semantics.hirc_action_corpus import (
+    media_join_is_decided_by_the_plugin_id,
     small_types_are_closed,
     type09_is_framed_except_the_second_run,
     type17_is_framed_except_the_tied_block,
@@ -164,6 +165,14 @@ def valid_action_fixture():
         "failureCategories": {},
         "unsupportedCategories": {},
         "nonExactExamples": [],
+    }
+    media_join = {
+        "mediaEntries": 3,
+        "mediaIds": [10, 11, 12],
+        "sourceIdsByPlugin": {
+            "plugin_00040001": [10, 11],
+            "plugin_00650002": [90, 91],
+        },
     }
     small_types = {
         "bodies": 4,
@@ -373,6 +382,7 @@ def valid_action_fixture():
                     "hircType17": copy.deepcopy(type17_bodies),
                     "hircType09": copy.deepcopy(type09_bodies),
                     "hircSmallTypes": copy.deepcopy(small_types),
+                    "hircMediaJoin": copy.deepcopy(media_join),
                     "hircType05BodyFrame": copy.deepcopy(type05_body),
                     "hircReferenceCensus": copy.deepcopy(reference_census),
                     "hircType03ActionFrame": copy.deepcopy(frame),
@@ -400,6 +410,7 @@ def valid_action_fixture():
                             "hircType17": copy.deepcopy(type17_bodies),
                             "hircType09": copy.deepcopy(type09_bodies),
                             "hircSmallTypes": copy.deepcopy(small_types),
+                            "hircMediaJoin": copy.deepcopy(media_join),
                             "hircType05BodyFrame": copy.deepcopy(type05_body),
                             "hircReferenceCensus": copy.deepcopy(reference_census),
                             "hircType03ActionFrame": copy.deepcopy(frame),
@@ -1138,6 +1149,61 @@ class HircActionCorpusTests(unittest.TestCase):
             scope["hircType05BodyFrame"]["groupCounts"]["recordEntries"] = 1_000_000
         with self.assertRaisesRegex(ValueError, "anonymous element bytes exceed the framed bodies"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, oversized)
+
+    def test_media_join_is_decided_by_the_plugin_id(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        media = result["type02MediaJoin"]
+        self.assertEqual(media["sourceIds"], 4)
+        self.assertEqual(media["sourceIdsNamingMedia"], 2)
+        self.assertEqual(media["pluginIdsAlwaysNamingMedia"], 1)
+        self.assertEqual(media["pluginIdsNeverNamingMedia"], 1)
+        self.assertEqual(media["pluginIdsSplitAcrossBothOutcomes"], [])
+        self.assertTrue(media_join_is_decided_by_the_plugin_id(media))
+
+        # One plug-in id landing on both sides falsifies the claim outright; a rate
+        # would hide exactly that.
+        self.assertFalse(
+            media_join_is_decided_by_the_plugin_id(
+                {**media, "pluginIdsSplitAcrossBothOutcomes": ["plugin_00040001"]}
+            )
+        )
+        # A partition with nothing on one side asserts nothing.
+        self.assertFalse(
+            media_join_is_decided_by_the_plugin_id({**media, "pluginIdsNeverNamingMedia": 0})
+        )
+        self.assertFalse(
+            media_join_is_decided_by_the_plugin_id({**media, "pluginIdsAlwaysNamingMedia": 0})
+        )
+
+    def test_media_join_detects_a_plugin_id_on_both_sides(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        mixed = copy.deepcopy(audio_audit)
+        for scope in (
+            mixed["rows"][0]["package"],
+            mixed["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircMediaJoin"]["sourceIdsByPlugin"]["plugin_00040001"] = [10, 99]
+        media = aggregate_current_hirc_actions(
+            outer, expected_files, excluded_files, mixed
+        )["type02MediaJoin"]
+        self.assertEqual(media["pluginIdsSplitAcrossBothOutcomes"], ["plugin_00040001"])
+        self.assertFalse(media_join_is_decided_by_the_plugin_id(media))
+
+    def test_media_join_rejects_a_malformed_census(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        for field, value, pattern in (
+            ("mediaEntries", 9, "disagrees with the id list"),
+            ("sourceIdsByPlugin", {"nonsense": [1]}, "plug-in key is malformed"),
+        ):
+            broken = copy.deepcopy(audio_audit)
+            for scope in (
+                broken["rows"][0]["package"],
+                broken["rows"][0]["package"]["bnkStructures"][0],
+            ):
+                scope["hircMediaJoin"][field] = value
+            with self.assertRaisesRegex(ValueError, pattern):
+                aggregate_current_hirc_actions(outer, expected_files, excluded_files, broken)
 
     def test_small_types_need_a_real_width_witness_not_just_exact_bodies(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

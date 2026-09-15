@@ -335,6 +335,13 @@ scratch. They do not open with the node frame, and searching for an offset where
 the frame parses is worthless because every music body admits several such
 offsets -- the frame is permissive, so "it parsed" is nearly no evidence. A
 structural predictor is needed, the way byte 1 predicts the `0x0E` prefix.
+The source id in a numeric type `0x02` bounded prefix names a media file the
+corpus ships, and **the plug-in id decides whether it does** -- two ids always
+resolve, five never, none both. Report the partition rather than the ~98% rate,
+which hides it. Union the media ids across every package before joining: a bank's
+media usually lives in another package, so a per-package join matches 12 of 75,958
+and is worthless. The whole plug-in id decides, not its low nibble.
+
 The HIRC serializer ships with the game: `Endfield_Data/Plugins/x86_64/
 AkSoundEngine.dll` is built from **Wwise SDK v2023.1.17** (that string occurs 28
 times and is the only version in the binary), against a vendored tree at

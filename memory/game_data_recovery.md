@@ -1664,6 +1664,28 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **The audio chain now reaches shipped media, and the plug-in id decides whether
+  it does.** Joining the source id in a numeric type `0x02` bounded prefix against
+  the media ids in the AKPK bank and sound sectors: 60,049 of 60,997 distinct
+  source ids name a file this corpus ships, and 1,284 of 61,333 media files are
+  never named.
+- **Read the partition, not the 98% rate.** The outcome is decided entirely by the
+  plug-in id, with no exceptions anywhere: `0x00040001` (51,889) and `0x00140001`
+  (8,160) name shipped media in **every** case, and `0x00080001`, `0x00640002`,
+  `0x00650002`, `0x00940002` and `0x01990002` name it in **none** (948 together).
+  No plug-in id appears on both sides. The gate enforces that no plug-in id is
+  split and that both sides are non-empty; a rate would have hidden the structure
+  entirely.
+- The low nibble does not explain it: `0x00080001` is type 1 like the two that
+  always resolve, and never resolves. It is the whole 32-bit plug-in id that
+  decides, so do not simplify this to "type 1 has media, type 2 does not".
+- **Compute this join across the whole corpus, never per package.** A bank's media
+  almost always lives in a *different* package: the same join done inside one
+  package matches 12 of 75,958. The reader therefore reports the two id sets and
+  the gate unions them, which is also why the reader carries no verdict here.
+- Not claimed: what any plug-in id is, what the five that name no media do instead
+  (generation and out-of-corpus media are both consistent with these bytes), or
+  that any of it is ever decoded or played.
 - **The serializer is on disk, and it is Wwise SDK v2023.1.17.** The shipped
   `Endfield_Data/Plugins/x86_64/AkSoundEngine.dll` (3,586,536 bytes, SHA-256
   `FD75D48813DC5B6497F0FD18B1AEE1912B8383FFA0AC229AD45A147A7ED052C6`) carries

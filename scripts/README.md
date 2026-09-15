@@ -582,6 +582,11 @@ never reported as a full one.
 python -m scripts.audio_semantics.hirc_named_reach --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 ```
 
+It gates the type `0x02` media join: every distinct source id is tested against the
+media ids the AKPK sectors declare, unioned across the whole corpus rather than per
+package. The gate does not check a rate -- it requires that no plug-in id appears
+both naming media and naming nothing, and that both sides are non-empty.
+
 It gates numeric types `0x13`, `0x14` and `0x15` as one group: all 18 bodies
 consumed exactly. Because those corpora are tiny, the gate also requires a nonempty
 second block somewhere, so the eight-byte value width is witnessed rather than
