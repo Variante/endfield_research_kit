@@ -1950,11 +1950,19 @@ Stable conclusions:
   `word_after_the_middle_block_is_not_zero` 14, `tail_block_does_not_end_the_body` 9,
   `range_tail_block_units` 6, `range_properties` 4. `0x12`:
   `range_tail_block_units` 4.
-- The `range_tail_block_units` bodies declare **zero** units and then carry a
-  different structure: `00 00 00`, a count, a zero byte, and that many **3-byte**
-  entries whose first byte is an index running 0, 1, 2, ... (e.g. `05 00` then
-  `00 02 01 | 01 02 00 | 02 06 00 | 03 06 00 | 04 02 01`). What follows that run is
-  not read. Ten bodies across both types; that is where the next attempt starts.
+- The `range_tail_block_units` bodies declare **zero** units. Reading two of them by
+  hand gives a tidy structure -- `00 00 00`, a count, a zero byte, that many 3-byte
+  entries with an index running 0, 1, 2, ..., then `01`, a `u32`, a zero byte, a unit
+  count, and that many 12-byte `(u32, u32, float)` units, closing the body exactly.
+  It reproduces those two samples to the byte.
+- **It is wrong, and this was checked before any of it was written into the reader.**
+  Across the ten bodies it closes **1**, and that one's indices are not ascending;
+  five type `0x08` bodies diverge at the byte after the entry run and four type
+  `0x12` bodies one byte earlier. Two samples were enough to invent a layout and not
+  nearly enough to test one.
+- An alternative that this corpus cannot rule out: the *entry run* walk may be wrong
+  for these bodies, so the tail does not start where the reader thinks. Test that
+  before proposing another tail shape.
 - **What the fence hides, censused rather than framed.** 40 bodies carry a tail
   after the entry run, and 27 of them end in a counted run of **twelve-byte
   records**: two 32-bit floats and a 32-bit code. The run is anchored from the
