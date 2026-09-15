@@ -6010,6 +6010,55 @@ Three orders of magnitude apart. **Slot 5 is not a placement list at all**, what
 codes mean. *The positive control is what makes the zero worth anything: without it, a
 test that cannot fire and a hypothesis that is false look identical.*
 
+#### WHAT THE ENGINE'S OWN ASSERTS AND LOGS SAY -- AND WHAT THE DATA DOES WITH IT
+
+`UnityPlayer.dll` keeps its `HG_ALWAYS_ASSERT` expression text and log formats, which is
+vocabulary straight from the authors:
+
+```
+fbMonoEntityData->componentDataList()->Get(0)->type() == kComponentTypeTransform
+!fbMonoEntityData->componentDataList()->empty()
+componentType != kComponentTypeNone        entityType != kECSEntityTypeCount
+entityType != kProxyEntityTypeCount        transition < EntityTransition::Count
+
+"Missing chunk file at %d,%d,%d, lod %d"   "Unexpected chunk status %u when load"
+"Unsupported Proxy entity type %u to ConvertFrom"   "[Streaming] Failed to load %s"
+```
+
+The first line is **literal FlatBuffers accessor code**: a table `MonoEntityData` with a
+`componentDataList()` vector whose elements carry a `type()`, and element 0 is always a
+Transform. Three bind functions sit beside it -- `BindMonoComponentConvertFuncFromScript`
+(`StreamingComponentType`), `BindProxyEntityConvertFuncFromScript` (`ProxyEntityType`),
+`BindECSEntityConvertFuncFromScript` (`ECSEntityType`) -- **three entity categories
+against the root's three vector slots.** That is the same matching-counts shape already
+refused twice in this family, so it is left as a lead, not a conclusion.
+
+***Two readings this vocabulary suggests, both refused by the bytes.***
+
+**`componentDataList` is not slot 5.** The assert predicts element 0 has one fixed type.
+Across all 26,372 files, slot-5 element 0 carries **15 distinct kind codes**, the most
+common covering 66%. Not a constant, so this vector is not that one.
+
+**The filename's fourth field is not a lod.** `Missing chunk file at %d,%d,%d, lod %d`
+invites reading `InitChunkData_<x>_<y>_<z>_<w>` as x/y/z/lod. The distribution says
+otherwise: `w` is **0 in 26,070 of 26,372** files, and where it is not it takes values
+like **587717614** and **293885694** -- confined entirely to **one level, `map02`**
+(302 files). A lod index does not look like that. *A log format string names the
+engine's addressing, not necessarily the filename's.*
+
+##### A refinement to the StreamingChunkInfo join
+
+The third field *does* vary -- `z` runs 0..7+ -- and **7 of 88 levels hold more chunk
+files than distinct `(x, y)` pairs**: `map01` has 7,599 files over 6,028 columns, `map02`
+1,952 over 1,229. So chunks are addressed by more than `(x, y)`.
+
+This does not break the earlier 88-of-88 index result, which compared **sets** of
+coordinates and so collapsed the `z` variants harmlessly -- but it does correct the
+impression that index entries and chunk files stand 1:1. **The index carries one entry per
+`(x, y)` column; the files are per `(x, y, z)`.** *The test was sound and its natural
+reading was not, which is a failure mode worth naming: set equality proves set equality,
+and nothing about multiplicity.*
+
 ***A degenerate fit, caught by fitting four rivals at once.*** `s4 == 24 + 24*n7` scores
 **100.00%** on the Streaming family, which reads like a decoded record stride -- until the
 rivals are run beside it. `24 + 32*n7`, `24 + 40*n7` and `24 + 44*n7` **all score
