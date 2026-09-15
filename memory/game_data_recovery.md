@@ -2203,6 +2203,18 @@ Stable conclusions:
   Solving `48 + c44 * w == entryWidth` gives a unique `w` for 3,618 of 4,019 bodies
   but `w` itself ranges over 36, 41, 43, 47, 72, 77, 84, 89, 96, 108 -- so `u32@44`
   counts something whose size is decided inside it, exactly like the tail's units.
+- **The same twelve-byte record the `0x08`/`0x12` tail carries is inside `0x0B`'s
+  entries too**, and it is now censused and gated. Where `u32@56` is nonzero,
+  `u32@60` is a record count and the records start at offset 64: two floats and a
+  32-bit interpolation code. Over the corpus: 775 entries of 4,019 carry them, 3,124
+  declare none, 120 have an unusable count, **0 run past the end**, and the 1,759
+  records' codes are **0 through 9 with no gaps and nothing above 9**.
+- That contiguous ten-value enum is the discriminator. A 32-bit field read at a
+  wrong offset would be noise, so the gate refuses any code outside a small range.
+  The first float takes 0.0 (793), 0.11, 0.13, 0.1, 2.33, ... -- an observation, not
+  a claim; nothing here establishes what it measures.
+- So the twelve-byte curve record is now confirmed in **three** numeric types --
+  `0x08`, `0x12` and `0x0B`. When a new type resists, look for it.
 - Two regularities worth carrying in: entry widths come in pairs five bytes apart
   (84/89, 132/137, 168/173) with identical counts, so some five-byte field is
   optional; and once a base is chosen the remaining widths differ by multiples of 12,

@@ -17,6 +17,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     type08_head_words_are_null_or_resolve,
     type11_sources_share_the_type02_plugin_space,
     type11_bodies_share_one_terminator,
+    type11_entries_carry_the_shared_curve_record,
     type08_bodies_are_exact_or_named,
     type12_bodies_are_exact_or_named,
     _read_type12_body_frame,
@@ -320,6 +321,13 @@ def valid_action_fixture():
         "tailEchoesExceedTheCount": 0,
         "firstTailEntryNamesADeclaredSource": 2,
         "firstTailEntryTooShort": 0,
+        "entriesInspected": 2,
+        "entriesWithNoRecords": 1,
+        "entriesWhoseRecordsFit": 1,
+        "entriesWhoseCountIsNotUsable": 0,
+        "entriesWhoseRecordsRunPastTheEnd": 0,
+        "curveRecords": 2,
+        "interpolationCounts": {"interp_1": 1, "interp_9": 1},
         "tailEntryCountCounts": {"tailEntries_1": 1, "tailEntries_2": 1},
         "firstTailEntryLeadingWordCounts": {"lead_00000000": 2},
     }
@@ -1540,6 +1548,33 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(type11_sources_share_the_type02_plugin_space(sources, {}))
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
+        )
+
+    def test_type11_entries_carry_the_shared_twelve_byte_curve_record(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        sources = result["type11SourceRecords"]
+        self.assertEqual(sources["curveRecords"], 2)
+        self.assertTrue(type11_entries_carry_the_shared_curve_record(sources))
+
+        # The interpolation code is the discriminator. Read at a wrong offset it
+        # would be arbitrary 32-bit noise, so one wild value means the records are
+        # not where the reader thinks they are.
+        self.assertFalse(
+            type11_entries_carry_the_shared_curve_record(
+                {**sources, "interpolationCounts": {"interp_1": 1, "interp_305419896": 1}}
+            )
+        )
+        # Nothing read proves nothing about the offset.
+        self.assertFalse(
+            type11_entries_carry_the_shared_curve_record(
+                {**sources, "entriesWhoseRecordsFit": 0, "curveRecords": 0,
+                 "interpolationCounts": {}}
+            )
+        )
+        # The histogram has to account for every record the census claims to have read.
+        self.assertFalse(
+            type11_entries_carry_the_shared_curve_record({**sources, "curveRecords": 9})
         )
 
     def test_every_type11_body_must_end_on_the_same_word(self) -> None:

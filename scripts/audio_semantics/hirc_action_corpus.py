@@ -1682,6 +1682,7 @@ def aggregate_current_hirc_actions(
     type08_body_failures: Counter[str] = Counter()
     type08_body_unsupported: Counter[str] = Counter()
     type11_tail_counts: Counter[str] = Counter()
+    type11_interps: Counter[str] = Counter()
     type11_lead_words: Counter[str] = Counter()
     type11_streams: Counter[str] = Counter()
     type11_record_counts: Counter[str] = Counter()
@@ -1832,6 +1833,7 @@ def aggregate_current_hirc_actions(
         type08_word_controls.update(package_type08_words["secondWordTargetTypeCounts"])
         type08_body_unsupported.update(package_type08_body["unsupportedCategories"])
         type11_tail_counts.update(package_type11["tailEntryCountCounts"])
+        type11_interps.update(package_type11["interpolationCounts"])
         type11_lead_words.update(package_type11["firstTailEntryLeadingWordCounts"])
 
         package_music_head = _read_music_head_census(
@@ -2296,6 +2298,7 @@ def aggregate_current_hirc_actions(
             "recordCountCounts": dict(sorted(type11_record_counts.items())),
             "terminatorCounts": dict(sorted(type11_terminators.items())),
             "tailEntryCountCounts": dict(sorted(type11_tail_counts.items())),
+            "interpolationCounts": dict(sorted(type11_interps.items())),
             "firstTailEntryLeadingWordCounts": dict(sorted(type11_lead_words.items())),
         },
         "musicHeadReferences": {
@@ -3158,7 +3161,13 @@ TYPE11_SOURCE_SCALARS = (
     "tailCountOutOfRange", "tailEntriesDeclared", "tailEntriesEchoed",
     "tailEchoesMatchTheCount", "tailEchoesExceedTheCount",
     "firstTailEntryNamesADeclaredSource", "firstTailEntryTooShort",
+    "entriesInspected", "entriesWithNoRecords", "entriesWhoseRecordsFit",
+    "entriesWhoseCountIsNotUsable", "entriesWhoseRecordsRunPastTheEnd",
+    "curveRecords",
 )
+# The interpolation code inside a twelve-byte curve record. Read at a wrong offset
+# it would be arbitrary 32-bit noise, so the ceiling is the discriminator.
+TYPE11_INTERPOLATION_CEILING = 32
 # Every numeric type 0x0B body observed ends with this 32-bit word.
 TYPE11_TERMINATOR_KEY = "end_00000064"
 
@@ -3437,7 +3446,7 @@ def _read_type11_source_census(census: Any, label: str) -> dict[str, Any]:
         return {key: 0 for key in TYPE11_SOURCE_SCALARS} | {
             "pluginIdCounts": {}, "streamTypeCounts": {}, "recordCountCounts": {},
             "terminatorCounts": {}, "tailEntryCountCounts": {},
-            "firstTailEntryLeadingWordCounts": {},
+            "firstTailEntryLeadingWordCounts": {}, "interpolationCounts": {},
         }
     if not isinstance(census, dict):
         raise ValueError(f"type 0x0B source census is not an object: {label}")
@@ -3452,7 +3461,7 @@ def _read_type11_source_census(census: Any, label: str) -> dict[str, Any]:
         out[key] = value
     for key in (
         "pluginIdCounts", "streamTypeCounts", "recordCountCounts", "terminatorCounts",
-        "tailEntryCountCounts", "firstTailEntryLeadingWordCounts",
+        "tailEntryCountCounts", "firstTailEntryLeadingWordCounts", "interpolationCounts",
     ):
         raw = census.get(key)
         if not isinstance(raw, dict):
@@ -3483,6 +3492,34 @@ def _read_type11_source_census(census: Any, label: str) -> dict[str, Any]:
     if out["bodiesWithRecords"] > out["bodies"]:
         raise ValueError(f"type 0x0B bodies with records exceed the body total: {label}")
     return out
+
+
+def type11_entries_carry_the_shared_curve_record(corpus: dict[str, Any]) -> bool:
+    """The records inside a type 0x0B tail entry are the shared twelve-byte record.
+
+    The entry is not framed, so the records are read at a fixed offset inside it and
+    nothing here claims the bytes around them. What makes that offset evidence
+    rather than arithmetic is the third field: read at a wrong place it would be
+    arbitrary 32-bit noise, so every one of them must stay inside a small range.
+
+    Entries the reader cannot use -- an unusable count, records that would run past
+    the end -- are permitted and counted, because an entry it cannot read is a real
+    outcome; what is not permitted is reading one and getting a wild code out.
+    """
+    fit = int(corpus.get("entriesWhoseRecordsFit") or 0)
+    if fit <= 0 or int(corpus.get("curveRecords") or 0) <= 0:
+        return False
+    codes = corpus.get("interpolationCounts") or {}
+    if not codes:
+        return False
+    for name in codes:
+        try:
+            code = int(str(name).split("_", 1)[1])
+        except (IndexError, ValueError):
+            return False
+        if code > TYPE11_INTERPOLATION_CEILING:
+            return False
+    return sum(int(value) for value in codes.values()) == int(corpus.get("curveRecords") or 0)
 
 
 def type11_bodies_share_one_terminator(corpus: dict[str, Any]) -> bool:
@@ -4542,6 +4579,7 @@ def run_current_corpus_audit(
     type08_body_named = type08_bodies_are_exact_or_named(
         report["corpus"].get("type08BodyFrames") or {}
     )
+    type11_curves = type11_entries_carry_the_shared_curve_record(type11_corpus)
     type11_terminator_closed = type11_bodies_share_one_terminator(type11_corpus)
     type11_tail_counted = type11_tail_entries_are_counted(type11_corpus)
     type11_closed = type11_sources_share_the_type02_plugin_space(
@@ -4553,6 +4591,7 @@ def run_current_corpus_audit(
         and type11_closed
         and type11_terminator_closed
         and type11_tail_counted
+        and type11_curves
         and type08_body_named
         and type08_tail_located
         and type08_head_named
@@ -4701,6 +4740,13 @@ def run_current_corpus_audit(
             f"count={body08.get('count')} exact={body08.get('exact')} "
             f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
             f"ambiguous={body08.get('ambiguous')}"
+        )
+    if not type11_curves:
+        lane_failures.append(
+            "type 0x0B entries do not carry the shared curve record: "
+            f"fit={type11_corpus['entriesWhoseRecordsFit']} "
+            f"records={type11_corpus['curveRecords']} "
+            f"codes={sorted(type11_corpus.get('interpolationCounts') or {})}"
         )
     if not type11_tail_counted:
         lane_failures.append(
