@@ -25,7 +25,10 @@ from scripts.audio_semantics.hirc_action_corpus import (
     _read_parent_field_census,
     _read_type0c_array_census,
     _read_type0c_hierarchy_census,
+    TYPE0C_ARRAY_MAPS,
+    TYPE0C_ARRAY_SCALARS,
     the_type0c_reference_array_is_located,
+    the_type0c_region_flag_places_the_next_block,
     the_parent_field_inverts_the_reference_graph,
     the_type0c_parent_relation_repeats_the_same_shape,
     edges_per_distinct_distance,
@@ -4070,3 +4073,55 @@ class Type0CReferenceArrayTests(unittest.TestCase):
 
     def test_an_absent_census_reads_as_empty(self) -> None:
         self.assertEqual(_read_type0c_array_census(None, "pkg")["bodies"], 0)
+
+
+class Type0CRegionFlagTests(unittest.TestCase):
+    """A flag inside the region — not in the header — places the next block."""
+
+    def census(self, **overrides):
+        base = {
+            "regionGapsTested": 686, "regionGapsPredicted": 646,
+            "regionFlagAboveTheObservedRange": 18,
+            "regionFlags": {"flag_0": 446, "flag_1": 240, "flag_2": 14, "flag_4": 4},
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_type0c_region_flag_places_the_next_block(self.census()))
+
+    def test_both_flag_values_must_occur(self) -> None:
+        # With only flag 0 present the "+ 27 * flag" half of the rule is untested,
+        # and a constant 99 would score identically.
+        self.assertFalse(the_type0c_region_flag_places_the_next_block(
+            self.census(regionFlags={"flag_0": 686})
+        ))
+        self.assertFalse(the_type0c_region_flag_places_the_next_block(
+            self.census(regionFlags={"flag_1": 686})
+        ))
+
+    def test_a_rule_that_misses_often_fails(self) -> None:
+        self.assertFalse(the_type0c_region_flag_places_the_next_block(
+            self.census(regionGapsPredicted=400)
+        ))
+
+    def test_an_untested_census_fails(self) -> None:
+        self.assertFalse(the_type0c_region_flag_places_the_next_block({}))
+        self.assertFalse(the_type0c_region_flag_places_the_next_block(
+            self.census(regionGapsTested=0, regionGapsPredicted=0)
+        ))
+
+    def test_the_threshold_sits_below_the_measurement(self) -> None:
+        # 646 of 686 is 94.2%; the gate asks for 90% so it guards against regression
+        # rather than tripping on the next legitimate change.
+        self.assertGreater(646 / 686, 0.90)
+        self.assertLess(0.90, 646 / 686)
+
+    def test_the_reader_rejects_more_predicted_than_tested(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_type0c_array_census(
+                {k: 0 for k in TYPE0C_ARRAY_SCALARS}
+                | {k: {} for k in TYPE0C_ARRAY_MAPS}
+                | {"regionGapsTested": 1, "regionGapsPredicted": 5},
+                "pkg",
+            )

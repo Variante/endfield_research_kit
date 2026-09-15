@@ -3888,8 +3888,9 @@ TYPE0C_ARRAY_SCALARS = (
     "bodies", "tooShort", "selectorOutOfRange", "countPastTheEnd", "countOutOfRange",
     "arrayPastTheEnd", "arraysTested", "arraysFullyResolving",
     "rivalArraysTested", "rivalArraysFullyResolving",
+    "regionGapsTested", "regionGapsPredicted", "regionFlagAboveTheObservedRange",
 )
-TYPE0C_ARRAY_MAPS = ("selectorValues", "arrayLengths", "targetTypes")
+TYPE0C_ARRAY_MAPS = ("selectorValues", "arrayLengths", "targetTypes", "regionFlags")
 
 
 def _read_type0c_array_census(census: Any, label: str) -> dict[str, Any]:
@@ -3917,6 +3918,8 @@ def _read_type0c_array_census(census: Any, label: str) -> dict[str, Any]:
         raise ValueError(f"type 0x0C census resolves more arrays than it tested: {label}")
     if out["rivalArraysFullyResolving"] > out["rivalArraysTested"]:
         raise ValueError(f"type 0x0C census resolves more rival arrays than tested: {label}")
+    if out["regionGapsPredicted"] > out["regionGapsTested"]:
+        raise ValueError(f"type 0x0C census predicts more gaps than it tested: {label}")
     if sum(out["arrayLengths"].values()) != out["arraysFullyResolving"]:
         raise ValueError(f"type 0x0C array lengths do not cover the resolving arrays: {label}")
     return out
@@ -3951,6 +3954,37 @@ def the_type0c_reference_array_is_located(corpus: dict[str, Any]) -> bool:
     if rival_tested <= 0:
         return False
     return rival * 10 < resolving
+
+
+def the_type0c_region_flag_places_the_next_block(corpus: dict[str, Any]) -> bool:
+    """A flag inside the region after the array decides where the next block starts.
+
+    The array is followed by a fixed 96-byte region, a flag, and then the next
+    reference either 99 or 126 bytes after the array's end -- `99 + 27 * flag` for
+    flag 0 and 1. That holds in 646 of the 704 bodies with a located array.
+
+    **The flag sits inside the region, not in the body header**, which is why scanning
+    the first 32 bytes for a selector found nothing but the parent reference.
+
+    The multiplier form is deliberately capped at 1. Flag 2 exists in 14 bodies and
+    puts the next reference at 155, 167 or 215 rather than the 153 a repeat would
+    predict, so this is a gate on one block rather than a count of them, and higher
+    values are censused as unexplained instead of being extrapolated into.
+
+    The measured rate is 646 of 686, or 94.2%. The 40 misses are all flag 0 with gaps
+    of 107, 190 or 355 -- the rule places the block, but something else can lengthen
+    the region further, and the threshold is set below the measurement rather than at
+    it so that this stays a regression guard rather than a tripwire.
+    """
+    tested = int(corpus.get("regionGapsTested") or 0)
+    if tested <= 0:
+        return False
+    predicted = int(corpus.get("regionGapsPredicted") or 0)
+    if predicted * 10 < tested * 9:
+        return False
+    flags = corpus.get("regionFlags") or {}
+    # Both observed values must occur, or "99 + 27 * flag" is untested at flag 1.
+    return int(flags.get("flag_0") or 0) > 0 and int(flags.get("flag_1") or 0) > 0
 
 
 def the_type0c_parent_relation_repeats_the_same_shape(corpus: dict[str, Any]) -> bool:
@@ -6806,6 +6840,7 @@ def run_current_corpus_audit(
     type0c_hier_corpus = corpus["type0CHierarchy"]
     t0c_shape = the_type0c_parent_relation_repeats_the_same_shape(type0c_hier_corpus)
     t0c_array = the_type0c_reference_array_is_located(corpus["type0CArray"])
+    t0c_region = the_type0c_region_flag_places_the_next_block(corpus["type0CArray"])
     type0a_anchor_corpus = corpus["type0AEndAnchor"]
     anchor_ok = the_type0a_end_anchor_beats_every_neighbouring_distance(type0a_anchor_corpus)
     array_ok = the_type0a_reference_is_a_counted_array(corpus["type0ACountedArray"])
@@ -6956,6 +6991,7 @@ def run_current_corpus_audit(
         and edge_located
         and t0c_shape
         and t0c_array
+        and t0c_region
         and parent_inverse
         and music_scope
         and music_partition
@@ -7223,6 +7259,13 @@ def run_current_corpus_audit(
             "the parent field and the reference graph are no longer inverse: "
             f"checkable={f.get('checkable')} agree={f.get('parentNamesTheChildBack')} "
             f"disagree={f.get('parentDoesNotNameTheChild')} {f.get('disagreementTypes')}"
+        )
+    if not t0c_region:
+        a = report["corpus"].get("type0CArray") or {}
+        lane_failures.append(
+            "the type 0x0C region flag no longer places the next block: "
+            f"predicted={a.get('regionGapsPredicted')}/{a.get('regionGapsTested')} "
+            f"flags={a.get('regionFlags')}"
         )
     if not t0c_array:
         a = report["corpus"].get("type0CArray") or {}

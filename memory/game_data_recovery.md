@@ -2671,11 +2671,19 @@ count x u32 at 36 + 5*body[14]   -- object ids
   `offset - 4*arrayLength - 5*selector` gives **135 in 406 bodies and 162 in 240** --
   **646 of 704, or 92%** -- with every other value in single digits. So the next block
   begins at `135 + 4n + 5k` or `162 + 4n + 5k`, the two differing by 27.
-- **No selector found.** Nothing in the first 32 bytes separates the two groups.
-  Bytes 9 to 12 look 86% pure, but those *are* the parent reference, so that is
-  objects under a common parent sharing a layout rather than a flag. *A "selector"
-  that turns out to be an identifier is not a selector; check what a candidate byte
-  already is before reading it as a discriminant.*
+- **The selector is INSIDE the region, at `arrayEnd + 96`.** Dumping the 99- and
+  126-byte regions side by side shows them **identical for 96 bytes**, then diverging:
+  a flag byte, and 27 further bytes when it is 1. So
+  `nextBlock = arrayEnd + 99 + 27 * flag`, holding in **646 of 686** bodies (94.2%).
+- *That is why scanning the body header found nothing.* The only "pure" bytes there
+  were 9 to 12 at 86%, and those **are** the parent reference -- objects under a
+  common parent sharing a layout, not a flag. **A selector that turns out to be an
+  identifier is not a selector, and a selector need not be in the header at all.**
+- **The multiplier stops at 1.** Flag 2 exists in 14 bodies and puts the next block at
+  155, 167 or 215, not the 153 a repeat would predict. So it gates one block rather
+  than counting them, and the gate refuses values above 1 instead of extrapolating.
+- The 40 misses are all flag 0 with gaps of 107, 190 or 355 -- the rule places the
+  block, but something else can lengthen the region further.
 - So `0x0C` is better described than "a variable-length list": a parent at 9, a
   counted array at `36 + 5k`, and a further block at a position computed from the
   array's length. What that block contains, and what chooses 135 over 162, are open.
