@@ -2510,10 +2510,21 @@ preceding content leaves it.
 - Per edge kind the separation is total and has an empty middle: `0A`->`0B` 135.2,
   `0A`->`0D` 81.1, `0A`->`0C` 73.5, `0D`->`0A` 43.5, `0D`->`0C` 43.4 --- then nothing
   --- `0C`->`0C` 2.5, `0C`->`0D` 2.1, `0C`->`0A` 1.6.
-- **So `0x0C` carries a variable-length list of references, about 13 per body, and
-  `0x0A` and `0x0D` carry roughly two each in fields.** That is why a fixed-offset
-  rule was findable for `0A`->`0B` and has never been findable for anything out of
-  `0C`: there is no offset to find.
+- **So `0x0C`'s references are not at fixed offsets and `0x0A`'s and `0x0D`'s are.**
+  That is why a fixed-offset rule was findable for `0A`->`0B` and has never been
+  findable for anything out of `0C`: there is no offset to find.
+- **Correction to the "about 13 per body" reading, which was mine and was wrong.**
+  13.0 is a mean over a wildly skewed distribution: the **median is 4** and the
+  maximum is **2,172**. Ten of the 742 bodies carry **5,217 of the 9,634 references**.
+  Nor is it a list -- only **6 of 742** bodies have all their reference positions
+  mutually 4-aligned, and the same id typically appears at **4** scattered positions
+  (mean 5.5, max 74), at gaps like 111, 264 and 201 within one 703-byte body. So a
+  `0x0C` body mentions a handful of targets repeatedly, rather than listing many.
+- **The split itself survives that.** Excluding the ten outlier bodies takes `0x0C`
+  from 1.9 to **3.7** edges per distance, still an order of magnitude below `0x0D`'s
+  38.1 and `0x0A`'s 82.9. *Check whether a ratio is carried by a handful of rows
+  before building on it -- and quote the median beside the mean whenever the maximum
+  is three orders of magnitude above it.*
 - **The two edges into type `0x11` are NOT classified.** 118 and 130 references across
   19 and 22 distances gives about 6 per distance, which is between the groups. A
   hundred-odd samples cannot say which side they belong to, and the first version of

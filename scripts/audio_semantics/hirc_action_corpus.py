@@ -3734,6 +3734,13 @@ def the_music_types_split_into_located_and_scattered_references(
     nothing in between, so the thresholds are not tuned; they are placed in an empty
     gap.
 
+    The split is not an artefact of a few huge bodies, which was worth checking
+    because `0x0C`'s edge count is dominated by them: **10 of its 742 bodies carry
+    5,217 of its 9,634 references**, and its per-body mean of 13 sits over a median of
+    **4** and a maximum of **2,172**. Excluding those ten takes the ratio from 1.9 to
+    **3.7** -- still an order of magnitude below `0x0D`'s 38.1 and `0x0A`'s 82.9. The
+    conclusion survives; the per-body mean does not, and should not be quoted.
+
     The two edges into type `0x11` are deliberately not classified. With 118 and 130
     references across 19 and 22 distances they score about 6 per distance, which is
     between the groups, and a hundred-odd samples cannot say which side they belong
