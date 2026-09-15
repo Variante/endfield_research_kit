@@ -2204,6 +2204,15 @@ Stable conclusions:
   **constant zero** bytes of the fixed head, so the second term vanishes and the
   general rule reduces to the special one. *A count that is zero in the population
   you are looking at is indistinguishable from padding.*
+- **Every one of `0x0A`'s 4,158 bodies is now in a named category.**
+  **3,875** have their `0x0B` reference placed by the head rule; **255** carry no
+  reference at all, which the 65-vs-69 tail length explains as an absent optional
+  field; and **28** are a residue the rule cannot place.
+- The 28 are characterised, not just counted: their `body[14]` takes values like 35
+  and 61 that are not counts (the implied extra comes out negative), `body[17]` is
+  zero in 7 of them even though the head is long, and their actual head offsets
+  cluster at 48, 51, 53, 54 and 59. A fourth shape, or variant bodies; 0.67% of the
+  type either way.
 - **`u32@5` is a CROSS-PACKAGE reference, and it names numeric type `0x08`
   objects.** It is zero in almost every body; the 120 nonzero words take **four**
   distinct values and **none of them resolves inside its own package** -- which is
