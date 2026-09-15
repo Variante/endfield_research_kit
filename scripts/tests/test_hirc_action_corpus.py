@@ -21,6 +21,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     _read_type11_header_census,
     almost_every_bank_contributes_one_tree,
     numeric_type_12_is_a_leaf,
+    the_hierarchy_runs_opposite_to_the_main_reference_graph,
     the_shared_hierarchy_is_a_forest,
     the_type11_curve_records_carry_interpolation_codes,
     the_type11_element_count_is_not_yet_a_count,
@@ -3410,3 +3411,50 @@ class SharedHierarchyTests(unittest.TestCase):
             )
         with self.assertRaises(ValueError):
             _read_hierarchy_census(self.census(rootsWithNoParent=9), "pkg")
+
+
+class HierarchyDirectionTests(unittest.TestCase):
+    """The 0x08/0x12 relation points the opposite way to the main reference graph."""
+
+    def census(self, **overrides):
+        base = {
+            "parentsWithSeveralChildren": 50,
+            "childrenPerParent": {
+                "children_1": 20, "children_2": 21, "children_3": 7, "children_4": 9,
+                "children_5": 2, "children_6": 2, "children_7": 1, "children_8": 1,
+                "children_9": 1, "children_11": 1, "children_13": 3, "children_16": 2,
+            },
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(
+            the_hierarchy_runs_opposite_to_the_main_reference_graph(self.census())
+        )
+
+    def test_one_child_per_parent_fails(self) -> None:
+        # That is the main reference graph's shape: every target named exactly once.
+        # If this relation ever looked like that, the claim that it runs the other
+        # way would need re-arguing rather than quietly standing.
+        self.assertFalse(the_hierarchy_runs_opposite_to_the_main_reference_graph(
+            self.census(parentsWithSeveralChildren=0,
+                        childrenPerParent={"children_1": 70})
+        ))
+
+    def test_a_thin_majority_with_no_wide_parent_fails(self) -> None:
+        self.assertFalse(the_hierarchy_runs_opposite_to_the_main_reference_graph(
+            self.census(parentsWithSeveralChildren=40,
+                        childrenPerParent={"children_1": 30, "children_2": 40})
+        ))
+
+    def test_an_empty_census_fails(self) -> None:
+        self.assertFalse(the_hierarchy_runs_opposite_to_the_main_reference_graph({}))
+        self.assertFalse(the_hierarchy_runs_opposite_to_the_main_reference_graph(
+            self.census(childrenPerParent={})
+        ))
+
+    def test_more_wide_parents_than_parents_fails(self) -> None:
+        self.assertFalse(the_hierarchy_runs_opposite_to_the_main_reference_graph(
+            self.census(parentsWithSeveralChildren=999)
+        ))

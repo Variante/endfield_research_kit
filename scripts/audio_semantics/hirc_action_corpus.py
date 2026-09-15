@@ -3429,10 +3429,11 @@ def the_type11_entry_header_fields_beat_their_controls(corpus: dict[str, Any]) -
 
 HIERARCHY_SCALARS = (
     "banks", "objects", "cycles", "rootsWithNoParent", "rootsNamingOutsideTheBank",
+    "parentsWithSeveralChildren",
 )
 HIERARCHY_MAPS = (
     "rootsPerBank", "rootTypes", "outsideBankTypes",
-    "internalTypes", "leafTypes", "depths",
+    "internalTypes", "leafTypes", "depths", "childrenPerParent",
 )
 
 
@@ -3545,6 +3546,38 @@ def numeric_type_12_is_a_leaf(corpus: dict[str, Any]) -> bool:
     if not roots or any(name != "type08" for name in roots):
         return False
     return True
+
+
+def the_hierarchy_runs_opposite_to_the_main_reference_graph(corpus: dict[str, Any]) -> bool:
+    """This relation points child-to-parent; the main reference graph points the
+    other way, and the in-degree is what shows it.
+
+    Both are forests, so shape alone does not tell them apart. What does is how often
+    a target is named. The main graph reports targetsWithMultipleReferrers = 0 over
+    230,247 edges: every object there is referenced exactly once, which is what an
+    owner-to-owned edge looks like. Here a parent is named by many children at once --
+    most parents have two or more, and some have thirteen -- which is what a
+    child-to-parent edge looks like.
+
+    The gate asserts the contrast rather than assuming it, because the two relations
+    were built by different code and nothing else would notice if one drifted into
+    the other's shape. If parents ever stopped having several children, this relation
+    would have become indistinguishable from the main graph and the reading that it
+    runs the other way would need re-arguing.
+    """
+    counts = corpus.get("childrenPerParent") or {}
+    total = sum(int(v) for v in counts.values())
+    if total <= 0:
+        return False
+    several = int(corpus.get("parentsWithSeveralChildren") or 0)
+    if several <= 0 or several > total:
+        return False
+    # Most parents carry more than one child, and some carry many.
+    widest = max(
+        (int(name.split("_")[1]) for name in counts if name.startswith("children_")),
+        default=0,
+    )
+    return several * 2 > total and widest >= 4
 
 
 def the_type11_curve_records_carry_interpolation_codes(corpus: dict[str, Any]) -> bool:
@@ -6049,6 +6082,9 @@ def run_current_corpus_audit(
     hierarchy_forest = the_shared_hierarchy_is_a_forest(hierarchy_corpus)
     hierarchy_rooted = almost_every_bank_contributes_one_tree(hierarchy_corpus)
     hierarchy_leaf = numeric_type_12_is_a_leaf(hierarchy_corpus)
+    hierarchy_direction = the_hierarchy_runs_opposite_to_the_main_reference_graph(
+        hierarchy_corpus
+    )
     type11_header_corpus = corpus["type11EntryHeaders"]
     t11_header_ok = the_type11_entry_header_fields_beat_their_controls(type11_header_corpus)
     t11_count_untested = the_type11_element_count_is_not_yet_a_count(type11_header_corpus)
@@ -6168,6 +6204,7 @@ def run_current_corpus_audit(
         and hierarchy_forest
         and hierarchy_rooted
         and hierarchy_leaf
+        and hierarchy_direction
         and music_partition
         and music_anchor
         and type0a_head
@@ -6420,6 +6457,13 @@ def run_current_corpus_audit(
             f"control={h.get('rangeControlIsSymmetric')}/{h.get('rangeControlTested')} "
             f"fractions={h.get('fractionsAreSmall')}/{h.get('fractionsTested')} "
             f"fractionControl={h.get('fractionControlsAreSmall')}/{h.get('fractionControlsTested')}"
+        )
+    if not hierarchy_direction:
+        h = report["corpus"].get("sharedHierarchy") or {}
+        lane_failures.append(
+            "the 0x08/0x12 relation no longer has parents with several children, so "
+            "it is no longer distinguishable from the main reference graph's "
+            f"one-referrer-per-target shape: {h.get('childrenPerParent')}"
         )
     if not hierarchy_forest:
         h = report["corpus"].get("sharedHierarchy") or {}

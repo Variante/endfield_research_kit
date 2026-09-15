@@ -1974,6 +1974,31 @@ references resolve: `0x12` -> `0x08` 201, `0x08` -> `0x08` 154, `0x12` -> `0x12`
 instead of 121 over 412, because ids repeat across banks. A relation is only as
 well-defined as the scope its endpoints are resolved in.*
 
+#### The two reference relations in this format run in OPPOSITE directions
+
+Both are forests, so shape alone does not tell them apart. **In-degree does.**
+
+| | edges | a target is named by |
+|---|---:|---|
+| main reference graph (`05`->`02`, `07`->`07`, `04`->`03`, ...) | 230,247 | **exactly one** referrer, always |
+| `0x08`/`0x12` leading word | 275 | **many** children -- 50 of 70 parents have two or more, and one has 16 |
+
+- The main graph's `targetsWithMultipleReferrers` is **0 over 230,247 edges**. Every
+  object there is named exactly once, which is what an **owner -> owned** edge looks
+  like: a `0x05` object owns its `0x02` objects and no other object owns them.
+- The `0x08` relation is the reverse: many children name one parent, which is what a
+  **child -> parent** edge looks like.
+- So the format carries downward ownership in one place and upward attachment in
+  another, and the two must not be merged into one graph. **The `0x08`/`0x12`
+  leading word is deliberately NOT in the main reference graph**, and adding it would
+  break that graph's one-referrer-per-target closure -- which is a reason to keep them
+  apart, not a defect.
+- Gated by `the_hierarchy_runs_opposite_to_the_main_reference_graph`, which asserts
+  the contrast rather than assuming it: the two relations are built by different code
+  and nothing else would notice if one drifted into the other's shape.
+- *Two relations can have the same shape and opposite meaning. Direction is not
+  visible in "is it a forest"; it is visible in how many times a target is named.*
+
 Gated by `the_shared_hierarchy_is_a_forest`, `almost_every_bank_contributes_one_tree`
 and `numeric_type_12_is_a_leaf`. Nothing here claims what the relation *means* -- only
 that it is a forest, that the two types occupy fixed positions in it, and that the
