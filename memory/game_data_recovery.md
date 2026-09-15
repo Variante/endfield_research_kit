@@ -2152,6 +2152,39 @@ makes the units legible rather than guessed.
 
 *So `0x12` is a node carrying one outbound reference, one stored word, a nested block and a
 millisecond duration* -- recovered from the reader, not inferred from the corpus.
+
+#### `0x09`: CALLED DIRECTLY, NOT THROUGH A VTABLE
+
+The slot search found nothing for `0x09` because **there is no slot** -- its loader calls
+the parser as a direct `call 0x180160450`. *A search for an indirect call cannot find a
+direct one, and the empty result reads exactly like "this type has no parser".*
+
+`0x180160450` has the same shape as `0x12`'s:
+
+```
+mov  rax,[rcx] ; call qword ptr [rax + 0x78]   ; type tag check
+cmp  eax, 5 ; jne error                        ; 0x09 requires 5   (0x12 requires 0 or 0xA)
+  ... log via 0x180036490, return 0x5b
+add  qword ptr [rsp+0x78], 4                   ; cursor += 4 -- node id, as everywhere
+lea  r8,[rsp+0x80] ; xor r9d,r9d ; lea rdx,[rsp+0x78]
+call 0x1800dcfd0                               ; shared sub-parser (this, &cursor, &out, 0)
+```
+
+So the three conventions now confirmed across types are: **the node id is consumed by the
+caller and skipped by the deserializer; a `[vt+0x78]` tag check gates entry with error
+`0x5b`; and the cursor is passed by reference so nested parsers advance it.**
+
+##### Status of the four types the notes called SDK-only
+
+| type | reached | result |
+| --- | --- | --- |
+| `0x10` | `vtable[+0x28]` -> `0x18014c250` | 12-byte prefix, then a plug-in tail |
+| `0x11` | `vtable[+0x28]` -> `0x18014c250` | same deserializer as `0x10` |
+| `0x12` | `vtable[+0x278]` -> `0x180109030` | ref id, stored word, nested block, ms duration |
+| `0x09` | **direct call** -> `0x180160450` | tag must be 5, delegates to `0x1800dcfd0` |
+
+plus `0x0A`-`0x0D`, which are not parsed at all. **The obstacle recorded for these was a
+licence; it was never the licence.**
 - **Numeric type `0x12` is the one HIRC type with no framing at all, and these
   readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
   grammar -- its word at offset 4 fails `range_section` on all 251. It is not the
