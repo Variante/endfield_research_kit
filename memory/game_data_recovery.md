@@ -2017,6 +2017,26 @@ nothing can ever read them. That distinction matters because it names exactly wh
 future answer would have to be: a registered handler, discovered at runtime, not a
 structure recoverable from the bank bytes.
 
+##### The `+12` / `+20` words inherit this, and it re-files them
+
+The maintained reader's `Type11EntryPairFirstOffset = 12` / second at 20 are entry-header
+words in **numeric type 11, which is `0x0B`** -- one of the four the engine skips. So the
+open question about those two words sits inside a body **the runtime never parses**, and
+the status recorded for it (blocked on a namespace outside the shipped files) is not the
+real obstacle.
+
+***What this rules out, and what it leaves.*** No engine-side evidence can ever name these
+words, because no engine code reads them -- that route is closed, not merely unexplored.
+But `0x0B` bodies are demonstrably *not* noise: the same reader already resolves their
+source records, whose word at `+5` names a declared media id in **all 4,447** of `0x0B`'s
+bodies and closed 1,276 media that nothing else accounted for. **That worked because it
+had an external anchor -- the AKPK media declarations -- rather than an engine parser.**
+
+So the `+12`/`+20` question is answerable in exactly one way: *another external anchor, of
+the kind that resolved the source records.* Ten populations have already been eliminated
+against the bytes alone; the lesson from the source-record success is that the missing
+ingredient is a second table to join against, not a better sweep of the same bodies.
+
 **Incidentally recovered:** the HIRC item header is `u8 type` at `[rbp-0x14]` followed by
 `u32 size` at `[rbp-0x13]`, with the section's item count at `[rbp-0x1c]` and the loop
 index in `r14d` -- which is exactly the framing this project's reader already uses,
