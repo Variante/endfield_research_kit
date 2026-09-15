@@ -2716,9 +2716,23 @@ u32 terminator, always 100
   frame from 3,683 to 3,715, and all 32 of the bodies it gained had failed on
   exactly `trailerFlag_02`. Anything above the highest observed flag is refused
   rather than assumed to continue.
-- **The 610 fenced bodies, by reason:** `entries_do_not_reach_the_terminator` 322,
-  `range_element_trailer_flag` 119, `range_element_runs` 102, `range_elements` 46,
-  `range_element_head` 21. None is partially framed into a result.
+- **The 610 fenced bodies, by reason:** `entries_do_not_reach_the_terminator` 218,
+  `range_element_trailer_flag` 119, `trailing_zero_run_before_the_terminator` 104,
+  `range_element_runs` 102, `range_elements` 46, `range_element_head` 21. None is
+  partially framed into a result.
+- **The largest bucket was two different things and is now named apart.** Of the 322
+  bodies that stopped short of the terminator, **104 leave nothing but a run of
+  zeros** -- 7 bytes in 98 of them, 5 in the other 6 -- and **218 leave real
+  content**. Reporting one number hid that the second group is unread structure while
+  the first may be padding. *When a fence bucket is the largest one, check whether it
+  is one failure or several wearing the same name.*
+- **What the 218 leave is recognisable, and is where the next attempt starts.** A
+  44-byte leftover begins `00 00 40 3f 00 00 80 3f 09 00 00 00` -- 0.75, 1.0 and the
+  interpolation code 9, which is the twelve-byte curve record this type already
+  carries. The 32-byte leftovers carry an object id at +8. And every leftover of both
+  sizes has `01` **ten bytes from the terminator**, which is where an element's short
+  trailer puts its own marker. So the residue looks like one more element that the
+  entry's element count at +44 did not declare, not like noise.
 - Not a closure-gated lane, for the same reason `0x08` is not. The gate is a floor
   at 80% -- there to catch a regression, not to assert the frame is complete, which
   it is not.
