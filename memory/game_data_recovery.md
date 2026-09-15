@@ -5765,7 +5765,54 @@ repeats: **73 distinct coordinate sets cover 88 levels**, with **14 levels shari
 65-chunk set** and 2 sharing a 257-chunk set. Those are instanced layouts. So the control
 fires where the world actually is duplicated, and nowhere else. *A control that returns
 exactly zero is sometimes a control that cannot fire at all; this one could, did once, and
-for a reason that is visible in the data.* Slots 5 and 6 are not unindexed for want of effort -- **at
+for a reason that is visible in the data.*
+
+## `StreamingChunkData` shares `InitChunkData`'s schema -- and carries none of the placements
+
+The paired family, over the same single-digit coordinate slice (**7,433 files each**, so
+14,866 in total; the full family is larger):
+
+- **7,433 of 7,433 decode with the terrain codec**, and show **one** root layout --
+  `(4, 8, 16, 20, 24, 28, 32, 36)`, objectSize 40 -- *identical* to `InitChunkData`'s.
+- **Slot 1 is the chunk origin here too: `(x*128, y*128)` in 7,433 of 7,433**, with the
+  axes-swapped control at the same 633 symmetric cases. *This prediction was made from the
+  Init family and tested on a family that had no part in fitting it.*
+- **Slot 0 is the constant 47 in all 14,866 files of both families** -- a format version
+  shared across the pair.
+
+So the two are **one schema**. What separates them is population, and the split is total:
+
+| | Init | Streaming |
+| --- | --- | --- |
+| slot 7 (placements) empty | 3,454 (46.47%) | **7,433 (100.00%)** |
+| slot 5 length equal to its partner's | — | **7,433 (100.00%)** |
+| byte-identical to its partner | — | **0 (0.00%)** |
+
+***The naming intuition is backwards.*** `StreamingChunkData` carries **no placements at
+all** in this slice, while `InitChunkData` carries them in 53.53% of chunks. Whatever
+distinguishes the two files, it is not that the "streaming" one holds the streamed
+objects. Their slot-5 vectors are the same length in every single pair, yet no pair is
+byte-identical.
+
+#### THE SCALAR SLOTS ARE SIZES, AND ONE EXACT RELATION TIES THEM TO SLOT 5
+
+`s2 = s3 + 8 + 4 * len(slot5)` in **14,866 of 14,866 files**, both families, no
+exceptions. Since a FlatBuffers vector occupies `4 + 4n` bytes, the gap between these two
+scalars is exactly slot 5's serialized footprint plus four of alignment.
+
+They are **not** offsets into the buffer: `s3 == slot-5 vector base`, `s2 == buffer
+length` and every related test score **0.00%**. Two sizes of something outside the file,
+whose difference is a structure inside it.
+
+***A degenerate fit, caught by fitting four rivals at once.*** `s4 == 24 + 24*n7` scores
+**100.00%** on the Streaming family, which reads like a decoded record stride -- until the
+rivals are run beside it. `24 + 32*n7`, `24 + 40*n7` and `24 + 44*n7` **all score
+100.00% too**, because Streaming's `n7` is *always* zero and every candidate collapses to
+the constant 24. On the Init family all four score the same 46.47% -- again exactly the
+`n7 == 0` subset. **The stride is unidentified, and the way to know that was to make the
+rivals compete rather than to check one and stop.** Init's actual `s4` grows far faster
+than linearly in `n7` (`n7=1` spans 188 distinct values; `n7=8` reaches 81,200), so it is
+a byte size over variable-length records, not a count times a stride. Slots 5 and 6 are not unindexed for want of effort -- **at
 this `inputSetSha256` they contain no variation to index against**, and further mining of
 them needs a different corpus, not a better test.
 
