@@ -1870,6 +1870,67 @@ Stable conclusions:
   index of what is already known; **reading it first is cheaper than re-deriving
   it**, and the only reason this batch was not pure waste is that entropy and RTTI
   were questions the earlier pass had not asked.
+
+#### THE HIRC TYPE DISPATCH, READ OUT OF THE SHIPPED PARSER
+
+The warning was about *strings*. The **code** is a different matter, and it is readable
+without a disassembler library -- the dispatch is a plain compare-and-jump chain.
+
+**Locating it.** The bank chunk switch is at file `0xf4b60` and is literally
+`cmp eax,'DATA' / je`, `cmp eax,'DIDX'`, `cmp eax,'HIRC' / je +0x35`, `cmp eax,'STID'`,
+`cmp eax,'STMG'`. Following the `HIRC` branch reaches a `call` at `0xf4bdb` whose target
+is the HIRC section parser at **file `0xf70a0`, VA `0x1800f7ca0`** -- confirmed by a
+textbook prologue (`push rbp/rbx/rsi/rdi/r12/r14/r15; mov rbp,rsp; sub rsp,0x40`).
+
+**The per-item dispatch**, at `0xf7147`:
+
+```
+movzx eax, byte [rbp-0x14]          ; the HIRC item's type byte
+add   eax, -2                       ; type - 2
+cmp   eax, 0x14                     ; 21 entries
+ja    default
+mov   ecx, [r13 + rax*4 + 0xf8008]  ; jump table at VA 0x1800f8008
+add   rcx, r13
+jmp   rcx
+```
+
+**21 entries covering types `0x02`-`0x16` exactly** -- the same range this project's
+reader covers. Each arm writes a small constant to `[rbp+0x58]` and calls a per-type
+constructor:
+
+| class id | types |
+| --- | --- |
+| 0 | `0x02`, `0x05`, `0x06`, `0x07`, `0x09` |
+| 1 | `0x08`, `0x12` |
+| 2 | `0x03`, `0x04` |
+| 5 | `0x0E` |
+| **6** | **`0x13`, `0x14`, `0x16`** |
+| 8 | `0x0F` |
+| 9 | `0x11` |
+| 10 | `0x10` |
+| 11 | `0x15` |
+| *(none)* | `0x0A`, `0x0B`, `0x0C`, `0x0D` |
+
+**18 distinct constructors for 21 types**, each at a known address (`0x02` ->
+`0x1800f0b90`, `0x09` -> `0x1800f2d30`, `0x10` -> `0x1800f2750`, `0x11` -> `0x1800f2460`,
+`0x12` -> `0x1800f1850`, and so on).
+
+***The result that bears on an open question.*** **Types `0x0A`, `0x0B`, `0x0C` and
+`0x0D` share a single jump-table target** -- one handler, identical code, no per-type
+constant. They are therefore parsed *the same way*, so **whatever `0x0B`'s layout is, it
+is also `0x0A`'s, `0x0C`'s and `0x0D`'s**, and evidence gathered on any of them transfers
+to the rest. The `0x0B` fenced-body question has been worked on in isolation; it need not
+be.
+
+**And every stuck type now has a located constructor.** The note above says the Wwise SDK
+headers would settle `0x11`'s 21-versus-27 tie, `0x09`'s second run, `0x10`'s `0x7F`
+variant and `0x12` outright. Those four constructors are at `0x1800f2460`, `0x1800f2d30`,
+`0x1800f2750` and `0x1800f1850` in a shipped, unpacked binary.
+
+**What is *not* claimed.** These are addresses and groupings, not decoded layouts. The
+`[rbp+0x58]` value is a per-type constant handed to a shared tail; **calling it a class
+selector is a reading, and only the grouping is a fact of the code.** No struct field has
+been recovered here.
 - **Numeric type `0x12` is the one HIRC type with no framing at all, and these
   readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
   grammar -- its word at offset 4 fails `range_section` on all 251. It is not the
