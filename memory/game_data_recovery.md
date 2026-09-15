@@ -2690,10 +2690,45 @@ from there the counts fall out. Widening a range would never have found either.
   against rivals sharing **neither** endpoint. *When scoring a two-part reading
   against rivals, rivals that share a part inherit its score; hold only the
   genuinely different ones to the wide margin.*
-- **Still not established: which field carries `k`.** `element[8]` equals it in
-  **575 of the 1,103** elements with `k > 0` -- part of the answer, not the rule. So
-  the element's *length* is modelled but its *forward frame* is not, and `0x0B`
-  still has no lane. Note `k` is never 1 or 2: it is 0 (2,491) or 3 and above.
+### `0x0B`'s element is now a forward frame
+
+```
+element body:
+  u8  runCount            -- element[0]
+  4   head bytes
+  runCount x run:
+      12-byte run header, the record count at +7
+      count x 12-byte record
+  12  trailing block
+then the trailer: first byte 0 -> 19 bytes, 1 -> 24
+```
+
+- **1,103 of the 1,151 elements that declare a run close exactly**, and the best
+  rival frame closes **17**. Rivals varying the head, the run header width, the
+  count's offset and the trailing block all score 0-17.
+- **Scored over every element instead, the finding would have evaporated**: the
+  chosen frame closes 3,594 and a rival closes 2,508, a ratio of 1.4. The 2,491
+  elements that declare no runs close under almost any frame whose head and trailing
+  block add up, and they outnumber the ones that walk a run two to one. Same frame,
+  same corpus, completely different strength of claim -- which is why the gate reads
+  `frameClosesWithRuns` and its control requires a rival to be visibly inflated by
+  the empty ones.
+- Run counts: 0 in 2,491 elements, 1 in 835, 2 in 242, 3 in 26.
+- **How the layout fell out**, in order, because the sequence is the method:
+  1. `element[0]` is 0 in exactly the 2,491 elements with no records -- so it is a
+     run count, not a record count.
+  2. For `element[0] == 1`, `k = 1 + element[12]` in **all 835**. The `+1` is the
+     run's own twelve-byte header.
+  3. For `element[0] == 2`, the second run's count sits at `element[24 + 12*c1]` in
+     **242 of 242**, and at no other relative offset. That fixed the run stride at
+     `12 + 12*c` and the count's place at `+7`.
+  4. The lengths then forced a fixed twelve-byte block after the runs: an element
+     with no runs is 17 body bytes, and 17 = 5 + 12.
+- **Earlier searches missed it by looking for one count.** `element[8]` equals `k`
+  in 575 of 1,103 -- a genuine half-fit that is not the rule and led nowhere,
+  because `k` is a *total* over runs, not a field. *When a count field explains
+  roughly half a corpus, consider that the quantity is a sum before hunting a better
+  offset.*
 - The degenerate trap caught this one too: scored without excluding `k = 0`, eight
   different offsets "carry k" in 2,491 elements, because an all-zero field matches a
   zero count for free. The census excludes them, and the code says why.

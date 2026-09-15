@@ -3112,11 +3112,18 @@ TYPE11_ELEMENT_SCALARS = (
     "bodies", "notASingleEntry", "notASingleElement", "elements",
     "trailerIsAmbiguous", "bodyIsNotWholeRecords", "framed",
     "elementsWithRecords", "countFieldAgrees",
+    "elementsWithRuns", "elementFrames",
 )
 TYPE11_ELEMENT_MAPS = (
     "trailerForm", "recordsPerElement",
     "anchorSelectsOneTrailer", "anchorLeavesWholeRecords",
+    "frameCloses", "frameClosesWithRuns",
+    "runsPerElement", "recordsPerFramedElement",
 )
+# The element frame the reader walks: five head bytes, then runCount runs of a
+# twelve-byte header whose byte at +7 counts the twelve-byte records after it, then
+# a fixed twelve-byte block.
+TYPE11_CHOSEN_FRAME = "frame_5_12_7_12"
 # The anchor the reader uses. Named here so the gate compares against it by name
 # rather than by assuming it is the best row.
 TYPE11_CHOSEN_ANCHOR = "trailer_19_24"
@@ -3156,6 +3163,19 @@ def _read_type11_element_census(census: Any, label: str) -> dict[str, Any]:
         raise ValueError(
             f"type 0x0B count field agrees more often than there are elements: {label}"
         )
+    if out["elementsWithRuns"] > out["elements"]:
+        raise ValueError(f"type 0x0B census has more run-bearing elements than elements: {label}")
+    if out["elementFrames"] > out["elements"]:
+        raise ValueError(f"type 0x0B census frames more elements than it read: {label}")
+    for name, value in out["frameClosesWithRuns"].items():
+        if value > out["frameCloses"].get(name, 0):
+            raise ValueError(
+                f"type 0x0B frame {name} closes more run-bearing elements than elements: {label}"
+            )
+        if value > out["elementsWithRuns"]:
+            raise ValueError(
+                f"type 0x0B frame {name} closes more elements than declare a run: {label}"
+            )
     if sum(out["trailerForm"].values()) != out["framed"] + out["bodyIsNotWholeRecords"]:
         raise ValueError(
             f"type 0x0B trailer forms do not cover the elements that chose one: {label}"
@@ -3236,6 +3256,56 @@ def the_type11_trailer_is_not_settled_by_parsing(corpus: dict[str, Any]) -> bool
         int(value) >= chosen for name, value in selects.items()
         if name != TYPE11_CHOSEN_ANCHOR
     )
+
+
+def the_type11_element_frame_beats_its_rivals(corpus: dict[str, Any]) -> bool:
+    """Numeric type 0x0B's element must frame, and beat every rival frame.
+
+    The element is five head bytes whose first is a run count, then that many runs,
+    then a fixed twelve-byte block. A run is a twelve-byte header whose byte at +7
+    counts the twelve-byte records that follow it -- the same twelve-byte record
+    three other numeric types carry.
+
+    **Scored only over elements that declare at least one run.** An element with no
+    runs closes under any frame whose head and trailing block happen to add up, and
+    there are 2,491 of those against 1,151 that exercise the run walk. Scored over
+    all of them the chosen frame appears to beat a rival 3,594 to 2,508; scored over
+    the ones that exercise it, 1,103 to 17. The second number is the finding and the
+    first is a measure of how much of the corpus is degenerate.
+
+    So the gate reads the run-bearing subset, demands the chosen frame close nearly
+    all of it, and demands every rival be far behind.
+    """
+    exercising = int(corpus.get("elementsWithRuns") or 0)
+    if exercising <= 0:
+        return False
+    closes = corpus.get("frameClosesWithRuns") or {}
+    chosen = int(closes.get(TYPE11_CHOSEN_FRAME) or 0)
+    if chosen <= 0:
+        return False
+    rivals = [int(v) for name, v in closes.items() if name != TYPE11_CHOSEN_FRAME]
+    if not rivals:
+        return False
+    return chosen * 2 > exercising and chosen > max(rivals) * 10
+
+
+def the_type11_element_frame_is_not_settled_by_empty_elements(corpus: dict[str, Any]) -> bool:
+    """A rival must close many elements overall while closing almost none with runs.
+
+    The control, stated as a requirement. It is what shows the run walk is carrying
+    the result rather than the head and trailing block adding up by luck: today a
+    rival frame closes thousands of elements in total and a handful of the ones that
+    actually walk a run. If that ever stops being true, the headline rate has become
+    the thing being measured and this gate fails instead of the reasoning rotting.
+    """
+    closes = corpus.get("frameCloses") or {}
+    with_runs = corpus.get("frameClosesWithRuns") or {}
+    for name, total in closes.items():
+        if name == TYPE11_CHOSEN_FRAME:
+            continue
+        if int(total) > 100 and int(with_runs.get(name) or 0) * 20 < int(total):
+            return True
+    return False
 
 
 def every_group_reports_the_bodies_behind_it(lanes: dict[str, Any]) -> bool:
@@ -5639,6 +5709,10 @@ def run_current_corpus_audit(
     type11_element_corpus = corpus["type11Elements"]
     t11_anchor_ok = the_type11_trailer_anchor_beats_its_rivals(type11_element_corpus)
     t11_anchor_control = the_type11_trailer_is_not_settled_by_parsing(type11_element_corpus)
+    t11_frame_ok = the_type11_element_frame_beats_its_rivals(type11_element_corpus)
+    t11_frame_control = the_type11_element_frame_is_not_settled_by_empty_elements(
+        type11_element_corpus
+    )
     shared_const_corpus = corpus["sharedFrameConstants"]
     shared_const_ok = every_shared_constant_beats_its_rivals(shared_const_corpus)
     shared_const_control = the_shared_constants_are_not_settled_by_closure(
@@ -5736,6 +5810,8 @@ def run_current_corpus_audit(
         and group_bodies_ok
         and t11_anchor_ok
         and t11_anchor_control
+        and t11_frame_ok
+        and t11_frame_control
         and music_partition
         and music_anchor
         and type0a_head
@@ -5976,6 +6052,20 @@ def run_current_corpus_audit(
             f"distinct={(refs.get('distinctTargets') or {}).get(MUSIC_PARTITIONING_EDGE)} "
             f"twice={(refs.get('targetsReachedTwice') or {}).get(MUSIC_PARTITIONING_EDGE)} "
             f"population={(refs.get('targetPopulation') or {}).get(MUSIC_PARTITIONING_EDGE)}"
+        )
+    if not t11_frame_ok:
+        t11 = report["corpus"].get("type11Elements") or {}
+        lane_failures.append(
+            "the type 0x0B element frame does not beat its rivals over the elements "
+            f"that declare a run: withRuns={t11.get('elementsWithRuns')} "
+            f"closes={t11.get('frameClosesWithRuns')}"
+        )
+    if not t11_frame_control:
+        t11 = report["corpus"].get("type11Elements") or {}
+        lane_failures.append(
+            "no rival type 0x0B element frame closes many elements while closing "
+            "almost none that walk a run, so the run walk is not shown to be "
+            f"carrying the result: closes={t11.get('frameCloses')}"
         )
     if not t11_anchor_ok:
         t11 = report["corpus"].get("type11Elements") or {}

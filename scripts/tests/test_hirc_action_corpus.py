@@ -14,6 +14,8 @@ from scripts.audio_semantics.hirc_action_corpus import (
     TYPE11_ELEMENT_SCALARS,
     _rank_shared_constants,
     _read_type11_element_census,
+    the_type11_element_frame_beats_its_rivals,
+    the_type11_element_frame_is_not_settled_by_empty_elements,
     the_type11_trailer_anchor_beats_its_rivals,
     the_type11_trailer_is_not_settled_by_parsing,
     every_group_reports_the_bodies_behind_it,
@@ -3086,3 +3088,77 @@ class Type11ElementTrailerTests(unittest.TestCase):
 
     def test_an_absent_census_reads_as_empty(self) -> None:
         self.assertEqual(_read_type11_element_census(None, "pkg")["elements"], 0)
+
+
+class Type11ElementFrameTests(unittest.TestCase):
+    """The element frame must be scored over the elements that exercise it."""
+
+    def census(self, **overrides):
+        base = {
+            "elementsWithRuns": 1151,
+            "frameClosesWithRuns": {
+                "frame_5_12_7_12": 1103, "frame_17_12_7_0": 17, "frame_5_12_11_12": 2,
+            },
+            "frameCloses": {
+                "frame_5_12_7_12": 3594, "frame_17_12_7_0": 2508,
+                "frame_5_12_11_12": 2493, "frame_5_11_7_12": 2491,
+            },
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_type11_element_frame_beats_its_rivals(self.census()))
+        self.assertTrue(
+            the_type11_element_frame_is_not_settled_by_empty_elements(self.census())
+        )
+
+    def test_scoring_over_every_element_would_hide_the_margin(self) -> None:
+        # The whole point of the exercising subset. Over all elements the chosen
+        # frame beats its best rival 3,594 to 2,508 -- a ratio of 1.4, which no
+        # tenfold margin survives. Over the elements that walk a run it is 1,103 to
+        # 17. Same frame, same corpus, completely different strength of claim.
+        census = self.census()
+        over_all = census["frameCloses"]
+        self.assertLess(over_all["frame_5_12_7_12"], over_all["frame_17_12_7_0"] * 10)
+        with_runs = census["frameClosesWithRuns"]
+        self.assertGreater(with_runs["frame_5_12_7_12"], with_runs["frame_17_12_7_0"] * 10)
+
+    def test_a_rival_closing_the_run_bearing_elements_fails_the_gate(self) -> None:
+        census = self.census()
+        census["frameClosesWithRuns"]["frame_17_12_7_0"] = 900
+        self.assertFalse(the_type11_element_frame_beats_its_rivals(census))
+
+    def test_a_frame_that_closes_a_minority_fails(self) -> None:
+        census = self.census()
+        census["frameClosesWithRuns"]["frame_5_12_7_12"] = 400
+        self.assertFalse(the_type11_element_frame_beats_its_rivals(census))
+
+    def test_an_empty_or_unexercised_census_fails(self) -> None:
+        self.assertFalse(the_type11_element_frame_beats_its_rivals({}))
+        self.assertFalse(the_type11_element_frame_beats_its_rivals(
+            self.census(elementsWithRuns=0)
+        ))
+        self.assertFalse(the_type11_element_frame_beats_its_rivals(
+            self.census(frameClosesWithRuns={"frame_5_12_7_12": 1103})
+        ))
+
+    def test_the_control_needs_a_rival_that_is_inflated_by_empty_elements(self) -> None:
+        # If no rival closed many elements overall while closing almost none that
+        # walk a run, the run walk would not be shown to carry the result.
+        census = self.census()
+        census["frameCloses"] = {"frame_5_12_7_12": 3594, "frame_17_12_7_0": 20}
+        self.assertFalse(
+            the_type11_element_frame_is_not_settled_by_empty_elements(census)
+        )
+        self.assertFalse(the_type11_element_frame_is_not_settled_by_empty_elements({}))
+
+    def test_the_reader_rejects_a_frame_closing_more_than_it_could(self) -> None:
+        base = {key: 0 for key in TYPE11_ELEMENT_SCALARS}
+        base.update({key: {} for key in TYPE11_ELEMENT_MAPS})
+        base["elements"] = 10
+        base["elementsWithRuns"] = 4
+        base["frameCloses"] = {"frame_5_12_7_12": 8}
+        base["frameClosesWithRuns"] = {"frame_5_12_7_12": 6}
+        with self.assertRaises(ValueError):
+            _read_type11_element_census(base, "pkg")
