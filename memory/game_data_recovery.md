@@ -5225,6 +5225,14 @@ numbers themselves are not decoded.
 *Two batches were spent eliminating containers for IrradianceVolume before asking the
 metadata. This family got asked first, and the answer arrived in one read.*
 
+**A route to `LAYER_C`'s purpose that is now closed.** `LAYER_` occurs **132** times in
+`global-metadata.dat`, which looks like the obvious place to look next. It is not: every
+one of those is an **animation** layer -- `LAYER_MAIN`, `LAYER_UPPER`, `LAYER_TWO_ARMS`,
+`LAYER_LOOKAT_PITCH_YAW`, `LAYER_MASK2` -- plus a few concatenated string-table runs. The
+terrain `LAYER_*` files share a prefix with an unrelated concept, and *a string search
+that matches the wrong namespace is worse than no hits, because it returns something.*
+`LAYER_C`'s purpose stays where the distribution argument left it.
+
 ## `InitChunkData`: the same container as terrain, and a named FlatBuffers schema
 
 **26,520 files, 624 MB** -- the largest `.bytes` family by file count. Streaming a
@@ -5671,10 +5679,36 @@ It is still refused, on two counts:
 absence of evidence from the binary, and it would still hold if a matching schema turned
 up tomorrow.*
 
+#### THE SIX CATEGORIES ARE UNORDERED: THE SIZE-CLASS READING IS REFUSED
+
+The `w4 = 8 | 2^(k+4)` lock-step makes `k` look like an index into something *ordered* --
+an LOD ladder or a size class -- which predicts that extents grow with `k`. Taking the
+geometric mean of each record's three extents and the median per category:
+
+| k | records | median extent | p25 | p75 |
+| --- | --- | --- | --- | --- |
+| 0 | 1,711 | 36.42 | 14.48 | 67.30 |
+| 1 | 1,178 | 30.32 | 11.09 | 58.09 |
+| 2 | 1,824 | **96.06** | 34.24 | 195.05 |
+| 3 | 1,204 | 39.48 | 16.85 | 59.89 |
+| 4 | 807 | 36.21 | 15.57 | 54.89 |
+| 5 | 388 | 33.77 | 14.21 | 50.73 |
+
+**Neither increasing nor decreasing.** Exact monotonicity across six bins would be a
+1-in-720 accident, so this had real power to confirm; it declined. `k` is a **categorical
+label, not a scale**, and the bit-shift relation between `byte1` and `w4` is an encoding
+convenience rather than an ordering.
+
+What the census does show: **k=2 is the distinctive class** -- the largest population and
+extents roughly three times the rest -- and **k=0 is the only category carrying the
+`0x0820` family** (393 of its 1,711). Both element object sizes, 56 and 60, occur in
+every category in roughly equal share, so the two shapes cut across the categories rather
+than encoding them.
+
 **Still open, with the route now narrowed:** what a slot-7 element *is*. Its category is a
-6-valued one-hot code confirmed twice over and its 24-byte centre/extents field is read,
-but no managed accessor, no filename literal and no loader type matches it. A name has to
-come from the native reader. Slots 5 and 6 are not unindexed for want of effort -- **at
+6-valued **unordered** one-hot code confirmed twice over and its 24-byte centre/extents
+field is read, but no managed accessor, no filename literal and no loader type matches it.
+A name has to come from the native reader. Slots 5 and 6 are not unindexed for want of effort -- **at
 this `inputSetSha256` they contain no variation to index against**, and further mining of
 them needs a different corpus, not a better test.
 
