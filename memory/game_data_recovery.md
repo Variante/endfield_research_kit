@@ -5225,6 +5225,62 @@ numbers themselves are not decoded.
 *Two batches were spent eliminating containers for IrradianceVolume before asking the
 metadata. This family got asked first, and the answer arrived in one read.*
 
+## `InitChunkData`: the same container as terrain, and a named FlatBuffers schema
+
+**26,520 files, 624 MB** -- the largest `.bytes` family by file count. Streaming a
+312-file slice (`InitChunkData_-1_-1_0_0.bytes`, which recurs across scenes):
+
+- **312 of 312 decode with the maintained terrain codec.** The custom LZ4 with
+  big-endian offsets and bit-interleaved tokens in
+  `scripts/asset_builder/terrain_stream.py` -- built for `Terrain_*` -- decodes these
+  byte-exactly, each to the length its own leading word declares. *The container is
+  shared across two families that no naming convention connects.*
+- **All 312 decoded payloads are valid FlatBuffers**: root offset in range, vtable
+  reachable, and a root table of **8 vtable slots** in every one.
+
+The schema is named in the IL2CPP metadata:
+
+```
+Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneChunkData
+    Version, StreamingVersion, UniqueId, Grids[], TotalStr[]
+
+Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid   (278 methods)
+    UniqueId, SceneVisibleStateInts, SceneVisibleAreaInts, PrimitiveIntList,
+    PrimitiveStringList, DataIndex, Vector3, Model, Effect, Ecs, EcsModel,
+    DataGroup, ResourceGroupWithStateDesc, NavModifyArea, MountPair, IntStrMapEntry,
+    MissionCondition, IdComp, SeatComp, PureFuncComp, TriggerComp, HittableComp,
+    FactoryBlockComp, DynamicEntityControlComp, NavModifyAreaComp,
+    InteractiveStateComp, ViewStateControlComp, MissionControlComp,
+    GlobalVarControlComp, SettlementControlComp, FactoryRegionControlComp,
+    ScriptControlComp, ResourceComp, RootComp, TreeRootComp, DecorationRootComp,
+    ErosionRootComp, ModelViewStateControllerNewComp, ConveyorBeltComp,
+    ConveyorBeltBoxComp, ConveyorBeltGroupComp, ConveyorPath, PureSystemComp,
+    NatureResourceComp, SludgeComp, Bounds, ExtraSceneComp, SceneGridInfo,
+    RemapSceneComp, WaterPipeComp, StreamingAreaComp, NavmeshObstacle,
+    MapVarControlComp, ActivityCondition, ActivityControlComp, PoiControlComp,
+    BlightMiasmaComp, LodGridResource, SnowFallTreeComp, Desc, **DataMask**
+```
+
+- ***`DataMask` is in there***, the field this file's own Remaining-gaps list names as
+  unresolved. It is a field of `FBDynamicSceneSingleGrid`, alongside sixty-odd
+  component vectors that say what a scene grid holds: conveyor belts, nav-mesh
+  obstacles, mission conditions, factory blocks, erosion and sludge, POI control.
+- Smaller schemas named alongside: `FBDynamicSceneActivityControlComp`
+  (`Conditions`, `CompareType`, `ToBeTrue`), `FBDynamicScenePoiControlComp` (`Id`,
+  `DomainType`), `FBDynamicSceneSingleGridDescriptor` (`Scene`, `Ranges`),
+  `FBDynamicSceneVersionData` (`Entries`, `Major`, `Minor`).
+
+**What is proven and what is named, kept apart.** Proven from the bytes: the container
+(312/312), the FlatBuffers validity (312/312), the 8-slot root. Named from metadata:
+the schema above. **Not yet proven: that the root table IS
+`FBDynamicSceneChunkData`** -- it declares 5 fields against 8 observed slots, which is
+ordinary for FlatBuffers with deprecated slots but is not the same as a match.
+
+**Next:** read the 8 slots against the declared field order. A FlatBuffers vtable gives
+each field's offset, so the `Grids` vector can be walked and its element count compared
+with the grid coordinates in the filename -- a join the schema predicts and the bytes
+can confirm.
+
 ## Remaining gaps
 
 - Streaming's next advance requires independent record-end evidence or a
