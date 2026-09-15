@@ -3320,6 +3320,45 @@ distinguish the claim from a weaker one, so the claim looked exact.**
   exactly what happened, so it was replaced rather than relaxed. *Write the tripwire
   that tells you when your own caveat has expired.*
 
+#### Two exhaustive searches over `0x0B`'s 388, both negative
+
+The method that settled STMG's middle block -- enumerate every shape and let closure
+discriminate -- applied to `0x0B`. Both searches came back empty, and that is worth
+recording precisely so the ground is not re-walked.
+
+**1. No uniform element grammar beats the shipped one.** Over the whole space of
+element-head bytes 1..12, run-header bytes 5..16, record-count offset 0..runheader-1
+and run-trailing bytes 0..3 -- about 2,300 combinations -- **656 close at least one
+currently-failing body and none reaches 3,937**.
+
+| gained of the 388 | head | run header | count at | trailing | whole corpus |
+| --- | --- | --- | --- | --- | --- |
+| 88 | 11 | 14 | +9 | 0 | **150** |
+| 81 | 5 | 16 | +7 | 1 | **2,841** |
+| 0 | **5** | **11** | **+7** | **1** | **3,937** (shipped) |
+
+The shipped grammar is a **local maximum over the entire four-parameter space**. Every
+shape that gains on the residue collapses the corpus.
+
+**2. No extended entry header selected by a flag.** The trailer turned out to be
+`7 + 5*flag` normally and `14 + 5*k` when the trailing block opens with 1, so the same
+idiom was tested on the entry header: 48 bytes normally, `48 + extra` when some header
+byte equals some value. **1,728 (selector, value, extra) triples**; three beat the
+baseline, by **+8, +2 and +2**, with **zero losses**.
+
+- The best is `header[44] == 3 -> +12`. Zero losses looked encouraging until the
+  mechanism was checked: **`header[44]` is the low byte of the element count**, the rule
+  fires on **14** bodies whose first entry declares 3 elements, and it closes **0 of
+  those 14**. The +8 comes from later entries in multi-entry bodies, not from the
+  population the rule describes.
+- All three rejected. *A rule that gains without losing is not thereby right; check
+  that the gain comes from the cases the rule is about.* Out of 1,728 trials a maximum
+  of +8 on 388 candidates is what noise looks like.
+
+**So the 388 need something that is neither a global grammar change nor a
+flag-selected header variant.** Both of the format's known idioms have been tried and
+neither fits.
+
 #### What does NOT explain `0x0B`'s remaining 388, tested and eliminated
 
 Recorded so the same ground is not re-walked. Each was scored over the whole corpus
