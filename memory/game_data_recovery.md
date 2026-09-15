@@ -6180,6 +6180,36 @@ there, while bits 8..14 carry the one-hot category. *The structure is fully fram
 referent is unidentified*, which is a different and more useful state than either half
 alone.
 
+##### Three further constraints, each narrowing what the category can be
+
+***It is not an enum in this vocabulary.*** Searching every enum in the HyperGryph,
+Streaming and Beyond namespaces whose values are verified sequential from
+`fieldDefaultValues`, exactly **one** has seven members -- `AudioDebugGizmosType`, a debug
+gizmo list. There is no seven-valued streaming enum for `k` to be.
+
+***It is orthogonal to level content.*** The terrain anchor that identified slot 5's `f2`
+gives **nothing** here: every category appears in nearly every level, terrain or not.
+
+| k | 0 | 1 | 2 | 3 | 4 | 5 | 6 |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| terrain-vs-not separation | +0.00% | -0.63% | -0.63% | -0.63% | -5.79% | +9.26% | +5.26% |
+
+**A category present in all 88 levels in similar proportion is a per-object attribute, not
+a content kind** -- which rules out the whole family of readings that name *what* is
+placed, and is why `ProxyEntityType`-style guesses were never going to land.
+
+***The ordering refusal holds on the full corpus.*** Re-run with the corrected seven-value
+range (the earlier run used the slice that misreported it as six), the median geometric
+extent per category is **38.98, 28.45, 97.74, 40.89, 38.05, 33.77, 31.51** -- neither
+increasing nor decreasing. *Re-testing was justified because the input had been shown
+unrepresentative, not because the answer was unwelcome.*
+
+**Two facts left for the next attempt.** `k = 2` is the outlier on every measure -- the
+largest population (3,305) and a median extent **2.5x** every other category. And the two
+varying low bits are not independent of the category: among populated descriptors the
+value `0xBF` occurs **only** with `k = 0`, 221 times in 2,956, with every other category
+exclusively `0xFF`.
+
 ***A degenerate fit, caught by fitting four rivals at once.*** `s4 == 24 + 24*n7` scores
 **100.00%** on the Streaming family, which reads like a decoded record stride -- until the
 rivals are run beside it. `24 + 32*n7`, `24 + 40*n7` and `24 + 44*n7` **all score
