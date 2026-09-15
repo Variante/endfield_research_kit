@@ -2213,6 +2213,16 @@ Stable conclusions:
   distinct values and look like parts of one 32-bit value. `byte@23` and `@24` are
   mixed. `byte@28` and `byte@33` are **booleans** (0/1, split 1,888/1,856 and
   3,146/598). `byte@32` takes 0, 1, 2, 3.
+- **Twenty bytes past the reference sits an AUTHORED float, and its values look
+  like tempo.** Over the 3,744 conditioned bodies it is finite in all of them,
+  **whole in 3,727** (99.5%) and inside `[50, 200]` in 3,435 (91.7%). Its range is
+  55 to 190 and its modes are **120.0** (1,557), 130, 110, 90.
+- A float that is an exact integer 99.5% of the time is **authored, not computed** --
+  that is the gated claim. That its range and modes are those of musical tempo, in
+  the music object hierarchy, is recorded as an **observation**: it is the obvious
+  reading and nothing here proves it.
+- Two neighbours read as floats too: `tail+8` is 3.366 to 6.533 (mode 4.477) and
+  `tail+12`, `tail+16`, `tail+24` are zero in nearly every body.
 - **The tail's optional 4-byte field is localized, and it is not counted.** Aligning
   the 3,321 tail-69 bodies against the 217 tail-73 bodies: from the **end** their
   constant profiles agree at **every one of 69 positions**, so the longer tail is the

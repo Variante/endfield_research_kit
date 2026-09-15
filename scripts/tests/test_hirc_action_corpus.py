@@ -26,6 +26,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_type0a_head_word_always_names_one_of_two_types,
     the_type0a_head_elements_are_padded_small_values,
     the_type0a_reference_is_an_optional_four_byte_field,
+    the_type0a_tail_float_is_an_authored_value,
     _read_type0a_head_census,
     _read_music_reference_census,
     type08_bodies_are_exact_or_named,
@@ -362,6 +363,9 @@ def valid_action_fixture():
         "elementPadNotZero": 0,
         "elementValueCounts": {"value_0": 2, "value_1": 3, "value_2": 1},
         "tailBytesByOutcome": {"withReference_69": 8, "withoutReference_65": 2},
+        "tailFloats": 100,
+        "tailFloatsInBand": 92,
+        "tailFloatsWhole": 99,
     }
     music_refs = {
         "bodies": 4,
@@ -1605,6 +1609,29 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
         )
+
+    def test_the_type0a_tail_float_must_be_whole_far_more_often_than_bounded(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        head = result["type0AHead"]
+        self.assertTrue(the_type0a_tail_float_is_an_authored_value(head))
+
+        # Whole numbers are the strong property: a computed float lands on exact
+        # integers by accident, so a drop there has to fail even while the band holds.
+        self.assertFalse(
+            the_type0a_tail_float_is_an_authored_value({**head, "tailFloatsWhole": 80})
+        )
+        # The band is the weaker property and is checked at a lower bar, because the
+        # outliers are real -- but it still has to hold.
+        self.assertFalse(
+            the_type0a_tail_float_is_an_authored_value({**head, "tailFloatsInBand": 50})
+        )
+        # A census claiming more whole or in-band values than floats it read is
+        # incoherent rather than merely wrong.
+        self.assertFalse(
+            the_type0a_tail_float_is_an_authored_value({**head, "tailFloatsWhole": 101})
+        )
+        self.assertFalse(the_type0a_tail_float_is_an_authored_value({**head, "tailFloats": 0}))
 
     def test_the_type0a_reference_is_an_optional_four_byte_field(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

@@ -1884,7 +1884,10 @@ def aggregate_current_hirc_actions(
         type0a_head_scores.update(package_head0a["namesTheSourceType"])
         type0a_head_conditioned.update(package_head0a["namesTheSourceTypeWhereTheRuleApplies"])
         type0a_head_words.update(package_head0a["headWordTargets"])
-        for key in ("elementTotal", "elementLeadingByteNotZero", "elementPadNotZero"):
+        for key in (
+            "elementTotal", "elementLeadingByteNotZero", "elementPadNotZero",
+            "tailFloats", "tailFloatsInBand", "tailFloatsWhole",
+        ):
             type0a_head_totals[key] += package_head0a[key]
         type0a_element_values.update(package_head0a["elementValueCounts"])
         type0a_tail_bytes.update(package_head0a["tailBytesByOutcome"])
@@ -2355,6 +2358,9 @@ def aggregate_current_hirc_actions(
             "elementPadNotZero": int(type0a_head_totals["elementPadNotZero"]),
             "elementValueCounts": dict(sorted(type0a_element_values.items())),
             "tailBytesByOutcome": dict(sorted(type0a_tail_bytes.items())),
+            "tailFloats": int(type0a_head_totals["tailFloats"]),
+            "tailFloatsInBand": int(type0a_head_totals["tailFloatsInBand"]),
+            "tailFloatsWhole": int(type0a_head_totals["tailFloatsWhole"]),
         },
         "musicReferences": {
             **{key: int(music_ref_totals[key]) for key in MUSIC_REFERENCE_SCALARS},
@@ -2903,6 +2909,7 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
             "elementLeadingByteNotZero": 0, "elementPadNotZero": 0,
             "namesTheSourceType": {}, "namesTheSourceTypeWhereTheRuleApplies": {},
             "headWordTargets": {}, "elementValueCounts": {}, "tailBytesByOutcome": {},
+            "tailFloats": 0, "tailFloatsInBand": 0, "tailFloatsWhole": 0,
         }
     if not isinstance(census, dict):
         raise ValueError(f"type 0x0A head census is not an object: {label}")
@@ -2910,6 +2917,7 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
     for key in (
         "bodies", "bodiesWhereTheRuleApplies", "elementTotal",
         "elementLeadingByteNotZero", "elementPadNotZero",
+        "tailFloats", "tailFloatsInBand", "tailFloatsWhole",
     ):
         try:
             value = int(census[key])
@@ -2948,6 +2956,37 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
             f"type 0x0A element values do not cover its elements: {label}"
         )
     return out
+
+
+# The float twenty bytes past the reference. Authored values, not computed ones:
+# nearly every one is a whole number.
+TYPE0A_TAIL_FLOAT_WHOLE_SHARE = 0.98
+TYPE0A_TAIL_FLOAT_BAND_SHARE = 0.85
+
+
+def the_type0a_tail_float_is_an_authored_value(corpus: dict[str, Any]) -> bool:
+    """The float twenty bytes past the reference is whole, and sits in a narrow band.
+
+    Two independent properties, and the first is the strong one. A computed float --
+    a duration, a ratio, an accumulated offset -- lands on exact integers by
+    accident; this one is a whole number in 3,727 of 3,744 bodies. That is what an
+    authored parameter looks like.
+
+    The band is the weaker property and is checked at a lower bar, because the
+    outliers are real: 309 bodies sit outside it. Nothing here says what the value
+    measures, only that it is authored and bounded.
+    """
+    total = int(corpus.get("tailFloats") or 0)
+    if total <= 0:
+        return False
+    whole = int(corpus.get("tailFloatsWhole") or 0)
+    band = int(corpus.get("tailFloatsInBand") or 0)
+    if whole > total or band > total:
+        return False
+    return (
+        whole / total >= TYPE0A_TAIL_FLOAT_WHOLE_SHARE
+        and band / total >= TYPE0A_TAIL_FLOAT_BAND_SHARE
+    )
 
 
 # The reference is an optional four-byte field, so a body without it is exactly
@@ -5030,6 +5069,9 @@ def run_current_corpus_audit(
         report["corpus"].get("type08BodyFrames") or {}
     )
     # True when no names were supplied: see the check's own note.
+    type0a_float = the_type0a_tail_float_is_an_authored_value(
+        report["corpus"].get("type0AHead") or {}
+    )
     type0a_optional = the_type0a_reference_is_an_optional_four_byte_field(
         report["corpus"].get("type0AHead") or {}
     )
@@ -5075,6 +5117,7 @@ def run_current_corpus_audit(
         and type0a_word
         and type0a_elements
         and type0a_optional
+        and type0a_float
         and type08_body_named
         and type08_tail_located
         and type08_head_named
@@ -5225,6 +5268,13 @@ def run_current_corpus_audit(
             f"count={body08.get('count')} exact={body08.get('exact')} "
             f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
             f"ambiguous={body08.get('ambiguous')}"
+        )
+    if not type0a_float:
+        head0a = report["corpus"].get("type0AHead") or {}
+        lane_failures.append(
+            "the type 0x0A tail float is not an authored value: "
+            f"floats={head0a.get('tailFloats')} whole={head0a.get('tailFloatsWhole')} "
+            f"inBand={head0a.get('tailFloatsInBand')}"
         )
     if not type0a_optional:
         head0a = report["corpus"].get("type0AHead") or {}
