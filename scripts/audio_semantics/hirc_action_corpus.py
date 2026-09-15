@@ -1639,6 +1639,9 @@ def aggregate_current_hirc_actions(
     type04_banks_with_objects = 0
     type04_non_exact_examples: list[dict[str, Any]] = []
     body_lanes = _build_body_lanes()
+    small_totals: Counter[str] = Counter()
+    small_by_type: Counter[str] = Counter()
+    small_failures: Counter[str] = Counter()
     type09_totals: Counter[str] = Counter()
     type09_failures: Counter[str] = Counter()
     type09_flags: Counter[str] = Counter()
@@ -1690,6 +1693,12 @@ def aggregate_current_hirc_actions(
             type02_plugin_counts[plugin_type] += count
         for plugin_id, count in package_type02["pluginIdCounts"].items():
             type02_plugin_ids[plugin_id] += count
+
+        package_small = _read_small_type_census(package.get("hircSmallTypes"), package_label)
+        for key in SMALL_TYPE_SCALARS:
+            small_totals[key] += package_small[key]
+        small_by_type.update(package_small["bodiesByType"])
+        small_failures.update(package_small["failureCounts"])
 
         package_type09 = _read_type09_census(package.get("hircType09"), package_label)
         for key in TYPE09_SCALARS:
@@ -2119,6 +2128,11 @@ def aggregate_current_hirc_actions(
         "type14BodyFrames": body_lanes["0x0E"].publish(),
         "type22BodyFrames": body_lanes["0x16"].publish(),
         "type08HeadWords": {key: int(type08_totals[key]) for key in TYPE08_HEAD_SCALARS},
+        "smallTypeBodies": {
+            **{key: int(small_totals[key]) for key in SMALL_TYPE_SCALARS},
+            "bodiesByType": dict(sorted(small_by_type.items())),
+            "failureCounts": dict(sorted(small_failures.items())),
+        },
         "type09Bodies": {
             **{key: int(type09_totals[key]) for key in TYPE09_SCALARS},
             "failureCounts": dict(sorted(type09_failures.items())),
@@ -2597,6 +2611,64 @@ def music_head_references_are_closed(corpus: dict[str, Any]) -> bool:
     )
 
 
+SMALL_TYPE_SCALARS = (
+    "bodies", "exact", "failed", "exactBytes", "bodyBytes",
+    "bodiesWithSecondBlock", "secondBlockEntries",
+)
+
+
+def _read_small_type_census(census: Any, label: str) -> dict[str, Any]:
+    if census is None:
+        return {key: 0 for key in SMALL_TYPE_SCALARS} | {"bodiesByType": {}, "failureCounts": {}}
+    if not isinstance(census, dict):
+        raise ValueError(f"small-type census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in SMALL_TYPE_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"small-type census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"small-type census has negative {key}: {label}")
+        out[key] = value
+    for key in ("bodiesByType", "failureCounts"):
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"small-type census has invalid {key}: {label}")
+        out[key] = {str(k): int(v) for k, v in raw.items()}
+    if out["exact"] + out["failed"] != out["bodies"]:
+        raise ValueError(
+            f"small-type outcomes do not partition the bodies: {label} "
+            f"exact={out['exact']} failed={out['failed']} bodies={out['bodies']}"
+        )
+    if sum(out["failureCounts"].values()) != out["failed"]:
+        raise ValueError(f"small-type failure categories do not sum to the failures: {label}")
+    if sum(out["bodiesByType"].values()) != out["bodies"]:
+        raise ValueError(f"small-type per-type counts disagree with the body total: {label}")
+    if out["bodiesWithSecondBlock"] > out["bodies"]:
+        raise ValueError(f"small-type second-block witnesses exceed the bodies: {label}")
+    if out["exactBytes"] > out["bodyBytes"]:
+        raise ValueError(f"small-type exact bytes exceed the body bytes: {label}")
+    return out
+
+
+def small_types_are_closed(corpus: dict[str, Any]) -> bool:
+    """Every 0x13, 0x14 and 0x15 body consumed exactly, with a real width witness.
+
+    These corpora are tiny, so exact consumption alone is weak: a layout fitted to
+    four bodies proves little. The eight-byte value width in the second block is
+    only meaningful if some body actually carries one, so the gate requires a
+    nonempty witness rather than accepting an all-empty corpus.
+    """
+    return (
+        int(corpus.get("bodies") or 0) > 0
+        and int(corpus.get("failed") or 0) == 0
+        and int(corpus.get("exact") or 0) == int(corpus.get("bodies") or 0)
+        and int(corpus.get("bodiesWithSecondBlock") or 0) > 0
+        and int(corpus.get("secondBlockEntries") or 0) > 0
+    )
+
+
 TYPE09_SCALARS = (
     "bodies", "exact", "unestablishedSecondRun", "failed",
     "exactBytes", "bodyBytes", "runEntries",
@@ -2843,6 +2915,37 @@ def reference_graph_is_closed(corpus: dict[str, Any]) -> bool:
 
 def _reference_graph_markdown(report: dict[str, Any]) -> str:
     graph = report["corpus"]["referenceGraph"]
+    small = report["corpus"].get("smallTypeBodies") or {}
+    small_lines = []
+    if small.get("bodies"):
+        small_lines = [
+            "",
+            "## Numeric types `0x13`, `0x14` and `0x15`: closed, on very few bodies",
+            "",
+            f"- Bodies: {small['bodies']:,}; consumed exactly: {small['exact']:,} "
+            f"({small['exactBytes']:,} of {small['bodyBytes']:,} bytes). Failures: "
+            f"{small['failed']:,}.",
+            "",
+            "| Numeric type | Bodies |",
+            "|---|---:|",
+            *(f"| `{name}` | {count:,} |" for name, count in sorted(small["bodiesByType"].items())),
+            "",
+            "Types `0x13` and `0x14` are a counted block of four-byte values, a counted "
+            "block of **eight**-byte values, then two bytes. Keys and values are parallel "
+            "runs in both blocks, the same shape numeric type `0x16` uses. Type `0x15` "
+            "instead shares the eight-byte header that numeric types `0x10` and `0x11` "
+            "use, and closes with eight further bytes.",
+            "",
+            f"These corpora are tiny -- {small['bodies']:,} bodies in total -- so exact "
+            "consumption is by itself weak evidence: plenty of layouts consume four "
+            "bodies. The number that carries weight is the second-block witness: "
+            f"{small['bodiesWithSecondBlock']:,} bodies actually carry a nonempty second "
+            f"block, totalling {small['secondBlockEntries']:,} entries, and it is those "
+            "that distinguish an eight-byte value width from a four-byte one. The gate "
+            "refuses a corpus where every second block is empty, because then the width "
+            "would be unwitnessed and the layout merely fitted.",
+        ]
+
     type09 = report["corpus"].get("type09Bodies") or {}
     type09_lines = []
     if type09.get("bodies"):
@@ -3037,6 +3140,7 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
                 for name, count in graph["objectCountsByType"].items()
             ) or "| _none_ | 0 | 0 |",
             "",
+            *small_lines,
             *type09_lines,
             *type17_lines,
             *head08_lines,
@@ -3387,6 +3491,8 @@ def run_current_corpus_audit(
     music_head_corpus = corpus["musicHeadReferences"]
     music_head_closed = music_head_references_are_closed(music_head_corpus)
     type11_corpus = corpus["type11SourceRecords"]
+    small_corpus = corpus["smallTypeBodies"]
+    small_closed = small_types_are_closed(small_corpus)
     type09_corpus = corpus["type09Bodies"]
     type09_closed = type09_is_framed_except_the_second_run(type09_corpus)
     type17_corpus = corpus["type17Bodies"]
@@ -3403,6 +3509,7 @@ def run_current_corpus_audit(
         and type08_closed
         and type17_closed
         and type09_closed
+        and small_closed
     )
     reference_report = {
         "format": "animestudio-wwise-hirc-reference-graph-audit",
@@ -3429,6 +3536,7 @@ def run_current_corpus_audit(
             "type08HeadWords": type08_corpus,
             "type17Bodies": type17_corpus,
             "type09Bodies": type09_corpus,
+            "smallTypeBodies": small_corpus,
             "type02PluginIdCounts": corpus["type02SourcePrefixes"]["pluginIdCounts"],
             "audioAuditSummary": corpus["audioAuditSummary"],
         },
@@ -3450,6 +3558,13 @@ def run_current_corpus_audit(
     reference_output_markdown.write_text(
         _reference_graph_markdown(reference_report), encoding="utf-8"
     )
+    if not small_closed:
+        lane_failures.append(
+            "numeric types 0x13/0x14/0x15 are not closed: "
+            f"bodies={small_corpus['bodies']} exact={small_corpus['exact']} "
+            f"failed={small_corpus['failed']} "
+            f"secondBlockWitnesses={small_corpus['bodiesWithSecondBlock']}"
+        )
     if not type09_closed:
         lane_failures.append(
             "type 0x09 bodies are neither framed nor fenced: "

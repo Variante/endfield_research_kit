@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from scripts.audio_semantics.hirc_action_corpus import (
+    small_types_are_closed,
     type09_is_framed_except_the_second_run,
     type17_is_framed_except_the_tied_block,
     type08_head_words_are_null_or_resolve,
@@ -163,6 +164,17 @@ def valid_action_fixture():
         "failureCategories": {},
         "unsupportedCategories": {},
         "nonExactExamples": [],
+    }
+    small_types = {
+        "bodies": 4,
+        "exact": 4,
+        "failed": 0,
+        "exactBytes": 120,
+        "bodyBytes": 120,
+        "bodiesWithSecondBlock": 2,
+        "secondBlockEntries": 3,
+        "bodiesByType": {"type13": 1, "type14": 2, "type15": 1},
+        "failureCounts": {},
     }
     type09_bodies = {
         "bodies": 5,
@@ -360,6 +372,7 @@ def valid_action_fixture():
                     "hircType08Head": copy.deepcopy(type08_head),
                     "hircType17": copy.deepcopy(type17_bodies),
                     "hircType09": copy.deepcopy(type09_bodies),
+                    "hircSmallTypes": copy.deepcopy(small_types),
                     "hircType05BodyFrame": copy.deepcopy(type05_body),
                     "hircReferenceCensus": copy.deepcopy(reference_census),
                     "hircType03ActionFrame": copy.deepcopy(frame),
@@ -386,6 +399,7 @@ def valid_action_fixture():
                             "hircType08Head": copy.deepcopy(type08_head),
                             "hircType17": copy.deepcopy(type17_bodies),
                             "hircType09": copy.deepcopy(type09_bodies),
+                            "hircSmallTypes": copy.deepcopy(small_types),
                             "hircType05BodyFrame": copy.deepcopy(type05_body),
                             "hircReferenceCensus": copy.deepcopy(reference_census),
                             "hircType03ActionFrame": copy.deepcopy(frame),
@@ -1124,6 +1138,40 @@ class HircActionCorpusTests(unittest.TestCase):
             scope["hircType05BodyFrame"]["groupCounts"]["recordEntries"] = 1_000_000
         with self.assertRaisesRegex(ValueError, "anonymous element bytes exceed the framed bodies"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, oversized)
+
+    def test_small_types_need_a_real_width_witness_not_just_exact_bodies(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        small = result["smallTypeBodies"]
+        self.assertEqual(small["exact"], 4)
+        self.assertEqual(small["bodiesByType"], {"type13": 1, "type14": 2, "type15": 1})
+        self.assertTrue(small_types_are_closed(small))
+
+        # Consuming every body exactly is weak on a corpus this small. If no body
+        # carries a nonempty second block, the eight-byte value width is unwitnessed
+        # and the layout is merely fitted, so that must not pass.
+        self.assertFalse(
+            small_types_are_closed(
+                {**small, "bodiesWithSecondBlock": 0, "secondBlockEntries": 0}
+            )
+        )
+        self.assertFalse(small_types_are_closed({**small, "exact": 3, "failed": 1}))
+
+    def test_small_type_counters_must_reconcile(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        for field, value, pattern in (
+            ("exact", 3, "do not partition"),
+            ("bodiesWithSecondBlock", 9, "witnesses exceed the bodies"),
+            ("exactBytes", 900, "exact bytes exceed"),
+        ):
+            broken = copy.deepcopy(audio_audit)
+            for scope in (
+                broken["rows"][0]["package"],
+                broken["rows"][0]["package"]["bnkStructures"][0],
+            ):
+                scope["hircSmallTypes"][field] = value
+            with self.assertRaisesRegex(ValueError, pattern):
+                aggregate_current_hirc_actions(outer, expected_files, excluded_files, broken)
 
     def test_type09_is_framed_or_fenced_and_flags_match_exact_bodies(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

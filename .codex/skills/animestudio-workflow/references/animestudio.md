@@ -335,6 +335,13 @@ scratch. They do not open with the node frame, and searching for an offset where
 the frame parses is worthless because every music body admits several such
 offsets -- the frame is permissive, so "it parsed" is nearly no evidence. A
 structural predictor is needed, the way byte 1 predicts the `0x0E` prefix.
+Numeric types `0x13`, `0x14` and `0x15` are framed byte-exact but on 4, 9 and 5
+bodies respectively, so read their report before relying on them: `0x13`/`0x14`
+are a four-byte-value block, an eight-byte-value block, then two bytes, and `0x15`
+is the `0x10`/`0x11` header plus eight bytes. The eight-byte width rests on the 6
+bodies that carry a nonempty second block, and the gate refuses an all-empty
+corpus so the width cannot pass unwitnessed.
+
 Numeric type `0x09` is opened by the shared node frame in all 5,158 bodies; after
 it come a counted four-byte run and a second count, and where that count is zero a
 single byte closes the body -- 4,973 of them, now gated. The recovery memory

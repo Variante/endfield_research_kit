@@ -1664,6 +1664,20 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **Numeric types `0x13`, `0x14` and `0x15` are framed byte-exact: 18 bodies, 685
+  bytes, all of them.** `0x13` and `0x14` are a counted block of four-byte values,
+  a counted block of **eight**-byte values, then two bytes; keys and values are
+  parallel runs in both, the same shape `0x16` uses. `0x15` instead shares the
+  eight-byte header `0x10` and `0x11` use and closes with eight further bytes.
+- **Treat these as weak claims and keep the witness counts in view.** Four, nine
+  and five bodies is not a corpus -- plenty of layouts consume four bodies. What
+  distinguishes the eight-byte second-block width from a four-byte one is that 6
+  bodies actually carry a nonempty second block (11 entries in total), and the
+  gate refuses a corpus where every second block is empty precisely so the width
+  cannot pass unwitnessed. If these types ever grow, re-check the width first.
+- They were only findable because the shapes were already known: the block came
+  from `0x16`, the header from `0x10`/`0x11`. That is now four types closed by
+  reuse rather than decode.
 - **Numeric type `0x10` shares type `0x11`'s grammar exactly, and was never
   decoded separately.** Its header matched (`u16`, `u16`, `u32` size), so the
   existing grammar was tried and 430 of its 453 bodies closed at once. That is now

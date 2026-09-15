@@ -582,6 +582,11 @@ never reported as a full one.
 python -m scripts.audio_semantics.hirc_named_reach --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 ```
 
+It gates numeric types `0x13`, `0x14` and `0x15` as one group: all 18 bodies
+consumed exactly. Because those corpora are tiny, the gate also requires a nonempty
+second block somewhere, so the eight-byte value width is witnessed rather than
+merely fitted.
+
 It gates numeric type `0x09` too: the node frame opens all 5,158 bodies, and 4,973
 close exactly after a counted four-byte run, a zero second count and one byte. The
 other 185 are fenced. A better reading (5,154) is recorded in the recovery memory
