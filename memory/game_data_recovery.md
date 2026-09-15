@@ -2031,9 +2031,9 @@ Following the constructors rather than scanning did work, in four hops:
 
 1. the `0x11` arm looks a node up in an **id-keyed chain** (`cmp [rbx+0x10], esi` /
    `mov rbx, [rbx+8]`, refcount at `+0x14`, vtable at `+0x0`);
-2. when absent it calls the **type-`0x11` factory at `0x18014af30`**, which allocates
+2. when absent it calls the **type-`0x11` factory at `0x18014aee0`**, which allocates
    **`0xa8` bytes** from pool 2, runs a base constructor, and **stores vtable
-   `0x180299200`** at `[rbx]` (plus a secondary at `[rbx+0x18]`);
+   `0x1802992d0`** at `[rbx]` (plus a secondary at `[rbx+0x18]`);
 3. `vtable[+0x28]` is therefore `0x18014c250`;
 4. that function is the deserializer, and it is short enough to read outright.
 
@@ -2060,11 +2060,33 @@ plug-in consumes.** Two body lengths are not two candidate readings of one struc
 are two plug-ins. *A tie that will not break under more corpus evidence is often a tie the
 format never had a side in.*
 
-**The method that got here, for the other stuck types.** `0x09`, `0x10` and `0x12` have
-arms at the same jump table, and the same four hops apply: arm -> factory (allocation size
-and vtable store) -> `vtable[+0x28]` -> read the field sequence. The factory is found by
-following the arm's node-creation branch, which is the call whose result immediately takes
-`mov [rax+0x10], <id>`.
+##### Running the recipe on the other types -- and a correction it caught
+
+The four hops were automated and run over `0x09`, `0x10`, `0x12` **and `0x11` again as a
+control**. The control earned its place immediately: it disagreed with the hand trace.
+
+| type | factory | alloc | vtable | `vtable[+0x28]` |
+| --- | --- | --- | --- | --- |
+| `0x10` | `0x18014af30` | 0xa8 | `0x180299200` | **`0x18014c250`** |
+| `0x11` | `0x18014aee0` | 0xa8 | `0x1802992d0` | **`0x18014c250`** |
+| `0x09` | *recipe found none* | -- | -- | -- |
+| `0x12` | *recipe found none* | -- | -- | -- |
+
+***The correction.*** An earlier version of the note above gave `0x11`'s factory as
+`0x18014af30` with vtable `0x180299200`. **Those are `0x10`'s.** The cause was reading a
+`tail`-truncated disassembly: the listing began after `0x18014aee0`'s body and showed the
+*next* function, whose vtable store was then attributed to the wrong type. *The deserializer
+address was right, which is exactly why the error survived -- a wrong path to a right answer
+looks like a right path.*
+
+**The substantive finding is unaffected and in fact broadens.** `0x10` and `0x11` have
+**different vtables but the same deserializer**, `0x18014c250`, so the 12-byte prefix plus
+plug-in tail describes **both** types -- which fits them being the two plug-in-bearing node
+kinds.
+
+**`0x09` and `0x12` are not reachable this way.** Neither arm has the node-creation
+signature (`call` whose result immediately takes `mov [rax+0x10], <id>`) within the scanned
+span, so they build their objects differently and need their own trace.
 - **Numeric type `0x12` is the one HIRC type with no framing at all, and these
   readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
   grammar -- its word at offset 4 fails `range_section` on all 251. It is not the
