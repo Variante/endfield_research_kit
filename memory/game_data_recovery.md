@@ -1995,6 +1995,35 @@ hook or by the authoring tool, not by the runtime.
 `u32 size` at `[rbp-0x13]`, with the section's item count at `[rbp-0x1c]` and the loop
 index in `r14d` -- which is exactly the framing this project's reader already uses,
 now confirmed against the engine.
+
+##### Where the per-type field reads actually happen
+
+Following the `0x11` arm (the 21-versus-27 tie) down: the arm **does not parse anything**.
+It allocates via `0x1800ef040`, returns error `0x38` if that fails, then takes a refcounted
+lock on a global registry at `[rip+0x252510] + 0x318`. The field reads are further on,
+behind a **virtual call**:
+
+```
+mov  rax, [rbx]            ; vtable
+mov  rcx, rbx              ; this
+lea  rdx, [rsp+0x30]       ; cursor
+lea  r8,  [rsp+0x20]       ; size (stored on entry from edx)
+call qword ptr [rax+0x28]  ; <- the deserializer
+```
+
+**`vtable[+0x28]` is the field deserializer**, uniform across the type handlers -- the
+single entry point any layout recovery has to go through. That is the useful, transferable
+part: it applies to `0x09`, `0x10`, `0x11` and `0x12` alike, not just the one traced.
+
+***What is left, stated precisely so the next attempt starts in the right place.*** Getting
+a concrete layout needs the per-type **vtable address**, and that is not stored inline in
+the arm -- it is written by a nested constructor, two or more calls down. A shortcut of
+scanning `.rdata` for runs of code pointers **does not work as written**: it finds 94 runs
+but merges adjacent tables, reporting 290-, 385- and 609-slot "vtables" that are plainly
+concatenations. Splitting them needs the RTTI `type_info` pointer that precedes each real
+vtable -- and this binary's RTTI is stripped to 12 `std::` descriptors, so that boundary is
+not available either. **The remaining route is to follow the nested constructors, not to
+scan for vtables.**
 - **Numeric type `0x12` is the one HIRC type with no framing at all, and these
   readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
   grammar -- its word at offset 4 fails `range_section` on all 251. It is not the
