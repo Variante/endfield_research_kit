@@ -6,7 +6,10 @@ one that most needs its evidence stated plainly. Every step is exact:
 1. ``global-metadata.dat`` ``stringLiteral`` rows are exact ``<byteLength,
    dataIndex>`` pairs over exact bytes, so an audio-like literal is a string the
    shipped managed code actually contains.
-2. Its FNV-1 hash over UTF-16 code units is compared to HIRC object identities.
+2. Its hash under the shipped ``AudioHashGenerator`` -- FNV-1 over UTF-16 code
+   units, folding ASCII ``A``-``Z`` before each XOR -- is compared to HIRC object
+   identities. The folding is not cosmetic: 46 shipped literals contain capitals,
+   and hashing them unfolded loses every one of their names.
    Every current match lands on a numeric type ``0x04`` object and on no other
    type, which is what identifies that type as the object managed code addresses
    by name. The gate refuses to publish if a match ever lands elsewhere, because
@@ -36,7 +39,10 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterable
 
-from scripts.audio_semantics.identifiers import collect_metadata_audio_literals
+from scripts.audio_semantics.identifiers import (
+    audio_hash_generator_compute,
+    collect_metadata_audio_literals,
+)
 
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUTER = ROOT / "reports/animestudio/vfs_understanding_latest.json"
@@ -44,32 +50,15 @@ DEFAULT_OUTPUT = ROOT / "reports/animestudio/hirc_named_reach_current_latest.jso
 DEFAULT_CLI = ROOT / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe"
 DEFAULT_TEMP_AUDIT = ROOT / "tmp/audio/hirc_named_reach/audio_audit.json"
 
-FNV1_OFFSET_BASIS = 0x811C9DC5
-FNV1_PRIME = 0x01000193
 # The type that every current literal hash match lands on. Kept as a number: the
 # identification is "managed code addresses this type by name", not a Wwise label.
 NAMED_OBJECT_TYPE = 0x04
 
 
-def fnv1_utf16(name: str) -> int:
-    """FNV-1 over UTF-16 code units, matching the shipped AudioHashGenerator."""
-    state = FNV1_OFFSET_BASIS
-    for character in name:
-        code_point = ord(character)
-        if code_point < 0x10000:
-            units: tuple[int, ...] = (code_point,)
-        else:
-            offset = code_point - 0x10000
-            units = (0xD800 + (offset >> 10), 0xDC00 + (offset & 0x3FF))
-        for unit in units:
-            state = ((state * FNV1_PRIME) & 0xFFFFFFFF) ^ unit
-    return state
-
-
 def index_literals(literals: Iterable[str]) -> dict[int, set[str]]:
     index: dict[int, set[str]] = defaultdict(set)
     for name in literals:
-        index[fnv1_utf16(name)].add(name)
+        index[audio_hash_generator_compute(name)].add(name)
     return index
 
 

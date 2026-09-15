@@ -7,7 +7,6 @@ from scripts.audio_semantics.hirc_named_reach import (
     coincidence_table,
     media_ids_from_audit,
     check_identification,
-    fnv1_utf16,
     index_literals,
     markdown,
     named_type_share,
@@ -32,12 +31,19 @@ def census(**overrides):
 
 
 class HircNamedReachTests(unittest.TestCase):
-    def test_hash_matches_the_shipped_generator(self) -> None:
-        # FNV-1 over UTF-16 code units, not bytes and not FNV-1a.
-        self.assertEqual(fnv1_utf16(""), 0x811C9DC5)
-        self.assertNotEqual(fnv1_utf16("au_a"), fnv1_utf16("au_b"))
-        index = index_literals(["au_one", "au_two"])
-        self.assertEqual(sum(len(names) for names in index.values()), 2)
+    def test_hash_is_the_shipped_generator_and_folds_capitals(self) -> None:
+        from scripts.audio_semantics.identifiers import audio_hash_generator_compute
+
+        # This module must not carry its own hash: the shipped generator folds
+        # ASCII A-Z, and an unfolded copy silently loses every name with a capital.
+        self.assertEqual(
+            audio_hash_generator_compute("Au_UI_Button_Close"),
+            audio_hash_generator_compute("au_ui_button_close"),
+        )
+        index = index_literals(["Au_One", "au_one", "au_two"])
+        # The two casings are one identity, so the index must fold them together.
+        self.assertEqual(len(index), 2)
+        self.assertEqual(index[audio_hash_generator_compute("au_one")], {"Au_One", "au_one"})
 
     def test_summary_partitions_and_bounds_its_counters(self) -> None:
         summary = summarise([census(), census()])

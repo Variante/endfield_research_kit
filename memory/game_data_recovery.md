@@ -1910,6 +1910,16 @@ Stable conclusions:
   (27); anything else must fail closed, because a fourth value has no branch.
   This is gated inside the reference-graph report and is a Layer-4 identity fact
   only: it says nothing about direction, containment, or meaning.
+- **That folding is load-bearing, and getting it wrong cost 46 names.** The first
+  version of this lane carried its own `fnv1_utf16` without the case fold, even
+  though `identifiers.audio_hash_generator_compute` already mirrored the shipped
+  implementation correctly. 46 shipped literals contain capitals -- every
+  `Au_UI_Button_*`, `Au_UI_Event_*` and similar -- and all of them were missed.
+  Correcting it took the lane from 151 to 203 named objects, 63 to 109 reaching a
+  source, and 57 to 83 reaching media. **Never re-implement a hash this repo
+  already mirrors**; the duplicate is what drifted, not the original.
+- The falsification property survives the correction and is stronger for it: all
+  203 matches still land on type `0x04` and none anywhere else.
 - That corrects an earlier reading in this file. Fixing the word at offset 9 for
   every body resolves only 97.3% of `0x0A` and 95.5% of `0x0D`, and the shortfall
   looks like missing references. It is not: those bodies put the word at offset 5,
@@ -1987,9 +1997,10 @@ Stable conclusions:
 - **Layer 5 opens: numeric HIRC type `0x04` is the object that shipped managed
   code addresses by name.** The evidence is a unique cross-table reference, not a
   label. `global-metadata.dat` `stringLiteral` rows give 221 exact audio-like
-  strings the game's own code contains; 151 of their FNV-1/UTF-16 hashes equal a
-  HIRC object identity, and **all 151 land on type `0x04` and none on any other
-  type**. Type `0x04` is 22,910 of the 323,034 objects (7.09%), so coincidence
+  strings the game's own code contains; 203 of their hashes equal a HIRC object
+  identity, and **all 203 land on type `0x04` and none on any other type**. The
+  hash is the shipped `AudioHashGenerator`: FNV-1 over UTF-16 code units, folding
+  ASCII `A`-`Z` before each XOR. Type `0x04` is 22,910 of the 323,034 objects (7.09%), so coincidence
   would scatter about 140 of those 151 matches onto other types; none did. That
   share is measured from the reader's own type histogram by `named_type_share`,
   not asserted in prose. The gate refuses to
