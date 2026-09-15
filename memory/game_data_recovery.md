@@ -5812,7 +5812,41 @@ the constant 24. On the Init family all four score the same 46.47% -- again exac
 `n7 == 0` subset. **The stride is unidentified, and the way to know that was to make the
 rivals compete rather than to check one and stop.** Init's actual `s4` grows far faster
 than linearly in `n7` (`n7=1` spans 188 distinct values; `n7=8` reaches 81,200), so it is
-a byte size over variable-length records, not a count times a stride. Slots 5 and 6 are not unindexed for want of effort -- **at
+a byte size over variable-length records, not a count times a stride.
+
+#### THE PAIR SPLITS SLOT 5's FIELDS INTO INVARIANT AND VARYING -- WHICH ONE FAMILY CANNOT SHOW
+
+Comparing each chunk's two files element by element, over **217,620 elements** in 7,433
+pairs. The element counts match in **every** pair (0 differ), and **not one element is
+byte-identical**:
+
+| slot-5 field | agrees across the pair |
+| --- | --- |
+| **field 1** | **58,141 of 58,141 = 100.0%** |
+| **field 2** | **100,822 of 100,822 = 100.0%** |
+| field 4 | 88.2% |
+| field 3 | 9.7% |
+| field 0 | 4.2% |
+| **field 5** | **0 of 81,172 = 0.0%** |
+
+*Two fields never disagree and one never agrees.* Fields 1 and 2 also carry the fewest
+distinct values in the corpus -- 5 and 11 -- so they read as a **kind or type code that
+identifies the same entry in both files**, while 0, 3 and 5 carry per-file quantities.
+**This partition is invisible from either family alone**: within `InitChunkData` all six
+fields look alike, small integers with few distinct values. It took the pairing to
+separate them.
+
+Element *vtable layouts* match in only 2,930 of 7,433 pairs, so some of these fields are
+optional and present in one file but not the other.
+
+***What this does not establish.*** The natural follow-up -- that fields 0, 3 and 5 are
+byte sizes summing to one of the scalars -- **fails**. Summing each across a chunk's
+entries and testing against `s2`, `s3`, `s4` and the buffer length gives at best 16.70%,
+and the one suggestive hit, `sum(field5) == s4 - 24` at **46.47%**, lands on **3,454**
+files in *both* families -- the same recurring empty-chunk subset that every degenerate
+fit in this family has produced. *When a number that has already been identified as the
+degenerate subset turns up as a match rate, it is the subset talking, not the hypothesis.*
+The scalars stay unexplained. Slots 5 and 6 are not unindexed for want of effort -- **at
 this `inputSetSha256` they contain no variation to index against**, and further mining of
 them needs a different corpus, not a better test.
 
