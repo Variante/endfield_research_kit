@@ -5836,6 +5836,50 @@ a chunk origin -- and still do not agree on what slot 2 counts. *A shared schema
 guarantee a shared meaning per field, and nothing short of testing the second family would
 have shown it.*
 
+### FULL-CORPUS GATE: 26,520 files per family, every claim re-run
+
+Everything above was established on the single-digit coordinate slice. The gate re-runs it
+over the whole family, and the headline is that **62.47% of the corpus -- 16,568
+multi-digit-coordinate files -- had never been tested at all**, alongside 148 `_Global_`
+files carrying no coordinate pair.
+
+| claim | Init | Streaming |
+| --- | --- | --- |
+| total files | 26,520 | 26,520 |
+| decoded with the terrain codec | 26,519 | 26,519 |
+| **decode failed** | **1** | **1** |
+| root layout `(4,8,16,20,24,28,32,36)`/40 | **26,519 / 26,519** | **26,519 / 26,519** |
+| slot 0 == 47 | **26,519 / 26,519** | **26,519 / 26,519** |
+| origin == `(x*128, y*128)` | **26,372 / 26,372**, 0 mismatches | **26,372 / 26,372**, 0 mismatches |
+| origin unsupported (`_Global_`) | 147 | 147 |
+| `s2 == len-root-20` | **26,519 (100.00%)** | **0 (0.00%)** |
+| `s3 == len-root-28-4n5` | **26,519 (100.00%)** | **0 (0.00%)** |
+| slot 7 (placements) empty | 20,517 (77.36%) | **26,519 (100.00%)** |
+
+**Everything held, including on the 62% never previously seen.** And one slice-level
+finding is *strengthened* rather than merely confirmed: `StreamingChunkData` carries
+**no placements in any of its 26,519 decodable files, corpus-wide** -- not a property of
+the sampled coordinates.
+
+***The two failures are the same level, and they fail loudly.*** Both are `DevOnly`'s
+`_Global_` files, rejected by the codec with `match offset 0 reaches before the output` --
+a refusal, not a silent truncation. `DevOnly` is the consistent outlier in this family: it
+is also the one level whose `StreamingChunkInfo` root has 3 slots instead of 4.
+
+#### THE TWO FILES DISAGREE ABOUT HOW TO SPELL "GLOBAL"
+
+All **294** decodable `_Global_` chunk files carry **one** origin value:
+
+```
+StreamingChunkInfo entry for the global chunk   (INT32_MIN, INT32_MIN)
+InitChunkData_Global_* own origin field         (INT32_MAX, INT32_MIN)
+```
+
+*Same concept, two different sentinels, in files that sit in the same directory and
+describe the same chunk.* The earlier 88-of-88 index join survived only because it matched
+on **filenames**, not on origin values -- a join written the other way would have scored
+zero and read as a refutation of a correct reading.
+
 ***A degenerate fit, caught by fitting four rivals at once.*** `s4 == 24 + 24*n7` scores
 **100.00%** on the Streaming family, which reads like a decoded record stride -- until the
 rivals are run beside it. `24 + 32*n7`, `24 + 40*n7` and `24 + 44*n7` **all score
