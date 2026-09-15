@@ -3279,15 +3279,30 @@ next occurrence of something it already parses correctly:
   97 is. The walk over-consumes by **4 bytes** in the element before it.
 - **No global constant change accounts for it.** Head 5->1 closes 10 bodies, block
   12->8 or 12->16 closes 0, trailer 19->15 or 19->23 closes 0, head 5->9 closes 0.
-  The chosen `(5, 12, 19)` closes 3,715 and nothing else comes close, so the four
-  bytes are **conditional** on something, exactly as the `0x08` gap turned out to be.
-- That is the sixth elimination on this bucket and the first one that also says what
-  the residue **is**. The question is no longer "what are these bytes" but "which
-  element is four bytes shorter than the walk thinks, and what marks it".
-- For the `0x08` gap the mark was the high bit on a head byte, found by noticing a
-  repeated head. The equivalent here would be a flag distinguishing the 104 elements
-  that are four bytes short -- and unlike the 12-versus-17 trailing-block question,
-  this population is large enough to look for one.
+  The chosen `(5, 12, 19)` closes 3,715 and nothing else comes close.
+
+**ELIMINATED: it is not one element over-consuming by four bytes.** That was my
+reading of the measurement above and it is wrong. Shortening **each element in turn**
+by four bytes and re-running the whole walk closes **none** of the 322 failing bodies.
+So there is no single point of over-consumption to find, and the "which element is
+four bytes long, and what marks it" framing is retired.
+
+**Also eliminated again, with the content test this time.** The residue lengths are
+consistent with a 1-byte-head element -- 13 is `1 + 12`, 25 is `1 + 12 + 12`, 93 is
+`1 + 80 + 12` -- but reading them that way still closes only the same **66**, every
+one with **zero runs and therefore zero records**. The interpolation-code test has
+nothing to check, so the arithmetic consistency is all there is. Third time this
+reading has been measured and third time it is degenerate.
+
+**What survives, and it is still the most useful thing known about this bucket**: 152
+of the 218 residues end with a valid element trailer, so they are element *tails*
+rather than appended data. The mechanism that leaves them is not a single mis-sized
+element.
+
+*Searching for a flag also failed for a reason worth keeping: once a walk
+desynchronises, every element after the divergence is noise, so comparing the LAST
+element of a failing body against good ones compares nothing. No byte separated the
+two groups, and that result means nothing either.*
 
 #### FIVE eliminations on the 218, so the next attempt does not repeat them
 
