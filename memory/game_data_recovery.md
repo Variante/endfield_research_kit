@@ -3947,7 +3947,7 @@ bank carries five more**: `DATA` 5,913,232, **`STMG` 10,118**, `INIT` 347, `ENVS
 `PLAT` 8, `DIDX` 84. *A section census costs nothing and should have been the first
 thing done to this format.*
 
-#### `STMG` is framed at both ends: 9,379 bytes of 10,118
+#### `STMG` IS CLOSED: 10,118 of 10,118 bytes, byte-exact
 
 ```
 u16                      observed 0
@@ -3991,10 +3991,33 @@ count x 21-byte record:  u32 id, f32, u8 selector, 3 zero bytes, f32, f32, u8
   **807** floats across the three float fields are finite and bounded, taking values
   like 0, -96, 1, 0.1, 10, 50 and 16000. The selector at `+8` is 0 in 210, 2 in 47 and
   1 in 12.
-- **739 bytes remain unframed** -- the middle block, which opens with a count of 15 and
-  is variable-length. With one instance there is nothing to check a guess against, so
-  it is reported rather than guessed at.
-- Framed: **9,379 of 10,118 (92.7%)**, from 3,722 (36.8%).
+#### `STMG`'s middle block, and why being bounded on both sides was the whole thing
+
+```
+u32 count                15
+count x entry:  u32, u32, u8 zero, u32 records, 3 zero bytes   (13 bytes)
+                records x 12-byte record: 8 bytes, u8 = 9, 3 zero bytes
+```
+
+- I said last batch this block was blocked on having one sample. **That was wrong, and
+  the mistake is worth naming: one STMG, but FIFTEEN entries inside the block.** The
+  sample size for an entry shape is 15, not 1.
+- **What made it framable was being bounded on both sides.** Once the leading and
+  trailing runs were located, the middle had a known start and a known end, so any
+  candidate shape had to consume it *byte-exactly in exactly 15 steps*. Searching every
+  shape of the form "head with a u32 count inside, then n records, then a tail" --
+  head 4..40, count offset 0..head-4, record 1..32, tail 0..16, about **745,000
+  candidates** -- **exactly one** does.
+- **The content agrees independently of the search.** All 15 entry ids are distinct,
+  the head's bytes at `+8` and `+10..+12` are zero in every entry, and the marker byte
+  at record `+8` is **9 in all 45 records** with `+9..+11` zero. *A shape found by
+  exhaustion needs content that the exhaustion did not select for.*
+- Record counts per entry: 3 in six entries, 5 in three, 0/2/4 in two each.
+- **Framed: 10,118 of 10,118. Nothing left over.** From 3,722 (36.8%) two batches ago.
+- Each of the three blocks was located by **different** evidence, because each had
+  something different available: the leading run by a forward count with a stride
+  discriminated against eleven rivals; the trailing run by a backward count, unique
+  over every length from 1 to 480; the middle by exhaustion plus closure.
 
 #### NOTHING outside HIRC references a music object either
 

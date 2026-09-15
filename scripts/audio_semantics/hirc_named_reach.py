@@ -321,6 +321,11 @@ STMG_SCALARS = (
     "tailDistinctIds", "tailFloatsTested", "tailFloatsBounded",
     "tailRivalStridesTested", "tailRivalStridesWithDistinctIds",
     "tailRivalStridesWithTheZeroRun",
+    "entryBlocks", "entryBlockBytes", "entryBlocksTooShort",
+    "entryCountOutOfRange", "entryHeadPastTheEnd", "entryRecordCountOutOfRange",
+    "entryRecordsPastTheEnd", "entryBlocksNotClosing", "entryBlocksFramed",
+    "entries", "distinctEntryIds", "entryRecords",
+    "entryRecordsCarryingTheMarker",
 )
 STMG_WORD_SCALARS = (
     "sections", "sectionBytes", "hircObjects", "wordsTested",
@@ -363,7 +368,7 @@ def _sum_census(audit: dict[str, Any], key: str, scalars: tuple[str, ...],
 
 
 def stmg_from_audit(audit: dict[str, Any]) -> dict[str, Any]:
-    return _sum_census(audit, "stmg", STMG_SCALARS, ("recordValues", "tailSelectors"))
+    return _sum_census(audit, "stmg", STMG_SCALARS, ("recordValues", "tailSelectors", "entryRecordCounts"))
 
 
 def stmg_words_from_audit(audit: dict[str, Any]) -> dict[str, Any]:
@@ -455,6 +460,52 @@ def the_stmg_tail_run_is_located_by_its_count(stmg: dict[str, Any]) -> bool:
                  ("tailTrailingBytesNotZero", "tailRunNotFound",
                   "tailCountDoesNotMatchTheRun"))
     return framed + fences == int(stmg.get("sectionsFramed") or 0)
+
+
+def the_stmg_section_closes_byte_exactly(stmg: dict[str, Any]) -> bool:
+    """STMG is framed end to end: 10,118 of 10,118 bytes, nothing left over.
+
+    Three blocks, each located by different evidence because each had a different
+    thing available:
+
+    - The **leading run** is located forward by a count, and its 12-byte stride is
+      discriminated by id distinctness against eleven rivals.
+    - The **trailing run** is located backward by a count -- the only run length from 1
+      to 480 whose preceding word equals it -- because the block before it is
+      variable-length and the start cannot be computed forward.
+    - The **middle block** is then bounded on both sides, which is what makes it
+      framable at all from a single section. Searching every shape of the form "head
+      with a u32 count inside, then n records, then a tail" over roughly 745,000
+      candidates, exactly **one** consumes the block in exactly 15 entries.
+
+    The content agrees independently of the search: 15 distinct entry ids out of 15,
+    and the marker byte at record `+8` is 9 in all 45 records. *A shape found by
+    exhaustion needs content that the exhaustion did not select for.*
+
+    The gate is byte-exact closure. STMG appears once in the corpus, so a partial
+    frame could always be made to look reasonable; closure cannot.
+    """
+    if not isinstance(stmg, dict):
+        return False
+    declared = int(stmg.get("sectionBytes") or 0)
+    if declared <= 0 or int(stmg.get("sections") or 0) <= 0:
+        return False
+    if int(stmg.get("bytesFramed") or 0) != declared:
+        return False
+    if int(stmg.get("bytesUnframed") or 0) != 0:
+        return False
+    blocks = int(stmg.get("entryBlocks") or 0)
+    framed = int(stmg.get("entryBlocksFramed") or 0)
+    if blocks <= 0 or framed != blocks:
+        return False
+    entries = int(stmg.get("entries") or 0)
+    if entries <= 0 or int(stmg.get("distinctEntryIds") or 0) != entries:
+        return False
+    records = int(stmg.get("entryRecords") or 0)
+    if records <= 0:
+        return False
+    # The content check the shape search did not select for.
+    return int(stmg.get("entryRecordsCarryingTheMarker") or 0) == records
 
 
 def the_unparsed_sections_name_only_buses(words: dict[str, Any]) -> bool:
@@ -965,6 +1016,15 @@ def run(
             f"rivals={stmg.get('tailRivalStridesWithDistinctIds')}"
             f"/{stmg.get('tailRivalStridesTested')} "
             f"floats={stmg.get('tailFloatsBounded')}/{stmg.get('tailFloatsTested')}"
+        )
+    if not the_stmg_section_closes_byte_exactly(stmg):
+        problems.append(
+            "STMG no longer closes byte-exactly: "
+            f"framed={stmg.get('bytesFramed')} of {stmg.get('sectionBytes')} "
+            f"unframed={stmg.get('bytesUnframed')} "
+            f"entries={stmg.get('distinctEntryIds')}/{stmg.get('entries')} "
+            f"marker={stmg.get('entryRecordsCarryingTheMarker')}"
+            f"/{stmg.get('entryRecords')}"
         )
     if not the_unparsed_sections_name_only_buses(stmg_words):
         problems.append(

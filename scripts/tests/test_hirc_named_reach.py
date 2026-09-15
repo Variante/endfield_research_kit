@@ -7,6 +7,7 @@ from scripts.audio_semantics.hirc_named_reach import (
     stmg_from_audit,
     the_stmg_record_stride_beats_its_rivals,
     the_stmg_tail_run_is_located_by_its_count,
+    the_stmg_section_closes_byte_exactly,
     the_unparsed_sections_name_only_buses,
     music_reach_from_audit,
     the_music_family_is_not_entered_from_the_object_graph,
@@ -535,3 +536,47 @@ class StmgTailTests(unittest.TestCase):
     def test_an_empty_census_fails_rather_than_passing_vacuously(self) -> None:
         self.assertFalse(the_stmg_tail_run_is_located_by_its_count({}))
         self.assertFalse(the_stmg_tail_run_is_located_by_its_count(None))
+
+
+class StmgClosureTests(unittest.TestCase):
+    """STMG appears once, so closure is the only check a partial frame cannot fake."""
+
+    MEASURED = {
+        "sections": 1, "sectionBytes": 10118, "bytesFramed": 10118,
+        "bytesUnframed": 0, "entryBlocks": 1, "entryBlocksFramed": 1,
+        "entries": 15, "distinctEntryIds": 15, "entryRecords": 45,
+        "entryRecordsCarryingTheMarker": 45,
+    }
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_stmg_section_closes_byte_exactly(self.MEASURED))
+
+    def test_a_single_unframed_byte_fails(self) -> None:
+        self.assertFalse(the_stmg_section_closes_byte_exactly(
+            dict(self.MEASURED, bytesFramed=10117, bytesUnframed=1)))
+
+    def test_a_block_that_does_not_close_fails(self) -> None:
+        self.assertFalse(the_stmg_section_closes_byte_exactly(
+            dict(self.MEASURED, entryBlocksFramed=0, entries=0,
+                 distinctEntryIds=0, entryRecords=0,
+                 entryRecordsCarryingTheMarker=0)))
+
+    def test_a_record_missing_the_marker_fails(self) -> None:
+        # The content check the shape search did not select for. Exhaustion found the
+        # shape; the marker is what says the shape is the right one.
+        self.assertFalse(the_stmg_section_closes_byte_exactly(
+            dict(self.MEASURED, entryRecordsCarryingTheMarker=44)))
+
+    def test_colliding_entry_ids_fail(self) -> None:
+        self.assertFalse(the_stmg_section_closes_byte_exactly(
+            dict(self.MEASURED, distinctEntryIds=14)))
+
+    def test_an_empty_section_fails_rather_than_passing_vacuously(self) -> None:
+        # Zero bytes framed of zero declared is not closure, it is absence.
+        self.assertFalse(the_stmg_section_closes_byte_exactly(
+            dict(self.MEASURED, sections=0, sectionBytes=0, bytesFramed=0,
+                 entryBlocks=0, entryBlocksFramed=0, entries=0,
+                 distinctEntryIds=0, entryRecords=0,
+                 entryRecordsCarryingTheMarker=0)))
+        self.assertFalse(the_stmg_section_closes_byte_exactly({}))
+        self.assertFalse(the_stmg_section_closes_byte_exactly(None))
