@@ -2204,6 +2204,20 @@ Stable conclusions:
   **constant zero** bytes of the fixed head, so the second term vanishes and the
   general rule reduces to the special one. *A count that is zero in the population
   you are looking at is indistinguishable from padding.*
+- **What the 20 varying bytes of the fixed head actually hold** (conditioned on
+  `byte17 == 0` and the rule confirmed, 3,744 bodies): `u32@5` takes only **5
+  distinct values** and is zero in 3,624 -- an enumeration or a rare id, not a
+  reference (it resolves nowhere). `u32@9` is the `0x0C`/`0x0D` reference.
+  `byte@13` is constant zero. `byte@14` is the element count (0/1/2). `byte@15` and
+  `byte@16` are small (0, 2, 5, 6). `byte@18`, `@19`, `@20` have 21, 23 and 8
+  distinct values and look like parts of one 32-bit value. `byte@23` and `@24` are
+  mixed. `byte@28` and `byte@33` are **booleans** (0/1, split 1,888/1,856 and
+  3,146/598). `byte@32` takes 0, 1, 2, 3.
+- **No single head byte predicts the tail length.** Tails are 69 (3,321), 73 (217),
+  77 (44), 82 (32) -- steps of 4 -- and `69 + 4*byte` matches at best **2,829 of
+  3,744** (byte 33), with byte 32 at 2,168 and byte 16 at 2,783. So the tail's
+  optional fields are counted from **inside the tail**, not from the head. Do not
+  spend another pass looking for a head byte that sizes the tail.
 - **Conditioning on the anchor makes the tail legible.** Restricted to the 3,419
   `0x0A` bodies with exactly one `0x0B` reference and it at -69, **21 of the last 69
   byte positions are constant** -- against **6 of 101** over the unconditioned
