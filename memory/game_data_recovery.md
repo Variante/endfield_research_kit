@@ -3266,6 +3266,29 @@ the 12-vs-17 selector is undetermined. *Check a length model's Frobenius number 
 quoting it -- this is the second length family in this format where most of the range
 is free.*
 
+#### The 218 are a PARTIAL ELEMENT, mis-entered by exactly four bytes
+
+Applying the lesson that closed `0x08` -- when a walk desynchronises, look for the
+next occurrence of something it already parses correctly:
+
+- **152 of the 218 residues END with a valid element trailer** -- 122 with the 19-byte
+  form, 26 with 24, 4 with 29. So the residue is not extra data appended to a finished
+  body. It is the **tail of an element the walk entered too late**.
+- Taking the trailer off leaves an element body, and **104 of those 152 are exactly
+  four bytes short of `17 + 12k`** -- 13 where 17 is wanted, 25 where 29 is, 93 where
+  97 is. The walk over-consumes by **4 bytes** in the element before it.
+- **No global constant change accounts for it.** Head 5->1 closes 10 bodies, block
+  12->8 or 12->16 closes 0, trailer 19->15 or 19->23 closes 0, head 5->9 closes 0.
+  The chosen `(5, 12, 19)` closes 3,715 and nothing else comes close, so the four
+  bytes are **conditional** on something, exactly as the `0x08` gap turned out to be.
+- That is the sixth elimination on this bucket and the first one that also says what
+  the residue **is**. The question is no longer "what are these bytes" but "which
+  element is four bytes shorter than the walk thinks, and what marks it".
+- For the `0x08` gap the mark was the high bit on a head byte, found by noticing a
+  repeated head. The equivalent here would be a flag distinguishing the 104 elements
+  that are four bytes short -- and unlike the 12-versus-17 trailing-block question,
+  this population is large enough to look for one.
+
 #### FIVE eliminations on the 218, so the next attempt does not repeat them
 
 The residue of numeric type `0x0B` bodies that leave real content before the
