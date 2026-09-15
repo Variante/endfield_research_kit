@@ -2056,6 +2056,18 @@ Stable conclusions:
   `0x0A` (2,505/4,158) and `0x0D` (912/2,431), on `unsupported_groupB_nonempty`
   for `0x0B` (4,217/4,325), while `0x0C` "succeeds" on 586/742 but leaves 143-303
   bytes over. Those successes are not evidence: see the next point.
+- **Two fresh eliminations on the music types (2026-09-15). Read these before
+  trying the next idea.**
+  (a) *Their head is not a fixed skeleton.* Tabulating every byte position across
+  the whole corpus, only offsets 0, 3 and 4 take a single value in `0x0A` and
+  `0x0D` (plus offset 34), and `0x0C` has none at all in its first five. A head read
+  off one body -- "nine zero bytes, then the reference, then zeros, then a flag" --
+  looks convincing and is over-fitting. Tabulate positions first.
+  (b) *They do not share the `0x08`/`0x12` tail.* The tail block fits 2 of 7,331
+  bodies. The entry-run-plus-five-zeros tail appears to fit 2,344 `0x0D` bodies --
+  and every one of those is `entries_0`, which is just "the last six bytes are
+  zero". A count of zero makes that test vacuous; check the count distribution
+  before believing a tail match.
 - **Do not try to locate the frame by searching for a start offset.** Every music
   body admits many offsets at which the node frame parses cleanly -- typically 2
   to 12, and up to 12 for `0x0B`. The frame is permissive enough that "it parsed"
