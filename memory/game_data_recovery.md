@@ -7054,8 +7054,36 @@ why `s2 == len - root - 20` held for `InitChunkData` and scored **0.00%** for
 allocation, and in the Streaming case it does not. *A relation that holds in one family and
 fails in its twin was never a fact about the byte layout.*
 
-**What this rules out:** decoding the records from these files. Their content is not here
-to decode -- only their sizes and the offsets that will address them once built.
+##### RETRACTED, AND A MUCH LARGER GAP FOUND
+
+The paragraph this replaces claimed the records "are not here to decode". **That was an
+inference from two guessed bases failing, and it is wrong.** The decisive test is coverage:
+walk the FlatBuffers structure from the root, mark every byte it accounts for -- vtables,
+tables by declared object size, vector prefixes and elements -- and measure what is left.
+
+Over 3,000 files:
+
+| | |
+| --- | --- |
+| buffer bytes accounted for by the FlatBuffers walk | **1.65%** |
+| files with enough free bytes anywhere for an `s4` region | **94.60%** |
+| files with a **contiguous** free run >= `s4` | **77.40%** |
+
+**There is ample room; the claim was unsupported.** But the number that matters is the
+first one. ***These files are 98% unaccounted for by everything this project has framed of
+them.*** The root table, its eight slots and the three vectors -- the entire structure
+recovered across many batches -- describe **one part in sixty** of the bytes.
+
+*That was invisible because nothing ever measured it.* Every result here was framed as
+"this field means X", verified against controls, and gated over the corpus -- all true, and
+all about a sliver. A 34 KB file with `n5=1, n6=2, n7=2` was being described by a reading
+that covers a few hundred bytes of it.
+
+**The walk may itself be incomplete** -- it does not follow slots 0-4's targets, strings, or
+nested vectors inside elements -- and closing those gaps will raise the figure. *It will not
+raise it to anything near 100%*, because the unwalked structures are small and the files are
+large. **The honest position is that the bulk of `InitChunkData` is unexamined, and the
+"complete" element table above is complete only for the element.**
 
 ## STATUS AFTER THE ENGINE-READING PASS (2026-09-15)
 
