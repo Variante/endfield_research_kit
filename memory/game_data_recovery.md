@@ -3281,11 +3281,21 @@ next occurrence of something it already parses correctly:
   12->8 or 12->16 closes 0, trailer 19->15 or 19->23 closes 0, head 5->9 closes 0.
   The chosen `(5, 12, 19)` closes 3,715 and nothing else comes close.
 
-**ELIMINATED: it is not one element over-consuming by four bytes.** That was my
-reading of the measurement above and it is wrong. Shortening **each element in turn**
-by four bytes and re-running the whole walk closes **none** of the 322 failing bodies.
-So there is no single point of over-consumption to find, and the "which element is
-four bytes long, and what marks it" framing is retired.
+**ELIMINATED, and the "four bytes" framing with it.** I read the shortfall as one
+element consuming four bytes too many. Every version of that fails:
+
+* shortening each element in turn by four and re-running the walk: **0 of 322**;
+* *growing* each element in turn by four: **0 of 322**;
+* shortening one element by four **and** taking one extra element at the end, which is
+  the only way a shift and the entry's element count can both be satisfied: **0**;
+* alternative entry-header widths (44, 52, 56) and element-count offsets (4, 8, 40,
+  48): **0** each, against 3,715 for the chosen 48 and +44.
+
+So "four bytes" is not a walk error at all. It is an **arithmetic property of the
+residue lengths**: the residue bodies are `13 + 12k` -- 13 in 66 bodies, 25 in 30, 37
+in 4 -- which is four less than the `17 + 12k` a complete element body takes. That is
+a description of the residue, not a diagnosis of the walk, and I turned one into the
+other without checking.
 
 **Also eliminated again, with the content test this time.** The residue lengths are
 consistent with a 1-byte-head element -- 13 is `1 + 12`, 25 is `1 + 12 + 12`, 93 is
