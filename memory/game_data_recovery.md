@@ -5169,11 +5169,30 @@ exactly as the IrradianceVolume payload turned out to be.
 
 *The constant gave the prediction a number to fail against. Without it "about 1.3 MB" would have looked like agreement with almost anything.*
 
-**Next:** the names are `LAYER_D_<n>.bytes` with a single index and repeat across
-directories, so the per-scene layer set is the unit. Whether the container is the same
-one the terrain lane already decoded -- the custom LZ4 with big-endian offsets and
-bit-interleaved tokens in `scripts/asset_builder/terrain_stream.py` -- is the first
-thing to test, and unlike IrradianceVolume there are 345 files to test it on.
+### CORRECTION: the `LAYER_*` files were already decoded, by the terrain lane
+
+They are in the **Terrain** block -- 744 of them, which the CLI confirms -- and
+`terrain_stream.load_samples` takes *every* file in that block rather than only
+`Terrain_*`. So they have been inside the gated corpus the whole time.
+
+- Running the maintained codec over them: **744 of 744 close**, 743 through the stream
+  decoder and 1 stored, each to exactly its declared length. Every decoded payload
+  begins `TRET`.
+- Only **two decoded sizes** exist: 1,398,148 (x690) and 1,398,121 (x53).
+- **The terrain report already names that group.** `terrain_tret_latest.json` carries
+  `layer2And3.frontier108And109.files = 690`, status `exact_anonymous_record_tiling` --
+  the same 690 files, already closed, already gated, counted inside the 46,164.
+
+***I nearly reported "744 of 744 decode" as a new result.*** It is not. The decode is
+the terrain lane's, done long ago; the filename triage found a family the block-level
+corpus had already swallowed. *A file-name family and a block are different
+partitions, and a new name for an old set is not a new set.*
+
+**What IS new here** is the naming. The terrain report calls that group
+`exact_anonymous_record_tiling` -- exact, and anonymous. `VirtualTextureRenderer`'s
+fields say what the records are: `LAYER_D` is `m_splatsDiffuseArray`, `LAYER_N` is
+`m_splatsNormalArray`, and `LAYER_C` is a control or colour map. **690 anonymous
+records now have a name, and the 940 MB they hold has a purpose.**
 
 *Two batches were spent eliminating containers for IrradianceVolume before asking the
 metadata. This family got asked first, and the answer arrived in one read.*
