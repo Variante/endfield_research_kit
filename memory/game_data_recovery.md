@@ -2118,7 +2118,40 @@ the callers shows which slot is actually invoked.*
 **`0x12`'s real deserializer is `0x180109030`** (`vtable[+0x278]`). It guards on a virtual
 `[rax+0x78]`, bails with error `0x5b` unless that returns 0 or 0xA, then takes the cursor
 and `add rax, 4` past the node id -- the same "id already consumed" convention as `0x11`.
-Its field sequence past that point is not yet read.
+
+#### HIRC `0x12`'s FIELD SEQUENCE, READ FROM THE DESERIALIZER
+
+```
+add  rax, 4                      ; cursor += 4   -- node id, consumed by the caller
+mov  r14d, [rax] ; add rax,4     ; FIELD 1 : u32
+test r14d, r14d ; je skip        ; 0 means "none"
+  mov  rbx, [rip+0x23b911]       ; global object manager
+  div  dword ptr [rbx+0xa0]      ; FIELD 1 % bucketCount
+  mov  rax, [rbx+0x98]           ; bucket array
+  mov  rdi, [rax+rdx*8]          ; chain head
+  cmp  [rdi+0x10], r14d / mov rdi,[rdi+8]    ; walk, key at +0x10, next at +0x8
+skip:
+mov  ecx, [rax] ; add rax,4      ; FIELD 2 : u32  -> stored at object +0x188
+call qword ptr [rax + 0x1f0]     ; nested parse, cursor passed by reference
+cmp  eax, 1 ; jne fail
+movsxd rcx, dword ptr [rax]      ; FIELD 3 : i32
+imul   rcx, [rip+0x2267ee]       ; x a global rate
+movabs rax, 0x20c49ba5e353f7cf ; imul ; sar rdx,7    ; / 1000
+```
+
+| field | width | what the code does with it |
+| --- | --- | --- |
+| node id | 4 | consumed by the caller, skipped here |
+| **1** | 4 | an **object id**, resolved through the global id-keyed hash table (`0` = none) -- the same `+0x10` key / `+0x8` chain structure the loaders walk |
+| **2** | 4 | stored at object offset `0x188` |
+| *(nested)* | -- | virtual `[vt+0x1f0]` parses a further block, advancing the shared cursor |
+| **3** | 4 | signed, multiplied by a global rate then divided by 1000 -- **a millisecond duration converted to samples** |
+
+The divide is the standard `0x20c49ba5e353f7cf` / `sar 7` reciprocal for 1000, which is what
+makes the units legible rather than guessed.
+
+*So `0x12` is a node carrying one outbound reference, one stored word, a nested block and a
+millisecond duration* -- recovered from the reader, not inferred from the corpus.
 - **Numeric type `0x12` is the one HIRC type with no framing at all, and these
   readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
   grammar -- its word at offset 4 fails `range_section` on all 251. It is not the
