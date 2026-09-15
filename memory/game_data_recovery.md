@@ -2118,17 +2118,27 @@ Stable conclusions:
   every one of them is `0x00`. *When a type's head resists, tabulate from the end.*
 - **Type `0x0D`'s body lengths are `165 + 34a + 5b`.** 2,273 of 2,431 fit, 130 do
   not, 28 are ambiguous; the modal `(a, b)` are `(1,0)` 906, `(1,1)` 410, `(2,0)`
-  352, `(2,1)` 239, `(1,2)` 78, `(0,0)` 41. So this type has a **34-byte repeating
-  element** and a **5-byte optional field** -- and that 5-byte optional field is the
-  same one `0x0B`'s entry widths show (84/89, 132/137, 168/173).
+  352, `(2,1)` 239, `(1,2)` 78, `(0,0)` 41. The 5 matches the optional field
+  `0x0B`'s entry widths also show (84/89, 132/137, 168/173).
 - **The arithmetic check that makes this worth believing.** 34 and 5 are coprime, so
   every `d >= 132` is representable for free (Frobenius number 131) and a fit there
   means nothing. Only **91** of the 2,431 bodies are in that range; **2,210** fit
   uniquely with `d < 132`, where roughly half the integers are representable at all.
   And it is type-specific: `0x0A` does **not** fit this shape (3,807 of 4,158 fail
   against base 101), so it is not just small-coefficient coverage.
-- Still **not** a frame for `0x0D`: no 34-byte element has been located in the bytes,
-  only inferred from the length distribution. Find one before framing it.
+- **The bytes do NOT back the "34-byte repeating element" reading, and it is
+  withdrawn as a structural claim.** Each length group is internally very uniform --
+  157 of 165 positions take a single value in the 165-group, 159 of 199 in the
+  199-group -- but the groups do **not** align with each other. Comparing their
+  fixed-position profiles gives only 70/89 to 91/141 agreement end-aligned and
+  similar front-aligned, where a base-plus-inserted-element layout would give
+  agreement everywhere both profiles are constrained.
+- A trap inside that measurement: restricting the comparison to a window where both
+  profiles happen to be constrained gives **1.0** at several different insertion
+  points, including two that contradict each other. Score an alignment over the
+  whole overlap, never over a window chosen after seeing the data.
+- So `165 + 34a + 5b` is a real regularity **of the lengths** and nothing more. The
+  length groups are different shapes, not one shape with a repeated block.
 - **Count the constants, and do not read a distinct-value count as a byte value.**
   The first version of this tabulation printed a constant as two hex digits and a
   varying position as its number of distinct values, in the same column. A position
