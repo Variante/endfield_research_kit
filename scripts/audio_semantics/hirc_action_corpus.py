@@ -1644,6 +1644,8 @@ def aggregate_current_hirc_actions(
     type09_flags: Counter[str] = Counter()
     type17_totals: Counter[str] = Counter()
     type17_failures: Counter[str] = Counter()
+    type17_reasons: Counter[str] = Counter()
+    type17_by_type: Counter[str] = Counter()
     type08_totals: Counter[str] = Counter()
     type11_totals: Counter[str] = Counter()
     type11_plugins: Counter[str] = Counter()
@@ -1699,6 +1701,8 @@ def aggregate_current_hirc_actions(
         for key in TYPE17_SCALARS:
             type17_totals[key] += package_type17[key]
         type17_failures.update(package_type17["failureCounts"])
+        type17_reasons.update(package_type17["fenceReasons"])
+        type17_by_type.update(package_type17["bodiesByType"])
 
         package_type08 = _read_type08_head_census(
             package.get("hircType08Head"), package_label
@@ -2123,6 +2127,8 @@ def aggregate_current_hirc_actions(
         "type17Bodies": {
             **{key: int(type17_totals[key]) for key in TYPE17_SCALARS},
             "failureCounts": dict(sorted(type17_failures.items())),
+            "fenceReasons": dict(sorted(type17_reasons.items())),
+            "bodiesByType": dict(sorted(type17_by_type.items())),
         },
         "type11SourceRecords": {
             **{key: int(type11_totals[key]) for key in TYPE11_SOURCE_SCALARS},
@@ -2651,14 +2657,16 @@ def type09_is_framed_except_the_second_run(corpus: dict[str, Any]) -> bool:
 
 
 TYPE17_SCALARS = (
-    "bodies", "exact", "tiedOptionalBlock", "failed",
+    "bodies", "exact", "fenced", "failed",
     "exactBytes", "bodyBytes", "runElements", "groupIEntries",
 )
 
 
 def _read_type17_census(census: Any, label: str) -> dict[str, Any]:
     if census is None:
-        return {key: 0 for key in TYPE17_SCALARS} | {"failureCounts": {}}
+        return {key: 0 for key in TYPE17_SCALARS} | {
+            "failureCounts": {}, "fenceReasons": {}, "bodiesByType": {}
+        }
     if not isinstance(census, dict):
         raise ValueError(f"type 0x11 census is not an object: {label}")
     out: dict[str, Any] = {}
@@ -2670,14 +2678,24 @@ def _read_type17_census(census: Any, label: str) -> dict[str, Any]:
         if value < 0:
             raise ValueError(f"type 0x11 census has negative {key}: {label}")
         out[key] = value
-    raw = census.get("failureCounts")
-    if not isinstance(raw, dict):
-        raise ValueError(f"type 0x11 census has invalid failureCounts: {label}")
-    out["failureCounts"] = {str(k): int(v) for k, v in raw.items()}
-    if out["exact"] + out["tiedOptionalBlock"] + out["failed"] != out["bodies"]:
+    for key in ("failureCounts", "fenceReasons", "bodiesByType"):
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"type 0x11 census has invalid {key}: {label}")
+        out[key] = {str(k): int(v) for k, v in raw.items()}
+    # Each fenced body carries exactly one stated reason, so a fence with no reason
+    # would be indistinguishable from a body quietly dropped.
+    if sum(out["fenceReasons"].values()) != out["fenced"]:
+        raise ValueError(
+            f"type 0x11 fence reasons do not sum to the fenced bodies: {label} "
+            f"reasons={sum(out['fenceReasons'].values())} fenced={out['fenced']}"
+        )
+    if sum(out["bodiesByType"].values()) != out["bodies"]:
+        raise ValueError(f"type 0x11 per-type counts disagree with the body total: {label}")
+    if out["exact"] + out["fenced"] + out["failed"] != out["bodies"]:
         raise ValueError(
             f"type 0x11 outcomes do not partition the bodies: {label} "
-            f"exact={out['exact']} tied={out['tiedOptionalBlock']} "
+            f"exact={out['exact']} fenced={out['fenced']} "
             f"failed={out['failed']} bodies={out['bodies']}"
         )
     if sum(out["failureCounts"].values()) != out["failed"]:
@@ -2698,7 +2716,7 @@ def type17_is_framed_except_the_tied_block(corpus: dict[str, Any]) -> bool:
         int(corpus.get("bodies") or 0) > 0
         and int(corpus.get("failed") or 0) == 0
         and int(corpus.get("exact") or 0) > 0
-        and int(corpus.get("exact") or 0) + int(corpus.get("tiedOptionalBlock") or 0)
+        and int(corpus.get("exact") or 0) + int(corpus.get("fenced") or 0)
         == int(corpus.get("bodies") or 0)
     )
 
@@ -2855,27 +2873,38 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
     if type17.get("bodies"):
         type17_lines = [
             "",
-            "## Numeric type `0x11`: framed, except where a width ties",
+            "## Numeric types `0x11` and `0x10`: one grammar, framed except where it is undetermined",
             "",
             f"- Bodies: {type17['bodies']:,}; consumed exactly to the declared body end: "
             f"{type17['exact']:,} ({type17['exactBytes']:,} of {type17['bodyBytes']:,} bytes).",
-            f"- Fenced because an optional block's width cannot be determined: "
-            f"{type17['tiedOptionalBlock']:,}. Failures: {type17['failed']:,}.",
+            f"- Fenced: {type17['fenced']:,}. Failures: {type17['failed']:,}.",
+            "",
+            "| Fence reason | Bodies |",
+            "|---|---:|",
+            *(f"| `{name}` | {count:,} |" for name, count in sorted(type17["fenceReasons"].items())),
+            "",
+            "| Numeric type | Bodies |",
+            "|---|---:|",
+            *(f"| `{name}` | {count:,} |" for name, count in sorted(type17["bodiesByType"].items())),
             f"- Group I entries: {type17['groupIEntries']:,}; six-byte run elements: "
             f"{type17['runElements']:,}.",
             "",
-            "The layout is an eight-byte header whose second word sizes an opaque "
-            "section, one byte, the node frame's group I structure, a sixteen-bit flag, "
-            "and a counted run of six-byte elements. Group I is reused, not re-derived.",
+            "Numeric types `0x11` and `0x10` share one grammar: an eight-byte header "
+            "whose second word sizes an opaque section, one byte, the node frame's group "
+            "I structure, a sixteen-bit flag, and a counted run of six-byte elements. "
+            "Group I is reused, not re-derived. Type `0x10` was not decoded separately -- "
+            "its header matched, so the existing grammar was tried and it fit.",
             "",
-            "The fenced bodies are the honest part. When the flag is set an extra block "
+            "Every fenced body states why. When the flag is set an extra block "
             "appears, and **two widths consume every flagged body exactly**: 21 and 27. "
             "They are the same bytes read two ways, with 27 swallowing the run's single "
             "element and reading a zero count. The flag is never greater than 1 anywhere "
             "in this corpus, so no body can separate the two readings, and the width is "
             "underdetermined rather than merely unknown. Those bodies are therefore not "
             "framed at all; picking either width would be a coin flip presented as a "
-            "result.",
+            "result. Separately, type `0x10` bodies whose third byte is 0x7F end in "
+            "something group I does not describe at any offset tried, so they are fenced "
+            "under their own reason rather than blamed on the shared grammar.",
         ]
 
     head08 = report["corpus"].get("type08HeadWords") or {}
@@ -3432,7 +3461,7 @@ def run_current_corpus_audit(
         lane_failures.append(
             "type 0x11 bodies are neither framed nor fenced: "
             f"bodies={type17_corpus['bodies']} exact={type17_corpus['exact']} "
-            f"tied={type17_corpus['tiedOptionalBlock']} failed={type17_corpus['failed']} "
+            f"fenced={type17_corpus['fenced']} failed={type17_corpus['failed']} "
             f"categories={sorted(type17_corpus['failureCounts'])}"
         )
     if not type08_closed:

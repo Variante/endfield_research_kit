@@ -1664,6 +1664,19 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **Numeric type `0x10` shares type `0x11`'s grammar exactly, and was never
+  decoded separately.** Its header matched (`u16`, `u16`, `u32` size), so the
+  existing grammar was tried and 430 of its 453 bodies closed at once. That is now
+  the third time "check whether another type already closes this" paid off, after
+  `0x16` reusing group I and `0x11` doing the same.
+- The 23 `0x10` bodies that do not close all carry third byte `0x7F`, and group I
+  fails to parse in their tail at every offset tried. They are fenced under their
+  own reason, `type10_variant7F`, not blamed on the shared grammar. The reader
+  applies that rule to type `0x10` only -- a `0x7F` third byte on a `0x11` body is
+  normal, and a test pins that so the rule cannot leak across types.
+- Both types now report through one census with a **named reason for every fenced
+  body**, and the gate requires the reasons to account for every fence. A fence
+  without a reason is indistinguishable from a body quietly dropped.
 - **Numeric type `0x11` is framed for 2,553 of its 2,645 bodies (208,891 of
   213,491 bytes); the other 92 are fenced because a width genuinely ties.**
   Layout: an eight-byte header whose second word sizes an opaque section, one

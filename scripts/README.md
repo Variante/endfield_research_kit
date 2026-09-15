@@ -588,10 +588,12 @@ other 185 are fenced. A better reading (5,154) is recorded in the recovery memor
 but has never been implemented, so this census is intentionally the weaker,
 verified one.
 
-It gates numeric type `0x11` as well: 2,553 of 2,645 bodies consumed exactly, and
-92 fenced because an optional block's width ties between 21 and 27 bytes with
-nothing in the corpus able to separate them. Failures are forbidden; fencing is a
-distinct outcome from both success and failure, and fencing everything is refused.
+It gates numeric types `0x11` and `0x10` together, since they share one grammar:
+2,983 of 3,098 bodies consumed exactly, 115 fenced. Every fenced body carries a
+named reason and the gate requires the reasons to account for all of them --
+`tiedOptionalBlockWidth` for 92 `0x11` bodies whose optional block ties between 21
+and 27 bytes, and `type10_variant7F` for 23 `0x10` bodies whose tail group I cannot
+parse. Failures are forbidden; fencing everything is refused.
 
 It gates numeric type `0x08`'s leading word too: null, or exactly one same-bank
 object, never a non-null value naming nothing. `0x08` is not framed.

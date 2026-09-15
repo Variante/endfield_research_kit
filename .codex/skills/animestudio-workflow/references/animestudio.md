@@ -342,9 +342,12 @@ records a better layer grammar reaching 5,154, but it exists only as prose and a
 later attempt could not reproduce it from 48 swept variants, so the shipped census
 is the weaker verified one. Record grammars as widths and offsets, not sentences.
 
-Numeric type `0x11` is an eight-byte header whose second word sizes an opaque
-section, one byte, group I, a 16-bit flag, then a counted run of six-byte
-elements -- 2,553 of 2,645 bodies close exactly. Do not try to close the other 92:
+Numeric types `0x11` and `0x10` share one grammar: an eight-byte header whose
+second word sizes an opaque section, one byte, group I, a 16-bit flag, then a
+counted run of six-byte elements. 2,983 of 3,098 bodies close exactly. Type `0x10`
+was never decoded on its own -- its header matched, the existing grammar was tried,
+and 430 of 453 fit; its 23 stragglers all carry third byte `0x7F` and are fenced
+under their own reason, which applies to `0x10` only. Do not try to close the other 92:
 when the flag is set, block widths 21 and 27 both consume every flagged body
 exactly (27 swallows the run's single element and reads a zero count), and the
 flag is never above 1, so nothing in this corpus separates them. That is a tie,

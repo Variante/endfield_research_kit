@@ -178,13 +178,15 @@ def valid_action_fixture():
     type17_bodies = {
         "bodies": 5,
         "exact": 4,
-        "tiedOptionalBlock": 1,
+        "fenced": 1,
         "failed": 0,
         "exactBytes": 80,
         "bodyBytes": 100,
         "runElements": 3,
         "groupIEntries": 2,
         "failureCounts": {},
+        "fenceReasons": {"tiedOptionalBlockWidth": 1},
+        "bodiesByType": {"type10": 2, "type11": 3},
     }
     type08_head = {
         "bodies": 3,
@@ -1160,7 +1162,8 @@ class HircActionCorpusTests(unittest.TestCase):
         bodies = result["type17Bodies"]
         self.assertEqual(bodies["exact"], 4)
         # A tied width is its own outcome, not a failure and not a pass.
-        self.assertEqual(bodies["tiedOptionalBlock"], 1)
+        self.assertEqual(bodies["fenced"], 1)
+        self.assertEqual(bodies["bodiesByType"], {"type10": 2, "type11": 3})
         self.assertTrue(type17_is_framed_except_the_tied_block(bodies))
 
         # A real failure is never acceptable, even one.
@@ -1169,9 +1172,7 @@ class HircActionCorpusTests(unittest.TestCase):
         )
         # Fencing everything would make the claim vacuous.
         self.assertFalse(
-            type17_is_framed_except_the_tied_block(
-                {**bodies, "exact": 0, "tiedOptionalBlock": 5}
-            )
+            type17_is_framed_except_the_tied_block({**bodies, "exact": 0, "fenced": 5})
         )
 
     def test_type17_outcomes_must_partition_and_bytes_must_fit(self) -> None:
@@ -1197,6 +1198,26 @@ class HircActionCorpusTests(unittest.TestCase):
             scope["hircType17"]["failureCounts"] = {"trailing_bytes": 2}
         with self.assertRaisesRegex(ValueError, "do not sum to the failures"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, mismatched)
+
+        # A fenced body without a stated reason is indistinguishable from one that
+        # was quietly dropped, so the reasons must account for every fence.
+        unreasoned = copy.deepcopy(audio_audit)
+        for scope in (
+            unreasoned["rows"][0]["package"],
+            unreasoned["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircType17"]["fenceReasons"] = {}
+        with self.assertRaisesRegex(ValueError, "fence reasons do not sum"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, unreasoned)
+
+        wrong_types = copy.deepcopy(audio_audit)
+        for scope in (
+            wrong_types["rows"][0]["package"],
+            wrong_types["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircType17"]["bodiesByType"] = {"type11": 3}
+        with self.assertRaisesRegex(ValueError, "per-type counts disagree"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, wrong_types)
 
     def test_type08_head_word_is_null_or_names_one_object(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
