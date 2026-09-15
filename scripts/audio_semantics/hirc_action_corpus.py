@@ -1729,6 +1729,10 @@ def aggregate_current_hirc_actions(
     music_ref_totals: Counter[str] = Counter()
     music_ref_per_body: Counter[str] = Counter()
     music_ref_edges: Counter[str] = Counter()
+    type11_element_totals: Counter[str] = Counter()
+    type11_element_maps: dict[str, Counter] = {
+        key: Counter() for key in TYPE11_ELEMENT_MAPS
+    }
     shared_constant_bodies = 0
     shared_constant_maps: dict[str, dict[str, int]] = {
         key: {} for key in SHARED_CONSTANT_MAPS
@@ -1917,6 +1921,13 @@ def aggregate_current_hirc_actions(
         music_ref_twice.update(package_music_refs["targetsReachedTwice"])
         music_ref_population.update(package_music_refs["targetPopulation"])
         music_ref_places.update(package_music_refs["edgeDistanceFromEnd"])
+        package_t11el = _read_type11_element_census(
+            package.get("hircType11Elements"), package_label
+        )
+        for key in TYPE11_ELEMENT_SCALARS:
+            type11_element_totals[key] += package_t11el[key]
+        for key in TYPE11_ELEMENT_MAPS:
+            type11_element_maps[key].update(package_t11el[key])
         package_shared = _read_shared_constant_census(
             package.get("hircSharedConstants"), package_label
         )
@@ -2419,6 +2430,13 @@ def aggregate_current_hirc_actions(
             "tailEntryCountCounts": dict(sorted(type11_tail_counts.items())),
             "interpolationCounts": dict(sorted(type11_interps.items())),
             "firstTailEntryLeadingWordCounts": dict(sorted(type11_lead_words.items())),
+        },
+        "type11Elements": {
+            **{key: int(type11_element_totals[key]) for key in TYPE11_ELEMENT_SCALARS},
+            **{
+                key: dict(sorted(type11_element_maps[key].items()))
+                for key in TYPE11_ELEMENT_MAPS
+            },
         },
         "sharedFrameConstants": {
             "bodies": int(shared_constant_bodies),
@@ -3088,6 +3106,136 @@ def _rank_shared_constants(corpus: dict[str, Any]) -> dict[str, dict[str, int]]:
 # more than one place. Not a statistical threshold -- just the line below which a
 # claim is an anecdote and should be labelled one.
 GROUP_THINLY_SEEN_BODIES = 32
+
+
+TYPE11_ELEMENT_SCALARS = (
+    "bodies", "notASingleEntry", "notASingleElement", "elements",
+    "trailerIsAmbiguous", "bodyIsNotWholeRecords", "framed",
+    "elementsWithRecords", "countFieldAgrees",
+)
+TYPE11_ELEMENT_MAPS = (
+    "trailerForm", "recordsPerElement",
+    "anchorSelectsOneTrailer", "anchorLeavesWholeRecords",
+)
+# The anchor the reader uses. Named here so the gate compares against it by name
+# rather than by assuming it is the best row.
+TYPE11_CHOSEN_ANCHOR = "trailer_19_24"
+
+
+def _read_type11_element_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's numeric type 0x0B element census."""
+    if census is None:
+        return {key: 0 for key in TYPE11_ELEMENT_SCALARS} | {
+            key: {} for key in TYPE11_ELEMENT_MAPS
+        }
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x0B element census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in TYPE11_ELEMENT_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x0B element census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x0B element census has negative {key}: {label}")
+        out[key] = value
+    for key in TYPE11_ELEMENT_MAPS:
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"type 0x0B element census has invalid {key}: {label}")
+        out[key] = {str(name): int(value) for name, value in raw.items()}
+    if out["elements"] > out["bodies"]:
+        raise ValueError(f"type 0x0B census has more elements than bodies: {label}")
+    if out["framed"] > out["elements"]:
+        raise ValueError(f"type 0x0B census frames more elements than it read: {label}")
+    if out["elementsWithRecords"] > out["framed"]:
+        raise ValueError(
+            f"type 0x0B census counts record-bearing elements it did not frame: {label}"
+        )
+    if out["countFieldAgrees"] > out["elementsWithRecords"]:
+        raise ValueError(
+            f"type 0x0B count field agrees more often than there are elements: {label}"
+        )
+    if sum(out["trailerForm"].values()) != out["framed"] + out["bodyIsNotWholeRecords"]:
+        raise ValueError(
+            f"type 0x0B trailer forms do not cover the elements that chose one: {label}"
+        )
+    for name, value in out["anchorLeavesWholeRecords"].items():
+        if value > out["anchorSelectsOneTrailer"].get(name, 0):
+            raise ValueError(
+                f"type 0x0B anchor {name} scores above its own selection: {label}"
+            )
+    return out
+
+
+def the_type11_trailer_anchor_beats_its_rivals(corpus: dict[str, Any]) -> bool:
+    """The element trailer must be established by what it leaves, not by parsing.
+
+    An element of numeric type 0x0B ends with a trailer whose first byte selects its
+    own length: zero means nineteen bytes, one means twenty-four. Several rival
+    anchor pairs pick exactly one trailer for just as many elements -- one of them
+    for *more* -- so "it parses" separates nothing here, as it separated nothing for
+    the shared frame's constants.
+
+    What separates them is the residue. Under the chosen anchor the element bodies
+    left behind are a 17-byte head plus a whole number of twelve-byte records; under
+    every rival pair almost none are. A wrong anchor leaves lengths with no
+    structure at all, and that is the evidence.
+
+    Rivals are not all independent, and pretending they are sets the bar in the
+    wrong place. An anchor pair sharing an endpoint with the chosen one inherits
+    most of its score from the elements that endpoint already explains: the pair
+    (19, 25) scores 3,108 only because 19 is right and 3,238 elements take the short
+    trailer. It is a near-duplicate, not an alternative.
+
+    So the gate asks two different things. Against every rival, the chosen anchor
+    must win outright. Against rivals sharing *neither* endpoint -- the genuinely
+    different readings -- it must win by a wide margin, because those are the ones
+    that would be scoring on structure of their own if they scored at all.
+    """
+    elements = int(corpus.get("elements") or 0)
+    if elements <= 0:
+        return False
+    leaves = corpus.get("anchorLeavesWholeRecords") or {}
+    selects = corpus.get("anchorSelectsOneTrailer") or {}
+    chosen = int(leaves.get(TYPE11_CHOSEN_ANCHOR) or 0)
+    if chosen <= 0:
+        return False
+    names = set(selects) | set(leaves)
+    rivals = [name for name in names if name != TYPE11_CHOSEN_ANCHOR]
+    if not rivals:
+        return False
+    chosen_ends = set(TYPE11_CHOSEN_ANCHOR.split("_")[1:])
+    independent = []
+    for name in rivals:
+        score = int(leaves.get(name) or 0)
+        if score >= chosen:
+            return False
+        if not (set(name.split("_")[1:]) & chosen_ends):
+            independent.append(score)
+    if not independent:
+        return False
+    return chosen > max(independent) * 10
+
+
+def the_type11_trailer_is_not_settled_by_parsing(corpus: dict[str, Any]) -> bool:
+    """Some rival anchor must pick a trailer at least as often as the chosen one.
+
+    The control for the gate above, stated as a requirement so it cannot quietly
+    stop being true. If the chosen anchor also won on how many elements it can parse
+    at all, then parsing would be the discriminator, the residue test would be doing
+    no work, and the reasoning recorded here would be wrong. Today a rival parses
+    more elements than the chosen anchor does and leaves nothing structured behind,
+    which is exactly the situation that makes the residue the evidence.
+    """
+    selects = corpus.get("anchorSelectsOneTrailer") or {}
+    chosen = int(selects.get(TYPE11_CHOSEN_ANCHOR) or 0)
+    if chosen <= 0:
+        return False
+    return any(
+        int(value) >= chosen for name, value in selects.items()
+        if name != TYPE11_CHOSEN_ANCHOR
+    )
 
 
 def every_group_reports_the_bodies_behind_it(lanes: dict[str, Any]) -> bool:
@@ -5488,6 +5636,9 @@ def run_current_corpus_audit(
     }
     group_bodies_ok = every_group_reports_the_bodies_behind_it(body_lane_corpus)
     thin_groups = thinly_seen_groups(body_lane_corpus)
+    type11_element_corpus = corpus["type11Elements"]
+    t11_anchor_ok = the_type11_trailer_anchor_beats_its_rivals(type11_element_corpus)
+    t11_anchor_control = the_type11_trailer_is_not_settled_by_parsing(type11_element_corpus)
     shared_const_corpus = corpus["sharedFrameConstants"]
     shared_const_ok = every_shared_constant_beats_its_rivals(shared_const_corpus)
     shared_const_control = the_shared_constants_are_not_settled_by_closure(
@@ -5583,6 +5734,8 @@ def run_current_corpus_audit(
         and shared_const_ok
         and shared_const_control
         and group_bodies_ok
+        and t11_anchor_ok
+        and t11_anchor_control
         and music_partition
         and music_anchor
         and type0a_head
@@ -5629,6 +5782,7 @@ def run_current_corpus_audit(
             "musicReferences": music_ref_corpus,
             "type0AHead": type0a_head_corpus,
             "sharedFrameConstants": shared_const_corpus,
+            "type11Elements": type11_element_corpus,
             "thinlySeenGroups": thin_groups,
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
@@ -5822,6 +5976,19 @@ def run_current_corpus_audit(
             f"distinct={(refs.get('distinctTargets') or {}).get(MUSIC_PARTITIONING_EDGE)} "
             f"twice={(refs.get('targetsReachedTwice') or {}).get(MUSIC_PARTITIONING_EDGE)} "
             f"population={(refs.get('targetPopulation') or {}).get(MUSIC_PARTITIONING_EDGE)}"
+        )
+    if not t11_anchor_ok:
+        t11 = report["corpus"].get("type11Elements") or {}
+        lane_failures.append(
+            "the type 0x0B element trailer does not beat its rival anchors on the "
+            f"residue: leaves={t11.get('anchorLeavesWholeRecords')}"
+        )
+    if not t11_anchor_control:
+        t11 = report["corpus"].get("type11Elements") or {}
+        lane_failures.append(
+            "no rival anchor parses as many type 0x0B elements as the chosen one, so "
+            "parsing would be the discriminator and the residue test is doing no "
+            f"work: selects={t11.get('anchorSelectsOneTrailer')}"
         )
     if not group_bodies_ok:
         lane_failures.append(

@@ -2658,13 +2658,54 @@ from there the counts fall out. Widening a range would never have found either.
   (84/89, 132/137, 168/173) with identical counts, so some five-byte field is
   optional; and once a base is chosen the remaining widths differ by multiples of 12,
   which is the record size the `0x08`/`0x12` tail also uses.
-- Still **not** established for `0x0B`: the entry element layout, and therefore the
-  entry widths themselves. Eleven readings of the entry
-  interior have been eliminated. The latest: the entry does not end with a node
-  frame (768 of 4,019 single-entry bodies admit no closing frame at any offset),
-  and the 53 + 12k head widths that *do* close are a fit rather than a layout --
-  no field in the first 53 bytes carries k (best agreement 34 of 834 bodies with
-  k > 0, which is noise). So `0x0B` still has no lane.
+### `0x0B`'s element ends with a self-sizing trailer, and that explains the widths
+
+- **The element's trailer chooses its own length from its first byte: `0` means 19
+  bytes, `1` means 24.** That five-byte difference is the five-byte step the entry
+  widths have shown all along -- 84/89, 132/137, 168/173 -- and it is an optional
+  field's two forms, not two layouts.
+- **What the trailer leaves behind is `17 + 12k`**: a 17-byte head and a run of
+  twelve-byte records, the same record `0x08`, `0x12` and `0x0B`'s curves carry.
+  Over the 3,891 bodies with exactly one entry and one element: **3,594 frame**
+  (3,238 short trailer, 544 long), 109 are ambiguous, 188 leave a body that is not a
+  whole number of records.
+- **The evidence is the residue, not the parse.** Rival anchors pick exactly one
+  trailer for just as many elements -- `-18/-23` picks one for **3,875**, more than
+  the chosen `-19/-24`'s 3,782. Parsing separates nothing. But the bodies each
+  anchor leaves behind do:
+
+  | anchor | picks one trailer | leaves `17 + 12k` |
+  |---|---:|---:|
+  | `-17/-22` | 3,877 | 32 |
+  | `-18/-23` | 3,875 | **0** |
+  | **`-19/-24`** | 3,782 | **3,594** |
+  | `-20/-25` | 3,418 | 6 |
+  | `-21/-26` | 721 | 4 |
+
+- **Rivals are not all independent, and the first version of this gate got that
+  wrong.** `-19/-25` scores 3,108, which failed a tenfold-margin test -- but it
+  scores that only because `-19` is right and most elements take the short trailer.
+  An anchor sharing an endpoint is a near-duplicate, not an alternative. The gate now
+  demands the chosen anchor win outright against every rival and by a wide margin
+  against rivals sharing **neither** endpoint. *When scoring a two-part reading
+  against rivals, rivals that share a part inherit its score; hold only the
+  genuinely different ones to the wide margin.*
+- **Still not established: which field carries `k`.** `element[8]` equals it in
+  **575 of the 1,103** elements with `k > 0` -- part of the answer, not the rule. So
+  the element's *length* is modelled but its *forward frame* is not, and `0x0B`
+  still has no lane. Note `k` is never 1 or 2: it is 0 (2,491) or 3 and above.
+- The degenerate trap caught this one too: scored without excluding `k = 0`, eight
+  different offsets "carry k" in 2,491 elements, because an all-zero field matches a
+  zero count for free. The census excludes them, and the code says why.
+- Gated by `the_type11_trailer_anchor_beats_its_rivals` with
+  `the_type11_trailer_is_not_settled_by_parsing` as its stated control: if the chosen
+  anchor ever also wins on how many elements it can parse, the residue test is doing
+  no work and the gate fails loudly.
+- Supersedes the earlier note that "the 53 + 12k head widths that close are a fit
+  rather than a layout". That measurement was made from the front, looking for a
+  count in the first 53 bytes. The structure is anchored to the **end**, which the
+  earlier attempt could not see -- and which is the third time in this type that
+  tabulating from the end worked where the head resisted.
 - Type `0x0B` carries **no** same-bank object references at all -- it is pointed to
   by `0x0A`, and points at media instead. The corpus has only 7 DIDX entries in
   total, so its media is streamed rather than embedded, and `0x0B`'s source ids

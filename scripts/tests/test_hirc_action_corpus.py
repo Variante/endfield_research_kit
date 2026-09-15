@@ -10,7 +10,12 @@ from pathlib import Path
 
 from scripts.audio_semantics.hirc_action_corpus import (
     _read_shared_constant_census,
+    TYPE11_ELEMENT_MAPS,
+    TYPE11_ELEMENT_SCALARS,
     _rank_shared_constants,
+    _read_type11_element_census,
+    the_type11_trailer_anchor_beats_its_rivals,
+    the_type11_trailer_is_not_settled_by_parsing,
     every_group_reports_the_bodies_behind_it,
     summarise_group_evidence,
     thinly_seen_groups,
@@ -2999,3 +3004,85 @@ class GroupEvidenceTests(unittest.TestCase):
         summary = summarise_group_evidence({})
         self.assertEqual(summary["bodiesPerGroupPooled"], {})
         self.assertEqual(summary["thinlySeenByLane"], {})
+
+
+class Type11ElementTrailerTests(unittest.TestCase):
+    """The element trailer must be established by its residue, not by parsing."""
+
+    def census(self, **overrides):
+        base = {
+            "elements": 3891,
+            "anchorSelectsOneTrailer": {
+                "trailer_17_22": 3877, "trailer_18_23": 3875, "trailer_19_24": 3782,
+                "trailer_19_25": 3327, "trailer_20_25": 3418, "trailer_21_26": 721,
+            },
+            "anchorLeavesWholeRecords": {
+                "trailer_17_22": 32, "trailer_19_24": 3594, "trailer_19_25": 3108,
+                "trailer_20_25": 6, "trailer_21_26": 4,
+            },
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_type11_trailer_anchor_beats_its_rivals(self.census()))
+        self.assertTrue(the_type11_trailer_is_not_settled_by_parsing(self.census()))
+
+    def test_a_rival_sharing_an_endpoint_is_not_held_to_the_wide_margin(self) -> None:
+        # (19, 25) scores 3,108 only because 19 is right and most elements take the
+        # short trailer. Demanding a tenfold margin over it would fail a correct
+        # reading -- which is exactly what the first version of this gate did.
+        census = self.census()
+        self.assertGreater(census["anchorLeavesWholeRecords"]["trailer_19_25"],
+                           census["anchorLeavesWholeRecords"]["trailer_19_24"] / 10)
+        self.assertTrue(the_type11_trailer_anchor_beats_its_rivals(census))
+
+    def test_an_independent_rival_that_scores_well_fails_the_gate(self) -> None:
+        census = self.census()
+        census["anchorLeavesWholeRecords"]["trailer_20_25"] = 1000
+        self.assertFalse(the_type11_trailer_anchor_beats_its_rivals(census))
+
+    def test_any_rival_beating_the_chosen_anchor_fails(self) -> None:
+        census = self.census()
+        census["anchorLeavesWholeRecords"]["trailer_19_25"] = 3594
+        self.assertFalse(the_type11_trailer_anchor_beats_its_rivals(census))
+
+    def test_an_anchor_that_leaves_nothing_structured_fails(self) -> None:
+        census = self.census()
+        census["anchorLeavesWholeRecords"]["trailer_19_24"] = 0
+        self.assertFalse(the_type11_trailer_anchor_beats_its_rivals(census))
+        self.assertFalse(the_type11_trailer_anchor_beats_its_rivals(self.census(elements=0)))
+        self.assertFalse(the_type11_trailer_anchor_beats_its_rivals({}))
+
+    def test_the_control_fails_when_parsing_would_have_sufficed(self) -> None:
+        # If the chosen anchor also parsed more elements than every rival, parsing
+        # would be the discriminator and the residue test would be doing no work.
+        census = self.census()
+        census["anchorSelectsOneTrailer"] = {
+            "trailer_19_24": 3782, "trailer_17_22": 10, "trailer_18_23": 10,
+        }
+        self.assertFalse(the_type11_trailer_is_not_settled_by_parsing(census))
+        self.assertFalse(the_type11_trailer_is_not_settled_by_parsing({}))
+
+    def test_the_reader_rejects_incoherent_counts(self) -> None:
+        base = {key: 0 for key in TYPE11_ELEMENT_SCALARS}
+        base.update({key: {} for key in TYPE11_ELEMENT_MAPS})
+        for field, value in (
+            ("elements", 5), ("framed", 5), ("elementsWithRecords", 5),
+            ("countFieldAgrees", 5),
+        ):
+            bad = dict(base, **{field: value})
+            bad.update({key: {} for key in TYPE11_ELEMENT_MAPS})
+            with self.assertRaises(ValueError):
+                _read_type11_element_census(bad, "pkg")
+
+    def test_the_reader_rejects_an_anchor_scoring_above_its_own_selection(self) -> None:
+        base = {key: 0 for key in TYPE11_ELEMENT_SCALARS}
+        base.update({key: {} for key in TYPE11_ELEMENT_MAPS})
+        base["anchorSelectsOneTrailer"] = {"trailer_19_24": 3}
+        base["anchorLeavesWholeRecords"] = {"trailer_19_24": 4}
+        with self.assertRaises(ValueError):
+            _read_type11_element_census(base, "pkg")
+
+    def test_an_absent_census_reads_as_empty(self) -> None:
+        self.assertEqual(_read_type11_element_census(None, "pkg")["elements"], 0)
