@@ -5708,7 +5708,64 @@ than encoding them.
 **Still open, with the route now narrowed:** what a slot-7 element *is*. Its category is a
 6-valued **unordered** one-hot code confirmed twice over and its 24-byte centre/extents
 field is read, but no managed accessor, no filename literal and no loader type matches it.
-A name has to come from the native reader. Slots 5 and 6 are not unindexed for want of effort -- **at
+A name has to come from the native reader.
+
+## `StreamingChunkInfo`: the per-level chunk index, and it checks out against the filenames
+
+Asking what *else* lives in the directory turned out to be worth more than any amount of
+further staring at the chunk payloads. Each level's `Data/Streaming/PC/<level>/Streaming/`
+holds three families:
+
+| file | per level |
+| --- | --- |
+| `InitChunkData_<x>_<y>_0_0.bytes` + `InitChunkData_Global_#_#.bytes` | one per chunk |
+| `StreamingChunkData_<x>_<y>_0_0.bytes` + `_Global_` | **the same coordinates, paired 1:1** |
+| **`StreamingChunkInfo.bytes`** | **exactly one -- the index** |
+
+**The index is not in the terrain container at all.** It decodes with the terrain codec
+**0 of 89** times, because it is a *plain, uncompressed FlatBuffers buffer* -- root
+uoffset 16, vtable immediately after. Its neighbours in the same directory are all
+codec-wrapped. *Sharing a directory does not mean sharing a container, and trying the
+neighbour's codec first is what established that cheaply.*
+
+**Framing, from the bytes.** 89 files, two root layouts and one element layout:
+
+```
+root   (4, 8, 12, 16) objectSize 20      x88        slot 3 = the chunk vector
+root   (4, 8, 12)     objectSize 16      x1         DevOnly -- no slot 3
+element (4, 12)       objectSize 16      x23,806    ALL of them, one layout
+   field 0  8 bytes = two int32   the chunk's (x, y) grid coordinates
+   field 1  4 bytes               the constant 4, in 23,806 of 23,806
+```
+
+Totals: **23,806 chunks indexed** across 88 levels, and exactly **88 sentinel entries** --
+`(INT32_MIN, INT32_MIN)`, **one per level**, which is the `_Global_` chunk.
+
+#### THE INDEX AGREES WITH THE FILENAMES EXACTLY, 88 OF 88
+
+The reading makes a prediction with nothing fitted to it: for every level, the set of
+coordinates *inside* the index equals the set of coordinates *in the filenames beside it*.
+It can fail in both directions -- an index entry with no file, or a file with no entry.
+
+| | levels |
+| --- | --- |
+| **exact set equality** | **88 / 88** |
+| any mismatch, either direction | **0** |
+| index did not frame | 1 (`DevOnly`, whose root has no slot 3) |
+| **control: matches a *different* level's files** | **1 / 88** |
+
+*Note the coordinates here are raw grid indices* -- `(-2, 0)`, `(-1, 1)` -- **not** scaled
+by 128 the way `InitChunkData`'s own origin field is. The same quantity is stored in two
+units in two places, which is exactly the sort of thing that makes a name-based guess go
+wrong and a join go right.
+
+***The control deserves its own note, because the single hit is real and not a weakness.***
+One adjacent pair of levels does share an identical chunk set -- because the data genuinely
+repeats: **73 distinct coordinate sets cover 88 levels**, with **14 levels sharing one
+65-chunk set** and 2 sharing a 257-chunk set. Those are instanced layouts. So the control
+fires where the world actually is duplicated, and nowhere else. *A control that returns
+exactly zero is sometimes a control that cannot fire at all; this one could, did once, and
+for a reason that is visible in the data.* Slots 5 and 6 are not unindexed for want of effort -- **at
 this `inputSetSha256` they contain no variation to index against**, and further mining of
 them needs a different corpus, not a better test.
 
