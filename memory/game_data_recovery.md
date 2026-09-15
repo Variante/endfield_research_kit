@@ -7085,6 +7085,38 @@ raise it to anything near 100%*, because the unwalked structures are small and t
 large. **The honest position is that the bulk of `InitChunkData` is unexamined, and the
 "complete" element table above is complete only for the element.**
 
+##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
+
+The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
+exactly 22 bytes of `GrassGrid_0_0#0_A5F014`, `19 00 00 00` then 25 of
+`GrassGrid_0_-64#0_26E4C30`. The names follow `<Type>_<x>_<y>#<n>_<hash>`, and the
+coordinates step by **64**, not the 128 of the chunk origin.
+
+**The type vocabulary is `ProxyEntityType`.** Over 400 files:
+
+| name prefix | count | | name prefix | count |
+| --- | --- | --- | --- | --- |
+| `SurfaceTypeData` | 147 | | `GrassGrid` | 19 |
+| `AudioEmitter` | 42 | | `AudioScatterEmitter` | 14 |
+| `AudioRoom` | 39 | | `MergedCollider` | 7 |
+| `AudioPortal` | 5 | | `ClothGroupInfo` | 6 |
+
+-- `TerrainSurfaceTypeData`, `AudioEmitter`, `AudioRoom`, `AudioPortal`, `GrassGrid`,
+`GpuClothGroup`, `MergedRenderCollider`, beside plain Unity object names
+(`Reflection Probes`, `Point Light`, `New Game Object`).
+
+***This vindicates the refusal and relocates the enum.*** `ProxyEntityType` was refused as
+slot 5's kind code on an external anchor -- 0 of 28 codes matched the `iv` block's counts,
+with a positive control proving the test could fire -- and slot 5 was shown not to be a
+placement list at all. **Both conclusions stand, and the enum does appear in these files:
+as the names of records in the region nothing had looked at.** *The enum was real, the
+refusal was right, and they were about different parts of the file.*
+
+**Strings are only 0.1% of the bytes**, roughly one name per file, so the bulk is the
+binary payload that follows each name -- floats among it. That is the next target, and it
+is now a specific one: *per-entity records, named by proxy-entity type, occupying
+essentially the whole file.*
+
 ## STATUS AFTER THE ENGINE-READING PASS (2026-09-15)
 
 Findings from this pass are spread across many entries above. This is the consolidated
