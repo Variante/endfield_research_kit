@@ -3508,6 +3508,36 @@ already predict.*** The gate publishes the number instead of pretending it
 discriminates, and the evidence it rests on is the pair a bad control cannot produce:
 coverage unchanged at 4,115, and 115 bodies caught that were previously walked through.
 
+#### `0x0B`'s residue is at a practical ceiling: six mechanisms swept and excluded
+
+Every mechanism this format's own idioms suggest has now been tried on the 210, and
+each was scored over the whole corpus rather than on the failing slice.
+
+| mechanism | search space | best result |
+| --- | --- | --- |
+| a different uniform element grammar | ~2,300 shapes | 150-2,841 vs **4,115** |
+| an extended entry header behind a flag | 1,728 triples | +8, and it fires on 14 bodies closing 0 of them |
+| a different source-record width | 8..32, and a separate width after the first | 4,041 vs **4,115** |
+| a gap before the entry count | -12..+16 | closes **nothing** when applied to all bodies |
+| the step-back applied per element | -- | identical, the case never arises |
+| shifting the failing element | -40..+40 | repairs **20 of 182**, at two inconsistent deltas |
+
+Two further checks close off the easy explanations:
+
+- **They are not dead data.** Every one of the 2,195 distinct `0x0B` objects is
+  referenced by a `0x0A` counted array -- **100% of the framing ones and 100% of the
+  failing ones**. The residue is live, referenced music tracks.
+- **The surplus is not a constant.** For the 22 failing bodies simple enough that the
+  frame can predict a length from their declared counts, the actual length exceeds it
+  by 16, 38, 49 or 50 -- inconsistent. For the other 188 the element does not parse
+  from its declared start at all, so no length can be predicted.
+
+**The position, stated plainly: numeric type `0x0B` is at 4,115 of 4,325 counted and
+2,087 of 2,195 distinct -- 95.1% either way -- and the residue resists every mechanism
+the format's own vocabulary suggests.** Progress on it needs evidence this corpus does
+not contain, not another sweep. *Recording a ceiling is worth more than a sweep that
+was always going to fail, and cheaper than running it twice.*
+
 #### The 210 scale with body complexity, and the source region is NOT the cause
 
 With the twelve reserved bytes now fencing at the cause, the failing bodies can be
