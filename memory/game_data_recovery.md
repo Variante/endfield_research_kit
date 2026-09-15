@@ -3215,6 +3215,20 @@ gate rather than buried in the field's name.*
 - What would settle it: a `0x0B` body with a populated element head and more than one
   run, or one run declaring records. None exists in this corpus.
 
+**A second property, measured later and worth only what it is worth.** Under the
+17-byte block the fenced elements come out at size **53** in 93 of the 119 and **41**
+in 20. Every element size closing bodies produce is of the form `36 + 12a + 5b` --
+36, 41, 72, 77, 84, 89, 96, 120, 125, 137 -- and 53 fits it as `36 + 12 + 5`. So the
+reading yields family-consistent sizes rather than arbitrary ones.
+
+*But the family test is weak and saying so matters more than the result.* With 12 and
+5 coprime, every size above **79** is representable, so the test is **vacuous** there;
+across 36 to 139 it rules out only **22 of 104** candidates, or 21%. Size 53 passing
+is corroboration, not evidence, and it does not change the standing conclusion that
+the 12-vs-17 selector is undetermined. *Check a length model's Frobenius number before
+quoting it -- this is the second length family in this format where most of the range
+is free.*
+
 #### FIVE eliminations on the 218, so the next attempt does not repeat them
 
 The residue of numeric type `0x0B` bodies that leave real content before the
