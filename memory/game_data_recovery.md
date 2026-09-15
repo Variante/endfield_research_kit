@@ -2726,13 +2726,28 @@ u32 terminator, always 100
   content**. Reporting one number hid that the second group is unread structure while
   the first may be padding. *When a fence bucket is the largest one, check whether it
   is one failure or several wearing the same name.*
-- **What the 218 leave is recognisable, and is where the next attempt starts.** A
-  44-byte leftover begins `00 00 40 3f 00 00 80 3f 09 00 00 00` -- 0.75, 1.0 and the
-  interpolation code 9, which is the twelve-byte curve record this type already
-  carries. The 32-byte leftovers carry an object id at +8. And every leftover of both
-  sizes has `01` **ten bytes from the terminator**, which is where an element's short
-  trailer puts its own marker. So the residue looks like one more element that the
-  entry's element count at +44 did not declare, not like noise.
+- **What the 218 leave is recognisable.** A 44-byte leftover begins
+  `00 00 40 3f 00 00 80 3f 09 00 00 00` -- 0.75, 1.0 and the interpolation code 9,
+  which is the twelve-byte curve record this type already carries. The 32-byte
+  leftovers carry an object id at +8. And every leftover of both sizes has `01`
+  **ten bytes from the terminator**, which is where an element's short trailer puts
+  its own marker.
+
+#### Two eliminations on the 218, so the next attempt does not repeat them
+
+- **It is NOT one more element the count at +44 failed to declare.** Walking elements
+  greedily after the declared ones -- taking every element that parses until the
+  terminator -- takes **zero** extra elements in **every** body, and closes exactly
+  the same 3,715. The residue does not parse as an element at all.
+- **A variant element with a one-byte head is a fit, not a finding, and is not
+  adopted.** `1 head + runs + 12 + trailer` closes **66 of 218** outright. Allowing a
+  free number of leading twelve-byte records before it raises that to 100 -- but the
+  number of records is then chosen per body after seeing the length, which is fitting,
+  not evidence. Recorded because the 66 is real and because the next attempt should
+  start from a rule that *predicts* the record count rather than absorbing it.
+- The control that makes the 66 worth noting at all: the established five-byte head
+  closes **4** of the 218. So the residue genuinely is a different shape from an
+  element, rather than an element the walk mis-entered.
 - Not a closure-gated lane, for the same reason `0x08` is not. The gate is a floor
   at 80% -- there to catch a regression, not to assert the frame is complete, which
   it is not.
