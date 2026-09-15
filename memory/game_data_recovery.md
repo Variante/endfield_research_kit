@@ -5547,11 +5547,45 @@ element's five exactly and its names are tempting -- `Guid, Trans, GridChain, Pa
 VisInfo` -- but its slot 3 is `Int64`, eight bytes, where the data measures four. *A
 five-field type with a plausible name is not a match; the widths are the match.*
 
+##### The Bounds attribution has to be narrowed: the element is not a managed table
+
+Checking the rest of the vocabulary walks part of the previous claim back, so it is
+stated here rather than left standing.
+
+**Exactly one of the 72 generated tables carries a `FBDynamicSceneBounds` field** --
+`FBDynamicSceneSludgeComp`, which has **27** fields against the element's 5. And running
+the widths against *every* generated table with 5 non-vector fields, **none matches**
+`[16|20, 4, 24, 4, 4]`:
+
+| table | widths |
+| --- | --- |
+| `FBDynamicSceneModel` | `[16, 36, 12, 8, 24]` |
+| `FBDynamicSceneSeatComp` | `[4, 4, 12, 12, 4]` |
+| `FBDynamicSceneRootComp`, `ActivityCondition`, `SettlementControlComp` | all `[4, 4, 4, 4, 4]` |
+| `FBFactorySingleGridRangeData` | `[4, 4, 4, 4, 4]` |
+
+So **the slot-7 element table is read by nothing in the managed assembly** -- the same
+native boundary the IrradianceVolume lane hit. That is a real finding, and it is also the
+reason the name has to be qualified.
+
+***What survives and what does not.*** The *reading* stands on the bytes alone and is
+unaffected: a centre that sits in its own chunk 73.96% against a 1.28% control, and a
+second triple that is non-negative in 21,336 of 21,336 components. **What does not stand
+is the stronger form -- that this field IS the declared `FBDynamicSceneBounds`.** The
+engine declares a type with exactly this layout and that name, which is good evidence
+that centre-and-extents is a real layout in this codebase; it is *not* evidence that this
+particular field is that type, because no table that could contain it uses it. *The name
+describes the layout; it does not locate a use site.* Anyone taking the earlier phrasing
+literally would go looking for a managed reader that does not exist.
+
+Note also that `FBDynamicSceneGuid` is **16 bytes** (V0..V3, UInt32) -- exactly slot 0's
+width. It is still not a match: a GUID does not take **34 distinct values** across 11,016
+records.
+
 **Still not known:** what a slot-7 element *is* as a whole. Its category is isolated to a
-6-valued one-hot code confirmed twice over, and its bounds are now named, but the element
-table itself has not been matched to one of the 72 generated tables -- the two candidates
-that fit its field count were both excluded above. Slots 5 and 6's integer tables are
-likewise unindexed.
+6-valued one-hot code confirmed twice over and its 24-byte field is read, but the table
+is outside the managed schema set entirely, so a name for it will not come from IL2CPP's
+generated accessors. Slots 5 and 6's integer tables are likewise unindexed.
 
 ## Remaining gaps
 
