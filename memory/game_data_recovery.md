@@ -2245,6 +2245,33 @@ per-class slots -- `[+0x1f0]` `0x1800ffc60`, `[+0x1f8]` `0x1800ff980`, `[+0x200]
 shared block of a three-type class family**, and anything established for one holds for the
 other two.
 
+##### The family's other two blocks, and a shape that appears twice independently
+
+**`[+0x1f0]` -> `0x1800ffc60`.** `u8 N`, then `align = (N+4) & ~3`, allocate
+`align + N*4`, store `N` at the head, fill from the cursor, and keep the block at
+`[+0x88]`. **That is the same `N` bytes then `N` dwords structure as `0x12`'s `[+0x1f0]`**
+(`0x180108d10`) -- *two different functions, compiled separately, producing an identical
+serialized shape and storing it at the identical object offset.* A layout inferred once
+could be a misreading; the same layout reached twice by independent code is the format.
+
+**`[+0x1f8]` -> `0x1800ff980`.** A single `u8`, folded into the flag word at `[+0x90]` with
+mask `0x3000000000000` -- **bits 48 and 49 together**, set or cleared as a pair. Note this
+differs from `[+0x200]`'s byte, which drives the single bit 54: *three bytes in three blocks
+all land in one flag word at different bit positions*, which is why they cannot be told
+apart by value and only the code separates them.
+
+##### The `0x02` / `0x05` / `0x09` node body, as far as the engine reads it
+
+| block | content |
+| --- | --- |
+| `[+0x1f0]` | `u8 N`, `N` x byte, `N` x dword -> object `+0x88` |
+| `[+0x1f8]` | `u8` -> flag bits 48-49 |
+| `[+0x200]` | `u8` -> flag bit 54; `u8 B`; `B` x `{u8, u32, u8}` |
+| shared tail | `u32` object reference, `0` = none, resolved via the registry at `0x1803449d8` |
+
+*All three types carry this identically -- it is one class, reached from three jump-table
+arms.*
+
 **`0x12`, `[vt+0x1f0]` -> `0x180108d10`.** The byte is a **count**, and what follows is a
 parallel-array block:
 
