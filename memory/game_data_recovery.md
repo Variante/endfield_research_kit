@@ -1946,8 +1946,19 @@ Stable conclusions:
   publishes a closed-form byte total and this type has none. Its gate forbids only
   what a partial framing must not do -- leave a body neither framed nor accounted
   for, report an ambiguous body, or pass with nothing framed at all.
-- **The remaining fences, and what is known about them.** `0x08`:
-  `word_after_the_middle_block_is_not_zero` 14, `tail_block_does_not_end_the_body` 9,
+- **The "zero word" after the middle block is a count too.** It is followed by that
+  many **18-byte** elements. It reads as zero in 396 of the 412 bodies of both types,
+  which is exactly why it was checked as a constant; the 16 that declare 1, 2, 3 or 7
+  are what expose it. The width was **solved for**, not guessed: asking which element
+  width lets each of those bodies close gives 18 for all of them, uniquely in 13 of
+  14. That took `0x08` from 128 to **142 of 161**.
+- **Third time this pattern has cost bodies in this layout.** The tail block's unit
+  count, this middle-run count, and (earlier) the second-list count all looked like
+  constants because the overwhelming majority of bodies declare the same value.
+  *Before checking any field as a constant in this layout, look at its value
+  distribution over both types -- a field that is 0 in 96% of bodies and small
+  elsewhere is a count.*
+- **The remaining fences.** `0x08`: `tail_block_does_not_end_the_body` 9,
   `range_tail_block_units` 6, `range_properties` 4. `0x12`:
   `range_tail_block_units` 4.
 - The `range_tail_block_units` bodies declare **zero** units. Reading two of them by
@@ -1960,9 +1971,11 @@ Stable conclusions:
   five type `0x08` bodies diverge at the byte after the entry run and four type
   `0x12` bodies one byte earlier. Two samples were enough to invent a layout and not
   nearly enough to test one.
-- An alternative that this corpus cannot rule out: the *entry run* walk may be wrong
-  for these bodies, so the tail does not start where the reader thinks. Test that
-  before proposing another tail shape.
+- The alternative -- that the *entry run* walk is wrong for these bodies, so the tail
+  does not start where the reader thinks -- is now **eliminated**: trying every run
+  length from 0 to 63 makes the tail frame as a unit block for **none** of the 19
+  bodies still fenced. The tail of these bodies is a different structure, not a
+  misplaced start.
 - **What the fence hides, censused rather than framed.** 40 bodies carry a tail
   after the entry run, and 27 of them end in a counted run of **twelve-byte
   records**: two 32-bit floats and a 32-bit code. The run is anchored from the
