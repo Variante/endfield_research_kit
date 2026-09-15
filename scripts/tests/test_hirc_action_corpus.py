@@ -17,6 +17,8 @@ from scripts.audio_semantics.hirc_action_corpus import (
     type08_head_words_are_null_or_resolve,
     type11_sources_share_the_type02_plugin_space,
     type11_bodies_share_one_terminator,
+    type08_bodies_are_exact_or_named,
+    _read_type08_body_frame,
     type11_tail_entries_are_counted,
     _read_type11_source_census,
     music_head_references_are_closed,
@@ -230,6 +232,16 @@ def valid_action_fixture():
         "unresolved": 0,
         "tooShort": 0,
     }
+    type08_body = {
+        "count": 3,
+        "exact": 2,
+        "unsupported": 0,
+        "failed": 1,
+        "ambiguous": 0,
+        "bodyBytes": 180,
+        "failureCategories": {"trailer_is_not_five_bytes": 1},
+        "unsupportedCategories": {},
+    }
     type11_sources = {
         "bodies": 2,
         "bodiesWithRecords": 2,
@@ -406,6 +418,7 @@ def valid_action_fixture():
                     "hircMusicHeadReferences": copy.deepcopy(music_head),
                     "hircType11Sources": copy.deepcopy(type11_sources),
                     "hircType08Head": copy.deepcopy(type08_head),
+                    "hircType08BodyFrame": copy.deepcopy(type08_body),
                     "hircType17": copy.deepcopy(type17_bodies),
                     "hircType09": copy.deepcopy(type09_bodies),
                     "hircType03Targets": copy.deepcopy(type03_targets),
@@ -435,6 +448,7 @@ def valid_action_fixture():
                             "hircMusicHeadReferences": copy.deepcopy(music_head),
                             "hircType11Sources": copy.deepcopy(type11_sources),
                             "hircType08Head": copy.deepcopy(type08_head),
+                            "hircType08BodyFrame": copy.deepcopy(type08_body),
                             "hircType17": copy.deepcopy(type17_bodies),
                             "hircType09": copy.deepcopy(type09_bodies),
                             "hircType03Targets": copy.deepcopy(type03_targets),
@@ -1505,6 +1519,40 @@ class HircActionCorpusTests(unittest.TestCase):
             )
         with self.assertRaisesRegex(ValueError, "more terminators than bodies"):
             _read_type11_source_census({**census, "endsWithTerminator": 9}, "unit")
+
+    def test_type08_bodies_must_be_framed_or_named(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        body = result["type08BodyFrames"]
+        self.assertEqual((body["count"], body["exact"], body["failed"]), (3, 2, 1))
+        self.assertTrue(type08_bodies_are_exact_or_named(body))
+
+        # This type does not close, so the gate cannot require every body to frame.
+        # What it must reject is a body that is neither framed nor accounted for.
+        self.assertFalse(type08_bodies_are_exact_or_named({**body, "count": 4}))
+        # An all-fenced corpus proves nothing about the layout and must not pass.
+        self.assertFalse(
+            type08_bodies_are_exact_or_named(
+                {**body, "exact": 0, "failed": 3,
+                 "failureCategories": {"trailer_is_not_five_bytes": 3}}
+            )
+        )
+        # An ambiguous body means the framer could not decide, which is not the same
+        # as a named fence and must not be counted as one.
+        self.assertFalse(type08_bodies_are_exact_or_named({**body, "ambiguous": 1, "count": 4}))
+        # A fence without a reason hides whatever shape the framer did not handle.
+        self.assertFalse(type08_bodies_are_exact_or_named({**body, "failureCategories": {}}))
+        self.assertFalse(type08_bodies_are_exact_or_named({"count": 0, "exact": 0}))
+
+    def test_a_type08_body_census_that_loses_a_body_is_refused(self) -> None:
+        _, _, _, audio_audit = valid_action_fixture()
+        census = audio_audit["rows"][0]["package"]["hircType08BodyFrame"]
+        with self.assertRaisesRegex(ValueError, "do not partition"):
+            _read_type08_body_frame({**census, "count": 9}, "unit")
+        with self.assertRaisesRegex(ValueError, "do not cover its failures"):
+            _read_type08_body_frame({**census, "failureCategories": {}}, "unit")
+        with self.assertRaisesRegex(ValueError, "negative"):
+            _read_type08_body_frame({**census, "exact": -1}, "unit")
 
     def test_the_type11_tail_count_must_be_carried_by_the_echoes(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

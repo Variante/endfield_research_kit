@@ -606,7 +606,16 @@ and 27 bytes, and `type10_variant7F` for 23 `0x10` bodies whose tail group I can
 parse. Failures are forbidden; fencing everything is refused.
 
 It gates numeric type `0x08`'s leading word too: null, or exactly one same-bank
-object, never a non-null value naming nothing. `0x08` is not framed.
+object, never a non-null value naming nothing.
+
+Numeric type `0x08`'s **body** is now framed byte-exact in 96 of its 161 bodies:
+a reference, the counted key/value block `0x16` uses, a one-entry list whose key
+sizes its value, a fixed nine-byte signature, a zero word, a counted run of
+six-byte entries, and five zero bytes. It is deliberately not one of the
+closure-gated body lanes -- a lane publishes a closed-form byte total and this
+type has none. Its own gate forbids the three things a partial framing must not
+do: leave a body neither framed nor accounted for, report an ambiguous body, or
+pass with nothing framed.
 
 It also gates numeric type `0x0B`'s head: a byte, a 32-bit record count, and that
 many fourteen-byte source records whose plug-in id must be one type `0x02` also

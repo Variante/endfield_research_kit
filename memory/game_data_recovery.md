@@ -1926,13 +1926,32 @@ Stable conclusions:
   resolve, 4 are null, 0 unresolved. Null is a real outcome for this type, so the
   gate permits it and forbids only the third case; an all-null corpus would make
   the claim vacuous and does not count as closed either.
-- `0x08` is **not framed**, and here is how far it got so it need not be redone.
-  After the leading word comes the same counted key/value block type `0x16` uses
-  (a count, that many one-byte keys, that many four-byte values). After *that* is a
-  one-entry list whose key byte sizes the value: key `0x15` is followed by 11
-  bytes and key `0x1D` by 27, exactly 16 apart. A fixed signature
-  `02 e8 03 00 00 00 00 c0 c2` then recurs in every tail. That accounts for
-  148 of 161 bodies and stops there, so no lane.
+- **`0x08` now frames byte-exact in 96 of its 161 bodies.** Layout, end to end:
+  a 32-bit reference, the counted key/value block type `0x16` uses (a count, that
+  many one-byte keys, that many four-byte values as parallel runs), a one-entry
+  list whose key sizes its value (`0x15` -> 11 bytes, `0x1D` -> 27, exactly 16
+  apart), the fixed nine-byte signature `02 e8 03 00 00 00 00 c0 c2`, a zero word,
+  a counted run of six-byte entries, and five zero bytes.
+- Two details are the whole difference between this and the earlier attempt.
+  The one-entry list's key **predicts** its value width, so an unobserved key is
+  held unsupported instead of walked with a guessed width. And the entry run
+  carries **one extra byte when its count is nonzero and nothing at all when the
+  count is zero** -- which the bodies declaring no entries fix, rather than being
+  assumed.
+- The 65 remaining bodies are fenced by named reason, never skipped:
+  `trailer_is_not_five_bytes` 40, `word_after_signature_is_not_zero` 11,
+  `signature_not_where_expected` 9, `range_properties` 4,
+  `second_list_is_not_one_entry` 1. Those names are where the next attempt starts.
+- `0x08` is deliberately **not** one of the closure-gated body lanes: a lane
+  publishes a closed-form byte total and this type has none. Its gate forbids only
+  what a partial framing must not do -- leave a body neither framed nor accounted
+  for, report an ambiguous body, or pass with nothing framed at all.
+- **A rule that looked right and is withdrawn.** Bodies whose leading reference is
+  null appeared to carry an extra 32-bit word before the property count. Adding
+  that rule changes the exact count by **zero**, and not one of the four
+  null-reference bodies frames under it. It was fitted to nothing. The general
+  lesson: when a special case is suggested by a handful of bodies, check that
+  removing it changes the count before keeping it.
 - The other small types do **not** share `0x08`'s head. Their leading word names
   nothing in 119 of 251 `0x12` bodies, all 453 `0x10` bodies, and all 2,645 `0x11`
   bodies, so offset 0 is simply not a reference field for them. `0x12`'s first

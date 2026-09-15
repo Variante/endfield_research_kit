@@ -1661,6 +1661,9 @@ def aggregate_current_hirc_actions(
     type11_totals: Counter[str] = Counter()
     type11_plugins: Counter[str] = Counter()
     type11_terminators: Counter[str] = Counter()
+    type08_body_totals: Counter[str] = Counter()
+    type08_body_failures: Counter[str] = Counter()
+    type08_body_unsupported: Counter[str] = Counter()
     type11_tail_counts: Counter[str] = Counter()
     type11_lead_words: Counter[str] = Counter()
     type11_streams: Counter[str] = Counter()
@@ -1753,6 +1756,13 @@ def aggregate_current_hirc_actions(
         type11_streams.update(package_type11["streamTypeCounts"])
         type11_record_counts.update(package_type11["recordCountCounts"])
         type11_terminators.update(package_type11["terminatorCounts"])
+        package_type08_body = _read_type08_body_frame(
+            package.get("hircType08BodyFrame"), package_label
+        )
+        for key in TYPE08_BODY_FIELDS:
+            type08_body_totals[key] += package_type08_body[key]
+        type08_body_failures.update(package_type08_body["failureCategories"])
+        type08_body_unsupported.update(package_type08_body["unsupportedCategories"])
         type11_tail_counts.update(package_type11["tailEntryCountCounts"])
         type11_lead_words.update(package_type11["firstTailEntryLeadingWordCounts"])
 
@@ -2156,6 +2166,11 @@ def aggregate_current_hirc_actions(
         "type14BodyFrames": body_lanes["0x0E"].publish(),
         "type22BodyFrames": body_lanes["0x16"].publish(),
         "type08HeadWords": {key: int(type08_totals[key]) for key in TYPE08_HEAD_SCALARS},
+        "type08BodyFrames": {
+            **{key: int(type08_body_totals[key]) for key in TYPE08_BODY_FIELDS},
+            "failureCategories": dict(sorted(type08_body_failures.items())),
+            "unsupportedCategories": dict(sorted(type08_body_unsupported.items())),
+        },
         "type02MediaJoin": _summarise_media_join(media_ids, source_ids_by_plugin),
         "smallTypeBodies": {
             **{key: int(small_totals[key]) for key in SMALL_TYPE_SCALARS},
@@ -3053,6 +3068,78 @@ TYPE11_SOURCE_SCALARS = (
 TYPE11_TERMINATOR_KEY = "end_00000064"
 
 
+TYPE08_BODY_FIELDS = ("count", "exact", "unsupported", "failed", "ambiguous", "bodyBytes")
+
+
+def _read_type08_body_frame(container: Any, label: str) -> dict[str, Any]:
+    """Validate one package's or bank's type 0x08 whole-body census.
+
+    Type 0x08 does not close, so it is read here rather than through the lane
+    framework: a lane that cannot account for every body has no business
+    publishing a closed-form byte total. What this reader insists on is that the
+    census partitions -- every body is exact, unsupported or failed, and every
+    non-exact body carries a named reason. A census that loses a body would
+    otherwise let an unread shape pass as absent.
+    """
+    if container is None:
+        return {key: 0 for key in TYPE08_BODY_FIELDS} | {
+            "failureCategories": {}, "unsupportedCategories": {},
+        }
+    if not isinstance(container, dict):
+        raise ValueError(f"type 0x08 body census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in TYPE08_BODY_FIELDS:
+        try:
+            value = int(container[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x08 body census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x08 body census has negative {key}: {label}")
+        out[key] = value
+    for key in ("failureCategories", "unsupportedCategories"):
+        raw = container.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"type 0x08 body census has invalid {key}: {label}")
+        out[key] = {str(name): int(count) for name, count in raw.items()}
+    if out["exact"] + out["unsupported"] + out["failed"] + out["ambiguous"] != out["count"]:
+        raise ValueError(f"type 0x08 body outcomes do not partition its bodies: {label}")
+    if sum(out["failureCategories"].values()) != out["failed"]:
+        raise ValueError(f"type 0x08 failure categories do not cover its failures: {label}")
+    if sum(out["unsupportedCategories"].values()) != out["unsupported"]:
+        raise ValueError(f"type 0x08 unsupported categories do not cover its bodies: {label}")
+    return out
+
+
+def type08_bodies_are_exact_or_named(corpus: dict[str, Any]) -> bool:
+    """Every type 0x08 body is either framed byte-exact or fenced by a named reason.
+
+    This type is **not** closed and the gate does not pretend otherwise. What it
+    forbids is the thing that would make a partial framing untrustworthy: a body
+    that is neither framed nor accounted for. Requiring at least one exact body
+    keeps an all-fenced corpus from satisfying it, and requiring each non-exact
+    body to carry a reason keeps the framer from quietly skipping shapes it does
+    not handle.
+    """
+    count = int(corpus.get("count") or 0)
+    if count <= 0 or int(corpus.get("exact") or 0) <= 0:
+        return False
+    if int(corpus.get("ambiguous") or 0):
+        return False
+    accounted = (
+        int(corpus.get("exact") or 0)
+        + int(corpus.get("unsupported") or 0)
+        + int(corpus.get("failed") or 0)
+    )
+    if accounted != count:
+        return False
+    return (
+        sum(int(v) for v in (corpus.get("failureCategories") or {}).values())
+        == int(corpus.get("failed") or 0)
+        and sum(int(v) for v in (corpus.get("unsupportedCategories") or {}).values())
+        == int(corpus.get("unsupported") or 0)
+    )
+
+
 def _read_type11_source_census(census: Any, label: str) -> dict[str, Any]:
     """Validate one package's or bank's type 0x0B source-record census."""
     if census is None:
@@ -3390,12 +3477,57 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             f"- Naming something that is not in the bank: {head08['unresolved']:,}; too short: "
             f"{head08['tooShort']:,}.",
             "",
-            "Type `0x08` is **not framed**. The claim here is only about its first four "
+            "The claim here is only about its first four "
             "bytes: they are either all zero or the identity of exactly one object "
             "declared by the same bank, and never a non-null value that names nothing. "
             "Null is a real outcome for this type rather than a failure, so it is counted "
             "on its own instead of being folded into either side; what the gate forbids is "
             "the third case.",
+        ]
+
+    body08 = report["corpus"].get("type08BodyFrames") or {}
+    body08_lines = []
+    if body08.get("count"):
+        body08_lines = [
+            "",
+            "## Numeric type `0x08`: most bodies now frame byte-exact",
+            "",
+            f"- Bodies: {body08['count']:,}; framed to the declared body end: "
+            f"{body08['exact']:,}; fenced: {body08['failed'] + body08['unsupported']:,}; "
+            f"ambiguous: {body08['ambiguous']:,}.",
+            "",
+            "| Fence reason | Bodies |",
+            "|---|---:|",
+            *(
+                f"| `{name}` | {count:,} |"
+                for name, count in sorted((body08.get("failureCategories") or {}).items())
+            ),
+            *(
+                f"| `{name}` (unsupported) | {count:,} |"
+                for name, count in sorted((body08.get("unsupportedCategories") or {}).items())
+            ),
+            "",
+            "Layout: a 32-bit reference, the counted key/value block numeric type `0x16` "
+            "uses, a one-entry list whose key sizes its value, a fixed nine-byte "
+            "signature, a zero word, a counted run of six-byte entries, and five zero "
+            "bytes. Two details carry the weight. The one-entry list's key **predicts** "
+            "its value width -- `0x15` is followed by 11 bytes and `0x1D` by 27, exactly "
+            "sixteen apart -- so a body with an unobserved key is refused rather than "
+            "walked with a guessed width. And the entry run carries one extra byte when "
+            "its count is nonzero and nothing at all when the count is zero, which is "
+            "fixed by the bodies that declare no entries rather than assumed.",
+            "",
+            "This type is **not closed**, and the gate does not treat it as if it were: "
+            "it has no closed-form byte total and is deliberately not one of the lanes. "
+            "What it does forbid is a body that is neither framed nor accounted for -- "
+            "every non-exact body carries a named reason, at least one body must frame, "
+            "and an all-fenced corpus fails.",
+            "",
+            "A rule that looked right and is **withdrawn**: bodies whose leading "
+            "reference is null appeared to carry an extra 32-bit word before the property "
+            "count. Adding that rule changes the exact count by zero, and not one of the "
+            "four null-reference bodies frames under it, so it was fitted to nothing and "
+            "is not in the reader.",
         ]
 
     sources11 = report["corpus"].get("type11SourceRecords") or {}
@@ -3547,6 +3679,7 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             *type09_lines,
             *type17_lines,
             *head08_lines,
+            *body08_lines,
             *source_lines,
             *head_lines,
             "",
@@ -3915,7 +4048,11 @@ def run_current_corpus_audit(
     type17_corpus = corpus["type17Bodies"]
     type17_closed = type17_is_framed_except_the_tied_block(type17_corpus)
     type08_corpus = corpus["type08HeadWords"]
+    type08_body_corpus = corpus["type08BodyFrames"]
     type08_closed = type08_head_words_are_null_or_resolve(type08_corpus)
+    type08_body_named = type08_bodies_are_exact_or_named(
+        report["corpus"].get("type08BodyFrames") or {}
+    )
     type11_terminator_closed = type11_bodies_share_one_terminator(type11_corpus)
     type11_tail_counted = type11_tail_entries_are_counted(type11_corpus)
     type11_closed = type11_sources_share_the_type02_plugin_space(
@@ -3927,6 +4064,7 @@ def run_current_corpus_audit(
         and type11_closed
         and type11_terminator_closed
         and type11_tail_counted
+        and type08_body_named
         and type08_closed
         and type17_closed
         and type09_closed
@@ -3957,6 +4095,7 @@ def run_current_corpus_audit(
             "musicHeadReferences": music_head_corpus,
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
+            "type08BodyFrames": type08_body_corpus,
             "type17Bodies": type17_corpus,
             "type09Bodies": type09_corpus,
             "type03Targets": t03_corpus,
@@ -4023,6 +4162,14 @@ def run_current_corpus_audit(
             f"bodies={type08_corpus['bodies']} resolved={type08_corpus['resolved']} "
             f"null={type08_corpus['null']} unresolved={type08_corpus['unresolved']} "
             f"tooShort={type08_corpus['tooShort']}"
+        )
+    if not type08_body_named:
+        body08 = report["corpus"].get("type08BodyFrames") or {}
+        lane_failures.append(
+            "type 0x08 bodies are not all exact or named: "
+            f"count={body08.get('count')} exact={body08.get('exact')} "
+            f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
+            f"ambiguous={body08.get('ambiguous')}"
         )
     if not type11_tail_counted:
         lane_failures.append(
