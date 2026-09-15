@@ -193,6 +193,21 @@ unique binding.
   literal-length encoding but that is an observation, not a claim. The 1,361 files
   whose magic is not at offset 6 are fenced rather than read with a layout that
   does not fit them, and 744 names are not `Terrain_a_b_c_X.bytes` shaped at all.
+- **The terrain payload is a control-byte encoded stream. It is not LZ4.** A
+  minimal LZ4 block decoder was tried at three plausible payload starts and
+  reproduced the declared size in **0 of 60** files, so that hypothesis is
+  eliminated rather than untried.
+- What is measured about it, as leads rather than a layout: two files with
+  identical headers differ **only** in one repeated byte value, which is what makes
+  a run encoding the obvious reading. `0xFF` appears in long early runs. `0xCC`,
+  `0xCE` and `0xDC` recur mid-stream in positions that look like opcodes. And a
+  terminator is strongly evidenced: over 2,470 framed payloads, **2,391 have `0x11`
+  exactly six bytes from the end** and 2,389 have exactly five bytes after their
+  last `0x11`.
+- Next attempt should start from that terminator and work backwards, since it is
+  the only part with a fixed shape. **Do not start from the front**: the first
+  payload byte takes at least five common values (0, 1, 128, 255, 246), so there is
+  no single entry state to anchor on.
 - Read by `scripts/asset_builder/terrain_header.py`; report at
   [`reports/assets/terrain_header_current_latest.json`](../reports/assets/terrain_header_current_latest.json).
   Terrain rows are `encrypted=False`, which is why a plain span read works here
