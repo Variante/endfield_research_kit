@@ -5801,9 +5801,34 @@ parameters are stored per layer.
 directories, 54 files against 345 each of `D` and `N`, with `D` and `N` equal in every
 directory -- matching the numbers above exactly.
 
-***So `LAYER_C`'s purpose is reopened, with a discriminator rather than a shrug:*** resolve
-type indices 144608 and 144600 to their declared types. If the colour-variation binding is
-a plain `Texture2D`, the identification above is wrong and the mask map is the answer.
+***The discriminator was run, and it disconfirms the answer above.*** Resolving the indices
+through `MetadataRegistration.types` in `GameAssembly.dll` (225,789 entries at VA
+`0x18c472bb0`; the type enum is bits 16-23 of the `Il2CppType` bitfield):
+
+| field | type index | declared type |
+| --- | --- | --- |
+| `m_splatsDiffuseArray` / `m_splatsNormalArray` | 144608 | **`UnityEngine.Texture2DArray`** |
+| `m_colorVariationTex` | 144600 | **`UnityEngine.Texture2D`** |
+
+**The arrays are per-layer; the colour-variation binding is a single texture.** And the
+argument that selected it eliminated `m_splatControlMap` on the grounds that *"a control map
+is one per terrain, always present, and would not carry a layer index"*. **`Texture2D` is
+one per terrain too** -- so the elimination that chose this answer also rules it out. *A
+distribution argument can only separate candidates it has typed; this one separated a name
+from a name.*
+
+**The rival does not simply inherit the win.** `VirtualTextureRenderer` binds exactly
+`m_splatsDiffuseArray`, `m_splatsNormalArray`, `m_colorVariationTex` and
+`m_decalBlockMaskLut` -- there is **no mask-map texture array**. The mask map's
+`maskMapRemapOffset`/`maskMapRemapScale` are `UnityEngine.Vector4` *parameters* per layer,
+which is consistent with a mask packed into the existing arrays rather than shipped as its
+own files.
+
+**So `LAYER_C`'s consumer is unidentified, and that is a firmer position than before**: the
+recorded answer is positively disconfirmed rather than merely unconfirmed, and the obvious
+rival is ruled out by the binding list. What fits the evidence -- 54 layer-indexed files,
+1-3 per directory, format 5 against 108/109 -- is something bound outside
+`VirtualTextureRenderer` entirely, which is where the next look belongs.
 
 `LAYER_C` also uses format **5** where `D` and `N` use 108 and 109 -- a low, presumably
 standard format against two engine-specific ones, which is consistent, though the format
