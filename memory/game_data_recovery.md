@@ -2184,9 +2184,17 @@ Stable conclusions:
   and longer. 69 - 65 = 4: the reference itself. Those bodies still carry the
   offset-9 head word (247 to `0x0D`, 8 to `0x0C`), so they are ordinary bodies with
   one field absent.
-- That closes the last population the head rule had excluded. The bodies it could
-  not predict were: 144 with a second counted run (now framed), and 255 with the
-  reference simply absent (now explained).
+- That closes two of the three populations the head rule had excluded: 144 with a
+  second counted run (framed), 255 with the reference absent (explained).
+- **The third is 62 bodies where the rule overshoots the body end, and they are a
+  THIRD shape.** Their `body[21]` takes values like 243, 111, 97 and 65 -- not
+  counts -- so the second-run formula does not apply, and for some of them
+  `body[14]` is not a count either (the implied extra comes out negative). Searching
+  every head byte for a count that explains their extra under `base + width*byte`
+  for base 0/7/12 and width 1/5 finds **nothing** above 80%.
+- What they do show: of the 47 with exactly one `0x0B` reference, **31 sit at
+  `head + 16`** and 6 at `head + 0`. So a 16-byte block, not a counted run. Do not
+  look for a count in these bodies; look for what makes the block present.
 - Why byte 21 was invisible before: in the single-run family it is one of the 16
   **constant zero** bytes of the fixed head, so the second term vanishes and the
   general rule reduces to the special one. *A count that is zero in the population
