@@ -1688,6 +1688,8 @@ def aggregate_current_hirc_actions(
     type11_record_counts: Counter[str] = Counter()
     music_head_totals: Counter[str] = Counter()
     music_head_shapes: Counter[str] = Counter()
+    music_tail_named: Counter[str] = Counter()
+    music_tail_tested: Counter[str] = Counter()
     music_head_by_type: Counter[str] = Counter()
     music_head_offsets: Counter[str] = Counter()
     music_head_discriminants: Counter[str] = Counter()
@@ -1845,6 +1847,8 @@ def aggregate_current_hirc_actions(
         music_head_offsets.update(package_music_head["offsetCounts"])
         music_head_discriminants.update(package_music_head["discriminantCounts"])
         music_head_shapes.update(package_music_head["headShapeCounts"])
+        music_tail_named.update(package_music_head["tailWordNamedByOffset"])
+        music_tail_tested.update(package_music_head["tailWordTestedByOffset"])
 
         package_reference = _read_reference_census(
             package.get("hircReferenceCensus"), package_label
@@ -2307,6 +2311,8 @@ def aggregate_current_hirc_actions(
             "headShapeCounts": dict(sorted(music_head_shapes.items())),
             "offsetCounts": dict(sorted(music_head_offsets.items())),
             "discriminantCounts": dict(sorted(music_head_discriminants.items())),
+            "tailWordNamedByOffset": dict(sorted(music_tail_named.items())),
+            "tailWordTestedByOffset": dict(sorted(music_tail_tested.items())),
         },
         "type04U32VectorCandidates": {
             "count": type04_count,
@@ -2697,6 +2703,9 @@ def _read_reference_census(census: Any, label: str) -> dict[str, Any]:
     return metrics
 
 
+# Name hashes are sparse against the 32-bit range, so a rate this far above the
+# chance expectation is the evidence. One in a hundred would not be.
+MUSIC_TAIL_NAMED_MINIMUM_RATE = 0.05
 MUSIC_HEAD_SCALARS = (
     "bodies",
     "resolved",
@@ -2707,6 +2716,7 @@ MUSIC_HEAD_SCALARS = (
     # Bodies whose first byte is not 0. Their head is a different shape, so they are
     # outside the claim; the count is published rather than removed from the total.
     "unknownHeadShape",
+    "tailWordsTested", "tailWordsNamed", "bodiesTooShortForTailWords",
 )
 # Byte 2 chooses where the word sits. Only these values are observed, and an
 # unobserved one must be counted as unknown rather than assigned a branch.
@@ -2730,7 +2740,10 @@ def _read_music_head_census(census: Any, label: str) -> dict[str, Any]:
         if value < 0:
             raise ValueError(f"music head census has negative {key}: {label}")
         out[key] = value
-    for key in ("bodiesByType", "offsetCounts", "discriminantCounts", "headShapeCounts"):
+    for key in (
+        "bodiesByType", "offsetCounts", "discriminantCounts", "headShapeCounts",
+        "tailWordNamedByOffset", "tailWordTestedByOffset",
+    ):
         raw = census.get(key)
         if not isinstance(raw, dict):
             raise ValueError(f"music head census has invalid {key}: {label}")
@@ -2762,6 +2775,43 @@ def _read_music_head_census(census: Any, label: str) -> dict[str, Any]:
             f"offsets={out['offsetCounts']} expected={expected}"
         )
     return out
+
+
+def music_tail_words_are_named(corpus: dict[str, Any]) -> bool:
+    """Two words at fixed distances from the end of a music body carry name hashes.
+
+    These types' heads are variable -- across the corpus only three byte positions
+    from the front take a single value -- so nothing can be located from there. The
+    end is different, and two 32-bit words sit at fixed distances from it.
+
+    The evidence is the arithmetic, not the rate by itself: under fifty thousand
+    name hashes against the 32-bit range means chance matches over the whole corpus
+    are expected far below one, so hundreds of matches cannot be coincidence. The
+    gate still asks for a rate well clear of zero, because a handful of matches in a
+    corpus this size would be the one thing chance could produce.
+
+    Nothing here claims what the names mean, or that an unnamed word is malformed:
+    most of these words are not names, and that is reported rather than treated as a
+    failure.
+
+    The check only applies when names were supplied. This corpus gate's reader run
+    does not load the metadata literals -- the named-reach tool does -- so a census
+    with nothing tested means the question was never asked, which is not the same as
+    the answer being no. Returning true there would be wrong too, so the caller is
+    told to skip rather than judge.
+    """
+    tested = int(corpus.get("tailWordsTested") or 0)
+    if tested <= 0:
+        return True
+    named = int(corpus.get("tailWordsNamed") or 0)
+    if named <= 0:
+        return False
+    by_offset = corpus.get("tailWordNamedByOffset") or {}
+    if not by_offset:
+        return False
+    if sum(int(value) for value in by_offset.values()) != named:
+        return False
+    return named / tested >= MUSIC_TAIL_NAMED_MINIMUM_RATE
 
 
 def music_head_references_are_closed(corpus: dict[str, Any]) -> bool:
@@ -4579,6 +4629,10 @@ def run_current_corpus_audit(
     type08_body_named = type08_bodies_are_exact_or_named(
         report["corpus"].get("type08BodyFrames") or {}
     )
+    # True when no names were supplied: see the check's own note.
+    music_named = music_tail_words_are_named(
+        report["corpus"].get("musicHeadReferences") or {}
+    )
     type11_curves = type11_entries_carry_the_shared_curve_record(type11_corpus)
     type11_terminator_closed = type11_bodies_share_one_terminator(type11_corpus)
     type11_tail_counted = type11_tail_entries_are_counted(type11_corpus)
@@ -4592,6 +4646,7 @@ def run_current_corpus_audit(
         and type11_terminator_closed
         and type11_tail_counted
         and type11_curves
+        and music_named
         and type08_body_named
         and type08_tail_located
         and type08_head_named
@@ -4740,6 +4795,13 @@ def run_current_corpus_audit(
             f"count={body08.get('count')} exact={body08.get('exact')} "
             f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
             f"ambiguous={body08.get('ambiguous')}"
+        )
+    if not music_named:
+        music = report["corpus"].get("musicHeadReferences") or {}
+        lane_failures.append(
+            "music tail words are not named: "
+            f"tested={music.get('tailWordsTested')} named={music.get('tailWordsNamed')} "
+            f"byOffset={music.get('tailWordNamedByOffset')}"
         )
     if not type11_curves:
         lane_failures.append(

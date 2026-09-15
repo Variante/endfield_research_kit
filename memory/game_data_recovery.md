@@ -2103,6 +2103,23 @@ Stable conclusions:
   `0x0A` (2,505/4,158) and `0x0D` (912/2,431), on `unsupported_groupB_nonempty`
   for `0x0B` (4,217/4,325), while `0x0C` "succeeds" on 586/742 but leaves 143-303
   bytes over. Those successes are not evidence: see the next point.
+- **Numeric type `0x0C` carries NAMES at fixed distances from the end of its body.**
+  The words 12 and 24 bytes from the end are FNV name hashes of shipped string
+  literals in **406 of 1,484 draws** over the 742 bodies -- against a chance
+  expectation of **0.017**. Recovered values: `High` (72), `Low` (70), `Loop` (62),
+  `WIN` (42+38), `Start`, `NONE`, `skip`, `General`, `END`, `Normal`, `Default`.
+  146 bodies carry a name at *both* offsets.
+- **This is the first semantic recovery inside the music types**, and the way in was
+  anchoring from the **end**. Their heads are variable -- only three byte positions
+  from the front take a single value across the corpus -- but the tail is not:
+  `0x0A` carries the constant word `0x5BBBD648` thirteen bytes from the end in all
+  4,158 bodies, and `0x0C`/`0x0D` have byte positions holding `0x64` (100) and
+  `0x32` (50) at fixed distances from the end. *When a type's head resists,
+  tabulate from the end.*
+- The census is in the maintained reader and gated, but the gate **skips when no
+  names are supplied**: the corpus gate's reader run does not load the metadata
+  literals -- the named-reach tool does -- and a census with nothing tested means
+  the question was never asked, not that the answer is no.
 - **The twelve-byte curve record is NOT in the music types.** Scanning every offset
   of all 7,331 bodies for a `u32` count followed by that many `(float, float,
   interp <= 9)` records finds it in 33 of 4,158 `0x0A`, 18 of 742 `0x0C` and **0 of

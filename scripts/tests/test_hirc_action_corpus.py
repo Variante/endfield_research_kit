@@ -18,6 +18,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     type11_sources_share_the_type02_plugin_space,
     type11_bodies_share_one_terminator,
     type11_entries_carry_the_shared_curve_record,
+    music_tail_words_are_named,
     type08_bodies_are_exact_or_named,
     type12_bodies_are_exact_or_named,
     _read_type12_body_frame,
@@ -332,6 +333,11 @@ def valid_action_fixture():
         "firstTailEntryLeadingWordCounts": {"lead_00000000": 2},
     }
     music_head = {
+        "tailWordsTested": 8,
+        "tailWordsNamed": 3,
+        "bodiesTooShortForTailWords": 0,
+        "tailWordNamedByOffset": {"minus12": 1, "minus24": 2},
+        "tailWordTestedByOffset": {"minus12": 4, "minus24": 4},
         "bodies": 4,
         "resolved": 3,
         "unresolved": 0,
@@ -1548,6 +1554,42 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(type11_sources_share_the_type02_plugin_space(sources, {}))
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
+        )
+
+    def test_music_tail_words_are_judged_only_when_names_were_supplied(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        music = result["musicHeadReferences"]
+        self.assertEqual(music["tailWordsNamed"], 3)
+        self.assertTrue(music_tail_words_are_named(music))
+
+        # A census with nothing tested means the question was never asked -- this
+        # corpus gate's reader run does not load the metadata literals. That must
+        # skip, not fail, and it must not be read as the answer being no either.
+        self.assertTrue(
+            music_tail_words_are_named(
+                {**music, "tailWordsTested": 0, "tailWordsNamed": 0,
+                 "tailWordNamedByOffset": {}}
+            )
+        )
+        # Asked and answered no, though, is a failure: name hashes are sparse enough
+        # that hundreds of matches cannot be chance, so zero is not the shape of this
+        # finding.
+        self.assertFalse(
+            music_tail_words_are_named(
+                {**music, "tailWordsNamed": 0, "tailWordNamedByOffset": {}}
+            )
+        )
+        # A handful of matches in a corpus this size is the one thing chance could
+        # produce, so the rate has to be clear of zero rather than merely nonzero.
+        self.assertFalse(
+            music_tail_words_are_named(
+                {**music, "tailWordsTested": 4000, "tailWordsNamed": 3}
+            )
+        )
+        # The per-offset histogram has to account for every match claimed.
+        self.assertFalse(
+            music_tail_words_are_named({**music, "tailWordNamedByOffset": {"minus12": 1}})
         )
 
     def test_type11_entries_carry_the_shared_twelve_byte_curve_record(self) -> None:
