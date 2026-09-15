@@ -5880,6 +5880,33 @@ describe the same chunk.* The earlier 88-of-88 index join survived only because 
 on **filenames**, not on origin values -- a join written the other way would have scored
 zero and read as a refutation of a correct reading.
 
+### THE `streaming` VFS BLOCK IS NOW FULLY INVENTORIED
+
+A bounded completeness claim, which is worth more than another partial one. Streaming the
+block with a filter that **excludes** the three known families returns **0 files**, so
+nothing else is in there. The totals close exactly:
+
+| family | files |
+| --- | --- |
+| `InitChunkData_<x>_<y>_0_0.bytes` | 26,372 |
+| `InitChunkData_Global_#_#.bytes` | 148 |
+| `StreamingChunkData_<x>_<y>_0_0.bytes` | 26,372 |
+| `StreamingChunkData_Global_#_#.bytes` | 148 |
+| `StreamingChunkInfo.bytes` | 89 |
+| **total** | **53,129 files, 719.4 MB** |
+
+and the five shapes sum to 53,129 with nothing left over. **Every family in this block is
+framed, and the framing is gated over all of it.** Two files -- `DevOnly`'s `_Global_`
+pair -- are reported as codec refusals rather than skipped.
+
+***The schema is not shipped, and that is now checked rather than assumed.*** Streaming
+the `table`, `json-data`, `extend-data` and `initial-extend-data` blocks for
+`*.fbs`, `*.bfbs`, `*.schema` and `*.proto` returns **0 files**. So the two things still
+unknown here -- what a slot-7 element *is*, and what slot 5's 19-value coupled code
+selects -- **cannot be settled from the shipped data at all**. They need the native
+reader. *That is a different statement from "not yet found", and it is the one the
+evidence supports.*
+
 ***A degenerate fit, caught by fitting four rivals at once.*** `s4 == 24 + 24*n7` scores
 **100.00%** on the Streaming family, which reads like a decoded record stride -- until the
 rivals are run beside it. `24 + 32*n7`, `24 + 40*n7` and `24 + 44*n7` **all score
