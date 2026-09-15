@@ -1639,6 +1639,7 @@ def aggregate_current_hirc_actions(
     type04_banks_with_objects = 0
     type04_non_exact_examples: list[dict[str, Any]] = []
     body_lanes = _build_body_lanes()
+    type08_totals: Counter[str] = Counter()
     type11_totals: Counter[str] = Counter()
     type11_plugins: Counter[str] = Counter()
     type11_streams: Counter[str] = Counter()
@@ -1682,6 +1683,12 @@ def aggregate_current_hirc_actions(
             type02_plugin_counts[plugin_type] += count
         for plugin_id, count in package_type02["pluginIdCounts"].items():
             type02_plugin_ids[plugin_id] += count
+
+        package_type08 = _read_type08_head_census(
+            package.get("hircType08Head"), package_label
+        )
+        for key in TYPE08_HEAD_SCALARS:
+            type08_totals[key] += package_type08[key]
 
         package_type11 = _read_type11_source_census(
             package.get("hircType11Sources"), package_label
@@ -2091,6 +2098,7 @@ def aggregate_current_hirc_actions(
         "type06BodyFrames": body_lanes["0x06"].publish(),
         "type14BodyFrames": body_lanes["0x0E"].publish(),
         "type22BodyFrames": body_lanes["0x16"].publish(),
+        "type08HeadWords": {key: int(type08_totals[key]) for key in TYPE08_HEAD_SCALARS},
         "type11SourceRecords": {
             **{key: int(type11_totals[key]) for key in TYPE11_SOURCE_SCALARS},
             "pluginIdCounts": dict(sorted(type11_plugins.items())),
@@ -2558,6 +2566,48 @@ def music_head_references_are_closed(corpus: dict[str, Any]) -> bool:
     )
 
 
+TYPE08_HEAD_SCALARS = ("bodies", "resolved", "null", "unresolved", "tooShort")
+
+
+def _read_type08_head_census(census: Any, label: str) -> dict[str, int]:
+    if census is None:
+        return {key: 0 for key in TYPE08_HEAD_SCALARS}
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x08 head census is not an object: {label}")
+    out: dict[str, int] = {}
+    for key in TYPE08_HEAD_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x08 head census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x08 head census has negative {key}: {label}")
+        out[key] = value
+    outcomes = out["resolved"] + out["null"] + out["unresolved"] + out["tooShort"]
+    if outcomes != out["bodies"]:
+        raise ValueError(
+            f"type 0x08 head outcomes do not partition the bodies: {label} "
+            f"outcomes={outcomes} bodies={out['bodies']}"
+        )
+    return out
+
+
+def type08_head_words_are_null_or_resolve(corpus: dict[str, Any]) -> bool:
+    """The leading word is null or names one same-bank object, never anything else.
+
+    Null is a legitimate outcome for this type, so it is allowed; a non-null word
+    that names nothing is not, because that is what the claim forbids.
+    """
+    return (
+        int(corpus.get("bodies") or 0) > 0
+        and int(corpus.get("unresolved") or 0) == 0
+        and int(corpus.get("tooShort") or 0) == 0
+        and int(corpus.get("resolved") or 0) > 0
+        and int(corpus.get("resolved") or 0) + int(corpus.get("null") or 0)
+        == int(corpus.get("bodies") or 0)
+    )
+
+
 TYPE11_SOURCE_SCALARS = ("bodies", "bodiesWithRecords", "records", "recordsOutOfRange", "tooShort")
 
 
@@ -2638,6 +2688,26 @@ def reference_graph_is_closed(corpus: dict[str, Any]) -> bool:
 
 def _reference_graph_markdown(report: dict[str, Any]) -> str:
     graph = report["corpus"]["referenceGraph"]
+    head08 = report["corpus"].get("type08HeadWords") or {}
+    head08_lines = []
+    if head08.get("bodies"):
+        head08_lines = [
+            "",
+            "## Numeric type `0x08`: a leading word that is null or names one object",
+            "",
+            f"- Bodies: {head08['bodies']:,}; naming one same-bank object: {head08['resolved']:,}; "
+            f"null: {head08['null']:,}.",
+            f"- Naming something that is not in the bank: {head08['unresolved']:,}; too short: "
+            f"{head08['tooShort']:,}.",
+            "",
+            "Type `0x08` is **not framed**. The claim here is only about its first four "
+            "bytes: they are either all zero or the identity of exactly one object "
+            "declared by the same bank, and never a non-null value that names nothing. "
+            "Null is a real outcome for this type rather than a failure, so it is counted "
+            "on its own instead of being folded into either side; what the gate forbids is "
+            "the third case.",
+        ]
+
     sources11 = report["corpus"].get("type11SourceRecords") or {}
     known_plugins = report["corpus"].get("type02PluginIdCounts") or {}
     source_lines = []
@@ -2748,6 +2818,7 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
                 for name, count in graph["objectCountsByType"].items()
             ) or "| _none_ | 0 | 0 |",
             "",
+            *head08_lines,
             *source_lines,
             *head_lines,
             "",
@@ -3095,11 +3166,16 @@ def run_current_corpus_audit(
     music_head_corpus = corpus["musicHeadReferences"]
     music_head_closed = music_head_references_are_closed(music_head_corpus)
     type11_corpus = corpus["type11SourceRecords"]
+    type08_corpus = corpus["type08HeadWords"]
+    type08_closed = type08_head_words_are_null_or_resolve(type08_corpus)
     type11_closed = type11_sources_share_the_type02_plugin_space(
         type11_corpus, corpus["type02SourcePrefixes"]["pluginIdCounts"]
     )
     reference_closed = (
-        reference_graph_is_closed(reference_corpus) and music_head_closed and type11_closed
+        reference_graph_is_closed(reference_corpus)
+        and music_head_closed
+        and type11_closed
+        and type08_closed
     )
     reference_report = {
         "format": "animestudio-wwise-hirc-reference-graph-audit",
@@ -3123,6 +3199,7 @@ def run_current_corpus_audit(
             "referenceGraph": reference_corpus,
             "musicHeadReferences": music_head_corpus,
             "type11SourceRecords": type11_corpus,
+            "type08HeadWords": type08_corpus,
             "type02PluginIdCounts": corpus["type02SourcePrefixes"]["pluginIdCounts"],
             "audioAuditSummary": corpus["audioAuditSummary"],
         },
@@ -3144,6 +3221,13 @@ def run_current_corpus_audit(
     reference_output_markdown.write_text(
         _reference_graph_markdown(reference_report), encoding="utf-8"
     )
+    if not type08_closed:
+        lane_failures.append(
+            "type 0x08 head words are not null-or-resolved: "
+            f"bodies={type08_corpus['bodies']} resolved={type08_corpus['resolved']} "
+            f"null={type08_corpus['null']} unresolved={type08_corpus['unresolved']} "
+            f"tooShort={type08_corpus['tooShort']}"
+        )
     if not type11_closed:
         lane_failures.append(
             "type 0x0B source records do not share the type 0x02 plug-in space: "

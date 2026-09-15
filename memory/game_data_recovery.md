@@ -1649,6 +1649,23 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **Numeric type `0x08`'s leading 32-bit word is null or names exactly one
+  same-bank object -- never a non-null value that names nothing.** 161 bodies: 157
+  resolve, 4 are null, 0 unresolved. Null is a real outcome for this type, so the
+  gate permits it and forbids only the third case; an all-null corpus would make
+  the claim vacuous and does not count as closed either.
+- `0x08` is **not framed**, and here is how far it got so it need not be redone.
+  After the leading word comes the same counted key/value block type `0x16` uses
+  (a count, that many one-byte keys, that many four-byte values). After *that* is a
+  one-entry list whose key byte sizes the value: key `0x15` is followed by 11
+  bytes and key `0x1D` by 27, exactly 16 apart. A fixed signature
+  `02 e8 03 00 00 00 00 c0 c2` then recurs in every tail. That accounts for
+  148 of 161 bodies and stops there, so no lane.
+- The other small types do **not** share `0x08`'s head. Their leading word names
+  nothing in 119 of 251 `0x12` bodies, all 453 `0x10` bodies, and all 2,645 `0x11`
+  bodies, so offset 0 is simply not a reference field for them. `0x12`'s first
+  reference sits at offset 39 in a third of its bodies, which is the thread to
+  pull there.
 - **Numeric HIRC type `0x16` is framed byte-exact: 778 bodies / 16,635 bytes.**
   Layout: a byte count, then that many one-byte keys followed by that many
   four-byte values as **two parallel runs rather than interleaved pairs**, then one

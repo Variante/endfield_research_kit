@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from scripts.audio_semantics.hirc_action_corpus import (
+    type08_head_words_are_null_or_resolve,
     type11_sources_share_the_type02_plugin_space,
     music_head_references_are_closed,
     _capture_cli_output_closure,
@@ -160,6 +161,13 @@ def valid_action_fixture():
         "failureCategories": {},
         "unsupportedCategories": {},
         "nonExactExamples": [],
+    }
+    type08_head = {
+        "bodies": 3,
+        "resolved": 2,
+        "null": 1,
+        "unresolved": 0,
+        "tooShort": 0,
     }
     type11_sources = {
         "bodies": 2,
@@ -323,6 +331,7 @@ def valid_action_fixture():
                     "hircType22BodyFrame": copy.deepcopy(type22_body),
                     "hircMusicHeadReferences": copy.deepcopy(music_head),
                     "hircType11Sources": copy.deepcopy(type11_sources),
+                    "hircType08Head": copy.deepcopy(type08_head),
                     "hircType05BodyFrame": copy.deepcopy(type05_body),
                     "hircReferenceCensus": copy.deepcopy(reference_census),
                     "hircType03ActionFrame": copy.deepcopy(frame),
@@ -346,6 +355,7 @@ def valid_action_fixture():
                             "hircType22BodyFrame": copy.deepcopy(type22_body),
                             "hircMusicHeadReferences": copy.deepcopy(music_head),
                             "hircType11Sources": copy.deepcopy(type11_sources),
+                            "hircType08Head": copy.deepcopy(type08_head),
                             "hircType05BodyFrame": copy.deepcopy(type05_body),
                             "hircReferenceCensus": copy.deepcopy(reference_census),
                             "hircType03ActionFrame": copy.deepcopy(frame),
@@ -1084,6 +1094,41 @@ class HircActionCorpusTests(unittest.TestCase):
             scope["hircType05BodyFrame"]["groupCounts"]["recordEntries"] = 1_000_000
         with self.assertRaisesRegex(ValueError, "anonymous element bytes exceed the framed bodies"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, oversized)
+
+    def test_type08_head_word_is_null_or_names_one_object(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        head = result["type08HeadWords"]
+        self.assertEqual(head["bodies"], 3)
+        self.assertEqual(head["resolved"], 2)
+        # Null is an allowed outcome; it is what the claim explicitly permits.
+        self.assertEqual(head["null"], 1)
+        self.assertTrue(type08_head_words_are_null_or_resolve(head))
+
+        # A non-null word that names nothing is the case the claim forbids.
+        self.assertFalse(
+            type08_head_words_are_null_or_resolve({**head, "resolved": 1, "unresolved": 1})
+        )
+        self.assertFalse(
+            type08_head_words_are_null_or_resolve({**head, "resolved": 1, "tooShort": 1})
+        )
+        # All-null would make the claim vacuous, so it does not count as closed.
+        self.assertFalse(
+            type08_head_words_are_null_or_resolve(
+                {"bodies": 3, "resolved": 0, "null": 3, "unresolved": 0, "tooShort": 0}
+            )
+        )
+
+    def test_type08_head_outcomes_must_partition_the_bodies(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        broken = copy.deepcopy(audio_audit)
+        for scope in (
+            broken["rows"][0]["package"],
+            broken["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircType08Head"]["null"] = 0
+        with self.assertRaisesRegex(ValueError, "do not partition"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, broken)
 
     def test_type11_sources_must_use_a_plugin_id_type02_also_uses(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

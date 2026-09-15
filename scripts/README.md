@@ -582,6 +582,9 @@ never reported as a full one.
 python -m scripts.audio_semantics.hirc_named_reach --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 ```
 
+It gates numeric type `0x08`'s leading word too: null, or exactly one same-bank
+object, never a non-null value naming nothing. `0x08` is not framed.
+
 It also gates numeric type `0x0B`'s head: a byte, a 32-bit record count, and that
 many fourteen-byte source records whose plug-in id must be one type `0x02` also
 uses. Both sides of that comparison are raw 32-bit ids produced by the same

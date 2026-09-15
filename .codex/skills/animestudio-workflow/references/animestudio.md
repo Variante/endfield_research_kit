@@ -335,6 +335,14 @@ scratch. They do not open with the node frame, and searching for an offset where
 the frame parses is worthless because every music body admits several such
 offsets -- the frame is permissive, so "it parsed" is nearly no evidence. A
 structural predictor is needed, the way byte 1 predicts the `0x0E` prefix.
+Numeric type `0x08`'s leading word is null or names exactly one same-bank object
+(157 resolve, 4 null, 0 unresolved over 161 bodies); null is an allowed outcome
+for this type, unlike the music head where it is not. `0x08` is not framed: its
+key/value block matches `0x16`'s, and after it a one-entry list whose key sizes
+the value (`0x15` -> 11 bytes, `0x1D` -> 27) plus a recurring
+`02 e8 03 00 00 00 00 c0 c2` signature explain 148 of 161 bodies and no more.
+Types `0x10`, `0x11` and most of `0x12` do not share that head at all.
+
 Type `0x0B` opens with a byte, a 32-bit record count, and that many fourteen-byte
 source records; every one of the 4,447 records carries a plug-in id numeric type
 `0x02` also uses, which is what evidences the stride -- plug-in ids are sparse, so
