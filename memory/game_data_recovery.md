@@ -1716,10 +1716,19 @@ Stable conclusions:
   of bodies and the best pair for 26%, against 100% for the `0x0E` flag byte, so
   `0x12` is not a fixed layout with flag-gated optional parts either.
 - Taken together these say the body is **not** a linear sequence of self-describing
-  records, which is what every model tried so far assumes. A ninth attempt should
-  start from a different premise -- for example that some field earlier in the body
-  sizes a later region, as in `0x10`/`0x11` -- rather than sweeping another record
-  shape.
+  records, which is what every model tried so far assumed.
+- **The size-field premise that suggested has now been tried too, and also fails.**
+  Testing every offset 0..23 at 16 and 32 bits for a value that sizes a following
+  region gives at best 30% agreement on the leftover; repeating it relative to the
+  end of a one-, two- or three-block chain gives at best 33%. In both sweeps the
+  "agreeing" leftovers cluster at 76/72/32 bodies, which is exactly the body-length
+  histogram -- so the agreement is an artifact of a few common lengths, not a field.
+  **Check a candidate field's hit distribution against the length histogram before
+  believing it**; these two sweeps looked like 30% signal and were 0%.
+- Ten readings are now eliminated. I have no further structural hypothesis for
+  `0x12` that this corpus can test, and would rather say so than keep sweeping.
+  The Wwise 2023.1.17 SDK would settle it outright; short of that, a genuinely new
+  premise is needed, not another parameterisation of an old one.
 - **Numeric types `0x13`, `0x14` and `0x15` are framed byte-exact: 18 bodies, 685
   bytes, all of them.** `0x13` and `0x14` are a counted block of four-byte values,
   a counted block of **eight**-byte values, then two bytes; keys and values are
