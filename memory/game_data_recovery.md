@@ -3465,6 +3465,39 @@ already predict.*** The gate publishes the number instead of pretending it
 discriminates, and the evidence it rests on is the pair a bad control cannot produce:
 coverage unchanged at 4,115, and 115 bodies caught that were previously walked through.
 
+#### The 210 scale with body complexity, and the source region is NOT the cause
+
+With the twelve reserved bytes now fencing at the cause, the failing bodies can be
+characterised properly.
+
+- **Shifting the failing element repairs only 20 of 182**, at two inconsistent deltas
+  (`-36` and `+17`). The desynchronisation begins earlier than the element that
+  reports it.
+- **Failure rate rises sharply with body complexity**, and the source count is the
+  sharpest predictor:
+
+  | declared sources | closing | failing | fail rate |
+  | --- | --- | --- | --- |
+  | 1 | 4,041 | 172 | **4.1%** |
+  | 2 | 70 | 28 | **28.6%** |
+  | 4 | 2 | 6 | **75%** |
+  | 0 | 0 | 4 | 100% |
+
+  Entry count and body length track it: 1 entry 3.9%, 2 entries 15.0%, 4 entries
+  37.5%; bodies under 200 bytes 3.6%, 200-300 14.4%, 400+ 40%.
+
+- **But the source region is framed correctly, and two sweeps say so.** A separate
+  width for records after the first: **14 is uniquely best** over 8 to 32 (4,115
+  against 4,041 for every alternative). A gap between the records and the entry count:
+  **0 is uniquely best** over `-12` to `+16`, and applying any gap to all bodies closes
+  **nothing at all**.
+- So the correlation is **complexity, not a located mechanism** -- exactly what a
+  per-element error probability produces. *A predictor is not a cause; a sweep that
+  confirms the field it points at is the difference.*
+- One provenance note: bank **4247105105** in `init_banks.pck` fails **5 of 13
+  (38.5%)** against 4.8% for the music bank. Thirteen bodies is too thin to conclude
+  from, and it is recorded as a lead rather than a finding.
+
 #### Where the remaining 210 actually go wrong, and one methodological trap
 
 Applying the content checks that found the four-byte step-back to the residue.
