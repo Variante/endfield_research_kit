@@ -217,33 +217,55 @@ unique binding.
   744-file "name not terrain shaped" bucket was.
 - The six tile channels are exactly balanced: 7,570 files each across 37 scenes, so
   every tile ships all six.
-- **The codec is bespoke, and this is now established at the whole-record level.**
-  lz4 block, zlib, raw deflate, lzma, bzip2 and brotli were each asked, from
-  offsets 4, 5 and 6, to produce exactly `declaredTotal` bytes beginning with
-  `TRET`. Every one refused every file. This is a stronger test than the earlier
-  payload-only sweep, because it states what a correct decode must produce rather
-  than merely hoping a codec accepts the bytes.
-- Earlier LZ4 diagnosis, still valid: a minimal LZ4 decoder stops at the **first
-  token** having emitted **zero** bytes, because that token asks for a match
-  against empty history. The stream does not begin with an LZ4 token, and hunting
-  for a better start offset will not help.
-- **A warning about the shape of this problem.** Payload counts look *almost*
-  reconcilable by hand -- eight `0xFF` plus `0xF7` plus `0x11` lands within a few
-  bytes of a declared 2,312 -- and it is very easy to find an arithmetic that fits
-  one file. Do not accept a formula that works on one or two samples.
-- Leads, not a layout: two files with identical headers differ **only** in one
-  repeated byte value. `0xFF` appears in long early runs. The recurring `49 92 24`
-  and `aa aa aa aa` patterns are bit-periodic (`001` every three bits, `10` every
-  two), which points at a bit-oriented encoder rather than a byte-oriented LZ77.
-  And a terminator is strongly evidenced: **`0x11` six bytes from the end** in the
-  large majority of framed payloads, with five bytes after it.
-- Next attempt should start from that terminator and work backwards. **Do not start
-  from the front**: the first stream byte takes at least five common values
-  (0, 1, 128, 255, 246), so there is no single entry state to anchor on.
 - Read by `scripts/asset_builder/terrain_header.py`; report at
   [`reports/assets/terrain_header_current_latest.json`](../reports/assets/terrain_header_current_latest.json).
   Terrain rows are `encrypted=False`, which is why a plain span read works here
   and not on the manifest.
+
+## Terrain stream: the codec is LZ4 with big-endian match offsets
+
+- **The stream is an LZ4 block starting at offset 4, and its first literal run is
+  the `TRET` record itself.** Everything is ordinary LZ4 -- token high nibble is the
+  literal length, low nibble the match length, `0xFF` extension bytes summed with
+  their terminator included, match base 4, a closing literal run -- **except that
+  the two-byte match offset is big-endian.**
+- That was not guessed. The grid of conventions (offset endianness x which nibble
+  carries the literal length x whether the extension terminator is added x match
+  base x tail rule) was searched exhaustively; only the big-endian reading produces
+  files that close at all, and the little-endian reading closes zero.
+- **6,442 of 46,164 files decode to the byte**: output exactly the declared size
+  *and* input exactly consumed. Both halves matter -- a decoder that stops early
+  has not decoded anything.
+- The decodes are corroborated from outside themselves. All 6,442 agree with the
+  file on the payload size in three independent places (the leading word, the
+  decoded header, the header legible in the file), and **6,090 decode to a payload
+  that repeats with period 1, 2 or 4** -- flat tiles, which is what a terrain field
+  mostly contains and what random bytes never produce.
+- **What is unresolved: streams with more than one sequence.** They stop at the
+  second match, whose offset field is only sensible *little*-endian -- the opposite
+  of the first. Both cannot be true, so one of the two sequence boundaries is
+  misplaced. 39,377 files fence on exactly this, and none is partially decoded into
+  a result.
+- **A preset dictionary is eliminated as the explanation.** Priming the window with
+  64 KB does not raise the closure count by a single file; the failures turn into
+  offset-zero desyncs instead, which is what a wrong boundary looks like and not
+  what a missing dictionary looks like.
+- Worked example of the contradiction, kept because the next attempt starts here.
+  In `Terrain_4_2_2_C.bytes`: token `ff` ext `04` gives 19 literals, offset
+  `00 01` big-endian is 1, the match extension `ff x8` + `0x76` gives 2,158, so the
+  first sequence closes at 2,196 of 2,332. The next token `0x05` then wants offset
+  `10 00`, which is 4,096 big-endian and 16 little-endian -- and only 16 is
+  possible. Searching the first literal run over 0..95 under a little-endian
+  reading closes **zero** files, so the fix is not a shifted first sequence.
+- Every observed stream ends `<token 0x11> <five literals>`. That is LZ4's
+  minimum closing literal run, which is why the decoder treats a six-byte
+  remainder as the tail.
+- **A warning about the shape of this problem.** Payload counts look *almost*
+  reconcilable by hand and it is very easy to find an arithmetic that fits one
+  file. Do not accept a formula that works on one or two samples -- accept one that
+  closes thousands, exactly, and agrees with the file.
+- Read by `scripts/asset_builder/terrain_stream.py`; report at
+  [`reports/assets/terrain_stream_current_latest.json`](../reports/assets/terrain_stream_current_latest.json).
 
 ## Reading VFS logical files: three things that look like corruption and are not
 

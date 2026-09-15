@@ -29,9 +29,11 @@ size). Codes 100 and 101 are reported **ambiguous** rather than resolved: they a
 only ever seen at 132x132, and 132 is a multiple of 4, so one byte per pixel and
 sixteen-byte blocks predict the same total there.
 
-What is *not* framed: the compressed stream. lz4 block, zlib, raw deflate, lzma,
-bzip2 and brotli were each asked, from offsets 4, 5 and 6, to produce exactly
-``declaredTotal`` bytes beginning with ``TRET``; every one refused every file.
+The compressed stream is read by :mod:`scripts.asset_builder.terrain_stream`: it is
+an LZ4 block whose match offset is big-endian, which is why every stock codec --
+lz4 block, zlib, raw deflate, lzma, bzip2 and brotli, from offsets 4, 5 and 6 --
+refused every file. Streams using a single sequence decode to the byte; the rest
+are fenced there and nothing in this module depends on them.
 
 Two name shapes ship here: ``Terrain_a_b_c_X.bytes`` tiles, whose channel is the
 last token, and ``LAYER_X_n.bytes`` textures, whose last token is a layer index and
@@ -334,9 +336,9 @@ def main(argv: list[str] | None = None) -> int:
             ),
             "semanticStatus": "structural-only",
             "nonClaims": [
-                "the codec of the compressed stream; lz4 block, zlib, raw deflate, "
-                "lzma, bzip2 and brotli were each asked from offsets 4, 5 and 6 to "
-                "produce declaredTotal bytes beginning with TRET, and all refused",
+                "anything about the compressed stream's contents; it is decoded by "
+                "scripts.asset_builder.terrain_stream, where only single-sequence "
+                "streams close and the rest are fenced",
                 "which graphics format a format code names; only the byte layout its "
                 "payload size implies is established, and for codes 100 and 101 even "
                 "that is ambiguous because they appear only at 132x132",
