@@ -4651,9 +4651,50 @@ Splitting each payload into its four byte phases and measuring each one separate
   file's leading word to be the decoded size, and here the leading word is 3, 990,
   1,182 or 12,291 for files of 16 KB to 70 MB.
 
-**Next step:** the `v3` files need their container identified before any record
-framing is worth attempting; the four `gacha` files are framable now and are the place
-to establish what a probe record contains.
+### The game names this format itself, and it has an INDEX
+
+Rather than guess the container further, `global-metadata.dat` was asked what the
+engine calls it. The answer is specific:
+
+```
+HGIrradianceVolumeManager / HGIrradianceVolumeManagerV2
+HGIrradianceVolumeConfig  / HGIrradianceVolumeConfigV2
+  GetCurrentIrradianceVolumePathV3      ReloadIndexFileV3 / ReloadIndexFileV2
+  ToggleDebugUpdateClipmap              ToggleDebugUpdateClipmapLod0
+  UpdateSceneStateMask                  UpdateGachaIV
+  StreamingInNewMap / StreamingInCabin  SetOverrideStreamingCenterByCamera
+```
+
+Three of these change what to do next:
+
+- **`ReloadIndexFileV3`** says there is an index. There is: **92 `index.bytes` files**
+  in the IV block, 980 bytes to 504 KB, one per scene -- plus **7 `regionIv_*.bytes`**
+  files totalling 3.09 MB. The earlier sweep matched only `iv_*.bytes` and missed both.
+- **`ToggleDebugUpdateClipmap`, `...Lod0`** name the structure: a **clipmap**, a
+  nested multi-resolution grid. That is what a volume file should be expected to hold.
+- **`UpdateGachaIV`** is a separate entry point from the V3 streaming path, which
+  independently confirms the `gacha` / `v3` split the byte-phase test measured.
+
+#### The index is framed enough to join, and the join is exact
+
+The index holds **length-prefixed UTF-16LE strings**: `u32 byteLength`, then that many
+bytes of UTF-16. The 980-byte index carries `u32 24` followed by `iv_0_0.bytes`.
+
+- Across the 92 index files, **138 `.bytes` names are listed -- exactly the 138 volume
+  files the block contains**.
+- **91 of the 92 indexes name precisely the set of files present in their own
+  directory.** Not a hit rate over a large population: each index names between one and
+  a few dozen files and gets the whole set right.
+- A `u32` at `+20` equals the name count in **86 of 92**, so it is a **candidate**
+  count offset rather than an established one, and is recorded that way.
+
+**Next step:** close the index header -- the 20 bytes before the count, and whatever
+follows each name -- since it is small, there are 92 of them, and the name join already
+gives an independent check on any framing. The volume payload itself should wait for
+the index to be read, because the index is what describes it.
+
+*Asking the shipped code what a format is called cost one metadata scan and moved this
+further than two batches of byte-pattern search.*
 
 ## Remaining gaps
 
