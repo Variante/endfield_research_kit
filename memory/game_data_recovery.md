@@ -5379,9 +5379,38 @@ Walking the three vector-of-tables slots and collecting every element's vtable:
 | element tables | typed for all three vector slots, 8,556 tables read |
 | managed schema | **excluded twice** -- failed vector walk, and no declared root has 8 fields |
 
-**Still not known:** what any field *means*. The widths and the parallelism are
-structure; nothing here says what a slot-5 element *is*. That needs either a name from
-outside or a join to something already understood.
+#### ROOT SLOT 1 IS THE CHUNK'S WORLD ORIGIN, joined to the filename
+
+The first field in this family with a *meaning*, and it came from a join rather than a
+name. Streaming **7,433** files across **361** distinct grid coordinates:
+
+```
+root slot 1, at table offset +8, eight bytes = two int32
+    +8  == x * 128        where x, y are the coordinates in
+    +12 == y * 128        InitChunkData_<x>_<y>_0_0.bytes
+```
+
+**7,433 of 7,433**, with the controls failing as they should:
+
+| reading | files |
+| --- | --- |
+| `+8 = x*128, +12 = y*128` | **7,433 / 7,433** |
+| axes swapped | 633 -- exactly the `x == y` cases where both readings coincide |
+| scale 64 or 256 | 85 -- exactly the origin chunks, where every scale gives 0 |
+
+So the 64-bit field is the chunk's **world-space origin**, and **128 is the chunk size
+in world units**. The 361 distinct coordinate pairs map to 361 distinct field values,
+one-to-one.
+
+***This also explains how the wrong schema looked right.*** Under
+`FBDynamicSceneChunkData` this slot read as `StreamingVersion`, with values 4294967168
+and 128 -- which is `0xFFFFFF80`, i.e. `-128`, i.e. `x * 128` for `x = -1`. A plausible
+name made a coordinate look like a version number. *The join to the filename settles in
+one test what no amount of reading the field alone could.*
+
+**Still not known:** what slots 5, 6 and 7's element tables hold. The widths and the
+6/7 parallelism are structure; the same kind of join is what would give them meaning,
+and the grid coordinates are now a known quantity to join against.
 
 ## Remaining gaps
 
