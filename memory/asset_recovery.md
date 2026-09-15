@@ -193,10 +193,16 @@ unique binding.
   literal-length encoding but that is an observation, not a claim. The 1,361 files
   whose magic is not at offset 6 are fenced rather than read with a layout that
   does not fit them, and 744 names are not `Terrain_a_b_c_X.bytes` shaped at all.
-- **The terrain payload is a control-byte encoded stream. It is not LZ4.** A
-  minimal LZ4 block decoder was tried at three plausible payload starts and
-  reproduced the declared size in **0 of 60** files, so that hypothesis is
-  eliminated rather than untried.
+- **The terrain payload is not LZ4, and the failure is structural rather than an
+  off-by-one.** A minimal LZ4 block decoder reproduced the declared size in 0 of 60
+  files at three plausible starts, and diagnosing it shows *why*: every file stops
+  at the **first token** having emitted **zero** bytes, because that token asks for
+  a match against empty history. So the stream does not begin with an LZ4 token at
+  all, and hunting for a better start offset will not help either.
+- Compression is heavy -- around 18 bytes expanding to 2,312 -- over data that is
+  near-constant. Combined with the many possible first bytes, that points away from
+  a byte-oriented LZ77 codec and toward something bit-oriented or hierarchical.
+  That is a direction, not a claim.
 - What is measured about it, as leads rather than a layout: two files with
   identical headers differ **only** in one repeated byte value, which is what makes
   a run encoding the obvious reading. `0xFF` appears in long early runs. `0xCC`,
