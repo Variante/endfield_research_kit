@@ -18,13 +18,24 @@ be *exactly* the size the file declares **and** the input must be *exactly*
 consumed. A decoder that stops early, or that leaves bytes over, has not decoded
 anything.
 
-What is **not** established: streams that use more than one sequence. They stop at
-the second match, whose offset field is only sensible read little-endian -- the
-opposite of the first. Both cannot be true, so one of the two sequence boundaries
-is misplaced and the layout after the first match is unresolved. Those files are
-fenced by reason, never partially decoded into a result. A preset dictionary was
-tested as an explanation and eliminated: priming the window with 64 KB does not
-raise the closure count by a single file.
+What is **not** established: streams that use more than one sequence. Two
+explanations have been tested and eliminated, so the next attempt should not spend
+itself on either.
+
+*Not a preset dictionary.* Priming the window with 64 KB does not raise the closure
+count by a single file; the failures turn into offset-zero desynchronisations,
+which is what a misplaced boundary looks like and not what a missing dictionary
+looks like.
+
+*Not a misread of the endianness or the tail.* An exhaustive search asked, per
+file, for **any** parse that closes while letting every sequence choose its own
+offset endianness, letting the literal length come from either nibble, and leaving
+the closing literal run's length free. Of 400 files it closed the same 16 -- every
+one of them single-sequence -- and **zero** of the 384 others. So the grammar
+itself is wrong after the first match: the streams contain something a token,
+literal run, two-byte offset and extended match length cannot express.
+
+Those files are fenced by reason, never partially decoded into a result.
 """
 
 from __future__ import annotations
@@ -290,11 +301,13 @@ def main(argv: list[str] | None = None) -> int:
             ),
             "semanticStatus": "structural-only",
             "nonClaims": [
-                "anything about streams that use more than one sequence; they stop at "
-                "the second match, whose offset is only sensible little-endian, and "
-                "that contradiction is unresolved",
+                "anything about streams that use more than one sequence; the grammar "
+                "is wrong after the first match and what replaces it is unresolved",
                 "that a preset dictionary explains those files; priming a 64 KB window "
                 "does not raise the closure count by one file",
+                "that the offset endianness, the literal nibble or the tail length is "
+                "what blocks them; an exhaustive per-file search over all three closed "
+                "zero of 384 multi-sequence files",
                 "what the decoded pixels mean, or what a channel measures",
                 "the encoder that produced these streams, or its parameters",
             ],

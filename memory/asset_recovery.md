@@ -246,10 +246,19 @@ unique binding.
   of the first. Both cannot be true, so one of the two sequence boundaries is
   misplaced. 39,377 files fence on exactly this, and none is partially decoded into
   a result.
-- **A preset dictionary is eliminated as the explanation.** Priming the window with
-  64 KB does not raise the closure count by a single file; the failures turn into
-  offset-zero desyncs instead, which is what a wrong boundary looks like and not
-  what a missing dictionary looks like.
+- **Two explanations are eliminated. Do not spend the next attempt on either.**
+  (a) *Not a preset dictionary*: priming the window with 64 KB does not raise the
+  closure count by a single file; the failures turn into offset-zero desyncs, which
+  is what a wrong boundary looks like and not what a missing dictionary looks like.
+  (b) *Not a misread of endianness, nibble role or tail length*: an exhaustive
+  per-file search for **any** closing parse -- every sequence free to pick its own
+  offset endianness, the literal length free to come from either nibble, the
+  closing literal run free in length -- closed the same 16 single-sequence files out
+  of 400 and **zero** of the 384 others.
+- So the grammar itself is wrong after the first match. These streams contain an
+  operation that a token, a literal run, a two-byte offset and an extended match
+  length cannot express. That is where the next attempt has to look, and it should
+  look for a *new op*, not a new parameter.
 - Worked example of the contradiction, kept because the next attempt starts here.
   In `Terrain_4_2_2_C.bytes`: token `ff` ext `04` gives 19 literals, offset
   `00 01` big-endian is 1, the match extension `ff x8` + `0x76` gives 2,158, so the
