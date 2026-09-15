@@ -4912,10 +4912,34 @@ could name.*
   every LOD for its chunk. The `<x>_<y>` are chunk coordinates, which is why 117 of 132
   begin `iv_0_`.
 
-**Still open:** the per-LOD array lengths and the physical texture format. This
-metadata parser reports field types as raw Il2CppType indices and does not resolve them,
-so the element widths need either the binary's type table or the `HGIrradianceVolume`
-method bodies.
+#### Both configs are blittable structs of fixed buffers, and that closes the argument
+
+Every `per*` field is a C# **fixed buffer**: each has a generated nested type
+`<name>e__FixedBuffer` holding a single `FixedElementField`.
+
+| type | fields | of which fixed buffers |
+| --- | --- | --- |
+| `HGIrradianceVolumeConfig` (V3) | 26 | **11** -- `perLOD`, `perHalfChunkCounts`, `perHashTableOffsets`, `perHashTableSizes`, `perPhysicalTextureOffsets`, `perPhysicalTextureBlockCounts`, `perFrameMaxLoadingByteCount`, `perFrameMaxUploadChunkCount`, `ClipmapTextureSize`, **`blockSizesV3`**, `cameraForwardBiasForYAxis` |
+| `HGIrradianceVolumeConfigV2` | 34 | **19** -- the `basis*`/`coeff*` dims, `perRawBuffer*`, `perBlockInfo*`, `perBasisTexture*`, `perCoeffTexture*`, `perHalfStreamingChunkCounts{X,Y,Z}`, `streamingCenterBias` |
+
+So both are **blittable structs with fixed-size per-LOD arrays** -- native interop
+configs, not serialised objects.
+
+***`blockSizesV3` is a fixed buffer, so block size varies per LOD.*** That is the last
+of the byte-statistic negatives explained: there is no single record stride in a `v3`
+payload because the physical texture blocks are sized per LOD, and one file holds every
+LOD for its chunk.
+
+**The `v3` container, stated as far as the evidence goes:** an indirection texture and a
+hash table addressing physical texture blocks, per-LOD offsets and counts held in fixed
+buffers, block sizes per LOD. Not framed byte-by-byte -- the buffer *lengths* live in
+the `FixedBuffer` attribute rather than in metadata, so the per-LOD array extents still
+need the binary's type table or the `HGIrradianceVolume` method bodies.
+
+**Where this lane stands:** the index is framed and shipped at 86 of 92 with 20 tests;
+the payload's container is **identified** rather than guessed, with every one of the
+seven byte-statistic eliminations explained by the identification; the remaining work is
+extents and element widths, and it is reachable with `tools/endfield-il2cpp`.
 
 *Two batches of byte statistics eliminated seven containers and identified none. One
 read of the type layout named the format, explained the residue, and resolved the
