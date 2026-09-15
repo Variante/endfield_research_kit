@@ -5001,9 +5001,37 @@ lands on the struct size exactly -- which is the check that the table was read r
 table addressing physical texture blocks, with **three** per-LOD offset/count pairs and
 three per-LOD block sizes, all in fixed buffers inside these blittable structs.
 
-**Not claimed:** that either struct appears verbatim in a shipped file. These are the
-runtime configs the engine holds; whether the `.bytes` payload embeds one, and where, is
-untested. *Knowing a struct exactly is not the same as knowing it is in the file.*
+#### The config is NOT in the shipped files, and the search had a positive control
+
+Knowing the struct exactly turns "is it in the file?" into a search with a
+specification rather than a pattern hunt. A 192-byte window counts only if every field
+is plausible for what it is named: `enableLowQualityMode` 0 or 1, the block counts and
+`indirectionTextureSize` positive and under 8192, `maxHashTableSize >= hashTableSize`,
+the three `perLOD` entries in 1..64, and `perHashTableOffsets` and
+`perPhysicalTextureOffsets` non-decreasing.
+
+| scanned | candidates |
+| --- | --- |
+| all 92 `index.bytes` | **0** |
+| 12 `v3` payloads, first 400 KB each | **0** |
+| the same payload bytes shuffled | 0 |
+
+***A test that returns zero on everything has not shown it can detect anything***, so
+the zero above is only worth having because of a positive control:
+
+| control | candidates |
+| --- | --- |
+| a synthetic config filled the way the engine would | **1** |
+| that struct embedded at offset 5000 in 20 KB of random bytes | **1, at exactly 5000** |
+| the 20 KB of random bytes alone | **0** |
+
+So the scanner detects the struct when it is there and does not fire on noise -- and
+**the V3 config does not appear in any shipped index or payload**. It is a runtime
+config the engine holds, not something serialised into the data, and the `.bytes` files
+must carry their geometry some other way.
+
+That closes the gap flagged last batch: knowing a struct exactly is not the same as
+knowing it is in the file, and here it is not.
 
 **Where this lane stands:** the index is framed and shipped at 86 of 92 with 20 tests;
 the payload's container is **identified** rather than guessed, with every one of the
