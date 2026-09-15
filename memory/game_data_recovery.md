@@ -2084,9 +2084,41 @@ looks like a right path.*
 plug-in tail describes **both** types -- which fits them being the two plug-in-bearing node
 kinds.
 
-**`0x09` and `0x12` are not reachable this way.** Neither arm has the node-creation
-signature (`call` whose result immediately takes `mov [rax+0x10], <id>`) within the scanned
-span, so they build their objects differently and need their own trace.
+**`0x09` and `0x12` needed a wider scan, not a different method.** Searching *every* direct
+call target in each loader for the factory signature finds exactly one per type:
+
+| type | loader | factory | alloc | vtable |
+| --- | --- | --- | --- | --- |
+| `0x02` | `0x1800f0b90` | `0x180150c50` | 264 | `0x180299498` |
+| `0x05` | `0x1800f3040` | `0x18013b6d0` | 304 | `0x1802984c8` |
+| `0x09` | `0x1800f2d30` | `0x18015ea90` | 304 | `0x18029a3b0` |
+| `0x10` | `0x1800f2750` | `0x18014af30` | 168 | `0x180299200` |
+| `0x11` | `0x1800f2460` | `0x18014aee0` | 168 | `0x1802992d0` |
+| `0x12` | `0x1800f1850` | `0x18015b170` | 400 | `0x180299cf0` |
+
+##### CORRECTION: the deserializer slot is *not* uniform
+
+An earlier note here said `vtable[+0x28]` is the field deserializer "uniform across the type
+handlers... it applies to `0x09`, `0x10`, `0x11` and `0x12` alike". **That was generalised
+from one loader and is false.** Reading the indirect calls each loader actually makes:
+
+| slot called | types |
+| --- | --- |
+| `[rax+0x28]` | `0x10`, `0x11`, `0x15` |
+| `[rax+0x278]` | `0x12` |
+| neither | `0x02`, `0x05`, `0x09`, `0x13` |
+
+***Why the wrong claim looked right.*** Slot `+0x28` **resolves to a real function on every
+one of these vtables** -- for `0x02`, `0x05`, `0x09` and `0x12` it is `0x1800dacd0`, which
+disassembles to a parent/flag setter (`bts`/`btr` on bits 13-15 of `[rbx+0x90]`, a virtual
+at `[rax+0x260]`), **not a payload parser at all**. *A slot that resolves cleanly for every
+type looks uniform; resolving is not the same as meaning the same thing, and only reading
+the callers shows which slot is actually invoked.*
+
+**`0x12`'s real deserializer is `0x180109030`** (`vtable[+0x278]`). It guards on a virtual
+`[rax+0x78]`, bails with error `0x5b` unless that returns 0 or 0xA, then takes the cursor
+and `add rax, 4` past the node id -- the same "id already consumed" convention as `0x11`.
+Its field sequence past that point is not yet read.
 - **Numeric type `0x12` is the one HIRC type with no framing at all, and these
   readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
   grammar -- its word at offset 4 fails `range_section` on all 251. It is not the
