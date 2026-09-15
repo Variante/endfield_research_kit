@@ -3395,6 +3395,49 @@ negative.
   that a later entry is **not the same 48-byte layout**, which is exactly what the 76
   trailing-section bodies have been hinting at.
 
+#### `+12`/`+20`: TEN populations eliminated, and what that leaves
+
+The pair is now tested against everything the shipped data contains.
+
+| population | size | matches at `+12`/`+20` |
+| --- | --- | --- |
+| object references, same bank | -- | 0 |
+| object references, corpus-wide | 238,807 | 0 |
+| source ids | 62,273 | 0 |
+| media ids | 61,333 | 0 |
+| bank ids | 20,863 | 0 |
+| `STMG` ids | 578 | 0 |
+| identifier-shaped literal hashes | 24,231 | 0 |
+| **every raw metadata literal hash** | **49,324** | **0** |
+| floats | -- | not plausible |
+| fixed-point fractions of 2^32 | -- | **2.9%**, see below |
+
+- **The fraction test, done properly with controls.** Several of the most common values
+  *look* like fractions -- `0xAAAAAAA3` is near 2/3, `0x71C71C6A` near 4/9,
+  `0x0F0F0F18` near 1/17 -- and that appearance is misleading. Asking for the closest
+  rational with denominator <= 64 and an error within 1 ULP: `+12` scores **2.9%** and
+  `+20` **2.8%**, against **100%** at `+28` and **96.4%** at `+36`, the two fields
+  already known to be fractions. The near-misses are off by 7 or 8 ULPs, and a real
+  fraction field here is exact. *An eyeball reading of the top few values is not a
+  measurement; the field that IS this encoding scores 100%.*
+- **What the values look like:** 373 distinct over 1,317 occurrences, so each repeats
+  about three and a half times; popcount centred on 16, which is what random 32-bit
+  values look like; range 1 to `0xFFFFFFFF`; equal to each other in **998 of 1,158**
+  headers where both are nonzero.
+- **So the pair is a hash or an id in a namespace the shipped files do not contain.**
+  Random-looking, repeating, 32 bits wide, and matching nothing the game ships --
+  including every string literal in `global-metadata.dat` at a chance rate of 0.05.
+  Further population tests on this field are not worth running until a new namespace
+  appears; the shipped ones are exhausted.
+
+#### The step-back is per ENTRY or per ELEMENT, and this corpus cannot tell
+
+Applying it between elements as well as between entries changes nothing -- 4,115
+either way -- because **every entry that frames carries at most one element**, so the
+between-elements case never arises. Recorded as an indeterminacy rather than a choice:
+the reader does it per entry because that is where the evidence was, and a corpus with
+a multi-element entry would settle it.
+
 #### `0x0B`'s `+12` and `+20` are one field written twice
 
 - Where both are nonzero they are **equal in 998 of 1,158 (86.2%)**. They share a top
