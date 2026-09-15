@@ -2218,9 +2218,32 @@ after the node id, and both resolve it against the same registry.**
 Both per-class virtuals open identically -- `movzx <r>, byte ptr [rax] ; inc rax ;
 mov [rdx], rax` -- a **u8** taken from the shared cursor.
 
-**`0x09`, `[vt+0x1f8]` -> `0x1800ffb50`.** The byte is a boolean: the object's 64-bit flag
-word at `[rcx+0x90]` is masked with `0xffbfffffffffffff` or OR-ed with `0x40000000000000`,
-i.e. **bit 54 is cleared or set from it**.
+**`0x09`, `[vt+0x200]` -> `0x1800ffb50`** *(an earlier draft of this note said `[vt+0x1f8]`;
+the slots are distinct -- `[+0x1f8]` is `0x1800ff980` and is not the function read here)*.
+It reads **two** bytes and then a table:
+
+```
+movzx r9d, byte [rax] ; inc rax          ; FLAG : u8
+mov  r8,[rcx+0x90] ; and/or with bit 54 ; cmove ; mov [rbp+0x90], r8   ; -> flags bit 54
+movzx ecx, byte [rax] ; inc rax          ; B : u8 count
+test cl,cl ; je done ; call 0x1800d70b0  ; reserve B
+loop x B:
+   movzx r10d, byte [rcx]      ; entry +0 : u8
+   mov   r8d,  dword [rcx+1]   ; entry +1 : u32
+   movzx r9d,  byte [rcx+5]    ; entry +5 : u8
+   cursor += 6
+   test r8d,r8d ; je next      ; the u32 being 0 skips the entry
+   call 0x1800dcf90
+```
+
+**`u8` flag, `u8` count `B`, then `B` six-byte entries of `{u8, u32, u8}`** -- the cursor
+advances 1, 4, 1 per entry, so the stride is read rather than assumed.
+
+***And three types share one implementation.*** `0x02`, `0x05` and `0x09` have **identical**
+per-class slots -- `[+0x1f0]` `0x1800ffc60`, `[+0x1f8]` `0x1800ff980`, `[+0x200]`
+`0x1800ffb50` -- while `0x12` has its own trio. So this block is not `0x09`'s; **it is the
+shared block of a three-type class family**, and anything established for one holds for the
+other two.
 
 **`0x12`, `[vt+0x1f0]` -> `0x180108d10`.** The byte is a **count**, and what follows is a
 parallel-array block:
