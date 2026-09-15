@@ -6,6 +6,7 @@ from scripts.audio_semantics.hirc_named_reach import (
     media_attribution,
     stmg_from_audit,
     the_stmg_record_stride_beats_its_rivals,
+    the_stmg_tail_run_is_located_by_its_count,
     the_unparsed_sections_name_only_buses,
     music_reach_from_audit,
     the_music_family_is_not_entered_from_the_object_graph,
@@ -486,3 +487,51 @@ class UnparsedSectionWordTests(unittest.TestCase):
         ))
         self.assertFalse(the_unparsed_sections_name_only_buses({}))
         self.assertFalse(the_unparsed_sections_name_only_buses(None))
+
+
+class StmgTailTests(unittest.TestCase):
+    """The trailing run is bounded by its shape and located by its count."""
+
+    MEASURED = {
+        "sectionsFramed": 1, "tailRunsFramed": 1, "tailRecords": 269,
+        "tailDistinctIds": 269, "tailFloatsTested": 807, "tailFloatsBounded": 807,
+        "tailRivalStridesTested": 7, "tailRivalStridesWithDistinctIds": 0,
+        "tailRivalStridesWithTheZeroRun": 0, "tailTrailingBytesNotZero": 0,
+        "tailRunNotFound": 0, "tailCountDoesNotMatchTheRun": 0,
+    }
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_stmg_tail_run_is_located_by_its_count(self.MEASURED))
+
+    def test_a_rival_stride_matching_either_check_fails(self) -> None:
+        self.assertFalse(the_stmg_tail_run_is_located_by_its_count(
+            dict(self.MEASURED, tailRivalStridesWithDistinctIds=1)))
+        self.assertFalse(the_stmg_tail_run_is_located_by_its_count(
+            dict(self.MEASURED, tailRivalStridesWithTheZeroRun=1)))
+
+    def test_colliding_ids_fail(self) -> None:
+        self.assertFalse(the_stmg_tail_run_is_located_by_its_count(
+            dict(self.MEASURED, tailDistinctIds=268)))
+
+    def test_an_unbounded_float_fails(self) -> None:
+        self.assertFalse(the_stmg_tail_run_is_located_by_its_count(
+            dict(self.MEASURED, tailFloatsBounded=806)))
+
+    def test_an_ambiguous_boundary_is_fenced_not_resolved(self) -> None:
+        # If several lengths had a preceding word equal to themselves the run would
+        # not be located, and the reader fences rather than preferring one.
+        self.assertFalse(the_stmg_tail_run_is_located_by_its_count(
+            dict(self.MEASURED, tailRunsFramed=0, tailRecords=0,
+                 tailCountDoesNotMatchTheRun=1)))
+
+    def test_a_section_neither_framed_nor_fenced_fails(self) -> None:
+        self.assertFalse(the_stmg_tail_run_is_located_by_its_count(
+            dict(self.MEASURED, sectionsFramed=2)))
+
+    def test_no_rival_scored_fails(self) -> None:
+        self.assertFalse(the_stmg_tail_run_is_located_by_its_count(
+            dict(self.MEASURED, tailRivalStridesTested=0)))
+
+    def test_an_empty_census_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_stmg_tail_run_is_located_by_its_count({}))
+        self.assertFalse(the_stmg_tail_run_is_located_by_its_count(None))

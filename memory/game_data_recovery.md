@@ -3947,7 +3947,7 @@ bank carries five more**: `DATA` 5,913,232, **`STMG` 10,118**, `INIT` 347, `ENVS
 `PLAT` 8, `DIDX` 84. *A section census costs nothing and should have been the first
 thing done to this format.*
 
-#### `STMG`'s leading block is framed: 3,722 bytes of 10,118
+#### `STMG` is framed at both ends: 9,379 bytes of 10,118
 
 ```
 u16                      observed 0
@@ -3968,8 +3968,33 @@ count x 12-byte record:  u32 id, u16 value, 6 bytes (all zero)
   - **What follows.** At 12 the word after the run is **15** -- a small count opening a
     further block. Every other stride lands on zero or an arbitrary large value.
 - The record value is **1000 in 306**, and 3500, 500 and 0 once each.
-- **6,396 bytes remain unframed** and are reported as such. With one instance there is
-  nothing to check a guess against.
+
+#### `STMG`'s trailing run is framed BACKWARD, and its count is what locates it
+
+```
+u32 count                269
+count x 21-byte record:  u32 id, f32, u8 selector, 3 zero bytes, f32, f32, u8
+4 trailing bytes         all zero
+```
+
+- **It has to be backward.** The block between the two runs is variable-length and is
+  not framed, so the trailing run's start cannot be computed forward.
+- **The record shape bounds the run; the count locates it.** Walking back while the
+  three zero bytes at `+9` hold reaches **270** records where the true count is **269**
+  -- the bytes happen to be zero one record early. So the boundary is settled by the
+  count instead: over every length from 1 to 480, **exactly one** has a preceding word
+  equal to itself. *A shape test that overshoots by one is not a boundary; a count that
+  agrees with the run length is.*
+- **The shape is discriminated the same way the leading run's was.** All 269 ids are
+  distinct and all 269 carry the zero bytes; **7 rival strides from 14 to 24 give
+  neither** -- between 108 and 133 distinct ids and between 126 and 162 zero runs. All
+  **807** floats across the three float fields are finite and bounded, taking values
+  like 0, -96, 1, 0.1, 10, 50 and 16000. The selector at `+8` is 0 in 210, 2 in 47 and
+  1 in 12.
+- **739 bytes remain unframed** -- the middle block, which opens with a count of 15 and
+  is variable-length. With one instance there is nothing to check a guess against, so
+  it is reported rather than guessed at.
+- Framed: **9,379 of 10,118 (92.7%)**, from 3,722 (36.8%).
 
 #### NOTHING outside HIRC references a music object either
 

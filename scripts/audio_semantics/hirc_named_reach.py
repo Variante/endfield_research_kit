@@ -316,6 +316,11 @@ STMG_SCALARS = (
     "runPastTheEnd", "sectionsFramed", "declaredRecords", "distinctRecordIds",
     "rivalStridesTested", "rivalStridesWithDistinctIds",
     "runsFollowedByAPlausibleCount", "bytesFramed", "bytesUnframed",
+    "tailTrailingBytesNotZero", "tailRunNotFound", "tailRunsCheckable",
+    "tailCountDoesNotMatchTheRun", "tailRunsFramed", "tailRecords",
+    "tailDistinctIds", "tailFloatsTested", "tailFloatsBounded",
+    "tailRivalStridesTested", "tailRivalStridesWithDistinctIds",
+    "tailRivalStridesWithTheZeroRun",
 )
 STMG_WORD_SCALARS = (
     "sections", "sectionBytes", "hircObjects", "wordsTested",
@@ -358,7 +363,7 @@ def _sum_census(audit: dict[str, Any], key: str, scalars: tuple[str, ...],
 
 
 def stmg_from_audit(audit: dict[str, Any]) -> dict[str, Any]:
-    return _sum_census(audit, "stmg", STMG_SCALARS, ("recordValues",))
+    return _sum_census(audit, "stmg", STMG_SCALARS, ("recordValues", "tailSelectors"))
 
 
 def stmg_words_from_audit(audit: dict[str, Any]) -> dict[str, Any]:
@@ -405,6 +410,51 @@ def the_stmg_record_stride_beats_its_rivals(stmg: dict[str, Any]) -> bool:
     fences = sum(int(stmg.get(name) or 0) for name in
                  ("sectionsTooShort", "countOutOfRange", "runPastTheEnd"))
     return framed + fences == int(stmg.get("sections") or 0)
+
+
+def the_stmg_tail_run_is_located_by_its_count(stmg: dict[str, Any]) -> bool:
+    """STMG's trailing run is framed backward, and its count is what locates it.
+
+    It has to be backward: the block between STMG's two runs is variable-length and is
+    not framed, so the trailing run's start cannot be computed forward.
+
+    The record-shape walk **bounds** the run but does not locate it -- it reaches 270
+    records where the count is 269, because the three bytes it checks happen to be zero
+    one record early. The boundary is settled by the count instead: over every length
+    from 1 to 480 exactly **one** has a preceding word equal to itself. So the run is
+    located to the byte, and a section where several lengths matched would be fenced
+    rather than resolved by preference.
+
+    Then the shape is discriminated the same way the leading run's was. All 269 ids are
+    distinct and all 269 carry the three zero bytes at +9; every rival stride from 14
+    to 24 gives neither. All 807 floats across the three float fields are finite and
+    bounded.
+
+    739 bytes remain unframed and are reported as such.
+    """
+    if not isinstance(stmg, dict):
+        return False
+    framed = int(stmg.get("tailRunsFramed") or 0)
+    records = int(stmg.get("tailRecords") or 0)
+    if framed <= 0 or records <= 0:
+        return False
+    if int(stmg.get("tailDistinctIds") or 0) != records:
+        return False
+    tested = int(stmg.get("tailRivalStridesTested") or 0)
+    if tested <= 0:
+        return False
+    if int(stmg.get("tailRivalStridesWithDistinctIds") or 0) != 0:
+        return False
+    if int(stmg.get("tailRivalStridesWithTheZeroRun") or 0) != 0:
+        return False
+    floats = int(stmg.get("tailFloatsTested") or 0)
+    if floats <= 0 or int(stmg.get("tailFloatsBounded") or 0) != floats:
+        return False
+    # Fail-closed: a section is framed or fenced, never quietly neither.
+    fences = sum(int(stmg.get(name) or 0) for name in
+                 ("tailTrailingBytesNotZero", "tailRunNotFound",
+                  "tailCountDoesNotMatchTheRun"))
+    return framed + fences == int(stmg.get("sectionsFramed") or 0)
 
 
 def the_unparsed_sections_name_only_buses(words: dict[str, Any]) -> bool:
@@ -906,6 +956,15 @@ def run(
             f"distinct={stmg.get('distinctRecordIds')} "
             f"rivals={stmg.get('rivalStridesWithDistinctIds')}"
             f"/{stmg.get('rivalStridesTested')}"
+        )
+    if not the_stmg_tail_run_is_located_by_its_count(stmg):
+        problems.append(
+            "the STMG trailing run is no longer located by its count: "
+            f"framed={stmg.get('tailRunsFramed')} records={stmg.get('tailRecords')} "
+            f"distinct={stmg.get('tailDistinctIds')} "
+            f"rivals={stmg.get('tailRivalStridesWithDistinctIds')}"
+            f"/{stmg.get('tailRivalStridesTested')} "
+            f"floats={stmg.get('tailFloatsBounded')}/{stmg.get('tailFloatsTested')}"
         )
     if not the_unparsed_sections_name_only_buses(stmg_words):
         problems.append(
