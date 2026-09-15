@@ -2243,7 +2243,14 @@ def _markdown(report: dict[str, Any]) -> str:
             "|---|---:|",
             operation_rows,
             "",
-            "The parser reports byte framing only. Numeric operation codes remain unnamed; this audit does not establish field ownership, operation meaning, target resolution, runtime execution, event selection, or audibility.",
+            "The parser reports byte framing only. Numeric operation codes remain unnamed; this audit does not establish field ownership, operation meaning, runtime execution, event selection, or audibility.",
+            "",
+            "Target resolution used to be on that list and has been removed, because it "
+            "is now established elsewhere: the reference-graph report classifies this "
+            "type's target word as naming an object in the same bank, in another bank "
+            "of the same package, or nothing the package declares. This audit still "
+            "only frames bytes, but listing target resolution as unestablished would "
+            "now be wrong rather than careful.",
             "",
             f"Corpus gate SHA-256: `{report['corpusGate']['sha256']}`.",
             f"Raw AnimeStudio package audit: `{report['audioAudit']['intermediatePath']}` (SHA-256 `{report['audioAudit']['sha256']}`).",
@@ -2355,7 +2362,16 @@ def _type04_markdown(report: dict[str, Any]) -> str:
             "|---|---:|",
             block_rows,
             "",
-            "The structural candidate is a one-byte count followed by that many 32-bit-width entries. Exact status means this candidate framing reaches the declared object-body end. Entry values remain unnamed; this census does not establish serialized field ownership, entry identity or meaning, Action relationships, runtime execution, event selection, or audibility.",
+            "The structural candidate is a one-byte count followed by that many 32-bit-width entries. Exact status means this candidate framing reaches the declared object-body end. This census does not establish serialized field ownership, runtime execution, event selection, or audibility.",
+            "",
+            "Two items came off that list because other reports now carry them. These "
+            "entries do resolve to object identities -- the reference-graph report gates "
+            "every one of them to exactly one object declared by the same bank, and the "
+            "type pairs it publishes include this type reaching numeric type `0x03`, so "
+            "saying no Action relationship is established would be wrong. And the "
+            "objects **holding** these vectors are named: the named-reach report gives "
+            "203 of them shipped identifiers. The entry targets themselves remain "
+            "unnamed, which is a narrower and still-true statement.",
             "",
             f"Corpus gate SHA-256: `{report['corpusGate']['sha256']}`; AnimeStudio CLI SHA-256 `{report['audioAudit']['toolSha256']}`.",
             f"Raw AnimeStudio package audit: `{report['audioAudit']['intermediatePath']}` (SHA-256 `{report['audioAudit']['sha256']}`).",

@@ -1711,6 +1711,19 @@ Stable conclusions:
   eventually contradicts a number somewhere; a wrong "we do not know this" just
   sits there looking responsible. When a new join lands, re-read the non-claims of
   every report that touches the same bytes.
+- Sweeping the remaining reports found two more. The type `0x03` action report
+  said it does not establish **target resolution** -- which the reference-graph
+  report had just gated (21,956 same-bank, 1,499 other-bank). The type `0x04`
+  vector report said **entry values remain unnamed** and that no **Action
+  relationship** is established, while the reference graph publishes this type's
+  edges into type `0x03` and the named-reach report names 203 of the objects
+  holding those vectors. Both are now scoped: the entry *targets* are still
+  unnamed, which is narrower and still true.
+- That is four stale non-claims across four reports, all written correctly and all
+  falsified later by a different lane. **The pattern is structural, not careless**:
+  each report is gated on what it claims, so nothing in the build can notice when a
+  sibling lane makes one of its non-claims obsolete. Treat "this does not establish
+  X" as a dated statement and re-read it whenever X lands somewhere else.
 - **An audit of the published wording found the over-generalisation had spread.**
   After correcting the cross-bank claim in these notes, the same claim was still
   sitting in two published reports, and one of them contradicted a table twenty

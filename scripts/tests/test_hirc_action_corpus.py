@@ -540,7 +540,12 @@ class HircActionCorpusTests(unittest.TestCase):
         markdown = _type04_markdown(report)
 
         self.assertIn("all-candidate-vectors-exact", markdown)
-        self.assertIn("Entry values remain unnamed", markdown)
+        # The entry targets are still unnamed, but the objects holding the vectors
+        # are not, and the entries do resolve. The report must keep the narrow
+        # statement without implying the broader one.
+        self.assertIn("entry targets themselves remain unnamed", markdown)
+        self.assertNotIn("Entry values remain unnamed", markdown)
+        self.assertIn("named-reach report", markdown)
         self.assertIn("does not establish serialized field ownership", markdown)
         self.assertIn("Corpus gate SHA-256: `" + "F" * 64, markdown)
         self.assertIn("79 files", markdown)
