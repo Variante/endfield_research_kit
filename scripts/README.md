@@ -588,10 +588,12 @@ uses. Both sides of that comparison are raw 32-bit ids produced by the same
 reader, so the check is like-for-like. Type `0x0B` is not framed -- only the
 counted run is read, and the rest of the body is untouched.
 
-The reference-graph report also gates a narrower claim about numeric types `0x0A`
-and `0x0D`, which are *not* framed: body byte 2 selects an offset (0 -> 9, nonzero
+The reference-graph report also gates a narrower claim about numeric types `0x0A`,
+`0x0C` and `0x0D`, which are *not* framed: body byte 2 selects an offset (0 -> 9, nonzero
 -> 5) at which a single 32-bit word names exactly one same-bank object, and all
-6,589 such bodies resolve. The offset histogram must follow from the byte
+7,326 of 7,331 such bodies resolve; the five that do not are `0x0C` bodies whose
+first byte is 6, a different head shape, and they stay in the published total
+rather than being removed from the denominator. The offset histogram must follow from the byte
 histogram, and an unobserved byte value counts as unknown rather than being
 assigned a branch.
 

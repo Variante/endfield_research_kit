@@ -172,15 +172,18 @@ def valid_action_fixture():
         "recordCountCounts": {"records_1": 1, "records_2": 1},
     }
     music_head = {
-        "bodies": 3,
+        "bodies": 4,
         "resolved": 3,
         "unresolved": 0,
         "zero": 0,
         "unknownDiscriminant": 0,
         "tooShort": 0,
-        "bodiesByType": {"type0A": 2, "type0D": 1},
+        "unknownHeadShape": 1,
+        "bodies": 4,
+        "bodiesByType": {"type0A": 2, "type0C": 1, "type0D": 1},
         "offsetCounts": {"offset_5": 1, "offset_9": 2},
         "discriminantCounts": {"byte2_00": 2, "byte2_01": 1},
+        "headShapeCounts": {"head_00": 3, "head_06": 1},
     }
     type14_body = {
         "count": 2,
@@ -1092,10 +1095,16 @@ class HircActionCorpusTests(unittest.TestCase):
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
         result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
         head = result["musicHeadReferences"]
-        self.assertEqual(head["bodies"], 3)
+        self.assertEqual(head["bodies"], 4)
         self.assertEqual(head["resolved"], 3)
-        self.assertEqual(head["bodiesByType"], {"type0A": 2, "type0D": 1})
+        self.assertEqual(head["unknownHeadShape"], 1)
+        self.assertEqual(head["bodiesByType"], {"type0A": 2, "type0C": 1, "type0D": 1})
+        # A body outside the claim is excluded from the numerator and kept in the
+        # published total, so the shortfall stays visible rather than vanishing.
         self.assertTrue(music_head_references_are_closed(head))
+        self.assertFalse(
+            music_head_references_are_closed({**head, "unknownHeadShape": 0})
+        )
 
     def test_a_single_unnamed_body_stops_the_music_head_claim(self) -> None:
         # The claim is that every body names a same-bank object. One that does not
@@ -1108,7 +1117,9 @@ class HircActionCorpusTests(unittest.TestCase):
                 broken["rows"][0]["package"]["bnkStructures"][0],
             ):
                 scope["hircMusicHeadReferences"]["resolved"] = 2
-                scope["hircMusicHeadReferences"][field] = 1
+                scope["hircMusicHeadReferences"][field] = (
+                    scope["hircMusicHeadReferences"][field] + 1
+                )
             head = aggregate_current_hirc_actions(
                 outer, expected_files, excluded_files, broken
             )["musicHeadReferences"]
@@ -1122,7 +1133,7 @@ class HircActionCorpusTests(unittest.TestCase):
             dropped["rows"][0]["package"],
             dropped["rows"][0]["package"]["bnkStructures"][0],
         ):
-            scope["hircMusicHeadReferences"]["resolved"] = 2
+            scope["hircMusicHeadReferences"]["resolved"] = 1
         with self.assertRaisesRegex(ValueError, "do not partition"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, dropped)
 

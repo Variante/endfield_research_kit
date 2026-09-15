@@ -1573,6 +1573,7 @@ def aggregate_current_hirc_actions(
     type11_streams: Counter[str] = Counter()
     type11_record_counts: Counter[str] = Counter()
     music_head_totals: Counter[str] = Counter()
+    music_head_shapes: Counter[str] = Counter()
     music_head_by_type: Counter[str] = Counter()
     music_head_offsets: Counter[str] = Counter()
     music_head_discriminants: Counter[str] = Counter()
@@ -1628,6 +1629,7 @@ def aggregate_current_hirc_actions(
         music_head_by_type.update(package_music_head["bodiesByType"])
         music_head_offsets.update(package_music_head["offsetCounts"])
         music_head_discriminants.update(package_music_head["discriminantCounts"])
+        music_head_shapes.update(package_music_head["headShapeCounts"])
 
         package_reference = _read_reference_census(
             package.get("hircReferenceCensus"), package_label
@@ -2026,6 +2028,7 @@ def aggregate_current_hirc_actions(
         "musicHeadReferences": {
             **{key: int(music_head_totals[key]) for key in MUSIC_HEAD_SCALARS},
             "bodiesByType": dict(sorted(music_head_by_type.items())),
+            "headShapeCounts": dict(sorted(music_head_shapes.items())),
             "offsetCounts": dict(sorted(music_head_offsets.items())),
             "discriminantCounts": dict(sorted(music_head_discriminants.items())),
         },
@@ -2402,6 +2405,9 @@ MUSIC_HEAD_SCALARS = (
     "zero",
     "unknownDiscriminant",
     "tooShort",
+    # Bodies whose first byte is not 0. Their head is a different shape, so they are
+    # outside the claim; the count is published rather than removed from the total.
+    "unknownHeadShape",
 )
 # Byte 2 chooses where the word sits. Only these values are observed, and an
 # unobserved one must be counted as unknown rather than assigned a branch.
@@ -2412,7 +2418,7 @@ def _read_music_head_census(census: Any, label: str) -> dict[str, Any]:
     """Validate one package's or bank's type 0x0A / 0x0D head-reference census."""
     if census is None:
         return {key: 0 for key in MUSIC_HEAD_SCALARS} | {
-            "bodiesByType": {}, "offsetCounts": {}, "discriminantCounts": {}
+            "bodiesByType": {}, "offsetCounts": {}, "discriminantCounts": {}, "headShapeCounts": {}
         }
     if not isinstance(census, dict):
         raise ValueError(f"music head reference census is not an object: {label}")
@@ -2425,14 +2431,17 @@ def _read_music_head_census(census: Any, label: str) -> dict[str, Any]:
         if value < 0:
             raise ValueError(f"music head census has negative {key}: {label}")
         out[key] = value
-    for key in ("bodiesByType", "offsetCounts", "discriminantCounts"):
+    for key in ("bodiesByType", "offsetCounts", "discriminantCounts", "headShapeCounts"):
         raw = census.get(key)
         if not isinstance(raw, dict):
             raise ValueError(f"music head census has invalid {key}: {label}")
         out[key] = {str(name): int(count) for name, count in raw.items()}
     # Every body must land in exactly one outcome, or a body has been double
     # counted or dropped somewhere in the reader.
-    outcomes = out["resolved"] + out["unresolved"] + out["zero"] + out["unknownDiscriminant"] + out["tooShort"]
+    outcomes = (
+        out["resolved"] + out["unresolved"] + out["zero"]
+        + out["unknownDiscriminant"] + out["tooShort"] + out["unknownHeadShape"]
+    )
     if outcomes != out["bodies"]:
         raise ValueError(
             f"music head outcomes do not partition the bodies: {label} "
@@ -2463,9 +2472,13 @@ def music_head_references_are_closed(corpus: dict[str, Any]) -> bool:
     A single body that is zero, unresolved, short, or carries an unobserved
     discriminant falsifies that, so none of them may be tolerated.
     """
+    bodies = int(corpus.get("bodies") or 0)
+    # The claim covers bodies whose head shape is the established one. The rest are
+    # published, not deleted, so the denominator stays visible.
+    claimed = bodies - int(corpus.get("unknownHeadShape") or 0)
     return (
-        int(corpus.get("bodies") or 0) > 0
-        and int(corpus.get("bodies") or 0) == int(corpus.get("resolved") or 0)
+        claimed > 0
+        and claimed == int(corpus.get("resolved") or 0)
         and int(corpus.get("unresolved") or 0) == 0
         and int(corpus.get("zero") or 0) == 0
         and int(corpus.get("unknownDiscriminant") or 0) == 0
@@ -2589,13 +2602,19 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
     head = report["corpus"].get("musicHeadReferences") or {}
     head_lines = []
     if head:
+        shape_rows = chr(10).join(
+            f"| `{name}` | {count:,} |" for name, count in sorted(head["headShapeCounts"].items())
+        ) or "| _none_ | 0 |"
         head_lines = [
             "",
-            "## Numeric types `0x0A` and `0x0D`: one named object per body",
+            "## Numeric types `0x0A`, `0x0C` and `0x0D`: one named object per body",
             "",
             f"- Bodies: {head['bodies']:,}; naming exactly one same-bank object: {head['resolved']:,}.",
             f"- Unresolved {head['unresolved']:,}; zero {head['zero']:,}; unknown discriminant "
             f"{head['unknownDiscriminant']:,}; too short {head['tooShort']:,}.",
+            f"- Bodies outside the claim because their first byte is not 0: {head['unknownHeadShape']:,}. "
+            "They are excluded and counted here rather than removed from the total, so the "
+            "denominator above stays the whole population.",
             "",
             "| Body byte 2 | Bodies | Word offset |",
             "|---|---:|---:|",
@@ -2604,11 +2623,16 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
                 for name, count in sorted(head["discriminantCounts"].items())
             ),
             "",
-            "These two types are **not framed**: a variable-length region inside them is "
+            "",
+            "| Body byte 0 | Bodies |",
+            "|---|---:|",
+            shape_rows,
+            "",
+            "These three types are **not framed**: a variable-length region inside them is "
             "still unisolated, so no layout is claimed here. What is claimed is narrower "
             "and is gated the same way as the vectors above: body byte 2 selects where a "
             "single 32-bit word sits, and that word names exactly one object declared by "
-            "the same bank in every body. The offset is computed from the byte and never "
+            "the same bank in every body whose first byte is 0. The offset is computed from the byte and never "
             "searched for, the offset histogram is required to follow from the byte "
             "histogram, and an unobserved byte value is counted as unknown rather than "
             "assigned a branch. Nothing here says what the relation means.",

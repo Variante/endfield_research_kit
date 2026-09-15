@@ -1661,11 +1661,16 @@ Stable conclusions:
   carries almost no information here, which is a stronger version of the ambiguity
   that type `0x0E` had. A structural predictor is required, as with the `0x0E`
   flag byte.
-- **Types `0x0A` and `0x0D` each name exactly one same-bank object, in every
-  body.** Body byte 2 selects where the 32-bit word sits: zero puts it at offset
-  9, nonzero at offset 5. Under that rule all 4,158 `0x0A` and all 2,431 `0x0D`
-  bodies resolve -- 6,589 of 6,589, with zero unresolved, zero null, and no
-  unobserved discriminant. Observed byte 2 values are 0 (6,368), 1 (194) and 2
+- **Types `0x0A`, `0x0C` and `0x0D` share one head, and each names exactly one
+  same-bank object.** Body byte 2 selects where the 32-bit word sits: zero puts it
+  at offset 9, nonzero at offset 5. Under that rule 7,326 of 7,331 bodies resolve
+  -- all 4,158 `0x0A`, all 2,431 `0x0D`, and 737 of 742 `0x0C` -- with zero
+  unresolved, zero null, and no unobserved discriminant.
+- The five exceptions are all `0x0C` bodies whose **first** byte is 6 rather than
+  0. That is a different head shape: their offset 9 is null and their offset 5
+  names nothing, so neither branch applies. They are excluded from the claim and
+  **counted in the published total** rather than dropped, so the denominator stays
+  the whole population. `0x0A` and `0x0D` are byte 0 == 0 in every body. Observed byte 2 values are 0 (6,368), 1 (194) and 2
   (27); anything else must fail closed, because a fourth value has no branch.
   This is gated inside the reference-graph report and is a Layer-4 identity fact
   only: it says nothing about direction, containment, or meaning.

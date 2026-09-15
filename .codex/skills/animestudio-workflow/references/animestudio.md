@@ -334,9 +334,11 @@ are the ones that test it. Do not extend this to a frame: the 88-byte entries th
 follow consume only 2,221 of 4,325 bodies exactly, 248 of their words name no
 declared source, and the node frame reaches EOF from there in 2 bodies.
 
-Types `0x0A` and `0x0D` do carry one gated reference each: body byte 2 selects the
-offset of a 32-bit word (0 -> offset 9, nonzero -> offset 5), and under that rule
-all 6,589 bodies name exactly one same-bank object. Fixing the offset at 9 instead
+Types `0x0A`, `0x0C` and `0x0D` share a head and carry one gated reference each:
+body byte 2 selects the offset of a 32-bit word (0 -> offset 9, nonzero -> offset
+5), and under that rule 7,326 of 7,331 bodies name exactly one same-bank object.
+The five exceptions are `0x0C` bodies whose *first* byte is 6, a head shape
+neither branch fits; they are excluded from the claim but kept in the denominator. Fixing the offset at 9 instead
 resolves only ~97%, which looked like missing references and was not -- when a
 rule is nearly always right, look for the byte that makes it always right before
 recording a limit. When probing them, mirror the node frame in
