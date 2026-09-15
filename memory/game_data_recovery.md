@@ -1701,6 +1701,16 @@ Stable conclusions:
   about what either type does.
 - The narrow prefix claim is untouched and still gated separately, so widening the
   filter cannot weaken it.
+- A second audit pass found a **stale non-claim**, which is the opposite failure
+  and just as misleading. The type `0x02` prefix report listed "physical media
+  placement" among the things it does not identify. That was true when written and
+  is now false: the source id inside that prefix joins to the media the corpus
+  ships, gated in the reference-graph report. Saying it is unidentified reads as
+  caution while actually being wrong.
+- **Non-claims go stale too, and nothing makes them fail.** A wrong positive claim
+  eventually contradicts a number somewhere; a wrong "we do not know this" just
+  sits there looking responsible. When a new join lands, re-read the non-claims of
+  every report that touches the same bytes.
 - **An audit of the published wording found the over-generalisation had spread.**
   After correcting the cross-bank claim in these notes, the same claim was still
   sitting in two published reports, and one of them contradicted a table twenty

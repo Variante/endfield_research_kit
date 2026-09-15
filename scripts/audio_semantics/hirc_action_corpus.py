@@ -1318,7 +1318,9 @@ def _build_body_lanes() -> dict[str, "_BodyLane"]:
             extra_non_claims=(
                 "source, effect, bus, or parent object identity",
                 "cross-object or cross-bank relationships",
-                "physical media placement or source-plugin semantics",
+                "source-plugin semantics, or which media bytes are placed where; the "
+                "source id's join to shipped media is established separately in the "
+                "reference-graph report and is not claimed by this lane",
             ),
             upstream_note=(
                 "a malformed 14-byte source prefix or plugin parameter range throws in "
@@ -2288,7 +2290,14 @@ def _type02_markdown(report: dict[str, Any]) -> str:
             "|---|---:|",
             block_rows,
             "",
-            "The parser bounds a 14-byte source prefix and, for numeric plugin type `0x02`, its length-prefixed parameter range. Remaining body bytes stay opaque. This is byte-boundary evidence only; it does not identify tail fields, physical media placement, runtime selection, or audibility.",
+            "The parser bounds a 14-byte source prefix and, for numeric plugin type `0x02`, its length-prefixed parameter range. Remaining body bytes stay opaque. This is byte-boundary evidence only; it does not identify tail fields, runtime selection, or audibility.",
+            "",
+            "Physical media used to be on that list and no longer belongs there. The "
+            "source id inside this prefix is joined to the media the corpus ships in "
+            "the reference-graph report, where the plug-in id decides whether it "
+            "resolves. This report still does not make that join -- it bounds bytes -- "
+            "but saying media placement is unidentified would now be false rather than "
+            "cautious.",
             "",
             f"Corpus gate SHA-256: `{report['corpusGate']['sha256']}`; AnimeStudio CLI SHA-256 `{report['audioAudit']['toolSha256']}`.",
             f"Raw AnimeStudio package audit: `{report['audioAudit']['intermediatePath']}` (SHA-256 `{report['audioAudit']['sha256']}`).",
@@ -3633,7 +3642,9 @@ def run_current_corpus_audit(
             "semanticStatus": "structural-only",
             "nonClaims": [
                 "opaque-tail field names or internal cursor",
-                "physical media placement or source-plugin semantics",
+                "source-plugin semantics, or which media bytes are placed where; the "
+                "source id's join to shipped media is established separately in the "
+                "reference-graph report and is not claimed by this lane",
                 "runtime execution, event selection, or audibility",
             ],
         },
