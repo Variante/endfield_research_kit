@@ -2063,9 +2063,60 @@ Stable conclusions:
   are scored the same way and lose. Fit and discrimination are different claims, and
   a closure rate reports the first while sounding like the second.
 
-- **The remaining fences.** `0x08`: `tail_block_does_not_end_the_body` 9,
-  `range_tail_block_units` 6, `range_properties` 4. `0x12`:
-  `range_tail_block_units` 4.
+### The fences are closed: `0x12` is complete, `0x08` is 160 of 161
+
+Two readings closed 22 of the 23 fenced bodies. Both were *missing* structure, not
+mis-sized structure, which is why widening ranges had never helped.
+
+**1. A null leading reference carries a second 32-bit word.** Four `0x08` bodies
+open `00 00 00 00` and then a word before the property count. Read without it they
+ask for 74, 205 or 167 properties in a body far too short to hold them; read with
+it, the second list's key lands on `0x15` in all four. That is the evidence -- where
+the rest of the frame lands, not whether the count looks plausible. (An earlier
+version of this idea was withdrawn because it "changed the exact count by zero".
+It did, at the time, because these four were also failing later for the tail-block
+reason below; fixing one without the other shows nothing.)
+
+**2. A tail block ends with a section, and the old reading hardcoded its absence.**
+The block is:
+
+```
+u8 zero, u8 unitCount, u8 zero          -- unitCount may be 0
+unitCount x unit                         -- 12 head bytes, records, a byte, records
+u8 entryCount
+  entryCount == 0: one byte closes the body
+  entryCount >  0: entries, then u8 one, u32 reference, u8 zero, u8 recordCount
+                   recordCount x record
+```
+
+- An **entry** is 3 bytes, or 4 when the high bit of its first byte is set. The same
+  high-bit width trick the format uses elsewhere. In bodies carrying several, the
+  entries' first bytes run 0, 1, 2, ... .
+- A **record** is `u32 id, u8 valueCount, u8 zero, valueCount x u16, valueCount x
+  float`. `valueCount` is 1 in 36 of 38 records, **which is exactly why the record
+  looked like a fixed 12 bytes** -- 4+1+1+2+4 = 12. Two records declare 2 and are 18
+  bytes.
+- **The two bytes the old code took for a fixed closing word were `entryCount = 0`
+  plus its one closing byte.** So it framed the 64 bodies whose section is absent
+  and none of the 18 whose section is present. A hardcoded constant standing in for
+  an optional structure, for the second time this session -- the terrain codec's
+  "closing run of exactly five literals" was the same mistake.
+
+**Result.** `0x08` 142 -> **160 of 161**; `0x12` 247 -> **251 of 251, complete**.
+
+**The one body left.** A `0x08` body whose first unit has `0x84` at head byte 6 --
+high bit set -- where every other unit has a value below `0x80`. The head appears to
+be 13 bytes rather than 12 there, which would match the entry rule above. **One
+observation, so it stays fenced rather than fitted.** If a second ever appears, the
+rule to test is "high bit on unit head byte 6 adds a byte", scored against bodies
+whose byte 6 is below `0x80`.
+
+**How these were found**, because the method is reusable: dump each fenced body
+from its failure cursor to the end and read the bytes. Both structures were legible
+by eye within a couple of samples -- the records end in recognisable floats
+(`00 00 80 3f` = 1.0, `00 00 c8 42` = 100.0), which anchors the record boundary, and
+from there the counts fall out. Widening a range would never have found either.
+
 - The `range_tail_block_units` bodies declare **zero** units. Reading two of them by
   hand gives a tidy structure -- `00 00 00`, a count, a zero byte, that many 3-byte
   entries with an index running 0, 1, 2, ..., then `01`, a `u32`, a zero byte, a unit
