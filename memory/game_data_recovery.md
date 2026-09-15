@@ -2113,9 +2113,15 @@ Stable conclusions:
   anchoring from the **end**. Their heads are variable -- only three byte positions
   from the front take a single value across the corpus -- but the tail is not:
   `0x0A` carries the constant word `0x5BBBD648` thirteen bytes from the end in all
-  4,158 bodies, and `0x0C`/`0x0D` have byte positions holding `0x64` (100) and
-  `0x32` (50) at fixed distances from the end. *When a type's head resists,
-  tabulate from the end.*
+  4,158 bodies; `0x0C` holds the constant bytes `0x64` (100) at -2 and `0x32` (50)
+  at -4 in all 742; `0x0D` has **30** constant byte positions in its last 120, and
+  every one of them is `0x00`. *When a type's head resists, tabulate from the end.*
+- **Count the constants, and do not read a distinct-value count as a byte value.**
+  The first version of this tabulation printed a constant as two hex digits and a
+  varying position as its number of distinct values, in the same column. A position
+  with 64 distinct values printed as `64` and was read as the constant byte `0x64`.
+  `0x0D` has no `100` or `50` anywhere near its end -- that was the bug, not the
+  data. Print a sigil for varying positions.
 - The census is in the maintained reader and gated, but the gate **skips when no
   names are supplied**: the corpus gate's reader run does not load the metadata
   literals -- the named-reach tool does -- and a census with nothing tested means
