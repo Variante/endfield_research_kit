@@ -3034,6 +3034,34 @@ u32 terminator, always 100
   internal split before suspecting the claim -- and settle it on content, because
   length cannot.
 
+#### The region after `0x0A`'s `0x0B` reference is a FLOAT BLOCK, and `+4` is the exception
+
+Reading every word after the reference as a float and asking how many are finite and
+in 1e-2..1e4:
+
+| offset | nonzero | plausible float | note |
+|---|---:|---:|---|
+| `+4` | 2,130 | **14%** | the odd one out |
+| `+8` | 3,748 | **95%** | median 5.689, mode **4.4766** (1,565) |
+| `+12` | 311 | 87% | |
+| `+16` | 334 | 95% | |
+| `+20` | 3,816 | **93%** | already recorded as an authored value |
+
+- **`+8` is a float field and had never been identified.** The reader uses it only as
+  the *control* for the `+4` fraction test -- where it works correctly, since a float
+  is not a small rational -- but nothing ever asked what it is in its own right. *A
+  word used as a control is still a field; passing as a control says what it is not,
+  never what it is.*
+- So the block after the `0x0B` reference is mostly floats, and `+4` is the one word
+  that is not. Its values -- `0x55555555`, `0xAAAAAAAB`, `0x89D89D8A`, `0xE8BA2E8B`,
+  `0x71C71C71` -- are `p/q` in Q32 for `q` in 3, 7, 9, 11, 13, 49. That it differs in
+  kind from its neighbours is now measured rather than assumed.
+- A test I wrote to check whether those values have repeating binary expansions
+  returned 100% for **every** offset including the floats, so it discriminates nothing
+  and is **discarded**. It is recorded here only so the next attempt does not rebuild
+  it. *A structural test that passes everything has not been run; it has been
+  mis-written.*
+
 #### QUALIFIED: `0x0A`'s "fraction" is a mixed value set, not a fraction field
 
 The discriminator that separates a real fixed-point field from a test artefact is
