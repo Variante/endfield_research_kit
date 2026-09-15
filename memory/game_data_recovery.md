@@ -3284,6 +3284,27 @@ rather than the ten enumerations that did not -- settles where the problem lives
 - **The remaining 70** have the same `(1, (1,))` shape as every closing body. Those,
   and only those, are a genuine element-level mystery.
 
+**The bucket decomposed, by (zero-element entries, residue bytes):**
+`(0,12)` 48, `(2,32)` 36, `(1,44)` 24, `(1,32)` 22, `(3,112)` 16, `(0,16)` 10,
+`(2,44)` 8, `(2,37)` 8, `(0,49)` 6, `(0,38)` 4.
+
+- **The residue does not scale with the number of zero-element entries.** Two zero
+  entries with a 32-byte residue is 16 each; one with 44 is 44; three with 112 is
+  37.3. No constant per entry, so the multi-entry layout is not "a fixed extra block
+  per empty entry".
+- **The 48 bodies with the closing shape and a 12-byte residue**: the residue is
+  `00 00 01 00 00 00 00 00 00 00 00 00` -- a mostly-zero twelve bytes with `01` at
+  offset 2. It passes a curve-record test, but only as `(0.0, 0.0, 0)`, which **a run
+  of zeros passes for free**. Not a curve record.
+- **Not a doubled trailing block either.** A 24-byte block closes **0** of 4,325 and a
+  36-byte block 0, against 3,715 for 12.
+
+*Four more readings eliminated. The pattern across this whole bucket is that every
+candidate that closes anything closes only the degenerate members -- zero runs, zero
+records, all-zero blocks -- and the content test catches each one. That is now the
+single most reliable signal in this investigation: if a reading's successes are all
+zero-filled, it is wrong.*
+
 *Ten hypotheses about element widths failed because the residue was never mostly an
 element problem. When a residue resists every reading of structure X, check whether
 the failing bodies even have the same shape at level X-1 as the ones that work.* Here
