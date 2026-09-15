@@ -6768,11 +6768,32 @@ windows. *That the garbage was orderly is what identified the stride:* entries o
 apart, values 0, 1, 2, 3. A wrong read that returns noise tells you nothing; a wrong read
 that returns a pattern tells you the layout.
 
-**What is still not claimed.** `(0, 4)` separates terrain at 100% but reads as
-`Default + SphereCollider`, which is not a terrain concept; terrain levels are the outdoor
-maps, so that separation plausibly tracks *outdoors*, not terrain. **One pair fitting the
-statistic without fitting the name keeps the mapping at strongly supported rather than
-settled.**
+***6. The caveat is resolved, and the mapping is confirmed far harder than before.*** The
+worry was `(0, 4)`, which separates terrain levels at 100% while reading as
+`Default + SphereCollider`. Presence separation is a weak instrument -- it asks only
+*whether* a pair occurs. Correlating **counts** against each level's terrain-file count,
+over the 38 terrain levels, separates them completely:
+
+| pair | reading | total | corr. with terrain files |
+| --- | --- | --- | --- |
+| **`(5, 7)`** | **Collider + TerrainCollider** | 5,406 | **+1.000** |
+| `(0, 7)` | Default + TerrainCollider | 4,590 | +0.956 |
+| `(0, 4)` | Default + SphereCollider | 5,312 | **+0.728** |
+| `(3, 9)` | -- | 103,748 | +0.118 |
+| `(1, 9)` | -- | 123,540 | -0.030 |
+
+**`(5, 7)` is perfectly linear in terrain extent across all 38 levels.** A count of
+"terrain colliders on the collider layer" rising exactly in step with the number of terrain
+files is what the two enum names jointly predict, and nothing else in the census behaves
+that way. *This is the confirmation the presence test could not give.*
+
+**And `(0, 4)` behaves unlike a terrain record.** At +0.728 it is plainly correlated -- but
+the two records that genuinely name terrain sit at +1.000 and +0.956, and the difference is
+not marginal. `(0, 4)` is common on outdoor levels without scaling with terrain, which is
+exactly what "sphere colliders are more numerous outdoors" predicts and what
+"sphere colliders *are* a terrain feature" does not. *The pair that fit the statistic
+without fitting the name turns out to fit a weaker statistic, which is the name's
+prediction after all.*
 
 #### SLOT 7's DESCRIPTOR: THREE CANDIDATES REFUSED, AND MY OWN "6-VALUED" CORRECTED
 
