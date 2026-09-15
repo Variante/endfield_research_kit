@@ -1662,6 +1662,9 @@ def aggregate_current_hirc_actions(
     type11_plugins: Counter[str] = Counter()
     type11_terminators: Counter[str] = Counter()
     type08_body_totals: Counter[str] = Counter()
+    type08_tail_totals: Counter[str] = Counter()
+    type08_tail_counts: Counter[str] = Counter()
+    type08_tail_codes: Counter[str] = Counter()
     type08_body_failures: Counter[str] = Counter()
     type08_body_unsupported: Counter[str] = Counter()
     type11_tail_counts: Counter[str] = Counter()
@@ -1762,6 +1765,13 @@ def aggregate_current_hirc_actions(
         for key in TYPE08_BODY_FIELDS:
             type08_body_totals[key] += package_type08_body[key]
         type08_body_failures.update(package_type08_body["failureCategories"])
+        package_type08_tail = _read_type08_tail_census(
+            package.get("hircType08Tail"), package_label
+        )
+        for key in TYPE08_TAIL_SCALARS:
+            type08_tail_totals[key] += package_type08_tail[key]
+        type08_tail_counts.update(package_type08_tail["recordCountCounts"])
+        type08_tail_codes.update(package_type08_tail["thirdFieldCounts"])
         type08_body_unsupported.update(package_type08_body["unsupportedCategories"])
         type11_tail_counts.update(package_type11["tailEntryCountCounts"])
         type11_lead_words.update(package_type11["firstTailEntryLeadingWordCounts"])
@@ -2166,6 +2176,11 @@ def aggregate_current_hirc_actions(
         "type14BodyFrames": body_lanes["0x0E"].publish(),
         "type22BodyFrames": body_lanes["0x16"].publish(),
         "type08HeadWords": {key: int(type08_totals[key]) for key in TYPE08_HEAD_SCALARS},
+        "type08TailRecords": {
+            **{key: int(type08_tail_totals[key]) for key in TYPE08_TAIL_SCALARS},
+            "recordCountCounts": dict(sorted(type08_tail_counts.items())),
+            "thirdFieldCounts": dict(sorted(type08_tail_codes.items())),
+        },
         "type08BodyFrames": {
             **{key: int(type08_body_totals[key]) for key in TYPE08_BODY_FIELDS},
             "failureCategories": dict(sorted(type08_body_failures.items())),
@@ -3071,6 +3086,91 @@ TYPE11_TERMINATOR_KEY = "end_00000064"
 TYPE08_BODY_FIELDS = ("count", "exact", "unsupported", "failed", "ambiguous", "bodyBytes")
 
 
+TYPE08_TAIL_SCALARS = (
+    "bodies", "notWalkable", "framedByTheReader", "tails", "noZeroWordAtTheEnd",
+    "noCountBeforeTheRecords", "countIsAmbiguous", "tailsWithAUniqueCount",
+    "records", "unexplainedHeadBytes",
+)
+# The third field of each tail record. Arbitrary bytes read at a wrong offset would
+# spread over the 32-bit range; these do not, which is what makes the alignment
+# evidence rather than arithmetic.
+TYPE08_TAIL_CODE_CEILING = 64
+
+
+def _read_type08_tail_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's or bank's type 0x08 tail census."""
+    if census is None:
+        return {key: 0 for key in TYPE08_TAIL_SCALARS} | {
+            "recordCountCounts": {}, "thirdFieldCounts": {},
+        }
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x08 tail census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in TYPE08_TAIL_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x08 tail census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x08 tail census has negative {key}: {label}")
+        out[key] = value
+    for key in ("recordCountCounts", "thirdFieldCounts"):
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"type 0x08 tail census has invalid {key}: {label}")
+        out[key] = {str(name): int(count) for name, count in raw.items()}
+    if out["notWalkable"] + out["framedByTheReader"] + out["tails"] != out["bodies"]:
+        raise ValueError(f"type 0x08 tail outcomes do not partition its bodies: {label}")
+    resolved = (
+        out["noZeroWordAtTheEnd"]
+        + out["noCountBeforeTheRecords"]
+        + out["countIsAmbiguous"]
+        + out["tailsWithAUniqueCount"]
+    )
+    if resolved != out["tails"]:
+        raise ValueError(f"type 0x08 tail outcomes do not partition its tails: {label}")
+    if sum(out["recordCountCounts"].values()) != out["tailsWithAUniqueCount"]:
+        raise ValueError(f"type 0x08 tail record counts do not cover its tails: {label}")
+    if sum(out["thirdFieldCounts"].values()) != out["records"]:
+        raise ValueError(f"type 0x08 tail codes do not cover its records: {label}")
+    return out
+
+
+def type08_tail_records_are_located_by_a_unique_count(corpus: dict[str, Any]) -> bool:
+    """The fenced type 0x08 tails end in a counted run this reader can locate.
+
+    The tail is **not** framed: the bytes before its trailing run are unexplained,
+    and the run is found by anchoring on the end rather than by walking forward.
+    So the check has to rule out the ways that anchoring could be meaningless.
+
+    An ambiguous count is one of them -- two lengths that both fit make the
+    alignment arithmetic, not evidence -- so any ambiguity fails. A tail with no
+    count at all is another, and those are permitted but counted, because a tail the
+    reader cannot locate is a real outcome and hiding it would overstate the reach.
+
+    The discriminator is each record's third field. Read at a wrong offset it would
+    be arbitrary 32-bit noise; here it must stay inside a small range, and that is
+    what separates this from a coincidence of lengths.
+    """
+    tails = int(corpus.get("tails") or 0)
+    located = int(corpus.get("tailsWithAUniqueCount") or 0)
+    if tails <= 0 or located <= 0:
+        return False
+    if int(corpus.get("countIsAmbiguous") or 0):
+        return False
+    codes = corpus.get("thirdFieldCounts") or {}
+    if not codes:
+        return False
+    for name in codes:
+        try:
+            code = int(str(name).split("_", 1)[1])
+        except (IndexError, ValueError):
+            return False
+        if code > TYPE08_TAIL_CODE_CEILING:
+            return False
+    return sum(int(value) for value in codes.values()) == int(corpus.get("records") or 0)
+
+
 def _read_type08_body_frame(container: Any, label: str) -> dict[str, Any]:
     """Validate one package's or bank's type 0x08 whole-body census.
 
@@ -3530,6 +3630,55 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             "is not in the reader.",
         ]
 
+    tail08 = report["corpus"].get("type08TailRecords") or {}
+    tail08_lines = []
+    if tail08.get("tails"):
+        tail08_lines = [
+            "",
+            "### What the fence hides: a counted run of twelve-byte records",
+            "",
+            f"- Bodies the reader can walk to the entry run: "
+            f"{tail08['framedByTheReader'] + tail08['tails']:,} of {tail08['bodies']:,}; "
+            f"framed outright: {tail08['framedByTheReader']:,}; carrying a tail: "
+            f"{tail08['tails']:,}.",
+            f"- Tails whose trailing run is located by a unique count: "
+            f"{tail08['tailsWithAUniqueCount']:,}; ambiguous: {tail08['countIsAmbiguous']:,}; "
+            f"no count before the records: {tail08['noCountBeforeTheRecords']:,}; no zero "
+            f"word at the end: {tail08['noZeroWordAtTheEnd']:,}.",
+            f"- Records: {tail08['records']:,}. Bytes before them that remain unexplained: "
+            f"{tail08['unexplainedHeadBytes']:,}.",
+            "",
+            "| Records in a tail | Tails |",
+            "|---|---:|",
+            *(
+                f"| `{name}` | {count:,} |"
+                for name, count in sorted((tail08.get("recordCountCounts") or {}).items())
+            ),
+            "",
+            "| Third field | Records |",
+            "|---|---:|",
+            *(
+                f"| `{name}` | {count:,} |"
+                for name, count in sorted(
+                    (tail08.get("thirdFieldCounts") or {}).items(),
+                    key=lambda pair: int(pair[0].split("_", 1)[1]),
+                )
+            ),
+            "",
+            "This is a census, **not** a frame. The bytes before the run are not "
+            "understood, so the run is anchored from the *end*: the tail must finish "
+            "with a zero 16-bit word, and the count must sit exactly two bytes before a "
+            "run of that many twelve-byte records. A tail where two lengths both fit is "
+            "reported ambiguous and not counted -- and none is.",
+            "",
+            "What makes the alignment evidence rather than arithmetic is the third "
+            "field. Read at a wrong offset it would be arbitrary 32-bit noise; across "
+            "every record in the corpus it takes **five** values. The first field of each "
+            "record reads as a float and takes values like -180, -96, -75, -48, -36, -18, "
+            "0, 0.6, 1, 75, 100 and 180 -- which is noted as an observation, not a claim: "
+            "nothing here establishes what any of them measures.",
+        ]
+
     sources11 = report["corpus"].get("type11SourceRecords") or {}
     known_plugins = report["corpus"].get("type02PluginIdCounts") or {}
     source_lines = []
@@ -3680,6 +3829,7 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             *type17_lines,
             *head08_lines,
             *body08_lines,
+            *tail08_lines,
             *source_lines,
             *head_lines,
             "",
@@ -4049,7 +4199,11 @@ def run_current_corpus_audit(
     type17_closed = type17_is_framed_except_the_tied_block(type17_corpus)
     type08_corpus = corpus["type08HeadWords"]
     type08_body_corpus = corpus["type08BodyFrames"]
+    type08_tail_corpus = corpus["type08TailRecords"]
     type08_closed = type08_head_words_are_null_or_resolve(type08_corpus)
+    type08_tail_located = type08_tail_records_are_located_by_a_unique_count(
+        report["corpus"].get("type08TailRecords") or {}
+    )
     type08_body_named = type08_bodies_are_exact_or_named(
         report["corpus"].get("type08BodyFrames") or {}
     )
@@ -4065,6 +4219,7 @@ def run_current_corpus_audit(
         and type11_terminator_closed
         and type11_tail_counted
         and type08_body_named
+        and type08_tail_located
         and type08_closed
         and type17_closed
         and type09_closed
@@ -4096,6 +4251,7 @@ def run_current_corpus_audit(
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
             "type08BodyFrames": type08_body_corpus,
+            "type08TailRecords": type08_tail_corpus,
             "type17Bodies": type17_corpus,
             "type09Bodies": type09_corpus,
             "type03Targets": t03_corpus,
@@ -4162,6 +4318,14 @@ def run_current_corpus_audit(
             f"bodies={type08_corpus['bodies']} resolved={type08_corpus['resolved']} "
             f"null={type08_corpus['null']} unresolved={type08_corpus['unresolved']} "
             f"tooShort={type08_corpus['tooShort']}"
+        )
+    if not type08_tail_located:
+        tail08 = report["corpus"].get("type08TailRecords") or {}
+        lane_failures.append(
+            "type 0x08 tail records are not located by a unique count: "
+            f"tails={tail08.get('tails')} located={tail08.get('tailsWithAUniqueCount')} "
+            f"ambiguous={tail08.get('countIsAmbiguous')} "
+            f"codes={sorted(tail08.get('thirdFieldCounts') or {})}"
         )
     if not type08_body_named:
         body08 = report["corpus"].get("type08BodyFrames") or {}

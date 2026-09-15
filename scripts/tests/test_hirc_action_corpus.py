@@ -18,6 +18,8 @@ from scripts.audio_semantics.hirc_action_corpus import (
     type11_sources_share_the_type02_plugin_space,
     type11_bodies_share_one_terminator,
     type08_bodies_are_exact_or_named,
+    type08_tail_records_are_located_by_a_unique_count,
+    _read_type08_tail_census,
     _read_type08_body_frame,
     type11_tail_entries_are_counted,
     _read_type11_source_census,
@@ -242,6 +244,20 @@ def valid_action_fixture():
         "failureCategories": {"trailer_is_not_five_bytes": 1},
         "unsupportedCategories": {},
     }
+    type08_tail = {
+        "bodies": 3,
+        "notWalkable": 0,
+        "framedByTheReader": 2,
+        "tails": 1,
+        "noZeroWordAtTheEnd": 0,
+        "noCountBeforeTheRecords": 0,
+        "countIsAmbiguous": 0,
+        "tailsWithAUniqueCount": 1,
+        "records": 2,
+        "unexplainedHeadBytes": 15,
+        "recordCountCounts": {"records_2": 1},
+        "thirdFieldCounts": {"code_4": 1, "code_9": 1},
+    }
     type11_sources = {
         "bodies": 2,
         "bodiesWithRecords": 2,
@@ -419,6 +435,7 @@ def valid_action_fixture():
                     "hircType11Sources": copy.deepcopy(type11_sources),
                     "hircType08Head": copy.deepcopy(type08_head),
                     "hircType08BodyFrame": copy.deepcopy(type08_body),
+                    "hircType08Tail": copy.deepcopy(type08_tail),
                     "hircType17": copy.deepcopy(type17_bodies),
                     "hircType09": copy.deepcopy(type09_bodies),
                     "hircType03Targets": copy.deepcopy(type03_targets),
@@ -449,6 +466,7 @@ def valid_action_fixture():
                             "hircType11Sources": copy.deepcopy(type11_sources),
                             "hircType08Head": copy.deepcopy(type08_head),
                             "hircType08BodyFrame": copy.deepcopy(type08_body),
+                            "hircType08Tail": copy.deepcopy(type08_tail),
                             "hircType17": copy.deepcopy(type17_bodies),
                             "hircType09": copy.deepcopy(type09_bodies),
                             "hircType03Targets": copy.deepcopy(type03_targets),
@@ -1519,6 +1537,50 @@ class HircActionCorpusTests(unittest.TestCase):
             )
         with self.assertRaisesRegex(ValueError, "more terminators than bodies"):
             _read_type11_source_census({**census, "endsWithTerminator": 9}, "unit")
+
+    def test_the_type08_tail_run_must_be_located_unambiguously(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        tail = result["type08TailRecords"]
+        self.assertEqual((tail["tails"], tail["tailsWithAUniqueCount"]), (1, 1))
+        self.assertTrue(type08_tail_records_are_located_by_a_unique_count(tail))
+
+        # Two lengths that both fit make the alignment arithmetic rather than
+        # evidence, so a single ambiguous tail has to break the claim.
+        self.assertFalse(
+            type08_tail_records_are_located_by_a_unique_count({**tail, "countIsAmbiguous": 1})
+        )
+        # The third field is the discriminator: read at a wrong offset it would be
+        # arbitrary 32-bit noise, so a large value means the run is not where the
+        # reader thinks it is.
+        self.assertFalse(
+            type08_tail_records_are_located_by_a_unique_count(
+                {**tail, "thirdFieldCounts": {"code_4": 1, "code_305419896": 1}}
+            )
+        )
+        # Nothing located proves nothing, and neither does a corpus with no tails.
+        self.assertFalse(
+            type08_tail_records_are_located_by_a_unique_count(
+                {**tail, "tailsWithAUniqueCount": 0, "noCountBeforeTheRecords": 1}
+            )
+        )
+        self.assertFalse(type08_tail_records_are_located_by_a_unique_count({**tail, "tails": 0}))
+        # The code histogram has to account for every record it claims to have read.
+        self.assertFalse(
+            type08_tail_records_are_located_by_a_unique_count({**tail, "records": 9})
+        )
+
+    def test_a_type08_tail_census_that_loses_a_tail_is_refused(self) -> None:
+        _, _, _, audio_audit = valid_action_fixture()
+        census = audio_audit["rows"][0]["package"]["hircType08Tail"]
+        with self.assertRaisesRegex(ValueError, "do not partition its bodies"):
+            _read_type08_tail_census({**census, "bodies": 9}, "unit")
+        with self.assertRaisesRegex(ValueError, "do not partition its tails"):
+            _read_type08_tail_census({**census, "tails": 2, "bodies": 4}, "unit")
+        with self.assertRaisesRegex(ValueError, "do not cover its tails"):
+            _read_type08_tail_census({**census, "recordCountCounts": {}}, "unit")
+        with self.assertRaisesRegex(ValueError, "do not cover its records"):
+            _read_type08_tail_census({**census, "thirdFieldCounts": {"code_4": 1}}, "unit")
 
     def test_type08_bodies_must_be_framed_or_named(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

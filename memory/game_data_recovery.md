@@ -1946,6 +1946,22 @@ Stable conclusions:
   publishes a closed-form byte total and this type has none. Its gate forbids only
   what a partial framing must not do -- leave a body neither framed nor accounted
   for, report an ambiguous body, or pass with nothing framed at all.
+- **What the fence hides, censused rather than framed.** 40 bodies carry a tail
+  after the entry run, and 27 of them end in a counted run of **twelve-byte
+  records**: two 32-bit floats and a 32-bit code. The run is anchored from the
+  **end**, never walked forward -- the tail must finish with a zero 16-bit word, and
+  the count must sit exactly two bytes before a run of that many records. Zero tails
+  are ambiguous and zero lack a count; the other 13 have no zero word at the end.
+- The discriminator, and the reason this is not just arithmetic that fits: the
+  record's **third field takes only five values across all 80 records** (0, 1, 4, 7
+  and 9). Read at a wrong offset it would be arbitrary 32-bit noise. The first field
+  reads as a float and takes values like -180, -96, -75, -48, -36, -18, 0, 0.6, 1,
+  75, 100 and 180 -- recorded as an observation, not a claim; nothing establishes
+  what any of them measures.
+- **1,832 bytes sit between the entry run and those records and are unexplained.**
+  A 15-byte head shape recurs there (`00 <a> 00 <u32> 00 <b> 00 <u32> 02`) but it
+  does not hold across all 40 tails, so it is deliberately not in the reader. That
+  head is where the next attempt starts.
 - **A rule that looked right and is withdrawn.** Bodies whose leading reference is
   null appeared to carry an extra 32-bit word before the property count. Adding
   that rule changes the exact count by **zero**, and not one of the four
