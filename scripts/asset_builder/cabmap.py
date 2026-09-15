@@ -158,8 +158,16 @@ def cabmap_is_closed(summary: dict[str, Any]) -> bool:
 DEFAULT_LEDGER = ROOT / "reports/animestudio/vfs_understanding_files_latest.jsonl.gz"
 
 
-def ledger_chunk_names(ledger_path: Path) -> set[str]:
-    """Chunk filenames the VFS understanding ledger enumerates."""
+def ledger_block_names(ledger_path: Path) -> set[str]:
+    """Block directories the VFS understanding ledger enumerates.
+
+    Resolve by block, never by chunk filename. The same block ships a *different*
+    chunk file in each VFS root -- block ``0CE8FA57`` is ``4B06191A...chk`` under
+    StreamingAssets and ``F047E09F...chk`` under Persistent -- and the ledger
+    resolves each block from the primary root while a CABMap built against the
+    fallback root names the fallback file. Comparing filenames reports a 222 MB
+    chunk as unenumerated when every one of its 1,053 containers is covered.
+    """
     import gzip  # noqa: PLC0415
 
     names: set[str] = set()
@@ -173,19 +181,19 @@ def ledger_chunk_names(ledger_path: Path) -> set[str]:
                 continue
             physical = row.get("physicalChunkPath")
             if physical:
-                names.add(Path(physical).name.upper())
+                names.add(Path(physical).parent.name.upper())
     return names
 
 
-def chunks_missing_from_ledger(
+def blocks_missing_from_ledger(
     entries_by_map: dict[str, list[CabEntry]], ledger: set[str]
 ) -> dict[str, dict[str, int]]:
-    """Chunks a CABMap references that the ledger never enumerates.
+    """Blocks a CABMap references that the ledger never enumerates.
 
     Both indexes are produced independently -- one by AnimeStudio walking
-    containers, one by the VFS audit walking blocks -- so a chunk in the first and
-    not the second is a coverage gap in whichever is wrong, and worth surfacing
-    rather than averaging away.
+    containers, one by the VFS audit walking blocks -- so a block in the first and
+    not the second is a real coverage gap. A *chunk* in the first and not the
+    second is not: see ``ledger_block_names`` for why that comparison is wrong.
     """
     out: dict[str, dict[str, int]] = {}
     if not ledger:
@@ -193,9 +201,9 @@ def chunks_missing_from_ledger(
     for name, entries in entries_by_map.items():
         counts: Counter[str] = Counter()
         for entry in entries:
-            chunk = Path(entry.path).name.upper()
-            if chunk not in ledger:
-                counts[chunk] += 1
+            block = Path(entry.path).parent.name.upper()
+            if block not in ledger:
+                counts[block] += 1
         if counts:
             out[name] = dict(counts.most_common())
     return out
@@ -248,8 +256,8 @@ def run(
             "namingAnotherMap": len((refs - own) & everything),
             "namingNothingAnywhere": len(unresolved),
         }
-    ledger = ledger_chunk_names(ledger_path)
-    missing_chunks = chunks_missing_from_ledger(parsed, ledger)
+    ledger = ledger_block_names(ledger_path)
+    missing_blocks = blocks_missing_from_ledger(parsed, ledger)
     report = {
         "format": "animestudio-cabmap-container-index",
         "schemaVersion": 1,
@@ -259,8 +267,8 @@ def run(
         "maps": summaries,
         "ledgerCoverage": {
             "ledgerPath": str(ledger_path),
-            "ledgerEnumeratesChunks": len(ledger),
-            "chunksReferencedButNotEnumerated": missing_chunks,
+            "ledgerEnumeratesBlocks": len(ledger),
+            "blocksReferencedButNotEnumerated": missing_blocks,
         },
         "dependencyResolution": {
             "distinctCabNames": len(everything),
@@ -281,8 +289,9 @@ def run(
                 "that a dependency edge implies load order, ownership or containment",
                 "that the three targets naming nothing are errors; this corpus simply "
                 "does not contain whatever declares them",
-                "why a referenced chunk is absent from the VFS ledger; the absence is "
-                "reported, the cause is not diagnosed here",
+                "that a chunk filename absent from the ledger means missing coverage; "
+                "each block ships a different chunk file per VFS root, so coverage is "
+                "resolved by block",
                 "that an offset points at a readable object without the container "
                 "format that sits at it",
             ],

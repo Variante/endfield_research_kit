@@ -109,19 +109,23 @@ unique binding.
   1,946 persistent entries land inside a ledger span, and 252,783 of 254,723
   streaming entries do. Two independently produced indexes -- AnimeStudio walking
   containers, the VFS audit walking blocks -- agree on where things are.
-- **That join found a coverage hole in the ledger.** The streaming map references
-  only 42 distinct chunks, and exactly one is absent from the ledger entirely:
-  `VFS/0CE8FA57/4B06191A404B86321CF14A4332DC1694.chk`. It exists on disk, is
-  **222,236,548 bytes**, and carries 1,053 CABMap entries. The ledger has *zero*
-  rows mentioning it -- not excluded, not shadowed, simply not enumerated, even
-  though it covers both VFS roots and the one `shadowed_fallback` row names a
-  different chunk.
-- Why it is absent is **not** diagnosed here. What is established is that a gated
-  ledger everything else hangs its provenance on does not enumerate a 222 MB chunk
-  that another index says holds a thousand containers. The check runs every time
-  `cabmap` runs, so the gap cannot quietly close or widen unnoticed.
-- The lesson generalises past this file: **a provenance ledger cannot audit its own
-  coverage.** Only a second, independently produced index can say what it missed.
+- **A coverage "hole" I reported here was my own bug. Retracted.** I compared
+  *chunk filenames* and concluded the ledger never enumerated
+  `VFS/0CE8FA57/4B06191A...chk` (222 MB, 1,053 containers). It does cover that
+  content. Block `0CE8FA57` ships a **different chunk file in each VFS root** --
+  `4B06191A...chk` under StreamingAssets, `F047E09F...chk` under Persistent -- and
+  the ledger resolves each block from the **primary** root while the CABMap, built
+  against StreamingAssets, names the fallback file. Both hold 1,053 containers.
+  Same block, same count, different filename.
+- Resolved by **block**, every block either map references is enumerated: nothing
+  is missing in either direction. The check now keys on the block directory, and a
+  test pins that so the filename comparison cannot come back.
+- Two things worth carrying from the mistake. The repo already records that this
+  VFS has two roots and that scans keyed on one silently mis-handle the other --
+  **I hit the exact failure the notes warn about**, because I keyed a join on the
+  most obvious identifier rather than the one the data is organised by. And I
+  escalated it as a foundational problem before checking the sibling root, which
+  is one `ls` away. **Check the cheap explanation before reporting a deep one.**
 - Read by `scripts/asset_builder/cabmap.py`; report at
   [`reports/assets/cabmap_current_latest.json`](../reports/assets/cabmap_current_latest.json).
   This is a container index only -- it says nothing about the objects inside a CAB,

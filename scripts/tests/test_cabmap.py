@@ -4,7 +4,7 @@ import struct
 import unittest
 
 from scripts.asset_builder.cabmap import (
-    chunks_missing_from_ledger,
+    blocks_missing_from_ledger,
     CabEntry,
     CabMapError,
     cabmap_is_closed,
@@ -112,7 +112,7 @@ class CabMapTests(unittest.TestCase):
         self.assertFalse(cabmap_is_closed(summary))
         self.assertFalse(cabmap_is_closed(summarise(FakePath(), "b", [])))
 
-    def test_chunks_absent_from_the_ledger_are_surfaced_per_map(self) -> None:
+    def test_blocks_absent_from_the_ledger_are_surfaced_per_map(self) -> None:
         entries = {
             "a.bin": [
                 CabEntry("CAB-a", "VFS/X/AAA.chk", 0, ()),
@@ -122,13 +122,16 @@ class CabMapTests(unittest.TestCase):
         }
         # The ledger and the CABMap are produced independently, so a chunk in one
         # and not the other is a coverage gap worth naming, not a rounding error.
-        missing = chunks_missing_from_ledger(entries, {"BBB.CHK"})
-        self.assertEqual(missing, {"a.bin": {"AAA.CHK": 2}})
-        # Full coverage reports nothing rather than an empty row per map.
-        self.assertEqual(chunks_missing_from_ledger(entries, {"AAA.CHK", "BBB.CHK"}), {})
+        # Coverage is resolved by block directory, never by chunk filename: the
+        # same block ships a different chunk file in each VFS root, so comparing
+        # filenames invents gaps that do not exist.
+        entries["a.bin"].append(CabEntry("CAB-d", "VFS/Y/CCC.chk", 0, ()))
+        missing = blocks_missing_from_ledger(entries, {"X"})
+        self.assertEqual(missing, {"a.bin": {"Y": 1}})
+        self.assertEqual(blocks_missing_from_ledger(entries, {"X", "Y"}), {})
         # With no ledger at all the check cannot run, and must not claim everything
         # is missing.
-        self.assertEqual(chunks_missing_from_ledger(entries, set()), {})
+        self.assertEqual(blocks_missing_from_ledger(entries, set()), {})
 
 
 if __name__ == "__main__":
