@@ -1888,6 +1888,8 @@ def aggregate_current_hirc_actions(
             "elementTotal", "elementLeadingByteNotZero", "elementPadNotZero",
             "tailFloats", "tailFloatsInBand", "tailFloatsWhole",
             "neighbourFloats", "neighbourFloatsWhole",
+            "fractionCandidates", "fractionsWithASmallDenominator",
+            "fractionControls", "fractionControlsWithASmallDenominator",
         ):
             type0a_head_totals[key] += package_head0a[key]
         type0a_element_values.update(package_head0a["elementValueCounts"])
@@ -2364,6 +2366,10 @@ def aggregate_current_hirc_actions(
             "tailFloatsWhole": int(type0a_head_totals["tailFloatsWhole"]),
             "neighbourFloats": int(type0a_head_totals["neighbourFloats"]),
             "neighbourFloatsWhole": int(type0a_head_totals["neighbourFloatsWhole"]),
+            "fractionCandidates": int(type0a_head_totals["fractionCandidates"]),
+            "fractionsWithASmallDenominator": int(type0a_head_totals["fractionsWithASmallDenominator"]),
+            "fractionControls": int(type0a_head_totals["fractionControls"]),
+            "fractionControlsWithASmallDenominator": int(type0a_head_totals["fractionControlsWithASmallDenominator"]),
         },
         "musicReferences": {
             **{key: int(music_ref_totals[key]) for key in MUSIC_REFERENCE_SCALARS},
@@ -2914,6 +2920,8 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
             "headWordTargets": {}, "elementValueCounts": {}, "tailBytesByOutcome": {},
             "tailFloats": 0, "tailFloatsInBand": 0, "tailFloatsWhole": 0,
             "neighbourFloats": 0, "neighbourFloatsWhole": 0,
+            "fractionCandidates": 0, "fractionsWithASmallDenominator": 0,
+            "fractionControls": 0, "fractionControlsWithASmallDenominator": 0,
         }
     if not isinstance(census, dict):
         raise ValueError(f"type 0x0A head census is not an object: {label}")
@@ -2923,6 +2931,8 @@ def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
         "elementLeadingByteNotZero", "elementPadNotZero",
         "tailFloats", "tailFloatsInBand", "tailFloatsWhole",
         "neighbourFloats", "neighbourFloatsWhole",
+        "fractionCandidates", "fractionsWithASmallDenominator",
+        "fractionControls", "fractionControlsWithASmallDenominator",
     ):
         try:
             value = int(census[key])
@@ -3009,6 +3019,38 @@ def the_type0a_tail_float_is_an_authored_value(corpus: dict[str, Any]) -> bool:
     if neighbour_whole > neighbours:
         return False
     return neighbour_whole / neighbours <= TYPE0A_NEIGHBOUR_WHOLE_CEILING
+
+
+# Four bytes past the reference: a fixed-point fraction, tested against the same
+# field twelve bytes later as a control.
+TYPE0A_FRACTION_SHARE = 0.60
+TYPE0A_FRACTION_CONTROL_CEILING = 0.20
+
+
+def the_type0a_tail_word_is_a_fixed_point_fraction(corpus: dict[str, Any]) -> bool:
+    """The word four bytes past the reference is a fraction of one, not an integer.
+
+    Its nonzero values land on simple rationals -- 1/3, 2/3, 4/7, 10/11, 7/13 -- to
+    within a few parts in 10^10 of 2^32. A value that is merely "some 32-bit number"
+    does not do that: hitting a rational with a denominator under 64 to that
+    precision is not something arbitrary bytes manage.
+
+    The control is the same test applied to the word twelve bytes later, which is a
+    float. It has to fail by a wide margin, because a test that accepts any 32-bit
+    value would accept both.
+    """
+    candidates = int(corpus.get("fractionCandidates") or 0)
+    controls = int(corpus.get("fractionControls") or 0)
+    if candidates <= 0 or controls <= 0:
+        return False
+    hits = int(corpus.get("fractionsWithASmallDenominator") or 0)
+    control_hits = int(corpus.get("fractionControlsWithASmallDenominator") or 0)
+    if hits > candidates or control_hits > controls:
+        return False
+    return (
+        hits / candidates >= TYPE0A_FRACTION_SHARE
+        and control_hits / controls <= TYPE0A_FRACTION_CONTROL_CEILING
+    )
 
 
 # The reference is an optional four-byte field, so a body without it is exactly
@@ -5091,6 +5133,9 @@ def run_current_corpus_audit(
         report["corpus"].get("type08BodyFrames") or {}
     )
     # True when no names were supplied: see the check's own note.
+    type0a_fraction = the_type0a_tail_word_is_a_fixed_point_fraction(
+        report["corpus"].get("type0AHead") or {}
+    )
     type0a_float = the_type0a_tail_float_is_an_authored_value(
         report["corpus"].get("type0AHead") or {}
     )
@@ -5140,6 +5185,7 @@ def run_current_corpus_audit(
         and type0a_elements
         and type0a_optional
         and type0a_float
+        and type0a_fraction
         and type08_body_named
         and type08_tail_located
         and type08_head_named
@@ -5290,6 +5336,15 @@ def run_current_corpus_audit(
             f"count={body08.get('count')} exact={body08.get('exact')} "
             f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
             f"ambiguous={body08.get('ambiguous')}"
+        )
+    if not type0a_fraction:
+        head0a = report["corpus"].get("type0AHead") or {}
+        lane_failures.append(
+            "the type 0x0A tail word is not a fixed-point fraction: "
+            f"candidates={head0a.get('fractionCandidates')} "
+            f"hits={head0a.get('fractionsWithASmallDenominator')} "
+            f"controls={head0a.get('fractionControls')} "
+            f"controlHits={head0a.get('fractionControlsWithASmallDenominator')}"
         )
     if not type0a_float:
         head0a = report["corpus"].get("type0AHead") or {}

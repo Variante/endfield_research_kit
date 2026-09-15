@@ -2250,6 +2250,16 @@ Stable conclusions:
   the two populations answers the question and a zero-rate does not.
 - `+4` is also the one field whose behaviour differs between the two: zero in 1,886
   of 3,321 short tails and **never zero** in the 217 long ones.
+- **`tail+4` is a 32-bit FIXED-POINT FRACTION of one.** Its nonzero values land on
+  simple rationals to within a few parts in 10^10: `0x55555555` = 1/3,
+  `0xAAAAAAAB` = 2/3, `0x92492492` = 4/7, `0xE8BA2E8B` = 10/11, `0x89D89D8A` = 7/13,
+  `0x71C71C71` = 4/9, `0x0F0F0F0F` = 1/17, plus 27/49, 13/19, 4/23, 20/37. Over the
+  corpus **1,399 of 1,804** nonzero values match a denominator <= 64; the same test
+  on `tail+8` (a float) matches **114 of 3,614**. A 24x gap.
+- Read it as bytes or as a rational, never as an integer or a float: as a `u32` it
+  looks like arbitrary large numbers, and as a float it is nonsense. That is the
+  second field in this tail whose meaning only appears in the right representation,
+  after `tail+24`'s packed `04 04 <0|1> 00`.
 - **The tail's optional 4-byte field is localized, and it is not counted.** Aligning
   the 3,321 tail-69 bodies against the 217 tail-73 bodies: from the **end** their
   constant profiles agree at **every one of 69 positions**, so the longer tail is the

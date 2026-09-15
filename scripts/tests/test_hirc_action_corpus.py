@@ -27,6 +27,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_type0a_head_elements_are_padded_small_values,
     the_type0a_reference_is_an_optional_four_byte_field,
     the_type0a_tail_float_is_an_authored_value,
+    the_type0a_tail_word_is_a_fixed_point_fraction,
     _read_type0a_head_census,
     _read_music_reference_census,
     type08_bodies_are_exact_or_named,
@@ -368,6 +369,10 @@ def valid_action_fixture():
         "tailFloatsWhole": 99,
         "neighbourFloats": 100,
         "neighbourFloatsWhole": 5,
+        "fractionCandidates": 100,
+        "fractionsWithASmallDenominator": 78,
+        "fractionControls": 200,
+        "fractionControlsWithASmallDenominator": 6,
     }
     music_refs = {
         "bodies": 4,
@@ -1610,6 +1615,34 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(type11_sources_share_the_type02_plugin_space(sources, {}))
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
+        )
+
+    def test_the_type0a_tail_word_reads_as_a_fraction_and_its_control_does_not(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        head = result["type0AHead"]
+        self.assertTrue(the_type0a_tail_word_is_a_fixed_point_fraction(head))
+
+        # A test that accepted any 32-bit value would accept the control too, so the
+        # control failing is what makes the result mean anything.
+        self.assertFalse(
+            the_type0a_tail_word_is_a_fixed_point_fraction(
+                {**head, "fractionControlsWithASmallDenominator": 150}
+            )
+        )
+        self.assertFalse(
+            the_type0a_tail_word_is_a_fixed_point_fraction(
+                {**head, "fractionsWithASmallDenominator": 20}
+            )
+        )
+        # Claiming more hits than candidates is incoherent, not merely wrong.
+        self.assertFalse(
+            the_type0a_tail_word_is_a_fixed_point_fraction(
+                {**head, "fractionsWithASmallDenominator": 101}
+            )
+        )
+        self.assertFalse(
+            the_type0a_tail_word_is_a_fixed_point_fraction({**head, "fractionControls": 0})
         )
 
     def test_the_type0a_tail_float_must_be_whole_far_more_often_than_bounded(self) -> None:
