@@ -394,6 +394,20 @@ def markdown(report: dict[str, Any]) -> str:
             "and the gate checks that the rule was applied to every type rather than "
             "only to the convenient ones.",
             "",
+            f"Populations the literals never name at all: "
+            f"{', '.join('`' + t + '`' for t in report['broadNaming'].get('populationsWithNoMatch') or []) or 'none'}. "
+            "Those zeros are measured, not assumed, and they say something the hits do "
+            "not: the ids of those types are **not** hashes of any string this build "
+            "ships, so their anonymity is a property of the data rather than a gap in "
+            "this search. Media ids are the notable one -- 61,333 of them, an expectation "
+            "of 0.36 by chance, and nothing. The identifier chain therefore ends at an "
+            "opaque media id and does not continue into a filename.",
+            "",
+            "Bank ids are a separate population from HIRC objects and are judged by the "
+            "same arithmetic. They are named, and none of the named bank ids is also an "
+            "object id, so bank names and event names are different strings rather than "
+            "one name reused.",
+            "",
             "Type `0x02` is the case that makes the test worth having. Its two matches "
             "look like names until the expectation is computed: with 142,815 objects it "
             "sits at its own coincidence rate, so it is reported and not claimed. Names "
@@ -548,7 +562,30 @@ def run(
         for key, count in (package.get("hircObjectTypeCounts") or {}).items():
             name = "type" + str(key)[2:].upper()
             populations[name] = populations.get(name, 0) + int(count)
+    # Bank ids and media ids are separate id populations; the same arithmetic
+    # judges them, so they join the table rather than getting a special case.
+    banks_matched = banks_seen = media_matched = media_seen = 0
+    for row in wide_rows:
+        package = row.get("package")
+        if not isinstance(package, dict):
+            continue
+        census = package["hircNamedReachCensus"]
+        banks_matched += int(census.get("banksMatched") or 0)
+        banks_seen += int(census.get("banksSeen") or 0)
+        media_matched += int(census.get("mediaMatched") or 0)
+        media_seen += int(census.get("mediaSeen") or 0)
+    if banks_seen:
+        wide_matches["bankId"] = banks_matched
+        populations["bankId"] = banks_seen
+    if media_seen:
+        wide_matches["mediaId"] = media_matched
+        populations["mediaId"] = media_seen
     table = coincidence_table(wide_matches, populations, len(wide))
+    # A population with no matches is absent from the table, which would hide a
+    # meaningful zero. Media ids matching nothing is a result, so state it.
+    table["populationsWithNoMatch"] = sorted(
+        name for name, size in populations.items() if size and not wide_matches.get(name)
+    )
     if not broad_naming_is_discriminated(table):
         problems.append(
             "the broad naming pass does not discriminate: "

@@ -1664,6 +1664,19 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **Bank ids are named too, and media ids are not -- both measured.** Applying the
+  same coincidence arithmetic to id populations other than HIRC objects: 175 of
+  20,873 bank ids are named by shipped literals (1,448x chance), while **0 of
+  61,333 media ids** are, against an expectation of 0.36. So the identifier chain
+  ends at an opaque media id and does **not** continue into a filename; do not go
+  looking for one.
+- None of the named bank ids is also a HIRC object id, so bank names and event
+  names are different strings rather than one name reused across both.
+- **Sixteen HIRC types match no literal at all**, and that zero is now measured
+  rather than assumed: `0x03`, `0x05`, `0x06`, `0x07`, `0x09`, `0x0A`-`0x0E`,
+  `0x10`-`0x14`, `0x16`. Their ids are not hashes of any string this build ships,
+  so their anonymity is a property of the data, not a gap in the search. Only
+  `0x04`, `0x08` and `0x15` carry names.
 - **Naming now extends past type `0x04`, and the test is a computed coincidence
   rate rather than a vocabulary.** The prefix filter (`au_`/`bark_`/`radio_`/`vo_`)
   exists because unfiltered literals resolve generic words by chance -- sound

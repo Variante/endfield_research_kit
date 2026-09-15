@@ -335,6 +335,14 @@ scratch. They do not open with the node frame, and searching for an offset where
 the frame parses is worthless because every music body admits several such
 offsets -- the frame is permissive, so "it parsed" is nearly no evidence. A
 structural predictor is needed, the way byte 1 predicts the `0x0E` prefix.
+Only numeric types `0x04`, `0x08` and `0x15` carry names, plus bank ids; the other
+sixteen HIRC types match no shipped literal at all and media ids match none either
+(0 of 61,333 against an expectation of 0.36). Those zeros are measured, so treat
+that anonymity as a property of the data rather than a gap to keep searching. The
+identifier chain ends at an opaque media id and does not continue into a filename.
+Judge any new naming claim by its computed coincidence rate -- population / 2^32 --
+because type `0x02` produces plausible-looking names at exactly its chance rate.
+
 The source id in a numeric type `0x02` bounded prefix names a media file the
 corpus ships, and **the plug-in id decides whether it does** -- two ids always
 resolve, five never, none both. Report the partition rather than the ~98% rate,

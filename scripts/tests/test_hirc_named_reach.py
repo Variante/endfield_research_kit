@@ -109,9 +109,12 @@ class HircNamedReachTests(unittest.TestCase):
             "metadata": {"path": "meta.dat", "sha256": "B" * 64, "audioLiteralCount": 221},
             "summary": summary,
             "identifiers": {"au_example": 3},
-            "broadNaming": coincidence_table(
-                {"type04": 200, "type02": 2}, {"type04": 22910, "type02": 142815}, 24868
-            ),
+            "broadNaming": {
+                **coincidence_table(
+                    {"type04": 200, "type02": 2}, {"type04": 22910, "type02": 142815}, 24868
+                ),
+                "populationsWithNoMatch": ["mediaId", "type07"],
+            },
             "mediaSummary": {
                 "declaredMediaIds": 5,
                 "identifiersReachingMedia": 1,
@@ -137,6 +140,10 @@ class HircNamedReachTests(unittest.TestCase):
         self.assertIn("judged against chance", text)
         self.assertIn("Expected by chance", text)
         self.assertIn("Indistinguishable from chance", text)
+        # A population that matches nothing is a result too, so it must be named
+        # in the report rather than silently absent from the table.
+        self.assertIn("never name at all", text)
+        self.assertIn("mediaId", text)
 
     def test_reached_lists_and_counts_must_describe_the_same_walk(self) -> None:
         summary = summarise([census()])
