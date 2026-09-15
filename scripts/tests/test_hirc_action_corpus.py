@@ -9,6 +9,10 @@ import unittest
 from pathlib import Path
 
 from scripts.audio_semantics.hirc_action_corpus import (
+    _read_shared_constant_census,
+    _rank_shared_constants,
+    every_shared_constant_beats_its_rivals,
+    the_shared_constants_are_not_settled_by_closure,
     type03_targets_cross_bank_boundaries,
     media_join_is_decided_by_the_plugin_id,
     small_types_are_closed,
@@ -2831,3 +2835,104 @@ class HircActionCorpusTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class SharedFrameConstantTests(unittest.TestCase):
+    """The constants in the shared framer must out-score their alternatives."""
+
+    def census(self, **overrides):
+        # Two constants, each with three candidate values. The chosen value wins the
+        # zero trailer outright; a rival closes every body but lands nothing there.
+        base = {
+            "bodies": 412,
+            "chosen": {"entryBytes": 6, "middleRunElementBytes": 18},
+            "bodiesExercising": {"entryBytes": 267, "middleRunElementBytes": 14},
+            "closesByCandidate": {
+                "entryBytes_5": 267, "entryBytes_6": 267, "entryBytes_9": 174,
+                "middleRunElementBytes_11": 14, "middleRunElementBytes_18": 14,
+                "middleRunElementBytes_19": 13,
+            },
+            "zeroTrailerByCandidate": {
+                "entryBytes_5": 0, "entryBytes_6": 203, "entryBytes_9": 0,
+                "middleRunElementBytes_11": 0, "middleRunElementBytes_18": 10,
+                "middleRunElementBytes_19": 0,
+            },
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(every_shared_constant_beats_its_rivals(self.census()))
+        self.assertTrue(the_shared_constants_are_not_settled_by_closure(self.census()))
+
+    def test_the_ranking_reduces_on_corpus_totals(self) -> None:
+        ranked = _rank_shared_constants(self.census())
+        self.assertEqual(ranked["entryBytes"]["chosenZeroTrailer"], 203)
+        self.assertEqual(ranked["entryBytes"]["bestRivalZeroTrailer"], 0)
+        # entryBytes_5 closes all 267 without landing on the trailer: that is the
+        # rival that makes closure useless as a discriminator.
+        self.assertEqual(ranked["entryBytes"]["rivalsThatCloseEveryBody"], 1)
+
+    def test_a_tie_with_a_rival_is_not_a_win(self) -> None:
+        census = self.census()
+        census["zeroTrailerByCandidate"]["entryBytes_5"] = 203
+        self.assertFalse(every_shared_constant_beats_its_rivals(census))
+
+    def test_a_constant_that_lands_nothing_on_the_trailer_is_untested(self) -> None:
+        # Beating every rival by zero to zero is not evidence.
+        census = self.census()
+        census["zeroTrailerByCandidate"]["middleRunElementBytes_18"] = 0
+        self.assertFalse(every_shared_constant_beats_its_rivals(census))
+
+    def test_a_constant_no_body_exercises_is_untested(self) -> None:
+        census = self.census()
+        census["bodiesExercising"]["middleRunElementBytes"] = 0
+        census["zeroTrailerByCandidate"]["middleRunElementBytes_18"] = 0
+        self.assertFalse(every_shared_constant_beats_its_rivals(census))
+
+    def test_an_empty_census_fails(self) -> None:
+        self.assertFalse(every_shared_constant_beats_its_rivals({}))
+        self.assertFalse(every_shared_constant_beats_its_rivals(self.census(bodies=0)))
+        self.assertFalse(every_shared_constant_beats_its_rivals(self.census(chosen={})))
+
+    def test_the_control_fails_when_closure_would_have_sufficed(self) -> None:
+        # If no rival closes every exercising body then closure discriminates after
+        # all, the zero-trailer test is doing no work, and the reasoning recorded
+        # around these constants is wrong. That has to fail loudly, not pass quietly.
+        census = self.census()
+        census["closesByCandidate"] = {
+            key: (value if key.endswith(("_6", "_18")) else 1)
+            for key, value in census["closesByCandidate"].items()
+        }
+        self.assertFalse(the_shared_constants_are_not_settled_by_closure(census))
+        self.assertFalse(the_shared_constants_are_not_settled_by_closure({}))
+
+    def test_the_reader_rejects_a_malformed_census(self) -> None:
+        for bad in ({"bodies": -1}, {"bodies": 4, "chosen": []}, {"bodies": 4}):
+            with self.assertRaises(ValueError):
+                _read_shared_constant_census(bad, "pkg")
+
+    def test_the_reader_rejects_a_census_that_skips_a_constant(self) -> None:
+        census = self.census()
+        census["bodiesExercising"] = {"entryBytes": 267}
+        with self.assertRaises(ValueError):
+            _read_shared_constant_census(census, "pkg")
+
+    def test_the_reader_rejects_a_score_above_its_exercising_set(self) -> None:
+        census = self.census()
+        census["zeroTrailerByCandidate"]["middleRunElementBytes_18"] = 99
+        with self.assertRaises(ValueError):
+            _read_shared_constant_census(census, "pkg")
+
+    def test_the_reader_rejects_an_exercising_set_larger_than_the_corpus(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_shared_constant_census(self.census(bodies=5), "pkg")
+
+    def test_the_reader_rejects_a_score_for_an_unknown_constant(self) -> None:
+        census = self.census()
+        census["zeroTrailerByCandidate"]["mysteryBytes_3"] = 1
+        with self.assertRaises(ValueError):
+            _read_shared_constant_census(census, "pkg")
+
+    def test_an_absent_census_reads_as_empty_rather_than_raising(self) -> None:
+        self.assertEqual(_read_shared_constant_census(None, "pkg")["bodies"], 0)

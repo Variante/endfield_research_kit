@@ -1693,6 +1693,10 @@ def aggregate_current_hirc_actions(
     music_ref_totals: Counter[str] = Counter()
     music_ref_per_body: Counter[str] = Counter()
     music_ref_edges: Counter[str] = Counter()
+    shared_constant_bodies = 0
+    shared_constant_maps: dict[str, dict[str, int]] = {
+        key: {} for key in SHARED_CONSTANT_MAPS
+    }
     music_ref_distinct: Counter[str] = Counter()
     music_ref_twice: Counter[str] = Counter()
     music_ref_population: Counter[str] = Counter()
@@ -1877,6 +1881,23 @@ def aggregate_current_hirc_actions(
         music_ref_twice.update(package_music_refs["targetsReachedTwice"])
         music_ref_population.update(package_music_refs["targetPopulation"])
         music_ref_places.update(package_music_refs["edgeDistanceFromEnd"])
+        package_shared = _read_shared_constant_census(
+            package.get("hircSharedConstants"), package_label
+        )
+        shared_constant_bodies += package_shared["bodies"]
+        for key in SHARED_CONSTANT_MAPS:
+            for name, value in package_shared[key].items():
+                if key == "chosen":
+                    # The framer's own constant, identical in every package. A sum
+                    # here would be nonsense, so it is asserted instead.
+                    if shared_constant_maps[key].setdefault(name, value) != value:
+                        raise ValueError(
+                            f"packages disagree about shared constant {name}"
+                        )
+                else:
+                    shared_constant_maps[key][name] = (
+                        shared_constant_maps[key].get(name, 0) + value
+                    )
         package_head0a = _read_type0a_head_census(
             package.get("hircType0AHead"), package_label
         )
@@ -2353,6 +2374,20 @@ def aggregate_current_hirc_actions(
             "tailEntryCountCounts": dict(sorted(type11_tail_counts.items())),
             "interpolationCounts": dict(sorted(type11_interps.items())),
             "firstTailEntryLeadingWordCounts": dict(sorted(type11_lead_words.items())),
+        },
+        "sharedFrameConstants": {
+            "bodies": int(shared_constant_bodies),
+            **{
+                key: dict(sorted(shared_constant_maps[key].items()))
+                for key in SHARED_CONSTANT_MAPS
+            },
+            "ranking": _rank_shared_constants({
+                "bodies": int(shared_constant_bodies),
+                **{
+                    key: dict(shared_constant_maps[key])
+                    for key in SHARED_CONSTANT_MAPS
+                },
+            }),
         },
         "type0AHead": {
             "bodies": int(type0a_head_totals["bodies"]),
@@ -2919,6 +2954,140 @@ TYPE0A_HEAD_RULE_MINIMUM = 0.75
 # 3,744 of 4,000. The gate uses the number it can actually derive.
 TYPE0A_HEAD_CONDITIONED_MINIMUM = 0.90
 TYPE0A_HEAD_CONTROL_MAXIMUM = 0.50
+
+
+SHARED_CONSTANT_MAPS = (
+    "chosen", "bodiesExercising", "zeroTrailerByCandidate", "closesByCandidate",
+)
+
+
+def _read_shared_constant_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's shared-frame constant scoring."""
+    if census is None:
+        return {"bodies": 0} | {key: {} for key in SHARED_CONSTANT_MAPS}
+    if not isinstance(census, dict):
+        raise ValueError(f"shared constant census is not an object: {label}")
+    try:
+        bodies = int(census["bodies"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(f"shared constant census has invalid bodies: {label}") from exc
+    if bodies < 0:
+        raise ValueError(f"shared constant census has negative bodies: {label}")
+    out: dict[str, Any] = {"bodies": bodies}
+    for key in SHARED_CONSTANT_MAPS:
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"shared constant census has invalid {key}: {label}")
+        out[key] = {str(name): int(value) for name, value in raw.items()}
+    names = set(out["chosen"])
+    if bodies and set(out["bodiesExercising"]) != names:
+        raise ValueError(
+            f"shared constant census does not report an exercising set for every "
+            f"constant: {label}"
+        )
+    for name, count in out["bodiesExercising"].items():
+        if count > bodies:
+            raise ValueError(
+                f"shared constant {name} exercises more bodies than exist: {label}"
+            )
+    for key in ("zeroTrailerByCandidate", "closesByCandidate"):
+        for entry, value in out[key].items():
+            name = entry.rsplit("_", 1)[0]
+            if names and name not in names:
+                raise ValueError(
+                    f"shared constant census scores an unknown constant {entry}: {label}"
+                )
+            if value > out["bodiesExercising"].get(name, 0):
+                raise ValueError(
+                    f"shared constant {entry} scores above its exercising set: {label}"
+                )
+    return out
+
+
+def _rank_shared_constants(corpus: dict[str, Any]) -> dict[str, dict[str, int]]:
+    """Per constant: the chosen value's score, the best rival's, and the rival count.
+
+    The reduction happens here rather than per package because the winner can only
+    be decided on corpus totals. A value that wins in every package individually and
+    a value that wins overall are not the same statement, and the second is the one
+    worth making.
+    """
+    chosen = corpus.get("chosen") or {}
+    exercising = corpus.get("bodiesExercising") or {}
+    zero = corpus.get("zeroTrailerByCandidate") or {}
+    closes = corpus.get("closesByCandidate") or {}
+    ranked: dict[str, dict[str, int]] = {}
+    for name, value in chosen.items():
+        live = int(exercising.get(name) or 0)
+        mine = int(zero.get(f"{name}_{value}") or 0)
+        best_rival = 0
+        rivals_that_close = 0
+        for entry, score in zero.items():
+            candidate_name, _, candidate = entry.rpartition("_")
+            if candidate_name != name or candidate == str(value):
+                continue
+            best_rival = max(best_rival, int(score))
+            if live and int(closes.get(entry) or 0) == live:
+                rivals_that_close += 1
+        ranked[name] = {
+            "chosen": int(value),
+            "exercising": live,
+            "chosenZeroTrailer": mine,
+            "bestRivalZeroTrailer": best_rival,
+            "rivalsThatCloseEveryBody": rivals_that_close,
+        }
+    return ranked
+
+
+def every_shared_constant_beats_its_rivals(corpus: dict[str, Any]) -> bool:
+    """Each constant in the shared framer must out-score every alternative value.
+
+    The test is deliberately not "does the body close". Three of these four
+    constants have rivals that close every body that exercises them: several entry
+    widths do, three element widths do, and every trailer length does, because a
+    remainder that does not match simply routes the body to the tail block instead
+    of refusing it. A constant fitted on closure alone would be one of several, and
+    nothing would say which.
+
+    What separates them is the zero trailer -- landing exactly on a run of five
+    bytes that are all zero. That is a coincidence a wrong width does not produce,
+    and each chosen value wins it outright.
+
+    Each constant is scored only over the bodies that exercise it, because a body
+    declaring a count of zero frames identically under every candidate width and
+    would bury the margin under bodies that cannot tell the values apart.
+
+    So the gate demands a strict margin over the best rival, not a tie and not a
+    majority, and it demands the chosen value score at all: a constant that lands no
+    body on the trailer has not been tested by this, however many rivals it beats.
+    """
+    if int(corpus.get("bodies") or 0) <= 0:
+        return False
+    ranked = _rank_shared_constants(corpus)
+    if not ranked:
+        return False
+    for row in ranked.values():
+        if row["exercising"] <= 0 or row["chosenZeroTrailer"] <= 0:
+            return False
+        if row["chosenZeroTrailer"] <= row["bestRivalZeroTrailer"]:
+            return False
+    return True
+
+
+def the_shared_constants_are_not_settled_by_closure(corpus: dict[str, Any]) -> bool:
+    """At least one constant must have a rival that closes every exercising body.
+
+    This is the control for the gate above, and it is stated as a requirement so it
+    cannot quietly stop being true. If no rival ever closed every body then closure
+    would be the discriminator after all, the zero-trailer test would be doing no
+    work, and the reasoning recorded around these constants would be wrong. The
+    corpus says otherwise today; the gate makes that a fact under test rather than a
+    remark in a comment.
+    """
+    ranked = _rank_shared_constants(corpus)
+    if not ranked:
+        return False
+    return any(row["rivalsThatCloseEveryBody"] > 0 for row in ranked.values())
 
 
 def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
@@ -5183,6 +5352,11 @@ def run_current_corpus_audit(
     music_head_corpus = corpus["musicHeadReferences"]
     music_ref_corpus = corpus["musicReferences"]
     type0a_head_corpus = corpus["type0AHead"]
+    shared_const_corpus = corpus["sharedFrameConstants"]
+    shared_const_ok = every_shared_constant_beats_its_rivals(shared_const_corpus)
+    shared_const_control = the_shared_constants_are_not_settled_by_closure(
+        shared_const_corpus
+    )
     music_head_closed = music_head_references_are_closed(music_head_corpus)
     type11_corpus = corpus["type11SourceRecords"]
     media_corpus = corpus["type02MediaJoin"]
@@ -5270,6 +5444,8 @@ def run_current_corpus_audit(
         and type11_curves
         and music_named
         and music_refs_ok
+        and shared_const_ok
+        and shared_const_control
         and music_partition
         and music_anchor
         and type0a_head
@@ -5315,6 +5491,7 @@ def run_current_corpus_audit(
             "musicHeadReferences": music_head_corpus,
             "musicReferences": music_ref_corpus,
             "type0AHead": type0a_head_corpus,
+            "sharedFrameConstants": shared_const_corpus,
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
             "type08BodyFrames": type08_body_corpus,
@@ -5507,6 +5684,19 @@ def run_current_corpus_audit(
             f"distinct={(refs.get('distinctTargets') or {}).get(MUSIC_PARTITIONING_EDGE)} "
             f"twice={(refs.get('targetsReachedTwice') or {}).get(MUSIC_PARTITIONING_EDGE)} "
             f"population={(refs.get('targetPopulation') or {}).get(MUSIC_PARTITIONING_EDGE)}"
+        )
+    if not shared_const_ok:
+        const = report["corpus"].get("sharedFrameConstants") or {}
+        lane_failures.append(
+            "a shared-frame constant does not beat its rivals: "
+            f"ranking={const.get('ranking')}"
+        )
+    if not shared_const_control:
+        const = report["corpus"].get("sharedFrameConstants") or {}
+        lane_failures.append(
+            "no shared-frame constant has a rival that closes every body, so closure "
+            "would be the discriminator and the zero-trailer test is doing no work: "
+            f"ranking={const.get('ranking')}"
         )
     if not music_refs_ok:
         refs = report["corpus"].get("musicReferences") or {}

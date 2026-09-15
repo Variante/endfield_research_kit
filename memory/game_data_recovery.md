@@ -1972,6 +1972,54 @@ Stable conclusions:
   *Before checking any field as a constant in this layout, look at its value
   distribution over both types -- a field that is 0 in 96% of bodies and small
   elsewhere is a count.*
+### The shared frame's constants: closure never settled three of the four
+
+- **Audited every constant in the shared framer by scoring it against every rival
+  value, and closure turns out to be the wrong test for three of them.** The
+  audit was prompted by the terrain retraction, where a claim validated only on
+  degenerate inputs collapsed; the question asked here was the same one -- what do
+  the *passing* bodies have in common?
+- Two rules make the scoring fair, and both matter more than the result:
+  1. **Score a constant only over the bodies that exercise it.** A body declaring a
+     middle run of zero frames identically under every element width. Scoring all
+     412 bodies buries the real margin under 398 that cannot tell the values apart
+     -- and it did: the first cut of this census reported a best rival of 202
+     against the chosen 325, which looked like a near-tie and was an artefact.
+  2. **Reduce on corpus totals, not per package.** A per-package maximum of the best
+     rival is not the corpus-wide best rival.
+- What the corpus says, per constant (`chosen` / `exercising bodies` /
+  `zero-trailer hits` / `best rival's hits` / `rivals that close every body`):
+
+  | constant | chosen | exercising | chosen | best rival | rivals that close all |
+  |---|---:|---:|---:|---:|---:|
+  | `middleBlockBytes` | 9 | 408 | 325 | 0 | **0** |
+  | `entryBytes` | 6 | 267 | 203 | 0 | **6** |
+  | `middleRunElementBytes` | 18 | 14 | 10 | 0 | **2** |
+  | `trailerBytes` | 5 | 408 | 325 | 0 | **12** |
+
+- **Only `middleBlockBytes` is settled by closure.** Six entry widths close all 267
+  bodies that carry an entry run. Three element widths close all 14 that carry a
+  middle run. *Every* trailer length "closes", because a remainder that does not
+  match simply routes the body to the tail block instead of refusing it -- so that
+  constant was never under any test at all.
+- What settles them is the **zero trailer**: landing exactly on five bytes that are
+  all zero. Each chosen value wins that outright and every rival scores **zero**.
+- **This corrects a stated reason, not a result.** The code comment claimed the
+  18-byte element width "was solved for by asking which one lets each of them
+  close". Widths 5 and 11 also close all fourteen. The width is right; the
+  justification recorded for it was insufficient, and a reader trusting it would
+  have believed the constant was better established than it was.
+- Both facts are now **gates**, not remarks. `every_shared_constant_beats_its_rivals`
+  demands a strict margin over the best rival and a nonzero score of its own; and a
+  control gate demands that some rival still close every body, so that if closure
+  ever did become the discriminator the reasoning here would fail loudly rather than
+  rot quietly. Published per candidate in `hircSharedConstants` so the margin is
+  re-measured every run.
+- **The general rule, and it is the same one the terrain codec taught.** A constant
+  fitted by "which value makes the parse close" is only established if the rivals
+  are scored the same way and lose. Fit and discrimination are different claims, and
+  a closure rate reports the first while sounding like the second.
+
 - **The remaining fences.** `0x08`: `tail_block_does_not_end_the_body` 9,
   `range_tail_block_units` 6, `range_properties` 4. `0x12`:
   `range_tail_block_units` 4.
