@@ -5307,10 +5307,39 @@ two independent ways within one test.
 | root inline object size | **40 bytes**, in every file |
 | slot 0 | **constant 47** across all 312 -- a version, on any reading |
 
-**Next:** the schema is not in managed metadata, so the field order has to come from
-the bytes. Eight 4-byte slots over 312 files with varying content is enough of a
-population to type each slot by what it points at -- which is how `0x0B`'s entry header
-was read, and it does not need a schema at all.
+#### The root schema, read from the bytes with no schema at all
+
+**One vtable layout in all 312 files** -- offsets `(4, 8, 16, 20, 24, 28, 32, 36)` with a
+40-byte inline object -- so every field's width falls out of the gaps, exactly as the
+IrradianceVolume config layout did:
+
+| slot | offset | width | type, from what it points at |
+| --- | --- | --- | --- |
+| 0 | +4 | 4 | **`u32` = 47 in all 312** -- a version |
+| 1 | +8 | **8** | 64-bit scalar |
+| 2 | +16 | 4 | `u32` scalar (289 of 312 read as one) |
+| 3 | +20 | 4 | **vector** (277 plain, 22 also table-like) |
+| 4 | +24 | 4 | **vector** |
+| 5 | +28 | 4 | **vector of tables** -- all 312 |
+| 6 | +32 | 4 | **vector of tables** -- all 312 |
+| 7 | +36 | 4 | **vector of tables** -- all 312 |
+
+Each vector-of-tables classification is earned: the vector length is read, then the
+first elements are followed as uoffsets and each must land on a table whose vtable
+resolves. **Slots 5, 6 and 7 pass that in every file.**
+
+**That single layout is itself the evidence.** 312 files of wildly different sizes --
+171 bytes to 4.5 MB -- share one vtable byte-for-byte, so they are one schema, and the
+typing is a statement about that schema rather than about a sample.
+
+**And it independently confirms the disproof.** `FBDynamicSceneChunkData` is three
+scalars and two vectors. This root is **three scalars (one of them 64-bit) and five
+vectors, three of which hold tables**. They are not the same shape, which is a second,
+structural reason beyond the failed vector walk.
+
+**Next:** the three vector-of-tables slots are where the content lives. Their element
+tables have their own vtables, readable the same way, and 312 files give a population
+for every one of them.
 
 ## Remaining gaps
 
