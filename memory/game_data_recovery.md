@@ -7034,6 +7034,16 @@ placements.
 - **`0x0B`'s `+12`/`+20` words.** Needs an external anchor of the kind that resolved the
   source records; no engine evidence can exist, since the engine never parses `0x0B`.
 - **The 1 of 8 unowned media** that is not Init-bank embedded.
+
+  *Reconciling two figures that look contradictory.* Pooling `hircMediaJoin` across all
+  25 audited packages gives **61,333 declared media, 60,049 named, 1,284 unowned** --
+  which sits oddly beside the recorded **61,325 of 61,333 (99.99%)**. They are the same
+  join at two stages: `sourceIdsByPlugin` carries the type-`0x02` records only, and the
+  note that **"adding `0x0B` closed 1,276 that no source record had named"** accounts for
+  the gap exactly -- **1,284 - 1,276 = 8**. *Two numbers in these notes that read as a
+  contradiction are the before and after of one step, and the arithmetic closes to the
+  unit.* The pooled join also shows **948 source ids naming no declared media**, the
+  reverse direction, which the cross-package trap predicts.
 - **Slot-7 field 3's record contents**, which are not in these files at all.
 
 *Three blockers recorded before this pass turned out to be misdiagnosed:* the chunk
