@@ -19,6 +19,8 @@ from scripts.audio_semantics.hirc_action_corpus import (
     type11_bodies_share_one_terminator,
     type11_entries_carry_the_shared_curve_record,
     music_tail_words_are_named,
+    music_bodies_all_carry_references,
+    _read_music_reference_census,
     type08_bodies_are_exact_or_named,
     type12_bodies_are_exact_or_named,
     _read_type12_body_frame,
@@ -332,6 +334,15 @@ def valid_action_fixture():
         "tailEntryCountCounts": {"tailEntries_1": 1, "tailEntries_2": 1},
         "firstTailEntryLeadingWordCounts": {"lead_00000000": 2},
     }
+    music_refs = {
+        "bodies": 4,
+        "packagePopulation": 200,
+        "wordsOffered": 400,
+        "references": 9,
+        "bodiesWithNoReference": 0,
+        "referencesPerBody": {"refs_2": 3, "refs_3": 1},
+        "edgeCounts": {"type0C_to_type0D": 5, "type0A_to_type0B": 4},
+    }
     music_head = {
         "tailWordsTested": 8,
         "tailWordsNamed": 3,
@@ -488,6 +499,7 @@ def valid_action_fixture():
                     "hircType14BodyFrame": copy.deepcopy(type14_body),
                     "hircType22BodyFrame": copy.deepcopy(type22_body),
                     "hircMusicHeadReferences": copy.deepcopy(music_head),
+                    "hircMusicReferences": copy.deepcopy(music_refs),
                     "hircType11Sources": copy.deepcopy(type11_sources),
                     "hircType08Head": copy.deepcopy(type08_head),
                     "hircType08BodyFrame": copy.deepcopy(type08_body),
@@ -1555,6 +1567,39 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
         )
+
+    def test_every_music_body_must_carry_at_least_one_reference(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        refs = result["musicReferences"]
+        self.assertEqual(refs["bodiesWithNoReference"], 0)
+        self.assertTrue(music_bodies_all_carry_references(refs))
+
+        # A total can be carried by a few reference-rich bodies; "every one of them"
+        # cannot, and it is the claim.
+        self.assertFalse(
+            music_bodies_all_carry_references({**refs, "bodiesWithNoReference": 1})
+        )
+        # Every word of every body is offered, so the chance expectation is not
+        # negligible and has to be beaten by a wide margin, not merely exceeded.
+        self.assertFalse(
+            music_bodies_all_carry_references(
+                {**refs, "wordsOffered": 10 ** 9, "packagePopulation": 10 ** 6}
+            )
+        )
+        # Without target types the edges say nothing about the relationships.
+        self.assertFalse(music_bodies_all_carry_references({**refs, "edgeCounts": {}}))
+        self.assertFalse(music_bodies_all_carry_references({**refs, "references": 0}))
+
+    def test_a_music_reference_census_that_loses_a_body_is_refused(self) -> None:
+        _, _, _, audio_audit = valid_action_fixture()
+        census = audio_audit["rows"][0]["package"]["hircMusicReferences"]
+        with self.assertRaisesRegex(ValueError, "does not cover its bodies"):
+            _read_music_reference_census({**census, "bodies": 9}, "unit")
+        with self.assertRaisesRegex(ValueError, "edges exceed its references"):
+            _read_music_reference_census({**census, "references": 1}, "unit")
+        with self.assertRaisesRegex(ValueError, "resolves more words than it offered"):
+            _read_music_reference_census({**census, "wordsOffered": 2}, "unit")
 
     def test_music_tail_words_are_judged_only_when_names_were_supplied(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

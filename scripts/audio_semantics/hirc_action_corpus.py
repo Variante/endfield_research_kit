@@ -1690,6 +1690,9 @@ def aggregate_current_hirc_actions(
     music_head_shapes: Counter[str] = Counter()
     music_tail_named: Counter[str] = Counter()
     music_tail_tested: Counter[str] = Counter()
+    music_ref_totals: Counter[str] = Counter()
+    music_ref_per_body: Counter[str] = Counter()
+    music_ref_edges: Counter[str] = Counter()
     music_head_by_type: Counter[str] = Counter()
     music_head_offsets: Counter[str] = Counter()
     music_head_discriminants: Counter[str] = Counter()
@@ -1849,6 +1852,16 @@ def aggregate_current_hirc_actions(
         music_head_shapes.update(package_music_head["headShapeCounts"])
         music_tail_named.update(package_music_head["tailWordNamedByOffset"])
         music_tail_tested.update(package_music_head["tailWordTestedByOffset"])
+        package_music_refs = _read_music_reference_census(
+            package.get("hircMusicReferences"), package_label
+        )
+        for key in MUSIC_REFERENCE_SCALARS:
+            if key == "packagePopulation":
+                music_ref_totals[key] = max(music_ref_totals[key], package_music_refs[key])
+                continue
+            music_ref_totals[key] += package_music_refs[key]
+        music_ref_per_body.update(package_music_refs["referencesPerBody"])
+        music_ref_edges.update(package_music_refs["edgeCounts"])
 
         package_reference = _read_reference_census(
             package.get("hircReferenceCensus"), package_label
@@ -2304,6 +2317,11 @@ def aggregate_current_hirc_actions(
             "tailEntryCountCounts": dict(sorted(type11_tail_counts.items())),
             "interpolationCounts": dict(sorted(type11_interps.items())),
             "firstTailEntryLeadingWordCounts": dict(sorted(type11_lead_words.items())),
+        },
+        "musicReferences": {
+            **{key: int(music_ref_totals[key]) for key in MUSIC_REFERENCE_SCALARS},
+            "referencesPerBody": dict(sorted(music_ref_per_body.items())),
+            "edgeCounts": dict(sorted(music_ref_edges.items())),
         },
         "musicHeadReferences": {
             **{key: int(music_head_totals[key]) for key in MUSIC_HEAD_SCALARS},
@@ -2775,6 +2793,73 @@ def _read_music_head_census(census: Any, label: str) -> dict[str, Any]:
             f"offsets={out['offsetCounts']} expected={expected}"
         )
     return out
+
+
+MUSIC_REFERENCE_SCALARS = (
+    "bodies", "packagePopulation", "wordsOffered", "references", "bodiesWithNoReference",
+)
+# How far above the chance expectation the reference count must sit. Every word of
+# every body is offered, so the expectation is not negligible and has to be beaten
+# by a wide margin rather than merely exceeded.
+MUSIC_REFERENCE_CHANCE_MULTIPLE = 100
+
+
+def _read_music_reference_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's music reference classification."""
+    if census is None:
+        return {key: 0 for key in MUSIC_REFERENCE_SCALARS} | {
+            "referencesPerBody": {}, "edgeCounts": {},
+        }
+    if not isinstance(census, dict):
+        raise ValueError(f"music reference census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in MUSIC_REFERENCE_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"music reference census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"music reference census has negative {key}: {label}")
+        out[key] = value
+    for key in ("referencesPerBody", "edgeCounts"):
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"music reference census has invalid {key}: {label}")
+        out[key] = {str(name): int(count) for name, count in raw.items()}
+    if sum(out["referencesPerBody"].values()) != out["bodies"]:
+        raise ValueError(f"music reference per-body histogram does not cover its bodies: {label}")
+    if sum(out["edgeCounts"].values()) > out["references"]:
+        raise ValueError(f"music reference edges exceed its references: {label}")
+    if out["references"] > out["wordsOffered"]:
+        raise ValueError(f"music reference census resolves more words than it offered: {label}")
+    return out
+
+
+def music_bodies_all_carry_references(corpus: dict[str, Any]) -> bool:
+    """Every music body names at least one object the package ships.
+
+    These types are not framed, so a reference cannot be read from a known offset.
+    Every word of every body is offered instead, and the id space decides: a package
+    declares on the order of a thousand objects against the 32-bit range, so the
+    chance resolutions expected across the whole corpus are a couple of words. The
+    gate demands the observed count beat that by a wide margin, not merely exceed it,
+    because offering every word is a generous test and has to be paid for.
+
+    It also demands that **no** body come up empty. A total can be carried by a few
+    reference-rich bodies; "every one of them" cannot, and it is the stronger claim.
+    """
+    bodies = int(corpus.get("bodies") or 0)
+    references = int(corpus.get("references") or 0)
+    offered = int(corpus.get("wordsOffered") or 0)
+    population = int(corpus.get("packagePopulation") or 0)
+    if bodies <= 0 or references <= 0 or offered <= 0 or population <= 0:
+        return False
+    if int(corpus.get("bodiesWithNoReference") or 0):
+        return False
+    if not (corpus.get("edgeCounts") or {}):
+        return False
+    expected = offered * population / 2 ** 32
+    return references >= expected * MUSIC_REFERENCE_CHANCE_MULTIPLE
 
 
 def music_tail_words_are_named(corpus: dict[str, Any]) -> bool:
@@ -4594,6 +4679,7 @@ def run_current_corpus_audit(
     ]
     reference_corpus = corpus["referenceGraph"]
     music_head_corpus = corpus["musicHeadReferences"]
+    music_ref_corpus = corpus["musicReferences"]
     music_head_closed = music_head_references_are_closed(music_head_corpus)
     type11_corpus = corpus["type11SourceRecords"]
     media_corpus = corpus["type02MediaJoin"]
@@ -4630,6 +4716,9 @@ def run_current_corpus_audit(
         report["corpus"].get("type08BodyFrames") or {}
     )
     # True when no names were supplied: see the check's own note.
+    music_refs_ok = music_bodies_all_carry_references(
+        report["corpus"].get("musicReferences") or {}
+    )
     music_named = music_tail_words_are_named(
         report["corpus"].get("musicHeadReferences") or {}
     )
@@ -4647,6 +4736,7 @@ def run_current_corpus_audit(
         and type11_tail_counted
         and type11_curves
         and music_named
+        and music_refs_ok
         and type08_body_named
         and type08_tail_located
         and type08_head_named
@@ -4680,6 +4770,7 @@ def run_current_corpus_audit(
             },
             "referenceGraph": reference_corpus,
             "musicHeadReferences": music_head_corpus,
+            "musicReferences": music_ref_corpus,
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
             "type08BodyFrames": type08_body_corpus,
@@ -4795,6 +4886,13 @@ def run_current_corpus_audit(
             f"count={body08.get('count')} exact={body08.get('exact')} "
             f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
             f"ambiguous={body08.get('ambiguous')}"
+        )
+    if not music_refs_ok:
+        refs = report["corpus"].get("musicReferences") or {}
+        lane_failures.append(
+            "music bodies do not all carry references: "
+            f"bodies={refs.get('bodies')} references={refs.get('references')} "
+            f"empty={refs.get('bodiesWithNoReference')} offered={refs.get('wordsOffered')}"
         )
     if not music_named:
         music = report["corpus"].get("musicHeadReferences") or {}

@@ -2109,6 +2109,20 @@ Stable conclusions:
   expectation of **0.017**. Recovered values: `High` (72), `Low` (70), `Loop` (62),
   `WIN` (42+38), `Start`, `NONE`, `skip`, `General`, `END`, `Normal`, `Default`.
   146 bodies carry a name at *both* offsets.
+- **Every music body references other objects, and the music types form a
+  hierarchy.** Offering every 32-bit word of every body against the package's object
+  set: **24,515 references across all 7,331 bodies, and not one body comes up
+  empty.** Chance expectation over the 646,465 words offered is about 2. Edges:
+  `0x0C`->`0x0D` 4,429, `0x0A`->`0x0B` 4,325, `0x0D`->`0x0A` 3,610, `0x0A`->`0x0D`
+  3,570, `0x0C`->`0x0A` 3,262, `0x0D`->`0x0C` 2,431, `0x0C`->`0x0C` 1,920,
+  `0x0A`->`0x0C` 588, plus small counts to `0x11`, `0x12` and `0x16`.
+- Two of those edge counts are exactly a body count: `0x0A`->`0x0B` is 4,325, the
+  number of `0x0B` bodies, and `0x0D`->`0x0C` is 2,431, the number of `0x0D` bodies.
+  Suggestive of one-to-one relations -- **not established**, since an edge total
+  matching a population is the kind of coincidence this project has been burned by.
+- The method that works when a type will not frame: **do not look for the reference,
+  offer every word.** Object ids are sparse enough that the id space does the
+  discrimination. It found three references per `0x0D` body where framing found one.
 - **This is the first semantic recovery inside the music types**, and the way in was
   anchoring from the **end**. Their heads are variable -- only three byte positions
   from the front take a single value across the corpus -- but the tail is not:
