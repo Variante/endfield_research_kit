@@ -6106,12 +6106,34 @@ does not merely leave the question open; it discriminates between the two surviv
 FlatBuffers omits any field equal to its default. `ECSEntityType.Render` is 0 -- the
 commonest thing in a chunk -- so the commonest record carries no type word at all.
 
-**What is not claimed.** `(0, 4)` separates terrain at 100% but reads as
+***5. The enum values are now verified, not assumed.*** The mapping above originally read
+member values off **declaration order**, which is a guess. IL2CPP stores the real values in
+`fieldDefaultValues` (127,853 records) indexing `fieldAndParameterDefaultValueData`, and
+decoding them confirms it:
+
+| enum | values | terminator | valid range |
+| --- | --- | --- | --- |
+| `StreamingLayer` | **sequential 0..11** | `Count` = 11 | **0..10** |
+| `ECSEntityType` | **sequential 0..14** | `TypeCount` = 14 | **0..13** |
+| `ProxyEntityType` | sequential 0..11 | `TypeCount` = 11 | 0..10 |
+| `StreamingComponentType` | **NOT sequential** -- max value **128** | `Count` = 43 | -- |
+
+`ECSEntityType`'s valid range ends at exactly **13**, which is exactly `f2`'s observed
+maximum. And the fourth candidate is now excluded on a second, stronger ground: `f2`'s
+values are **contiguous 0..13**, which a non-sequential enum carrying a 128 does not
+produce. *The coverage argument against it was suggestive; this one is structural.*
+
+**A read that failed usefully.** The values are stored as **single bytes**, and reading
+them as int32 produced `0x03020100`, `0x04030201`, `0x05040302` -- consecutive overlapping
+windows. *That the garbage was orderly is what identified the stride:* entries one byte
+apart, values 0, 1, 2, 3. A wrong read that returns noise tells you nothing; a wrong read
+that returns a pattern tells you the layout.
+
+**What is still not claimed.** `(0, 4)` separates terrain at 100% but reads as
 `Default + SphereCollider`, which is not a terrain concept; terrain levels are the outdoor
 maps, so that separation plausibly tracks *outdoors*, not terrain. **One pair fitting the
-statistic without fitting the name is a reason to hold the mapping as strongly supported
-rather than settled** -- the enum values themselves are read from declaration order, not
-from `fieldDefaultValues`, and that remains unverified.
+statistic without fitting the name keeps the mapping at strongly supported rather than
+settled.**
 
 ***A degenerate fit, caught by fitting four rivals at once.*** `s4 == 24 + 24*n7` scores
 **100.00%** on the Streaming family, which reads like a decoded record stride -- until the
