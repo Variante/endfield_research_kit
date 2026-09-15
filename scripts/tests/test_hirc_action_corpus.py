@@ -20,7 +20,9 @@ from scripts.audio_semantics.hirc_action_corpus import (
     _read_hierarchy_census,
     _read_music_mutuality_census,
     _read_type0a_anchor_census,
+    _read_parent_field_census,
     _read_type0c_hierarchy_census,
+    the_parent_field_inverts_the_reference_graph,
     the_type0c_parent_relation_repeats_the_same_shape,
     edges_per_distinct_distance,
     end_distance_alignment,
@@ -3805,3 +3807,60 @@ class Type0CHierarchyTests(unittest.TestCase):
 
     def test_an_absent_census_reads_as_empty(self) -> None:
         self.assertEqual(_read_type0c_hierarchy_census(None, "pkg")["objects"], 0)
+
+
+class ParentFieldInverseTests(unittest.TestCase):
+    """The parent field and the reference graph must be exact inverses."""
+
+    def census(self, **overrides):
+        base = {
+            "checkable": 199445, "parentNamesTheChildBack": 199445,
+            "parentDoesNotNameTheChild": 0,
+            "namesSomethingOutsideTheBank": 1598, "parentDeclaresNoChildren": 10448,
+            "edgeTypes": {
+                "type02_to_type05": 129413, "type07_to_type07": 28425,
+                "type05_to_type06": 17572, "type05_to_type07": 7138,
+                "type02_to_type07": 6881, "type06_to_type07": 3653,
+                "type09_to_type07": 3308,
+            },
+            "disagreementTypes": {},
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_parent_field_inverts_the_reference_graph(self.census()))
+
+    def test_a_single_disagreement_fails(self) -> None:
+        # Equality, not a rate: one disagreement means one of the two readings has
+        # drifted, and which one is then worth knowing.
+        self.assertFalse(the_parent_field_inverts_the_reference_graph(self.census(
+            parentNamesTheChildBack=199444, parentDoesNotNameTheChild=1,
+            disagreementTypes={"type02_under_type05": 1},
+        )))
+
+    def test_a_relation_confined_to_a_few_type_pairs_fails(self) -> None:
+        self.assertFalse(the_parent_field_inverts_the_reference_graph(self.census(
+            edgeTypes={"type02_to_type05": 199445}
+        )))
+
+    def test_an_empty_census_fails(self) -> None:
+        self.assertFalse(the_parent_field_inverts_the_reference_graph({}))
+        self.assertFalse(the_parent_field_inverts_the_reference_graph(
+            self.census(checkable=0, parentNamesTheChildBack=0)
+        ))
+
+    def test_the_reader_rejects_outcomes_that_do_not_cover_the_checkable(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_parent_field_census(
+                self.census(parentNamesTheChildBack=5), "pkg"
+            )
+
+    def test_the_reader_rejects_disagreement_types_that_do_not_add_up(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_parent_field_census(
+                self.census(disagreementTypes={"type02_under_type05": 3}), "pkg"
+            )
+
+    def test_an_absent_census_reads_as_empty(self) -> None:
+        self.assertEqual(_read_parent_field_census(None, "pkg")["checkable"], 0)

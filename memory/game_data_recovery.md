@@ -2494,6 +2494,44 @@ from there the counts fall out. Widening a range would never have found either.
   end lands on *something* in every body, so a hit count says nothing. Every distance
   within five bytes that is *not* an anchor -- `-64` to `-68`, `-70`, `-71`, `-72`,
   `-74`, `-75` -- names a type `0x0B` object in **zero** bodies.
+### The hierarchy is carried TWICE: a parent field inverse to the reference graph
+
+- **Numeric types `0x02`, `0x05`, `0x06`, `0x07` and `0x09` name their owner at a
+  fixed front offset** -- 8 for all but `0x02`, which uses 22.
+- **Over 199,445 checkable cases the child's declared parent names the child back,
+  with ZERO disagreements**, across 13 type pairs: `02`->`05` 129,413, `07`->`07`
+  28,425, `05`->`06` 17,572, `05`->`07` 7,138, `02`->`07` 6,881, `06`->`07` 3,653,
+  `09`->`07` 3,308, and smaller.
+- The two readings come from **entirely different bytes**: the parent field is one
+  word at a fixed offset, the reference graph is framed from each body's own counted
+  runs. Their agreeing is the strongest cross-check this format allows, and it is
+  gated as equality rather than a rate.
+- **Two offsets the sweep also found are NOT parents, and the inverse test is what
+  established that.**
+  * `0x04` at offset 1 names a `0x03`, and the graph has `0x04` naming `0x03` too --
+    the **same** direction, so it is that edge and not its inverse. 22,317 of its
+    22,335 cases disagreed.
+  * The music types at offset 9 are likewise downward.
+- *A field that names a plausible object is not a parent until something independent
+  says which way it points.* Both of these look exactly like the real parent fields
+  and are not; nothing but the inverse test separates them.
+
+### CORRECTION: the music offset-9 reference was already known
+
+The previous two entries presented the music parent at front offset 9 as a
+discovery. **It was not.** The reader has censused it all along as
+`musicHeadReferences`: 7,084 bodies at offset 9, 242 at offset 5, selected by byte 2,
+7,326 of 7,331 resolved. I rediscovered a field the report prints every run.
+
+What the sweep did add, and what stands:
+- the **non-music** parent fields, which are new;
+- the **inverse test**, which is new and is what tells a parent from a child;
+- the target types and forest shape of the music relation, which the existing census
+  records the offset of but not the structure.
+
+*Before presenting a located field as new, grep the reader for the offset.* The
+sweep's value was the types nobody had swept, not the one already covered.
+
 ### THE MUSIC HIERARCHY: every music type has a parent at front offset 9
 
 **All four music types name another object at front offset 9**, and the targets

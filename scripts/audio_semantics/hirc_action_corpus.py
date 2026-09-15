@@ -1733,6 +1733,8 @@ def aggregate_current_hirc_actions(
     type11_body_failures: Counter[str] = Counter()
     type11_body_groups: Counter[str] = Counter()
     type11_body_selectors: Counter[str] = Counter()
+    parent_field_totals: Counter[str] = Counter()
+    parent_field_maps: dict[str, Counter] = {k: Counter() for k in PARENT_FIELD_MAPS}
     type0c_hier_totals: Counter[str] = Counter()
     type0c_hier_maps: dict[str, Counter] = {k: Counter() for k in TYPE0C_HIERARCHY_MAPS}
     type0a_anchor_totals: Counter[str] = Counter()
@@ -1956,6 +1958,13 @@ def aggregate_current_hirc_actions(
             type0a_anchor_totals[key] += package_anchor[key]
         type0a_anchor_controls.update(package_anchor["controlHits"])
         type0a_anchor_hits.update(package_anchor["anchorHits"])
+        package_pf = _read_parent_field_census(
+            package.get("hircParentField"), package_label
+        )
+        for key in PARENT_FIELD_SCALARS:
+            parent_field_totals[key] += package_pf[key]
+        for key in PARENT_FIELD_MAPS:
+            parent_field_maps[key].update(package_pf[key])
         package_t0c = _read_type0c_hierarchy_census(
             package.get("hircType0CHierarchy"), package_label
         )
@@ -2498,6 +2507,10 @@ def aggregate_current_hirc_actions(
             "tailEntryCountCounts": dict(sorted(type11_tail_counts.items())),
             "interpolationCounts": dict(sorted(type11_interps.items())),
             "firstTailEntryLeadingWordCounts": dict(sorted(type11_lead_words.items())),
+        },
+        "parentField": {
+            **{k: int(parent_field_totals[k]) for k in PARENT_FIELD_SCALARS},
+            **{k: dict(sorted(parent_field_maps[k].items())) for k in PARENT_FIELD_MAPS},
         },
         "type0CHierarchy": {
             **{k: int(type0c_hier_totals[k]) for k in TYPE0C_HIERARCHY_SCALARS},
@@ -3762,6 +3775,78 @@ def _read_type0c_hierarchy_census(census: Any, label: str) -> dict[str, Any]:
             f"type 0x0C hierarchy parent kinds do not partition its objects: {label}"
         )
     return out
+
+
+PARENT_FIELD_SCALARS = (
+    "checkable", "parentNamesTheChildBack", "parentDoesNotNameTheChild",
+    "namesSomethingOutsideTheBank", "parentDeclaresNoChildren",
+)
+PARENT_FIELD_MAPS = ("edgeTypes", "disagreementTypes")
+
+
+def _read_parent_field_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's parent-field census."""
+    if census is None:
+        return ({key: 0 for key in PARENT_FIELD_SCALARS}
+                | {key: {} for key in PARENT_FIELD_MAPS})
+    if not isinstance(census, dict):
+        raise ValueError(f"parent field census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in PARENT_FIELD_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"parent field census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"parent field census has negative {key}: {label}")
+        out[key] = value
+    for key in PARENT_FIELD_MAPS:
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"parent field census has invalid {key}: {label}")
+        out[key] = {str(name): int(value) for name, value in raw.items()}
+    if out["parentNamesTheChildBack"] + out["parentDoesNotNameTheChild"] != out["checkable"]:
+        raise ValueError(f"parent field outcomes do not cover the checkable cases: {label}")
+    if sum(out["disagreementTypes"].values()) != out["parentDoesNotNameTheChild"]:
+        raise ValueError(f"parent field disagreement types do not add up: {label}")
+    return out
+
+
+def the_parent_field_inverts_the_reference_graph(corpus: dict[str, Any]) -> bool:
+    """The two relations must be exact inverses, with no exceptions.
+
+    This is the strongest cross-check the format allows, and it is the one claim in
+    this reader that two independent readings of **entirely different bytes** have to
+    agree on.
+
+    Numeric types `0x02`, `0x05`, `0x06`, `0x07` and `0x09` name one object at a fixed
+    front offset -- 8 for all but `0x02`, which uses 22. The reference graph, framed
+    separately from each body's own counted runs, has every parent naming its
+    children. Over 199,463 checkable cases the child's declared parent names the child
+    back, with **zero** disagreements.
+
+    So this family carries its hierarchy twice: downward as child lists, upward as a
+    parent field. The gate is equality, not a rate -- a single disagreement means one
+    of the two readings has drifted, and which one is then worth knowing.
+
+    Two offsets the front sweep also found are excluded, and the inverse test is what
+    excluded them. `0x04` at offset 1 names a `0x03` and the graph has `0x04` naming
+    `0x03` as well -- the same direction, so it is that edge rather than its inverse,
+    and 22,317 of its 22,335 cases disagreed. The music types at offset 9 are the head
+    reference the reader has censused all along. *A field that names a plausible
+    object is not a parent until something independent says which way it points.*
+    """
+    checkable = int(corpus.get("checkable") or 0)
+    if checkable <= 0:
+        return False
+    if int(corpus.get("parentDoesNotNameTheChild") or 0) != 0:
+        return False
+    if int(corpus.get("parentNamesTheChildBack") or 0) != checkable:
+        return False
+    # It must span the format rather than one family, or "the hierarchy is carried
+    # twice" would be a claim about one relation.
+    edges = corpus.get("edgeTypes") or {}
+    return len({name for name, value in edges.items() if int(value) > 0}) >= 5
 
 
 def the_type0c_parent_relation_repeats_the_same_shape(corpus: dict[str, Any]) -> bool:
@@ -6507,6 +6592,8 @@ def run_current_corpus_audit(
     }
     group_bodies_ok = every_group_reports_the_bodies_behind_it(body_lane_corpus)
     thin_groups = thinly_seen_groups(body_lane_corpus)
+    parent_field_corpus = corpus["parentField"]
+    parent_inverse = the_parent_field_inverts_the_reference_graph(parent_field_corpus)
     type0c_hier_corpus = corpus["type0CHierarchy"]
     t0c_shape = the_type0c_parent_relation_repeats_the_same_shape(type0c_hier_corpus)
     type0a_anchor_corpus = corpus["type0AEndAnchor"]
@@ -6654,6 +6741,7 @@ def run_current_corpus_audit(
         and edge_aligned
         and edge_located
         and t0c_shape
+        and parent_inverse
         and music_scope
         and music_partition
         and music_anchor
@@ -6707,6 +6795,7 @@ def run_current_corpus_audit(
             "musicMutuality": music_mutuality_corpus,
             "type0AEndAnchor": type0a_anchor_corpus,
             "type0CHierarchy": type0c_hier_corpus,
+            "parentField": parent_field_corpus,
             "thinlySeenGroups": thin_groups,
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
@@ -6910,6 +6999,13 @@ def run_current_corpus_audit(
             f"control={h.get('rangeControlIsSymmetric')}/{h.get('rangeControlTested')} "
             f"fractions={h.get('fractionsAreSmall')}/{h.get('fractionsTested')} "
             f"fractionControl={h.get('fractionControlsAreSmall')}/{h.get('fractionControlsTested')}"
+        )
+    if not parent_inverse:
+        f = report["corpus"].get("parentField") or {}
+        lane_failures.append(
+            "the parent field and the reference graph are no longer inverse: "
+            f"checkable={f.get('checkable')} agree={f.get('parentNamesTheChildBack')} "
+            f"disagree={f.get('parentDoesNotNameTheChild')} {f.get('disagreementTypes')}"
         )
     if not t0c_shape:
         t = report["corpus"].get("type0CHierarchy") or {}
