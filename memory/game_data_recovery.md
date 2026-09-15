@@ -3295,13 +3295,22 @@ distinguish the claim from a weaker one, so the claim looked exact.**
 | the element count is a count | untestable -- **1 in every framed entry** | now read at **0, 1, 2 and 3** (130, 3,871, 8, 4) with the walk consuming exactly that many |
 | the entry count is a count | untestable -- **1 in every framed body** | now **1 in 3,861 and 2 in 76** |
 | the word at header `+4` is a source id | **3,715 of 3,715** headers | **3,937 of 4,013** headers, but **3,937 of 3,937 bodies**: in a two-entry body **exactly one of the two** entries names a declared source |
-| the 12-byte close ends in eight zeros | **3,861 of 3,861** trailers | it is a **body** property, not a trailer one: **3,937 of 3,937 final** blocks, **0 of 38 interior** ones |
+| the 12-byte close ends in eight zeros | **3,861 of 3,861** trailers | its **content** is body-final -- **3,937 of 3,937 final** blocks, **0 of 38 interior** ones -- while its **length** is per element |
 
-- **The last of these is the one worth keeping.** Before this batch I could not tell
-  whether the 12-byte close belonged to the element or to the body, because every
-  framed body had exactly one element and the two readings made identical
-  predictions. Interior blocks scoring **0 of 38** settles it: the block closes the
-  **body**.
+- **The last of these is the one worth keeping, and it splits in two.** Before this
+  batch I could not tell whether the 12-byte close belonged to the element or to the
+  body, because every framed body had exactly one element and the two readings made
+  identical predictions.
+  - Its **content** is body-final. Interior blocks end in eight zeros **0 of 38**
+    times against **3,937 of 3,937** for final ones.
+  - Its **length** is per element, and that is the opposite answer. Charging the 12
+    bytes to every element closes **3,937**; charging them only to the last element of
+    an entry, only to the last of the body, or only to the first each close **3,925**,
+    and charging them to none closes **58**. So an interior element does consume a
+    12-byte close -- it simply does not hold the eight-zero pattern.
+  - *These are two different claims about the same twelve bytes, and the first draft
+    of this note ran them together. A field's length and a field's content are
+    separately testable and can have separate answers.*
 - The source join is now counted **per body**, not per header. Per header the same
   data reads as a regression from 100% to 98.1%; per body it is exact, and the 76
   "misses" are one half of each two-entry body.
@@ -3310,6 +3319,33 @@ distinguish the claim from a weaker one, so the claim looked exact.**
   means the reading has finally been tested. Change it then, not before."* That is
   exactly what happened, so it was replaced rather than relaxed. *Write the tripwire
   that tells you when your own caveat has expired.*
+
+#### What does NOT explain `0x0B`'s remaining 388, tested and eliminated
+
+Recorded so the same ground is not re-walked. Each was scored over the whole corpus
+by whole-body closure, not on the failing slice alone.
+
+| hypothesis | result |
+| --- | --- |
+| a wider entry header, uniform | **no width from 8 to 200** closes a single multi-entry body |
+| all headers first, then all elements | likewise none; and note single-entry bodies score **3,861 either way**, so they cannot tell these two layouts apart at all |
+| the element count somewhere other than `+44` | `+44`: **3,861**; every other offset from 0 to 44: **at most 69** |
+| the residue is more elements | **122 of 142** stop at the first one |
+| a different source-record width | no width from 8 to 32 rescues any of the 50 out-of-range bodies |
+| a missing field before or after the entry count | gaps 0-16 either side rescue **2** at post-8, and cost the rest of the corpus |
+| the close belongs only to some elements | see above -- every element, **3,937** against 3,925 |
+
+- **The 119 trailer-flag fences almost all land at element index 1**, in single-entry
+  bodies declaring two or more elements, with the flag and the block's opening byte
+  both scattered. So the walk is already lost by then: **the first element's length is
+  wrong**, not the second element's flag.
+- **Shifting the second element does not repair them.** Of the 128 single-entry
+  multi-element bodies, only **20** close at *any* offset in `[-40, +80]`, and those
+  20 split between `-36` and `+17`. A single repeated delta would be a missing fixed
+  field; this is not one.
+- The 50 bodies whose counts come back wildly out of range have leading byte 0 and
+  declared source counts of 0 to 4 -- indistinguishable on both from the 3,937 that
+  frame.
 
 #### `0x0B`'s residue, measured rather than guessed
 

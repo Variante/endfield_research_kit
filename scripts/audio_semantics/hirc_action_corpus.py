@@ -3553,14 +3553,25 @@ def the_trailing_section_closes_only_multi_entry_bodies(
 
 
 def the_trailer_close_block_ends_in_eight_zeros(totals: dict[str, Any]) -> bool:
-    """Every element trailer ends with four variable bytes and eight zero ones.
+    """The block that ENDS A BODY carries eight zero bytes; interior ones do not.
+
+    Two claims about the same twelve bytes, and they have different answers.
+
+    The **length** is per element: charging 12 bytes to every element's trailer closes
+    3,937 bodies, and charging them only to the last element of an entry, only to the
+    last of the body, or only to the first each close 3,925. So an interior element
+    does consume a close block.
+
+    The **content** is body-final: the last block before the terminator ends in eight
+    zero bytes in 3,937 of 3,937 bodies, and an interior one does so 0 of 38 times.
+    That contrast only became measurable when multi-element bodies began to frame --
+    before that every framed body had one element, so "the trailer ends this way" and
+    "the body ends this way" made identical predictions.
 
     Read only from bodies that frame, because a close block reached by a walk that
-    later fails is a block the walk may never have been standing on.
-
-    The control is the same width read four bytes earlier. If long zero runs were
-    simply common here, the shifted window would score as well; it does not, so the
-    eight zeros are a property of this block and not of the neighbourhood.
+    later fails is a block the walk may never have been standing on. The second
+    control is the same width read four bytes earlier: if long zero runs were simply
+    common here the shifted window would score as well, and it does not.
     """
     if not isinstance(totals, dict):
         return False
