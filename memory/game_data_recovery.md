@@ -2170,6 +2170,14 @@ Stable conclusions:
   then `body[14]` elements of `00 <u16 0..4> 00 00`, then the `0x0B` reference.
   What it leaves: the remaining varying fields inside the 36, the 144 bodies with a
   nonzero byte 17, and the 255 with no `0x0B` reference.
+- **Byte 17 flags the longer head but does NOT determine its length.** Over the 126
+  nonzero-byte-17 bodies with exactly one `0x0B` reference, byte 17 takes **36
+  distinct values** and **6 of them map to two different head extras**. So it is a
+  flag, not a count -- do not try to read a length out of it.
+- The extras themselves (head minus `36 + 5*body[14]`) concentrate on **7, 12, 16
+  and 23**, with 110 of the 126 having `body[14] == 0`. The 7/12 pair differs by 5,
+  the same optional-element width the head already uses, so the likeliest reading is
+  a second counted run whose count lives somewhere other than byte 17.
 - **Conditioning on the anchor makes the tail legible.** Restricted to the 3,419
   `0x0A` bodies with exactly one `0x0B` reference and it at -69, **21 of the last 69
   byte positions are constant** -- against **6 of 101** over the unconditioned
