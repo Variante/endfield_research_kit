@@ -4797,9 +4797,33 @@ arithmetic identity over four samples is the kind of pattern that has already fa
 twice in this lane once the whole population was checked -- the stride-4 periodicity and
 the clipmap grid extents both looked at least this good.
 
-**Next:** the 132 `v3` files do not share this header at all -- their leading words are
-arbitrary and the relation fails in every one. They are 4.16 GB and the thing actually
-worth framing; the `gacha` files are 6 files and 6.9 MB.
+#### What the 132 `v3` payloads are NOT: five containers eliminated
+
+The `v3` files are 4.16 GB and the thing worth framing. Five hypotheses are now
+excluded, each by a measurement rather than by inspection.
+
+| hypothesis | test | result |
+| --- | --- | --- |
+| a chain of size-prefixed blocks | 1/2/4-byte sizes, prefix in or out, starts 0..32 | **no chain reaches EOF** in any file |
+| the terrain container's LZ4 variant | its reader needs the leading word to be the decoded size | the leading word is 3, 990, 1,182 or 12,291 for files of 16 KB to 70 MB |
+| standard compression | zlib, gzip, zstd, lz4 frame, bzip2 magics in the first 4 KB | **none**; the 22 "zlib" hits are coincidental `78 01` byte pairs, and no offset 0..63 inflates to more than 1 KB |
+| an array of 4-byte records | byte-phase entropy | **all four phases equal to two decimals**, which a 4-byte record cannot produce |
+| an array of spatially coherent probe values | delta entropy at every stride 1..64 | **every delta raises entropy above raw** -- 6.21 to 6.74 at best |
+
+The last is the sharpest. Irradiance data is spatially smooth by nature, so if the
+payload were probe values laid out on a grid, differencing at the record stride would
+*drop* the entropy. It rises at every stride from 1 to 64. **There is no byte stride at
+which consecutive values resemble each other.**
+
+What is left fits **bit-packed block-compressed data**: moderate entropy (5.0 to 6.9
+bits per byte, not the 7.9 of a real compressor), no byte alignment, no delta
+coherence. GPU block formats have exactly that profile, and a clipmap of HDR probes is
+what they would be storing. *That is a shape argument and not evidence* -- it is
+written down as the next thing to test, not as a finding.
+
+**Next:** test a block-compression decode directly rather than inferring it. If the
+payload is BC-style blocks, decoding a known-size region and checking the result for
+plausible HDR colour is a content test the byte statistics cannot give.
 
 *Asking the shipped code what a format is called cost one metadata scan and moved this
 further than two batches of byte-pattern search.*
