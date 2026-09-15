@@ -2037,6 +2037,39 @@ the kind that resolved the source records.* Ten populations have already been el
 against the bytes alone; the lesson from the source-record success is that the missing
 ingredient is a second table to join against, not a better sweep of the same bodies.
 
+##### The chunk switch in full, and what it says about the "unowned" media
+
+Disassembled properly, the bank dispatch is a flat fourcc chain:
+
+```
+cmp eax, 'DATA' ; je            cmp eax, 'DIDX' ; jne (other)
+cmp eax, 'ENVS' ; ja / je
+cmp eax, 'DATA' ; je 0x1800f57e5
+cmp eax, 'HIRC' ; je -> call 0x1800f7ca0      <- confirms the HIRC parser address
+cmp eax, 'STID' ; je -> call 0x1800f81e0
+cmp eax, 'STMG' ; jne 0x1800f5831 -> the DIDX/DATA media path
+```
+
+The media path runs the same `0x1800ef2b0` stream advance with the same
+consumed-versus-declared check and error 7, then allocates the media block (flags
+`0x20000003`, size stored at `[rdx+0x28]`) through the same `0x1800ef040` /`0x1800ef120`
+helpers the node loaders use.
+
+***It never touches the HIRC section.*** Media declared in `DIDX` and carried in `DATA` are
+allocated and registered **by id, straight from the chunk**, with no consultation of any
+source record.
+
+**So "unowned" is a property of the join, not an anomaly in the data.** The open item
+counts media that no HIRC source record names, and 7 of the 8 were already characterised as
+the Init bank's `DIDX`-embedded media. The reader explains *why that is the expected state*:
+**a bank-embedded media needs no HIRC owner to be loadable**, because the chunk path is
+self-sufficient. A media with no source record is not a dangling reference; it is a media
+that happens not to be reached that way.
+
+*That reframes the remaining question from "why are these 8 unowned" to "what, if anything,
+distinguishes the 1 that is not Init-bank embedded" -- a much smaller question, and one the
+existing censuses can be pointed at directly.*
+
 **Incidentally recovered:** the HIRC item header is `u8 type` at `[rbp-0x14]` followed by
 `u32 size` at `[rbp-0x13]`, with the section's item count at `[rbp-0x1c]` and the loop
 index in `r14d` -- which is exactly the framing this project's reader already uses,
