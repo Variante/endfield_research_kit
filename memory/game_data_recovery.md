@@ -3215,7 +3215,33 @@ gate rather than buried in the field's name.*
 - What would settle it: a `0x0B` body with a populated element head and more than one
   run, or one run declaring records. None exists in this corpus.
 
-#### Two eliminations on the 218, so the next attempt does not repeat them
+#### FIVE eliminations on the 218, so the next attempt does not repeat them
+
+The residue of numeric type `0x0B` bodies that leave real content before the
+terminator. Sizes: `32`:58, `12`:48, `44`:32, `112`:16, `49`:10, `16`:10, `37`:8,
+then singles.
+
+1. **Not one more element the entry count failed to declare.** Walking elements
+   greedily after the declared ones takes **zero** extra in **every** body.
+2. **Not whole elements of any observed shape.** The element sizes bodies that close
+   actually use are 36, 41, 72, 84, 96, 120, 89, 77, 125, 137. Only **4 of 218**
+   residues have a size in that set. This is independent of (1) and reaches the same
+   place.
+3. **Not a variant element with a one-byte head.** It closes 66, but every one of
+   those declares a run count of zero, so only the fixed bytes are exercised and the
+   interpolation-code test has nothing to check. Retracted in full.
+4. **Not explained by the 17-byte trailing block.** Allowing it takes the frame to
+   3,804 and drops the trailer-flag fences from 119 to 6, but grows this bucket from
+   218 to 236. The two fence buckets have independent causes.
+5. **Not a counted array of curve records.** Locating the first curve-shaped window
+   and stepping back four bytes -- the move that closed `0x0A` -- gives no count in
+   any body: 150 of 218 have no room for one and the rest disagree.
+
+*Elimination (2) is the cheapest of the five and should have been first: comparing
+the residue's size against the sizes the structure is actually observed to take costs
+one query and rules out the whole "it is another one of those" family.*
+
+#### Two eliminations on the 218, kept for the record
 
 - **It is NOT one more element the count at +44 failed to declare.** Walking elements
   greedily after the declared ones -- taking every element that parses until the
