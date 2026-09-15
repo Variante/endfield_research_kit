@@ -1701,6 +1701,22 @@ Stable conclusions:
   about what either type does.
 - The narrow prefix claim is untouched and still gated separately, so widening the
   filter cannot weaken it.
+- **An audit of the published wording found the over-generalisation had spread.**
+  After correcting the cross-bank claim in these notes, the same claim was still
+  sitting in two published reports, and one of them contradicted a table twenty
+  lines above it. Both are now scoped: the reference-graph report says its
+  same-bank result is a fact about *those counted vectors*, not the corpus, and
+  says plainly that names do exist for some endpoints. The named-reach report says
+  its "all on type `0x04`" result is a fact about *those literals*, not the format,
+  since the broad pass in the same module names `0x08` and `0x15`.
+- **When a conclusion is corrected, grep for where else it was asserted.** A
+  correction recorded only in memory leaves the wrong sentence in every report and
+  docstring that repeated it, and those are what a future reader actually reads.
+  The tests now pin the scoping rather than the old absolute sentence.
+- One cross-check passed and is worth recording as passing: the five reached source
+  ids that name no shipped media all come from plug-in ids the media partition says
+  never name media (`00080001`, `00640002`, `00650002`). The media join and the
+  identifier chain agree.
 - **Correction: this corpus DOES contain cross-bank references.** The numeric type
   `0x03` target word leaves its bank routinely -- of 28,379 targets, 21,956 name an
   object in the same bank, **1,499 name one in another bank of the same package**,

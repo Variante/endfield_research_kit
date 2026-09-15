@@ -1017,7 +1017,13 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertIn("Resolution is an identity fact and nothing more", markdown)
         self.assertIn("does not establish direction", markdown)
         self.assertIn("The type pairs are numeric on both sides", markdown)
-        self.assertIn("a property of this corpus, not a rule", markdown)
+        # The report must not generalise these vectors' same-bank behaviour to the
+        # corpus: type 0x03 targets leave their bank, and that over-generalisation
+        # was published once already.
+        self.assertIn("not about the corpus", markdown.replace("**", ""))
+        self.assertIn("Do not generalise the vectors", markdown)
+        # It must also not imply endpoints are nameless, since three types are named.
+        self.assertIn("names do exist for some endpoints", markdown)
         # No edge may be rendered with a domain name.
         for word in ("event", "action", "parent", "child", "container", "playlist"):
             self.assertNotIn(f"`{word}", markdown.lower())

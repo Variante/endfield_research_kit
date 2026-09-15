@@ -341,7 +341,10 @@ def markdown(report: dict[str, Any]) -> str:
             "have landed on some other type. None did. Every match landing on one type is what "
             "establishes that managed code addresses that type by name. A single match "
             "elsewhere would dissolve the identification, so the gate refuses to publish in "
-            "that case rather than reporting a rate.",
+            "that case rather than reporting a rate. Read the scope literally: this is "
+            "about these literals, not the format. The broad pass below names numeric "
+            "types `0x08` and `0x15` from other literals, so `0x04` is not the only type "
+            "addressed by name.",
             "",
             "## Identifiers reaching the most distinct source ids",
             "",

@@ -3405,7 +3405,15 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             "",
             "Every reference is a four-byte value inside a counted vector that the body framers already consume exactly. This report joins those values to the object identities declared by the same bank and reports where each one lands.",
             "",
-            "Resolution is an identity fact and nothing more. A resolved reference does not establish direction, parenthood, containment, membership, ordering, selection, playback, or any name for either endpoint; it establishes only that the value equals the identity of exactly one object declared in the same bank. The type pairs are numeric on both sides. No cross-bank or cross-package relation is claimed, and absence of one here is a property of this corpus, not a rule.",
+            "Resolution is an identity fact and nothing more. A resolved reference does not establish direction, parenthood, containment, membership, ordering, selection, or playback; it establishes only that the value equals the identity of exactly one object declared in the same bank. The type pairs are numeric on both sides.",
+            "",
+            "Two limits of that sentence are worth stating because both have been "
+            "over-read before. It says nothing about names, but names do exist for some "
+            "endpoints -- numeric types `0x04`, `0x08` and `0x15` are named, from a "
+            "different join reported separately. And every one of **these** references "
+            "staying inside its bank is a fact about these counted vectors, **not** "
+            "about the corpus: the numeric type `0x03` target words above leave their "
+            "bank routinely. Do not generalise the vectors' behaviour to the format.",
             "",
             f"Corpus gate SHA-256: `{report['corpusGate']['sha256']}`; AnimeStudio CLI SHA-256 `{report['audioAudit']['toolSha256']}`.",
             f"Raw AnimeStudio package audit: `{report['audioAudit']['intermediatePath']}` (SHA-256 `{report['audioAudit']['sha256']}`).",
