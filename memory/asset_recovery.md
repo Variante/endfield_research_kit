@@ -159,6 +159,28 @@ unique binding.
   provide one. That needs an AnimeStudio export; the `.bin` maps only locate
   containers.
 
+## Reading VFS logical files: three things that look like corruption and are not
+
+- **A raw span read is only valid for `encrypted=False` rows.** The audio probe's
+  `read_logical` seeks to a ledger row's offset, reads its length and checks the
+  MD5. That works because every audio block is `encrypted=False`. Five block types
+  are `encrypted=True` -- `BundleManifest`, `IFixPatchOut`, `JsonData`, `Lua` and
+  `Table` -- and on those the same read produces a confident MD5 mismatch that
+  looks exactly like a corrupt or stale file.
+- **A chunk's filename is not the MD5 of its raw bytes.** `fileChunkMd5...` is not
+  the raw-byte digest: checked across six chunks, including ones whose files
+  verify normally, the filename never equals the raw MD5. So "filename does not
+  match its hash" is **not** evidence that a chunk changed on disk. That control
+  is cheap and worth running before concluding anything about a mismatch.
+- **`manifest.hgmmap` is a Brotli stream**, so XOR-decrypting it yields no UTF-16
+  and looks like a failed decrypt. `scripts/game_data/bundle_manifest.py` already
+  frames it end to end -- headers, three fixed-width row regions, a variable region
+  with counted UTF-16 fragments. Do not re-derive it; a CAB-to-manifest-name join
+  should call that module.
+- All three cost time here because a wrong tool produced a plausible failure rather
+  than an obvious one. **When a read fails, check whether the reader was valid for
+  that row before believing the bytes are wrong.**
+
 ## Remaining gaps
 
 - Exact runtime prefab assembly and entity-to-renderable ownership.
