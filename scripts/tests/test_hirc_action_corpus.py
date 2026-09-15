@@ -17,7 +17,11 @@ from scripts.audio_semantics.hirc_action_corpus import (
     TYPE11_BODY_MINIMUM_EXACT,
     the_type11_body_frame_covers_most_of_its_corpus,
     TYPE11_HEADER_SCALARS,
+    _read_hierarchy_census,
     _read_type11_header_census,
+    almost_every_bank_contributes_one_tree,
+    numeric_type_12_is_a_leaf,
+    the_shared_hierarchy_is_a_forest,
     the_type11_curve_records_carry_interpolation_codes,
     the_type11_element_count_is_not_yet_a_count,
     the_type11_element_frame_beats_its_rivals,
@@ -3330,3 +3334,79 @@ class Type11CurveRecordTests(unittest.TestCase):
                 | {"elementCountValues": {}, "curveCodes": {"code_0": 3}},
                 "pkg",
             )
+
+
+class SharedHierarchyTests(unittest.TestCase):
+    """The parent relation 0x08 and 0x12 declare is a forest with a type discipline."""
+
+    def census(self, **overrides):
+        base = {
+            "banks": 121, "objects": 412, "cycles": 0,
+            "rootsWithNoParent": 4, "rootsNamingOutsideTheBank": 119,
+            "rootsPerBank": {"roots_1": 120, "roots_3": 1},
+            "rootTypes": {"type08": 4},
+            "outsideBankTypes": {"type12": 119},
+            "internalTypes": {"type08": 68, "type12": 2},
+            "leafTypes": {"type08": 93, "type12": 249},
+            "depths": {"depth_0": 123, "depth_2": 126, "depth_3": 64, "depth_4": 32,
+                       "depth_5": 23, "depth_6": 21, "depth_1": 18, "depth_7": 5},
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_shared_hierarchy_is_a_forest(self.census()))
+        self.assertTrue(almost_every_bank_contributes_one_tree(self.census()))
+        self.assertTrue(numeric_type_12_is_a_leaf(self.census()))
+
+    def test_one_cycle_fails(self) -> None:
+        # A cycle would mean the leading word is not a parent at all, so this is
+        # equality with zero rather than a rate.
+        self.assertFalse(the_shared_hierarchy_is_a_forest(self.census(cycles=1)))
+
+    def test_a_forest_of_isolated_nodes_fails(self) -> None:
+        # Acyclicity is free when nothing is connected. The gate demands the
+        # relation actually relate things.
+        self.assertFalse(the_shared_hierarchy_is_a_forest(
+            self.census(depths={"depth_0": 412})
+        ))
+
+    def test_scattered_roots_fail(self) -> None:
+        self.assertFalse(almost_every_bank_contributes_one_tree(
+            self.census(rootsPerBank={"roots_1": 40, "roots_5": 81})
+        ))
+        self.assertFalse(almost_every_bank_contributes_one_tree({}))
+
+    def test_an_out_of_bank_parent_is_not_a_counterexample_to_the_leaf_claim(self) -> None:
+        # The distinction the first version of this gate got wrong. 119 type 0x12
+        # objects name a parent outside their bank; that makes them roots of a bank
+        # fragment, not internal nodes, and the leaf claim survives.
+        census = self.census()
+        self.assertEqual(census["outsideBankTypes"], {"type12": 119})
+        self.assertTrue(numeric_type_12_is_a_leaf(census))
+
+    def test_type_12_gaining_children_fails(self) -> None:
+        self.assertFalse(numeric_type_12_is_a_leaf(
+            self.census(internalTypes={"type08": 68, "type12": 200})
+        ))
+
+    def test_a_parentless_type_12_fails(self) -> None:
+        # Every object with no parent at all is a 0x08. A 0x12 at the top would mean
+        # the two types do not occupy fixed positions after all.
+        self.assertFalse(numeric_type_12_is_a_leaf(
+            self.census(rootTypes={"type08": 4, "type12": 1})
+        ))
+
+    def test_an_empty_census_fails_rather_than_passing_vacuously(self) -> None:
+        for gate in (the_shared_hierarchy_is_a_forest,
+                     almost_every_bank_contributes_one_tree,
+                     numeric_type_12_is_a_leaf):
+            self.assertFalse(gate({}))
+
+    def test_the_reader_rejects_counts_that_do_not_partition(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_hierarchy_census(
+                self.census(leafTypes={"type08": 93, "type12": 1}), "pkg"
+            )
+        with self.assertRaises(ValueError):
+            _read_hierarchy_census(self.census(rootsWithNoParent=9), "pkg")

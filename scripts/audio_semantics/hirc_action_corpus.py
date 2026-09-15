@@ -1733,6 +1733,8 @@ def aggregate_current_hirc_actions(
     type11_body_failures: Counter[str] = Counter()
     type11_body_groups: Counter[str] = Counter()
     type11_body_selectors: Counter[str] = Counter()
+    hierarchy_totals: Counter[str] = Counter()
+    hierarchy_maps: dict[str, Counter] = {key: Counter() for key in HIERARCHY_MAPS}
     type11_header_totals: Counter[str] = Counter()
     type11_header_elements: Counter[str] = Counter()
     type11_header_codes: Counter[str] = Counter()
@@ -1940,6 +1942,13 @@ def aggregate_current_hirc_actions(
         music_ref_twice.update(package_music_refs["targetsReachedTwice"])
         music_ref_population.update(package_music_refs["targetPopulation"])
         music_ref_places.update(package_music_refs["edgeDistanceFromEnd"])
+        package_hier = _read_hierarchy_census(
+            package.get("hircHierarchy"), package_label
+        )
+        for key in HIERARCHY_SCALARS:
+            hierarchy_totals[key] += package_hier[key]
+        for key in HIERARCHY_MAPS:
+            hierarchy_maps[key].update(package_hier[key])
         package_t11hdr = _read_type11_header_census(
             package.get("hircType11EntryHeaders"), package_label
         )
@@ -2462,6 +2471,10 @@ def aggregate_current_hirc_actions(
             "tailEntryCountCounts": dict(sorted(type11_tail_counts.items())),
             "interpolationCounts": dict(sorted(type11_interps.items())),
             "firstTailEntryLeadingWordCounts": dict(sorted(type11_lead_words.items())),
+        },
+        "sharedHierarchy": {
+            **{key: int(hierarchy_totals[key]) for key in HIERARCHY_SCALARS},
+            **{key: dict(sorted(hierarchy_maps[key].items())) for key in HIERARCHY_MAPS},
         },
         "type11EntryHeaders": {
             **{key: int(type11_header_totals[key]) for key in TYPE11_HEADER_SCALARS},
@@ -3412,6 +3425,126 @@ def the_type11_entry_header_fields_beat_their_controls(corpus: dict[str, Any]) -
     small = int(corpus.get("fractionsAreSmall") or 0) / fractions
     small_control = int(corpus.get("fractionControlsAreSmall") or 0) / fraction_control
     return small >= 0.9 and small > small_control * 2
+
+
+HIERARCHY_SCALARS = (
+    "banks", "objects", "cycles", "rootsWithNoParent", "rootsNamingOutsideTheBank",
+)
+HIERARCHY_MAPS = (
+    "rootsPerBank", "rootTypes", "outsideBankTypes",
+    "internalTypes", "leafTypes", "depths",
+)
+
+
+def _read_hierarchy_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's numeric type 0x08/0x12 hierarchy census."""
+    if census is None:
+        return {key: 0 for key in HIERARCHY_SCALARS} | {key: {} for key in HIERARCHY_MAPS}
+    if not isinstance(census, dict):
+        raise ValueError(f"hierarchy census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in HIERARCHY_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"hierarchy census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"hierarchy census has negative {key}: {label}")
+        out[key] = value
+    for key in HIERARCHY_MAPS:
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"hierarchy census has invalid {key}: {label}")
+        out[key] = {str(name): int(value) for name, value in raw.items()}
+    if sum(out["rootsPerBank"].values()) != out["banks"]:
+        raise ValueError(f"hierarchy root histogram does not cover its banks: {label}")
+    for key in ("internalTypes", "leafTypes"):
+        if sum(out[key].values()) > out["objects"]:
+            raise ValueError(f"hierarchy {key} counts more objects than exist: {label}")
+    if sum(out["internalTypes"].values()) + sum(out["leafTypes"].values()) != out["objects"]:
+        raise ValueError(
+            f"hierarchy internal and leaf counts do not partition its objects: {label}"
+        )
+    if out["rootsWithNoParent"] != sum(out["rootTypes"].values()):
+        raise ValueError(f"hierarchy root kinds do not match its root types: {label}")
+    if out["rootsNamingOutsideTheBank"] != sum(out["outsideBankTypes"].values()):
+        raise ValueError(f"hierarchy out-of-bank kinds do not match their types: {label}")
+    return out
+
+
+def the_shared_hierarchy_is_a_forest(corpus: dict[str, Any]) -> bool:
+    """The parent relation numeric types 0x08 and 0x12 declare must be acyclic.
+
+    This is the first statement about this format above the level of a byte layout,
+    so it is worth being exact about what it claims. Each object's leading word names
+    another object. Following that relation *within a bank* gives a graph, and the
+    graph is a forest: no object is its own ancestor anywhere in the corpus.
+
+    The per-bank part is not a detail. Object ids repeat across banks, and the graph
+    built on deduplicated ids merges trees that are not connected -- doing that turns
+    121 trees over 412 objects into 3 over 278 and makes the structure look far
+    tidier than it is.
+
+    A cycle would mean the leading word is not a parent at all, so the gate is
+    equality with zero rather than a rate.
+    """
+    if int(corpus.get("objects") or 0) <= 0 or int(corpus.get("banks") or 0) <= 0:
+        return False
+    if int(corpus.get("cycles") or 0) != 0:
+        return False
+    # A forest of isolated nodes would satisfy acyclicity for free.
+    depths = corpus.get("depths") or {}
+    deep = sum(int(v) for k, v in depths.items() if k != "depth_0")
+    return deep * 2 > int(corpus.get("objects") or 0)
+
+
+def almost_every_bank_contributes_one_tree(corpus: dict[str, Any]) -> bool:
+    """Each bank's objects should hang off a single root.
+
+    120 of the 121 banks that carry these types have exactly one object whose parent
+    is absent or lives outside the bank; one bank has three. That is a fact about how
+    the data is packaged rather than about the format, so the gate asks for the
+    overwhelming majority rather than for all -- but it asks, because a change that
+    scattered the roots would mean the relation had stopped being read correctly.
+    """
+    banks = int(corpus.get("banks") or 0)
+    if banks <= 0:
+        return False
+    single = int((corpus.get("rootsPerBank") or {}).get("roots_1") or 0)
+    return single * 10 >= banks * 9
+
+
+def numeric_type_12_is_a_leaf(corpus: dict[str, Any]) -> bool:
+    """Numeric type 0x12 sits at the bottom of the relation, 0x08 above it.
+
+    Of 251 type 0x12 objects, 249 have no child; of 161 type 0x08 objects, 68 do.
+    Every object with no parent at all is a 0x08 -- there are four. So the two types
+    occupy different positions: 0x08 above, 0x12 below.
+
+    The distinction that matters here, and that a first version of this gate got
+    wrong: an object with **no parent** is a root of the relation, while an object
+    naming a parent that is merely **not in this bank** is a root only of this bank's
+    fragment. There are 119 of the second kind and they are all 0x12, which is not a
+    counter-example to 0x12 being a leaf -- it is the observation that a 0x12 object's
+    parent usually lives in another bank.
+
+    Stated as a majority with a wide margin rather than as an absolute, because two
+    0x12 objects do have children and the gate should describe the corpus rather
+    than round it off.
+    """
+    internal = corpus.get("internalTypes") or {}
+    leaves = corpus.get("leafTypes") or {}
+    twelve_internal = int(internal.get("type12") or 0)
+    twelve_leaf = int(leaves.get("type12") or 0)
+    eight_internal = int(internal.get("type08") or 0)
+    if twelve_leaf <= 0 or eight_internal <= 0:
+        return False
+    if twelve_internal * 20 >= twelve_leaf:
+        return False
+    roots = corpus.get("rootTypes") or {}
+    if not roots or any(name != "type08" for name in roots):
+        return False
+    return True
 
 
 def the_type11_curve_records_carry_interpolation_codes(corpus: dict[str, Any]) -> bool:
@@ -5912,6 +6045,10 @@ def run_current_corpus_audit(
     }
     group_bodies_ok = every_group_reports_the_bodies_behind_it(body_lane_corpus)
     thin_groups = thinly_seen_groups(body_lane_corpus)
+    hierarchy_corpus = corpus["sharedHierarchy"]
+    hierarchy_forest = the_shared_hierarchy_is_a_forest(hierarchy_corpus)
+    hierarchy_rooted = almost_every_bank_contributes_one_tree(hierarchy_corpus)
+    hierarchy_leaf = numeric_type_12_is_a_leaf(hierarchy_corpus)
     type11_header_corpus = corpus["type11EntryHeaders"]
     t11_header_ok = the_type11_entry_header_fields_beat_their_controls(type11_header_corpus)
     t11_count_untested = the_type11_element_count_is_not_yet_a_count(type11_header_corpus)
@@ -6028,6 +6165,9 @@ def run_current_corpus_audit(
         and t11_header_ok
         and t11_count_untested
         and t11_curves_ok
+        and hierarchy_forest
+        and hierarchy_rooted
+        and hierarchy_leaf
         and music_partition
         and music_anchor
         and type0a_head
@@ -6076,6 +6216,7 @@ def run_current_corpus_audit(
             "sharedFrameConstants": shared_const_corpus,
             "type11Elements": type11_element_corpus,
             "type11EntryHeaders": type11_header_corpus,
+            "sharedHierarchy": hierarchy_corpus,
             "thinlySeenGroups": thin_groups,
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
@@ -6279,6 +6420,25 @@ def run_current_corpus_audit(
             f"control={h.get('rangeControlIsSymmetric')}/{h.get('rangeControlTested')} "
             f"fractions={h.get('fractionsAreSmall')}/{h.get('fractionsTested')} "
             f"fractionControl={h.get('fractionControlsAreSmall')}/{h.get('fractionControlsTested')}"
+        )
+    if not hierarchy_forest:
+        h = report["corpus"].get("sharedHierarchy") or {}
+        lane_failures.append(
+            "the 0x08/0x12 parent relation is not a forest: "
+            f"objects={h.get('objects')} cycles={h.get('cycles')} depths={h.get('depths')}"
+        )
+    if not hierarchy_rooted:
+        h = report["corpus"].get("sharedHierarchy") or {}
+        lane_failures.append(
+            "banks no longer contribute one tree each: "
+            f"banks={h.get('banks')} rootsPerBank={h.get('rootsPerBank')}"
+        )
+    if not hierarchy_leaf:
+        h = report["corpus"].get("sharedHierarchy") or {}
+        lane_failures.append(
+            "numeric type 0x12 is no longer a leaf beneath 0x08: "
+            f"internal={h.get('internalTypes')} leaves={h.get('leafTypes')} "
+            f"roots={h.get('rootTypes')}"
         )
     if not t11_curves_ok:
         h = report["corpus"].get("type11EntryHeaders") or {}

@@ -1946,6 +1946,39 @@ Stable conclusions:
   hierarchy with `0x08` beneath `0x12`, and `0x08` also nests within itself. No edge
   from either to `0x0B`.
 
+### The first structure above byte layout: `0x08`/`0x12` form a forest
+
+The leading word of every `0x08` and `0x12` body names another object. Followed as a
+parent relation **per bank**, over 121 banks and 412 objects:
+
+- **Zero cycles.** No object is its own ancestor anywhere in the corpus. A cycle
+  would have meant the leading word is not a parent at all, so this is gated as
+  equality with zero.
+- **Depth runs to 7**, mode 2: `0`:123, `2`:126, `3`:64, `4`:32, `5`:23, `6`:21,
+  `1`:18, `7`:5. It is a real hierarchy, not a flat list -- which the gate checks,
+  because acyclicity is free when nothing is connected.
+- **`0x08` is above, `0x12` below.** Internal nodes: `0x08` **68**, `0x12` **2**.
+  Leaves: `0x08` 93, `0x12` **249**. The four objects with *no parent at all* are all
+  `0x08`.
+- **120 of 121 banks contribute exactly one tree**; one bank contributes three.
+
+**The distinction that a first version of this gate got wrong.** An object with **no
+parent** is a root of the relation; an object naming a parent that is merely **not in
+this bank** is a root only of that bank's fragment. There are 119 of the second kind
+and **all 119 are `0x12`**. Scored together they looked like 119 `0x12` roots, which
+contradicts `0x12` being a leaf; scored apart they say something else entirely --
+**a `0x12` object's parent usually lives in a different bank.** Corpus-wide those
+references resolve: `0x12` -> `0x08` 201, `0x08` -> `0x08` 154, `0x12` -> `0x12` 48.
+
+*Building this graph on deduplicated object ids gives 3 trees over 278 objects
+instead of 121 over 412, because ids repeat across banks. A relation is only as
+well-defined as the scope its endpoints are resolved in.*
+
+Gated by `the_shared_hierarchy_is_a_forest`, `almost_every_bank_contributes_one_tree`
+and `numeric_type_12_is_a_leaf`. Nothing here claims what the relation *means* -- only
+that it is a forest, that the two types occupy fixed positions in it, and that the
+`0x12` end reaches across banks.
+
 #### The curve record's values cannot be tested for propagation in this corpus
 
 - The shuffle test that retired the fraction link has **no power** on the curve
