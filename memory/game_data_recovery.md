@@ -5633,12 +5633,50 @@ signature as slot 7's 34-value descriptor, which invites treating them as one vo
 They **share 0 values**: slot 5's is a single all-zero constant. *Matching field widths
 are not a shared type.*
 
-**Still not known, and now with a reason:** what a slot-7 element *is* as a whole. Its
-category is isolated to a 6-valued one-hot code confirmed twice over and its 24-byte
-field is read, but the table is outside the managed schema set entirely, so a name will
-not come from IL2CPP's generated accessors. Slots 5 and 6 are not unindexed for want of
-effort -- **at this `inputSetSha256` they contain no variation to index against**, and
-further mining of them needs a different corpus, not a better test.
+#### NO MANAGED CODE NAMES THESE FILES, AND THE TEMPTING MAPPING FAILS ITS OWN TEST
+
+Chasing the reader through the filename ends in a clean negative:
+
+| literal | global-metadata.dat | GameAssembly.dll |
+| --- | --- | --- |
+| `InitChunkData_` | **0** (ASCII and UTF-16) | **0** |
+| `ChunkData_` | 0 | 0 |
+| `_0_0.bytes` | 0 | 0 |
+| `InitChunkData` | 2 -- *both* the method `_InitChunkDataPool` | 0 |
+
+So **no managed string literal constructs these filenames.** The two hits are a
+`MapManager` method that initialises a chunk-data *pool*, not a path. These files are
+addressed some other way -- by catalogue id or hash -- which is consistent with the VFS
+design and with the slot-7 element matching none of the 72 generated accessors.
+
+***The mapping that looks obvious, and why it is refused.*** `MapManager+
+LoaderChunkStaticData` holds **three** collections -- `grids`, `tiers`, `mists` -- against
+the root's **three** vector slots, and `TierLoadConfigInfo` and `MistLoadConfigInfo` each
+have **exactly 5 fields**, matching the slot-7 element's 5. Two independent-looking
+coincidences pointing the same way.
+
+It is still refused, on two counts:
+
+1. **The widths disagree.** Both config types spend three of their five fields on vector
+   members (`worldCenter`, `worldLeftBottom`, `worldRightTop`), where the data has one
+   24-byte field and four small ones -- `[16|20, 4, 24, 4, 4]`. *A field-count match with
+   a width mismatch is the same mistake `FBDynamicSceneModel` already cost.*
+2. **The data argues against it directly.** `len(slot6) == len(slot7)` in **7,433 of
+   7,433** files, with identical length distributions down to the 3,454 files where both
+   are empty. Two *independent* collections -- tiers and mists -- would not have equal
+   counts in every chunk in the world. Slots 6 and 7 read as **two parallel arrays over
+   one list**, not as two separate concepts.
+
+*The second point is the useful one: it is evidence from the corpus rather than an
+absence of evidence from the binary, and it would still hold if a matching schema turned
+up tomorrow.*
+
+**Still open, with the route now narrowed:** what a slot-7 element *is*. Its category is a
+6-valued one-hot code confirmed twice over and its 24-byte centre/extents field is read,
+but no managed accessor, no filename literal and no loader type matches it. A name has to
+come from the native reader. Slots 5 and 6 are not unindexed for want of effort -- **at
+this `inputSetSha256` they contain no variation to index against**, and further mining of
+them needs a different corpus, not a better test.
 
 ## Remaining gaps
 
