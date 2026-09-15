@@ -1949,13 +1949,52 @@ is how the error announced itself. The real section map:
 The dispatch table above is unaffected -- every address in it is a `.text` address and each
 target was confirmed against a real function prologue.
 
-***Where this stops.*** Reading the *bodies* of these handlers by hand goes wrong quietly.
-The shared `0x0A`-`0x0D` arm consults a function pointer in `.data`, and following it
-requires exactly the mapping that was wrong; a first pass also mis-read a rip-relative
-operand as a `call` because the scan started mid-instruction. **The dispatch is a
-compare-and-jump chain and hand-decoding is adequate for it; the handler bodies are not,
-and a tentative reading of what `0x0A`-`0x0D` do with their payload was discarded rather
-than recorded.** Going further needs a real disassembler, not more care.
+***Where hand-decoding stops.*** Reading handler *bodies* by hand goes wrong quietly: a
+first pass mis-read a rip-relative operand as a `call` by starting mid-instruction, and the
+`.data` global needed exactly the section mapping that was wrong.
+
+**capstone 5.0.7 is installed** -- a note elsewhere recording its absence is stale -- and
+re-running under it shows the hand-decoded *instruction stream* was right all along; only
+the address resolution was wrong. So the reading below is the one that was provisionally
+discarded, now verified.
+
+#### HIRC `0x0A`-`0x0D` ARE NOT PARSED: THE ENGINE SKIPS THEM
+
+The shared arm, disassembled:
+
+```
+mov  rax, [rip + 0x24ca0f]      ; global hook, .data VA 0x180344998
+test rax, rax ; je default
+lea  r9,[rbp-0x20] ; mov rdx,rdi ; lea r8,[rbp+0x58] ; lea rcx,[rbp-0x14]
+call rax                         ; registered handler, if any
+cmp  eax, 3 ; jne done           ; 3 == "not handled, fall through"
+default:
+mov  edx, [rbp-0x13]             ; the item's declared SIZE
+lea  rcx, [rsi+8] ; lea r8,[rbp-0x18] ; mov [rbp-0x18], 0
+call 0x1800ef2b0                 ; advance the read stream by `size`
+cmp  [rbp-0x18], [rbp-0x13] ; cmovne ebx, 7    ; short read -> error 7
+inc  r14d ; cmp r14d,[rbp-0x1c] ; jb loop      ; next item
+```
+
+`0x1800ef2b0` is a **buffered-stream skip**, not a parser: it takes `min(remaining,
+requested)` against `[rbx + rax*4 + 0x18]`, advances `[rbx+0x50]`/`[rbx+0x10]`, calls a
+virtual refill at `[rax+0x68]` when a buffer empties, and returns bytes consumed.
+
+**So in this build, absent a registered hook, HIRC types `0x0A`, `0x0B`, `0x0C` and `0x0D`
+are consumed as opaque payloads of their declared size**, with the only check being that
+the skip consumed exactly `size` bytes.
+
+***This changes the `0x0B` question rather than answering it.*** The open item -- the 210
+multi-entry `0x0B` bodies -- has been looking for a structure that **the shipped reader
+never imposes**. Six mechanisms were swept and excluded from the bytes; the reader explains
+why none of them was found in the reader's own behaviour: *there is no `0x0B` layout in
+this engine to recover.* Whatever structure those bodies have is imposed by the optional
+hook or by the authoring tool, not by the runtime.
+
+**Incidentally recovered:** the HIRC item header is `u8 type` at `[rbp-0x14]` followed by
+`u32 size` at `[rbp-0x13]`, with the section's item count at `[rbp-0x1c]` and the loop
+index in `r14d` -- which is exactly the framing this project's reader already uses,
+now confirmed against the engine.
 - **Numeric type `0x12` is the one HIRC type with no framing at all, and these
   readings are ruled out.** 251 bodies, 15,175 bytes. It is not the `0x10`/`0x11`
   grammar -- its word at offset 4 fails `range_section` on all 251. It is not the
