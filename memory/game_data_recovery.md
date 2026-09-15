@@ -3320,6 +3320,43 @@ distinguish the claim from a weaker one, so the claim looked exact.**
   exactly what happened, so it was replaced rather than relaxed. *Write the tripwire
   that tells you when your own caveat has expired.*
 
+#### `0x0B`'s word at `+32` IS A FLOAT, and negative zero is why it hid
+
+Nine id populations had failed on this word: object references same-bank and
+corpus-wide, source ids, media ids, **bank ids**, **STMG's 578 ids**, fixed-point
+fractions, and the 24,231 identifier literal hashes. The last two populations only
+existed after this batch framed STMG and published bank ids; both came back with **no
+offset matching at all**.
+
+Read as a **float**, in first entry headers it is **1,953 of 1,953 plausible** -- 823
+exactly **negative zero**, and the rest in **-9.83 to 7.81** with most of them
+negative.
+
+| reading | plausible | share |
+| --- | --- | --- |
+| `+32` in the first entry header | **1,953 / 1,953** | **100%** |
+| the same span at `+28`..`+31`, `+33`..`+39` | 202 / 3,116 | 6.5% |
+| **`+32` in a LATER entry header** | **2 / 26** | **7.7%** |
+
+- ***The `-0.0` is why this took so long.*** A band test that asks for
+  `abs(v) > 1e-4` throws away `0x80000000` as "not a float" -- and that is **42%** of
+  the field. **A field whose unset marker is negative zero looks unlike a float to any
+  test that treats zero as uninteresting.** My own earlier float test on this header
+  covered `+12` and `+20` and scored `+32` at 60.5%, which read as a miss.
+- **The later-entry control is the sharp one, and it is a finding in itself.** The same
+  offset one entry later scores 2 of 26, the rate of a shifted read. So the word is a
+  float in the first entry header and **is not one after it** -- independent evidence
+  that a later entry is **not the same 48-byte layout**, which is exactly what the 76
+  trailing-section bodies have been hinting at.
+
+#### `0x0B`'s `+12` and `+20` are one field written twice
+
+- Where both are nonzero they are **equal in 998 of 1,158 (86.2%)**. They share a top
+  value and a distribution: minimum 1, median about 2.18e9, maximum `0xFFFFFFFF`.
+- **Still unidentified.** The same nine populations failed on them. This is a
+  structural observation, gated so it cannot quietly stop being true while the note
+  claims it.
+
 #### CORPUS PROVENANCE: 10 banks ship twice, and one of them is the music bank
 
 Looking at `0x0B`'s residue along a **provenance** axis instead of a grammar one

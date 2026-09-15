@@ -3552,6 +3552,72 @@ def the_trailing_section_closes_only_multi_entry_bodies(
     return all(int(name) <= 2 for name in flags)
 
 
+def the_entry_header_word_at_thirty_two_is_a_float(corpus: dict[str, Any]) -> bool:
+    """Numeric type 0x0B's entry-header word at +32 is a float, and -0.0 is why it hid.
+
+    Nine id populations failed to explain this word: object references same-bank and
+    corpus-wide, source ids, media ids, bank ids, STMG's ids, fixed-point fractions,
+    and the 24,231 identifier literal hashes from global-metadata.dat.
+
+    Read as a float, **2,189 of its 2,189 nonzero values are plausible** -- 865 exactly
+    NEGATIVE zero, and the other 1,324 in -9.83 to 7.81 with 1,220 negative. Every
+    other offset from 28 to 39 scores between 0 and 17.7%, the four-byte-aligned
+    neighbours at 28 and 36 included.
+
+    *The -0.0 is why this took so long.* A band test that asks for `abs(v) > 1e-4`
+    discards 0x80000000 as "not a float", and that is 40% of the field. A field whose
+    unset marker is negative zero looks unlike a float to any test that treats zero as
+    uninteresting.
+
+    The gate wants all three things: every value plausible, the controls clearly
+    worse, and the negative zeros actually present -- because if they vanished, the
+    field being read would no longer be the one this note describes.
+    """
+    if not isinstance(corpus, dict):
+        return False
+    tested = int(corpus.get("gainsTested") or 0)
+    if tested <= 0:
+        return False
+    if int(corpus.get("gainsPlausible") or 0) != tested:
+        return False
+    if int(corpus.get("gainsThatAreNegativeZero") or 0) <= 0:
+        return False
+    controls = int(corpus.get("gainControlsTested") or 0)
+    if controls <= 0:
+        return False
+    # The controls must fail clearly, or "it reads as a float" says nothing.
+    if int(corpus.get("gainControlsPlausible") or 0) * 4 >= controls:
+        return False
+    # The sharpest control this field has: the SAME offset in a LATER entry header.
+    # It scores 2 of 26, the rate of a shifted read, so the word is a float in the
+    # first entry header and is not one after it -- independent evidence that a later
+    # entry is not the same 48-byte layout as the first.
+    later = int(corpus.get("laterEntryGainsTested") or 0)
+    if later <= 0:
+        return False
+    return int(corpus.get("laterEntryGainsPlausible") or 0) * 4 < later
+
+
+def the_entry_header_carries_the_same_word_twice(corpus: dict[str, Any]) -> bool:
+    """The words at +12 and +20 are one field written twice, more often than not.
+
+    Where both are nonzero they are **equal in 1,102** cases. They also share a top
+    value and a distribution: minimum 1, median about 2.18e9, maximum 0xFFFFFFFF.
+
+    This is a structural observation, not an identification. What the pair holds is
+    still unknown and the same nine populations failed on it as on +32. It is gated so
+    that the relationship cannot quietly disappear while the note still claims it.
+    """
+    if not isinstance(corpus, dict):
+        return False
+    tested = int(corpus.get("pairsTested") or 0)
+    equal = int(corpus.get("pairsEqual") or 0)
+    if tested <= 0 or equal <= 0 or equal > tested:
+        return False
+    # A majority, or "the same field twice" is not what the data shows.
+    return equal * 2 > tested
+
+
 def the_trailer_close_block_ends_in_eight_zeros(totals: dict[str, Any]) -> bool:
     """The block that ENDS A BODY carries eight zero bytes; interior ones do not.
 
@@ -3604,6 +3670,10 @@ TYPE11_HEADER_SCALARS = (
     "boundedFloatsTested", "boundedFloatsInBand",
     "floatControlsTested", "floatControlsInBand",
     "sourceJoinTested", "sourceJoinMatched",
+    "gainsTested", "gainsPlausible", "gainsThatAreNegativeZero",
+    "gainControlsTested", "gainControlsPlausible",
+    "laterEntryGainsTested", "laterEntryGainsPlausible",
+    "pairsTested", "pairsEqual",
     "closeBlocks", "closeBlocksEndingInEightZeros",
     "closeBlockControlsEndingInEightZeros",
     "finalCloseBlocks", "finalCloseBlocksEndingInEightZeros",
@@ -7137,6 +7207,12 @@ def run_current_corpus_audit(
         type11_body_selectors,
         type11_body_corpus,
     )
+    t11_gain_ok = the_entry_header_word_at_thirty_two_is_a_float(
+        report["corpus"].get("type11EntryHeaders") or {}
+    )
+    t11_pair_ok = the_entry_header_carries_the_same_word_twice(
+        report["corpus"].get("type11EntryHeaders") or {}
+    )
     t11_close_ok = the_trailer_close_block_ends_in_eight_zeros(
         report["corpus"].get("type11EntryHeaders") or {}
     )
@@ -7224,6 +7300,8 @@ def run_current_corpus_audit(
         and t11_ext_ok
         and t11_ext_free
         and t11_close_ok
+        and t11_gain_ok
+        and t11_pair_ok
         and t11_section_ok
         and t11_header_ok
         and t11_count_is_a_count
@@ -7660,6 +7738,20 @@ def run_current_corpus_audit(
             "the type 0x0B trailing section is gone, or has started accepting "
             "residues whose opening byte the trailer rule does not recognise: "
             f"{ {k: v for k, v in type11_body_selectors.items() if 'railingSection' in k} }"
+        )
+    if not t11_gain_ok:
+        h = report["corpus"].get("type11EntryHeaders") or {}
+        lane_failures.append(
+            "the type 0x0B entry header word at +32 no longer reads as a float: "
+            f"plausible={h.get('gainsPlausible')}/{h.get('gainsTested')} "
+            f"negativeZeros={h.get('gainsThatAreNegativeZero')} "
+            f"controls={h.get('gainControlsPlausible')}/{h.get('gainControlsTested')}"
+        )
+    if not t11_pair_ok:
+        h = report["corpus"].get("type11EntryHeaders") or {}
+        lane_failures.append(
+            "the type 0x0B entry header words at +12 and +20 are no longer usually "
+            f"equal: {h.get('pairsEqual')} of {h.get('pairsTested')}"
         )
     if not t11_close_ok:
         h11 = report["corpus"].get("type11EntryHeaders") or {}
