@@ -20,6 +20,8 @@ from scripts.audio_semantics.hirc_action_corpus import (
     _read_hierarchy_census,
     _read_music_mutuality_census,
     _read_type0a_anchor_census,
+    _read_type0c_hierarchy_census,
+    the_type0c_parent_relation_repeats_the_same_shape,
     edges_per_distinct_distance,
     end_distance_alignment,
     the_music_types_split_into_located_and_scattered_references,
@@ -3733,3 +3735,64 @@ class MusicEdgeLocationTests(unittest.TestCase):
         self.assertFalse(
             the_music_types_split_into_located_and_scattered_references(one_sided)
         )
+
+
+class Type0CHierarchyTests(unittest.TestCase):
+    """A fourth located relation, with the shape the 0x08/0x12 one has."""
+
+    def census(self, **overrides):
+        base = {
+            "banks": 5, "objects": 742, "objectsNamingAParent": 716,
+            "rootsWithNoParent": 22, "parentsOutsideTheBank": 4, "cycles": 0,
+            "parentsWithSeveralChildren": 138,
+            "depths": {"depth_0": 26, "depth_1": 38, "depth_2": 266, "depth_3": 250,
+                       "depth_4": 130, "depth_5": 18, "depth_6": 10, "depth_7": 4},
+            "childrenPerParent": {"children_1": 88, "children_2": 56, "children_3": 34,
+                                  "children_4": 18, "children_5": 4, "children_6": 8,
+                                  "children_7": 2, "children_9": 2, "children_10": 2,
+                                  "children_14": 4, "children_16": 8},
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(
+            the_type0c_parent_relation_repeats_the_same_shape(self.census())
+        )
+
+    def test_one_cycle_fails(self) -> None:
+        self.assertFalse(the_type0c_parent_relation_repeats_the_same_shape(
+            self.census(cycles=1)
+        ))
+
+    def test_a_shallow_relation_fails(self) -> None:
+        # Acyclicity is free when nothing is connected, so the relation must reach
+        # past depth one for most of its objects.
+        self.assertFalse(the_type0c_parent_relation_repeats_the_same_shape(
+            self.census(depths={"depth_0": 700, "depth_1": 42})
+        ))
+
+    def test_one_child_per_parent_fails(self) -> None:
+        # That would be the main reference graph's direction, not this one's.
+        self.assertFalse(the_type0c_parent_relation_repeats_the_same_shape(
+            self.census(parentsWithSeveralChildren=0,
+                        childrenPerParent={"children_1": 226})
+        ))
+
+    def test_a_relation_most_objects_do_not_use_fails(self) -> None:
+        self.assertFalse(the_type0c_parent_relation_repeats_the_same_shape(
+            self.census(objectsNamingAParent=100, rootsWithNoParent=638)
+        ))
+
+    def test_an_empty_census_fails(self) -> None:
+        self.assertFalse(the_type0c_parent_relation_repeats_the_same_shape({}))
+        self.assertFalse(the_type0c_parent_relation_repeats_the_same_shape(
+            self.census(objects=0)
+        ))
+
+    def test_the_reader_rejects_parent_kinds_that_do_not_partition(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_type0c_hierarchy_census(self.census(rootsWithNoParent=999), "pkg")
+
+    def test_an_absent_census_reads_as_empty(self) -> None:
+        self.assertEqual(_read_type0c_hierarchy_census(None, "pkg")["objects"], 0)

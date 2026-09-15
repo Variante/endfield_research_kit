@@ -1733,6 +1733,8 @@ def aggregate_current_hirc_actions(
     type11_body_failures: Counter[str] = Counter()
     type11_body_groups: Counter[str] = Counter()
     type11_body_selectors: Counter[str] = Counter()
+    type0c_hier_totals: Counter[str] = Counter()
+    type0c_hier_maps: dict[str, Counter] = {k: Counter() for k in TYPE0C_HIERARCHY_MAPS}
     type0a_anchor_totals: Counter[str] = Counter()
     type0a_anchor_controls: Counter[str] = Counter()
     type0a_anchor_hits: Counter[str] = Counter()
@@ -1954,6 +1956,13 @@ def aggregate_current_hirc_actions(
             type0a_anchor_totals[key] += package_anchor[key]
         type0a_anchor_controls.update(package_anchor["controlHits"])
         type0a_anchor_hits.update(package_anchor["anchorHits"])
+        package_t0c = _read_type0c_hierarchy_census(
+            package.get("hircType0CHierarchy"), package_label
+        )
+        for key in TYPE0C_HIERARCHY_SCALARS:
+            type0c_hier_totals[key] += package_t0c[key]
+        for key in TYPE0C_HIERARCHY_MAPS:
+            type0c_hier_maps[key].update(package_t0c[key])
         package_mut = _read_music_mutuality_census(
             package.get("hircMusicMutuality"), package_label
         )
@@ -2489,6 +2498,10 @@ def aggregate_current_hirc_actions(
             "tailEntryCountCounts": dict(sorted(type11_tail_counts.items())),
             "interpolationCounts": dict(sorted(type11_interps.items())),
             "firstTailEntryLeadingWordCounts": dict(sorted(type11_lead_words.items())),
+        },
+        "type0CHierarchy": {
+            **{k: int(type0c_hier_totals[k]) for k in TYPE0C_HIERARCHY_SCALARS},
+            **{k: dict(sorted(type0c_hier_maps[k].items())) for k in TYPE0C_HIERARCHY_MAPS},
         },
         "type0AEndAnchor": {
             **{key: int(type0a_anchor_totals[key]) for key in TYPE0A_ANCHOR_SCALARS},
@@ -3712,6 +3725,77 @@ def edges_per_distinct_distance(distances: dict[str, Any]) -> dict[str, dict[str
         row["edges"] += int(count)
         row["distances"] += 1
     return out
+
+
+TYPE0C_HIERARCHY_SCALARS = (
+    "banks", "objects", "objectsNamingAParent", "rootsWithNoParent",
+    "parentsOutsideTheBank", "cycles", "parentsWithSeveralChildren",
+)
+TYPE0C_HIERARCHY_MAPS = ("depths", "childrenPerParent")
+
+
+def _read_type0c_hierarchy_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's numeric type 0x0C hierarchy census."""
+    if census is None:
+        return ({key: 0 for key in TYPE0C_HIERARCHY_SCALARS}
+                | {key: {} for key in TYPE0C_HIERARCHY_MAPS})
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x0C hierarchy census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in TYPE0C_HIERARCHY_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x0C hierarchy census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x0C hierarchy census has negative {key}: {label}")
+        out[key] = value
+    for key in TYPE0C_HIERARCHY_MAPS:
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"type 0x0C hierarchy census has invalid {key}: {label}")
+        out[key] = {str(name): int(value) for name, value in raw.items()}
+    kinds = (out["objectsNamingAParent"] + out["rootsWithNoParent"]
+             + out["parentsOutsideTheBank"])
+    if kinds != out["objects"]:
+        raise ValueError(
+            f"type 0x0C hierarchy parent kinds do not partition its objects: {label}"
+        )
+    return out
+
+
+def the_type0c_parent_relation_repeats_the_same_shape(corpus: dict[str, Any]) -> bool:
+    """A fourth located relation, with the shape the 0x08/0x12 one has.
+
+    Numeric type 0x0C names another 0x0C at front offset 9 in 716 of its 742 bodies.
+    Walked per bank the relation is a forest -- no cycles, depth running to 7 -- and
+    many children name one parent, up to 19, which is the child-to-parent direction
+    rather than the main reference graph's one-referrer-per-target.
+
+    That the same shape appears in an unrelated family of types, at a different
+    offset, is the finding. What it means is still not claimed.
+
+    The gate asks for all of it: the relation must relate most of its objects, be
+    acyclic, reach past depth one, and keep parents with several children. Acyclicity
+    alone is free when nothing is connected, and a one-child-per-parent relation
+    would be the other direction.
+    """
+    objects = int(corpus.get("objects") or 0)
+    if objects <= 0:
+        return False
+    if int(corpus.get("cycles") or 0) != 0:
+        return False
+    naming = int(corpus.get("objectsNamingAParent") or 0)
+    if naming * 2 <= objects:
+        return False
+    depths = corpus.get("depths") or {}
+    deep = sum(int(v) for k, v in depths.items() if k not in ("depth_0", "depth_1"))
+    if deep * 2 <= objects:
+        return False
+    counts = corpus.get("childrenPerParent") or {}
+    total = sum(int(v) for v in counts.values())
+    several = int(corpus.get("parentsWithSeveralChildren") or 0)
+    return total > 0 and several * 2 > total
 
 
 def the_music_types_split_into_located_and_scattered_references(
@@ -6414,6 +6498,8 @@ def run_current_corpus_audit(
     }
     group_bodies_ok = every_group_reports_the_bodies_behind_it(body_lane_corpus)
     thin_groups = thinly_seen_groups(body_lane_corpus)
+    type0c_hier_corpus = corpus["type0CHierarchy"]
+    t0c_shape = the_type0c_parent_relation_repeats_the_same_shape(type0c_hier_corpus)
     type0a_anchor_corpus = corpus["type0AEndAnchor"]
     anchor_ok = the_type0a_end_anchor_beats_every_neighbouring_distance(type0a_anchor_corpus)
     edge_aligned = the_type0a_to_type0b_edge_is_aligned_to_the_body_end(
@@ -6558,6 +6644,7 @@ def run_current_corpus_audit(
         and anchor_ok
         and edge_aligned
         and edge_located
+        and t0c_shape
         and music_scope
         and music_partition
         and music_anchor
@@ -6610,6 +6697,7 @@ def run_current_corpus_audit(
             "sharedHierarchy": hierarchy_corpus,
             "musicMutuality": music_mutuality_corpus,
             "type0AEndAnchor": type0a_anchor_corpus,
+            "type0CHierarchy": type0c_hier_corpus,
             "thinlySeenGroups": thin_groups,
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
@@ -6813,6 +6901,14 @@ def run_current_corpus_audit(
             f"control={h.get('rangeControlIsSymmetric')}/{h.get('rangeControlTested')} "
             f"fractions={h.get('fractionsAreSmall')}/{h.get('fractionsTested')} "
             f"fractionControl={h.get('fractionControlsAreSmall')}/{h.get('fractionControlsTested')}"
+        )
+    if not t0c_shape:
+        t = report["corpus"].get("type0CHierarchy") or {}
+        lane_failures.append(
+            "the type 0x0C parent relation no longer has the shape the 0x08 one has: "
+            f"objects={t.get('objects')} naming={t.get('objectsNamingAParent')} "
+            f"cycles={t.get('cycles')} depths={t.get('depths')} "
+            f"severalChildren={t.get('parentsWithSeveralChildren')}"
         )
     if not edge_located:
         rows = edges_per_distinct_distance(

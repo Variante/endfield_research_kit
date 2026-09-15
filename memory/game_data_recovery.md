@@ -2494,6 +2494,28 @@ from there the counts fall out. Widening a range would never have found either.
   end lands on *something* in every body, so a hit count says nothing. Every distance
   within five bytes that is *not* an anchor -- `-64` to `-68`, `-70`, `-71`, `-72`,
   `-74`, `-75` -- names a type `0x0B` object in **zero** bodies.
+### `0x0C` has a parent at front offset 9: the same shape, a fourth time
+
+- **716 of `0x0C`'s 742 bodies name another `0x0C` object at front offset 9.** Walked
+  per bank: **zero cycles**, 22 roots with no parent, 4 whose parent is in another
+  bank, depth to **7** (mode 2-3), and **138 of 226 parents have several children**,
+  up to 16 or more.
+- **That is the shape the `0x08`/`0x12` relation has**, in an unrelated family of
+  types and at a different offset. A forest, child-to-parent, many children per
+  parent. What it means is still not claimed; that the pattern recurs is the finding.
+- **How it was found, and it corrects the framing of the previous entry.** The census
+  measures distance from the **end**, and from the end `0x0C` looks entirely unlocated
+  -- 3,757 distinct distances for 9,634 references. Measured from the **front** it is
+  3,193 distinct offsets, just as scattered, **except that one offset carries 716 of
+  them.** A type can be unlocated in aggregate and still have a located field; the
+  aggregate hides it.
+- *Measure locality from both ends. A field at a fixed front offset is invisible to an
+  end-distance census whenever body lengths vary, and every type here has variable
+  bodies.*
+- For the record, `0x0A` is more concentrated from the front too: **32** distinct
+  front offsets against 77 end distances. The end anchor at `-69` is real and
+  controlled, but the front is where these references are actually placed.
+
 ### `0x0C` keeps its references in a list; `0A` and `0D` keep theirs in fields
 
 Asked of a census the reader has published for many runs: **how many distinct end
