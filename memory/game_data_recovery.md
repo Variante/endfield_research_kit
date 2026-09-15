@@ -1974,6 +1974,36 @@ references resolve: `0x12` -> `0x08` 201, `0x08` -> `0x08` 154, `0x12` -> `0x12`
 instead of 121 over 412, because ids repeat across banks. A relation is only as
 well-defined as the scope its endpoints are resolved in.*
 
+### Three relation kinds, told apart by in-degree and symmetry
+
+| relation | edges | a target is named by | reverse edge present | reading |
+|---|---:|---|---:|---|
+| main reference graph | 230,247 | exactly one referrer | -- | owner -> owned |
+| `0x08`/`0x12` leading word | 275 | many children | -- | child -> parent |
+| music types (`0A`,`0C`,`0D`) | 24,430 | many | **73.9%** | **mutual, neither** |
+
+- **The music relation is symmetric.** Of 24,430 same-bank edges, 4,598 point at an
+  object that was never scanned (only `0A`, `0C` and `0D` bodies are) and so cannot be
+  asked the question; of the 19,832 that can, **14,652 have their reverse present**.
+  Mutual across every type pair: `0A`<->`0D` 3,570 each way, `0C`<->`0D` 2,431,
+  `0C`<->`0A` 588, `0C`<->`0C` 1,474.
+- **So these edges cannot be read as parenthood in either direction**, and the music
+  types do not form a hierarchy the way the other two relations do.
+- **Not cliques either.** Neighbours of a node are linked to each other **0.1%** of
+  the time, which rules out the reading that these bodies simply share a list of
+  sibling ids.
+- The graph has 7,341 back edges, which is exactly what a mostly-symmetric relation
+  produces -- every mutual pair is a two-cycle. *Running a cycle check on a relation
+  before checking whether it is symmetric answers the wrong question.*
+- **Two corrections to my own earlier statements, both measured.**
+  1. I said a shape analysis of the music edges "would be measuring the noise as much
+     as the structure". Wrong by three orders of magnitude: expected chance matches
+     are `646,465 x 213,138 / 2^32` = **32**, which is **0.13%** of 24,515.
+  2. I assumed package-wide resolution was inflating the count. Also wrong --
+     **24,430 of 24,515 music references are same-bank**, a difference of 85. Only
+     0.35% leave the bank, against 119 of 275 for the `0x08`/`0x12` relation, which
+     is the one that really does reach across banks.
+
 #### The two reference relations in this format run in OPPOSITE directions
 
 Both are forests, so shape alone does not tell them apart. **In-degree does.**

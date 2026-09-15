@@ -1733,6 +1733,8 @@ def aggregate_current_hirc_actions(
     type11_body_failures: Counter[str] = Counter()
     type11_body_groups: Counter[str] = Counter()
     type11_body_selectors: Counter[str] = Counter()
+    music_mutuality_totals: Counter[str] = Counter()
+    music_mutuality_kinds: Counter[str] = Counter()
     hierarchy_totals: Counter[str] = Counter()
     hierarchy_maps: dict[str, Counter] = {key: Counter() for key in HIERARCHY_MAPS}
     type11_header_totals: Counter[str] = Counter()
@@ -1942,6 +1944,12 @@ def aggregate_current_hirc_actions(
         music_ref_twice.update(package_music_refs["targetsReachedTwice"])
         music_ref_population.update(package_music_refs["targetPopulation"])
         music_ref_places.update(package_music_refs["edgeDistanceFromEnd"])
+        package_mut = _read_music_mutuality_census(
+            package.get("hircMusicMutuality"), package_label
+        )
+        for key in MUSIC_MUTUALITY_SCALARS:
+            music_mutuality_totals[key] += package_mut[key]
+        music_mutuality_kinds.update(package_mut["mutualEdgeKinds"])
         package_hier = _read_hierarchy_census(
             package.get("hircHierarchy"), package_label
         )
@@ -2471,6 +2479,10 @@ def aggregate_current_hirc_actions(
             "tailEntryCountCounts": dict(sorted(type11_tail_counts.items())),
             "interpolationCounts": dict(sorted(type11_interps.items())),
             "firstTailEntryLeadingWordCounts": dict(sorted(type11_lead_words.items())),
+        },
+        "musicMutuality": {
+            **{key: int(music_mutuality_totals[key]) for key in MUSIC_MUTUALITY_SCALARS},
+            "mutualEdgeKinds": dict(sorted(music_mutuality_kinds.items())),
         },
         "sharedHierarchy": {
             **{key: int(hierarchy_totals[key]) for key in HIERARCHY_SCALARS},
@@ -3546,6 +3558,97 @@ def numeric_type_12_is_a_leaf(corpus: dict[str, Any]) -> bool:
     if not roots or any(name != "type08" for name in roots):
         return False
     return True
+
+
+MUSIC_MUTUALITY_SCALARS = (
+    "sameBankEdges", "edgesIntoUnscannedObjects",
+    "edgesBetweenScannedObjects", "mutualEdges",
+)
+
+
+def _read_music_mutuality_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's music mutuality census."""
+    if census is None:
+        return {key: 0 for key in MUSIC_MUTUALITY_SCALARS} | {"mutualEdgeKinds": {}}
+    if not isinstance(census, dict):
+        raise ValueError(f"music mutuality census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in MUSIC_MUTUALITY_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"music mutuality census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"music mutuality census has negative {key}: {label}")
+        out[key] = value
+    raw = census.get("mutualEdgeKinds")
+    if not isinstance(raw, dict):
+        raise ValueError(f"music mutuality census has invalid mutualEdgeKinds: {label}")
+    out["mutualEdgeKinds"] = {str(name): int(value) for name, value in raw.items()}
+    if out["edgesIntoUnscannedObjects"] + out["edgesBetweenScannedObjects"] != out["sameBankEdges"]:
+        raise ValueError(
+            f"music mutuality edge kinds do not partition its edges: {label}"
+        )
+    if out["mutualEdges"] > out["edgesBetweenScannedObjects"]:
+        raise ValueError(
+            f"music mutuality counts more mutual edges than askable ones: {label}"
+        )
+    if sum(out["mutualEdgeKinds"].values()) != out["mutualEdges"]:
+        raise ValueError(
+            f"music mutual edge kinds do not cover the mutual edges: {label}"
+        )
+    return out
+
+
+def the_music_relation_is_symmetric(corpus: dict[str, Any]) -> bool:
+    """The music types' relation is mutual, unlike the format's other two.
+
+    This is the third relation kind in this format and the only symmetric one. The
+    main reference graph is functional -- every target named exactly once. The
+    0x08/0x12 parent relation has many children naming one parent. Here most edges
+    have their reverse present as well, which is neither, and which means these
+    edges **cannot be read as parenthood in either direction**.
+
+    Only edges whose target was itself scanned can be asked the question, because
+    an unscanned body cannot carry the reverse edge. Counting those as one-way would
+    understate the rate by mixing "not mutual" with "not askable". Of 24,430 same-bank
+    edges, 4,598 point at unscanned objects and 19,832 are askable; 14,652 of those
+    are mutual, which is 73.9%.
+    """
+    askable = int(corpus.get("edgesBetweenScannedObjects") or 0)
+    if askable <= 0:
+        return False
+    mutual = int(corpus.get("mutualEdges") or 0)
+    if mutual <= 0:
+        return False
+    kinds = corpus.get("mutualEdgeKinds") or {}
+    if len(kinds) < 3:
+        return False
+    return mutual * 2 > askable
+
+
+def music_references_resolve_inside_their_own_bank(
+    corpus: dict[str, Any], package_wide: dict[str, Any]
+) -> bool:
+    """Almost every music reference names an object in the referrer's own bank.
+
+    I expected the opposite and was wrong, so the number is worth stating plainly:
+    the package-wide census resolves 24,515 references and the same-bank census
+    24,430, a difference of 85. Only 0.35% of music references reach an object that
+    is not in the referrer's bank.
+
+    That matches the main reference graph, which is same-bank by closure over
+    230,247 edges, and it means the wide scope was never buying much here -- unlike
+    the 0x08/0x12 parent relation, where 119 of 275 edges leave the bank.
+
+    Gated because it is a closure property: if music references started leaving their
+    bank, the relation would have changed rather than the measurement.
+    """
+    wide = int(package_wide.get("references") or 0)
+    near = int(corpus.get("sameBankEdges") or 0)
+    if wide <= 0 or near <= 0:
+        return False
+    return near * 100 >= wide * 99
 
 
 def the_hierarchy_runs_opposite_to_the_main_reference_graph(corpus: dict[str, Any]) -> bool:
@@ -6078,6 +6181,11 @@ def run_current_corpus_audit(
     }
     group_bodies_ok = every_group_reports_the_bodies_behind_it(body_lane_corpus)
     thin_groups = thinly_seen_groups(body_lane_corpus)
+    music_mutuality_corpus = corpus["musicMutuality"]
+    music_symmetric = the_music_relation_is_symmetric(music_mutuality_corpus)
+    music_scope = music_references_resolve_inside_their_own_bank(
+        music_mutuality_corpus, corpus["musicReferences"]
+    )
     hierarchy_corpus = corpus["sharedHierarchy"]
     hierarchy_forest = the_shared_hierarchy_is_a_forest(hierarchy_corpus)
     hierarchy_rooted = almost_every_bank_contributes_one_tree(hierarchy_corpus)
@@ -6205,6 +6313,8 @@ def run_current_corpus_audit(
         and hierarchy_rooted
         and hierarchy_leaf
         and hierarchy_direction
+        and music_symmetric
+        and music_scope
         and music_partition
         and music_anchor
         and type0a_head
@@ -6254,6 +6364,7 @@ def run_current_corpus_audit(
             "type11Elements": type11_element_corpus,
             "type11EntryHeaders": type11_header_corpus,
             "sharedHierarchy": hierarchy_corpus,
+            "musicMutuality": music_mutuality_corpus,
             "thinlySeenGroups": thin_groups,
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
@@ -6457,6 +6568,20 @@ def run_current_corpus_audit(
             f"control={h.get('rangeControlIsSymmetric')}/{h.get('rangeControlTested')} "
             f"fractions={h.get('fractionsAreSmall')}/{h.get('fractionsTested')} "
             f"fractionControl={h.get('fractionControlsAreSmall')}/{h.get('fractionControlsTested')}"
+        )
+    if not music_symmetric:
+        m = report["corpus"].get("musicMutuality") or {}
+        lane_failures.append(
+            "the music relation is no longer symmetric: "
+            f"mutual={m.get('mutualEdges')} askable={m.get('edgesBetweenScannedObjects')} "
+            f"kinds={m.get('mutualEdgeKinds')}"
+        )
+    if not music_scope:
+        m = report["corpus"].get("musicMutuality") or {}
+        w = report["corpus"].get("musicReferences") or {}
+        lane_failures.append(
+            "music references no longer resolve inside their own bank: "
+            f"sameBank={m.get('sameBankEdges')} packageWide={w.get('references')}"
         )
     if not hierarchy_direction:
         h = report["corpus"].get("sharedHierarchy") or {}

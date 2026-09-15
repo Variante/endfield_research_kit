@@ -18,6 +18,9 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_type11_body_frame_covers_most_of_its_corpus,
     TYPE11_HEADER_SCALARS,
     _read_hierarchy_census,
+    _read_music_mutuality_census,
+    music_references_resolve_inside_their_own_bank,
+    the_music_relation_is_symmetric,
     _read_type11_header_census,
     almost_every_bank_contributes_one_tree,
     numeric_type_12_is_a_leaf,
@@ -3458,3 +3461,67 @@ class HierarchyDirectionTests(unittest.TestCase):
         self.assertFalse(the_hierarchy_runs_opposite_to_the_main_reference_graph(
             self.census(parentsWithSeveralChildren=999)
         ))
+
+
+class MusicMutualityTests(unittest.TestCase):
+    """The music relation is the format's third kind: symmetric."""
+
+    def census(self, **overrides):
+        base = {
+            "sameBankEdges": 24430, "edgesIntoUnscannedObjects": 4598,
+            "edgesBetweenScannedObjects": 19832, "mutualEdges": 14652,
+            "mutualEdgeKinds": {
+                "type0A_with_type0C": 588, "type0A_with_type0D": 3570,
+                "type0C_with_type0A": 588, "type0C_with_type0C": 1474,
+                "type0C_with_type0D": 2431, "type0D_with_type0A": 3570,
+                "type0D_with_type0C": 2431,
+            },
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_music_relation_is_symmetric(self.census()))
+        self.assertTrue(music_references_resolve_inside_their_own_bank(
+            self.census(), {"references": 24515}
+        ))
+
+    def test_a_one_way_relation_fails(self) -> None:
+        # That would make it a hierarchy like the format's other two relations, and
+        # the reading that these edges cannot be parenthood would need re-arguing.
+        self.assertFalse(the_music_relation_is_symmetric(
+            self.census(mutualEdges=200)
+        ))
+
+    def test_unaskable_edges_are_not_counted_against_the_rate(self) -> None:
+        # An edge into an unscanned object cannot carry a reverse edge, so counting
+        # it as one-way would mix "not mutual" with "not askable".
+        c = self.census()
+        self.assertEqual(
+            c["edgesIntoUnscannedObjects"] + c["edgesBetweenScannedObjects"],
+            c["sameBankEdges"],
+        )
+        self.assertTrue(the_music_relation_is_symmetric(c))
+
+    def test_mutuality_confined_to_one_type_pair_fails(self) -> None:
+        self.assertFalse(the_music_relation_is_symmetric(
+            self.census(mutualEdgeKinds={"type0A_with_type0D": 14652})
+        ))
+
+    def test_an_empty_census_fails(self) -> None:
+        self.assertFalse(the_music_relation_is_symmetric({}))
+        self.assertFalse(the_music_relation_is_symmetric(
+            self.census(edgesBetweenScannedObjects=0, mutualEdges=0)
+        ))
+
+    def test_references_leaving_the_bank_fail_the_closure(self) -> None:
+        self.assertFalse(music_references_resolve_inside_their_own_bank(
+            self.census(sameBankEdges=12000), {"references": 24515}
+        ))
+        self.assertFalse(music_references_resolve_inside_their_own_bank({}, {}))
+
+    def test_the_reader_rejects_counts_that_do_not_partition(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_music_mutuality_census(self.census(sameBankEdges=99), "pkg")
+        with self.assertRaises(ValueError):
+            _read_music_mutuality_census(self.census(mutualEdges=99999), "pkg")
