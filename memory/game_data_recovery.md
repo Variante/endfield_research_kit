@@ -2128,6 +2128,17 @@ Stable conclusions:
 - The secondary distances are 4 apart (-69, -73, -77), so an optional 4-byte field
   shifts the anchor -- the same kind of optional field `0x0D`'s lengths and `0x0B`'s
   entry widths both show.
+- **Conditioning on the anchor makes the tail legible.** Restricted to the 3,419
+  `0x0A` bodies with exactly one `0x0B` reference and it at -69, **21 of the last 69
+  byte positions are constant** -- against **6 of 101** over the unconditioned
+  population. Constants include the word `0x5BBBD648` at -13, `0x00000002` at -30,
+  `0x0298DF12` at -26, `0x02` at -23 and -30, and zero runs at -27..-29, -39..-42,
+  -48..-49.
+- The varying positions in that window fall in runs of **8 and 4 bytes** (-2..-9,
+  -15..-22, -31..-38, -43..-46), i.e. whole 32-bit fields. So the region from the
+  anchor to the end looks like a fixed record with `u32` slots, and that is where a
+  `0x0A` framing attempt should start -- backwards from the end, conditioned on the
+  anchor, never forwards from the head.
 - **The two edges that looked the same are eliminated.** `0x0D`->`0x0C` has an edge
   total of exactly 2,431 -- the `0x0D` body count, which is what made it look like a
   bijection -- and reaches **578 of 742** objects, 382 of them repeatedly.
