@@ -9,6 +9,7 @@ from scripts.audio_semantics.hirc_named_reach import (
     the_stmg_tail_run_is_located_by_its_count,
     the_stmg_section_closes_byte_exactly,
     init_from_audit,
+    the_envs_curves_carry_interpolation_codes,
     the_init_table_names_the_plugins_the_records_use,
     the_unparsed_sections_name_only_buses,
     music_reach_from_audit,
@@ -651,3 +652,43 @@ class InitPluginTableTests(unittest.TestCase):
         self.assertEqual(out["sourceRecordsNamingAPlugin"], 833)
         self.assertEqual(out["pluginsUsed"], {"AkSilenceGenerator": 833})
         self.assertEqual(out["pluginIdsNotInTheTable"], {"00040001": 100})
+
+
+class EnvsCurveTests(unittest.TestCase):
+    """Closure found three shapes for ENVS; content picked one."""
+
+    MEASURED = {
+        "sections": 1, "sectionBytes": 216, "sectionsNotClosing": 0,
+        "sectionsFramed": 1, "curves": 6, "points": 16, "codesInRange": 16,
+        "floatsBounded": 16, "curvesWithRisingX": 6,
+    }
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(
+            the_envs_curves_carry_interpolation_codes(self.MEASURED))
+
+    def test_a_code_outside_zero_to_nine_fails(self) -> None:
+        # The test that separated this shape from the 18-byte rival, which put 3 of
+        # 10 codes in range. Closure alone could not tell them apart.
+        self.assertFalse(the_envs_curves_carry_interpolation_codes(
+            dict(self.MEASURED, codesInRange=15)))
+
+    def test_a_curve_whose_x_goes_backwards_fails(self) -> None:
+        self.assertFalse(the_envs_curves_carry_interpolation_codes(
+            dict(self.MEASURED, curvesWithRisingX=5)))
+
+    def test_an_unbounded_float_fails(self) -> None:
+        self.assertFalse(the_envs_curves_carry_interpolation_codes(
+            dict(self.MEASURED, floatsBounded=15)))
+
+    def test_a_section_that_does_not_close_fails(self) -> None:
+        self.assertFalse(the_envs_curves_carry_interpolation_codes(
+            dict(self.MEASURED, sectionsFramed=0, sectionsNotClosing=1,
+                 curves=0, points=0, codesInRange=0, floatsBounded=0,
+                 curvesWithRisingX=0)))
+
+    def test_an_empty_census_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_envs_curves_carry_interpolation_codes({}))
+        self.assertFalse(the_envs_curves_carry_interpolation_codes(None))
+        self.assertFalse(the_envs_curves_carry_interpolation_codes(
+            dict(self.MEASURED, curves=0, points=0)))

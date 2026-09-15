@@ -4019,6 +4019,44 @@ count x entry:  u32, u32, u8 zero, u32 records, 3 zero bytes   (13 bytes)
   discriminated against eleven rivals; the trailing run by a backward count, unique
   over every length from 1 to 480; the middle by exhaustion plus closure.
 
+#### `ENVS` is a run of curves over the SAME point record `0x0B` uses
+
+```
+(repeat until the section ends)
+u8, u8, u8 count, u8
+count x point:  f32 x, f32 y, u32 interpolation
+```
+
+- ENVS has **no count of its own** -- the run ends when the bytes do -- so byte-exact
+  closure is what makes the walk a frame rather than a scan. **Three** shapes close it
+  with every curve non-empty, and the content separated them:
+
+  | shape | codes 0..9 | curves with rising x |
+  | --- | --- | --- |
+  | **head 4, count at `+2`, 12-byte point** | **16 of 16** | **6 of 6** |
+  | head 12, count at `+2`, 18-byte record | 3 of 10 | 1 of 3 |
+
+  *Closure found three candidates; content picked one.* The third ran off the end of
+  the section, which is its own rejection.
+- 6 curves, 16 points; codes 4 (x8), 0, 1, 2 (x2 each), 6 and 7. Same vocabulary as
+  numeric type `0x0B`'s element runs.
+- **This is the second record the format shares between two places**, after the
+  14-byte source record that types `0x02` and `0x0B` share. The 12-byte
+  `(x, y, interpolation)` point appears in `ENVS` curves and in `0x0B` element runs.
+
+#### Every non-HIRC section of the bank format is now framed
+
+| tag | instances | bytes | framed |
+| --- | --- | --- | --- |
+| `BKHD` | 20,873 | 834,940 | version field |
+| `HIRC` | 20,873 | 26,995,526 | 10 types closed, `0x0B` at 3,937/4,325 |
+| `DIDX` | 1 | 84 | 7 x 12 media entries |
+| `DATA` | 1 | 5,913,232 | addressed by `DIDX` |
+| `STMG` | 1 | 10,118 | **10,118 byte-exact** |
+| `INIT` | 1 | 347 | **347 byte-exact** |
+| `ENVS` | 1 | 216 | **216 byte-exact** |
+| `PLAT` | 1 | 8 | **`Windows`** |
+
 #### `INIT` is a plugin NAME table, and it names the plugins the records use
 
 ```

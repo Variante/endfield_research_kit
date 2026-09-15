@@ -599,6 +599,53 @@ def the_init_table_names_the_plugins_the_records_use(init: dict[str, Any]) -> bo
     return True
 
 
+ENVS_SCALARS = (
+    "sections", "sectionBytes", "sectionsNotClosing", "sectionsFramed",
+    "curves", "points", "codesInRange", "floatsBounded", "curvesWithRisingX",
+)
+
+
+def envs_from_audit(audit: dict[str, Any]) -> dict[str, Any]:
+    return _sum_census(audit, "envs", ENVS_SCALARS, ("interpolationCodes",))
+
+
+def the_envs_curves_carry_interpolation_codes(envs: dict[str, Any]) -> bool:
+    """ENVS is a run of curves over the SAME 12-byte point numeric type 0x0B carries.
+
+    The section has no count of its own -- the run ends when the bytes do -- so
+    byte-exact closure is what makes the walk a frame rather than a scan. Three shapes
+    close it with every curve non-empty, and the content separates them:
+
+    | shape | codes 0..9 | curves with rising x |
+    | --- | --- | --- |
+    | head 4, count at +2, 12-byte point | **16 of 16** | **6 of 6** |
+    | head 12, count at +2, 18-byte record | 3 of 10 | 1 of 3 |
+
+    *Closure found three candidates; content picked one.* The surviving point is the
+    same `f32 x, f32 y, u32 interpolation` record that numeric type 0x0B's element runs
+    carry -- the second record this format shares between two places, after the 14-byte
+    source record that types 0x02 and 0x0B share.
+    """
+    if not isinstance(envs, dict):
+        return False
+    sections = int(envs.get("sections") or 0)
+    framed = int(envs.get("sectionsFramed") or 0)
+    if sections <= 0 or framed != sections:
+        return False
+    if int(envs.get("sectionsNotClosing") or 0) != 0:
+        return False
+    points = int(envs.get("points") or 0)
+    curves = int(envs.get("curves") or 0)
+    if points <= 0 or curves <= 0:
+        return False
+    # The two content tests that separated this reading from its rivals.
+    if int(envs.get("codesInRange") or 0) != points:
+        return False
+    if int(envs.get("floatsBounded") or 0) != points:
+        return False
+    return int(envs.get("curvesWithRisingX") or 0) == curves
+
+
 def the_unparsed_sections_name_only_buses(words: dict[str, Any]) -> bool:
     """The sections nothing parses reference buses, and no music object at all.
 
@@ -1000,6 +1047,7 @@ def run(
     stmg = stmg_from_audit(audit)
     stmg_words = stmg_words_from_audit(audit)
     init = init_from_audit(audit)
+    envs = envs_from_audit(audit)
     if not media:
         problems.append("the audit declares no media ids, so the media join cannot be checked")
 
@@ -1118,6 +1166,14 @@ def run(
             f"marker={stmg.get('entryRecordsCarryingTheMarker')}"
             f"/{stmg.get('entryRecords')}"
         )
+    if not the_envs_curves_carry_interpolation_codes(envs):
+        problems.append(
+            "the ENVS curves no longer close or no longer carry interpolation codes: "
+            f"framed={envs.get('sectionsFramed')}/{envs.get('sections')} "
+            f"curves={envs.get('curves')} points={envs.get('points')} "
+            f"codes={envs.get('codesInRange')} bounded={envs.get('floatsBounded')} "
+            f"rising={envs.get('curvesWithRisingX')}"
+        )
     if not the_init_table_names_the_plugins_the_records_use(init):
         problems.append(
             "the INIT plugin table no longer closes or no longer names the plugins "
@@ -1188,6 +1244,7 @@ def run(
         "stmg": stmg,
         "unparsedSectionWords": stmg_words,
         "initPluginTable": init,
+        "envsCurves": envs,
         "mediaSummary": {
             "declaredMediaIds": len(media),
             "identifiersReachingMedia": sum(1 for v in media_reached.values() if v),
