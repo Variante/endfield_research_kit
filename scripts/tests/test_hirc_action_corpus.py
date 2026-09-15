@@ -19,6 +19,8 @@ from scripts.audio_semantics.hirc_action_corpus import (
     type11_bodies_share_one_terminator,
     type08_bodies_are_exact_or_named,
     type08_tail_records_are_located_by_a_unique_count,
+    type08_tail_head_names_one_object_type,
+    _read_type08_tail_word_census,
     _read_type08_tail_census,
     _read_type08_body_frame,
     type11_tail_entries_are_counted,
@@ -257,6 +259,18 @@ def valid_action_fixture():
         "unexplainedHeadBytes": 15,
         "recordCountCounts": {"records_2": 1},
         "thirdFieldCounts": {"code_4": 1, "code_9": 1},
+        "headsOfTheObservedWidth": 1,
+        "headIsNotTheObservedWidth": 0,
+    }
+    type08_tail_words = {
+        "heads": 1,
+        "packagePopulation": 200,
+        "firstWordSameBank": 1,
+        "firstWordOtherBankInPackage": 0,
+        "firstWordOutsidePackage": 0,
+        "secondWordResolves": 0,
+        "firstWordTargetTypeCounts": {"type12": 1},
+        "secondWordTargetTypeCounts": {},
     }
     type11_sources = {
         "bodies": 2,
@@ -436,6 +450,7 @@ def valid_action_fixture():
                     "hircType08Head": copy.deepcopy(type08_head),
                     "hircType08BodyFrame": copy.deepcopy(type08_body),
                     "hircType08Tail": copy.deepcopy(type08_tail),
+                    "hircType08TailWords": copy.deepcopy(type08_tail_words),
                     "hircType17": copy.deepcopy(type17_bodies),
                     "hircType09": copy.deepcopy(type09_bodies),
                     "hircType03Targets": copy.deepcopy(type03_targets),
@@ -1537,6 +1552,45 @@ class HircActionCorpusTests(unittest.TestCase):
             )
         with self.assertRaisesRegex(ValueError, "more terminators than bodies"):
             _read_type11_source_census({**census, "endsWithTerminator": 9}, "unit")
+
+    def test_the_type08_tail_head_word_must_beat_its_own_control(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        words = result["type08TailHeadWords"]
+        self.assertEqual(words["firstWordTargetTypeCounts"], {"type12": 1})
+        self.assertTrue(type08_tail_head_names_one_object_type(words))
+
+        # The control is the whole test. A 32-bit value read at an arbitrary offset
+        # would resolve at the same rate as the field under test, so the control
+        # resolving even once means the hits prove nothing.
+        self.assertFalse(
+            type08_tail_head_names_one_object_type({**words, "secondWordResolves": 1})
+        )
+        # No resolution at all is not evidence of a reference.
+        self.assertFalse(
+            type08_tail_head_names_one_object_type(
+                {**words, "firstWordSameBank": 0, "firstWordOutsidePackage": 1,
+                 "firstWordTargetTypeCounts": {}}
+            )
+        )
+        # A second target type would be a wider claim than this one, so it must fail
+        # rather than be quietly absorbed.
+        self.assertFalse(
+            type08_tail_head_names_one_object_type(
+                {**words, "firstWordTargetTypeCounts": {"type12": 1, "type02": 1}}
+            )
+        )
+        self.assertFalse(type08_tail_head_names_one_object_type({**words, "heads": 0}))
+
+    def test_a_type08_tail_word_census_that_loses_a_word_is_refused(self) -> None:
+        _, _, _, audio_audit = valid_action_fixture()
+        census = audio_audit["rows"][0]["package"]["hircType08TailWords"]
+        with self.assertRaisesRegex(ValueError, "do not partition its heads"):
+            _read_type08_tail_word_census({**census, "heads": 4}, "unit")
+        with self.assertRaisesRegex(ValueError, "do not cover its resolved words"):
+            _read_type08_tail_word_census({**census, "firstWordTargetTypeCounts": {}}, "unit")
+        with self.assertRaisesRegex(ValueError, "do not cover its resolved controls"):
+            _read_type08_tail_word_census({**census, "secondWordResolves": 2}, "unit")
 
     def test_the_type08_tail_run_must_be_located_unambiguously(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

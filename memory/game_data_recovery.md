@@ -1958,10 +1958,22 @@ Stable conclusions:
   reads as a float and takes values like -180, -96, -75, -48, -36, -18, 0, 0.6, 1,
   75, 100 and 180 -- recorded as an observation, not a claim; nothing establishes
   what any of them measures.
-- **1,832 bytes sit between the entry run and those records and are unexplained.**
-  A 15-byte head shape recurs there (`00 <a> 00 <u32> 00 <b> 00 <u32> 02`) but it
-  does not hold across all 40 tails, so it is deliberately not in the reader. That
-  head is where the next attempt starts.
+- **The 15-byte head's first word is a reference, and it names a numeric type
+  `0x12` object.** 13 of the 27 located tails have a head of that width. Its word at
+  offset 3 resolves to a same-bank object 5 times; the other 8 name objects the
+  package does not ship, which is the same pattern type `0x03` targets show. The
+  **control** -- the word at offset 10 of the same head, classified identically --
+  resolves **zero** times. Object population 213,138, so chance resolutions across
+  13 draws are expected at 0.000645; observing 5 settles it. Every resolved target
+  is type `0x12`, and the gate fails rather than widening if a second type appears.
+- Two readings of those words are **eliminated**. They are not names: 0 of 26 match
+  an FNV-1 hash of any of the 49,324 distinct `global-metadata.dat` string literals.
+  And the word at offset 10 is not a reference at all -- it is distinct in every
+  body and resolves nowhere.
+- What remains unexplained in the tail: the 14 located tails whose head is wider
+  than 15 bytes, and the bytes of the 15-byte head other than its first word. That
+  is where the next attempt starts -- and the `0x12` link says to attack type `0x12`
+  alongside it rather than separately.
 - **A rule that looked right and is withdrawn.** Bodies whose leading reference is
   null appeared to carry an extra 32-bit word before the property count. Adding
   that rule changes the exact count by **zero**, and not one of the four

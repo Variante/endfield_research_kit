@@ -1665,6 +1665,9 @@ def aggregate_current_hirc_actions(
     type08_tail_totals: Counter[str] = Counter()
     type08_tail_counts: Counter[str] = Counter()
     type08_tail_codes: Counter[str] = Counter()
+    type08_word_totals: Counter[str] = Counter()
+    type08_word_targets: Counter[str] = Counter()
+    type08_word_controls: Counter[str] = Counter()
     type08_body_failures: Counter[str] = Counter()
     type08_body_unsupported: Counter[str] = Counter()
     type11_tail_counts: Counter[str] = Counter()
@@ -1772,6 +1775,18 @@ def aggregate_current_hirc_actions(
             type08_tail_totals[key] += package_type08_tail[key]
         type08_tail_counts.update(package_type08_tail["recordCountCounts"])
         type08_tail_codes.update(package_type08_tail["thirdFieldCounts"])
+        package_type08_words = _read_type08_tail_word_census(
+            package.get("hircType08TailWords"), package_label
+        )
+        for key in TYPE08_TAIL_WORD_SCALARS:
+            if key == "packagePopulation":
+                type08_word_totals[key] = max(
+                    type08_word_totals[key], package_type08_words[key]
+                )
+                continue
+            type08_word_totals[key] += package_type08_words[key]
+        type08_word_targets.update(package_type08_words["firstWordTargetTypeCounts"])
+        type08_word_controls.update(package_type08_words["secondWordTargetTypeCounts"])
         type08_body_unsupported.update(package_type08_body["unsupportedCategories"])
         type11_tail_counts.update(package_type11["tailEntryCountCounts"])
         type11_lead_words.update(package_type11["firstTailEntryLeadingWordCounts"])
@@ -2176,6 +2191,11 @@ def aggregate_current_hirc_actions(
         "type14BodyFrames": body_lanes["0x0E"].publish(),
         "type22BodyFrames": body_lanes["0x16"].publish(),
         "type08HeadWords": {key: int(type08_totals[key]) for key in TYPE08_HEAD_SCALARS},
+        "type08TailHeadWords": {
+            **{key: int(type08_word_totals[key]) for key in TYPE08_TAIL_WORD_SCALARS},
+            "firstWordTargetTypeCounts": dict(sorted(type08_word_targets.items())),
+            "secondWordTargetTypeCounts": dict(sorted(type08_word_controls.items())),
+        },
         "type08TailRecords": {
             **{key: int(type08_tail_totals[key]) for key in TYPE08_TAIL_SCALARS},
             "recordCountCounts": dict(sorted(type08_tail_counts.items())),
@@ -3089,12 +3109,95 @@ TYPE08_BODY_FIELDS = ("count", "exact", "unsupported", "failed", "ambiguous", "b
 TYPE08_TAIL_SCALARS = (
     "bodies", "notWalkable", "framedByTheReader", "tails", "noZeroWordAtTheEnd",
     "noCountBeforeTheRecords", "countIsAmbiguous", "tailsWithAUniqueCount",
-    "records", "unexplainedHeadBytes",
+    "records", "unexplainedHeadBytes", "headsOfTheObservedWidth",
+    "headIsNotTheObservedWidth",
 )
 # The third field of each tail record. Arbitrary bytes read at a wrong offset would
 # spread over the 32-bit range; these do not, which is what makes the alignment
 # evidence rather than arithmetic.
 TYPE08_TAIL_CODE_CEILING = 64
+
+
+TYPE08_TAIL_WORD_SCALARS = (
+    "heads", "packagePopulation", "firstWordSameBank", "firstWordOtherBankInPackage",
+    "firstWordOutsidePackage", "secondWordResolves",
+)
+
+
+def _read_type08_tail_word_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's classification of the type 0x08 tail-head words."""
+    if census is None:
+        return {key: 0 for key in TYPE08_TAIL_WORD_SCALARS} | {
+            "firstWordTargetTypeCounts": {}, "secondWordTargetTypeCounts": {},
+        }
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x08 tail-word census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in TYPE08_TAIL_WORD_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x08 tail-word census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x08 tail-word census has negative {key}: {label}")
+        out[key] = value
+    for key in ("firstWordTargetTypeCounts", "secondWordTargetTypeCounts"):
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"type 0x08 tail-word census has invalid {key}: {label}")
+        out[key] = {str(name): int(count) for name, count in raw.items()}
+    outcomes = (
+        out["firstWordSameBank"]
+        + out["firstWordOtherBankInPackage"]
+        + out["firstWordOutsidePackage"]
+    )
+    if outcomes != out["heads"]:
+        raise ValueError(f"type 0x08 tail-word outcomes do not partition its heads: {label}")
+    resolved = out["firstWordSameBank"] + out["firstWordOtherBankInPackage"]
+    if sum(out["firstWordTargetTypeCounts"].values()) != resolved:
+        raise ValueError(
+            f"type 0x08 tail-word target types do not cover its resolved words: {label}"
+        )
+    if sum(out["secondWordTargetTypeCounts"].values()) != out["secondWordResolves"]:
+        raise ValueError(
+            f"type 0x08 tail-word control types do not cover its resolved controls: {label}"
+        )
+    return out
+
+
+def type08_tail_head_names_one_object_type(corpus: dict[str, Any]) -> bool:
+    """The first word of the type 0x08 tail head is a reference, and it names one type.
+
+    Object ids are sparse against the 32-bit range, so the arithmetic is what decides
+    this rather than the hit rate. With a package population on the order of a
+    thousand and a few dozen draws, chance hits across the whole corpus are expected
+    far below one; any resolution at all is therefore informative, and several are
+    decisive.
+
+    The control is what makes it a test rather than a story. A second word sits at a
+    fixed offset in the same head and is classified the same way. If the first word's
+    hits came from reading a 32-bit value at an arbitrary place, the control would
+    resolve at the same rate -- so the control resolving even once fails this.
+
+    Resolved targets must also share a single numeric type. A reference that named
+    several would still be a reference, but the claim here is the narrower one, and
+    it must fail rather than be quietly widened.
+    """
+    heads = int(corpus.get("heads") or 0)
+    if heads <= 0:
+        return False
+    resolved = (
+        int(corpus.get("firstWordSameBank") or 0)
+        + int(corpus.get("firstWordOtherBankInPackage") or 0)
+    )
+    if resolved <= 0:
+        return False
+    if int(corpus.get("secondWordResolves") or 0):
+        return False
+    targets = corpus.get("firstWordTargetTypeCounts") or {}
+    if len(targets) != 1:
+        return False
+    return sum(int(value) for value in targets.values()) == resolved
 
 
 def _read_type08_tail_census(census: Any, label: str) -> dict[str, Any]:
@@ -3679,6 +3782,51 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             "nothing here establishes what any of them measures.",
         ]
 
+    words08 = report["corpus"].get("type08TailHeadWords") or {}
+    words08_lines = []
+    if words08.get("heads"):
+        resolved = (
+            int(words08["firstWordSameBank"]) + int(words08["firstWordOtherBankInPackage"])
+        )
+        population = int(words08["packagePopulation"])
+        expected = int(words08["heads"]) * population / 2 ** 32
+        words08_lines = [
+            "",
+            "### The tail head's first word is a reference to a numeric type `0x12` object",
+            "",
+            f"- Heads of the width where the words can be tested: {words08['heads']:,} "
+            f"(the other {report['corpus']['type08TailRecords']['headIsNotTheObservedWidth']:,} "
+            f"located tails are wider and are not read).",
+            f"- First word: resolves in the same bank {words08['firstWordSameBank']:,}, in "
+            f"another bank of the package {words08['firstWordOtherBankInPackage']:,}, "
+            f"outside the package {words08['firstWordOutsidePackage']:,}.",
+            f"- **Control**: the second word of the same head, classified identically, "
+            f"resolves {words08['secondWordResolves']:,} times.",
+            f"- Object population to hit: {population:,}, so chance resolutions across all "
+            f"{words08['heads']:,} draws are expected at **{expected:.6f}**. Observed: "
+            f"{resolved:,}.",
+            "",
+            "| Numeric type named | Words |",
+            "|---|---:|",
+            *(
+                f"| `{name}` | {count:,} |"
+                for name, count in sorted(
+                    (words08.get("firstWordTargetTypeCounts") or {}).items()
+                )
+            ),
+            "",
+            "Object ids are sparse against the 32-bit range, so the arithmetic decides "
+            "this rather than the hit rate: expecting well under one chance resolution "
+            "and observing several is decisive, and the words that do not resolve name "
+            "objects this package does not ship -- the same pattern numeric type `0x03` "
+            "targets already show. The control is what makes it a test: a 32-bit value "
+            "read at an arbitrary offset would resolve at the same rate, and this one "
+            "resolves never.",
+            "",
+            "Every resolved target is the same numeric type. That is the claim, and the "
+            "gate fails rather than widening it if a second type ever appears.",
+        ]
+
     sources11 = report["corpus"].get("type11SourceRecords") or {}
     known_plugins = report["corpus"].get("type02PluginIdCounts") or {}
     source_lines = []
@@ -3830,6 +3978,7 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             *head08_lines,
             *body08_lines,
             *tail08_lines,
+            *words08_lines,
             *source_lines,
             *head_lines,
             "",
@@ -4200,7 +4349,11 @@ def run_current_corpus_audit(
     type08_corpus = corpus["type08HeadWords"]
     type08_body_corpus = corpus["type08BodyFrames"]
     type08_tail_corpus = corpus["type08TailRecords"]
+    type08_word_corpus = corpus["type08TailHeadWords"]
     type08_closed = type08_head_words_are_null_or_resolve(type08_corpus)
+    type08_head_named = type08_tail_head_names_one_object_type(
+        report["corpus"].get("type08TailHeadWords") or {}
+    )
     type08_tail_located = type08_tail_records_are_located_by_a_unique_count(
         report["corpus"].get("type08TailRecords") or {}
     )
@@ -4220,6 +4373,7 @@ def run_current_corpus_audit(
         and type11_tail_counted
         and type08_body_named
         and type08_tail_located
+        and type08_head_named
         and type08_closed
         and type17_closed
         and type09_closed
@@ -4252,6 +4406,7 @@ def run_current_corpus_audit(
             "type08HeadWords": type08_corpus,
             "type08BodyFrames": type08_body_corpus,
             "type08TailRecords": type08_tail_corpus,
+            "type08TailHeadWords": type08_word_corpus,
             "type17Bodies": type17_corpus,
             "type09Bodies": type09_corpus,
             "type03Targets": t03_corpus,
@@ -4318,6 +4473,15 @@ def run_current_corpus_audit(
             f"bodies={type08_corpus['bodies']} resolved={type08_corpus['resolved']} "
             f"null={type08_corpus['null']} unresolved={type08_corpus['unresolved']} "
             f"tooShort={type08_corpus['tooShort']}"
+        )
+    if not type08_head_named:
+        words08 = report["corpus"].get("type08TailHeadWords") or {}
+        lane_failures.append(
+            "type 0x08 tail head does not name one object type: "
+            f"heads={words08.get('heads')} sameBank={words08.get('firstWordSameBank')} "
+            f"otherBank={words08.get('firstWordOtherBankInPackage')} "
+            f"control={words08.get('secondWordResolves')} "
+            f"targets={sorted(words08.get('firstWordTargetTypeCounts') or {})}"
         )
     if not type08_tail_located:
         tail08 = report["corpus"].get("type08TailRecords") or {}
