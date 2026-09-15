@@ -16,6 +16,9 @@ from scripts.audio_semantics.hirc_action_corpus import (
     type17_is_framed_except_the_tied_block,
     type08_head_words_are_null_or_resolve,
     type11_sources_share_the_type02_plugin_space,
+    type11_bodies_share_one_terminator,
+    type11_tail_entries_are_counted,
+    _read_type11_source_census,
     music_head_references_are_closed,
     _capture_cli_output_closure,
     _load_json_with_sha256,
@@ -236,6 +239,19 @@ def valid_action_fixture():
         "pluginIdCounts": {"plugin_00040001": 2, "plugin_00140001": 1},
         "streamTypeCounts": {"streamType_02": 3},
         "recordCountCounts": {"records_1": 1, "records_2": 1},
+        "endsWithTerminator": 2,
+        "terminatorCounts": {"end_00000064": 2},
+        "bodiesWithATail": 2,
+        "noTailAfterTheRun": 0,
+        "tailCountOutOfRange": 0,
+        "tailEntriesDeclared": 3,
+        "tailEntriesEchoed": 3,
+        "tailEchoesMatchTheCount": 2,
+        "tailEchoesExceedTheCount": 0,
+        "firstTailEntryNamesADeclaredSource": 2,
+        "firstTailEntryTooShort": 0,
+        "tailEntryCountCounts": {"tailEntries_1": 1, "tailEntries_2": 1},
+        "firstTailEntryLeadingWordCounts": {"lead_00000000": 2},
     }
     music_head = {
         "bodies": 4,
@@ -1447,6 +1463,105 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
         )
+
+    def test_every_type11_body_must_end_on_the_same_word(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        sources = result["type11SourceRecords"]
+        self.assertEqual(sources["endsWithTerminator"], sources["bodies"])
+        self.assertEqual(sources["terminatorCounts"], {"end_00000064": 2})
+        self.assertTrue(type11_bodies_share_one_terminator(sources))
+
+        # One body ending on a different word means the reader is looking at a
+        # different layout, so a majority is not enough -- the count must be exact.
+        self.assertFalse(
+            type11_bodies_share_one_terminator(
+                {**sources, "endsWithTerminator": 1,
+                 "terminatorCounts": {"end_00000064": 1, "end_00000000": 1}}
+            )
+        )
+        # A second word present alongside the terminator still breaks it, even if
+        # every body is somehow counted as terminated.
+        self.assertFalse(
+            type11_bodies_share_one_terminator(
+                {**sources, "terminatorCounts": {"end_00000064": 2, "end_00000001": 1}}
+            )
+        )
+        # An empty corpus must not satisfy the claim vacuously.
+        self.assertFalse(
+            type11_bodies_share_one_terminator(
+                {"bodies": 0, "endsWithTerminator": 0, "terminatorCounts": {}}
+            )
+        )
+
+    def test_a_type11_census_whose_terminators_miss_bodies_is_refused(self) -> None:
+        # Terminator counts that do not cover every body mean some body was walked
+        # without being classified, which would let an unread shape pass as closed.
+        _, _, _, audio_audit = valid_action_fixture()
+        census = audio_audit["rows"][0]["package"]["hircType11Sources"]
+        with self.assertRaisesRegex(ValueError, "do not cover every body"):
+            _read_type11_source_census(
+                {**census, "terminatorCounts": {"end_00000064": 1}}, "unit"
+            )
+        with self.assertRaisesRegex(ValueError, "more terminators than bodies"):
+            _read_type11_source_census({**census, "endsWithTerminator": 9}, "unit")
+
+    def test_the_type11_tail_count_must_be_carried_by_the_echoes(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        sources = result["type11SourceRecords"]
+        self.assertTrue(type11_tail_entries_are_counted(sources))
+
+        # More echoes than the count declares means the field is not a count, so a
+        # single such body has to break it.
+        self.assertFalse(
+            type11_tail_entries_are_counted({**sources, "tailEchoesExceedTheCount": 1})
+        )
+        # A body whose first entry does not name a declared source leaves the start
+        # of the run unfixed; that is the evidence the offset rests on.
+        self.assertFalse(
+            type11_tail_entries_are_counted(
+                {**sources, "firstTailEntryNamesADeclaredSource": 1}
+            )
+        )
+        self.assertFalse(
+            type11_tail_entries_are_counted({**sources, "firstTailEntryTooShort": 1})
+        )
+        self.assertFalse(
+            type11_tail_entries_are_counted({**sources, "tailCountOutOfRange": 1})
+        )
+        # The histogram has to account for every body with a tail, or some body was
+        # walked without being classified.
+        self.assertFalse(
+            type11_tail_entries_are_counted(
+                {**sources, "tailEntryCountCounts": {"tailEntries_1": 1}}
+            )
+        )
+        # Fewer echoes than declared is permitted -- later entries are variable-width
+        # so their ids need not land on a four-byte boundary -- and must not fail.
+        self.assertTrue(
+            type11_tail_entries_are_counted({**sources, "tailEntriesEchoed": 2})
+        )
+        # A corpus where every body declares zero entries proves nothing about where
+        # entries begin, so it must not pass vacuously.
+        self.assertFalse(
+            type11_tail_entries_are_counted(
+                {
+                    **sources,
+                    "tailEntryCountCounts": {"tailEntries_0": 2},
+                    "firstTailEntryNamesADeclaredSource": 0,
+                }
+            )
+        )
+        self.assertFalse(type11_tail_entries_are_counted({**sources, "bodiesWithATail": 0}))
+
+    def test_a_type11_census_that_echoes_more_than_it_declares_is_refused(self) -> None:
+        _, _, _, audio_audit = valid_action_fixture()
+        census = audio_audit["rows"][0]["package"]["hircType11Sources"]
+        with self.assertRaisesRegex(ValueError, "echoes more tail entries"):
+            _read_type11_source_census({**census, "tailEntriesEchoed": 99}, "unit")
+        with self.assertRaisesRegex(ValueError, "tail outcomes exceed the body count"):
+            _read_type11_source_census({**census, "noTailAfterTheRun": 99}, "unit")
 
     def test_type11_histograms_must_sum_to_the_record_total(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

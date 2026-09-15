@@ -611,8 +611,17 @@ object, never a non-null value naming nothing. `0x08` is not framed.
 It also gates numeric type `0x0B`'s head: a byte, a 32-bit record count, and that
 many fourteen-byte source records whose plug-in id must be one type `0x02` also
 uses. Both sides of that comparison are raw 32-bit ids produced by the same
-reader, so the check is like-for-like. Type `0x0B` is not framed -- only the
-counted run is read, and the rest of the body is untouched.
+reader, so the check is like-for-like.
+
+The `0x0B` body's outline is now gated end to end even though the body is still
+not framed: the source run, a 32-bit tail-entry count, that many **variable-width**
+entries, and a 32-bit terminator that every one of the 4,325 bodies carries. Two
+checks hold the outline up. The terminator gate is equality with the body count,
+not a rate. The tail gate requires that the first entry's second word name one of
+the body's own declared source ids -- sparse 32-bit values, so arbitrary bytes do
+not produce them -- that no body carry more echoes than it declares, and that the
+bodies declaring zero entries carry none. Nothing inside an entry past its first
+two words is read, so the entry widths remain unknown and `0x0B` has no lane.
 
 The reference-graph report also gates a narrower claim about numeric types `0x0A`,
 `0x0C` and `0x0D`, which are *not* framed: body byte 2 selects an offset (0 -> 9, nonzero

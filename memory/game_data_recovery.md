@@ -2024,13 +2024,32 @@ Stable conclusions:
   arbitrary bytes in that field and they would leave the set immediately. The
   records *after the first* are what actually test it -- 106 bodies declare 2 to 4
   records, contributing 230 such records, and every one landed in the set.
-- What is **not** established for `0x0B`, and must not be published as if it were.
-  After the record run comes a second counted structure of 88-byte entries whose
-  second word repeats one of the body's own source ids. That framing consumes
-  2,221 of 4,325 bodies exactly to EOF, but 248 entries name something other than
-  a declared source, and 2,010 bodies still have a tail afterwards. The node frame
-  does not explain that tail either: walking it from the end of the entries
-  reaches EOF in 2 bodies out of 4,325. So `0x0B` has no lane.
+- **Every `0x0B` body ends with the 32-bit word 100** -- 4,325 of 4,325, no other
+  word observed. Gated on equality with the body count, not a rate, because one
+  exception would mean the reader is looking at a different layout.
+- **After the record run comes a 32-bit entry count, that many variable-width
+  entries, then that terminator.** Counts run 0 to 8 (4,019 bodies declare one).
+  The first entry's leading word is 0 in 4,295 bodies and 1 in 26, and its *second*
+  word is one of the body's own declared source ids in all 4,321 bodies that
+  declare an entry -- the four declaring zero carry no echo, which is the control.
+  What fixes the entry start is that **no other offset in a 48-byte window echoes
+  a source id even once**; source ids are sparse 32-bit values, so this is not
+  something arbitrary bytes produce. No body carries more echoes than it declares
+  (4,261 match exactly, 64 carry fewer because later entries, being
+  variable-width, do not land on four-byte boundaries).
+- **Retraction.** The earlier reading of this tail as fixed 88-byte entries is
+  withdrawn. It called 2,221 bodies exact because the run finished at EOF -- which
+  it could only do by swallowing the terminator. The 88 was the 4-byte count plus
+  the *modal* 84-byte entry, not a stride; entry widths are 84, 89, 120, 132, 168,
+  137, ... The "248 entries name something other than a declared source" figure
+  came from that same wrong stride and is withdrawn with it.
+- Still **not** established for `0x0B`: anything inside an entry past its first two
+  words, and therefore the entry widths themselves. Eleven readings of the entry
+  interior have been eliminated. The latest: the entry does not end with a node
+  frame (768 of 4,019 single-entry bodies admit no closing frame at any offset),
+  and the 53 + 12k head widths that *do* close are a fit rather than a layout --
+  no field in the first 53 bytes carries k (best agreement 34 of 834 bodies with
+  k > 0, which is noise). So `0x0B` still has no lane.
 - Type `0x0B` carries **no** same-bank object references at all -- it is pointed to
   by `0x0A`, and points at media instead. The corpus has only 7 DIDX entries in
   total, so its media is streamed rather than embedded, and `0x0B`'s source ids

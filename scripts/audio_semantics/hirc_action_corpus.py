@@ -1660,6 +1660,9 @@ def aggregate_current_hirc_actions(
     type08_totals: Counter[str] = Counter()
     type11_totals: Counter[str] = Counter()
     type11_plugins: Counter[str] = Counter()
+    type11_terminators: Counter[str] = Counter()
+    type11_tail_counts: Counter[str] = Counter()
+    type11_lead_words: Counter[str] = Counter()
     type11_streams: Counter[str] = Counter()
     type11_record_counts: Counter[str] = Counter()
     music_head_totals: Counter[str] = Counter()
@@ -1749,6 +1752,9 @@ def aggregate_current_hirc_actions(
         type11_plugins.update(package_type11["pluginIdCounts"])
         type11_streams.update(package_type11["streamTypeCounts"])
         type11_record_counts.update(package_type11["recordCountCounts"])
+        type11_terminators.update(package_type11["terminatorCounts"])
+        type11_tail_counts.update(package_type11["tailEntryCountCounts"])
+        type11_lead_words.update(package_type11["firstTailEntryLeadingWordCounts"])
 
         package_music_head = _read_music_head_census(
             package.get("hircMusicHeadReferences"), package_label
@@ -2178,6 +2184,9 @@ def aggregate_current_hirc_actions(
             "pluginIdCounts": dict(sorted(type11_plugins.items())),
             "streamTypeCounts": dict(sorted(type11_streams.items())),
             "recordCountCounts": dict(sorted(type11_record_counts.items())),
+            "terminatorCounts": dict(sorted(type11_terminators.items())),
+            "tailEntryCountCounts": dict(sorted(type11_tail_counts.items())),
+            "firstTailEntryLeadingWordCounts": dict(sorted(type11_lead_words.items())),
         },
         "musicHeadReferences": {
             **{key: int(music_head_totals[key]) for key in MUSIC_HEAD_SCALARS},
@@ -3033,14 +3042,24 @@ def type08_head_words_are_null_or_resolve(corpus: dict[str, Any]) -> bool:
     )
 
 
-TYPE11_SOURCE_SCALARS = ("bodies", "bodiesWithRecords", "records", "recordsOutOfRange", "tooShort")
+TYPE11_SOURCE_SCALARS = (
+    "bodies", "bodiesWithRecords", "records", "recordsOutOfRange", "tooShort",
+    "endsWithTerminator", "bodiesWithATail", "noTailAfterTheRun",
+    "tailCountOutOfRange", "tailEntriesDeclared", "tailEntriesEchoed",
+    "tailEchoesMatchTheCount", "tailEchoesExceedTheCount",
+    "firstTailEntryNamesADeclaredSource", "firstTailEntryTooShort",
+)
+# Every numeric type 0x0B body observed ends with this 32-bit word.
+TYPE11_TERMINATOR_KEY = "end_00000064"
 
 
 def _read_type11_source_census(census: Any, label: str) -> dict[str, Any]:
     """Validate one package's or bank's type 0x0B source-record census."""
     if census is None:
         return {key: 0 for key in TYPE11_SOURCE_SCALARS} | {
-            "pluginIdCounts": {}, "streamTypeCounts": {}, "recordCountCounts": {}
+            "pluginIdCounts": {}, "streamTypeCounts": {}, "recordCountCounts": {},
+            "terminatorCounts": {}, "tailEntryCountCounts": {},
+            "firstTailEntryLeadingWordCounts": {},
         }
     if not isinstance(census, dict):
         raise ValueError(f"type 0x0B source census is not an object: {label}")
@@ -3053,11 +3072,30 @@ def _read_type11_source_census(census: Any, label: str) -> dict[str, Any]:
         if value < 0:
             raise ValueError(f"type 0x0B source census has negative {key}: {label}")
         out[key] = value
-    for key in ("pluginIdCounts", "streamTypeCounts", "recordCountCounts"):
+    for key in (
+        "pluginIdCounts", "streamTypeCounts", "recordCountCounts", "terminatorCounts",
+        "tailEntryCountCounts", "firstTailEntryLeadingWordCounts",
+    ):
         raw = census.get(key)
         if not isinstance(raw, dict):
             raise ValueError(f"type 0x0B source census has invalid {key}: {label}")
         out[key] = {str(name): int(count) for name, count in raw.items()}
+    if out["endsWithTerminator"] > out["bodies"]:
+        raise ValueError(
+            f"type 0x0B source census counts more terminators than bodies: {label}"
+        )
+    if out["tailEntriesEchoed"] > out["tailEntriesDeclared"]:
+        raise ValueError(
+            f"type 0x0B census echoes more tail entries than it declares: {label}"
+        )
+    if out["bodiesWithATail"] + out["noTailAfterTheRun"] + out["tailCountOutOfRange"] > out["bodies"]:
+        raise ValueError(
+            f"type 0x0B tail outcomes exceed the body count: {label}"
+        )
+    if sum(out["terminatorCounts"].values()) != out["bodies"]:
+        raise ValueError(
+            f"type 0x0B terminator counts do not cover every body: {label}"
+        )
     for key in ("pluginIdCounts", "streamTypeCounts"):
         if sum(out[key].values()) != out["records"]:
             raise ValueError(
@@ -3067,6 +3105,57 @@ def _read_type11_source_census(census: Any, label: str) -> dict[str, Any]:
     if out["bodiesWithRecords"] > out["bodies"]:
         raise ValueError(f"type 0x0B bodies with records exceed the body total: {label}")
     return out
+
+
+def type11_bodies_share_one_terminator(corpus: dict[str, Any]) -> bool:
+    """Every type 0x0B body must end with the same 32-bit word.
+
+    This is the only fixed landmark the type has: its interior is not framed, so a
+    body ending on a different word would mean the reader is looking at a
+    different layout entirely. One exception falsifies it, which is why the check
+    is equality against the body count rather than a rate.
+    """
+    bodies = int(corpus.get("bodies") or 0)
+    ends = int(corpus.get("endsWithTerminator") or 0)
+    counts = corpus.get("terminatorCounts") or {}
+    return bodies > 0 and ends == bodies and set(counts) == {TYPE11_TERMINATOR_KEY}
+
+
+def type11_tail_entries_are_counted(corpus: dict[str, Any]) -> bool:
+    """The word after type 0x0B's source run must be the tail's entry count.
+
+    The entries are variable-width, so the run cannot be walked and "it parsed" is
+    not available as evidence. What is available is that each entry's second word
+    echoes one of the body's own declared source ids -- sparse 32-bit values that
+    arbitrary bytes do not reproduce -- so a body declaring c entries must carry
+    exactly c echoes on four-byte boundaries.
+
+    Three things have to hold together, and each rules out a different way of being
+    wrong. No body may carry *more* echoes than it declares, because a count that
+    under-reports is not a count. Every body that declares at least one entry must
+    have a declared source id at +4 of the first entry, because that fixes where
+    entries begin. And the count must never fall outside its bound. Bodies with
+    fewer echoes than declared are permitted and reported: a later entry whose
+    source id does not land on a four-byte boundary relative to the first is a
+    consequence of the entries being variable-width, not a contradiction.
+    """
+    bodies = int(corpus.get("bodiesWithATail") or 0)
+    if bodies <= 0:
+        return False
+    if int(corpus.get("tailCountOutOfRange") or 0):
+        return False
+    if int(corpus.get("tailEchoesExceedTheCount") or 0):
+        return False
+    counts = corpus.get("tailEntryCountCounts") or {}
+    if sum(int(value) for value in counts.values()) != bodies:
+        return False
+    declaring = bodies - int(counts.get("tailEntries_0", 0) or 0)
+    if declaring <= 0:
+        return False
+    return (
+        int(corpus.get("firstTailEntryNamesADeclaredSource") or 0) == declaring
+        and int(corpus.get("firstTailEntryTooShort") or 0) == 0
+    )
 
 
 def type11_sources_share_the_type02_plugin_space(
@@ -3335,11 +3424,44 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             "field and they would leave the set immediately. Records after the first are "
             "what actually test the stride, and they are in the counts above.",
             "",
-            "This is **not** a frame for type `0x0B`. Only the counted run is read; what "
-            "follows it is untouched and unclaimed. The bytes after the run do continue "
-            "with a second counted structure whose entries repeat one of these source ids, "
-            "but 248 of those entries name something else, so it is not established and is "
-            "deliberately absent from this report.",
+            "### The tail after the run",
+            "",
+            f"- Every body ends on the same 32-bit word: {sources11['endsWithTerminator']:,} of "
+            f"{sources11['bodies']:,}, observed words "
+            f"{sorted(sources11.get('terminatorCounts') or {})}.",
+            f"- Between the run and that word sits a 32-bit entry count in "
+            f"{sources11['bodiesWithATail']:,} bodies; out of range "
+            f"{sources11['tailCountOutOfRange']:,}; no tail at all "
+            f"{sources11['noTailAfterTheRun']:,}.",
+            f"- Entries declared: {sources11['tailEntriesDeclared']:,}; echoing a declared "
+            f"source id on a four-byte boundary: {sources11['tailEntriesEchoed']:,}; bodies "
+            f"where the two agree exactly: {sources11['tailEchoesMatchTheCount']:,}; bodies "
+            f"carrying more echoes than they declare: "
+            f"{sources11['tailEchoesExceedTheCount']:,}.",
+            f"- First entry names one of the body's own declared sources at +4: "
+            f"{sources11['firstTailEntryNamesADeclaredSource']:,}.",
+            "",
+            "| Declared tail entries | Bodies |",
+            "|---|---:|",
+            *(
+                f"| `{name}` | {count:,} |"
+                for name, count in sorted((sources11.get("tailEntryCountCounts") or {}).items())
+            ),
+            "",
+            "After the source run comes a 32-bit entry count, that many entries, and then "
+            "the terminator. The entries are **variable-width**, so the run is not walked "
+            "and nothing inside an entry past its first two words is read here. What fixes "
+            "where the entries begin is that the second word of the first one echoes a "
+            "source id the same body declared -- across the corpus no other offset in a "
+            "48-byte window echoes at all, and the four bodies declaring zero entries carry "
+            "zero echoes. No body carries more echoes than it declares; the bodies carrying "
+            "fewer are multi-entry bodies whose later ids do not land on a four-byte "
+            "boundary, which is what variable-width entries produce.",
+            "",
+            "An earlier reading of this tail as a run of fixed 88-byte entries is "
+            "**retracted**: it counted bodies as exact because the run finished at EOF, "
+            "which it could only do by swallowing the terminator. The 88 bytes were the "
+            "count plus the modal 84-byte entry, not a stride.",
         ]
 
     head = report["corpus"].get("musicHeadReferences") or {}
@@ -3794,6 +3916,8 @@ def run_current_corpus_audit(
     type17_closed = type17_is_framed_except_the_tied_block(type17_corpus)
     type08_corpus = corpus["type08HeadWords"]
     type08_closed = type08_head_words_are_null_or_resolve(type08_corpus)
+    type11_terminator_closed = type11_bodies_share_one_terminator(type11_corpus)
+    type11_tail_counted = type11_tail_entries_are_counted(type11_corpus)
     type11_closed = type11_sources_share_the_type02_plugin_space(
         type11_corpus, corpus["type02SourcePrefixes"]["pluginIdCounts"]
     )
@@ -3801,6 +3925,8 @@ def run_current_corpus_audit(
         reference_graph_is_closed(reference_corpus)
         and music_head_closed
         and type11_closed
+        and type11_terminator_closed
+        and type11_tail_counted
         and type08_closed
         and type17_closed
         and type09_closed
@@ -3897,6 +4023,21 @@ def run_current_corpus_audit(
             f"bodies={type08_corpus['bodies']} resolved={type08_corpus['resolved']} "
             f"null={type08_corpus['null']} unresolved={type08_corpus['unresolved']} "
             f"tooShort={type08_corpus['tooShort']}"
+        )
+    if not type11_tail_counted:
+        lane_failures.append(
+            "type 0x0B tail entries are not counted: "
+            f"withTail={type11_corpus['bodiesWithATail']} "
+            f"outOfRange={type11_corpus['tailCountOutOfRange']} "
+            f"echoesExceed={type11_corpus['tailEchoesExceedTheCount']} "
+            f"firstNames={type11_corpus['firstTailEntryNamesADeclaredSource']} "
+            f"firstShort={type11_corpus['firstTailEntryTooShort']}"
+        )
+    if not type11_terminator_closed:
+        lane_failures.append(
+            "type 0x0B bodies do not share one terminator: "
+            f"bodies={type11_corpus['bodies']} ending={type11_corpus['endsWithTerminator']} "
+            f"words={sorted(type11_corpus.get('terminatorCounts') or {})}"
         )
     if not type11_closed:
         lane_failures.append(
