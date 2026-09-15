@@ -1946,6 +1946,15 @@ Stable conclusions:
   publishes a closed-form byte total and this type has none. Its gate forbids only
   what a partial framing must not do -- leave a body neither framed nor accounted
   for, report an ambiguous body, or pass with nothing framed at all.
+- **The remaining fences, and what is known about them.** `0x08`:
+  `word_after_the_middle_block_is_not_zero` 14, `tail_block_does_not_end_the_body` 9,
+  `range_tail_block_units` 6, `range_properties` 4. `0x12`:
+  `range_tail_block_units` 4.
+- The `range_tail_block_units` bodies declare **zero** units and then carry a
+  different structure: `00 00 00`, a count, a zero byte, and that many **3-byte**
+  entries whose first byte is an index running 0, 1, 2, ... (e.g. `05 00` then
+  `00 02 01 | 01 02 00 | 02 06 00 | 03 06 00 | 04 02 01`). What follows that run is
+  not read. Ten bodies across both types; that is where the next attempt starts.
 - **What the fence hides, censused rather than framed.** 40 bodies carry a tail
   after the entry run, and 27 of them end in a counted run of **twelve-byte
   records**: two 32-bit floats and a 32-bit code. The run is anchored from the
@@ -1963,12 +1972,22 @@ Stable conclusions:
   a 15-byte head, a record count, one byte, that many 12-byte records, and a zero
   `u16`. That took `0x08` from 96 to **109 of 161** exact and `0x12` from 213 to
   **245 of 251**.
-- The head, over all 45 instances of both types: `[0]`, `[2]` and `[7]` are zero and
-  `[1]` is 1 in **every** body of **both** types -- those four are checked. `[8]`,
-  `[9]` and `[14]` are constant *within* a type (`0x08` -> `02 00 02`, `0x12` ->
-  `04 31 00`) and are published as a selector rather than checked, because a corpus
-  where each type is homogeneous cannot tell "depends on the type" from "is whatever
-  this type happens to carry". Two 32-bit values sit at `[3]` and `[10]`.
+- **The "fifteen-byte head" was a one-unit block. The tail is a counted run of
+  units.** Layout: a zero byte, a **unit count**, a zero byte, then that many units,
+  then a zero `u16`. A unit is `u32, zero byte, two bytes, u32, one byte`, then its
+  own record count, one byte, and that many 12-byte records. Reading it this way took
+  `0x08` from 115 to **128 of 161** and `0x12` from 245 to **247 of 251**.
+- Why the old reading looked right: the unit count is 1 in every body that framed
+  under it, so the whole 15 bytes looked constant. *A single-element counted run is
+  indistinguishable from a fixed head -- find a body with two before believing a
+  head is fixed.*
+- This also settles the three bytes I had published as a per-type selector. They are
+  **per unit**, not per type: across the corpus they take `020002`, `060200`,
+  `060300`, `020402`, `020502`, `020100`, `022300`, `043100`. Publishing rather than
+  checking them is what kept that reading recoverable -- a check would have been
+  wrong and would have hidden it.
+- Only the bytes zero in every body of both types are checked (the prefix's `[0]` and
+  `[2]`, and each unit's `[4]`).
 - **The 15-byte head's first word is a reference, and it names a numeric type
   `0x12` object.** 13 of the 27 located tails have a head of that width. Its word at
   offset 3 resolves to a same-bank object 5 times; the other 8 name objects the
