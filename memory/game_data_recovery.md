@@ -2237,9 +2237,19 @@ Stable conclusions:
   the authored float; `+24..27` four bytes reading `04 04 <0|1> 00` -- only **5
   distinct** 32-bit values across the corpus, so a packed flag record and not a
   number; `+28` constant zero. Seven 32-bit fields and a byte.
-- That closes the region the 4-byte optional insertion was localized to. The
-  insertion has to displace one of those seven fields, and the two `u32`s at `+12`
-  and `+16` that are zero in 3,317 of 3,321 are the natural suspects.
+- **The 4-byte insertion sits immediately after the reference, before the float.**
+  Tracking two fields by their signatures across the two tail lengths pins it: the
+  never-whole float moves from `+8` to `+12` in **all 217** long-tail bodies, and the
+  authored float from `+20` to `+24` in **all 217**. The reference stays at `+0`. So
+  everything from `+8` onward shifts by exactly 4 and the extra field lands in the
+  `+4..+7` region.
+- That also rules out my own guess. I expected the insertion at `+12` or `+16`
+  because those are zero in 3,317 of 3,321 -- the shape an optional field usually
+  hides in. It is not there. **A field's being almost always zero says it could be
+  optional, not that it is**; tracking a field with a distinctive signature across
+  the two populations answers the question and a zero-rate does not.
+- `+4` is also the one field whose behaviour differs between the two: zero in 1,886
+  of 3,321 short tails and **never zero** in the 217 long ones.
 - **The tail's optional 4-byte field is localized, and it is not counted.** Aligning
   the 3,321 tail-69 bodies against the 217 tail-73 bodies: from the **end** their
   constant profiles agree at **every one of 69 positions**, so the longer tail is the
