@@ -2272,6 +2272,27 @@ apart by value and only the code separates them.
 *All three types carry this identically -- it is one class, reached from three jump-table
 arms.*
 
+##### `0x12`'s trio beside it -- same shapes, three precise differences
+
+| block | `0x02` / `0x05` / `0x09` | `0x12` |
+| --- | --- | --- |
+| `[+0x1f0]` | `u8 N`, `N` x byte, `N` x dword -> `+0x88` | **same shape**, different function |
+| `[+0x1f8]` | `u8` read, sets *or clears* bits 48-49 | **reads nothing**; ORs bits 48-49 **unconditionally** |
+| `[+0x200]` | `u8` flag -> bit 54, **then** `u8 B` | **no flag byte** -- the first byte *is* `B` |
+| entries | `B` x `{u8, u32, u8}`, stride 6, skip when the u32 is 0 | **identical**, same callee `0x1800dcf90` |
+
+***The entry block is now confirmed three times over.*** `0x1800ffb50` and `0x180108c30`
+are separately compiled functions that read the same six-byte record with the same 1/4/1
+cursor advance and the same skip-on-zero rule, and `[+0x1f0]`'s `N`/bytes/dwords block
+likewise appears in two independent implementations. *Three independent arrivals at one
+layout is about as far from a lucky fit as byte-level work gets.*
+
+**And the difference that matters for reading bodies:** `0x12` spends **one byte fewer**
+in `[+0x200]` than the family does, and **zero bytes** in `[+0x1f8]` where the family
+spends one. Two types whose blocks look interchangeable differ by exactly two bytes of
+payload -- *which is the kind of discrepancy that makes a corpus-derived stride look
+"nearly right" across a mixed population and never quite fit.*
+
 **`0x12`, `[vt+0x1f0]` -> `0x180108d10`.** The byte is a **count**, and what follows is a
 parallel-array block:
 
