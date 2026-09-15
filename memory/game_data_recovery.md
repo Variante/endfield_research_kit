@@ -6876,11 +6876,50 @@ extent per category is **38.98, 28.45, 97.74, 40.89, 38.05, 33.77, 31.51** -- ne
 increasing nor decreasing. *Re-testing was justified because the input had been shown
 unrepresentative, not because the answer was unwelcome.*
 
-**Two facts left for the next attempt.** `k = 2` is the outlier on every measure -- the
-largest population (3,305) and a median extent **2.5x** every other category. And the two
-varying low bits are not independent of the category: among populated descriptors the
-value `0xBF` occurs **only** with `k = 0`, 221 times in 2,956, with every other category
-exclusively `0xFF`.
+#### SOLVED: THE DESCRIPTOR IS A `StreamingComponentType` MASK
+
+The blocker was a **broken tool, not missing evidence**. `StreamingComponentType` had been
+excluded partly because it read as "non-sequential, max 128" -- a misread from taking one
+byte per enum value. Read at its declared width it is `ulong` and a **one-hot bitmask**:
+`Transform` = 1, `MeshFilter` = 2, `MeshRenderer` = 4, ... `HGGPUParticleSystem` = 2^42.
+
+Testing slot 7's first `u16` as a mask over it, across **12,932** non-empty descriptors:
+
+| check | result |
+| --- | --- |
+| every set bit is <= 14 | **12,932 / 12,932 = 100.00%** |
+| any bit 15 or above | **0** |
+| bits 0-5 all set (`Transform`..`MeshCollider`) | **12,932 / 12,932 = 100.00%** |
+| bits 8-15 one-hot | 12,859 / 12,932 = 99.44% |
+
+**And the one-hot bit names the category outright:**
+
+| k | bit | component | count |
+| --- | --- | --- | --- |
+| 0 | 8 | `TerrainCollider` | 2,956 |
+| 1 | 9 | `MultiCollider` | 1,980 |
+| 2 | 10 | **`HGDecalProjector`** | 3,305 |
+| 3 | 11 | `HLODGroup` | 2,250 |
+| 4 | 12 | `HGVolumetricLocalFog` | 1,536 |
+| 5 | 13 | `HGWaterRenderer` | 830 |
+| 6 | 14 | `HGEnvironmentVolume` | 2 |
+
+*Those are exactly the k-counts measured earlier, from a census that knew nothing of this
+enum.* The two varying low bits are **`SphereCollider`** (bit 6) and **`CapsuleCollider`**
+(bit 7): both present 12,638 times, capsule only 283, neither 11.
+
+***Every earlier observation now has a reason.*** `k = 2` was the outlier with the largest
+population and a median extent **2.5x** the rest -- it is `HGDecalProjector`, and a decal
+projector's bounds are large. The category looked "orthogonal to level content" because
+every level has decals, HLOD groups, fog and water. The range was seven because exactly
+seven component bits occur. `0xBF` appeared only with `k = 0` because a terrain-collider
+placement is the one that carries no sphere collider. And the `ECSEntityType` mask test
+failed against its controls because **it was the wrong enum, not the wrong idea**.
+
+**The lesson is about the tool.** This sat unsolved across several batches behind a
+one-byte read that silently produced a plausible-looking wrong answer. *A misread that
+returns garbage gets caught; a misread that returns a small tidy number gets believed* --
+and "max 128, non-sequential" was tidy enough to found an argument on.
 
 ***A degenerate fit, caught by fitting four rivals at once.*** `s4 == 24 + 24*n7` scores
 **100.00%** on the Streaming family, which reads like a decoded record stride -- until the
