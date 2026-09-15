@@ -13016,4 +13016,88 @@ class BuffActionsTests(unittest.TestCase):
         self.assertEqual(set(row['diagnostic']),{'source','offset','expected','actual','category'})
 
 
+class NativeD5D6ReaderTests(unittest.TestCase):
+    @staticmethod
+    def wire(tag, *, extended=False, header=4, boolean=0x80,
+             values=(0xFFFFFFFF, 0x80000000, 0x7FC00000)):
+        encoded_tag = b'\xfa' + struct.pack('<H', tag) if extended else bytes([tag])
+        return encoded_tag + bytes([header, boolean]) + struct.pack('<III', *values)
+
+    def test_d5_d6_member4_records_preserve_exact_ranges(self):
+        for tag in (0xD5, 0xD6):
+            for extended in (False, True):
+                with self.subTest(tag=tag, extended=extended):
+                    raw = self.wire(tag, extended=extended)
+                    width = 3 if extended else 1
+                    reader = Reader(raw, f'tag-{tag:02x}')
+                    reader.action(0)
+                    self.assertEqual(reader.pos, len(raw))
+                    self.assertEqual(reader.records, [{
+                        'start': 0, 'end': len(raw), 'kind': 'union', 'tag': tag,
+                    }])
+                    self.assertEqual([(row['start'], row['end'], row['kind'])
+                                      for row in reader.ranges], [
+                        (0, width, 'union-tag'),
+                        (width, width + 1, 'member-header'),
+                        (width + 1, width + 2, 'anonymous-nonzero-byte'),
+                        (width + 2, width + 6, 'anonymous-scalar32'),
+                        (width + 6, width + 10, 'anonymous-scalar32'),
+                        (width + 10, width + 14, 'anonymous-scalar32'),
+                    ])
+
+    def test_d5_d6_truncations_headers_limits_and_parent_tails(self):
+        for tag in (0xD5, 0xD6):
+            raw = self.wire(tag)
+            for cut in range(len(raw)):
+                reader = Reader(raw + b'\xff' * 8, f'tag-{tag:02x}-cut', limit=cut)
+                with self.subTest(tag=tag, cut=cut), self.assertRaises(FrameError) as caught:
+                    reader.action(0)
+                self.assertEqual(caught.exception.diagnostic['category'], 'truncated')
+                self.assertLessEqual(reader.pos, cut)
+                self.assertFalse(any(row.get('tag') == tag for row in reader.records))
+
+            bad_header = bytearray(raw)
+            bad_header[1] = 5
+            reader = Reader(bytes(bad_header), f'tag-{tag:02x}-bad-header')
+            with self.assertRaises(FrameError) as caught:
+                reader.action(0)
+            self.assertEqual(caught.exception.diagnostic['category'], 'member-count')
+            self.assertEqual(caught.exception.diagnostic['offset'], 1)
+            self.assertEqual(reader.pos, 1)
+
+        complete = sequence(self.wire(0xD5), self.wire(0xD6, extended=True))
+        reader = Reader(complete, 'd5-d6-parent')
+        reader.sequence()
+        self.assertEqual(reader.pos, len(complete))
+        self.assertEqual([(row['tag'], row['start'], row['end'])
+                          for row in reader.records if row['kind'] == 'union'], [
+            (0xD5, 5, 20), (0xD6, 20, 37),
+        ])
+        self.assertEqual(sequence_frame(complete)[-1]['end'], len(complete))
+        with self.assertRaises(FrameError) as caught:
+            sequence_frame(complete + b'\x00')
+        self.assertEqual(caught.exception.diagnostic['category'], 'trailing-byte')
+
+        for cut in range(len(complete)):
+            reader = Reader(complete + b'\xff' * 4, 'd5-d6-parent-limit', limit=cut)
+            with self.subTest(parent_cut=cut), self.assertRaises(FrameError) as caught:
+                reader.sequence()
+            self.assertIn(caught.exception.diagnostic['category'], ('truncated', 'count-bounds'))
+            self.assertLessEqual(reader.pos, cut)
+            self.assertFalse(any(row['kind'] == 'sequence' for row in reader.records))
+
+    def test_unknown_tag_stops_at_first_byte_and_keeps_parent_open(self):
+        raw = sequence(self.wire(0xD5), b'\xd7\x04' + bytes(13))
+        reader = Reader(raw, 'd5-then-unknown')
+        with self.assertRaises(Unsupported) as caught:
+            reader.sequence()
+        unknown_start = 5 + len(self.wire(0xD5))
+        self.assertEqual(caught.exception.diagnostic['category'], 'union-tag')
+        self.assertEqual(caught.exception.diagnostic['offset'], unknown_start)
+        self.assertEqual(caught.exception.diagnostic['actual'], 0xD7)
+        self.assertEqual(reader.pos, unknown_start)
+        self.assertEqual([row['tag'] for row in reader.records if row['kind'] == 'union'], [0xD5])
+        self.assertFalse(any(row['kind'] == 'sequence' for row in reader.records))
+
+
 if __name__=='__main__':unittest.main()

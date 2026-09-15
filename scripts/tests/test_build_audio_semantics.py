@@ -1,4 +1,5 @@
 import copy
+import gzip
 import json
 import tempfile
 import unittest
@@ -7414,6 +7415,73 @@ class AudioSemanticDataTests(unittest.TestCase):
             })
             self.assertNotIn("#0x0000007b", result["eventContexts"])
             self.assertNotIn("#0x0000006f", result["eventContexts"])
+
+    def test_mono_behaviour_raw_json_is_read_only_for_incomplete_index_rows(self) -> None:
+        """Rows whose own field projection is complete must not be re-read from raw JSON.
+
+        The published merged index carries the complete bounded field
+        projection per row.  Re-reading the raw JSON of a row that already
+        satisfies that contract cannot add an occurrence, so the raw read has
+        to stay scoped to rows that fail it (plus the content prefilter).
+        """
+
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            index_dir = root / "recovered/AnimeStudio-cli/StreamingAssets/object_index"
+            index_dir.mkdir(parents=True)
+            (index_dir / "summary.json").write_text(json.dumps({
+                "complete": True,
+                "counts": {"objects": 2},
+                "outputs": {"objects": {"path": "objects.jsonl.gz"}},
+            }), encoding="utf-8")
+            rows = [{
+                "recordType": "object",
+                "object": {"serializedFile": "CAB-complete", "pathId": 11},
+                "name": "CompleteComponent",
+                "fieldsStatus": "decoded",
+                "fields": [["$._spawnAudioEvent._id", "i", 0x11111111]],
+            }, {
+                "recordType": "object",
+                "object": {"serializedFile": "CAB-partial", "pathId": 22},
+                "name": "PartialComponent",
+                "fieldsStatus": "partial",
+                "fields": [["$.genericValue", "i", 7]],
+            }]
+            with gzip.open(index_dir / "objects.jsonl.gz", "wt", encoding="utf-8") as stream:
+                for row in rows:
+                    stream.write(json.dumps(row) + "\n")
+
+            mono_dir = root / "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/MonoBehaviour"
+            mono_dir.mkdir(parents=True)
+            # The complete row's raw file carries no audio field name, so the
+            # content prefilter cannot reach it either: the only way it gets
+            # opened is the per-object expansion this test pins down.
+            (mono_dir / "CompleteComponent_p000000000000000B.json").write_text(json.dumps({
+                "$animestudio": {"sourceFile": "CAB-complete", "pathId": 11},
+                "genericValue": 5,
+            }), encoding="utf-8")
+            (mono_dir / "PartialComponent_p0000000000000016.json").write_text(json.dumps({
+                "$animestudio": {"sourceFile": "CAB-partial", "pathId": 22},
+                "_onHitAudioEvent": {"_id": 0x22222222},
+            }), encoding="utf-8")
+
+            result = audio_semantics.collect_mono_behaviour_audio_id_contexts(
+                root,
+                {0x11111111, 0x22222222},
+            )
+
+            stats = result["stats"]
+            self.assertEqual(stats["prefilteredObjectRows"], 2)
+            # Only the row that failed the per-row field contract is read back.
+            self.assertEqual(stats["prefilteredRawJsonFiles"], 1)
+            self.assertEqual(stats["rawJsonFallbackOccurrences"], 1)
+            self.assertEqual(stats["eventContextOccurrences"], 2)
+            indexed = result["eventContexts"]["#0x11111111"][0]
+            self.assertEqual(indexed["componentName"], "CompleteComponent")
+            self.assertNotIn("rawJsonSource", indexed)
+            recovered = result["eventContexts"]["#0x22222222"][0]
+            self.assertEqual(recovered["authoredFieldRole"], "componentHitCallback")
+            self.assertIn("rawJsonSource", recovered)
 
     def test_mono_behaviour_audio_id_context_is_exposed_as_static_trigger(self) -> None:
         rows = audio_semantics._build_mono_behaviour_audio_id_trigger_contexts([{

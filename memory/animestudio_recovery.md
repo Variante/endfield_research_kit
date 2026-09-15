@@ -664,6 +664,18 @@ pass license and target-framework review for AnimeStudio's .NET targets.
   one-byte read alone do not prove source extent or exact EOF. Preserve candidate
   ambiguity until that connection exists, then continue the residual JsonData
   record queue rather than inferring field order from declarations.
+  Two gates decide this thread: an authenticated logical file joined to the
+  anonymous terminal start, and a proven element byte width at the `ListFormatter`
+  element dispatch. Static registration/MethodSpec joins that move neither gate do
+  not reduce the 2,621 ambiguous candidates. If continued tracing stops moving
+  either gate, treat the static-join route as at its ceiling and evaluate a bounded
+  runtime deserialization trace instead of extending the native inventory. A
+  final outer-deserializer cursor cannot select between terminal candidates that
+  both end at EOF; the witness must capture the cursor immediately before the
+  ambiguous terminal member on the same authenticated source buffer and reader,
+  joined to the actual Core.SkillData invocation. No maintained current-build
+  runtime profile currently closes that chain, so preserve both candidates until
+  such a witness exists.
 - `memorypack.buff_corpus` supplies the full current BuffData denominator from
   authenticated outer-ledger identities and decrypted stream bytes, using shared
   `memorypack.corpus_gate` provenance guards. It retains all filename-string

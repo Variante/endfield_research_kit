@@ -521,6 +521,19 @@ def build_dummy_dll_signature(path: Path | None) -> dict[str, Any] | None:
     return payload
 
 
+def compact_dummy_dll_signature(signature: dict[str, Any] | None) -> dict[str, Any] | None:
+    """The per-DLL list is provenance detail; identity is the fingerprint."""
+    if signature is None:
+        return None
+    return {key: signature.get(key) for key in ("dll_count", "bytes", "fingerprint")}
+
+
+def compact_source_fingerprint(fingerprint: dict[str, Any] | None) -> dict[str, Any] | None:
+    if fingerprint is None:
+        return None
+    return {key: fingerprint.get(key) for key in ("files", "bytes", "fingerprint")}
+
+
 def animestudio_asset_cache_path(output_root: Path) -> Path:
     return animestudio_work_dir(output_root) / "animestudio_asset_cache.json"
 
@@ -546,8 +559,15 @@ def load_animestudio_asset_cache(path: Path) -> dict[str, Any]:
         return default_animestudio_asset_cache()
     if not isinstance(data, dict):
         return default_animestudio_asset_cache()
+    if data.get("schema_version") != ANIMESTUDIO_ASSET_CACHE_SCHEMA_VERSION:
+        # Entries written under a different schema describe their keys with
+        # different rules; reusing them would decide reuse on stale evidence.
+        log(
+            f"AnimeStudio asset cache at {path} was written for schema "
+            f"{data.get('schema_version')!r}; starting with an empty cache"
+        )
+        return default_animestudio_asset_cache()
     payload = dict(data)
-    payload["schema_version"] = ANIMESTUDIO_ASSET_CACHE_SCHEMA_VERSION
     if not isinstance(payload.get("entries"), dict):
         payload["entries"] = {}
     return payload
@@ -973,7 +993,34 @@ def stable_asset_export_signature(item: dict[str, Any], plan: dict[str, Any]) ->
     }
 
 
+ASSET_CACHE_REQUIRED_PLAN_SIGNATURES = (
+    "cli_signature",
+    "dummy_dll_signature",
+    "source_fingerprint",
+)
+
+
+def asset_cache_plan_evidence_gap(plan: dict[str, Any]) -> str | None:
+    """Name the first cache-key input the plan cannot prove, if any.
+
+    `asset_entry_cache_key` hashes these three alongside the per-object Hash.
+    If one is absent the key stops distinguishing a rebuilt AnimeStudio CLI, a
+    different dummy-DLL set, or a changed source VFS, and a hit would no longer
+    be evidence that the output is current.
+    """
+    for name in ASSET_CACHE_REQUIRED_PLAN_SIGNATURES:
+        if not plan.get(name):
+            return name
+    return None
+
+
 def asset_entry_cache_key(entry: dict[str, Any], item: dict[str, Any], plan: dict[str, Any]) -> str:
+    gap = asset_cache_plan_evidence_gap(plan)
+    if gap is not None:
+        raise ValueError(
+            f"AnimeStudio asset cache key is missing its {gap}; refusing to "
+            "decide reuse without it"
+        )
     return stable_hash(
         {
             "asset": asset_entry_identity(entry),
@@ -2160,11 +2207,15 @@ def plan_animestudio_stage(
     output_root: Path,
     stage: str,
     options: dict[str, Any],
+    cli_signature: dict[str, Any] | None = None,
+    dummy_dll_signature: dict[str, Any] | None = None,
+    source_fingerprint: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    # The cross-run AnimeStudio cache has been removed: every selected item is
-    # always (re)exported, so planning is just an enumeration. No manifest
-    # lookups, no per-item cache_key hashing, and no planning-time count_files
-    # walks (output counts are gathered once at summary time instead).
+    # Item-level planning is a plain enumeration: every selected item is queued
+    # and no planning-time count_files walk happens (output counts are gathered
+    # once at summary time instead). Reuse is decided per asset, not per item,
+    # by `prepare_animestudio_asset_shards`; the three signatures recorded here
+    # are the non-asset half of `asset_entry_cache_key`.
     items: list[dict[str, Any]] = []
     selected_items: list[str] = []
     run_items: list[str] = []
@@ -2197,7 +2248,12 @@ def plan_animestudio_stage(
         "item_marker_file_counts": {},
         "type_specs_to_run": tuple(type_specs_to_run),
         "should_run": bool(run_items),
-        "cache_state": "no_cache",
+        "cache_state": (
+            "per_asset" if options.get("asset_cache_enabled") else "no_cache"
+        ),
+        "cli_signature": cli_signature,
+        "dummy_dll_signature": dummy_dll_signature,
+        "source_fingerprint": source_fingerprint,
     }
 
 
@@ -2376,6 +2432,18 @@ def parse_args() -> argparse.Namespace:
             f"The default {ANIMESTUDIO_DEFAULT_SHARDS} keeps per-process asset slices small; "
             f"the shared --asset-jobs pool consumes those shards. "
             "Use 0 to shard by --asset-jobs."
+        ),
+    )
+    parser.add_argument(
+        "--animestudio-no-asset-cache",
+        action="store_true",
+        help=(
+            "Re-convert every map-filtered asset even when the cross-run asset cache "
+            "proves the output is current. The cache key binds each object's XXH64 "
+            "content Hash from the asset map, the AnimeStudio CLI/dummy-DLL content "
+            "signatures, the stage export options, and the source VFS fingerprint, so "
+            "a hit means nothing that can change the output has changed. Use this to "
+            "rebuild outputs that were edited or deleted outside the exporter."
         ),
     )
     parser.add_argument(
@@ -4042,6 +4110,14 @@ def prepare_animestudio_asset_shards(
         )
     )
     cache_enabled = bool(options.get("asset_cache_enabled", True))
+    if cache_enabled:
+        gap = asset_cache_plan_evidence_gap(plan)
+        if gap is not None:
+            raise ValueError(
+                f"AnimeStudio asset cache is enabled for {stage}:{type_name} on "
+                f"{source} but the stage plan carries no {gap}; the cache key "
+                "cannot be computed"
+            )
     cache_path = animestudio_asset_cache_path(output_root)
     if cache_enabled:
         if asset_cache is None:
@@ -4065,7 +4141,7 @@ def prepare_animestudio_asset_shards(
             pending_entries.append(entry)
             continue
         # Only compute the sha256 manifest/cache keys when the cache is enabled;
-        # with the cache removed every matched entry is simply re-exported.
+        # with --animestudio-no-asset-cache every matched entry is re-exported.
         if cache_enabled:
             manifest_key = asset_entry_manifest_key(entry, item, plan)
             cache_key = asset_entry_cache_key(entry, item, plan)
@@ -5578,17 +5654,27 @@ def main() -> int:
     animestudio_mono_behaviour_type_tree_priority = animestudio_cli_type_tree_priority(
         args.animestudio_mono_behaviour_type_tree_priority
     )
+    # The converter's own identity. Both the object index and the cross-run
+    # asset cache need it, so it is hashed once here and shared.
+    animestudio_asset_cache_enabled = not (
+        args.skip_animestudio or args.animestudio_no_asset_cache
+    )
+    animestudio_cli_signature: dict[str, Any] | None = None
+    animestudio_dummy_dll_signature: dict[str, Any] | None = None
+    if animestudio_object_index_enabled or animestudio_asset_cache_enabled:
+        animestudio_cli_signature = build_animestudio_object_index_cli_provenance(
+            animestudio
+        )
+        animestudio_dummy_dll_signature = compact_dummy_dll_signature(
+            build_dummy_dll_signature(animestudio_dummy_dlls)
+        )
     animestudio_object_index_cli_provenance: dict[str, Any] = {}
     if animestudio_object_index_enabled:
-        animestudio_object_index_cli_provenance = (
-            build_animestudio_object_index_cli_provenance(animestudio)
-        )
-        dummy_signature = build_dummy_dll_signature(animestudio_dummy_dlls)
-        if dummy_signature is not None:
-            animestudio_object_index_cli_provenance["dummyDlls"] = {
-                key: dummy_signature.get(key)
-                for key in ("dll_count", "bytes", "fingerprint")
-            }
+        animestudio_object_index_cli_provenance = dict(animestudio_cli_signature or {})
+        if animestudio_dummy_dll_signature is not None:
+            animestudio_object_index_cli_provenance["dummyDlls"] = dict(
+                animestudio_dummy_dll_signature
+            )
             animestudio_object_index_cli_provenance["fingerprint"] = stable_hash(
                 {
                     key: value
@@ -5596,6 +5682,13 @@ def main() -> int:
                     if key != "fingerprint"
                 }
             )
+    # "no dummy DLLs" is itself a fact the cache key has to carry, so the cache
+    # evidence is always a dict even when none were resolved.
+    animestudio_asset_cache_dummy_evidence = animestudio_dummy_dll_signature or {
+        "dll_count": 0,
+        "bytes": 0,
+        "fingerprint": None,
+    }
     if args.skip_animestudio:
         animestudio_stage_merge_feature = {
             "contract": "secondary_export_v1",
@@ -5661,7 +5754,14 @@ def main() -> int:
         "  animestudio asset shards: "
         f"{args.animestudio_shards if args.animestudio_shards else f'auto ({animestudio_jobs})'}"
     )
-    log("  animestudio asset cache: removed (every run re-exports)")
+    log(
+        "  animestudio asset cache: "
+        + (
+            "enabled (per-asset Hash + CLI + options + source fingerprint)"
+            if animestudio_asset_cache_enabled
+            else "disabled (--animestudio-no-asset-cache; every asset re-exports)"
+        )
+    )
     log(f"  animestudio MonoBehaviour TypeTree priority: {animestudio_mono_behaviour_type_tree_priority}")
     log(
         "  animestudio original-data object index: "
@@ -5744,10 +5844,6 @@ def main() -> int:
     structured_manifest_by_source: dict[str, list[dict[str, str]]] = {}
     raw_failures_by_source: dict[str, list[dict[str, Any]]] = {}
     raw_manifest_chunks_by_source: dict[str, list[dict[str, Any]]] = {}
-    # The cross-run AnimeStudio cache has been removed. Signatures and the type
-    # manifest only ever fed cache keys, so they are no longer computed or read.
-    animestudio_cli_signature = None
-    animestudio_dummy_dll_signature = None
     animestudio_summary: dict[str, Any] = {
         "enabled": not args.skip_animestudio,
         "exe": str(animestudio),
@@ -5776,8 +5872,9 @@ def main() -> int:
         "stage_merge_feature": animestudio_stage_merge_feature,
         "stage_merge_attempts": [],
         "asset_shards": args.animestudio_shards,
-        "asset_cache_enabled": False,
-        "cache_removed": True,
+        "asset_cache_enabled": animestudio_asset_cache_enabled,
+        "asset_cache_opt_out": bool(args.animestudio_no_asset_cache),
+        "asset_cache_schema_version": ANIMESTUDIO_ASSET_CACHE_SCHEMA_VERSION,
         "sources_selected": list(selected_sources),
         "stages_selected": list(selected_animestudio_stages),
         "sources": {},
@@ -5931,7 +6028,7 @@ def main() -> int:
                 options["managed_reference_diagnostics_include_exact_matches"] = (
                     managed_reference_diagnostics_include_exact_matches
                 )
-                options["asset_cache_enabled"] = False
+                options["asset_cache_enabled"] = animestudio_asset_cache_enabled
                 options["asset_shards"] = args.animestudio_shards
                 if stage == "maps":
                     options["map_name"] = f"endfield_{source.lower()}_assets"
@@ -5976,6 +6073,9 @@ def main() -> int:
                     output_root=output_root,
                     stage=stage,
                     options=options,
+                    cli_signature=animestudio_cli_signature,
+                    dummy_dll_signature=animestudio_asset_cache_dummy_evidence,
+                    source_fingerprint=compact_source_fingerprint(source_sizes[source]),
                 )
                 animestudio_stage_plans[stage] = plan
                 log(
@@ -6439,7 +6539,14 @@ def main() -> int:
             "- Asset shards: "
             f"`{args.animestudio_shards if args.animestudio_shards else f'auto ({animestudio_jobs})'}`"
         )
-        md_lines.append("- Asset cache: `removed` (every run re-exports)")
+        md_lines.append(
+            "- Asset cache: "
+            + (
+                "`enabled` (per-asset Hash + CLI signature + stage options + source fingerprint)"
+                if animestudio_asset_cache_enabled
+                else "`disabled` (--animestudio-no-asset-cache; every asset re-exports)"
+            )
+        )
         md_lines.append(f"- MonoBehaviour TypeTree priority: `{animestudio_mono_behaviour_type_tree_priority}`")
         md_lines.append(
             "- Original-data object index: "

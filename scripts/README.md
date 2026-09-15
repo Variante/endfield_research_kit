@@ -224,6 +224,7 @@ python -m scripts.game_data.streaming_marker13_corpus --input-set-sha256 CURRENT
 python -m scripts.game_data.streaming_marker2_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.memorypack.skill_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --output reports/animestudio/skilldata_current_latest.json --output-md reports/animestudio/skilldata_current_latest.md
 python -m scripts.game_data.memorypack.skill_cursor_receipt --preflight
+python -m scripts.game_data.memorypack.skill_timeline_cursor --stream-jsonl CURRENT_SKILLDATA_STREAM_JSONL --native-context reports/animestudio/il2cpp_context_current_latest.json
 python -m scripts.game_data.memorypack.npc_montage_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.memorypack.buff_1b_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
@@ -299,6 +300,14 @@ hashes, hard limits, and terminal candidates. It can promote only the observed
 terminal range, not the complete SkillData schema. Use its receipt mode from
 the exact-build workflow in `tools/EndfieldCapture/README.md`; `--preflight`
 prints the authenticated current input-set hash without launching the game.
+`memorypack.skill_timeline_cursor` joins a complete current SkillData stream to
+the source-bound corpus and exact-build native context, then replays child
+action readers only when the selected native route, per-tag reader contract,
+and hash-verified `memorypack.buff_actions.Reader` agree. It records candidate
+byte ranges and precise unsupported/truncated stops; selected reader ends do
+not prove runtime provider choice or close their parents. The command writes
+`reports/animestudio/skilldata_timeline_cursor_latest.json` and `.md`; partial
+probes belong in `tmp/` or `scratch/`.
 `memorypack.npc_montage_corpus` authenticates the complete current
 `Data/Json/NPC/MontageJson/MontageNew/*.json` family by joining each
 outer-ledger identity to AnimeStudio `stream --verify-md5` output, then frames
@@ -358,11 +367,18 @@ exact-build reader order and field types. It also checks the shifted candidate
 against the registered GameplayTagList header and matching List<GameplayTag>
 remaining-byte guard. These are conditional static-path checks; runtime
 provider/cache selection and an executed cursor remain unobserved.
-Its ActionGroupData section also cross-checks empty and nonempty
-`passiveEventActions` sequence branches against the registered AbilityActionMap
-and SequenceActionData readers. The empty-array branch reaches the map's
-conditional static end; the nonempty branch stops before its first non-null
-action-union byte, leaving its parent list incomplete.
+Its ActionGroupData section also replays current positive
+`passiveEventActions` samples against registered AbilityActionMap,
+SequenceActionData, and selected action readers. A child union advances only as
+far as its independently pinned reader evidence supports: unverified tags stop
+at their first byte, and the C9 member-eight path stops before its first generic
+SequenceActionData call. The report separately keeps any three-call nested
+SequenceActionData replay candidate-only: provider/cache selection remains
+unobserved, so its ranges do not advance the authoritative parser cursor. The
+following `timelineActions` count is only peeked; neither the parent
+`ActionGroupData` nor whole SkillData is closed. See
+`reports/animestudio/il2cpp_context_current_latest.*` for the current
+identity-bound ranges and corpus classification.
 Object indexes may be JSONL or
 `.jsonl.gz`; `certify-index` requires a complete terminal summary row, `replay`
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,

@@ -33,6 +33,7 @@ import hashlib
 import io
 import json
 import math
+import os
 import re
 import struct
 import subprocess
@@ -59,7 +60,16 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts.audit_map_asset_closure import iter_asset_entries, sha256_file
+from scripts.map_recovery_cache_evidence import (
+    asset_map_sha256,
+    binding_relations,
+    file_content_evidence,
+    repo_rel,
+    source_evidence_list,
+    streaming_source_evidence,
+)
 from scripts.map_recovery_sources import isolated_art_source, projection_streaming_scene
+from scripts.recover_map_streaming_instances import DEFAULT_CLI as STREAMING_CLI
 
 DEFAULT_ASSET_MAP = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json"
 MESH_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
@@ -70,6 +80,8 @@ MAPS_ROOT = ROOT / "webui/data/map_recovery/maps"
 OUTPUT_ROOT = ROOT / "webui/data/map_recovery/render"
 HLOD_INDEX = ROOT / "reports/assets/map_recovery/hlod_grid_index.json"
 RENDER_CACHE_ROOT = ROOT / "reports/assets/map_recovery/render_cache"
+STREAMING_SCENE_COST_CACHE = ROOT / "reports/assets/map_recovery/streaming_scene_costs.json"
+STREAMING_SCENE_COST_SCHEMA = 1
 ASSET_INDEX = ROOT / "webui/data/assets/index.json"
 
 CLUSTER_RE = re.compile(r"^S_HLOD(\d+)_(-?\d+)_(-?\d+)_Cluster_")
@@ -151,7 +163,9 @@ DETAIL_HORIZONTAL_NORMAL_Y = 0.985
 DETAIL_HORIZONTAL_AREA = 0.1
 DETAIL_PROP_ONLY_LEVELS = {"base01_lv001", "base01_lv003"}
 DEFAULT_SURFACE_POINT_DENSITY = 0.25  # deterministic world-space samples per square metre
-POINT_RENDER_CACHE_SCHEMA = 1
+# 2: sources are identified by asset-map object hash / content SHA-256 instead
+# of size+mtime, so a `--from-game` rewrite of unchanged bytes still hits.
+POINT_RENDER_CACHE_SCHEMA = 2
 # Bump whenever a rendering rule changes without changing its explicit inputs.
 POINT_RENDER_ALGORITHM_VERSION = 1
 _USE_RENDER_CACHE = True
@@ -217,14 +231,151 @@ def preview_level_groups(maps_root: Path, levels: set[str] | None = None) -> lis
     return [tuple(sorted(groups[key])) for key in sorted(groups)]
 
 
+def _streaming_scene_cost(source: Path) -> float:
+    """Estimate one exact Streaming scene's rasterizer work from its sidecar.
+
+    Triangle count is proportional to how much OBJ geometry each instance
+    draws, and an OBJ's byte size is the only proxy for that which does not
+    mean parsing fifteen gigabytes of OBJ text, so only `stat` is used here.
+    """
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    sizes: dict[str, int] = {}
+    total = 0.0
+    instances = 0
+    for row in payload.get("entityBases") or []:
+        meshes = row.get("meshes")
+        count = row.get("instanceCount")
+        count = count if isinstance(count, int) and count > 0 else 1
+        instances += count
+        if not isinstance(meshes, list):
+            continue
+        for mesh in meshes:
+            value = str((mesh or {}).get("obj") or "") if isinstance(mesh, dict) else ""
+            if not value:
+                continue
+            if value not in sizes:
+                mesh_path = ROOT / value
+                sizes[value] = mesh_path.stat().st_size if mesh_path.is_file() else 0
+            total += sizes[value] * count
+    # A sidecar whose meshes are all unexported still costs one pass over its
+    # instances, so instance count remains the fallback ordering signal.
+    return total or float(instances)
+
+
+def _load_streaming_scene_costs() -> dict:
+    if not STREAMING_SCENE_COST_CACHE.is_file():
+        return {}
+    cached = json.loads(STREAMING_SCENE_COST_CACHE.read_text(encoding="utf-8"))
+    scenes = cached.get("scenes")
+    if cached.get("schemaVersion") != STREAMING_SCENE_COST_SCHEMA or not isinstance(scenes, dict):
+        return {}
+    return scenes
+
+
+def _write_streaming_scene_costs(scenes: dict) -> None:
+    STREAMING_SCENE_COST_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    temporary = STREAMING_SCENE_COST_CACHE.with_name(f"{STREAMING_SCENE_COST_CACHE.name}.{os.getpid()}.tmp")
+    temporary.write_text(
+        json.dumps(
+            {"schemaVersion": STREAMING_SCENE_COST_SCHEMA, "scenes": scenes},
+            ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+        ) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(STREAMING_SCENE_COST_CACHE)
+
+
+def preview_scene_costs(groups: list[tuple[str, ...]]) -> dict[str, float]:
+    """Estimated render cost per level id, each Streaming scene counted once.
+
+    The members of a shared scene rasterize it once between them, so the
+    scene's cost is split evenly across its members. `preview_level_groups`
+    already keeps those members in one group, so summing a group's level costs
+    reconstructs the scene cost instead of a multiple of it.
+
+    Only the parent process needs this, and it is persisted per scene under the
+    sidecar's own `InitChunkData` content evidence, which a cheap prefix scan
+    reads. Otherwise every parallel run would re-parse a gigabyte of sidecar
+    JSON - a third of it the single 343 MB `map02` file - to re-derive numbers
+    that only change when the export does.
+    """
+    scene_costs: dict[str, float] = {}
+    scene_members: dict[str, list[str]] = {}
+    costs: dict[str, float] = {}
+    persisted = _load_streaming_scene_costs()
+    rebuilt = False
+    for group in groups:
+        for level_id in group:
+            projection = projection_streaming_scene(level_id)
+            source = Path(projection["instanceSource"]) if projection else None
+            if source is None or not source.is_file():
+                costs[level_id] = 1.0
+                continue
+            scene_id = str(projection["sceneId"])
+            if scene_id not in scene_costs:
+                evidence = streaming_source_evidence(level_id)
+                # Without packed-chunk evidence there is nothing to key a
+                # reusable cost on, so that scene is measured every time.
+                reusable = evidence.get("evidence") == "initChunkDataPackedSha256"
+                # The evidence is only ever compared for equality, and a
+                # region's per-chunk hash list is megabytes, so the table
+                # stores its digest rather than the evidence itself.
+                digest = hashlib.sha256(
+                    json.dumps(evidence, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                ).hexdigest()
+                entry = persisted.get(scene_id) if reusable else None
+                if isinstance(entry, dict) and entry.get("evidenceSha256") == digest and isinstance(
+                    entry.get("cost"), (int, float)
+                ):
+                    scene_costs[scene_id] = float(entry["cost"])
+                else:
+                    scene_costs[scene_id] = _streaming_scene_cost(source)
+                    if reusable:
+                        persisted[scene_id] = {
+                            "evidenceSha256": digest,
+                            "evidenceKind": evidence.get("evidence"),
+                            "cost": scene_costs[scene_id],
+                        }
+                        rebuilt = True
+            scene_members.setdefault(scene_id, []).append(level_id)
+    if rebuilt:
+        _write_streaming_scene_costs(persisted)
+    for scene_id, members in scene_members.items():
+        share = scene_costs[scene_id] / len(members)
+        for level_id in members:
+            costs[level_id] = share
+    return costs
+
+
+def _preview_group_cost(group: tuple[str, ...], costs: dict[str, float] | None) -> float:
+    """One group's estimated cost; equal weights keep the old even spread."""
+    if not costs:
+        return 1.0
+    return max(1.0, sum(costs.get(level_id, 0.0) for level_id in group))
+
+
 def preview_worker_shards(
-    groups: list[tuple[str, ...]], jobs: int,
+    groups: list[tuple[str, ...]], jobs: int, costs: dict[str, float] | None = None,
 ) -> list[tuple[str, ...]]:
-    """Distribute stable scene groups round-robin across long-lived workers."""
+    """Balance stable scene groups across long-lived workers by rendering cost.
+
+    Round-robin by sorted group name left three of four workers idle for most
+    of a full run, because the single `map02` group carries more geometry than
+    every other group put together. Longest-processing-time-first keeps the
+    heavy groups on separate workers; a shared Streaming scene still never
+    splits, because the group, not the level, is the unit being placed.
+    """
     worker_count = max(1, min(jobs, len(groups)))
     shards: list[list[str]] = [[] for _ in range(worker_count)]
-    for index, group in enumerate(groups):
-        shards[index % worker_count].extend(group)
+    loads = [0.0] * worker_count
+    ordered = sorted(
+        range(len(groups)),
+        key=lambda index: (-_preview_group_cost(groups[index], costs), index),
+    )
+    for index in ordered:
+        target = min(range(worker_count), key=lambda worker: (loads[worker], worker))
+        shards[target].extend(groups[index])
+        loads[target] += _preview_group_cost(groups[index], costs)
     return [tuple(shard) for shard in shards if shard]
 
 
@@ -262,14 +413,17 @@ def _run_preview_worker(command: list[str]) -> int:
 def run_parallel_preview_workers(args: argparse.Namespace) -> int | None:
     """Render independent level shards concurrently, or return None for serial."""
     groups = preview_level_groups(args.maps_root, set(args.level))
-    shards = preview_worker_shards(groups, args.jobs)
+    costs = preview_scene_costs(groups) if args.jobs > 1 and len(groups) > 1 else None
+    shards = preview_worker_shards(groups, args.jobs, costs)
     if len(shards) <= 1:
         return None
 
-    # Make the shared HLOD index current once before workers read it. This
-    # avoids concurrent rebuilds of the same cache after an AssetMap refresh.
+    # Make the shared HLOD index and binding tables current once before the
+    # workers read them. This avoids four concurrent rebuilds of the same
+    # derived caches after an AssetMap refresh.
     if args.asset_map.is_file():
-        load_hlod_index(args.asset_map, args.hlod_index, args.refresh_index)
+        index = load_hlod_index(args.asset_map, args.hlod_index, args.refresh_index)
+        prepare_render_bindings(args.asset_map, index, args.texture_root)
 
     print(
         f"map previews: {len(groups)} independent scene groups across "
@@ -287,78 +441,364 @@ def _path_id_file(index: dict[str, Path], path_id: int) -> Path | None:
     return index.get(f"{unsigned:016X}") or index.get(f"{unsigned:X}")
 
 
-_raster_triangle_numba = None
+_raster_mesh_numba = None
+_sample_mesh_numba = None
+_transform_vertices_numba = None
+_origin_lod_coverage_numba = None
 if _numba_njit is not None:
     @_numba_njit(cache=True)
-    def _raster_triangle_numba(
-        depth, detail_depth, color_depth, detail_color_depth, albedo, detail_albedo, width,
-        x0, x1, y0, y1, row_w0, row_w1, w0_dx, w0_dy, w1_dx, w1_dy,
-        y_a, y_b, y_c, detail_face, has_texture, uv_values, texture_pixels,
-        texture_width, texture_height, scale_u, scale_v, offset_u, offset_v,
-        cutoff_alpha, tint_lut, edge_epsilon,
+    def _origin_lod_coverage_numba(
+        xs, zs, base_cell, size, kx_lo, kx_count, kz_lo, kz_count, occupied, i_min, j_min,
     ):
-        """Compiled equivalent of the streaming rasterizer's per-pixel loop."""
-        textured_hit = False
-        for pixel_y in range(y0, y1 + 1):
-            base = pixel_y * width
-            w0 = row_w0
-            w1 = row_w1
-            for pixel_x in range(x0, x1 + 1):
-                w2 = 1.0 - w0 - w1
-                if w0 >= -edge_epsilon and w1 >= -edge_epsilon and w2 >= -edge_epsilon:
-                    elevation = w0 * y_a + w1 * y_b + w2 * y_c
-                    index = base + pixel_x
-                    wins_full = elevation > depth[index]
-                    wins_detail = detail_face and elevation > detail_depth[index]
-                    wins_color = has_texture and elevation > color_depth[index]
-                    wins_detail_color = has_texture and detail_face and elevation > detail_color_depth[index]
-                    if wins_full or wins_detail or wins_color or wins_detail_color:
-                        visible = True
-                        red = green = blue = alpha = 0
-                        if has_texture:
-                            u = (w0 * uv_values[0, 0] + w1 * uv_values[1, 0] + w2 * uv_values[2, 0]) * scale_u + offset_u
-                            v = (w0 * uv_values[0, 1] + w1 * uv_values[1, 1] + w2 * uv_values[2, 1]) * scale_v + offset_v
-                            texture_x = min(texture_width - 1, int((u % 1.0) * texture_width))
-                            texture_y = min(texture_height - 1, int(((1.0 - v) % 1.0) * texture_height))
-                            alpha = texture_pixels[texture_y, texture_x, 3]
-                            if alpha < cutoff_alpha:
-                                visible = False
-                            else:
-                                red = tint_lut[0, texture_pixels[texture_y, texture_x, 0]]
-                                green = tint_lut[1, texture_pixels[texture_y, texture_x, 1]]
-                                blue = tint_lut[2, texture_pixels[texture_y, texture_x, 2]]
-                        if visible:
-                            if wins_full:
-                                depth[index] = elevation
-                            if wins_color:
-                                color_depth[index] = elevation
-                                albedo[index, 0] = red
-                                albedo[index, 1] = green
-                                albedo[index, 2] = blue
-                                albedo[index, 3] = alpha
-                                textured_hit = True
-                            if wins_detail:
-                                detail_depth[index] = elevation
-                            if wins_detail_color:
-                                detail_color_depth[index] = elevation
-                                detail_albedo[index, 0] = red
-                                detail_albedo[index, 1] = green
-                                detail_albedo[index, 2] = blue
-                                detail_albedo[index, 3] = alpha
-                w0 += w0_dx
-                w1 += w1_dx
-            row_w0 += w0_dy
-            row_w1 += w1_dy
-        return textured_hit
+        """Marker occupancy of one LOD over a whole rectangle of candidate origins.
 
+        The cell index along X depends only on the candidate's kx, so it is
+        computed once per kx row instead of once per candidate per marker.
+        """
+        count = xs.shape[0]
+        rows = occupied.shape[0]
+        columns = occupied.shape[1]
+        coverage = _np.empty((kx_count, kz_count), dtype=_np.float64)
+        cell_i = _np.empty(count, dtype=_np.int64)
+        for a in range(kx_count):
+            origin_x = (kx_lo + a) * base_cell
+            for index in range(count):
+                cell_i[index] = int(math.floor((xs[index] - origin_x) / size)) - i_min
+            for b in range(kz_count):
+                origin_z = (kz_lo + b) * base_cell
+                hits = 0
+                for index in range(count):
+                    i = cell_i[index]
+                    if i < 0 or i >= rows:
+                        continue
+                    j = int(math.floor((zs[index] - origin_z) / size)) - j_min
+                    if 0 <= j < columns and occupied[i, j]:
+                        hits += 1
+                coverage[a, b] = hits / count
+        return coverage
 
-def _source_stat(path: Path) -> dict[str, int | str]:
-    """Return a cheap local-build invalidation token for one exported source."""
-    try:
-        stat = path.stat()
-    except OSError:
-        return {"path": str(path), "missing": 1}
-    return {"path": str(path), "size": stat.st_size, "mtimeNs": stat.st_mtime_ns}
+    @_numba_njit(cache=True)
+    def _transform_vertices_numba(raw, matrix):
+        """Apply one column-major instance matrix to a whole OBJ's vertices.
+
+        AnimeStudio's OBJ conversion mirrors Unity X, so the mirror is undone
+        before the matrix multiply, in the same float64 operation order the
+        per-vertex Python comprehension used.
+        """
+        count = raw.shape[0]
+        world = _np.empty((count, 3), dtype=_np.float64)
+        for index in range(count):
+            local_x = -raw[index, 0]
+            obj_y = raw[index, 1]
+            obj_z = raw[index, 2]
+            world[index, 0] = matrix[0] * local_x + matrix[4] * obj_y + matrix[8] * obj_z + matrix[12]
+            world[index, 1] = matrix[1] * local_x + matrix[5] * obj_y + matrix[9] * obj_z + matrix[13]
+            world[index, 2] = matrix[2] * local_x + matrix[6] * obj_y + matrix[10] * obj_z + matrix[14]
+        return world
+
+    @_numba_njit(cache=True)
+    def _raster_mesh_numba(
+        depth, detail_depth, color_depth, detail_color_depth, albedo, detail_albedo,
+        width, height, min_x, max_z, span_x, span_z,
+        world, face_vertices, face_valid, face_texcoords, face_uv_ok, texcoords,
+        first_face, last_face, detail_mode,
+        has_texture, texture_pixels, texture_width, texture_height,
+        scale_u, scale_v, offset_u, offset_v, cutoff_alpha, tint_lut, edge_epsilon,
+    ):
+        """Compiled equivalent of the streaming rasterizer, one submesh run at a time.
+
+        The per-triangle screen setup, the detail classification and the pixel
+        loop all run here so that a mesh instance costs one compiled call
+        instead of one interpreted call per face.
+        """
+        drawn = 0
+        textured = 0
+        detail_count = 0
+        excluded_count = 0
+        textured_hit = 0
+        for face in range(first_face, last_face):
+            if not face_valid[face]:
+                continue
+            index_a = face_vertices[face, 0]
+            index_b = face_vertices[face, 1]
+            index_c = face_vertices[face, 2]
+            x_a = world[index_a, 0]
+            y_a = world[index_a, 1]
+            z_a = world[index_a, 2]
+            x_b = world[index_b, 0]
+            y_b = world[index_b, 1]
+            z_b = world[index_b, 2]
+            x_c = world[index_c, 0]
+            y_c = world[index_c, 1]
+            z_c = world[index_c, 2]
+            if detail_mode == 0:
+                detail_face = False
+            elif detail_mode == 1:
+                detail_face = True
+            else:
+                ux = x_b - x_a
+                uy = y_b - y_a
+                uz = z_b - z_a
+                vx = x_c - x_a
+                vy = y_c - y_a
+                vz = z_c - z_a
+                nx = uy * vz - uz * vy
+                ny = uz * vx - ux * vz
+                nz = ux * vy - uy * vx
+                magnitude = math.sqrt(nx * nx + ny * ny + nz * nz)
+                large_horizontal = False
+                if magnitude > 1e-9 and abs(ny) / magnitude >= DETAIL_HORIZONTAL_NORMAL_Y:
+                    large_horizontal = abs(ux * vz - uz * vx) * 0.5 >= DETAIL_HORIZONTAL_AREA
+                detail_face = not large_horizontal
+            if detail_face:
+                detail_count += 1
+            else:
+                excluded_count += 1
+            face_textured = has_texture and face_uv_ok[face]
+            screen_x0 = (x_a - min_x) / span_x * width
+            screen_x1 = (x_b - min_x) / span_x * width
+            screen_x2 = (x_c - min_x) / span_x * width
+            screen_y0 = (max_z - z_a) / span_z * height
+            screen_y1 = (max_z - z_b) / span_z * height
+            screen_y2 = (max_z - z_c) / span_z * height
+            x0 = max(0, int(min(screen_x0, screen_x1, screen_x2)))
+            x1 = min(width - 1, int(max(screen_x0, screen_x1, screen_x2)) + 1)
+            y0 = max(0, int(min(screen_y0, screen_y1, screen_y2)))
+            y1 = min(height - 1, int(max(screen_y0, screen_y1, screen_y2)) + 1)
+            if x0 > x1 or y0 > y1:
+                continue
+            area = ((screen_y1 - screen_y2) * (screen_x0 - screen_x2)
+                    + (screen_x2 - screen_x1) * (screen_y0 - screen_y2))
+            if abs(area) < 1e-12:
+                continue
+            drawn += 1
+            u_a = 0.0
+            v_a = 0.0
+            u_b = 0.0
+            v_b = 0.0
+            u_c = 0.0
+            v_c = 0.0
+            if face_textured:
+                textured += 1
+                uv_a = face_texcoords[face, 0]
+                uv_b = face_texcoords[face, 1]
+                uv_c = face_texcoords[face, 2]
+                u_a = texcoords[uv_a, 0]
+                v_a = texcoords[uv_a, 1]
+                u_b = texcoords[uv_b, 0]
+                v_b = texcoords[uv_b, 1]
+                u_c = texcoords[uv_c, 0]
+                v_c = texcoords[uv_c, 1]
+            inv_area = 1.0 / area
+            w0_dx = (screen_y1 - screen_y2) * inv_area
+            w0_dy = (screen_x2 - screen_x1) * inv_area
+            w1_dx = (screen_y2 - screen_y0) * inv_area
+            w1_dy = (screen_x0 - screen_x2) * inv_area
+            first_x = x0 + 0.5
+            first_y = y0 + 0.5
+            row_w0 = (((screen_y1 - screen_y2) * (first_x - screen_x2)
+                       + (screen_x2 - screen_x1) * (first_y - screen_y2)) * inv_area)
+            row_w1 = (((screen_y2 - screen_y0) * (first_x - screen_x2)
+                       + (screen_x0 - screen_x2) * (first_y - screen_y2)) * inv_area)
+            for pixel_y in range(y0, y1 + 1):
+                base = pixel_y * width
+                w0 = row_w0
+                w1 = row_w1
+                for pixel_x in range(x0, x1 + 1):
+                    w2 = 1.0 - w0 - w1
+                    if w0 >= -edge_epsilon and w1 >= -edge_epsilon and w2 >= -edge_epsilon:
+                        elevation = w0 * y_a + w1 * y_b + w2 * y_c
+                        index = base + pixel_x
+                        wins_full = elevation > depth[index]
+                        wins_detail = detail_face and elevation > detail_depth[index]
+                        wins_color = face_textured and elevation > color_depth[index]
+                        wins_detail_color = face_textured and detail_face and elevation > detail_color_depth[index]
+                        if wins_full or wins_detail or wins_color or wins_detail_color:
+                            visible = True
+                            red = green = blue = alpha = 0
+                            if face_textured:
+                                u = (w0 * u_a + w1 * u_b + w2 * u_c) * scale_u + offset_u
+                                v = (w0 * v_a + w1 * v_b + w2 * v_c) * scale_v + offset_v
+                                texture_x = min(texture_width - 1, int((u % 1.0) * texture_width))
+                                texture_y = min(texture_height - 1, int(((1.0 - v) % 1.0) * texture_height))
+                                alpha = texture_pixels[texture_y, texture_x, 3]
+                                if alpha < cutoff_alpha:
+                                    visible = False
+                                else:
+                                    red = tint_lut[0, texture_pixels[texture_y, texture_x, 0]]
+                                    green = tint_lut[1, texture_pixels[texture_y, texture_x, 1]]
+                                    blue = tint_lut[2, texture_pixels[texture_y, texture_x, 2]]
+                            if visible:
+                                if wins_full:
+                                    depth[index] = elevation
+                                if wins_color:
+                                    color_depth[index] = elevation
+                                    albedo[index, 0] = red
+                                    albedo[index, 1] = green
+                                    albedo[index, 2] = blue
+                                    albedo[index, 3] = alpha
+                                    textured_hit = 1
+                                if wins_detail:
+                                    detail_depth[index] = elevation
+                                if wins_detail_color:
+                                    detail_color_depth[index] = elevation
+                                    detail_albedo[index, 0] = red
+                                    detail_albedo[index, 1] = green
+                                    detail_albedo[index, 2] = blue
+                                    detail_albedo[index, 3] = alpha
+                    w0 += w0_dx
+                    w1 += w1_dx
+                row_w0 += w0_dy
+                row_w1 += w1_dy
+        return drawn, textured, detail_count, excluded_count, textured_hit
+
+    @_numba_njit(cache=True)
+    def _sample_mesh_numba(
+        world, face_vertices, face_valid, face_texcoords, face_uv_ok, texcoords,
+        first_face, last_face, skip_horizontal,
+        has_texture, texture_pixels, texture_width, texture_height,
+        scale_u, scale_v, offset_u, offset_v, cutout, transparent, cutoff, tint_lut,
+        spacing, min_x, max_x, min_z, max_z, span_x, span_z, width, height,
+        edge_epsilon, epsilon,
+        head, chain, sample_index, sample_y, sample_rgba, count,
+    ):
+        """Compiled equivalent of the world-lattice surface sampler.
+
+        Returns the first face it did not finish. The caller grows the record
+        buffers and resumes there, which never double counts because a face
+        only touches a counter after the buffer check has passed.
+        """
+        excluded_horizontal = 0
+        unresolved_material = 0
+        unresolved_uv = 0
+        sampled_triangles = 0
+        source_samples = 0
+        used_texture = 0
+        needed = 0
+        capacity = sample_y.shape[0]
+        face = first_face
+        while face < last_face:
+            if not face_valid[face]:
+                face += 1
+                continue
+            index_a = face_vertices[face, 0]
+            index_b = face_vertices[face, 1]
+            index_c = face_vertices[face, 2]
+            x_a = world[index_a, 0]
+            y_a = world[index_a, 1]
+            z_a = world[index_a, 2]
+            x_b = world[index_b, 0]
+            y_b = world[index_b, 1]
+            z_b = world[index_b, 2]
+            x_c = world[index_c, 0]
+            y_c = world[index_c, 1]
+            z_c = world[index_c, 2]
+            if skip_horizontal:
+                ux = x_b - x_a
+                uy = y_b - y_a
+                uz = z_b - z_a
+                vx = x_c - x_a
+                vy = y_c - y_a
+                vz = z_c - z_a
+                nx = uy * vz - uz * vy
+                ny = uz * vx - ux * vz
+                nz = ux * vy - uy * vx
+                magnitude = math.sqrt(nx * nx + ny * ny + nz * nz)
+                large_horizontal = False
+                if magnitude > 1e-9 and abs(ny) / magnitude >= DETAIL_HORIZONTAL_NORMAL_Y:
+                    large_horizontal = abs(ux * vz - uz * vx) * 0.5 >= DETAIL_HORIZONTAL_AREA
+                if large_horizontal:
+                    excluded_horizontal += 1
+                    face += 1
+                    continue
+            if not has_texture:
+                unresolved_material += 1
+                face += 1
+                continue
+            area = (z_b - z_c) * (x_a - x_c) + (x_c - x_b) * (z_a - z_c)
+            if abs(area) < 1e-12:
+                face += 1
+                continue
+            min_kx = int(math.ceil(min(x_a, x_b, x_c) / spacing - 0.5))
+            max_kx = int(math.floor(max(x_a, x_b, x_c) / spacing - 0.5))
+            min_kz = int(math.ceil(min(z_a, z_b, z_c) / spacing - 0.5))
+            max_kz = int(math.floor(max(z_a, z_b, z_c) / spacing - 0.5))
+            if not face_uv_ok[face]:
+                unresolved_uv += 1
+                face += 1
+                continue
+            cells_x = max_kx - min_kx + 1
+            cells_z = max_kz - min_kz + 1
+            budget = cells_x * cells_z if cells_x > 0 and cells_z > 0 else 0
+            if count + budget > capacity:
+                needed = count + budget
+                return (face, count, excluded_horizontal, unresolved_material,
+                        unresolved_uv, sampled_triangles, source_samples, used_texture, needed)
+            uv_a = face_texcoords[face, 0]
+            uv_b = face_texcoords[face, 1]
+            uv_c = face_texcoords[face, 2]
+            u_a = texcoords[uv_a, 0]
+            v_a = texcoords[uv_a, 1]
+            u_b = texcoords[uv_b, 0]
+            v_b = texcoords[uv_b, 1]
+            u_c = texcoords[uv_c, 0]
+            v_c = texcoords[uv_c, 1]
+            landed = False
+            for kz in range(min_kz, max_kz + 1):
+                world_z = (kz + 0.5) * spacing
+                if world_z < min_z or world_z > max_z:
+                    continue
+                for kx in range(min_kx, max_kx + 1):
+                    world_x = (kx + 0.5) * spacing
+                    if world_x < min_x or world_x > max_x:
+                        continue
+                    w0 = ((z_b - z_c) * (world_x - x_c) + (x_c - x_b) * (world_z - z_c)) / area
+                    w1 = ((z_c - z_a) * (world_x - x_c) + (x_a - x_c) * (world_z - z_c)) / area
+                    w2 = 1.0 - w0 - w1
+                    if min(w0, w1, w2) < -edge_epsilon:
+                        continue
+                    world_y = w0 * y_a + w1 * y_b + w2 * y_c
+                    pixel_x = int(round((world_x - min_x) / span_x * (width - 1)))
+                    pixel_y = int(round((max_z - world_z) / span_z * (height - 1)))
+                    if pixel_x < 0 or pixel_x >= width or pixel_y < 0 or pixel_y >= height:
+                        continue
+                    u = (w0 * u_a + w1 * u_b + w2 * u_c) * scale_u + offset_u
+                    v = (w0 * v_a + w1 * v_b + w2 * v_c) * scale_v + offset_v
+                    texture_x = min(texture_width - 1, int((u % 1.0) * texture_width))
+                    texture_y = min(texture_height - 1, int(((1.0 - v) % 1.0) * texture_height))
+                    alpha = int(texture_pixels[texture_y, texture_x, 3])
+                    if cutout and alpha / 255 < cutoff:
+                        continue
+                    red = tint_lut[0, texture_pixels[texture_y, texture_x, 0]]
+                    green = tint_lut[1, texture_pixels[texture_y, texture_x, 1]]
+                    blue = tint_lut[2, texture_pixels[texture_y, texture_x, 2]]
+                    out_alpha = alpha if transparent else 255
+                    used_texture = 1
+                    pixel_index = pixel_y * width + pixel_x
+                    node = head[pixel_index]
+                    duplicate = False
+                    while node != -1:
+                        if abs(sample_y[node] - world_y) <= epsilon:
+                            duplicate = True
+                            break
+                        node = chain[node]
+                    if not duplicate:
+                        sample_index[count] = pixel_index
+                        sample_y[count] = world_y
+                        sample_rgba[count, 0] = red
+                        sample_rgba[count, 1] = green
+                        sample_rgba[count, 2] = blue
+                        sample_rgba[count, 3] = out_alpha
+                        chain[count] = head[pixel_index]
+                        head[pixel_index] = count
+                        count += 1
+                    source_samples += 1
+                    landed = True
+            if landed:
+                sampled_triangles += 1
+            face += 1
+        return (face, count, excluded_horizontal, unresolved_material,
+                unresolved_uv, sampled_triangles, source_samples, used_texture, needed)
 
 
 def _binding_source_paths(binding: dict | None) -> list[Path]:
@@ -386,12 +826,18 @@ def _point_render_cache_signature(
     bindings: dict[str, dict],
 ) -> str:
     source_paths: set[Path] = set()
+    # Only the relations this scene actually draws belong in its signature; the
+    # supplied map is the global binding table plus this scene's overrides.
+    used_bindings: dict[str, dict] = {}
     for instance in resolved:
         for mesh in _instance_meshes(instance):
             value = mesh.get("obj")
             if value:
                 source_paths.add((ROOT / str(value)).resolve())
-            binding = bindings.get(_asset_rel_from_obj(value))
+            asset_rel = _asset_rel_from_obj(value)
+            binding = bindings.get(asset_rel)
+            if binding is not None:
+                used_bindings[asset_rel] = binding
             source_paths.update(path.resolve() for path in _binding_source_paths(binding))
     payload = {
         "schema": POINT_RENDER_CACHE_SCHEMA,
@@ -407,9 +853,18 @@ def _point_render_cache_signature(
             "detailNormalY": DETAIL_HORIZONTAL_NORMAL_Y,
             "detailArea": DETAIL_HORIZONTAL_AREA,
         },
-        "sources": [_source_stat(path) for path in sorted(source_paths, key=str)],
-        "rendererIndex": _source_stat(RENDERER_INDEX),
-        "assetMap": _source_stat(DEFAULT_ASSET_MAP),
+        # Content evidence, never size+mtime: a `--from-game` re-export rewrites
+        # every one of these files without changing what they contain.
+        "sources": source_evidence_list(source_paths, DEFAULT_ASSET_MAP),
+        "rendererIndex": file_content_evidence(RENDERER_INDEX),
+        # The exporter itself is an input: a rebuilt CLI can change the OBJ and
+        # PNG conversion without changing any Unity object hash.
+        "cli": exporter_cli_evidence(),
+        # The asset map contributes to a render only through the relations it
+        # resolves for this scene, so record those instead of a whole-map token
+        # that every unrelated object in the 845 MB export would invalidate.
+        "bindingRelations": binding_relations(used_bindings),
+        "streamingSource": streaming_source_evidence(level_id),
     }
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
@@ -484,7 +939,7 @@ def _hlod_render_cache_signature(
     bindings: dict[int, dict],
 ) -> str:
     mesh_paths = {
-        path
+        path.resolve()
         for cluster in clusters
         if (path := _path_id_file(mesh_files, int(cluster["pathId"]))) is not None
     }
@@ -504,11 +959,14 @@ def _hlod_render_cache_signature(
         "bounds": bounds,
         "scanMode": scan_mode,
         "renderConstants": {"longEdge": LONG_EDGE, "edgeEpsilon": EDGE_EPSILON},
-        "sources": [
-            _source_stat(path)
-            for path in sorted(mesh_paths | binding_paths, key=str)
-        ],
-        "assetMap": _source_stat(DEFAULT_ASSET_MAP),
+        # Content evidence, never size+mtime - see `_point_render_cache_signature`.
+        "sources": source_evidence_list(mesh_paths | binding_paths, DEFAULT_ASSET_MAP),
+        # `hlod_texture_bindings` is already scoped to this level and LOD, so
+        # its resolved relations replace the whole-asset-map token.
+        "bindingRelations": binding_relations(bindings),
+        # The cluster OBJs and atlas PNGs are exporter output, and no object
+        # hash changes when the exporter's conversion does.
+        "cli": exporter_cli_evidence(),
     }
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
     return hashlib.sha256(encoded).hexdigest()
@@ -661,13 +1119,17 @@ def cell_size(lod: int) -> float:
     return BASE_CELL * (2 ** lod)
 
 
-def origin_coverage(lods: dict[str, list], points: list[tuple[float, float]], origin_x: float, origin_z: float) -> float:
-    """Return the worst per-LOD marker occupancy for one fixed grid origin."""
-    if not points:
-        return 0.0
-    occupancy = {int(lod): {(row["i"], row["j"]) for row in rows} for lod, rows in lods.items()}
-    if 0 not in occupancy:
-        return 0.0
+def _grid_occupancy(lods: dict[str, list]) -> dict[int, set[tuple[int, int]]]:
+    """Per-LOD set of occupied cluster cells; depends only on the level's LODs."""
+    return {int(lod): {(row["i"], row["j"]) for row in rows} for lod, rows in lods.items()}
+
+
+def _occupancy_coverage(
+    occupancy: dict[int, set[tuple[int, int]]],
+    points: list[tuple[float, float]],
+    origin_x: float,
+    origin_z: float,
+) -> float:
     return min(
         sum(
             1 for x, z in points
@@ -676,6 +1138,68 @@ def origin_coverage(lods: dict[str, list], points: list[tuple[float, float]], or
         ) / len(points)
         for lod, cells in occupancy.items()
     )
+
+
+def origin_coverage(lods: dict[str, list], points: list[tuple[float, float]], origin_x: float, origin_z: float) -> float:
+    """Return the worst per-LOD marker occupancy for one fixed grid origin."""
+    if not points:
+        return 0.0
+    occupancy = _grid_occupancy(lods)
+    if 0 not in occupancy:
+        return 0.0
+    return _occupancy_coverage(occupancy, points, origin_x, origin_z)
+
+
+def _score_origin_grid(
+    occupancy: dict[int, set[tuple[int, int]]],
+    points: list[tuple[float, float]],
+    kx_values: range,
+    kz_values: range,
+) -> list[tuple[float, float, float]]:
+    """Worst-LOD coverage of every candidate origin, in kx-major order.
+
+    The interpreted form rebuilt the occupancy sets and recomputed
+    `cell_size(lod)` once per marker per candidate origin, which is where a
+    `--level` run spent most of its startup. The arithmetic is unchanged: the
+    same `floor((coordinate - origin) / cell_size)` in float64 and the same
+    integer hit count divided by the same sample size.
+    """
+    if _origin_lod_coverage_numba is None:
+        return [
+            (_occupancy_coverage(occupancy, points, kx * BASE_CELL, kz * BASE_CELL),
+             kx * BASE_CELL, kz * BASE_CELL)
+            for kx in kx_values for kz in kz_values
+        ]
+    xs = _np.array([point[0] for point in points], dtype=_np.float64)
+    zs = _np.array([point[1] for point in points], dtype=_np.float64)
+    worst = None
+    for lod, cells in occupancy.items():
+        if cells:
+            i_min = min(cell[0] for cell in cells)
+            j_min = min(cell[1] for cell in cells)
+            occupied = _np.zeros(
+                (max(cell[0] for cell in cells) - i_min + 1,
+                 max(cell[1] for cell in cells) - j_min + 1),
+                dtype=_np.bool_,
+            )
+            for cell_i, cell_j in cells:
+                occupied[cell_i - i_min, cell_j - j_min] = True
+        else:
+            # No cell can be hit, so every origin scores zero for this LOD.
+            i_min = j_min = 0
+            occupied = _np.zeros((0, 0), dtype=_np.bool_)
+        coverage = _origin_lod_coverage_numba(
+            xs, zs, BASE_CELL, cell_size(lod),
+            kx_values.start, len(kx_values), kz_values.start, len(kz_values),
+            occupied, i_min, j_min,
+        )
+        worst = coverage if worst is None else _np.minimum(worst, coverage)
+    flat = worst.reshape(-1).tolist()
+    return [
+        (flat[index * len(kz_values) + offset], kx * BASE_CELL, kz * BASE_CELL)
+        for index, kx in enumerate(kx_values)
+        for offset, kz in enumerate(kz_values)
+    ]
 
 
 def select_shared_origin(fits: list[dict]) -> tuple[float, float] | None:
@@ -704,7 +1228,7 @@ def fit_origin(lods: dict[str, list], points: list[tuple[float, float]]) -> dict
     """
     if len(points) < MIN_SAMPLES:
         return None
-    occupancy = {int(lod): {(row["i"], row["j"]) for row in rows} for lod, rows in lods.items()}
+    occupancy = _grid_occupancy(lods)
     if 0 not in occupancy:
         return None
     base = occupancy[0]
@@ -713,12 +1237,12 @@ def fit_origin(lods: dict[str, list], points: list[tuple[float, float]]) -> dict
     xs = [p[0] for p in points]
     zs = [p[1] for p in points]
 
-    scored: list[tuple[float, float, float]] = []
-    for kx in range(int(min(xs) // BASE_CELL) - i_max - 1, int(max(xs) // BASE_CELL) - i_min + 2):
-        for kz in range(int(min(zs) // BASE_CELL) - j_max - 1, int(max(zs) // BASE_CELL) - j_min + 2):
-            origin_x, origin_z = kx * BASE_CELL, kz * BASE_CELL
-            worst = origin_coverage(lods, points, origin_x, origin_z)
-            scored.append((worst, origin_x, origin_z))
+    scored = _score_origin_grid(
+        occupancy,
+        points,
+        range(int(min(xs) // BASE_CELL) - i_max - 1, int(max(xs) // BASE_CELL) - i_min + 2),
+        range(int(min(zs) // BASE_CELL) - j_max - 1, int(max(zs) // BASE_CELL) - j_min + 2),
+    )
     if not scored:
         return None
 
@@ -899,6 +1423,15 @@ def _unfilter_rgba8_rows(payload: bytes, compressed: bytes, width: int, height: 
     return bytes(rows)
 
 
+@functools.lru_cache(maxsize=256)
+def _resolved_directory(path: Path) -> Path | None:
+    """`Path.resolve` for one directory, cached; on Windows it is a syscall."""
+    try:
+        return path.resolve()
+    except OSError:
+        return None
+
+
 def _relation_path(relative: str, source_roots: dict[str, str]) -> Path | None:
     normalized = str(relative or "").replace("\\", "/")
     if "/" not in normalized:
@@ -908,12 +1441,19 @@ def _relation_path(relative: str, source_roots: dict[str, str]) -> Path | None:
     if not configured:
         return None
     path = Path(configured)
-    resolved = (path if path.is_absolute() else ROOT / path) / tail
-    try:
-        resolved.resolve().relative_to(ROOT.resolve())
-    except (OSError, ValueError):
+    base = path if path.is_absolute() else ROOT / path
+    # Containment is decided on the handful of configured source roots rather
+    # than by resolving each of the 51k relation paths, which was the single
+    # most expensive syscall in startup. A relation tail is exported file
+    # names, so `..` is the only way it could leave its root, and it is
+    # rejected outright instead of being collapsed by `Path.resolve`.
+    if ".." in tail.split("/"):
         return None
-    return resolved
+    resolved_base = _resolved_directory(base)
+    resolved_root = _resolved_directory(ROOT)
+    if resolved_base is None or resolved_root is None or not resolved_base.is_relative_to(resolved_root):
+        return None
+    return base / tail
 
 
 def _asset_rel_from_obj(value: object) -> str:
@@ -1115,6 +1655,134 @@ def install_hlod_material_json_bindings(
     return installed, unresolved
 
 
+TEXTURE_BINDING_TABLE_CACHE = ROOT / "reports/assets/map_recovery/texture_binding_tables.json"
+TEXTURE_BINDING_TABLE_SCHEMA = 1
+
+
+@functools.lru_cache(maxsize=1)
+def exporter_cli_evidence() -> dict:
+    """Content evidence for the exporter that produced every OBJ/PNG/Material.
+
+    A rebuilt `AnimeStudio.CLI` can change the conversion without changing any
+    Unity object hash, so it belongs in every render signature. Hashed once per
+    process, then reused by both cache signatures and the binding tables.
+    """
+    return file_content_evidence(STREAMING_CLI)
+
+
+def _binding_to_json(binding: dict | None) -> dict | None:
+    if binding is None:
+        return None
+    return {key: (repo_rel(value) if isinstance(value, Path) else value) for key, value in binding.items()}
+
+
+def _binding_from_json(row: dict | None) -> dict | None:
+    if row is None:
+        return None
+    return {
+        key: (ROOT / value if key in ("texturePath", "materialPath") else value)
+        for key, value in row.items()
+    }
+
+
+def _texture_binding_table_signature(
+    asset_map: Path, texture_files: dict[str, Path], material_root: Path,
+) -> str:
+    """Content evidence for every input the binding tables are derived from.
+
+    The tables are a pure function of the WebUI asset index, the exported
+    Material/Texture2D trees and the exporter. The asset map's own SHA-256 is
+    the export identity the rest of this pipeline already keys on, and the two
+    exported-file counts catch a tree that lost files without the asset map
+    being rewritten.
+    """
+    payload = {
+        "schema": TEXTURE_BINDING_TABLE_SCHEMA,
+        "assetIndex": file_content_evidence(ASSET_INDEX),
+        "assetMapSha256": asset_map_sha256(asset_map),
+        "assetMap": repo_rel(asset_map),
+        "baseTextureSlots": list(BASE_TEXTURE_SLOTS),
+        "textureRoot": repo_rel(TEXTURE_ROOT),
+        "materialRoot": repo_rel(material_root),
+        "exportedTextureCount": len(texture_files),
+        "exportedMaterialCount": sum(1 for _ in material_root.glob("*.json")) if material_root.is_dir() else 0,
+        "cli": exporter_cli_evidence(),
+    }
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _read_texture_binding_tables(signature: str) -> dict | None:
+    if not TEXTURE_BINDING_TABLE_CACHE.is_file():
+        return None
+    cached = json.loads(TEXTURE_BINDING_TABLE_CACHE.read_text(encoding="utf-8"))
+    if cached.get("schemaVersion") != TEXTURE_BINDING_TABLE_SCHEMA or cached.get("signature") != signature:
+        return None
+    if not isinstance(cached.get("meshBindings"), dict) or not isinstance(cached.get("hlodBindings"), list):
+        return None
+    return cached
+
+
+def _write_texture_binding_tables(signature: str, diffuse: int, material: int, unresolved: int) -> None:
+    payload = {
+        "schemaVersion": TEXTURE_BINDING_TABLE_SCHEMA,
+        "signature": signature,
+        "counts": {"diffuse": diffuse, "material": material, "unresolvedMaterial": unresolved},
+        "meshBindings": {key: _binding_to_json(row) for key, row in (_TEXTURE_BINDINGS or {}).items()},
+        "hlodBindings": [
+            [[key[0], key[1], key[2]], _binding_to_json(row)]
+            for key, row in sorted((_HLOD_TEXTURE_BINDINGS or {}).items())
+        ],
+    }
+    TEXTURE_BINDING_TABLE_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    # Workers can reach this together after an export change; a PID-unique
+    # temporary keeps each writer's replace atomic.
+    temporary = TEXTURE_BINDING_TABLE_CACHE.with_name(f"{TEXTURE_BINDING_TABLE_CACHE.name}.{os.getpid()}.tmp")
+    temporary.write_text(
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8",
+    )
+    temporary.replace(TEXTURE_BINDING_TABLE_CACHE)
+
+
+def prepare_render_bindings(
+    asset_map: Path, index: dict, texture_root: Path, material_root: Path = MATERIAL_ROOT,
+) -> tuple[dict[str, Path], int, int, int]:
+    """Resolve every base-color binding table once per export, not per process.
+
+    Rebuilding them parses the 168 MB WebUI asset index, stats 51k exported
+    relation files and reads 17k HLOD material JSONs - about twenty seconds
+    that the parent and all four preview workers each used to repeat. The
+    tables are a pure function of the export, so they are persisted under the
+    export's own content evidence and every later process just reads them.
+    """
+    global _TEXTURE_BINDINGS, _HLOD_TEXTURE_BINDINGS
+    texture_files = texture_file_index(texture_root) if (
+        index.get("waterSectors") or index.get("hlodDiffuseBindings")
+    ) else {}
+    signature = (
+        _texture_binding_table_signature(asset_map, texture_files, material_root)
+        if asset_map.is_file() and ASSET_INDEX.is_file() else None
+    )
+    if signature is not None:
+        cached = _read_texture_binding_tables(signature)
+        if cached is not None:
+            _TEXTURE_BINDINGS = {
+                key: _binding_from_json(row) for key, row in cached["meshBindings"].items()
+            }
+            _HLOD_TEXTURE_BINDINGS = {
+                (str(key[0]), int(key[1]), int(key[2])): _binding_from_json(row)
+                for key, row in cached["hlodBindings"]
+            }
+            counts = cached["counts"]
+            return texture_files, counts["diffuse"], counts["material"], counts["unresolvedMaterial"]
+    texture_bindings()
+    diffuse = install_asset_map_hlod_diffuse_bindings(index, texture_files)
+    material, unresolved = install_hlod_material_json_bindings(material_root, texture_files, index)
+    if signature is not None:
+        _write_texture_binding_tables(signature, diffuse, material, unresolved)
+    return texture_files, diffuse, material, unresolved
+
+
 def _material_render_params(binding: dict) -> dict:
     key = (Path(binding["materialPath"]), str(binding["slot"]))
     if key in _MATERIAL_PARAMS:
@@ -1212,6 +1880,68 @@ def _sample_texture(texture: dict, u: float, v: float) -> tuple[int, int, int, i
         tint_lut[2][source[offset + 2]],
         alpha if alpha_mode == "transparent" else 255,
     )
+
+
+_EMPTY_TEXTURE_PIXELS = None
+_IDENTITY_TINT_LUT = None
+if _np is not None:
+    # Read-only views, so an untextured run and a textured run present numba
+    # with one identical argument type and share a single compiled signature.
+    _EMPTY_TEXTURE_PIXELS = _np.frombuffer(bytes(4), dtype=_np.uint8).reshape(1, 1, 4)
+    _IDENTITY_TINT_LUT = _np.frombuffer(bytes(range(256)) * 3, dtype=_np.uint8).reshape(3, 256)
+
+
+def _depth_texture_arrays(texture: dict) -> dict:
+    """Attach the compiled rasterizer's pixel and tint views to a record once."""
+    if "_npPixels" not in texture:
+        texture["_npPixels"] = _np.frombuffer(texture["pixels"], dtype=_np.uint8).reshape(
+            texture["height"], texture["width"], 4
+        )
+        texture["_npTintLut"] = _np.frombuffer(
+            b"".join(texture["tintLut"]), dtype=_np.uint8
+        ).reshape(3, 256)
+    return texture
+
+
+def _sample_texture_arrays(texture: dict) -> dict:
+    """Attach `_sample_texture`'s pixel and tint views to a record once.
+
+    A record that carries no precomputed tint LUT builds the same one
+    `_sample_texture` would have built per sample, now once per texture.
+    """
+    if "_npSamplePixels" not in texture:
+        texture["_npSamplePixels"] = _np.frombuffer(texture["pixels"], dtype=_np.uint8).reshape(
+            texture["height"], texture["width"], 4
+        )
+        tint_lut = texture.get("tintLut")
+        if tint_lut is None:
+            tint_lut = tuple(
+                bytes(_tint_srgb_channel(encoded, channel) for encoded in range(256))
+                for channel in texture["tint"]
+            )
+        texture["_npSampleTintLut"] = _np.frombuffer(
+            b"".join(tint_lut[:3]), dtype=_np.uint8
+        ).reshape(3, 256)
+    return texture
+
+
+def _run_texture(
+    cache: dict[tuple[str, int], dict | None],
+    bindings: dict[str, dict] | None,
+    asset_rel: str,
+    submesh_index: int | None,
+) -> dict | None:
+    """Resolve one submesh's base-color record once per mesh and submesh slot.
+
+    The record is rebuilt from the PNG and the material JSON, including a
+    3x256 tint LUT, so resolving it per face - as the renderer used to - cost
+    two orders of magnitude more than rasterizing the face.
+    """
+    key = (asset_rel, -1 if submesh_index is None else submesh_index)
+    if key not in cache:
+        binding = (bindings or {}).get(asset_rel)
+        cache[key] = _texture_render_source(_submesh_binding(binding, submesh_index))
+    return cache[key]
 
 
 def level_positions(path: Path) -> list[tuple[float, float, float]]:
@@ -1890,6 +2620,156 @@ def _read_textured_mesh(path: Path):
     return vertices, texcoords, faces
 
 
+_STREAMING_OBJ_PATHS: dict[tuple[Path, str], Path | None] = {}
+
+
+def _streaming_obj_path(value: str, export_root: Path) -> Path | None:
+    """Resolve and sandbox one instance OBJ reference once per process.
+
+    Hundreds of thousands of instances name a few thousand OBJ files, and
+    `Path.resolve` is a filesystem call, so the answer is memoized per source
+    string rather than recomputed per instance.
+    """
+    key = (ROOT, value)
+    if key not in _STREAMING_OBJ_PATHS:
+        path = (ROOT / value).resolve()
+        _STREAMING_OBJ_PATHS[key] = path if path.is_relative_to(export_root) else None
+    return _STREAMING_OBJ_PATHS[key]
+
+
+_STREAMING_MESH_ARRAYS: dict[Path, dict | None] = {}
+_STREAMING_MESH_ARRAY_BYTES = 0
+# One worker renders several scenes in sequence. A whole region's OBJ set stays
+# resident for that scene's depth and lattice passes and is then released, so
+# the arrays never accumulate across unrelated scenes.
+_STREAMING_MESH_ARRAY_LIMIT = 3 << 30
+
+
+def _read_textured_mesh_arrays(path: Path) -> dict | None:
+    """`_read_textured_mesh` into contiguous arrays, with the same parse rules.
+
+    Triangle corners are resolved here once: Python list indexing wraps a
+    negative OBJ index and raises past the end, so the compiled kernels only
+    ever see in-range corners plus the mask of faces the interpreter skipped.
+    """
+    positions: list[tuple[float, float, float]] = []
+    uvs: list[tuple[float, float]] = []
+    corner_vertices: list[int] = []
+    corner_texcoords: list[int] = []
+    face_submeshes: list[int] = []
+    base_group = None
+    submesh_index = -1
+    try:
+        stream = path.open("r", encoding="utf-8", errors="strict")
+    except OSError:
+        return None
+    with stream:
+        for line in stream:
+            if line.startswith("v "):
+                parts = line.split()
+                try:
+                    positions.append((float(parts[1]), float(parts[2]), float(parts[3])))
+                except (IndexError, ValueError):
+                    return None
+            elif line.startswith("vt "):
+                parts = line.split()
+                try:
+                    uvs.append((float(parts[1]), float(parts[2])))
+                except (IndexError, ValueError):
+                    return None
+            elif line.startswith("g "):
+                group = line[2:].strip()
+                if base_group is None:
+                    base_group = group
+                    submesh_index = -1
+                elif group.startswith(base_group + "_"):
+                    suffix = group[len(base_group) + 1:]
+                    submesh_index = int(suffix) if suffix.isdigit() else -1
+                else:
+                    submesh_index = -1
+            elif line.startswith("f "):
+                vertex_indices = []
+                texture_indices = []
+                for token in line.split()[1:4]:
+                    fields = token.split("/")
+                    try:
+                        vertex_indices.append(int(fields[0]) - 1)
+                        texture_indices.append(int(fields[1]) - 1 if len(fields) > 1 and fields[1] else -1)
+                    except ValueError:
+                        vertex_indices = []
+                        break
+                if len(vertex_indices) == 3:
+                    corner_vertices.extend(vertex_indices)
+                    corner_texcoords.extend(texture_indices)
+                    face_submeshes.append(submesh_index)
+
+    vertex_count = len(positions)
+    texcoord_count = len(uvs)
+    face_count = len(face_submeshes)
+    vertices = _np.array(positions, dtype=_np.float64) if vertex_count else _np.zeros((0, 3), dtype=_np.float64)
+    texcoords = _np.array(uvs, dtype=_np.float64) if texcoord_count else _np.zeros((0, 2), dtype=_np.float64)
+    if face_count:
+        raw_vertices = _np.array(corner_vertices, dtype=_np.int64).reshape(face_count, 3)
+        raw_texcoords = _np.array(corner_texcoords, dtype=_np.int64).reshape(face_count, 3)
+        submeshes = _np.array(face_submeshes, dtype=_np.int64)
+    else:
+        raw_vertices = _np.zeros((0, 3), dtype=_np.int64)
+        raw_texcoords = _np.zeros((0, 3), dtype=_np.int64)
+        submeshes = _np.zeros(0, dtype=_np.int64)
+    resolved = _np.where(raw_vertices < 0, raw_vertices + vertex_count, raw_vertices)
+    face_valid = ((resolved >= 0) & (resolved < vertex_count)).all(axis=1)
+    resolved[~face_valid] = 0
+    face_uv_ok = ((raw_texcoords >= 0) & (raw_texcoords < texcoord_count)).all(axis=1)
+    raw_texcoords = _np.where(face_uv_ok[:, None], raw_texcoords, 0)
+    # Every retained corner is now inside its own array, so the region's worth
+    # of index data halves without any chance of a truncated OBJ index.
+    resolved = resolved.astype(_np.int32)
+    raw_texcoords = raw_texcoords.astype(_np.int32)
+    # OBJ `g` lines partition the face list, so equal submesh slots are already
+    # contiguous; one run is one compiled call with one resolved texture.
+    breaks = _np.flatnonzero(submeshes[1:] != submeshes[:-1]).tolist() if face_count else []
+    starts = [0, *(index + 1 for index in breaks)]
+    stops = [*(index + 1 for index in breaks), face_count]
+    runs = [
+        (start, stop, None if submeshes[start] < 0 else int(submeshes[start]))
+        for start, stop in zip(starts, stops)
+    ] if face_count else []
+    return {
+        "vertices": vertices,
+        "texcoords": texcoords,
+        "faceVertices": resolved,
+        "faceValid": face_valid,
+        "faceTexcoords": raw_texcoords,
+        "faceUvOk": face_uv_ok,
+        "runs": runs,
+        "validFaceCount": int(face_valid.sum()),
+        "bytes": int(
+            vertices.nbytes + texcoords.nbytes + resolved.nbytes
+            + face_valid.nbytes + raw_texcoords.nbytes + face_uv_ok.nbytes
+        ),
+    }
+
+
+def _textured_mesh_arrays(path: Path) -> dict | None:
+    """Parse one streaming OBJ at most once per process.
+
+    Both the depth pass and the lattice pass read the same arrays, and a single
+    region reuses a few thousand OBJs across hundreds of thousands of
+    instances, so the parse is the one place that must not repeat.
+    """
+    global _STREAMING_MESH_ARRAY_BYTES
+    if path in _STREAMING_MESH_ARRAYS:
+        return _STREAMING_MESH_ARRAYS[path]
+    arrays = _read_textured_mesh_arrays(path)
+    if arrays is not None and _STREAMING_MESH_ARRAY_BYTES + arrays["bytes"] > _STREAMING_MESH_ARRAY_LIMIT:
+        _STREAMING_MESH_ARRAYS.clear()
+        _STREAMING_MESH_ARRAY_BYTES = 0
+    _STREAMING_MESH_ARRAYS[path] = arrays
+    if arrays is not None:
+        _STREAMING_MESH_ARRAY_BYTES += arrays["bytes"]
+    return arrays
+
+
 def _submesh_binding(binding: dict | None, submesh_index: int | None) -> dict | None:
     slots = (binding or {}).get("submeshBindings")
     if slots is None:
@@ -2064,27 +2944,140 @@ def render_hlod_point_samples(
 
 def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, detail_props_only=False):
     """Rasterize exact static instances, sampling proven material base textures."""
+    if _raster_mesh_numba is not None:
+        return _rasterise_streaming_depth_batched(
+            streaming, bounds, width, height, bindings, detail_props_only,
+        )
+    return _rasterise_streaming_depth_stdlib(
+        streaming, bounds, width, height, bindings, detail_props_only,
+    )
+
+
+def _rasterise_streaming_depth_batched(streaming, bounds, width, height, bindings, detail_props_only):
+    """One compiled call per mesh instance and submesh run, not per triangle."""
+    min_x = bounds["minX"]
+    max_z = bounds["maxZ"]
+    span_x = bounds["maxX"] - min_x
+    span_z = max_z - bounds["minZ"]
+    pixels = width * height
+    depth = _np.full(pixels, NO_HIT, dtype=_np.float64)
+    detail_depth = _np.full(pixels, NO_HIT, dtype=_np.float64)
+    color_depth = _np.full(pixels, NO_HIT, dtype=_np.float64)
+    detail_color_depth = _np.full(pixels, NO_HIT, dtype=_np.float64)
+    albedo = _np.zeros((pixels, 4), dtype=_np.uint8)
+    detail_albedo = _np.zeros((pixels, 4), dtype=_np.uint8)
+    textures: dict[tuple[str, int], dict | None] = {}
+    used_instances = 0
+    textured_instances = 0
+    triangles = 0
+    textured_triangles = 0
+    detail_triangles = 0
+    excluded_detail_triangles = 0
+    used_textures: set[str] = set()
+    export_root = (ROOT / "export_full").resolve()
+
+    for instance in streaming:
+        matrix = instance.get("matrixColumnMajor")
+        meshes = _instance_meshes(instance)
+        if not meshes or not isinstance(matrix, list) or len(matrix) != 16:
+            continue
+        matrix_values = _np.asarray(matrix, dtype=_np.float64)
+        instance_drawn = False
+        instance_textured = False
+        for mesh in meshes:
+            path = _streaming_obj_path(str(mesh.get("obj") or ""), export_root)
+            if path is None:
+                continue
+            arrays = _textured_mesh_arrays(path)
+            if arrays is None:
+                continue
+            # The detail rule is per mesh except for the geometric slab test,
+            # which stays per face and is evaluated inside the kernel.
+            if detail_props_only:
+                detail_mode = 1 if _is_detail_prop(instance, mesh) else 0
+            elif _is_detail_structural(instance, mesh):
+                detail_mode = 0
+            elif _is_detail_prop(instance, mesh):
+                detail_mode = 1
+            else:
+                detail_mode = 2
+            asset_rel = _asset_rel_from_obj(mesh.get("obj"))
+            world = _transform_vertices_numba(arrays["vertices"], matrix_values)
+            drawn = 0
+            for first_face, last_face, submesh_index in arrays["runs"]:
+                texture = _run_texture(textures, bindings, asset_rel, submesh_index)
+                if texture is None:
+                    has_texture = False
+                    texture_pixels = _EMPTY_TEXTURE_PIXELS
+                    tint_lut = _IDENTITY_TINT_LUT
+                    texture_width = 1
+                    texture_height = 1
+                    scale_u = scale_v = 1.0
+                    offset_u = offset_v = cutoff_alpha = 0.0
+                else:
+                    _depth_texture_arrays(texture)
+                    has_texture = True
+                    texture_pixels = texture["_npPixels"]
+                    tint_lut = texture["_npTintLut"]
+                    texture_width = texture["width"]
+                    texture_height = texture["height"]
+                    scale_u, scale_v = texture["scale"]
+                    offset_u, offset_v = texture["offset"]
+                    cutoff_alpha = texture["cutoff"] * 255.0
+                run_drawn, run_textured, run_detail, run_excluded, run_hit = _raster_mesh_numba(
+                    depth, detail_depth, color_depth, detail_color_depth, albedo, detail_albedo,
+                    width, height, min_x, max_z, span_x, span_z,
+                    world, arrays["faceVertices"], arrays["faceValid"],
+                    arrays["faceTexcoords"], arrays["faceUvOk"], arrays["texcoords"],
+                    first_face, last_face, detail_mode,
+                    has_texture, texture_pixels, texture_width, texture_height,
+                    scale_u, scale_v, offset_u, offset_v, cutoff_alpha, tint_lut, EDGE_EPSILON,
+                )
+                drawn += run_drawn
+                textured_triangles += run_textured
+                detail_triangles += run_detail
+                excluded_detail_triangles += run_excluded
+                if run_textured:
+                    used_textures.add(texture["textureRel"])
+                if run_hit:
+                    instance_textured = True
+            if drawn:
+                instance_drawn = True
+                triangles += drawn
+        if instance_drawn:
+            used_instances += 1
+        if instance_textured:
+            textured_instances += 1
+    return {
+        "depth": depth.tolist(),
+        "detailDepth": detail_depth.tolist(),
+        "albedo": bytearray(albedo.tobytes()),
+        "detailAlbedo": bytearray(detail_albedo.tobytes()),
+        "usedInstances": used_instances,
+        "texturedInstances": textured_instances,
+        "triangles": triangles,
+        "texturedTriangles": textured_triangles,
+        "detailTriangles": detail_triangles,
+        "excludedDetailTriangles": excluded_detail_triangles,
+        "vertexSamples": 0,
+        "texturedPixels": int(_np.count_nonzero(albedo[:, 3])),
+        "usedTextures": sorted(used_textures),
+        "rasterBackend": "numpy_numba",
+    }
+
+
+def _rasterise_streaming_depth_stdlib(streaming, bounds, width, height, bindings, detail_props_only):
+    """Maintained interpreter path for an environment without NumPy/Numba."""
     span_x = bounds["maxX"] - bounds["minX"]
     span_z = bounds["maxZ"] - bounds["minZ"]
-    accelerated = _raster_triangle_numba is not None
-    if accelerated:
-        depth = _np.full(width * height, NO_HIT, dtype=_np.float64)
-        detail_depth = _np.full(width * height, NO_HIT, dtype=_np.float64)
-        color_depth = _np.full(width * height, NO_HIT, dtype=_np.float64)
-        detail_color_depth = _np.full(width * height, NO_HIT, dtype=_np.float64)
-        albedo = _np.zeros((width * height, 4), dtype=_np.uint8)
-        detail_albedo = _np.zeros((width * height, 4), dtype=_np.uint8)
-        empty_uvs = _np.zeros((3, 2), dtype=_np.float64)
-        empty_texture = _np.zeros((1, 1, 4), dtype=_np.uint8)
-        identity_lut = _np.vstack([_np.arange(256, dtype=_np.uint8)] * 3)
-    else:
-        depth = [NO_HIT] * (width * height)
-        detail_depth = [NO_HIT] * (width * height)
-        color_depth = [NO_HIT] * (width * height)
-        detail_color_depth = [NO_HIT] * (width * height)
-        albedo = bytearray(width * height * 4)
-        detail_albedo = bytearray(width * height * 4)
+    depth = [NO_HIT] * (width * height)
+    detail_depth = [NO_HIT] * (width * height)
+    color_depth = [NO_HIT] * (width * height)
+    detail_color_depth = [NO_HIT] * (width * height)
+    albedo = bytearray(width * height * 4)
+    detail_albedo = bytearray(width * height * 4)
     cache: dict[Path, tuple[list, list, list] | None] = {}
+    textures: dict[tuple[str, int], dict | None] = {}
     used_instances = 0
     textured_instances = 0
     triangles = 0
@@ -2103,10 +3096,8 @@ def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, d
         instance_drawn = False
         instance_textured = False
         for mesh in meshes:
-            path = (ROOT / str(mesh.get("obj") or "")).resolve()
-            try:
-                path.relative_to(export_root)
-            except ValueError:
+            path = _streaming_obj_path(str(mesh.get("obj") or ""), export_root)
+            if path is None:
                 continue
             if path not in cache:
                 cache[path] = _read_textured_mesh(path)
@@ -2115,7 +3106,8 @@ def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, d
                 continue
             raw_vertices, texcoords, faces = parsed
             structural_detail = _is_detail_structural(instance, mesh)
-            binding = (bindings or {}).get(_asset_rel_from_obj(mesh.get("obj")))
+            authored_detail_prop = _is_detail_prop(instance, mesh)
+            asset_rel = _asset_rel_from_obj(mesh.get("obj"))
             # AnimeStudio's OBJ conversion mirrors Unity X. Undo that conversion
             # before applying the recovered Unity column-major instance matrix.
             vertices = []
@@ -2128,12 +3120,11 @@ def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, d
                 ))
             drawn = 0
             for vertex_face, texture_face, submesh_index in faces:
-                texture = _texture_render_source(_submesh_binding(binding, submesh_index))
+                texture = _run_texture(textures, bindings, asset_rel, submesh_index)
                 try:
                     points = [vertices[index] for index in vertex_face]
                 except IndexError:
                     continue
-                authored_detail_prop = _is_detail_prop(instance, mesh)
                 detail_face = (
                     authored_detail_prop
                     if detail_props_only else
@@ -2175,39 +3166,6 @@ def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, d
                            + (screen_x[2] - screen_x[1]) * (first_y - screen_y[2])) * inv_area)
                 row_w1 = (((screen_y[2] - screen_y[0]) * (first_x - screen_x[2])
                            + (screen_x[0] - screen_x[2]) * (first_y - screen_y[2])) * inv_area)
-                if accelerated:
-                    if uvs is not None:
-                        if "_npPixels" not in texture:
-                            texture["_npPixels"] = _np.frombuffer(texture["pixels"], dtype=_np.uint8).reshape(
-                                texture["height"], texture["width"], 4
-                            )
-                            texture["_npTintLut"] = _np.frombuffer(
-                                b"".join(texture["tintLut"]), dtype=_np.uint8
-                            ).reshape(3, 256)
-                        uv_values = _np.asarray(uvs, dtype=_np.float64)
-                        texture_pixels = texture["_npPixels"]
-                        tint_lut = texture["_npTintLut"]
-                        scale_u, scale_v = texture["scale"]
-                        offset_u, offset_v = texture["offset"]
-                        cutoff_alpha = texture["cutoff"] * 255.0
-                        texture_width, texture_height = texture["width"], texture["height"]
-                        has_texture = True
-                    else:
-                        uv_values = empty_uvs
-                        texture_pixels = empty_texture
-                        tint_lut = identity_lut
-                        scale_u = scale_v = 1.0
-                        offset_u = offset_v = cutoff_alpha = 0.0
-                        texture_width = texture_height = 1
-                        has_texture = False
-                    instance_textured = bool(_raster_triangle_numba(
-                        depth, detail_depth, color_depth, detail_color_depth, albedo, detail_albedo, width,
-                        x0, x1, y0, y1, row_w0, row_w1, w0_dx, w0_dy, w1_dx, w1_dy,
-                        points[0][1], points[1][1], points[2][1], detail_face,
-                        has_texture, uv_values, texture_pixels, texture_width, texture_height,
-                        scale_u, scale_v, offset_u, offset_v, cutoff_alpha, tint_lut, EDGE_EPSILON,
-                    )) or instance_textured
-                    continue
                 for pixel_y in range(y0, y1 + 1):
                     base = pixel_y * width
                     w0 = row_w0
@@ -2269,14 +3227,6 @@ def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, d
             used_instances += 1
         if instance_textured:
             textured_instances += 1
-    if accelerated:
-        textured_pixels = int(_np.count_nonzero(albedo[:, 3]))
-        depth = depth.tolist()
-        detail_depth = detail_depth.tolist()
-        albedo = bytearray(albedo.tobytes())
-        detail_albedo = bytearray(detail_albedo.tobytes())
-    else:
-        textured_pixels = sum(1 for index in range(3, len(albedo), 4) if albedo[index])
     return {
         "depth": depth,
         "detailDepth": detail_depth,
@@ -2289,9 +3239,9 @@ def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, d
         "detailTriangles": detail_triangles,
         "excludedDetailTriangles": excluded_detail_triangles,
         "vertexSamples": vertex_samples,
-        "texturedPixels": textured_pixels,
+        "texturedPixels": sum(1 for index in range(3, len(albedo), 4) if albedo[index]),
         "usedTextures": sorted(used_textures),
-        "rasterBackend": "numpy_numba" if accelerated else "stdlib_python",
+        "rasterBackend": "stdlib_python",
     }
 
 
@@ -3188,27 +4138,167 @@ def renderer_texture_bindings() -> dict[tuple[str, int], dict]:
     return _RENDERER_TEXTURE_BINDINGS
 
 
-def render_streaming_surface_samples(
-    level_id: str,
-    streaming: list[dict],
-    bounds: dict[str, float],
-    width: int,
-    height: int,
-    output_root: Path,
-    density: float,
-    bindings: dict[str, dict] | None = None,
-) -> dict | None:
-    """Sample exact transformed triangle surfaces on a global X/Z lattice."""
-    spacing = math.sqrt(1.0 / density)
-    span_x = bounds["maxX"] - bounds["minX"]
-    span_z = bounds["maxZ"] - bounds["minZ"]
-    samples: dict[int, list[tuple[float, tuple[int, int, int, int] | None]]] = {}
-    cache: dict[Path, tuple[list, list, list] | None] = {}
+def _grow_sample_buffer(values, capacity):
+    grown = _np.empty((capacity, *values.shape[1:]), dtype=values.dtype)
+    grown[:values.shape[0]] = values
+    return grown
+
+
+def _collect_streaming_surface_samples_batched(
+    streaming, bounds, width, height, bindings, spacing, epsilon,
+):
+    """Sample the world lattice with one compiled call per submesh run."""
+    min_x, max_x = bounds["minX"], bounds["maxX"]
+    min_z, max_z = bounds["minZ"], bounds["maxZ"]
+    span_x = max_x - min_x
+    span_z = max_z - min_z
+    pixels = width * height
+    head = _np.full(pixels, -1, dtype=_np.int64)
+    capacity = 1 << 16
+    chain = _np.empty(capacity, dtype=_np.int64)
+    sample_index = _np.empty(capacity, dtype=_np.int64)
+    sample_y = _np.empty(capacity, dtype=_np.float64)
+    sample_rgba = _np.empty((capacity, 4), dtype=_np.uint8)
+    count = 0
+    textures: dict[tuple[str, int], dict | None] = {}
     used_textures: set[str] = set()
     sampled_triangles = source_samples = 0
     excluded_structural_triangles = excluded_horizontal_triangles = 0
     unresolved_material_triangles = unresolved_uv_triangles = 0
-    epsilon = 1e-4
+    export_root = (ROOT / "export_full").resolve()
+
+    for instance in streaming:
+        matrix = instance.get("matrixColumnMajor")
+        if not isinstance(matrix, list) or len(matrix) != 16:
+            continue
+        matrix_values = _np.asarray(matrix, dtype=_np.float64)
+        for mesh in _instance_meshes(instance):
+            path = _streaming_obj_path(str(mesh.get("obj") or ""), export_root)
+            if path is None:
+                continue
+            arrays = _textured_mesh_arrays(path)
+            if arrays is None:
+                continue
+            if _is_detail_structural(instance, mesh):
+                excluded_structural_triangles += arrays["validFaceCount"]
+                continue
+            skip_horizontal = not _is_detail_prop(instance, mesh)
+            asset_rel = _asset_rel_from_obj(mesh.get("obj"))
+            world = _transform_vertices_numba(arrays["vertices"], matrix_values)
+            for first_face, last_face, submesh_index in arrays["runs"]:
+                texture = _run_texture(textures, bindings, asset_rel, submesh_index)
+                if texture is None:
+                    has_texture = False
+                    texture_pixels = _EMPTY_TEXTURE_PIXELS
+                    tint_lut = _IDENTITY_TINT_LUT
+                    texture_width = 1
+                    texture_height = 1
+                    scale_u = scale_v = 1.0
+                    offset_u = offset_v = 0.0
+                    cutout = transparent = False
+                    cutoff = 0.0
+                else:
+                    _sample_texture_arrays(texture)
+                    has_texture = True
+                    texture_pixels = texture["_npSamplePixels"]
+                    tint_lut = texture["_npSampleTintLut"]
+                    texture_width = texture["width"]
+                    texture_height = texture["height"]
+                    scale_u, scale_v = texture["scale"]
+                    offset_u, offset_v = texture["offset"]
+                    alpha_mode = texture.get("alphaMode", "opaque")
+                    cutout = alpha_mode == "cutout"
+                    transparent = alpha_mode == "transparent"
+                    cutoff = texture["cutoff"] if cutout else 0.0
+                face = first_face
+                while face < last_face:
+                    (
+                        face, count, run_horizontal, run_material, run_uv,
+                        run_sampled, run_samples, run_used, needed,
+                    ) = _sample_mesh_numba(
+                        world, arrays["faceVertices"], arrays["faceValid"],
+                        arrays["faceTexcoords"], arrays["faceUvOk"], arrays["texcoords"],
+                        face, last_face, skip_horizontal,
+                        has_texture, texture_pixels, texture_width, texture_height,
+                        scale_u, scale_v, offset_u, offset_v,
+                        cutout, transparent, cutoff, tint_lut,
+                        spacing, min_x, max_x, min_z, max_z, span_x, span_z, width, height,
+                        EDGE_EPSILON, epsilon,
+                        head, chain, sample_index, sample_y, sample_rgba, count,
+                    )
+                    excluded_horizontal_triangles += run_horizontal
+                    unresolved_material_triangles += run_material
+                    unresolved_uv_triangles += run_uv
+                    sampled_triangles += run_sampled
+                    source_samples += run_samples
+                    if run_used:
+                        used_textures.add(texture["textureRel"])
+                    if face < last_face:
+                        capacity = max(needed, capacity * 2)
+                        chain = _grow_sample_buffer(chain, capacity)
+                        sample_index = _grow_sample_buffer(sample_index, capacity)
+                        sample_y = _grow_sample_buffer(sample_y, capacity)
+                        sample_rgba = _grow_sample_buffer(sample_rgba, capacity)
+
+    if not count:
+        return None
+    # `sorted(samples)` then a stable sort by height is exactly an ascending
+    # (pixel, height) order; no two retained heights in one pixel can tie
+    # because the dedupe epsilon already removed them.
+    order = _np.lexsort((sample_y[:count], sample_index[:count]))
+    ordered_index = sample_index[:count][order]
+    ordered_y = sample_y[:count][order]
+    ordered_rgba = sample_rgba[:count][order]
+    rows = _np.empty(count, dtype=_np.dtype([
+        ("index", "<u4"), ("height", "<f4"),
+        ("red", "u1"), ("green", "u1"), ("blue", "u1"), ("alpha", "u1"),
+    ]))
+    rows["index"] = ordered_index
+    rows["height"] = ordered_y
+    rows["red"] = ordered_rgba[:, 0]
+    rows["green"] = ordered_rgba[:, 1]
+    rows["blue"] = ordered_rgba[:, 2]
+    rows["alpha"] = ordered_rgba[:, 3]
+    records = bytearray(b"MRPS" + struct.pack("<HHII", 1, 12, width, height))
+    records.extend(rows.tobytes())
+    top = _np.empty(count, dtype=bool)
+    top[-1] = True
+    top[:-1] = ordered_index[1:] != ordered_index[:-1]
+    top_depth = _np.full(pixels, NO_HIT, dtype=_np.float64)
+    top_depth[ordered_index[top]] = ordered_y[top]
+    top_colors = _np.zeros((pixels, 4), dtype=_np.uint8)
+    top_colors[ordered_index[top]] = ordered_rgba[top]
+    return {
+        "records": records,
+        "recordCount": count,
+        "pixelCount": int(_np.count_nonzero(top)),
+        "low": float(ordered_y.min()),
+        "high": float(ordered_y.max()),
+        "topDepth": top_depth.tolist(),
+        "topColors": bytearray(top_colors.tobytes()),
+        "sampledTriangles": sampled_triangles,
+        "sourceSamples": source_samples,
+        "excludedStructuralTriangles": excluded_structural_triangles,
+        "excludedHorizontalTriangles": excluded_horizontal_triangles,
+        "unresolvedMaterialTriangles": unresolved_material_triangles,
+        "unresolvedUvTriangles": unresolved_uv_triangles,
+        "usedTextures": used_textures,
+    }
+
+
+def _collect_streaming_surface_samples_stdlib(
+    streaming, bounds, width, height, bindings, spacing, epsilon,
+):
+    """Maintained interpreter path for an environment without NumPy/Numba."""
+    span_x = bounds["maxX"] - bounds["minX"]
+    span_z = bounds["maxZ"] - bounds["minZ"]
+    samples: dict[int, list[tuple[float, tuple[int, int, int, int] | None]]] = {}
+    cache: dict[Path, tuple[list, list, list] | None] = {}
+    textures: dict[tuple[str, int], dict | None] = {}
+    used_textures: set[str] = set()
+    sampled_triangles = source_samples = 0
+    excluded_structural_triangles = excluded_horizontal_triangles = 0
+    unresolved_material_triangles = unresolved_uv_triangles = 0
     export_root = (ROOT / "export_full").resolve()
 
     def add(index: int, world_y: float, color: tuple[int, int, int, int] | None) -> None:
@@ -3225,10 +4315,8 @@ def render_streaming_surface_samples(
         if not isinstance(matrix, list) or len(matrix) != 16:
             continue
         for mesh in _instance_meshes(instance):
-            path = (ROOT / str(mesh.get("obj") or "")).resolve()
-            try:
-                path.relative_to(export_root)
-            except ValueError:
+            path = _streaming_obj_path(str(mesh.get("obj") or ""), export_root)
+            if path is None:
                 continue
             if path not in cache:
                 cache[path] = _read_textured_mesh(path)
@@ -3238,7 +4326,7 @@ def render_streaming_surface_samples(
             raw_vertices, texcoords, faces = parsed
             structural_detail = _is_detail_structural(instance, mesh)
             authored_detail_prop = _is_detail_prop(instance, mesh)
-            binding = (bindings or {}).get(_asset_rel_from_obj(mesh.get("obj")))
+            asset_rel = _asset_rel_from_obj(mesh.get("obj"))
             vertices = []
             for obj_x, obj_y, obj_z in raw_vertices:
                 local_x = -obj_x  # undo AnimeStudio OBJ's Unity-X mirror
@@ -3248,7 +4336,7 @@ def render_streaming_surface_samples(
                     matrix[2] * local_x + matrix[6] * obj_y + matrix[10] * obj_z + matrix[14],
                 ))
             for vertex_face, texture_face, submesh_index in faces:
-                texture = _texture_render_source(_submesh_binding(binding, submesh_index))
+                texture = _run_texture(textures, bindings, asset_rel, submesh_index)
                 try:
                     points = [vertices[index] for index in vertex_face]
                 except IndexError:
@@ -3316,7 +4404,6 @@ def render_streaming_surface_samples(
     all_heights = [world_y for rows in samples.values() for world_y, _color in rows]
     if not all_heights:
         return None
-    low, high = min(all_heights), max(all_heights)
     top_depth = [NO_HIT] * (width * height)
     top_colors = bytearray(width * height * 4)
     records = bytearray(b"MRPS" + struct.pack("<HHII", 1, 12, width, height))
@@ -3330,7 +4417,46 @@ def render_streaming_surface_samples(
         top_depth[index] = top_y
         offset = index * 4
         top_colors[offset:offset + 4] = bytes(top_color)
+    return {
+        "records": records,
+        "recordCount": record_count,
+        "pixelCount": len(samples),
+        "low": min(all_heights),
+        "high": max(all_heights),
+        "topDepth": top_depth,
+        "topColors": top_colors,
+        "sampledTriangles": sampled_triangles,
+        "sourceSamples": source_samples,
+        "excludedStructuralTriangles": excluded_structural_triangles,
+        "excludedHorizontalTriangles": excluded_horizontal_triangles,
+        "unresolvedMaterialTriangles": unresolved_material_triangles,
+        "unresolvedUvTriangles": unresolved_uv_triangles,
+        "usedTextures": used_textures,
+    }
 
+
+def render_streaming_surface_samples(
+    level_id: str,
+    streaming: list[dict],
+    bounds: dict[str, float],
+    width: int,
+    height: int,
+    output_root: Path,
+    density: float,
+    bindings: dict[str, dict] | None = None,
+) -> dict | None:
+    """Sample exact transformed triangle surfaces on a global X/Z lattice."""
+    spacing = math.sqrt(1.0 / density)
+    epsilon = 1e-4
+    collect = (
+        _collect_streaming_surface_samples_batched if _sample_mesh_numba is not None
+        else _collect_streaming_surface_samples_stdlib
+    )
+    collected = collect(streaming, bounds, width, height, bindings, spacing, epsilon)
+    if collected is None:
+        return None
+
+    top_colors = collected["topColors"]
     output_root.mkdir(parents=True, exist_ok=True)
     image_name = f"{level_id}_streaming_surface_points.png"
     write_png(
@@ -3338,9 +4464,9 @@ def render_streaming_surface_samples(
         [bytes(top_colors[row * width * 4:(row + 1) * width * 4]) for row in range(height)],
     )
     sample_name = f"{level_id}_streaming_surface_points.samples"
-    (output_root / sample_name).write_bytes(records)
+    (output_root / sample_name).write_bytes(collected["records"])
     height_mask = render_point_height_mask(
-        level_id, top_depth, width, height, output_root,
+        level_id, collected["topDepth"], width, height, output_root,
         image_suffix="streaming_surface_points_height_mask", sampling="all",
     )
     return {
@@ -3349,24 +4475,24 @@ def render_streaming_surface_samples(
         "defaultOpacity": 0.72,
         "densityPerSquareMeter": density,
         "spacingMeters": spacing,
-        "sourceSampleCount": source_samples,
-        "sampledTriangleCount": sampled_triangles,
-        "excludedStructuralTriangleCount": excluded_structural_triangles,
-        "excludedHorizontalTriangleCount": excluded_horizontal_triangles,
-        "unresolvedMaterialTriangleCount": unresolved_material_triangles,
-        "unresolvedUvTriangleCount": unresolved_uv_triangles,
+        "sourceSampleCount": collected["sourceSamples"],
+        "sampledTriangleCount": collected["sampledTriangles"],
+        "excludedStructuralTriangleCount": collected["excludedStructuralTriangles"],
+        "excludedHorizontalTriangleCount": collected["excludedHorizontalTriangles"],
+        "unresolvedMaterialTriangleCount": collected["unresolvedMaterialTriangles"],
+        "unresolvedUvTriangleCount": collected["unresolvedUvTriangles"],
         "heightMask": height_mask,
         "sampleSet": {
             "src": f"render/{sample_name}",
             "encoding": "mrps_v1_le_u32_pixel_f32_height_rgba8",
             "width": width,
             "height": height,
-            "recordCount": record_count,
-            "pixelCount": len(samples),
-            "elevationRange": {"min": low, "max": high},
+            "recordCount": collected["recordCount"],
+            "pixelCount": collected["pixelCount"],
+            "elevationRange": {"min": collected["low"], "max": collected["high"]},
             "dedupeEpsilon": epsilon,
         },
-        "baseColorTextures": sorted(used_textures),
+        "baseColorTextures": sorted(collected["usedTextures"]),
         "boundary": (
             "Deterministic world-space X/Z lattice samples on exact matrix-transformed detail triangle surfaces. "
             "Every visible point samples its exact exported base-color texture through the triangle UVs; "
@@ -3524,15 +4650,14 @@ def main(argv: list[str] | None = None) -> int:
     if not args.asset_map.is_file():
         print(f"map previews: HLOD skipped - AssetMap not found: {args.asset_map}")
     mesh_files = mesh_file_index(args.mesh_root) if index["levels"] else {}
-    texture_files = texture_file_index(args.texture_root) if (
-        index.get("waterSectors") or index.get("hlodDiffuseBindings")
-    ) else {}
-    installed_diffuse_bindings = install_asset_map_hlod_diffuse_bindings(index, texture_files)
+    (
+        texture_files,
+        installed_diffuse_bindings,
+        installed_material_bindings,
+        unresolved_material_bindings,
+    ) = prepare_render_bindings(args.asset_map, index, args.texture_root)
     if installed_diffuse_bindings:
         print(f"map previews: recovered {installed_diffuse_bindings} baked HLOD diffuse bindings from AssetMap containers")
-    installed_material_bindings, unresolved_material_bindings = install_hlod_material_json_bindings(
-        MATERIAL_ROOT, texture_files, index,
-    )
     if installed_material_bindings or unresolved_material_bindings:
         print(
             f"map previews: recovered {installed_material_bindings} serialized HLOD material diffuse bindings"

@@ -30,6 +30,20 @@ def commands_for(
     ]
 
 
+def graph(*argv: str) -> dict[str, build_webui_views.TaskSpec]:
+    args = build_webui_views.parse_args(list(argv))
+    return {task.name: task for task in build_webui_views.build_tasks(args)}
+
+
+def spec(name: str, after: tuple[str, ...] = (), seconds: float = 0.0) -> build_webui_views.TaskSpec:
+    """A task whose single command is a python sleep, for scheduler tests."""
+    return build_webui_views.TaskSpec(
+        name,
+        (build_webui_views.CommandSpec(("python", "-c", f"pass  # {seconds}")),),
+        after=after,
+    )
+
+
 class WebuiViewPlanTests(unittest.TestCase):
     def test_gameplay_base_builder_uses_scripts_package_identity(self) -> None:
         from scripts import common
@@ -47,37 +61,97 @@ class WebuiViewPlanTests(unittest.TestCase):
             )
         )
 
-    def test_default_plan_keeps_graph_after_every_producer(self) -> None:
-        args = build_webui_views.parse_args([])
-        phases = build_webui_views.build_phases(args)
+    def test_default_plan_declares_every_producer_edge(self) -> None:
+        tasks = graph()
 
         self.assertEqual(
-            task_names(phases),
-            [
-                [
-                    "map_recovery",
-                    "characters",
-                    "gameplay",
-                    "projectiles",
-                ],
-                ["gameplay_asset_refs", "map_recovery"],
-                ["source_graph"],
-                ["gameplay_asset_refs_after_graph", "combat_relationships"],
-            ],
+            {name: task.after for name, task in tasks.items()},
+            {
+                "map_recovery": (),
+                "gameplay": (),
+                "projectiles": (),
+                "characters": (),
+                "gameplay_asset_refs": ("gameplay",),
+                "map_streaming_instances": ("map_recovery",),
+                "map_recovery_preview": ("map_streaming_instances",),
+                "source_graph": ("gameplay",),
+                "gameplay_asset_refs_after_graph": (
+                    "source_graph",
+                    "gameplay_asset_refs",
+                ),
+                "combat_relationships": ("source_graph",),
+            },
         )
+        self.assertNotIn("audio", tasks)
+        self.assertNotIn("assets", tasks)
+        phases = build_webui_views.build_phases(build_webui_views.parse_args([]))
         self.assertIn("--relevant-asset-maps", commands_for(phases, "source_graph")[0])
-        self.assertNotIn("audio", [name for phase in task_names(phases) for name in phase])
         for task_name in ("map_recovery", "characters", "gameplay", "projectiles"):
             self.assertEqual(commands_for(phases, task_name)[-1][1], "-m")
 
-    def test_gameplay_base_is_followed_by_recovery_audit_in_same_task(self) -> None:
-        args = build_webui_views.parse_args([])
-        gameplay_task = next(
-            task
-            for _, tasks in build_webui_views.build_phases(args)
-            for task in tasks
-            if task.name == "gameplay"
+    def test_asset_plan_binds_asset_index_consumers_to_the_assets_task(self) -> None:
+        tasks = graph("--with-assets", "--asset-mode", "debug", "--decode-audio")
+
+        self.assertEqual(tasks["assets"].after, ())
+        # build_character_data, the gameplay asset sidecar, the map preview and
+        # the source graph all read webui/data/assets/index.json.
+        for name in (
+            "characters",
+            "gameplay_asset_refs",
+            "map_recovery_preview",
+            "source_graph",
+        ):
+            self.assertIn("assets", tasks[name].after, name)
+        # build_audio reads the gameplay index, projectiles.json and the
+        # streaming-instance sidecars, but no asset index.
+        self.assertEqual(
+            tasks["audio"].after,
+            ("gameplay", "projectiles", "map_streaming_instances"),
         )
+        self.assertNotIn("assets", tasks["audio"].after)
+
+    def test_audio_waits_for_the_streaming_sidecars_it_reads(self) -> None:
+        # build_audio.py:14851 -> build_audio_semantics.py:13206 ->
+        # scene_backgrounds.collect_scene_background_semantics globs
+        # export_full/recovered/AnimeStudio-cli/*/map_streaming_instances.
+        # Running audio beside the extractor that rewrites that directory
+        # (as the old barrier phase did) reads a half-written catalog.
+        from scripts.audio_semantics import scene_backgrounds
+
+        source = inspect.getsource(scene_backgrounds._streaming_instance_paths)
+        self.assertIn("map_streaming_instances", source)
+
+        tasks = graph("--with-assets", "--decode-audio")
+        self.assertIn("map_streaming_instances", tasks["audio"].after)
+        depths = build_webui_views.dependency_depths(list(tasks.values()))
+        self.assertGreater(depths["audio"], depths["map_streaming_instances"])
+
+        phases = build_webui_views.build_phases(
+            build_webui_views.parse_args(
+                ["--with-assets", "--asset-mode", "debug", "--decode-audio"]
+            )
+        )
+        asset_command = commands_for(phases, "assets")[0]
+        self.assertNotIn("--skip-gameplay-refs", asset_command)
+        self.assertEqual(asset_command[asset_command.index("--mode") + 1], "debug")
+        self.assertNotIn("--skip-decode", commands_for(phases, "audio")[0])
+
+    def test_audio_and_the_map_preview_never_gate_the_source_graph(self) -> None:
+        # The 2026-09-07 barrier plan made the graph wait for the audio builder
+        # and the map preview even though it reads neither.
+        tasks = graph("--with-assets", "--decode-audio")
+        depths = build_webui_views.dependency_depths(list(tasks.values()))
+
+        for blocker in ("audio", "map_recovery_preview", "map_streaming_instances"):
+            self.assertNotIn(blocker, tasks["source_graph"].after)
+            self.assertNotIn(blocker, tasks["combat_relationships"].after)
+            self.assertNotIn(blocker, tasks["gameplay_asset_refs_after_graph"].after)
+        # The graph chain is shorter than the audio chain, so it cannot be the
+        # thing that finishes last.
+        self.assertLess(depths["source_graph"], depths["map_recovery_preview"])
+
+    def test_gameplay_base_is_followed_by_recovery_audit_in_same_task(self) -> None:
+        gameplay_task = graph()["gameplay"]
         stages = [
             command.argv[index + 1]
             for command in gameplay_task.commands
@@ -90,103 +164,83 @@ class WebuiViewPlanTests(unittest.TestCase):
             self.assertIn("--default-language", command.argv)
 
     def test_gameplay_asset_refs_refresh_after_graph_without_rebuilding_base(self) -> None:
-        args = build_webui_views.parse_args([])
-        phases = build_webui_views.build_phases(args)
-        phase_names = [name for name, _ in phases]
-        graph_index = phase_names.index("source_graph")
-        refs_phase_index = next(
-            index
-            for index, (_, tasks) in enumerate(phases)
-            if any(task.name == "gameplay_asset_refs" for task in tasks)
-        )
-        self.assertLess(refs_phase_index, graph_index)
+        tasks = graph()
+        after_graph = tasks["gameplay_asset_refs_after_graph"]
+        self.assertIn("source_graph", after_graph.after)
+        # Both runs publish webui/data/assets/gameplay_refs.json, so the second
+        # must follow the first instead of racing it.
+        self.assertIn("gameplay_asset_refs", after_graph.after)
 
-        asset_ref_tasks = [
-            task
-            for _, tasks in phases
-            for task in tasks
-            if task.name.startswith("gameplay_asset_refs")
-        ]
-        self.assertEqual(
-            [task.name for task in asset_ref_tasks],
-            ["gameplay_asset_refs", "gameplay_asset_refs_after_graph"],
-        )
-        for task in asset_ref_tasks:
+        for name in ("gameplay_asset_refs", "gameplay_asset_refs_after_graph"):
+            task = tasks[name]
             self.assertEqual(len(task.commands), 1)
             command = task.commands[0].argv
             self.assertEqual(command[command.index("--stage") + 1], "asset-refs")
 
-        gameplay_commands = commands_for(phases, "gameplay")
+        gameplay_commands = [
+            command.argv for command in tasks["gameplay"].commands
+        ]
         self.assertEqual(
             [command[command.index("--stage") + 1] for command in gameplay_commands],
             ["base"],
         )
         self.assertEqual(gameplay_commands[0].count("--stage"), 2)
 
-    def test_asset_plan_joins_character_and_refs_after_fresh_asset_index(self) -> None:
-        args = build_webui_views.parse_args(
-            ["--with-assets", "--asset-mode", "debug", "--decode-audio"]
-        )
-        phases = build_webui_views.build_phases(args)
+    def test_preview_follows_streaming_instances_without_rebuilding_map_data(self) -> None:
+        tasks = graph()
 
-        self.assertEqual(task_names(phases)[0][:3], ["map_recovery", "assets", "gameplay"])
-        self.assertNotIn("characters", task_names(phases)[0])
-        self.assertEqual(
-            task_names(phases)[1],
-            ["characters", "gameplay_asset_refs", "map_recovery", "audio"],
-        )
-        asset_command = commands_for(phases, "assets")[0]
-        self.assertNotIn("--skip-gameplay-refs", asset_command)
-        self.assertEqual(asset_command[asset_command.index("--mode") + 1], "debug")
-        self.assertNotIn("--skip-decode", commands_for(phases, "audio")[0])
+        map_command = tasks["map_recovery"].commands[0].argv
+        self.assertIn("scripts.build_map_recovery_data", map_command)
+        self.assertNotIn("--preview-only", map_command)
 
-    def test_full_plan_refreshes_preview_without_rebuilding_map_data(self) -> None:
-        phases = build_webui_views.build_phases(build_webui_views.parse_args([]))
-        map_commands = [
-            command
-            for command in commands_for(phases, "map_recovery")
-            if "scripts.build_map_recovery_data" in command
-        ]
-        self.assertEqual(len(map_commands), 2)
-        self.assertNotIn("--preview-only", map_commands[0])
-        self.assertIn("--preview-only", map_commands[1])
-        joined_map_task = next(
-            task for name, tasks in phases if name == "joined_sidecars"
-            for task in tasks if task.name == "map_recovery"
-        )
-        self.assertIn("recover_map_streaming_instances.py", joined_map_task.commands[0].argv[1])
-        self.assertIn("--all-published-map-scenes", joined_map_task.commands[0].argv)
-        self.assertIn("--preview-only", joined_map_task.commands[1].argv)
-        self.assertEqual(
-            joined_map_task.commands[1].argv[
-                joined_map_task.commands[1].argv.index("--jobs") + 1
-            ],
-            "4",
-        )
+        streaming = tasks["map_streaming_instances"]
+        self.assertEqual(streaming.after, ("map_recovery",))
+        self.assertIn("recover_map_streaming_instances.py", streaming.commands[0].argv[1])
+        self.assertIn("--all-published-map-scenes", streaming.commands[0].argv)
+
+        preview = tasks["map_recovery_preview"]
+        self.assertEqual(preview.after, ("map_streaming_instances",))
+        preview_command = preview.commands[0].argv
+        self.assertIn("--preview-only", preview_command)
+        self.assertEqual(preview_command[preview_command.index("--jobs") + 1], "4")
 
     def test_map_build_uses_worker_budget_with_and_without_assets(self) -> None:
-        normal = commands_for(
-            build_webui_views.build_phases(build_webui_views.parse_args(["--jobs", "3"])),
-            "map_recovery",
-        )
-        self.assertEqual(normal[0][normal[0].index("--jobs") + 1], "3")
-        self.assertEqual(normal[1][normal[1].index("--jobs") + 1], "3")
-
-        with_assets = commands_for(
-            build_webui_views.build_phases(
-                build_webui_views.parse_args(["--jobs", "3", "--with-assets"])
-            ),
-            "map_recovery",
-        )
-        self.assertEqual(with_assets[0][with_assets[0].index("--jobs") + 1], "3")
-        self.assertEqual(with_assets[1][with_assets[1].index("--jobs") + 1], "3")
+        for argv in (["--jobs", "3"], ["--jobs", "3", "--with-assets"]):
+            tasks = graph(*argv)
+            for name in ("map_recovery", "map_streaming_instances", "map_recovery_preview"):
+                command = tasks[name].commands[0].argv
+                self.assertEqual(command[command.index("--jobs") + 1], "3", name)
 
     def test_full_graph_omits_relevant_scope_filters(self) -> None:
-        args = build_webui_views.parse_args(["--full-source-graph"])
-        graph_command = commands_for(build_webui_views.build_phases(args), "source_graph")[0]
+        graph_command = graph("--full-source-graph")["source_graph"].commands[0].argv
 
         self.assertNotIn("--relevant-asset-maps", graph_command)
         self.assertNotIn("--skip-reference-rows", graph_command)
+
+    def test_graph_is_validated_at_plan_time(self) -> None:
+        with self.assertRaises(ValueError):
+            build_webui_views.validate_tasks([spec("a", ("missing",))])
+        with self.assertRaises(ValueError):
+            build_webui_views.validate_tasks([spec("a"), spec("a")])
+        with self.assertRaises(ValueError):
+            build_webui_views.validate_tasks([spec("a", ("b",)), spec("b", ("a",))])
+
+    def test_phases_group_by_dependency_depth(self) -> None:
+        phases = build_webui_views.build_phases(
+            build_webui_views.parse_args(["--with-assets"])
+        )
+        names = {
+            name: index
+            for index, (_, tasks) in enumerate(phases)
+            for task in tasks
+            for name in (task.name,)
+        }
+        self.assertEqual([name for name, _ in phases][0], "depth0")
+        self.assertEqual(names["assets"], 0)
+        self.assertEqual(names["gameplay"], 0)
+        self.assertEqual(names["map_recovery"], 0)
+        self.assertLess(names["source_graph"], names["combat_relationships"])
+        self.assertLess(names["map_streaming_instances"], names["map_recovery_preview"])
 
     def test_asset_builder_rejects_retired_gameplay_sidecar_option(self) -> None:
         with mock.patch("sys.stderr"), self.assertRaises(SystemExit):
@@ -260,18 +314,12 @@ class WebuiViewPlanTests(unittest.TestCase):
     def test_export_wrapper_owns_no_second_copy_of_the_mission_stage(self) -> None:
         # Mission Pipeline is maintained as a direct Python workflow and is
         # intentionally absent from the WebUI export plan.
-        source = (ROOT / "export.bat").read_text(encoding="utf-8")
-        self.assertNotIn(
-            "mission_pipeline",
-            [name for phase in task_names(build_webui_views.build_phases(build_webui_views.parse_args([]))) for name in phase],
+        tasks = graph()
+        self.assertNotIn("mission_pipeline", tasks)
+        self.assertIn(
+            "--preview-only",
+            tasks["map_recovery_preview"].commands[0].argv,
         )
-        self.assertTrue(any(
-            "--preview-only" in command
-            for command in commands_for(
-                build_webui_views.build_phases(build_webui_views.parse_args([])),
-                "map_recovery",
-            )
-        ))
 
     def test_export_wrapper_preflights_the_arguments_it_will_actually_run(self) -> None:
         source = (ROOT / "export.bat").read_text(encoding="utf-8")
@@ -339,8 +387,7 @@ class WebuiViewPlanTests(unittest.TestCase):
             )
             commands = [
                 command
-                for _, tasks in build_webui_views.build_phases(args)
-                for task in tasks
+                for task in build_webui_views.build_tasks(args)
                 for command in task.commands
             ]
 
@@ -355,6 +402,117 @@ class WebuiViewPlanTests(unittest.TestCase):
                     environment["ENDFIELD_GAME_ROOT"],
                     str((root / "game").resolve()),
                 )
+
+    def test_dry_run_prints_every_task_with_its_dependencies(self) -> None:
+        from io import StringIO
+
+        buffer = StringIO()
+        with mock.patch("sys.stdout", buffer):
+            self.assertEqual(build_webui_views.main(["--dry-run", "--with-assets"]), 0)
+        printed = buffer.getvalue()
+        for name in graph("--with-assets"):
+            self.assertIn(name, printed)
+        self.assertIn("(after: map_streaming_instances", printed)
+        self.assertIn("[depth0]", printed)
+
+
+class WebuiViewSchedulerTests(unittest.TestCase):
+    def run_graph(self, tasks, failures=(), jobs=4):
+        """Run `run_graph` with run_task replaced by a deterministic stub."""
+        order: list[str] = []
+        failed = set(failures)
+
+        def fake_run_task(task: build_webui_views.TaskSpec) -> dict:
+            order.append(task.name)
+            returncode = 3 if task.name in failed else 0
+            return {
+                "name": task.name,
+                "returnCode": returncode,
+                "seconds": 0.01,
+                "commands": [],
+            }
+
+        with mock.patch.object(build_webui_views, "run_task", fake_run_task):
+            returncode, runs = build_webui_views.run_graph(tasks, jobs)
+        return returncode, {run.spec.name: run for run in runs}, order
+
+    def test_dependencies_run_before_their_dependents(self) -> None:
+        tasks = [
+            spec("a"),
+            spec("b", ("a",)),
+            spec("c", ("b",)),
+            spec("d"),
+        ]
+        returncode, runs, order = self.run_graph(tasks)
+        self.assertEqual(returncode, 0)
+        self.assertLess(order.index("a"), order.index("b"))
+        self.assertLess(order.index("b"), order.index("c"))
+        self.assertEqual({run.status for run in runs.values()}, {"ok"})
+
+    def test_a_failed_task_skips_its_dependents_and_fails_the_run(self) -> None:
+        tasks = [
+            spec("a"),
+            spec("b", ("a",)),
+            spec("c", ("b",)),
+            spec("independent"),
+        ]
+        returncode, runs, order = self.run_graph(tasks, failures={"a"})
+        self.assertEqual(returncode, 3)
+        self.assertEqual(runs["a"].status, "failed")
+        self.assertEqual(runs["b"].status, "skipped")
+        self.assertEqual(runs["c"].status, "skipped")
+        # A task that does not read the failed output still runs.
+        self.assertEqual(runs["independent"].status, "ok")
+        self.assertNotIn("b", order)
+        self.assertNotIn("c", order)
+
+    def test_job_budget_is_respected(self) -> None:
+        import threading
+
+        tasks = [spec(f"t{index}") for index in range(6)]
+        peak = 0
+        live = 0
+        lock = threading.Lock()
+        barrier = threading.Event()
+
+        def fake_run_task(task: build_webui_views.TaskSpec) -> dict:
+            nonlocal peak, live
+            with lock:
+                live += 1
+                peak = max(peak, live)
+            barrier.wait(0.05)
+            with lock:
+                live -= 1
+            return {"name": task.name, "returnCode": 0, "seconds": 0.0, "commands": []}
+
+        with mock.patch.object(build_webui_views, "run_task", fake_run_task):
+            returncode, _ = build_webui_views.run_graph(tasks, 2)
+        self.assertEqual(returncode, 0)
+        self.assertLessEqual(peak, 2)
+
+    def test_report_groups_tasks_by_depth_and_keeps_per_task_seconds(self) -> None:
+        tasks = [spec("a"), spec("b", ("a",)), spec("c", ("b",))]
+        _, runs, _ = self.run_graph(tasks)
+        phases = build_webui_views.phase_payloads(
+            [runs["a"], runs["b"], runs["c"]]
+        )
+        self.assertEqual([phase["name"] for phase in phases], ["depth0", "depth1", "depth2"])
+        self.assertEqual(
+            [[task["name"] for task in phase["tasks"]] for phase in phases],
+            [["a"], ["b"], ["c"]],
+        )
+        for phase in phases:
+            for task in phase["tasks"]:
+                self.assertIn("seconds", task)
+                self.assertIn("after", task)
+
+    def test_skipped_tasks_are_reported_without_a_bogus_return_code(self) -> None:
+        tasks = [spec("a"), spec("b", ("a",))]
+        _, runs, _ = self.run_graph(tasks, failures={"a"})
+        payload = build_webui_views.task_payload(runs["b"])
+        self.assertEqual(payload["status"], "skipped")
+        self.assertIsNone(payload["returnCode"])
+        self.assertEqual(payload["after"], ["a"])
 
 
 if __name__ == "__main__":

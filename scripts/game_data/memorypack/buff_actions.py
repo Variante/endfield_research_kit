@@ -84,6 +84,17 @@ class Reader:
             self.byte_payload(reserve=4)
             self.take(4,'anonymous-float32-bits')
             return
+        if tag in (213,214):
+            # Current native routes D5/D6 share a four-member source reader:
+            # one boolean byte followed by three fixed-width raw DWORDs.
+            # Keep the child values anonymous; the VFS bytes do not establish
+            # their managed field ownership or gameplay meaning.
+            self.take(width,'union-tag')
+            if self.peek()==255:self.take(1,'null-wrapper');return
+            self.header(4)
+            self.take(1,'anonymous-nonzero-byte')
+            for _ in range(3):self.take(4,'anonymous-scalar32')
+            return
         # FC/FD/FE are authenticated only in their extended encodings.
         if (width==1 and tag>=251) or tag not in (201,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,372,65,169,98,316,144,187,11,12,43,277,337,319,320,152,374,147,373,252,131,314,134,99,107,119,392,64,391,313,394,309,290,92,387,47,348,367,5,58,76,336,167,414,8,288,159,27,135,82,142,293,292,335,113,112,345,22,376,193,257,199,411,296,356,207,299,44,295,171,246,380,390,185,244,307,330,349,55,298,324,347,7,395,412,138,331,358,370,40,258,398,402,206,23,173,408,407,145,148,388,223,31,183,240,85,54,32,168,35,362,111,353,192,284,140,78,364,133,344,346,377,188,334,224,13,38):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(width,'union-tag')

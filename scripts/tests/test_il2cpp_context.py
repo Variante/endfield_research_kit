@@ -18,6 +18,10 @@ from scripts.game_data.il2cpp_context_audit import (
     skilldata_nested_branch_static_alignment,
     skilldata_actiongroup_branch_sample_witness,
     skilldata_actiongroup_branch_static_alignment,
+    skilldata_timeline_branch_sample_witness,
+    skilldata_timeline_branch_static_alignment,
+    skilldata_action_union_c9_prefix_reader_evidence,
+    skilldata_actiongroup_c9_nested_sequence_candidate_replay,
 )
 from scripts.game_data.memorypack.skill_corpus import CensusGateError
 from scripts.game_data.memorypack.skill_terminal import frame_skill_terminal_at
@@ -65,6 +69,7 @@ from scripts.game_data.il2cpp_context_audit import buff_ifelse_forwarding
 from scripts.game_data.il2cpp_context_audit import buff_ifelse_read_order
 from scripts.game_data.il2cpp_context_audit import buff_sequence_read_order
 from scripts.game_data.il2cpp_context_audit import buff_tag76_read_order
+from scripts.game_data.il2cpp_context_audit import verify_contract_source_read_calls
 from unittest.mock import patch
 
 
@@ -150,6 +155,62 @@ class BuffTag76ReadOrderTests(unittest.TestCase):
         with self.assertRaises(ContextError):self.decode()
 
 
+class ContractSourceReadCallSiteTests(unittest.TestCase):
+    def setUp(self):
+        self.base = 0x180000000
+        self.rva = 0x3777126
+        self.target = 0x2CA8700
+        instruction = b'\xE8' + struct.pack('<i', self.target - self.rva - 5)
+        self.parts = {self.base + self.rva: instruction}
+        self.pe = SimpleNamespace(
+            image_base=self.base,
+            bytes_at_va=lambda va, size: self.parts[va][:size],
+        )
+        self.contract = {
+            'anonymousReadOrder': {
+                'member16': ['byte', 'scalar32', 'scalar32', 'scalar32', 'byte-payload'],
+            },
+            'sourceReadCallSites': [{
+                'memberIndex': 4,
+                'readType': 'byte-payload',
+                'callInstructionRva': self.rva,
+                'targetRva': self.target,
+            }],
+        }
+
+    def test_verifies_the_member_type_and_direct_target(self):
+        rows = verify_contract_source_read_calls(
+            self.pe, self.contract, source='fixture.dll')
+        self.assertEqual(rows, [{
+            'rootReadOrderKey': 'member16',
+            'memberIndex': 4,
+            'readType': 'byte-payload',
+            'callInstructionRva': self.rva,
+            'instructionByteLength': 5,
+            'rawHex': (b'\xE8' + struct.pack('<i', self.target - self.rva - 5)).hex().upper(),
+            'targetRva': self.target,
+            'classification': 'exact-build direct E8 source-reader call',
+        }])
+
+    def test_rejects_target_or_read_order_drift(self):
+        changed_target = json.loads(json.dumps(self.contract))
+        changed_target['sourceReadCallSites'][0]['targetRva'] += 1
+        with self.assertRaises(ContextError):
+            verify_contract_source_read_calls(
+                self.pe, changed_target, source='fixture.dll')
+        changed_member = json.loads(json.dumps(self.contract))
+        changed_member['sourceReadCallSites'][0]['readType'] = 'raw4'
+        with self.assertRaises(ContextError):
+            verify_contract_source_read_calls(
+                self.pe, changed_member, source='fixture.dll')
+
+    def test_rejects_truncated_call_instruction(self):
+        self.parts[self.base + self.rva] = b'\xE8\x00'
+        with self.assertRaises(ContextError):
+            verify_contract_source_read_calls(
+                self.pe, self.contract, source='fixture.dll')
+
+
 class BuffSequenceReadOrderTests(unittest.TestCase):
     def setUp(self):
         self.base=0x180000000
@@ -167,7 +228,15 @@ class BuffSequenceReadOrderTests(unittest.TestCase):
         self.pe=SimpleNamespace(image_base=self.base,bytes_at_va=lambda va,n:self.parts[va])
 
     def decode(self):
-        with patch('scripts.game_data.il2cpp_context_audit.module_methods',return_value=[]):
+        root_method = {
+            'methodIndex': 104346,
+            'declaringType': 'Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack',
+            'name': 'Deserialize',
+            'image': 'MemoryPack.Beyond.dll',
+            'pointerVa': self.base + 0x39C6AA0,
+        }
+        with patch('scripts.game_data.il2cpp_context_audit.module_methods',
+                   return_value=[root_method]):
             return buff_sequence_read_order(self.pe,None,{},[],source='fixture.dll')
 
     def test_conditional_structure_retains_unknown_elements(self):
@@ -280,7 +349,7 @@ class BuffIfElseForwardingTests(unittest.TestCase):
 class BuffUnionRouteTests(unittest.TestCase):
     def setUp(self):
         self.base=0x180000000
-        self.instruction_targets={0x3910906,0x3910104,0x391096A,0x3910C8A,0x3910CBC,0x3910DB6,0x39109CE,0x3910618,0x390E7D2,0x3910168,0x390FDB2,0x3910776,0x39105B4}
+        self.instruction_targets={0x3910906,0x3910104,0x391096A,0x3910C8A,0x3910CBC,0x3910DB6,0x39109CE,0x3910618,0x390E7D2,0x3910168,0x390FDB2,0x3910776,0x39105B4,0x4E67C83,0x4E67CC6}
         self.parts={at:bytes.fromhex(raw) for at,raw in (
             (0x390D974,'488D5424384533C06689742438488BCFE8F7FEFFFF84C00F8422BD55010FB774243881FE9F0100000F87E0BC5501488D1557266FFC8B8CB2185391034803CAFFE1'),
             (0x390D8D2,'4080FEFA731C66418936B001'),
@@ -497,6 +566,11 @@ class BuffUnionRouteTests(unittest.TestCase):
             (0x390FDB2,'488B15279D7709'),
             (0x3910776,'488B157B057809'),
             (0x390DD14,'488B15651E7809488B0BE8FD5A6FFC488BCF4885C00F85A28C5501488B15D23D7D09E89DFF10FD488903488BD0E99CFCFFFF'))}
+        for index,at in enumerate((0x4E67C83,0x4E67CC6)):
+            cell_va=self.base+0x700000+index*8
+            instruction=bytearray.fromhex('488B0500000000')
+            struct.pack_into('<i',instruction,3,cell_va-(self.base+at+7))
+            self.parts[at]=bytes(instruction)
         targets=[0]*416
         types=[None]*16728;self.ptrs={}
         for tag,target,index,definition,suffix,init in (
@@ -706,7 +780,9 @@ class BuffUnionRouteTests(unittest.TestCase):
             (0xBC,0x39109CE,106637,16137,'ForceTriggerWeakness_Data',None),
             (334,0x3910618,107088,16435,'SetDamageTagImmuneRule_Data',None),
             (224,0x390E7D2,106794,15961,'LockCameraAimAction_LockCameraAimActionData',None),
-            (13,0x3910168,106291,15909,'AirborneAction_AirborneActionData',None)):
+            (13,0x3910168,106291,15909,'AirborneAction_AirborneActionData',None),
+            (0xD5,0x4E67C83,106689,16187,'IntResourceHpCheckAction_Data',None),
+            (0xD6,0x4E67CC6,106690,16189,'IntResourceOnHpZeroAction_Data',None)):
             namespace='View' if tag==0x19E else 'Core'
             targets[tag]=target;types[definition]='Beyond.MemoryPack.Beyond_Gameplay_'+namespace+'_'+suffix+'ForMemoryPack'
             pointer=self.base+index*16
@@ -728,7 +804,7 @@ class BuffUnionRouteTests(unittest.TestCase):
             return buff_union_routes(self.pe,self.md,self.reg,{},[],source='fixture.dll')
 
     def test_current_tag_routes_do_not_alias_old_names(self):
-        row=self.decode();self.assertEqual([r['tag'] for r in row['rows'] if r['tag'] not in (188,334,346,402,224,13)],[201,192,64,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,133,372,65,169,98,316,144,187,11,12,38,268,43,277,337,319,320,152,374,147,373,252,131,314,134,99,107,119,392,391,313,394,309,290,92,387,47,348,367,5,58,76,336,167,414,8,288,159,27,135,82,142,293,292,335,113,112,345,22,376,193,257,199,411,296,356,207,299,44,295,171,246,380,390,185,244,307,330,349,55,298,324,347,7,395,412,138,331,358,370,40,258,398,206,23,173,408,407,145,388,223,31,183,240,85,54,32,168,35,362,111,353,284,140,78,148,344,364,377])
+        row=self.decode();self.assertEqual([r['tag'] for r in row['rows'] if r['tag'] not in (188,334,346,402,224,13)],[201,192,64,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,133,372,65,169,98,316,144,187,11,12,38,268,43,277,337,319,320,152,374,147,373,252,131,314,134,99,107,119,392,391,313,394,309,290,92,387,47,348,367,5,58,76,336,167,414,8,288,159,27,135,82,142,293,292,335,113,112,345,22,376,193,257,199,411,296,356,207,299,44,295,171,246,380,390,185,244,307,330,349,55,298,324,347,7,395,412,138,331,358,370,40,258,398,206,23,173,408,407,145,388,223,31,183,240,85,54,32,168,35,362,111,353,284,140,78,148,344,364,377,213,214])
         route_tags=[r['tag'] for r in row['rows']]
         self.assertEqual(route_tags.index(346),route_tags.index(344)+1)
         self.assertIn('IfElse',row['rows'][0]['wrapperName'])
@@ -2909,7 +2985,75 @@ class SkillDataActionGroupBranchTests(unittest.TestCase):
     def nonempty_sequence_unknown_action_raw():
         return (b'\x30\x02' + struct.pack('<i', 2) + b'\x02' +
                 struct.pack('<i', 0x12345678) + struct.pack('<i', 1) +
-                b'\x03' + struct.pack('<i', 1) + b'\xD5opaque-tail')
+                b'\x03' + struct.pack('<i', 1) + b'\xD7opaque-tail')
+
+    @staticmethod
+    def nonempty_sequence_d5_d6_raw():
+        d5 = b'\xD5\x04\x01' + struct.pack('<III', 0xFFFFFFFF, 0x80000000, 0x7FC00000)
+        d6 = b'\xD6\x04\x00' + struct.pack('<III', 1, 2, 3)
+        return (b'\x30\x02' + struct.pack('<i', 2) + b'\x02' +
+                struct.pack('<i', 12) + struct.pack('<i', 1) +
+                b'\x03' + struct.pack('<i', 1) + d5 + b'\x02\x01' +
+                b'\x02' + struct.pack('<i', 1) + struct.pack('<i', 1) +
+                b'\x03' + struct.pack('<i', 1) + d6 + b'\x00\x00' + bytes(8))
+
+    @staticmethod
+    def tag56_record():
+        return bytes.fromhex(
+            '5608010000000000000000000000000000000001000000011e000000'
+            '627566665f6368725f303033305f7a6875616e6766795f74616c656e7431'
+            '00000000020000000000000000')
+
+    @staticmethod
+    def tag92_record():
+        return (b'\x92\x13\x00' + bytes(12) + b'\x00\x00\xff' +
+                struct.pack('<i', 0) + bytes(4) + struct.pack('<i', 0) +
+                b'\xff\x00' + struct.pack('<i', 0) + bytes(5) + b'\xff')
+
+    @classmethod
+    def nonempty_sequence_tag56_unknown92_raw(cls):
+        return (b'\x30\x02' + struct.pack('<i', 1) + b'\x02' +
+                struct.pack('<i', 0x12345678) + struct.pack('<i', 1) +
+                b'\x03' + struct.pack('<i', 2) + cls.tag56_record() +
+                b'\x92opaque-tail')
+
+    @classmethod
+    def nonempty_sequence_tag56_tag92_raw(cls):
+        return (b'\x30\x02' + struct.pack('<i', 1) + b'\x02' +
+                struct.pack('<i', 0x12345678) + struct.pack('<i', 1) +
+                b'\x03' + struct.pack('<i', 2) + cls.tag56_record() +
+                cls.tag92_record() + b'\x00\x00' + bytes(4))
+
+    @staticmethod
+    def nonempty_sequence_c9_raw(first_member_byte=1):
+        c9 = (b'\xC9\x08' + bytes([first_member_byte]) +
+              struct.pack('<III', 0x11223344, 0x55667788, 0x99AABBCC) + b'\x01')
+        return (b'\x30\x02' + struct.pack('<i', 1) + b'\x02' +
+                struct.pack('<i', 0x12345678) + struct.pack('<i', 1) +
+                b'\x03' + struct.pack('<i', 1) + c9 +
+                b'\x03' + struct.pack('<i', 0) + b'\x00\x00' + bytes(4))
+
+    @staticmethod
+    def empty_candidate_sequence():
+        return b'\x03' + struct.pack('<i', 0) + b'\x00\x00'
+
+    @classmethod
+    def c9_three_empty_nested_sequences_raw(cls):
+        c9 = (b'\xC9\x08\x01' +
+              struct.pack('<III', 0x11223344, 0x55667788, 0x99AABBCC) + b'\x01')
+        return (b'\x30\x02' + struct.pack('<i', 1) + b'\x02' +
+                struct.pack('<i', 0x12345678) + struct.pack('<i', 1) +
+                b'\x03' + struct.pack('<i', 1) + c9 +
+                cls.empty_candidate_sequence() * 3 + bytes(8))
+
+    @classmethod
+    def c9_unknown_nested_action_raw(cls):
+        c9 = (b'\xC9\x08\x01' +
+              struct.pack('<III', 0x11223344, 0x55667788, 0x99AABBCC) + b'\x01')
+        unknown_sequence = b'\x03' + struct.pack('<i', 1) + b'\xD7' + bytes(32)
+        return (b'\x30\x02' + struct.pack('<i', 1) + b'\x02' +
+                struct.pack('<i', 0x12345678) + struct.pack('<i', 1) +
+                b'\x03' + struct.pack('<i', 1) + c9 + unknown_sequence)
 
     def corpus_for(self, raw, path='Data/Json/SkillData/fixture_actiongroup.json'):
         logical_sha = hashlib.sha256(raw).hexdigest().upper()
@@ -2932,6 +3076,59 @@ class SkillDataActionGroupBranchTests(unittest.TestCase):
         return {'inputSetSha256': self.input_set, 'files': [row]}, row
 
     def static_evidence(self):
+        action_reader_root = Path(__file__).resolve().parents[1] / 'game_data'
+
+        def native_reader(tag, method_index, wrapper, start, end, digest, member_key, read_order):
+            contract_path = action_reader_root / f'buff_{tag:02x}_native.json'
+            return {
+                'contractPath': str(contract_path),
+                'contractSha256': hashlib.sha256(contract_path.read_bytes()).hexdigest().upper(),
+                'methods': [{
+                    'methodIndex': method_index,
+                    'declaringType': wrapper,
+                    'name': 'Deserialize',
+                    'image': 'MemoryPack.Beyond.dll',
+                    'pointerVa': 0x180000000 + start,
+                }],
+                'anonymousReadOrder': {member_key: read_order},
+                'codeWindows': [{'startRva': start, 'endRva': end, 'sha256': digest}],
+            }
+
+        buff_d5 = native_reader(
+            0xD5, 120788,
+            'Beyond.MemoryPack.Beyond_Gameplay_Core_IntResourceHpCheckAction_DataForMemoryPack',
+            153753548, 153753943,
+            '24DFDAE1E252056FB43AB54D51BFA7443249A2FFA932B4636ACEA7F01C3EF1EB',
+            'member4', ['boolean', 'scalar32', 'scalar32', 'scalar32'])
+        buff_d6 = native_reader(
+            0xD6, 120799,
+            'Beyond.MemoryPack.Beyond_Gameplay_Core_IntResourceOnHpZeroAction_DataForMemoryPack',
+            153754580, 153754975,
+            '2256CCF5032B30A1906A9830B8D815D491B6963EA04330DA4E67BBE49D399F7F',
+            'member4', ['boolean', 'scalar32', 'scalar32', 'scalar32'])
+        buff_56 = native_reader(
+            0x56, 123989,
+            'Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckBuffIdInContext_DataForMemoryPack',
+            64470240, 64470718,
+            '5CFB847464E8BE7C8765284DD83410F0FC35EBEF5A696CADE3834AB1638FBAE2',
+            'member8', ['byte', 'scalar32', 'scalar32', 'scalar32', 'byte-payload',
+                        'counted-member1-payloads', 'scalar32', 'query-profile'])
+        buff_92 = native_reader(
+            0x92, 119710,
+            'Beyond.MemoryPack.Beyond_Gameplay_Core_CreateBuffAction_DataForMemoryPack',
+            58148448, 58149638,
+            '533490A2A185AEE76FEB96108FB2504E3D0F25BF70F1B56CE68B8D2DD51E3BFB',
+            'member19', ['byte', 'scalar32', 'scalar32', 'scalar32', 'byte', 'byte',
+                         'scalar-bytes-profile', 'counted-input-profiles', 'scalar32',
+                         'byte-payload', 'scalar-payload', 'byte',
+                         'counted-byte-payloads', 'byte', 'byte', 'byte', 'byte',
+                         'byte', 'target-profile'])
+        buff_fd = native_reader(
+            0xFD, 121507,
+            'Beyond.MemoryPack.Beyond_Gameplay_Core_NotNextCheckAction_DataForMemoryPack',
+            68267776, 68268062,
+            '2B474FF47B86EA8E1592D491D6503F1E70FB2DB512F807B80DCAE27C893C6930',
+            'member4', ['byte', 'scalar32', 'scalar32', 'scalar32'])
         return (
             {
                 'inputSetSha256': self.input_set,
@@ -3001,17 +3198,939 @@ class SkillDataActionGroupBranchTests(unittest.TestCase):
                 }],
             },
             {
-                'methods': [{'methodIndex': 104346}, {'methodIndex': 104347}],
-                'windows': [{'rva': 0x39C6B82,
-                             'rawHex': '4080FE030F85DD030000'}],
+                'methods': [
+                    {'methodIndex': 104346,
+                     'declaringType': 'Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack',
+                     'name': 'Deserialize', 'image': 'MemoryPack.Beyond.dll',
+                     'pointerVa': 0x180000000 + 0x39C6AA0},
+                    {'methodIndex': 104347},
+                ],
+                'windows': [
+                    {'rva': 0x39C6B82, 'rawHex': '4080FE030F85DD030000'},
+                    {'rva': 0x39C6EA2,
+                     'rawHex': '488B43500FB6288B7B3083EF017911BA01000000488BCBE882B2100284C0750D48FF4350FF4340FF4344897B30'},
+                    {'rva': 0x39C6F07,
+                     'rawHex': '488B43500FB6288B7B3083EF017911BA01000000488BCBE81DB2100284C0750D48FF4350FF4340FF4344897B30'},
+                ],
+                'rootCodeWindow': {
+                    'startRva': 0x39C6AA0,
+                    'endRva': 0x39C6FA7,
+                    'sha256': '6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90',
+                },
                 'boundary': 'Header 3 takes a signed DWORD count after the one-byte header.',
             },
+            buff_d5,
+            buff_d6,
+            {
+                'rows': [
+                    {'tag': 0xD5, 'switchTargetRva': 0x4E67C83, 'typeDefinition': 16187,
+                     'wrapperName': 'Beyond.MemoryPack.Beyond_Gameplay_Core_IntResourceHpCheckAction_DataForMemoryPack',
+                     'operands': [{'usageTag': 1, 'registeredTypeIndex': 106689}]},
+                    {'tag': 0xD6, 'switchTargetRva': 0x4E67CC6, 'typeDefinition': 16189,
+                     'wrapperName': 'Beyond.MemoryPack.Beyond_Gameplay_Core_IntResourceOnHpZeroAction_DataForMemoryPack',
+                     'operands': [{'usageTag': 1, 'registeredTypeIndex': 106690}]},
+                    {'tag': 0x56, 'switchTargetRva': 0x4E67C84, 'typeDefinition': 16593,
+                     'wrapperName': 'Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckBuffIdInContext_DataForMemoryPack',
+                     'operands': [{'usageTag': 1, 'registeredTypeIndex': 106476}]},
+                    {'tag': 0x92, 'switchTargetRva': 59824728, 'typeDefinition': 16047,
+                     'wrapperName': 'Beyond.MemoryPack.Beyond_Gameplay_Core_CreateBuffAction_DataForMemoryPack',
+                     'operands': [{'usageTag': 1, 'registeredTypeIndex': 106537}]},
+                    {'tag': 0xC9, 'switchTargetRva': 0x390DA8A, 'typeDefinition': 16163,
+                     'wrapperName': 'Beyond.MemoryPack.Beyond_Gameplay_Core_IfElseAction_IfElseActionDataForMemoryPack',
+                     'operands': [{'usageTag': 1, 'registeredTypeIndex': 106672}]},
+                    {'tag': 0xFD, 'switchTargetRva': 59828228, 'typeDefinition': 16275,
+                     'wrapperName': 'Beyond.MemoryPack.Beyond_Gameplay_Core_NotNextCheckAction_DataForMemoryPack',
+                     'operands': [{'usageTag': 1, 'registeredTypeIndex': 106885}]},
+                ],
+            },
+            {0x56: buff_56, 0x92: buff_92, 0xFD: buff_fd},
         )
 
-    def witness(self, raw, *, path='Data/Json/SkillData/fixture_actiongroup.json'):
+    def timeline_corpus_for(self, raw,
+                            path='Data/Json/SkillData/fixture_timeline.json',
+                            timeline_count=1):
+        logical_sha = hashlib.sha256(raw).hexdigest().upper()
+        row = {
+            'inputSetSha256': self.input_set,
+            'virtualPath': path,
+            'logicalSha256': logical_sha,
+            'hardLimit': len(raw),
+            'parserCursor': 10,
+            'boundaryClass': 'ambiguous',
+            'boundaryContext': {
+                'inputSetSha256': self.input_set,
+                'logicalFileIdentity': path,
+                'logicalSha256': logical_sha,
+                'hardLimit': len(raw),
+            },
+            'commonPrefixFraming': {
+                'parserCursor': 10,
+                'byteRanges': [
+                    {'start': 0, 'end': 2},
+                    {'start': 2, 'end': 6},
+                    {'start': 6, 'end': 10},
+                ],
+                'recordLists': [
+                    {'count': 0, 'countOffset': '0x2'},
+                    {'count': timeline_count, 'countOffset': '0x6'},
+                ],
+            },
+            'framing': {'candidateCount': 2, 'candidates': [{}, {}]},
+        }
+        return {'inputSetSha256': self.input_set, 'files': [row]}, row
+
+    @staticmethod
+    def timeline_branch_raw(action_bytes, *, action_count=1, timeline_count=1,
+                            start_frame=0, trailing=b'OPAQUE',
+                            include_timeline_tail=True):
+        raw = (b'\x30\x02' + struct.pack('<i', 0) + struct.pack('<i', timeline_count) +
+               b'\x04' + struct.pack('<i', 0x12345678) + b'\x03' +
+               struct.pack('<i', action_count) + action_bytes)
+        if include_timeline_tail:
+            raw += b'\x00\x00' + struct.pack('<i', start_frame)
+        return raw + trailing
+
+    @staticmethod
+    def play_animation_member16(*, first_payload=b'abc', inner_sequence=None,
+                                second_payload=b''):
+        if inner_sequence is None:
+            inner_sequence = b'\x03' + struct.pack('<i', 0) + b'\x00\x00'
+        return (
+            b'\xFA\x15\x01\x10' + b'\x7F' +
+            struct.pack('<III', 0x11223344, 0x55667788, 0x99AABBCC) +
+            struct.pack('<i', len(first_payload)) + first_payload +
+            b'RAW5' + b'RAW6' + struct.pack('<I', 0x3F800000) + b'RAW8' +
+            b'\x01\x00' + inner_sequence + b'R12!' + b'RAW3' +
+            struct.pack('<i', len(second_payload)) + second_payload + b'\x00'
+        )
+
+    @staticmethod
+    def force_sync_member4(*, force_sync=0, montage_name=b'',
+                           playback_speed=1.0, target_frame=0):
+        return (b'\x04' + bytes([force_sync]) +
+                struct.pack('<i', len(montage_name)) + montage_name +
+                struct.pack('<f', playback_speed) + struct.pack('<i', target_frame))
+
+    def timeline_static_evidence(self):
+        base = 0x180000000
+        evidence = self.static_evidence()
+        action_reader_root = Path(__file__).resolve().parents[1] / 'game_data'
+        contract_path = action_reader_root / 'buff_115_native.json'
+        contract_bytes = contract_path.read_bytes()
+        contract = json.loads(contract_bytes)
+        root_method = next(row for row in contract['methods']
+                           if row[2] == 'Deserialize' and
+                           'Formatter' not in row[1])
+        play_animation_reader = {
+            'contractPath': str(contract_path.resolve()),
+            'contractSha256': hashlib.sha256(contract_bytes).hexdigest().upper(),
+            'methods': [{
+                'methodIndex': root_method[0],
+                'declaringType': root_method[1],
+                'name': root_method[2],
+                'image': 'MemoryPack.Beyond.dll',
+                'pointerVa': base + root_method[3],
+            }],
+            'codeWindows': contract['codeWindows'],
+            'anonymousReadOrder': contract['anonymousReadOrder'],
+            'nestedContexts': contract['nestedContexts'],
+            'verifiedSourceReadCallSites': [
+                {**row, 'rawHex': ('E8D51553FF' if row['memberIndex'] == 4
+                                   else 'E8ED1353FF')}
+                for row in contract['sourceReadCallSites']
+            ],
+        }
+        routes = {'rows': [*evidence[6]['rows'], {
+            'tag': 0x115,
+            'switchTargetRva': 59824878,
+            'typeDefinition': 16321,
+            'wrapperName': root_method[1],
+            'operands': [{'usageTag': 1, 'registeredTypeIndex': 106937}],
+        }]}
+        readers = {**evidence[7], 0xD5: evidence[4], 0xD6: evidence[5],
+                   0x115: play_animation_reader}
+        timeline_reader = {
+            'elementTypeDefinitionIndex': 9199,
+            'elementTypeName': 'Beyond.Gameplay.Core.TimelineAction+TimelineActionData',
+            'listReaderMethodSpec': {'index': 610915},
+            'methods': [
+                {'methodIndex': 104653,
+                 'declaringType': 'Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPack',
+                 'name': 'Deserialize', 'image': 'MemoryPack.Beyond.dll',
+                 'pointerVa': 0x180000000 + 0x32CCF70},
+                {'methodIndex': 104654,
+                 'declaringType': 'Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPack+Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPackFormatter',
+                 'name': 'Deserialize', 'image': 'MemoryPack.Beyond.dll',
+                 'pointerVa': 0x180000000 + 0x32CE8C0},
+                {'methodIndex': 107909,
+                 'declaringType': 'Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPack',
+                 'name': 'Deserialize', 'image': 'MemoryPack.Beyond.dll',
+                 'pointerVa': 0x180000000 + 0x32CE4B0},
+                {'methodIndex': 107910,
+                 'declaringType': 'Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPack+Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPackFormatter',
+                 'name': 'Deserialize', 'image': 'MemoryPack.Beyond.dll',
+                 'pointerVa': 0x180000000 + 0x32CE860},
+            ],
+            'codeWindows': [{
+                'startRva': 0x32CCF70,
+                'endRva': 0x32CD277,
+                'sha256': 'CB497F6362D9DA9396D6533F6CC037536FC9499D67848F1E8BBBAC8AA2F03688',
+            }, {
+                'startRva': 0x32CE4B0,
+                'endRva': 0x32CE75C,
+                'sha256': '1FB17BEDE173176E0BC082E7C315267B6FC6F3CE76796DB90A627E9B0E9D7767',
+            }],
+            'verifiedInstructionWindows': [
+                {'rva': 0x32CD04E, 'rawHex': '4080FE04'},
+            ],
+            'serializedMembers': [
+                {'serializedOrderIndex': 0, 'fieldName': '_endFrame', 'reader': {
+                    'callInstructionRva': 0x32CD05E,
+                    'callInstructionHex': 'E84DB69DFF',
+                    'targetRva': 0x2CA86B0, 'role': 'read endFrame int32'}},
+                {'serializedOrderIndex': 1, 'fieldName': '_sequenceActionData', 'readerMethodSpec': {
+                    'index': 619962,
+                    'genericType': {'typeDefinitionIndex': 9202}}},
+                {'serializedOrderIndex': 2, 'fieldName': '_startFrame', 'reader': {
+                    'kind': 'inline-int32', 'byteWidth': 4,
+                    'verifiedInstructions': [
+                        {'rva': 53268774, 'rawHex': '448B30'},
+                        {'rva': 53268802, 'rawHex': '4883435004'},
+                         {'rva': 53268807, 'rawHex': '83434004'},
+                        {'rva': 53268811, 'rawHex': '83434404'},
+                    ]}},
+                {'serializedOrderIndex': 3, 'fieldName': 'forceSyncAnimData',
+                 'readerMethodSpec': {'index': 620038, 'genericType': {
+                     'typeDefinitionIndex': 9198,
+                     'typeName': 'Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData'}}},
+            ],
+            'forceSyncAnimDataReader': {
+                'typeDefinitionIndex': 9198,
+                'typeName': 'Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData',
+                'serializedMembers': [
+                    {'serializedOrderIndex': 0, 'fieldName': 'forceSync',
+                     'objectField': {'typeDefinitionIndex': 9198, 'fieldOffset': 0x10,
+                                     'fieldType': {'wireType': 'bool'}},
+                     'reader': {'callInstructionRva': 0x32CE58E,
+                                'callInstructionHex': 'E82DA39DFF',
+                                'targetRva': 0x2CA88C0, 'role': 'read forceSync boolean'}},
+                    {'serializedOrderIndex': 1, 'fieldName': 'montageName',
+                     'objectField': {'typeDefinitionIndex': 9198, 'fieldOffset': 0x18,
+                                     'fieldType': {'wireType': 'System.String'}},
+                     'reader': {'callInstructionRva': 0x32CE5B2,
+                                'callInstructionHex': 'E849A19DFF',
+                                'targetRva': 0x2CA8700, 'role': 'read montageName string'}},
+                    {'serializedOrderIndex': 2, 'fieldName': 'playbackSpeed',
+                     'objectField': {'typeDefinitionIndex': 9198, 'fieldOffset': 0x24,
+                                     'fieldType': {'wireType': 'System.Single'}},
+                     'reader': {'kind': 'inline-float32', 'byteWidth': 4,
+                                'verifiedInstructions': [
+                                    {'rva': 0x32CE635, 'rawHex': 'F30F1030'},
+                                    {'rva': 0x32CE652, 'rawHex': '4883435004'},
+                                    {'rva': 0x32CE67B, 'rawHex': 'F30F117024'},
+                                ]}},
+                    {'serializedOrderIndex': 3, 'fieldName': 'targetFrame',
+                     'objectField': {'typeDefinitionIndex': 9198, 'fieldOffset': 0x20,
+                                     'fieldType': {'wireType': 'System.Int32'}},
+                     'reader': {'kind': 'inline-int32', 'byteWidth': 4,
+                                'verifiedInstructions': [
+                                    {'rva': 0x32CE69A, 'rawHex': '8B28'},
+                                    {'rva': 0x32CE6B5, 'rawHex': '4883435004'},
+                                    {'rva': 0x32CE6D8, 'rawHex': '896820'},
+                                ]}},
+                ],
+                'verifiedInstructionWindows': [
+                    {'rva': 0x32CE57E, 'rawHex': '4080FE04'},
+                    {'rva': 0x32CE5A9, 'rawHex': '884610'},
+                    {'rva': 0x32CE5D9, 'rawHex': '49894018'},
+                ],
+            },
+            'sequenceActionDataReaderReference': {
+                'methodIndex': 104346,
+                'rootRva': 0x39C6AA0,
+                'rootCodeWindowSha256':
+                    '6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90',
+            },
+        }
+        skilldata_reader = {
+            'inputSetSha256': self.input_set,
+            'firstSkillDataField': {'fieldName': 'actionGroupData'},
+            'actionGroupDataMembers': [
+                {'serializedOrderIndex': 0, 'fieldName': 'passiveEventActions',
+                 'readerMethodSpec': {'index': 610662, 'genericType': {
+                     'typeName': 'System.Collections.Generic.List`1',
+                     'elementTypeName': 'Beyond.Gameplay.Core.AbilityActionMap'}}},
+                {'serializedOrderIndex': 1, 'fieldName': 'timelineActions',
+                 'readerMethodSpec': {'index': 610915, 'genericType': {
+                     'typeName': 'System.Collections.Generic.List`1',
+                     'elementTypeName':
+                         'Beyond.Gameplay.Core.TimelineAction+TimelineActionData',
+                     'elementTypeDefinitionIndex': 9199}}},
+            ],
+            'codeWindows': [{
+                'rva': 58581179, 'byteLength': 2314,
+                'sha256': 'FEA359985EBF5DF75CC58D871469481F0F692B1768D84724FF5941D47CAD8132',
+            }],
+            'verifiedInstructionWindows': [
+                {'rva': 58581199, 'rawHex': '4080FD30'},
+                {'rva': 65273925, 'rawHex': '4080FD02'},
+                {'rva': 65273975, 'rawHex': '48894118'},
+                {'rva': 65274020, 'rawHex': '48894110'},
+            ],
+            'timelineActionDataReader': timeline_reader,
+        }
+        return (skilldata_reader, evidence[3], routes, readers,
+                self.c9_prefix_reader_evidence())
+
+    def timeline_witness_and_alignment(self, raw, *, path='Data/Json/SkillData/fixture_timeline.json',
+                                       timeline_count=1, byte_payload_helper=None,
+                                       bool_helper_evidence=None):
+        corpus, _ = self.timeline_corpus_for(raw, path, timeline_count=timeline_count)
+        witness = skilldata_timeline_branch_sample_witness(
+            corpus, path, raw, source='fixture-timeline.json')
+        skilldata_reader, sequence_reader, routes, readers, c9 = self.timeline_static_evidence()
+        aligned = skilldata_timeline_branch_static_alignment(
+            witness, raw, skilldata_reader, sequence_reader, routes, readers,
+            (bool_helper_evidence if bool_helper_evidence is not None else c9),
+            byte_payload_helper_evidence=(byte_payload_helper if byte_payload_helper is not None
+                                          else self.byte_payload_helper_evidence()),
+            source='fixture-timeline.json')
+        return witness, aligned
+
+    @staticmethod
+    def byte_payload_helper_evidence():
+        return {
+            'orderedCalls': [
+                {'rva': 0x3D9BBE5, 'targetRva': 0x2CA8700},
+                {'rva': 0x3D9BC37, 'targetRva': 0x2CA8700},
+            ],
+            'windows': [
+                {'rva': 0x2CA8729,
+                 'rawHex': '488B43504863388B733083EE040F885C8CE30148834350048343400483434404897330'},
+                {'rva': 0x2CA874C,
+                 'rawHex': '48634344488B4B18482BC8483BCF0F8C528CE30183FFFF743785FF7517'},
+                {'rva': 0x2CA8780,
+                 'rawHex': '4533C08BD7488BCB488B5C2430488B7424384883C4205FE974020000'},
+                {'rva': 0x2CA8A97,
+                 'rawHex': '4533C9448BC7488BD5488BCEE878F8FFFF488BE885FF7418'},
+                {'rva': 0x2CA8AAF,
+                 'rawHex': '8B73302BF70F88B0A4F70148017B50017B40017B44897330'},
+            ],
+            'boundary': ('The shared helper reads a signed DWORD; -1 returns null, zero takes an empty path, '
+                         'and positive length is forwarded unchanged to the byte consumer.'),
+        }
+
+    def test_timeline_branch_binds_typed_root_and_stops_115_at_first_payload(self):
+        play_animation = (b'\xFA\x15\x01\x10\x7F' +
+                          struct.pack('<III', 0x11223344, 0x55667788, 0x99AABBCC))
+        raw = self.timeline_branch_raw(play_animation, trailing=b'',
+                                       include_timeline_tail=False)
+        witness, aligned = self.timeline_witness_and_alignment(raw)
+        self.assertEqual(witness['authoritativeParserCursor'], 10)
+        self.assertEqual(witness['candidateCursor'], 20)
+        self.assertEqual(witness['firstActionUnionTagPeekOnly'], {
+            'offset': 20, 'firstByte': 0xFA, 'tag': 0x115,
+            'tagWidth': 3, 'encodingHex': 'FA1501', 'consumed': False,
+        })
+        self.assertEqual(aligned['candidateCursor'], 37)
+        self.assertEqual(aligned['candidateStatus'],
+                         'truncated-byte-payload-length-member4')
+        self.assertEqual(aligned['failure'], {
+            'category': 'truncated', 'offset': 37,
+            'kind': 'PlayAnimationAction.member4.byte-payload.length-i32',
+            'expectedBytes': 4, 'remainingBytes': 0,
+        })
+        self.assertEqual(aligned['candidateActionPrefixStop']['nextSourceReadOffset'], 37)
+        self.assertIsNone(aligned['candidatePlayAnimationRecordEnd'])
+        self.assertEqual(aligned['typedPrefixOwnershipCandidate'][2], {
+            'start': 2, 'end': 6,
+            'kind': 'ActionGroupData.passiveEventActions.count-i32', 'value': 0,
+        })
+        self.assertEqual(aligned['typedPrefixOwnershipCandidate'][3], {
+            'start': 6, 'end': 10,
+            'kind': 'ActionGroupData.timelineActions.count-i32', 'value': 1,
+        })
+        self.assertEqual(aligned['candidateByteRanges'][-1], {
+            'start': 33, 'end': 37,
+            'kind': 'PlayAnimationAction.member3.scalar32',
+        })
+        self.assertEqual(aligned['opaqueByteRanges'], [])
+        self.assertEqual(aligned['runtimeProviderCacheSelection'], 'unobserved')
+        self.assertEqual(aligned['exactClosedTimelineActionRecords'], 0)
+        self.assertEqual(aligned['exactClosedActionGroupDataRecords'], 0)
+        self.assertEqual(aligned['wholeSkillDataClassification'], 'ambiguous')
+        self.assertEqual(aligned['wholeSkillDataExactClosedRecords'], 0)
+
+    def test_115_candidate_reaches_force_sync_and_candidate_parent_ends(self):
+        action = self.play_animation_member16(first_payload=b'xyz')
+        force_sync = self.force_sync_member4(target_frame=37)
+        raw = self.timeline_branch_raw(action, trailing=force_sync + b'OPAQUE')
+        _, aligned = self.timeline_witness_and_alignment(raw)
+        action_end = 20 + len(action)
+        timeline_end = action_end + 6 + len(force_sync)
+        self.assertEqual(aligned['candidateStatus'],
+                         'candidate-actiongroup-reader-field-sequence-exhausted')
+        self.assertEqual(aligned['candidatePlayAnimationRecordEnd'], {
+            'start': 20, 'end': action_end, 'memberCount': 16,
+            'sourceReadOrderKey': 'member16',
+            'classification': 'candidate selected-reader field-sequence end; live provider/cache unobserved',
+        })
+        self.assertEqual(aligned['candidateTimelineContinuation']['cursor'], timeline_end)
+        self.assertEqual(aligned['candidateTimelineContinuation']['nextSourceReadType'],
+                         'next SkillData member after ActionGroupData')
+        self.assertFalse(aligned['candidateTimelineContinuation']['nextSourceReadConsumed'])
+        self.assertEqual(aligned['candidateTimelineContinuation'][
+            'forceSyncAnimDataContinuation']['status'],
+            'candidate-force-sync-reader-field-sequence-exhausted')
+        self.assertEqual(aligned['candidateTimelineActionDataRecordEnd'], {
+            'start': 10, 'end': timeline_end, 'memberCount': 4,
+            'sourceReadOrderKey': 'member4',
+            'classification': 'candidate selected TimelineActionData field-sequence end; live provider/cache unobserved',
+        })
+        self.assertEqual(aligned['candidateActionGroupDataRecordEnd'], {
+            'start': 1, 'end': timeline_end, 'memberCount': 2,
+            'sourceReadOrderKey': 'member2',
+            'classification': 'candidate ActionGroupData field-sequence end; SkillData remains open',
+        })
+        self.assertEqual(aligned['candidatePlayAnimationNestedSequence']['header'], 3)
+        self.assertEqual(aligned['candidatePlayAnimationNestedSequence']['count'], 0)
+        self.assertEqual(aligned['opaquePayloadByteRanges'], [{
+            'start': 41, 'end': 44,
+            'kind': 'PlayAnimationAction.member4.byte-payload.opaque-bytes',
+        }])
+        self.assertEqual(aligned['candidateByteRanges'][-1]['kind'],
+                         'ForceSyncAnimData.member3.targetFrame.int32')
+        self.assertEqual(aligned['candidateByteRanges'][-1]['rawHex'],
+                         struct.pack('<i', 37).hex().upper())
+        cursor = 10
+        for span in aligned['candidateByteRanges']:
+            self.assertEqual(span['start'], cursor)
+            self.assertGreater(span['end'], span['start'])
+            self.assertLessEqual(span['end'], len(raw))
+            cursor = span['end']
+        self.assertEqual(cursor, aligned['candidateCursor'])
+        self.assertEqual(aligned['authoritativeParserCursor'], 10)
+        self.assertEqual(aligned['exactClosedTimelineActionRecords'], 0)
+        self.assertEqual(aligned['exactClosedActionGroupDataRecords'], 0)
+        self.assertEqual(aligned['candidateCursor'], timeline_end)
+        self.assertEqual(aligned['opaqueByteRanges'][0]['start'], timeline_end)
+
+    def test_force_sync_string_and_timeline_list_count_boundaries(self):
+        action = self.play_animation_member16(first_payload=b'')
+        force_sync = self.force_sync_member4(
+            force_sync=1, montage_name=b'pose', playback_speed=0.75,
+            target_frame=-12)
+        raw = self.timeline_branch_raw(action, trailing=force_sync + b'OPAQUE')
+        _, one_timeline = self.timeline_witness_and_alignment(raw)
+        continuation = one_timeline['candidateTimelineContinuation']
+        force = continuation['forceSyncAnimDataContinuation']
+        self.assertEqual(force['montageNameLength'], 4)
+        self.assertEqual(one_timeline['opaquePayloadByteRanges'], [{
+            'start': continuation['forceSyncAnimDataStart'] + 6,
+            'end': continuation['forceSyncAnimDataStart'] + 10,
+            'kind': 'ForceSyncAnimData.member1.montageName.opaque-bytes',
+        }])
+        self.assertEqual(one_timeline['candidateStatus'],
+                         'candidate-actiongroup-reader-field-sequence-exhausted')
+        self.assertEqual(one_timeline['candidateCursor'],
+                         one_timeline['candidateActionGroupDataRecordEnd']['end'])
+        self.assertIsNone(one_timeline['failure'])
+
+        next_timeline = (b'\x04' + struct.pack('<i', 99) + b'\x03' +
+                         struct.pack('<i', 1) + b'\x99NEXT')
+        raw = self.timeline_branch_raw(
+            action, timeline_count=2,
+            trailing=self.force_sync_member4() + next_timeline)
+        _, two_timelines = self.timeline_witness_and_alignment(
+            raw, timeline_count=2)
+        self.assertEqual(two_timelines['candidateStatus'],
+                         'stopped-before-following-timeline-sequence-action')
+        end = two_timelines['candidateTimelineActionDataRecordEnd']['end']
+        self.assertEqual(raw[end], 4)
+        following = two_timelines['candidateFollowingTimelineActionDataPrefix']
+        self.assertEqual(following['start'], end)
+        self.assertEqual(following['timelineSequenceCount'], 1)
+        self.assertEqual(following['firstActionUnionTagPeekOnly'], {
+            'offset': end + 10, 'firstByte': 0x99, 'consumed': False,
+            'tag': 0x99, 'tagWidth': 1, 'encodingHex': '99',
+        })
+        self.assertEqual(two_timelines['candidateCursor'], end + 10)
+        self.assertEqual(raw[end], 4)
+        self.assertIsNone(two_timelines['candidateActionGroupDataRecordEnd'])
+        self.assertEqual(two_timelines['opaqueByteRanges'][0]['start'], end + 10)
+        self.assertEqual(two_timelines['exactClosedTimelineActionRecords'], 0)
+
+        second_action = self.play_animation_member16(
+            first_payload=b'xy', second_payload=b'z')
+        second_timeline = (b'\x04' + struct.pack('<i', 99) + b'\x03' +
+                           struct.pack('<i', 1) + second_action + b'\x00\x00' +
+                           struct.pack('<i', -3) + self.force_sync_member4())
+        raw = self.timeline_branch_raw(
+            action, timeline_count=2,
+            trailing=self.force_sync_member4() + second_timeline + b'OPAQUE')
+        _, two_play_animations = self.timeline_witness_and_alignment(
+            raw, timeline_count=2)
+        first_end = two_play_animations['candidateTimelineActionDataRecordEnd']['end']
+        second_end = two_play_animations[
+            'candidateFollowingTimelineActionDataRecordEnd']['end']
+        self.assertEqual(two_play_animations['candidateStatus'],
+                         'candidate-actiongroup-reader-field-sequence-exhausted')
+        self.assertEqual(two_play_animations[
+            'candidateFollowingPlayAnimationRecordEnd']['start'], first_end + 10)
+        self.assertEqual(two_play_animations[
+            'candidateFollowingTimelineActionDataRecordEnd']['start'], first_end)
+        self.assertEqual(two_play_animations['candidateActionGroupDataRecordEnd']['end'],
+                         second_end)
+        self.assertEqual(two_play_animations['candidateCursor'], second_end)
+        self.assertEqual(two_play_animations['opaqueByteRanges'][0]['start'], second_end)
+        self.assertEqual(two_play_animations['exactClosedTimelineActionRecords'], 0)
+        self.assertEqual(two_play_animations['exactClosedActionGroupDataRecords'], 0)
+
+    def test_following_timeline_prefix_bad_header_and_endframe_truncation(self):
+        action = self.play_animation_member16(first_payload=b'')
+        first_force_sync = self.force_sync_member4()
+
+        raw = self.timeline_branch_raw(
+            action, timeline_count=2,
+            trailing=first_force_sync + b'\x03')
+        _, bad_header = self.timeline_witness_and_alignment(raw, timeline_count=2)
+        following = bad_header['candidateFollowingTimelineActionDataPrefix']
+        self.assertEqual(following['status'],
+                         'malformed-following-timeline-action-member-count')
+        self.assertEqual(following['cursor'], following['start'] + 1)
+        self.assertEqual(following['failure']['category'], 'member-count')
+        self.assertEqual(bad_header['candidateCursor'], following['cursor'])
+
+        raw = self.timeline_branch_raw(
+            action, timeline_count=2,
+            trailing=first_force_sync + b'\x04\x01')
+        _, short_end_frame = self.timeline_witness_and_alignment(
+            raw, timeline_count=2)
+        following = short_end_frame['candidateFollowingTimelineActionDataPrefix']
+        self.assertEqual(following['status'],
+                         'truncated-following-timeline-action-end-frame')
+        self.assertEqual(following['failure']['expectedBytes'], 4)
+        self.assertEqual(following['failure']['remainingBytes'], 1)
+        self.assertIsNone(following['firstActionUnionTagPeekOnly'])
+
+    def test_following_115_member_header_and_multi_action_prefix_stay_bounded(self):
+        action = self.play_animation_member16(first_payload=b'')
+        first_force_sync = self.force_sync_member4()
+        next_prefix = b'\x04' + struct.pack('<i', 99) + b'\x03' + struct.pack('<i', 1)
+
+        raw = self.timeline_branch_raw(
+            action, timeline_count=2,
+            trailing=first_force_sync + next_prefix + b'\xFA\x15\x01\x0F')
+        _, bad_member_header = self.timeline_witness_and_alignment(
+            raw, timeline_count=2)
+        following = bad_member_header['candidateFollowingTimelineActionDataPrefix']
+        tag_offset = following['firstActionUnionTagPeekOnly']['offset']
+        self.assertEqual(bad_member_header['candidateStatus'],
+                         'stopped-before-following-play-animation-member-header')
+        self.assertEqual(bad_member_header['candidateCursor'], tag_offset)
+        self.assertEqual(raw[tag_offset:tag_offset + 4], b'\xFA\x15\x01\x0F')
+        self.assertIsNone(bad_member_header['candidateFollowingPlayAnimationRecordEnd'])
+        self.assertFalse(following['firstActionUnionTagPeekOnly']['consumed'])
+
+        multi_action_prefix = (b'\x04' + struct.pack('<i', 99) + b'\x03' +
+                               struct.pack('<i', 2) + b'\xFA\x15\x01')
+        raw = self.timeline_branch_raw(
+            action, timeline_count=2,
+            trailing=first_force_sync + multi_action_prefix)
+        _, multi_action = self.timeline_witness_and_alignment(
+            raw, timeline_count=2)
+        following = multi_action['candidateFollowingTimelineActionDataPrefix']
+        tag_offset = following['firstActionUnionTagPeekOnly']['offset']
+        self.assertEqual(multi_action['candidateStatus'],
+                         'stopped-before-following-timeline-sequence-action')
+        self.assertEqual(following['timelineSequenceCount'], 2)
+        self.assertEqual(multi_action['candidateCursor'], tag_offset)
+        self.assertIsNone(multi_action['candidateFollowingPlayAnimationRecordEnd'])
+        self.assertEqual(raw[tag_offset], 0xFA)
+
+    def test_force_sync_bad_headers_lengths_and_truncation_stop_at_proven_cursor(self):
+        action = self.play_animation_member16(first_payload=b'')
+
+        raw = self.timeline_branch_raw(action, trailing=b'')
+        _, no_header = self.timeline_witness_and_alignment(raw)
+        start = no_header['candidateTimelineContinuation']['forceSyncAnimDataStart']
+        self.assertEqual(no_header['candidateStatus'],
+                         'truncated-force-sync-member-header')
+        self.assertEqual(no_header['candidateCursor'], start)
+        self.assertEqual(no_header['failure']['offset'], start)
+        self.assertIsNone(no_header['candidateTimelineActionDataRecordEnd'])
+
+        raw = self.timeline_branch_raw(action, trailing=b'\x03')
+        _, bad_header = self.timeline_witness_and_alignment(raw)
+        start = bad_header['candidateTimelineContinuation']['forceSyncAnimDataStart']
+        self.assertEqual(bad_header['candidateStatus'],
+                         'malformed-force-sync-member-count')
+        self.assertEqual(bad_header['candidateCursor'], start + 1)
+        self.assertIsNone(bad_header['candidateTimelineActionDataRecordEnd'])
+
+        raw = self.timeline_branch_raw(action, trailing=b'\x04\x00')
+        _, missing_length = self.timeline_witness_and_alignment(raw)
+        self.assertEqual(missing_length['candidateStatus'],
+                         'truncated-byte-payload-length-montageName')
+        self.assertEqual(missing_length['failure']['expectedBytes'], 4)
+        self.assertEqual(missing_length['failure']['remainingBytes'], 0)
+
+        raw = self.timeline_branch_raw(
+            action, trailing=b'\x04\x00' + struct.pack('<i', 3) + b'x')
+        _, short_string = self.timeline_witness_and_alignment(raw)
+        self.assertEqual(short_string['candidateStatus'],
+                         'truncated-byte-payload-montageName')
+        self.assertEqual(short_string['candidateCursor'], len(raw) - 1)
+        self.assertEqual(short_string['failure']['expectedBytes'], 3)
+        self.assertEqual(short_string['failure']['remainingBytes'], 1)
+        self.assertEqual(short_string['opaquePayloadByteRanges'], [])
+
+        raw = self.timeline_branch_raw(
+            action, trailing=b'\x04\x00' + struct.pack('<i', -2))
+        _, bad_string_length = self.timeline_witness_and_alignment(raw)
+        self.assertEqual(bad_string_length['candidateStatus'],
+                         'unsupported-byte-payload-length-montageName')
+        self.assertEqual(bad_string_length['failure']['category'], 'unsupported')
+        self.assertEqual(bad_string_length['candidateCursor'], len(raw))
+
+        raw = self.timeline_branch_raw(
+            action, trailing=b'\x04\x00' + struct.pack('<i', 0))
+        _, missing_speed = self.timeline_witness_and_alignment(raw)
+        self.assertEqual(missing_speed['candidateStatus'],
+                         'truncated-force-sync-playbackSpeed')
+        self.assertEqual(missing_speed['candidateCursor'], len(raw))
+
+        raw = self.timeline_branch_raw(
+            action, trailing=(b'\x04\x00' + struct.pack('<i', 0) +
+                              struct.pack('<f', 1.0)))
+        _, missing_target = self.timeline_witness_and_alignment(raw)
+        self.assertEqual(missing_target['candidateStatus'],
+                         'truncated-force-sync-targetFrame')
+        self.assertEqual(missing_target['candidateCursor'], len(raw))
+
+    def test_force_sync_reader_helper_drift_and_hard_limit_fail_closed(self):
+        action = self.play_animation_member16(first_payload=b'')
+        raw = self.timeline_branch_raw(action, trailing=self.force_sync_member4())
+        bool_evidence = self.c9_prefix_reader_evidence()
+        bool_evidence['verifiedSharedHelperReads'][0]['fastSerializedWidth'] = 4
+        with self.assertRaises(ContextError):
+            self.timeline_witness_and_alignment(raw,
+                                                bool_helper_evidence=bool_evidence)
+
+        corpus, _ = self.timeline_corpus_for(raw)
+        witness = skilldata_timeline_branch_sample_witness(
+            corpus, 'Data/Json/SkillData/fixture_timeline.json', raw,
+            source='fixture-force-sync-reader.json')
+        skilldata_reader, sequence_reader, routes, readers, c9 = self.timeline_static_evidence()
+        force_sync_reader = skilldata_reader['timelineActionDataReader'][
+            'forceSyncAnimDataReader']
+        force_sync_reader['serializedMembers'][0]['reader']['targetRva'] += 1
+        with self.assertRaises(ContextError):
+            skilldata_timeline_branch_static_alignment(
+                witness, raw, skilldata_reader, sequence_reader, routes, readers, c9,
+                byte_payload_helper_evidence=self.byte_payload_helper_evidence(),
+                source='fixture-force-sync-reader.json')
+
+        corpus, _ = self.timeline_corpus_for(raw)
+        witness = skilldata_timeline_branch_sample_witness(
+            corpus, 'Data/Json/SkillData/fixture_timeline.json', raw,
+            source='fixture-timeline-limit.json')
+        witness['hardLimit'] += 1
+        skilldata_reader, sequence_reader, routes, readers, c9 = self.timeline_static_evidence()
+        with self.assertRaises(ContextError):
+            skilldata_timeline_branch_static_alignment(
+                witness, raw, skilldata_reader, sequence_reader, routes, readers, c9,
+                byte_payload_helper_evidence=self.byte_payload_helper_evidence(),
+                source='fixture-timeline-limit.json')
+
+    def test_115_payload_and_nested_sequence_failures_stop_at_proven_cursor(self):
+        fixed = b'\xFA\x15\x01\x10\x7F' + struct.pack('<III', 1, 2, 3)
+        overlong = self.timeline_branch_raw(fixed + struct.pack('<i', 1000))
+        _, cut_payload = self.timeline_witness_and_alignment(overlong)
+        self.assertEqual(cut_payload['candidateStatus'], 'truncated-byte-payload-member4')
+        self.assertEqual(cut_payload['candidateCursor'], 41)
+        self.assertEqual(cut_payload['failure']['expectedBytes'], 1000)
+        self.assertEqual(cut_payload['failure']['remainingBytes'], len(overlong) - 41)
+        self.assertIsNone(cut_payload['candidatePlayAnimationRecordEnd'])
+
+        negative = self.timeline_branch_raw(fixed + struct.pack('<i', -2))
+        _, unsupported = self.timeline_witness_and_alignment(negative)
+        self.assertEqual(unsupported['candidateStatus'],
+                         'unsupported-byte-payload-length-member4')
+        self.assertEqual(unsupported['failure']['category'], 'unsupported')
+        self.assertEqual(unsupported['candidateCursor'], 41)
+
+        positive_sequence = (b'\x03' + struct.pack('<i', 1) + b'\xEE')
+        action = self.play_animation_member16(inner_sequence=positive_sequence)
+        _, nested_prefix = self.timeline_witness_and_alignment(
+            self.timeline_branch_raw(action))
+        nested = nested_prefix['candidatePlayAnimationNestedSequence']
+        self.assertEqual(nested_prefix['candidateStatus'],
+                         'stopped-before-sequence-action-elements')
+        self.assertEqual(nested_prefix['candidateCursor'], nested['cursor'])
+        self.assertEqual(nested['firstActionUnionTagPeekOnly'], {
+            'offset': nested['cursor'], 'firstByte': 0xEE, 'consumed': False,
+        })
+        self.assertFalse(nested_prefix['candidatePlayAnimationRecordEnd'])
+
+        bad_sequence = b'\x02' + struct.pack('<i', 0) + b'\x00\x00'
+        action = self.play_animation_member16(inner_sequence=bad_sequence)
+        _, bad_header = self.timeline_witness_and_alignment(
+            self.timeline_branch_raw(action))
+        self.assertEqual(bad_header['candidateStatus'],
+                         'malformed-sequence-action-header')
+        self.assertEqual(bad_header['candidatePlayAnimationNestedSequence']['header'], 2)
+        self.assertEqual(bad_header['exactClosedTimelineActionRecords'], 0)
+
+    def test_115_nested_and_outer_tail_truncation_never_closes_parent(self):
+        action_prefix = (
+            b'\xFA\x15\x01\x10\x7F' + struct.pack('<III', 1, 2, 3) +
+            struct.pack('<i', 0) + b'RAW5RAW6' + struct.pack('<I', 4) +
+            b'RAW8\x00\x00'
+        )
+        nested_cut = action_prefix + b'\x03' + struct.pack('<i', 0) + b'\x00'
+        raw = self.timeline_branch_raw(nested_cut, trailing=b'',
+                                       include_timeline_tail=False)
+        _, nested_tail = self.timeline_witness_and_alignment(raw)
+        self.assertEqual(nested_tail['candidateStatus'], 'truncated-sequence-action-tail')
+        self.assertEqual(nested_tail['candidateCursor'], len(raw))
+        self.assertEqual(nested_tail['candidatePlayAnimationRecordEnd'], None)
+
+        complete_action = self.play_animation_member16()
+        raw = self.timeline_branch_raw(complete_action)
+        action_end = 20 + len(complete_action)
+        outer_tail_cut = raw[:action_end + 1]
+        _, outer_tail = self.timeline_witness_and_alignment(outer_tail_cut)
+        self.assertEqual(outer_tail['candidateStatus'],
+                         'truncated-timeline-sequence-action-data-tail')
+        self.assertEqual(outer_tail['candidateCursor'], action_end + 1)
+        self.assertTrue(outer_tail['candidatePlayAnimationRecordEnd'])
+        self.assertEqual(outer_tail['exactClosedTimelineActionRecords'], 0)
+
+        start_frame_cut = raw[:action_end + 4]
+        _, start_frame = self.timeline_witness_and_alignment(start_frame_cut)
+        self.assertEqual(start_frame['candidateStatus'],
+                         'truncated-timeline-action-start-frame')
+        self.assertEqual(start_frame['candidateCursor'], action_end + 2)
+        self.assertTrue(start_frame['candidatePlayAnimationRecordEnd'])
+        self.assertEqual(start_frame['exactClosedActionGroupDataRecords'], 0)
+
+    def test_115_reader_and_payload_helper_drift_fail_closed(self):
+        raw = self.timeline_branch_raw(self.play_animation_member16())
+        helper = self.byte_payload_helper_evidence()
+        helper['windows'][0]['rawHex'] = '00'
+        with self.assertRaises(ContextError):
+            self.timeline_witness_and_alignment(raw, byte_payload_helper=helper)
+
+        corpus, _ = self.timeline_corpus_for(raw)
+        witness = skilldata_timeline_branch_sample_witness(
+            corpus, 'Data/Json/SkillData/fixture_timeline.json', raw,
+            source='fixture-timeline.json')
+        skilldata_reader, sequence_reader, routes, readers, c9 = self.timeline_static_evidence()
+        readers[0x115]['verifiedSourceReadCallSites'][1]['targetRva'] += 1
+        with self.assertRaises(ContextError):
+            skilldata_timeline_branch_static_alignment(
+                witness, raw, skilldata_reader, sequence_reader, routes,
+                readers, c9,
+                byte_payload_helper_evidence=self.byte_payload_helper_evidence(),
+                source='fixture-timeline.json')
+
+        skilldata_reader, sequence_reader, routes, readers, c9 = self.timeline_static_evidence()
+        sequence_reader['windows'][1]['rawHex'] = '00'
+        with self.assertRaises(ContextError):
+            skilldata_timeline_branch_static_alignment(
+                witness, raw, skilldata_reader, sequence_reader, routes,
+                readers, c9,
+                byte_payload_helper_evidence=self.byte_payload_helper_evidence(),
+                source='fixture-timeline.json')
+
+    def test_timeline_replays_only_shared_fixed_prefix_for_other_selected_readers(self):
+        fixed_four_member = (b'\xFA\xFD\x00\x04\x7F' +
+                             struct.pack('<III', 0x11223344, 0x55667788, 0x99AABBCC))
+        raw = self.timeline_branch_raw(fixed_four_member)
+        witness, aligned = self.timeline_witness_and_alignment(raw)
+        self.assertEqual(witness['firstActionUnionTagPeekOnly'], {
+            'offset': 20, 'firstByte': 0xFA, 'tag': 0xFD,
+            'tagWidth': 3, 'encodingHex': 'FAFD00', 'consumed': False,
+        })
+        self.assertEqual(aligned['candidateCursor'], 37)
+        self.assertEqual(aligned['candidateStatus'],
+                         'candidate-action-reader-member-sequence-exhausted')
+        self.assertEqual(aligned['candidateActionReaderEvidence']['rootMemberCount'], 4)
+        self.assertEqual(aligned['candidateActionPrefixStop'], {
+            'tag': 0xFD, 'start': 20, 'end': 37, 'memberHeader': 4,
+            'rootReadOrderKey': 'member4',
+            'sourceReadOrderPrefix': ['byte', 'scalar32', 'scalar32', 'scalar32'],
+            'nextSourceReadType': None, 'nextSourceReadOffset': 37,
+            'nextSourceReadConsumed': None, 'consumedUnionRecord': False,
+            'classification': 'candidate-static-reader-member-sequence; provider unobserved',
+        })
+        self.assertEqual(aligned['candidateByteRanges'][-1], {
+            'start': 33, 'end': 37,
+            'kind': 'AbilityActionData.member3.scalar32',
+        })
+        self.assertEqual(aligned['opaqueByteRanges'][0]['start'], 37)
+        self.assertEqual(aligned['exactClosedTimelineActionRecords'], 0)
+        self.assertEqual(aligned['exactClosedActionGroupDataRecords'], 0)
+        self.assertEqual(aligned['wholeSkillDataClassification'], 'ambiguous')
+
+        wrong_header = bytearray(fixed_four_member)
+        wrong_header[3] = 5
+        _, rejected = self.timeline_witness_and_alignment(
+            self.timeline_branch_raw(bytes(wrong_header)))
+        self.assertEqual(rejected['candidateCursor'], 20)
+        self.assertEqual(rejected['candidateStatus'], 'stopped-before-action-member-header')
+        self.assertEqual(rejected['failure'], {
+            'category': 'member-count', 'offset': 23, 'expected': 4, 'actual': 5,
+        })
+        self.assertEqual(rejected['candidateByteRanges'][-1]['end'], 20)
+
+        timeline_prefix = (b'\x30\x02' + struct.pack('<ii', 0, 1) + b'\x04' +
+                           struct.pack('<i', 0x12345678) + b'\x03' + struct.pack('<i', 1))
+        _, cut = self.timeline_witness_and_alignment(
+            timeline_prefix + fixed_four_member[:-2])
+        self.assertEqual(cut['candidateCursor'], 33)
+        self.assertEqual(cut['candidateStatus'], 'truncated-action-fixed-prefix')
+        self.assertEqual(cut['failure'], {
+            'category': 'truncated', 'offset': 33, 'memberIndex': 3,
+            'kind': 'scalar32', 'expectedBytes': 4, 'remainingBytes': 2,
+        })
+        self.assertEqual(cut['candidateByteRanges'][-1]['end'], 33)
+        self.assertEqual(cut['opaqueByteRanges'][0]['start'], 33)
+
+        d5 = b'\xD5\x04\x01' + struct.pack('<III', 1, 2, 3)
+        _, no_common_prefix = self.timeline_witness_and_alignment(
+            self.timeline_branch_raw(d5))
+        self.assertEqual(no_common_prefix['candidateCursor'], 20)
+        self.assertEqual(no_common_prefix['candidateStatus'],
+                         'stopped-before-action-without-bounded-prefix-contract')
+        self.assertEqual(no_common_prefix['candidateActionReaderEvidence']
+                         ['rootAnonymousReadOrder'][:4],
+                         ['boolean', 'scalar32', 'scalar32', 'scalar32'])
+
+    def test_timeline_c9_prefix_stops_before_nested_sequence_and_unknown_stays_at_tag(self):
+        c9 = (b'\xC9\x08\x01' + struct.pack('<III',
+              0x11223344, 0x55667788, 0x99AABBCC) + b'\x01')
+        witness, aligned = self.timeline_witness_and_alignment(
+            self.timeline_branch_raw(c9))
+        self.assertEqual(aligned['candidateCursor'], 36)
+        self.assertEqual(aligned['candidateStatus'],
+                         'stopped-before-if-else-sequence-call')
+        self.assertEqual(aligned['candidateActionPrefixStop']['nextSourceReadType'],
+                         'Beyond.Gameplay.Core.SequenceActionData')
+        self.assertEqual(aligned['candidateActionPrefixStop']['nextSourceReadOffset'], 36)
+        self.assertFalse(aligned['candidateActionPrefixStop']['nextSourceReadConsumed'])
+        self.assertEqual(aligned['opaqueByteRanges'][0]['start'], 36)
+        self.assertEqual(aligned['exactClosedTimelineActionRecords'], 0)
+
+        unknown = self.timeline_branch_raw(b'\xFA\x16\x01\x00\x00')
+        unknown_witness, unknown_aligned = self.timeline_witness_and_alignment(unknown)
+        self.assertEqual(unknown_aligned['candidateCursor'], 20)
+        self.assertEqual(unknown_aligned['candidateStatus'], 'stopped-at-unknown-action-tag')
+        self.assertEqual(unknown_aligned['firstActionUnionTagPeekOnly'], {
+            'offset': 20, 'firstByte': 0xFA, 'tag': 0x116,
+            'tagWidth': 3, 'encodingHex': 'FA1601', 'consumed': False,
+        })
+        self.assertEqual(unknown_aligned['opaqueByteRanges'][0]['start'], 20)
+        self.assertEqual(unknown_aligned['wholeSkillDataExactClosedRecords'], 0)
+
+    def test_timeline_truncation_bad_headers_counts_and_limits_fail_closed(self):
+        full = self.timeline_branch_raw(b'\xFA\x16\x01\x00\x00')
+        bad_timeline_header = bytearray(full)
+        bad_timeline_header[10] = 3
+        witness, aligned = self.timeline_witness_and_alignment(bytes(bad_timeline_header))
+        self.assertEqual(witness['candidateCursor'], 10)
+        self.assertEqual(aligned['candidateStatus'], 'malformed-timeline-structural-prefix')
+        self.assertEqual(aligned['candidateByteRanges'], [])
+
+        truncated_sequence_header = full[:15]
+        witness, aligned = self.timeline_witness_and_alignment(truncated_sequence_header)
+        self.assertEqual(witness['candidateCursor'], 15)
+        self.assertEqual(witness['failure']['category'], 'truncated')
+        self.assertEqual(aligned['candidateStatus'], 'truncated-timeline-structural-prefix')
+        self.assertEqual(aligned['candidateByteRanges'], [
+            {'start': 10, 'end': 11, 'kind': 'TimelineActionData.member-header'},
+            {'start': 11, 'end': 15, 'kind': 'TimelineActionData.endFrame.i32'},
+        ])
+
+        bad_sequence_header = bytearray(full)
+        bad_sequence_header[15] = 2
+        witness, aligned = self.timeline_witness_and_alignment(bytes(bad_sequence_header))
+        self.assertEqual(witness['candidateCursor'], 15)
+        self.assertEqual(witness['failure']['category'], 'member-count')
+        self.assertEqual(aligned['candidateStatus'], 'malformed-timeline-structural-prefix')
+
+        bad_nested_count = bytearray(full)
+        struct.pack_into('<i', bad_nested_count, 16, -2)
+        witness, aligned = self.timeline_witness_and_alignment(bytes(bad_nested_count))
+        self.assertEqual(witness['candidateCursor'], 20)
+        self.assertEqual(witness['failure']['category'], 'count-bounds')
+        self.assertEqual(aligned['candidateStatus'], 'malformed-timeline-structural-prefix')
+        self.assertIsNone(witness['firstActionUnionTagPeekOnly'])
+
+        corpus, row = self.timeline_corpus_for(full)
+        row['hardLimit'] += 1
+        with self.assertRaises(ContextError):
+            skilldata_timeline_branch_sample_witness(
+                corpus, row['virtualPath'], full, source='fixture-timeline-limit.json')
+
+    def c9_prefix_reader_evidence(self, mutate=None):
+        base = 0x180000000
+        wrapper = ('Beyond.MemoryPack.Beyond_Gameplay_Core_IfElseAction_'
+                   'IfElseActionDataForMemoryPack')
+        reader = {
+            'methods': [{
+                'methodIndex': 120613,
+                'declaringType': wrapper,
+                'name': 'Deserialize',
+                'image': 'MemoryPack.Beyond.dll',
+                'pointerVa': base + 0x3774060,
+            }],
+            'rootCodeWindow': {
+                'startRva': 0x3774060,
+                'endRva': 0x37742A8,
+                'sha256': 'AC1FF978FEF71639E74980B43AE00D9746518A9DD94B41772F2867963A596ED8',
+            },
+            'windows': [
+                {'rva': 0x3774093,
+                 'rawHex': '837B30010F8C089A6B01488B43500FB6288B733083EE010F880B9A6B0148FF4350FF4340FF43448973304080FDFF0F8482010000'},
+                {'rva': 0x37740FA, 'rawHex': '4080FD080F85D1996B01'},
+            ],
+            'orderedCalls': [
+                {'rva': 0x377410A, 'targetRva': 0x2CA88C0, 'fastSerializedWidth': 1},
+                {'rva': 0x3774135, 'targetRva': 0x2CA86B0, 'fastSerializedWidth': 4},
+                {'rva': 0x3774159, 'targetRva': 0x2CA86B0, 'fastSerializedWidth': 4},
+                {'rva': 0x377417D, 'targetRva': 0x2CA86B0, 'fastSerializedWidth': 4},
+                {'rva': 0x37741A1, 'targetRva': 0x2CA88C0, 'fastSerializedWidth': 1},
+                {'rva': 0x37741CA, 'targetRva': 0x2DA5C90, 'fastSerializedWidth': None},
+                {'rva': 0x37741F3, 'targetRva': 0x2DA5C90, 'fastSerializedWidth': None},
+                {'rva': 0x377421C, 'targetRva': 0x2DA5C90, 'fastSerializedWidth': None},
+            ],
+            'nestedOperands': [
+                {'rva': 0x37741BD, 'cellVa': 0x180010000, 'usageRawHex': '75EB12C000000000'},
+                {'rva': 0x37741E6, 'cellVa': 0x180010000, 'usageRawHex': '75EB12C000000000'},
+                {'rva': 0x377420F, 'cellVa': 0x180010000, 'usageRawHex': '75EB12C000000000'},
+            ],
+            'nestedMethodSpecIndex': 619962,
+            'nestedTypeDefinition': 9202,
+            'nestedTypeName': 'Beyond.Gameplay.Core.SequenceActionData',
+            'nestedInstantiation': {'arguments': ({
+                'raw_type_record_hex': 'F2230000000000000000120000000000',
+            },)},
+        }
+        if mutate is not None:
+            mutate(reader)
+        return skilldata_action_union_c9_prefix_reader_evidence(
+            reader, self.static_evidence()[6], gameassembly_image_base=base,
+            source='fixture-GameAssembly.dll')
+
+    def witness(self, raw, *, path='Data/Json/SkillData/fixture_actiongroup.json',
+                verified_action_tags=None, verified_action_prefix_tags=None):
         corpus, _ = self.corpus_for(raw, path)
         return skilldata_actiongroup_branch_sample_witness(
-            corpus, path, raw, source='fixture-actiongroup.json')
+            corpus, path, raw, source='fixture-actiongroup.json',
+            verified_action_tags=verified_action_tags,
+            verified_action_prefix_tags=verified_action_prefix_tags)
 
     def test_empty_and_nonempty_branches_bind_ranges_and_keep_parents_open(self):
         empty = self.witness(self.empty_sequence_array_raw())
@@ -3039,26 +4158,321 @@ class SkillDataActionGroupBranchTests(unittest.TestCase):
             {'offset': 16, 'end': 20, 'signedI32': 1},
         ])
         self.assertEqual(nonempty['firstUnconsumedActionUnionByte'], {
-            'offset': 20, 'firstByte': 0xD5, 'consumed': False,
+            'offset': 20, 'firstByte': 0xD7, 'tag': 0xD7, 'consumed': False,
         })
         self.assertEqual(nonempty['completedNestedRecords'], [])
         self.assertEqual(nonempty['opaqueByteRanges'][0]['start'], 20)
         self.assertEqual(nonempty['wholeSkillDataExactClosedRecords'], 0)
 
-    def test_static_native_alignment_covers_both_branches_but_closes_no_parent(self):
-        skilldata_reader, ability_map_reader, shared_list_reader, sequence_reader = (
-            self.static_evidence())
+    def test_static_native_alignment_covers_all_branches_but_closes_no_parent(self):
+        (skilldata_reader, ability_map_reader, shared_list_reader, sequence_reader,
+         buff_d5_reader, buff_d6_reader, buff_routes,
+         buff_action_readers) = self.static_evidence()
         for raw in (self.empty_sequence_array_raw(),
-                    self.nonempty_sequence_unknown_action_raw()):
+                    self.nonempty_sequence_unknown_action_raw(),
+                    self.nonempty_sequence_d5_d6_raw()):
             witness = self.witness(raw)
             aligned = skilldata_actiongroup_branch_static_alignment(
                 witness, skilldata_reader, ability_map_reader, shared_list_reader,
-                sequence_reader, source='fixture-actiongroup.json')
+                sequence_reader, buff_d5_reader, buff_d6_reader, buff_routes,
+                source='fixture-actiongroup.json',
+                buff_action_readers=buff_action_readers)
             self.assertEqual(aligned['status'], 'conditional-static-reader-alignment')
             self.assertEqual(aligned['actionGroupDataExactClosedRecords'], 0)
             self.assertEqual(aligned['wholeSkillDataClassification'], 'ambiguous')
             self.assertEqual(aligned['wholeSkillDataExactClosedRecords'], 0)
             self.assertEqual(aligned['runtimeProviderCacheSelection'], 'unobserved')
+            if aligned['completedD5D6UnionRanges']:
+                self.assertEqual(aligned['completedD5D6UnionRanges'], [
+                    {'tag': 0xD5, 'start': 20, 'end': 35},
+                    {'tag': 0xD6, 'start': 51, 'end': 66},
+                ])
+                self.assertEqual(aligned['parserCursor'], 68)
+
+    def test_tag56_stops_before_unverified_92_without_completing_parent(self):
+        raw = self.nonempty_sequence_tag56_unknown92_raw()
+        witness = self.witness(raw, verified_action_tags={0x56})
+        (skilldata_reader, ability_map_reader, shared_list_reader, sequence_reader,
+         buff_d5_reader, buff_d6_reader, buff_routes,
+         buff_action_readers) = self.static_evidence()
+        aligned = skilldata_actiongroup_branch_static_alignment(
+            witness, skilldata_reader, ability_map_reader, shared_list_reader,
+            sequence_reader, buff_d5_reader, buff_d6_reader, buff_routes,
+            source='fixture-actiongroup.json',
+            buff_action_readers={0x56: buff_action_readers[0x56]})
+        self.assertEqual(aligned['status'], 'conditional-static-reader-alignment')
+        self.assertEqual(aligned['completedActionUnionRanges'], [
+            {'tag': 0x56, 'start': 20, 'end': 91},
+        ])
+        self.assertEqual(aligned['parserCursor'], 91)
+        self.assertEqual(witness['firstUnconsumedActionUnionByte'], {
+            'offset': 91, 'firstByte': 0x92, 'tag': 0x92, 'consumed': False,
+        })
+        self.assertIsNone(witness['nextMemberCountPeekOnly'])
+        self.assertFalse(any(row['kind'] == 'anonymous-ability-action-map-list'
+                             for row in witness['completedNestedRecords']))
+        self.assertEqual(aligned['actionGroupDataExactClosedRecords'], 0)
+        self.assertEqual(aligned['wholeSkillDataExactClosedRecords'], 0)
+
+    def test_tag56_and_92_reach_conditional_list_end_only(self):
+        raw = self.nonempty_sequence_tag56_tag92_raw()
+        witness = self.witness(raw, verified_action_tags={0x56, 0x92})
+        (skilldata_reader, ability_map_reader, shared_list_reader, sequence_reader,
+         buff_d5_reader, buff_d6_reader, buff_routes,
+         buff_action_readers) = self.static_evidence()
+        aligned = skilldata_actiongroup_branch_static_alignment(
+            witness, skilldata_reader, ability_map_reader, shared_list_reader,
+            sequence_reader, buff_d5_reader, buff_d6_reader, buff_routes,
+            source='fixture-actiongroup.json',
+            buff_action_readers={0x56: buff_action_readers[0x56],
+                                 0x92: buff_action_readers[0x92]})
+        self.assertEqual(aligned['status'], 'conditional-static-reader-alignment')
+        self.assertEqual(aligned['completedActionUnionRanges'], [
+            {'tag': 0x56, 'start': 20, 'end': 91},
+            {'tag': 0x92, 'start': 91, 'end': 133},
+        ])
+        self.assertEqual(aligned['verifiedActionUnionReaderTags'], [0x56, 0x92])
+        self.assertEqual(aligned['parserCursor'], 135)
+        self.assertEqual(witness['nextMemberCountPeekOnly'], {
+            'fieldName': 'timelineActions.count', 'offset': 135,
+            'signedI32': 0, 'consumed': False,
+        })
+        self.assertEqual(aligned['actionGroupDataExactClosedRecords'], 0)
+        self.assertEqual(aligned['wholeSkillDataClassification'], 'ambiguous')
+        self.assertEqual(aligned['wholeSkillDataExactClosedRecords'], 0)
+        evidence_by_tag = {row['tag']: row
+                           for row in aligned['abilityActionUnionReaderEvidence']}
+        self.assertEqual(evidence_by_tag[0x56]['rootMemberCount'], 8)
+        self.assertEqual(evidence_by_tag[0x92]['rootMemberCount'], 19)
+
+    def test_extended_fd_tag_keeps_three_byte_prefix_when_tag_value_fits_one_byte(self):
+        fd = (b'\xFA\xFD\x00\x04\x01' +
+              struct.pack('<III', 0xFFFFFFFF, 0x80000000, 0x7FC00000))
+        raw = (b'\x30\x02' + struct.pack('<i', 1) + b'\x02' +
+               struct.pack('<i', 0x12345678) + struct.pack('<i', 1) +
+               b'\x03' + struct.pack('<i', 1) + fd + b'\x00\x00' +
+               struct.pack('<i', 0))
+        witness = self.witness(raw, verified_action_tags={0xFD})
+        evidence = self.static_evidence()
+        aligned = skilldata_actiongroup_branch_static_alignment(
+            witness, *evidence[:7], source='fixture-extended-fd.json',
+            buff_action_readers={0xFD: evidence[7][0xFD]})
+        observation = witness['completedActionUnionHeaderObservations'][0]
+        self.assertEqual(observation, {
+            'tag': 0xFD,
+            'start': 20,
+            'end': 37,
+            'tagWidth': 3,
+            'tagPrefixByte': 0xFA,
+            'tagEncodingHex': 'FAFD00',
+            'memberHeaderOffset': 23,
+            'memberHeaderValue': 4,
+        })
+        self.assertEqual(aligned['completedActionUnionRanges'], [
+            {'tag': 0xFD, 'start': 20, 'end': 37},
+        ])
+        self.assertEqual(aligned['verifiedActionUnionReaderTags'], [0xFD])
+        self.assertEqual(aligned['actionGroupDataExactClosedRecords'], 0)
+
+    def test_c9_consumes_only_header_eight_scalar_prefix_before_nested_reader(self):
+        raw = self.nonempty_sequence_c9_raw(first_member_byte=0xFF)
+        witness = self.witness(raw, verified_action_prefix_tags={0xC9})
+        evidence = self.c9_prefix_reader_evidence()
+        (skilldata_reader, ability_map_reader, shared_list_reader, sequence_reader,
+         buff_d5_reader, buff_d6_reader, buff_routes,
+         buff_action_readers) = self.static_evidence()
+        aligned = skilldata_actiongroup_branch_static_alignment(
+            witness, skilldata_reader, ability_map_reader, shared_list_reader,
+            sequence_reader, buff_d5_reader, buff_d6_reader, buff_routes,
+            source='fixture-actiongroup.json',
+            buff_action_readers=buff_action_readers,
+            buff_action_prefixes={0xC9: evidence})
+        self.assertEqual(witness['status'], 'stopped-after-verified-action-prefix')
+        self.assertEqual(witness['boundaryClass'], 'structural-prefix')
+        self.assertEqual(witness['parserCursor'], 36)
+        self.assertEqual(witness['actionUnionPrefixStop'], {
+            'tag': 0xC9,
+            'start': 20,
+            'end': 36,
+            'memberHeader': 8,
+            'sourceReadWidthsAfterHeader': [1, 4, 4, 4, 1],
+            'consumedUnionRecord': False,
+            'nextSourceReadType': 'Beyond.Gameplay.Core.SequenceActionData',
+            'nextSourceReadOffset': 36,
+            'nextSourceReadConsumed': False,
+            'nextSourceReadFirstByte': 3,
+            'remainingBytesOpaque': True,
+        })
+        self.assertEqual(aligned['verifiedActionUnionPrefixTags'], [0xC9])
+        self.assertEqual(aligned['actionGroupDataExactClosedRecords'], 0)
+        self.assertEqual(aligned['wholeSkillDataExactClosedRecords'], 0)
+        self.assertEqual(witness['opaqueByteRanges'][0]['start'], 36)
+        self.assertFalse(any(row['kind'] in (
+            'anonymous-ability-action-map', 'anonymous-ability-action-map-list', 'sequence')
+            for row in witness['completedNestedRecords']))
+
+    def test_c9_prefix_truncation_and_other_headers_do_not_claim_the_prefix(self):
+        truncated_raw = self.nonempty_sequence_c9_raw()[:30]
+        truncated = self.witness(
+            truncated_raw, verified_action_prefix_tags={0xC9})
+        self.assertEqual(truncated['status'], 'truncated-structural-prefix')
+        self.assertEqual(truncated['parserCursor'], 27)
+        self.assertEqual(truncated['parserError']['category'], 'truncated')
+        self.assertIsNone(truncated['actionUnionPrefixStop'])
+
+        wrong_header_raw = bytearray(self.nonempty_sequence_c9_raw())
+        wrong_header_raw[21] = 7
+        wrong_header = self.witness(
+            bytes(wrong_header_raw), verified_action_prefix_tags={0xC9})
+        self.assertEqual(wrong_header['status'],
+                         'stopped-before-first-nonnull-action-union')
+        self.assertEqual(wrong_header['parserCursor'], 20)
+        self.assertEqual(wrong_header['firstUnconsumedActionUnionByte'], {
+            'offset': 20, 'firstByte': 0xC9, 'tag': 0xC9, 'consumed': False,
+        })
+
+    def test_c9_prefix_reader_evidence_rejects_nested_call_order_drift(self):
+        with self.assertRaises(ContextError):
+            self.c9_prefix_reader_evidence(
+                lambda reader: reader['orderedCalls'][5].update(
+                    targetRva=0x2DA5C91))
+        evidence = self.c9_prefix_reader_evidence()
+        self.assertEqual({(row['callInstructionRva'], row['targetRva'],
+                           row['fastSerializedWidth'])
+                          for row in evidence['verifiedSharedHelperReads']
+                          if row['targetRva'] == 0x2CA88C0},
+                         {(0x377410A, 0x2CA88C0, 1),
+                          (0x37741A1, 0x2CA88C0, 1)})
+
+    def test_c9_nested_sequence_candidates_are_reported_outside_authoritative_cursor(self):
+        raw = self.c9_three_empty_nested_sequences_raw()
+        witness = self.witness(raw, verified_action_prefix_tags={0xC9})
+        (skilldata_reader, ability_map_reader, shared_list_reader, sequence_reader,
+         buff_d5_reader, buff_d6_reader, buff_routes,
+         buff_action_readers) = self.static_evidence()
+        prefix_reader = self.c9_prefix_reader_evidence()
+        candidate = skilldata_actiongroup_c9_nested_sequence_candidate_replay(
+            witness, raw, prefix_reader, sequence_reader, {}, buff_routes,
+            source='fixture-c9-candidate.json')
+        self.assertEqual(candidate['status'],
+                         'three-sequence-call-candidates-replayed')
+        self.assertEqual(candidate['candidateSequenceRanges'], [
+            {'start': 36, 'end': 43,
+             'kind': 'candidate-SequenceActionData-call-range',
+             'callSiteRva': 0x37741CA,
+             'byteRanges': [
+                 {'start': 36, 'end': 37, 'kind': 'member-header'},
+                 {'start': 37, 'end': 41, 'kind': 'count-i32'},
+                 {'start': 41, 'end': 42, 'kind': 'anonymous-byte'},
+                 {'start': 42, 'end': 43, 'kind': 'anonymous-byte'},
+             ],
+             'completedChildActionTags': [],
+             'classification': 'candidate-only; runtime provider/cache selection unobserved'},
+            {'start': 43, 'end': 50,
+             'kind': 'candidate-SequenceActionData-call-range',
+             'callSiteRva': 0x37741F3,
+             'byteRanges': [
+                 {'start': 43, 'end': 44, 'kind': 'member-header'},
+                 {'start': 44, 'end': 48, 'kind': 'count-i32'},
+                 {'start': 48, 'end': 49, 'kind': 'anonymous-byte'},
+                 {'start': 49, 'end': 50, 'kind': 'anonymous-byte'},
+             ],
+             'completedChildActionTags': [],
+             'classification': 'candidate-only; runtime provider/cache selection unobserved'},
+            {'start': 50, 'end': 57,
+             'kind': 'candidate-SequenceActionData-call-range',
+             'callSiteRva': 0x377421C,
+             'byteRanges': [
+                 {'start': 50, 'end': 51, 'kind': 'member-header'},
+                 {'start': 51, 'end': 55, 'kind': 'count-i32'},
+                 {'start': 55, 'end': 56, 'kind': 'anonymous-byte'},
+                 {'start': 56, 'end': 57, 'kind': 'anonymous-byte'},
+             ],
+             'completedChildActionTags': [],
+             'classification': 'candidate-only; runtime provider/cache selection unobserved'},
+        ])
+        self.assertEqual(candidate['candidateStart'], 36)
+        self.assertEqual(candidate['candidateCursor'], 57)
+        self.assertEqual(candidate['authoritativeParserCursor'], 36)
+        self.assertTrue(candidate['authoritativeParserCursorUnchanged'])
+        self.assertEqual(candidate['exactClosedSequenceRecords'], 0)
+        self.assertEqual(candidate['exactClosedC9UnionRecords'], 0)
+        self.assertEqual(candidate['remainingSourceBytesOpaque'], [{
+            'start': 57, 'end': len(raw), 'kind': 'candidate-replay-remainder-opaque',
+        }])
+        self.assertFalse(any(row['kind'] in (
+            'anonymous-ability-action-map', 'anonymous-ability-action-map-list', 'sequence')
+            for row in witness['completedNestedRecords']))
+
+    def test_c9_candidate_child_union_requires_current_native_reader_contract(self):
+        raw = self.c9_three_empty_nested_sequences_raw()
+        c9_prefix = b'\xC9\x08\x01' + struct.pack('<III',
+            0x11223344, 0x55667788, 0x99AABBCC) + b'\x01'
+        d5 = b'\xD5\x04\x01' + struct.pack('<III', 0xFFFFFFFF, 0x80000000, 0x7FC00000)
+        first_sequence = b'\x03' + struct.pack('<i', 1) + d5 + b'\x00\x00'
+        raw = raw[:36] + first_sequence + self.empty_candidate_sequence() * 2 + bytes(8)
+        witness = self.witness(raw, verified_action_prefix_tags={0xC9})
+        evidence = self.static_evidence()
+        candidate = skilldata_actiongroup_c9_nested_sequence_candidate_replay(
+            witness, raw, self.c9_prefix_reader_evidence(), evidence[3],
+            {0xD5: evidence[4]}, evidence[6], source='fixture-c9-d5.json')
+        self.assertEqual(candidate['status'],
+                         'three-sequence-call-candidates-replayed')
+        self.assertEqual(candidate['candidateActionUnionRanges'][0]['tag'], 0xD5)
+        self.assertEqual((candidate['candidateActionUnionRanges'][0]['start'],
+                          candidate['candidateActionUnionRanges'][0]['end']),
+                         (41, 56))
+        self.assertEqual(candidate['candidateActionUnionRanges'][0]['memberHeaderValue'], 4)
+        self.assertEqual(
+            candidate['candidateActionUnionRanges'][0]['classification'],
+            'candidate-only-static-reader-child-range')
+        self.assertEqual(candidate['currentActionReaderEvidence'][0]['contractFile'],
+                         'buff_d5_native.json')
+        self.assertEqual(candidate['exactClosedC9UnionRecords'], 0)
+
+    def test_c9_candidate_unknown_tag_stops_at_first_byte_and_short_limit_stays_truncated(self):
+        unknown_raw = self.c9_unknown_nested_action_raw()
+        unknown_witness = self.witness(
+            unknown_raw, verified_action_prefix_tags={0xC9})
+        evidence = self.static_evidence()
+        unknown = skilldata_actiongroup_c9_nested_sequence_candidate_replay(
+            unknown_witness, unknown_raw, self.c9_prefix_reader_evidence(),
+            evidence[3], {}, evidence[6], source='fixture-c9-unknown.json')
+        self.assertEqual(unknown['status'],
+                         'stopped-before-first-unverified-nested-action')
+        self.assertEqual(unknown['candidateCursor'], 41)
+        self.assertEqual(unknown['sequenceCallCandidates'][0]
+                         ['firstUnconsumedActionUnionByte'], {
+                             'offset': 41, 'firstByte': 0xD7,
+                             'decodedTag': 0xD7, 'consumed': False,
+                         })
+        self.assertEqual(unknown['candidateSequenceRanges'], [])
+        self.assertEqual(unknown['exactClosedSequenceRecords'], 0)
+
+        raw = self.c9_three_empty_nested_sequences_raw()
+        witness = self.witness(raw, verified_action_prefix_tags={0xC9})
+        truncated = skilldata_actiongroup_c9_nested_sequence_candidate_replay(
+            witness, raw, self.c9_prefix_reader_evidence(), evidence[3], {},
+            evidence[6], source='fixture-c9-truncated.json', candidate_limit=41)
+        self.assertEqual(truncated['status'], 'truncated-candidate-sequence')
+        self.assertEqual(truncated['candidateCursor'], 41)
+        self.assertEqual(truncated['candidateSequenceRanges'], [])
+        self.assertEqual(truncated['failure']['category'], 'truncated')
+        self.assertEqual(truncated['remainingSourceBytesOpaque'], [{
+            'start': 41, 'end': len(raw), 'kind': 'beyond-candidateLimit-opaque',
+        }])
+
+    def test_c9_candidate_rejects_sequence_reader_code_window_drift(self):
+        raw = self.c9_three_empty_nested_sequences_raw()
+        witness = self.witness(raw, verified_action_prefix_tags={0xC9})
+        evidence = self.static_evidence()
+        sequence_reader = dict(evidence[3])
+        sequence_reader['rootCodeWindow'] = dict(sequence_reader['rootCodeWindow'])
+        sequence_reader['rootCodeWindow']['sha256'] = '0' * 64
+        with self.assertRaises(ContextError):
+            skilldata_actiongroup_c9_nested_sequence_candidate_replay(
+                witness, raw, self.c9_prefix_reader_evidence(), sequence_reader,
+                {}, evidence[6], source='fixture-c9-window-drift.json')
 
     def test_ordinary_reader_stops_on_unknown_union_tag_without_completing_parent(self):
         raw = self.nonempty_sequence_unknown_action_raw()
@@ -3130,13 +4544,16 @@ class SkillDataActionGroupBranchTests(unittest.TestCase):
     def test_native_alignment_rejects_reader_window_drift(self):
         raw = self.empty_sequence_array_raw()
         witness = self.witness(raw)
-        skilldata_reader, ability_map_reader, shared_list_reader, sequence_reader = (
-            self.static_evidence())
+        (skilldata_reader, ability_map_reader, shared_list_reader, sequence_reader,
+         buff_d5_reader, buff_d6_reader, buff_routes,
+         buff_action_readers) = self.static_evidence()
         shared_list_reader['codeWindows'][0]['sha256'] = '0' * 64
         with self.assertRaises(ContextError):
             skilldata_actiongroup_branch_static_alignment(
                 witness, skilldata_reader, ability_map_reader, shared_list_reader,
-                sequence_reader, source='fixture-actiongroup.json')
+                sequence_reader, buff_d5_reader, buff_d6_reader, buff_routes,
+                source='fixture-actiongroup.json',
+                buff_action_readers=buff_action_readers)
 
 
 class SkillDataCursorHookCallSiteTests(unittest.TestCase):

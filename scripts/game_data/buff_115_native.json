@@ -102,5 +102,19 @@
       "byte"
     ]
   },
+  "sourceReadCallSites": [
+    {
+      "memberIndex": 4,
+      "readType": "byte-payload",
+      "callInstructionRva": 58159398,
+      "targetRva": 46827264
+    },
+    {
+      "memberIndex": 14,
+      "readType": "byte-payload",
+      "callInstructionRva": 58159886,
+      "targetRva": 46827264
+    }
+  ],
   "boundary": "Exact selected registration and module/token joins establish direct source order and structural-only framing. After common byte/three DWORDs, the member16 action reads payload, two raw4 values, DWORD, raw4, two bytes, SequenceActionData, two raw4 values, payload and final byte. MethodSpec619962 joins typedef9202 and the independently pinned member3 nullable count/indirect-child/two-byte sequence grammar. Shared provider selection remains conditional. Sequence termination does not terminate this action: the final two raw4 values, payload and byte remain mandatory. Unknown child unions retain their first offset and leave the enclosing action incomplete; recursion remains bounded. The 2CA8BB0 helper consumes four source bytes; output setters add no source bytes. Formatter lazy/class initialization, reader lazy initialization, normal RET, existing-output and FF paths retain complete instructions. Animation meaning, live formatter selection, complete refill/error parity and whole-BuffData EOF remain unresolved."
 }

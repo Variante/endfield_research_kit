@@ -8,13 +8,16 @@ import base64
 import hashlib
 import json
 import math
+import os
 import re
 import struct
 import subprocess
+import sys
 import tempfile
 import time
 import wave
 from collections import Counter, defaultdict, deque
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path, PurePosixPath
 from struct import unpack_from
 from typing import Any
@@ -960,6 +963,41 @@ def audio_rel_with_extension(rel: str | Path, extension: str) -> str:
         suffix = "." + suffix
     path = PurePosixPath(normalize_posix(rel))
     return normalize_posix(path.with_suffix(suffix)) if suffix else normalize_posix(path)
+
+
+AUDIO_STAGE_TIMINGS: list[tuple[str, float]] = []
+
+
+class AudioStageTimer:
+    """Time each ``build_audio`` stage and report it on stderr.
+
+    The pipeline report records only the total for the whole task, so the
+    per-stage wall times are the only evidence available for deciding where
+    the time goes.  They are written to stderr so the existing stdout summary
+    lines stay machine-parsable.
+    """
+
+    def __init__(self) -> None:
+        self.last = time.perf_counter()
+
+    def mark(self, label: str) -> None:
+        now = time.perf_counter()
+        elapsed = now - self.last
+        self.last = now
+        AUDIO_STAGE_TIMINGS.append((label, elapsed))
+        print(f"Audio stage [{label}]: {elapsed:.2f}s", file=sys.stderr, flush=True)
+
+
+def print_audio_stage_summary() -> None:
+    if not AUDIO_STAGE_TIMINGS:
+        return
+    width = max(len(label) for label, _ in AUDIO_STAGE_TIMINGS)
+    total = sum(seconds for _, seconds in AUDIO_STAGE_TIMINGS)
+    print("Audio stage summary (wall seconds):", file=sys.stderr)
+    for label, seconds in sorted(AUDIO_STAGE_TIMINGS, key=lambda row: -row[1]):
+        share = (seconds / total * 100.0) if total else 0.0
+        print(f"  {label.ljust(width)}  {seconds:9.2f}  {share:5.1f}%", file=sys.stderr)
+    print(f"  {'TOTAL'.ljust(width)}  {total:9.2f}  100.0%", file=sys.stderr, flush=True)
 
 
 def json_dump(path: Path, payload: Any) -> None:
@@ -10859,29 +10897,67 @@ def backfill_event_source_metadata(
         entry.update(metadata)
 
 
-def iter_audio_files(language_root: Path) -> list[Path]:
+def scan_audio_files(language_root: Path) -> list[tuple[Path, str, os.stat_result]]:
+    """Return ``(path, rel, stat)`` for every decoded media under ``language_root``.
+
+    ``Path.rglob("*")`` pays one extra ``stat`` syscall per entry for
+    ``is_file()`` and every caller then stats the file again for its size.
+    ``os.scandir`` carries both in the directory entry it already read, so
+    reusing it removes roughly two syscalls per file — about 190k of them per
+    walk over the ~93k decoded media.  The ordering is the one the published
+    index depends on and is reproduced exactly.
+    """
+
     if not language_root.exists():
         return []
-    return sorted(
-        [
-            path
-            for path in language_root.rglob("*")
-            if path.is_file() and path.suffix.lower() in AUDIO_EXTENSIONS
-        ],
-        key=lambda path: (
-            normalize_posix(path.relative_to(language_root)).rsplit(".", 1)[0].lower(),
-            AUDIO_EXTENSION_PRIORITY.get(path.suffix.lower(), 99),
-            normalize_posix(path.relative_to(language_root)).lower(),
-        ),
+    prefix_length = len(str(language_root)) + 1
+    rows: list[tuple[Path, str, os.stat_result]] = []
+    stack: list[str] = [str(language_root)]
+    while stack:
+        with os.scandir(stack.pop()) as entries:
+            for entry in entries:
+                if entry.is_dir(follow_symlinks=False):
+                    stack.append(entry.path)
+                    continue
+                if not entry.is_file(follow_symlinks=False):
+                    continue
+                if os.path.splitext(entry.name)[1].lower() not in AUDIO_EXTENSIONS:
+                    continue
+                rows.append(
+                    (
+                        Path(entry.path),
+                        normalize_posix(entry.path[prefix_length:]),
+                        entry.stat(),
+                    )
+                )
+    rows.sort(
+        key=lambda row: (
+            row[1].rsplit(".", 1)[0].lower(),
+            AUDIO_EXTENSION_PRIORITY.get(row[0].suffix.lower(), 99),
+            row[1].lower(),
+        )
     )
+    return rows
+
+
+def iter_audio_files(language_root: Path) -> list[Path]:
+    return [path for path, _rel, _stat in scan_audio_files(language_root)]
 
 
 def has_decoded_audio(language_root: Path) -> bool:
     if not language_root.exists():
         return False
-    for path in language_root.rglob("*"):
-        if path.is_file() and path.suffix.lower() in AUDIO_EXTENSIONS:
-            return True
+    stack: list[str] = [str(language_root)]
+    while stack:
+        with os.scandir(stack.pop()) as entries:
+            for entry in entries:
+                if entry.is_dir(follow_symlinks=False):
+                    stack.append(entry.path)
+                elif (
+                    os.path.splitext(entry.name)[1].lower() in AUDIO_EXTENSIONS
+                    and entry.is_file()
+                ):
+                    return True
     return False
 
 
@@ -10921,6 +10997,26 @@ def audio_file_metrics(path: Path, file_size: int | None = None) -> dict[str, An
     }
 
 
+def audio_file_metrics_bulk(
+    rows: list[tuple[Path, str, os.stat_result]],
+) -> list[dict[str, Any]]:
+    """Read the container header of every row, overlapping the file opens.
+
+    Each call reads 42 bytes from a different file, so the ~93k decoded media
+    cost one storage round trip each and the walk is latency bound, not CPU
+    bound.  ``ThreadPoolExecutor.map`` keeps the results in row order, so the
+    produced index is identical to the serial read.
+    """
+
+    if not rows:
+        return []
+    workers = min(16, max(1, (os.cpu_count() or 4) * 2), len(rows))
+    if workers <= 1:
+        return [audio_file_metrics(path, stat.st_size) for path, _rel, stat in rows]
+    with ThreadPoolExecutor(max_workers=workers) as pool:
+        return list(pool.map(lambda row: audio_file_metrics(row[0], row[2].st_size), rows))
+
+
 def collect_audio_files(
     audio_root: Path,
     webui_root: Path,
@@ -10935,17 +11031,20 @@ def collect_audio_files(
     prior_source_by_rel = prior_source_by_rel or {}
     by_id: dict[str, dict[str, Any]] = {}
     seen_occurrences: set[str] = set()
-    for path in iter_audio_files(source_root):
-        rel = normalize_posix(path.relative_to(source_root))
-        occurrence_key = normalize_posix(PurePosixPath(rel).with_suffix("")).lower()
+    # Resolve the surviving occurrence set first so the container headers of
+    # the files that are about to be dropped are never read.
+    selected: list[tuple[Path, str, os.stat_result]] = []
+    for row in scan_audio_files(source_root):
+        occurrence_key = normalize_posix(PurePosixPath(row[1]).with_suffix("")).lower()
         # Keep the preferred FLAC/WAV/WEM for one physical path stem while
         # preserving same-media-id occurrences in distinct folders or banks.
         if occurrence_key in seen_occurrences:
             continue
         seen_occurrences.add(occurrence_key)
+        selected.append(row)
+    metrics_by_row = audio_file_metrics_bulk(selected)
+    for (path, rel, stat), metrics in zip(selected, metrics_by_row):
         audio_id = path.stem.lower()
-        stat = path.stat()
-        metrics = audio_file_metrics(path, stat.st_size)
         metadata = source_metadata_for_rel(
             storage_root,
             rel,
@@ -11035,7 +11134,13 @@ def build_dialog_audio_index(
     preferred_extension: str,
 ) -> dict[str, dict[str, Any]]:
     duration_field = language_info["durationField"]
+    # One directory walk answers the per-candidate existence probes and carries
+    # each file's size, replacing roughly four syscalls per AudioDialog row.
+    # A candidate the walk did not report still falls back to the filesystem so
+    # a name that differs only by case resolves exactly as it did before.
+    stat_by_rel = {rel: stat for _path, rel, stat in scan_audio_files(language_root)}
     out: dict[str, dict[str, Any]] = {}
+    resolved: list[tuple[str, str, Path, os.stat_result, Any, Any, str, str]] = []
     for audio_dialog_path in audio_dialog_paths:
         rows = load_json(audio_dialog_path, {})
         if not isinstance(rows, dict):
@@ -11063,36 +11168,58 @@ def build_dialog_audio_index(
                 candidate_rel = audio_rel_for_dialog_path(dialog_path, normalized_extension)
                 candidate_path = language_root / Path(*PurePosixPath(candidate_rel).parts)
                 candidates.append((normalized_extension, candidate_rel, candidate_path))
-            selected = next(
-                ((rel, file_path) for _, rel, file_path in candidates if file_path.exists()),
-                None,
-            )
+            selected = None
+            for _extension, candidate_rel, candidate_path in candidates:
+                stat = stat_by_rel.get(candidate_rel)
+                if stat is None:
+                    if not candidate_path.exists():
+                        continue
+                    stat = candidate_path.stat()
+                selected = (candidate_rel, candidate_path, stat)
+                break
             if selected is None:
                 continue
-            rel, file_path = selected
-            stat = file_path.stat()
-            metrics = audio_file_metrics(file_path, stat.st_size)
-            authored_duration = row.get(duration_field)
-            duration = authored_duration if isinstance(authored_duration, (int, float)) else metrics.get("duration")
-            bitrate = round(stat.st_size * 8 / duration) if isinstance(duration, (int, float)) and duration > 0 else metrics.get("bitrate")
-            entry = {
-                "id": audio_id,
-                "rel": rel,
-                "storageRoot": language,
-                "src": served_audio_href(audio_root, webui_root, language, rel),
-                "format": file_path.suffix.lower().lstrip("."),
-                "bytes": stat.st_size,
-                "audioDialogKey": int(row_key) if str(row_key).lstrip("-").isdigit() else row_key,
-                "audioDialogPath": dialog_path,
-                "audioDialogSource": source_path,
-                "speakerChannel": str(row.get("speakerChannel") or ""),
-                "voType": row.get("voType"),
-                "duration": duration if isinstance(duration, (int, float)) else None,
-                "bitrate": bitrate,
-                **audio_source_metadata("voice", language, language_info),
-            }
-            apply_audio_category(entry)
-            out[audio_id] = entry
+            rel, file_path, stat = selected
+            resolved.append(
+                (audio_id, rel, file_path, stat, row, row_key, source_path, dialog_path)
+            )
+    metrics_by_row = audio_file_metrics_bulk(
+        [
+            (file_path, rel, stat)
+            for _id, rel, file_path, stat, _row, _key, _src, _dialog in resolved
+        ]
+    )
+    for (
+        audio_id,
+        rel,
+        file_path,
+        stat,
+        row,
+        row_key,
+        source_path,
+        dialog_path,
+    ), metrics in zip(resolved, metrics_by_row):
+        authored_duration = row.get(duration_field)
+        duration = authored_duration if isinstance(authored_duration, (int, float)) else metrics.get("duration")
+        bitrate = round(stat.st_size * 8 / duration) if isinstance(duration, (int, float)) and duration > 0 else metrics.get("bitrate")
+        entry = {
+            "id": audio_id,
+            "rel": rel,
+            "storageRoot": language,
+            "src": served_audio_href(audio_root, webui_root, language, rel),
+            "format": file_path.suffix.lower().lstrip("."),
+            "bytes": stat.st_size,
+            "audioDialogKey": int(row_key) if str(row_key).lstrip("-").isdigit() else row_key,
+            "audioDialogPath": dialog_path,
+            "audioDialogSource": source_path,
+            "speakerChannel": str(row.get("speakerChannel") or ""),
+            "voType": row.get("voType"),
+            "duration": duration if isinstance(duration, (int, float)) else None,
+            "bitrate": bitrate,
+            **audio_source_metadata("voice", language, language_info),
+        }
+        apply_audio_category(entry)
+        out[audio_id] = entry
     return out
 
 
@@ -11730,17 +11857,31 @@ def collect_audio_event_names(conv_dir: Path, export_root: Path) -> set[str]:
     return names
 
 
-def mono_behaviour_json_by_path_id(export_root: Path) -> dict[int, Path]:
+def mono_behaviour_json_by_path_id(
+    export_root: Path,
+    wanted_path_ids: set[int] | None = None,
+) -> dict[int, Path]:
+    """Resolve raw object JSON paths for published path ids.
+
+    Resolving a row costs one ``is_file`` probe, and the published index holds
+    every exported object, while each caller looks up only the handful of audio
+    playables it found in the asset map.  ``wanted_path_ids`` restricts the
+    probe to those ids; the entries returned for them are unchanged.
+    """
+
     out: dict[int, Path] = {}
     try:
         for row in iter_published_objects(export_root, "StreamingAssets"):
-            path = raw_json_path_for_object(export_root, "StreamingAssets", row)
             identity = row.get("object") if isinstance(row.get("object"), dict) else {}
+            try:
+                path_id = int(identity.get("pathId"))
+            except (TypeError, ValueError):
+                continue
+            if wanted_path_ids is not None and path_id not in wanted_path_ids:
+                continue
+            path = raw_json_path_for_object(export_root, "StreamingAssets", row)
             if path is not None:
-                try:
-                    out[int(identity.get("pathId"))] = path
-                except (TypeError, ValueError):
-                    continue
+                out[path_id] = path
         return out
     except ObjectIndexUnavailable:
         pass
@@ -11767,11 +11908,21 @@ def mono_behaviour_json_by_path_id(export_root: Path) -> dict[int, Path]:
         except ValueError:
             continue
         path_id = unsigned if unsigned < (1 << 63) else unsigned - (1 << 64)
+        if wanted_path_ids is not None and path_id not in wanted_path_ids:
+            continue
         out[path_id] = path
     return out
 
 
-def iter_asset_map_objects(path: Path) -> Any:
+def iter_asset_map_objects(path: Path, required_text: str | None = None) -> Any:
+    """Yield asset-map entries, optionally only those containing ``required_text``.
+
+    The map is hundreds of megabytes and ``json.loads`` dominates a scan, so a
+    caller that wants one narrow object kind can name a literal its raw block
+    must contain.  The filter only skips blocks that could not have matched the
+    caller's own predicate anyway.
+    """
+
     if not path.exists():
         return
     block: list[str] = []
@@ -11788,16 +11939,55 @@ def iter_asset_map_objects(path: Path) -> Any:
                 block = []
                 if '"Container"' not in text or '"PathID"' not in text:
                     continue
+                if required_text is not None and required_text not in text:
+                    continue
                 try:
                     yield json.loads(text.rstrip(",\r\n"))
                 except json.JSONDecodeError:
                     continue
 
 
+CUTSCENE_AUDIO_PLAYABLE_NAME_PREFIXES = (
+    "AudioDlgEventPlayable",
+    "AudioEventPlayable",
+    "AudioMusicPlayable",
+)
+
+
+def cutscene_audio_playable_path_ids(export_root: Path) -> set[int]:
+    """Every audio-playable path id the cutscene collectors can ask about.
+
+    The three cutscene collectors each resolve a subset of these ids through
+    the published object index, and one index pass reads a multi-gigabyte
+    stream.  Resolving their union once keeps the result for each collector
+    identical while paying for that stream a single time.
+    """
+
+    asset_map = (
+        export_root
+        / "recovered"
+        / "AnimeStudio-cli"
+        / "StreamingAssets"
+        / "maps"
+        / "endfield_streamingassets_assets.json"
+    )
+    out: set[int] = set()
+    for entry in iter_asset_map_objects(asset_map, '"Name": "Audio'):
+        if not isinstance(entry, dict) or entry.get("Type") != "MonoBehaviour":
+            continue
+        path_id = entry.get("PathID")
+        if isinstance(path_id, int) and str(entry.get("Name") or "").startswith(
+            CUTSCENE_AUDIO_PLAYABLE_NAME_PREFIXES
+        ):
+            out.add(path_id)
+    return out
+
+
 def collect_fmv_cutscene_audio_events(
     export_root: Path,
     language_info: dict[str, Any],
     fmv_attach_overrides: dict[str, str] | None = None,
+    by_path_id: dict[int, Path] | None = None,
 ) -> dict[str, list[str]]:
     """Recover FMV cutscene audio events from language-specific subtitle playables."""
     suffix = str(language_info.get("fmvSuffix") or "").lower()
@@ -11852,7 +12042,8 @@ def collect_fmv_cutscene_audio_events(
     if not event_path_ids:
         return {}
 
-    by_path_id = mono_behaviour_json_by_path_id(export_root)
+    if by_path_id is None:
+        by_path_id = mono_behaviour_json_by_path_id(export_root, set(event_path_ids))
     cutscene_events: dict[str, list[str]] = defaultdict(list)
     seen: set[tuple[str, str]] = set()
     for path_id, container in event_path_ids.items():
@@ -11942,7 +12133,10 @@ def collect_video_binding_audio_containers(export_root: Path) -> dict[str, str]:
     return out
 
 
-def collect_timeline_cutscene_audio_events(export_root: Path) -> dict[str, list[str]]:
+def collect_timeline_cutscene_audio_events(
+    export_root: Path,
+    by_path_id: dict[int, Path] | None = None,
+) -> dict[str, list[str]]:
     container_to_cutscene = collect_video_binding_audio_containers(export_root)
     if not container_to_cutscene:
         return {}
@@ -11972,7 +12166,8 @@ def collect_timeline_cutscene_audio_events(export_root: Path) -> dict[str, list[
     if not event_path_ids:
         return {}
 
-    by_path_id = mono_behaviour_json_by_path_id(export_root)
+    if by_path_id is None:
+        by_path_id = mono_behaviour_json_by_path_id(export_root, set(event_path_ids))
     cutscene_events: dict[str, list[str]] = defaultdict(list)
     seen: set[tuple[str, str]] = set()
     for path_id, container in event_path_ids.items():
@@ -11993,7 +12188,10 @@ def collect_timeline_cutscene_audio_events(export_root: Path) -> dict[str, list[
     return dict(cutscene_events)
 
 
-def collect_levelseq_cutscene_audio_events(export_root: Path) -> dict[str, list[str]]:
+def collect_levelseq_cutscene_audio_events(
+    export_root: Path,
+    by_path_id: dict[int, Path] | None = None,
+) -> dict[str, list[str]]:
     asset_map = (
         export_root
         / "recovered"
@@ -12033,7 +12231,8 @@ def collect_levelseq_cutscene_audio_events(export_root: Path) -> dict[str, list[
     if not event_path_ids:
         return {}
 
-    by_path_id = mono_behaviour_json_by_path_id(export_root)
+    if by_path_id is None:
+        by_path_id = mono_behaviour_json_by_path_id(export_root, set(event_path_ids))
     cutscene_events: dict[str, list[str]] = defaultdict(list)
     seen: set[tuple[str, str]] = set()
     for path_id, container in event_path_ids.items():
@@ -13379,9 +13578,15 @@ def load_cached_event_audio_index(
 
 def snapshot_audio_file_stats(source_root: Path) -> dict[str, tuple[int, int]]:
     return {
-        normalize_posix(path.relative_to(source_root)): (path.stat().st_size, path.stat().st_mtime_ns)
-        for path in iter_audio_files(source_root)
+        rel: (stat.st_size, stat.st_mtime_ns)
+        for _path, rel, stat in scan_audio_files(source_root)
     }
+
+
+def decode_jobs(args: argparse.Namespace) -> int:
+    """Worker count for the WEM→FLAC decode pass."""
+    requested = int(getattr(args, "decode_jobs", 0) or 0)
+    return requested if requested > 0 else max(1, os.cpu_count() or 1)
 
 
 def run_audio_dumper_once(
@@ -13407,6 +13612,11 @@ def run_audio_dumper_once(
         AUDIO_OUTPUT_FORMAT,
         "--block",
         block,
+        # The dumper's own default caps decoding at 8 workers regardless of the
+        # host. Each worker is one vgmstream process plus an in-process FLAC
+        # encoder, so the pass scales with the real core count.
+        "--jobs",
+        str(decode_jobs(args)),
     ]
     if shared_output_root is not None:
         command.extend(["--shared-output", str(shared_output_root)])
@@ -13861,17 +14071,32 @@ def flat_unmapped_files(folder: Path) -> list[Path]:
 
 
 def prune_empty_audio_dirs(root: Path) -> int:
+    """Remove folders left empty by a layout move, deepest first.
+
+    ``os.walk`` bottom-up already reports each folder's remaining children, so
+    only the folders that are actually empty are touched.  The previous
+    ``rglob("*")`` scan stat-ed every one of the ~93k decoded media just to
+    discard them, then issued a failing ``rmdir`` for every populated folder.
+    """
+
     if not root.exists():
         return 0
-    removed = 0
-    dirs = [path for path in root.rglob("*") if path.is_dir()]
-    for folder in sorted(dirs, key=lambda item: len(item.parts), reverse=True):
+    root_str = str(root)
+    removed_dirs: set[str] = set()
+    for current, dirnames, filenames in os.walk(root_str, topdown=False):
+        if current == root_str or filenames:
+            continue
+        # ``os.walk`` listed the children before this pass deleted the empty
+        # ones, so a folder that now holds only just-removed folders is empty
+        # too.  Bottom-up order guarantees they were already visited.
+        if any(os.path.join(current, name) not in removed_dirs for name in dirnames):
+            continue
         try:
-            folder.rmdir()
-            removed += 1
+            os.rmdir(current)
         except OSError:
             continue
-    return removed
+        removed_dirs.add(current)
+    return len(removed_dirs)
 
 
 def canonicalize_audio_layout(audio_root: Path, storage: str) -> dict[str, int]:
@@ -13880,8 +14105,7 @@ def canonicalize_audio_layout(audio_root: Path, storage: str) -> dict[str, int]:
     if not storage_root.exists():
         return {}
     counts: dict[str, int] = defaultdict(int)
-    for path in iter_audio_files(storage_root):
-        rel = normalize_posix(path.relative_to(storage_root))
+    for path, rel, _stat in scan_audio_files(storage_root):
         canonical_rel = canonical_audio_rel(rel)
         if canonical_rel == rel:
             continue
@@ -14148,6 +14372,7 @@ def build_audio(args: argparse.Namespace) -> int:
     language_root.mkdir(parents=True, exist_ok=True)
 
     started = time.time()
+    stage = AudioStageTimer()
     lua_audio_payload = load_lua_audio_reference_cache(
         args,
         refresh=bool(args.refresh_lua_audio or not args.skip_decode),
@@ -14162,8 +14387,11 @@ def build_audio(args: argparse.Namespace) -> int:
         for row in lua_audio_references
         if row.get("kind") == "luaPostEvent" and str(row.get("name") or "").strip()
     }
+    stage.mark("luaAudioReferenceCache")
     prior_source_by_rel = prior_source_metadata_by_rel(language_root, language)
+    stage.mark("priorSourceMetadata")
     decoded_source_by_rel = run_audio_dumper(args, language, language_info)
+    stage.mark("decode")
 
     for regroup_storage in (SHARED_AUDIO_STORAGE, language):
         bank_counts, bank_metadata = regroup_unmapped_by_bank(args.audio_root, regroup_storage, args.export_root)
@@ -14172,6 +14400,7 @@ def build_audio(args: argparse.Namespace) -> int:
             summary = ", ".join(f"{bank}:{count:,}" for bank, count in sorted(bank_counts.items()))
             print(f"Audio source-bank tagging [{regroup_storage}]: {summary}")
 
+    stage.mark("regroupUnmappedByBank")
     prior_source_by_rel = canonicalized_source_metadata_by_rel(prior_source_by_rel)
     decoded_source_by_rel = canonicalized_source_metadata_by_rel(decoded_source_by_rel)
     for layout_storage in (SHARED_AUDIO_STORAGE, language):
@@ -14185,7 +14414,9 @@ def build_audio(args: argparse.Namespace) -> int:
                 f"{replaced:,} replaced, {removed_dirs:,} old empty folders removed"
             )
 
+    stage.mark("canonicalizeAudioLayout")
     audio_dialog_paths = find_audio_dialog_tables(args.export_root)
+    stage.mark("findAudioDialogTables")
     shared_audio = collect_audio_files(
         args.audio_root,
         args.webui_root,
@@ -14206,6 +14437,7 @@ def build_audio(args: argparse.Namespace) -> int:
         decoded_source_by_rel,
         prior_source_by_rel,
     )
+    stage.mark("collectAudioFiles")
     generic_audio = merge_audio_file_indexes(shared_audio, language_audio)
     dialog_audio = build_dialog_audio_index(
         audio_dialog_paths,
@@ -14220,6 +14452,7 @@ def build_audio(args: argparse.Namespace) -> int:
     # fingerprint. Otherwise the cache compares an unsuppressed physical scan
     # with the suppressed inventory stored by the previous build and needlessly
     # reparses every Wwise bank on every --skip-decode run.
+    stage.mark("buildDialogAudioIndex")
     duplicate_suppression_stats = suppress_redundant_unknown_audio_occurrences(
         args.audio_root,
         generic_audio,
@@ -14238,18 +14471,22 @@ def build_audio(args: argparse.Namespace) -> int:
             f"{duplicate_suppression_stats['audioDialogExternalCopiesSuppressed']:,} "
             "exact AudioDialog external-id path copies"
         )
+    stage.mark("suppressRedundantOccurrences")
     audio_by_id = {**generic_audio, **dialog_audio}
     media_inventory_fingerprint = event_media_inventory_fingerprint(audio_by_id)
+    stage.mark("mediaInventoryFingerprint")
 
     conv_dir = args.webui_root / "data" / "lang" / language / "conv"
     if not conv_dir.exists():
         raise SystemExit(f"Conversation directory not found: {conv_dir}")
     table_event_names, table_event_hashes = collect_table_audio_events(args.export_root)
+    stage.mark("collectTableAudioEvents")
     event_name_source_sets: dict[str, set[str]] = {
         "storyOrCoreAudioTable": collect_audio_event_names(conv_dir, args.export_root),
         "typedAudioTableOrConfig": table_event_names,
         "luaPostEvent": set(lua_post_event_names),
     }
+    stage.mark("collectAudioEventNames")
     event_names = set().union(*event_name_source_sets.values())
     metadata_path = args.game_root / "il2cpp_data" / "Metadata" / "global-metadata.dat"
     if not metadata_path.is_file():
@@ -14261,19 +14498,32 @@ def build_audio(args: argparse.Namespace) -> int:
     }
 
 
+    stage.mark("collectMetadataAudioLiterals")
     event_name_source_sets["managedStringLiteral"] = set(binary_managed_event_names)
     event_names.update(binary_managed_event_names)
     fmv_attach_overrides = load_narrative_video_attach_overrides(args.webui_root)
     audio_source_overrides = load_narrative_video_audio_source_overrides(args.webui_root)
+    # The three cutscene collectors resolve disjoint subsets of the same audio
+    # playables, so their union is resolved once against the published object
+    # index instead of streaming that index three times.
+    # An export without any audio playable leaves every collector empty anyway,
+    # so fall back to their own resolution rather than hand them an empty map.
+    cutscene_playable_ids = cutscene_audio_playable_path_ids(args.export_root)
+    cutscene_playable_json = (
+        mono_behaviour_json_by_path_id(args.export_root, cutscene_playable_ids)
+        if cutscene_playable_ids
+        else None
+    )
     cutscene_audio_events = collect_fmv_cutscene_audio_events(
         args.export_root,
         language_info,
         fmv_attach_overrides,
+        by_path_id=cutscene_playable_json,
     )
     merge_event_map(
         cutscene_audio_events,
-        collect_timeline_cutscene_audio_events(args.export_root),
-        collect_levelseq_cutscene_audio_events(args.export_root),
+        collect_timeline_cutscene_audio_events(args.export_root, cutscene_playable_json),
+        collect_levelseq_cutscene_audio_events(args.export_root, cutscene_playable_json),
     )
     apply_cutscene_audio_source_overrides(
         cutscene_audio_events,
@@ -14286,6 +14536,7 @@ def build_audio(args: argparse.Namespace) -> int:
         for event in events
         if str(event or "").strip()
     }
+    stage.mark("collectCutsceneAudioEvents")
     event_name_source_sets["cutsceneTimeline"] = cutscene_event_names
     event_names.update(cutscene_event_names)
     gameplay_audio_references = collect_gameplay_audio_references(
@@ -14293,6 +14544,7 @@ def build_audio(args: argparse.Namespace) -> int:
         args.export_root,
         language,
     )
+    stage.mark("collectGameplayAudioReferences")
     gameplay_event_names = set(gameplay_audio_references.get("eventNames") or set())
     event_name_source_sets["gameplayReference"] = gameplay_event_names
     event_names.update(gameplay_event_names)
@@ -14320,6 +14572,7 @@ def build_audio(args: argparse.Namespace) -> int:
         if args.skip_decode and not args.refresh_hirc
         else None
     )
+    stage.mark("loadCachedEventAudioIndex")
     hirc_summary: dict[str, Any] = {}
     wwise_event_inventory: list[dict[str, Any]] = []
     if cached_event_index is not None:
@@ -14340,6 +14593,7 @@ def build_audio(args: argparse.Namespace) -> int:
             hirc_summary,
             wwise_event_inventory,
         )
+    stage.mark("eventAudioIndex")
     audio_dialog_wwise_event_aliases = collect_audio_dialog_wwise_event_aliases(
         audio_dialog_paths,
         wwise_event_inventory,
@@ -14416,6 +14670,7 @@ def build_audio(args: argparse.Namespace) -> int:
             )
     # Every observed-string source is exhausted by this point, so the Events
     # still without a name are regenerated from the grammar those names share.
+    stage.mark("wwiseEventAliases")
     grammar_event_name_recovery = name_recovery.recover_event_names(
         event_names,
         wwise_event_inventory,
@@ -14445,6 +14700,7 @@ def build_audio(args: argparse.Namespace) -> int:
             and (int(row["eventHash"]) & 0xFFFFFFFF) in grammar_recovered_name_hashes
         ):
             row["eventIdentityStatus"] = "grammarHashPreimageNameRecovered"
+    stage.mark("grammarEventNameRecovery")
     event_entries = [
         entry
         for entries in event_audio_by_id.values()
@@ -14461,6 +14717,7 @@ def build_audio(args: argparse.Namespace) -> int:
         for entry in event_entries
         if entry.get("eventId") or entry.get("id")
     })
+    stage.mark("backfillEventSourceMetadata")
     category_moved = regroup_unmapped_by_category(
         args.audio_root, args.webui_root, audio_by_id, event_entries, language
     )
@@ -14474,8 +14731,10 @@ def build_audio(args: argparse.Namespace) -> int:
         **generic_audio,
         **dialog_audio,
     })
+    stage.mark("regroupUnmappedByCategory")
     source_summary = summarize_audio_sources(list(generic_audio.values()))
     link_stats = link_conversation_audio(conv_dir, audio_by_id, event_audio_by_id, cutscene_audio_events)
+    stage.mark("linkConversationAudio")
     projectile_link_stats = write_projectile_audio_sidecar(
         args.webui_root,
         language,
@@ -14491,6 +14750,7 @@ def build_audio(args: argparse.Namespace) -> int:
         dialog_audio,
     )
 
+    stage.mark("linkGameplayAudio")
     index_payload = {
         "generated": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "language": language,
@@ -14596,7 +14856,9 @@ def build_audio(args: argparse.Namespace) -> int:
         "events": sorted(event_entries, key=lambda item: (str(item.get("eventId") or ""), int(item.get("mediaId") or 0))),
         "entries": sorted(audio_by_id.values(), key=lambda item: (str(item.get("id") or ""), str(item.get("rel") or ""))),
     }
+    stage.mark("buildIndexPayload")
     json_dump(language_root / "index.json", index_payload)
+    stage.mark("writeIndexJson")
     semantic_payload = build_audio_semantic_data(
         index_payload,
         language=language,
@@ -14607,6 +14869,8 @@ def build_audio(args: argparse.Namespace) -> int:
         cutscene_events=cutscene_audio_events,
     )
 
+    stage.mark("buildAudioSemanticData")
+    print_audio_stage_summary()
     elapsed = time.time() - started
     scope_counts = source_summary.get("byScope", {})
     print(
@@ -14656,6 +14920,15 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=DEFAULT_AUDIO_DUMPER,
         help="Path to AnimeStudio CLI for audio extraction.",
+    )
+    parser.add_argument(
+        "--decode-jobs",
+        type=int,
+        default=0,
+        help=(
+            "Parallel WEM decode workers passed to the AnimeStudio audio "
+            "dumper. Default: one per logical CPU."
+        ),
     )
     parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
     parser.add_argument("--streaming-assets", type=Path, default=None)

@@ -8,6 +8,7 @@ from __future__ import annotations
 import hashlib
 import importlib.util
 import json
+import re
 import struct
 import sys
 from pathlib import Path
@@ -44,6 +45,10 @@ CONSUMER_WINDOWS = (
     (0x2CA8A10,0x2CA8AFD,'A839E67CFE09CC6BF53DA3BE9E149AEF9B411E9AA20D23C981A94C18C13678BC'),
     (0x39C6A40,0x39C6A9D,'650BBFFE813D1F3A7663C6C9C42E160E5799B70541246A11AAADABF1D3F08DD6'),
     (0x39C6AA0,0x39C6FA7,'6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90'),
+    (0x32CCF70,0x32CD277,'CB497F6362D9DA9396D6533F6CC037536FC9499D67848F1E8BBBAC8AA2F03688'),
+    (0x32CE4B0,0x32CE75C,'1FB17BEDE173176E0BC082E7C315267B6FC6F3CE76796DB90A627E9B0E9D7767'),
+    (0x32CE860,0x32CE8C0,'1F6F3F32B14A6DCBB87743E94C1DB14106B3AB3EE17D6C6EBB14F7DB0347A3EB'),
+    (0x32CE8C0,0x32CE920,'D0D022A7D27D843AD4BFFE86FEC8A5FA07037249273A8ECB5AEC0167FEF98F33'),
     (0x3773670,0x37736CD,'D1E00A92152340C6A1F095DC4FF14393C99973AED0304478AD12506492E37A0C'),
     (0x3774060,0x37742A8,'AC1FF978FEF71639E74980B43AE00D9746518A9DD94B41772F2867963A596ED8'),
     (0x2CA88C0,0x2CA8912,'636D6E913965572E9F43C20D0BBA78706400327D19134D1EF6C71FB5DE6B397E'),
@@ -471,11 +476,65 @@ def buff_action_read_order(pe,md,reg,table,modules,image_owners,*,source,contrac
             require(struct.unpack_from('<Q',argument)[0],row['typeDefinition'],source,va)
         require(0<=row['typeDefinition']<len(md.types),True,source,va)
         require(md.type_full_name(md.types[row['typeDefinition']]),row['typeName'],source,va)
+    verified_source_read_calls = verify_contract_source_read_calls(
+        pe, contract, source=source)
     return {'contractPath':str(path),'contractSha256':sha(path),'methods':methods,
         'codeWindows':contract['codeWindows'],'dataWindows':contract.get('dataWindows',[]),'nestedContexts':contract['nestedContexts'],
         'anonymousReadOrder':contract['anonymousReadOrder'],
+        'verifiedSourceReadCallSites':verified_source_read_calls,
         'level':'direct selected consumer order; exact static nested type joins; structural-only parser profile',
         'boundary':contract['boundary']}
+
+
+def verify_contract_source_read_calls(pe, contract, *, source):
+    """Verify contract-pinned direct source-reader calls against the selected PE."""
+    rows = contract.get('sourceReadCallSites', [])
+    if not isinstance(rows, list):
+        raise ContextError(source, 0, 'sourceReadCallSites array', rows)
+    if not rows:
+        return []
+    read_orders = contract.get('anonymousReadOrder')
+    if not isinstance(read_orders, dict) or len(read_orders) != 1:
+        raise ContextError(source, 0, 'one root member read-order for source callsites',
+                           read_orders)
+    root_key, root_order = next(iter(read_orders.items()))
+    if not isinstance(root_order, list) or not re.search(r'member\d+$', root_key):
+        raise ContextError(source, 0, 'root member-count key and read-order array',
+                           [root_key, root_order])
+    verified = []
+    seen = set()
+    for index, row in enumerate(rows):
+        if not isinstance(row, dict):
+            raise ContextError(source, index, f'source read callsite {index} object', row)
+        member_index = row.get('memberIndex')
+        read_type = row.get('readType')
+        instruction_rva = row.get('callInstructionRva')
+        target_rva = row.get('targetRva')
+        if (type(member_index) is not int or not 0 <= member_index < len(root_order) or
+                type(instruction_rva) is not int or type(target_rva) is not int or
+                not isinstance(read_type, str)):
+            raise ContextError(source, index,
+                               f'source read callsite {index} bounded member/RVA fields', row)
+        require(root_order[member_index], read_type, source, instruction_rva)
+        if instruction_rva in seen:
+            raise ContextError(source, instruction_rva,
+                               'unique source read call instruction RVA', instruction_rva)
+        seen.add(instruction_rva)
+        raw = pe.bytes_at_va(pe.image_base + instruction_rva, 5)
+        require(raw[:1], b'\xE8', source, instruction_rva)
+        target = relative_branch_target(raw, pe.image_base + instruction_rva, source=source)
+        require(target, pe.image_base + target_rva, source, instruction_rva)
+        verified.append({
+            'rootReadOrderKey': root_key,
+            'memberIndex': member_index,
+            'readType': read_type,
+            'callInstructionRva': instruction_rva,
+            'instructionByteLength': len(raw),
+            'rawHex': raw.hex().upper(),
+            'targetRva': target - pe.image_base,
+            'classification': 'exact-build direct E8 source-reader call',
+        })
+    return verified
 
 
 def buff_sequence_read_order(pe,md,modules,image_owners,*,source):
@@ -499,7 +558,18 @@ def buff_sequence_read_order(pe,md,modules,image_owners,*,source):
         (0x39C6F47,'4084ED4C8B6C2428488B6C24680F95C04C8B742420884118')):
         raw=bytes.fromhex(expected);require(pe.bytes_at_va(pe.image_base+at,len(raw)),raw,source,at)
         windows.append({'rva':at,'rawHex':expected})
-    return {'methods':methods,'windows':windows,'level':'direct conditional selected-consumer structure',
+    root_methods=[row for row in methods if row.get('methodIndex')==104346]
+    require(len(root_methods),1,source,0x39C6AA0)
+    require(root_methods[0].get('pointerVa')-pe.image_base,0x39C6AA0,source,0x39C6AA0)
+    root_windows=[(start,end,digest) for start,end,digest in CONSUMER_WINDOWS
+                  if start==0x39C6AA0]
+    require(root_windows,[(0x39C6AA0,0x39C6FA7,
+                           '6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90')],
+            source,0x39C6AA0)
+    root_start,root_end,root_sha=root_windows[0]
+    return {'methods':methods,'windows':windows,
+        'rootCodeWindow':{'startRva':root_start,'endRva':root_end,'sha256':root_sha},
+        'level':'direct conditional selected-consumer structure',
         'boundary':'Header FF clears the output; header 3 takes a signed DWORD count after the one-byte header. The fast count path compares total-minus-consumed with the count, not count times an element width. Count -1 skips elements; zero uses a separate empty-array helper. Positive counts call a provider-selected class+0x190 target with the same reader, an eight-byte array output slot and class+0x198 companion. Output-slot width is not serialized element width. Then two bytes are consumed and nonzero-normalized, writing object offsets 0x19 then 0x18. No semantic field names, live provider identity, negative-count allocation behavior, nested extent, authenticated source cursor or EOF are promoted. Maintained framing rejects counts below -1 conservatively.'}
 
 
@@ -541,8 +611,19 @@ def buff_ifelse_read_order(pe,md,reg,table,modules,image_owners,*,source):
     require([a.raw_type_record_hex for a in instance.arguments],['F2230000000000000000120000000000'],source)
     require(9202<len(md.types),True,source)
     require(md.type_full_name(md.types[9202]),'Beyond.Gameplay.Core.SequenceActionData',source)
+    root_windows=[(start,end,digest) for start,end,digest in CONSUMER_WINDOWS
+                  if start==0x3774060]
+    require(root_windows,[(0x3774060,0x37742A8,
+                           'AC1FF978FEF71639E74980B43AE00D9746518A9DD94B41772F2867963A596ED8')],
+            source,0x3774060)
+    root_start,root_end,root_sha=root_windows[0]
     return {'methods':methods,'windows':windows,'orderedCalls':calls,'nestedOperands':operands,
-        'nestedMethodSpecIndex':619962,'nestedMethodSpecRawHex':raw.hex().upper(),'nestedInstantiation':instance.as_dict(),
+        'nestedMethodSpecIndex':619962,'nestedMethodSpecRawHex':raw.hex().upper(),
+        'nestedTypeDefinition':9202,
+        'nestedTypeName':'Beyond.Gameplay.Core.SequenceActionData',
+        'nestedInstantiation':instance.as_dict(),
+        'rootCodeWindow':{'startRva':root_start,'endRva':root_end,
+                          'sha256':root_sha},
         'level':'direct selected-consumer order and fast widths; exact nested static type argument',
         'boundary':'The token/module-joined formatter forwards RDX reader and R8 output to the static reader. After a one-byte member header, its header-eight branch passes the same reader to byte/nonzero normalization, three raw DWORD reads, a second byte/nonzero normalization, then three nested helper calls. The fast scalar prefix is 14 bytes after the header; no signedness or gameplay names are assigned. All three nested callsites use one MethodSpec with SequenceActionData as its type argument, not a proven live formatter. Header FF, reused-object preprocessing, allocation/init, other header values and segment-replacement paths are outside this fast-path claim. No nested serialized widths, complete record extent, concrete source cursor or EOF are established.'}
 
@@ -1000,7 +1081,9 @@ def buff_union_routes(pe,md,reg,modules,image_owners,*,source):
         (402,0x3910DB6,107225,16565,'TyphoeaIsInShootingRangeAction_Data',None),
         (334,0x3910618,107088,16435,'SetDamageTagImmuneRule_Data',None),
         (224,0x390E7D2,106794,15961,'LockCameraAimAction_LockCameraAimActionData',None),
-        (13,0x3910168,106291,15909,'AirborneAction_AirborneActionData',None)):
+        (13,0x3910168,106291,15909,'AirborneAction_AirborneActionData',None),
+        (0xD5,0x4E67C83,106689,16187,'IntResourceHpCheckAction_Data',None),
+        (0xD6,0x4E67CC6,106690,16189,'IntResourceOnHpZeroAction_Data',None)):
         require(targets[tag],target,source,table_va+tag*4)
         operands=[]
         for at,usage_tag in ((target,1),)+(((init,2),) if init is not None else ()):
@@ -1602,7 +1685,9 @@ def skilldata_corpus_branch_evidence(corpus, *, source):
     }
 
 
-def skilldata_actiongroup_branch_sample_witness(corpus, logical_path, raw, *, source):
+def skilldata_actiongroup_branch_sample_witness(
+        corpus, logical_path, raw, *, source, verified_action_tags=None,
+        verified_action_prefix_tags=None):
     """Replay one current passiveEventActions list, stopping at unverified unions."""
     input_set = corpus.get('inputSetSha256')
     if (not isinstance(input_set, str) or len(input_set) != 64 or
@@ -1654,22 +1739,71 @@ def skilldata_actiongroup_branch_sample_witness(corpus, logical_path, raw, *, so
         actual_list_count = struct.unpack_from('<i', raw, 2)[0]
         require(actual_list_count, expected_list_count, source, 2)
 
+    if verified_action_tags is None:
+        verified_action_tags = {0xD5, 0xD6}
+    if (not isinstance(verified_action_tags, (set, frozenset)) or
+            any(type(tag) is not int or not 0 <= tag <= 0xFFFF
+                for tag in verified_action_tags)):
+        raise ContextError(source, 0, 'verified action tags as a set of 16-bit integers',
+                           verified_action_tags)
+    if verified_action_prefix_tags is None:
+        verified_action_prefix_tags = set()
+    if (not isinstance(verified_action_prefix_tags, (set, frozenset)) or
+            any(type(tag) is not int or not 0 <= tag <= 0xFFFF
+                for tag in verified_action_prefix_tags)):
+        raise ContextError(source, 0,
+                           'verified action-prefix tags as a set of 16-bit integers',
+                           verified_action_prefix_tags)
+
     from scripts.game_data.memorypack.buff_actions import Reader, Unsupported
 
-    class StopBeforeNonNullUnionReader(Reader):
-        def action(self, depth):
-            start = self.pos
-            lead = self.peek()
-            if lead == 0xFF:
-                self.take(1, 'null-union')
-                self.records.append({'start': start, 'end': self.pos,
-                                     'kind': 'union', 'tag': 0xFF})
-                return
-            raise Unsupported(self.source, start,
-                              'non-null AbilityActionData payload remains opaque',
-                              lead, 'opaque-union')
+    class StopBeforeUnverifiedUnionReader(Reader):
+        def __init__(self, *args, **kwargs):
+            super().__init__(*args, **kwargs)
+            self.action_prefix_stop = None
 
-    reader = StopBeforeNonNullUnionReader(raw, source, limit=hard_limit)
+        def _action(self, depth, tag, width):
+            if tag == 0xFF or tag in verified_action_tags:
+                return super()._action(depth, tag, width)
+            if tag == 0xC9 and tag in verified_action_prefix_tags:
+                start = self.pos
+                available = self.limit - self.pos
+                if (width != 1 or available < 2 or self.data[self.pos] != 0xC9 or
+                        self.data[self.pos + 1] != 8):
+                    raise Unsupported(self.source, start,
+                                      'non-null 0xC9 member-eight normal path',
+                                      tag,
+                                      'opaque-union')
+                self.take(width, 'union-tag')
+                self.header(8)
+                self.take(1, 'anonymous-byte')
+                for _ in range(3):
+                    self.take(4, 'anonymous-scalar32')
+                self.take(1, 'anonymous-byte')
+                self.action_prefix_stop = {
+                    'tag': tag,
+                    'start': start,
+                    'end': self.pos,
+                    'memberHeader': 8,
+                    'sourceReadWidthsAfterHeader': [1, 4, 4, 4, 1],
+                    'consumedUnionRecord': False,
+                    'nextSourceReadType': 'Beyond.Gameplay.Core.SequenceActionData',
+                    'nextSourceReadOffset': self.pos,
+                    'nextSourceReadConsumed': False,
+                    'nextSourceReadFirstByte': (
+                        self.data[self.pos] if self.pos < self.limit else None),
+                    'remainingBytesOpaque': True,
+                }
+                raise Unsupported(self.source, self.pos,
+                                  'first nested SequenceActionData call remains unread',
+                                  tag, 'verified-prefix-stop')
+            # _action is entered before the tag bytes are consumed, so this
+            # keeps every unverified union at its first byte (including FA/u16).
+            raise Unsupported(self.source, self.pos,
+                              'non-null AbilityActionData payload remains opaque',
+                              tag, 'opaque-union')
+
+    reader = StopBeforeUnverifiedUnionReader(raw, source, limit=hard_limit)
     reader.pos = 2
     parser_error = None
     try:
@@ -1684,6 +1818,9 @@ def skilldata_actiongroup_branch_sample_witness(corpus, logical_path, raw, *, so
         if diagnostic.get('category') == 'opaque-union':
             parse_status = 'stopped-before-first-nonnull-action-union'
             boundary_class = 'opaque'
+        elif diagnostic.get('category') == 'verified-prefix-stop':
+            parse_status = 'stopped-after-verified-action-prefix'
+            boundary_class = 'structural-prefix'
         elif diagnostic.get('category') == 'truncated':
             parse_status = 'truncated-structural-prefix'
             boundary_class = 'structural-prefix'
@@ -1720,7 +1857,40 @@ def skilldata_actiongroup_branch_sample_witness(corpus, logical_path, raw, *, so
     unconsumed_union = None
     if parser_error and parser_error.get('category') == 'opaque-union':
         offset = reader.pos
-        unconsumed_union = {'offset': offset, 'firstByte': raw[offset], 'consumed': False}
+        unconsumed_union = {
+            'offset': offset,
+            'firstByte': raw[offset],
+            'tag': parser_error.get('actual'),
+            'consumed': False,
+        }
+    action_union_prefix_stop = getattr(reader, 'action_prefix_stop', None)
+    if parser_error and parser_error.get('category') == 'verified-prefix-stop':
+        if not isinstance(action_union_prefix_stop, dict):
+            raise ContextError(source, reader.pos,
+                               'verified-prefix diagnostic has a bounded action-prefix stop record',
+                               action_union_prefix_stop)
+        require(action_union_prefix_stop.get('end'), reader.pos, source, reader.pos)
+    union_header_observations = []
+    for record in reader.records:
+        if record.get('kind') != 'union' or record.get('tag') == 0xFF:
+            continue
+        start = record.get('start')
+        if type(start) is not int or not start < record.get('end', start):
+            raise ContextError(source, reader.pos, 'completed action union has a byte range', record)
+        tag_width = 3 if raw[start] == 0xFA else 1
+        header_offset = start + tag_width
+        if header_offset >= record['end'] or raw[header_offset] == 0xFF:
+            continue
+        union_header_observations.append({
+            'tag': record['tag'],
+            'start': start,
+            'end': record['end'],
+            'tagWidth': tag_width,
+            'tagPrefixByte': raw[start],
+            'tagEncodingHex': raw[start:header_offset].hex().upper(),
+            'memberHeaderOffset': header_offset,
+            'memberHeaderValue': raw[header_offset],
+        })
     next_member_count_peek = None
     if (parse_status == 'passive-list-consumed-to-conditional-static-end' and
             reader.pos + 4 <= hard_limit):
@@ -1742,33 +1912,2712 @@ def skilldata_actiongroup_branch_sample_witness(corpus, logical_path, raw, *, so
         'consumedByteRanges': consumed_ranges,
         'countI32Fields': count_fields,
         'completedNestedRecords': reader.records,
+        'completedActionUnionHeaderObservations': union_header_observations,
         'nextMemberCountPeekOnly': next_member_count_peek,
         'opaqueByteRanges': ([] if reader.pos == hard_limit else [
             {'start': reader.pos, 'end': hard_limit, 'kind': 'unconsumed-actiongroup-and-skilldata-bytes'}
         ]),
         'firstUnconsumedActionUnionByte': unconsumed_union,
+        'actionUnionPrefixStop': action_union_prefix_stop,
         'parserError': parser_error,
         'wholeSkillDataClassification': 'ambiguous',
         'wholeSkillDataExactClosedRecords': 0,
-        'boundary': ('Only the first ActionGroupData passiveEventActions list is replayed. A non-null nested '
-                     'action union stops at its first byte. timelineActions, the rest of ActionGroupData, '
-                     'and the whole SkillData endpoint are not consumed.'),
+        'boundary': ('Only the first ActionGroupData passiveEventActions list is replayed. A union advances '
+                     'only when its current-build tag route and hash-pinned native action reader are supplied '
+                     'to the separate alignment gate; every other non-null tag stops at its first byte. '
+                     'timelineActions, the rest of ActionGroupData, and the whole SkillData endpoint are '
+                     'not consumed.'),
+    }
+
+
+def skilldata_timeline_branch_sample_witness(corpus, logical_path, raw, *, source):
+    """Replay only the first TimelineActionData structural prefix in a current VFS row."""
+    input_set = corpus.get('inputSetSha256')
+    if (not isinstance(input_set, str) or len(input_set) != 64 or
+            any(ch not in '0123456789abcdefABCDEF' for ch in input_set)):
+        raise ContextError(source, 0, 'current 64-hex SkillData inputSetSha256', input_set)
+    rows = [row for row in corpus.get('files', [])
+            if isinstance(row, dict) and row.get('virtualPath') == logical_path]
+    if len(rows) != 1:
+        raise ContextError(source, 0,
+                           f'exactly one current VFS SkillData row for {logical_path!r}',
+                           len(rows))
+    row = rows[0]
+    if (not isinstance(logical_path, str) or
+            not logical_path.startswith('Data/Json/SkillData/')):
+        raise ContextError(source, 0, 'logical SkillData virtualPath', logical_path)
+    if not isinstance(raw, bytes):
+        raise ContextError(source, 0, 'current raw SkillData sample bytes',
+                           type(raw).__name__)
+    hard_limit = row.get('hardLimit')
+    if type(hard_limit) is not int or hard_limit != len(raw):
+        raise ContextError(source, 0, 'sample hardLimit equals raw file length',
+                           [hard_limit, len(raw)])
+    logical_sha = hashlib.sha256(raw).hexdigest().upper()
+    require(row.get('logicalSha256'), logical_sha, source, 0)
+    require(row.get('inputSetSha256'), input_set, source, 0)
+    boundary_context = row.get('boundaryContext')
+    if not isinstance(boundary_context, dict):
+        raise ContextError(source, 0, 'current sample boundaryContext', boundary_context)
+    for key, expected in (
+            ('inputSetSha256', input_set),
+            ('logicalFileIdentity', logical_path),
+            ('logicalSha256', logical_sha),
+            ('hardLimit', hard_limit)):
+        require(boundary_context.get(key), expected, source, 0)
+    require(row.get('boundaryClass'), 'ambiguous', source, 0)
+    require(row.get('parserCursor'), 10, source, 0)
+    require(row.get('hardLimit'), hard_limit, source, 0)
+    framing = row.get('framing')
+    if not isinstance(framing, dict):
+        raise ContextError(source, 0, 'current ambiguous SkillData framing', framing)
+    candidate_count = framing.get('candidateCount')
+    require(type(candidate_count) is int and candidate_count >= 2, True, source, 0)
+    prefix = row.get('commonPrefixFraming')
+    if not isinstance(prefix, dict):
+        raise ContextError(source, 0, 'current common SkillData prefix', prefix)
+    require(prefix.get('parserCursor'), 10, source, 0)
+    record_lists = prefix.get('recordLists')
+    if not isinstance(record_lists, list) or len(record_lists) != 2:
+        raise ContextError(source, 0, 'two current ActionGroupData list-count reads',
+                           record_lists)
+    count_offsets = []
+    for index, item in enumerate(record_lists):
+        raw_offset = item.get('countOffset')
+        try:
+            count_offsets.append(int(raw_offset, 0) if isinstance(raw_offset, str)
+                                 else raw_offset)
+        except ValueError as exc:
+            raise ContextError(source, 2 + index * 4,
+                               'bounded list-count source offset', raw_offset) from exc
+    require(count_offsets, [2, 6], source, 2)
+    first_count, timeline_count = (item.get('count') for item in record_lists)
+    require(first_count, 0, source, 2)
+    if type(timeline_count) is not int or timeline_count <= 0:
+        raise ContextError(source, 6, 'positive current timelineActions list count',
+                           timeline_count)
+    if hard_limit < 10:
+        raise ContextError(source, 0, 'current common prefix fits within hardLimit',
+                           hard_limit)
+    require(raw[0], 48, source, 0)
+    require(raw[1], 2, source, 1)
+    require(struct.unpack_from('<i', raw, 2)[0], first_count, source, 2)
+    require(struct.unpack_from('<i', raw, 6)[0], timeline_count, source, 6)
+
+    prefix_ranges = prefix.get('byteRanges')
+    if not isinstance(prefix_ranges, list):
+        raise ContextError(source, 0, 'current common-prefix byte-range manifest',
+                           prefix_ranges)
+    prefix_cursor = 0
+    for index, span in enumerate(prefix_ranges):
+        start, end = span.get('start'), span.get('end')
+        if (type(start) is not int or type(end) is not int or
+                start != prefix_cursor or end <= start or end > 10):
+            raise ContextError(source, prefix_cursor,
+                               f'common prefix byteRanges[{index}] contiguous in [0,10)', span)
+        prefix_cursor = end
+    require(prefix_cursor, 10, source, prefix_cursor)
+
+    cursor = 10
+    candidate_ranges = []
+    failure = None
+
+    def take(width, kind):
+        nonlocal cursor, failure
+        if type(width) is not int or width < 0:
+            failure = {'category': 'malformed', 'offset': cursor,
+                       'expected': 'non-negative byte width', 'actual': width}
+            return None
+        if width > hard_limit - cursor:
+            failure = {'category': 'truncated', 'offset': cursor,
+                       'expected': {'bytes': width},
+                       'actual': {'remaining': hard_limit - cursor}}
+            return None
+        start = cursor
+        cursor += width
+        if width:
+            candidate_ranges.append({'start': start, 'end': cursor, 'kind': kind})
+        return raw[start:cursor]
+
+    def header(expected, kind):
+        nonlocal failure
+        if cursor >= hard_limit:
+            failure = {'category': 'truncated', 'offset': cursor,
+                       'expected': {'bytes': 1}, 'actual': {'remaining': 0}}
+            return False
+        if raw[cursor] != expected:
+            failure = {'category': 'member-count', 'offset': cursor,
+                       'expected': expected, 'actual': raw[cursor]}
+            return False
+        return take(1, kind) is not None
+
+    if not header(4, 'TimelineActionData.member-header'):
+        pass
+    elif take(4, 'TimelineActionData.endFrame.i32') is None:
+        pass
+    elif not header(3, 'SequenceActionData.member-header'):
+        pass
+    else:
+        count_raw = take(4, 'SequenceActionData.actionData.count-i32')
+        if count_raw is not None:
+            action_count = struct.unpack('<i', count_raw)[0]
+            if action_count < -1:
+                failure = {'category': 'count-bounds', 'offset': cursor - 4,
+                           'expected': {'minimum': -1}, 'actual': action_count}
+            else:
+                maximum = max(0, hard_limit - cursor - 2)
+                if action_count > maximum:
+                    failure = {'category': 'count-bounds', 'offset': cursor - 4,
+                               'expected': {'minimum': -1, 'maximum': maximum},
+                               'actual': action_count}
+
+    tag_peek = None
+    if failure is None and len(candidate_ranges) == 4 and action_count > 0:
+        if cursor >= hard_limit:
+            failure = {'category': 'truncated-action-tag', 'offset': cursor,
+                       'expected': {'minimumBytes': 1},
+                       'actual': {'remaining': 0}}
+        else:
+            first_byte = raw[cursor]
+            tag_width = 3 if first_byte == 0xFA else 1
+            if tag_width > hard_limit - cursor:
+                failure = {'category': 'truncated-action-tag', 'offset': cursor,
+                           'expected': {'bytes': tag_width},
+                           'actual': {'remaining': hard_limit - cursor}}
+                tag_peek = {'offset': cursor, 'firstByte': first_byte,
+                            'tag': None, 'tagWidth': tag_width,
+                            'encodingHex': raw[cursor:hard_limit].hex().upper(),
+                            'consumed': False}
+            else:
+                tag = (struct.unpack_from('<H', raw, cursor + 1)[0]
+                       if tag_width == 3 else first_byte)
+                tag_peek = {'offset': cursor, 'firstByte': first_byte,
+                            'tag': tag, 'tagWidth': tag_width,
+                            'encodingHex': raw[cursor:cursor + tag_width].hex().upper(),
+                            'consumed': False}
+
+    candidate_status = 'candidate-first-timeline-sequence-prefix'
+    if failure is not None:
+        if failure['category'] in ('member-count', 'count-bounds', 'malformed'):
+            candidate_status = 'malformed-timeline-structural-prefix'
+        elif failure['category'] == 'truncated-action-tag':
+            candidate_status = 'truncated-first-action-tag'
+        else:
+            candidate_status = 'truncated-timeline-structural-prefix'
+    elif action_count <= 0:
+        candidate_status = 'empty-first-sequence-action-list'
+
+    return {
+        'inputSetSha256': input_set.upper(),
+        'logicalFileIdentity': logical_path,
+        'logicalSha256': logical_sha,
+        'hardLimit': hard_limit,
+        'authoritativeParserCursor': 10,
+        'candidateStart': 10,
+        'candidateCursor': cursor,
+        'timelineActionsListCount': timeline_count,
+        'firstSequenceActionDataCount': action_count if failure is None or cursor >= 20 else None,
+        'status': candidate_status,
+        'failure': failure,
+        'currentParserByteRanges': prefix_ranges,
+        'candidateByteRanges': candidate_ranges,
+        'firstActionUnionTagPeekOnly': tag_peek,
+        'opaqueByteRanges': ([] if cursor == hard_limit else [
+            {'start': cursor, 'end': hard_limit,
+             'kind': 'unconsumed-timeline-actiongroup-and-skilldata-bytes'}]),
+        'exactClosedTimelineActionRecords': 0,
+        'exactClosedActionGroupDataRecords': 0,
+        'wholeSkillDataClassification': 'ambiguous',
+        'wholeSkillDataExactClosedRecords': 0,
+        'boundary': ('The current corpus parser remains at byte 10. This separate structural candidate follows only the '
+                     'first TimelineActionData header/endFrame and its SequenceActionData header/action count, then peeks '
+                     'at most the first action tag. It does not close a timeline action, ActionGroupData or SkillData.'),
+    }
+
+
+def _skilldata_action_fixed_member_width(read_type):
+    """Return widths for scalar members that the selected native reader reads inline."""
+    if not isinstance(read_type, str):
+        return None
+    normalized = read_type.strip().lower().replace('_', '-')
+    if normalized in ('byte', 'boolean', 'bool'):
+        return 1
+    if normalized in ('scalar32', 'float32', 'raw-float32', 'raw-float32-bits'):
+        return 4
+    if normalized == 'scalar64':
+        return 8
+    match = re.fullmatch(r'raw(\d+)', normalized)
+    if match is not None:
+        width = int(match.group(1))
+        return width if width in (1, 2, 4, 8, 12, 16) else None
+    return None
+
+
+def _skilldata_verified_byte_payload_reader(action_reader, shared_helper, *, source):
+    """Join the two PlayAnimation payload callsites to the audited signed-length helper."""
+    call_sites = action_reader.get('verifiedSourceReadCallSites')
+    if not isinstance(call_sites, list):
+        raise ContextError(source, 0x115,
+                           'verified PlayAnimation byte-payload source callsites', call_sites)
+    selected = [row for row in call_sites if isinstance(row, dict) and
+                row.get('readType') == 'byte-payload']
+    expected_sites = {
+        (4, 0x3777126, 0x2CA8700),
+        (14, 0x377730E, 0x2CA8700),
+    }
+    actual_sites = {(row.get('memberIndex'), row.get('callInstructionRva'),
+                     row.get('targetRva')) for row in selected}
+    require(actual_sites, expected_sites, source, 0x115)
+    require(len(selected), 2, source, 0x115)
+
+    if not isinstance(shared_helper, dict):
+        raise ContextError(source, 0x2CA8700,
+                           'independent current signed-length byte-payload helper audit',
+                           shared_helper)
+    expected_windows = {
+        0x2CA8729: '488B43504863388B733083EE040F885C8CE30148834350048343400483434404897330',
+        0x2CA874C: '48634344488B4B18482BC8483BCF0F8C528CE30183FFFF743785FF7517',
+        0x2CA8780: '4533C08BD7488BCB488B5C2430488B7424384883C4205FE974020000',
+        0x2CA8A97: '4533C9448BC7488BD5488BCEE878F8FFFF488BE885FF7418',
+        0x2CA8AAF: '8B73302BF70F88B0A4F70148017B50017B40017B44897330',
+    }
+    windows = shared_helper.get('windows')
+    if not isinstance(windows, list):
+        raise ContextError(source, 0x2CA8700,
+                           'independent byte-payload helper/consumer instruction windows', windows)
+    actual_windows = {row.get('rva'): row.get('rawHex', '').upper()
+                      for row in windows if isinstance(row, dict)}
+    for rva, raw_hex in expected_windows.items():
+        require(actual_windows.get(rva), raw_hex, source, rva)
+    helper_calls = shared_helper.get('orderedCalls')
+    if not isinstance(helper_calls, list):
+        raise ContextError(source, 0x2CA8700,
+                           'independent byte-payload helper consumer callsites', helper_calls)
+    expected_helper_calls = {(0x3D9BBE5, 0x2CA8700),
+                             (0x3D9BC37, 0x2CA8700)}
+    actual_helper_calls = {(row.get('rva'), row.get('targetRva'))
+                           for row in helper_calls if isinstance(row, dict) and
+                           row.get('targetRva') == 0x2CA8700}
+    require(actual_helper_calls, expected_helper_calls, source, 0x2CA8700)
+    boundary = shared_helper.get('boundary')
+    if (not isinstance(boundary, str) or 'signed DWORD' not in boundary or
+            '-1 returns null' not in boundary or 'positive length' not in boundary):
+        raise ContextError(source, 0x2CA8700,
+                           'bounded signed-length/null/positive payload consumer evidence', boundary)
+    return {
+        'actionTag': 0x115,
+        'actionMemberCallSites': [dict(row) for row in selected],
+        'sharedHelperTargetRva': 0x2CA8700,
+        'independentConsumerCallSites': [
+            {'callInstructionRva': rva, 'targetRva': target}
+            for rva, target in sorted(actual_helper_calls)],
+        'verifiedHelperWindows': [
+            {'rva': rva, 'rawHex': actual_windows[rva]}
+            for rva in sorted(expected_windows)],
+        'lengthSemantics': 'signed-i32; -1 null; 0 empty; positive length-bounded opaque payload',
+        'payloadSemantics': 'opaque; no decoding or gameplay field name is assigned',
+        'providerSelection': 'unobserved',
+    }
+
+
+def _skilldata_read_byte_payload_candidate(raw, start, hard_limit, *, kind, source):
+    """Read only a signed length and its in-bounds opaque payload bytes."""
+    if start < 0 or hard_limit < start or hard_limit > len(raw):
+        raise ContextError(source, start, 'byte-payload start and hard limit inside current raw bytes',
+                           {'start': start, 'hardLimit': hard_limit, 'rawLength': len(raw)})
+    if hard_limit - start < 4:
+        return {
+            'cursor': start, 'ranges': [], 'opaquePayloadByteRanges': [],
+            'length': None, 'complete': False, 'status': 'truncated-byte-payload-length',
+            'failure': {'category': 'truncated', 'offset': start,
+                        'kind': f'{kind}.length-i32', 'expectedBytes': 4,
+                        'remainingBytes': hard_limit - start},
+        }
+    length = struct.unpack_from('<i', raw, start)[0]
+    ranges = [{'start': start, 'end': start + 4,
+               'kind': f'{kind}.length-i32', 'value': length}]
+    after_length = start + 4
+    if length < -1:
+        return {
+            'cursor': after_length, 'ranges': ranges, 'opaquePayloadByteRanges': [],
+            'length': length, 'complete': False, 'status': 'unsupported-byte-payload-length',
+            'failure': {'category': 'unsupported', 'offset': start,
+                        'kind': f'{kind}.length-i32', 'actual': length,
+                        'supportedValues': '-1, 0, or a positive in-limit length'},
+        }
+    payload_length = max(length, 0)
+    available = hard_limit - after_length
+    if payload_length > available:
+        return {
+            'cursor': after_length, 'ranges': ranges, 'opaquePayloadByteRanges': [],
+            'length': length, 'complete': False, 'status': 'truncated-byte-payload',
+            'failure': {'category': 'truncated', 'offset': after_length,
+                        'kind': f'{kind}.opaque-bytes', 'expectedBytes': payload_length,
+                        'remainingBytes': available},
+        }
+    opaque_ranges = []
+    if payload_length:
+        payload_range = {'start': after_length, 'end': after_length + payload_length,
+                         'kind': f'{kind}.opaque-bytes'}
+        ranges.append(payload_range)
+        opaque_ranges.append(dict(payload_range))
+    return {
+        'cursor': after_length + payload_length, 'ranges': ranges,
+        'opaquePayloadByteRanges': opaque_ranges, 'length': length,
+        'complete': True, 'status': 'bounded-byte-payload', 'failure': None,
+    }
+
+
+def _skilldata_read_sequence_data_candidate(raw, start, hard_limit, *, source):
+    """Read SequenceActionData's null/empty path; stop before any list element."""
+    ranges = []
+    position = start
+    if hard_limit - position < 1:
+        return {'cursor': position, 'ranges': ranges, 'complete': False,
+                'status': 'truncated-sequence-action-header', 'failure': {
+                    'category': 'truncated', 'offset': position,
+                    'kind': 'SequenceActionData.member-header', 'expectedBytes': 1,
+                    'remainingBytes': 0}}
+    header = raw[position]
+    ranges.append({'start': position, 'end': position + 1,
+                   'kind': 'SequenceActionData.member-header', 'value': header})
+    position += 1
+    if header == 0xFF:
+        return {'cursor': position, 'ranges': ranges, 'complete': True,
+                'status': 'candidate-null-sequence', 'header': header,
+                'count': None, 'failure': None}
+    if header != 3:
+        return {'cursor': position, 'ranges': ranges, 'complete': False,
+                'status': 'malformed-sequence-action-header', 'header': header,
+                'failure': {'category': 'member-count', 'offset': start,
+                            'expected': [3, 0xFF], 'actual': header}}
+    if hard_limit - position < 4:
+        return {'cursor': position, 'ranges': ranges, 'complete': False,
+                'status': 'truncated-sequence-action-count', 'header': header,
+                'failure': {'category': 'truncated', 'offset': position,
+                            'kind': 'SequenceActionData.list-count-i32',
+                            'expectedBytes': 4, 'remainingBytes': hard_limit - position}}
+    count = struct.unpack_from('<i', raw, position)[0]
+    ranges.append({'start': position, 'end': position + 4,
+                   'kind': 'SequenceActionData.list-count-i32', 'value': count})
+    position += 4
+    if count < -1:
+        return {'cursor': position, 'ranges': ranges, 'complete': False,
+                'status': 'unsupported-sequence-action-count', 'header': header,
+                'count': count, 'failure': {'category': 'unsupported',
+                    'offset': position - 4, 'kind': 'SequenceActionData.list-count-i32',
+                    'actual': count, 'supportedLowerBound': -1}}
+    if count > 0:
+        first_action_tag = None
+        if position < hard_limit:
+            first_action_tag = {
+                'offset': position,
+                'firstByte': raw[position],
+                'consumed': False,
+            }
+        return {'cursor': position, 'ranges': ranges, 'complete': False,
+                'status': 'stopped-before-sequence-action-elements', 'header': header,
+                'count': count, 'firstActionUnionTagPeekOnly': first_action_tag,
+                'failure': (None if first_action_tag is not None else {
+                    'category': 'truncated', 'offset': position,
+                    'kind': 'SequenceActionData.firstActionUnionTag',
+                    'expectedBytes': 1, 'remainingBytes': 0})}
+    for index in range(2):
+        if position >= hard_limit:
+            return {'cursor': position, 'ranges': ranges, 'complete': False,
+                    'status': 'truncated-sequence-action-tail', 'header': header,
+                    'count': count, 'failure': {'category': 'truncated',
+                        'offset': position, 'kind': f'SequenceActionData.trailing-byte[{index}]',
+                        'expectedBytes': 1, 'remainingBytes': 0}}
+        ranges.append({'start': position, 'end': position + 1,
+                       'kind': f'SequenceActionData.trailing-byte[{index}]',
+                       'value': raw[position]})
+        position += 1
+    return {'cursor': position, 'ranges': ranges, 'complete': True,
+            'status': 'candidate-empty-sequence', 'header': header,
+            'count': count, 'failure': None}
+
+
+def _skilldata_sequence_tail_windows(sequence_reader, *, source):
+    expected = {
+        0x39C6EA2: '488B43500FB6288B7B3083EF017911BA01000000488BCBE882B2100284C0750D48FF4350FF4340FF4344897B30',
+        0x39C6F07: '488B43500FB6288B7B3083EF017911BA01000000488BCBE81DB2100284C0750D48FF4350FF4340FF4344897B30',
+    }
+    windows = sequence_reader.get('windows')
+    if not isinstance(windows, list):
+        raise ContextError(source, 0x39C6EA2,
+                           'SequenceActionData empty-list trailing byte read windows', windows)
+    actual = {row.get('rva'): str(row.get('rawHex', '')).upper()
+              for row in windows if isinstance(row, dict)}
+    for rva, raw_hex in expected.items():
+        require(actual.get(rva), raw_hex, source, rva)
+    return [{'rva': rva, 'rawHex': actual[rva]} for rva in sorted(expected)]
+
+
+def _skilldata_continue_play_animation_candidate(raw, start, hard_limit, *,
+                                                  action_start,
+                                                  root_read_order,
+                                                  sequence_reader,
+                                                  payload_helper_evidence,
+                                                  source):
+    """Replay the 0x115 selected reader field sequence without closing parents."""
+    if len(root_read_order) != 16 or root_read_order[:4] != [
+            'byte', 'scalar32', 'scalar32', 'scalar32']:
+        raise ContextError(source, start,
+                           'PlayAnimation member16 reader order after the shared fixed prefix',
+                           root_read_order)
+    if (payload_helper_evidence.get('sharedHelperTargetRva') != 0x2CA8700 or
+            payload_helper_evidence.get('providerSelection') != 'unobserved'):
+        raise ContextError(source, start,
+                           'current helper identity with runtime provider kept unobserved',
+                           payload_helper_evidence)
+    sequence_tail_windows = _skilldata_sequence_tail_windows(
+        sequence_reader, source=source)
+    ranges = []
+    opaque_payload_ranges = []
+    position = start
+    nested_sequence = None
+    failure = None
+    status = None
+    for member_index, member_type in enumerate(root_read_order[4:], start=4):
+        member_kind = f'PlayAnimationAction.member{member_index}'
+        if member_type == 'byte-payload':
+            payload = _skilldata_read_byte_payload_candidate(
+                raw, position, hard_limit, kind=f'{member_kind}.byte-payload',
+                source=source)
+            ranges.extend(payload['ranges'])
+            opaque_payload_ranges.extend(payload['opaquePayloadByteRanges'])
+            position = payload['cursor']
+            if not payload['complete']:
+                status = f'{payload["status"]}-member{member_index}'
+                failure = payload['failure']
+                break
+            continue
+        if member_type == 'sequence':
+            nested_sequence = _skilldata_read_sequence_data_candidate(
+                raw, position, hard_limit, source=source)
+            nested_sequence['ranges'] = [
+                {**row, 'kind': f'{member_kind}.sequence.{row["kind"]}'}
+                for row in nested_sequence['ranges']
+            ]
+            ranges.extend(nested_sequence['ranges'])
+            position = nested_sequence['cursor']
+            if not nested_sequence['complete']:
+                status = nested_sequence['status']
+                failure = nested_sequence['failure']
+                break
+            continue
+        width = _skilldata_action_fixed_member_width(member_type)
+        if width is None:
+            status = 'stopped-before-unsupported-play-animation-member'
+            failure = {'category': 'unsupported', 'offset': position,
+                       'memberIndex': member_index, 'readType': member_type}
+            break
+        if hard_limit - position < width:
+            status = 'truncated-play-animation-fixed-member'
+            failure = {'category': 'truncated', 'offset': position,
+                       'memberIndex': member_index, 'kind': member_type,
+                       'expectedBytes': width, 'remainingBytes': hard_limit - position}
+            break
+        ranges.append({'start': position, 'end': position + width,
+                       'kind': f'{member_kind}.{member_type}'})
+        position += width
+    else:
+        status = 'candidate-play-animation-reader-field-sequence-exhausted'
+    complete = status == 'candidate-play-animation-reader-field-sequence-exhausted'
+    return {
+        'cursor': position,
+        'ranges': ranges,
+        'opaquePayloadByteRanges': opaque_payload_ranges,
+        'complete': complete,
+        'status': status,
+        'failure': failure,
+        'recordEndCandidate': ({
+            'start': action_start,
+            'end': position,
+            'memberCount': 16,
+            'sourceReadOrderKey': 'member16',
+            'classification': 'candidate selected-reader field-sequence end; live provider/cache unobserved',
+        } if complete else None),
+        'nestedSequence': nested_sequence,
+        'independentlyVerifiedSequenceTailWindows': sequence_tail_windows,
+        'bytePayloadEvidence': payload_helper_evidence,
+    }
+
+
+def _skilldata_force_sync_reader_evidence(timeline_reader, *,
+                                          payload_helper_evidence,
+                                          bool_helper_evidence,
+                                          gameassembly_image_base,
+                                          source):
+    """Verify the exact current ForceSync reader order before replaying bytes."""
+    timeline_members = timeline_reader.get('serializedMembers')
+    if not isinstance(timeline_members, list) or len(timeline_members) != 4:
+        raise ContextError(source, 0, 'four current TimelineActionData members',
+                           timeline_members)
+    force_sync_member = timeline_members[3]
+    force_sync_method_spec = force_sync_member.get('readerMethodSpec', {})
+    require((force_sync_member.get('serializedOrderIndex'),
+             force_sync_member.get('fieldName'),
+             force_sync_method_spec.get('index'),
+             force_sync_method_spec.get('genericType', {}).get('typeDefinitionIndex'),
+             force_sync_method_spec.get('genericType', {}).get('typeName')),
+            (3, 'forceSyncAnimData', 620038, 9198,
+             'Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData'),
+            source, 0x32CD16F)
+
+    force_reader = timeline_reader.get('forceSyncAnimDataReader')
+    if not isinstance(force_reader, dict):
+        raise ContextError(source, 0x32CE4B0,
+                           'current ForceSyncAnimData selected-reader evidence',
+                           force_reader)
+    require((force_reader.get('typeDefinitionIndex'), force_reader.get('typeName')),
+            (9198, 'Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData'),
+            source, 0x32CE4B0)
+
+    methods = timeline_reader.get('methods')
+    if not isinstance(methods, list):
+        raise ContextError(source, 0x32CE4B0,
+                           'TimelineActionData/ForceSync reader module-token rows', methods)
+    root_type = ('Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_'
+                 'ForceSyncAnimDataForMemoryPack')
+    root_methods = [row for row in methods if isinstance(row, dict) and
+                    row.get('methodIndex') == 107909]
+    if len(root_methods) != 1:
+        raise ContextError(source, 0x32CE4B0,
+                           'one current ForceSyncAnimData root Deserialize method',
+                           len(root_methods))
+    root_method = root_methods[0]
+    require((root_method.get('declaringType'), root_method.get('name'),
+             root_method.get('image'), root_method.get('pointerVa')),
+            (root_type, 'Deserialize', 'MemoryPack.Beyond.dll',
+             gameassembly_image_base + 0x32CE4B0), source, 0x32CE4B0)
+
+    windows = timeline_reader.get('codeWindows')
+    if not isinstance(windows, list):
+        raise ContextError(source, 0x32CE4B0,
+                           'hash-pinned ForceSyncAnimData reader/formatter windows', windows)
+    expected_root_window = (
+        0x32CE4B0, 0x32CE75C,
+        '1FB17BEDE173176E0BC082E7C315267B6FC6F3CE76796DB90A627E9B0E9D7767')
+    matches = [row for row in windows if isinstance(row, dict) and
+               (row.get('startRva'), row.get('endRva'), row.get('sha256')) ==
+               expected_root_window]
+    if len(matches) != 1:
+        raise ContextError(source, 0x32CE4B0,
+                           'one exact ForceSyncAnimData root code window', matches)
+
+    expected_header_and_stores = {
+        (0x32CE57E, '4080FE04'),
+        (0x32CE5A9, '884610'),
+        (0x32CE5D9, '49894018'),
+    }
+    reader_windows = force_reader.get('verifiedInstructionWindows')
+    if not isinstance(reader_windows, list):
+        raise ContextError(source, 0x32CE57E,
+                           'ForceSync member-count and member-store instruction evidence',
+                           reader_windows)
+    actual_header_and_stores = {
+        (row.get('rva'), str(row.get('rawHex', '')).upper())
+        for row in reader_windows if isinstance(row, dict)
+    }
+    require(actual_header_and_stores, expected_header_and_stores, source, 0x32CE57E)
+
+    members = force_reader.get('serializedMembers')
+    if not isinstance(members, list) or len(members) != 4:
+        raise ContextError(source, 0x32CE4B0,
+                           'four current ForceSyncAnimData serialized members', members)
+    expected_members = [
+        (0, 'forceSync', 0x10, 'bool'),
+        (1, 'montageName', 0x18, 'System.String'),
+        (2, 'playbackSpeed', 0x24, 'System.Single'),
+        (3, 'targetFrame', 0x20, 'System.Int32'),
+    ]
+    require([(row.get('serializedOrderIndex'), row.get('fieldName'),
+              row.get('objectField', {}).get('fieldOffset'),
+              row.get('objectField', {}).get('fieldType', {}).get('wireType'))
+             for row in members], expected_members, source, 0x32CE4B0)
+    for row in members:
+        require(row.get('objectField', {}).get('typeDefinitionIndex'), 9198,
+                source, row.get('serializedOrderIndex'))
+
+    force_sync_reader = members[0].get('reader', {})
+    montage_reader = members[1].get('reader', {})
+    require((force_sync_reader.get('callInstructionRva'),
+             force_sync_reader.get('callInstructionHex'),
+             force_sync_reader.get('targetRva'), force_sync_reader.get('role')),
+            (0x32CE58E, 'E82DA39DFF', 0x2CA88C0, 'read forceSync boolean'),
+            source, 0x32CE58E)
+    require((montage_reader.get('callInstructionRva'),
+             montage_reader.get('callInstructionHex'),
+             montage_reader.get('targetRva'), montage_reader.get('role')),
+            (0x32CE5B2, 'E849A19DFF', 0x2CA8700, 'read montageName string'),
+            source, 0x32CE5B2)
+
+    scalar_expectations = {
+        'playbackSpeed': (
+            'inline-float32', 4,
+            {(0x32CE635, 'F30F1030'), (0x32CE652, '4883435004'),
+             (0x32CE67B, 'F30F117024')}),
+        'targetFrame': (
+            'inline-int32', 4,
+            {(0x32CE69A, '8B28'), (0x32CE6B5, '4883435004'),
+             (0x32CE6D8, '896820')}),
+    }
+    for field_name, (kind, byte_width, expected_instructions) in scalar_expectations.items():
+        reader = next(row for row in members if row.get('fieldName') == field_name).get('reader', {})
+        require((reader.get('kind'), reader.get('byteWidth')),
+                (kind, byte_width), source, 0x32CE4B0)
+        instructions = reader.get('verifiedInstructions')
+        if not isinstance(instructions, list):
+            raise ContextError(source, 0x32CE4B0,
+                               f'{field_name} inline source-cursor instructions', instructions)
+        actual_instructions = {
+            (row.get('rva'), str(row.get('rawHex', '')).upper())
+            for row in instructions if isinstance(row, dict)
+        }
+        require(actual_instructions, expected_instructions, source, 0x32CE4B0)
+
+    shared_bool_reads = bool_helper_evidence.get('verifiedSharedHelperReads')
+    if not isinstance(shared_bool_reads, list):
+        raise ContextError(source, 0x2CA88C0,
+                           'independent one-byte shared boolean-helper reader evidence',
+                           shared_bool_reads)
+    expected_shared_bool_reads = {
+        (0x377410A, 0x2CA88C0, 1),
+        (0x37741A1, 0x2CA88C0, 1),
+    }
+    actual_shared_bool_reads = {
+        (row.get('callInstructionRva'), row.get('targetRva'),
+         row.get('fastSerializedWidth'))
+        for row in shared_bool_reads if isinstance(row, dict) and
+        row.get('targetRva') == 0x2CA88C0
+    }
+    require(actual_shared_bool_reads, expected_shared_bool_reads,
+            source, 0x2CA88C0)
+    require((payload_helper_evidence.get('sharedHelperTargetRva'),
+             payload_helper_evidence.get('providerSelection')),
+            (0x2CA8700, 'unobserved'), source, 0x2CA8700)
+
+    return {
+        'timelineForceSyncMethodSpecIndex': 620038,
+        'forceSyncTypeDefinitionIndex': 9198,
+        'forceSyncRootMethodIndex': 107909,
+        'forceSyncRootRva': 0x32CE4B0,
+        'forceSyncRootCodeWindow': dict(matches[0]),
+        'memberCountHeader': 4,
+        'serializedMembers': [
+            {'serializedOrderIndex': index, 'fieldName': field_name,
+             'byteWidth': (1 if index == 0 else None if index == 1 else 4),
+             'readerTargetRva': (0x2CA88C0 if index == 0 else
+                                 0x2CA8700 if index == 1 else None)}
+            for index, field_name, _, _ in expected_members],
+        'sharedOneByteHelperEvidence': {
+            'sourceRootRva': 0x3774060,
+            'verifiedCallSites': [dict(row) for row in shared_bool_reads
+                                  if row.get('targetRva') == 0x2CA88C0],
+        },
+        'sharedSignedLengthPayloadHelperTargetRva': 0x2CA8700,
+        'runtimeProviderSelection': 'unobserved',
+    }
+
+
+def _skilldata_read_force_sync_candidate(raw, start, hard_limit, *,
+                                         timeline_reader,
+                                         payload_helper_evidence,
+                                         bool_helper_evidence,
+                                         gameassembly_image_base,
+                                         source):
+    """Consume the selected ForceSync reader's bounded field sequence only."""
+    evidence = _skilldata_force_sync_reader_evidence(
+        timeline_reader, payload_helper_evidence=payload_helper_evidence,
+        bool_helper_evidence=bool_helper_evidence,
+        gameassembly_image_base=gameassembly_image_base, source=source)
+    if start < 0 or hard_limit < start or hard_limit > len(raw):
+        raise ContextError(source, start,
+                           'ForceSync candidate start and hard limit inside current raw bytes',
+                           {'start': start, 'hardLimit': hard_limit,
+                            'rawLength': len(raw)})
+    ranges = []
+    opaque_payload_ranges = []
+    if hard_limit - start < 1:
+        return {'cursor': start, 'ranges': ranges,
+                'opaquePayloadByteRanges': opaque_payload_ranges,
+                'complete': False, 'status': 'truncated-force-sync-member-header',
+                'failure': {'category': 'truncated', 'offset': start,
+                            'kind': 'ForceSyncAnimData.member-header',
+                            'expectedBytes': 1, 'remainingBytes': 0},
+                'recordEndCandidate': None, 'readerEvidence': evidence}
+    header = raw[start]
+    position = start + 1
+    ranges.append({'start': start, 'end': position,
+                   'kind': 'ForceSyncAnimData.member-header', 'value': header})
+    if header != 4:
+        return {'cursor': position, 'ranges': ranges,
+                'opaquePayloadByteRanges': opaque_payload_ranges,
+                'complete': False, 'status': 'malformed-force-sync-member-count',
+                'failure': {'category': 'member-count', 'offset': start,
+                            'expected': 4, 'actual': header},
+                'recordEndCandidate': None, 'readerEvidence': evidence}
+    if hard_limit - position < 1:
+        return {'cursor': position, 'ranges': ranges,
+                'opaquePayloadByteRanges': opaque_payload_ranges,
+                'complete': False, 'status': 'truncated-force-sync-forceSync',
+                'failure': {'category': 'truncated', 'offset': position,
+                            'kind': 'ForceSyncAnimData.member0.forceSync.byte',
+                            'expectedBytes': 1, 'remainingBytes': 0},
+                'recordEndCandidate': None, 'readerEvidence': evidence}
+    ranges.append({'start': position, 'end': position + 1,
+                   'kind': 'ForceSyncAnimData.member0.forceSync.byte',
+                   'value': raw[position],
+                   'rawHex': raw[position:position + 1].hex().upper()})
+    position += 1
+
+    montage = _skilldata_read_byte_payload_candidate(
+        raw, position, hard_limit,
+        kind='ForceSyncAnimData.member1.montageName', source=source)
+    ranges.extend(montage['ranges'])
+    opaque_payload_ranges.extend(montage['opaquePayloadByteRanges'])
+    position = montage['cursor']
+    if not montage['complete']:
+        return {'cursor': position, 'ranges': ranges,
+                'opaquePayloadByteRanges': opaque_payload_ranges,
+                'complete': False,
+                'status': f'{montage["status"]}-montageName',
+                'failure': montage['failure'], 'recordEndCandidate': None,
+                'readerEvidence': evidence, 'montageNameLength': montage['length']}
+
+    for member_index, field_name, kind in (
+            (2, 'playbackSpeed', 'float32'),
+            (3, 'targetFrame', 'int32')):
+        if hard_limit - position < 4:
+            return {'cursor': position, 'ranges': ranges,
+                    'opaquePayloadByteRanges': opaque_payload_ranges,
+                    'complete': False,
+                    'status': f'truncated-force-sync-{field_name}',
+                    'failure': {'category': 'truncated', 'offset': position,
+                                'kind': f'ForceSyncAnimData.member{member_index}.{field_name}.{kind}',
+                                'expectedBytes': 4,
+                                'remainingBytes': hard_limit - position},
+                    'recordEndCandidate': None, 'readerEvidence': evidence,
+                    'montageNameLength': montage['length']}
+        ranges.append({'start': position, 'end': position + 4,
+                       'kind': f'ForceSyncAnimData.member{member_index}.{field_name}.{kind}',
+                       'rawHex': raw[position:position + 4].hex().upper()})
+        position += 4
+    return {
+        'cursor': position, 'ranges': ranges,
+        'opaquePayloadByteRanges': opaque_payload_ranges,
+        'complete': True,
+        'status': 'candidate-force-sync-reader-field-sequence-exhausted',
+        'failure': None,
+        'recordEndCandidate': {
+            'start': start, 'end': position, 'memberCount': 4,
+            'sourceReadOrderKey': 'member4',
+            'classification': 'candidate selected-reader field-sequence end; live provider/cache unobserved',
+        },
+        'readerEvidence': evidence,
+        'montageNameLength': montage['length'],
+    }
+
+
+def _skilldata_read_following_timeline_action_data_prefix_candidate(
+        raw, start, hard_limit, *, timeline_reader, sequence_reader,
+        payload_helper_evidence, bool_helper_evidence,
+        gameassembly_image_base, source):
+    """Replay the next timeline element through its first nested action tag."""
+    timeline_windows = timeline_reader.get('codeWindows')
+    if not isinstance(timeline_windows, list) or not any(
+            (row.get('startRva'), row.get('endRva'), row.get('sha256')) ==
+            (0x32CCF70, 0x32CD277,
+             'CB497F6362D9DA9396D6533F6CC037536FC9499D67848F1E8BBBAC8AA2F03688')
+            for row in timeline_windows if isinstance(row, dict)):
+        raise ContextError(source, 0x32CCF70,
+                           'hash-pinned current TimelineActionData root reader', timeline_windows)
+    timeline_members = timeline_reader.get('serializedMembers')
+    if not isinstance(timeline_members, list) or len(timeline_members) != 4:
+        raise ContextError(source, start, 'four current TimelineActionData member readers',
+                           timeline_members)
+    end_frame = timeline_members[0].get('reader', {})
+    require((end_frame.get('callInstructionRva'), end_frame.get('callInstructionHex'),
+             end_frame.get('targetRva'), end_frame.get('role')),
+            (0x32CD05E, 'E84DB69DFF', 0x2CA86B0, 'read endFrame int32'),
+            source, 0x32CD05E)
+    header_windows = timeline_reader.get('verifiedInstructionWindows')
+    if not isinstance(header_windows, list):
+        raise ContextError(source, 0x32CD04E,
+                           'TimelineActionData member-count header instruction evidence',
+                           header_windows)
+    require(any((row.get('rva'), str(row.get('rawHex', '')).upper()) ==
+                (0x32CD04E, '4080FE04')
+                for row in header_windows if isinstance(row, dict)), True,
+            source, 0x32CD04E)
+
+    shared_reads = bool_helper_evidence.get('verifiedSharedHelperReads')
+    if not isinstance(shared_reads, list):
+        raise ContextError(source, 0x2CA86B0,
+                           'independent four-byte reader-helper evidence', shared_reads)
+    expected_end_frame_witness = (0x3774135, 0x2CA86B0, 4)
+    actual_shared_reads = {
+        (row.get('callInstructionRva'), row.get('targetRva'),
+         row.get('fastSerializedWidth'))
+        for row in shared_reads if isinstance(row, dict)
+    }
+    require(expected_end_frame_witness in actual_shared_reads, True,
+            source, 0x2CA86B0)
+    _skilldata_sequence_tail_windows(sequence_reader, source=source)
+
+    if start < 0 or hard_limit < start or hard_limit > len(raw):
+        raise ContextError(source, start,
+                           'following TimelineActionData start and hard limit inside raw bytes',
+                           {'start': start, 'hardLimit': hard_limit,
+                            'rawLength': len(raw)})
+    ranges = []
+    position = start
+    if hard_limit - position < 1:
+        return {'start': start, 'cursor': position, 'ranges': ranges,
+                'status': 'truncated-following-timeline-action-member-header',
+                'failure': {'category': 'truncated', 'offset': position,
+                            'kind': 'TimelineActionData.member-header',
+                            'expectedBytes': 1, 'remainingBytes': 0},
+                'firstActionUnionTagPeekOnly': None,
+                'candidateRecordEnd': None}
+    header = raw[position]
+    ranges.append({'start': position, 'end': position + 1,
+                   'kind': 'TimelineActionData.member-header', 'value': header})
+    position += 1
+    if header != 4:
+        return {'start': start, 'cursor': position, 'ranges': ranges,
+                'status': 'malformed-following-timeline-action-member-count',
+                'failure': {'category': 'member-count', 'offset': start,
+                            'expected': 4, 'actual': header},
+                'firstActionUnionTagPeekOnly': None,
+                'candidateRecordEnd': None}
+    if hard_limit - position < 4:
+        return {'start': start, 'cursor': position, 'ranges': ranges,
+                'status': 'truncated-following-timeline-action-end-frame',
+                'failure': {'category': 'truncated', 'offset': position,
+                            'kind': 'TimelineActionData.member0.endFrame.i32',
+                            'expectedBytes': 4, 'remainingBytes': hard_limit - position},
+                'firstActionUnionTagPeekOnly': None,
+                'candidateRecordEnd': None}
+    ranges.append({'start': position, 'end': position + 4,
+                   'kind': 'TimelineActionData.member0.endFrame.i32',
+                   'rawHex': raw[position:position + 4].hex().upper()})
+    position += 4
+
+    sequence_start = position
+    sequence = _skilldata_read_sequence_data_candidate(
+        raw, position, hard_limit, source=source)
+    sequence['ranges'] = [
+        {**row, 'kind': f'TimelineActionData.member1.{row["kind"]}'}
+        for row in sequence['ranges']]
+    ranges.extend(sequence['ranges'])
+    position = sequence['cursor']
+    tag_peek = sequence.get('firstActionUnionTagPeekOnly')
+    if isinstance(tag_peek, dict):
+        first_byte = tag_peek['firstByte']
+        tag_width = 3 if first_byte == 0xFA else 1
+        remaining = hard_limit - tag_peek['offset']
+        if tag_width > remaining:
+            tag_peek = {
+                **tag_peek, 'tag': None, 'tagWidth': tag_width,
+                'encodingHex': raw[tag_peek['offset']:hard_limit].hex().upper(),
+            }
+            return {
+                'start': start, 'cursor': position, 'ranges': ranges,
+                'status': 'truncated-following-timeline-action-tag',
+                'failure': {'category': 'truncated-action-tag',
+                            'offset': tag_peek['offset'],
+                            'expected': {'bytes': tag_width},
+                            'actual': {'remaining': remaining}},
+                'timelineSequenceCount': sequence.get('count'),
+                'timelineSequenceStart': sequence_start,
+                'firstActionUnionTagPeekOnly': tag_peek,
+                'candidateRecordEnd': None,
+            }
+        tag_peek = {
+            **tag_peek,
+            'tag': (struct.unpack_from('<H', raw, tag_peek['offset'] + 1)[0]
+                    if tag_width == 3 else first_byte),
+            'tagWidth': tag_width,
+            'encodingHex': raw[tag_peek['offset']:tag_peek['offset'] + tag_width].hex().upper(),
+        }
+
+    if not sequence['complete']:
+        status = ('stopped-before-following-timeline-sequence-action'
+                  if sequence.get('status') == 'stopped-before-sequence-action-elements'
+                  else sequence.get('status', 'ambiguous-following-timeline-sequence'))
+        return {
+            'start': start, 'cursor': position, 'ranges': ranges,
+            'status': status, 'failure': sequence.get('failure'),
+            'timelineSequenceCount': sequence.get('count'),
+            'timelineSequenceStart': sequence_start,
+            'timelineSequenceStatus': sequence.get('status'),
+            'firstActionUnionTagPeekOnly': tag_peek,
+            'candidateRecordEnd': None,
+            'nextSourceReadType': 'TimelineActionData.member1.SequenceActionData action element',
+            'nextSourceReadOffset': position,
+            'nextSourceReadConsumed': False,
+        }
+
+    start_frame = timeline_members[2].get('reader', {})
+    expected_start_frame = {
+        (53268774, '448B30'), (53268802, '4883435004'),
+        (53268807, '83434004'), (53268811, '83434404'),
+    }
+    actual_start_frame = {
+        (row.get('rva'), str(row.get('rawHex', '')).upper())
+        for row in start_frame.get('verifiedInstructions', [])
+        if isinstance(row, dict)
+    }
+    require(actual_start_frame, expected_start_frame, source, position)
+    if hard_limit - position < 4:
+        return {'start': start, 'cursor': position, 'ranges': ranges,
+                'status': 'truncated-following-timeline-action-start-frame',
+                'failure': {'category': 'truncated', 'offset': position,
+                            'kind': 'TimelineActionData.member2.startFrame.i32',
+                            'expectedBytes': 4, 'remainingBytes': hard_limit - position},
+                'timelineSequenceCount': sequence.get('count'),
+                'timelineSequenceStart': sequence_start,
+                'firstActionUnionTagPeekOnly': None,
+                'candidateRecordEnd': None}
+    ranges.append({'start': position, 'end': position + 4,
+                   'kind': 'TimelineActionData.member2.startFrame.i32',
+                   'rawHex': raw[position:position + 4].hex().upper()})
+    position += 4
+    force_sync = _skilldata_read_force_sync_candidate(
+        raw, position, hard_limit, timeline_reader=timeline_reader,
+        payload_helper_evidence=payload_helper_evidence,
+        bool_helper_evidence=bool_helper_evidence,
+        gameassembly_image_base=gameassembly_image_base, source=source)
+    ranges.extend(force_sync['ranges'])
+    position = force_sync['cursor']
+    candidate_end = None
+    if force_sync['complete']:
+        candidate_end = {
+            'start': start, 'end': position, 'memberCount': 4,
+            'sourceReadOrderKey': 'member4',
+            'classification': 'candidate selected TimelineActionData field-sequence end; live provider/cache unobserved',
+        }
+    return {
+        'start': start, 'cursor': position, 'ranges': ranges,
+        'status': (('candidate-following-timeline-action-field-sequence-exhausted'
+                    if force_sync['complete'] else force_sync['status'])),
+        'failure': force_sync.get('failure'),
+        'timelineSequenceCount': sequence.get('count'),
+        'timelineSequenceStart': sequence_start,
+        'timelineSequenceStatus': sequence.get('status'),
+        'firstActionUnionTagPeekOnly': tag_peek,
+        'forceSyncAnimDataRecordEndCandidate': force_sync.get('recordEndCandidate'),
+        'candidateRecordEnd': candidate_end,
+        'forceSyncAnimDataReaderEvidence': force_sync['readerEvidence'],
+        'opaquePayloadByteRanges': force_sync['opaquePayloadByteRanges'],
+        'nextSourceReadType': ('next TimelineActionData list element'
+                               if force_sync['complete'] else
+                               force_sync.get('failure', {}).get('kind')),
+        'nextSourceReadOffset': position,
+        'nextSourceReadConsumed': False if force_sync['complete'] else None,
+    }
+
+
+def _skilldata_continue_following_play_animation_candidate(
+        raw, following_timeline, hard_limit, *, timeline_actions_list_count,
+        timeline_reader, sequence_reader, action_group_members, buff_routes,
+        action_readers, payload_helper_evidence, bool_helper_evidence,
+        gameassembly_image_base, source):
+    """Continue a second TimelineActionData only for its exact 0x115 child path."""
+    peek = following_timeline.get('firstActionUnionTagPeekOnly')
+    if not isinstance(peek, dict) or peek.get('tag') != 0x115 or peek.get('tagWidth') != 3:
+        raise ContextError(source, following_timeline.get('cursor', 0),
+                           'non-consuming extended 0x115 child tag peek', peek)
+    if following_timeline.get('timelineSequenceCount') != 1:
+        raise ContextError(source, peek.get('offset', 0),
+                           'one child in the second TimelineActionData SequenceActionData',
+                           following_timeline.get('timelineSequenceCount'))
+    reader = action_readers.get(0x115)
+    if not isinstance(reader, dict):
+        raise ContextError(source, peek['offset'],
+                           'current 0x115 PlayAnimation selected reader', reader)
+    union_evidence = skilldata_action_union_static_reader_evidence(
+        0x115, reader, buff_routes,
+        gameassembly_image_base=gameassembly_image_base, source=source)
+    root_member_count = union_evidence.get('rootMemberCount')
+    root_read_order = union_evidence.get('rootAnonymousReadOrder')
+    require((root_member_count, union_evidence.get('rootReadOrderKey'),
+             root_read_order[:4] if isinstance(root_read_order, list) else None),
+            (16, 'member16', ['byte', 'scalar32', 'scalar32', 'scalar32']),
+            source, peek['offset'])
+    start = peek['offset']
+    encoded_tag = bytes.fromhex(str(peek.get('encodingHex', '')))
+    require((raw[start:start + 3], encoded_tag),
+            (b'\xFA\x15\x01', b'\xFA\x15\x01'), source, start)
+    header_offset = start + 3
+    if header_offset >= hard_limit or raw[header_offset] != root_member_count:
+        return {
+            'cursor': start, 'ranges': [], 'opaquePayloadByteRanges': [],
+            'status': 'stopped-before-following-play-animation-member-header',
+            'failure': {'category': ('truncated' if header_offset >= hard_limit
+                                     else 'member-count'),
+                        'offset': header_offset, 'expected': root_member_count,
+                        'actual': raw[header_offset] if header_offset < hard_limit else None},
+            'candidatePlayAnimationRecordEnd': None,
+            'candidateTimelineActionDataRecordEnd': None,
+            'candidateActionGroupDataRecordEnd': None,
+            'candidateTimelineContinuation': None,
+            'readerEvidence': union_evidence,
+        }
+    position = header_offset + 1
+    ranges = [
+        {'start': start, 'end': header_offset,
+         'kind': 'AbilityActionData.union-tag'},
+        {'start': header_offset, 'end': position,
+         'kind': 'PlayAnimationAction.memberCount'},
+    ]
+    fixed_members = []
+    for member_index, member_type in enumerate(root_read_order[:4]):
+        width = _skilldata_action_fixed_member_width(member_type)
+        if width is None:
+            raise ContextError(source, position,
+                               'four current fixed 0x115 prefix member widths', member_type)
+        if hard_limit - position < width:
+            return {
+                'cursor': position, 'ranges': ranges,
+                'opaquePayloadByteRanges': [],
+                'status': 'truncated-following-play-animation-fixed-prefix',
+                'failure': {'category': 'truncated', 'offset': position,
+                            'memberIndex': member_index, 'kind': member_type,
+                            'expectedBytes': width,
+                            'remainingBytes': hard_limit - position},
+                'candidatePlayAnimationRecordEnd': None,
+                'candidateTimelineActionDataRecordEnd': None,
+                'candidateActionGroupDataRecordEnd': None,
+                'candidateTimelineContinuation': None,
+                'readerEvidence': union_evidence,
+            }
+        ranges.append({'start': position, 'end': position + width,
+                       'kind': f'PlayAnimationAction.member{member_index}.{member_type}'})
+        fixed_members.append(member_type)
+        position += width
+
+    require((payload_helper_evidence.get('actionTag'),
+             payload_helper_evidence.get('sharedHelperTargetRva'),
+             payload_helper_evidence.get('providerSelection')),
+            (0x115, 0x2CA8700, 'unobserved'), source, start)
+    payload_helper = payload_helper_evidence
+    play_animation = _skilldata_continue_play_animation_candidate(
+        raw, position, hard_limit, action_start=start,
+        root_read_order=root_read_order, sequence_reader=sequence_reader,
+        payload_helper_evidence=payload_helper, source=source)
+    ranges.extend(play_animation['ranges'])
+    position = play_animation['cursor']
+    if not play_animation['complete']:
+        return {
+            'cursor': position, 'ranges': ranges,
+            'opaquePayloadByteRanges': play_animation['opaquePayloadByteRanges'],
+            'status': play_animation['status'], 'failure': play_animation['failure'],
+            'candidatePlayAnimationRecordEnd': play_animation['recordEndCandidate'],
+            'candidateTimelineActionDataRecordEnd': None,
+            'candidateActionGroupDataRecordEnd': None,
+            'candidateTimelineContinuation': None,
+            'candidatePlayAnimationNestedSequence': play_animation.get('nestedSequence'),
+            'readerEvidence': union_evidence,
+            'bytePayloadHelperEvidence': payload_helper,
+        }
+
+    parent = _skilldata_continue_timeline_parent_candidate(
+        raw, position, hard_limit, sequence_action_count=1,
+        timeline_actions_list_count=timeline_actions_list_count,
+        timeline_action_start=following_timeline['start'],
+        timeline_reader=timeline_reader,
+        sequence_tail_windows=play_animation['independentlyVerifiedSequenceTailWindows'],
+        action_group_members=action_group_members,
+        payload_helper_evidence=payload_helper,
+        bool_helper_evidence=bool_helper_evidence,
+        gameassembly_image_base=gameassembly_image_base,
+        source=source)
+    ranges.extend(parent['ranges'])
+    position = parent['cursor']
+    opaque_payload_ranges = [*play_animation['opaquePayloadByteRanges'],
+                             *parent.get('opaquePayloadByteRanges', [])]
+    return {
+        'cursor': position, 'ranges': ranges,
+        'opaquePayloadByteRanges': opaque_payload_ranges,
+        'status': parent['status'], 'failure': parent.get('failure'),
+        'candidatePlayAnimationRecordEnd': play_animation['recordEndCandidate'],
+        'candidateTimelineActionDataRecordEnd': parent.get(
+            'candidateTimelineActionDataRecordEnd'),
+        'candidateActionGroupDataRecordEnd': parent.get(
+            'candidateActionGroupDataRecordEnd'),
+        'candidateTimelineContinuation': parent,
+        'candidatePlayAnimationNestedSequence': play_animation.get('nestedSequence'),
+        'readerEvidence': union_evidence,
+        'bytePayloadHelperEvidence': payload_helper,
+    }
+
+
+def _skilldata_continue_timeline_parent_candidate(raw, start, hard_limit, *,
+                                                   sequence_action_count,
+                                                   timeline_actions_list_count,
+                                                   timeline_action_start,
+                                                   timeline_reader,
+                                                   sequence_tail_windows,
+                                                   action_group_members,
+                                                   payload_helper_evidence,
+                                                   bool_helper_evidence,
+                                                   gameassembly_image_base,
+                                                   source):
+    """Continue one completed 0x115 child through its proven enclosing prefixes."""
+    ranges = []
+    position = start
+    if sequence_action_count != 1:
+        return {
+            'cursor': position, 'ranges': ranges,
+            'status': 'stopped-before-additional-sequence-action',
+            'failure': None,
+            'sequenceActionCount': sequence_action_count,
+            'nextSourceReadType': 'next SequenceActionData action or trailing bytes',
+            'nextSourceReadOffset': position,
+        }
+    for index in range(2):
+        if position >= hard_limit:
+            return {
+                'cursor': position, 'ranges': ranges,
+                'status': 'truncated-timeline-sequence-action-data-tail',
+                'failure': {'category': 'truncated', 'offset': position,
+                            'kind': f'TimelineActionData.member1.SequenceActionData.trailing-byte[{index}]',
+                            'expectedBytes': 1, 'remainingBytes': 0},
+                'sequenceActionCount': sequence_action_count,
+                'nextSourceReadType': f'TimelineActionData.member1.SequenceActionData.trailing-byte[{index}]',
+                'nextSourceReadOffset': position,
+            }
+        ranges.append({'start': position, 'end': position + 1,
+                       'kind': f'TimelineActionData.member1.SequenceActionData.trailing-byte[{index}]',
+                       'value': raw[position]})
+        position += 1
+
+    timeline_members = timeline_reader.get('serializedMembers')
+    if not isinstance(timeline_members, list) or len(timeline_members) != 4:
+        raise ContextError(source, position, 'four current TimelineActionData members',
+                           timeline_members)
+    start_frame = timeline_members[2].get('reader', {})
+    expected_start_frame_instructions = {
+        (53268774, '448B30'),
+        (53268802, '4883435004'),
+        (53268807, '83434004'),
+        (53268811, '83434404'),
+    }
+    instructions = start_frame.get('verifiedInstructions')
+    if not isinstance(instructions, list):
+        raise ContextError(source, position,
+                           'verified TimelineActionData startFrame source cursor instructions',
+                           instructions)
+    actual = {(row.get('rva'), row.get('rawHex')) for row in instructions
+              if isinstance(row, dict)}
+    require(actual, expected_start_frame_instructions, source, position)
+    require((timeline_members[2].get('fieldName'), start_frame.get('kind'),
+             start_frame.get('byteWidth')),
+            ('_startFrame', 'inline-int32', 4), source, position)
+    if hard_limit - position < 4:
+        return {
+            'cursor': position, 'ranges': ranges,
+            'status': 'truncated-timeline-action-start-frame',
+            'failure': {'category': 'truncated', 'offset': position,
+                        'kind': 'TimelineActionData.member2.startFrame.i32',
+                        'expectedBytes': 4, 'remainingBytes': hard_limit - position},
+            'sequenceActionCount': sequence_action_count,
+            'nextSourceReadType': 'TimelineActionData.member2.startFrame.i32',
+            'nextSourceReadOffset': position,
+        }
+    ranges.append({'start': position, 'end': position + 4,
+                   'kind': 'TimelineActionData.member2.startFrame.i32',
+                   'rawHex': raw[position:position + 4].hex().upper()})
+    position += 4
+    force_sync_start = position
+    force_sync = _skilldata_read_force_sync_candidate(
+        raw, force_sync_start, hard_limit, timeline_reader=timeline_reader,
+        payload_helper_evidence=payload_helper_evidence,
+        bool_helper_evidence=bool_helper_evidence,
+        gameassembly_image_base=gameassembly_image_base, source=source)
+    ranges.extend(force_sync['ranges'])
+    position = force_sync['cursor']
+    common = {
+        'sequenceActionCount': sequence_action_count,
+        'timelineActionsListCount': timeline_actions_list_count,
+        'sequenceTailEvidence': sequence_tail_windows,
+        'timelineStartFrameEvidence': [
+            {'rva': rva, 'rawHex': raw_hex}
+            for rva, raw_hex in sorted(expected_start_frame_instructions)],
+        'forceSyncAnimDataStart': force_sync_start,
+        'forceSyncAnimDataContinuation': {
+            'status': force_sync['status'],
+            'cursor': force_sync['cursor'],
+            'failure': force_sync['failure'],
+            'montageNameLength': force_sync.get('montageNameLength'),
+            'recordEndCandidate': force_sync.get('recordEndCandidate'),
+            'readerEvidence': force_sync['readerEvidence'],
+        },
+        'forceSyncAnimDataRecordEndCandidate': force_sync.get('recordEndCandidate'),
+        'opaquePayloadByteRanges': force_sync['opaquePayloadByteRanges'],
+    }
+    if not force_sync['complete']:
+        return {
+            'cursor': position, 'ranges': ranges,
+            'status': force_sync['status'], 'failure': force_sync['failure'],
+            'nextSourceReadType': (force_sync['failure'].get('kind')
+                                   if isinstance(force_sync.get('failure'), dict)
+                                   else 'ForceSyncAnimData remaining member reads'),
+            'nextSourceReadOffset': position,
+            'nextSourceReadConsumed': False,
+            'classification': 'candidate TimelineActionData prefix; ForceSync reader incomplete',
+            **common,
+        }
+
+    if type(timeline_action_start) is not int or not 0 <= timeline_action_start < force_sync_start:
+        raise ContextError(source, force_sync_start,
+                           'TimelineActionData start preceding its ForceSync child',
+                           timeline_action_start)
+    timeline_record_end = {
+        'start': timeline_action_start, 'end': position,
+        'memberCount': 4, 'sourceReadOrderKey': 'member4',
+        'classification': 'candidate selected TimelineActionData field-sequence end; live provider/cache unobserved',
+    }
+    common['candidateTimelineActionDataRecordEnd'] = timeline_record_end
+
+    if type(timeline_actions_list_count) is not int or timeline_actions_list_count < 1:
+        return {
+            'cursor': position, 'ranges': ranges,
+            'status': 'unsupported-timeline-actions-list-count',
+            'failure': {'category': 'unsupported',
+                        'offset': timeline_action_start,
+                        'actual': timeline_actions_list_count,
+                        'supportedLowerBound': 1},
+            'nextSourceReadType': None,
+            'nextSourceReadOffset': position,
+            'nextSourceReadConsumed': None,
+            'classification': 'candidate TimelineActionData end; ActionGroupData list extent unsupported',
+            **common,
+        }
+
+    if timeline_actions_list_count == 1:
+        if not isinstance(action_group_members, list) or len(action_group_members) != 2:
+            raise ContextError(source, 1, 'two current ActionGroupData serialized members',
+                               action_group_members)
+        require([row.get('serializedOrderIndex') for row in action_group_members],
+                [0, 1], source, 1)
+        require([row.get('fieldName') for row in action_group_members],
+                ['passiveEventActions', 'timelineActions'], source, 1)
+        action_group_end = {
+            'start': 1, 'end': position, 'memberCount': 2,
+            'sourceReadOrderKey': 'member2',
+            'classification': 'candidate ActionGroupData field-sequence end; SkillData remains open',
+        }
+        return {
+            'cursor': position, 'ranges': ranges,
+            'status': 'candidate-actiongroup-reader-field-sequence-exhausted',
+            'failure': None,
+            'candidateActionGroupDataRecordEnd': action_group_end,
+            'nextSourceReadType': 'next SkillData member after ActionGroupData',
+            'nextSourceReadOffset': position,
+            'nextSourceReadConsumed': False,
+            'classification': 'candidate ActionGroupData field-sequence end; whole SkillData remains open',
+            **common,
+        }
+
+    return {
+        'cursor': position, 'ranges': ranges,
+        'status': 'stopped-before-additional-timeline-action-data',
+        'failure': None,
+        'nextSourceReadType': 'next TimelineActionData list element',
+        'nextSourceReadOffset': position,
+        'nextSourceReadConsumed': False,
+        'classification': 'candidate first TimelineActionData end; remaining list and parents remain open',
+        **common,
+    }
+
+
+def skilldata_timeline_branch_static_alignment(
+        witness, raw, skilldata_reader_order, sequence_reader, buff_routes,
+        buff_action_readers, c9_prefix_evidence, *,
+        gameassembly_image_base=0x180000000,
+        byte_payload_helper_evidence=None, source):
+    """Add typed native alignment and only bounded first-child prefixes to a candidate cursor."""
+    if not isinstance(witness, dict) or not isinstance(raw, bytes):
+        raise ContextError(source, 0, 'current timeline candidate witness and raw bytes',
+                           [type(witness).__name__, type(raw).__name__])
+    if not all(isinstance(value, dict) for value in
+               (skilldata_reader_order, sequence_reader, buff_routes)):
+        raise ContextError(source, 0, 'SkillData, Sequence and action-route native evidence objects',
+                           [type(skilldata_reader_order).__name__, type(sequence_reader).__name__,
+                            type(buff_routes).__name__])
+    if not isinstance(buff_action_readers, dict) or any(
+            type(tag) is not int or not isinstance(reader, dict)
+            for tag, reader in buff_action_readers.items()):
+        raise ContextError(source, 0, 'current tag-to-native action reader map',
+                           type(buff_action_readers).__name__)
+    input_set = witness.get('inputSetSha256')
+    require(skilldata_reader_order.get('inputSetSha256'), input_set, source, 0)
+    require(witness.get('hardLimit'), len(raw), source, 0)
+    require(witness.get('logicalSha256'), hashlib.sha256(raw).hexdigest().upper(), source, 0)
+    require(witness.get('authoritativeParserCursor'), 10, source, 0)
+    require(witness.get('candidateStart'), 10, source, 0)
+    if not isinstance(witness.get('candidateByteRanges'), list):
+        raise ContextError(source, witness.get('candidateCursor', 10),
+                           'candidate byte-range manifest', witness.get('candidateByteRanges'))
+
+    require(skilldata_reader_order.get('firstSkillDataField', {}).get('fieldName'),
+            'actionGroupData', source, 0)
+    action_group_members = skilldata_reader_order.get('actionGroupDataMembers')
+    if not isinstance(action_group_members, list) or len(action_group_members) != 2:
+        raise ContextError(source, 1, 'two native ActionGroupData member reads',
+                           action_group_members)
+    require([row.get('fieldName') for row in action_group_members],
+            ['passiveEventActions', 'timelineActions'], source, 1)
+    require([row.get('serializedOrderIndex') for row in action_group_members],
+            [0, 1], source, 1)
+    require([row.get('readerMethodSpec', {}).get('index')
+             for row in action_group_members], [610662, 610915], source, 1)
+    first_list_type = action_group_members[0].get('readerMethodSpec', {}).get('genericType', {})
+    timeline_list_type = action_group_members[1].get('readerMethodSpec', {}).get('genericType', {})
+    require((first_list_type.get('typeName'), first_list_type.get('elementTypeName')),
+            ('System.Collections.Generic.List`1',
+             'Beyond.Gameplay.Core.AbilityActionMap'), source, 2)
+    require((timeline_list_type.get('typeName'), timeline_list_type.get('elementTypeName'),
+             timeline_list_type.get('elementTypeDefinitionIndex')),
+            ('System.Collections.Generic.List`1',
+             'Beyond.Gameplay.Core.TimelineAction+TimelineActionData', 9199), source, 6)
+    action_group_windows = skilldata_reader_order.get('codeWindows')
+    if not isinstance(action_group_windows, list) or not any(
+            (row.get('rva'), row.get('byteLength'), row.get('sha256')) ==
+            (58581179, 2314,
+             'FEA359985EBF5DF75CC58D871469481F0F692B1768D84724FF5941D47CAD8132')
+            for row in action_group_windows):
+        raise ContextError(source, 1, 'hash-pinned SkillData/ActionGroupData root reader window',
+                           action_group_windows)
+    instructions = skilldata_reader_order.get('verifiedInstructionWindows')
+    if not isinstance(instructions, list):
+        raise ContextError(source, 1, 'current SkillData and ActionGroupData header/store instructions',
+                           instructions)
+    expected_instructions = {
+        (58581199, '4080FD30'),
+        (65273925, '4080FD02'),
+        (65273975, '48894118'),
+        (65274020, '48894110'),
+    }
+    actual_instructions = {(row.get('rva'), row.get('rawHex')) for row in instructions}
+    require(expected_instructions <= actual_instructions, True, source, 1)
+
+    timeline = skilldata_reader_order.get('timelineActionDataReader')
+    if not isinstance(timeline, dict):
+        raise ContextError(source, 10, 'current TimelineActionData native reader evidence', timeline)
+    require((timeline.get('elementTypeDefinitionIndex'), timeline.get('elementTypeName')),
+            (9199, 'Beyond.Gameplay.Core.TimelineAction+TimelineActionData'), source, 10)
+    require(timeline.get('listReaderMethodSpec', {}).get('index'), 610915, source, 10)
+    timeline_methods = timeline.get('methods')
+    if not isinstance(timeline_methods, list):
+        raise ContextError(source, 10, 'TimelineActionData and ForceSync reader module/token rows',
+                           timeline_methods)
+    require(sorted(row.get('methodIndex') for row in timeline_methods),
+            [104653, 104654, 107909, 107910], source, 10)
+    timeline_windows = timeline.get('codeWindows')
+    if not isinstance(timeline_windows, list):
+        raise ContextError(source, 10, 'TimelineActionData hash-pinned reader windows',
+                           timeline_windows)
+    require(any((row.get('startRva'), row.get('endRva'), row.get('sha256')) ==
+                (0x32CCF70, 0x32CD277,
+                 'CB497F6362D9DA9396D6533F6CC037536FC9499D67848F1E8BBBAC8AA2F03688')
+                for row in timeline_windows), True, source, 10)
+    timeline_members = timeline.get('serializedMembers')
+    if not isinstance(timeline_members, list) or len(timeline_members) != 4:
+        raise ContextError(source, 10, 'four selected TimelineActionData member reads',
+                           timeline_members)
+    require([row.get('fieldName') for row in timeline_members],
+            ['_endFrame', '_sequenceActionData', '_startFrame', 'forceSyncAnimData'],
+            source, 10)
+    end_frame_reader = timeline_members[0].get('reader', {})
+    require((end_frame_reader.get('targetRva'), end_frame_reader.get('role')),
+            (0x2CA86B0, 'read endFrame int32'), source, 11)
+    sequence_method = timeline_members[1].get('readerMethodSpec', {})
+    require((sequence_method.get('index'),
+             sequence_method.get('genericType', {}).get('typeDefinitionIndex')),
+            (619962, 9202), source, 15)
+    require((timeline_members[2].get('reader', {}).get('kind'),
+             timeline_members[2].get('reader', {}).get('byteWidth')),
+            ('inline-int32', 4), source, 0)
+    sequence_reference = timeline.get('sequenceActionDataReaderReference', {})
+    sequence_window = sequence_reader.get('rootCodeWindow', {})
+    require((sequence_reference.get('methodIndex'), sequence_reference.get('rootRva'),
+             sequence_reference.get('rootCodeWindowSha256')),
+            (104346, 0x39C6AA0,
+             '6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90'),
+            source, 15)
+    require((sequence_window.get('startRva'), sequence_window.get('endRva'),
+             sequence_window.get('sha256')),
+            (0x39C6AA0, 0x39C6FA7,
+             '6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90'),
+            source, 15)
+    sequence_methods = sequence_reader.get('methods')
+    if not isinstance(sequence_methods, list):
+        raise ContextError(source, 15, 'selected SequenceActionData reader module/token rows',
+                           sequence_methods)
+    sequence_root_methods = [row for row in sequence_methods
+                             if row.get('methodIndex') == 104346 and
+                             row.get('declaringType') ==
+                             'Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack' and
+                             row.get('name') == 'Deserialize' and
+                             row.get('image') == 'MemoryPack.Beyond.dll']
+    if len(sequence_root_methods) != 1:
+        raise ContextError(source, 15, 'one exact SequenceActionData root Deserialize method',
+                           len(sequence_root_methods))
+    require(sequence_root_methods[0].get('pointerVa'),
+            gameassembly_image_base + 0x39C6AA0, source, 15)
+    sequence_windows = sequence_reader.get('windows')
+    if not isinstance(sequence_windows, list):
+        raise ContextError(source, 15, 'selected SequenceActionData header/count instruction',
+                           sequence_windows)
+    sequence_header = [row for row in sequence_windows
+                       if row.get('rva') == 0x39C6B82]
+    if len(sequence_header) != 1:
+        raise ContextError(source, 15, 'one selected SequenceActionData member-three header check',
+                           len(sequence_header))
+    require(sequence_header[0].get('rawHex'), '4080FE030F85DD030000', source, 0x39C6B82)
+
+    typed_prefix_ownership = [
+        {'start': 0, 'end': 1, 'kind': 'SkillData.memberCount', 'value': 48},
+        {'start': 1, 'end': 2, 'kind': 'ActionGroupData.memberCount', 'value': 2},
+        {'start': 2, 'end': 6, 'kind': 'ActionGroupData.passiveEventActions.count-i32',
+         'value': 0},
+        {'start': 6, 'end': 10, 'kind': 'ActionGroupData.timelineActions.count-i32',
+         'value': witness.get('timelineActionsListCount')},
+    ]
+    candidate_ranges = [dict(row) for row in witness['candidateByteRanges']]
+    candidate_cursor = witness.get('candidateCursor')
+    status = witness.get('status')
+    failure = witness.get('failure')
+    union_peek = witness.get('firstActionUnionTagPeekOnly')
+    union_evidence = None
+    prefix_stop = None
+    candidate_play_animation_record_end = None
+    candidate_timeline_continuation = None
+    candidate_timeline_action_data_record_end = None
+    candidate_action_group_data_record_end = None
+    candidate_following_timeline_action_prefix = None
+    candidate_following_timeline_action_data_record_end = None
+    candidate_following_play_animation_record_end = None
+    candidate_following_timeline_continuation = None
+    candidate_play_animation_nested_sequence = None
+    candidate_opaque_payload_ranges = []
+    candidate_byte_payload_helper_evidence = None
+    route_rows = buff_routes.get('rows')
+    if not isinstance(route_rows, list):
+        raise ContextError(source, 20, 'current AbilityActionData route rows', route_rows)
+
+    if (failure is None and isinstance(union_peek, dict) and
+            type(union_peek.get('tag')) is int):
+        tag = union_peek['tag']
+        tag_routes = [row for row in route_rows if row.get('tag') == tag]
+        if tag == 0xFF and union_peek.get('tagWidth') == 1:
+            start = union_peek['offset']
+            if start < len(raw):
+                candidate_ranges.append({'start': start, 'end': start + 1,
+                                         'kind': 'candidate-null-action-union'})
+                candidate_cursor = start + 1
+                status = 'stopped-after-null-action-union'
+                prefix_stop = {
+                    'tag': tag, 'start': start, 'end': candidate_cursor,
+                    'classification': 'candidate-null-union-only',
+                    'parentCompleted': False,
+                }
+        elif tag != 0xC9 and (tag == 0x115 or tag in buff_action_readers):
+            reader = buff_action_readers.get(tag)
+            if reader is None:
+                status = 'stopped-before-action-without-current-reader'
+            else:
+                union_evidence = skilldata_action_union_static_reader_evidence(
+                    tag, reader, buff_routes,
+                    gameassembly_image_base=gameassembly_image_base, source=source)
+                require(len(tag_routes), 1, source, union_peek['offset'])
+                root_member_count = union_evidence.get('rootMemberCount')
+                root_read_order_key = union_evidence.get('rootReadOrderKey')
+                root_read_order = union_evidence.get('rootAnonymousReadOrder')
+                if not isinstance(root_read_order, list):
+                    raise ContextError(source, union_peek['offset'],
+                                       'current selected action member read order',
+                                       root_read_order)
+                common_prefix = ['byte', 'scalar32', 'scalar32', 'scalar32']
+                if tag == 0x115:
+                    require((root_member_count, root_read_order_key,
+                             root_read_order[:4]),
+                            (16, 'member16', common_prefix),
+                            source, union_peek['offset'])
+                    require(root_read_order[4], 'byte-payload',
+                            source, union_peek['offset'])
+                    nested_contexts = reader.get('nestedContexts')
+                    if not isinstance(nested_contexts, list):
+                        raise ContextError(source, union_peek['offset'],
+                                           'PlayAnimation SequenceActionData static type context',
+                                           nested_contexts)
+                    nested_sequence_contexts = [row for row in nested_contexts
+                                                if row.get('methodSpecIndex') == 619962 and
+                                                row.get('typeDefinition') == 9202 and
+                                                row.get('typeName') ==
+                                                'Beyond.Gameplay.Core.SequenceActionData']
+                    require(len(nested_sequence_contexts), 1, source,
+                            union_peek['offset'])
+                if root_read_order[:4] != common_prefix:
+                    status = 'stopped-before-action-without-bounded-prefix-contract'
+                else:
+                    start = union_peek['offset']
+                    width = union_peek.get('tagWidth')
+                    expected_width = 3 if union_peek.get('firstByte') == 0xFA else 1
+                    try:
+                        encoded_tag = bytes.fromhex(union_peek.get('encodingHex', ''))
+                    except ValueError as error:
+                        raise ContextError(source, start,
+                                           'hex-encoded current action union tag',
+                                           union_peek) from error
+                    if (type(width) is not int or width != expected_width or
+                            len(encoded_tag) != width or raw[start:start + width] != encoded_tag):
+                        raise ContextError(source, start,
+                                           'complete current AbilityActionData union tag encoding',
+                                           union_peek)
+                    header_offset = start + width
+                    header_good = (header_offset < len(raw) and
+                                   raw[header_offset] == root_member_count)
+                    if not header_good:
+                        status = ('stopped-before-play-animation-member-header'
+                                  if tag == 0x115 else
+                                  'stopped-before-action-member-header')
+                        failure = {
+                            'category': ('truncated' if header_offset >= len(raw)
+                                         else 'member-count'),
+                            'offset': header_offset,
+                            'expected': root_member_count,
+                            'actual': raw[header_offset] if header_offset < len(raw) else None,
+                        }
+                    else:
+                        position = header_offset + 1
+                        prefix_rows = [
+                            {'start': start, 'end': header_offset,
+                             'kind': 'AbilityActionData.union-tag'},
+                            {'start': header_offset, 'end': position,
+                             'kind': ('PlayAnimationAction.memberCount' if tag == 0x115
+                                      else 'AbilityActionData.root-memberCount')},
+                        ]
+                        next_field = None
+                        next_member_type = None
+                        consumed_member_types = []
+                        for member_index, member_type in enumerate(root_read_order):
+                            member_width = _skilldata_action_fixed_member_width(member_type)
+                            if member_width is None:
+                                next_member_type = member_type
+                                break
+                            if member_width > len(raw) - position:
+                                next_field = {
+                                    'offset': position,
+                                    'memberIndex': member_index,
+                                    'kind': member_type,
+                                    'expectedBytes': member_width,
+                                    'remainingBytes': len(raw) - position,
+                                }
+                                break
+                            member_label = ('PlayAnimationAction' if tag == 0x115
+                                            else 'AbilityActionData')
+                            prefix_rows.append({
+                                'start': position,
+                                'end': position + member_width,
+                                'kind': f'{member_label}.member{member_index}.{member_type}',
+                            })
+                            position += member_width
+                            consumed_member_types.append(member_type)
+                        candidate_ranges.extend(prefix_rows)
+                        candidate_cursor = position
+                        if next_field is not None:
+                            status = ('truncated-play-animation-fixed-prefix'
+                                      if tag == 0x115 else
+                                      'truncated-action-fixed-prefix')
+                            failure = {'category': 'truncated', **next_field}
+                        elif (tag == 0x115 and next_member_type == 'byte-payload'):
+                            payload_helper = _skilldata_verified_byte_payload_reader(
+                                reader, byte_payload_helper_evidence, source=source)
+                            candidate_byte_payload_helper_evidence = payload_helper
+                            action_continuation = _skilldata_continue_play_animation_candidate(
+                                raw, position, witness['hardLimit'],
+                                root_read_order=root_read_order,
+                                sequence_reader=sequence_reader,
+                                payload_helper_evidence=payload_helper,
+                                action_start=start, source=source)
+                            candidate_ranges.extend(action_continuation['ranges'])
+                            candidate_opaque_payload_ranges.extend(
+                                action_continuation['opaquePayloadByteRanges'])
+                            candidate_cursor = action_continuation['cursor']
+                            status = action_continuation['status']
+                            failure = action_continuation['failure']
+                            candidate_play_animation_record_end = action_continuation[
+                                'recordEndCandidate']
+                            candidate_play_animation_nested_sequence = action_continuation.get(
+                                'nestedSequence')
+                            if candidate_play_animation_record_end is not None:
+                                parent_continuation = _skilldata_continue_timeline_parent_candidate(
+                                    raw, candidate_cursor, witness['hardLimit'],
+                                    sequence_action_count=witness.get(
+                                        'firstSequenceActionDataCount'),
+                                    timeline_actions_list_count=witness.get(
+                                        'timelineActionsListCount'),
+                                    timeline_action_start=witness.get('candidateStart'),
+                                    timeline_reader=timeline,
+                                    sequence_tail_windows=action_continuation[
+                                        'independentlyVerifiedSequenceTailWindows'],
+                                    action_group_members=action_group_members,
+                                    payload_helper_evidence=payload_helper,
+                                    bool_helper_evidence=c9_prefix_evidence,
+                                    gameassembly_image_base=gameassembly_image_base,
+                                    source=source)
+                                candidate_timeline_continuation = parent_continuation
+                                candidate_ranges.extend(parent_continuation['ranges'])
+                                candidate_opaque_payload_ranges.extend(
+                                    parent_continuation.get('opaquePayloadByteRanges', []))
+                                candidate_timeline_action_data_record_end = (
+                                    parent_continuation.get(
+                                        'candidateTimelineActionDataRecordEnd'))
+                                candidate_action_group_data_record_end = (
+                                    parent_continuation.get(
+                                        'candidateActionGroupDataRecordEnd'))
+                                candidate_cursor = parent_continuation['cursor']
+                                status = parent_continuation['status']
+                                failure = parent_continuation['failure']
+                                prefix_stop = {
+                                    'tag': tag, 'start': start,
+                                    'recordEndCandidate': candidate_play_animation_record_end,
+                                    'end': candidate_cursor,
+                                    'nextSourceReadType': parent_continuation.get(
+                                        'nextSourceReadType'),
+                                    'nextSourceReadOffset': parent_continuation.get(
+                                        'nextSourceReadOffset'),
+                                    'nextSourceReadConsumed': False,
+                                    'classification': parent_continuation.get(
+                                        'classification',
+                                        'candidate-static-reader-record end; parent incomplete'),
+                                }
+                                if (parent_continuation.get('status') ==
+                                        'stopped-before-additional-timeline-action-data'):
+                                    following_timeline = (
+                                        _skilldata_read_following_timeline_action_data_prefix_candidate(
+                                            raw, candidate_cursor, witness['hardLimit'],
+                                            timeline_reader=timeline,
+                                            sequence_reader=sequence_reader,
+                                            payload_helper_evidence=payload_helper,
+                                            bool_helper_evidence=c9_prefix_evidence,
+                                            gameassembly_image_base=gameassembly_image_base,
+                                            source=source))
+                                    candidate_following_timeline_action_prefix = following_timeline
+                                    candidate_ranges.extend(following_timeline['ranges'])
+                                    candidate_opaque_payload_ranges.extend(
+                                        following_timeline.get('opaquePayloadByteRanges', []))
+                                    candidate_cursor = following_timeline['cursor']
+                                    status = following_timeline['status']
+                                    failure = following_timeline.get('failure')
+                                    prefix_stop = {
+                                        'tag': tag, 'start': following_timeline['start'],
+                                        'end': candidate_cursor,
+                                        'nextSourceReadType': following_timeline.get(
+                                            'nextSourceReadType'),
+                                        'nextSourceReadOffset': following_timeline.get(
+                                            'nextSourceReadOffset', candidate_cursor),
+                                        'nextSourceReadConsumed': following_timeline.get(
+                                            'nextSourceReadConsumed', False),
+                                        'firstActionUnionTagPeekOnly': following_timeline.get(
+                                            'firstActionUnionTagPeekOnly'),
+                                        'classification': (
+                                            'candidate following TimelineActionData prefix; '
+                                            'nested action and later parents remain open'),
+                                    }
+                                    following_tag = following_timeline.get(
+                                        'firstActionUnionTagPeekOnly')
+                                    if (following_timeline.get('status') ==
+                                            'stopped-before-following-timeline-sequence-action' and
+                                            isinstance(following_tag, dict) and
+                                            following_tag.get('tag') == 0x115 and
+                                            following_timeline.get('timelineSequenceCount') == 1):
+                                        remaining_timeline_actions = (
+                                            witness.get('timelineActionsListCount') - 1)
+                                        following_action = (
+                                            _skilldata_continue_following_play_animation_candidate(
+                                                raw, following_timeline, witness['hardLimit'],
+                                                timeline_actions_list_count=remaining_timeline_actions,
+                                                timeline_reader=timeline,
+                                                sequence_reader=sequence_reader,
+                                                action_group_members=action_group_members,
+                                                buff_routes=buff_routes,
+                                                action_readers=buff_action_readers,
+                                                payload_helper_evidence=payload_helper,
+                                                bool_helper_evidence=c9_prefix_evidence,
+                                                gameassembly_image_base=gameassembly_image_base,
+                                                source=source))
+                                        following_timeline['playAnimationContinuation'] = {
+                                            key: value for key, value in following_action.items()
+                                            if key != 'ranges'}
+                                        following_timeline['ranges'].extend(
+                                            following_action['ranges'])
+                                        following_timeline['opaquePayloadByteRanges'] = (
+                                            following_action['opaquePayloadByteRanges'])
+                                        following_timeline['cursor'] = following_action['cursor']
+                                        following_timeline['status'] = following_action['status']
+                                        following_timeline['failure'] = following_action['failure']
+                                        following_timeline['candidateRecordEnd'] = (
+                                            following_action.get(
+                                                'candidateTimelineActionDataRecordEnd'))
+                                        following_timeline['candidatePlayAnimationRecordEnd'] = (
+                                            following_action.get(
+                                                'candidatePlayAnimationRecordEnd'))
+                                        following_timeline['candidateTimelineContinuation'] = (
+                                            following_action.get(
+                                                'candidateTimelineContinuation'))
+                                        candidate_ranges.extend(following_action['ranges'])
+                                        candidate_opaque_payload_ranges.extend(
+                                            following_action['opaquePayloadByteRanges'])
+                                        candidate_cursor = following_action['cursor']
+                                        status = following_action['status']
+                                        failure = following_action['failure']
+                                        candidate_following_timeline_action_data_record_end = (
+                                            following_action.get(
+                                                'candidateTimelineActionDataRecordEnd'))
+                                        candidate_following_play_animation_record_end = (
+                                            following_action.get(
+                                                'candidatePlayAnimationRecordEnd'))
+                                        candidate_following_timeline_continuation = (
+                                            following_action.get(
+                                                'candidateTimelineContinuation'))
+                                        if following_action.get(
+                                                'candidateActionGroupDataRecordEnd') is not None:
+                                            candidate_action_group_data_record_end = (
+                                                following_action.get(
+                                                    'candidateActionGroupDataRecordEnd'))
+                                        next_continuation = following_action.get(
+                                            'candidateTimelineContinuation')
+                                        prefix_stop = {
+                                            'tag': tag, 'start': following_timeline['start'],
+                                            'end': candidate_cursor,
+                                            'nextSourceReadType': (
+                                                next_continuation.get('nextSourceReadType')
+                                                if isinstance(next_continuation, dict) else
+                                                following_action.get('nextSourceReadType')),
+                                            'nextSourceReadOffset': (
+                                                next_continuation.get('nextSourceReadOffset')
+                                                if isinstance(next_continuation, dict) else
+                                                candidate_cursor),
+                                            'nextSourceReadConsumed': False,
+                                            'classification': following_action.get(
+                                                'classification',
+                                                'candidate following TimelineActionData reader end; later parents remain open'),
+                                        }
+                            else:
+                                nested = action_continuation.get('nestedSequence')
+                                next_type = ('SequenceActionData list element'
+                                if isinstance(nested, dict) and
+                                             nested.get('status') ==
+                                             'stopped-before-sequence-action-elements'
+                                             else 'PlayAnimationAction remaining member reads')
+                                prefix_stop = {
+                                    'tag': tag, 'start': start,
+                                    'end': candidate_cursor,
+                                    'nextSourceReadType': next_type,
+                                    'nextSourceReadOffset': candidate_cursor,
+                                    'nextSourceReadConsumed': False,
+                                    'classification': 'candidate-static-reader prefix; parent incomplete',
+                                }
+                        elif next_member_type is not None:
+                            status = ('stopped-before-play-animation-byte-payload'
+                                      if tag == 0x115 else
+                                      'stopped-before-action-variable-member')
+                            if tag == 0x115:
+                                prefix_stop = {
+                                    'tag': tag, 'start': start, 'end': position,
+                                    'memberHeader': root_member_count,
+                                    'sourceReadOrderPrefix': consumed_member_types,
+                                    'nextSourceReadType': next_member_type,
+                                    'nextSourceReadOffset': position,
+                                    'nextSourceReadConsumed': False,
+                                    'consumedUnionRecord': False,
+                                    'classification': 'candidate-static-reader-prefix; provider unobserved',
+                                }
+                            else:
+                                prefix_stop = {
+                                    'tag': tag, 'start': start, 'end': position,
+                                    'memberHeader': root_member_count,
+                                    'rootReadOrderKey': root_read_order_key,
+                                    'sourceReadOrderPrefix': consumed_member_types,
+                                    'nextSourceReadType': next_member_type,
+                                    'nextSourceReadOffset': position,
+                                    'nextSourceReadConsumed': False,
+                                    'consumedUnionRecord': False,
+                                    'classification': 'candidate-static-reader-prefix; provider unobserved',
+                                }
+                        else:
+                            status = 'candidate-action-reader-member-sequence-exhausted'
+                            prefix_stop = {
+                                'tag': tag, 'start': start, 'end': position,
+                                'memberHeader': root_member_count,
+                                'rootReadOrderKey': root_read_order_key,
+                                'sourceReadOrderPrefix': consumed_member_types,
+                                'nextSourceReadType': None,
+                                'nextSourceReadOffset': position,
+                                'nextSourceReadConsumed': None,
+                                'consumedUnionRecord': False,
+                                'classification': 'candidate-static-reader-member-sequence; provider unobserved',
+                            }
+        elif tag == 0xC9:
+            require(len(tag_routes), 1, source, union_peek['offset'])
+            if not isinstance(c9_prefix_evidence, dict):
+                raise ContextError(source, union_peek['offset'],
+                                   'current exact-build C9 member-eight prefix reader evidence',
+                                   c9_prefix_evidence)
+            c9_route = tag_routes[0]
+            require((c9_prefix_evidence.get('tag'),
+                     c9_prefix_evidence.get('switchTargetRva'),
+                     c9_prefix_evidence.get('typeDefinition'),
+                     c9_prefix_evidence.get('wrapperName')),
+                    (0xC9, c9_route.get('switchTargetRva'), c9_route.get('typeDefinition'),
+                     c9_route.get('wrapperName')), source, union_peek['offset'])
+            require(c9_prefix_evidence.get('providerSelection'), 'unobserved', source,
+                    union_peek['offset'])
+            start = union_peek['offset']
+            if union_peek.get('tagWidth') != 1 or raw[start] != 0xC9:
+                raise ContextError(source, start, 'one-byte C9 union tag', union_peek)
+            header_offset = start + 1
+            header_good = header_offset < len(raw) and raw[header_offset] == 8
+            if not header_good:
+                status = 'stopped-before-if-else-member-header'
+                failure = {'category': ('truncated' if header_offset >= len(raw)
+                                        else 'member-count'),
+                           'offset': header_offset, 'expected': 8,
+                           'actual': raw[header_offset] if header_offset < len(raw) else None}
+            else:
+                position = start
+                prefix_fields = [
+                    (1, 'AbilityActionData.union-tag'),
+                    (1, 'IfElseAction.memberCount'),
+                    (1, 'IfElseAction.member0.byte'),
+                    (4, 'IfElseAction.member1.scalar32'),
+                    (4, 'IfElseAction.member2.scalar32'),
+                    (4, 'IfElseAction.member3.scalar32'),
+                    (1, 'IfElseAction.member4.byte'),
+                ]
+                prefix_rows = []
+                next_field = None
+                for field_width, kind in prefix_fields:
+                    if field_width > len(raw) - position:
+                        next_field = {'offset': position, 'kind': kind,
+                                      'expectedBytes': field_width,
+                                      'remainingBytes': len(raw) - position}
+                        break
+                    prefix_rows.append({'start': position,
+                                        'end': position + field_width,
+                                        'kind': kind})
+                    position += field_width
+                candidate_ranges.extend(prefix_rows)
+                candidate_cursor = position
+                if next_field is not None:
+                    status = 'truncated-if-else-fixed-prefix'
+                    failure = {'category': 'truncated', **next_field}
+                else:
+                    status = 'stopped-before-if-else-sequence-call'
+                    prefix_stop = {
+                        'tag': tag, 'start': start, 'end': position,
+                        'memberHeader': 8,
+                        'sourceReadWidthsAfterHeader': [1, 4, 4, 4, 1],
+                        'nextSourceReadType': 'Beyond.Gameplay.Core.SequenceActionData',
+                        'nextSourceReadOffset': position,
+                        'nextSourceReadConsumed': False,
+                        'consumedUnionRecord': False,
+                        'classification': 'candidate-static-reader-prefix; provider unobserved',
+                    }
+        else:
+            reader = buff_action_readers.get(tag)
+            if len(tag_routes) == 1 and reader is not None:
+                union_evidence = skilldata_action_union_static_reader_evidence(
+                    tag, reader, buff_routes,
+                    gameassembly_image_base=gameassembly_image_base, source=source)
+                status = 'stopped-before-action-without-bounded-prefix-contract'
+            elif tag_routes:
+                status = 'stopped-before-action-without-current-reader'
+            else:
+                status = 'stopped-at-unknown-action-tag'
+
+    candidate_ranges.sort(key=lambda row: (row['start'], row['end']))
+    range_cursor = 10
+    for index, span in enumerate(candidate_ranges):
+        if (type(span.get('start')) is not int or type(span.get('end')) is not int or
+                span['start'] != range_cursor or span['end'] <= span['start'] or
+                span['end'] > witness['hardLimit']):
+            raise ContextError(source, range_cursor,
+                               f'timeline candidate byteRanges[{index}] contiguous from byte 10',
+                               span)
+        range_cursor = span['end']
+    require(range_cursor, candidate_cursor, source, candidate_cursor)
+    if status == 'stopped-at-unknown-action-tag':
+        require(witness['firstActionUnionTagPeekOnly'].get('consumed'), False,
+                source, candidate_cursor)
+        require(candidate_cursor, witness['firstActionUnionTagPeekOnly']['offset'],
+                source, candidate_cursor)
+
+    return {
+        'status': 'conditional-static-reader-alignment',
+        'inputSetSha256': input_set,
+        'logicalFileIdentity': witness.get('logicalFileIdentity'),
+        'logicalSha256': witness.get('logicalSha256'),
+        'hardLimit': witness.get('hardLimit'),
+        'authoritativeParserCursor': witness.get('authoritativeParserCursor'),
+        'candidateCursor': candidate_cursor,
+        'timelineActionsListCount': witness.get('timelineActionsListCount'),
+        'firstSequenceActionDataCount': witness.get('firstSequenceActionDataCount'),
+        'typedPrefixOwnershipCandidate': typed_prefix_ownership,
+        'candidateByteRanges': candidate_ranges,
+        'firstActionUnionTagPeekOnly': witness.get('firstActionUnionTagPeekOnly'),
+        'candidateActionReaderEvidence': union_evidence,
+        'candidateActionPrefixStop': prefix_stop,
+        'candidatePlayAnimationRecordEnd': candidate_play_animation_record_end,
+        'candidatePlayAnimationNestedSequence': candidate_play_animation_nested_sequence,
+        'candidateTimelineContinuation': candidate_timeline_continuation,
+        'candidateTimelineActionDataRecordEnd': candidate_timeline_action_data_record_end,
+        'candidateActionGroupDataRecordEnd': candidate_action_group_data_record_end,
+        'candidateFollowingTimelineActionDataPrefix': candidate_following_timeline_action_prefix,
+        'candidateFollowingTimelineActionDataRecordEnd': (
+            candidate_following_timeline_action_data_record_end),
+        'candidateFollowingPlayAnimationRecordEnd': (
+            candidate_following_play_animation_record_end),
+        'candidateFollowingTimelineContinuation': candidate_following_timeline_continuation,
+        'opaquePayloadByteRanges': candidate_opaque_payload_ranges,
+        'bytePayloadHelperEvidence': candidate_byte_payload_helper_evidence,
+        'candidateStatus': status,
+        'failure': failure,
+        'opaqueByteRanges': ([] if candidate_cursor == witness['hardLimit'] else [{
+            'start': candidate_cursor, 'end': witness['hardLimit'],
+            'kind': 'unconsumed-timeline-actiongroup-and-skilldata-bytes'}]),
+        'exactClosedTimelineActionRecords': 0,
+        'exactClosedActionGroupDataRecords': 0,
+        'wholeSkillDataClassification': 'ambiguous',
+        'wholeSkillDataExactClosedRecords': 0,
+        'runtimeProviderCacheSelection': 'unobserved',
+        'boundary': ('This reader-path alignment is a separate candidate and never changes parserCursor 10. The 0x115 '
+                     'candidate may follow exact-build signed-length byte-payload helpers, its static SequenceActionData '
+                     'null/empty path, and the enclosing sequence tail/startFrame when each current byte fits. Opaque '
+                     'payload content is not decoded; runtime formatter/provider selection remains unobserved. Unknown '
+                     'tags remain at their first byte. No TimelineActionData, ActionGroupData or SkillData parent is '
+                     'counted closed.'),
+    }
+
+
+def skilldata_action_readers_from_locals(local_values, *, source):
+    """Collect only current native action readers backed by matching contracts."""
+    readers = {}
+    for variable_name, reader in local_values.items():
+        variable_match = re.fullmatch(r'buff_([0-9a-f]+)', variable_name)
+        if variable_match is None or not isinstance(reader, dict):
+            continue
+        contract_value = reader.get('contractPath')
+        if not isinstance(contract_value, str) or not contract_value:
+            continue
+        contract_path = Path(contract_value).resolve()
+        contract_match = re.fullmatch(r'buff_([0-9a-f]+)_native\.json',
+                                      contract_path.name, flags=re.IGNORECASE)
+        if contract_match is None:
+            continue
+        tag = int(variable_match.group(1), 16)
+        require(int(contract_match.group(1), 16), tag, source, tag)
+        expected_path = Path(__file__).with_name(
+            f'buff_{tag:02x}_native.json').resolve()
+        require(contract_path, expected_path, source, tag)
+        if not contract_path.is_file():
+            raise ContextError(source, tag, 'current selected action reader contract file',
+                               str(contract_path))
+        contract_sha = hashlib.sha256(contract_path.read_bytes()).hexdigest().upper()
+        require(reader.get('contractSha256'), contract_sha, source, tag)
+        if tag in readers:
+            raise ContextError(source, tag, 'one selected native action reader per tag',
+                               [variable_name, readers[tag]['variableName']])
+        reader = dict(reader)
+        reader['variableName'] = variable_name
+        readers[tag] = reader
+    return readers
+
+
+def skilldata_action_union_static_reader_evidence(tag, reader, buff_routes, *,
+                                                   gameassembly_image_base,
+                                                   source):
+    """Join one sample tag to its registered wrapper and exact current reader body."""
+    if not isinstance(reader, dict):
+        raise ContextError(source, tag, 'hash-pinned native reader for consumed action tag',
+                           type(reader).__name__)
+    route_rows = buff_routes.get('rows') if isinstance(buff_routes, dict) else None
+    if not isinstance(route_rows, list):
+        raise ContextError(source, tag, 'current AbilityActionData union route rows', route_rows)
+    matching_routes = [row for row in route_rows if row.get('tag') == tag]
+    if len(matching_routes) != 1:
+        raise ContextError(source, tag, f'exactly one current route for tag {tag:#x}',
+                           len(matching_routes))
+    route = matching_routes[0]
+    operands = route.get('operands')
+    if not isinstance(operands, list) or not operands:
+        raise ContextError(source, tag, 'registered tag-to-wrapper type-usage operand', operands)
+    operand_rows = []
+    for index, operand in enumerate(operands):
+        if not isinstance(operand, dict):
+            raise ContextError(source, tag, f'route operand {index} object', operand)
+        if (type(operand.get('usageTag')) is not int or
+                type(operand.get('registeredTypeIndex')) is not int):
+            raise ContextError(source, tag, f'route operand {index} exact usage/type indices', operand)
+        operand_rows.append({
+            'usageTag': operand['usageTag'],
+            'registeredTypeIndex': operand['registeredTypeIndex'],
+        })
+
+    expected_contract = Path(__file__).with_name(
+        f'buff_{tag:02x}_native.json').resolve()
+    contract_path = Path(reader.get('contractPath', '')).resolve()
+    require(contract_path, expected_contract, source, tag)
+    if not expected_contract.is_file():
+        raise ContextError(source, tag, 'current selected action reader contract file',
+                           str(expected_contract))
+    contract_sha = hashlib.sha256(expected_contract.read_bytes()).hexdigest().upper()
+    require(reader.get('contractSha256'), contract_sha, source, tag)
+
+    methods = reader.get('methods')
+    if not isinstance(methods, list):
+        raise ContextError(source, tag, 'native action Deserialize module/token rows', methods)
+    selected_methods = [row for row in methods
+                        if row.get('declaringType') == route.get('wrapperName') and
+                        row.get('name') == 'Deserialize']
+    if len(selected_methods) != 1:
+        raise ContextError(source, tag, 'one module/token-joined registered wrapper reader',
+                           len(selected_methods))
+    method = selected_methods[0]
+    require(method.get('image'), 'MemoryPack.Beyond.dll', source, tag)
+    pointer_va = method.get('pointerVa')
+    if type(pointer_va) is not int:
+        raise ContextError(source, tag, 'current root reader native pointer VA', pointer_va)
+    root_rva = pointer_va - gameassembly_image_base
+    code_windows = reader.get('codeWindows')
+    if not isinstance(code_windows, list):
+        raise ContextError(source, tag, 'hash-pinned selected action reader code windows',
+                           code_windows)
+    root_windows = [row for row in code_windows
+                    if isinstance(row, dict) and row.get('startRva') == root_rva]
+    if len(root_windows) != 1:
+        raise ContextError(source, tag,
+                           'one exact reader code window beginning at the registered method pointer',
+                           {'rootRva': root_rva, 'matches': len(root_windows)})
+    root_window = root_windows[0]
+    if (type(root_window.get('endRva')) is not int or
+            root_window['endRva'] <= root_window['startRva'] or
+            not isinstance(root_window.get('sha256'), str) or
+            not re.fullmatch(r'[0-9A-Fa-f]{64}', root_window['sha256'])):
+        raise ContextError(source, tag, 'bounded 64-hex root reader code-window fingerprint',
+                           root_window)
+
+    read_order = reader.get('anonymousReadOrder')
+    if not isinstance(read_order, dict) or not read_order:
+        raise ContextError(source, tag, 'anonymous native member read order', read_order)
+    root_order_key = next(iter(read_order))
+    header_match = (re.search(r'member(\d+)$', root_order_key, flags=re.IGNORECASE)
+                    if isinstance(root_order_key, str) else None)
+    if header_match is None:
+        raise ContextError(source, tag, 'root read-order key ending in its member count',
+                           root_order_key)
+    root_member_count = int(header_match.group(1))
+    root_member_order = read_order[root_order_key]
+    if not isinstance(root_member_order, list):
+        raise ContextError(source, tag, 'root anonymous member read-order list',
+                           root_member_order)
+    return {
+        'tag': tag,
+        'switchTargetRva': route.get('switchTargetRva'),
+        'typeDefinition': route.get('typeDefinition'),
+        'wrapperName': route.get('wrapperName'),
+        'operands': operand_rows,
+        'methodIndex': method.get('methodIndex'),
+        'contractFile': expected_contract.name,
+        'contractSha256': contract_sha,
+        'rootCodeWindow': {
+            'startRva': root_window['startRva'],
+            'endRva': root_window['endRva'],
+            'sha256': root_window['sha256'],
+        },
+        'rootReadOrderKey': root_order_key,
+        'rootMemberCount': root_member_count,
+        'rootAnonymousReadOrder': root_member_order,
+    }
+
+
+def skilldata_action_union_c9_prefix_reader_evidence(reader, buff_routes, *,
+                                                       gameassembly_image_base,
+                                                       source):
+    """Pin only the C9 member-eight scalar prefix before its generic children."""
+    if not isinstance(reader, dict):
+        raise ContextError(source, 0xC9,
+                           'current exact-build IfElse selected-reader evidence',
+                           type(reader).__name__)
+    route_rows = buff_routes.get('rows') if isinstance(buff_routes, dict) else None
+    if not isinstance(route_rows, list):
+        raise ContextError(source, 0xC9, 'current AbilityActionData union route rows',
+                           route_rows)
+    matching_routes = [row for row in route_rows if row.get('tag') == 0xC9]
+    if len(matching_routes) != 1:
+        raise ContextError(source, 0xC9, 'one exact current C9 union route',
+                           len(matching_routes))
+    route = matching_routes[0]
+    wrapper = ('Beyond.MemoryPack.Beyond_Gameplay_Core_IfElseAction_'
+               'IfElseActionDataForMemoryPack')
+    require(route.get('switchTargetRva'), 0x390DA8A, source, 0xC9)
+    require(route.get('typeDefinition'), 16163, source, 0xC9)
+    require(route.get('wrapperName'), wrapper, source, 0xC9)
+    operands = route.get('operands')
+    if not isinstance(operands, list):
+        raise ContextError(source, 0xC9, 'C9 registered type-usage operands', operands)
+    selected_operands = [row for row in operands
+                         if row.get('usageTag') == 1 and
+                         row.get('registeredTypeIndex') == 106672]
+    require(len(selected_operands), 1, source, 0xC9)
+
+    methods = reader.get('methods')
+    if not isinstance(methods, list):
+        raise ContextError(source, 0xC9, 'IfElse selected reader method rows', methods)
+    selected_methods = [row for row in methods
+                        if row.get('methodIndex') == 120613 and
+                        row.get('declaringType') == wrapper and
+                        row.get('name') == 'Deserialize']
+    if len(selected_methods) != 1:
+        raise ContextError(source, 0xC9,
+                           'one token/module-joined IfElse root Deserialize method',
+                           len(selected_methods))
+    method = selected_methods[0]
+    require(method.get('image'), 'MemoryPack.Beyond.dll', source, 0xC9)
+    pointer_va = method.get('pointerVa')
+    if type(pointer_va) is not int:
+        raise ContextError(source, 0xC9, 'exact IfElse root reader pointer VA', pointer_va)
+    root_rva = pointer_va - gameassembly_image_base
+    require(root_rva, 0x3774060, source, 0xC9)
+    root_window = reader.get('rootCodeWindow')
+    if not isinstance(root_window, dict):
+        raise ContextError(source, 0xC9, 'hash-pinned complete IfElse reader code window',
+                           root_window)
+    require((root_window.get('startRva'), root_window.get('endRva'),
+             root_window.get('sha256')),
+            (0x3774060, 0x37742A8,
+             'AC1FF978FEF71639E74980B43AE00D9746518A9DD94B41772F2867963A596ED8'),
+            source, 0xC9)
+
+    expected_windows = {
+        0x3774093:
+            '837B30010F8C089A6B01488B43500FB6288B733083EE010F880B9A6B0148FF4350FF4340FF43448973304080FDFF0F8482010000',
+        0x37740FA: '4080FD080F85D1996B01',
+    }
+    windows = reader.get('windows')
+    if not isinstance(windows, list):
+        raise ContextError(source, 0xC9, 'selected IfElse reader instruction windows', windows)
+    window_evidence = []
+    for rva, expected_hex in expected_windows.items():
+        matches = [row for row in windows if row.get('rva') == rva]
+        if len(matches) != 1:
+            raise ContextError(source, rva, 'one exact selected IfElse normal-path window',
+                               len(matches))
+        actual_hex = matches[0].get('rawHex')
+        require(actual_hex, expected_hex, source, rva)
+        raw_window = bytes.fromhex(actual_hex)
+        window_evidence.append({
+            'startRva': rva,
+            'endRva': rva + len(raw_window),
+            'byteLength': len(raw_window),
+            'sha256': hashlib.sha256(raw_window).hexdigest().upper(),
+            'rawHex': actual_hex,
+        })
+
+    expected_calls = [
+        (0x377410A, 0x2CA88C0, 1),
+        (0x3774135, 0x2CA86B0, 4),
+        (0x3774159, 0x2CA86B0, 4),
+        (0x377417D, 0x2CA86B0, 4),
+        (0x37741A1, 0x2CA88C0, 1),
+        (0x37741CA, 0x2DA5C90, None),
+        (0x37741F3, 0x2DA5C90, None),
+        (0x377421C, 0x2DA5C90, None),
+    ]
+    calls = reader.get('orderedCalls')
+    if not isinstance(calls, list):
+        raise ContextError(source, 0xC9, 'selected IfElse ordered source-call rows', calls)
+    actual_calls = [(row.get('rva'), row.get('targetRva'),
+                     row.get('fastSerializedWidth')) for row in calls]
+    require(actual_calls, expected_calls, source, 0x377410A)
+
+    expected_nested_operand_rvas = [0x37741BD, 0x37741E6, 0x377420F]
+    nested_operands = reader.get('nestedOperands')
+    if not isinstance(nested_operands, list):
+        raise ContextError(source, 0xC9, 'three exact nested generic type-usage rows',
+                           nested_operands)
+    require([row.get('rva') for row in nested_operands],
+            expected_nested_operand_rvas, source, 0xC9)
+    require(len({row.get('cellVa') for row in nested_operands}), 1, source, 0xC9)
+    require(len({row.get('usageRawHex') for row in nested_operands}), 1, source, 0xC9)
+    require(reader.get('nestedMethodSpecIndex'), 619962, source, 0xC9)
+    require(reader.get('nestedTypeDefinition'), 9202, source, 0xC9)
+    require(reader.get('nestedTypeName'),
+            'Beyond.Gameplay.Core.SequenceActionData', source, 0xC9)
+    instantiation = reader.get('nestedInstantiation')
+    if not isinstance(instantiation, dict):
+        raise ContextError(source, 0xC9,
+                           'exact nested SequenceActionData type instantiation',
+                           instantiation)
+    arguments = instantiation.get('arguments')
+    if not isinstance(arguments, (list, tuple)) or len(arguments) != 1:
+        raise ContextError(source, 0xC9, 'one selected SequenceActionData type argument',
+                           arguments)
+    require(arguments[0].get('raw_type_record_hex'),
+            'F2230000000000000000120000000000', source, 0xC9)
+
+    return {
+        'tag': 0xC9,
+        'switchTargetRva': route['switchTargetRva'],
+        'typeDefinition': route['typeDefinition'],
+        'wrapperName': wrapper,
+        'registeredTypeIndex': 106672,
+        'methodIndex': method['methodIndex'],
+        'rootMethodRva': root_rva,
+        'rootCodeWindow': root_window,
+        'memberHeader': 8,
+        'prefixSourceReadWidthsAfterHeader': [1, 4, 4, 4, 1],
+        'prefixByteLengthIncludingTagAndMemberHeader': 16,
+        'codeWindows': window_evidence,
+        'nestedSequenceMethodSpecIndex': reader['nestedMethodSpecIndex'],
+        'nestedSequenceTypeDefinition': reader['nestedTypeDefinition'],
+        'nestedSequenceTypeName': reader['nestedTypeName'],
+        'verifiedSharedHelperReads': [
+            {'callInstructionRva': rva, 'targetRva': target,
+             'fastSerializedWidth': width}
+            for rva, target, width in expected_calls[:5]],
+        'nestedSequenceCallSites': [
+            {'rva': rva, 'targetRva': target}
+            for rva, target, width in expected_calls[5:]],
+        'providerSelection': 'unobserved',
+        'boundary': ('The current C9 route selects the exact IfElse root reader. Its selected member-eight '
+                     'normal path reads a one-byte member header, widths 1/4/4/4/1, then makes three '
+                     'generic calls whose MethodSpec type argument is SequenceActionData. This evidence '
+                     'ends before the first generic child call; it does not establish which runtime '
+                     'formatter/provider supplies that child reader or close the C9 union.'),
+    }
+
+
+def skilldata_actiongroup_c9_nested_sequence_candidate_replay(
+        witness, raw, c9_prefix_reader, sequence_reader, buff_action_readers,
+        buff_routes, *, source, gameassembly_image_base=0x180000000,
+        candidate_limit=None):
+    """Keep a bounded C9->Sequence replay explicitly separate from the parser cursor."""
+    if not isinstance(witness, dict) or not isinstance(raw, bytes):
+        raise ContextError(source, 0, 'current SkillData prefix witness and raw bytes',
+                           [type(witness).__name__, type(raw).__name__])
+    if not all(isinstance(value, dict) for value in
+               (c9_prefix_reader, sequence_reader, buff_routes)):
+        raise ContextError(source, 0,
+                           'C9, SequenceActionData and action-route static evidence objects',
+                           [type(c9_prefix_reader).__name__, type(sequence_reader).__name__,
+                            type(buff_routes).__name__])
+    if not isinstance(buff_action_readers, dict) or any(
+            type(tag) is not int or not isinstance(reader, dict)
+            for tag, reader in buff_action_readers.items()):
+        raise ContextError(source, 0, 'current tag-to-native action reader map',
+                           type(buff_action_readers).__name__)
+
+    input_set = witness.get('inputSetSha256')
+    if not isinstance(input_set, str) or not re.fullmatch(r'[0-9A-Fa-f]{64}', input_set):
+        raise ContextError(source, 0, 'current SkillData inputSetSha256', input_set)
+    logical_path = witness.get('logicalFileIdentity')
+    if not isinstance(logical_path, str) or not logical_path.startswith('Data/Json/SkillData/'):
+        raise ContextError(source, 0, 'logical SkillData file identity', logical_path)
+    logical_sha = hashlib.sha256(raw).hexdigest().upper()
+    require(witness.get('logicalSha256'), logical_sha, source, 0)
+    hard_limit = witness.get('hardLimit')
+    require(hard_limit, len(raw), source, 0)
+    require(witness.get('status'), 'stopped-after-verified-action-prefix', source, 0)
+    prefix = witness.get('actionUnionPrefixStop')
+    if not isinstance(prefix, dict):
+        raise ContextError(source, witness.get('parserCursor', 0),
+                           'C9 structural-prefix witness', prefix)
+    prefix_start = prefix.get('start')
+    prefix_end = prefix.get('end')
+    if (type(prefix_start) is not int or type(prefix_end) is not int or
+            prefix_start < 0 or prefix_end <= prefix_start or prefix_end > hard_limit):
+        raise ContextError(source, 0, 'C9 prefix range within current hardLimit',
+                           [prefix_start, prefix_end, hard_limit])
+    require(prefix.get('tag'), 0xC9, source, prefix_start if type(prefix_start) is int else 0)
+    require(prefix.get('memberHeader'), 8, source,
+            prefix_start + 1 if type(prefix_start) is int else 0)
+    require(prefix.get('sourceReadWidthsAfterHeader'), [1, 4, 4, 4, 1], source,
+            prefix_start if type(prefix_start) is int else 0)
+    require(prefix_end - prefix_start, 16, source,
+            prefix_start if type(prefix_start) is int else 0)
+    require(witness.get('parserCursor'), prefix_end, source,
+            prefix_end if type(prefix_end) is int else 0)
+    require(prefix.get('consumedUnionRecord'), False, source,
+            prefix_start if type(prefix_start) is int else 0)
+    require(prefix.get('nextSourceReadType'),
+            'Beyond.Gameplay.Core.SequenceActionData', source, prefix_end)
+    require(prefix.get('nextSourceReadOffset'), prefix_end, source, prefix_end)
+    require(prefix.get('nextSourceReadConsumed'), False, source, prefix_end)
+    require(prefix.get('remainingBytesOpaque'), True, source, prefix_end)
+    require(c9_prefix_reader.get('tag'), 0xC9, source, prefix_start)
+    require(c9_prefix_reader.get('memberHeader'), 8, source, prefix_start + 1)
+    require(c9_prefix_reader.get('prefixSourceReadWidthsAfterHeader'),
+            [1, 4, 4, 4, 1], source, prefix_start)
+    require(c9_prefix_reader.get('prefixByteLengthIncludingTagAndMemberHeader'),
+            16, source, prefix_start)
+    require(c9_prefix_reader.get('nestedSequenceMethodSpecIndex'), 619962, source, prefix_start)
+    require(c9_prefix_reader.get('nestedSequenceTypeDefinition'), 9202, source, prefix_start)
+    require(c9_prefix_reader.get('nestedSequenceTypeName'),
+            'Beyond.Gameplay.Core.SequenceActionData', source, prefix_start)
+    require(c9_prefix_reader.get('providerSelection'), 'unobserved', source, prefix_start)
+    c9_root = c9_prefix_reader.get('rootCodeWindow')
+    require((c9_root.get('startRva'), c9_root.get('endRva'), c9_root.get('sha256'))
+            if isinstance(c9_root, dict) else None,
+            (0x3774060, 0x37742A8,
+             'AC1FF978FEF71639E74980B43AE00D9746518A9DD94B41772F2867963A596ED8'),
+            source, prefix_start)
+    expected_call_sites = [
+        {'rva': 0x37741CA, 'targetRva': 0x2DA5C90},
+        {'rva': 0x37741F3, 'targetRva': 0x2DA5C90},
+        {'rva': 0x377421C, 'targetRva': 0x2DA5C90},
+    ]
+    require(c9_prefix_reader.get('nestedSequenceCallSites'), expected_call_sites,
+            source, prefix_start)
+
+    sequence_methods = sequence_reader.get('methods')
+    if not isinstance(sequence_methods, list):
+        raise ContextError(source, prefix_end, 'SequenceActionData native method rows',
+                           sequence_methods)
+    selected_sequence_methods = [row for row in sequence_methods
+                                 if isinstance(row, dict) and
+                                 row.get('methodIndex') == 104346 and
+                                 row.get('declaringType') ==
+                                 'Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack' and
+                                 row.get('name') == 'Deserialize' and
+                                 row.get('image') == 'MemoryPack.Beyond.dll']
+    if len(selected_sequence_methods) != 1:
+        raise ContextError(source, prefix_end,
+                           'one module/token-joined SequenceActionData root reader',
+                           len(selected_sequence_methods))
+    sequence_method = selected_sequence_methods[0]
+    if type(sequence_method.get('pointerVa')) is not int:
+        raise ContextError(source, prefix_end,
+                           'SequenceActionData root reader pointer VA', sequence_method)
+    sequence_root_rva = sequence_method['pointerVa'] - gameassembly_image_base
+    require(sequence_root_rva, 0x39C6AA0, source, prefix_end)
+    sequence_root = sequence_reader.get('rootCodeWindow')
+    require((sequence_root.get('startRva'), sequence_root.get('endRva'),
+             sequence_root.get('sha256')) if isinstance(sequence_root, dict) else None,
+            (0x39C6AA0, 0x39C6FA7,
+             '6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90'),
+            source, prefix_end)
+
+    if candidate_limit is None:
+        candidate_limit = hard_limit
+    if (type(candidate_limit) is not int or
+            not prefix_end <= candidate_limit <= hard_limit):
+        raise ContextError(source, prefix_end,
+                           'candidateLimit within [C9 prefix end, current hardLimit]',
+                           candidate_limit)
+
+    from scripts.game_data.memorypack.buff_actions import FrameError, Reader, Unsupported
+
+    class GuardedSequenceReader(Reader):
+        def action(self, depth):
+            start = self.pos
+            lead = self.peek()
+            width = 3 if lead == 0xFA else 1
+            if width > self.limit - self.pos:
+                raise FrameError(self.source, self.pos, {'bytes': width},
+                                 {'remaining': self.limit - self.pos}, 'truncated')
+            tag = struct.unpack_from('<H', self.data, self.pos + 1)[0] if width == 3 else lead
+            if tag != 0xFF and tag not in buff_action_readers:
+                raise Unsupported(self.source, start,
+                                  'current selected native action-reader contract for nested tag',
+                                  tag, 'union-tag')
+            if tag != 0xFF:
+                native_reader = buff_action_readers[tag]
+                native_evidence = skilldata_action_union_static_reader_evidence(
+                    tag, native_reader, buff_routes,
+                    gameassembly_image_base=gameassembly_image_base,
+                    source=self.source)
+                action_reader_evidence_by_tag.setdefault(tag, native_evidence)
+                header_offset = start + width
+                if (header_offset < self.limit and
+                        self.data[header_offset] != 0xFF and
+                        self.data[header_offset] != native_evidence['rootMemberCount']):
+                    raise Unsupported(
+                        self.source, start,
+                        {'nativeReaderMemberCount': native_evidence['rootMemberCount'],
+                         'firstUnconsumedByte': start},
+                        {'tag': tag, 'memberHeaderOffset': header_offset,
+                         'memberHeaderValue': self.data[header_offset]},
+                        'native-header')
+            return super().action(depth)
+
+    reader = GuardedSequenceReader(raw, source, limit=candidate_limit)
+    reader.pos = prefix_end
+    candidate_sequence_ranges = []
+    candidate_calls = []
+    candidate_action_ranges = []
+    action_reader_evidence_by_tag = {}
+    failure = None
+    for call_index, call_site in enumerate(expected_call_sites):
+        start = reader.pos
+        first_range_index = len(reader.ranges)
+        first_record_index = len(reader.records)
+        call_error = None
+        try:
+            reader.sequence(depth=0)
+        except FrameError as exc:
+            diagnostic = getattr(exc, 'diagnostic', None)
+            if not isinstance(diagnostic, dict):
+                raise
+            call_error = diagnostic
+            failure = diagnostic
+
+        end = reader.pos
+        new_ranges = [dict(row) for row in reader.ranges[first_range_index:]]
+        range_cursor = start
+        for range_index, byte_range in enumerate(new_ranges):
+            if (type(byte_range.get('start')) is not int or
+                    type(byte_range.get('end')) is not int or
+                    byte_range['start'] != range_cursor or
+                    byte_range['end'] <= range_cursor or byte_range['end'] > end):
+                raise ContextError(source, range_cursor,
+                                   f'candidate call {call_index} byteRanges[{range_index}] contiguous',
+                                   byte_range)
+            range_cursor = byte_range['end']
+        require(range_cursor, end, source, end)
+
+        new_records = reader.records[first_record_index:]
+        for record in new_records:
+            if record.get('kind') != 'union':
+                continue
+            tag = record.get('tag')
+            union_start, union_end = record.get('start'), record.get('end')
+            if (type(tag) is not int or type(union_start) is not int or
+                    type(union_end) is not int or
+                    not start <= union_start < union_end <= end):
+                raise ContextError(source, start,
+                                   'candidate child union range contained within attempted SequenceActionData call',
+                                   record)
+            lead = raw[union_start]
+            tag_width = 3 if lead == 0xFA else 1
+            if tag_width == 3:
+                actual_tag = struct.unpack_from('<H', raw, union_start + 1)[0]
+            else:
+                actual_tag = lead
+            require(actual_tag, tag, source, union_start)
+            if tag == 0xFF:
+                candidate_action_ranges.append({
+                    'tag': tag, 'start': union_start, 'end': union_end,
+                    'sequenceCallIndex': call_index,
+                    'memberHeaderValue': None,
+                    'nativeActionReaderEvidence': None,
+                    'classification': 'candidate-only-null-action-range',
+                })
+                continue
+            native_reader = buff_action_readers.get(tag)
+            if not isinstance(native_reader, dict):
+                raise ContextError(source, union_start,
+                                   'native action-reader contract for completed candidate child tag', tag)
+            native_evidence = skilldata_action_union_static_reader_evidence(
+                tag, native_reader, buff_routes,
+                gameassembly_image_base=gameassembly_image_base, source=source)
+            header_offset = union_start + tag_width
+            if header_offset >= union_end:
+                raise ContextError(source, header_offset,
+                                   'candidate non-null child contains its member header',
+                                   [union_start, union_end, tag_width])
+            member_header = raw[header_offset]
+            if member_header != 0xFF:
+                require(member_header, native_evidence['rootMemberCount'], source,
+                        header_offset)
+            action_reader_evidence_by_tag.setdefault(tag, native_evidence)
+            candidate_action_ranges.append({
+                'tag': tag, 'start': union_start, 'end': union_end,
+                'sequenceCallIndex': call_index,
+                'memberHeaderValue': member_header,
+                'nativeActionReaderEvidence': native_evidence,
+                'classification': 'candidate-only-static-reader-child-range',
+            })
+
+        matching_outer_sequences = [row for row in new_records
+                                    if row.get('kind') == 'sequence' and
+                                    row.get('start') == start and row.get('end') == end]
+        complete = call_error is None
+        if complete:
+            require(len(matching_outer_sequences), 1, source, start)
+            candidate_range = {
+                'start': start,
+                'end': end,
+                'kind': 'candidate-SequenceActionData-call-range',
+                'callSiteRva': call_site['rva'],
+                'byteRanges': new_ranges,
+                'completedChildActionTags': [
+                    row['tag'] for row in candidate_action_ranges
+                    if row['sequenceCallIndex'] == call_index],
+                'classification': 'candidate-only; runtime provider/cache selection unobserved',
+            }
+            candidate_sequence_ranges.append(candidate_range)
+            call_status = 'candidate-sequence-range-replayed'
+        else:
+            require(matching_outer_sequences, [], source, start)
+            call_status = call_error.get('category', 'unsupported')
+            call_row = {
+                'callIndex': call_index,
+                'callSiteRva': call_site['rva'],
+                'start': start,
+                'candidateCursor': end,
+                'completed': False,
+                'status': call_status,
+                'diagnostic': call_error,
+                'consumedByteRanges': new_ranges,
+            }
+            if call_status in ('union-tag', 'native-header') and end < candidate_limit:
+                lead = raw[end]
+                width = 3 if lead == 0xFA else 1
+                peeked_tag = (struct.unpack_from('<H', raw, end + 1)[0]
+                              if width == 3 and candidate_limit - end >= 3 else
+                              lead if width == 1 else None)
+                call_row['firstUnconsumedActionUnionByte'] = {
+                    'offset': end,
+                    'firstByte': lead,
+                    'decodedTag': peeked_tag,
+                    'consumed': False,
+                }
+                if call_status == 'native-header':
+                    call_row['nativeReaderHeaderConflict'] = call_error.get('actual')
+            candidate_calls.append(call_row)
+            break
+        candidate_calls.append({
+            'callIndex': call_index,
+            'callSiteRva': call_site['rva'],
+            'start': start,
+            'end': end,
+            'completed': True,
+            'status': call_status,
+            'candidateRange': candidate_range,
+        })
+
+    candidate_cursor = reader.pos
+    overall_ranges = [dict(row) for row in reader.ranges]
+    range_cursor = prefix_end
+    for range_index, byte_range in enumerate(overall_ranges):
+        if (type(byte_range.get('start')) is not int or
+                type(byte_range.get('end')) is not int or
+                byte_range['start'] != range_cursor or
+                byte_range['end'] <= range_cursor or
+                byte_range['end'] > candidate_cursor):
+            raise ContextError(source, range_cursor,
+                               f'candidateByteRanges[{range_index}] contiguous from C9 prefix cursor',
+                               byte_range)
+        range_cursor = byte_range['end']
+    require(range_cursor, candidate_cursor, source, candidate_cursor)
+    if failure is None:
+        status = 'three-sequence-call-candidates-replayed'
+    elif failure.get('category') == 'union-tag':
+        status = 'stopped-before-first-unverified-nested-action'
+    elif failure.get('category') == 'native-header':
+        status = 'ambiguous-native-reader-header'
+    elif failure.get('category') == 'truncated':
+        status = 'truncated-candidate-sequence'
+    elif failure.get('category') in ('count-bounds', 'member-count', 'malformed'):
+        status = 'malformed-candidate-sequence'
+    else:
+        status = 'unsupported-candidate-sequence'
+    return {
+        'candidateOnly': True,
+        'status': status,
+        'inputSetSha256': input_set,
+        'logicalFileIdentity': logical_path,
+        'logicalSha256': logical_sha,
+        'hardLimit': hard_limit,
+        'candidateLimit': candidate_limit,
+        'candidateStart': prefix_end,
+        'candidateCursor': candidate_cursor,
+        'candidateByteRanges': overall_ranges,
+        'sequenceCallCandidates': candidate_calls,
+        'candidateSequenceRanges': candidate_sequence_ranges,
+        'candidateActionUnionRanges': candidate_action_ranges,
+        'currentActionReaderEvidence': [
+            action_reader_evidence_by_tag[tag]
+            for tag in sorted(action_reader_evidence_by_tag)],
+        'selectedNativeSequenceReader': {
+            'methodIndex': sequence_method['methodIndex'],
+            'image': sequence_method['image'],
+            'rootCodeWindow': sequence_root,
+        },
+        'runtimeProviderCacheSelection': 'unobserved',
+        'authoritativeParserCursor': witness['parserCursor'],
+        'authoritativeParserCursorUnchanged': True,
+        'exactClosedSequenceRecords': 0,
+        'exactClosedC9UnionRecords': 0,
+        'exactClosedActionGroupDataRecords': 0,
+        'exactClosedWholeSkillDataRecords': 0,
+        'failure': failure,
+        'remainingSourceBytesOpaque': [
+            *([] if candidate_cursor >= candidate_limit else [{
+                'start': candidate_cursor,
+                'end': candidate_limit,
+                'kind': 'candidate-replay-remainder-opaque',
+            }]),
+            *([] if candidate_limit >= hard_limit else [{
+                'start': candidate_limit,
+                'end': hard_limit,
+                'kind': 'beyond-candidateLimit-opaque',
+            }]),
+        ],
+        'boundary': ('The three SequenceActionData calls are replayed only as a separate candidate using the '
+                     'current native Sequence root and child-action reader contracts. Runtime provider/cache '
+                     'selection for the C9 generic calls is unobserved. Candidate ranges never advance the '
+                     'authoritative parser cursor and never close the C9 union, AbilityActionMap, parent list, '
+                     'ActionGroupData, or whole SkillData record.'),
     }
 
 
 def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
                                                    ability_map_reader,
                                                    shared_list_reader,
-                                                   sequence_reader, *, source):
+                                                   sequence_reader,
+                                                   buff_d5_reader,
+                                                   buff_d6_reader,
+                                                   buff_routes, *, source,
+                                                   buff_action_readers=None,
+                                                   buff_action_prefixes=None,
+                                                   gameassembly_image_base=0x180000000):
     """Align current ActionGroupData samples with separately audited native readers."""
     if not all(isinstance(value, dict) for value in
                (witness, skilldata_reader, ability_map_reader,
-                shared_list_reader, sequence_reader)):
+                shared_list_reader, sequence_reader, buff_d5_reader,
+                buff_d6_reader, buff_routes)):
         raise ContextError(source, 0,
-                           'sample plus SkillData, AbilityActionMap, List<T> and Sequence static evidence',
+                           'sample plus SkillData, AbilityActionMap, List<T>, Sequence and D5/D6 static evidence',
                            [type(value).__name__ for value in
                             (witness, skilldata_reader, ability_map_reader,
-                             shared_list_reader, sequence_reader)])
+                             shared_list_reader, sequence_reader, buff_d5_reader,
+                             buff_d6_reader, buff_routes)])
+    if buff_action_readers is None:
+        buff_action_readers = {}
+    if not isinstance(buff_action_readers, dict) or any(
+            type(tag) is not int or not isinstance(reader, dict)
+            for tag, reader in buff_action_readers.items()):
+        raise ContextError(source, 0, 'tag-to-current-native-action-reader mapping',
+                           type(buff_action_readers).__name__)
+    if buff_action_prefixes is None:
+        buff_action_prefixes = {}
+    if not isinstance(buff_action_prefixes, dict) or any(
+            type(tag) is not int or not isinstance(evidence, dict)
+            for tag, evidence in buff_action_prefixes.items()):
+        raise ContextError(source, 0, 'tag-to-current-native-action-prefix evidence mapping',
+                           type(buff_action_prefixes).__name__)
+    native_action_readers = {0xD5: buff_d5_reader, 0xD6: buff_d6_reader}
+    native_action_readers.update(buff_action_readers)
     require(skilldata_reader.get('firstSkillDataField', {}).get('fieldName'),
             'actionGroupData', source, 0)
     require(skilldata_reader.get('inputSetSha256'), witness.get('inputSetSha256'), source, 0)
@@ -1861,36 +4710,320 @@ def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
         raise ContextError(source, 0, 'SequenceActionData header/count boundary statement',
                            sequence_reader.get('boundary'))
 
+    expected_action_readers = (
+        (0xD5, buff_d5_reader, 120788,
+         'Beyond.MemoryPack.Beyond_Gameplay_Core_IntResourceHpCheckAction_DataForMemoryPack',
+         16187, 106689, 0x4E67C83, 153753548, 153753943,
+         '24DFDAE1E252056FB43AB54D51BFA7443249A2FFA932B4636ACEA7F01C3EF1EB'),
+        (0xD6, buff_d6_reader, 120799,
+         'Beyond.MemoryPack.Beyond_Gameplay_Core_IntResourceOnHpZeroAction_DataForMemoryPack',
+         16189, 106690, 0x4E67CC6, 153754580, 153754975,
+         '2256CCF5032B30A1906A9830B8D815D491B6963EA04330DA4E67BBE49D399F7F'),
+    )
+    route_rows = buff_routes.get('rows')
+    if not isinstance(route_rows, list):
+        raise ContextError(source, 0, 'current AbilityActionData union route rows', route_rows)
+    action_union_reader_evidence_by_tag = {}
+    for (tag, reader, method_index, wrapper_name, type_definition,
+         usage_index, switch_target, start_rva, end_rva, window_sha) in expected_action_readers:
+        matching_routes = [row for row in route_rows if row.get('tag') == tag]
+        if len(matching_routes) != 1:
+            raise ContextError(source, tag, f'exactly one current route for D5/D6 tag {tag:#x}',
+                               len(matching_routes))
+        route = matching_routes[0]
+        require(route.get('switchTargetRva'), switch_target, source, tag)
+        require(route.get('typeDefinition'), type_definition, source, tag)
+        require(route.get('wrapperName'), wrapper_name, source, tag)
+        operands = route.get('operands')
+        if not isinstance(operands, list) or len(operands) != 1:
+            raise ContextError(source, tag, 'one exact tag-to-wrapper type-usage operand', operands)
+        require((operands[0].get('usageTag'), operands[0].get('registeredTypeIndex')),
+                (1, usage_index), source, tag)
+
+        methods = reader.get('methods')
+        if not isinstance(methods, list):
+            raise ContextError(source, tag, 'selected D5/D6 Deserialize module/token row', methods)
+        selected_methods = [row for row in methods if row.get('methodIndex') == method_index]
+        if len(selected_methods) != 1:
+            raise ContextError(source, tag, f'exactly one method row {method_index}', len(selected_methods))
+        method = selected_methods[0]
+        require((method.get('declaringType'), method.get('name'), method.get('image')),
+                (wrapper_name, 'Deserialize', 'MemoryPack.Beyond.dll'), source, tag)
+        require(reader.get('anonymousReadOrder', {}).get('member4'),
+                ['boolean', 'scalar32', 'scalar32', 'scalar32'], source, tag)
+        code_windows = reader.get('codeWindows')
+        if not isinstance(code_windows, list):
+            raise ContextError(source, tag, 'selected D5/D6 native code windows', code_windows)
+        if not any((row.get('startRva'), row.get('endRva'), row.get('sha256')) ==
+                   (start_rva, end_rva, window_sha) for row in code_windows):
+            raise ContextError(source, tag,
+                               'hash-pinned selected D5/D6 reader positive path through RET',
+                               code_windows)
+        action_union_reader_evidence_by_tag[tag] = {
+            'tag': tag,
+            'switchTargetRva': switch_target,
+            'wrapperName': wrapper_name,
+            'registeredTypeIndex': usage_index,
+            'methodIndex': method_index,
+            'codeWindow': {'startRva': start_rva, 'endRva': end_rva,
+                           'sha256': window_sha},
+            'anonymousReadOrder': reader['anonymousReadOrder']['member4'],
+            'contractSha256': reader.get('contractSha256'),
+        }
+
     require(witness.get('wholeSkillDataClassification'), 'ambiguous', source, 0)
     require(witness.get('wholeSkillDataExactClosedRecords'), 0, source, 0)
     count_fields = {row['offset']: row['signedI32']
                     for row in witness.get('countI32Fields', [])}
     map_records = [row for row in witness.get('completedNestedRecords', [])
                    if row.get('kind') == 'anonymous-ability-action-map']
+    all_union_records = sorted(
+        [row for row in witness.get('completedNestedRecords', [])
+         if row.get('kind') == 'union'], key=lambda row: row['start'])
+    non_null_union_records = [row for row in all_union_records
+                              if row.get('tag') != 0xFF]
+    d5d6_union_records = [row for row in non_null_union_records
+                          if row.get('tag') in (0xD5, 0xD6)]
+    observed_union_headers = witness.get('completedActionUnionHeaderObservations')
+    if not isinstance(observed_union_headers, list):
+        raise ContextError(source, witness.get('parserCursor'),
+                           'completed action union header observations',
+                           observed_union_headers)
+    native_reader_evidence_by_tag = {}
+    for record in non_null_union_records:
+        tag = record.get('tag')
+        if type(tag) is not int:
+            raise ContextError(source, record.get('start', 0),
+                               'completed action union with integer tag', record)
+        reader = native_action_readers.get(tag)
+        if reader is None:
+            raise ContextError(source, record.get('start', 0),
+                               'current selected native reader for every consumed non-null tag',
+                               tag)
+        evidence = skilldata_action_union_static_reader_evidence(
+            tag, reader, buff_routes,
+            gameassembly_image_base=gameassembly_image_base, source=source)
+        native_reader_evidence_by_tag[tag] = evidence
+
+    observed_ids = set()
+    for observation in observed_union_headers:
+        if not isinstance(observation, dict):
+            raise ContextError(source, witness.get('parserCursor'),
+                               'action union header observation object', observation)
+        record = next((row for row in non_null_union_records
+                       if (row.get('tag'), row.get('start'), row.get('end')) ==
+                       (observation.get('tag'), observation.get('start'), observation.get('end'))),
+                      None)
+        if record is None:
+            raise ContextError(source, observation.get('start', 0),
+                               'header observation belongs to a completed union range',
+                               observation)
+        observation_id = (observation['tag'], observation['start'], observation['end'])
+        if observation_id in observed_ids:
+            raise ContextError(source, observation['start'],
+                               'one member-header observation per completed union',
+                               observation)
+        observed_ids.add(observation_id)
+        reader_evidence = native_reader_evidence_by_tag[observation['tag']]
+        require(observation.get('memberHeaderValue'),
+                reader_evidence['rootMemberCount'], source,
+                observation.get('memberHeaderOffset', observation['start']))
+        tag_width = observation.get('tagWidth')
+        expected_tag_width = (3 if observation.get('tagPrefixByte') == 0xFA else 1)
+        require(tag_width, expected_tag_width, source, observation['start'])
+        tag_encoding_hex = observation.get('tagEncodingHex')
+        if not isinstance(tag_encoding_hex, str):
+            raise ContextError(source, observation['start'],
+                               'raw one-byte or FA-prefixed extended tag encoding',
+                               tag_encoding_hex)
+        try:
+            tag_encoding = bytes.fromhex(tag_encoding_hex)
+        except ValueError as exc:
+            raise ContextError(source, observation['start'],
+                               'hexadecimal action tag encoding', tag_encoding_hex) from exc
+        require(len(tag_encoding), expected_tag_width, source, observation['start'])
+        require(tag_encoding[0],
+                0xFA if expected_tag_width == 3 else observation['tag'],
+                source, observation['start'])
+        decoded_tag = (struct.unpack_from('<H', tag_encoding, 1)[0]
+                       if expected_tag_width == 3 else tag_encoding[0])
+        require(decoded_tag, observation['tag'], source, observation['start'])
+        require(observation.get('memberHeaderOffset'),
+                observation['start'] + tag_width, source, observation['start'])
+    for record in non_null_union_records:
+        record_id = (record.get('tag'), record.get('start'), record.get('end'))
+        if record_id not in observed_ids:
+            tag_width = 3 if record['tag'] == 0xFA or record['tag'] > 0xFF else 1
+            require(record.get('end') - record.get('start'), tag_width + 1,
+                    source, record.get('start', 0))
+
+    for tag in (0xD5, 0xD6):
+        if tag in native_reader_evidence_by_tag:
+            native_reader_evidence_by_tag[tag].update(
+                action_union_reader_evidence_by_tag[tag])
+    action_union_reader_evidence = [
+        native_reader_evidence_by_tag[tag]
+        for tag in dict.fromkeys(row['tag'] for row in non_null_union_records)
+    ]
+    action_union_prefix_evidence = []
+
     if witness.get('status') == 'passive-list-consumed-to-conditional-static-end':
-        require(len(map_records), witness.get('passiveEventActionsListCount'), source, 0)
-        require(witness.get('parserCursor'), 15, source, 0)
-        require(count_fields.get(11), 0, source, 11)
         next_count = witness.get('nextMemberCountPeekOnly')
         if not isinstance(next_count, dict):
-            raise ContextError(source, 15, 'non-advancing timelineActions count peek', next_count)
+            raise ContextError(source, witness.get('parserCursor'),
+                               'non-advancing timelineActions count peek', next_count)
         require(next_count.get('fieldName'), 'timelineActions.count', source, 15)
-        require(next_count.get('offset'), 15, source, 15)
-        require(next_count.get('signedI32'), 0, source, 15)
         require(next_count.get('consumed'), False, source, 15)
-        expected_disposition = 'first passiveEventActions list reaches its static end; timelineActions remains unread'
+        cursor = witness.get('parserCursor')
+        map_lists = [row for row in witness.get('completedNestedRecords', [])
+                     if row.get('kind') == 'anonymous-ability-action-map-list']
+        require([(row.get('start'), row.get('end')) for row in map_lists],
+                [(2, cursor)], source, 2)
+        require(len(map_records), witness.get('passiveEventActionsListCount'), source, 0)
+        if not non_null_union_records and cursor == 15:
+            require(len(map_records), witness.get('passiveEventActionsListCount'), source, 0)
+            require(count_fields.get(11), 0, source, 11)
+            require(next_count.get('offset'), cursor, source, cursor)
+            require(next_count.get('signedI32'), 0, source, cursor)
+            expected_disposition = (
+                'empty SequenceActionData array branch reaches the conditional passiveEventActions end; '
+                'timelineActions remains unread')
+        elif sorted((row.get('tag'), row.get('start'), row.get('end'))
+                    for row in d5d6_union_records) == [
+                        (0xD5, 20, 35), (0xD6, 51, 66)
+                    ] and len(non_null_union_records) == 2:
+            require([(row.get('tag'), row.get('start'), row.get('end'))
+                     for row in d5d6_union_records],
+                    [(0xD5, 20, 35), (0xD6, 51, 66)], source, 20)
+            require(cursor, 68, source, 68)
+            require(witness.get('passiveEventActionsListCount'), 2, source, 2)
+            require(count_fields, {2: 2, 11: 1, 16: 1, 42: 1, 47: 1}, source, 2)
+            require(sorted((row.get('start'), row.get('end')) for row in map_records),
+                    [(6, 37), (37, 68)], source, 6)
+            sequence_records = sorted(
+                [(row.get('start'), row.get('end'))
+                 for row in witness.get('completedNestedRecords', [])
+                 if row.get('kind') == 'sequence'])
+            require(sequence_records, [(15, 37), (46, 68)], source, 15)
+            require(next_count.get('offset'), cursor, source, cursor)
+            require(next_count.get('signedI32'), 0, source, cursor)
+            expected_disposition = (
+                'two D5/D6 child ranges and both SequenceActionData entries reach the conditional '
+                'passiveEventActions list end; timelineActions count is peek-only')
+        else:
+            require(type(cursor) is int and 15 <= cursor <= witness.get('hardLimit'),
+                    True, source, 0)
+            require(next_count.get('offset'), cursor, source, cursor)
+            opaque = witness.get('opaqueByteRanges')
+            expected_opaque = ([] if cursor == witness.get('hardLimit') else [{
+                'start': cursor,
+                'end': witness.get('hardLimit'),
+                'kind': 'unconsumed-actiongroup-and-skilldata-bytes',
+            }])
+            require(opaque, expected_opaque, source, cursor)
+            expected_disposition = (
+                f'{len(non_null_union_records)} non-null child unions align to their selected native readers; '
+                f'{len(map_records)} AbilityActionMap entries reach the conditional passiveEventActions '
+                f'list end at {cursor}; timelineActions remains peek-only')
     elif witness.get('status') == 'stopped-before-first-nonnull-action-union':
-        require(witness.get('parserCursor'), 20, source, 20)
-        require(count_fields.get(11), 1, source, 11)
-        require(count_fields.get(16), 1, source, 16)
+        cursor = witness.get('parserCursor')
         first_union = witness.get('firstUnconsumedActionUnionByte')
         if not isinstance(first_union, dict):
-            raise ContextError(source, 20, 'first unconsumed nested action-union byte', first_union)
-        require(first_union.get('offset'), 20, source, 20)
-        require(first_union.get('firstByte'), 0xD5, source, 20)
-        require(first_union.get('consumed'), False, source, 20)
-        require(len(map_records), 0, source, 20)
-        expected_disposition = 'SequenceActionData prefix ends before its first non-null action tag; parent list remains incomplete'
+            raise ContextError(source, cursor, 'first unconsumed nested action-union byte', first_union)
+        require(first_union.get('offset'), cursor, source, cursor)
+        require(first_union.get('tag') not in native_action_readers, True, source, cursor)
+        require(first_union.get('tag'), witness.get('parserError', {}).get('actual'), source, cursor)
+        require(first_union.get('consumed'), False, source, cursor)
+        require(first_union.get('firstByte') not in (0xFF,), True, source, cursor)
+        parser_error = witness.get('parserError')
+        if not isinstance(parser_error, dict):
+            raise ContextError(source, cursor, 'opaque diagnostic for unverified tag', parser_error)
+        require(parser_error.get('category'), 'opaque-union', source, cursor)
+        require(parser_error.get('offset'), cursor, source, cursor)
+        map_lists = [row for row in witness.get('completedNestedRecords', [])
+                     if row.get('kind') == 'anonymous-ability-action-map-list']
+        require(map_lists, [], source, cursor)
+        for parent_kind in ('anonymous-ability-action-map', 'sequence'):
+            crossing = [row for row in witness.get('completedNestedRecords', [])
+                        if row.get('kind') == parent_kind and
+                        row.get('start', cursor) <= cursor < row.get('end', cursor)]
+            require(crossing, [], source, cursor)
+        require(witness.get('nextMemberCountPeekOnly'), None, source, cursor)
+        require(witness.get('opaqueByteRanges'), [{
+            'start': cursor,
+            'end': witness.get('hardLimit'),
+            'kind': 'unconsumed-actiongroup-and-skilldata-bytes',
+        }], source, cursor)
+        expected_disposition = (
+            'SequenceActionData stops before the first unverified non-null action tag; '
+            'parent list remains incomplete')
+    elif witness.get('status') == 'stopped-after-verified-action-prefix':
+        prefix = witness.get('actionUnionPrefixStop')
+        if not isinstance(prefix, dict):
+            raise ContextError(source, witness.get('parserCursor'),
+                               'bounded C9 action-union prefix-stop witness', prefix)
+        tag = prefix.get('tag')
+        if tag not in buff_action_prefixes:
+            raise ContextError(source, prefix.get('start', 0),
+                               'exact current static reader prefix for consumed action tag', tag)
+        prefix_evidence = buff_action_prefixes[tag]
+        require(tag, prefix_evidence.get('tag'), source, prefix.get('start', 0))
+        require(prefix.get('memberHeader'), prefix_evidence.get('memberHeader'),
+                source, prefix.get('start', 0))
+        require(prefix.get('sourceReadWidthsAfterHeader'),
+                prefix_evidence.get('prefixSourceReadWidthsAfterHeader'),
+                source, prefix.get('start', 0))
+        start = prefix.get('start')
+        cursor = witness.get('parserCursor')
+        require(type(start) is int and type(cursor) is int and cursor > start,
+                True, source, start if type(start) is int else 0)
+        require(cursor - start,
+                prefix_evidence.get('prefixByteLengthIncludingTagAndMemberHeader'),
+                source, start)
+        require(prefix.get('end'), cursor, source, cursor)
+        require(prefix.get('consumedUnionRecord'), False, source, start)
+        require(prefix.get('nextSourceReadType'),
+                prefix_evidence.get('nestedSequenceTypeName'), source, cursor)
+        require(prefix.get('nextSourceReadOffset'), cursor, source, cursor)
+        require(prefix.get('nextSourceReadConsumed'), False, source, cursor)
+        next_lead = prefix.get('nextSourceReadFirstByte')
+        if next_lead not in (None, 3, 0xFF):
+            raise ContextError(source, cursor,
+                               'peeked next SequenceActionData lead is header 3, null FF, or beyond hardLimit',
+                               next_lead)
+        prefix_ranges = [row for row in witness.get('consumedByteRanges', [])
+                         if row.get('start', -1) >= start and
+                         row.get('end', cursor + 1) <= cursor]
+        require([(row.get('start'), row.get('end'), row.get('kind'))
+                 for row in prefix_ranges], [
+                     (start, start + 1, 'union-tag'),
+                     (start + 1, start + 2, 'member-header'),
+                     (start + 2, start + 3, 'anonymous-byte'),
+                     (start + 3, start + 7, 'anonymous-scalar32'),
+                     (start + 7, start + 11, 'anonymous-scalar32'),
+                     (start + 11, start + 15, 'anonymous-scalar32'),
+                     (start + 15, start + 16, 'anonymous-byte'),
+                 ], source, start)
+        require(not any(row.get('kind') == 'union' and row.get('start') == start
+                        for row in witness.get('completedNestedRecords', [])),
+                True, source, start)
+        for parent_kind in ('anonymous-ability-action-map',
+                            'anonymous-ability-action-map-list', 'sequence'):
+            crossing = [row for row in witness.get('completedNestedRecords', [])
+                        if row.get('kind') == parent_kind and
+                        row.get('start', cursor) <= start < row.get('end', start)]
+            require(crossing, [], source, start)
+        require(witness.get('nextMemberCountPeekOnly'), None, source, cursor)
+        require(witness.get('opaqueByteRanges'), ([] if cursor == witness.get('hardLimit') else [{
+            'start': cursor,
+            'end': witness.get('hardLimit'),
+            'kind': 'unconsumed-actiongroup-and-skilldata-bytes',
+        }]), source, cursor)
+        action_union_prefix_evidence.append(prefix_evidence)
+        expected_disposition = (
+            f'C9 tag and member-eight scalar prefix [ {start}, {cursor} ) align with the current '
+            'IfElse reader; stop before its first SequenceActionData generic call, leaving the union '
+            'and enclosing map/list incomplete')
     else:
         raise ContextError(source, 0,
                            'one recognized closed-list or opaque-union ActionGroupData branch',
@@ -1912,15 +5045,26 @@ def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
             'headerCountWindowRva': sequence_header_window[0]['rva'],
             'headerCountWindowRawHex': sequence_header_window[0]['rawHex'],
         },
+        'abilityActionUnionReaderEvidence': action_union_reader_evidence,
+        'verifiedActionUnionReaderTags': [row['tag'] for row in action_union_reader_evidence],
+        'abilityActionUnionPrefixReaderEvidence': action_union_prefix_evidence,
+        'verifiedActionUnionPrefixTags': [row['tag'] for row in action_union_prefix_evidence],
+        'completedActionUnionRanges': [
+            {'tag': row['tag'], 'start': row['start'], 'end': row['end']}
+            for row in non_null_union_records],
+        'completedD5D6UnionRanges': [
+            {'tag': row['tag'], 'start': row['start'], 'end': row['end']}
+            for row in d5d6_union_records],
         'conditionalDisposition': expected_disposition,
         'runtimeProviderCacheSelection': 'unobserved',
         'actionGroupDataExactClosedRecords': 0,
         'wholeSkillDataClassification': 'ambiguous',
         'wholeSkillDataExactClosedRecords': 0,
-        'boundary': ('The raw ActionGroupData passive-action samples align with a separately validated current-build '
-                     'AbilityActionMap reader and SequenceActionData path. This is conditional static-reader evidence; '
-                     'provider/cache selection is unobserved, timelineActions or the parent are not promoted, and '
-                     'non-null action-union payloads remain opaque.'),
+        'boundary': ('The raw ActionGroupData passive-action samples align with current-build registered wrapper '
+                     'routes and hash-pinned action readers, including the observed child member-header counts. '
+                     'Child ranges and passiveEventActions list ends remain conditional static-reader evidence; '
+                     'unknown tags stop at their first byte. Provider/cache selection is unobserved, timelineActions '
+                     'is only peeked, and neither ActionGroupData nor whole SkillData is promoted.'),
     }
 
 
@@ -3637,6 +6781,240 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
             'Beyond.Gameplay.Core.TimelineAction+TimelineActionData', source)
     require(action_group_call['genericType']['typeName'], 'Beyond.Gameplay.Core.ActionGroupData', source)
 
+    # Continue the second ActionGroupData list through the concrete timeline
+    # element reader. These are exact static reader/type joins; formatter and
+    # provider selection for any current VFS file remain unobserved.
+    timeline_action_type = type_index(
+        'Beyond.Gameplay.Core.TimelineAction+TimelineActionData',
+        'Gameplay.Beyond.dll')
+    require(timeline_action_type, 9199, source, timeline_action_type)
+    timeline_action_fields = field_layout(timeline_action_type, {
+        '_startFrame', '_endFrame', '_sequenceActionData', 'forceSyncAnimData',
+    })
+    force_sync_type = type_index(
+        'Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData',
+        'Gameplay.Beyond.dll')
+    require(force_sync_type, 9198, source, force_sync_type)
+    force_sync_fields = field_layout(force_sync_type, {
+        'forceSync', 'montageName', 'targetFrame', 'playbackSpeed',
+    })
+    timeline_field_expectations = (
+        ('_endFrame', 0x14, 'System.Int32'),
+        ('_sequenceActionData', 0x18,
+         'Beyond.Gameplay.Core.SequenceActionData'),
+        ('_startFrame', 0x10, 'System.Int32'),
+        ('forceSyncAnimData', 0x20,
+         'Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData'),
+    )
+    timeline_field_rows = {}
+    for field_name, field_offset, wire_type in timeline_field_expectations:
+        field = timeline_action_fields[field_name]
+        require(field['fieldOffset'], field_offset, source,
+                field['metadataFieldIndex'])
+        identity = field_wire_identity(field_name, field)
+        require(identity['wireType'], wire_type, source,
+                field['metadataFieldIndex'])
+        timeline_field_rows[field_name] = {
+            'typeDefinitionIndex': timeline_action_type,
+            **field,
+            'fieldType': identity,
+        }
+    force_sync_field_expectations = (
+        ('forceSync', 0x10, 'bool'),
+        ('montageName', 0x18, 'System.String'),
+        ('playbackSpeed', 0x24, 'System.Single'),
+        ('targetFrame', 0x20, 'System.Int32'),
+    )
+    force_sync_field_rows = {}
+    for field_name, field_offset, wire_type in force_sync_field_expectations:
+        field = force_sync_fields[field_name]
+        require(field['fieldOffset'], field_offset, source,
+                field['metadataFieldIndex'])
+        identity = field_wire_identity(field_name, field)
+        require(identity['wireType'], wire_type, source,
+                field['metadataFieldIndex'])
+        force_sync_field_rows[field_name] = {
+            'typeDefinitionIndex': force_sync_type,
+            **field,
+            'fieldType': identity,
+        }
+
+    timeline_reader_methods = module_methods(pe, md, modules, image_owners, [
+        (104653,
+         'Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPack',
+         'Deserialize', 0x32CCF70),
+        (104654,
+         'Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPack+'
+         'Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPackFormatter',
+         'Deserialize', 0x32CE8C0),
+        (107909,
+         'Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPack',
+         'Deserialize', 0x32CE4B0),
+        (107910,
+         'Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPack+'
+         'Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPackFormatter',
+         'Deserialize', 0x32CE860),
+    ], source=source, expected_image='MemoryPack.Beyond.dll')
+    timeline_reader_code_windows = []
+    for start_rva, end_rva, expected_sha, role in (
+        (0x32CCF70, 0x32CD277,
+         'CB497F6362D9DA9396D6533F6CC037536FC9499D67848F1E8BBBAC8AA2F03688',
+         'TimelineActionData Deserialize: selected source-read path and bounded failure/return fragments'),
+        (0x32CE4B0, 0x32CE75C,
+         '1FB17BEDE173176E0BC082E7C315267B6FC6F3CE76796DB90A627E9B0E9D7767',
+         'ForceSyncAnimData Deserialize: selected source-read path and bounded failure/return fragments'),
+        (0x32CE860, 0x32CE8C0,
+         '1F6F3F32B14A6DCBB87743E94C1DB14106B3AB3EE17D6C6EBB14F7DB0347A3EB',
+         'ForceSyncAnimData formatter forwarding window'),
+        (0x32CE8C0, 0x32CE920,
+         'D0D022A7D27D843AD4BFFE86FEC8A5FA07037249273A8ECB5AEC0167FEF98F33',
+         'TimelineActionData formatter forwarding window'),
+    ):
+        raw = pe.bytes_at_va(pe.image_base + start_rva, end_rva - start_rva)
+        digest = hashlib.sha256(raw).hexdigest().upper()
+        require(digest, expected_sha, source, start_rva)
+        timeline_reader_code_windows.append({
+            'startRva': start_rva,
+            'endRva': end_rva,
+            'byteLength': end_rva - start_rva,
+            'sha256': digest,
+            'role': role,
+        })
+
+    timeline_sequence_read = call_method_spec(
+        0x32CD07F, 0x32CD089, 428464, 'ReadValue', 0x2DA5C90)
+    require(timeline_sequence_read['index'], 619962, source,
+            timeline_sequence_read['usageVa'])
+    require(timeline_sequence_read['genericType']['typeDefinitionIndex'], 9202,
+            source, timeline_sequence_read['usageVa'])
+    require(timeline_sequence_read['genericType']['typeName'],
+            'Beyond.Gameplay.Core.SequenceActionData', source,
+            timeline_sequence_read['usageVa'])
+    timeline_force_sync_read = call_method_spec(
+        0x32CD16F, 0x32CD179, 428464, 'ReadValue', 0x2DA5C90)
+    require(timeline_force_sync_read['index'], 620038, source,
+            timeline_force_sync_read['usageVa'])
+    require(timeline_force_sync_read['genericType']['typeDefinitionIndex'], 9198,
+            source, timeline_force_sync_read['usageVa'])
+    require(timeline_force_sync_read['genericType']['typeName'],
+            'Beyond.Gameplay.Core.TimelineAction+ForceSyncAnimData', source,
+            timeline_force_sync_read['usageVa'])
+
+    def timeline_helper_call(call_rva, target_rva, role):
+        raw = pe.bytes_at_va(pe.image_base + call_rva, 5)
+        require(raw[:1], b'\xE8', source, call_rva)
+        require(relative_branch_target(raw, pe.image_base + call_rva, source=source),
+                pe.image_base + target_rva, source, call_rva)
+        return {'callInstructionRva': call_rva,
+                'callInstructionHex': raw.hex().upper(),
+                'targetRva': target_rva,
+                'role': role}
+
+    timeline_reader_instructions = []
+    for rva, expected_hex, role in (
+        (0x32CD04E, '4080FE04', 'TimelineActionData accepts member-count header 4 on this path'),
+        (0x32CD079, '894614', 'store endFrame result at object offset +0x14'),
+        (0x32CD0BC, '49894018', 'store SequenceActionData result at object offset +0x18'),
+        (0x32CD126, '448B30', 'load the startFrame DWORD from the current cursor'),
+        (0x32CD142, '4883435004', 'advance the startFrame source cursor by four bytes'),
+        (0x32CD147, '83434004', 'advance the consumed counter for startFrame by four'),
+        (0x32CD14B, '83434404', 'advance the total counter for startFrame by four'),
+        (0x32CD168, '44897010', 'store startFrame at object offset +0x10'),
+        (0x32CD19B, '49894020', 'store ForceSyncAnimData result at object offset +0x20'),
+        (0x32CE57E, '4080FE04', 'ForceSyncAnimData accepts member-count header 4 on this path'),
+        (0x32CE5A9, '884610', 'store forceSync byte at object offset +0x10'),
+        (0x32CE5D9, '49894018', 'store montageName result at object offset +0x18'),
+        (0x32CE635, 'F30F1030', 'load playbackSpeed float32 from the current cursor'),
+        (0x32CE652, '4883435004', 'advance playbackSpeed source cursor by four bytes'),
+        (0x32CE67B, 'F30F117024', 'store playbackSpeed float32 at object offset +0x24'),
+        (0x32CE69A, '8B28', 'load targetFrame int32 from the current cursor'),
+        (0x32CE6B5, '4883435004', 'advance targetFrame source cursor by four bytes'),
+        (0x32CE6D8, '896820', 'store targetFrame int32 at object offset +0x20'),
+    ):
+        raw = pe.bytes_at_va(pe.image_base + rva, len(bytes.fromhex(expected_hex)))
+        require(raw, bytes.fromhex(expected_hex), source, rva)
+        timeline_reader_instructions.append({
+            'rva': rva, 'rawHex': raw.hex().upper(), 'role': role,
+        })
+    timeline_direct_calls = [
+        timeline_helper_call(0x32CD05E, 0x2CA86B0,
+                             'read endFrame int32'),
+        timeline_helper_call(0x32CE58E, 0x2CA88C0,
+                             'read forceSync boolean'),
+        timeline_helper_call(0x32CE5B2, 0x2CA8700,
+                             'read montageName string'),
+    ]
+    timeline_action_data_reader = {
+        'elementTypeDefinitionIndex': timeline_action_type,
+        'elementTypeName': md.type_full_name(md.types[timeline_action_type]),
+        'listReaderMethodSpec': list_calls[1],
+        'methods': timeline_reader_methods,
+        'codeWindows': timeline_reader_code_windows,
+        'serializedMembers': [
+            {'serializedOrderIndex': 0, 'fieldName': '_endFrame',
+             'objectField': timeline_field_rows['_endFrame'],
+             'reader': timeline_direct_calls[0]},
+            {'serializedOrderIndex': 1, 'fieldName': '_sequenceActionData',
+             'objectField': timeline_field_rows['_sequenceActionData'],
+             'readerMethodSpec': timeline_sequence_read},
+            {'serializedOrderIndex': 2, 'fieldName': '_startFrame',
+             'objectField': timeline_field_rows['_startFrame'],
+             'reader': {'kind': 'inline-int32', 'byteWidth': 4,
+                        'verifiedInstructions': [
+                            row for row in timeline_reader_instructions
+                            if row['rva'] in (0x32CD126, 0x32CD142,
+                                             0x32CD147, 0x32CD14B)]}},
+            {'serializedOrderIndex': 3, 'fieldName': 'forceSyncAnimData',
+             'objectField': timeline_field_rows['forceSyncAnimData'],
+             'readerMethodSpec': timeline_force_sync_read},
+        ],
+        'forceSyncAnimDataReader': {
+            'typeDefinitionIndex': force_sync_type,
+            'typeName': md.type_full_name(md.types[force_sync_type]),
+            'serializedMembers': [
+                {'serializedOrderIndex': 0, 'fieldName': 'forceSync',
+                 'objectField': force_sync_field_rows['forceSync'],
+                 'reader': timeline_direct_calls[1]},
+                {'serializedOrderIndex': 1, 'fieldName': 'montageName',
+                 'objectField': force_sync_field_rows['montageName'],
+                 'reader': timeline_direct_calls[2]},
+                {'serializedOrderIndex': 2, 'fieldName': 'playbackSpeed',
+                 'objectField': force_sync_field_rows['playbackSpeed'],
+                 'reader': {'kind': 'inline-float32', 'byteWidth': 4,
+                            'verifiedInstructions': [
+                                row for row in timeline_reader_instructions
+                                if row['rva'] in (0x32CE635, 0x32CE652,
+                                                 0x32CE67B)]}},
+                {'serializedOrderIndex': 3, 'fieldName': 'targetFrame',
+                 'objectField': force_sync_field_rows['targetFrame'],
+                 'reader': {'kind': 'inline-int32', 'byteWidth': 4,
+                            'verifiedInstructions': [
+                                row for row in timeline_reader_instructions
+                                if row['rva'] in (0x32CE69A, 0x32CE6B5,
+                                                 0x32CE6D8)]}},
+            ],
+            'verifiedInstructionWindows': [
+                row for row in timeline_reader_instructions
+                if row['rva'] in (0x32CE57E, 0x32CE5A9, 0x32CE5D9)],
+        },
+        'verifiedInstructionWindows': timeline_reader_instructions,
+        'sequenceActionDataReaderReference': {
+            'reportKey': 'selectedBuffSequenceReadOrder',
+            'methodIndex': 104346,
+            'rootRva': 0x39C6AA0,
+            'rootCodeWindowSha256': '6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90',
+        },
+        'level': 'exact current-build module/token, generic MethodSpec, TypeDef field-offset and selected source-read code joins',
+        'runtimeProviderSelection': 'unobserved',
+        'runtimeCursor': 'unobserved',
+        'boundary': ('The exact static list element type is TimelineActionData. Its selected Deserialize normal path reads endFrame, '
+                     'SequenceActionData, startFrame and ForceSyncAnimData in that order. ForceSyncAnimData reads forceSync, '
+                     'montageName, playbackSpeed and targetFrame; the two trailing scalar members each advance four bytes. '
+                     'This establishes a native reader order and widths for those scalar fields only. The list/formatter/provider '
+                     'chosen for current VFS files, dynamic string extent, successful runtime cursor and enclosing record/EOF '
+                     'remain unobserved; these static paths do not close a SkillData parent.'),
+    }
+
     terminal_method_calls = {
         'tagDuringAttach': call_method_spec(
             0x37DE8E9, 0x37DE8F3, 428464, 'ReadValue', 0x2DA5C90),
@@ -4118,6 +7496,7 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
             for index, (name, call) in enumerate((('passiveEventActions', list_calls[0]),
                                                    ('timelineActions', list_calls[1])))
         ],
+        'timelineActionDataReader': timeline_action_data_reader,
         'currentVfsBranchCrossCheck': crosscheck,
         'representativeTerminalShapeCollision': terminal_collision,
         'representativeTerminalSampleByteWitness': terminal_sample,
@@ -5135,9 +8514,24 @@ def audit():
         Path(*selection['row']['virtualPath'].split('/'))
         for selection in terminal_branch_selections
     ]
+    actiongroup_branch_census_rows = []
+    for row in corpus.get('files', []):
+        record_lists = row.get('commonPrefixFraming', {}).get('recordLists', [])
+        if (record_lists and type(record_lists[0].get('count')) is int and
+                record_lists[0]['count'] > 0):
+            actiongroup_branch_census_rows.append(row)
+    actiongroup_branch_census_sample_paths = [
+        ROOT / 'export_full/structured/StreamingAssets' /
+        Path(*row['virtualPath'].split('/'))
+        for row in actiongroup_branch_census_rows
+    ]
     actiongroup_branch_sample_identities = [
         'Data/Json/SkillData/eny_0045_agtrinit_state0_passive.json',
         'Data/Json/SkillData/abilityentity_int_doodad_passive.json',
+        'Data/Json/SkillData/chr_0030_zhuangfy_talent1.json',
+        'Data/Json/SkillData/sk_wpn_funnel_0006.json',
+        'Data/Json/SkillData/sk_wpn_claym_0003.json',
+        'Data/Json/SkillData/abilityentity_interact_mud_carpet_passive.json',
     ]
     actiongroup_branch_sample_paths = [
         ROOT / 'export_full/structured/StreamingAssets' / Path(*logical_path.split('/'))
@@ -5146,6 +8540,7 @@ def audit():
     skill_terminal_path = Path(__file__).with_name('memorypack') / 'skill_terminal.py'
     skill_buff_path = Path(__file__).with_name('memorypack') / 'buff.py'
     skill_core_path = Path(__file__).with_name('memorypack') / 'core.py'
+    buff_actions_path = Path(__file__).with_name('memorypack') / 'buff_actions.py'
     buff_path=ROOT/'reports/animestudio/buffdata_current_latest.json'
     buff_sha=sha(buff_path);buff_corpus=json.loads(buff_path.read_text(encoding='utf-8'))
     verify_family_report_inputs(buff_corpus,expected_format='animestudio-buffdata-current-vfs-corpus',label='BuffData')
@@ -5155,9 +8550,10 @@ def audit():
     catalog_path = ROOT / 'tools/endfield-il2cpp/catalog_option_flow_metadata.py'
     sources = [Path(__file__), Path(__file__).with_name('il2cpp_context.py'),
                mapper_path, catalog_path, ROOT / 'scripts/common.py',
-               skill_terminal_path, skill_buff_path, skill_core_path,
+               skill_terminal_path, skill_buff_path, skill_core_path, buff_actions_path,
                skill_sample_path, *terminal_branch_sample_paths,
                *actiongroup_branch_sample_paths,
+               *actiongroup_branch_census_sample_paths,
                Path(__file__).with_name('buff_ec_native.json'),
                Path(__file__).with_name('buff_50_native.json'),
                Path(__file__).with_name('buff_11f_native.json'),
@@ -5226,6 +8622,8 @@ def audit():
                Path(__file__).with_name('buff_171_native.json'),
                Path(__file__).with_name('buff_132_native.json'),
                Path(__file__).with_name('buff_d4_native.json'),
+               Path(__file__).with_name('buff_d5_native.json'),
+               Path(__file__).with_name('buff_d6_native.json'),
                Path(__file__).with_name('buff_60_native.json'),
                Path(__file__).with_name('buff_126_native.json'),
                Path(__file__).with_name('buff_1c_native.json'),
@@ -5379,7 +8777,7 @@ def audit():
                Path(__file__).with_name('buff_11c_native.json'),
                Path(__file__).with_name('buff_8c_native.json'),
                Path(__file__).with_name('buff_4e_native.json')]
-    source_hashes = {str(p): sha(p) for p in sources}
+    source_hashes = {str(p): sha(p) for p in dict.fromkeys(sources)}
     mapper = load('context_audit_mapper', mapper_path)
     catalog = load('context_audit_catalog', catalog_path)
     pe = mapper.PeImage(gate.gameassembly)
@@ -5746,6 +9144,9 @@ def audit():
     buff_routes=buff_union_routes(pe,md,reg,modules,image_owners,source=str(gate.gameassembly))
     buff_forwarding=buff_ifelse_forwarding(pe,md,reg,table,source=str(gate.gameassembly))
     buff_order=buff_ifelse_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly))
+    buff_c9_prefix_evidence = skilldata_action_union_c9_prefix_reader_evidence(
+        buff_order, buff_routes, gameassembly_image_base=pe.image_base,
+        source=str(gate.gameassembly))
     buff_sequence=buff_sequence_read_order(pe,md,modules,image_owners,source=str(gate.gameassembly))
     buff_tag76=buff_tag76_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly))
     buff_ec=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -6102,23 +9503,10 @@ def audit():
         contract_path=Path(__file__).with_name('buff_17_native.json'))
     buff_ad=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_ad_native.json'))
-    actiongroup_branch_sample_rows = []
-    for logical_path, path in zip(actiongroup_branch_sample_identities,
-                                  actiongroup_branch_sample_paths):
-        raw = path.read_bytes()
-        source_name = str(path.relative_to(ROOT))
-        witness = skilldata_actiongroup_branch_sample_witness(
-            corpus, logical_path, raw, source=source_name)
-        witness['nativeReaderAlignment'] = skilldata_actiongroup_branch_static_alignment(
-            witness, skilldata_reader_order, buff_ad, buff_b4, buff_sequence,
-            source=source_name)
-        actiongroup_branch_sample_rows.append(witness)
-    skilldata_reader_order['representativeActionGroupBranchSamples'] = actiongroup_branch_sample_rows
-    skilldata_reader_order['actionGroupBranchSampleBoundary'] = (
-        'The first passiveEventActions list has a conditional static end in the empty SequenceActionData-array '
-        'branch. A separate nonempty-sequence branch stops before its first non-null action-union byte; the '
-        'parent list, timelineActions field and whole SkillData record remain incomplete or ambiguous.'
-    )
+    buff_d5=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('buff_d5_native.json'))
+    buff_d6=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
+        contract_path=Path(__file__).with_name('buff_d6_native.json'))
     buff_198=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_198_native.json'))
     buff_197=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
@@ -6207,6 +9595,168 @@ def audit():
         contract_path=Path(__file__).with_name('buff_3c_native.json'))
     buff_5b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
         contract_path=Path(__file__).with_name('buff_5b_native.json'))
+    buff_action_readers = skilldata_action_readers_from_locals(
+        locals(), source=str(gate.gameassembly))
+    verified_action_tags = set(buff_action_readers)
+    buff_action_prefixes = {0xC9: buff_c9_prefix_evidence}
+    verified_action_prefix_tags = set(buff_action_prefixes)
+    for reader in buff_action_readers.values():
+        contract_path = Path(reader['contractPath']).resolve()
+        source_hashes[str(contract_path)] = sha(contract_path)
+
+    actiongroup_branch_census_files = []
+    actiongroup_branch_class_counts = {}
+    actiongroup_branch_status_counts = {}
+    actiongroup_completed_tag_counts = {}
+    actiongroup_first_unverified_tag_counts = {}
+    actiongroup_prefix_stop_tag_counts = {}
+    actiongroup_reader_evidence_by_tag = {}
+    actiongroup_opaque_bytes_after_cursor = 0
+    actiongroup_c9_candidate_status_counts = {}
+    actiongroup_c9_candidate_file_count = 0
+    actiongroup_c9_candidate_sequence_range_count = 0
+    for row, path in zip(actiongroup_branch_census_rows,
+                         actiongroup_branch_census_sample_paths):
+        logical_path = row['virtualPath']
+        raw = path.read_bytes()
+        source_name = str(path.relative_to(ROOT))
+        witness = skilldata_actiongroup_branch_sample_witness(
+            corpus, logical_path, raw, source=source_name,
+            verified_action_tags=verified_action_tags,
+            verified_action_prefix_tags=verified_action_prefix_tags)
+        alignment = skilldata_actiongroup_branch_static_alignment(
+            witness, skilldata_reader_order, buff_ad, buff_b4, buff_sequence,
+            buff_d5, buff_d6, buff_routes, source=source_name,
+            buff_action_readers=buff_action_readers,
+            buff_action_prefixes=buff_action_prefixes,
+            gameassembly_image_base=pe.image_base)
+        c9_candidate = None
+        if witness['status'] == 'stopped-after-verified-action-prefix':
+            c9_candidate = skilldata_actiongroup_c9_nested_sequence_candidate_replay(
+                witness, raw, buff_c9_prefix_evidence, buff_sequence,
+                buff_action_readers, buff_routes, source=source_name,
+                gameassembly_image_base=pe.image_base)
+            actiongroup_c9_candidate_file_count += 1
+            actiongroup_c9_candidate_status_counts[c9_candidate['status']] = (
+                actiongroup_c9_candidate_status_counts.get(c9_candidate['status'], 0) + 1)
+            actiongroup_c9_candidate_sequence_range_count += len(
+                c9_candidate['candidateSequenceRanges'])
+        actiongroup_branch_class_counts[witness['boundaryClass']] = (
+            actiongroup_branch_class_counts.get(witness['boundaryClass'], 0) + 1)
+        actiongroup_branch_status_counts[witness['status']] = (
+            actiongroup_branch_status_counts.get(witness['status'], 0) + 1)
+        actiongroup_opaque_bytes_after_cursor += sum(
+            byte_range['end'] - byte_range['start']
+            for byte_range in witness.get('opaqueByteRanges', []))
+        for union_range in alignment['completedActionUnionRanges']:
+            tag_label = f"0x{union_range['tag']:X}"
+            actiongroup_completed_tag_counts[tag_label] = (
+                actiongroup_completed_tag_counts.get(tag_label, 0) + 1)
+        first_unconsumed = witness.get('firstUnconsumedActionUnionByte')
+        if isinstance(first_unconsumed, dict):
+            tag_label = f"0x{first_unconsumed['tag']:X}"
+            actiongroup_first_unverified_tag_counts[tag_label] = (
+                actiongroup_first_unverified_tag_counts.get(tag_label, 0) + 1)
+        prefix_stop = witness.get('actionUnionPrefixStop')
+        if isinstance(prefix_stop, dict):
+            tag_label = f"0x{prefix_stop['tag']:X}"
+            actiongroup_prefix_stop_tag_counts[tag_label] = (
+                actiongroup_prefix_stop_tag_counts.get(tag_label, 0) + 1)
+        for evidence in alignment['abilityActionUnionReaderEvidence']:
+            actiongroup_reader_evidence_by_tag.setdefault(evidence['tag'], evidence)
+        actiongroup_branch_census_files.append({
+            'inputSetSha256': witness['inputSetSha256'],
+            'logicalFileIdentity': witness['logicalFileIdentity'],
+            'logicalSha256': witness['logicalSha256'],
+            'hardLimit': witness['hardLimit'],
+            'parserCursor': witness['parserCursor'],
+            'status': witness['status'],
+            'boundaryClass': witness['boundaryClass'],
+            'consumedByteRanges': witness['consumedByteRanges'],
+            'completedActionUnionRanges': alignment['completedActionUnionRanges'],
+            'actionUnionPrefixStop': witness['actionUnionPrefixStop'],
+            'firstUnconsumedActionUnionByte': witness['firstUnconsumedActionUnionByte'],
+            'opaqueByteRanges': witness['opaqueByteRanges'],
+            'wholeSkillDataClassification': witness['wholeSkillDataClassification'],
+            'wholeSkillDataExactClosedRecords': witness['wholeSkillDataExactClosedRecords'],
+            'conditionalReaderTags': alignment['verifiedActionUnionReaderTags'],
+            'conditionalPrefixReaderTags': alignment['verifiedActionUnionPrefixTags'],
+            'conditionalC9NestedSequenceCandidate': c9_candidate,
+        })
+
+    actiongroup_branch_census = {
+        'inputSetSha256': corpus['inputSetSha256'],
+        'sampleSelection': 'current SkillData corpus rows whose first common-prefix record list count is positive',
+        'selectedFiles': len(actiongroup_branch_census_rows),
+        'hashMatchedCurrentVfsFiles': len(actiongroup_branch_census_files),
+        'boundaryClassCounts': actiongroup_branch_class_counts,
+        'parserStatusCounts': actiongroup_branch_status_counts,
+        'conditionalPassiveEventActionsListEnds': actiongroup_branch_status_counts.get(
+            'passive-list-consumed-to-conditional-static-end', 0),
+        'stoppedAtUnverifiedUnion': actiongroup_branch_status_counts.get(
+            'stopped-before-first-nonnull-action-union', 0),
+        'unsupported': actiongroup_branch_status_counts.get('unsupported-structural-prefix', 0),
+        'ambiguousWholeSkillDataFiles': len(actiongroup_branch_census_files),
+        'exactClosedActionGroupDataRecords': 0,
+        'exactClosedWholeSkillDataRecords': 0,
+        'opaqueBytesAfterConditionalCursor': actiongroup_opaque_bytes_after_cursor,
+        'completedActionUnionTagCounts': dict(sorted(actiongroup_completed_tag_counts.items())),
+        'firstUnverifiedActionUnionTagCounts': dict(sorted(actiongroup_first_unverified_tag_counts.items())),
+        'stoppedAfterActionUnionPrefixTagCounts': dict(
+            sorted(actiongroup_prefix_stop_tag_counts.items())),
+        'candidateOnlyC9Files': actiongroup_c9_candidate_file_count,
+        'candidateOnlyC9SequenceStatusCounts': dict(
+            sorted(actiongroup_c9_candidate_status_counts.items())),
+        'candidateOnlyC9SequenceRanges': actiongroup_c9_candidate_sequence_range_count,
+        'exactClosedC9UnionRecords': 0,
+        'exactClosedSequenceRecords': 0,
+        'verifiedActionReaderContractsAvailable': len(buff_action_readers),
+        'verifiedActionReaderPrefixEvidenceAvailable': [buff_c9_prefix_evidence],
+        'verifiedActionReaderEvidenceUsed': [
+            actiongroup_reader_evidence_by_tag[tag]
+            for tag in sorted(actiongroup_reader_evidence_by_tag)],
+        'files': actiongroup_branch_census_files,
+        'boundary': ('This bounded subcorpus follows only the first ActionGroupData passiveEventActions list. '
+                     'A list-end count means its child maps and sequences align to the selected static readers; '
+                     'the following timelineActions member remains a non-advancing peek. Where a current C9 '
+                     'header-eight normal path is selected, only its tag/member-header/14-byte scalar prefix '
+                     'is consumed, stopping before its first generic SequenceActionData call. Unknown other '
+                     'tags remain opaque at their first byte. Every enclosing ActionGroupData and whole SkillData '
+                     'file remains ambiguous; no exact closed parent record is counted.'),
+    }
+    actiongroup_branch_sample_rows = []
+    for logical_path, path in zip(actiongroup_branch_sample_identities,
+                                  actiongroup_branch_sample_paths):
+        raw = path.read_bytes()
+        source_name = str(path.relative_to(ROOT))
+        witness = skilldata_actiongroup_branch_sample_witness(
+            corpus, logical_path, raw, source=source_name,
+            verified_action_tags=verified_action_tags,
+            verified_action_prefix_tags=verified_action_prefix_tags)
+        witness['nativeReaderAlignment'] = skilldata_actiongroup_branch_static_alignment(
+            witness, skilldata_reader_order, buff_ad, buff_b4, buff_sequence,
+            buff_d5, buff_d6, buff_routes, source=source_name,
+            buff_action_readers=buff_action_readers,
+            buff_action_prefixes=buff_action_prefixes,
+            gameassembly_image_base=pe.image_base)
+        witness['conditionalC9NestedSequenceCandidate'] = (
+            skilldata_actiongroup_c9_nested_sequence_candidate_replay(
+                witness, raw, buff_c9_prefix_evidence, buff_sequence,
+                buff_action_readers, buff_routes, source=source_name,
+                gameassembly_image_base=pe.image_base)
+            if witness['status'] == 'stopped-after-verified-action-prefix' else None)
+        actiongroup_branch_sample_rows.append(witness)
+    skilldata_reader_order['representativeActionGroupBranchSamples'] = actiongroup_branch_sample_rows
+    skilldata_reader_order['actionGroupBranchSampleCensus'] = actiongroup_branch_census
+    skilldata_reader_order['actionGroupBranchSampleBoundary'] = (
+        'The current positive-list subcorpus is replayed through every hash-pinned direct action reader whose '
+        'registered wrapper route and root member header match. For C9, only the exact header-eight scalar '
+        'prefix through the first generic SequenceActionData callsite is consumed. A separate candidate-only '
+        'replay records the three nested sequence call ranges against the current sequence and child-action '
+        'reader windows; C9 provider/cache selection remains unobserved, so those ranges never advance the '
+        'authoritative parser cursor. timelineActions is only peeked after a conditional list end; the parent '
+        'ActionGroupData and whole SkillData records remain ambiguous.'
+    )
     list_candidate['bodyWindows']=[]
     for start,end,digest in (
         (0x3BA40F0,0x3BA4364,'6D15262413608863F8223A3A1F9465529CD29B6129E3B390D7DAC8179E77DEAA'),
@@ -6520,6 +10070,8 @@ def audit():
         'selectedBuffCeReadOrder':buff_ce,
         'selectedBuff17ReadOrder':buff_17,
         'selectedBuffAdReadOrder':buff_ad,
+        'selectedBuffD5ReadOrder':buff_d5,
+        'selectedBuffD6ReadOrder':buff_d6,
         'selectedBuff198ReadOrder':buff_198,
         'selectedBuff197ReadOrder':buff_197,
         'selectedBuff91ReadOrder':buff_91,

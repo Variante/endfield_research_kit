@@ -988,5 +988,459 @@ class StoryMonoBehaviourNameFilterTests(unittest.TestCase):
         self.assertIsNone(text_signature["names"])
 
 
+def asset_cache_plan(**overrides) -> dict:
+    plan = {
+        "stage": "convert_by_type",
+        "options": {"export_type": "Convert", "asset_cache_enabled": True},
+        "cli_signature": {"fingerprint": "cli-1"},
+        "dummy_dll_signature": {"dll_count": 2, "bytes": 10, "fingerprint": "dll-1"},
+        "source_fingerprint": {"files": 3, "bytes": 30, "fingerprint": "src-1"},
+    }
+    plan.update(overrides)
+    return plan
+
+
+def asset_cache_item() -> dict:
+    return {
+        "type_spec": "Mesh:Both",
+        "item_name": "Mesh",
+        "stage_signature": export_full_from_game.build_animestudio_stage_signature(
+            "convert_by_type", {"export_type": "Convert"}, "Mesh:Both"
+        ),
+    }
+
+
+def asset_map_entry(**overrides) -> dict:
+    entry = {
+        "Name": "prop_rock",
+        "Container": "assets/prop_rock.prefab",
+        "Source": "level0.ab",
+        "PathID": 1234,
+        "Type": "Mesh",
+        "Hash": "aaaaaaaaaaaaaaaa",
+        "Offset": 0,
+    }
+    entry.update(overrides)
+    return entry
+
+
+class AnimeStudioAssetCacheKeyTests(unittest.TestCase):
+    def key(self, *, entry=None, plan=None) -> str:
+        return export_full_from_game.asset_entry_cache_key(
+            entry if entry is not None else asset_map_entry(),
+            asset_cache_item(),
+            plan if plan is not None else asset_cache_plan(),
+        )
+
+    def test_identical_inputs_produce_one_stable_key(self) -> None:
+        self.assertEqual(self.key(), self.key())
+
+    def test_changed_object_hash_changes_the_key(self) -> None:
+        # The asset map carries AnimeStudio's XXH64 of the raw object bytes, so
+        # an object the game patched cannot be served from the cache.
+        self.assertNotEqual(
+            self.key(),
+            self.key(entry=asset_map_entry(Hash="bbbbbbbbbbbbbbbb")),
+        )
+
+    def test_changed_cli_dummy_dlls_or_source_change_the_key(self) -> None:
+        baseline = self.key()
+        for field, value in (
+            ("cli_signature", {"fingerprint": "cli-2"}),
+            ("dummy_dll_signature", {"dll_count": 3, "bytes": 11, "fingerprint": "dll-2"}),
+            ("source_fingerprint", {"files": 4, "bytes": 31, "fingerprint": "src-2"}),
+        ):
+            with self.subTest(field=field):
+                self.assertNotEqual(
+                    baseline,
+                    self.key(plan=asset_cache_plan(**{field: value})),
+                )
+
+    def test_changed_export_options_change_the_key(self) -> None:
+        item = asset_cache_item()
+        other = asset_cache_item()
+        other["stage_signature"] = dict(other["stage_signature"], logger_flags=["Debug"])
+        plan = asset_cache_plan()
+        self.assertNotEqual(
+            export_full_from_game.asset_entry_cache_key(asset_map_entry(), item, plan),
+            export_full_from_game.asset_entry_cache_key(asset_map_entry(), other, plan),
+        )
+
+    def test_missing_evidence_refuses_to_produce_a_key(self) -> None:
+        for field in export_full_from_game.ASSET_CACHE_REQUIRED_PLAN_SIGNATURES:
+            with self.subTest(field=field):
+                plan = asset_cache_plan(**{field: None})
+                self.assertEqual(
+                    export_full_from_game.asset_cache_plan_evidence_gap(plan),
+                    field,
+                )
+                with self.assertRaises(ValueError):
+                    self.key(plan=plan)
+
+    def test_complete_evidence_reports_no_gap(self) -> None:
+        self.assertIsNone(
+            export_full_from_game.asset_cache_plan_evidence_gap(asset_cache_plan())
+        )
+
+
+class AnimeStudioAssetCacheValidityTests(unittest.TestCase):
+    def cache_with(self, output_path: Path, **overrides) -> dict:
+        stat = output_path.stat()
+        entry = {
+            "cache_key": "key-1",
+            "output_path": str(output_path),
+            "missing_output": False,
+            "output_size": stat.st_size,
+            "output_mtime_ns": stat.st_mtime_ns,
+        }
+        entry.update(overrides)
+        return {"schema_version": 1, "entries": {"manifest-1": entry}}
+
+    def test_matching_key_and_output_is_a_hit(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "prop_rock_p1234.obj"
+            output.write_text("v 0 0 0\n", encoding="utf-8")
+            self.assertTrue(
+                export_full_from_game.asset_cache_entry_is_valid(
+                    self.cache_with(output), "manifest-1", "key-1", output
+                )
+            )
+
+    def test_changed_key_deleted_output_or_edited_output_is_a_miss(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "prop_rock_p1234.obj"
+            output.write_text("v 0 0 0\n", encoding="utf-8")
+            cache = self.cache_with(output)
+
+            # A different cache key (new Hash, new CLI, new options, ...).
+            self.assertFalse(
+                export_full_from_game.asset_cache_entry_is_valid(
+                    cache, "manifest-1", "key-2", output
+                )
+            )
+            # An unknown object.
+            self.assertFalse(
+                export_full_from_game.asset_cache_entry_is_valid(
+                    cache, "manifest-2", "key-1", output
+                )
+            )
+            # An output edited or truncated outside the exporter.
+            output.write_text("v 1 1 1\nv 2 2 2\n", encoding="utf-8")
+            self.assertFalse(
+                export_full_from_game.asset_cache_entry_is_valid(
+                    cache, "manifest-1", "key-1", output
+                )
+            )
+            # An output that was deleted.
+            output.unlink()
+            self.assertFalse(
+                export_full_from_game.asset_cache_entry_is_valid(
+                    cache, "manifest-1", "key-1", output
+                )
+            )
+
+    def test_recorded_missing_output_stays_valid_only_while_still_missing(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output = Path(temporary) / "clip_p9.anim"
+            output.write_text("x", encoding="utf-8")
+            cache = self.cache_with(output, missing_output=True)
+            self.assertFalse(
+                export_full_from_game.asset_cache_entry_is_valid(
+                    cache, "manifest-1", "key-1", output
+                )
+            )
+            output.unlink()
+            self.assertTrue(
+                export_full_from_game.asset_cache_entry_is_valid(
+                    cache, "manifest-1", "key-1", output
+                )
+            )
+
+    def test_cache_written_for_another_schema_is_discarded(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "animestudio_asset_cache.json"
+            path.write_text(
+                json.dumps({"schema_version": 0, "entries": {"manifest-1": {}}}),
+                encoding="utf-8",
+            )
+            cache = export_full_from_game.load_animestudio_asset_cache(path)
+            self.assertEqual(cache["entries"], {})
+            self.assertEqual(
+                cache["schema_version"],
+                export_full_from_game.ANIMESTUDIO_ASSET_CACHE_SCHEMA_VERSION,
+            )
+
+    def test_current_schema_cache_round_trips(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "animestudio_asset_cache.json"
+            export_full_from_game.save_animestudio_asset_cache(
+                path, {"entries": {"manifest-1": {"cache_key": "key-1"}}}
+            )
+            cache = export_full_from_game.load_animestudio_asset_cache(path)
+            self.assertEqual(cache["entries"]["manifest-1"]["cache_key"], "key-1")
+
+
+class AnimeStudioAssetCacheEnablementTests(unittest.TestCase):
+    def test_cache_is_on_by_default_and_opt_out_turns_it_off(self) -> None:
+        source = inspect.getsource(export_full_from_game.main)
+        self.assertIn(
+            "animestudio_asset_cache_enabled = not (\n"
+            "        args.skip_animestudio or args.animestudio_no_asset_cache\n"
+            "    )",
+            source,
+        )
+        self.assertIn(
+            'options["asset_cache_enabled"] = animestudio_asset_cache_enabled',
+            source,
+        )
+        # The run summary must report the live decision, not a hard-coded line.
+        self.assertNotIn("cache_removed", source)
+        self.assertNotIn("removed (every run re-exports)", source)
+
+    def test_plan_records_the_three_cache_key_signatures(self) -> None:
+        plan = export_full_from_game.plan_animestudio_stage(
+            source="StreamingAssets",
+            output_root=Path("export_full"),
+            stage="convert_by_type",
+            options={
+                "export_type": "Convert",
+                "asset_cache_enabled": True,
+                "types": ("Mesh:Both",),
+            },
+            cli_signature={"fingerprint": "cli-1"},
+            dummy_dll_signature={"fingerprint": "dll-1"},
+            source_fingerprint={"fingerprint": "src-1"},
+        )
+        self.assertEqual(plan["cache_state"], "per_asset")
+        self.assertIsNone(export_full_from_game.asset_cache_plan_evidence_gap(plan))
+
+    def test_plan_without_the_cache_stays_uncached(self) -> None:
+        plan = export_full_from_game.plan_animestudio_stage(
+            source="StreamingAssets",
+            output_root=Path("export_full"),
+            stage="convert_by_type",
+            options={
+                "export_type": "Convert",
+                "asset_cache_enabled": False,
+                "types": ("Mesh:Both",),
+            },
+        )
+        self.assertEqual(plan["cache_state"], "no_cache")
+        self.assertEqual(plan["cached_items"], [])
+        self.assertEqual(plan["run_items"], ["Mesh"])
+
+    def test_opt_out_flag_is_parseable_and_defaults_to_false(self) -> None:
+        with mock.patch(
+            "sys.argv",
+            ["export_full_from_game.py"],
+        ):
+            args = export_full_from_game.parse_args()
+        self.assertFalse(args.animestudio_no_asset_cache)
+        with mock.patch(
+            "sys.argv",
+            ["export_full_from_game.py", "--animestudio-no-asset-cache"],
+        ):
+            args = export_full_from_game.parse_args()
+        self.assertTrue(args.animestudio_no_asset_cache)
+
+
+class AnimeStudioAssetCachePruningTests(unittest.TestCase):
+    def test_outputs_of_vanished_objects_are_pruned(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_root = Path(temporary)
+            type_dir = export_full_from_game.animestudio_stage_dir(
+                output_root, "StreamingAssets", "convert_by_type"
+            ) / "Mesh"
+            type_dir.mkdir(parents=True)
+            kept = export_full_from_game.predict_animestudio_convert_output_path(
+                output_root, "StreamingAssets", "convert_by_type", asset_map_entry()
+            )
+            kept.write_text("v 0 0 0\n", encoding="utf-8")
+            vanished = type_dir / "deleted_prop_p999.obj"
+            vanished.write_text("v 1 1 1\n", encoding="utf-8")
+
+            removed = export_full_from_game.prune_unmatched_animestudio_asset_outputs(
+                output_root=output_root,
+                source="StreamingAssets",
+                stage="convert_by_type",
+                entries=[asset_map_entry()],
+                type_name="Mesh",
+            )
+            self.assertEqual(removed, 1)
+            self.assertTrue(kept.is_file())
+            self.assertFalse(vanished.exists())
+
+    def test_pending_outputs_are_removed_before_re_export(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_root = Path(temporary)
+            stale = export_full_from_game.predict_animestudio_convert_output_path(
+                output_root, "StreamingAssets", "convert_by_type", asset_map_entry()
+            )
+            stale.parent.mkdir(parents=True)
+            stale.write_text("v 0 0 0\n", encoding="utf-8")
+
+            removed = export_full_from_game.remove_animestudio_asset_outputs(
+                output_root=output_root,
+                source="StreamingAssets",
+                stage="convert_by_type",
+                entries=[asset_map_entry()],
+            )
+            self.assertEqual(removed, 1)
+            self.assertFalse(stale.exists())
+
+
+class AnimeStudioAssetShardCacheDecisionTests(unittest.TestCase):
+    """End-to-end reuse decision over a fixture asset map."""
+
+    ENTRIES = (
+        asset_map_entry(Name="rock", PathID=1, Hash="1111111111111111"),
+        asset_map_entry(Name="tree", PathID=2, Hash="2222222222222222"),
+        asset_map_entry(Name="wall", PathID=3, Hash="3333333333333333"),
+    )
+
+    def build(self, output_root: Path, entries, *, cache=None, plan_overrides=None):
+        map_path = output_root / "maps" / "endfield_streamingassets_assets.json"
+        map_path.parent.mkdir(parents=True, exist_ok=True)
+        map_path.write_text(json.dumps({"AssetEntries": list(entries)}), encoding="utf-8")
+        options = {
+            "export_type": "Convert",
+            "asset_cache_enabled": True,
+            "asset_map_filter": True,
+            "map_name": str(map_path),
+            "asset_shards": 2,
+            "types": ("Mesh:Both",),
+        }
+        plan = asset_cache_plan(options=options)
+        plan.update(plan_overrides or {})
+        item = asset_cache_item()
+        item["stage_signature"] = export_full_from_game.build_animestudio_stage_signature(
+            "convert_by_type", options, "Mesh:Both"
+        )
+        return export_full_from_game.prepare_animestudio_asset_shards(
+            source="StreamingAssets",
+            output_root=output_root,
+            stage="convert_by_type",
+            plan=plan,
+            runnable_items=[item],
+            jobs=2,
+            asset_cache=cache,
+        ), plan, item
+
+    def seed_cache(self, output_root: Path, plan, item, entries):
+        """Write the outputs and cache rows a previous run would have left."""
+        cache = export_full_from_game.default_animestudio_asset_cache()
+        for entry in entries:
+            output = export_full_from_game.predict_animestudio_convert_output_path(
+                output_root, "StreamingAssets", "convert_by_type", entry
+            )
+            output.parent.mkdir(parents=True, exist_ok=True)
+            output.write_text(f"v {entry['PathID']} 0 0\n", encoding="utf-8")
+        export_full_from_game.update_asset_cache_entries(
+            cache=cache,
+            entries=list(entries),
+            item=item,
+            plan=plan,
+            output_root=output_root,
+            source="StreamingAssets",
+            stage="convert_by_type",
+        )
+        return cache
+
+    def test_unchanged_assets_are_reused_and_changed_ones_re_export(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_root = Path(temporary)
+            _, plan, item = self.build(output_root, self.ENTRIES)
+            cache = self.seed_cache(output_root, plan, item, self.ENTRIES)
+
+            # Same game, same CLI, same options: nothing to do.
+            work, _, _ = self.build(output_root, self.ENTRIES, cache=cache)
+            self.assertEqual(len(work["cached_entries"]), 3)
+            self.assertEqual(work["pending_entries"], [])
+            self.assertEqual(work["shards"], [])
+
+            # One object's raw bytes changed and one object is new.
+            patched = (
+                self.ENTRIES[0],
+                asset_map_entry(Name="tree", PathID=2, Hash="ffffffffffffffff"),
+                self.ENTRIES[2],
+                asset_map_entry(Name="fence", PathID=4, Hash="4444444444444444"),
+            )
+            work, _, _ = self.build(output_root, patched, cache=cache)
+            self.assertEqual(
+                sorted(entry["Name"] for entry in work["cached_entries"]),
+                ["rock", "wall"],
+            )
+            self.assertEqual(
+                sorted(entry["Name"] for entry in work["pending_entries"]),
+                ["fence", "tree"],
+            )
+
+    def test_a_new_cli_build_invalidates_every_entry(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_root = Path(temporary)
+            _, plan, item = self.build(output_root, self.ENTRIES)
+            cache = self.seed_cache(output_root, plan, item, self.ENTRIES)
+
+            work, _, _ = self.build(
+                output_root,
+                self.ENTRIES,
+                cache=cache,
+                plan_overrides={"cli_signature": {"fingerprint": "cli-rebuilt"}},
+            )
+            self.assertEqual(work["cached_entries"], [])
+            self.assertEqual(len(work["pending_entries"]), 3)
+
+    def test_a_patched_game_invalidates_every_entry(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_root = Path(temporary)
+            _, plan, item = self.build(output_root, self.ENTRIES)
+            cache = self.seed_cache(output_root, plan, item, self.ENTRIES)
+
+            # Streamed payloads (.resS) are not covered by the per-object Hash,
+            # so the source VFS fingerprint has to invalidate the cache too.
+            work, _, _ = self.build(
+                output_root,
+                self.ENTRIES,
+                cache=cache,
+                plan_overrides={
+                    "source_fingerprint": {"files": 9, "bytes": 99, "fingerprint": "src-2"}
+                },
+            )
+            self.assertEqual(work["cached_entries"], [])
+            self.assertEqual(len(work["pending_entries"]), 3)
+
+    def test_disabled_cache_marks_every_entry_pending(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_root = Path(temporary)
+            _, plan, item = self.build(output_root, self.ENTRIES)
+            cache = self.seed_cache(output_root, plan, item, self.ENTRIES)
+
+            map_path = output_root / "maps" / "endfield_streamingassets_assets.json"
+            options = dict(plan["options"], asset_cache_enabled=False, map_name=str(map_path))
+            disabled_plan = asset_cache_plan(options=options)
+            work = export_full_from_game.prepare_animestudio_asset_shards(
+                source="StreamingAssets",
+                output_root=output_root,
+                stage="convert_by_type",
+                plan=disabled_plan,
+                runnable_items=[item],
+                jobs=2,
+                asset_cache=cache,
+            )
+            self.assertFalse(work["cache_enabled"])
+            self.assertEqual(work["cached_entries"], [])
+            self.assertEqual(len(work["pending_entries"]), 3)
+
+    def test_enabled_cache_without_evidence_fails_closed(self) -> None:
+        with tempfile.TemporaryDirectory() as temporary:
+            output_root = Path(temporary)
+            with self.assertRaises(ValueError):
+                self.build(
+                    output_root,
+                    self.ENTRIES,
+                    plan_overrides={"cli_signature": None},
+                )
+
+
 if __name__ == "__main__":
     unittest.main()

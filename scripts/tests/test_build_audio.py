@@ -3328,6 +3328,36 @@ class AudioDumperTests(unittest.TestCase):
             self.assertEqual(Path(hotfix[hotfix.index("--streaming-assets") + 1]), persistent)
             self.assertNotIn("--shared-output", hotfix)
 
+    def test_decode_pass_requests_explicit_worker_count(self) -> None:
+        with tempfile.TemporaryDirectory() as raw_root:
+            root = Path(raw_root)
+            executable = root / "AnimeStudio.CLI.exe"
+            streaming = root / "StreamingAssets"
+            executable.touch()
+            streaming.mkdir()
+            args = argparse.Namespace(
+                skip_decode=False,
+                audio_dumper=executable,
+                streaming_assets=streaming,
+                fallback_assets=None,
+                audio_root=root / "Audio",
+                block="all",
+                decode_jobs=12,
+            )
+
+            with mock.patch.object(build_audio.subprocess, "run") as run:
+                build_audio.run_audio_dumper(args, "CN", build_audio.LANGUAGES["CN"])
+
+            command = run.call_args.args[0]
+            self.assertEqual(command[command.index("--jobs") + 1], "12")
+
+            args.decode_jobs = 0
+            with mock.patch.object(build_audio.subprocess, "run") as run:
+                build_audio.run_audio_dumper(args, "CN", build_audio.LANGUAGES["CN"])
+
+            command = run.call_args.args[0]
+            self.assertGreaterEqual(int(command[command.index("--jobs") + 1]), 1)
+
     def test_explicit_hotfix_mode_uses_persistent_as_primary(self) -> None:
         with tempfile.TemporaryDirectory() as raw_root:
             root = Path(raw_root)

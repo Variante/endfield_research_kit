@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import struct
 import tempfile
 import unittest
@@ -7,6 +8,7 @@ from pathlib import Path
 from unittest import mock
 
 from scripts import build_map_recovery_preview as builder
+from scripts import map_recovery_cache_evidence as cache_evidence
 from scripts.build_map_recovery_preview import (
     BASE_CELL,
     LONG_EDGE,
@@ -385,6 +387,36 @@ class PreviewInputTests(unittest.TestCase):
             "level", [(0.0, 1.0, 0.0)], {}, bounds, 0.25, [], {}
         )
         self.assertNotEqual(base, changed)
+
+    def _signature_for_one_obj(self, obj_path):
+        bounds = {"minX": 0.0, "maxX": 1.0, "minZ": 0.0, "maxZ": 1.0}
+        instances = [{"meshes": [{"name": "S_probe", "pathId": 42, "obj": str(obj_path)}]}]
+        return builder._point_render_cache_signature(
+            "level", [(0.0, 0.0, 0.0)], {}, bounds, 0.25, instances, {}
+        )
+
+    def test_point_render_cache_signature_ignores_a_source_rewritten_with_equal_bytes(self):
+        # `export.bat --from-game` rewrites every exported source on every run.
+        # Only its mtime moves, so the render must still be reusable.
+        with tempfile.TemporaryDirectory() as tmp:
+            obj = Path(tmp, "S_probe_p000000000000002A.obj")
+            obj.write_text("v 0 0 0\n", encoding="utf-8")
+            base = self._signature_for_one_obj(obj)
+            os.utime(obj, (0, 0))
+            cache_evidence._CONTENT_SHA_MEMO.clear()
+            self.assertEqual(self._signature_for_one_obj(obj), base)
+
+    def test_point_render_cache_signature_follows_source_content_and_absence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            obj = Path(tmp, "S_probe_p000000000000002A.obj")
+            obj.write_text("v 0 0 0\n", encoding="utf-8")
+            base = self._signature_for_one_obj(obj)
+            obj.write_text("v 0 0 0\nv 1 1 1\n", encoding="utf-8")
+            cache_evidence._CONTENT_SHA_MEMO.clear()
+            edited = self._signature_for_one_obj(obj)
+            self.assertNotEqual(edited, base)
+            obj.unlink()
+            self.assertNotEqual(self._signature_for_one_obj(obj), edited)
 
     def test_streaming_static_meshes_are_rasterized_instead_of_drawn_as_location_points(self):
         payload = {"markers": [{"streamingInstance": {
@@ -795,7 +827,7 @@ class SurfaceRasterTests(unittest.TestCase):
         self.assertEqual(raster["triangles"], 1)
         self.assertEqual(raster["excludedDetailTriangles"], 1)
 
-    @unittest.skipIf(builder._raster_triangle_numba is None, "NumPy/Numba acceleration unavailable")
+    @unittest.skipIf(builder._raster_mesh_numba is None, "NumPy/Numba acceleration unavailable")
     def test_numba_streaming_raster_matches_stdlib_pixels_and_depth(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -838,7 +870,7 @@ class SurfaceRasterTests(unittest.TestCase):
             builder._MATERIAL_PARAMS.clear()
             with mock.patch.object(builder, "ROOT", root):
                 accelerated = builder.rasterise_streaming_depth(streaming, bounds, 32, 32, bindings)
-                with mock.patch.object(builder, "_raster_triangle_numba", None):
+                with mock.patch.object(builder, "_raster_mesh_numba", None):
                     stdlib = builder.rasterise_streaming_depth(streaming, bounds, 32, 32, bindings)
 
         self.assertEqual(accelerated["rasterBackend"], "numpy_numba")
@@ -1356,6 +1388,618 @@ class ReliefShadingTests(unittest.TestCase):
         mask[12] = True
         shades = hillshade([1.0] * (width * height), mask, width, height)
         self.assertTrue(all(shades[i] == 0.0 for i in range(len(shades)) if not mask[i]))
+
+
+class BatchedStreamingRasterTests(unittest.TestCase):
+    """The batched kernels must reproduce the interpreted renderer exactly."""
+
+    MATRICES = (
+        [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1],
+        # A rotation, a non-uniform scale and a translation at once, so the
+        # vectorized vertex transform cannot pass by only handling identity.
+        [0.8, 0.0, 0.6, 0, 0.0, 1.25, 0.0, 0, -0.6, 0.0, 0.8, 0, 1.5, -0.75, 2.25, 1],
+    )
+    MESH_REL = "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh/props.obj"
+    COVER_REL = "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh/cover.obj"
+
+    def _scene(self, root: Path) -> tuple[list[dict], dict]:
+        """A multi-submesh scene that reaches every branch of the raster path."""
+        mesh_root = root / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
+        mesh_root.mkdir(parents=True)
+        (mesh_root / "props.obj").write_text(
+            "g props\n"
+            # Submesh 0 is textured: a tilted triangle, a triangle whose UVs
+            # leave the unit square, a zero-area triangle and a triangle whose
+            # corners carry no texture index at all.
+            "v 0 2 0\nv -4 3 0\nv 0 4 4\n"
+            "v -1 6 1\nv -3 7 1\nv -1 8 3\n"
+            "v 0 5 0\nv 0 5 0\nv 0 5 0\n"
+            "v -1 9 1\nv -2 9 1\nv -1 9 2\n"
+            # Submesh 1 has no binding: a broad flat slab that the detail
+            # layers exclude, and a triangle outside the world rectangle.
+            "v 6 1 -6\nv -6 1 -6\nv -6 1 6\n"
+            "v 900 3 900\nv 800 3 900\nv 900 3 800\n"
+            # Submesh 2 is an alpha-clipped material over partly cut texels.
+            "v 1 5 -2\nv -5 5.5 -2\nv 1 6 4\n"
+            "vt 0 0\nvt 1 0\nvt 0 1\nvt -0.25 1.75\nvt 2.5 -1.5\n"
+            "g props_0\n"
+            "f 1/1 2/2 3/3\n"
+            "f 4/4 5/5 6/3\n"
+            "f 7/1 8/2 9/3\n"
+            "f 10 11 12\n"
+            "g props_1\n"
+            "f 13/1 14/2 15/3\n"
+            "f 16/1 17/2 18/3\n"
+            "g props_2\n"
+            "f 19/1 20/2 21/3\n",
+            encoding="utf-8",
+        )
+        (mesh_root / "cover.obj").write_text(
+            "v 0 12 0\nv -4 13 0\nv 0 14 4\nf 1 2 3\n", encoding="utf-8"
+        )
+        opaque = root / "opaque.png"
+        cutout = root / "cutout.png"
+        builder.write_png(opaque, 2, 2, [
+            bytes((128, 64, 32, 255, 200, 10, 90, 255)),
+            bytes((5, 250, 30, 255, 60, 60, 60, 255)),
+        ])
+        builder.write_png(cutout, 2, 2, [
+            bytes((10, 20, 30, 255, 40, 50, 60, 12)),
+            bytes((70, 80, 90, 200, 100, 110, 120, 0)),
+        ])
+        tinted = root / "tinted.json"
+        tinted.write_text(json.dumps({
+            "m_SavedProperties": {
+                "m_Colors": {"_BaseColor": {"r": 0.5, "g": 0.25, "b": 2.0}},
+                "m_TexEnvs": {"_BaseColorMap": {
+                    "m_Scale": {"X": 1.5, "Y": 0.75}, "m_Offset": {"X": 0.2, "Y": -0.3},
+                }},
+            },
+        }), encoding="utf-8")
+        clipped = root / "clipped.json"
+        clipped.write_text(json.dumps({
+            "m_SavedProperties": {"m_Floats": {"_AlphaClipThreshold": 0.3}},
+            "m_ValidKeywords": ["_ALPHATEST_ON"],
+        }), encoding="utf-8")
+        bindings = {"StreamingAssets/Mesh/props.obj": {"submeshBindings": [
+            {"slot": "_BaseColorMap", "textureRel": "opaque.png", "texturePath": opaque,
+             "materialRel": "tinted.json", "materialPath": tinted},
+            None,
+            {"slot": "_BaseColorMap", "textureRel": "cutout.png", "texturePath": cutout,
+             "materialRel": "clipped.json", "materialPath": clipped},
+        ]}}
+        # One plain instance (the geometric slab rule applies), one authored
+        # prop (every triangle is detail) and one named floor (none is).
+        streaming = [
+            {"entityBase": "P_batch_000", "matrixColumnMajor": self.MATRICES[0],
+             "meshes": [{"name": "S_batch_000_lod0", "obj": self.MESH_REL, "pathId": 1}]},
+            {"entityBase": "P_batch_001", "matrixColumnMajor": self.MATRICES[1],
+             "meshes": [{"name": "S_batch_001_lod0", "obj": self.MESH_REL, "pathId": 1}]},
+            {"entityBase": "P_prop_batch_002", "matrixColumnMajor": self.MATRICES[1],
+             "meshes": [{"name": "S_prop_batch_002_lod0", "obj": self.MESH_REL, "pathId": 1}]},
+            {"entityBase": "P_build_indie_floor_001", "matrixColumnMajor": self.MATRICES[0],
+             "meshes": [{"name": "S_build_indie_floor_lod0", "obj": self.COVER_REL, "pathId": 2}]},
+        ]
+        return streaming, bindings
+
+    def _clear_caches(self) -> None:
+        builder._MATERIAL_PARAMS.clear()
+        builder._TEXTURE_PREVIEWS.clear()
+        builder._STREAMING_MESH_ARRAYS.clear()
+
+    @unittest.skipIf(builder._raster_mesh_numba is None, "NumPy/Numba acceleration unavailable")
+    def test_batched_depth_matches_the_interpreted_rasterizer(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            streaming, bindings = self._scene(root)
+            bounds = {"minX": -6.0, "maxX": 10.0, "minZ": -6.0, "maxZ": 10.0}
+            with mock.patch.object(builder, "ROOT", root):
+                self._clear_caches()
+                batched = builder.rasterise_streaming_depth(streaming, bounds, 48, 48, bindings)
+                self._clear_caches()
+                with mock.patch.object(builder, "_raster_mesh_numba", None):
+                    stdlib = builder.rasterise_streaming_depth(streaming, bounds, 48, 48, bindings)
+
+        self.assertEqual(batched["rasterBackend"], "numpy_numba")
+        self.assertEqual(stdlib["rasterBackend"], "stdlib_python")
+        # The scene must really reach the layers this test claims to cover.
+        self.assertGreater(stdlib["texturedTriangles"], 0)
+        self.assertGreater(stdlib["detailTriangles"], 0)
+        self.assertGreater(stdlib["excludedDetailTriangles"], 0)
+        self.assertGreater(stdlib["texturedPixels"], 0)
+        self.assertEqual(len(stdlib["usedTextures"]), 2)
+        for key in (
+            "depth", "detailDepth", "albedo", "detailAlbedo", "usedInstances",
+            "texturedInstances", "triangles", "texturedTriangles", "detailTriangles",
+            "excludedDetailTriangles", "vertexSamples", "texturedPixels", "usedTextures",
+        ):
+            self.assertEqual(batched[key], stdlib[key], key)
+
+    @unittest.skipIf(builder._raster_mesh_numba is None, "NumPy/Numba acceleration unavailable")
+    def test_batched_detail_props_only_matches_the_interpreted_rasterizer(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            streaming, bindings = self._scene(root)
+            bounds = {"minX": -6.0, "maxX": 10.0, "minZ": -6.0, "maxZ": 10.0}
+            with mock.patch.object(builder, "ROOT", root):
+                self._clear_caches()
+                batched = builder.rasterise_streaming_depth(
+                    streaming, bounds, 32, 32, bindings, detail_props_only=True
+                )
+                self._clear_caches()
+                with mock.patch.object(builder, "_raster_mesh_numba", None):
+                    stdlib = builder.rasterise_streaming_depth(
+                        streaming, bounds, 32, 32, bindings, detail_props_only=True
+                    )
+
+        self.assertGreater(stdlib["detailTriangles"], 0)
+        for key in ("depth", "detailDepth", "albedo", "detailAlbedo",
+                    "detailTriangles", "excludedDetailTriangles"):
+            self.assertEqual(batched[key], stdlib[key], key)
+
+    @unittest.skipIf(builder._sample_mesh_numba is None, "NumPy/Numba acceleration unavailable")
+    def test_batched_surface_samples_are_byte_identical(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            streaming, bindings = self._scene(root)
+            bounds = {"minX": -6.0, "maxX": 10.0, "minZ": -6.0, "maxZ": 10.0}
+            output = root / "out"
+            with mock.patch.object(builder, "ROOT", root):
+                self._clear_caches()
+                batched = render_streaming_surface_samples(
+                    "batched", streaming, bounds, 40, 40, output, 1.0, bindings
+                )
+                self._clear_caches()
+                with mock.patch.object(builder, "_sample_mesh_numba", None):
+                    stdlib = render_streaming_surface_samples(
+                        "stdlib", streaming, bounds, 40, 40, output, 1.0, bindings
+                    )
+            files = {
+                name: (
+                    (output / f"batched_streaming_surface_points{name}").read_bytes(),
+                    (output / f"stdlib_streaming_surface_points{name}").read_bytes(),
+                )
+                for name in (".samples", ".png", "_height_mask.png")
+            }
+
+        self.assertGreater(batched["sourceSampleCount"], 0)
+        self.assertGreater(batched["sampleSet"]["recordCount"], 0)
+        self.assertGreater(batched["excludedStructuralTriangleCount"], 0)
+        self.assertGreater(batched["excludedHorizontalTriangleCount"], 0)
+        self.assertGreater(batched["unresolvedMaterialTriangleCount"], 0)
+        self.assertGreater(batched["unresolvedUvTriangleCount"], 0)
+        for name, (left, right) in files.items():
+            self.assertEqual(left, right, name)
+        for key, value in stdlib.items():
+            if key in {"src", "sampleSet", "heightMask"}:
+                continue
+            self.assertEqual(batched[key], value, key)
+        for key in ("sampleSet", "heightMask"):
+            self.assertEqual(
+                {name: item for name, item in batched[key].items() if name != "src"},
+                {name: item for name, item in stdlib[key].items() if name != "src"},
+                key,
+            )
+
+    @unittest.skipIf(builder._np is None, "NumPy unavailable")
+    def test_obj_arrays_carry_the_same_parse_as_the_tuple_reader(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp) / "mixed.obj"
+            path.write_text(
+                "g mixed\n"
+                "v 0 1 0\nv 1 1 0\nv 0 1 1\nv 2 2 2\n"
+                "vt 0 0\nvt 1 0\nvt 0 1\n"
+                "g mixed_0\n"
+                "f 1/1 2/2 3/3\n"
+                # A zero index wraps to the last vertex exactly as Python does.
+                "f 0/1 2/2 3/3\n"
+                # A corner past the end drops the face; a texture corner past
+                # the end only drops its UVs; two corners are not a triangle.
+                "f 9/1 2/2 3/3\n"
+                "f 1/9 2/2 3/3\n"
+                "f 1/1 2/2\n"
+                "g mixed_2\n"
+                "f 1 2 3\n"
+                "g unrelated\n"
+                "f 2/2 3/3 4/1\n",
+                encoding="utf-8",
+            )
+            vertices, texcoords, faces = _read_textured_mesh(path)
+            arrays = builder._read_textured_mesh_arrays(path)
+
+        self.assertEqual(arrays["vertices"].tolist(), [list(row) for row in vertices])
+        self.assertEqual(arrays["texcoords"].tolist(), [list(row) for row in texcoords])
+        self.assertEqual(len(arrays["faceValid"]), len(faces))
+        for index, (vertex_face, texture_face, _submesh) in enumerate(faces):
+            try:
+                corners = [vertices[corner] for corner in vertex_face]
+            except IndexError:
+                corners = None
+            self.assertEqual(bool(arrays["faceValid"][index]), corners is not None, index)
+            if corners is not None:
+                self.assertEqual(
+                    corners,
+                    [tuple(arrays["vertices"][corner]) for corner in arrays["faceVertices"][index]],
+                    index,
+                )
+            usable = min(texture_face) >= 0 and max(texture_face) < len(texcoords)
+            self.assertEqual(bool(arrays["faceUvOk"][index]), usable, index)
+        self.assertEqual(arrays["validFaceCount"], 5)
+        self.assertEqual(arrays["runs"], [(0, 4, 0), (4, 5, 2), (5, 6, None)])
+        self.assertEqual([face[2] for face in faces], [0, 0, 0, 0, 2, None])
+
+
+class PreviewShardCostTests(unittest.TestCase):
+    def test_shards_balance_cost_instead_of_alternating_by_name(self):
+        groups = [("heavy",), ("small_a",), ("small_b",), ("small_c",)]
+        costs = {"heavy": 900.0, "small_a": 40.0, "small_b": 35.0, "small_c": 30.0}
+        shards = preview_worker_shards(groups, 2, costs)
+        self.assertEqual(len(shards), 2)
+        self.assertIn(("heavy",), shards)
+        self.assertEqual(
+            sorted(level for shard in shards for level in shard),
+            ["heavy", "small_a", "small_b", "small_c"],
+        )
+
+    def test_shared_scene_groups_stay_whole_under_cost_balancing(self):
+        groups = [("shared_a", "shared_b"), ("solo",)]
+        costs = {"shared_a": 500.0, "shared_b": 500.0, "solo": 10.0}
+        shards = preview_worker_shards(groups, 2, costs)
+        self.assertTrue(any({"shared_a", "shared_b"} <= set(shard) for shard in shards))
+
+    def test_shards_stay_evenly_spread_when_no_cost_is_known(self):
+        groups = [(f"level_{index}",) for index in range(6)]
+        shards = preview_worker_shards(groups, 3, None)
+        self.assertEqual(sorted(len(shard) for shard in shards), [2, 2, 2])
+
+    def test_shared_scene_members_split_one_scene_cost(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            obj = root / "meshes/one.obj"
+            obj.parent.mkdir(parents=True)
+            obj.write_bytes(b"x" * 100)
+            source = root / "shared.json"
+            source.write_text(json.dumps({"entityBases": [
+                {"entityBase": "a", "instanceCount": 6, "meshes": [{"obj": "meshes/one.obj"}]},
+            ]}), encoding="utf-8")
+
+            def projection(level_id):
+                if level_id in {"member_a", "member_b"}:
+                    return {"sceneId": "shared", "instanceSource": source}
+                return None
+
+            groups = [("member_a", "member_b"), ("lonely",)]
+            with mock.patch.object(builder, "ROOT", root), mock.patch.object(
+                builder, "projection_streaming_scene", side_effect=projection
+            ):
+                costs = builder.preview_scene_costs(groups)
+
+        # The shared scene rasterizes once for both members, so the group's
+        # summed cost is the scene cost rather than twice it.
+        self.assertEqual(costs["member_a"] + costs["member_b"], 600.0)
+        self.assertEqual(costs["lonely"], 1.0)
+        self.assertEqual(builder._preview_group_cost(groups[0], costs), 600.0)
+
+    def test_scene_cost_sums_obj_bytes_per_instance(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            obj = root / "meshes/one.obj"
+            obj.parent.mkdir(parents=True)
+            obj.write_bytes(b"x" * 400)
+            source = root / "scene.json"
+            source.write_text(json.dumps({"entityBases": [
+                {"entityBase": "a", "instanceCount": 3, "meshes": [{"obj": "meshes/one.obj"}]},
+                {"entityBase": "b", "instanceCount": 2, "meshes": [{"obj": "meshes/missing.obj"}]},
+            ]}), encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root):
+                cost = builder._streaming_scene_cost(source)
+
+        self.assertEqual(cost, 1200.0)
+
+    def test_scene_cost_falls_back_to_instance_count(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "scene.json"
+            source.write_text(json.dumps({"entityBases": [
+                {"entityBase": "a", "instanceCount": 7, "meshes": []},
+                {"entityBase": "b", "instanceCount": 5},
+            ]}), encoding="utf-8")
+            with mock.patch.object(builder, "ROOT", root):
+                cost = builder._streaming_scene_cost(source)
+
+        self.assertEqual(cost, 12.0)
+
+
+class ExporterEvidenceTests(unittest.TestCase):
+    """A rebuilt exporter changes conversions without moving any object hash."""
+
+    BOUNDS = {"minX": 0.0, "maxX": 1.0, "minZ": 0.0, "maxZ": 1.0}
+
+    def _signatures(self, cli_path):
+        builder.exporter_cli_evidence.cache_clear()
+        cache_evidence._CONTENT_SHA_MEMO.clear()
+        with mock.patch.object(builder, "STREAMING_CLI", cli_path):
+            point = builder._point_render_cache_signature(
+                "level", [(0.0, 0.0, 0.0)], {}, self.BOUNDS, 0.25, [], {}
+            )
+            hlod = builder._hlod_render_cache_signature(
+                "level", [], 0, {"originX": 0.0, "originZ": 0.0}, self.BOUNDS, {}, "depth_points", {},
+            )
+        return point, hlod
+
+    def tearDown(self):
+        builder.exporter_cli_evidence.cache_clear()
+
+    def test_exporter_cli_evidence_points_at_the_recovery_exporter(self):
+        from scripts.recover_map_streaming_instances import DEFAULT_CLI
+
+        self.assertEqual(builder.STREAMING_CLI, DEFAULT_CLI)
+
+    def test_both_render_cache_signatures_follow_the_exporter_binary(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cli = Path(tmp, "AnimeStudio.CLI.exe")
+            cli.write_bytes(b"exporter-build-1")
+            base = self._signatures(cli)
+
+            cli.write_bytes(b"exporter-build-2-different-length")
+            rebuilt = self._signatures(cli)
+            self.assertNotEqual(rebuilt[0], base[0])
+            self.assertNotEqual(rebuilt[1], base[1])
+
+            # Rebuilding to identical bytes is not a change of input.
+            cli.write_bytes(b"exporter-build-1")
+            os.utime(cli, (0, 0))
+            self.assertEqual(self._signatures(cli), base)
+
+            cli.unlink()
+            missing = self._signatures(cli)
+            self.assertNotEqual(missing[0], base[0])
+            self.assertNotEqual(missing[1], base[1])
+
+    def test_exporter_evidence_is_content_not_mtime(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            cli = Path(tmp, "AnimeStudio.CLI.exe")
+            cli.write_bytes(b"exporter")
+            builder.exporter_cli_evidence.cache_clear()
+            cache_evidence._CONTENT_SHA_MEMO.clear()
+            with mock.patch.object(builder, "STREAMING_CLI", cli):
+                record = builder.exporter_cli_evidence()
+
+        self.assertEqual(record["evidence"], "contentSha256")
+        self.assertNotIn("mtimeNs", record)
+
+
+class TextureBindingTableCacheTests(unittest.TestCase):
+    """The binding tables are a pure function of the export, so persist them."""
+
+    def _export(self, root: Path) -> tuple[Path, Path, Path]:
+        (root / "materials/Material").mkdir(parents=True)
+        (root / "textures/Texture2D").mkdir(parents=True)
+        material = root / "materials/Material/M_probe_p000000000000000A.json"
+        texture = root / "textures/Texture2D/T_probe_p000000000000000B.png"
+        material.write_text("{}", encoding="utf-8")
+        builder.write_png(texture, 1, 1, [bytes((10, 20, 30, 255))])
+        asset_index = root / "index.json"
+        asset_index.write_text(json.dumps({
+            "sourceRoots": {
+                "StreamingAssets-materials": str(root / "materials"),
+                "StreamingAssets": str(root / "textures"),
+            },
+            "relations": {
+                "StreamingAssets/Mesh/probe.obj": {
+                    "materials": [{"rel": "StreamingAssets-materials/Material/M_probe_p000000000000000A.json"}],
+                    "textures": [{"slot": "_BaseColorMap", "rel": "StreamingAssets/Texture2D/T_probe_p000000000000000B.png"}],
+                },
+            },
+        }), encoding="utf-8")
+        asset_map = root / "assets.json"
+        asset_map.write_text(json.dumps({"AssetEntries": []}), encoding="utf-8")
+        return asset_index, asset_map, root / "materials/Material"
+
+    def _prepare(self, root, asset_index, asset_map, material_root, cache):
+        with mock.patch.object(builder, "ROOT", root), \
+                mock.patch.object(builder, "ASSET_INDEX", asset_index), \
+                mock.patch.object(builder, "TEXTURE_BINDING_TABLE_CACHE", cache), \
+                mock.patch.object(builder, "_TEXTURE_BINDINGS", None), \
+                mock.patch.object(builder, "_HLOD_TEXTURE_BINDINGS", None):
+            builder._resolved_directory.cache_clear()
+            result = builder.prepare_render_bindings(asset_map, {}, root / "textures", material_root)
+            tables = (dict(builder._TEXTURE_BINDINGS), dict(builder._HLOD_TEXTURE_BINDINGS))
+        return result, tables
+
+    def test_cached_tables_are_restored_exactly_without_rebuilding(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            asset_index, asset_map, material_root = self._export(root)
+            cache = root / "cache/texture_binding_tables.json"
+
+            first, built = self._prepare(root, asset_index, asset_map, material_root, cache)
+            self.assertTrue(cache.is_file())
+            self.assertIn("StreamingAssets/Mesh/probe.obj", built[0])
+            self.assertIsInstance(built[0]["StreamingAssets/Mesh/probe.obj"]["texturePath"], Path)
+
+            with mock.patch.object(
+                builder, "texture_bindings", side_effect=AssertionError("rebuilt a cached table")
+            ):
+                second, restored = self._prepare(root, asset_index, asset_map, material_root, cache)
+
+        self.assertEqual(second, first)
+        self.assertEqual(restored, built)
+
+    def test_a_changed_asset_index_is_not_served_from_the_cache(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            asset_index, asset_map, material_root = self._export(root)
+            cache = root / "cache/texture_binding_tables.json"
+            _first, built = self._prepare(root, asset_index, asset_map, material_root, cache)
+            signature = json.loads(cache.read_text(encoding="utf-8"))["signature"]
+
+            payload = json.loads(asset_index.read_text(encoding="utf-8"))
+            payload["relations"] = {}
+            asset_index.write_text(json.dumps(payload), encoding="utf-8")
+            cache_evidence._CONTENT_SHA_MEMO.clear()
+            _second, rebuilt = self._prepare(root, asset_index, asset_map, material_root, cache)
+            new_signature = json.loads(cache.read_text(encoding="utf-8"))["signature"]
+
+        self.assertNotEqual(new_signature, signature)
+        self.assertEqual(rebuilt[0], {})
+        self.assertNotEqual(rebuilt[0], built[0])
+
+    def test_no_table_is_persisted_without_an_asset_map(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            asset_index, _asset_map, material_root = self._export(root)
+            cache = root / "cache/texture_binding_tables.json"
+            self._prepare(root, asset_index, root / "absent.json", material_root, cache)
+        self.assertFalse(cache.is_file())
+
+
+class StreamingSceneCostCacheTests(unittest.TestCase):
+    def test_scene_cost_is_reused_under_unchanged_sidecar_evidence(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            obj = root / "meshes/one.obj"
+            obj.parent.mkdir(parents=True)
+            obj.write_bytes(b"x" * 250)
+            source = root / "scene.json"
+            source.write_text(json.dumps({"entityBases": [
+                {"entityBase": "a", "instanceCount": 2, "meshes": [{"obj": "meshes/one.obj"}]},
+            ]}), encoding="utf-8")
+            cache = root / "streaming_scene_costs.json"
+            evidence = {
+                "sceneId": "scene",
+                "evidence": "initChunkDataPackedSha256",
+                "cliSha256": "abc",
+                "files": [["chunk", "def"]],
+            }
+
+            def projection(level_id):
+                return {"sceneId": "scene", "instanceSource": source}
+
+            with mock.patch.object(builder, "ROOT", root), \
+                    mock.patch.object(builder, "STREAMING_SCENE_COST_CACHE", cache), \
+                    mock.patch.object(builder, "projection_streaming_scene", side_effect=projection), \
+                    mock.patch.object(builder, "streaming_source_evidence", return_value=evidence):
+                first = builder.preview_scene_costs([("only",)])
+                self.assertTrue(cache.is_file())
+                # A second run must not re-read the sidecar at all.
+                with mock.patch.object(
+                    builder, "_streaming_scene_cost", side_effect=AssertionError("re-parsed a sidecar")
+                ):
+                    second = builder.preview_scene_costs([("only",)])
+                # A rebuilt exporter changes the sidecar's evidence, so the
+                # scene has to be measured again rather than reused.
+                evidence_changed = {**evidence, "cliSha256": "rebuilt"}
+                measured = mock.Mock(return_value=77.0)
+                with mock.patch.object(builder, "streaming_source_evidence", return_value=evidence_changed), \
+                        mock.patch.object(builder, "_streaming_scene_cost", measured):
+                    third = builder.preview_scene_costs([("only",)])
+            stored = json.loads(cache.read_text(encoding="utf-8"))["scenes"]["scene"]
+
+        self.assertEqual(first, {"only": 500.0})
+        self.assertEqual(second, first)
+        self.assertEqual(measured.call_count, 1)
+        self.assertEqual(third, {"only": 77.0})
+        self.assertEqual(stored["cost"], 77.0)
+        self.assertEqual(stored["evidenceKind"], "initChunkDataPackedSha256")
+        self.assertNotIn("evidence", stored)
+
+    def test_a_scene_without_packed_evidence_is_never_persisted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            source = root / "scene.json"
+            source.write_text(json.dumps({"entityBases": [
+                {"entityBase": "a", "instanceCount": 4, "meshes": []},
+            ]}), encoding="utf-8")
+            cache = root / "streaming_scene_costs.json"
+
+            def projection(level_id):
+                return {"sceneId": "scene", "instanceSource": source}
+
+            with mock.patch.object(builder, "ROOT", root), \
+                    mock.patch.object(builder, "STREAMING_SCENE_COST_CACHE", cache), \
+                    mock.patch.object(builder, "projection_streaming_scene", side_effect=projection), \
+                    mock.patch.object(
+                        builder, "streaming_source_evidence", return_value={"evidence": "missingSidecar"}
+                    ):
+                costs = builder.preview_scene_costs([("only",)])
+
+        self.assertEqual(costs, {"only": 4.0})
+        self.assertFalse(cache.is_file())
+
+
+class OriginGridScoringTests(unittest.TestCase):
+    """The vectorized origin fit must reproduce the interpreted score exactly."""
+
+    def _lods(self):
+        return {
+            "0": [{"i": i, "j": j, "pathId": i * 100 + j, "name": "n"}
+                  for i in range(6, 12) for j in range(3, 9)],
+            "1": [{"i": i, "j": j, "pathId": 1000 + i * 100 + j, "name": "n"}
+                  for i in range(3, 6) for j in range(1, 5)],
+        }
+
+    def _points(self):
+        return [
+            (x * 7.5 - 40.0, z * 11.25 - 25.0)
+            for x in range(9) for z in range(9)
+        ]
+
+    @unittest.skipIf(builder._origin_lod_coverage_numba is None, "NumPy/Numba acceleration unavailable")
+    def test_vectorized_fit_matches_the_interpreted_fit(self):
+        lods, points = self._lods(), self._points()
+        self.assertGreaterEqual(len(points), MIN_SAMPLES)
+        vectorized = fit_origin(lods, points)
+        with mock.patch.object(builder, "_origin_lod_coverage_numba", None):
+            interpreted = fit_origin(lods, points)
+        self.assertIsNotNone(vectorized)
+        self.assertEqual(vectorized, interpreted)
+
+    @unittest.skipIf(builder._origin_lod_coverage_numba is None, "NumPy/Numba acceleration unavailable")
+    def test_vectorized_scores_match_origin_coverage_candidate_by_candidate(self):
+        lods, points = self._lods(), self._points()
+        occupancy = builder._grid_occupancy(lods)
+        kx_values, kz_values = range(-10, 0), range(-10, 0)
+        scored = builder._score_origin_grid(occupancy, points, kx_values, kz_values)
+        expected = [
+            (builder.origin_coverage(lods, points, kx * builder.BASE_CELL, kz * builder.BASE_CELL),
+             kx * builder.BASE_CELL, kz * builder.BASE_CELL)
+            for kx in kx_values for kz in kz_values
+        ]
+        self.assertEqual(scored, expected)
+        self.assertTrue(any(row[0] > 0.0 for row in scored))
+
+    def test_origin_coverage_keeps_its_empty_and_missing_lod_contract(self):
+        lods = {"1": [{"i": 0, "j": 0, "pathId": 1, "name": "n"}]}
+        self.assertEqual(builder.origin_coverage(lods, [], 0.0, 0.0), 0.0)
+        self.assertEqual(builder.origin_coverage(lods, [(0.0, 0.0)], 0.0, 0.0), 0.0)
+
+
+class RelationPathTests(unittest.TestCase):
+    def test_relation_paths_stay_inside_the_repository(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "textures/Texture2D").mkdir(parents=True)
+            outside = root.parent / f"{root.name}_outside"
+            outside.mkdir()
+            roots = {
+                "StreamingAssets": str(root / "textures"),
+                "Escaped": str(outside),
+            }
+            with mock.patch.object(builder, "ROOT", root):
+                builder._resolved_directory.cache_clear()
+                inside = builder._relation_path("StreamingAssets/Texture2D/a.png", roots)
+                escaped_root = builder._relation_path("Escaped/a.png", roots)
+                traversal = builder._relation_path("StreamingAssets/../../a.png", roots)
+                unknown = builder._relation_path("Nope/a.png", roots)
+                bare = builder._relation_path("a.png", roots)
+            outside.rmdir()
+
+        self.assertEqual(inside, root / "textures/Texture2D/a.png")
+        self.assertIsNone(escaped_root)
+        self.assertIsNone(traversal)
+        self.assertIsNone(unknown)
+        self.assertIsNone(bare)
 
 
 if __name__ == "__main__":

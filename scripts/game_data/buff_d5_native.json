@@ -1,0 +1,46 @@
+{
+  "schemaVersion": 1,
+  "methods": [
+    [
+      120788,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_IntResourceHpCheckAction_DataForMemoryPack",
+      "Deserialize",
+      153753548
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 153753548,
+      "endRva": 153753943,
+      "sha256": "24DFDAE1E252056FB43AB54D51BFA7443249A2FFA932B4636ACEA7F01C3EF1EB",
+      "boundary": "member4 direct source-read body through its normal RET"
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 153753765,
+      "instructionHex": "488B157C85DE03",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17
+    }
+  ],
+  "anonymousReadOrder": {
+    "member4": [
+      "boolean",
+      "scalar32",
+      "scalar32",
+      "scalar32"
+    ]
+  },
+  "boundary": "The current union dispatch route selects this exact MemoryPack.Beyond reader. Its positive header-four path calls the one-byte Boolean reader and then three fixed-width DWORD readers in source order; the shared native helper windows are separately hash-gated by the audit. The first DWORD callsite joins ReadUnmanaged<AbilityActionData.Priority>, but no output field name or value meaning is promoted. All payload ranges remain anonymous. This supports only the D5 child boundary under the selected static reader; provider/cache selection, an executed source cursor, parent ActionGroupData closure and whole SkillData EOF remain unresolved."
+}

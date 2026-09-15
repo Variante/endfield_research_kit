@@ -7378,11 +7378,18 @@ def collect_mono_behaviour_audio_id_contexts(
                 candidate_path_id = int(object_row.get("pathId") or 0)
             except (TypeError, ValueError):
                 candidate_path_id = 0
-            raw_object_candidates.add((
-                source_root,
-                str(row.get("name") or ""),
-                candidate_path_id,
-            ))
+            # A row whose own field projection is complete (``fields`` decoded
+            # and untruncated) already carries every serialized leaf the raw
+            # JSON would yield, so re-reading its file cannot add an
+            # occurrence.  Only rows that fail that per-row contract stay
+            # eligible for the raw-JSON read; the source-level gate below still
+            # decides whether the content prefilter is also required.
+            if not has_fields_contract:
+                raw_object_candidates.add((
+                    source_root,
+                    str(row.get("name") or ""),
+                    candidate_path_id,
+                ))
             scene = row.get("sceneContext") if isinstance(row.get("sceneContext"), dict) else {}
             script = row.get("script") if isinstance(row.get("script"), dict) else {}
             scalar_values = {

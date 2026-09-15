@@ -172,6 +172,54 @@ reports/source_graph/
 Counts, edge inventories, native addresses, hashes, per-level examples, and
 session proof belong in those outputs rather than this file.
 
+## Deferred bounded Story capture plan
+
+Planned, not implemented: revisit EndfieldCapture for runtime trigger and
+continuation evidence after selecting a concrete static-evidence gap. Existing
+audio relationships and optional host recording can document one observed
+playthrough; the generic gameplay-semantics profile is not a Mission/LevelScript/
+Story tracer. Recheck actual provider capabilities when resuming. Operational
+commands and capture restrictions remain owned by
+[`EndfieldCapture/README.md`](../tools/EndfieldCapture/README.md).
+
+Start with one short, repeatable NPC interaction leading to one Story and its
+completion callback, not a whole chapter. Record the initial mission/objective,
+interaction target, and chosen option. Existing bounded audio capture plus
+optional recording may establish observed playback, but cannot establish its
+trigger or mission ownership by themselves.
+
+Before implementing a dedicated observer, authenticate the current native
+inputs and validate each selected method body, ABI, payload boundary, and
+identity carrier. Observe only the bounded chain:
+
+`trigger -> condition result -> LevelScript action -> Story start/end -> callback or quest-state change`
+
+Retain exact source-connectable trigger/entity/LevelScript identities, condition
+inputs and results, Story key and initiating action, playback-instance lifetime,
+callback/successor identity, and supplied mission/quest identities where proven.
+Cross-thread or asynchronous links need validated correlation identities;
+timestamps and process-local pointers alone do not establish causality or
+persistent source identity. Unavailable fields remain unresolved. A received
+server notification does not reveal the server's selection policy.
+
+Keep hooks observation-only and bounded, preserve original calls and results,
+and follow the prelaunch, one-attachment, exact-build, clean-stop, and collector
+gates. Missing hooks, unreadable/truncated payloads, lost events, ambiguous joins,
+or incomplete cleanup fail closed. Add focused positive and negative tests
+before retail observation. A key press or successful preflight is not evidence
+that capture completed; require validated collection and its hashed inventory.
+
+Join accepted runtime records back to authenticated static sources before
+publishing edges. One session proves only its observed route, not universal
+ordering, unobserved branch behavior, or server policy. If safely repeatable,
+use separate bounded sessions for a repeat and a controlled alternative, without
+modifying game state through the observer. Keep raw sessions in the existing
+`scratch/reverse_engineering/endfield_capture/` area and compact reviewed results
+in `reports/story/recovery/`; update this topic only with durable conclusions.
+Expand to quest conditions and cross-Story callbacks only after the first chain
+has a complete identity join. This plan authorizes no capture or implementation
+until explicitly revisited.
+
 ## Remaining gaps
 
 - Revisit exact playback ownership only when server policy, payload-aware

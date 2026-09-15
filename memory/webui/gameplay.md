@@ -53,3 +53,9 @@ Story inputs changed.
 - Improve exact skill-to-projectile, asset, and sound ownership.
 - Recover additional action/selector schemas with exact-consumption fixtures.
 - Keep runtime formula and tag semantics gated and reproducible.
+- Buff coverage is reported without a current denominator: the page consumes
+  exported BuffData with Persistent precedence, but no provenance-matched
+  BuffData census exists. See the BuffData corpus gap in
+  [`../animestudio_recovery.md`](../animestudio_recovery.md); until it closes,
+  an absent lifecycle/stacking/trigger tail cannot be distinguished from an
+  unextracted one.

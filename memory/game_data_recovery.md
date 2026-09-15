@@ -232,12 +232,26 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   accepted-header path or the bounded list reader's remaining-byte check. This
   ranks the tail hypotheses offline, but provider/cache selection and an
   executed parent cursor remain unavailable, so no whole SkillData record is
-  closed. A separate ActionGroupData branch probe conditionally matches a
-  `passiveEventActions` AbilityActionMap element to its registered reader: an
-  empty SequenceActionData array reaches the map's static end, while a
-  nonempty sequence stops before its first non-null action-union payload. This
-  does not close the parent list or ActionGroupData; bytes outside these
-  sample-local ranges and before the terminal tail remain opaque.
+  closed. A separate ActionGroupData census replays current positive
+  `passiveEventActions` lists through empty and nonempty SequenceActionData
+  branches. Exact-build dispatch and selected reader bodies align several
+  non-null child unions to their independently pinned member-header counts.
+  The C9 member-eight normal path is consumed only through its scalar prefix,
+  stopping before its first generic SequenceActionData call because runtime
+  provider selection for that nested reader remains unobserved. A separate
+  candidate-only replay may record its three SequenceActionData call ranges
+  against the current native sequence and child-action reader contracts, but
+  those ranges do not advance the authoritative parser cursor or close C9.
+  Other tags without a selected reader remain opaque at their first byte. The
+  offline `memorypack.skill_timeline_cursor` now extends candidates through a
+  child action only when the exact-build native route, per-tag reader contract,
+  and source-hash-verified `memorypack.buff_actions.Reader` agree. Its selected
+  reader endpoints and byte ranges remain candidates; an unsupported nested
+  union stays unconsumed at its first byte. This broadens offline structural
+  prefixes without selecting the runtime provider/cache or closing the parent.
+  `timelineActions` remains a non-advancing count peek, and neither
+  `ActionGroupData` nor whole SkillData is closed. Child fields remain unnamed,
+  and bytes beyond each proven prefix or conditional list endpoint stay opaque.
   The report also verifies the observer's post-call return-address coordinates,
   which are hook locations rather than a live cursor receipt.
   Available TypeTrees do not cover these JsonData files.
