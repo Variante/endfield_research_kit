@@ -6291,6 +6291,33 @@ It is still refused, on two counts:
 absence of evidence from the binary, and it would still hold if a matching schema turned
 up tomorrow.*
 
+##### CONFIRMED LATER: the engine's own types say the same thing
+
+The `<type-index:...>` placeholders that blocked this at the time are resolvable through
+`MetadataRegistration.types` in `GameAssembly.dll`. Resolved, `LoaderChunkStaticData` reads:
+
+```
+loadConfig      Beyond.Gameplay.ChunkLoadConfigInfo     chunkId    string
+compareId       uint                                    globalId   uint
+levelId         string                                  levelNumId int
+rectCenter / rectLeftBottom / rectRightTop  UnityEngine.Vector2
+grids           List<...>
+tiers           Dictionary<,>          mists      Dictionary<,>
+```
+
+***`tiers` and `mists` are dictionaries, not lists.*** The mapping was refused because
+`len(slot6) == len(slot7)` in 7,433 of 7,433 files and two independent collections would not
+match that exactly. The engine now says something stronger and quite separate: **two of the
+three are not even the same container kind as the third**, so they could not serialize as
+three parallel vectors whatever their lengths. *A refusal made on corpus evidence, upheld a
+second time by type evidence that did not exist when it was made.*
+
+Also worth keeping: the chunk rectangles are **`Vector2`** -- the loader addresses chunks in
+two dimensions, matching `StreamingChunkInfo`'s two-int32 entries, while the *filenames*
+carry a third coordinate that varies 0..7. And `LoaderLevelData` splits its chunks into
+`lowChunks` / `mediumChunks` / `highChunks`, three `List<>` of chunk references, which is a
+LOD tiering of chunks rather than of anything inside them.
+
 #### THE SIX CATEGORIES ARE UNORDERED: THE SIZE-CLASS READING IS REFUSED
 
 The `w4 = 8 | 2^(k+4)` lock-step makes `k` look like an index into something *ordered* --
