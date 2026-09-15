@@ -9,6 +9,7 @@ import unittest
 from pathlib import Path
 
 from scripts.audio_semantics.hirc_action_corpus import (
+    type09_is_framed_except_the_second_run,
     type17_is_framed_except_the_tied_block,
     type08_head_words_are_null_or_resolve,
     type11_sources_share_the_type02_plugin_space,
@@ -162,6 +163,17 @@ def valid_action_fixture():
         "failureCategories": {},
         "unsupportedCategories": {},
         "nonExactExamples": [],
+    }
+    type09_bodies = {
+        "bodies": 5,
+        "exact": 4,
+        "unestablishedSecondRun": 1,
+        "failed": 0,
+        "exactBytes": 80,
+        "bodyBytes": 100,
+        "runEntries": 6,
+        "failureCounts": {},
+        "tailFlagCounts": {"tail_00": 3, "tail_01": 1},
     }
     type17_bodies = {
         "bodies": 5,
@@ -345,6 +357,7 @@ def valid_action_fixture():
                     "hircType11Sources": copy.deepcopy(type11_sources),
                     "hircType08Head": copy.deepcopy(type08_head),
                     "hircType17": copy.deepcopy(type17_bodies),
+                    "hircType09": copy.deepcopy(type09_bodies),
                     "hircType05BodyFrame": copy.deepcopy(type05_body),
                     "hircReferenceCensus": copy.deepcopy(reference_census),
                     "hircType03ActionFrame": copy.deepcopy(frame),
@@ -370,6 +383,7 @@ def valid_action_fixture():
                             "hircType11Sources": copy.deepcopy(type11_sources),
                             "hircType08Head": copy.deepcopy(type08_head),
                             "hircType17": copy.deepcopy(type17_bodies),
+                            "hircType09": copy.deepcopy(type09_bodies),
                             "hircType05BodyFrame": copy.deepcopy(type05_body),
                             "hircReferenceCensus": copy.deepcopy(reference_census),
                             "hircType03ActionFrame": copy.deepcopy(frame),
@@ -1108,6 +1122,37 @@ class HircActionCorpusTests(unittest.TestCase):
             scope["hircType05BodyFrame"]["groupCounts"]["recordEntries"] = 1_000_000
         with self.assertRaisesRegex(ValueError, "anonymous element bytes exceed the framed bodies"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, oversized)
+
+    def test_type09_is_framed_or_fenced_and_flags_match_exact_bodies(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        bodies = result["type09Bodies"]
+        self.assertEqual(bodies["exact"], 4)
+        self.assertEqual(bodies["unestablishedSecondRun"], 1)
+        self.assertTrue(type09_is_framed_except_the_second_run(bodies))
+        self.assertFalse(
+            type09_is_framed_except_the_second_run({**bodies, "exact": 3, "failed": 1})
+        )
+
+        # One tail flag is read per exactly framed body and nowhere else, so the
+        # histogram cannot drift from the exact count.
+        broken = copy.deepcopy(audio_audit)
+        for scope in (
+            broken["rows"][0]["package"],
+            broken["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircType09"]["tailFlagCounts"] = {"tail_00": 9}
+        with self.assertRaisesRegex(ValueError, "tail flags do not match"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, broken)
+
+        partition = copy.deepcopy(audio_audit)
+        for scope in (
+            partition["rows"][0]["package"],
+            partition["rows"][0]["package"]["bnkStructures"][0],
+        ):
+            scope["hircType09"]["unestablishedSecondRun"] = 0
+        with self.assertRaisesRegex(ValueError, "do not partition"):
+            aggregate_current_hirc_actions(outer, expected_files, excluded_files, partition)
 
     def test_type17_is_framed_or_fenced_never_failed(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

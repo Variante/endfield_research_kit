@@ -1620,6 +1620,21 @@ Stable conclusions:
   fields without guessing, so the grammar stays unresolved rather than being
   fitted to four samples. Do not publish a type `0x09` lane until those four
   parse; the gate would refuse it anyway.
+- **That 5,154 grammar is documented here but not implemented anywhere, and this
+  prose is not enough to rebuild it.** A later attempt re-derived type `0x09` from
+  scratch with a validated node-frame mirror and reached only 4,982 bodies at
+  best, after sweeping 48 layer-grammar variants (header widths 8..23 against
+  fixed, single-counted and per-reference point lists). None reproduced 5,154. If
+  the layer grammar is revisited, **write it down as field widths and offsets or
+  as code**, not as a sentence -- a number in a note that nobody can reproduce is
+  worse than no number.
+- What that attempt did confirm independently: the shared node frame opens **all
+  5,158** type `0x09` bodies, and after it come a counted run of four-byte
+  entries and a second count. Where the second count is zero, one further byte
+  closes the body exactly -- 4,973 bodies, 308,489 of 344,190 bytes, now gated and
+  tested in the reader. The other 185 are fenced. **This shipped census is
+  deliberately weaker than the 5,154 recorded above**; it is what is verified in
+  code, not the best reading anyone has had.
 - **Layer 4 opens for audio.** The anonymous four-byte values inside the exactly
   framed terminal vectors of numeric types `0x04`, `0x05`, `0x06` and `0x07` are object
   identities. All 230,247 of them resolve, every one to exactly one HIRC object

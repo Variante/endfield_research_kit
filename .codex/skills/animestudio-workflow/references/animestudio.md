@@ -335,6 +335,13 @@ scratch. They do not open with the node frame, and searching for an offset where
 the frame parses is worthless because every music body admits several such
 offsets -- the frame is permissive, so "it parsed" is nearly no evidence. A
 structural predictor is needed, the way byte 1 predicts the `0x0E` prefix.
+Numeric type `0x09` is opened by the shared node frame in all 5,158 bodies; after
+it come a counted four-byte run and a second count, and where that count is zero a
+single byte closes the body -- 4,973 of them, now gated. The recovery memory
+records a better layer grammar reaching 5,154, but it exists only as prose and a
+later attempt could not reproduce it from 48 swept variants, so the shipped census
+is the weaker verified one. Record grammars as widths and offsets, not sentences.
+
 Numeric type `0x11` is an eight-byte header whose second word sizes an opaque
 section, one byte, group I, a 16-bit flag, then a counted run of six-byte
 elements -- 2,553 of 2,645 bodies close exactly. Do not try to close the other 92:

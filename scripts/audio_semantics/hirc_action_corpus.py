@@ -1639,6 +1639,9 @@ def aggregate_current_hirc_actions(
     type04_banks_with_objects = 0
     type04_non_exact_examples: list[dict[str, Any]] = []
     body_lanes = _build_body_lanes()
+    type09_totals: Counter[str] = Counter()
+    type09_failures: Counter[str] = Counter()
+    type09_flags: Counter[str] = Counter()
     type17_totals: Counter[str] = Counter()
     type17_failures: Counter[str] = Counter()
     type08_totals: Counter[str] = Counter()
@@ -1685,6 +1688,12 @@ def aggregate_current_hirc_actions(
             type02_plugin_counts[plugin_type] += count
         for plugin_id, count in package_type02["pluginIdCounts"].items():
             type02_plugin_ids[plugin_id] += count
+
+        package_type09 = _read_type09_census(package.get("hircType09"), package_label)
+        for key in TYPE09_SCALARS:
+            type09_totals[key] += package_type09[key]
+        type09_failures.update(package_type09["failureCounts"])
+        type09_flags.update(package_type09["tailFlagCounts"])
 
         package_type17 = _read_type17_census(package.get("hircType17"), package_label)
         for key in TYPE17_SCALARS:
@@ -2106,6 +2115,11 @@ def aggregate_current_hirc_actions(
         "type14BodyFrames": body_lanes["0x0E"].publish(),
         "type22BodyFrames": body_lanes["0x16"].publish(),
         "type08HeadWords": {key: int(type08_totals[key]) for key in TYPE08_HEAD_SCALARS},
+        "type09Bodies": {
+            **{key: int(type09_totals[key]) for key in TYPE09_SCALARS},
+            "failureCounts": dict(sorted(type09_failures.items())),
+            "tailFlagCounts": dict(sorted(type09_flags.items())),
+        },
         "type17Bodies": {
             **{key: int(type17_totals[key]) for key in TYPE17_SCALARS},
             "failureCounts": dict(sorted(type17_failures.items())),
@@ -2577,6 +2591,65 @@ def music_head_references_are_closed(corpus: dict[str, Any]) -> bool:
     )
 
 
+TYPE09_SCALARS = (
+    "bodies", "exact", "unestablishedSecondRun", "failed",
+    "exactBytes", "bodyBytes", "runEntries",
+)
+
+
+def _read_type09_census(census: Any, label: str) -> dict[str, Any]:
+    if census is None:
+        return {key: 0 for key in TYPE09_SCALARS} | {"failureCounts": {}, "tailFlagCounts": {}}
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x09 census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in TYPE09_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x09 census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x09 census has negative {key}: {label}")
+        out[key] = value
+    for key in ("failureCounts", "tailFlagCounts"):
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"type 0x09 census has invalid {key}: {label}")
+        out[key] = {str(k): int(v) for k, v in raw.items()}
+    if out["exact"] + out["unestablishedSecondRun"] + out["failed"] != out["bodies"]:
+        raise ValueError(
+            f"type 0x09 outcomes do not partition the bodies: {label} "
+            f"exact={out['exact']} open={out['unestablishedSecondRun']} "
+            f"failed={out['failed']} bodies={out['bodies']}"
+        )
+    if sum(out["failureCounts"].values()) != out["failed"]:
+        raise ValueError(f"type 0x09 failure categories do not sum to the failures: {label}")
+    # One tail flag is read per exactly framed body and nowhere else.
+    if sum(out["tailFlagCounts"].values()) != out["exact"]:
+        raise ValueError(
+            f"type 0x09 tail flags do not match the exact bodies: {label} "
+            f"flags={sum(out['tailFlagCounts'].values())} exact={out['exact']}"
+        )
+    if out["exactBytes"] > out["bodyBytes"]:
+        raise ValueError(f"type 0x09 exact bytes exceed the body bytes: {label}")
+    return out
+
+
+def type09_is_framed_except_the_second_run(corpus: dict[str, Any]) -> bool:
+    """Every type 0x09 body is consumed exactly or fenced for its second run.
+
+    The node frame opens all of them, so a failure here means the reader broke,
+    not that the format is hard; failures are therefore not tolerated at all.
+    """
+    return (
+        int(corpus.get("bodies") or 0) > 0
+        and int(corpus.get("failed") or 0) == 0
+        and int(corpus.get("exact") or 0) > 0
+        and int(corpus.get("exact") or 0) + int(corpus.get("unestablishedSecondRun") or 0)
+        == int(corpus.get("bodies") or 0)
+    )
+
+
 TYPE17_SCALARS = (
     "bodies", "exact", "tiedOptionalBlock", "failed",
     "exactBytes", "bodyBytes", "runElements", "groupIEntries",
@@ -2752,6 +2825,31 @@ def reference_graph_is_closed(corpus: dict[str, Any]) -> bool:
 
 def _reference_graph_markdown(report: dict[str, Any]) -> str:
     graph = report["corpus"]["referenceGraph"]
+    type09 = report["corpus"].get("type09Bodies") or {}
+    type09_lines = []
+    if type09.get("bodies"):
+        type09_lines = [
+            "",
+            "## Numeric type `0x09`: the node frame does open it",
+            "",
+            f"- Bodies: {type09['bodies']:,}; consumed exactly to the declared body end: "
+            f"{type09['exact']:,} ({type09['exactBytes']:,} of {type09['bodyBytes']:,} bytes).",
+            f"- Fenced because a second counted run introduces records of an "
+            f"unestablished shape: {type09['unestablishedSecondRun']:,}. Failures: "
+            f"{type09['failed']:,}.",
+            f"- Four-byte run entries: {type09['runEntries']:,}.",
+            "",
+            "The shared node frame opens **every** one of these bodies, which is worth "
+            "stating plainly because this type was previously recorded here as resisting "
+            "it. After the frame comes a counted run of four-byte entries and then a "
+            "second count. Where that second count is zero, one more byte closes the "
+            "body exactly.",
+            "",
+            "Where it is not zero it introduces records this reader cannot frame, so "
+            "those bodies are fenced. Several fixed and variable record shapes were "
+            "tried and none consumed them, so nothing is claimed about that run.",
+        ]
+
     type17 = report["corpus"].get("type17Bodies") or {}
     type17_lines = []
     if type17.get("bodies"):
@@ -2910,6 +3008,7 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
                 for name, count in graph["objectCountsByType"].items()
             ) or "| _none_ | 0 | 0 |",
             "",
+            *type09_lines,
             *type17_lines,
             *head08_lines,
             *source_lines,
@@ -3259,6 +3358,8 @@ def run_current_corpus_audit(
     music_head_corpus = corpus["musicHeadReferences"]
     music_head_closed = music_head_references_are_closed(music_head_corpus)
     type11_corpus = corpus["type11SourceRecords"]
+    type09_corpus = corpus["type09Bodies"]
+    type09_closed = type09_is_framed_except_the_second_run(type09_corpus)
     type17_corpus = corpus["type17Bodies"]
     type17_closed = type17_is_framed_except_the_tied_block(type17_corpus)
     type08_corpus = corpus["type08HeadWords"]
@@ -3272,6 +3373,7 @@ def run_current_corpus_audit(
         and type11_closed
         and type08_closed
         and type17_closed
+        and type09_closed
     )
     reference_report = {
         "format": "animestudio-wwise-hirc-reference-graph-audit",
@@ -3297,6 +3399,7 @@ def run_current_corpus_audit(
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
             "type17Bodies": type17_corpus,
+            "type09Bodies": type09_corpus,
             "type02PluginIdCounts": corpus["type02SourcePrefixes"]["pluginIdCounts"],
             "audioAuditSummary": corpus["audioAuditSummary"],
         },
@@ -3318,6 +3421,13 @@ def run_current_corpus_audit(
     reference_output_markdown.write_text(
         _reference_graph_markdown(reference_report), encoding="utf-8"
     )
+    if not type09_closed:
+        lane_failures.append(
+            "type 0x09 bodies are neither framed nor fenced: "
+            f"bodies={type09_corpus['bodies']} exact={type09_corpus['exact']} "
+            f"open={type09_corpus['unestablishedSecondRun']} failed={type09_corpus['failed']} "
+            f"categories={sorted(type09_corpus['failureCounts'])}"
+        )
     if not type17_closed:
         lane_failures.append(
             "type 0x11 bodies are neither framed nor fenced: "
