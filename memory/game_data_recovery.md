@@ -2635,6 +2635,34 @@ chain:
   front offsets against 77 end distances. The end anchor at `-69` is real and
   controlled, but the front is where these references are actually placed.
 
+### `0x0C`'s list is LOCATED: a counted array at `32 + 5 * body[14]`
+
+```
+body[14]                 -- a count of five-byte optional fields
+u32 count   at 32 + 5*body[14]
+count x u32 at 36 + 5*body[14]   -- object ids
+```
+
+- **704 of the 704 arrays found there resolve completely** -- every entry naming an
+  object in the same bank. 38 bodies have a count outside 1..64 and are not tested.
+- Lengths spread 1 to 9+: `2`:270, `3`:148, `1`:80, `9`:70, `4`:60, `5`:24, `7`:22,
+  `6`:20, `8`:10. Targets: `0D` 1,942, `0C` 644, `0A` 394.
+- Selector values: 0 in 595 bodies, 1 in 122, 2 in 23, 6 in 2.
+- **The control is total: 0 of 4,928 rival attempts resolve.** Read at base 28, 30,
+  31, 33, 34, 36 or 40 the same test never even finds a usable count, let alone an
+  array that resolves.
+- **Base and step are settled by different evidence.** The base by resolution -- 32
+  works and its neighbours find nothing. The step by *coverage* -- a step of 5 finds
+  an array in 704 bodies where 0, 4, 6 and 8 find one in 564, and the 140 extra are
+  exactly the bodies whose selector byte is nonzero. *A step that did not match the
+  data would not reach more bodies; it would reach the same ones and fail on them.*
+- This **locates a field**, not the type. Most bodies still carry references after
+  the array, and what holds those is unknown.
+- It came from applying the move that closed `0x0A` -- find a reference, step back
+  four bytes, look for a count -- to a different type. That move has now worked twice
+  and failed once (the `0x0B` residue), which is a better record than any of the
+  width-enumeration attempts.
+
 ### `0x0C` keeps its references in a list; `0A` and `0D` keep theirs in fields
 
 Asked of a census the reader has published for many runs: **how many distinct end

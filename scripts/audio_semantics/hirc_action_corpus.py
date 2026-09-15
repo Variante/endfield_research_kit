@@ -1735,6 +1735,8 @@ def aggregate_current_hirc_actions(
     type11_body_selectors: Counter[str] = Counter()
     parent_field_totals: Counter[str] = Counter()
     parent_field_maps: dict[str, Counter] = {k: Counter() for k in PARENT_FIELD_MAPS}
+    type0c_arr_totals: Counter[str] = Counter()
+    type0c_arr_maps: dict[str, Counter] = {k: Counter() for k in TYPE0C_ARRAY_MAPS}
     type0c_hier_totals: Counter[str] = Counter()
     type0c_hier_maps: dict[str, Counter] = {k: Counter() for k in TYPE0C_HIERARCHY_MAPS}
     type0a_array_totals: Counter[str] = Counter()
@@ -1974,6 +1976,13 @@ def aggregate_current_hirc_actions(
             parent_field_totals[key] += package_pf[key]
         for key in PARENT_FIELD_MAPS:
             parent_field_maps[key].update(package_pf[key])
+        package_t0ca = _read_type0c_array_census(
+            package.get("hircType0CArray"), package_label
+        )
+        for key in TYPE0C_ARRAY_SCALARS:
+            type0c_arr_totals[key] += package_t0ca[key]
+        for key in TYPE0C_ARRAY_MAPS:
+            type0c_arr_maps[key].update(package_t0ca[key])
         package_t0c = _read_type0c_hierarchy_census(
             package.get("hircType0CHierarchy"), package_label
         )
@@ -2521,6 +2530,10 @@ def aggregate_current_hirc_actions(
         "parentField": {
             **{k: int(parent_field_totals[k]) for k in PARENT_FIELD_SCALARS},
             **{k: dict(sorted(parent_field_maps[k].items())) for k in PARENT_FIELD_MAPS},
+        },
+        "type0CArray": {
+            **{k: int(type0c_arr_totals[k]) for k in TYPE0C_ARRAY_SCALARS},
+            **{k: dict(sorted(type0c_arr_maps[k].items())) for k in TYPE0C_ARRAY_MAPS},
         },
         "type0CHierarchy": {
             **{k: int(type0c_hier_totals[k]) for k in TYPE0C_HIERARCHY_SCALARS},
@@ -3869,6 +3882,75 @@ def the_parent_field_inverts_the_reference_graph(corpus: dict[str, Any]) -> bool
     # twice" would be a claim about one relation.
     edges = corpus.get("edgeTypes") or {}
     return len({name for name, value in edges.items() if int(value) > 0}) >= 5
+
+
+TYPE0C_ARRAY_SCALARS = (
+    "bodies", "tooShort", "selectorOutOfRange", "countPastTheEnd", "countOutOfRange",
+    "arrayPastTheEnd", "arraysTested", "arraysFullyResolving",
+    "rivalArraysTested", "rivalArraysFullyResolving",
+)
+TYPE0C_ARRAY_MAPS = ("selectorValues", "arrayLengths", "targetTypes")
+
+
+def _read_type0c_array_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's numeric type 0x0C reference-array census."""
+    if census is None:
+        return ({key: 0 for key in TYPE0C_ARRAY_SCALARS}
+                | {key: {} for key in TYPE0C_ARRAY_MAPS})
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x0C array census is not an object: {label}")
+    out: dict[str, Any] = {}
+    for key in TYPE0C_ARRAY_SCALARS:
+        try:
+            value = int(census[key])
+        except (KeyError, TypeError, ValueError) as exc:
+            raise ValueError(f"type 0x0C array census has invalid {key}: {label}") from exc
+        if value < 0:
+            raise ValueError(f"type 0x0C array census has negative {key}: {label}")
+        out[key] = value
+    for key in TYPE0C_ARRAY_MAPS:
+        raw = census.get(key)
+        if not isinstance(raw, dict):
+            raise ValueError(f"type 0x0C array census has invalid {key}: {label}")
+        out[key] = {str(name): int(value) for name, value in raw.items()}
+    if out["arraysFullyResolving"] > out["arraysTested"]:
+        raise ValueError(f"type 0x0C census resolves more arrays than it tested: {label}")
+    if out["rivalArraysFullyResolving"] > out["rivalArraysTested"]:
+        raise ValueError(f"type 0x0C census resolves more rival arrays than tested: {label}")
+    if sum(out["arrayLengths"].values()) != out["arraysFullyResolving"]:
+        raise ValueError(f"type 0x0C array lengths do not cover the resolving arrays: {label}")
+    return out
+
+
+def the_type0c_reference_array_is_located(corpus: dict[str, Any]) -> bool:
+    """Numeric type 0x0C carries a counted reference array at 32 + 5 * body[14].
+
+    Nearly every array found there resolves completely -- every entry naming an object
+    in the same bank -- with lengths spread from 1 to 9 and beyond rather than piling
+    on one value.
+
+    The rival bases are what make the offset a location rather than a guess. Read at
+    28, 30, 31, 33, 34, 36 or 40 the same test finds almost nothing: a count that
+    happens to be small and an array that happens to resolve is not something a wrong
+    offset produces.
+
+    This locates one field. It is **not** a frame for the type: most bodies carry more
+    references after the array, and what holds them is still unknown.
+    """
+    tested = int(corpus.get("arraysTested") or 0)
+    if tested <= 0:
+        return False
+    resolving = int(corpus.get("arraysFullyResolving") or 0)
+    if resolving * 20 < tested * 19:
+        return False
+    lengths = corpus.get("arrayLengths") or {}
+    if len({k for k, v in lengths.items() if int(v) > 0}) < 4:
+        return False
+    rival_tested = int(corpus.get("rivalArraysTested") or 0)
+    rival = int(corpus.get("rivalArraysFullyResolving") or 0)
+    if rival_tested <= 0:
+        return False
+    return rival * 10 < resolving
 
 
 def the_type0c_parent_relation_repeats_the_same_shape(corpus: dict[str, Any]) -> bool:
@@ -6723,6 +6805,7 @@ def run_current_corpus_audit(
     parent_inverse = the_parent_field_inverts_the_reference_graph(parent_field_corpus)
     type0c_hier_corpus = corpus["type0CHierarchy"]
     t0c_shape = the_type0c_parent_relation_repeats_the_same_shape(type0c_hier_corpus)
+    t0c_array = the_type0c_reference_array_is_located(corpus["type0CArray"])
     type0a_anchor_corpus = corpus["type0AEndAnchor"]
     anchor_ok = the_type0a_end_anchor_beats_every_neighbouring_distance(type0a_anchor_corpus)
     array_ok = the_type0a_reference_is_a_counted_array(corpus["type0ACountedArray"])
@@ -6872,6 +6955,7 @@ def run_current_corpus_audit(
         and edge_aligned
         and edge_located
         and t0c_shape
+        and t0c_array
         and parent_inverse
         and music_scope
         and music_partition
@@ -6927,6 +7011,7 @@ def run_current_corpus_audit(
             "type0AEndAnchor": type0a_anchor_corpus,
             "type0ACountedArray": corpus["type0ACountedArray"],
             "type0CHierarchy": type0c_hier_corpus,
+            "type0CArray": corpus["type0CArray"],
             "parentField": parent_field_corpus,
             "thinlySeenGroups": thin_groups,
             "type11SourceRecords": type11_corpus,
@@ -7138,6 +7223,14 @@ def run_current_corpus_audit(
             "the parent field and the reference graph are no longer inverse: "
             f"checkable={f.get('checkable')} agree={f.get('parentNamesTheChildBack')} "
             f"disagree={f.get('parentDoesNotNameTheChild')} {f.get('disagreementTypes')}"
+        )
+    if not t0c_array:
+        a = report["corpus"].get("type0CArray") or {}
+        lane_failures.append(
+            "the type 0x0C reference array is no longer located: "
+            f"resolving={a.get('arraysFullyResolving')}/{a.get('arraysTested')} "
+            f"rivals={a.get('rivalArraysFullyResolving')}/{a.get('rivalArraysTested')} "
+            f"lengths={a.get('arrayLengths')}"
         )
     if not t0c_shape:
         t = report["corpus"].get("type0CHierarchy") or {}

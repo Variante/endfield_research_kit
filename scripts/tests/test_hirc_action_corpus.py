@@ -23,7 +23,9 @@ from scripts.audio_semantics.hirc_action_corpus import (
     _read_type0a_array_census,
     the_type0a_reference_is_a_counted_array,
     _read_parent_field_census,
+    _read_type0c_array_census,
     _read_type0c_hierarchy_census,
+    the_type0c_reference_array_is_located,
     the_parent_field_inverts_the_reference_graph,
     the_type0c_parent_relation_repeats_the_same_shape,
     edges_per_distinct_distance,
@@ -4006,3 +4008,65 @@ class Type11EntryCountTests(unittest.TestCase):
         )
         self.assertEqual(got["entryCountValues"], {})
         self.assertEqual(_read_type11_header_census(None, "pkg")["entryCountValues"], {})
+
+
+class Type0CReferenceArrayTests(unittest.TestCase):
+    """The array is located; the rival bases are what make that a location."""
+
+    def census(self, **overrides):
+        base = {
+            "bodies": 742, "tooShort": 0, "selectorOutOfRange": 0,
+            "countPastTheEnd": 0, "countOutOfRange": 38, "arrayPastTheEnd": 0,
+            "arraysTested": 704, "arraysFullyResolving": 704,
+            "rivalArraysTested": 4928, "rivalArraysFullyResolving": 0,
+            "selectorValues": {"selector_0": 595, "selector_1": 122,
+                               "selector_2": 23, "selector_6": 2},
+            "arrayLengths": {"entries_1": 80, "entries_2": 270, "entries_3": 148,
+                             "entries_4": 60, "entries_9": 70, "entries_5": 24},
+            "targetTypes": {"type0D": 1942, "type0C": 644, "type0A": 394},
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_type0c_reference_array_is_located(self.census()))
+
+    def test_rivals_that_also_resolve_fail(self) -> None:
+        # A count that happens to be small and an array that happens to resolve is
+        # not something a wrong offset produces -- if it were, the offset would not
+        # be a location.
+        self.assertFalse(the_type0c_reference_array_is_located(
+            self.census(rivalArraysFullyResolving=600)
+        ))
+
+    def test_arrays_that_do_not_resolve_fail(self) -> None:
+        self.assertFalse(the_type0c_reference_array_is_located(
+            self.census(arraysFullyResolving=400)
+        ))
+
+    def test_one_array_length_is_not_enough(self) -> None:
+        # All-length-one arrays could not tell a count from the constant 1.
+        self.assertFalse(the_type0c_reference_array_is_located(
+            self.census(arrayLengths={"entries_1": 704})
+        ))
+
+    def test_rivals_must_have_been_attempted(self) -> None:
+        # Zero rival attempts is not a clean sweep, it is an unrun control.
+        self.assertFalse(the_type0c_reference_array_is_located(
+            self.census(rivalArraysTested=0)
+        ))
+
+    def test_an_empty_census_fails(self) -> None:
+        self.assertFalse(the_type0c_reference_array_is_located({}))
+        self.assertFalse(the_type0c_reference_array_is_located(
+            self.census(arraysTested=0, arraysFullyResolving=0)
+        ))
+
+    def test_the_reader_rejects_more_resolving_than_tested(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_type0c_array_census(self.census(arraysFullyResolving=9999), "pkg")
+        with self.assertRaises(ValueError):
+            _read_type0c_array_census(self.census(arrayLengths={"entries_1": 3}), "pkg")
+
+    def test_an_absent_census_reads_as_empty(self) -> None:
+        self.assertEqual(_read_type0c_array_census(None, "pkg")["bodies"], 0)
