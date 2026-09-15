@@ -4877,9 +4877,45 @@ were not noise in a thin sample; they are a documented variant. *A relation with
 unexplained exceptions and a relation whose exceptions the vendor's own config explains
 are different things.*
 
-**Still open:** the `v3` scene files use `iv_<x>_<y>.bytes` with no LOD in the name, and
-117 of them start with `x = 0`. How the LOD dimension is carried there is not yet read,
-and the texture formats behind `clipmapTextureA`/`B` are not identified.
+#### TWO SCHEMES, and the field names say which file uses which
+
+There are two config types, and their fields are different schemes rather than
+versions of one:
+
+| `HGIrradianceVolumeConfigV2` (34 fields) | `HGIrradianceVolumeConfig` (26 fields) |
+| --- | --- |
+| `clipMapTextureSizeX/Y/Z` | `indirectionTextureSize`, `ClipmapTextureSize` |
+| `basisBaseGridDim`, `basisVoxelDataDim` | `blockCountX/Y/Z`, **`blockSizesV3`** |
+| `coeffBaseGridDim`, `coeffVoxelDataDim` | `hashTableSize`, `maxHashTableSize` |
+| `perBasisTextureOffset`, `perCoeffTextureOffset` | `perHashTableOffsets`, `perHashTableSizes` |
+| `lod3BaseGridDim`, `lod3VoxelDataDim`, `lod3Budget` | `perPhysicalTextureOffsets`, `perPhysicalTextureBlockCounts` |
+| `perRawBufferOffsets`, `perRawBufferCounts` | **`perFrameMaxLoadingByteCountV3`**, **`perFrameMaxUploadChunkCountV3`** |
+
+- **V2 is a clipmap of basis and coefficient textures per LOD.** That is the
+  `iv_<lod>_<x>_<y>.bytes` form -- the six non-`/v3/` gacha files at LODs 0, 1 and 3,
+  with magic `0x00003003` and the `w4 = w1 x 8 + w3` header.
+- **V3 is a sparse virtual texture: an indirection texture, a hash table, and physical
+  texture blocks.** The three fields carrying the `V3` suffix all live in
+  `HGIrradianceVolumeConfig`, alongside `blockSizesV3`. That is the
+  `Data/.../v3/iv_<x>_<y>.bytes` form -- 132 files, 4.16 GB.
+
+**This is what the byte statistics were seeing.** A hash table and an indirection
+texture at the front of a file are exactly what "49 distinct leading word pairs, no byte
+alignment, no delta coherence, no runs, entropy 5-7" look like. The leading words are
+hash-table and indirection data, and the bulk is physical texture blocks. *Seven
+eliminations were each correct and all pointing at the same answer, which none of them
+could name.*
+
+- **The LOD is carried inside the file, not in the name.** `perLOD`,
+  `perHashTableOffsets`, `perHashTableSizes`, `perPhysicalTextureOffsets` and
+  `perPhysicalTextureBlockCounts` are per-LOD arrays, so one `iv_<x>_<y>.bytes` holds
+  every LOD for its chunk. The `<x>_<y>` are chunk coordinates, which is why 117 of 132
+  begin `iv_0_`.
+
+**Still open:** the per-LOD array lengths and the physical texture format. This
+metadata parser reports field types as raw Il2CppType indices and does not resolve them,
+so the element widths need either the binary's type table or the `HGIrradianceVolume`
+method bodies.
 
 *Two batches of byte statistics eliminated seven containers and identified none. One
 read of the type layout named the format, explained the residue, and resolved the
