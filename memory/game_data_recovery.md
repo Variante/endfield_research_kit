@@ -2058,7 +2058,20 @@ is only their referent that is missing.*
 **Which sharpens what an anchor has to supply.** Not "what are these bytes" -- that is
 answered -- but *which quantity in this engine is a symmetric float range, usually
 degenerate to a point, attached to a source entry inside a node type the runtime never
-reads.* A table keyed by that shape is what would close it.
+reads.*
+
+***And it rules out every table in this corpus, on type grounds.*** The obvious next
+anchor is `STMG`, which is framed byte-exactly and carries the switch/state vocabulary.
+It cannot serve: pooled over all 25 packages `STMG` holds **4 sections, 15 distinct entry
+ids, 45 records** -- and those are **ids**, while `+12`/`+20` are **floats**. *A float does
+not join to an id table*, and the same objection retires the bank ids, media ids and object
+ids at a stroke. **The corpus's anchors are all identifier-keyed; this question needs a
+float-valued one**, which is why ten population sweeps found nothing and an eleventh would
+not either.
+
+That is a stronger statement of the blocker than "needs an external anchor": the anchor has
+to be a **property enumeration** -- the Wwise SDK's, or a bounded runtime observation --
+because nothing in the shipped data associates a float range with a name.
 
 ##### The chunk switch in full, and what it says about the "unowned" media
 
