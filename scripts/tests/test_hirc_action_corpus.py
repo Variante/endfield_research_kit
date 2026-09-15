@@ -21,6 +21,8 @@ from scripts.audio_semantics.hirc_action_corpus import (
     type12_bodies_are_exact_or_named,
     _read_type12_body_frame,
     type08_tail_records_are_located_by_a_unique_count,
+    type12_tail_records_are_located_by_a_unique_count,
+    _read_type12_tail_census,
     type08_tail_head_names_one_object_type,
     _read_type08_tail_word_census,
     _read_type08_tail_census,
@@ -275,6 +277,18 @@ def valid_action_fixture():
         "unsupportedCategories": {},
         "selectorCounts": {"secondListKey_15": 2, "secondListKey_0A": 1},
     }
+    # Numeric type 0x12's tail head resolves nowhere, control included -- the two
+    # types share a layout but not this field's meaning.
+    type12_tail_words = {
+        "heads": 1,
+        "packagePopulation": 200,
+        "firstWordSameBank": 0,
+        "firstWordOtherBankInPackage": 0,
+        "firstWordOutsidePackage": 1,
+        "secondWordResolves": 0,
+        "firstWordTargetTypeCounts": {},
+        "secondWordTargetTypeCounts": {},
+    }
     type08_tail_words = {
         "heads": 1,
         "packagePopulation": 200,
@@ -465,6 +479,8 @@ def valid_action_fixture():
                     "hircType08Tail": copy.deepcopy(type08_tail),
                     "hircType08TailWords": copy.deepcopy(type08_tail_words),
                     "hircType12BodyFrame": copy.deepcopy(type12_body),
+                    "hircType12Tail": copy.deepcopy(type08_tail),
+                    "hircType12TailWords": copy.deepcopy(type12_tail_words),
                     "hircType17": copy.deepcopy(type17_bodies),
                     "hircType09": copy.deepcopy(type09_bodies),
                     "hircType03Targets": copy.deepcopy(type03_targets),
@@ -1566,6 +1582,29 @@ class HircActionCorpusTests(unittest.TestCase):
             )
         with self.assertRaisesRegex(ValueError, "more terminators than bodies"):
             _read_type11_source_census({**census, "endsWithTerminator": 9}, "unit")
+
+    def test_type12_tails_are_located_by_the_same_check_as_type08(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        tail = result["type12TailRecords"]
+        self.assertTrue(type12_tail_records_are_located_by_a_unique_count(tail))
+        # One check, two types, because it is one structure. An ambiguous count has to
+        # break it for either type.
+        self.assertFalse(
+            type12_tail_records_are_located_by_a_unique_count({**tail, "countIsAmbiguous": 1})
+        )
+        # Sharing a layout does not make the same field mean the same thing: this
+        # type's tail-head words resolve nowhere, and the report must say so rather
+        # than inherit 0x08's finding.
+        words = result["type12TailHeadWords"]
+        self.assertEqual(words["firstWordTargetTypeCounts"], {})
+        self.assertEqual(words["secondWordResolves"], 0)
+
+    def test_a_type12_tail_census_names_its_own_type_when_it_refuses(self) -> None:
+        _, _, _, audio_audit = valid_action_fixture()
+        census = audio_audit["rows"][0]["package"]["hircType12Tail"]
+        with self.assertRaisesRegex(ValueError, "type 0x12 tail outcomes do not partition"):
+            _read_type12_tail_census({**census, "bodies": 9}, "unit")
 
     def test_the_type08_tail_head_word_must_beat_its_own_control(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

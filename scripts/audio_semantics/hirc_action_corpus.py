@@ -1669,6 +1669,12 @@ def aggregate_current_hirc_actions(
     type08_tail_totals: Counter[str] = Counter()
     type08_tail_counts: Counter[str] = Counter()
     type08_tail_codes: Counter[str] = Counter()
+    type12_tail_totals: Counter[str] = Counter()
+    type12_tail_counts: Counter[str] = Counter()
+    type12_tail_codes: Counter[str] = Counter()
+    type12_word_totals: Counter[str] = Counter()
+    type12_word_targets: Counter[str] = Counter()
+    type12_word_controls: Counter[str] = Counter()
     type08_word_totals: Counter[str] = Counter()
     type08_word_targets: Counter[str] = Counter()
     type08_word_controls: Counter[str] = Counter()
@@ -1789,6 +1795,25 @@ def aggregate_current_hirc_actions(
             type08_tail_totals[key] += package_type08_tail[key]
         type08_tail_counts.update(package_type08_tail["recordCountCounts"])
         type08_tail_codes.update(package_type08_tail["thirdFieldCounts"])
+        package_type12_tail = _read_type12_tail_census(
+            package.get("hircType12Tail"), package_label
+        )
+        for key in TYPE08_TAIL_SCALARS:
+            type12_tail_totals[key] += package_type12_tail[key]
+        type12_tail_counts.update(package_type12_tail["recordCountCounts"])
+        type12_tail_codes.update(package_type12_tail["thirdFieldCounts"])
+        package_type12_words = _read_type08_tail_word_census(
+            package.get("hircType12TailWords"), package_label
+        )
+        for key in TYPE08_TAIL_WORD_SCALARS:
+            if key == "packagePopulation":
+                type12_word_totals[key] = max(
+                    type12_word_totals[key], package_type12_words[key]
+                )
+                continue
+            type12_word_totals[key] += package_type12_words[key]
+        type12_word_targets.update(package_type12_words["firstWordTargetTypeCounts"])
+        type12_word_controls.update(package_type12_words["secondWordTargetTypeCounts"])
         package_type08_words = _read_type08_tail_word_census(
             package.get("hircType08TailWords"), package_label
         )
@@ -2205,10 +2230,20 @@ def aggregate_current_hirc_actions(
         "type14BodyFrames": body_lanes["0x0E"].publish(),
         "type22BodyFrames": body_lanes["0x16"].publish(),
         "type08HeadWords": {key: int(type08_totals[key]) for key in TYPE08_HEAD_SCALARS},
+        "type12TailHeadWords": {
+            **{key: int(type12_word_totals[key]) for key in TYPE08_TAIL_WORD_SCALARS},
+            "firstWordTargetTypeCounts": dict(sorted(type12_word_targets.items())),
+            "secondWordTargetTypeCounts": dict(sorted(type12_word_controls.items())),
+        },
         "type08TailHeadWords": {
             **{key: int(type08_word_totals[key]) for key in TYPE08_TAIL_WORD_SCALARS},
             "firstWordTargetTypeCounts": dict(sorted(type08_word_targets.items())),
             "secondWordTargetTypeCounts": dict(sorted(type08_word_controls.items())),
+        },
+        "type12TailRecords": {
+            **{key: int(type12_tail_totals[key]) for key in TYPE08_TAIL_SCALARS},
+            "recordCountCounts": dict(sorted(type12_tail_counts.items())),
+            "thirdFieldCounts": dict(sorted(type12_tail_codes.items())),
         },
         "type08TailRecords": {
             **{key: int(type08_tail_totals[key]) for key in TYPE08_TAIL_SCALARS},
@@ -3220,30 +3255,30 @@ def type08_tail_head_names_one_object_type(corpus: dict[str, Any]) -> bool:
     return sum(int(value) for value in targets.values()) == resolved
 
 
-def _read_type08_tail_census(census: Any, label: str) -> dict[str, Any]:
-    """Validate one package's or bank's type 0x08 tail census."""
+def _read_tail_census(census: Any, label: str, type_label: str) -> dict[str, Any]:
+    """Validate one package's or bank's tail census for a type that carries one."""
     if census is None:
         return {key: 0 for key in TYPE08_TAIL_SCALARS} | {
             "recordCountCounts": {}, "thirdFieldCounts": {},
         }
     if not isinstance(census, dict):
-        raise ValueError(f"type 0x08 tail census is not an object: {label}")
+        raise ValueError(f"type {type_label} tail census is not an object: {label}")
     out: dict[str, Any] = {}
     for key in TYPE08_TAIL_SCALARS:
         try:
             value = int(census[key])
         except (KeyError, TypeError, ValueError) as exc:
-            raise ValueError(f"type 0x08 tail census has invalid {key}: {label}") from exc
+            raise ValueError(f"type {type_label} tail census has invalid {key}: {label}") from exc
         if value < 0:
-            raise ValueError(f"type 0x08 tail census has negative {key}: {label}")
+            raise ValueError(f"type {type_label} tail census has negative {key}: {label}")
         out[key] = value
     for key in ("recordCountCounts", "thirdFieldCounts"):
         raw = census.get(key)
         if not isinstance(raw, dict):
-            raise ValueError(f"type 0x08 tail census has invalid {key}: {label}")
+            raise ValueError(f"type {type_label} tail census has invalid {key}: {label}")
         out[key] = {str(name): int(count) for name, count in raw.items()}
     if out["notWalkable"] + out["framedByTheReader"] + out["tails"] != out["bodies"]:
-        raise ValueError(f"type 0x08 tail outcomes do not partition its bodies: {label}")
+        raise ValueError(f"type {type_label} tail outcomes do not partition its bodies: {label}")
     resolved = (
         out["noZeroWordAtTheEnd"]
         + out["noCountBeforeTheRecords"]
@@ -3251,15 +3286,23 @@ def _read_type08_tail_census(census: Any, label: str) -> dict[str, Any]:
         + out["tailsWithAUniqueCount"]
     )
     if resolved != out["tails"]:
-        raise ValueError(f"type 0x08 tail outcomes do not partition its tails: {label}")
+        raise ValueError(f"type {type_label} tail outcomes do not partition its tails: {label}")
     if sum(out["recordCountCounts"].values()) != out["tailsWithAUniqueCount"]:
-        raise ValueError(f"type 0x08 tail record counts do not cover its tails: {label}")
+        raise ValueError(f"type {type_label} tail record counts do not cover its tails: {label}")
     if sum(out["thirdFieldCounts"].values()) != out["records"]:
-        raise ValueError(f"type 0x08 tail codes do not cover its records: {label}")
+        raise ValueError(f"type {type_label} tail codes do not cover its records: {label}")
     return out
 
 
-def type08_tail_records_are_located_by_a_unique_count(corpus: dict[str, Any]) -> bool:
+def _read_type08_tail_census(census: Any, label: str) -> dict[str, Any]:
+    return _read_tail_census(census, label, "0x08")
+
+
+def _read_type12_tail_census(census: Any, label: str) -> dict[str, Any]:
+    return _read_tail_census(census, label, "0x12")
+
+
+def tail_records_are_located_by_a_unique_count(corpus: dict[str, Any]) -> bool:
     """The fenced type 0x08 tails end in a counted run this reader can locate.
 
     The tail is **not** framed: the bytes before its trailing run are unexplained,
@@ -3292,6 +3335,12 @@ def type08_tail_records_are_located_by_a_unique_count(corpus: dict[str, Any]) ->
         if code > TYPE08_TAIL_CODE_CEILING:
             return False
     return sum(int(value) for value in codes.values()) == int(corpus.get("records") or 0)
+
+
+# Numeric types 0x08 and 0x12 carry the same tail, so they share one check. Both
+# names are kept so a failure message can say which type broke.
+type08_tail_records_are_located_by_a_unique_count = tail_records_are_located_by_a_unique_count
+type12_tail_records_are_located_by_a_unique_count = tail_records_are_located_by_a_unique_count
 
 
 def _read_partial_body_frame(container: Any, label: str, type_label: str) -> dict[str, Any]:
@@ -3868,6 +3917,37 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             "reason, and neither would have closed as fast alone.",
         ]
 
+    tail12 = report["corpus"].get("type12TailRecords") or {}
+    words12 = report["corpus"].get("type12TailHeadWords") or {}
+    tail12_lines = []
+    if tail12.get("tails"):
+        tail12_lines = [
+            "",
+            "### The fenced `0x12` bodies carry `0x08`'s tail",
+            "",
+            f"- Tails: {tail12['tails']:,}; located by a unique count: "
+            f"{tail12['tailsWithAUniqueCount']:,}; ambiguous: {tail12['countIsAmbiguous']:,}; "
+            f"no count before the records: {tail12['noCountBeforeTheRecords']:,}; no zero "
+            f"word at the end: {tail12['noZeroWordAtTheEnd']:,}.",
+            f"- Records: {tail12['records']:,}; third field values: "
+            f"{sorted((tail12.get('thirdFieldCounts') or {}))}.",
+            f"- So of {tail12['bodies']:,} bodies, {tail12['framedByTheReader']:,} frame "
+            f"outright and {tail12['tailsWithAUniqueCount']:,} more have their trailing "
+            f"run located; {tail12['noZeroWordAtTheEnd']:,} are read no further than the "
+            f"entry run.",
+            "",
+            "The same code censuses both types' tails, because the tail is the same "
+            "structure. It is still a census and not a frame: the bytes before the run "
+            "are unexplained in both.",
+            "",
+            "**And here the two types part.** Classified exactly as `0x08`'s are, "
+            f"`0x12`'s {words12.get('heads', 0):,} tail-head words resolve to a package "
+            f"object {int(words12.get('firstWordSameBank') or 0) + int(words12.get('firstWordOtherBankInPackage') or 0):,} "
+            f"times -- and so does the control. Sharing a layout does not make the same "
+            "field mean the same thing, and nothing here says `0x12`'s tail head "
+            "references anything.",
+        ]
+
     words08 = report["corpus"].get("type08TailHeadWords") or {}
     words08_lines = []
     if words08.get("heads"):
@@ -4066,6 +4146,7 @@ def _reference_graph_markdown(report: dict[str, Any]) -> str:
             *tail08_lines,
             *words08_lines,
             *body12_lines,
+            *tail12_lines,
             *source_lines,
             *head_lines,
             "",
@@ -4438,7 +4519,12 @@ def run_current_corpus_audit(
     type12_body_corpus = corpus["type12BodyFrames"]
     type08_tail_corpus = corpus["type08TailRecords"]
     type08_word_corpus = corpus["type08TailHeadWords"]
+    type12_tail_corpus = corpus["type12TailRecords"]
+    type12_word_corpus = corpus["type12TailHeadWords"]
     type08_closed = type08_head_words_are_null_or_resolve(type08_corpus)
+    type12_tail_located = type12_tail_records_are_located_by_a_unique_count(
+        report["corpus"].get("type12TailRecords") or {}
+    )
     type12_body_named = type12_bodies_are_exact_or_named(
         report["corpus"].get("type12BodyFrames") or {}
     )
@@ -4466,6 +4552,7 @@ def run_current_corpus_audit(
         and type08_tail_located
         and type08_head_named
         and type12_body_named
+        and type12_tail_located
         and type08_closed
         and type17_closed
         and type09_closed
@@ -4500,6 +4587,8 @@ def run_current_corpus_audit(
             "type12BodyFrames": type12_body_corpus,
             "type08TailRecords": type08_tail_corpus,
             "type08TailHeadWords": type08_word_corpus,
+            "type12TailRecords": type12_tail_corpus,
+            "type12TailHeadWords": type12_word_corpus,
             "type17Bodies": type17_corpus,
             "type09Bodies": type09_corpus,
             "type03Targets": t03_corpus,
@@ -4566,6 +4655,14 @@ def run_current_corpus_audit(
             f"bodies={type08_corpus['bodies']} resolved={type08_corpus['resolved']} "
             f"null={type08_corpus['null']} unresolved={type08_corpus['unresolved']} "
             f"tooShort={type08_corpus['tooShort']}"
+        )
+    if not type12_tail_located:
+        tail12 = report["corpus"].get("type12TailRecords") or {}
+        lane_failures.append(
+            "type 0x12 tail records are not located by a unique count: "
+            f"tails={tail12.get('tails')} located={tail12.get('tailsWithAUniqueCount')} "
+            f"ambiguous={tail12.get('countIsAmbiguous')} "
+            f"codes={sorted(tail12.get('thirdFieldCounts') or {})}"
         )
     if not type12_body_named:
         body12 = report["corpus"].get("type12BodyFrames") or {}

@@ -1998,6 +1998,15 @@ Stable conclusions:
   of 3 and a 12-byte value; the other keys always arrive with a count of 1. So "the
   key decides the width" and "the count multiplies a per-key width of 4, 11 and 27"
   predict the same bytes everywhere in this corpus. The simpler rule is implemented.
+- **The 38 fenced `0x12` bodies carry `0x08`'s tail.** Same code censuses both. 34
+  of the 38 have their trailing twelve-byte record run located by a unique count
+  (100 records, third field only 4 and 9); zero are ambiguous; 4 have no zero word
+  at the end and are read no further than the entry run. So of 251 bodies, 213 frame
+  outright, 34 more are censused to their trailing run, and **4 remain opaque**.
+- **Where the two types part, and it matters.** `0x12`'s tail-head words were
+  classified exactly as `0x08`'s -- and they resolve to a package object **zero**
+  times, control included. Sharing a layout does not make the same field mean the
+  same thing. Do not carry `0x08`'s "names a `0x12` object" finding across.
 - **What made this fast**: `0x08`'s tail head names a `0x12` object, so the two were
   attacked together. The reusable lesson is the one `0x16` already taught, now
   twice confirmed -- *when a small type resists, look for a structure another type
