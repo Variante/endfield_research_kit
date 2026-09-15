@@ -3426,6 +3426,7 @@ TYPE11_HEADER_SCALARS = (
     "curveControlsTested", "curveControlsInRange",
     "boundedFloatsTested", "boundedFloatsInBand",
     "floatControlsTested", "floatControlsInBand",
+    "sourceJoinTested", "sourceJoinMatched",
 )
 
 
@@ -3477,6 +3478,7 @@ def _read_type11_header_census(census: Any, label: str) -> dict[str, Any]:
         ("curveControlsTested", "curveControlsInRange"),
         ("boundedFloatsTested", "boundedFloatsInBand"),
         ("floatControlsTested", "floatControlsInBand"),
+        ("sourceJoinTested", "sourceJoinMatched"),
     ):
         if out[hits] > out[tested]:
             raise ValueError(f"type 0x0B entry header {hits} exceeds {tested}: {label}")
@@ -4351,6 +4353,26 @@ def the_type11_entry_header_carries_a_bounded_float(corpus: dict[str, Any]) -> b
     control = int(corpus.get("floatControlsInBand") or 0)
     # The controls must fail clearly, or "it reads as a float" says nothing.
     return control * 2 < control_tested
+
+
+def the_type11_entry_header_names_one_of_its_own_sources(corpus: dict[str, Any]) -> bool:
+    """The entry header's word at 4 is a source id, and the join proves it.
+
+    Every entry header's word at offset 4 is one of the source ids the **same body**
+    declares in its own 14-byte source records. The match is exact: 4,321 of 4,321.
+
+    The id sits at record offset **5**, which is not four-byte aligned. Testing the
+    record's aligned words -- 0, 4 and 8 -- finds **no match at all**, which is what
+    made this field look unidentified for so long. *A join that fails at every aligned
+    offset has not been disproved; it has been tested at the wrong offsets.*
+
+    The gate is equality. A single entry naming a source its body does not declare
+    would mean the join is coincidence rather than structure.
+    """
+    tested = int(corpus.get("sourceJoinTested") or 0)
+    if tested <= 0:
+        return False
+    return int(corpus.get("sourceJoinMatched") or 0) == tested
 
 
 def the_type11_element_count_is_not_yet_a_count(corpus: dict[str, Any]) -> bool:
@@ -6867,6 +6889,7 @@ def run_current_corpus_audit(
     t11_count_untested = the_type11_element_count_is_not_yet_a_count(type11_header_corpus)
     t11_curves_ok = the_type11_curve_records_carry_interpolation_codes(type11_header_corpus)
     t11_float_ok = the_type11_entry_header_carries_a_bounded_float(type11_header_corpus)
+    t11_join_ok = the_type11_entry_header_names_one_of_its_own_sources(type11_header_corpus)
     type11_element_corpus = corpus["type11Elements"]
     t11_anchor_ok = the_type11_trailer_anchor_beats_its_rivals(type11_element_corpus)
     t11_anchor_control = the_type11_trailer_is_not_settled_by_parsing(type11_element_corpus)
@@ -6980,6 +7003,7 @@ def run_current_corpus_audit(
         and t11_count_untested
         and t11_curves_ok
         and t11_float_ok
+        and t11_join_ok
         and hierarchy_forest
         and hierarchy_rooted
         and hierarchy_leaf
@@ -7357,6 +7381,12 @@ def run_current_corpus_audit(
             "numeric type 0x12 is no longer a leaf beneath 0x08: "
             f"internal={h.get('internalTypes')} leaves={h.get('leafTypes')} "
             f"roots={h.get('rootTypes')}"
+        )
+    if not t11_join_ok:
+        h = report["corpus"].get("type11EntryHeaders") or {}
+        lane_failures.append(
+            "a type 0x0B entry header names a source its own body does not declare: "
+            f"matched={h.get('sourceJoinMatched')} of {h.get('sourceJoinTested')}"
         )
     if not t11_float_ok:
         h = report["corpus"].get("type11EntryHeaders") or {}

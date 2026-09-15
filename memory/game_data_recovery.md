@@ -3319,12 +3319,23 @@ that later fails says nothing, because the walk that reached it may be desynchro
 | offset | reading | evidence | control |
 |---|---|---|---|
 | `+0`, `+8` | constant zero | 3,715 each | -- |
-| `+4` | source id | 1,132 distinct | -- |
+| `+4` | **source id, joined** | it is one of the source ids the **same body** declares: **3,715 of 3,715** | -- |
 | `+16`, `+24` | a **symmetric float pair** | `low == -high` in **1,218 of 1,404** nonzero pairs; `low <= high` in 1,264 | the neighbouring word at `+12`: **0 of 1,391** |
 | `+28`, `+36` | **fixed-point fractions of 2^32** | small rationals in **2,735 of 2,804** | the word at `+40`: **0 of 3,715** |
 | `+40` | a **bounded float**, in every entry | 3,715 of 3,715 in 1e-3..1e4; range 3.951 to 10.1, median 7.548, 889 distinct | `+4` and `+12`: **420 of 4,806** |
 | `+44` | element count | see below | -- |
 
+- **The source id sits at record offset 5, which is NOT four-byte aligned.** Testing
+  the 14-byte source record's aligned words -- 0, 4 and 8 -- against the header's `+4`
+  finds **no match at all**; offset 5 matches **every one of the 4,321**. That is why
+  this field read as unidentified for so long, and it is the second time in two
+  batches that a field turned out not to be where alignment suggests. *A join that
+  fails at every aligned offset has not been disproved; it has been tested at the
+  wrong offsets.*
+- **None of the header words is a source id either.** Scored against the full
+  source-id population, every offset including `+12`, `+20` and `+32` matches **zero**
+  -- so those remain unread, now eliminated as object references, name hashes, floats,
+  fractions **and** source ids.
 - **The opaque words are not references.** Tested against the same-bank id set and the
   corpus-wide one, **none** of the twelve header words resolves to an object -- `+4`
   matches 8 ids out of 4,321 and the rest match zero. That confirms the standing note

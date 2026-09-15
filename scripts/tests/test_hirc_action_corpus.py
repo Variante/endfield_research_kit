@@ -45,6 +45,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     the_shared_hierarchy_is_a_forest,
     the_type11_curve_records_carry_interpolation_codes,
     the_type11_entry_header_carries_a_bounded_float,
+    the_type11_entry_header_names_one_of_its_own_sources,
     the_type11_element_count_is_not_yet_a_count,
     the_type11_element_frame_beats_its_rivals,
     the_type11_entry_header_fields_beat_their_controls,
@@ -4123,5 +4124,36 @@ class Type0CRegionFlagTests(unittest.TestCase):
                 {k: 0 for k in TYPE0C_ARRAY_SCALARS}
                 | {k: {} for k in TYPE0C_ARRAY_MAPS}
                 | {"regionGapsTested": 1, "regionGapsPredicted": 5},
+                "pkg",
+            )
+
+
+class Type11SourceJoinTests(unittest.TestCase):
+    """The entry header's word at 4 names a source the same body declares."""
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(the_type11_entry_header_names_one_of_its_own_sources(
+            {"sourceJoinTested": 3715, "sourceJoinMatched": 3715}
+        ))
+
+    def test_a_single_miss_fails(self) -> None:
+        # Equality, because one entry naming a source its body does not declare
+        # would make the join coincidence rather than structure.
+        self.assertFalse(the_type11_entry_header_names_one_of_its_own_sources(
+            {"sourceJoinTested": 3715, "sourceJoinMatched": 3714}
+        ))
+
+    def test_an_untested_join_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_type11_entry_header_names_one_of_its_own_sources({}))
+        self.assertFalse(the_type11_entry_header_names_one_of_its_own_sources(
+            {"sourceJoinTested": 0, "sourceJoinMatched": 0}
+        ))
+
+    def test_the_reader_rejects_more_matches_than_tests(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_type11_header_census(
+                {k: 0 for k in TYPE11_HEADER_SCALARS}
+                | {"elementCountValues": {}, "curveCodes": {},
+                   "sourceJoinTested": 1, "sourceJoinMatched": 9},
                 "pkg",
             )
