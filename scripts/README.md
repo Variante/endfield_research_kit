@@ -597,6 +597,11 @@ rather than being removed from the denominator. The offset histogram must follow
 histogram, and an unobserved byte value counts as unknown rather than being
 assigned a branch.
 
+The `0x16` lane is the smallest and closed almost entirely by reuse: a counted
+key/value block, one byte, then the node frame's group I structure verbatim. Its
+selector families are per-element rather than per-body, so they reconcile against
+their own counters -- the lane framework takes those as an explicit mapping.
+
 The `0x0E` lane is the one body lane that does not share the node frame, so it
 supplies its own residual list, its own unconditional selector families, and a
 closed-form byte identity (`24 * bodies + 12 * elements + 3 * entries + 20 *

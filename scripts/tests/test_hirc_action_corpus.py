@@ -185,6 +185,33 @@ def valid_action_fixture():
         "discriminantCounts": {"byte2_00": 2, "byte2_01": 1},
         "headShapeCounts": {"head_00": 3, "head_06": 1},
     }
+    type22_body = {
+        "count": 2,
+        "exact": 2,
+        "unsupported": 0,
+        "failed": 0,
+        "ambiguous": 0,
+        "bodyBytes": 49,
+        "exactCursorBytes": 49,
+        "nonExactBodyBytes": 0,
+        "minExactBodyBytes": 9,
+        "maxExactBodyBytes": 40,
+        "groupCounts": {
+            "propertyEntries": 3,
+            "groupIEntries": 1,
+            "groupIKeyBytes": 1,
+            "groupIPoints": 1,
+        },
+        "selectorCounts": {
+            "propertyKey_00": 2,
+            "propertyKey_11": 1,
+            "groupIKeyWidth_1": 1,
+        },
+        "failureCategories": {},
+        "unsupportedCategories": {},
+        "nonExactExamples": [],
+    }
+    type22_stats = {"count": 2, "declaredLengthBytes": 57}
     type14_body = {
         "count": 2,
         "exact": 2,
@@ -280,18 +307,20 @@ def valid_action_fixture():
                 "source": r"D:\Persistent\VFS\AA\bank.chk",
                 "status": "verified",
                 "package": {
-                    "hircObjectTypeCounts": {"0x02": 2, "0x03": 2, "0x04": 2, "0x05": 2, "0x07": 2, "0x0E": 2},
+                    "hircObjectTypeCounts": {"0x02": 2, "0x03": 2, "0x04": 2, "0x05": 2, "0x07": 2, "0x0E": 2, "0x16": 2},
                     "hircObjectTypeStats": {
                         "0x02": copy.deepcopy(type02_stats),
                         "0x04": copy.deepcopy(type04_stats),
                         "0x07": copy.deepcopy(type07_stats),
                         "0x05": copy.deepcopy(type05_stats),
                         "0x0E": copy.deepcopy(type14_stats),
+                        "0x16": copy.deepcopy(type22_stats),
                     },
                     "hircType02Prefix": copy.deepcopy(type02_prefix),
                     "hircType02BodyFrame": copy.deepcopy(type02_body),
                     "hircType07BodyFrame": copy.deepcopy(type07_body),
                     "hircType14BodyFrame": copy.deepcopy(type14_body),
+                    "hircType22BodyFrame": copy.deepcopy(type22_body),
                     "hircMusicHeadReferences": copy.deepcopy(music_head),
                     "hircType11Sources": copy.deepcopy(type11_sources),
                     "hircType05BodyFrame": copy.deepcopy(type05_body),
@@ -308,11 +337,13 @@ def valid_action_fixture():
                                 "0x07": copy.deepcopy(type07_stats),
                                 "0x05": copy.deepcopy(type05_stats),
                                 "0x0E": copy.deepcopy(type14_stats),
+                                "0x16": copy.deepcopy(type22_stats),
                             },
                             "hircType02Prefix": copy.deepcopy(type02_prefix),
                             "hircType02BodyFrame": copy.deepcopy(type02_body),
                             "hircType07BodyFrame": copy.deepcopy(type07_body),
                             "hircType14BodyFrame": copy.deepcopy(type14_body),
+                            "hircType22BodyFrame": copy.deepcopy(type22_body),
                             "hircMusicHeadReferences": copy.deepcopy(music_head),
                             "hircType11Sources": copy.deepcopy(type11_sources),
                             "hircType05BodyFrame": copy.deepcopy(type05_body),
@@ -1016,7 +1047,7 @@ class HircActionCorpusTests(unittest.TestCase):
         from scripts.audio_semantics.hirc_action_corpus import _build_body_lanes
 
         lanes = _build_body_lanes()
-        self.assertEqual(sorted(lanes), ["0x02", "0x05", "0x06", "0x07", "0x0E"])
+        self.assertEqual(sorted(lanes), ["0x02", "0x05", "0x06", "0x07", "0x0E", "0x16"])
         layouts = {key: lane.layout for key, lane in lanes.items()}
         self.assertEqual(len(set(layouts.values())), len(lanes))
         self.assertIn("counted list of groups", layouts["0x06"])
@@ -1165,6 +1196,34 @@ class HircActionCorpusTests(unittest.TestCase):
             scope["hircMusicHeadReferences"]["bodiesByType"] = {"type0A": 2}
         with self.assertRaisesRegex(ValueError, "per-type counts disagree"):
             aggregate_current_hirc_actions(outer, expected_files, excluded_files, mismatched)
+
+    def test_type22_reuses_group_i_and_keeps_only_its_residuals(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        bodies = result["type22BodyFrames"]
+        self.assertEqual(bodies["exact"], 2)
+        self.assertEqual(bodies["frameClosure"], "all-bodies-exact")
+        self.assertTrue(body_lane_corpus_is_closed(bodies))
+        residuals = " ".join(bodies["unresolvedWidths"])
+        self.assertIn("group I", residuals)
+        # It shares only group I, so the rest of the node frame's open questions
+        # are not statements about this type.
+        self.assertNotIn("group B", residuals)
+        self.assertNotIn("group H", residuals)
+
+    def test_type22_per_element_selector_families_must_match_their_counters(self) -> None:
+        # These families carry one observation per counted element, not per body, so
+        # they reconcile against their own counter rather than the body total.
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        for family, group in (("propertyKey_00", "propertyEntries"), ("groupIKeyWidth_1", "groupIEntries")):
+            broken = copy.deepcopy(audio_audit)
+            for scope in (
+                broken["rows"][0]["package"],
+                broken["rows"][0]["package"]["bnkStructures"][0],
+            ):
+                scope["hircType22BodyFrame"]["selectorCounts"][family] += 1
+            with self.assertRaisesRegex(ValueError, f"does not match {group}"):
+                aggregate_current_hirc_actions(outer, expected_files, excluded_files, broken)
 
     def test_type14_body_is_framed_without_the_shared_node_frame(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

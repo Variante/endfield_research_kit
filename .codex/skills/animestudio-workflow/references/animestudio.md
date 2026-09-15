@@ -305,6 +305,15 @@ target. That is not parenthood, containment, membership, a tree or a root. Befor
 re-run the gate: it refuses to publish unless every reference names exactly one
 unambiguous same-bank object, duplicate-id targets included.
 
+Numeric type `0x16` is framed byte-exact (778 bodies, 16,635 bytes) and is worth
+copying as a method: a byte count, that many one-byte keys followed by that many
+four-byte values as two parallel runs, one anonymous byte, then the node frame's
+group I structure verbatim. Most of it was already proven, so before decoding a
+small type from scratch, check whether it ends with a structure another type
+already closes. It shares only group I, so it carries only the group I residuals,
+and its selector families are per-element -- one observation per counted thing --
+and reconcile against their own counters rather than the body total.
+
 Numeric type `0x0E` is framed byte-exact too, but on its own terms: it does not
 use the node frame at all, so it must not inherit the node frame's residual list,
 its group widths, or its unconditional selector families -- the lane framework now

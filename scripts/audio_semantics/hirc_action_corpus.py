@@ -93,6 +93,20 @@ TYPE02_BODY_MINIMUM_FRAME_BYTES = 45
 # smallest body that can frame and the per-body constant in the closed-form total,
 # because everything else in this layout is counted: the two uses are the same
 # quantity by construction, not a coincidence to be split apart.
+TYPE22_BODY_MINIMUM_FRAME_BYTES = 4
+TYPE22_BODY_PROPERTY_BYTES = 5
+# Numeric type 0x16 ends with the node frame's group I structure verbatim, so the
+# group I residuals apply to it and the rest of the node frame's do not.
+TYPE22_BODY_RESIDUALS = (
+    "the counted key/value block is consumed by extent only: keys are one byte, "
+    "values four, and neither is named or interpreted here",
+    "one anonymous byte separates that block from the group I structure and gates "
+    "nothing observed",
+    "the group I key is consumed by extent only, and every key in this type is one "
+    "byte wide, so this corpus does not widen the inherited five-byte cap either",
+    "the twelve-byte group I points are consumed whole; no internal split is claimed",
+)
+
 TYPE14_BODY_MINIMUM_FRAME_BYTES = 24
 TYPE14_BODY_FIXED_HEAD_BYTES = 21
 TYPE14_BODY_OPTIONAL_BLOCK_BYTES = 20
@@ -145,6 +159,7 @@ REFERENCE_CENSUS_FIELDS = (
 REFERENCE_DEPTH_FIELD = "maximumReferenceDepth"
 DEFAULT_TYPE07_BODY_OUTPUT = ROOT / "reports/animestudio/hirc_type07_body_current_latest.json"
 DEFAULT_TYPE14_BODY_OUTPUT = ROOT / "reports/animestudio/hirc_type14_body_current_latest.json"
+DEFAULT_TYPE22_BODY_OUTPUT = ROOT / "reports/animestudio/hirc_type22_body_current_latest.json"
 AUDIO_BLOCKS = frozenset(
     {
         "InitAudio",
@@ -593,6 +608,7 @@ def _read_hirc_body_metrics(
     unconditional_selectors: tuple[str, ...] = SHARED_NODE_FRAME_SELECTOR_FAMILIES,
     conditional_selectors: tuple[str, ...] = SHARED_NODE_FRAME_CONDITIONAL_SELECTORS,
     fixed_bytes_per_body: int | None = None,
+    selector_families_matching_groups: dict[str, str] | None = None,
 ) -> dict[str, Any]:
     if expected_count < 0:
         raise ValueError(f"negative {type_label} object count: {label}")
@@ -736,6 +752,19 @@ def _read_hirc_body_metrics(
             raise ValueError(
                 f"{type_label} selector family {prefix} does not match exact bodies: {label} "
                 f"selectors={selector_total} exact={metrics['exact']}"
+            )
+    # Some selector families are per-element, not per-body: one observation for each
+    # counted thing. Those must reconcile against their own group counter, or a
+    # miscounted run would leave the histogram silently disagreeing with it.
+    for prefix, group_name in (selector_families_matching_groups or {}).items():
+        observed = sum(
+            count for name, count in metrics["selectorCounts"].items() if name.startswith(prefix)
+        )
+        expected = metrics["groupCounts"].get(group_name, 0)
+        if observed != expected:
+            raise ValueError(
+                f"{type_label} selector family {prefix} does not match {group_name}: {label} "
+                f"selectors={observed} {group_name}={expected}"
             )
     for prefix in conditional_selectors:
         branch_total = sum(
@@ -1088,6 +1117,7 @@ class _BodyLane:
         unconditional_selectors: tuple[str, ...] = SHARED_NODE_FRAME_SELECTOR_FAMILIES,
         conditional_selectors: tuple[str, ...] = SHARED_NODE_FRAME_CONDITIONAL_SELECTORS,
         fixed_bytes_per_body: int | None = None,
+        selector_families_matching_groups: dict[str, str] | None = None,
         upstream_note: str = "",
         shared_note: str = "",
     ) -> None:
@@ -1107,6 +1137,7 @@ class _BodyLane:
         self.unconditional_selectors = unconditional_selectors
         self.conditional_selectors = conditional_selectors
         self.fixed_bytes_per_body = fixed_bytes_per_body
+        self.selector_families_matching_groups = selector_families_matching_groups or {}
         self.closed_form_total = (
             None
             if fixed_bytes_per_body is None
@@ -1150,6 +1181,7 @@ class _BodyLane:
             unconditional_selectors=self.unconditional_selectors,
             conditional_selectors=self.conditional_selectors,
             fixed_bytes_per_body=self.fixed_bytes_per_body,
+            selector_families_matching_groups=self.selector_families_matching_groups,
         )
 
     def add_package(
@@ -1292,6 +1324,45 @@ def _build_body_lanes() -> dict[str, "_BodyLane"]:
                 "a malformed 14-byte source prefix or plugin parameter range throws in "
                 "the preceding prefix census and aborts the whole package, so it is "
                 "never counted as a failed body by this lane"
+            ),
+        ),
+        "0x16": _BodyLane(
+            "0x16",
+            "hircType22BodyFrame",
+            TYPE22_BODY_MINIMUM_FRAME_BYTES,
+            "numeric type 0x16 bodies are consumed whole, from the first byte to the "
+            "declared object-body end",
+            layout=(
+                "The reader consumes a byte-counted block of properties -- that many "
+                "one-byte keys followed by that many four-byte values, as two parallel "
+                "runs rather than interleaved pairs -- then one anonymous byte, then the "
+                "node frame's group I structure verbatim. Group I is not re-derived here: "
+                "it is the same structure the shipped reader already frames byte-exactly "
+                "on numeric types 0x02, 0x05, 0x06 and 0x07, which is why this type closed "
+                "with almost no new guessing."
+            ),
+            extra_non_claims=(
+                "that a property key names anything, or that its value is a number of "
+                "any particular kind",
+                "that this type's group I entries mean the same thing as another type's",
+            ),
+            base_residuals=TYPE22_BODY_RESIDUALS,
+            base_element_widths={
+                "propertyEntries": TYPE22_BODY_PROPERTY_BYTES,
+                "groupIEntries": 14,
+                "groupIPoints": 12,
+            },
+            unconditional_selectors=(),
+            conditional_selectors=(),
+            # Both families are per-element: one observation per counted property and
+            # per group I entry, so each must equal its own counter.
+            selector_families_matching_groups={
+                "propertyKey_": "propertyEntries",
+                "groupIKeyWidth_": "groupIEntries",
+            },
+            shared_note=(
+                "This lane shares only group I with the node frame, not the whole frame, "
+                "so it carries the group I residuals and none of the others"
             ),
         ),
         "0x0E": _BodyLane(
@@ -2019,6 +2090,7 @@ def aggregate_current_hirc_actions(
         "type05BodyFrames": body_lanes["0x05"].publish(),
         "type06BodyFrames": body_lanes["0x06"].publish(),
         "type14BodyFrames": body_lanes["0x0E"].publish(),
+        "type22BodyFrames": body_lanes["0x16"].publish(),
         "type11SourceRecords": {
             **{key: int(type11_totals[key]) for key in TYPE11_SOURCE_SCALARS},
             "pluginIdCounts": dict(sorted(type11_plugins.items())),
@@ -2721,6 +2793,8 @@ def run_current_corpus_audit(
     type06_body_output_markdown: Path | None = None,
     type14_body_output_json: Path = DEFAULT_TYPE14_BODY_OUTPUT,
     type14_body_output_markdown: Path | None = None,
+    type22_body_output_json: Path = DEFAULT_TYPE22_BODY_OUTPUT,
+    type22_body_output_markdown: Path | None = None,
     reference_output_json: Path = DEFAULT_REFERENCE_OUTPUT,
     reference_output_markdown: Path | None = None,
 ) -> dict[str, Any]:
@@ -2761,6 +2835,9 @@ def run_current_corpus_audit(
     type14_body_output_json.parent.mkdir(parents=True, exist_ok=True)
     type14_body_output_markdown = type14_body_output_markdown or type14_body_output_json.with_suffix(".md")
     type14_body_output_markdown.parent.mkdir(parents=True, exist_ok=True)
+    type22_body_output_json.parent.mkdir(parents=True, exist_ok=True)
+    type22_body_output_markdown = type22_body_output_markdown or type22_body_output_json.with_suffix(".md")
+    type22_body_output_markdown.parent.mkdir(parents=True, exist_ok=True)
     reference_output_json.parent.mkdir(parents=True, exist_ok=True)
     reference_output_markdown = reference_output_markdown or reference_output_json.with_suffix(".md")
     reference_output_markdown.parent.mkdir(parents=True, exist_ok=True)
@@ -3005,6 +3082,7 @@ def run_current_corpus_audit(
         ("0x05", "type05BodyFrames", type05_body_output_json, type05_body_output_markdown),
         ("0x06", "type06BodyFrames", type06_body_output_json, type06_body_output_markdown),
         ("0x0E", "type14BodyFrames", type14_body_output_json, type14_body_output_markdown),
+        ("0x16", "type22BodyFrames", type22_body_output_json, type22_body_output_markdown),
     )
     lane_failures = [
         failure
@@ -3112,6 +3190,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--type02-body-output-markdown", type=Path, default=None)
     parser.add_argument("--type07-body-output-json", type=Path, default=DEFAULT_TYPE07_BODY_OUTPUT)
     parser.add_argument("--type14-body-output-json", type=Path, default=DEFAULT_TYPE14_BODY_OUTPUT)
+    parser.add_argument("--type22-body-output-json", type=Path, default=DEFAULT_TYPE22_BODY_OUTPUT)
+    parser.add_argument("--type22-body-output-markdown", type=Path, default=None)
     parser.add_argument("--type14-body-output-markdown", type=Path, default=None)
     parser.add_argument("--type07-body-output-markdown", type=Path, default=None)
     parser.add_argument("--type05-body-output-json", type=Path, default=DEFAULT_TYPE05_BODY_OUTPUT)
@@ -3144,6 +3224,8 @@ def main(argv: list[str] | None = None) -> int:
             type06_body_output_markdown=args.type06_body_output_markdown,
             type14_body_output_json=args.type14_body_output_json,
             type14_body_output_markdown=args.type14_body_output_markdown,
+            type22_body_output_json=args.type22_body_output_json,
+            type22_body_output_markdown=args.type22_body_output_markdown,
             reference_output_json=args.reference_output_json,
             reference_output_markdown=args.reference_output_markdown,
         )

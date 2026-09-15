@@ -1649,6 +1649,29 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+- **Numeric HIRC type `0x16` is framed byte-exact: 778 bodies / 16,635 bytes.**
+  Layout: a byte count, then that many one-byte keys followed by that many
+  four-byte values as **two parallel runs rather than interleaved pairs**, then one
+  anonymous byte, then the node frame's group I structure verbatim.
+- It closed fast because most of it was already proven. Group I is the same
+  structure the reader frames byte-exactly on types `0x02`, `0x05`, `0x06` and
+  `0x07`, so the only new part was the key/value block. **When a small type
+  resists, check whether it ends with a structure another type already closes** --
+  that is what turned this one from a decode into a ten-line framer.
+- The parallel-runs detail is the one thing worth remembering about the block: an
+  interleaved reading of key-then-value fails immediately, and the giveaway was
+  that body length is exactly `4 + 5 * count` for the short bodies.
+- `0x16` shares *only* group I, not the whole node frame, so it carries the group I
+  residuals and none of the others. Its property keys and group I key widths are
+  **per-element** selector families -- one observation per counted thing, not per
+  body -- so they reconcile against their own counters rather than the body total.
+  The lane framework now supports that kind of family explicitly; the first attempt
+  bounded them by exact bodies and the gate correctly rejected it.
+  See [`reports/animestudio/hirc_type22_body_current_latest.md`](../reports/animestudio/hirc_type22_body_current_latest.md).
+- None of the small types `0x08`, `0x10`, `0x11`, `0x12`, `0x16` open with the node
+  frame. `0x08` and `0x12` begin *with* a same-bank reference at offset 0 (157/161
+  and 132/251), which is a different head from every type seen so far and is the
+  obvious next thread.
 - **The music types `0x0A`-`0x0D` are attempted and NOT framed. Read this before
   trying again.** They do not open with the shared node frame, and the ways they
   fail are per-type: at offset 0 the frame dies on `range_groupHStateElements` for
