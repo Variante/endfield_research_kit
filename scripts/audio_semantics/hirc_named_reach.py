@@ -508,6 +508,97 @@ def the_stmg_section_closes_byte_exactly(stmg: dict[str, Any]) -> bool:
     return int(stmg.get("entryRecordsCarryingTheMarker") or 0) == records
 
 
+INIT_SCALARS = (
+    "sections", "sectionsTooShort", "countOutOfRange", "sectionsNotClosing",
+    "sectionsFramed", "entries", "distinctPluginIds",
+    "platSections", "platSectionsNotClosing", "platSectionsFramed",
+)
+
+
+def init_from_audit(audit: dict[str, Any]) -> dict[str, Any]:
+    """The INIT plugin table, pooled, and joined to the plugin ids the records carry.
+
+    The join has to happen here and not in the reader. INIT lives in init_banks.pck
+    and the 147,262 source records live in default_banks.pck, so a package-local join
+    scores 1 of 147,262. That is the third field in this format whose two sides sit in
+    different packages, after the media ids and the source ids -- the reader collects,
+    this pass unions and joins.
+    """
+    totals = _sum_census(audit, "init", INIT_SCALARS, ("platformNames",))
+    names: dict[str, str] = {}
+    used: Counter[str] = Counter()
+    absent: Counter[str] = Counter()
+    for row in audit.get("rows", []):
+        if row.get("status") != "verified":
+            continue
+        package = row.get("package") or {}
+        block = (package.get("init") or {}).get("pluginNames")
+        if isinstance(block, dict):
+            names.update({str(k): str(v) for k, v in block.items()})
+    joined = 0
+    for row in audit.get("rows", []):
+        if row.get("status") != "verified":
+            continue
+        package = row.get("package") or {}
+        census = (package.get("hircMediaJoin") or {}).get("hircSourceRecords") or {}
+        for key, count in (census.get("pluginIdsByType") or {}).items():
+            word = key.rsplit("_", 1)[-1].upper()
+            joined += int(count)
+            if word in names:
+                used[names[word]] += int(count)
+            else:
+                absent[word] += int(count)
+    totals["pluginNames"] = len(names)
+    totals["sourceRecordsJoined"] = joined
+    totals["sourceRecordsNamingAPlugin"] = sum(used.values())
+    totals["pluginsUsed"] = dict(sorted(used.items()))
+    totals["pluginIdsNotInTheTable"] = dict(sorted(absent.items()))
+    return totals
+
+
+def the_init_table_names_the_plugins_the_records_use(init: dict[str, Any]) -> bool:
+    """INIT closes byte-exactly, and it names the plugins the source records carry.
+
+    INIT is self-describing: a u32 count, then 22 entries of `u16 company, u16 plugin,
+    NUL-terminated name`, closing exactly on 347 bytes. A wrong field order would not
+    land on the section end, which is the whole check for a section that appears once.
+
+    The plugin id word at the front of the 14-byte source record decomposes as
+    `(plugin << 16) | company`, and **every company-2 value the corpus carries is in the
+    table**: 0x00640002 AkSineTone, 0x00650002 AkSilenceGenerator, 0x00940002
+    AkSynthOne, 0x01990002 AkMotion.
+
+    The company-1 values are not, and that is not a shortfall. INIT lists plugin DLLs;
+    company 1 is the built-in codec set, which the engine does not need named. So the
+    gate asks that the table close, that it name some records, and that **everything it
+    fails to name be company 1** -- because a company-2 id missing from the table would
+    mean the decomposition is wrong.
+    """
+    if not isinstance(init, dict):
+        return False
+    if int(init.get("sections") or 0) <= 0:
+        return False
+    if int(init.get("sectionsFramed") or 0) != int(init.get("sections") or 0):
+        return False
+    if int(init.get("platSectionsFramed") or 0) != int(init.get("platSections") or 0):
+        return False
+    entries = int(init.get("entries") or 0)
+    if entries <= 0 or int(init.get("distinctPluginIds") or 0) != entries:
+        return False
+    if int(init.get("sourceRecordsNamingAPlugin") or 0) <= 0:
+        return False
+    absent = init.get("pluginIdsNotInTheTable")
+    if not isinstance(absent, dict):
+        return False
+    for word in absent:
+        try:
+            if int(word, 16) & 0xFFFF != 1:
+                return False
+        except ValueError:
+            return False
+    return True
+
+
 def the_unparsed_sections_name_only_buses(words: dict[str, Any]) -> bool:
     """The sections nothing parses reference buses, and no music object at all.
 
@@ -908,6 +999,7 @@ def run(
     music_reach = music_reach_from_audit(audit)
     stmg = stmg_from_audit(audit)
     stmg_words = stmg_words_from_audit(audit)
+    init = init_from_audit(audit)
     if not media:
         problems.append("the audit declares no media ids, so the media join cannot be checked")
 
@@ -1026,6 +1118,15 @@ def run(
             f"marker={stmg.get('entryRecordsCarryingTheMarker')}"
             f"/{stmg.get('entryRecords')}"
         )
+    if not the_init_table_names_the_plugins_the_records_use(init):
+        problems.append(
+            "the INIT plugin table no longer closes or no longer names the plugins "
+            "the source records carry: "
+            f"framed={init.get('sectionsFramed')}/{init.get('sections')} "
+            f"entries={init.get('entries')} "
+            f"named={init.get('sourceRecordsNamingAPlugin')} "
+            f"absent={init.get('pluginIdsNotInTheTable')}"
+        )
     if not the_unparsed_sections_name_only_buses(stmg_words):
         problems.append(
             "the unparsed sections no longer name only buses, which means either the "
@@ -1086,6 +1187,7 @@ def run(
         "musicReach": music_reach,
         "stmg": stmg,
         "unparsedSectionWords": stmg_words,
+        "initPluginTable": init,
         "mediaSummary": {
             "declaredMediaIds": len(media),
             "identifiersReachingMedia": sum(1 for v in media_reached.values() if v),

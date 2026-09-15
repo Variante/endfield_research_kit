@@ -8,6 +8,8 @@ from scripts.audio_semantics.hirc_named_reach import (
     the_stmg_record_stride_beats_its_rivals,
     the_stmg_tail_run_is_located_by_its_count,
     the_stmg_section_closes_byte_exactly,
+    init_from_audit,
+    the_init_table_names_the_plugins_the_records_use,
     the_unparsed_sections_name_only_buses,
     music_reach_from_audit,
     the_music_family_is_not_entered_from_the_object_graph,
@@ -580,3 +582,72 @@ class StmgClosureTests(unittest.TestCase):
                  entryRecordsCarryingTheMarker=0)))
         self.assertFalse(the_stmg_section_closes_byte_exactly({}))
         self.assertFalse(the_stmg_section_closes_byte_exactly(None))
+
+
+class InitPluginTableTests(unittest.TestCase):
+    """INIT names the plugins the source records carry, across a package boundary."""
+
+    MEASURED = {
+        "sections": 1, "sectionsFramed": 1, "platSections": 1,
+        "platSectionsFramed": 1, "entries": 22, "distinctPluginIds": 22,
+        "sourceRecordsJoined": 147262, "sourceRecordsNamingAPlugin": 973,
+        "pluginIdsNotInTheTable": {"00040001": 132056, "00080001": 1721,
+                                   "00140001": 12512},
+    }
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(
+            the_init_table_names_the_plugins_the_records_use(self.MEASURED))
+
+    def test_a_company_two_id_missing_from_the_table_fails(self) -> None:
+        # The check that tests the decomposition rather than the coverage. Company 1
+        # is the built-in codec set and INIT does not list it, so those absences are
+        # expected; a company-2 id absent would mean (plugin << 16) | company is the
+        # wrong reading of the word.
+        self.assertFalse(the_init_table_names_the_plugins_the_records_use(
+            dict(self.MEASURED, pluginIdsNotInTheTable={"00040001": 132056,
+                                                        "00650002": 833})))
+
+    def test_a_section_that_does_not_close_fails(self) -> None:
+        self.assertFalse(the_init_table_names_the_plugins_the_records_use(
+            dict(self.MEASURED, sectionsFramed=0)))
+        self.assertFalse(the_init_table_names_the_plugins_the_records_use(
+            dict(self.MEASURED, platSectionsFramed=0)))
+
+    def test_colliding_plugin_ids_fail(self) -> None:
+        self.assertFalse(the_init_table_names_the_plugins_the_records_use(
+            dict(self.MEASURED, distinctPluginIds=21)))
+
+    def test_a_table_that_names_nothing_fails(self) -> None:
+        # The state a package-local join produced: the table parsed, and joined to
+        # almost nothing, because its users are in another file.
+        self.assertFalse(the_init_table_names_the_plugins_the_records_use(
+            dict(self.MEASURED, sourceRecordsNamingAPlugin=0)))
+
+    def test_an_empty_census_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_init_table_names_the_plugins_the_records_use({}))
+        self.assertFalse(the_init_table_names_the_plugins_the_records_use(None))
+
+    def test_the_join_pools_across_packages(self) -> None:
+        # One package holds INIT, another holds the records. The join must see both.
+        base = {k: 0 for k in (
+            "sections", "sectionsTooShort", "countOutOfRange",
+            "sectionsNotClosing", "sectionsFramed", "entries",
+            "distinctPluginIds", "platSections", "platSectionsNotClosing",
+            "platSectionsFramed")}
+        audit = {"rows": [
+            {"status": "verified", "package": {
+                "init": dict(base, sections=1, sectionsFramed=1, entries=2,
+                             distinctPluginIds=2,
+                             pluginNames={"00640002": "AkSineTone",
+                                          "00650002": "AkSilenceGenerator"})}},
+            {"status": "verified", "package": {"hircMediaJoin": {
+                "hircSourceRecords": {"pluginIdsByType": {
+                    "type02_plugin_00650002": 833,
+                    "type02_plugin_00040001": 100}}}}},
+        ]}
+        out = init_from_audit(audit)
+        self.assertEqual(out["pluginNames"], 2)
+        self.assertEqual(out["sourceRecordsNamingAPlugin"], 833)
+        self.assertEqual(out["pluginsUsed"], {"AkSilenceGenerator": 833})
+        self.assertEqual(out["pluginIdsNotInTheTable"], {"00040001": 100})

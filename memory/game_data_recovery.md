@@ -4019,6 +4019,57 @@ count x entry:  u32, u32, u8 zero, u32 records, 3 zero bytes   (13 bytes)
   discriminated against eleven rivals; the trailing run by a backward count, unique
   over every length from 1 to 480; the middle by exhaustion plus closure.
 
+#### `INIT` is a plugin NAME table, and it names the plugins the records use
+
+```
+u32 count                22
+count x entry:  u16 company, u16 plugin, NUL-terminated ASCII name
+```
+
+Closes byte-exactly on 347 bytes. A wrong field order would not land on the section
+end, which is the whole check for a section that appears once.
+
+- **The plugin id word at the front of the 14-byte source record decomposes as
+  `(plugin << 16) | company`**, and every company-2 value the corpus carries is named
+  here: `0x00640002` **AkSineTone**, `0x00650002` **AkSilenceGenerator**, `0x00940002`
+  **AkSynthOne**, `0x01990002` **AkMotion**. **973 of 147,262** source records name a
+  plugin the game itself names.
+- **Everything unnamed is company 1** -- `0x00040001` (132,056), `0x00140001` (12,512),
+  `0x00080001` (1,721). INIT lists plugin DLLs; company 1 is the built-in codec set,
+  which the engine does not need named. The gate requires the absences to be company 1
+  *exactly*, because a company-2 id missing would mean the decomposition is wrong.
+- `PLAT` is a single NUL-terminated platform name: **`Windows`**.
+
+#### THE CROSS-PACKAGE JOIN TRAP, THREE TIMES
+
+This has now bitten three separate fields, and the pattern is always the same: a table
+and its users live in **different `.pck` files**, so a join written inside the reader
+scores near zero and looks like a negative result.
+
+| field | package-local score | pooled score |
+| --- | --- | --- |
+| media ids named by source records | 12 of 147,262 | **61,325 of 61,333** |
+| source ids reached from named events | (pooled from the start) | 163 |
+| plugin ids named by `INIT` | **1** of 147,262 | **973** of 147,262 |
+
+`media_ids_from_audit` has carried the warning in its own docstring the whole time:
+*"joining inside one package answers a question nobody asked."* I wrote the C# join
+twice more anyway. **When a table and its users are in separate files, the join belongs
+in the pass that already unions the files** -- the reader collects, the audit joins.
+
+#### The 8 media nothing names, explained
+
+- **7 of the 8** are declared by `default_banks.pck`, which has `sounds=0`,
+  `externals=0` and **exactly 7 media entries** -- so all 7 come from its `DIDX`
+  section (84 bytes = 7 x 12). They are the Init bank's **embedded** media, and the
+  same 7 ids are also declared as streamed copies in `default_stream_0.pck`. The 8th is
+  in `default_stream_2.pck` only.
+- **None of the 8 is a bank id**: pooled over 20,863 bank ids, the intersection with
+  the 61,333 media ids is **0**, so they are genuine audio that no HIRC source record
+  names rather than banks miscounted as media.
+- Externals exist in this corpus -- 28,277 in `default_chinese_stream.pck` and 1 in
+  `hotfix_japanese_bD0.pck` -- but not in the packages the 8 live in.
+
 #### NOTHING outside HIRC references a music object either
 
 Sliding a 32-bit window over all four unparsed sections -- 10,677 words -- **63 name a
