@@ -5824,11 +5824,35 @@ from a name.*
 which is consistent with a mask packed into the existing arrays rather than shipped as its
 own files.
 
-**So `LAYER_C`'s consumer is unidentified, and that is a firmer position than before**: the
-recorded answer is positively disconfirmed rather than merely unconfirmed, and the obvious
-rival is ruled out by the binding list. What fits the evidence -- 54 layer-indexed files,
-1-3 per directory, format 5 against 108/109 -- is something bound outside
-`VirtualTextureRenderer` entirely, which is where the next look belongs.
+##### CORRECTION TO THE CORRECTION: the original identification survives
+
+The disconfirmation above over-reached, and two further checks show why.
+
+***There is no alternative binding.*** Across the **entire** metadata, exactly **four**
+fields are declared `UnityEngine.Texture2DArray`, all on `VirtualTextureRenderer`:
+`m_splatsDiffuseArray`, `m_splatsNormalArray`, `m_decalDiffuseTexArray`,
+`m_decalNormalMROTexArray`. **No third splat array exists anywhere**, so "something bound
+outside `VirtualTextureRenderer`" is not available -- there is nowhere else for a
+per-layer terrain texture to go.
+
+***And `LAYER_C` really is per-layer.*** Its indices are a **subset of that directory's
+`D` index set in 22 of 22 directories, with zero exceptions** (`C=[5]` against `D=0..6`;
+`C=[4,5,13]` against 15 layers; `C=[2,8]` against 11). The recorded claim was right and my
+doubt about it was not.
+
+**The objection dissolves rather than the answer.** The disconfirmation rested on
+`m_colorVariationTex` being a `Texture2D` and therefore "one per terrain", which was taken
+to exclude layer-indexed source files. *That only follows if each file is bound directly
+as an array slice.* Per-layer files **composited into** one texture -- which is what a
+virtual-texture renderer does, and what `HGTerrainSplatStreaming` in the engine's log
+strings names -- are per-layer inputs to a single binding, with no contradiction at all.
+
+**So `m_colorVariationTex` stands as the identification**, now on stronger ground than the
+distribution argument alone: it is the only colour-carrying terrain texture binding in the
+game, and the per-layer/per-terrain mismatch that seemed fatal is just the difference
+between a source file and a bound result. *I disconfirmed a correct answer by assuming the
+binding had to be one-to-one with the files, which is the sort of premise that never gets
+stated and so never gets checked.*
 
 `LAYER_C` also uses format **5** where `D` and `N` use 108 and 109 -- a low, presumably
 standard format against two engine-specific ones, which is consistent, though the format
