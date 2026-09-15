@@ -3332,6 +3332,19 @@ that later fails says nothing, because the walk that reached it may be desynchro
   batches that a field turned out not to be where alignment suggests. *A join that
   fails at every aligned offset has not been disproved; it has been tested at the
   wrong offsets.*
+- **Nor are they among the audio-named literal hashes.** All twelve offsets score
+  **0 of 4,321** against the 221 audio literal hashes the named-reach audit loads.
+- *A correction on how I read that.* I dismissed this as "no discriminating power",
+  which is backwards. With 221 hashes against 2^32, the expected chance matches over
+  4,321 words is **0.0002** -- so the test can never produce a false positive, and a
+  single hit would have been decisive. Finding none is a narrow but real elimination,
+  not a failed experiment. **A test with a tiny false-positive rate is powerful for
+  confirming and weak for refuting; say which of the two you got.**
+- **The stronger test has not been run.** The 221 is the reader's *audio-filtered*
+  subset (`metadata.audioLiteralCount = 221`); `global-metadata.dat` holds **49,324**
+  distinct literals. Even at that size the expected chance matches are **0.05**, so
+  testing `+12`, `+20` and `+32` against the full set would be decisive either way and
+  is the obvious next move on these words.
 - **None of the header words is a source id either.** Scored against the full
   source-id population, every offset including `+12`, `+20` and `+32` matches **zero**
   -- so those remain unread, now eliminated as object references, name hashes, floats,
