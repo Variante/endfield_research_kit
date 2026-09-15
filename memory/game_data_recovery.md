@@ -5408,9 +5408,66 @@ and 128 -- which is `0xFFFFFF80`, i.e. `-128`, i.e. `x * 128` for `x = -1`. A pl
 name made a coordinate look like a version number. *The join to the filename settles in
 one test what no amount of reading the field alone could.*
 
-**Still not known:** what slots 5, 6 and 7's element tables hold. The widths and the
-6/7 parallelism are structure; the same kind of join is what would give them meaning,
-and the grid coordinates are now a known quantity to join against.
+#### THE SLOT-7 ELEMENTS CARRY WORLD PLACEMENTS, found by joining to that origin
+
+With the chunk origin known, the chunk is a **box in world units**, and a box is
+something the other slots can be tested against. Over the same 7,433 files:
+
+**Slots 5 and 6 are not spatial at all.** Every float-shaped field in them is
+**0.0% non-denormal** -- the bytes are small integers, and reading them as float gives
+denormals near zero. *Their apparent "box hits" in the first pass were entirely that
+artefact:* a denormal lands in whatever box straddles zero, which is why own-box and
+neighbour-box scored identically (28.9% vs 28.8%). **A test whose control matches it is
+measuring the control.**
+
+**Slot 7's element field 2 is a 24-byte inline struct of six floats.** Both element
+shapes give it 24 bytes (`obj 60`: offsets 28..52; `obj 56`: 24..48), and it is either
+**wholly zero or wholly populated, with zero exceptions**:
+
+| | elements |
+| --- | --- |
+| all 24 bytes zero (unset) | 3,904 |
+| populated | 7,112 |
+| *records mixing the two* | **0** |
+
+**The first triple is a world-space position, `(x, height, z)`:**
+
+| reading | share of 7,112 |
+| --- | --- |
+| **f0 in own chunk's x, f2 in own chunk's z** | **73.96%** |
+| same test against a neighbour chunk (control) | **1.28%** |
+| `(f0, f1)` as the two axes -- the non-Y-up reading | 6.25% |
+| rotations `(f1, f0)`, `(f2, f1)` (controls) | 1.92%, 1.91% |
+
+A **58-fold** margin over the spatial control. The axis assignment is then confirmed a
+*second* time, without using the box at all -- by sign:
+
+```
+axis 0 negative  61.7%      axis 1 negative   4.9%      axis 2 negative  48.2%
+```
+
+The middle axis is the one that stays positive, which is what a height does and what a
+horizontal coordinate does not. *Two independent lines, one from geometry and one from
+sign, pick the same middle float.*
+
+**The second triple is non-negative, always.** 0 of 21,336 components negative across
+7,112 records, range 0..687 -- while the position triple in those same records is
+negative 61.7%/4.9%/48.2% of the time. It is **not** a second position (2.18% own box
+against a 2.26% control -- chance), not a unit quaternion (lengths 411..693), not a
+scale (magnitudes in the hundreds). An extent is consistent with all of it, but nothing
+here *discriminates* an extent from any other non-negative triple, so it stays
+**structural-only**.
+
+***Disproved along the way:*** the six floats as a min/max bounding box. `min <= max`
+componentwise holds for 38.52% -- **below** its own reversed control at 43.22%, and level
+with a shuffled pairing at 37.69%. *The reversed control outscoring the claim is the
+cleanest possible refutation, and it cost one run.* The `f3..f5 >= 0` check scored
+100.00% in that same run and meant nothing, because the unset records were still in the
+denominator; it only became evidence once the population was restricted to the 7,112 and
+the position triple supplied the contrast.
+
+**Still not known:** what a slot-7 element *is* -- the placement is located but the thing
+being placed is not named; and what slots 5 and 6's integer tables index.
 
 ## Remaining gaps
 
