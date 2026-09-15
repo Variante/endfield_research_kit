@@ -104,6 +104,24 @@ unique binding.
   targets live in the streaming map and only 570 in its own, so a per-map check
   would report it as 95% dangling. 1,939 of its 1,946 CAB names also appear in the
   streaming map.
+- **The CABMap offset is a physical byte offset into the `.chk`, and it lands
+  inside a VFS logical file.** Joined against the VFS understanding ledger: all
+  1,946 persistent entries land inside a ledger span, and 252,783 of 254,723
+  streaming entries do. Two independently produced indexes -- AnimeStudio walking
+  containers, the VFS audit walking blocks -- agree on where things are.
+- **That join found a coverage hole in the ledger.** The streaming map references
+  only 42 distinct chunks, and exactly one is absent from the ledger entirely:
+  `VFS/0CE8FA57/4B06191A404B86321CF14A4332DC1694.chk`. It exists on disk, is
+  **222,236,548 bytes**, and carries 1,053 CABMap entries. The ledger has *zero*
+  rows mentioning it -- not excluded, not shadowed, simply not enumerated, even
+  though it covers both VFS roots and the one `shadowed_fallback` row names a
+  different chunk.
+- Why it is absent is **not** diagnosed here. What is established is that a gated
+  ledger everything else hangs its provenance on does not enumerate a 222 MB chunk
+  that another index says holds a thousand containers. The check runs every time
+  `cabmap` runs, so the gap cannot quietly close or widen unnoticed.
+- The lesson generalises past this file: **a provenance ledger cannot audit its own
+  coverage.** Only a second, independently produced index can say what it missed.
 - Read by `scripts/asset_builder/cabmap.py`; report at
   [`reports/assets/cabmap_current_latest.json`](../reports/assets/cabmap_current_latest.json).
   This is a container index only -- it says nothing about the objects inside a CAB,

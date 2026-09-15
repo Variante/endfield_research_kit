@@ -155,11 +155,62 @@ def cabmap_is_closed(summary: dict[str, Any]) -> bool:
     )
 
 
+DEFAULT_LEDGER = ROOT / "reports/animestudio/vfs_understanding_files_latest.jsonl.gz"
+
+
+def ledger_chunk_names(ledger_path: Path) -> set[str]:
+    """Chunk filenames the VFS understanding ledger enumerates."""
+    import gzip  # noqa: PLC0415
+
+    names: set[str] = set()
+    if not ledger_path.is_file():
+        return names
+    with gzip.open(ledger_path, "rt", encoding="utf-8") as handle:
+        handle.readline()
+        for line in handle:
+            row = json.loads(line)
+            if row.get("recordType") != "file":
+                continue
+            physical = row.get("physicalChunkPath")
+            if physical:
+                names.add(Path(physical).name.upper())
+    return names
+
+
+def chunks_missing_from_ledger(
+    entries_by_map: dict[str, list[CabEntry]], ledger: set[str]
+) -> dict[str, dict[str, int]]:
+    """Chunks a CABMap references that the ledger never enumerates.
+
+    Both indexes are produced independently -- one by AnimeStudio walking
+    containers, one by the VFS audit walking blocks -- so a chunk in the first and
+    not the second is a coverage gap in whichever is wrong, and worth surfacing
+    rather than averaging away.
+    """
+    out: dict[str, dict[str, int]] = {}
+    if not ledger:
+        return out
+    for name, entries in entries_by_map.items():
+        counts: Counter[str] = Counter()
+        for entry in entries:
+            chunk = Path(entry.path).name.upper()
+            if chunk not in ledger:
+                counts[chunk] += 1
+        if counts:
+            out[name] = dict(counts.most_common())
+    return out
+
+
 def iter_maps(directory: Path) -> Iterator[Path]:
     yield from sorted(directory.glob("*.bin"))
 
 
-def run(*, maps_directory: Path, output_json: Path) -> dict[str, Any]:
+def run(
+    *,
+    maps_directory: Path,
+    output_json: Path,
+    ledger_path: Path = DEFAULT_LEDGER,
+) -> dict[str, Any]:
     files = list(iter_maps(maps_directory))
     if not files:
         raise CabMapError(f"no CABMap files under {maps_directory}")
@@ -197,6 +248,8 @@ def run(*, maps_directory: Path, output_json: Path) -> dict[str, Any]:
             "namingAnotherMap": len((refs - own) & everything),
             "namingNothingAnywhere": len(unresolved),
         }
+    ledger = ledger_chunk_names(ledger_path)
+    missing_chunks = chunks_missing_from_ledger(parsed, ledger)
     report = {
         "format": "animestudio-cabmap-container-index",
         "schemaVersion": 1,
@@ -204,6 +257,11 @@ def run(*, maps_directory: Path, output_json: Path) -> dict[str, Any]:
         "status": "complete" if not problems else "incomplete",
         "closureEnforced": True,
         "maps": summaries,
+        "ledgerCoverage": {
+            "ledgerPath": str(ledger_path),
+            "ledgerEnumeratesChunks": len(ledger),
+            "chunksReferencedButNotEnumerated": missing_chunks,
+        },
         "dependencyResolution": {
             "distinctCabNames": len(everything),
             "dependencyEdges": edge_total,
@@ -223,6 +281,8 @@ def run(*, maps_directory: Path, output_json: Path) -> dict[str, Any]:
                 "that a dependency edge implies load order, ownership or containment",
                 "that the three targets naming nothing are errors; this corpus simply "
                 "does not contain whatever declares them",
+                "why a referenced chunk is absent from the VFS ledger; the absence is "
+                "reported, the cause is not diagnosed here",
                 "that an offset points at a readable object without the container "
                 "format that sits at it",
             ],

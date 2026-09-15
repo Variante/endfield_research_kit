@@ -4,6 +4,7 @@ import struct
 import unittest
 
 from scripts.asset_builder.cabmap import (
+    chunks_missing_from_ledger,
     CabEntry,
     CabMapError,
     cabmap_is_closed,
@@ -110,6 +111,24 @@ class CabMapTests(unittest.TestCase):
         self.assertEqual(summary["distinctCabNames"], 1)
         self.assertFalse(cabmap_is_closed(summary))
         self.assertFalse(cabmap_is_closed(summarise(FakePath(), "b", [])))
+
+    def test_chunks_absent_from_the_ledger_are_surfaced_per_map(self) -> None:
+        entries = {
+            "a.bin": [
+                CabEntry("CAB-a", "VFS/X/AAA.chk", 0, ()),
+                CabEntry("CAB-b", "VFS/X/AAA.chk", 8, ()),
+                CabEntry("CAB-c", "VFS/X/BBB.chk", 0, ()),
+            ]
+        }
+        # The ledger and the CABMap are produced independently, so a chunk in one
+        # and not the other is a coverage gap worth naming, not a rounding error.
+        missing = chunks_missing_from_ledger(entries, {"BBB.CHK"})
+        self.assertEqual(missing, {"a.bin": {"AAA.CHK": 2}})
+        # Full coverage reports nothing rather than an empty row per map.
+        self.assertEqual(chunks_missing_from_ledger(entries, {"AAA.CHK", "BBB.CHK"}), {})
+        # With no ledger at all the check cannot run, and must not claim everything
+        # is missing.
+        self.assertEqual(chunks_missing_from_ledger(entries, set()), {})
 
 
 if __name__ == "__main__":
