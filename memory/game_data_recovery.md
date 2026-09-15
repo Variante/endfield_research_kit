@@ -5846,9 +5846,35 @@ and the one suggestive hit, `sum(field5) == s4 - 24` at **46.47%**, lands on **3
 files in *both* families -- the same recurring empty-chunk subset that every degenerate
 fit in this family has produced. *When a number that has already been identified as the
 degenerate subset turns up as a match rate, it is the subset talking, not the hypothesis.*
-The scalars stay unexplained. Slots 5 and 6 are not unindexed for want of effort -- **at
-this `inputSetSha256` they contain no variation to index against**, and further mining of
-them needs a different corpus, not a better test.
+The scalars stay unexplained.
+
+#### THE KIND CODES ARE COUPLED, BUT NOT A SECTION DIRECTORY
+
+Fields 1 and 2 -- the two that never disagree across the pair -- take
+`{5, 6, 8, 9, 10}` and `{1..10, 12}`. Independent codes would give 55 combinations;
+**only 19 occur**, so the two are coupled and carry less information than their ranges
+suggest. Over **629,607** slot-5 elements:
+
+| reading | result |
+| --- | --- |
+| a directory keyed by kind (each kind once per chunk) | **refused** -- 3,410 of 7,433 files repeat a `(f1, f2)` |
+| a sort key | **refused** -- field 2 is unordered in 2,226 of 7,433 files |
+| distinct `(f1, f2)` combinations | 19 of a possible 55 |
+
+***A test that cannot decide, recorded so it is not run again.*** The remaining reading is
+that `(f1, f2)` is a **union tag** selecting a record type, which predicts one vtable
+layout per kind. The census gives 19 kinds against 16 layouts, with only **6 of 19** kinds
+showing a single layout -- which looks like a refutation and **is not one**. *FlatBuffers
+omits any field whose value equals its default*, so a single type legitimately produces
+several layouts depending on which fields happen to be defaulted. Layout spread within a
+kind is uninformative here, in both directions. **The union reading is neither supported
+nor refused by this evidence, and re-running it will not change that** -- separating the
+cases needs the schema, not the bytes.
+
+**Where this family stands.** Slots 5 and 6 are not unindexed for want of effort -- at
+this `inputSetSha256` **slot 6 contains no variation to index against at all**, and slot
+5's remaining questions are now pinned to a 19-value coupled code whose resolution needs
+the schema. Further mining needs a different corpus, not a better test.
 
 ## Remaining gaps
 
