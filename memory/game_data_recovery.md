@@ -2733,6 +2733,28 @@ u32 terminator, always 100
   **ten bytes from the terminator**, which is where an element's short trailer puts
   its own marker.
 
+#### The 119 trailer-flag fences: the size is found, the selector is not
+
+- **A 17-byte trailing block instead of 12 closes 89 of the 119**, taking the body
+  frame from 3,715 to 3,804 of 4,325. And `17 - 12 = 5`, the same optional five-byte
+  step the element trailer and the entry widths both show.
+- The size is discriminated: `(17,)` alone closes only **91** bodies, `(12, 16)`
+  gains nothing, and `(12, 16, 17)` gains less than `(12, 17)` because 16 mis-matches
+  first. So 17 is specifically right, not merely bigger.
+- **But the selector is undetermined, and it is not adopted.** Thirteen byte
+  positions separate the two groups perfectly -- element head bytes 1 to 4, run
+  header bytes 0 to 4 and 7 to 9. The 89 are a completely homogeneous population:
+  every one has exactly one run, that run declares zero records, and its head bytes
+  1 to 4 are nonzero, while **2 of 3,804** twelve-byte-block elements have a nonzero
+  head there and **none** has one run with zero records.
+- So the two populations differ in every measured respect and nothing in the corpus
+  can say which difference is the switch. Picking one of the thirteen would be
+  arbitrary; taking `(12, 17)` as a fallback search would resolve the choice *by
+  closure*, which is the exact failure mode that made the terrain codec's nibble
+  reading look right for 6,442 files. **Measured, recorded, not adopted.**
+- What would settle it: a `0x0B` body with a populated element head and more than one
+  run, or one run declaring records. None exists in this corpus.
+
 #### Two eliminations on the 218, so the next attempt does not repeat them
 
 - **It is NOT one more element the count at +44 failed to declare.** Walking elements
