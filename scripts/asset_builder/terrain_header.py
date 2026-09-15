@@ -1,28 +1,43 @@
 """Frame the header of Endfield ``Data/Terrain/PC/<scene>/Terrain_a_b_c_X.bytes``.
 
-Every terrain file carries the ASCII magic ``TRET``. In 97% of them it sits at
-offset 6 and a fixed header follows::
+A terrain file is **not** a header followed by pixels. Its leading ``u32`` equals
+``payloadBytes + 20``, which is the size of the *decompressed* record -- twenty
+header bytes plus every mip level -- while the file itself is one to two hundred
+times smaller. The magic ``TRET`` then sits at offset 6 in most files but at 7, 8,
+9, 10, 11, 17, 31 and further in 1,322 others. Both facts say the same thing: the
+file is a compressed stream, and the header is legible only because the compressor
+emitted it as literals. Where it emitted part of it as a match instead, the header
+is not contiguous in the file and cannot be read at all.
 
-    u32  declaredTotal      == payloadBytes + 20
-    u8   0xFF
-    u8   channel selector
+So the header is located by its magic, never by a fixed offset::
+
+    u32  declaredTotal      == payloadBytes + 20   (decompressed record size)
     ---- "TRET"
     u32  one
     u16  width
     u16  height
-    u16  one
-    u16  six
-    u32  payloadBytes       == width * height * bytesPerPixel
+    u16  mipLevels
+    u16  formatCode
+    u32  payloadBytes
 
-The **channel letter in the filename decides bytes per pixel** -- ``A``, ``N`` and
-``T`` are one byte, ``C`` and ``H`` two, ``S`` four -- and that is the finding this
-module exists to gate. It is a join between the name and the header, so neither
-side proves it alone.
+``payloadBytes`` is the **whole mip chain**, not one image: for the 1024x1024
+layer textures ``mipLevels`` is 11 and the payload is 4/3 of the base level. That
+is what this module gates -- the payload must equal the chain computed from
+``width``, ``height``, ``mipLevels`` and the layout the format code implies, under
+exactly one of two layouts (a linear bytes-per-pixel, or 4x4 blocks of a fixed
+size). Codes 100 and 101 are reported **ambiguous** rather than resolved: they are
+only ever seen at 132x132, and 132 is a multiple of 4, so one byte per pixel and
+sixteen-byte blocks predict the same total there.
 
-What is *not* framed: everything after the header. The bytes there are smaller
-than ``payloadBytes`` declares, so the payload is encoded or compressed, and this
-module does not decode it. Files whose magic is not at offset 6 are fenced rather
-than read with a layout that does not apply to them.
+What is *not* framed: the compressed stream. lz4 block, zlib, raw deflate, lzma,
+bzip2 and brotli were each asked, from offsets 4, 5 and 6, to produce exactly
+``declaredTotal`` bytes beginning with ``TRET``; every one refused every file.
+
+Two name shapes ship here: ``Terrain_a_b_c_X.bytes`` tiles, whose channel is the
+last token, and ``LAYER_X_n.bytes`` textures, whose last token is a layer index and
+whose channel sits in the middle. The layer textures are the only files carrying a
+mip chain, and so the only ones whose payload size can tell a block layout from a
+linear one.
 """
 
 from __future__ import annotations
@@ -42,13 +57,25 @@ ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_OUTPUT = ROOT / "reports/assets/terrain_header_current_latest.json"
 
 MAGIC = b"TRET"
-MAGIC_OFFSET = 6
-HEADER_BYTES = 26
-# declaredTotal counts the payload plus the header bytes that follow the size word.
-TOTAL_OVERHEAD = 20
-TERRAIN_NAME_RE = re.compile(r"Terrain_\d+_\d+_\d+_([A-Za-z0-9]+)\.bytes$")
-# The channel letter in the filename, and what the header then says a pixel costs.
-CHANNEL_BYTES_PER_PIXEL = {"A": 1, "N": 1, "T": 1, "C": 2, "H": 2, "S": 4}
+# "TRET", a word, two dimensions, two 16-bit fields and the payload size.
+HEADER_BYTES = 20
+# declaredTotal counts those header bytes plus the payload.
+TOTAL_OVERHEAD = HEADER_BYTES
+# The leading size word must precede the magic, so the magic cannot start before 4.
+MINIMUM_MAGIC_OFFSET = 4
+# A bound on the mip count so a stray "TRET" inside compressed bytes cannot be read
+# as a header: 16 levels already covers a 32768-pixel texture.
+MAXIMUM_MIP_LEVELS = 16
+# Two name shapes ship in this block. The per-tile files carry their channel last;
+# the 1024x1024 layer textures carry it in the middle and a layer index last, so
+# taking the trailing token would read the index as a channel.
+TERRAIN_TILE_NAME_RE = re.compile(r"Terrain_\d+_\d+_\d+_([A-Za-z0-9]+)\.bytes$")
+TERRAIN_LAYER_NAME_RE = re.compile(r"LAYER_([A-Za-z]+)_\d+\.bytes$")
+# Candidate layouts the payload size is tested against. Nothing here is named after
+# a graphics format: these are the only two ways the observed totals can arise.
+LINEAR_BYTES_PER_PIXEL = (1, 2, 4, 8, 16)
+BLOCK_BYTES = (8, 16)
+BLOCK_SIDE = 4
 
 
 class TerrainHeaderError(ValueError):
@@ -57,48 +84,116 @@ class TerrainHeaderError(ValueError):
 
 @dataclass(frozen=True)
 class TerrainHeader:
-    channel_selector: int
+    magic_offset: int
     width: int
     height: int
+    mip_levels: int
+    format_code: int
     declared_total: int
     payload_bytes: int
 
-    @property
-    def bytes_per_pixel(self) -> float | None:
-        pixels = self.width * self.height
-        if not pixels or self.payload_bytes % pixels:
-            return None
-        return self.payload_bytes // pixels
+
+def linear_chain(width: int, height: int, mip_levels: int, bytes_per_pixel: int) -> int:
+    """Total bytes of a mip chain stored as plain pixels."""
+    total = 0
+    for level in range(mip_levels):
+        total += max(1, width >> level) * max(1, height >> level) * bytes_per_pixel
+    return total
+
+
+def block_chain(width: int, height: int, mip_levels: int, block_bytes: int) -> int:
+    """Total bytes of a mip chain stored as 4x4 blocks.
+
+    The last levels matter: a 2x2 or 1x1 level still costs a whole block, so a
+    block chain is slightly larger than four thirds of its base. That difference is
+    what separates a block layout from a linear one at 1024x1024.
+    """
+    total = 0
+    for level in range(mip_levels):
+        wide = max(1, width >> level)
+        high = max(1, height >> level)
+        total += ((wide + BLOCK_SIDE - 1) // BLOCK_SIDE) * ((high + BLOCK_SIDE - 1) // BLOCK_SIDE) * block_bytes
+    return total
+
+
+def fit_payload(header: TerrainHeader) -> tuple[str, int | None, int | None]:
+    """Which layout accounts for ``payloadBytes`` exactly.
+
+    Returns one of ``linear``, ``block``, ``ambiguous`` or ``neither`` together
+    with the widths that fit. ``ambiguous`` is a real outcome, not a failure: at a
+    dimension that is a multiple of four, one byte per pixel and sixteen-byte
+    blocks predict the same total, and nothing in these bytes separates them.
+    """
+    linear = next(
+        (b for b in LINEAR_BYTES_PER_PIXEL
+         if linear_chain(header.width, header.height, header.mip_levels, b) == header.payload_bytes),
+        None,
+    )
+    block = next(
+        (b for b in BLOCK_BYTES
+         if block_chain(header.width, header.height, header.mip_levels, b) == header.payload_bytes),
+        None,
+    )
+    if linear is not None and block is not None:
+        return "ambiguous", linear, block
+    if linear is not None:
+        return "linear", linear, None
+    if block is not None:
+        return "block", None, block
+    return "neither", None, None
 
 
 def parse_terrain_header(data: bytes) -> TerrainHeader:
-    """Read the fixed header, or refuse."""
-    if len(data) < HEADER_BYTES:
+    """Locate the header by its magic and read it, or refuse.
+
+    Every occurrence of the magic is tried, because a compressed stream can carry
+    the four bytes by chance before the real header appears. An occurrence is
+    accepted only if the two size words agree -- ``declaredTotal`` against
+    ``payloadBytes`` -- which is two independent statements about the same record.
+    """
+    if len(data) < MINIMUM_MAGIC_OFFSET + HEADER_BYTES:
         raise TerrainHeaderError(f"shorter than a header: {len(data)} bytes")
-    if data[MAGIC_OFFSET:MAGIC_OFFSET + 4] != MAGIC:
-        raise TerrainHeaderError("magic TRET is not at offset 6")
     declared_total = struct.unpack_from("<I", data, 0)[0]
-    width = struct.unpack_from("<H", data, 14)[0]
-    height = struct.unpack_from("<H", data, 16)[0]
-    payload_bytes = struct.unpack_from("<I", data, 22)[0]
-    if declared_total != payload_bytes + TOTAL_OVERHEAD:
-        raise TerrainHeaderError(
-            f"declared total {declared_total} is not payload {payload_bytes} plus "
-            f"{TOTAL_OVERHEAD}"
-        )
-    return TerrainHeader(data[5], width, height, declared_total, payload_bytes)
+    at = data.find(MAGIC)
+    while at != -1:
+        if at >= MINIMUM_MAGIC_OFFSET and at + HEADER_BYTES <= len(data):
+            one = struct.unpack_from("<I", data, at + 4)[0]
+            width, height = struct.unpack_from("<HH", data, at + 8)
+            mip_levels, format_code = struct.unpack_from("<HH", data, at + 12)
+            payload_bytes = struct.unpack_from("<I", data, at + 16)[0]
+            if (
+                one == 1
+                and width > 0
+                and height > 0
+                and 0 < mip_levels <= MAXIMUM_MIP_LEVELS
+                and declared_total == payload_bytes + TOTAL_OVERHEAD
+            ):
+                return TerrainHeader(
+                    at, width, height, mip_levels, format_code, declared_total, payload_bytes
+                )
+        at = data.find(MAGIC, at + 1)
+    raise TerrainHeaderError(
+        "no occurrence of TRET is followed by a header whose sizes agree"
+    )
 
 
 def channel_of(file_name: str) -> str | None:
-    match = TERRAIN_NAME_RE.search(file_name)
-    return match.group(1) if match else None
+    """The channel token, from whichever of the two name shapes applies."""
+    match = TERRAIN_TILE_NAME_RE.search(file_name)
+    if match:
+        return match.group(1)
+    match = TERRAIN_LAYER_NAME_RE.search(file_name)
+    return f"LAYER_{match.group(1)}" if match else None
 
 
 def summarise(samples: list[tuple[str, bytes]]) -> dict[str, Any]:
     """Census over (fileName, bytes) pairs."""
     outcomes: Counter[str] = Counter()
-    per_channel: dict[str, Counter] = defaultdict(Counter)
-    selectors: dict[str, Counter] = defaultdict(Counter)
+    magic_offsets: Counter[int] = Counter()
+    fits: dict[str, Counter] = defaultdict(Counter)
+    widths: dict[str, Counter] = defaultdict(Counter)
+    formats_by_channel: dict[str, Counter] = defaultdict(Counter)
+    dimensions: dict[str, Counter] = defaultdict(Counter)
     disagreements: list[str] = []
     for name, data in samples:
         channel = channel_of(name)
@@ -108,49 +203,83 @@ def summarise(samples: list[tuple[str, bytes]]) -> dict[str, Any]:
         try:
             header = parse_terrain_header(data)
         except TerrainHeaderError:
-            outcomes["headerNotAtOffsetSix"] += 1
+            # The header is not contiguous in the file. That is a property of the
+            # compressed stream, not a malformed file, so it is fenced by name.
+            outcomes["headerNotLegibleInTheStream"] += 1
             continue
         outcomes["headerFramed"] += 1
-        selectors[channel][header.channel_selector] += 1
-        width = header.bytes_per_pixel
-        if width is None:
-            per_channel[channel]["nonIntegral"] += 1
-            continue
-        per_channel[channel][width] += 1
-        expected = CHANNEL_BYTES_PER_PIXEL.get(channel)
-        if expected is not None and width != expected:
-            outcomes["channelWidthDisagrees"] += 1
+        magic_offsets[header.magic_offset] += 1
+        code = str(header.format_code)
+        verdict, linear, block = fit_payload(header)
+        outcomes[f"payload_{verdict}"] += 1
+        fits[code][verdict] += 1
+        dimensions[code][f"{header.width}x{header.height}"] += 1
+        formats_by_channel[channel][f"mips{header.mip_levels}_format{header.format_code}"] += 1
+        if verdict == "neither":
             if len(disagreements) < 8:
-                disagreements.append(f"{name}: expected {expected}, header says {width}")
+                disagreements.append(
+                    f"{name}: {header.width}x{header.height} mips {header.mip_levels} "
+                    f"format {header.format_code} payload {header.payload_bytes} fits no layout"
+                )
+            continue
+        widths[code][f"linear_{linear}" if linear is not None else "linear_none"] += 1
+        widths[code][f"block_{block}" if block is not None else "block_none"] += 1
     return {
         "outcomes": dict(outcomes.most_common()),
-        "bytesPerPixelByChannel": {
-            channel: {str(key): count for key, count in sorted(values.items(), key=str)}
-            for channel, values in sorted(per_channel.items())
+        "magicOffsets": {str(key): value for key, value in sorted(magic_offsets.items())},
+        "payloadFitByFormat": {
+            code: dict(sorted(values.items())) for code, values in sorted(fits.items(), key=lambda x: int(x[0]))
         },
-        "channelSelectorByChannel": {
-            channel: {str(key): count for key, count in sorted(values.items())}
-            for channel, values in sorted(selectors.items())
+        "layoutByFormat": {
+            code: dict(sorted(values.items())) for code, values in sorted(widths.items(), key=lambda x: int(x[0]))
         },
-        "expectedBytesPerPixel": dict(sorted(CHANNEL_BYTES_PER_PIXEL.items())),
+        "dimensionsByFormat": {
+            code: dict(sorted(values.items())) for code, values in sorted(dimensions.items(), key=lambda x: int(x[0]))
+        },
+        "formatByChannel": {
+            channel: dict(sorted(values.items())) for channel, values in sorted(formats_by_channel.items())
+        },
         "disagreements": disagreements,
     }
 
 
-def channel_decides_pixel_width(summary: dict[str, Any]) -> bool:
-    """The filename's channel letter must predict the header's bytes per pixel.
+def payload_is_the_mip_chain(summary: dict[str, Any]) -> bool:
+    """Every framed payload must be the mip chain its header describes.
 
-    Stated as a gate because it is the whole claim. One file whose header
-    disagrees with its name breaks the join, and a rate would hide it; a corpus
-    where nothing framed would satisfy it vacuously, so framing is required too.
+    This is the whole claim, and it is an equality over four header fields at once:
+    width, height, mip level count and format code together predict an exact byte
+    total. A file that fits neither layout breaks it, and a rate would hide that
+    file. A corpus where nothing framed satisfies it vacuously, so framing is
+    required as well.
+
+    ``ambiguous`` counts as accounted for -- the total *is* predicted, just by two
+    layouts that these dimensions cannot separate -- and is reported so the
+    ambiguity is not mistaken for a resolution.
     """
     outcomes = summary.get("outcomes") or {}
-    if int(outcomes.get("headerFramed") or 0) <= 0:
+    framed = int(outcomes.get("headerFramed") or 0)
+    if framed <= 0:
         return False
-    if int(outcomes.get("channelWidthDisagrees") or 0):
+    if int(outcomes.get("payload_neither") or 0):
         return False
-    observed = summary.get("bytesPerPixelByChannel") or {}
-    return any(channel in observed for channel in CHANNEL_BYTES_PER_PIXEL)
+    accounted = sum(
+        int(outcomes.get(f"payload_{verdict}") or 0)
+        for verdict in ("linear", "block", "ambiguous")
+    )
+    return accounted == framed
+
+
+def channel_decides_the_format(summary: dict[str, Any]) -> bool:
+    """The channel in the file name must pick exactly one (mips, format) pair.
+
+    Two pairs under one channel would mean the name does not determine the format,
+    which is the join this report exists to state. Digit channels are pooled by the
+    caller only for reporting; here each channel string stands on its own.
+    """
+    by_channel = summary.get("formatByChannel") or {}
+    if not by_channel:
+        return False
+    return all(len(values) == 1 for values in by_channel.values())
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -186,10 +315,10 @@ def main(argv: list[str] | None = None) -> int:
         return 1
 
     summary = summarise(samples)
-    closed = channel_decides_pixel_width(summary)
+    closed = payload_is_the_mip_chain(summary) and channel_decides_the_format(summary)
     report = {
         "format": "endfield-terrain-header-audit",
-        "schemaVersion": 1,
+        "schemaVersion": 2,
         "generatedUtc": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
         "status": "complete" if closed else "incomplete",
         "closureEnforced": True,
@@ -198,18 +327,23 @@ def main(argv: list[str] | None = None) -> int:
         "evidenceBoundary": {
             "layer": 3,
             "claim": (
-                "every terrain file carries the TRET magic, and where it sits at "
-                "offset 6 the header's pixel width is predicted by the channel letter "
-                "in the file name"
+                "a terrain file is a compressed stream of a 20-byte TRET record plus "
+                "its payload; where the header survives as literals it can be located "
+                "by its magic, and its payload size is exactly the mip chain implied "
+                "by width, height, mip level count and format code"
             ),
             "semanticStatus": "structural-only",
             "nonClaims": [
-                "anything about the bytes after the header; they are shorter than the "
-                "declared payload, so the payload is encoded and is not decoded here",
+                "the codec of the compressed stream; lz4 block, zlib, raw deflate, "
+                "lzma, bzip2 and brotli were each asked from offsets 4, 5 and 6 to "
+                "produce declaredTotal bytes beginning with TRET, and all refused",
+                "which graphics format a format code names; only the byte layout its "
+                "payload size implies is established, and for codes 100 and 101 even "
+                "that is ambiguous because they appear only at 132x132",
                 "what a channel letter means, or what its pixels represent",
                 "that width and height are world extents rather than sample counts",
-                "any reading of the files whose magic is not at offset 6; those are "
-                "fenced, not framed",
+                "any reading of the files whose header is not contiguous in the "
+                "stream; those are fenced, not framed",
             ],
         },
     }
@@ -218,7 +352,8 @@ def main(argv: list[str] | None = None) -> int:
     framed = summary["outcomes"].get("headerFramed", 0)
     print(
         f"Terrain headers: {framed:,} framed of {len(samples):,} files; "
-        f"channel decides pixel width: {closed}"
+        f"payload is the mip chain: {payload_is_the_mip_chain(summary)}; "
+        f"channel decides the format: {channel_decides_the_format(summary)}"
     )
     print(f"Terrain header report: {args.output_json}")
     return 0 if closed else 1

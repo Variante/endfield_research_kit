@@ -174,56 +174,72 @@ unique binding.
 
 ## Terrain header
 
-- **Every terrain file carries the ASCII magic `TRET`**, and where it sits at
-  offset 6 -- 44,059 of 46,164 files -- a fixed 26-byte header follows: a `u32`
-  declared total, `0xFF`, a channel-selector byte, the magic, `u32` 1, `u16` width,
-  `u16` height, `u16` 1, `u16` 6, and a `u32` payload size. The two size words are
-  two statements about the same file and must agree: `declaredTotal == payload + 20`.
-- **The channel letter in the filename decides bytes per pixel, with no
-  exceptions.** `A`, `N` and `T` are one byte, `C` and `H` two, `S` four --
-  checked against the header's own `payload / (width * height)` on every framed
-  file, 0 disagreements. It is a join between the name and the header, so neither
-  side establishes it alone, and the gate refuses on a single mismatch rather than
-  reporting a rate.
-- The six channels are exactly balanced: 7,570 files each across 37 scenes, so
+- **A terrain file is a compressed stream, not a header plus pixels.** The leading
+  `u32` equals `payload + 20` -- the size of the *decompressed* record -- while the
+  file itself is 50 to 250 times smaller. That is why the magic floats: `TRET` sits
+  at offset 6 in 44,059 files but at 7, 8, 9, 10, 11, 17, 31 and beyond in 1,322
+  others. The header is legible only where the compressor emitted it as literals.
+- **Locate the header by its magic, never at a fixed offset, and try every
+  occurrence.** Four bytes spelling `TRET` can occur inside compressed data; an
+  occurrence is accepted only when the word after it is 1, the dimensions are
+  nonzero, the mip count is at most 16 and `declaredTotal == payload + 20`. Under
+  that rule **45,648 of 46,164 files frame**, up from 44,059 under the old
+  fixed-offset reading. The remaining 516 are fenced as
+  `headerNotLegibleInTheStream` -- their header is not contiguous in the file.
+- **The record is 20 bytes**, not 26: `"TRET"`, `u32` 1, `u16` width, `u16` height,
+  `u16` **mipLevels**, `u16` **formatCode**, `u32` payload. The two fields the
+  earlier note called constants `1` and `6` are not constants at all.
+- **`payload` is the whole mip chain, and it is predicted exactly.** Width, height,
+  mip count and format code together give a byte total that matches on every one of
+  the 45,648 framed files, zero exceptions, under one of two layouts: a linear
+  bytes-per-pixel, or 4x4 blocks of a fixed size. `LAYER_*` textures are
+  1024x1024 with **mipLevels 11** -- `log2(1024) + 1` -- and their payload is the
+  full chain: 1,398,101 bytes at one byte per pixel.
+- **The mip chain is what separates a block layout from a linear one.** A block
+  chain costs a whole block for the 2x2 and 1x1 levels, so it lands 27 bytes above
+  four thirds of its base. Format 5 hits 1,398,101 (linear, 1 B/px); formats 108
+  and 109 hit 1,398,128 (4x4 blocks of 16 bytes). Neither could be told apart
+  without the chain.
+- **Formats 100 and 101 are ambiguous, and are reported as such.** They appear only
+  at 132x132; 132 is a multiple of 4, so one byte per pixel and sixteen-byte blocks
+  predict the same total. Nothing in these bytes separates them, so the audit names
+  the ambiguity instead of picking one.
+- **The channel in the file name decides `(mipLevels, formatCode)` exactly**, with
+  no channel carrying two pairs: `C`,`H` -> `(1, 6)` at 2 B/px; `S` -> `(1, 8)` at
+  4 B/px; `T` -> `(1, 100)`; `A`,`N` -> `(1, 101)`; `LAYER_C` -> `(11, 5)`;
+  `LAYER_D` -> `(11, 108)`; `LAYER_N` -> `(11, 109)`. This *replaces* the older
+  "channel letter decides bytes per pixel" claim with its mechanism: the name picks
+  a format code, and the format code decides the layout.
+- **Two name shapes ship here.** `Terrain_a_b_c_X.bytes` tiles carry the channel
+  last; `LAYER_X_n.bytes` textures carry it in the middle and a **layer index**
+  last. Reading the trailing token as a channel turns one channel into nine and
+  drops the only files with a mip chain -- which is exactly what the earlier
+  744-file "name not terrain shaped" bucket was.
+- The six tile channels are exactly balanced: 7,570 files each across 37 scenes, so
   every tile ships all six.
-- **Nothing after the header is framed.** The file is far smaller than
-  `payload` declares, so the payload is encoded or compressed; this is not
-  decoded, and the `ff`-prefixed bytes before some magics look like a
-  literal-length encoding but that is an observation, not a claim. The 1,361 files
-  whose magic is not at offset 6 are fenced rather than read with a layout that
-  does not fit them, and 744 names are not `Terrain_a_b_c_X.bytes` shaped at all.
-- **The terrain payload is not LZ4, and the failure is structural rather than an
-  off-by-one.** A minimal LZ4 block decoder reproduced the declared size in 0 of 60
-  files at three plausible starts, and diagnosing it shows *why*: every file stops
-  at the **first token** having emitted **zero** bytes, because that token asks for
-  a match against empty history. So the stream does not begin with an LZ4 token at
-  all, and hunting for a better start offset will not help either.
-- **No standard codec either.** zlib, raw deflate, gzip, bzip2, lzma and brotli
-  were all tried at five payload start offsets across 25 files: zero successful
-  decompressions. Combined with the LZ4 result the payload is a bespoke encoding,
-  so the next attempt should be deriving it from bytes rather than identifying it.
-- Compression is heavy -- around 18 bytes expanding to 2,312 -- over near-constant
-  data, and the first payload byte takes at least five common values. That points
-  away from a byte-oriented LZ77 codec and toward something bit-oriented or
-  hierarchical. A direction, not a claim.
+- **The codec is bespoke, and this is now established at the whole-record level.**
+  lz4 block, zlib, raw deflate, lzma, bzip2 and brotli were each asked, from
+  offsets 4, 5 and 6, to produce exactly `declaredTotal` bytes beginning with
+  `TRET`. Every one refused every file. This is a stronger test than the earlier
+  payload-only sweep, because it states what a correct decode must produce rather
+  than merely hoping a codec accepts the bytes.
+- Earlier LZ4 diagnosis, still valid: a minimal LZ4 decoder stops at the **first
+  token** having emitted **zero** bytes, because that token asks for a match
+  against empty history. The stream does not begin with an LZ4 token, and hunting
+  for a better start offset will not help.
 - **A warning about the shape of this problem.** Payload counts look *almost*
   reconcilable by hand -- eight `0xFF` plus `0xF7` plus `0x11` lands within a few
-  bytes of the declared 2,312 -- and it is very easy to find an arithmetic that
-  fits one file. I stopped at that point deliberately. Do not accept a formula that
-  works on one or two samples: the earlier sweeps in this repo were wrong at 96.8%,
-  and a codec that is close on one tile is worth nothing.
-- What is measured about it, as leads rather than a layout: two files with
-  identical headers differ **only** in one repeated byte value, which is what makes
-  a run encoding the obvious reading. `0xFF` appears in long early runs. `0xCC`,
-  `0xCE` and `0xDC` recur mid-stream in positions that look like opcodes. And a
-  terminator is strongly evidenced: over 2,470 framed payloads, **2,391 have `0x11`
-  exactly six bytes from the end** and 2,389 have exactly five bytes after their
-  last `0x11`.
-- Next attempt should start from that terminator and work backwards, since it is
-  the only part with a fixed shape. **Do not start from the front**: the first
-  payload byte takes at least five common values (0, 1, 128, 255, 246), so there is
-  no single entry state to anchor on.
+  bytes of a declared 2,312 -- and it is very easy to find an arithmetic that fits
+  one file. Do not accept a formula that works on one or two samples.
+- Leads, not a layout: two files with identical headers differ **only** in one
+  repeated byte value. `0xFF` appears in long early runs. The recurring `49 92 24`
+  and `aa aa aa aa` patterns are bit-periodic (`001` every three bits, `10` every
+  two), which points at a bit-oriented encoder rather than a byte-oriented LZ77.
+  And a terminator is strongly evidenced: **`0x11` six bytes from the end** in the
+  large majority of framed payloads, with five bytes after it.
+- Next attempt should start from that terminator and work backwards. **Do not start
+  from the front**: the first stream byte takes at least five common values
+  (0, 1, 128, 255, 246), so there is no single entry state to anchor on.
 - Read by `scripts/asset_builder/terrain_header.py`; report at
   [`reports/assets/terrain_header_current_latest.json`](../reports/assets/terrain_header_current_latest.json).
   Terrain rows are `encrypted=False`, which is why a plain span read works here
