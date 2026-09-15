@@ -1697,6 +1697,8 @@ def aggregate_current_hirc_actions(
     music_ref_twice: Counter[str] = Counter()
     music_ref_population: Counter[str] = Counter()
     music_ref_places: Counter[str] = Counter()
+    type0a_head_totals: Counter[str] = Counter()
+    type0a_head_scores: Counter[str] = Counter()
     music_head_by_type: Counter[str] = Counter()
     music_head_offsets: Counter[str] = Counter()
     music_head_discriminants: Counter[str] = Counter()
@@ -1870,6 +1872,11 @@ def aggregate_current_hirc_actions(
         music_ref_twice.update(package_music_refs["targetsReachedTwice"])
         music_ref_population.update(package_music_refs["targetPopulation"])
         music_ref_places.update(package_music_refs["edgeDistanceFromEnd"])
+        package_head0a = _read_type0a_head_census(
+            package.get("hircType0AHead"), package_label
+        )
+        type0a_head_totals["bodies"] += package_head0a["bodies"]
+        type0a_head_scores.update(package_head0a["namesTheSourceType"])
 
         package_reference = _read_reference_census(
             package.get("hircReferenceCensus"), package_label
@@ -2325,6 +2332,10 @@ def aggregate_current_hirc_actions(
             "tailEntryCountCounts": dict(sorted(type11_tail_counts.items())),
             "interpolationCounts": dict(sorted(type11_interps.items())),
             "firstTailEntryLeadingWordCounts": dict(sorted(type11_lead_words.items())),
+        },
+        "type0AHead": {
+            "bodies": int(type0a_head_totals["bodies"]),
+            "namesTheSourceType": dict(sorted(type0a_head_scores.items())),
         },
         "musicReferences": {
             **{key: int(music_ref_totals[key]) for key in MUSIC_REFERENCE_SCALARS},
@@ -2850,6 +2861,62 @@ def _read_music_reference_census(census: Any, label: str) -> dict[str, Any]:
     if out["references"] > out["wordsOffered"]:
         raise ValueError(f"music reference census resolves more words than it offered: {label}")
     return out
+
+
+# Numeric type 0x0A's head-length rule must beat every control by this much. The
+# rule is worth nothing unless the count is what places the reference.
+TYPE0A_HEAD_RULE_MINIMUM = 0.75
+TYPE0A_HEAD_CONTROL_MAXIMUM = 0.50
+
+
+def _read_type0a_head_census(census: Any, label: str) -> dict[str, Any]:
+    """Validate one package's type 0x0A head-rule census."""
+    if census is None:
+        return {"bodies": 0, "namesTheSourceType": {}}
+    if not isinstance(census, dict):
+        raise ValueError(f"type 0x0A head census is not an object: {label}")
+    try:
+        bodies = int(census["bodies"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise ValueError(f"type 0x0A head census has invalid bodies: {label}") from exc
+    if bodies < 0:
+        raise ValueError(f"type 0x0A head census has negative bodies: {label}")
+    raw = census.get("namesTheSourceType")
+    if not isinstance(raw, dict):
+        raise ValueError(f"type 0x0A head census has invalid namesTheSourceType: {label}")
+    scores = {str(name): int(count) for name, count in raw.items()}
+    for name, count in scores.items():
+        if count > bodies:
+            raise ValueError(
+                f"type 0x0A head census scores {name} above its body count: {label}"
+            )
+    return {"bodies": bodies, "namesTheSourceType": scores}
+
+
+def the_type0a_head_rule_beats_its_controls(corpus: dict[str, Any]) -> bool:
+    """Numeric type 0x0A's head is a fixed part plus a counted run of five-byte elements.
+
+    The rule places the reference that follows the head, so it can be tested by
+    asking what sits there. On its own that proves little: a formula that lands on a
+    reference nine times in ten might be finding a reference that is simply always
+    nearby.
+
+    Three controls settle it. A fixed offset that ignores the count asks whether the
+    count matters at all. The two neighbouring positions ask whether the rule names
+    the place or merely its neighbourhood. The rule must clear a high bar and every
+    control must fall well below it.
+    """
+    bodies = int(corpus.get("bodies") or 0)
+    if bodies <= 0:
+        return False
+    scores = corpus.get("namesTheSourceType") or {}
+    predicted = int(scores.get("predicted") or 0) / bodies
+    if predicted < TYPE0A_HEAD_RULE_MINIMUM:
+        return False
+    for control in ("fixedOffset", "predictedPlusFour", "predictedMinusFour"):
+        if int(scores.get(control) or 0) / bodies > TYPE0A_HEAD_CONTROL_MAXIMUM:
+            return False
+    return True
 
 
 # The one music edge whose targets are partitioned rather than merely reached.
@@ -4758,6 +4825,7 @@ def run_current_corpus_audit(
     reference_corpus = corpus["referenceGraph"]
     music_head_corpus = corpus["musicHeadReferences"]
     music_ref_corpus = corpus["musicReferences"]
+    type0a_head_corpus = corpus["type0AHead"]
     music_head_closed = music_head_references_are_closed(music_head_corpus)
     type11_corpus = corpus["type11SourceRecords"]
     media_corpus = corpus["type02MediaJoin"]
@@ -4794,6 +4862,9 @@ def run_current_corpus_audit(
         report["corpus"].get("type08BodyFrames") or {}
     )
     # True when no names were supplied: see the check's own note.
+    type0a_head = the_type0a_head_rule_beats_its_controls(
+        report["corpus"].get("type0AHead") or {}
+    )
     music_anchor = the_music_partition_edge_sits_at_a_few_places(
         report["corpus"].get("musicReferences") or {}
     )
@@ -4823,6 +4894,7 @@ def run_current_corpus_audit(
         and music_refs_ok
         and music_partition
         and music_anchor
+        and type0a_head
         and type08_body_named
         and type08_tail_located
         and type08_head_named
@@ -4857,6 +4929,7 @@ def run_current_corpus_audit(
             "referenceGraph": reference_corpus,
             "musicHeadReferences": music_head_corpus,
             "musicReferences": music_ref_corpus,
+            "type0AHead": type0a_head_corpus,
             "type11SourceRecords": type11_corpus,
             "type08HeadWords": type08_corpus,
             "type08BodyFrames": type08_body_corpus,
@@ -4972,6 +5045,12 @@ def run_current_corpus_audit(
             f"count={body08.get('count')} exact={body08.get('exact')} "
             f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
             f"ambiguous={body08.get('ambiguous')}"
+        )
+    if not type0a_head:
+        head0a = report["corpus"].get("type0AHead") or {}
+        lane_failures.append(
+            "the type 0x0A head rule does not beat its controls: "
+            f"bodies={head0a.get('bodies')} scores={head0a.get('namesTheSourceType')}"
         )
     if not music_anchor:
         refs = report["corpus"].get("musicReferences") or {}

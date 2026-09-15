@@ -2128,6 +2128,16 @@ Stable conclusions:
 - The secondary distances are 4 apart (-69, -73, -77), so an optional 4-byte field
   shifts the anchor -- the same kind of optional field `0x0D`'s lengths and `0x0B`'s
   entry widths both show.
+- **`0x0A`'s HEAD has a rule: `36 + 5 * body[14]`.** Byte 14 is a count of five-byte
+  elements, and it equals `(headLength - 36) / 5` in **3,441 of 3,441** bodies of
+  the dominant family, including all 2,246 where the count is nonzero. Across the
+  whole type the rule predicts a `0x0B` reference in **3,750 of 4,144** bodies.
+- **Three controls, and they are what make it a finding.** Ignoring the count and
+  reading at a fixed 36 scores **31.1%**; the position four bytes later scores
+  **7.5%**; four bytes earlier scores **0.0%**. So the count is what places the
+  reference, not proximity.
+- That is the first framing rule `0x0A` has. What it leaves: the 36 fixed bytes, the
+  five-byte elements, and the 394 bodies the rule does not predict.
 - **Conditioning on the anchor makes the tail legible.** Restricted to the 3,419
   `0x0A` bodies with exactly one `0x0B` reference and it at -69, **21 of the last 69
   byte positions are constant** -- against **6 of 101** over the unconditioned

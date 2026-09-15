@@ -22,6 +22,8 @@ from scripts.audio_semantics.hirc_action_corpus import (
     music_bodies_all_carry_references,
     the_music_partition_edge_is_one_to_one,
     the_music_partition_edge_sits_at_a_few_places,
+    the_type0a_head_rule_beats_its_controls,
+    _read_type0a_head_census,
     _read_music_reference_census,
     type08_bodies_are_exact_or_named,
     type12_bodies_are_exact_or_named,
@@ -336,6 +338,15 @@ def valid_action_fixture():
         "tailEntryCountCounts": {"tailEntries_1": 1, "tailEntries_2": 1},
         "firstTailEntryLeadingWordCounts": {"lead_00000000": 2},
     }
+    type0a_head = {
+        "bodies": 10,
+        "namesTheSourceType": {
+            "predicted": 9,
+            "fixedOffset": 3,
+            "predictedPlusFour": 1,
+            "predictedMinusFour": 0,
+        },
+    }
     music_refs = {
         "bodies": 4,
         "packagePopulation": 200,
@@ -510,6 +521,7 @@ def valid_action_fixture():
                     "hircType22BodyFrame": copy.deepcopy(type22_body),
                     "hircMusicHeadReferences": copy.deepcopy(music_head),
                     "hircMusicReferences": copy.deepcopy(music_refs),
+                    "hircType0AHead": copy.deepcopy(type0a_head),
                     "hircType11Sources": copy.deepcopy(type11_sources),
                     "hircType08Head": copy.deepcopy(type08_head),
                     "hircType08BodyFrame": copy.deepcopy(type08_body),
@@ -1577,6 +1589,40 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
         )
+
+    def test_the_type0a_head_rule_must_beat_a_fixed_offset_and_its_neighbours(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        head = result["type0AHead"]
+        self.assertTrue(the_type0a_head_rule_beats_its_controls(head))
+
+        # A formula that lands on a reference nine times in ten might just be finding
+        # a reference that is always nearby. If ignoring the count scores as well,
+        # the count is not what places it.
+        self.assertFalse(
+            the_type0a_head_rule_beats_its_controls(
+                {**head, "namesTheSourceType": {**head["namesTheSourceType"], "fixedOffset": 9}}
+            )
+        )
+        # Same for a neighbour: naming the neighbourhood is not naming the place.
+        self.assertFalse(
+            the_type0a_head_rule_beats_its_controls(
+                {**head, "namesTheSourceType": {**head["namesTheSourceType"], "predictedPlusFour": 8}}
+            )
+        )
+        # And the rule itself has to clear a high bar, not merely beat the controls.
+        self.assertFalse(
+            the_type0a_head_rule_beats_its_controls(
+                {**head, "namesTheSourceType": {**head["namesTheSourceType"], "predicted": 4}}
+            )
+        )
+        self.assertFalse(the_type0a_head_rule_beats_its_controls({**head, "bodies": 0}))
+
+    def test_a_type0a_head_census_scoring_above_its_bodies_is_refused(self) -> None:
+        _, _, _, audio_audit = valid_action_fixture()
+        census = audio_audit["rows"][0]["package"]["hircType0AHead"]
+        with self.assertRaisesRegex(ValueError, "above its body count"):
+            _read_type0a_head_census({**census, "bodies": 2}, "unit")
 
     def test_the_music_reference_position_must_be_concentrated_to_be_an_anchor(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
