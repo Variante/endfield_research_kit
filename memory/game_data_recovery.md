@@ -2213,6 +2213,19 @@ Stable conclusions:
   distinct values and look like parts of one 32-bit value. `byte@23` and `@24` are
   mixed. `byte@28` and `byte@33` are **booleans** (0/1, split 1,888/1,856 and
   3,146/598). `byte@32` takes 0, 1, 2, 3.
+- **The tail's optional 4-byte field is localized, and it is not counted.** Aligning
+  the 3,321 tail-69 bodies against the 217 tail-73 bodies: from the **end** their
+  constant profiles agree at **every one of 69 positions**, so the longer tail is the
+  shorter one with four bytes inserted, not a different shape. From the **front**
+  they agree to `tail+28` and diverge at `tail+29`. So the extra four bytes sit
+  **within the first 29 bytes after the `0x0B` reference**.
+- The constant word `0x5BBBD648` moves with the end, as expected: bytes 187 and 91
+  sit at `tail+58,+59` in the 69-byte tails and at `tail+62,+63` in the 73-byte ones.
+- **No byte inside the tail counts the extension either.** Best match for
+  `tail == 69 + 4*byte` over the tail's own 69 positions is `tail+30` at 3,492 of
+  3,585 -- but only **171 of the 264** bodies where the count would be nonzero, which
+  is the giveaway. The high total is carried by zero bytes matching a zero count.
+  *Always report the informative subset alongside the total.*
 - **No single head byte predicts the tail length.** Tails are 69 (3,321), 73 (217),
   77 (44), 82 (32) -- steps of 4 -- and `69 + 4*byte` matches at best **2,829 of
   3,744** (byte 33), with byte 32 at 2,168 and byte 16 at 2,783. So the tail's
