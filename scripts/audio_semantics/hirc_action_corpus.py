@@ -1735,6 +1735,7 @@ def aggregate_current_hirc_actions(
     type11_body_selectors: Counter[str] = Counter()
     type11_header_totals: Counter[str] = Counter()
     type11_header_elements: Counter[str] = Counter()
+    type11_header_codes: Counter[str] = Counter()
     type11_element_totals: Counter[str] = Counter()
     type11_element_maps: dict[str, Counter] = {
         key: Counter() for key in TYPE11_ELEMENT_MAPS
@@ -1945,6 +1946,7 @@ def aggregate_current_hirc_actions(
         for key in TYPE11_HEADER_SCALARS:
             type11_header_totals[key] += package_t11hdr[key]
         type11_header_elements.update(package_t11hdr["elementCountValues"])
+        type11_header_codes.update(package_t11hdr["curveCodes"])
         package_t11el = _read_type11_element_census(
             package.get("hircType11Elements"), package_label
         )
@@ -2464,6 +2466,7 @@ def aggregate_current_hirc_actions(
         "type11EntryHeaders": {
             **{key: int(type11_header_totals[key]) for key in TYPE11_HEADER_SCALARS},
             "elementCountValues": dict(sorted(type11_header_elements.items())),
+            "curveCodes": dict(sorted(type11_header_codes.items())),
         },
         "type11Elements": {
             **{key: int(type11_element_totals[key]) for key in TYPE11_ELEMENT_SCALARS},
@@ -3157,7 +3160,7 @@ TYPE11_ELEMENT_MAPS = (
 # The element frame the reader walks: five head bytes, then runCount runs of a
 # twelve-byte header whose byte at +7 counts the twelve-byte records after it, then
 # a fixed twelve-byte block.
-TYPE11_CHOSEN_FRAME = "frame_5_12_7_12"
+TYPE11_CHOSEN_FRAME = "frame_5_11_7_12"
 # The anchor the reader uses. Named here so the gate compares against it by name
 # rather than by assuming it is the best row.
 TYPE11_CHOSEN_ANCHOR = "trailer_19_24"
@@ -3325,13 +3328,16 @@ TYPE11_HEADER_SCALARS = (
     "rangeControlTested", "rangeControlIsSymmetric", "rangeControlIsOrdered",
     "fractionsTested", "fractionsAreSmall",
     "fractionControlsTested", "fractionControlsAreSmall",
+    "curveRecords", "curveCodesInRange",
+    "curveControlsTested", "curveControlsInRange",
 )
 
 
 def _read_type11_header_census(census: Any, label: str) -> dict[str, Any]:
     """Validate one package's numeric type 0x0B entry-header census."""
     if census is None:
-        return {key: 0 for key in TYPE11_HEADER_SCALARS} | {"elementCountValues": {}}
+        return ({key: 0 for key in TYPE11_HEADER_SCALARS}
+                | {"elementCountValues": {}, "curveCodes": {}})
     if not isinstance(census, dict):
         raise ValueError(f"type 0x0B entry header census is not an object: {label}")
     out: dict[str, Any] = {}
@@ -3345,6 +3351,15 @@ def _read_type11_header_census(census: Any, label: str) -> dict[str, Any]:
         if value < 0:
             raise ValueError(f"type 0x0B entry header census has negative {key}: {label}")
         out[key] = value
+    for key in ("curveCodes",):
+        rawc = census.get(key)
+        if not isinstance(rawc, dict):
+            raise ValueError(f"type 0x0B entry header census has invalid {key}: {label}")
+        out[key] = {str(name): int(value) for name, value in rawc.items()}
+    if sum(out["curveCodes"].values()) != out["curveCodesInRange"]:
+        raise ValueError(
+            f"type 0x0B curve code histogram does not cover the codes in range: {label}"
+        )
     raw = census.get("elementCountValues")
     if not isinstance(raw, dict):
         raise ValueError(f"type 0x0B entry header census has invalid elementCountValues: {label}")
@@ -3359,6 +3374,8 @@ def _read_type11_header_census(census: Any, label: str) -> dict[str, Any]:
         ("rangeControlTested", "rangeControlIsOrdered"),
         ("fractionsTested", "fractionsAreSmall"),
         ("fractionControlsTested", "fractionControlsAreSmall"),
+        ("curveRecords", "curveCodesInRange"),
+        ("curveControlsTested", "curveControlsInRange"),
     ):
         if out[hits] > out[tested]:
             raise ValueError(f"type 0x0B entry header {hits} exceeds {tested}: {label}")
@@ -3395,6 +3412,34 @@ def the_type11_entry_header_fields_beat_their_controls(corpus: dict[str, Any]) -
     small = int(corpus.get("fractionsAreSmall") or 0) / fractions
     small_control = int(corpus.get("fractionControlsAreSmall") or 0) / fraction_control
     return small >= 0.9 and small > small_control * 2
+
+
+def the_type11_curve_records_carry_interpolation_codes(corpus: dict[str, Any]) -> bool:
+    """The element run's records must be curve records, and the split must be earned.
+
+    This is the test that settles numeric type 0x0B's run layout, because its length
+    does not: 11 + 12n + 1 and 12 + 12n are the same number of bytes, so the body
+    frame closes the same 3,715 bodies under either split. What differs is what the
+    records contain. Under the eleven-byte header every record carries an
+    interpolation code of 0 to 9 -- the same contiguous ten-value enum numeric types
+    0x08 and 0x12 carry in their tail units. Under any other width almost none does,
+    because the word is then read across a float boundary.
+
+    So the gate asks for every record to be in range, for the codes to span most of
+    the enum rather than piling on one value, and for the control readings to fail.
+    """
+    records = int(corpus.get("curveRecords") or 0)
+    if records <= 0:
+        return False
+    if int(corpus.get("curveCodesInRange") or 0) != records:
+        return False
+    codes = corpus.get("curveCodes") or {}
+    if len({name for name, value in codes.items() if int(value) > 0}) < 6:
+        return False
+    tested = int(corpus.get("curveControlsTested") or 0)
+    if tested <= 0:
+        return False
+    return int(corpus.get("curveControlsInRange") or 0) * 4 < tested
 
 
 def the_type11_element_count_is_not_yet_a_count(corpus: dict[str, Any]) -> bool:
@@ -5870,6 +5915,7 @@ def run_current_corpus_audit(
     type11_header_corpus = corpus["type11EntryHeaders"]
     t11_header_ok = the_type11_entry_header_fields_beat_their_controls(type11_header_corpus)
     t11_count_untested = the_type11_element_count_is_not_yet_a_count(type11_header_corpus)
+    t11_curves_ok = the_type11_curve_records_carry_interpolation_codes(type11_header_corpus)
     type11_element_corpus = corpus["type11Elements"]
     t11_anchor_ok = the_type11_trailer_anchor_beats_its_rivals(type11_element_corpus)
     t11_anchor_control = the_type11_trailer_is_not_settled_by_parsing(type11_element_corpus)
@@ -5981,6 +6027,7 @@ def run_current_corpus_audit(
         and t11_body_ok
         and t11_header_ok
         and t11_count_untested
+        and t11_curves_ok
         and music_partition
         and music_anchor
         and type0a_head
@@ -6232,6 +6279,14 @@ def run_current_corpus_audit(
             f"control={h.get('rangeControlIsSymmetric')}/{h.get('rangeControlTested')} "
             f"fractions={h.get('fractionsAreSmall')}/{h.get('fractionsTested')} "
             f"fractionControl={h.get('fractionControlsAreSmall')}/{h.get('fractionControlsTested')}"
+        )
+    if not t11_curves_ok:
+        h = report["corpus"].get("type11EntryHeaders") or {}
+        lane_failures.append(
+            "the type 0x0B element run's records are not curve records: "
+            f"records={h.get('curveRecords')} inRange={h.get('curveCodesInRange')} "
+            f"codes={h.get('curveCodes')} "
+            f"control={h.get('curveControlsInRange')}/{h.get('curveControlsTested')}"
         )
     if not t11_count_untested:
         h = report["corpus"].get("type11EntryHeaders") or {}

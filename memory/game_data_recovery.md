@@ -2733,6 +2733,31 @@ u32 terminator, always 100
   **ten bytes from the terminator**, which is where an element's short trailer puts
   its own marker.
 
+#### Correction: `0x0B`'s run splits 11 + 12n + 1, and its records ARE curve records
+
+- **The run header is 11 bytes, not 12**, followed by the records and then one
+  trailing byte. `11 + 12n + 1` and `12 + 12n` are **the same length**, so the body
+  frame closes the same 3,715 bodies either way -- which is exactly why the split
+  could not be settled by closure and had to be settled by what the records contain.
+- Under the 11-byte header **all 4,086 records carry an interpolation code of 0 to 9**,
+  spanning every value with no gaps: `9`:2017, `4`:1003, `1`:485, `7`:280, `8`:103,
+  `0`:77, `5`:74, `2`:25, `6`:14, `3`:8. Under 12 the codes are noise and only the
+  zeros pass. The control reading -- the same word one byte either side -- lands in
+  range **377 of 9,376** times.
+- **This corrects my own earlier measurement and restores the memory claim it
+  appeared to contradict.** Reading the records at the 12-byte boundary showed codes
+  in range for only 1,644 of 4,304, all of them zero, and I nearly recorded that the
+  curve record is *not* in `0x0B`. The boundary was off by one byte; the claim was
+  right.
+- So the twelve-byte curve record is confirmed in **three** numeric types by a test
+  with a working control: `0x08` and `0x12`'s tail units (314 records, all in range,
+  codes 9/4/7/1/0/8/5) and `0x0B`'s element runs.
+- **The lesson, and it is the sharpest form of one this session keeps teaching.** Two
+  layouts of equal total length are indistinguishable by closure *no matter how large
+  the corpus*. When a frame closes and its contents look like noise, suspect the
+  internal split before suspecting the claim -- and settle it on content, because
+  length cannot.
+
 #### The fixed-point fraction is in two types, and they are NOT the same quantity
 
 Three measurements, and the conclusion is a negative worth keeping.

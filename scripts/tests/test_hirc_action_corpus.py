@@ -16,7 +16,9 @@ from scripts.audio_semantics.hirc_action_corpus import (
     _read_type11_element_census,
     TYPE11_BODY_MINIMUM_EXACT,
     the_type11_body_frame_covers_most_of_its_corpus,
+    TYPE11_HEADER_SCALARS,
     _read_type11_header_census,
+    the_type11_curve_records_carry_interpolation_codes,
     the_type11_element_count_is_not_yet_a_count,
     the_type11_element_frame_beats_its_rivals,
     the_type11_entry_header_fields_beat_their_controls,
@@ -3102,11 +3104,11 @@ class Type11ElementFrameTests(unittest.TestCase):
         base = {
             "elementsWithRuns": 1151,
             "frameClosesWithRuns": {
-                "frame_5_12_7_12": 1103, "frame_17_12_7_0": 17, "frame_5_12_11_12": 2,
+                "frame_5_11_7_12": 1103, "frame_17_11_7_0": 17, "frame_5_11_11_12": 2,
             },
             "frameCloses": {
-                "frame_5_12_7_12": 3594, "frame_17_12_7_0": 2508,
-                "frame_5_12_11_12": 2493, "frame_5_11_7_12": 2491,
+                "frame_5_11_7_12": 3594, "frame_17_11_7_0": 2508,
+                "frame_5_11_11_12": 2493, "frame_5_10_7_12": 2491,
             },
         }
         base.update(overrides)
@@ -3125,18 +3127,18 @@ class Type11ElementFrameTests(unittest.TestCase):
         # 17. Same frame, same corpus, completely different strength of claim.
         census = self.census()
         over_all = census["frameCloses"]
-        self.assertLess(over_all["frame_5_12_7_12"], over_all["frame_17_12_7_0"] * 10)
+        self.assertLess(over_all["frame_5_11_7_12"], over_all["frame_17_11_7_0"] * 10)
         with_runs = census["frameClosesWithRuns"]
-        self.assertGreater(with_runs["frame_5_12_7_12"], with_runs["frame_17_12_7_0"] * 10)
+        self.assertGreater(with_runs["frame_5_11_7_12"], with_runs["frame_17_11_7_0"] * 10)
 
     def test_a_rival_closing_the_run_bearing_elements_fails_the_gate(self) -> None:
         census = self.census()
-        census["frameClosesWithRuns"]["frame_17_12_7_0"] = 900
+        census["frameClosesWithRuns"]["frame_17_11_7_0"] = 900
         self.assertFalse(the_type11_element_frame_beats_its_rivals(census))
 
     def test_a_frame_that_closes_a_minority_fails(self) -> None:
         census = self.census()
-        census["frameClosesWithRuns"]["frame_5_12_7_12"] = 400
+        census["frameClosesWithRuns"]["frame_5_11_7_12"] = 400
         self.assertFalse(the_type11_element_frame_beats_its_rivals(census))
 
     def test_an_empty_or_unexercised_census_fails(self) -> None:
@@ -3145,14 +3147,14 @@ class Type11ElementFrameTests(unittest.TestCase):
             self.census(elementsWithRuns=0)
         ))
         self.assertFalse(the_type11_element_frame_beats_its_rivals(
-            self.census(frameClosesWithRuns={"frame_5_12_7_12": 1103})
+            self.census(frameClosesWithRuns={"frame_5_11_7_12": 1103})
         ))
 
     def test_the_control_needs_a_rival_that_is_inflated_by_empty_elements(self) -> None:
         # If no rival closed many elements overall while closing almost none that
         # walk a run, the run walk would not be shown to carry the result.
         census = self.census()
-        census["frameCloses"] = {"frame_5_12_7_12": 3594, "frame_17_12_7_0": 20}
+        census["frameCloses"] = {"frame_5_11_7_12": 3594, "frame_17_11_7_0": 20}
         self.assertFalse(
             the_type11_element_frame_is_not_settled_by_empty_elements(census)
         )
@@ -3163,8 +3165,8 @@ class Type11ElementFrameTests(unittest.TestCase):
         base.update({key: {} for key in TYPE11_ELEMENT_MAPS})
         base["elements"] = 10
         base["elementsWithRuns"] = 4
-        base["frameCloses"] = {"frame_5_12_7_12": 8}
-        base["frameClosesWithRuns"] = {"frame_5_12_7_12": 6}
+        base["frameCloses"] = {"frame_5_11_7_12": 8}
+        base["frameClosesWithRuns"] = {"frame_5_11_7_12": 6}
         with self.assertRaises(ValueError):
             _read_type11_element_census(base, "pkg")
 
@@ -3271,3 +3273,60 @@ class Type11EntryHeaderTests(unittest.TestCase):
 
     def test_an_absent_census_reads_as_empty(self) -> None:
         self.assertEqual(_read_type11_header_census(None, "pkg")["entries"], 0)
+
+
+class Type11CurveRecordTests(unittest.TestCase):
+    """The run's split is settled by what the records contain, not by length."""
+
+    def census(self, **overrides):
+        base = {
+            "curveRecords": 4086, "curveCodesInRange": 4086,
+            "curveControlsTested": 9376, "curveControlsInRange": 377,
+            "curveCodes": {
+                "code_0": 77, "code_1": 485, "code_2": 25, "code_3": 8, "code_4": 1003,
+                "code_5": 74, "code_6": 14, "code_7": 280, "code_8": 103, "code_9": 2017,
+            },
+        }
+        base.update(overrides)
+        return base
+
+    def test_the_measured_corpus_passes(self) -> None:
+        self.assertTrue(
+            the_type11_curve_records_carry_interpolation_codes(self.census())
+        )
+
+    def test_one_record_out_of_range_fails(self) -> None:
+        # The enum is contiguous and complete, so a single miss means the boundary
+        # is wrong somewhere, not that one record is odd.
+        self.assertFalse(the_type11_curve_records_carry_interpolation_codes(
+            self.census(curveCodesInRange=4085)
+        ))
+
+    def test_codes_piling_on_one_value_fail(self) -> None:
+        # A wrong offset over a zero-filled region would put every code on 0 and
+        # pass a range test. Spanning the enum is what a real code field does.
+        self.assertFalse(the_type11_curve_records_carry_interpolation_codes(
+            self.census(curveCodes={"code_0": 4086})
+        ))
+
+    def test_a_control_that_scores_as_well_fails(self) -> None:
+        self.assertFalse(the_type11_curve_records_carry_interpolation_codes(
+            self.census(curveControlsInRange=9000)
+        ))
+
+    def test_an_untested_census_fails_rather_than_passing_vacuously(self) -> None:
+        self.assertFalse(the_type11_curve_records_carry_interpolation_codes({}))
+        self.assertFalse(the_type11_curve_records_carry_interpolation_codes(
+            self.census(curveRecords=0, curveCodesInRange=0)
+        ))
+        self.assertFalse(the_type11_curve_records_carry_interpolation_codes(
+            self.census(curveControlsTested=0, curveControlsInRange=0)
+        ))
+
+    def test_the_reader_rejects_a_code_histogram_that_misses_records(self) -> None:
+        with self.assertRaises(ValueError):
+            _read_type11_header_census(
+                {key: 0 for key in TYPE11_HEADER_SCALARS}
+                | {"elementCountValues": {}, "curveCodes": {"code_0": 3}},
+                "pkg",
+            )
