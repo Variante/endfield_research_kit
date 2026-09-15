@@ -20,6 +20,7 @@ from scripts.audio_semantics.hirc_action_corpus import (
     type11_entries_carry_the_shared_curve_record,
     music_tail_words_are_named,
     music_bodies_all_carry_references,
+    the_music_partition_edge_is_one_to_one,
     _read_music_reference_census,
     type08_bodies_are_exact_or_named,
     type12_bodies_are_exact_or_named,
@@ -342,6 +343,9 @@ def valid_action_fixture():
         "bodiesWithNoReference": 0,
         "referencesPerBody": {"refs_2": 3, "refs_3": 1},
         "edgeCounts": {"type0C_to_type0D": 5, "type0A_to_type0B": 4},
+        "distinctTargets": {"type0C_to_type0D": 3, "type0A_to_type0B": 4},
+        "targetsReachedTwice": {"type0C_to_type0D": 2, "type0A_to_type0B": 0},
+        "targetPopulation": {"type0C_to_type0D": 3, "type0A_to_type0B": 4},
     }
     music_head = {
         "tailWordsTested": 8,
@@ -1567,6 +1571,36 @@ class HircActionCorpusTests(unittest.TestCase):
         self.assertFalse(
             type11_sources_share_the_type02_plugin_space({**sources, "records": 0}, known)
         )
+
+    def test_the_one_to_one_music_edge_needs_all_three_conditions(self) -> None:
+        outer, expected_files, excluded_files, audio_audit = valid_action_fixture()
+        result = aggregate_current_hirc_actions(outer, expected_files, excluded_files, audio_audit)
+        refs = result["musicReferences"]
+        self.assertTrue(the_music_partition_edge_is_one_to_one(refs))
+
+        # An edge total equal to a population is not evidence of a bijection -- the
+        # 0x0D -> 0x0C edge has exactly that and reaches 578 of 742 objects. Reaching
+        # every object still is not enough either: 0x0C -> 0x0D reaches all of its
+        # targets and reaches 1,628 of them twice.
+        self.assertFalse(
+            the_music_partition_edge_is_one_to_one(
+                {**refs, "targetsReachedTwice": {"type0A_to_type0B": 1}}
+            )
+        )
+        # Leaving objects unreached breaks it from the other side.
+        self.assertFalse(
+            the_music_partition_edge_is_one_to_one(
+                {**refs, "distinctTargets": {"type0A_to_type0B": 3}}
+            )
+        )
+        # And an edge total above the distinct count means some source named a target
+        # twice even if no target was reached twice overall.
+        self.assertFalse(
+            the_music_partition_edge_is_one_to_one(
+                {**refs, "edgeCounts": {"type0A_to_type0B": 5}}
+            )
+        )
+        self.assertFalse(the_music_partition_edge_is_one_to_one({**refs, "edgeCounts": {}}))
 
     def test_every_music_body_must_carry_at_least_one_reference(self) -> None:
         outer, expected_files, excluded_files, audio_audit = valid_action_fixture()

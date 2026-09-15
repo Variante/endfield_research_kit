@@ -1693,6 +1693,9 @@ def aggregate_current_hirc_actions(
     music_ref_totals: Counter[str] = Counter()
     music_ref_per_body: Counter[str] = Counter()
     music_ref_edges: Counter[str] = Counter()
+    music_ref_distinct: Counter[str] = Counter()
+    music_ref_twice: Counter[str] = Counter()
+    music_ref_population: Counter[str] = Counter()
     music_head_by_type: Counter[str] = Counter()
     music_head_offsets: Counter[str] = Counter()
     music_head_discriminants: Counter[str] = Counter()
@@ -1862,6 +1865,9 @@ def aggregate_current_hirc_actions(
             music_ref_totals[key] += package_music_refs[key]
         music_ref_per_body.update(package_music_refs["referencesPerBody"])
         music_ref_edges.update(package_music_refs["edgeCounts"])
+        music_ref_distinct.update(package_music_refs["distinctTargets"])
+        music_ref_twice.update(package_music_refs["targetsReachedTwice"])
+        music_ref_population.update(package_music_refs["targetPopulation"])
 
         package_reference = _read_reference_census(
             package.get("hircReferenceCensus"), package_label
@@ -2322,6 +2328,9 @@ def aggregate_current_hirc_actions(
             **{key: int(music_ref_totals[key]) for key in MUSIC_REFERENCE_SCALARS},
             "referencesPerBody": dict(sorted(music_ref_per_body.items())),
             "edgeCounts": dict(sorted(music_ref_edges.items())),
+            "distinctTargets": dict(sorted(music_ref_distinct.items())),
+            "targetsReachedTwice": dict(sorted(music_ref_twice.items())),
+            "targetPopulation": dict(sorted(music_ref_population.items())),
         },
         "musicHeadReferences": {
             **{key: int(music_head_totals[key]) for key in MUSIC_HEAD_SCALARS},
@@ -2808,7 +2817,8 @@ def _read_music_reference_census(census: Any, label: str) -> dict[str, Any]:
     """Validate one package's music reference classification."""
     if census is None:
         return {key: 0 for key in MUSIC_REFERENCE_SCALARS} | {
-            "referencesPerBody": {}, "edgeCounts": {},
+            "referencesPerBody": {}, "edgeCounts": {}, "distinctTargets": {},
+            "targetsReachedTwice": {}, "targetPopulation": {},
         }
     if not isinstance(census, dict):
         raise ValueError(f"music reference census is not an object: {label}")
@@ -2821,7 +2831,10 @@ def _read_music_reference_census(census: Any, label: str) -> dict[str, Any]:
         if value < 0:
             raise ValueError(f"music reference census has negative {key}: {label}")
         out[key] = value
-    for key in ("referencesPerBody", "edgeCounts"):
+    for key in (
+        "referencesPerBody", "edgeCounts", "distinctTargets", "targetsReachedTwice",
+        "targetPopulation",
+    ):
         raw = census.get(key)
         if not isinstance(raw, dict):
             raise ValueError(f"music reference census has invalid {key}: {label}")
@@ -2833,6 +2846,38 @@ def _read_music_reference_census(census: Any, label: str) -> dict[str, Any]:
     if out["references"] > out["wordsOffered"]:
         raise ValueError(f"music reference census resolves more words than it offered: {label}")
     return out
+
+
+# The one music edge whose targets are partitioned rather than merely reached.
+MUSIC_PARTITIONING_EDGE = "type0A_to_type0B"
+
+
+def the_music_partition_edge_is_one_to_one(corpus: dict[str, Any]) -> bool:
+    """Every numeric type 0x0B object is reached by exactly one type 0x0A reference.
+
+    An edge total that equals a population is not evidence of a one-to-one relation;
+    this project has been burned by exactly that coincidence. What settles it is the
+    target side: the edge must reach as many distinct objects as the type declares,
+    reach none of them twice, and leave none of them unreached.
+
+    The neighbouring edges show why all three are needed. 0x0C -> 0x0D also reaches
+    every object of its target type, but reaches 1,628 of them more than once.
+    0x0D -> 0x0C has an edge total of exactly 2,431 -- the number of 0x0D bodies,
+    which looks like a bijection -- and reaches only 578 of 742 objects, 382 of them
+    repeatedly.
+    """
+    edges = corpus.get("edgeCounts") or {}
+    distinct = corpus.get("distinctTargets") or {}
+    twice = corpus.get("targetsReachedTwice") or {}
+    population = corpus.get("targetPopulation") or {}
+    total = int(edges.get(MUSIC_PARTITIONING_EDGE) or 0)
+    reached = int(distinct.get(MUSIC_PARTITIONING_EDGE) or 0)
+    declared = int(population.get(MUSIC_PARTITIONING_EDGE) or 0)
+    if total <= 0 or declared <= 0:
+        return False
+    if int(twice.get(MUSIC_PARTITIONING_EDGE) or 0):
+        return False
+    return reached == declared == total
 
 
 def music_bodies_all_carry_references(corpus: dict[str, Any]) -> bool:
@@ -4716,6 +4761,9 @@ def run_current_corpus_audit(
         report["corpus"].get("type08BodyFrames") or {}
     )
     # True when no names were supplied: see the check's own note.
+    music_partition = the_music_partition_edge_is_one_to_one(
+        report["corpus"].get("musicReferences") or {}
+    )
     music_refs_ok = music_bodies_all_carry_references(
         report["corpus"].get("musicReferences") or {}
     )
@@ -4737,6 +4785,7 @@ def run_current_corpus_audit(
         and type11_curves
         and music_named
         and music_refs_ok
+        and music_partition
         and type08_body_named
         and type08_tail_located
         and type08_head_named
@@ -4886,6 +4935,15 @@ def run_current_corpus_audit(
             f"count={body08.get('count')} exact={body08.get('exact')} "
             f"failed={body08.get('failed')} unsupported={body08.get('unsupported')} "
             f"ambiguous={body08.get('ambiguous')}"
+        )
+    if not music_partition:
+        refs = report["corpus"].get("musicReferences") or {}
+        lane_failures.append(
+            "the music partition edge is not one to one: "
+            f"edges={(refs.get('edgeCounts') or {}).get(MUSIC_PARTITIONING_EDGE)} "
+            f"distinct={(refs.get('distinctTargets') or {}).get(MUSIC_PARTITIONING_EDGE)} "
+            f"twice={(refs.get('targetsReachedTwice') or {}).get(MUSIC_PARTITIONING_EDGE)} "
+            f"population={(refs.get('targetPopulation') or {}).get(MUSIC_PARTITIONING_EDGE)}"
         )
     if not music_refs_ok:
         refs = report["corpus"].get("musicReferences") or {}

@@ -2116,10 +2116,18 @@ Stable conclusions:
   `0x0C`->`0x0D` 4,429, `0x0A`->`0x0B` 4,325, `0x0D`->`0x0A` 3,610, `0x0A`->`0x0D`
   3,570, `0x0C`->`0x0A` 3,262, `0x0D`->`0x0C` 2,431, `0x0C`->`0x0C` 1,920,
   `0x0A`->`0x0C` 588, plus small counts to `0x11`, `0x12` and `0x16`.
-- Two of those edge counts are exactly a body count: `0x0A`->`0x0B` is 4,325, the
-  number of `0x0B` bodies, and `0x0D`->`0x0C` is 2,431, the number of `0x0D` bodies.
-  Suggestive of one-to-one relations -- **not established**, since an edge total
-  matching a population is the kind of coincidence this project has been burned by.
+- **`0x0A` -> `0x0B` is one-to-one, and it is the only music edge that is.** 4,325
+  edges reaching 4,325 distinct objects, none twice, out of a population of 4,325:
+  every `0x0B` object is named by exactly one `0x0A` reference and none is missed.
+- **The two edges that looked the same are eliminated.** `0x0D`->`0x0C` has an edge
+  total of exactly 2,431 -- the `0x0D` body count, which is what made it look like a
+  bijection -- and reaches **578 of 742** objects, 382 of them repeatedly.
+  `0x0C`->`0x0D` reaches every one of its 2,431 targets but reaches **1,628** of
+  them twice.
+- So a one-to-one claim needs **all three** measurements and an edge total supplies
+  none of them: distinct targets equal to the population, no target reached twice,
+  and the edge total equal to both. Two of the three neighbours here pass one or two
+  of those conditions and fail the rest.
 - The method that works when a type will not frame: **do not look for the reference,
   offer every word.** Object ids are sparse enough that the id space does the
   discrimination. It found three references per `0x0D` body where framing found one.
