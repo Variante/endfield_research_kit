@@ -2170,14 +2170,18 @@ Stable conclusions:
   then `body[14]` elements of `00 <u16 0..4> 00 00`, then the `0x0B` reference.
   What it leaves: the remaining varying fields inside the 36, the 144 bodies with a
   nonzero byte 17, and the 255 with no `0x0B` reference.
-- **Byte 17 flags the longer head but does NOT determine its length.** Over the 126
-  nonzero-byte-17 bodies with exactly one `0x0B` reference, byte 17 takes **36
-  distinct values** and **6 of them map to two different head extras**. So it is a
-  flag, not a count -- do not try to read a length out of it.
-- The extras themselves (head minus `36 + 5*body[14]`) concentrate on **7, 12, 16
-  and 23**, with 110 of the 126 having `body[14] == 0`. The 7/12 pair differs by 5,
-  the same optional-element width the head already uses, so the likeliest reading is
-  a second counted run whose count lives somewhere other than byte 17.
+- **Byte 17 flags the longer head but does NOT determine its length** -- 36 distinct
+  values over 126 bodies, 6 of them mapping to two different extras. It is a flag.
+- **The count for the second run is `body[21]`, and the rule generalises.**
+  `head = 36 + 5*body[14] + (7 + 5*body[21] if body[17] != 0 else 0)`.
+  Byte 21 equals the second run's element count in **76 of 76** bodies of the
+  `7 + 5k` family, all 56 with a nonzero count included. Over the whole type the
+  generalised rule predicts the reference in **3,833 of 3,841** applicable bodies --
+  **99.79%** -- against 3,744 for the single-run form.
+- Why byte 21 was invisible before: in the single-run family it is one of the 16
+  **constant zero** bytes of the fixed head, so the second term vanishes and the
+  general rule reduces to the special one. *A count that is zero in the population
+  you are looking at is indistinguishable from padding.*
 - **Conditioning on the anchor makes the tail legible.** Restricted to the 3,419
   `0x0A` bodies with exactly one `0x0B` reference and it at -69, **21 of the last 69
   byte positions are constant** -- against **6 of 101** over the unconditioned
