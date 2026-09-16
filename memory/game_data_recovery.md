@@ -5779,10 +5779,33 @@ payload length is not stated in the header** by any reading tried.
 The bodies are packed: entropy **6.7-7.2 bits/byte** with adjacency **+0.01 to +0.09**, the same
 signature that identified the block-compressed `LAYER` files.
 
-***The `regionIv_room_*` files are the exception worth noting:*** they open `(4096, 44)` and are
-followed by **plainly readable floats** (6.326, 0.549, 75.41). **They are the only files in this
-block whose contents are not packed**, which makes them the place to start if this block is
-picked up again.
+#### `regionIv_room_*` decoded completely
+
+The seven `regionIv_room_*` files are the only unpacked ones in the block, and they decode
+end to end:
+
+| offset | field |
+| --- | --- |
+| `+0` | u32, constant **4096** |
+| `+4` | u32 **44** -- *the header size itself* |
+| `+8` | 3 x f32 bounding-box **min** |
+| `+20` | 3 x f32 bounding-box **max** |
+| `+32` | 3 x u32 grid dimensions `nx, ny, nz` |
+| `+44` | `nx*ny*nz` probe records of **16 bytes** |
+
+***`44 + 16 * nx*ny*nz == file length` in 7 of 7 files*** -- 36x17x39, 39x17x36, 37x21x35,
+40x16x62 and so on, against sizes from 381,932 to 634,924 bytes.
+
+***The reading is confirmed independently by probe density.*** Dividing each grid dimension by
+its bounding-box extent gives **1.92 to 2.01 probes per world unit on every axis of every
+file** -- a fixed ~2/unit sampling. *A bounding box and a grid that happen to be mislabelled
+would not produce a constant density across seven files and three different box shapes.*
+
+**The 16-byte probe is four 4-byte groups.** Bytes 11 and 15 are **zero in every probe**, and
+groups 1, 2 and 3 are near-identical triples -- mean absolute difference of **0.8-1.3** between
+groups 1 and 2 and **2.2-3.5** between 2 and 3. *Three closely-related RGB triples plus one
+group carrying a fourth component* is what directional irradiance samples look like, **though
+the exact encoding is not claimed.**
 
 ### `Data/ExtendData/Main/StringPathHash.bin` -- partial
 
