@@ -7260,11 +7260,35 @@ high byte of a float near 0.05 to 100. Their prominence is evidence of substanti
 content, which is hard to reconcile with the earlier finding that this region carries
 **"less than half the float density"** of the walked structure (9.03% against 20.40%).
 
-*Both measurements are real; at least one is being read wrongly.* The float count classified
-**4-byte-aligned words**, so floats stored at a different alignment, or narrower than 32
-bits, would be missed by it and still show up here. **The tension is recorded rather than
-resolved** -- and the earlier characterisation of the region as
-"integer-and-zero-dominated, not geometry" should be treated as unsafe until it is.
+***Resolved: the float count was sampling the wrong alignment.*** Measuring the
+float-plausible rate at each of the four byte phases inside the run:
+
+| phase (relative to the run start) | float-plausible |
+| --- | --- |
+| 0 | 8.17% |
+| **1** | **24.25%** |
+| 2 | 9.41% |
+| 3 | 9.92% |
+
+and the exponent bytes `0x3D`-`0x42` sit at **absolute position mod 4 == 3** in **230,164**
+cases against 8,794 / 5,519 / 6,450 elsewhere -- a 26-to-42-fold concentration.
+
+**The two agree.** A little-endian float keeps its exponent in the *high* byte, at `+3`, so
+exponents at `mod 4 == 3` mean the floats start at `mod 4 == 0`: **properly aligned in
+absolute file coordinates**. The runs themselves do not begin on a 4-byte boundary, so
+iterating phases *relative to the run start* sampled the wrong alignment -- which is exactly
+what the 9.03% figure did.
+
+***So the earlier characterisation is reversed, not merely unsafe.*** At correct alignment
+the unreached region is about **24% float-plausible**, against **20.40%** measured over the
+reached bytes (whose iteration was absolute, and so correctly aligned). *The region is at
+least as float-dense as the structure that was walked* -- **not "integer-and-zero-dominated,
+not geometry", which was an artefact of an off-by-one in the sampler.** (The two rates use
+slightly different magnitude bands, `1e-3..1e5` against `1e-4..1e6`, so treat the comparison
+as qualitative.)
+
+**Worth naming the failure mode:** the byte histogram and the word classifier disagreed, and
+the disagreement was the signal. A single measurement would have been believed.
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
