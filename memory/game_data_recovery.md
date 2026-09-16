@@ -6009,6 +6009,22 @@ was wrong on both counts -- **`_Global_` chunks reference shared assets, and rep
 per-instance.** The decoy control settled it where intuition would have thrown away a true
 result.
 
+###### Where these hashes appear, and where they do not
+
+| data | real hits | decoy |
+| --- | --- | --- |
+| **`InitChunkData`** | **2.94%** on large files, 1.02% on small | 0 |
+| `StreamingChunkData` | **0** | 0 |
+| `StreamingChunkInfo` | **0** | 0 |
+| `LAYER_*`, `iv` payloads, `iv` index | **0** | 0 |
+| `table` block | **0** | 0 |
+
+***The hashes are specific to `InitChunkData`.*** Not terrain, not irradiance volumes, not the
+config tables, and -- *the sharpest of these* -- **not `StreamingChunkData`**, which is the same
+format family from the same directories. **So `Init` chunks declare asset dependencies and
+`Streaming` chunks do not**, which is a semantic distinction between the two that the structural
+work never surfaced: the pair have matching layouts and differ in what they carry.
+
 #### Region A: a second hash table, keyed by something else
 
 Bytes 8 to 6,422,536 are **802,816 slots of 8 bytes** -- and `802,816 = 784 x 1024`, a capacity
