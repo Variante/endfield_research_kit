@@ -7816,9 +7816,38 @@ in 2,500 files**:
 what was previously only inferred from a chance argument: **slot 3 is an id vector running
 index-parallel to slot 5, and the name carries that id masked to 27 bits.**
 
-**Still unread:** tag 1's field 3, an 8- or 12-byte inline struct that is byte-structured
-(`01 40 00 00`, `01 00 01 00`, `01 00 02 02`) -- and, given the slot-4 error, *byte-structured
-is the reading to start from rather than a word-wise one.*
+##### Tag 1's field 3 is a StreamingComponentType mask -- the last union field, closed
+
+Censused positionally rather than word-wise (**4,386 elements, 1,500 files**): byte +0 is
+constant `0x01`, bytes +1..+4 are low-cardinality and bit-like, and **+5 onward are always
+zero** -- including the whole 4-byte tail of the 12-wide variant, *so that tail is object
+padding, not field content, and the field is 8 bytes.*
+
+There are only **8 distinct combinations**, and **the name prefix determines the combination at
+100%** -- every light type shares one, every reflection probe another. Read as a little-endian
+u64 they decode against the `StreamingComponentType` enum recovered from IL2CPP:
+
+| n | bytes | decodes to | names carrying it |
+| --- | --- | --- | --- |
+| 1,266 | `01 00 02 02 00` | `Transform \| Light \| HGAdditionalLightData` | Spot / Point / Linear Light, `lt_*` |
+| 645 | `01 00 01 00 00` | `Transform \| ReflectionProbe` | Reflection Probe(s), `rp_global` |
+| 217 | `01 40 00 00 00` | `Transform \| HGEnvironmentVolume` | `Env_*`, Global Env |
+| 19 | `01 80 00 00 00` | `Transform \| Volume` | Global Volume |
+| 19 | `01 00 02 22 00` | `Transform \| Light \| HGAdditionalLightData \| LensFlareComponentSRP` | Directional Light |
+| 14 | `01 00 00 00 01` | `Transform \| HGWaterGlobalConfig` | Water |
+| 5 | `01 00 08 00 00` | `Transform \| HGTerrain` | TerrainRoot |
+| 1 | `01 00 00 00 02` | `Transform \| HGWindMotor` | Wind |
+
+***8 of 8 masks decode with no unknown bits, and every decode matches its names.*** The enum
+comes from the IL2CPP metadata and the names come from the file, so **these are two independent
+sources agreeing eight times out of eight** -- this is not a name inference. The sharpest case
+is `Directional Light`, which differs from the other lights by exactly one bit,
+`LensFlareComponentSRP`: *a directional light that carries a lens flare, which is what a sun
+is.* **Every field of all three union members is now characterised.**
+
+This also ties the member back to known ground: **the slot-7 descriptor is a
+`StreamingComponentType` mask too**, so the same component vocabulary appears at two levels of
+this format.
 
 ##### A cross-lane link the names open up, and why the raw route to it is closed
 
