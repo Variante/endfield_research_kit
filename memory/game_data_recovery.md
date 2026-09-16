@@ -5751,9 +5751,17 @@ All three families share one container, verified on **105 files with no exceptio
 | body | a **full mip chain, 1 byte per texel** |
 
 ***The size equation closes exactly:*** `header + sum((1024 >> i)^2 for i in 0..10)` equals the
-file length in **105 of 105 files, with zero trailing bytes**. The chain sums to 1,398,101, and
-the header is **20 bytes for `C`** and **47 for `D`/`N`**. *The `+12` field is not inferred to be
-a mip count -- 11 is exactly the number of levels the size equation requires.*
+file length in **105 of 105 files, with zero trailing bytes**. The chain sums to 1,398,101.
+*The `+12` field is not inferred to be a mip count -- 11 is exactly the number of levels the size
+equation requires.*
+
+***The header is 20 bytes for every family, not 20 for `C` and 47 for `D`/`N`.*** The u32 at
+`+16` equals **file length - 20 in 105 of 105 files**, which fixes the header at 20 and makes
+that field a payload size. The difference is in the *payload*: **`LAYER_C`'s payload is the mip
+chain exactly**, while **`D`/`N` carry a 27-byte prefix ahead of theirs**. That prefix is
+high-entropy and per-file -- 23 to 26 distinct byte values out of 27, and 76 distinct
+leading words across 98 files -- so it reads as a signature or key rather than a structure, and
+**is recorded as unidentified rather than guessed at.**
 
 Decoding the levels confirms a real image pyramid: `LAYER_C`'s level means fall monotonically
 **37.97 -> 1.00**, which is what repeated downsampling does.
