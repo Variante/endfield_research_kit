@@ -5737,6 +5737,29 @@ VT_INDIRECT_TEX_BUFFER_COUNT, VT_GPU_FEEDBACK_BUFFER_COUNT, VT_WORK_GROUP_COUNT
   `m_splatControlMap` and `m_colorVariationTex` are both candidates and it is not
   settled which.
 
+### The remaining VFS blocks, inventoried
+
+Beyond `streaming` and `terrain`, the blocks hold: **`iv` 4.17 GB** (irradiance volumes;
+`iv_N_N.bytes`, 92 `index.bytes`, a few `regionIv_room_*`), **`table`** 724 single-instance
+config tables (`BuffTable`, `SkillConditionTable`, `CharacterConst`, ...), **`json-data`** ~1,264
+name shapes of plain JSON, **`extend-data`** just three files
+(`CompressData.bin`, `FacBoneTRS.bin`, `StringPathHash.bin`, 176 MB together), and
+**`bundle-manifest`** a single 50 MB `manifest.hgmmap`. *`iv` is by a wide margin the largest
+and was entirely uncharacterised.*
+
+#### The irradiance-volume index
+
+`Data/IrradianceVolume/PC/<level>/v3/index.bytes` decodes cleanly at the head: a u32
+`0x03000003`, a u32, then a **length-prefixed UTF-16LE string** (`'under_construction'`), a
+28-byte field block, then **back-to-back length-prefixed UTF-16LE file names** naming the
+volume payloads this level uses -- `'iv_0_0.bytes'`, `'iv_1215527338_0.bytes'`.
+
+**The strings are only a header.** In the sample level they occupy 150 of 6,390 bytes and the
+remaining **6,240 bytes are small integers and zeros** -- *not* float positions or bounds, which
+is what an irradiance-volume index invites one to expect: only **9.9%** of the tail reads as a
+plausible float. Its record size is not settled -- 6,240 divides evenly by 12, 16, 24, 32 and 48
+alike, **so the divisor proves nothing and none is claimed.**
+
 ### `Data/ExtendData/Main/StringPathHash.bin` -- partial
 
 **157,726,628 bytes = 19,715,828 eight-byte entries with 4 bytes spare.** Read as `(u32, u32)`:
