@@ -2037,13 +2037,28 @@ the kind that resolved the source records.* Ten populations have already been el
 against the bytes alone; the lesson from the source-record success is that the missing
 ingredient is a second table to join against, not a better sweep of the same bodies.
 
-**One candidate anchor has now been checked and ruled out.** The pipeline's decoded
-intermediate `tmp/audio/hirc_action_current/audio_audit.json` (325 MB) is the obvious place to
-look for a property enumeration, since it is the only decoded view of the banks on disk.
-***It does not carry HIRC object bodies.*** Its rows hold per-package structural summaries --
-sector byte counts, bank counts, `bnkBankIds` lists -- and its type breakdown is counts only
-(`"0x0B": 2130`). **So it cannot supply the `+12`/`+20` enumeration**, and the blocker is now a
-checked fact rather than an assumption about where to look.
+**Two candidate anchors have now been checked and ruled out.**
+
+***The decoded intermediate does not carry object bodies.***
+`tmp/audio/hirc_action_current/audio_audit.json` (325 MB) is the only decoded view of the banks
+on disk, and its rows hold per-package structural summaries -- sector byte counts, bank counts,
+`bnkBankIds` lists -- with a type breakdown that is counts only (`"0x0B": 2130`). It cannot
+supply a property enumeration.
+
+***Nor can it supply the media-size join.*** The better idea was to skip the enumeration
+entirely: every `0x0B` body's source record names a declared media id, so *if those words are
+durations they must correlate with the media's byte size* -- a genuine external anchor of the
+kind that resolved the source records. **The audit has no media sizes.** Its 41,752
+`offset`/`declaredSize` pairs are **BNK section headers** (`BKHD`, `HIRC`), not media entries,
+because it was generated with `mediaVerification: "skipped"`.
+
+***So every anchor reachable from the shipped artefacts is now exhausted.*** The shipped reader
+skips types `0x0A`-`0x0D` outright, the metadata has no bodies, and the media table has no sizes.
+**Closing this needs either the Wwise SDK's structure definitions or a bounded runtime
+observation** -- and the latter is an account-affecting action on a client that ships
+`AntiCheatExpert`, so *it is the user's call and must not be taken without an explicit request.*
+**This item is blocked on an input, not on analysis effort**, and should not be re-attempted
+against the corpus alone.
 
 ##### What *is* established about those words, pooled over the corpus
 
