@@ -5896,6 +5896,25 @@ positions ~90% zero, which is exactly how UTF-16LE ASCII looks. *The earlier fin
 first words are "not hashes of VFS paths" stands, but the reason to doubt it was visible in the
 zero pattern and was missed.*
 
+#### The index region is still unresolved, with three readings eliminated
+
+The 19,234,920 bytes between the header and the pool are **not** decoded. What they are *not*,
+each measured against a control:
+
+* ***not 32-bit hashes of the file's own paths.*** Hashing 50,000 of the 801,455 strings with
+  `crc32` (utf-8, lowercased, utf-16le), `fnv1a-32` (utf-8, lowercased) and both halves of
+  `fnv1a-64` gives **0.04-0.08% membership against a random-u32 control of 0.056%** -- *every
+  variant is at chance.* **The table does not key its own strings by any of these.**
+* **not string indices.** Only **0.27%** of first words fall within `[1, 801455]`, and the
+  distinct ones cover **0.7%** of the string set.
+* **not uniform.** The second word is `1, 2, 3, 4 ...` in a decaying tail over part of the region
+  and near-2^32 elsewhere, so *one record layout does not describe the whole span* -- which is
+  why the pairing statistics kept disagreeing between samples.
+
+***The pool is the valuable half and it is fully decoded; the index half is recorded as open
+rather than guessed at.*** The obvious next move is not another hash function but finding where
+the region changes layout, since the evidence says it is more than one table.
+
 ### The `TRET` container, decoded exactly
 
 ***Every file in the terrain block shares one container*** -- not just the `LAYER_*` families.
