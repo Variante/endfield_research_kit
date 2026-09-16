@@ -5827,6 +5827,38 @@ differences at **every one of the 16 byte positions** than `z` innermost (16.4 v
 position 0, 3.93 vs 4.75 at position 4, and so on) -- *a small margin, but unanimous across all
 sixteen.*
 
+### `extend-data`: two files are plain, two are opaque
+
+A single entropy/adjacency profile separates them, calibrated against known-readable references
+(plain JSON reads 5.111 bits/byte at +0.678; the decoded `regionIv` reads 6.301):
+
+| file | bytes | entropy | adjacency | verdict |
+| --- | --- | --- | --- | --- |
+| `manifest.hgmmap` | 50,002,822 | **7.997** | +0.002 | ***indistinguishable from random*** |
+| `CompressData.bin` | 873,686 | **7.994** | +0.016 | ***indistinguishable from random*** |
+| `FacBoneTRS.bin` | 17,909,576 | 3.956 | +0.411 | plain |
+| `StringPathHash.bin` | 157,726,628 | 4.022 | +0.379 | plain |
+
+***`manifest.hgmmap` and `CompressData.bin` are encrypted or fully compressed and cannot be
+parsed as they stand*** -- recorded so no one spends time on a byte-level attack.
+
+#### `FacBoneTRS.bin` is an array of 4x4 matrices
+
+After a **14,216-byte head** of small integers, the rest is **279,615 records of 64 bytes**
+(`17,895,360 / 64` exactly), and each is a row-major 4x4 affine transform:
+
+| test | result |
+| --- | --- |
+| 4th column == `(0,0,0,1)` | **100.00%** |
+| rows mutually orthogonal | 99.69% |
+| uniform scale | 99.69% |
+| **full TRS** | **99.69%** |
+| *control at random offsets* | **2.495%** |
+
+**A 40x separation from its control**, on the same acceptance test built for the chunk-data
+transforms -- *so the tooling from one format carried straight over to another.* The name's
+claim (facial bone TRS) is borne out by the contents rather than assumed from it.
+
 ### `Data/ExtendData/Main/StringPathHash.bin` -- partial
 
 **157,726,628 bytes = 19,715,828 eight-byte entries with 4 bytes spare.** Read as `(u32, u32)`:
