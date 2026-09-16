@@ -8141,9 +8141,30 @@ residual is small and consistently positive; a plausible reading is the handful 
 objects (`Directional Light`, `Global Volume`, `Water`, `Wind`) that belong to no block, **but
 that has not been tested and is not claimed.**
 
-***The size-like word is not the block length.*** Summed against unreached bytes the ratio
-ranges from **0.001 to 1.27** across files, and single-descriptor files pair a 2 KB sum with a
-100 KB payload. *Whatever it measures, it is not the bytes that follow.*
+***The size-like word is not the block length*** -- summed against unreached bytes the ratio
+ranges from **0.001 to 1.27**, and single-descriptor files pair a 2 KB sum with a 100 KB payload.
+
+***It is the block's per-object payload size.*** It correlates **+0.943 with the descriptor's
+count** and near zero with names, matrices or block length, and it is divisible by 4 in 100% of
+cases. Fitting `size = a x count + b` **within each component mask**, over 29 masks in 120
+files, gives **integer `a` and a constant `b` of about 20-22 bytes**:
+
+| mask | bytes per object | b | max residual |
+| --- | --- | --- | --- |
+| `0x100000200000` | **80** | 20.00 | **0.00** |
+| `0x0000082001ff` | **328** | 20.00 | **0.00** |
+| `0x8000202402ff` | **589** | 21.59 | 1.68 |
+| `0x8000202408ff` | **1021** | 21.72 | 1.72 |
+| `0x8000202410ff` | **1597** | 22.00 | 2.00 |
+
+So **`size = archetypeSize x count + ~20-byte header`**, where the archetype size is a constant
+determined by the component mask -- *which is exactly what an ECS chunk's serialized size looks
+like*, and it ties the descriptor's mask to its payload quantitatively rather than by name.
+
+**The obvious corroboration is weak and is not claimed as support.** Bytes-per-object correlates
+only **+0.550** with the number of components in the mask, and *masks with the same 13 components
+give 505, 589, 733, 1021 and 1597* -- consistent with different components having different
+sizes, but no evidence in its own right. **The fit is the result; the component count is not.**
 
 A second confirmation fell out of the offsets: **slot 4's storage ends exactly where slot 5's
 begins**, which is only true if slot 4 is a byte vector -- the reading established earlier from
