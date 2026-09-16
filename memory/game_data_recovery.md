@@ -5920,9 +5920,33 @@ Read that way, the second part is **800,774 records** of:
 ```
 
 **So `StringPathHash.bin` is a complete 64-bit-hash to asset-path resolver for the whole game**,
-and the name is exact. *This is the anchor table whose absence blocked several earlier
-questions* -- ids keyed by hash can now be resolved to a real path wherever a 64-bit hash
-appears.
+and the name is exact.
+
+##### The resolver works on the chunk data
+
+***`InitChunkData` carries these hashes, and they resolve.*** Over 25 large chunk files and
+6,101,502 aligned u64 words:
+
+| set | matches | rate |
+| --- | --- | --- |
+| **the real 787,063 hashes** | **179,537** | **2.9425%** |
+| decoy: same set with the low bit flipped | 4 | 0.0001% |
+| decoy: same set with bit 40 flipped | 0 | 0.0000% |
+
+***The decoy control is what makes this safe to claim.*** A random-u64 control scores 0% here
+too, but chunk data is not random -- it is adjacent float pairs -- so a decoy of **identical size
+and magnitude** is the honest test, and it lands at 1 in 10,000 of the real rate.
+
+Resolved, a chunk's hashes name its asset dependencies -- NavMesh chunks, HLOD meshes, character
+`.fbx`, effect textures, terrain `.bytes`, `.ab` bundles. **A single hash repeats thousands of
+times within one file** (4,487x for the top asset in one `_Global_` chunk), which is what
+per-instance storage of a shared mesh reference looks like.
+
+*This was nearly discarded.* The cross-level references and the heavy repetition looked like
+false positives, and the reasoning "a `blackbox02` chunk would not reference `map02` assets"
+was wrong on both counts -- **`_Global_` chunks reference shared assets, and repetition is
+per-instance.** The decoy control settled it where intuition would have thrown away a true
+result.
 
 #### Region A: a second hash table, keyed by something else
 
