@@ -8121,6 +8121,34 @@ not reachable from the FlatBuffers root** and that carries the same objects' nam
 their transforms. **The scene contents are therefore already enumerated by the union** -- the
 gap is a second encoding of them, not unseen objects.
 
+##### How the second payload is organised
+
+*It is not one opaque blob.* The root carries **two parallel vector groups**, not one: slots
+3/4/5 at the union's element count, and **slots 6/7 at a second, much smaller count** (1, 9, 15,
+20 ...). Following slot 7's elements as uoffsets lands them **immediately after each large
+unreached block** -- block 38,288..82,404 ends exactly at slot-7 target 82,404, and so on down
+the file. ***So the payload is a sequence of descriptor-delimited blocks, and the descriptors
+are reachable even though the blocks are not.***
+
+Each descriptor is a 56/60-byte table holding, in order: an **8-byte `StreamingComponentType`
+mask** (which is the previously recorded slot-7 descriptor, now located), a **count**, **two
+floats**, a large size-like word, and a constant `4`.
+
+**The count nearly partitions the union.** Summed over a file's descriptors it equals the union
+element count exactly in 15% of 400 files and falls short by just **1 to 7** in most of the rest
+-- *a near-partition, so the descriptors group the scene's objects into streaming blocks.* The
+residual is small and consistently positive; a plausible reading is the handful of global
+objects (`Directional Light`, `Global Volume`, `Water`, `Wind`) that belong to no block, **but
+that has not been tested and is not claimed.**
+
+***The size-like word is not the block length.*** Summed against unreached bytes the ratio
+ranges from **0.001 to 1.27** across files, and single-descriptor files pair a 2 KB sum with a
+100 KB payload. *Whatever it measures, it is not the bytes that follow.*
+
+A second confirmation fell out of the offsets: **slot 4's storage ends exactly where slot 5's
+begins**, which is only true if slot 4 is a byte vector -- the reading established earlier from
+value shape alone now also holds geometrically.
+
 ***A plausible reading was tested and refuted.*** If each named instance carried its own
 transform, names and matrices would interleave. They do not: the distance from a name to the
 nearest matrix is **worse than chance** -- 0.5% within 256 bytes against a random-offset control
