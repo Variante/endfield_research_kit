@@ -5755,13 +5755,39 @@ file length in **105 of 105 files, with zero trailing bytes**. The chain sums to
 *The `+12` field is not inferred to be a mip count -- 11 is exactly the number of levels the size
 equation requires.*
 
-***The header is 20 bytes for every family, not 20 for `C` and 47 for `D`/`N`.*** The u32 at
-`+16` equals **file length - 20 in 105 of 105 files**, which fixes the header at 20 and makes
-that field a payload size. The difference is in the *payload*: **`LAYER_C`'s payload is the mip
-chain exactly**, while **`D`/`N` carry a 27-byte prefix ahead of theirs**. That prefix is
-high-entropy and per-file -- 23 to 26 distinct byte values out of 27, and 76 distinct
-leading words across 98 files -- so it reads as a signature or key rather than a structure, and
-**is recorded as unidentified rather than guessed at.**
+***The header is 20 bytes for every family.*** The u32 at `+16` equals **file length - 20 in 105
+of 105 files**, which fixes the header at 20 and makes that field a payload size.
+
+### `C` is uncompressed; `D`/`N` are block-compressed
+
+***There is no 27-byte prefix.*** That number was an artefact of assuming an uncompressed layout
+for all three. Block-compressed formats are 1 byte per texel but **pad every mip below 4x4 to a
+full 16-byte block**, so the two tails differ by exactly 27 bytes:
+
+| chain | bytes |
+| --- | --- |
+| uncompressed, 1024^2 down to 1x1 at 1 B/texel | 1,398,101 |
+| block, 1024^2 down to 4x4 plus two 16-byte mips | **1,398,128** |
+
+| family | uncompressed chain | block chain |
+| --- | --- | --- |
+| `C` (7 files) | **7 / 7** | 0 / 7 |
+| `D` (49 files) | 0 / 49 | **49 / 49** |
+| `N` (49 files) | 0 / 49 | **49 / 49** |
+
+***Perfect separation, no crossover***, and it explains three things that did not previously fit:
+
+* **`C` is a real image and `D`/`N` are not, byte-wise.** Downsampling L0 and comparing to L1
+  gives a mean error of **4.5 for `C`** and **72-75 for `D`/`N` at every candidate offset** --
+  block-compressed data cannot be box-filtered at byte level.
+* **Entropy and adjacency agree.** `C` reads **6.12 bits/byte with +0.973 adjacent-byte
+  correlation** -- a natural image; `D`/`N` read **7.56/7.83 bits with +0.09/+0.12** -- the
+  signature of compressed blocks.
+* The `D`/`N` level means sitting at ~128 at *every* level, which looked like signed encoding,
+  is just compressed data looking random.
+
+**So format code 5 is uncompressed 8-bit and 108/109 are two block-compressed formats** -- and
+the earlier note that `C` "holds a different kind of quantity" was right for the wrong reason.
 
 Decoding the levels confirms a real image pyramid: `LAYER_C`'s level means fall monotonically
 **37.97 -> 1.00**, which is what repeated downsampling does.
