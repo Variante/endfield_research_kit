@@ -7537,6 +7537,35 @@ name string  ->  hex suffix  ==  slot-3 id  ->  (same index)  ->  slot-5 typed r
 attach a human-readable label to a subset of them -- 77 of 975 ids are named, so most
 entries carry an id with no name in the file.
 
+##### THE ROOT RETYPED: slots 2, 3 and 4 are all vectors
+
+Dereferencing the remaining scalars finishes the correction. Over 400 files:
+
+| slot | resolves to | evidence |
+| --- | --- | --- |
+| **2** | a vector, **always empty** | target is exactly `len - 4` in **400/400**, count `0` in **400/400** |
+| **3** | a vector of **ids** | 400/400, `len == len(slot 5)` in 400/400 |
+| **4** | a vector, non-table elements | **400/400**, `len == len(slot 3) == len(slot 5)` in **400/400** |
+
+***So every one of slots 2 through 7 is a vector, and the "runtime allocation sizes" reading
+of 2, 3 and 4 was wrong for all three.*** The root is:
+
+```
+0  version 47          1  chunk origin (x*128, y*128), 8 bytes inline
+2  empty vector        3 | 4 | 5   three PARALLEL vectors
+                       6 | 7       two parallel vectors
+```
+
+**Slot 4's elements are packed bytes.** Its commonest values are `0x02020202` (324),
+`0x01010101` (92), `0x03030303` (88), `0x03020202`, `0x00020203` -- *byte-replicated and
+byte-packed words* -- mixed with small integers (1, 2, 3, 4, 16, 248, 356). Four small
+values per word, one per parallel entry's worth of something.
+
+**So a slot-5 record now has three columns beside it:** an **id** (slot 3), a **packed byte
+quad** (slot 4), and its own typed fields. *That is a far richer row than the "kind code plus
+five opaque fields" this section began with*, and all of it was hidden behind three fields
+recorded as sizes because they were never dereferenced.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
