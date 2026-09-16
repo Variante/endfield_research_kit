@@ -8240,12 +8240,32 @@ transform array should hold exactly one entry per entity.
 **It does not.** Across 87 descriptors and 16,577 runs, the number of matrices in a descriptor's
 block equals its entity count in **0.00%** of cases.
 
-*What does hold is weaker and still worth having:* **no run exceeds the entity count** (99.3%
-are at or below it) and **20.73% match it exactly**, with a median run at 0.083 of the count.
-That is the shape of an array of N slots read in fragments, which is consistent with the ECS
-reading -- **but the test that would have confirmed it failed, so it stays a reading and not a
-finding.** *The detection could be undercounting matrices, which would produce exactly this
-pattern; that is a reason to doubt the test, not to believe the hypothesis.*
+*What does hold is weaker:* **no run exceeds the entity count** (99.3% at or below) and **20.73%
+match it exactly**. But the array reading fails a second, independent test as well: **the span
+from a group's first to last matrix, measured in 96-byte slots, equals its entity count in 0% of
+groups and exceeds it in 60%**, with a median span/count of **2.07** and a maximum of **4,519**.
+*Matrices are not laid out as one N-slot array per descriptor.* **The ECS struct-of-arrays
+reading is not supported and is dropped rather than kept as a plausible story.**
+
+###### What actually fills the space between transform runs
+
+Measuring the acceptance test first -- as the failed hypothesis above said to do -- answers it.
+Of 33,022 rejected slots adjacent to an accepted matrix, the conditions fail in a very
+particular pattern: **`col3 zero` passes at 96.74% while `m15 == 1` passes at 8.98% and
+`scale uniform` at 0.00%.** *That is the signature of all-zero data*, which satisfies a
+zero-column test and fails every other one. Confirmed directly:
+
+| | |
+| --- | --- |
+| zero words within those slots | **86.12%** |
+| slots whose 64-byte matrix region is entirely zero | **56.15%** |
+| slots that are entirely zero across all 96 bytes | 12.44% |
+
+***So the space between transform runs is mostly zeros.*** Not a rival structure, not a component
+array -- **sparse default space**, which is the same answer the corpus decomposition gave from
+the other direction when it found 45.75% of all unreached bytes to be zero. *It also explains
+the earlier puzzle that skipped slots are* **less** *matrix-like than random data (0.23% against
+a 1.90% control): zeros fail the relaxed test too.*
 
 **An earlier count of 25/25 for the ordering was measured on a smaller, easier subset** (blocks
 with any names and matrices rather than at least three of each). The honest figure is 47/48.
