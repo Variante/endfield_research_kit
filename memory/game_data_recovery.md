@@ -5940,6 +5940,14 @@ usually small (`1, 2, 3, 4 ...` in a decaying tail).
 | an offset landing on a string record | 1.37% | 0.57% |
 | a string index (`<= 802,816`) | 0.14% | -- |
 | `crc32` / `fnv1a-32` / `fnv1a-64` of the paths | 0.04-0.08% | 0.056% |
+| **the 24-hex bundle id** from the 253,670 `.ab` paths, any 4-byte slice | **0.01-0.02%** | 0.013% |
+
+***The slot layout is tighter than first recorded.*** At stride 8 from byte 8 the zero-fractions
+are `[0.38, 0.38, 0.38, 0.84, 0.38, 1.00, 1.00, 1.00]`, so **the second field is effectively a
+single byte**, not a u32 -- the 4.29-billion maximum quoted earlier came from a ~0.5% tail, not
+the common case. *An apparent set of sub-region "shifts" was an artefact of profiling with a
+window size that is not a multiple of 8*, which rotates the stride phase every window; region A
+is uniform throughout.
 
 **So the file holds *two* hash tables over the same string pool**: region B keys 800,774 paths by
 a 64-bit hash and resolves at 100%, while region A keys ~502,837 entries by a 32-bit value that
