@@ -7112,10 +7112,18 @@ placement list at all. **Both conclusions stand, and the enum does appear in the
 as the names of records in the region nothing had looked at.** *The enum was real, the
 refusal was right, and they were about different parts of the file.*
 
-**Strings are only 0.1% of the bytes**, roughly one name per file, so the bulk is the
-binary payload that follows each name -- floats among it. That is the next target, and it
-is now a specific one: *per-entity records, named by proxy-entity type, occupying
-essentially the whole file.*
+**Strings are only 0.1% of the bytes**, roughly one name per file.
+
+***And the records that carry them are small, which moves the mystery rather than solving
+it.*** Tracing the single uoffset that points at `GrassGrid_0_0#0_A5F014` (at 2140, in a
+9,480-byte file) reaches a table at 2128 with **vtable size 12, objectSize 16 and slots
+`[4, 0, 8, 12]`** -- four fields, one absent, the name in the last. *A 16-byte table is a
+directory entry, not a payload.*
+
+So the earlier guess in this section -- "the bulk is the binary payload that follows each
+name" -- is **not** supported: the name belongs to a compact record, and the 98% lies
+elsewhere. **What the region contains is still open; what is now known is that it is not
+hanging off these name tables.**
 
 ## STATUS AFTER THE ENGINE-READING PASS (2026-09-15)
 
