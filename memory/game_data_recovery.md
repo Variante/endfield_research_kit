@@ -7182,6 +7182,32 @@ next measurement rather than by better thinking.* The one that should not have h
 the last: **a positive result published without the control that this project applies
 everywhere else.**
 
+##### What the region actually contains, described rather than theorised
+
+Dropping the question of *how* it is reached and simply describing the bytes -- with the
+**reached** bytes of the same 120 files as the control:
+
+| word class | unreached | reached |
+| --- | --- | --- |
+| zero | **43.74%** | 23.79% |
+| small int (< 4096) | **10.66%** | 5.41% |
+| plausible float (1e-4..1e6) | 9.03% | **20.40%** |
+| other | 36.57% | **50.40%** |
+| *words sampled* | 791,863 | 2,293,309 |
+
+**The profiles differ substantially**, so the unreached region is *not* simply more of the
+walked structure: it is **~1.8x as sparse** (zeros), carries **~2x the small integers**, and
+holds **less than half the float density**.
+
+*The walked tables are where the floats live* -- transforms, bounds, centres and extents,
+which is consistent with everything recovered from them. **The unreached region is
+integer-and-zero-dominated, which is the signature of index or table data with many unused
+slots**, not of geometry.
+
+That is a description, not an identification, and it is offered as one. **But it is the
+first statement about this region that was measured against a control and survived** --
+after four that were not.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
