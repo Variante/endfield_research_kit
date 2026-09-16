@@ -8097,14 +8097,26 @@ not reach. Zeros are padding and default space, not undiscovered structure, so *
 of the gap is the non-zero unexplained share, which is about an eighth of the format rather than
 the third the headline implies.**
 
-***The rest is not alien data; it is more of the scene population already recovered.***
+***The rest is not alien data; it is the same scene population, stored a second time.***
 Searching the unreached region for the `<name>#<N>_<HEX>` form established for union field 0
-finds it densely, and **39.1% of all such names in these files lie in bytes the walk never
-reaches.** The vocabulary is the same one the union members use, dominated by prefab instances
-(`P_prop_*`, `P_tree_*`, `P_bush_*`, overwhelmingly `_ECSMerged`) and followed by
-`MergedCollider`, `GrassGrid`, `AudioEmitter`, `SOCChunk`, `SurfaceTypeData`, `Reflection
-Probe`, `Global Volume`. **So the format is a scene placement table**, and the structural walk
-simply does not traverse the structure that holds most of its contents.
+finds it densely -- **39.1% of all such name occurrences lie in bytes the walk never reaches** --
+and the vocabulary is the union's own, dominated by prefab instances (`P_prop_*`, `P_tree_*`,
+`P_bush_*`, overwhelmingly `_ECSMerged`) then `MergedCollider`, `GrassGrid`, `AudioEmitter`,
+`SOCChunk`, `SurfaceTypeData`, `Reflection Probe`, `Global Volume`.
+
+***That first looked like additional objects the walk fails to traverse. It is not.***
+**99.61% of the names found in unreached bytes are names the union already reaches**, and
+counting occurrences shows why: **1,303 of 1,311 distinct names appear exactly twice** (mean
+1.99 copies), **72.6% with one reached copy and one unreached copy**, and only one name with no
+reached copy at all. *The same string is stored at two offsets* -- for example
+`P_prop_map01_vatzmdlife+1_008_s03_ECSMerged#0_637998D` at 3,560 (unreached) and 1,054,728
+(reached).
+
+***So the unreached region does not extend the scene population; it duplicates its name set.***
+Taken with the transform arrays, **`InitChunkData` embeds a second serialized payload that is
+not reachable from the FlatBuffers root** and that carries the same objects' names alongside
+their transforms. **The scene contents are therefore already enumerated by the union** -- the
+gap is a second encoding of them, not unseen objects.
 
 ***A plausible reading was tested and refuted.*** If each named instance carried its own
 transform, names and matrices would interleave. They do not: the distance from a name to the
