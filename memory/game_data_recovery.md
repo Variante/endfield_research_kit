@@ -7969,8 +7969,34 @@ What can be quoted, from **45 completed walks totalling 2.67 MB**:
 | of that, inside a 96-byte TRS record | 19.36% |
 | combined accounted for | **62.30%** |
 
-***This is a 45-file sample, not the corpus, and must not be quoted as one.*** The corpus
-number needs the stall found first -- in `follow()` or `coverage()`, not in the recursion.
+##### The stall, found
+
+Printing each filename before walking it named the culprits directly: a **134 KB** file took
+**38.6 s** at only 880 tables, a **323 KB** file took **70.2 s** at 679. *Time was unrelated to
+table count and tracked `offsetVectors`.* The cause was in `follow()`: it built a Python list of
+every element -- **up to 65,536 ints** -- for **every candidate vector**, before testing whether
+the vector was acceptable. Replacing that test with a vectorised numpy read:
+
+| file | before | after |
+| --- | --- | --- |
+| `InitChunkData_Global_1_0.bytes` (323 KB) | 70.2 s | **16.6 s** |
+| `InitChunkData_-1_0_1_0.bytes` (134 KB) | 38.6 s | **12.0 s** |
+| `InitChunkData_-1_0_0_0.bytes` (3.2 MB) | 15.0 s | **10.0 s** |
+
+Still **byte-identical to `Walker3` on 150 of 150 files**, and every coverage value unchanged.
+
+***One further optimisation was tried and was wrong.*** `as_string` tests printability with
+`all(32 <= c < 127 for c in s)`; pushing that into C as `min(s) >= 32 and max(s) < 127` made it
+**slower** -- the 3.2 MB file went 10.0 s -> 14.2 s. `min`/`max` each traverse the whole slice
+while `all` short-circuits on the first non-printable byte, *and nearly every candidate fails on
+byte one.* **Reverted, with the measurement recorded in the code so it is not retried.**
+
+With the faster walk, **92 files / 5.51 MB** in one bounded run: 24.14% unreached, 19.23% of
+that inside a 96-byte TRS record, **80.50% combined accounted for**.
+
+***That is still a sample.*** 92 of 26,520 files is not a corpus figure and must not be quoted
+as one. `scratch/corpus_coverage.py` runs the full set unbounded and writes
+`corpus_coverage.json`; **the corpus number belongs in this section only once that finishes.**
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
