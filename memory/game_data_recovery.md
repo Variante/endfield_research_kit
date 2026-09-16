@@ -7628,6 +7628,35 @@ cases.
 **uoffset to a short code list**, and the constant 4. **Nothing in it is a size, and nothing
 in it points outside the file** -- which is the opposite of what this section concluded twice.
 
+##### SWEEPING SLOT 5 FOR THE SAME ERROR -- two more uoffsets
+
+Rather than wait for the next field to break, every width-4 field of a slot-5 element was
+dereferenced at once:
+
+| field | tested | vector-shaped | valid table |
+| --- | --- | --- | --- |
+| 0 | 2,327 | 95.57% | 18.99% |
+| 1 *(kind code)* | 2,039 | **0.00%** | 2.40% |
+| 2 *(kind code)* | 1,855 | 11.11% | 7.44% |
+| **3** | 1,890 | 8.68% | **100.00%** |
+| **4** | 437 | **100.00%** | 31.81% |
+| 5 | 1,358 | **0.00%** | **0.00%** |
+
+*Fields 1 and 5 scoring 0.00% are the control* -- the test rejects scalars rather than
+accepting anything. **Field 3 is a uoffset to a table and field 4 a uoffset to a vector**,
+both at 100%.
+
+**The kind codes survive.** Fields 1 and 2 -- `StreamingLayer` and `ECSEntityType` -- are
+scalars on this test, so that identification, which rests on five independent lines, is
+untouched.
+
+***And it re-explains the Init/Streaming comparison.*** That census found fields 1 and 2
+**invariant** across a chunk's two files while 0, 3 and 5 **differed**, and read the
+difference as "per-file quantities". **Fields 3 and 0 differ because they are offsets** --
+two files with different layouts inevitably place the same object at different addresses.
+*The invariant/varying split was partly types, not semantics*, and only field 5 (a genuine
+scalar that differs in 100% of pairs) still needs a content explanation.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
