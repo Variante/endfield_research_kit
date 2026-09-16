@@ -5953,6 +5953,18 @@ What the values do say:
 *A function whose top four bits stay clear more often as the input grows is a strong fingerprint*
 and should identify it quickly once a wider hash library is available.
 
+***The hash is non-linear, so differential recovery will not work.*** The pool contains many
+paths differing in a single character, which for any polynomial or accumulate-style hash
+(`h = h*M + c`) forces a *constant* difference for a fixed `(length, position, character delta)`.
+Measured over 881 such groups: **796 vary and only 85 are constant, and every one of those 85 had
+just a single observed pair** -- constant by having nothing to disagree with. **The same holds
+for XOR.** *So the function ends in an avalanche finalizer*, which rules out the entire
+linear-accumulate family structurally rather than one member at a time, and means the algorithm
+must be identified by name rather than solved for.
+
+**The remaining route is the engine binary.** `UnityPlayer.dll` ships unpacked with 866
+`HyperGryph` symbols, and the function that builds this table is in it.
+
 ##### The resolver works on the chunk data
 
 ***`InitChunkData` carries these hashes, and they resolve.*** Over 25 large chunk files and
