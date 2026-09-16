@@ -5962,8 +5962,26 @@ for XOR.** *So the function ends in an avalanche finalizer*, which rules out the
 linear-accumulate family structurally rather than one member at a time, and means the algorithm
 must be identified by name rather than solved for.
 
-**The remaining route is the engine binary.** `UnityPlayer.dll` ships unpacked with 866
-`HyperGryph` symbols, and the function that builds this table is in it.
+**The remaining route is the engine binary** -- and a constant scan of it narrows nothing on its
+own. Searching for the published 64-bit constants of seven hash families:
+
+| binary | constants present |
+| --- | --- |
+| `UnityPlayer.dll` | **Murmur3 `fmix64` x58 each**, xxHash64 primes 1-5, CityHash k0-k2, FNV-1a64 |
+| `GameAssembly.dll` | FNV-1a64 prime x70 / offset x62, xxHash64 primes |
+| `HGP.dll` | xorshift64* x57, FNV-1a64 x10 |
+
+***Presence is not use.*** These binaries carry several hash families at once, so the scan cannot
+say which one writes this table -- *but the 58 `fmix64` pairs pointed at MurmurHash3_x64_128,
+which is a different algorithm from the already-eliminated Murmur64A (MurmurHash2) and whose
+`fmix64` finalizer matches the measured avalanche.* **It was implemented and tested: no match
+across 4 encodings x 3 seeds x both 64-bit halves** (self-test: `murmur3_x64_128(b"", 0)` returns
+`(0, 0)` as published).
+
+**Seven families and 44 combinations are now eliminated**, every one with a verified
+implementation. *Identifying the function needs the routine disassembled rather than more
+candidates guessed*, which is a larger task than this section has needed so far and is recorded
+as the next step rather than attempted here.
 
 ##### The resolver works on the chunk data
 
