@@ -7695,12 +7695,50 @@ id reading survives, and with it the join to the name strings' hex suffix. **The
 broke `s2`, `s3`, slot-7 field 3 and two slot-5 fields clears this one**, which is worth more
 than never having doubted it.
 
-***Slot 4 is now doubtful.*** At 62.11% resolving to a valid table against slot 3's 0.00%
-control, its elements are probably uoffsets -- but **38% do not resolve**, and a vector of
-uoffsets should be all or nothing. The `0x02020202`-style values that looked like packed byte
-quads are exactly the ones too large to be in-bounds. *Either the vector is not uniform, or
-the reading is still wrong.* **The "packed byte quad" description is withdrawn pending that,
-and slot 4 is recorded as unresolved rather than characterised.**
+***Slot 4 was read at the wrong width.*** At 62.11% resolving to a valid table against a
+same-buffer random-position control of **3.13%**, the signal was real -- but 38% did not
+resolve, and a vector of uoffsets is all or nothing. The `0x02020202`-style values that looked
+like packed byte quads were the tell: **that is what a vector of *bytes* looks like read four
+at a time.**
+
+Read as a byte vector instead, over 400 files:
+
+| test | result |
+| --- | --- |
+| byte-vector storage `4 + n` fits | **100.00%** |
+| `count(slot4) == count(slot5)` | **100.00%** |
+| `count(slot4) == count(slot3)` | **100.00%** |
+| distinct byte values over 3,325 elements | **3** -- only `1`, `2`, `3` |
+
+##### Slots 4 and 5 are a union vector
+
+A `ubyte` vector of three small values running exactly parallel to a vector of tables is the
+FlatBuffers **union vector** signature: `field: [SomeUnion]` generates a `ubyte` type vector
+plus an offset vector. That is falsifiable -- the tag must *determine the element's layout* --
+so every slot-5 element was cross-tabulated against its tag over **1,200 files, Init and
+Streaming, 12,417 elements**:
+
+| tag | elements | vtable slot-count | distinct layouts |
+| --- | --- | --- | --- |
+| 1 | 2,368 | **5, always** | 2 |
+| 2 | 7,653 | **6, always** | 6 |
+| 3 | 2,396 | **4, always** | 4 |
+
+***0 of 10 layouts appear under more than one tag.*** Slot-count is a function of the tag at
+100% purity; the size variants inside a tag (obj 24/28, 40/44, 20/16) are ordinary
+default-omission. **So root slots 3, 4 and 5 are one three-part structure: ids, union type
+tags, union values** -- not three independent vectors, which is how they have been treated
+throughout.
+
+##### What this invalidates
+
+**The slot-5 field sweep and the field-3 table follow both pooled the three union members.**
+"Field 3" is a different field in a 4-slot, a 5-slot and a 6-slot table, so those two tables
+of percentages measured a mixture. It also explains their oddities -- the sweep's shrinking
+sample sizes per field index were the tag-2-only fields, and *it is the likely explanation of
+the "five lines" in the slot-5 kind codes*, which would be distinct union members rather than
+five lines in one code space. **Both results are demoted to structural-only and must be re-read
+per tag before anything is concluded from them.**
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
