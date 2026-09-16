@@ -8089,6 +8089,35 @@ Counts, per-run totals and the acceptance test live in
 `reports/chunk_data/init_chunk_coverage_latest.{json,md}`, per the rule that changing counts and
 full inventories belong in reports rather than memory prose.
 
+##### What the unreached bytes actually hold
+
+*"Unaccounted" is the absence of a finding, not a finding*, so the unreached bytes were split
+into named parts. **The largest part is zero bytes** -- roughly half of everything the walk does
+not reach. Zeros are padding and default space, not undiscovered structure, so **the honest size
+of the gap is the non-zero unexplained share, which is about an eighth of the format rather than
+the third the headline implies.**
+
+***The rest is not alien data; it is more of the scene population already recovered.***
+Searching the unreached region for the `<name>#<N>_<HEX>` form established for union field 0
+finds it densely, and **39.1% of all such names in these files lie in bytes the walk never
+reaches.** The vocabulary is the same one the union members use, dominated by prefab instances
+(`P_prop_*`, `P_tree_*`, `P_bush_*`, overwhelmingly `_ECSMerged`) and followed by
+`MergedCollider`, `GrassGrid`, `AudioEmitter`, `SOCChunk`, `SurfaceTypeData`, `Reflection
+Probe`, `Global Volume`. **So the format is a scene placement table**, and the structural walk
+simply does not traverse the structure that holds most of its contents.
+
+***A plausible reading was tested and refuted.*** If each named instance carried its own
+transform, names and matrices would interleave. They do not: the distance from a name to the
+nearest matrix is **worse than chance** -- 0.5% within 256 bytes against a random-offset control
+at 20.6%. **Names and transforms live in separate regions**, which is what a pooled string table
+beside a contiguous transform array looks like, and *not* a record-per-instance layout.
+
+One further structure was isolated in the residue: a **24-byte fixed-stride record** whose six
+words are four constants, one sentinel `0xffffffff` and one small varying field -- a
+fixed-capacity, mostly-default table. It is real (17x its control) but minor, a little over 1%
+of the unreached bytes. **A constant-byte-fill hypothesis was measured and dropped** at 0.28%;
+the one 20 KB run of `0x02` that suggested it is an outlier, not a category.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
