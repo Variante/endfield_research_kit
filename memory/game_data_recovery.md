@@ -2037,6 +2037,14 @@ the kind that resolved the source records.* Ten populations have already been el
 against the bytes alone; the lesson from the source-record success is that the missing
 ingredient is a second table to join against, not a better sweep of the same bodies.
 
+**One candidate anchor has now been checked and ruled out.** The pipeline's decoded
+intermediate `tmp/audio/hirc_action_current/audio_audit.json` (325 MB) is the obvious place to
+look for a property enumeration, since it is the only decoded view of the banks on disk.
+***It does not carry HIRC object bodies.*** Its rows hold per-package structural summaries --
+sector byte counts, bank counts, `bnkBankIds` lists -- and its type breakdown is counts only
+(`"0x0B": 2130`). **So it cannot supply the `+12`/`+20` enumeration**, and the blocker is now a
+checked fact rather than an assumption about where to look.
+
 ##### What *is* established about those words, pooled over the corpus
 
 "Ten populations eliminated" understates the positive characterisation. Pooling the
