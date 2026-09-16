@@ -7387,6 +7387,29 @@ correlated with unreached bytes because the giant files happen to name grass; `S
 correlated negatively because the small, fully-covered files are dominated by it. *The
 size confound was not a nuisance in the measurement -- it was the finding.*
 
+##### Opening the largest offender
+
+`InitChunkData_-1_0_0_0.bytes` in **`blackbox02_dg001`** -- 3,238,664 bytes, **77.6%
+unreached**, across **125** runs, the largest **444,381** bytes.
+
+Sampling the big run shows what the bytes are:
+
+```
+b9 f3 48 3d  b9 f3 48 3d  b9 f3 48 3d     <- 0.04905 repeated
+e0 a3 a9 3c  e0 a3 a9 3c  e0 a3 a9 3c     <- 0.02071 repeated
+00 00 80 3f                                <- 1.0
+00 00 00 00 ... (long stretches)
+```
+
+**Identical floats repeated in threes, `1.0` constants, and long zero regions.** That is
+consistent with the normalised-float profile measured earlier, and the *repetition* is new:
+consecutive entries carrying the same value, either `Vector3(v, v, v)` or runs of identical
+per-element data.
+
+**This is where a future session should start.** Not "the bulk of `InitChunkData`" -- one
+named file, whose 444 KB run can be read directly, in a level (`blackbox02_dg001`) whose
+sibling chunks are the other four large offenders.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
