@@ -5924,28 +5924,29 @@ and the name is exact. *This is the anchor table whose absence blocked several e
 questions* -- ids keyed by hash can now be resolved to a real path wherever a 64-bit hash
 appears.
 
-**Region A, bytes 8 to 6,422,536, is still open.** It is a different layout -- no high values,
-~37% zero -- and the three eliminations below apply to it. The earlier failure to find hashes was
-partly this: *the tests pooled two different tables together.*
+#### Region A: a second hash table, keyed by something else
 
-#### What region A is not, with three readings eliminated
+Bytes 8 to 6,422,536 are **802,816 slots of 8 bytes** -- and `802,816 = 784 x 1024`, a capacity
+rather than a count. **299,979 slots (37.37%) are entirely empty** and 502,837 are occupied,
+which is a load factor around 0.63: *this is an open-addressing hash table.* The first word is
+hash-like -- all distinct over a 100,000 sample, spanning the full u32 range -- and the second is
+usually small (`1, 2, 3, 4 ...` in a decaying tail).
 
-The 19,234,920 bytes between the header and the pool are **not** decoded. What they are *not*,
-each measured against a control:
+***What it is keyed by is not any of the obvious things.*** Each tested against a control:
 
-* ***not 32-bit hashes of the file's own paths.*** Hashing 50,000 of the 801,455 strings with
-  `crc32` (utf-8, lowercased, utf-16le), `fnv1a-32` (utf-8, lowercased) and both halves of
-  `fnv1a-64` gives **0.04-0.08% membership against a random-u32 control of 0.056%** -- *every
-  variant is at chance.* **The table does not key its own strings by any of these.**
-* **not string indices.** Only **0.27%** of first words fall within `[1, 801455]`, and the
-  distinct ones cover **0.7%** of the string set.
-* **not uniform.** The second word is `1, 2, 3, 4 ...` in a decaying tail over part of the region
-  and near-2^32 elsewhere, so *one record layout does not describe the whole span* -- which is
-  why the pairing statistics kept disagreeing between samples.
+| reading | result | control |
+| --- | --- | --- |
+| region B's 64-bit hash, low or high half | 0.03% / 0.10% | 0.016% |
+| an offset landing on a string record | 1.37% | 0.57% |
+| a string index (`<= 802,816`) | 0.14% | -- |
+| `crc32` / `fnv1a-32` / `fnv1a-64` of the paths | 0.04-0.08% | 0.056% |
 
-***The pool is the valuable half and it is fully decoded; the index half is recorded as open
-rather than guessed at.*** The obvious next move is not another hash function but finding where
-the region changes layout, since the evidence says it is more than one table.
+**So the file holds *two* hash tables over the same string pool**: region B keys 800,774 paths by
+a 64-bit hash and resolves at 100%, while region A keys ~502,837 entries by a 32-bit value that
+is *not* derived from the path text by any function tried, *nor* related to region B's hash.
+**It is plausibly keyed by something other than the path** -- a GUID, a bundle id, an object id
+-- which would explain every negative above at once. ***Recorded as open; the resolver in region
+B is the usable half.***
 
 ### The `TRET` container, decoded exactly
 
