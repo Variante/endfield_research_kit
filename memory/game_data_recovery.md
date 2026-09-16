@@ -7149,13 +7149,26 @@ So the large runs are **not** mostly vectors of the kind the walker was rejectin
 diagnosis was reasonable, specific, and wrong -- and it cost one run to find that out
 rather than being carried forward as an assumption.*
 
-**Where that leaves it.** About **44%** of `InitChunkData` is still unreached, in runs of
-256 bytes and up whose heads look like counts followed by descending offsets but which do
-not behave like offset vectors under test. Candidates not yet tried: vectors of **inline
-structs** (no offsets to resolve at all), and regions genuinely not addressed from the
-FlatBuffers root. **The estimate has now gone 1.65% -> 54.91% -> 56.30%, and the honest
-summary is that a little over half these files is reachable and the rest is not yet
-explained.**
+**Where that leaves it, measured rather than guessed.** Two facts settle the character of
+the remaining 44%:
+
+- ***The gap is concentrated in a minority of files.*** Of 341 files, **221 have no
+  unreached run of 256 bytes or more** -- they are walked essentially in full. Only **120**
+  carry a large unreached region, and those are the big files.
+- ***Those regions are addressed.*** Scanning every 4-byte position in each file for a
+  value that resolves into the run, **120 of 120 runs are pointed into**, with **6,274
+  inbound offsets** in total -- about 52 per run. **They are not orphaned data.**
+
+And they are not simple arrays: no run satisfies `4 + count*W == length` for `W` in
+{4, 8, 12, 16, 24, 32, 36, 48}, so the head is not a count over a fixed stride.
+
+***So the region is reachable in principle and unreached in practice.*** The pointers into
+it exist; the root-down walk does not arrive at them -- most likely because they live inside
+the unreached regions themselves, or inside inline struct fields the walker treats as
+opaque. **The estimate has gone 1.65% -> 54.91% -> 56.30%, and what remains is neither
+"unexamined bulk" nor "walker capability" as previously claimed, but a specific structure:
+a densely cross-referenced region in the large files that the root does not reach through
+tables, vectors or strings.**
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
