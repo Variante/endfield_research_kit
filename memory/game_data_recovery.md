@@ -7576,6 +7576,33 @@ large files is a different problem entirely, and no amount of correcting the roo
 **A structural correction and a coverage gain are not the same currency**, and this one paid
 entirely in the first.
 
+##### AND IT BREAKS THE SLOT-7 FIELD-3 READING TOO
+
+Field 3 of a slot-7 element was recorded as *"a byte offset into the region `s4` sizes"*,
+and `s4` has just turned out to be a **vector offset**, not a size. That interpretation is
+void, so field 3 was dereferenced the same way -- **with controls this time**:
+
+| field | recorded as | dereferences to a vector |
+| --- | --- | --- |
+| **3** | "byte offset into `s4`'s region" | **434 / 434 = 100.00%** |
+| 1 | a count *(control)* | 9 / 434 = 2.07% |
+| 4 | the constant 4 *(control)* | **0 / 434 = 0.00%** |
+
+**Field 3 is a uoffset**, and the controls show the test discriminates rather than accepting
+anything. The vectors it reaches are short -- **length 2 in 392 of 434**, 15 in 32, 16 in 10
+-- with non-table elements.
+
+***So the records field 3 names are in the file after all.*** The earlier conclusion that
+*"their content is not here to decode -- only their sizes and the offsets that will address
+them once built"* is **withdrawn in full**. It rested on `s4` being an allocation size, which
+it is not.
+
+**That is the third claim in this family to fail the same way**: `s2`, `s3` and now field 3
+were each verified as *arithmetic* against other numbers, across tens of thousands of files,
+and each was a uoffset. *The formulas were real and the types were invented* -- and a
+uoffset that lands at a predictable distance from the end of a buffer will satisfy an
+arithmetic identity every time.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
