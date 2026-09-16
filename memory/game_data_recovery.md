@@ -7290,6 +7290,33 @@ as qualitative.)
 **Worth naming the failure mode:** the byte histogram and the word classifier disagreed, and
 the disagreement was the signal. A single measurement would have been believed.
 
+##### The floats are normalised, not positional
+
+With the alignment fixed, the values can be read. Testing them against the chunk box that
+identified slot 7's centre gives **nothing**: `own X` 35.53% against a neighbour-box control
+of 31.00%, `own Z` 41.68% against 38.15% -- gaps of three and four points, where the slot-7
+centre scored 73.96% against 1.28%. **These are not world coordinates.**
+
+What they are is small:
+
+| band | share of 332,031 aligned float-plausible words |
+| --- | --- |
+| `0..128` | **93.85%** |
+| `128..256` | 4.63% |
+| `256..384` | 1.42% |
+| `384+` | ~0.00% |
+| **of which `|f| <= 1`** | **72.05%** |
+
+*The decay is the control* -- 93.85% into the first band against 4.63% into the next is not
+what a positional quantity spread over a 128-unit chunk looks like; it is what **normalised
+values** look like. **Nearly three quarters of these floats lie in `[0, 1]`.**
+
+**So the unreached region is normalised float data interleaved with zeros** -- weights,
+factors, normals, colours or coefficients rather than geometry -- **which is why the
+world-box join that worked on slot 7 finds nothing here.** Taken with the rest: ~44% of
+bytes, in 120 of 341 files, entropy 3.925, zeros in runs of one and three, no record stride,
+floats 4-byte aligned in absolute coordinates and 72% of them in the unit interval.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
