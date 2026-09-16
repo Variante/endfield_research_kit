@@ -7772,8 +7772,53 @@ Established per tag:
 above:*** per tag those fields have 2, 5 and 8 distinct values, and the earlier five-line
 structure was three different members' fields overlaid in one space.
 
-**Still unread:** tag 1's field 3, an 8- or 12-byte inline struct, the only field in the union
-not yet characterised.
+##### Field 0 is the object's name, and the id join closes at 100%
+
+***The per-tag table above understates field 0, and the "it is an id" reading in the previous
+commit is wrong.*** That test asked only whether the target was a *table*; a uoffset can point
+at a string or a vector just as well. Re-tested against every target kind:
+
+| target | tag 1 | tag 2 | tag 3 | control |
+| --- | --- | --- | --- | --- |
+| **string** | **40.49%** | **40.59%** | **39.15%** | **0.19-0.31%** |
+| table | 9.20% | 10.74% | 10.85% | 3.5-4.6% |
+
+At 130x control this is not ambiguous, and the ~50% that resolved to nothing are **empty
+strings**, whose zero length failed the `0 < count` guard in the checker. Decoded properly,
+every field 0 is a NUL-terminated name and **100.00%** parse as `<base>#<N>_<HEX>`.
+
+***These names give the three union members their identities:***
+
+| tag | representative names |
+| --- | --- |
+| 1 | `Reflection Probes (5)#0_6BF84D2`, `rp_global#0_1C8A4C4`, `Env_rabbit hole (2)#0_73AB3B3` |
+| 2 | `New Game Object#0_1255C60`, `MergedCollider_0_-1_0_0#0_51C0A5E` |
+| 3 | `AudioBox_0#30_42A2041`, `AudioEmitter_4192702263#30_6F648D2`, `SurfaceTypeData_3_3#31_5EA5EA4` |
+
+**The `#N` group is not decorative** -- it tracks field 1 exactly: `(tag 1, #0)` -> 8,
+`(tag 2, #0/#31)` -> 5, `(tag 3, #30)` -> 9. *So the tiny-cardinality field 1 and the name's
+group number are two encodings of the same thing*, which is the first independent check on
+those kind codes this section has had.
+
+###### The id join
+
+The hex suffix was compared to the parallel slot-3 id. Exact equality gave 72.24%, and the
+misses were not random: the suffix differed from the id's low 28 bits **by exactly one bit**
+each time (`D`->`5`, `B`->`3`, `A`->`2`). That is bit 27. The true rule, over **97,061 names
+in 2,500 files**:
+
+| rule | match |
+| --- | --- |
+| `suffix == id & 0x0FFFFFFF` | 98.613% |
+| ***`suffix == id & 0x07FFFFFF`*** | ***100.000%*** |
+
+***Exact, at full-corpus scale, with 0 names matching a different index.*** This establishes
+what was previously only inferred from a chance argument: **slot 3 is an id vector running
+index-parallel to slot 5, and the name carries that id masked to 27 bits.**
+
+**Still unread:** tag 1's field 3, an 8- or 12-byte inline struct that is byte-structured
+(`01 40 00 00`, `01 00 01 00`, `01 00 02 02`) -- and, given the slot-4 error, *byte-structured
+is the reading to start from rather than a word-wise one.*
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
