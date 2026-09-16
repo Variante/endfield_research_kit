@@ -5737,9 +5737,40 @@ VT_INDIRECT_TEX_BUFFER_COUNT, VT_GPU_FEEDBACK_BUFFER_COUNT, VT_WORK_GROUP_COUNT
   `m_splatControlMap` and `m_colorVariationTex` are both candidates and it is not
   settled which.
 
-### The `LAYER_*` container format, decoded exactly
+### The `TRET` container, decoded exactly
 
-All three families share one container, verified on **105 files with no exceptions**:
+***Every file in the terrain block shares one container*** -- not just the `LAYER_*` families.
+Over **2,500 files: 0 non-`TRET`, 0 decode failures**, version 1 in all, and
+**`payload == file length - 20` in 2,500 of 2,500**, which fixes a 20-byte header:
+
+| offset | field |
+| --- | --- |
+| `+0` | magic `TRET` |
+| `+4` | version (always 1) |
+| `+8`, `+10` | width, height |
+| `+12` | mip count -- **1** for the per-chunk `Terrain_*` files (2,428), **11** for `LAYER_*` (72) |
+| `+14` | format code |
+| `+16` | payload size |
+
+***The format code determines bytes per texel, exactly and with no variance.*** Over the
+single-mip files:
+
+| code | files | bytes/texel | seen on |
+| --- | --- | --- | --- |
+| 6 | 889 | **2.0** | `Terrain_*_C` (34^2), `Terrain_*_H` (65^2) |
+| 8 | 329 | **4.0** | `Terrain_*_S` (132^2) |
+| 100 | 552 | **1.0** | `Terrain_*_T` (132^2) |
+| 101 | 658 | **1.0** | `Terrain_*_A`, `Terrain_*_N` (132^2) |
+| 5 | 7 | 1.0, uncompressed | `LAYER_C` |
+| 108 / 109 | 98 | 1.0, block-compressed | `LAYER_D` / `LAYER_N` |
+
+*Each code yields a single value across every file carrying it* -- 889 files at exactly 2.0,
+329 at exactly 4.0, and so on. **The per-chunk terrain maps are 34x34, 65x65 and 132x132
+single-level surfaces; the layer maps are 1024x1024 with a full 11-level chain.**
+
+#### The `LAYER_*` families
+
+All three share the container above, verified on **105 files with no exceptions**:
 
 | field | value |
 | --- | --- |
