@@ -8091,11 +8091,14 @@ full inventories belong in reports rather than memory prose.
 
 ##### What the unreached bytes actually hold
 
-*"Unaccounted" is the absence of a finding, not a finding*, so the unreached bytes were split
-into named parts. **The largest part is zero bytes** -- roughly half of everything the walk does
-not reach. Zeros are padding and default space, not undiscovered structure, so **the honest size
-of the gap is the non-zero unexplained share, which is about an eighth of the format rather than
-the third the headline implies.**
+*"Unaccounted" is the absence of a finding, not a finding*, so every unreached byte was
+attributed to exactly one named bucket, over the full corpus (26,519 files, 0 unbounded).
+**The largest part is zero bytes -- 45.75% of everything the walk does not reach.** Zeros are
+padding and default space, not undiscovered structure.
+
+***The honest size of the gap is therefore 11.65% of the format, not the 34.4% the headline
+coverage figure implies.*** Quoting "a third unaccounted" overstates it by roughly three times.
+*The single most useful thing done to this number was refusing to leave it as one word.*
 
 ***The rest is not alien data; it is the same scene population, stored a second time.***
 Searching the unreached region for the `<name>#<N>_<HEX>` form established for union field 0
@@ -8126,9 +8129,11 @@ beside a contiguous transform array looks like, and *not* a record-per-instance 
 
 One further structure was isolated in the residue: a **24-byte fixed-stride record** whose six
 words are four constants, one sentinel `0xffffffff` and one small varying field -- a
-fixed-capacity, mostly-default table. It is real (17x its control) but minor, a little over 1%
-of the unreached bytes. **A constant-byte-fill hypothesis was measured and dropped** at 0.28%;
-the one 20 KB run of `0x02` that suggested it is an outlier, not a category.
+fixed-capacity, mostly-default table. It is real (17x its control) but minor, **1.59%** of the
+unreached bytes. **A constant-byte-fill hypothesis was measured and dropped** at 0.28%; the one
+20 KB run of `0x02` that suggested it is an outlier, not a category.
+
+The bucket counts live in `reports/chunk_data/init_chunk_residue_latest.{json,md}`.
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
