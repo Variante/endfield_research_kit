@@ -7740,6 +7740,41 @@ the "five lines" in the slot-5 kind codes*, which would be distinct union member
 five lines in one code space. **Both results are demoted to structural-only and must be re-read
 per tag before anything is concluded from them.**
 
+##### The per-tag re-read
+
+Done over **900 files, Init and Streaming**, each width-4 field tested as a uoffset against a
+random-position control in the same buffer (`r` = resolves to a valid table, `c` = control):
+
+| | field 0 | field 1 | field 2 | field 3 | field 4 | field 5 |
+| --- | --- | --- | --- | --- | --- | --- |
+| **tag 1** | 669 distinct, r 9.20% | **1 distinct** | -- | 8/12-byte inline struct | 11 distinct, r 14.62% | -- |
+| **tag 2** | 1,445 distinct, r 10.74% | 2 distinct, r 0% | 5 distinct, r 0% | **r 100.00%**, c 3.35% | **16 bytes, 100% zero** | 12 distinct, r 0% |
+| **tag 3** | 761 distinct, r 10.85% | 2 distinct, r 0% | 8 distinct, r 24.24% | **r 100.00%**, c 3.87% | -- | -- |
+
+***The 100%-against-3.4% contrast is the useful part of this table.*** It shows what a real
+uoffset looks like beside a scalar that coincidentally resolves, and retro-fits a calibration
+this section never had: **field 0's ~10% is three times control and still not an offset.**
+Cardinality agrees -- 669/1,445/761 distinct values is an id field, not a pointer.
+
+Established per tag:
+
+* **Field 0 of all three members is a high-cardinality id-like scalar**, not an offset.
+* **Field 3 of tags 2 and 3 is a uoffset to a table at 100%.** This is the nested table
+  followed earlier, so that result survives the demotion -- for those two members.
+* **Field 1 is tiny-cardinality in every member** (1, 2, 2 distinct) and *tag 1's is constant
+  across all 1,564 elements*.
+* ***Tag 2 field 4 is sixteen bytes that are zero in 2,781 of 2,781 elements***, across both
+  Init and Streaming. Read as 4 floats it is all-zero too. A struct field is written even when
+  default, so this is most likely reserved or always-default space -- **it is not a transform,
+  which is what a 16-byte inline struct in chunk data invites one to assume.**
+
+***The "five lines" of slot-5 kind codes are confirmed as the pooling artefact predicted
+above:*** per tag those fields have 2, 5 and 8 distinct values, and the earlier five-line
+structure was three different members' fields overlaid in one space.
+
+**Still unread:** tag 1's field 3, an 8- or 12-byte inline struct, the only field in the union
+not yet characterised.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
