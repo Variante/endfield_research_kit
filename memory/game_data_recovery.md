@@ -7317,6 +7317,31 @@ world-box join that worked on slot 7 finds nothing here.** Taken with the rest: 
 bytes, in 120 of 341 files, entropy 3.925, zeros in runs of one and three, no record stride,
 floats 4-byte aligned in absolute coordinates and 72% of them in the unit interval.
 
+##### A lead on the consumer: the region tracks `GrassGrid`
+
+Grouping 400 files by which names they contain, and measuring unreached bytes per group:
+
+| name present | files | unreached | mean file size |
+| --- | --- | --- | --- |
+| **`GrassGrid`** | 17 | **68.5%** | **740,677** |
+| `Reflection Probes (5)#0` | 45 | 51.5% | 1,227 |
+| `AudioScatterEmitter` | 13 | 36.0% | 1,881 |
+| `AudioRoom` | 38 | 30.1% | 6,269 |
+| `AudioEmitter` | 42 | 22.4% | 6,769 |
+| `SurfaceTypeData` | 147 | 16.2% | 83,829 |
+
+***Files naming `GrassGrid` are about a hundred times larger than the rest and the most
+unreached of any group*** -- 68.5% against `SurfaceTypeData`'s 16.2%, even though those
+files average 83 KB and are the most common name by far.
+
+**Normalised floats in `[0, 1]`, interleaved with zeros, in very large files that name
+grass** is a coherent fit for density or per-instance attribute data. *It is a lead, not an
+identification:* the groups overlap, a file may carry several names, and nothing here shows
+the grass records rather than correlating with their presence. **The test that would settle
+it is whether unreached volume scales with grass extent the way `(Collider,
+TerrainCollider)` scaled +1.000 with terrain** -- that method is proven in this family and
+has not been applied here.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
