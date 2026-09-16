@@ -7360,6 +7360,33 @@ That is worth more than the grass lead -- **it says the walk handles `SurfaceTyp
 content well, and that the unreached region is largely what is left when those records are
 accounted for.**
 
+##### THE GAP IS SEVEN FILES, NOT A PROPERTY OF THE FAMILY
+
+Chasing *which name* owns the unreached bytes was the wrong question. Coverage tracks
+**size**, not content: a **65,836-byte** file carrying a single `SurfaceTypeData` name is
+**99.9% covered**, while a **2.2 MB** file with the same single name is 77.9% unreached.
+
+Concentrating the 400-file sample (27,658,484 bytes, 40.01% unreached):
+
+| | share of all unreached bytes |
+| --- | --- |
+| top 1 file | 22.72% |
+| top 5 files | **84.13%** |
+| top 10 files | 93.59% |
+| **the 7 files >= 1 MB** | **90.41%** |
+| **the 382 files < 100 KB** | **3.73%** |
+
+***So "44% of `InitChunkData` is unreached" was a true number with a false implication.***
+It is not a property distributed across the family -- **393 of 400 files are walked
+essentially in full**, and the entire gap is a handful of multi-megabyte files, five of
+which carry 84% of it.
+
+**That is a far smaller and more tractable target than anything claimed for this region so
+far**, and it explains every confusing correlation above: `GrassGrid` and file size both
+correlated with unreached bytes because the giant files happen to name grass; `SurfaceTypeData`
+correlated negatively because the small, fully-covered files are dominated by it. *The
+size confound was not a nuisance in the measurement -- it was the finding.*
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
