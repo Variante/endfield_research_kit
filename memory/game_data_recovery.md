@@ -7566,6 +7566,16 @@ quad** (slot 4), and its own typed fields. *That is a far richer row than the "k
 five opaque fields" this section began with*, and all of it was hidden behind three fields
 recorded as sizes because they were never dereferenced.
 
+***And it changes nothing about the coverage gap.*** Marking those three vectors explicitly
+moves coverage from **59.99% to 60.05%** over 400 files -- **17,062 bytes, 42 per file**.
+They hold 59 entries at four bytes each; the gap is measured in megabytes.
+
+*Two separate things were being conflated under "unexamined".* The root typing was **wrong**
+and is now right, which matters for reading these files. The **byte volume** in the five
+large files is a different problem entirely, and no amount of correcting the root touches it.
+**A structural correction and a coverage gain are not the same currency**, and this one paid
+entirely in the first.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
