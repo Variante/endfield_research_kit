@@ -5922,6 +5922,29 @@ Read that way, the second part is **800,774 records** of:
 **So `StringPathHash.bin` is a complete 64-bit-hash to asset-path resolver for the whole game**,
 and the name is exact.
 
+##### The hash function itself is not identified, but it is constrained
+
+***The resolver works by lookup; it cannot yet be computed.*** With 787,063 ground-truth
+`(hash, path)` pairs available, the function was attacked directly and **16 combinations were
+eliminated**: `fnv1a-64`, `fnv1-64`, `djb2-64` and `sdbm-64`, each over utf-8, lowercased utf-8,
+utf-16le and lowercased utf-16le -- **0 of 400 pairs matched for every one.** *`xxhash` and
+`mmh3` are not installed here, so xxHash64, CityHash64 and Murmur64A are untested, not
+eliminated.*
+
+What the values do say:
+
+* **bits 0-59 are uniform** -- each set in exactly 50% of hashes;
+* **bits 60-63 are not** -- each set in only 28%;
+* the **top nibble is `0x0` in 46.95%** of hashes while `0x1`-`0xF` take ~3.5% each, against
+  6.25% for a uniform nibble;
+* ***that skew tracks path length***, not asset type: the nibble-`0` share runs **28.76% for
+  50-60 character paths and ~67% for paths over 80**, correlation **+0.316**. It looked like a
+  type tag because `.fbx` paths (73%) are long and `.ab` paths (27%) are short -- **the
+  extension correlation is a proxy for length.**
+
+*A function whose top four bits stay clear more often as the input grows is a strong fingerprint*
+and should identify it quickly once a wider hash library is available.
+
 ##### The resolver works on the chunk data
 
 ***`InitChunkData` carries these hashes, and they resolve.*** Over 25 large chunk files and
