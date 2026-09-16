@@ -5766,12 +5766,33 @@ leading words across 98 files -- so it reads as a signature or key rather than a
 Decoding the levels confirms a real image pyramid: `LAYER_C`'s level means fall monotonically
 **37.97 -> 1.00**, which is what repeated downsampling does.
 
-**One statistical difference worth recording, and its limit.** `D` and `N` sit at level means of
-**~124 and ~131**, hovering around 128 across every level, whereas `C` starts at **38** and
-decays. *Data centred on 128 is signed or offset-encoded; `C`'s is not*, so **`C` holds a
-different kind of quantity from `D`/`N`** -- which is consistent with the control-map reading
-over the colour-map one, **but does not settle it**, since a sparse colour-variation map would
-look the same.
+**One statistical difference.** `D` and `N` sit at level means of **~124 and ~131**, hovering
+around 128 across every level, whereas `C` starts at **38** and decays. *Data centred on 128 is
+signed or offset-encoded; `C`'s is not*, so **`C` holds a different kind of quantity from
+`D`/`N`.**
+
+### `LAYER_C` is not a splat control map
+
+The file *counts* settle what the byte statistics could not. Over **744 LAYER files in 38
+directories**:
+
+| | |
+| --- | --- |
+| directories where `D` and `N` index sets are identical | **38 / 38** |
+| directories where `C`'s index set is a subset of `D`'s | **22 / 22** |
+| directories with **no** `C` file at all | **16 / 38** |
+| `C` files per directory where present | 1, 2 or 4 -- *never a fixed one* |
+
+***A splat control map is terrain-wide: exactly one per terrain, always present.*** `C` is
+neither. Its indices are drawn from the same per-layer numbering as `D`/`N` (`C[4,5,13]` against
+`D[0..7]`), most terrains have none, and those that do have a handful. **So `C` is a per-layer
+optional map, and the `m_splatControlMap` reading is eliminated** -- leaving the
+`m_colorVariationTex` sort of per-layer extra, which is what an optional third texture attached
+to *some* layers looks like.
+
+**The `D`/`N` pairing claim is independently confirmed** by the same census: identical index sets
+in every one of the 38 directories, which is stronger than the matching file counts it rested on
+before.
 - The surrounding machinery is named too: `HGASMVirtualTextureAllocator` with
   `AllocateTile` and `GetVTData`, `ASMTileManager` with an LRU tile cache,
   `HGTerrainGroundLayerClipmap` with `Initialize`/`Render`/`SetPlayerCenter`, and
