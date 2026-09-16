@@ -7504,6 +7504,39 @@ scalar whose meaning is still open.**
 was never dereferenced. *An arithmetic identity that fits 26,519 files is strong evidence
 about a value and no evidence at all about its type.*
 
+##### Slot 3 holds object ids, and the names carry the same id
+
+Slot 3's elements are **not tables** -- 0 of 2,327 resolve as one. They are bare 32-bit
+values: **975 distinct across 2,327 reads, none below 4096**, repeating across files
+(`113214674` appears 70 times, `88420531` 42 times). *That is an id vocabulary, shared
+between chunks.*
+
+***And it is the same vocabulary the names use.*** The name strings end in a hex suffix --
+`GrassGrid_0_0#0_A5F014`, `GrassGrid_0_-64#0_26E4C30` -- and parsing those tails as
+hexadecimal:
+
+| | |
+| --- | --- |
+| distinct slot-3 ids | 975 |
+| distinct name-tail hex values | 77 |
+| **intersection** | **40**, with **145 same-file pairs** |
+
+**The ids span about 1.3 x 10^8**, so 975 of them occupy roughly 7 x 10^-6 of that space and
+the expected intersection of 77 arbitrary values is **about 0.0005**. Observing **40** is not
+a coincidence.
+
+***So the hex suffix in a name is a slot-3 id.*** With slot 3 parallel to slot 5 in every
+file, that gives the chain:
+
+```
+name string  ->  hex suffix  ==  slot-3 id  ->  (same index)  ->  slot-5 typed record
+```
+
+**Slot 5's entries are identifiable after all.** Its kind codes gave the *type*
+(`StreamingLayer` x `ECSEntityType`); slot 3 gives the *identity*; and the name strings
+attach a human-readable label to a subset of them -- 77 of 975 ids are named, so most
+entries carry an id with no name in the file.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
