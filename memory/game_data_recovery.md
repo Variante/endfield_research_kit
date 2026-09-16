@@ -7155,20 +7155,32 @@ the remaining 44%:
 - ***The gap is concentrated in a minority of files.*** Of 341 files, **221 have no
   unreached run of 256 bytes or more** -- they are walked essentially in full. Only **120**
   carry a large unreached region, and those are the big files.
-- ***Those regions are addressed.*** Scanning every 4-byte position in each file for a
-  value that resolves into the run, **120 of 120 runs are pointed into**, with **6,274
-  inbound offsets** in total -- about 52 per run. **They are not orphaned data.**
+- ***RETRACTED: "those regions are addressed".*** That claim came from scanning every
+  4-byte position for a value resolving into the run -- 6,274 hits, 120 of 120 runs -- and
+  it was published **without a control**. With one, it collapses: a **randomly placed
+  window of the same size** in the same files draws **13,717 hits, 114.3 per run**, against
+  the real run's **52.3**. *The real region attracts fewer apparent pointers than chance
+  does.* **The test measures how often arbitrary 32-bit values land in a range, not whether
+  anything points at it**, and the region's addressability is unknown.
+
+  The tell was in the examples: `table@28 obj=40 +12, v=128` is the **root's own origin
+  field** -- `y*128` -- read as though it were a uoffset. Coordinates, counts and floats all
+  "resolve" when every word is treated as a pointer.
 
 And they are not simple arrays: no run satisfies `4 + count*W == length` for `W` in
 {4, 8, 12, 16, 24, 32, 36, 48}, so the head is not a count over a fixed stride.
 
-***So the region is reachable in principle and unreached in practice.*** The pointers into
-it exist; the root-down walk does not arrive at them -- most likely because they live inside
-the unreached regions themselves, or inside inline struct fields the walker treats as
-opaque. **The estimate has gone 1.65% -> 54.91% -> 56.30%, and what remains is neither
-"unexamined bulk" nor "walker capability" as previously claimed, but a specific structure:
-a densely cross-referenced region in the large files that the root does not reach through
-tables, vectors or strings.**
+***So the honest position is narrower than any of the four claims made about this region.***
+It is not "unexamined bulk" (56.30% of the bytes are reached), not "walker capability" (the
+fix gained 1.4 points), and not "densely cross-referenced" (the control refutes it). What is
+established is only this: **about 44% of `InitChunkData` bytes are not reached from the
+FlatBuffers root, concentrated in 120 of 341 files, in runs of 256 bytes and up whose
+internal structure is unknown.**
+
+*Four successive characterisations of this region were wrong, and each was caught by the
+next measurement rather than by better thinking.* The one that should not have happened is
+the last: **a positive result published without the control that this project applies
+everywhere else.**
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
