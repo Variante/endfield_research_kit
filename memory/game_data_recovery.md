@@ -7451,10 +7451,28 @@ It is **not** a bounds value from the walked structures: scanning every slot-7
 centre-and-extents component in the level matches it **zero** times. So the unreached region
 carries per-area quantities that the framed tables do not.
 
-**What this gives a future session** is much better than a byte offset: a value, a count, and
-a footprint. *If `61.71` is an elevation, the 2x2 block is a room or platform spanning those
-four chunks* -- and the level's terrain heights, already recovered, can confirm or refute it
-directly.
+***The elevation reading was tested and is unsupported*** -- and the way it failed is the
+finding. Comparing `61.71` against slot-7 centre heights:
+
+| | result |
+| --- | --- |
+| placements **inside** the 2x2 block | **none at all** |
+| placements outside (control) | 20, heights 25.80 to 124.22, median 70.41 |
+| of those, within +-5 of 61.71 | 1 of 20 = 5%, i.e. chance |
+
+**There was nothing inside the block to compare against, because those four chunks carry no
+populated placements whatsoever.**
+
+***That is a structural dichotomy, not a size difference.*** The large files are not "small
+files with more in them": **their slot-7 vectors are empty and their entire content lives in
+the unreached region**, while the small files carry their content in the tables the walker
+reads. Two kinds of chunk file, and every coverage number in this section is the ratio
+between them.
+
+**So the framed structure and the unreached region are largely disjoint populations** --
+which is why no join from one to the other has worked, and why `SurfaceTypeData` correlated
+*negatively* with the unreached fraction. *The next attempt should stop trying to reach the
+blob from the root and read it on its own terms.*
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
