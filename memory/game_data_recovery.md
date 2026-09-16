@@ -7106,6 +7106,39 @@ what was claimed, and the claim was repeated across several entries before it wa
 reporting a floor as though it were the value, when the instrument's known blind spot was
 the obvious first thing to close.
 
+##### WHAT THE REMAINING 45% IS: vectors the walker cannot follow
+
+Breaking the unreached bytes down by run length, **weighted by bytes rather than by run**:
+
+| unreached runs | bytes | share |
+| --- | --- | --- |
+| < 16 (alignment padding) | 26,210 | 0.2% |
+| 16-63 | 16,897 | 0.2% |
+| 64-255 | 50,679 | 0.5% |
+| **>= 256** | **10,953,692** | **99.2%** |
+
+*A first pass at this counted runs instead of bytes and concluded "mostly padding" -- there
+are indeed thousands of tiny runs, and they are 0.9% of the volume.* **The same mistake as
+the coverage figure itself: the right measurement reported through the wrong statistic.**
+
+**And the large runs are FlatBuffers.** Their heads look like this:
+
+```
+11 00 00 00   cc 02 00 00  bc 02 00 00  ac 02 00 00  9c 02 00 00  3c 02 00 00
+   count 17      descending 32-bit offsets ...
+```
+
+A count followed by descending offsets is **a vector**, and 266 distinct 64-byte heads
+across the sample share that shape. The walker misses them because `follow()` only accepts
+a target as a vector when its first elements resolve to valid *vtables* -- so vectors of
+**structs or scalars** are rejected and their bytes never marked.
+
+***So the gap is walker capability, not an unframed second section.*** The remaining 45% is
+addressed from the root like everything else; the instrument cannot follow it. **That is a
+much better position than "the bulk of the file is unexamined", and it is the third
+successive tightening of this estimate** -- 1.65%, then 54.91%, and now a specific,
+fixable reason for the rest.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
