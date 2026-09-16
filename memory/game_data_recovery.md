@@ -5803,9 +5803,29 @@ would not produce a constant density across seven files and three different box 
 
 **The 16-byte probe is four 4-byte groups.** Bytes 11 and 15 are **zero in every probe**, and
 groups 1, 2 and 3 are near-identical triples -- mean absolute difference of **0.8-1.3** between
-groups 1 and 2 and **2.2-3.5** between 2 and 3. *Three closely-related RGB triples plus one
-group carrying a fourth component* is what directional irradiance samples look like, **though
-the exact encoding is not claimed.**
+groups 1 and 2 and **2.2-3.5** between 2 and 3.
+
+***Which bytes hold sampled field data can be settled without knowing the encoding.*** Real
+irradiance is spatially smooth, so the probes were reshaped onto their `nx,ny,nz` grid and
+neighbour correlation measured per byte position, against a shuffled-probe control:
+
+| byte positions | neighbour correlation | mean abs. difference |
+| --- | --- | --- |
+| 4-10, 12-14 | **0.77 - 0.91** | 3.3 - 4.6 |
+| 0, 3 | 0.77, 0.81 | 16.4, 6.1 |
+| **1, 2** | **0.40, 0.17** | **56, 75** |
+| 11, 15 | -- | constant zero |
+| *shuffled control* | ***~0.00*** | -- |
+
+***So groups 1-3 are genuinely a sampled field*** -- correlation up to 0.91 where shuffling the
+same values gives 0.00. **Bytes 1 and 2 are not**: at 0.40 and 0.17 with neighbour differences of
+56 and 75 they are packed or quantised data sitting inside an otherwise smooth record, *which is
+why the record must not be read as four uniform RGBA groups.*
+
+**The grid is stored x-fastest.** Ordering the probes with `x` innermost gives lower neighbour
+differences at **every one of the 16 byte positions** than `z` innermost (16.4 vs 18.4 at
+position 0, 3.93 vs 4.75 at position 4, and so on) -- *a small margin, but unanimous across all
+sixteen.*
 
 ### `Data/ExtendData/Main/StringPathHash.bin` -- partial
 
