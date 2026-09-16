@@ -8188,12 +8188,27 @@ file whose gaps were dominated by 160 (= 96 + 64, temptingly a record plus a nam
 **refuted as soon as it was measured across files.** The fragmentation is skipped slots within a
 constant-stride array, not a varying record size.
 
-Two things the gap histogram does say: the off-stride gaps are overwhelmingly of the form
-**k x 96 + 4**, and a sample record reads as an identity rotation with translation
-(-67.30, 1.336, -2.051) followed by `(0, 1, 0, 0)` and 80 zero bytes. *What occupies the skipped
-slots is still unresolved* -- the leading candidate is simply matrices the acceptance test
-rejects, since it demands uniform scale, and relaxing that raised the count from 1,846 to 2,543
-on one file.
+A sample record reads as an identity rotation with translation (-67.30, 1.336, -2.051) followed
+by `(0, 1, 0, 0)` and 80 zero bytes.
+
+###### What separates the runs: two hypotheses, both refuted
+
+***The skipped slots are not rejected matrices.*** Enumerating every 96-aligned slot between the
+first and last accepted matrix gives **228,075 skipped slots**; they pass the scale-relaxed test
+at **0.23%** against a random-position control of **1.90%**. **They are *less* transform-like
+than random data**, so loosening the acceptance test would not recover them -- and the count
+rising from 1,846 to 2,543 on one file, which suggested this, was measuring something else.
+
+***There is no count word before a run.*** The dword preceding a run equals the run's length in
+29.13% of 13,978 runs and its byte length in **0.00%** -- and the sampled cases read `0` before a
+run of 2, contradicting the match outright. *29% is chance-level agreement between two small
+integers*, and **is recorded as a non-result rather than a weak signal.**
+
+***The framing itself was wrong.*** 228,075 skipped slots against a far smaller number of
+accepted ones means the matrices are **not a dense constant-stride array with holes**; they are
+**short runs scattered through a much larger region**. What fills the space between them is
+genuinely open, and is now open with two candidate answers eliminated under controls rather than
+with none.
 
 **An earlier count of 25/25 for the ordering was measured on a smaller, easier subset** (blocks
 with any names and matrices rather than at least three of each). The honest figure is 47/48.
