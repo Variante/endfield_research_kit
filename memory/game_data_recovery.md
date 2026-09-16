@@ -5779,6 +5779,22 @@ payload length is not stated in the header** by any reading tried.
 The bodies are packed: entropy **6.7-7.2 bits/byte** with adjacency **+0.01 to +0.09**, the same
 signature that identified the block-compressed `LAYER` files.
 
+***They are block-compressed at a 16-byte block size.*** Two measurements agree:
+
+* **A 16-byte period.** Mean `|x[i] - x[i+lag]|` is minimised at **lag 16 in every file tested**
+  (56.6 / 57.8 / 61.9 against lag-1 baselines of 73.5 / 75.6 / 68.4), with lags 32 and 48 next --
+  multiples of the same period.
+* **No positional structure within the block.** All 16 byte positions carry **256 distinct values
+  with identical zero-fractions** (~0.12-0.14). *Compare the decoded `regionIv` probe, also 16
+  bytes, where positions 11 and 15 are zero in every record* -- **a plain record has per-position
+  structure and these have none.**
+
+Periodic at 16 bytes but flat inside the block is what **BC-family block compression** looks
+like: blocks are spatially coherent with their neighbours while every byte position spans the
+full range. *The specific BC variant is not identified* -- an irradiance volume would plausibly
+use an HDR format -- **but the block size and the compressed-texture reading are measured rather
+than assumed.**
+
 #### `regionIv_room_*` decoded completely
 
 The seven `regionIv_room_*` files are the only unpacked ones in the block, and they decode
