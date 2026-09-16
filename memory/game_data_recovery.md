@@ -7895,6 +7895,55 @@ that is shared between places, rather than a per-instance Unity id.
 *What they do identify is still open, but the search space is now smaller by the most obvious
 candidate.*
 
+#### The unreached bulk of InitChunkData is an array of transform matrices
+
+The coverage gap was last recorded as "~44% unreached, concentrated in five multi-megabyte
+files", with the largest run 444,381 bytes in `blackbox02_dg001/InitChunkData_-1_0_0_0.bytes`.
+***The run was being read at the wrong alignment.*** It begins at 2,601,975, which is not
+4-aligned, so word reads were shifted by three bytes -- which is exactly why the earlier census
+found top values `0x0000003f` / `0x000000bf` / `0x000000be`. **Those are float exponent bytes
+sitting one byte off**, and it is the same three-byte shift the earlier note recorded as
+"exponent bytes concentrate at `mod 4 == 3`" without following it up.
+
+Realigned absolutely, the window is `0.0`, `1.0` (4,707x), `61.71` (2,966x), `0.049`, `0.286`
+-- and consecutive `1.0` values are **24 words apart**. Laying the floats out on that stride:
+
+```
+-0.5947   0.0000   0.2789   0.0000
+ 0.0000   0.6569   0.0000   0.0000
+-0.2789   0.0000  -0.5947   0.0000
+-166.69  61.7100  37.6612   1.0000
+```
+
+***A row-major 4x4 affine transform.*** A rotation about Y at uniform scale 0.6569
+(`|row0| = sqrt(0.5947^2 + 0.2789^2) = 0.6569`, matching row 1), translation in the last row,
+fourth column `(0,0,0,1)`.
+
+Tested as a hypothesis rather than read off one sample -- fourth column zero, rows mutually
+orthogonal to 1e-3, scale uniform to 1e-3 -- **scanning every 4-aligned offset** of that file:
+
+| | |
+| --- | --- |
+| matrices found | **19,990** |
+| gap between consecutive matrices == 96 bytes | **18,451 / 19,989 = 92%** |
+| random 16-float windows passing the same test *(control)* | **1.88%** |
+| unreached bytes inside a 64-byte matrix | 41.84% |
+| ***unreached bytes inside the 96-byte record*** | ***62.76%*** |
+
+**The record is `[64-byte matrix][16 zero bytes][16 bytes of floats]`** -- words +16..+19 are
+zero in **19,989 of 19,990**, the same always-zero 16-byte block seen in the union's tag-2
+field 4, which suggests one reserved field reused at both levels.
+
+***This also settles the `61.71` mystery.*** It was recorded as an unexplained value repeating
+2,966 times and localised to a 2x2 chunk block whose chunks have no populated placements.
+**It is the Y component of the translation row** -- the ground height where those objects stand.
+*It was never a strange constant; it was a coordinate being read as an opaque number.*
+
+**Scope:** measured on the worst file. A second large file (`InitChunkData_Global_0_0.bytes`,
+1,846 matrices) gives 19.2%, so the share varies and *this is not yet a corpus figure* -- the
+pure-Python walker is too slow over multi-megabyte files to produce one, which is the next
+thing to fix before quoting a number for the whole corpus.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
