@@ -7940,9 +7940,37 @@ field 4, which suggests one reserved field reused at both levels.
 *It was never a strange constant; it was a coordinate being read as an opaque number.*
 
 **Scope:** measured on the worst file. A second large file (`InitChunkData_Global_0_0.bytes`,
-1,846 matrices) gives 19.2%, so the share varies and *this is not yet a corpus figure* -- the
-pure-Python walker is too slow over multi-megabyte files to produce one, which is the next
-thing to fix before quoting a number for the whole corpus.
+1,846 matrices) gives 19.2%, so the share varies and *this is not yet a corpus figure.*
+
+##### Trying to make it a corpus figure -- partly done, and the diagnosis was wrong
+
+`scratch/coverage4.py` rewrites the walk with O(1) marking (spans resolved once by a numpy
+difference array instead of a bytearray slice per call) and a cached `vtable_of`. It is
+**byte-identical to `Walker3` on 120 of 120 files**, and it makes the 3.2 MB worst file walkable
+in **15 s**, which `Walker3` could not do at all. *That part worked.*
+
+***The corpus figure still does not exist, and the reason is not what was written above.***
+A run over all `InitChunkData` files managed only **45 files in 554 s**, which is ~12 s each for
+~59 KB files -- absurd. Profiling then showed **the walk is not the bottleneck**: 0.00 s per
+file on typical inputs, and 6 files stream and decode in 0.4 s. *So "the pure-Python walker is
+too slow" was the wrong diagnosis.* **A few specific files stall it**, and the rest are instant.
+
+A node budget was added to `table()` so a stalling file fails closed as `unbounded` rather than
+silently returning a truncated coverage number. **It did not stop the stall**, which localises
+the problem usefully: *it is not in table recursion.* The remaining suspects are the O(count)
+element list `follow()` rebuilds for every candidate vector (count up to 65,536), and the
+Python loop over spans in `coverage()`.
+
+What can be quoted, from **45 completed walks totalling 2.67 MB**:
+
+| | |
+| --- | --- |
+| unreached by the structural walk | 46.75% |
+| of that, inside a 96-byte TRS record | 19.36% |
+| combined accounted for | **62.30%** |
+
+***This is a 45-file sample, not the corpus, and must not be quoted as one.*** The corpus
+number needs the stall found first -- in `follow()` or `coverage()`, not in the recursion.
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
