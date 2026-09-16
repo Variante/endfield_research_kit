@@ -7995,8 +7995,37 @@ With the faster walk, **92 files / 5.51 MB** in one bounded run: 24.14% unreache
 that inside a 96-byte TRS record, **80.50% combined accounted for**.
 
 ***That is still a sample.*** 92 of 26,520 files is not a corpus figure and must not be quoted
-as one. `scratch/corpus_coverage.py` runs the full set unbounded and writes
-`corpus_coverage.json`; **the corpus number belongs in this section only once that finishes.**
+as one.
+
+##### Benchmarking on this machine needs a quiet machine
+
+A full-corpus background run reached 200 files in 1,088 s -- ~5.4 s/file, which extrapolates to
+**about 40 hours**. To cut that, a numpy pre-filter was added to skip vector elements that could
+be neither a string nor a table. Measured against the existing code it looked **3-4x slower**.
+
+***That measurement was invalid, and the reason is worth keeping.*** The corpus run was still
+going in the background, competing for CPU, while the "before" baselines had been taken on an
+idle machine. **Re-measured with the background job stopped, the same three files varied by up
+to 4x run to run with no code change at all** -- 16.6 s and 63.0 s for the same walk of the same
+buffer. The pre-filter won on one file and lost on two, entirely inside that noise.
+
+**It was reverted.** *An optimisation that cannot be shown to help is just more code*, and the
+measurement is recorded in the source so it is not tried again. The earlier `min`/`max`
+`as_string` result should be read with the same caution -- though that one at least was taken
+against an idle machine.
+
+##### Fail-closed on the stragglers instead
+
+Since a minority of files stall the walk while most are instant, `walk()` now takes a wall-clock
+`seconds` budget alongside the node budget: a file that exceeds it is marked **`unbounded`** and
+**excluded from the percentages**, with its count and bytes reported, rather than contributing a
+truncated coverage. Still **byte-identical to `Walker3` on 150 of 150 files.**
+`scratch/corpus_coverage.py` runs the full set at a 3 s/file budget and writes
+`corpus_coverage.json` with `total / success / unbounded / unboundedBytes / decodeFailed`, so
+the denominator and the excluded share are both visible.
+
+**The corpus number belongs in this section only once that run finishes** -- and it will have to
+be quoted *with* the unbounded count, not as though the walk had completed everywhere.
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
