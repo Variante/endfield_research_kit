@@ -8067,8 +8067,30 @@ rarely be needed.
 guess-driven change was aimed at the wrong function, and the one that mattered took a single
 profile to find.
 
-**The corpus number belongs in this section only once the run finishes** -- and it will have to
-be quoted *with* the unbounded count, not as though the walk had completed everywhere.
+#### The corpus coverage figure
+
+With the walk fixed, the full `InitChunkData` set ran in **28 minutes** (it had been
+extrapolating to 36 hours). **26,520 files: 26,461 walked, 58 unbounded, 1 decode-failed.**
+
+| | |
+| --- | --- |
+| decoded bytes walked | 2,339,334,376 |
+| TRS matrices found | **6,069,413** |
+| unreached by the structural walk | **46.85%** |
+| of that, inside a 64-byte matrix | 21.62% |
+| of that, inside a 96-byte record | **32.42%** |
+| **combined accounted for** | **68.34%** |
+
+***This figure must not be quoted on its own.*** The 58 unbounded files total **570,937,328
+bytes** -- at ~9.8 MB each they are *the large files*, and **~19.6% of all bytes were excluded
+from the measurement.** Worse, the excluded files are exactly the ones this section has always
+said hold most of the unreached content, so **the exclusion is not neutral -- it removes the
+hardest cases and flatters the number.** A re-run with a 300 s budget is in flight to include
+them; *the figure above is provisional until it lands.*
+
+**What is solid regardless of that re-run** is the matrix count: **6,069,413 transform matrices
+across the corpus**, found by a test whose control passes at 1.88%. The transform-array reading
+is not a property of one file -- *it is the dominant content of this format.*
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
