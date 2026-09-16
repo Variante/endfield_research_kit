@@ -5896,7 +5896,39 @@ positions ~90% zero, which is exactly how UTF-16LE ASCII looks. *The earlier fin
 first words are "not hashes of VFS paths" stands, but the reason to doubt it was visible in the
 zero pattern and was missed.*
 
-#### The index region is still unresolved, with three readings eliminated
+#### The index region: a 64-bit hash to path map
+
+***Profiling the region in windows found the layout change the statistics had been hinting at.***
+Up to byte **6,422,536** the words are ~37% zero and ~68% small with no high values; after it
+they sit at **exactly 25.0% zero and 25.0% small** -- one word in four, which is the signature of
+a **16-byte record**.
+
+Read that way, the second part is **800,774 records** of:
+
+| slot | content |
+| --- | --- |
+| 0 | **offset into the string pool** (max 138,491,050 against a pool of 138,491,700) |
+| 1 | always zero -- padding, making slot 0 a u64 |
+| 2, 3 | a **64-bit hash**, essentially all distinct |
+
+***Every one of the 800,774 offsets lands exactly on a string record start -- 100.00%.***
+
+```
+0xcbb43c776a00a407 -> Data/Bundles/Windows/main/0054a391cac476902c17df24.ab
+0xe77047c45d2ad392 -> Data/Terrain/PC/dung02_dg002/Terrain_2_1_1_H.bytes
+0x08714e372c034651 -> Data/Json/LipSync/Chinese/au_dlg_c31m1_2_031.json
+```
+
+**So `StringPathHash.bin` is a complete 64-bit-hash to asset-path resolver for the whole game**,
+and the name is exact. *This is the anchor table whose absence blocked several earlier
+questions* -- ids keyed by hash can now be resolved to a real path wherever a 64-bit hash
+appears.
+
+**Region A, bytes 8 to 6,422,536, is still open.** It is a different layout -- no high values,
+~37% zero -- and the three eliminations below apply to it. The earlier failure to find hashes was
+partly this: *the tests pooled two different tables together.*
+
+#### What region A is not, with three readings eliminated
 
 The 19,234,920 bytes between the header and the pool are **not** decoded. What they are *not*,
 each measured against a control:
