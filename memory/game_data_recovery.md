@@ -8149,6 +8149,26 @@ A second confirmation fell out of the offsets: **slot 4's storage ends exactly w
 begins**, which is only true if slot 4 is a byte vector -- the reading established earlier from
 value shape alone now also holds geometrically.
 
+##### Inside a block
+
+**The names are a fixed-width array, not a string pool.** Across 100 blocks in 8 files, the
+spacing between consecutive names is **exactly 64 bytes in 99.83%** of 2,420 gaps, and each slot
+holds a **NUL-terminated ASCII name zero-padded to 64 bytes** -- text lengths run 15 to 63, never
+exceeding 63 plus the terminator, and the remainder is zero in almost every case. That is a
+`char[64]` field, which is *also why the names are duplicated*: **the block stores its own fixed
+copy of a name the FlatBuffers side already stores as a variable-length string.**
+
+So a block's known contents are now: a header region, runs of floats, a `char[64]` name array,
+the 96-byte TRS transform records, and zero padding. **What orders those regions relative to one
+another is not yet established.**
+
+***A length-prefix reading was tried and is not supported.*** The first dword of a block is close
+to the block's length for some blocks -- **39 of 100 within 512 bytes**, with a suspiciously
+consistent 132-142 byte difference -- but it is exact in **0 of 100**, and the remainder are
+nowhere near (one reads 1,057,398,912 for a 61,138-byte block). *Either the block boundary taken
+from the coverage mask is not the true block start, or the first dword is not a length.*
+**Recorded as unresolved rather than as a near-miss worth quoting.**
+
 ***A plausible reading was tested and refuted.*** If each named instance carried its own
 transform, names and matrices would interleave. They do not: the distance from a name to the
 nearest matrix is **worse than chance** -- 0.5% within 256 bytes against a random-offset control
