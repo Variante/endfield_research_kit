@@ -7657,6 +7657,30 @@ two files with different layouts inevitably place the same object at different a
 *The invariant/varying split was partly types, not semantics*, and only field 5 (a genuine
 scalar that differs in 100% of pairs) still needs a content explanation.
 
+##### The structure nests further than assumed
+
+Following slot-5 field 3 to its table (1,890 of them): the vtable is
+`(0, 0, 0, 12, 8, 4)` with objectSize **16** in 1,810 cases, `(0, 16, 0, 12, 8, 4)` with
+objectSize 20 in 80. **Three live fields at *descending* offsets -- +12, +8, +4** -- in a
+table whose whole body is 16 bytes: a soffset plus three words.
+
+Their values give them away:
+
+| field | offset | commonest value | resolves to |
+| --- | --- | --- | --- |
+| 5 | +4 | 12 (1,810), 16 (80) | `table + 16` / `table + 20` -- *immediately past the table* |
+| 4 | +8 | 12, 20, 24 | `table + 20`, ... |
+| 3 | +12 | 12, 24, 28 | `table + 24`, ... |
+
+**Three more uoffsets**, pointing at objects laid out directly after their own table --
+which is why the values are small and cluster on 12.
+
+***So the depth is greater than this section has been assuming throughout.*** The chain now
+runs root -> slot-5 vector -> element -> field-3 table -> three further objects, and each
+level was reached only by dereferencing a field previously written down as a number.
+**Every "distinct value" census in this family counted addresses as though they were data**,
+which is why so many of them found large distinct-value counts with no structure in them.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
