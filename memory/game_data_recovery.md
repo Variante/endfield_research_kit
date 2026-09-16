@@ -7133,11 +7133,29 @@ across the sample share that shape. The walker misses them because `follow()` on
 a target as a vector when its first elements resolve to valid *vtables* -- so vectors of
 **structs or scalars** are rejected and their bytes never marked.
 
-***So the gap is walker capability, not an unframed second section.*** The remaining 45% is
-addressed from the root like everything else; the instrument cannot follow it. **That is a
-much better position than "the bulk of the file is unexamined", and it is the third
-successive tightening of this estimate** -- 1.65%, then 54.91%, and now a specific,
-fixable reason for the rest.
+***The obvious conclusion -- "the gap is walker capability" -- was drawn and then tested,
+and it does not hold.*** Extending the walk to accept any vector whose elements all resolve
+in-bounds as offsets (marking the vector's storage but recursing only into targets that
+independently validate) finds **1,648 such vectors** and moves coverage from **54.91% to
+56.30%**: a gain of **1.4 points** against a 45-point gap.
+
+| walk | coverage |
+| --- | --- |
+| root slots 5-7 only | 1.65% |
+| tables, table-vectors, strings | 54.91% |
+| **+ offset-vectors** | **56.30%** |
+
+So the large runs are **not** mostly vectors of the kind the walker was rejecting. *The
+diagnosis was reasonable, specific, and wrong -- and it cost one run to find that out
+rather than being carried forward as an assumption.*
+
+**Where that leaves it.** About **44%** of `InitChunkData` is still unreached, in runs of
+256 bytes and up whose heads look like counts followed by descending offsets but which do
+not behave like offset vectors under test. Candidates not yet tried: vectors of **inline
+structs** (no offsets to resolve at all), and regions genuinely not addressed from the
+FlatBuffers root. **The estimate has now gone 1.65% -> 54.91% -> 56.30%, and the honest
+summary is that a little over half these files is reachable and the rest is not yet
+explained.**
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
