@@ -7681,6 +7681,27 @@ level was reached only by dereferencing a field previously written down as a num
 **Every "distinct value" census in this family counted addresses as though they were data**,
 which is why so many of them found large distinct-value counts with no structure in them.
 
+##### Re-checking the two censuses that finding casts doubt on
+
+Applying the same dereference to the slot-3 "ids" and slot-4 "packed byte quads":
+
+| | in-bounds as an offset | resolves to a table |
+| --- | --- | --- |
+| **slot 3** | **0.00%** | **0.00%** |
+| slot 4 | 77.11% | **62.11%** |
+
+***Slot 3 is vindicated.*** Its values are not offsets by any margin -- 0 of 3,325 -- so the
+id reading survives, and with it the join to the name strings' hex suffix. **The test that
+broke `s2`, `s3`, slot-7 field 3 and two slot-5 fields clears this one**, which is worth more
+than never having doubted it.
+
+***Slot 4 is now doubtful.*** At 62.11% resolving to a valid table against slot 3's 0.00%
+control, its elements are probably uoffsets -- but **38% do not resolve**, and a vector of
+uoffsets should be all or nothing. The `0x02020202`-style values that looked like packed byte
+quads are exactly the ones too large to be in-bounds. *Either the vector is not uniform, or
+the reading is still wrong.* **The "packed byte quad" description is withdrawn pending that,
+and slot 4 is recorded as unresolved rather than characterised.**
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
