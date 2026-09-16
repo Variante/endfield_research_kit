@@ -5859,24 +5859,42 @@ After a **14,216-byte head** of small integers, the rest is **279,615 records of
 transforms -- *so the tooling from one format carried straight over to another.* The name's
 claim (facial bone TRS) is borne out by the contents rather than assumed from it.
 
-### `Data/ExtendData/Main/StringPathHash.bin` -- partial
+### `StringPathHash.bin` is the game's complete source-path table
 
-**157,726,628 bytes = 19,715,828 eight-byte entries with 4 bytes spare.** Read as `(u32, u32)`:
+***157,726,628 bytes, decoded end to end with nothing left over.***
 
-* the first word is non-zero in **98.48%**, and **96.02% fall below the file length**;
-* ***it is not a unique key.*** There are only **2,086,384 distinct values across 19,415,849
-  non-zero entries** -- about nine repeats each -- *so this is a reference or adjacency
-  structure, not a hash table keyed by the first word*, which is what the file name invites;
-* the second word takes only **48 distinct values**, dominated by 1, 2, 3, 4 in a decaying tail
-  in the file's early region but mostly large later, so **the file is not uniform end to end**.
+| offset | field |
+| --- | --- |
+| `+0` | u32 **19,234,928** -- offset of the string pool |
+| `+4` | u32 **801,455** -- the string count |
+| `+8 .. poolOffset` | index/hash table |
+| `poolOffset .. EOF` | `801,455` x `[u32 byteLength][UTF-16LE bytes][u16 0x0000]` |
 
-***The name's obvious reading was tested and did not hold.*** 800 real VFS paths were hashed
-with `crc32`, `fnv1-32` and `fnv1a-32`, over full paths, lowercased paths and basenames, and
-matched against the 2.09M distinct first words: **every variant scored 0.00-0.12% against a
-random-u32 control of 0.000%**, i.e. nothing. **The first words are not hashes of VFS chunk
-paths under the common functions.** *That negative is scoped -- the file may hash asset-bundle
-paths rather than VFS paths, or use a function not tried (Murmur, xxHash, a custom one)* -- and
-it is recorded so the next attempt starts past those seven variants.
+**Walking the pool fail-closed parses 801,455 of 801,455 strings and ends exactly on the last
+byte, with 0 leftover** -- and the header's count was confirmed independently by scanning for
+UTF-16 runs *before* the header was understood, which found the same 801,455.
+
+***These are the real asset paths:*** 453,513 under `Data/`, 347,635 under `Assets/`/`assets/`;
+by extension 253,670 `.ab`, 103,592 `.bytes`, 102,852 `.json`, 64,164 `.fbx`, 62,109 `.asset`,
+30,856 `.png`, 29,959 `.mat`, 28,884 `.prefab`, 23,083 `.anim`.
+
+```
+Assets/Beyond/Arts/Entity/Actor/Loli/Wulfa/Materials/M_actor_wulfa_iris_01.mat
+Assets/Beyond/Arts/Environment/SceneAssets/Map01/Prop/.../S_prop_map01_object+1_005_07a_lod0.fbx
+Data/Streaming/PC/map01/Streaming/InitChunkData_4_14_0_0.bytes
+Data/Bundles/Windows/main/4df843b7674ea0b7d4d078a2.ab
+```
+
+**This is the largest semantic anchor recovered here** -- *a name for essentially every asset the
+game ships*, including the `.ab` bundle hashes and the chunk files this section has spent so long
+on.
+
+***A correction worth keeping.*** An earlier pass over this file searched for **8-bit ASCII**
+runs, found only random-looking junk, and concluded it held no strings -- while 801,455 UTF-16
+paths sat in it. **The byte-position census is what exposed it**: even positions varied, odd
+positions ~90% zero, which is exactly how UTF-16LE ASCII looks. *The earlier finding that the
+first words are "not hashes of VFS paths" stands, but the reason to doubt it was visible in the
+zero pattern and was missed.*
 
 ### The `TRET` container, decoded exactly
 
