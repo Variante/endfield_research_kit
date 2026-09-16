@@ -7335,12 +7335,30 @@ unreached of any group*** -- 68.5% against `SurfaceTypeData`'s 16.2%, even thoug
 files average 83 KB and are the most common name by far.
 
 **Normalised floats in `[0, 1]`, interleaved with zeros, in very large files that name
-grass** is a coherent fit for density or per-instance attribute data. *It is a lead, not an
-identification:* the groups overlap, a file may carry several names, and nothing here shows
-the grass records rather than correlating with their presence. **The test that would settle
-it is whether unreached volume scales with grass extent the way `(Collider,
-TerrainCollider)` scaled +1.000 with terrain** -- that method is proven in this family and
-has not been applied here.
+grass** is a coherent fit for density or per-instance attribute data.
+
+***The test was run, and the lead does not survive it intact.*** Correlating against raw
+unreached **bytes** gives `GrassGrid` +0.479 -- but **file size alone scores +0.978**
+against the same target, because unreached bytes are a roughly fixed fraction of any file.
+*Anything that correlates with size correlates with unreached bytes.* Normalising to the
+unreached **fraction**:
+
+| against the unreached fraction | correlation |
+| --- | --- |
+| `GrassGrid` count | **+0.234** |
+| `SurfaceTypeData` count | **-0.768** |
+| file size (residual) | +0.176 |
+
+**Most of the grass signal was the size confound.** What survives is modest: files naming
+`GrassGrid` average a 45.6% unreached fraction against 22.8% for those that do not -- a real
+two-fold difference, but +0.234 is not the `+1.000` that identified `(Collider,
+TerrainCollider)`, and it does not identify a consumer.
+
+***The strongest effect in the data is the control, and it is negative.*** `SurfaceTypeData`
+scores **-0.768**: the more of those records a file carries, the *better covered* it is.
+That is worth more than the grass lead -- **it says the walk handles `SurfaceTypeData`
+content well, and that the unreached region is largely what is left when those records are
+accounted for.**
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
