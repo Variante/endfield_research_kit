@@ -7432,8 +7432,29 @@ The **12-word (48-byte) equal runs, occurring 142 times**, are the only long rep
 `48 = 12 x 4` is the size of three `Vector3`s or one `Transform` -- worth testing, though
 run length is not a stride and the earlier periodicity test over this region found none.
 
-**A future session starts here**: one named file, one located run, and a concrete first
-question -- *what is 61.71 in `blackbox02_dg001`?*
+***Answering that question, spatially.*** `61.71` occurs in only **5 of the level's 106
+chunk files**, 19,144 times, and its distribution is **contiguous**:
+
+| chunk origin | occurrences |
+| --- | --- |
+| (-256, 0) | 5,367 |
+| (-128, 0) | 4,639 |
+| (-256, -128) | 4,568 |
+| (-128, -128) | 4,568 |
+| `_Global_` | 2 |
+
+**Four adjacent chunks forming a 2x2 block** -- x in {-256, -128}, z in {-128, 0}, a
+256x256-unit area -- and nothing outside it. *A constant repeated thousands of times across
+exactly one contiguous region is a property of that region, not of the format.*
+
+It is **not** a bounds value from the walked structures: scanning every slot-7
+centre-and-extents component in the level matches it **zero** times. So the unreached region
+carries per-area quantities that the framed tables do not.
+
+**What this gives a future session** is much better than a byte offset: a value, a count, and
+a footprint. *If `61.71` is an elevation, the 2x2 block is a room or platform spanning those
+four chunks* -- and the level's terrain heights, already recovered, can confirm or refute it
+directly.
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
