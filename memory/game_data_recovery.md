@@ -7237,8 +7237,34 @@ the record size it would stand clear of the others, and none does.* **There is n
 record period in this region.**
 
 So the structure is short-range but not periodic: characteristic run lengths, no repeating
-frame. That is consistent with variable-length records, or with encoded data, and it rules
-out the flat array of fixed-size entries that the run-length profile invites.
+frame, and no flat array of fixed-size entries.
+
+##### Not encoded -- and a byte histogram that disputes an earlier claim of mine
+
+"Encoded data" was one of two guesses offered above. **Entropy settles it:**
+
+| region | byte entropy |
+| --- | --- |
+| unreached | **3.925 bits/byte** |
+| reached (same files) | 5.110 bits/byte |
+| compressed input to the terrain codec | ~7.6+ |
+
+**Nothing compressed or encrypted looks like 3.9 bits/byte.** The region is plain data.
+
+***And its byte histogram sits awkwardly with something recorded above.*** The commonest
+bytes are `0x00` (1,972,692, **59.6%** of the region), then **`0x3F` (91,638), `0x3E`
+(48,183), `0x42` (43,565), `0x80` (41,767), `0x3D` (36,344)**.
+
+`0x3D`-`0x42` is precisely the **IEEE-754 exponent range for ordinary magnitudes** -- the
+high byte of a float near 0.05 to 100. Their prominence is evidence of substantial float
+content, which is hard to reconcile with the earlier finding that this region carries
+**"less than half the float density"** of the walked structure (9.03% against 20.40%).
+
+*Both measurements are real; at least one is being read wrongly.* The float count classified
+**4-byte-aligned words**, so floats stored at a different alignment, or narrower than 32
+bits, would be missed by it and still show up here. **The tension is recorded rather than
+resolved** -- and the earlier characterisation of the region as
+"integer-and-zero-dominated, not geometry" should be treated as unsafe until it is.
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
