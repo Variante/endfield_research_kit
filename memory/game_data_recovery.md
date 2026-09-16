@@ -7079,11 +7079,32 @@ recovered across many batches -- describe **one part in sixty** of the bytes.
 all about a sliver. A 34 KB file with `n5=1, n6=2, n7=2` was being described by a reading
 that covers a few hundred bytes of it.
 
-**The walk may itself be incomplete** -- it does not follow slots 0-4's targets, strings, or
-nested vectors inside elements -- and closing those gaps will raise the figure. *It will not
-raise it to anything near 100%*, because the unwalked structures are small and the files are
-large. **The honest position is that the bulk of `InitChunkData` is unexamined, and the
-"complete" element table above is complete only for the element.**
+##### CORRECTION: the 98% figure was an artefact of the walk, not a property of the files
+
+The walk that produced 1.65% followed **only root slots 5-7**. A full recursive walk --
+every root slot, recursing through tables, vectors of tables and strings -- reaches
+**54.91%** of buffer bytes over 300 files, finding **7,751 tables, 1,258 vectors and 2,429
+strings** (about eight strings per file, not the one the sampling suggested).
+
+| walk | coverage |
+| --- | --- |
+| root slots 5-7 only | 1.65% |
+| **full recursive** | **54.91%** |
+
+***So "98% unaccounted" was wrong by a factor of thirty.*** I measured coverage with an
+instrument I had already documented as partial, then quoted the result as though it
+measured the files -- and wrote *"it will not raise it to anything near 100%"* in the same
+breath, which was a prediction made to protect the number rather than test it. It rose to
+more than half.
+
+**What survives.** Roughly **45% of `InitChunkData` is still not reachable** from the
+FlatBuffers root by this walk, which is a real and large gap -- the element table is still
+complete only for the element, and the bulk question stands. *But the gap is a third of
+what was claimed, and the claim was repeated across several entries before it was checked.*
+
+**The lesson is narrower than "measure coverage".** Measuring was right. The error was
+reporting a floor as though it were the value, when the instrument's known blind spot was
+the obvious first thing to close.
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
