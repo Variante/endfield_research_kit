@@ -8032,7 +8032,42 @@ truncated coverage. Still **byte-identical to `Walker3` on 150 of 150 files.**
 `corpus_coverage.json` with `total / success / unbounded / unboundedBytes / decodeFailed`, so
 the denominator and the excluded share are both visible.
 
-**The corpus number belongs in this section only once that run finishes** -- and it will have to
+##### The actual bottleneck, found by profiling instead of guessing
+
+***Three successive diagnoses of this walk's cost were wrong*** -- "the pure-Python walker is too
+slow over multi-megabyte files", then the O(count) element list in `follow()`, then a wall-clock
+budget. A profile of one 134 KB file ends the argument:
+
+```
+268,365 calls   13.694s   method 'index' of 'list' objects
+```
+
+**`live.index(off)` in `table()` was 96% of the entire walk.** It rescans the sorted slot list
+for every slot of every table, making the function quadratic in slot count. *Nothing to do with
+vectors, element counts, or file size* -- which is exactly why every fix aimed at those missed.
+Replacing it with a precomputed offset-to-position map (reproducing `index()` exactly, including
+which position a duplicated offset maps to):
+
+| file | before | after |
+| --- | --- | --- |
+| `InitChunkData_Global_1_0.bytes` (323 KB) | ~67 s | **0.31 s** |
+| `InitChunkData_-1_0_1_0.bytes` (134 KB) | 13.4 s | **0.25 s** |
+| `InitChunkData_-1_0_0_0.bytes` (3.2 MB) | 13.4 s | **0.31 s** |
+
+**40-200x, still byte-identical to `Walker3` on 150 of 150 files**, every coverage value
+unchanged.
+
+***The profile also exposed why the budget never fired.*** It reported `work = 6,799` elements
+on a file that took 13 seconds -- proof the time could not be in the element loops -- and the
+deadline was checked every 8,192 elements, so on that file it was never checked at all. The
+counter now advances where the work happens, though with the real bottleneck gone it should
+rarely be needed.
+
+***The lesson, which cost two turns:*** on this walk, *measure before optimising.* Every
+guess-driven change was aimed at the wrong function, and the one that mattered took a single
+profile to find.
+
+**The corpus number belongs in this section only once the run finishes** -- and it will have to
 be quoted *with* the unbounded count, not as though the walk had completed everywhere.
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
