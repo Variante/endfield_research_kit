@@ -5760,6 +5760,30 @@ is what an irradiance-volume index invites one to expect: only **9.9%** of the t
 plausible float. Its record size is not settled -- 6,240 divides evenly by 12, 16, 24, 32 and 48
 alike, **so the divisor proves nothing and none is claimed.**
 
+**The second u32 is the named-entry count**, and it is **0 in 82 of 92 index files** -- *most
+levels name no payload at all*, which is why the sampled level with three strings is the
+exception rather than the pattern.
+
+#### The `iv` payloads are not one format
+
+The block holds three kinds: **92 `index.bytes`, 138 `iv_N_N.bytes`, 7 `regionIv_room_*`**.
+
+***A four-file sample said the payloads begin `(3, 2)` with a 512-byte header of `0`/`0xffffffff`
+sentinels. Across 120 files that holds for only 25%.*** The sample came from the first
+directories and was not representative. The majority open instead as `(N, 512)` or `(N, 768)`
+-- 990, 1050, 1063, 1246, 2270 in the first word -- with **high-entropy data immediately after
+an 8-byte head** and no sentinel region at all. *No header word equals the body or file length
+in any of the 120*, and body sizes are unaligned (divisible by 4 in only 21.7%), **so the
+payload length is not stated in the header** by any reading tried.
+
+The bodies are packed: entropy **6.7-7.2 bits/byte** with adjacency **+0.01 to +0.09**, the same
+signature that identified the block-compressed `LAYER` files.
+
+***The `regionIv_room_*` files are the exception worth noting:*** they open `(4096, 44)` and are
+followed by **plainly readable floats** (6.326, 0.549, 75.41). **They are the only files in this
+block whose contents are not packed**, which makes them the place to start if this block is
+picked up again.
+
 ### `Data/ExtendData/Main/StringPathHash.bin` -- partial
 
 **157,726,628 bytes = 19,715,828 eight-byte entries with 4 bytes spare.** Read as `(u32, u32)`:
