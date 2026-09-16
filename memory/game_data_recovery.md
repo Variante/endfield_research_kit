@@ -5925,11 +5925,19 @@ and the name is exact.
 ##### The hash function itself is not identified, but it is constrained
 
 ***The resolver works by lookup; it cannot yet be computed.*** With 787,063 ground-truth
-`(hash, path)` pairs available, the function was attacked directly and **16 combinations were
-eliminated**: `fnv1a-64`, `fnv1-64`, `djb2-64` and `sdbm-64`, each over utf-8, lowercased utf-8,
-utf-16le and lowercased utf-16le -- **0 of 400 pairs matched for every one.** *`xxhash` and
-`mmh3` are not installed here, so xxHash64, CityHash64 and Murmur64A are untested, not
-eliminated.*
+`(hash, path)` pairs available, the function was attacked directly and **32 combinations are now
+eliminated**, all scoring **0 matches**:
+
+| family | encodings | seeds |
+| --- | --- | --- |
+| `fnv1a-64`, `fnv1-64`, `djb2-64`, `sdbm-64` | utf-8, utf-8 lower, utf-16le, utf-16le lower | -- |
+| **`xxHash64`**, **`Murmur64A`** | the same four | 0 and 1 |
+
+`xxhash` and `mmh3` are not installed here, so **both were implemented from their published
+definitions in `scratch/hash64.py` and checked against xxHash64's published test vectors first**
+(`""` seed 0 -> `0xef46db3751d8e999`, seed 1 -> `0xd5afba1336a3be4b`, both reproduced exactly).
+*That check is what makes the negative meaningful: the algorithm is ruled out, not the
+implementation.*
 
 What the values do say:
 
