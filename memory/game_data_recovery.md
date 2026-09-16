@@ -7820,6 +7820,27 @@ index-parallel to slot 5, and the name carries that id masked to 27 bits.**
 (`01 40 00 00`, `01 00 01 00`, `01 00 02 02`) -- and, given the slot-4 error, *byte-structured
 is the reading to start from rather than a word-wise one.*
 
+##### A cross-lane link the names open up, and why the raw route to it is closed
+
+Tag 3's names embed numbers -- `AudioEmitter_4192702263`, `AudioScatterEmitter_771790068`.
+Over 1,500 chunk files these yield **306 distinct ids in four kinds** (AudioEmitter 212,
+AudioScatterEmitter 60, AudioBoxEmitter 30, AudioPrismEmitter 4), all inside u32 and ranging
+15,460,646 .. 4,268,220,140. **That is the shape of Wwise short ids**, so if they appear among
+the HIRC object or AKPK media ids, the chunk lane and the audio lane are joined by something
+stronger than a name -- *and this section has wanted a cross-lane anchor for a long time.*
+
+**The raw route is closed.** Every audio package begins with the magic `:)xD`, not `AKPK`, so
+the containers are obfuscated and a byte scan finds no `HIRC`/`BKHD` at all -- 0 sections
+across `Audio` and `InitAudio`. *A scan reporting zero here means the scanner never reached the
+banks, not that the ids are absent*, and the intersection measured that way (0 of 306, with a
+control also at 0) **carries no information and is recorded only so it is not re-run.**
+
+The maintained audio pipeline already enumerates AKPK media ids through `AnimeStudio.CLI`,
+which handles the container. **The join is therefore a well-specified next step rather than an
+open question:** take the 306 ids and test them against the ids that pipeline already produces,
+with a perturbed-id control. *It was not run here because reimplementing the container decode
+in scratch would duplicate maintained code.*
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
