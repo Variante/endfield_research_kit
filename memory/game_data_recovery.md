@@ -7865,10 +7865,35 @@ banks, not that the ids are absent*, and the intersection measured that way (0 o
 control also at 0) **carries no information and is recorded only so it is not re-run.**
 
 The maintained audio pipeline already enumerates AKPK media ids through `AnimeStudio.CLI`,
-which handles the container. **The join is therefore a well-specified next step rather than an
-open question:** take the 306 ids and test them against the ids that pipeline already produces,
-with a perturbed-id control. *It was not run here because reimplementing the container decode
-in scratch would duplicate maintained code.*
+which handles the container, and **its decoded intermediate is already on disk** --
+`tmp/audio/hirc_action_current/audio_audit.json`, 325 MB of `akpk-structure-audit-v1`. So the
+join could be run after all, without re-running the pipeline or touching its sources.
+
+###### The join runs, and it is a clean negative
+
+Scanning the whole audit for each id as a decimal and as a hex token:
+
+| set | found |
+| --- | --- |
+| 3 source ids known from the named-reach report *(positive control)* | **3 / 3** |
+| the 306 emitter ids | **0 / 306** |
+| 306 random ids drawn from the same range *(negative control)* | **0 / 306** |
+
+***The positive control is what makes this worth recording.*** The first attempt at this join
+scanned the raw packages, found nothing, and the zero meant only that the scanner never reached
+the banks. Here a known-present id is found 3 times out of 3, in sorted id lists, **so the scan
+demonstrably works and the absence of the emitter ids is a real result rather than a broken
+tool.**
+
+**The emitter numbers are not any id the AKPK/HIRC audit records** -- not source ids, not media
+ids. They are therefore *not Wwise identifiers into the shipped banks*, and the obvious
+hypothesis is closed. Supporting evidence from the chunk side agrees: the number **is not the
+element's own id** (0.00% against both the id and its 27-bit mask), spans the full u32 range,
+and **22 of 306 recur across level directories, one in six levels** -- an authored identifier
+that is shared between places, rather than a per-instance Unity id.
+
+*What they do identify is still open, but the search space is now smaller by the most obvious
+candidate.*
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
