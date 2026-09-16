@@ -5736,6 +5736,34 @@ VT_INDIRECT_TEX_BUFFER_COUNT, VT_GPU_FEEDBACK_BUFFER_COUNT, VT_WORK_GROUP_COUNT
   same layer set look like. `LAYER_C` at 54 files is a control or colour map --
   `m_splatControlMap` and `m_colorVariationTex` are both candidates and it is not
   settled which.
+
+### The `LAYER_*` container format, decoded exactly
+
+All three families share one container, verified on **105 files with no exceptions**:
+
+| field | value |
+| --- | --- |
+| `+0` magic | **`TRET`** (105/105) |
+| `+4` version | 1 (105/105) |
+| `+8`, `+10` | width, height = **1024 x 1024** (105/105) |
+| `+12` | **11** -- the mip-level count (105/105) |
+| `+14` | format code: **5** = `C`, **108** = `D`, **109** = `N` |
+| body | a **full mip chain, 1 byte per texel** |
+
+***The size equation closes exactly:*** `header + sum((1024 >> i)^2 for i in 0..10)` equals the
+file length in **105 of 105 files, with zero trailing bytes**. The chain sums to 1,398,101, and
+the header is **20 bytes for `C`** and **47 for `D`/`N`**. *The `+12` field is not inferred to be
+a mip count -- 11 is exactly the number of levels the size equation requires.*
+
+Decoding the levels confirms a real image pyramid: `LAYER_C`'s level means fall monotonically
+**37.97 -> 1.00**, which is what repeated downsampling does.
+
+**One statistical difference worth recording, and its limit.** `D` and `N` sit at level means of
+**~124 and ~131**, hovering around 128 across every level, whereas `C` starts at **38** and
+decays. *Data centred on 128 is signed or offset-encoded; `C`'s is not*, so **`C` holds a
+different kind of quantity from `D`/`N`** -- which is consistent with the control-map reading
+over the colour-map one, **but does not settle it**, since a sparse colour-variation map would
+look the same.
 - The surrounding machinery is named too: `HGASMVirtualTextureAllocator` with
   `AllocateTile` and `GetVTData`, `ASMTileManager` with an LRU tile cache,
   `HGTerrainGroundLayerClipmap` with `Initialize`/`Render`/`SetPlayerCenter`, and
