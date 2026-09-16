@@ -8227,9 +8227,25 @@ integers*, and **is recorded as a non-result rather than a weak signal.**
 
 ***The framing itself was wrong.*** 228,075 skipped slots against a far smaller number of
 accepted ones means the matrices are **not a dense constant-stride array with holes**; they are
-**short runs scattered through a much larger region**. What fills the space between them is
-genuinely open, and is now open with two candidate answers eliminated under controls rather than
-with none.
+**short runs scattered through a much larger region**.
+
+###### The ECS reading predicts this, and is only half borne out
+
+Once the descriptor is understood as an archetype plus an entity count, the natural reading is a
+**struct-of-arrays chunk**: each component type gets its own contiguous array, which would
+explain the never-interleaved regions, the `char[64]` array and the transform runs at once, with
+the space between runs being *other components' arrays*. It makes a sharp prediction: a block's
+transform array should hold exactly one entry per entity.
+
+**It does not.** Across 87 descriptors and 16,577 runs, the number of matrices in a descriptor's
+block equals its entity count in **0.00%** of cases.
+
+*What does hold is weaker and still worth having:* **no run exceeds the entity count** (99.3%
+are at or below it) and **20.73% match it exactly**, with a median run at 0.083 of the count.
+That is the shape of an array of N slots read in fragments, which is consistent with the ECS
+reading -- **but the test that would have confirmed it failed, so it stays a reading and not a
+finding.** *The detection could be undercounting matrices, which would produce exactly this
+pattern; that is a reason to doubt the test, not to believe the hypothesis.*
 
 **An earlier count of 25/25 for the ordering was measured on a smaller, easier subset** (blocks
 with any names and matrices rather than at least three of each). The honest figure is 47/48.
