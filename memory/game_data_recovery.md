@@ -7208,6 +7208,38 @@ That is a description, not an identification, and it is offered as one. **But it
 first statement about this region that was measured against a control and survived** --
 after four that were not.
 
+##### The zeros are interleaved, but there is no record stride
+
+Where the zeros *sit* distinguishes reserved space from records with empty fields. Measuring
+run lengths inside the unreached region:
+
+| zero-run length (words) | count | | non-zero run | count |
+| --- | --- | --- | --- | --- |
+| **1** | 34,554 | | 2 | 21,409 |
+| **3** | 33,117 | | **8** | 14,178 |
+| 4 | 2,170 | | 7 | 6,594 |
+| >= 16 | 1,130 | | 6 | 5,860 |
+
+**Almost no long zero blocks.** The 43.74% zeros are *interleaved* in runs of one and three
+words -- empty fields between short bursts of data, not reserved padding.
+
+***Which makes a fixed-size record array the obvious reading, and it is wrong.*** Testing
+every stride from 2 to 32 words for how well position-mod-stride predicts zero-ness:
+
+```
+stride 32 words: 59.63%     stride 16: 59.58%     stride  8: 59.03%
+stride 31 words: 59.18%     stride 24: 59.15%     stride  4: 58.97%
+```
+
+**Every stride scores between 58.97% and 59.63%** -- a spread of 0.66 points -- against a
+majority-class baseline of about 56.3%. *The uniformity is the control: if any stride were
+the record size it would stand clear of the others, and none does.* **There is no fixed
+record period in this region.**
+
+So the structure is short-range but not periodic: characteristic run lengths, no repeating
+frame. That is consistent with variable-length records, or with encoded data, and it rules
+out the flat array of fixed-size entries that the run-length profile invites.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
