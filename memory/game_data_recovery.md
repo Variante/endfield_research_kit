@@ -8158,9 +8158,33 @@ exceeding 63 plus the terminator, and the remainder is zero in almost every case
 `char[64]` field, which is *also why the names are duplicated*: **the block stores its own fixed
 copy of a name the FlatBuffers side already stores as a variable-length string.**
 
-So a block's known contents are now: a header region, runs of floats, a `char[64]` name array,
-the 96-byte TRS transform records, and zero padding. **What orders those regions relative to one
-another is not yet established.**
+##### How a block's regions are ordered
+
+Over **48 blocks** of at least 8 KB carrying both names and matrices:
+
+| | |
+| --- | --- |
+| all matrices before all names | **47 / 48 (97.9%)** |
+| all names before all matrices | 1 / 48 |
+| ***interleaved*** | ***0 / 48*** |
+
+***The zero is the informative cell.*** The two populations never mix, so a block is
+**regionally partitioned**, not a sequence of per-object records -- which is the same conclusion
+the failed name-to-matrix proximity test reached from the opposite direction. Median layout:
+float/header content to ~0.31 of the block, transforms ~0.31-0.53, names ~0.54-0.61, trailer
+after; and the gap from the last matrix to the first name is typically **96 bytes**, one
+transform record.
+
+**The name array is contiguous in 85.4%** of blocks -- `count x 64` spans exactly the distance
+from first to last.
+
+***The transform region, however, is not one array.*** At 96-byte stride it breaks into a median
+of **58 separate runs** per block (min 3, max 1,027). *So "an array of transform matrices" is
+too simple*: the block holds **many transform runs**, and what separates them is not yet known.
+
+**An earlier count of 25/25 for the ordering was measured on a smaller, easier subset** (blocks
+with any names and matrices rather than at least three of each). The honest figure is 47/48.
+*Widening the sample moved the number, which is the reason to widen it.*
 
 ***A length-prefix reading was tried and is not supported.*** The first dword of a block is close
 to the block's length for some blocks -- **39 of 100 within 512 bytes**, with a suspiciously
