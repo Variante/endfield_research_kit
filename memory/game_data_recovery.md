@@ -5737,6 +5737,25 @@ VT_INDIRECT_TEX_BUFFER_COUNT, VT_GPU_FEEDBACK_BUFFER_COUNT, VT_WORK_GROUP_COUNT
   `m_splatControlMap` and `m_colorVariationTex` are both candidates and it is not
   settled which.
 
+### `Data/ExtendData/Main/StringPathHash.bin` -- partial
+
+**157,726,628 bytes = 19,715,828 eight-byte entries with 4 bytes spare.** Read as `(u32, u32)`:
+
+* the first word is non-zero in **98.48%**, and **96.02% fall below the file length**;
+* ***it is not a unique key.*** There are only **2,086,384 distinct values across 19,415,849
+  non-zero entries** -- about nine repeats each -- *so this is a reference or adjacency
+  structure, not a hash table keyed by the first word*, which is what the file name invites;
+* the second word takes only **48 distinct values**, dominated by 1, 2, 3, 4 in a decaying tail
+  in the file's early region but mostly large later, so **the file is not uniform end to end**.
+
+***The name's obvious reading was tested and did not hold.*** 800 real VFS paths were hashed
+with `crc32`, `fnv1-32` and `fnv1a-32`, over full paths, lowercased paths and basenames, and
+matched against the 2.09M distinct first words: **every variant scored 0.00-0.12% against a
+random-u32 control of 0.000%**, i.e. nothing. **The first words are not hashes of VFS chunk
+paths under the common functions.** *That negative is scoped -- the file may hash asset-bundle
+paths rather than VFS paths, or use a function not tried (Murmur, xxHash, a custom one)* -- and
+it is recorded so the next attempt starts past those seven variants.
+
 ### The `TRET` container, decoded exactly
 
 ***Every file in the terrain block shares one container*** -- not just the `LAYER_*` families.
