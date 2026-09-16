@@ -7406,9 +7406,34 @@ consistent with the normalised-float profile measured earlier, and the *repetiti
 consecutive entries carrying the same value, either `Vector3(v, v, v)` or runs of identical
 per-element data.
 
-**This is where a future session should start.** Not "the bulk of `InitChunkData`" -- one
-named file, whose 444 KB run can be read directly, in a level (`blackbox02_dg001`) whose
-sibling chunks are the other four large offenders.
+**Reading that run directly** -- 444,381 bytes at offset 2,601,975, **111,095** aligned
+words:
+
+| property | value |
+| --- | --- |
+| zero words | 66,768 = **60%** |
+| distinct values | **13,164** of 111,095 = 12% |
+| adjacent words equal | **47.5%** |
+| equal-value run lengths | 1: 44,510 · 2: 6,624 · 3: 3,438 · 4: 3,640 · **12: 142** |
+
+| commonest value | count | as float |
+| --- | --- | --- |
+| `0x00000000` | 66,768 | 0 |
+| `0x3f800000` | 4,707 | **1.0** |
+| `0x4276d70a` | 2,966 | **61.71** |
+| `0x3d48bcb8` | 591 | 0.0490081 |
+| `0x3f0161de` | 375 | 0.5054 |
+
+**Only one word in eight is distinct**, and two constants dominate the non-zero content:
+`1.0` and `61.71`. *`1.0` is the signature of a normalised default; `61.71` is not
+normalised at all* -- a magnitude, repeated nearly three thousand times in one chunk.
+
+The **12-word (48-byte) equal runs, occurring 142 times**, are the only long repeat, and
+`48 = 12 x 4` is the size of three `Vector3`s or one `Transform` -- worth testing, though
+run length is not a stride and the earlier periodicity test over this region found none.
+
+**A future session starts here**: one named file, one located run, and a concrete first
+question -- *what is 61.71 in `blackbox02_dg001`?*
 
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
