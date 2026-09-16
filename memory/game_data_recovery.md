@@ -7603,6 +7603,31 @@ and each was a uoffset. *The formulas were real and the types were invented* -- 
 uoffset that lands at a predictable distance from the end of a buffer will satisfy an
 arithmetic identity every time.
 
+##### What field 3's vectors hold: an alternating code/zero list, three codes in all
+
+Reading the elements: **952 words, and only 4 distinct values.**
+
+| value | hex | as two u16 | count |
+| --- | --- | --- | --- |
+| `0` | -- | -- | 476 |
+| `4194325` | `0x00400015` | (64, 21) | 392 |
+| `262144` | `0x00040000` | (4, 0) | 42 |
+| `262145` | `0x00040001` | (4, 1) | 42 |
+
+**Exactly half the words are zero**, and the layout is strictly alternating -- `[4194325, 0]`
+for the length-2 vectors, `[262144, 0, 262145, 0, ...]` for the length-15 ones. *So the
+vector is a list of `(code, 0)` pairs*, and the codes come from a **three-value vocabulary**
+across the whole sample.
+
+Read as two 16-bit halves the codes are `(64, 21)`, `(4, 0)` and `(4, 1)` -- a high half of
+64 or 4, a low half of 21, 0 or 1. **A three-code enumeration attached to a placement is a
+flag or kind list, not payload**, which fits the vector being two entries long in 392 of 434
+cases.
+
+*This completes the slot-7 element*: a component mask, a count, world centre and extents, a
+**uoffset to a short code list**, and the constant 4. **Nothing in it is a size, and nothing
+in it points outside the file** -- which is the opposite of what this section concluded twice.
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
