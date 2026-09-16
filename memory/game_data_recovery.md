@@ -7474,6 +7474,36 @@ which is why no join from one to the other has worked, and why `SurfaceTypeData`
 *negatively* with the unreached fraction. *The next attempt should stop trying to reach the
 blob from the root and read it on its own terms.*
 
+##### CORRECTION: slot 3 is a vector, not a size
+
+Reading one large file from the top -- rather than from the unreached end -- exposes an
+error in the root typing. In `InitChunkData_-1_0_0_0.bytes` (`blackbox02_dg001`), slot 3
+holds **3,238,372**, and taken as a uoffset from `root+20` that lands at **3,238,420**,
+where the first word is **59** -- exactly slot 5's element count.
+
+Tested over 400 files:
+
+| | |
+| --- | --- |
+| slot 3 resolves to a valid vector | **400 / 400 = 100.00%** |
+| `len(slot 3) == len(slot 5)` | **400 / 400 = 100.00%** |
+| slot 2 resolves to a vector | **0 / 400** |
+
+***So slot 3 is a fourth vector, parallel to slot 5 in every file*** -- not one of the
+"runtime allocation sizes" recorded earlier. **The formula `s3 == len - root - 28 - 4*n5`
+still holds arithmetically, but it was describing where that vector sits, not what the field
+is.** A vector pinned at a fixed distance from the end of the buffer makes its own offset
+look like a size, and `s3`'s dependence on `n5` -- which read as suspicious coupling -- was
+simply the vector's own length entering the address.
+
+*Slot 2 is untouched by this: it resolves to nothing in any file, so the size reading stands
+for it alone.* **The root now has four vectors (3, 5, 6, 7), two of them parallel, and one
+scalar whose meaning is still open.**
+
+**How the error survived:** `s3` was only ever tested as a number against other numbers. It
+was never dereferenced. *An arithmetic identity that fits 26,519 files is strong evidence
+about a value and no evidence at all about its type.*
+
 ##### FIRST LOOK AT THE 98%: NAMED PROXY-ENTITY RECORDS
 
 The unaccounted region opens with a **length-prefixed string** -- `16 00 00 00` followed by
