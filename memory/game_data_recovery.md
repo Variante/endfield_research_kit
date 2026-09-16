@@ -8178,9 +8178,22 @@ transform record.
 **The name array is contiguous in 85.4%** of blocks -- `count x 64` spans exactly the distance
 from first to last.
 
-***The transform region, however, is not one array.*** At 96-byte stride it breaks into a median
-of **58 separate runs** per block (min 3, max 1,027). *So "an array of transform matrices" is
-too simple*: the block holds **many transform runs**, and what separates them is not yet known.
+***The transform region, however, is not one contiguous array.*** At 96-byte stride it breaks
+into a median of **58 separate runs** per block (min 3, max 1,027).
+
+**But the stride itself is stable.** Grouping matrices by the descriptor whose block they fall
+in, the dominant gap is **96 bytes in 50 of 50 groups, for all 19 distinct component masks
+observed.** *So the record size does not vary by component mask* -- a hypothesis raised by one
+file whose gaps were dominated by 160 (= 96 + 64, temptingly a record plus a name slot) and
+**refuted as soon as it was measured across files.** The fragmentation is skipped slots within a
+constant-stride array, not a varying record size.
+
+Two things the gap histogram does say: the off-stride gaps are overwhelmingly of the form
+**k x 96 + 4**, and a sample record reads as an identity rotation with translation
+(-67.30, 1.336, -2.051) followed by `(0, 1, 0, 0)` and 80 zero bytes. *What occupies the skipped
+slots is still unresolved* -- the leading candidate is simply matrices the acceptance test
+rejects, since it demands uniform scale, and relaxing that raised the count from 1,846 to 2,543
+on one file.
 
 **An earlier count of 25/25 for the ordering was measured on a smaller, easier subset** (blocks
 with any names and matrices rather than at least three of each). The honest figure is 47/48.
