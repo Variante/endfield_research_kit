@@ -216,3 +216,31 @@ pass license and target-framework review for AnimeStudio's .NET targets.
 - Add converter regressions for more Unity layouts.
 - Reduce peak memory for broad Story JSON/object-index work without unsafe
   filtering or unsupported JSON concurrency.
+
+## Measured scheduling conclusions
+
+Each of these was measured, not assumed, and each is the reason a knob has the
+default it has. Re-measure before changing one; do not re-derive it.
+
+The default exporter mode is
+`--animestudio-type-job-mode auto`: it merges map-filtered JSON, runs broad Story
+JSON types sequentially in isolated processes, and keeps map-filtered asset
+conversion sharded; use `parallel` only when comparing concurrent per-type jobs.
+`TextAsset` loads through the generated asset map instead of every bundle:
+byte-identical output, 508s -> 27s (475,588 bundle containers parsed -> 16,218).
+Every other json type still loads broadly. Map filtering is only sound for a
+type that resolves nothing outside its own bundle, because the filtered load
+never opens the skipped bundles -- matching object counts prove nothing.
+`MonoBehaviour` has complete map coverage and was still rejected: filtering
+renamed 128,181 of 174,133 files to `MonoBehaviour#100001_p...` because the
+defining MonoScript sits in a skipped bundle, and turned 2,709 resolved PPtr
+targets into `external_target_unavailable`. `PlayableDirector` has zero map
+entries and would emit nothing. Add to `ANIMESTUDIO_JSON_MAP_FILTER_TYPES`
+only after exporting a type both ways and diffing the bytes;
+`--no-animestudio-json-map-filter` forces the broad path. Sharding those loads was separately measured and rejected: on identical object sets, `Convert` Texture2D scales
+4.03x across 8 shards while `JSON` Material runs 0.92-0.95x, i.e. no better
+than one process. Convert is CPU-bound decode (~37 ms/object); JSON export is
+~3.55 ms/object and bound on single-disk small-file creation, so extra
+processes only contend. Keep `convert_by_type` sharding; do not add JSON
+sharding. `--animestudio-broad-json-jobs N` bounds concurrent broad loads and
+defaults to 1; values above 1 are not supported by any measurement.

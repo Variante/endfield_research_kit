@@ -680,7 +680,11 @@ a shape no amount of staring at body lengths would have separated from a single 
   The flag is never greater than 1 anywhere in the corpus, so no body can separate
   them; a body with flag 2 would, and none exists. This is underdetermined in the
   same sense as type `0x09`, not merely undecoded, so those 92 bodies are not
-  framed at all.
+  framed at all. Their fence reason is named `tiedOptionalBlockWidth`, beside
+  `0x10`'s `type10_variant7F`; `0x10` and `0x11` are gated together as one
+  grammar, and the gate requires the two named reasons to account for every
+  fenced body of the pair. Failures are forbidden and fencing everything is
+  refused.
 - The gate for this type forbids failures outright and allows only the fenced
   outcome, which is counted separately from both success and failure. Fencing
   everything would make the claim vacuous and is rejected too.

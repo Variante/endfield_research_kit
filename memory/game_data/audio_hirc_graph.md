@@ -113,7 +113,8 @@ that it is a forest, that the two types occupy fixed positions in it, and that t
   the same two dominant values everywhere. `0x08`/`0x12` tail units run 9 at 44.9%
   and 4 at 41.7% of 314 records; `0x0B` element runs 9 at 49.4% and 4 at 24.5% of
   4,086. Same enum, same defaults, different mix.
-- **`0x08` now frames byte-exact in 96 of its 161 bodies.** Layout, end to end:
+- **`0x08` framed byte-exact in 96 of its 161 bodies at this point** -- superseded
+  below by `0x08` IS CLOSED TOO: 161 of 161. Layout, end to end:
   a 32-bit reference, the counted key/value block type `0x16` uses (a count, that
   many one-byte keys, that many four-byte values as parallel runs), a one-entry
   list whose key sizes its value (`0x15` -> 11 bytes, `0x1D` -> 27, exactly 16
@@ -397,8 +398,9 @@ from there the counts fall out. Widening a range would never have found either.
   null-reference bodies frames under it. It was fitted to nothing. The general
   lesson: when a special case is suggested by a handful of bodies, check that
   removing it changes the count before keeping it.
-- **Numeric type `0x12` shares `0x08`'s layout, and 213 of its 251 bodies now frame
-  byte-exact.** Reference, counted key/value block, a second list whose key sizes
+- **Numeric type `0x12` shares `0x08`'s layout, and 213 of its 251 bodies framed
+  byte-exact at this point** -- superseded below by `0x12` 251 of 251, complete.
+  Reference, counted key/value block, a second list whose key sizes
   its value, nine bytes, a zero word, the counted run of six-byte entries with its
   extra byte when the count is nonzero, five zero bytes. Two of the three
   second-list keys are `0x08`'s own: `0x15` -> 11 bytes, `0x1D` -> 27, plus `0x0A`
@@ -1188,3 +1190,195 @@ preceding content leaves it.
   (84/89, 132/137, 168/173) with identical counts, so some five-byte field is
   optional; and once a base is chosen the remaining widths differ by multiples of 12,
   which is the record size the `0x08`/`0x12` tail also uses.
+
+## The typed v150 parse: effects, buses, and the NodeBase tail
+
+Above the anonymous body framing recorded above sits a *typed* v150 read of the
+same objects, which resolves fields by name because the Wwise 2023.1.17
+serialization order is known. Everything here is **authored serialized data**: none of it is
+runtime DSP, effective inheritance, branch choice, or audibility. Per-build
+addresses, symbol hashes and changing row counts belong to the generated Audio
+evidence and to `reports/story/recovery/audio/`, not here.
+
+### Effect slots and the built-in plug-in parameter blocks
+
+- The v150 HIRC parser publishes **exact NodeBase effect slots and output-bus
+  IDs**. Effect definitions retain physical PCK/bank scope, built-in plug-in
+  class identity, and parameter hashes.
+- Fingerprinted shipped `SetParamsBlock` layouts decode exact authored base
+  settings for **Gain, Delay, Compressor, Expander, three-band Parametric EQ,
+  Meter, Matrix Reverb, Pitch Shifter, Harmonizer and Stereo Delay**. Guitar
+  Distortion exposes three pre-EQ and three post-EQ bands plus distortion type,
+  drive, tone, rectification, output gain and wet/dry mix.
+- The v150 **FX-slot bit vectors** are decoded: direct NodeBase slots expose
+  authored bypass, ShareSet and rendered bits, while Audio/Aux Bus slots expose
+  the bypass/ShareSet subset. **These flags are not runtime DSP/audibility
+  proof** and remain separate from node-level `bypassAll` and dynamic BypassFX
+  controls.
+- **RoomVerb** exposes all 37 public authoring controls and all 31 ER pattern
+  names. Its 11 additional private algorithm-tuning IDs retain exact values with
+  native-use roles: five feed early-reflection tap-pattern synthesis (endpoint
+  pairs plus seeded per-tap variation, then ER-grid normalization), one feeds
+  six-channel coefficient derivation, two feed a seeded secondary
+  reflection-pattern generator, and three remain **name/read-unresolved** in the
+  audited native path.
+- **Convolution Reverb** exposes its 13 public runtime controls plus exact
+  impulse-response plug-in media IDs. Its two private rows retain exact native
+  forwarding evidence: SetParam 34 reaches a wrapper field and both convolution
+  processing paths, while serialized byte 56 reaches a second wrapper field and
+  runtime state. **The current CPU consumer does not expose a read of the
+  forwarded scalar**, so public names and final DSP roles remain fail-closed,
+  and **IR IDs are not emitted as playable WEM leaves**.
+- **Mastering Suite** exposes its four output-device modules: six EQ bands, four
+  multiband-compressor bands with crossover/link controls, overall plus 12
+  serialized channel gains, and limiter mode/threshold/timing/output/link
+  values. Its SetParam IDs **100 and 200 remain exact unnamed codes**: binary
+  evidence pins them to native storage fields, but **no direct read is observed
+  in the audited runtime region**, so the UI labels them storage-only and keeps
+  those definitions visibly partial rather than inferring processing-order or
+  profile semantics. The 12 channel gains map exactly from serialized offsets
+  235..279 to consecutive native fields at stride 4, while **speaker names
+  remain unresolved**.
+
+### The Bus forest, typed and complete
+
+- Type-8/type-18 HIRC objects publish the **complete 279-bus parent hierarchy**
+  -- 276 parent edges and three roots -- which is the typed reading of the
+  `0x08`/`0x12` forest recorded above.
+- Typed v150 `CAkBus` parsing consumes the property, positioning, Aux, duck and
+  bus-state fields **before** InitialFX, and proves the serialized effect count
+  on all 279 buses: 128 have an explicit zero-count list (including the 50 Audio
+  Bus and 11 Auxiliary Bus rows previously recovered by sibling correlation),
+  while 151 carry 247 decoded non-empty slots.
+- The Bus parser continues through the v150 suffix **in its actual order --
+  InitialRTPC before StateChunk** -- and parses all 279 Bus payloads exactly.
+  Parameter labels use the current RTPC table; out-of-range IDs such as
+  `0x1802`/`0x1804` remain **explicit custom/internal numerics rather than
+  guessed DSP names**.
+
+### The NodeBase tail
+
+- The same v150 NodeBase tail parser recovers the authored **AuxParams
+  bitvector, four conditional User-Defined Aux Bus slots, and the Early
+  Reflections Bus ID**, with field-level fail-closed diagnostics. The current
+  unique-payload audit passes every node payload, finds populated User slots
+  reaching 25 Aux Buses, a large Game-Defined Use bit population, and **no
+  populated Early Reflections target**.
+- **Game-Defined Bus IDs, listeners and send levels are runtime API inputs and
+  remain unresolved rather than projected as static routes.**
+- The NodeBase parser also continues through AdvSettings, StateChunk and
+  InitialRTPC; an independent audit matches production offsets and row counts on
+  every unique node payload, recovering State Group occurrences, RTPC curves and
+  points.
+- Exact initial **AkPropID v150 bundles** are published: traversed nodes carry
+  authored values and min/max ranges, with raw U32 and finite-float forms
+  preserved, and typed ID/integer unions retain integer labels **rather than
+  fake tiny floats**. Initial BypassFX/BypassAllFX property IDs **do not occur
+  in the current banks**; direct NodeBase bypass flags remain a separate exact
+  field and dynamic bypass is still unresolved. Effective inheritance, live
+  State/RTPC/modulator values, platform DSP and audibility remain gaps.
+
+### RTPC and GameParameter names: symbol-to-ID only
+
+- The generated summary carries a **hash-pinned IL2CPP cross-match for six
+  game-side GameParameter symbols**: `AU_RTPC_CINE_CTRL_VOL_AMB`, `...VOL_MU`,
+  `...VOL_SFX`, `...IS_MUTE_BY_SDK_WEBVIEW`, `...IS_SURROUND_CHANNELS` and
+  `...GLOBAL_VOL_MASTER_IOS_WORKAROUND`, each against its own node and Bus curve
+  occurrences. **This is symbol-to-ID evidence only**; `0x1802`/`0x1804` remain
+  custom/internal Wwise property IDs with **no guessed DSP names and no
+  live-value claims**. Event/media RTPC and Bus-control rows reuse the same
+  exact-name catalog, and unmatched IDs remain numeric/custom.
+- The schema-117 semantic payload publishes `controlCatalog.staticRtpcAlignment`:
+  a six-name canonical `AU_RTPC_*` contract that aligns exact numeric HIRC IDs
+  with serialized InitialRTPC curve/property evidence and same-event
+  Set/ResetGameParameter controls, published as **`authoredStatic` evidence
+  only**. The explicit selected `global-metadata.dat` + `GameAssembly.dll` hash
+  gate is required; a missing or mismatched selected/source hash, a malformed or
+  incomplete contract, or stale serialized evidence **fails closed and withholds
+  static names and rows**. Runtime parameter values, setter execution, target
+  objects, selected branches, DSP and audibility remain runtime-only.
+- Some Set/ResetGameParameter rows share an exact ID with an InitialRTPC curve
+  target and are exposed as `sameEventInitialRtpcId` **authored curve-target
+  joins**, while the GameParameter name and live value remain unresolved.
+- A small set of unique InitialRTPC IDs is joined to exact metadata `au_rtpc_*`
+  literals. The catalog keeps the exact authored Event/context, controlled AkProp
+  targets, response-point count and interpolation mix; **it does not claim a
+  live RTPC update or an audible result.**
+- Generated event evidence preserves State property values and complete RTPC
+  points/accumulation/scaling, with known control hashes **named only by exact
+  FNV/native evidence**.
+
+### Non-playback Action tails, and the selector packages
+
+- The same v150 pass decodes non-playback Action tails **directly from the bank
+  bytes**. SetState, SetSwitch, Set/ResetGameParameter, Stop/Pause/Resume, Seek,
+  value/filter actions and FX slot actions are all `typedExactV150` in the
+  current named-event evidence, with **zero failed control tails**; the
+  per-category counts live in the generated evidence. The parser preserves typed
+  Event->Action object paths and type labels, action ordinals, FNV IDs, value
+  ranges, fade curves, active-action bit vectors, exception buses and FX slot
+  indices.
+- The semantic projection joins State/Switch Action group references and exact
+  value references. It covers the **three native-backed selector roles** --
+  voice identity, surface material, and local/remote routing -- plus ten exact
+  current-metadata music State groups. Typed type-6 selector packages use the
+  same 15-row catalog, and **unmatched IDs remain numeric**.
+- The authored v150 Type-6 selector subset is published only on lazy
+  Event-detail records as `selectorBranches`. Package child IDs join decoded
+  media **only** through exact same-bank `soundObjectIds` evidence; malformed or
+  cross-bank structures stay unresolved and fail closed, while runtime selector
+  choice and audibility remain unresolved.
+- **Any unsupported or truncated tail is published as `failedClosed` with an
+  offset and a reason.** These are authored trigger parameters, not evaluated
+  runtime state, effective inheritance, selected branch, DSP execution, or
+  audibility.
+
+### What the media projection may say about all of this
+
+The Audio page projects the typed catalog onto each possible media leaf. The
+projection's shape is a durable contract even though its row counts are not:
+
+- each media leaf is projected onto its **exact serialized Event output-bus
+  paths**, with effect and unresolved bus IDs kept as references into the typed
+  catalog; **runtime branch selection and effective DSP are not inferred**.
+- media whose typed NodeBase evidence has `outputBusNodeCount=0` receive an
+  explicit `noExplicitOutputBusSerialized` status. **This is not treated as a
+  default route, as silence, or as proof of an effect-free path.**
+- media rows carry bounded exact **direct NodeBase effect slots** from Event
+  `postProcessSummary.effectNodes`, separate from output-Bus effects. Each
+  summary preserves the effect ID/plugin, node and slot, authored parameter
+  summary and slot flags **without claiming live DSP execution or audibility**.
+- they carry exact serialized **Wwise media-edge types and selection paths**
+  (`directSound`, `layerChild`, `randomAlternative`, `switchCandidate`,
+  sequence/music edges) plus root Action IDs. These are **authored candidate
+  relations, not runtime branch or caller traces**.
+- they publish a compact **serialized effect chain** combining direct-node slots
+  with each leaf-to-root Bus path, capped per row. Direct-node slots are shown
+  before Bus slots, and Bus slots preserve serialized path/slot order. **This is
+  an authored binary join, not observed runtime DSP ordering, inherited values,
+  branch choice, or audibility.**
+- they keep compact references to serialized **Bus controls**; full points and
+  plug-in parameters remain in the unique Bus catalog and are resolved by Bus ID
+  instead of duplicated per leaf.
+- serialized **Bus ducking** is projected compactly, preserving target Bus,
+  attenuation, fade and target-property fields. **Runtime duck activation and
+  audibility are not inferred.**
+- exact **User-Defined Aux slots** are projected compactly, with unique Aux
+  Bus/slot targets over their underlying send occurrences. Source-node types,
+  flags, root Actions and target Bus IDs remain visible; **Game-Defined IDs and
+  live send levels are runtime-only.** Each target also retains its exact
+  serialized Aux Bus parent path and effect-Bus IDs, linking the possible send
+  route into the typed Bus/DSP catalog.
+- NodeBase **authored property values and ranges** are summarized per possible
+  media path as distinct property and range signatures; raw U32 forms and full
+  node provenance remain in Event evidence.
+- bounded exact **StateChunk overrides and InitialRTPC response shapes** are
+  published from possible Event paths, each RTPC summary keeping at most eight
+  points and marking truncation. **These joins describe authored serialized
+  controls, not live setter values, selected branches, effective inheritance,
+  platform DSP, or audibility.**
+- media rows also receive a separate **Event-level context summary** for the
+  possible media set, carrying compact consumer kinds, roles, owners and
+  situations. This is broader than exact `mediaRefs` and remains explicitly
+  **non-selected and runtime-unobserved**; each row keeps at most 32 distinct
+  summaries and reports when the list was truncated.

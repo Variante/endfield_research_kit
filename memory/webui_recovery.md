@@ -97,3 +97,22 @@ is required.
 Changing counts and per-build inventories belong in `reports/`; page guides
 record only stable recovery logic, evidence boundaries, and the highest-value
 gaps.
+
+## Packaging contract
+
+ emits four matching archives; the commands are in
+[`../scripts/README.md`](../scripts/README.md).
+
+Packaging emits four matching archives. The main archive owns WebUI code and
+generated text data. The `-media` archive owns images/videos referenced by
+Story, Text, Map, Characters, and Gameplay plus their compact asset index. The
+`-audio` archive owns FLAC files referenced by those pages. The optional
+`-resources` archive owns every file listed by the Assets page—including
+indexed images, videos, JSON, OBJ, and FBX files—the remaining FLAC set, and
+the complete Audio/Assets resource indexes. Assets referenced by normal pages
+are duplicated there so the Assets page works from the resources archive alone.
+With no selection the archives publish atomically in main, media, audio, then
+resources order; an explicit selection uses the caller's order.
+Already-compressed media is ZIP-stored instead of being recompressed. Each
+archive includes a UTF-8 Chinese usage note; extract resources last because its
+complete asset index replaces the compact media-only index.

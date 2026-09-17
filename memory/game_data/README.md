@@ -99,10 +99,11 @@ animation. Neither is spatial, so neither belongs in the world lane.
 | --- | --- | --- |
 | [`audio_overview.md`](audio_overview.md) -- the six evidence layers and the authored-versus-observed boundary | 2 | 406 |
 | [`audio_bank_format.md`](audio_bank_format.md) -- the bank sections outside HIRC | 2 | 147 |
-| [`audio_hirc_parser.md`](audio_hirc_parser.md) -- the shipped parser, read out of the engine | 2 | 697 |
-| [`audio_hirc_graph.md`](audio_hirc_graph.md) -- the object graph and the closed type layouts | 3 | 1190 |
+| [`audio_hirc_parser.md`](audio_hirc_parser.md) -- the shipped parser, read out of the engine | 2 | 701 |
+| [`audio_native_hooks.md`](audio_native_hooks.md) -- the native request chain, and what a bounded capture would prove | 2 | 435 |
+| [`audio_hirc_graph.md`](audio_hirc_graph.md) -- the object graph, the closed type layouts, and the typed v150 effect/bus parse | 3 | 1384 |
 | [`audio_hirc_curves.md`](audio_hirc_curves.md) -- `0x0B`, framed from bytes alone | 3 | 1103 |
-| [`audio_naming_coverage.md`](audio_naming_coverage.md) -- what is named, and what nothing reaches | 4 | 156 |
+| [`audio_naming_coverage.md`](audio_naming_coverage.md) -- what is named and owned, and what nothing reaches | 4 | 424 |
 
 **Gameplay lane** -- authored `Table` config joined to native contracts.
 
@@ -148,6 +149,7 @@ animation. Neither is spatial, so neither belongs in the world lane.
 - *What is this `.bytes` file?* -> [`install_and_vfs.md`](install_and_vfs.md).
 - *Why does the terrain codec decode chunk data?* -> [`shared_containers.md`](shared_containers.md).
 - *How does the game actually read this file off disk?* -> [`native_read_path.md`](native_read_path.md).
+- *What does the audio runtime do with a voice request, and what would a capture add?* -> [`audio_native_hooks.md`](audio_native_hooks.md).
 - *Is this family's reader proven that far?* -> [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md), not the lane file.
 - *What is the layout of Buff action tag `0xNN`?* -> its `scripts/game_data/buff_NN_native.json` contract, not the gameplay file.
 - *Does this LevelScript action or trigger volume prove a Story link?* -> [`story_carriers.md`](story_carriers.md).

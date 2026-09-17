@@ -165,3 +165,149 @@ descriptor, field name, or runtime meaning follows.
   JsonData semantics are incomplete.
 - Material and shader extraction preserves recoverable metadata; it does not
   prove renderer ownership, selected variants, final lighting, or appearance.
+
+## What each corpus gate proves
+
+One paragraph per maintained gate: what it reauthenticates, what it writes, and
+what it explicitly leaves unresolved. The commands themselves are in
+[`../../scripts/README.md`](../../scripts/README.md); this is the boundary each
+one establishes.
+
+`streaming_corpus` reauthenticates block-15 rows from that ledger and writes
+`reports/animestudio/streaming_root_subgraphs_latest.json` plus `.md`; pass the
+exact `inputSetSha256` from the current outer summary. The gate covers the
+anonymous field-2 vector, immediate table/vtable framing, and terminal row
+field-5 scalar32 vectors through EOF, as well as the field3/4/5 and field6/7
+subgraphs. It also verifies the field-2 row object's four-byte prefix plus
+slot-to-next-boundary partition. Before publishing fields 0--5 as anonymous
+scalar32/scalar32/scalar32/int32[2]/float32[6]/scalar32[], it revalidates the
+selected GameAssembly, metadata, UnityPlayer, and bounded accessor/consumer
+bodies. The field-5 consumer reloads the retained row pointer from a 72-byte
+runtime record, iterates the count-prefixed vector with four-byte loads, and
+uses each value as a hash-table key. The report also gates the current
+numeric/Global filename-token relations. The selected family-level native read
+path closes payload base, requested length, actual-count equality, and root
+calculation. The concrete runtime path is unavailable, FlatBuffer accessors
+receive no outer length, and no final cursor is exposed, so the carrier is not
+joined to one authenticated logical file. Key namespace and signedness, field
+names, and semantics remain unresolved.
+`streaming_marker17_corpus` reuses the source-bound marker17 directory from that
+report, reauthenticates every listed physical range and refines the native-gated
+tag5 counted arrays and fixed tag1/4/6 profiles with `streaming_marker17`;
+unknown keys remain explicitly opaque/unsupported. It writes
+`reports/animestudio/streaming_marker17_bodies_latest.json` plus `.md`.
+Partial `--max-files` probes require explicit output paths and are not eligible
+as complete-corpus evidence. Record fields and runtime selection remain unknown.
+`streaming_marker13_corpus` rereads the complete block-15 ledger through the
+source-bound Streaming parser, joins marker13 references to independently
+certified structural neighbours, and tests native-gated explicit-selector9 and
+byte-proven absent-selector profiles. `streaming_pairs` binds paired file
+identities, complete ordered vectors and exact serialized ordinals; absence is
+never rewritten to a stored zero. Its inventory separates structure, read windows,
+physical gaps and opaque remainder; a physical gap is not a serialized sizeof or native EOF.
+Outputs are `reports/animestudio/streaming_marker13_latest.json`/`.md` and
+`streaming_marker13_inventory_latest.jsonl.gz`; partial outputs must stay in
+`tmp/` or `scratch/`. The summary authenticates the inventory's content/hash.
+`streaming_marker2_directory` owns the complete nested reference/occupancy
+replay. `streaming_marker2_corpus` gates the separate selector6 finite-gap
+parser against the same source-bound ledger and ordered pairs; it publishes
+`streaming_marker2_latest.json`/`.md` and
+`streaming_marker2_inventory_latest.jsonl.gz` under `reports/animestudio/`.
+Its four-byte native window is separate from the physical gap and opaque
+complement. Unknown representations and multi-target clusters remain explicit;
+partial probes cannot replace complete reports. Both ends of a sweep check
+the live BLC path set as well as fingerprint contents and executing sources.
+`memorypack.skill_corpus` owns the SkillData current-VFS gate; `skill` owns
+anonymous prefix/candidate framing and `skill_terminal` enumerates each terminal
+branch with complete record ranges. The gate joins current decrypted stream
+bytes to every selected outer-ledger identity and checks overlay, raw chunks,
+CLI and parser provenance at both ends. Historical census rebinding is rejected.
+Unique, ambiguous, unsupported and failed rows remain explicit; no candidate
+establishes whole-schema ownership. Each prefix/candidate binds the input-set
+hash, logical identity/hash, `[start, hardLimit)`, grammar parser cursor, byte
+ranges and opaque ranges. The aggregate keeps independently closed records,
+structural-prefix evidence, ambiguity, unsupported/failed rows and opaque-byte
+counts distinct; candidate EOF cursors do not certify the active formatter.
+Partial `--max-files` outputs must stay in `tmp/` or `scratch/`.
+`memorypack.skill_cursor_receipt` validates the current corpus/native-context
+binding and joins a bounded cursor receipt to current SkillData identities,
+hashes, hard limits, and terminal candidates. It can promote only the observed
+terminal range, not the complete SkillData schema. Use its receipt mode from
+the exact-build workflow in `tools/EndfieldCapture/README.md`; `--preflight`
+prints the authenticated current input-set hash without launching the game.
+`memorypack.skill_timeline_cursor` joins a complete current SkillData stream to
+the source-bound corpus and exact-build native context, then replays child
+action readers only when the selected native route, per-tag reader contract,
+and hash-verified `memorypack.buff_actions.Reader` agree. It records candidate
+byte ranges and precise unsupported/truncated stops; selected reader ends do
+not prove runtime provider choice or close their parents. The command writes
+`reports/animestudio/skilldata_timeline_cursor_latest.json` and `.md`; partial
+probes belong in `tmp/` or `scratch/`.
+`memorypack.npc_montage_corpus` authenticates the complete current
+`Data/Json/NPC/MontageJson/MontageNew/*.json` family by joining each
+outer-ledger identity to AnimeStudio `stream --verify-md5` output, then frames
+supported records through EOF. It checks current chunks, CLI and parser
+fingerprints at both ends and writes
+`reports/animestudio/npc_montage_current_latest.json` and `.md`. Changing
+coverage belongs in that report; nested strings, scalars and fixed record bodies
+remain anonymous.
+`memorypack.corpus_gate` owns shared outer-ledger, overlay, fingerprint and output
+guards. `memorypack.buff_corpus` joins the full current BuffData stream and retains
+every filename-string anchor and reader-accepted suffix candidate, without
+promoting legacy field labels or internal opaque bodies. Run
+`python -m scripts.game_data.memorypack.buff_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --output-json reports/animestudio/buffdata_current_latest.json --output-md reports/animestudio/buffdata_current_latest.md`.
+The report partitions selected files into successful candidate framing, failed
+reader execution and unsupported shapes; uniqueness is only within that reader.
+Each accepted BuffData suffix also records a hard-bounded prefix-reader stop and
+remaining gap, with prefix support counted separately from suffix acceptance.
+The report binds its parser cursor and closed action ranges to current input-set
+and logical-file identities, and keeps exact action closures, structural
+prefixes, opaque bytes, rejected anchors and unsupported results separate.
+`memorypack.buff_actions` owns the independent anonymous event-prefix grammar;
+its per-candidate scalar/record spans and explicit opaque remainder have a separate
+success/failed/unsupported/ambiguous census. Malformed prefixes fail the corpus
+gate even if the legacy suffix candidate succeeds; unknown unions are not aliased.
+`currentRootContinuation` consumes selected root members 2-6 only after a
+supported first collection, beginning at `currentEventPrefix.consumedEnd`.
+Its independent status and ranges retain the remaining physical bytes as opaque;
+malformed continuation data also fails publication. This does not join the
+filename suffix to a proven root field or establish whole-schema EOF.
+`memorypack.buff_1b_corpus` rebuilds that full current census, selects only
+exact-closed tag `0x1B` records from root continuation, and re-streams matching
+files to verify their literal tag byte against ledger MD5 and logical SHA-256.
+It joins the tag to the exact-build selected `BlowOffAction_Data` reader order
+and writes `reports/animestudio/buff_1b_current_latest.{json,md}`. Provider
+selection, action semantics and whole-BuffData EOF remain unresolved.
+`memorypack.lipsync_corpus` joins the full LipSync JsonData stream to current
+ledger identities and runs the strict 15-member reader through EOF, checking
+logical MD5 and source/tool/parser pins at both ends. It reads JSONL one row at a
+time and writes `reports/animestudio/lipsync_current_latest.json` plus `.md`:
+
+
+`python -m scripts.game_data.il2cpp_context_audit` emits an exact-build native
+generic-instantiation audit as JSON on stdout. `il2cpp_context` owns bounded
+pointer-table/record/vector decoding and reciprocal method-parameter identity;
+the audit checks selected native inputs and consumer pins, scans all registered
+instances, validates metadata image ownership and unique module-name joins, and
+rechecks the saved SkillData corpus's live input/tool/parser/chunk pins through
+`memorypack.skill_corpus.verify_current_report_inputs`. It does not
+re-stream the full corpus or establish runtime formatter/cursor identity. Its
+SkillData section re-reads one terminal sample and selected branches covering
+every positive terminal-list count shape in the saved census. Each sample is
+bound to its current logical identity/hash/hard limit and replayed against the
+exact-build reader order and field types. It also checks the shifted candidate
+against the registered GameplayTagList header and matching List<GameplayTag>
+remaining-byte guard. These are conditional static-path checks; runtime
+provider/cache selection and an executed cursor remain unobserved.
+Its ActionGroupData section also replays current positive
+`passiveEventActions` samples against registered AbilityActionMap,
+SequenceActionData, and selected action readers. A child union advances only as
+far as its independently pinned reader evidence supports: unverified tags stop
+at their first byte, and the C9 member-eight path stops before its first generic
+SequenceActionData call. The report separately keeps any three-call nested
+SequenceActionData replay candidate-only: provider/cache selection remains
+unobserved, so its ranges do not advance the authoritative parser cursor. The
+following `timelineActions` count is only peeked; neither the parent
+`ActionGroupData` nor whole SkillData is closed. See
+`reports/animestudio/il2cpp_context_current_latest.*` for the current
+identity-bound ranges and corpus classification.

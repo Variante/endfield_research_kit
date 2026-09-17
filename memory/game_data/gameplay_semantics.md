@@ -145,6 +145,34 @@ extending this grammar, including the unsupported actions reached inside the
 sixth root collection -- until those close, not all sixth-member endpoints are
 known.
 
+## What the published Gameplay datasets establish
+
+The page builder's own evidence limits, which travel with the data rather than
+with the command:
+
+The base stage publishes every exact `chr_NNNN_token` identity registered in
+`StrIdNumTable`, even when `CharacterTable` has no row. Such namespace-only
+records remain visibly evidence-limited and do not claim availability,
+progression, runtime use, or playable status; longer skill/Buff/projectile ids
+are not promoted to characters.
+The base stage also resolves every BuffData id referenced by active Gameplay
+rows into a compact, fail-closed lifecycle/stacking/value catalog. Native enemy
+modifier, ability-event, skill-type, and cooldown-operation enum names are
+emitted only after the selected GameAssembly/metadata pair passes the
+installed-native gate. Non-empty Buff action chains use the current formatter's
+union ids/member counts and publish only chains whose typed actions consume to
+the exact next field boundary. The base stage also joins the current
+`GameplayTagPredefineTable.json` by signed-Int32/unsigned-hex ID, then joins
+the build's serialized `GameplayTagConfig` object-index paths using the
+validated CRC32(UTF-8 full path) rule. It publishes exact predefined/config
+names and preserves unmapped applied tags as raw IDs. A missing immunity path
+is named only when an exact `tagName2Immune` status context independently
+contains the CRC32 of `Immune/<suffix>`; these rows are labeled
+`exact-context-derived` and retain the proof context. The registry records the
+matched config-object/path counts and marks IDs absent from that serialized
+registry with a structured unresolved reason; it does not infer names from
+Buff ids.
+
 ## Tags, projectiles, and consumer freshness
 
 - Gameplay tag names come from exact predefined/config registries or validated

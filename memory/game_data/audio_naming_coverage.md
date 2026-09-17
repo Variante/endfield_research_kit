@@ -154,3 +154,271 @@ The gap is not a defect in the walk. Only **221** audio-shaped literals survive 
 `global-metadata.dat`, matching 199 objects; the event names for the rest are not
 shipped as managed literals. *Coverage of the structure and coverage of the names are
 different numbers, and quoting one for the other would overstate both.*
+
+## Beyond the shipped literals: how an Event acquires a name and an owner
+
+Everything above measures what the *bank corpus* names. The rest of the lane's
+naming comes from outside the banks -- managed literals, authored tables,
+serialized components and native callsites -- and each route has its own
+promotion rule. The rules are the durable part; the row counts they produce
+belong to the generated Audio evidence and to
+`reports/story/recovery/audio/`. None of these routes upgrades an authored
+request to a selected branch, a playback event, or audibility.
+
+### Managed `AU_*` fields: symbol-to-ID and nothing further
+
+A scan of current IL2CPP string fields finds 25 unique `AU_*` symbols whose
+`AudioHashGenerator` hashes match current Wwise Event IDs. Each is published
+with its declaring type, field token, metadata hash and exact symbol-to-ID
+evidence, and the existing name-prefix taxonomy is then used **only** for a
+conservative broad category. **This static field identity does not recover the
+runtime setter, caller, trigger, selected branch, execution, or audibility.**
+
+### Grammar name recovery, for the Events no shipped string reaches
+
+`scripts/audio_semantics/name_recovery.py` names Events that no shipped string
+reaches. Sweeping the whole IL2CPP literal blob and every metadata type/field
+name resolves only a handful of hash-only Events, so the module instead mines
+head/tail name templates per naming family **from the names already proven by
+exact evidence**, regenerates sibling names, and keeps candidates whose
+`AudioHashGenerator` hash equals a current hash-only Event id.
+
+- **Because a generated preimage is weaker than a shipped string**, a hash with
+  two distinct spellings is dropped, and a name is promoted only when its head
+  and tail each recur across other recovered Events at one shared split
+  boundary. Uncorroborated hits stay in
+  `grammarEventNameRecovery.isolatedEntries` and **never become an Event name**.
+- `index.json` publishes the promoted rows as `grammarRecoveredWwiseEventNames`
+  plus the candidate, isolated and ambiguous counts and the
+  coincidental-preimage expectation.
+- Promoted rows set `eventIdentityStatus=grammarHashPreimageNameRecovered` and
+  recover **only the owner and category the spelling encodes, never a caller or
+  audibility**.
+- Grammar-derived `au_` names are projected to an enemy only when the full
+  current EnemyTable id prefix plus delimiter matches exactly. That
+  `enemyNamespaceAudio` projection is **identity-only and is not a trigger or
+  runtime-consumer claim.**
+
+### Broad categories recovered without upgrading status
+
+- Complete final-media leaf-set equivalence recovers a **uniform broad output
+  category** for 85 hash-only Events (56 SFX, 21 UI, 6 voice, 2 control),
+  **without upgrading their caller, trigger, branch or runtime-purpose status**.
+- Weak category-name evidence is retained for 954 named Events from the enemy,
+  actor/UI, LevelSequence and Gameplay-SFX families; **exact voice contexts
+  override the weak enemy-name category** where the two disagree.
+- Media paths that remain under `wwise/unknown` receive a separate semantic
+  category from exact evidence: uniform related-Event joins, four
+  trigger-context Event categories, and MonoBehaviour audio-field roles. **The
+  raw physical category is preserved**, and mixed known-category joins remain
+  unclassified rather than resolved by majority.
+
+### Native trigger contexts, and the one that is deliberately not an Event
+
+- 18 exact native `SwitchAudioCustomState` contexts are admitted across
+  rotate-platform, crane, electric-fence, ForgeIron, LifterButton and
+  MovingPlatform Event rows. The trigger catalog exposes the decoded
+  custom-state name, current-build method/callsite evidence and metadata usage
+  word **only after an authored `InteractiveData` custom-state join**.
+  RotateNormalStart and RotateOverStart remain **separate branch-specific states
+  at one native callsite**; branch execution, object ownership and audible
+  output remain unobserved.
+- The same fingerprint-locked catalog places the pause/resume control Events
+  `au_gameplay_pause_spidle` and `au_gameplay_resume_spidle` at their exact
+  `SnapshotSystem` `PostEvent` callsites; **the selected action entity and the
+  runtime execution branch remain unobserved.**
+- The validated native-literal catalog also covers exact anchor-wave hit-state
+  routes and 3D-radio narrative selector values. **These are authored callsite
+  contexts, not runtime execution or audible-playback evidence.**
+- LevelScript `PlayVoice`/`PlayVoiceNarrative` rows are kept as a **separate
+  direct path-stem contract**: their constant `_voId` selects an `AudioDialog`
+  path and deliberately carries `wwiseEventStatus=notApplicable`. **They are not
+  rewritten into Wwise Event identities.**
+
+### LevelScript audio lifecycle, and the dynamic-property boundary
+
+Producer/consumer links are admitted only for an **exact same-LevelScript
+source-root and source-path identity**, with one active final serialized slot
+and one unique output path. `story_builder.level_bindings` resolves
+`ParamSource=200` dynamic string properties **only** through the strict
+`LevelScriptBriefData` property formatter; `ParamSource=100` and
+unknown/runtime sources remain runtime-unresolved and **cannot become handles**.
+This is authored serialized topology, **not runtime handle state, action
+execution, branch selection, or audibility**.
+
+RemoteCommon lifecycle fields use an exact Persistent-over-Streaming row
+overlay: non-empty `startAudioEvent`/`endAudioEvent` values become separate
+authored trigger contexts, while `voiceId` remains a dialogue identity and
+runtime execution remains unobserved.
+
+### The AudioCue expression tree is an operand projection
+
+The projection retains the complete validated tree with cue/handler scope,
+expression side, source path, parent/depth, `exprType`, four serialized scalar
+fields, child paths, node class and bounded diagnostics, **without evaluating
+serialized expressions**.
+
+- Non-empty behavior `exprType=3` leaves are **authored Event requests**;
+  non-empty `exprType=8` leaves are `runtimeCueVariable` evidence; non-empty
+  child lists are `compositeOpaque`; **all other nodes remain opaque**.
+- `childrenLimit` rejects the parent before child projection.
+- Enum and operator names are published only for a validated exact native
+  contract; missing or mismatched native inputs keep those names absent.
+- **The AST is a static request/operand projection, never condition truth,
+  variable value, branch execution, or playback evidence.**
+
+### Serialized components: the path is the evidence
+
+- For MonoBehaviour `monoBehaviourAudioIdField` contexts the **serialized path
+  remains the evidence**. The narrow `component*` role is an authored static
+  field label, while `componentLayout`, raw field/path values and exact
+  GameObject placement stay separately searchable. **Component or callback
+  execution, Event posting, Wwise selection and audibility remain unobserved.**
+- Complete serialized `AudioMapData` schemas admit their exact trigger
+  enter/exit, level lifecycle and outdoor-room-tone `uint32` Event fields. **The
+  schema gate rejects incomplete lookalikes before a numeric Wwise match becomes
+  a context.**
+
+### Scene ownership: what promotes it, and the prefab-identity gap that blocks it
+
+The scene-background catalog consumes each validated AnimeStudio AssetMap object
+root in one bounded streaming pass, using exact AssetMap `Source` + `PathID`
+identities.
+
+- **Prefab-local and scene-asset containment candidates remain separate**, and
+  only an authoritative scene ID with unique scene containment promotes scene
+  ownership.
+- Missing, malformed or unreadable sources are excluded with explicit
+  diagnostics while independently validated sources remain publishable; **no
+  cross-source edge is inferred.**
+- It resolves `AudioMapData` and scene emitters by script type, and joins exact
+  `AudioLevel` rows plus `MissionRuntimeAsset.acceptMode.levelId`.
+- **Scene activation, State/RTPC values, selector branches, listener state,
+  playback and audibility remain runtime evidence; source prefab definitions do
+  not prove level-instance placement.**
+- Scene-emitter Event rows publish compact containment and prefab-identity
+  status sets. **The current valid negative contract is a
+  prefab-local/static-authored emitter with unresolved scene and unavailable
+  prefab identity**; only exact SceneAsset/Level containment, or an exact prefab
+  `Source`+`PathID` evidence row joined to one level, may publish
+  `sceneEmitterSceneIds`. Candidate paths, sidecar `levelId`, names, positions
+  and mixed exact attributions **fail closed**.
+- Scene-global Event rows receive a compact attribution **only after** the
+  merged scene-background catalog validates every direct context: the complete
+  scene-id and original semantic-role sets are retained, while malformed,
+  partial, non-direct, truncated or out-of-catalog contexts remain unavailable
+  with bounded diagnostics. This is authored definition evidence; `foundInWwise`,
+  category, runtime activation, branch choice, playback and audibility are
+  unchanged.
+
+**The blocking gap is exporter-side.** `recover_map_streaming_instances.py`
+publishes the validated `InitChunkData` entity/name/transform and the raw ECS
+columns under a versioned prefab identity contract, and **the current validated
+columns expose no known prefab `Source`+`PathID`/hash field in the observed
+schema**. So no instance is promoted by basename, entity name, position, Mesh,
+or similarity. If a future sidecar carries an exact numeric identity, it may
+resolve through one unique full AssetMap container path (or an explicit
+component identity) before the Audio page attaches a level; ambiguous and
+missing relations stay unresolved. If the explicit component-identity and exact
+prefab-path identity routes disagree, reconciliation fails closed with
+`conflictingPrefabInstanceIdentityJoins`. **The remaining gap is
+exporter/sidecar production of exact prefab identity**, not analysis of the
+current columns.
+
+### Coarse media ownership, and what it may fill in
+
+Scene roles plus exact Event-context and external-path evidence are projected
+into coarse decoded-media ownership such as scene environment, animation,
+authored component, interaction, or mission narration. It **may** fill an
+otherwise unknown semantic category only for unambiguous roles such as outdoor
+room tone or an authored ambient emitter; **ownership never upgrades runtime
+playback or audibility status.**
+
+### Character, enemy and NPC ownership rules
+
+These are the promotion rules, each stated with what it refuses:
+
+- **Character namespaces.** Current `CharacterTable` keys assign authored
+  `chr_*`/`au_chr_*` Event namespaces, leading `au_actor_<token>_*` Events, and
+  Event-leading internal character tokens such as `lastrite_*` to a character
+  **only** through a delimited full key, a unique four-digit character-id
+  prefix, or a uniquely owned exact token. That owner set propagates to possible
+  media, **retaining every owner when a Wwise leaf is shared**. Generic
+  character templates, display-name similarity, actions, runtime requests,
+  selected leaves and playback positions are **not** inferred. Endministrator
+  gender variants continue to use the existing synthetic-item alias rather than
+  inventing a new WebUI owner.
+- **Enemy namespaces.** A leading `au_monster_<token>_*` Event is accepted only
+  when that token maps to **one** exact current `EnemyTable` id; it remains
+  separate from full `au_eny_<id>_*` matches and is **identity-only**. Explicit
+  enemy response candidates from ResponsiveDialog, skill and animation contexts
+  are published separately when their owner field **exactly equals** a current
+  EnemyTable id, and native-covered Events stay in the stronger native group.
+  Native voice-response callsites are published separately when their exact
+  AudioDialog Event has one longest delimited current EnemyTable prefix; they
+  retain response role and media candidates **without claiming live selection or
+  playback**.
+- **NPC owners.** An NPC owner is admitted only when one valid `NpcInfoTable`
+  row has matching non-empty `voActor`/`wwiseId` fields **and** its
+  `NpcTemplateGroupTable` `npcNameId`/`templateId` row agrees. Exact actor tokens
+  must also have one exact current `AudioDialogChannel` key whose typed
+  narrating and radio Event suffixes agree with that token; only then do they
+  publish `ownerKind=npc`, the `npcId`, the template id and the actor token.
+  Rows with duplicate tokens, overlay conflicts, malformed layers or template
+  mismatches remain unresolved, and **generic archetypes are never promoted by
+  name**.
+- **Table overlays are authoritative or suppressed, never stale.** In the
+  CharacterTable/EnemyTable/EnemyTemplateTable animation identity overlay,
+  Persistent rows are authoritative, and **a malformed Persistent layer
+  suppresses that table's identity surface instead of silently falling back to a
+  stale base**.
+- **Resolved is separate from candidate.** Each supported serialized
+  AnimationClip callback keeps per-Clip resolved entity IDs separate from
+  candidate IDs: exact Character, Enemy or EnemyTemplate matches may resolve,
+  while unique-token and multi-match possibilities remain candidate/ambiguous.
+  Shared callback owners remain shared; missing, malformed or unsupported
+  evidence stays unresolved/fail-closed; **candidate IDs never become resolved
+  ownership.** Mixed Events retain an identity only on their callback
+  occurrence/Clip rows, **not as a single Event owner**, and none of this proves
+  CharacterTable identity, Animator execution, playback or audibility.
+
+### Animation callbacks: the callback is the edge, not the name
+
+- Every supported serialized AnimationClip `PostAudioEvent` context is projected
+  as an explicit Event/media callback link with its clip, owner, function,
+  reachability and AnimatorController names when available. **This callback link
+  does not require the Event and clip names to match and does not promote an
+  unknown category.**
+- An AnimationClip action name and a Wwise Event id are recognized as the same
+  thing **only** when their normalized names match exactly *inside an existing
+  `PostAudioEvent` callback context*. That promotes the Event and its possible
+  media to action SFX while retaining the clip, actor, callback and
+  runtime-selection boundary. **Name similarity without the callback never
+  creates a trigger or ownership edge.**
+
+### External Source identity: three alias families, kept apart
+
+`externalSourceEventIdentityAudit` compares External Source Event ids separately
+against typed voice-table routing aliases and the narrower AudioDialog
+path-hash aliases, **preserving the Event-route versus per-request
+`externalSourceKey` boundary**.
+
+- When the structured AudioDialog tables are available, the audit adds a typed
+  `overrideWwiseEvent -> AudioDialog.path` candidate join producing bounded
+  route/path candidate sets. **Shared route Events remain candidate sets, not
+  selected runtime rows.**
+- Typed `AudioDialogChannel` narrating/radio fields add a broader candidate join
+  for channel-selection candidates. **This is explicitly lower-confidence
+  evidence** and is reported separately from the path-hash audit.
+- The changing candidate counts for both live in their own reports under
+  `reports/story/recovery/audio/`.
+
+### Playable-media projection into other pages
+
+- The compact Gameplay projection of exact namespace Events and playable
+  candidates is published into the language-specific `gameplay/sound_effects.json`
+  sidecar and **remains separate from trigger-backed skill and animation
+  audio**.
+- Playable `AudioDialogCustomEventTable` preload/post-enter rows are projected
+  onto matching `conv/<dialogId>.json` records. **Missing conversation IDs
+  remain Audio-only and lifecycle dispatch is not inferred.**
