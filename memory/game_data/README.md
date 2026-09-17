@@ -109,7 +109,7 @@ animation. Neither is spatial, so neither belongs in the world lane.
 
 | File | Level | Lines |
 | --- | --- | --- |
-| [`gameplay_semantics.md`](gameplay_semantics.md) -- the root framing and the rules the 228 tracked contracts share | 4 | 158 |
+| [`gameplay_semantics.md`](gameplay_semantics.md) -- the root framing and the rules the 228 tracked contracts share | 4 | 186 |
 
 **Story lane** -- the carriers that activate and place Story.
 
@@ -133,8 +133,8 @@ animation. Neither is spatial, so neither belongs in the world lane.
 
 | File | Level | Lines |
 | --- | --- | --- |
-| [`extraction_pipeline.md`](extraction_pipeline.md) -- AnimeStudio: export scopes, provenance states, scheduling, DummyDll, shader recovery, change workflow | 1 | 218 |
-| [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md) -- one statement per family: which reader is fail-closed and where it stops | 2 | 167 |
+| [`extraction_pipeline.md`](extraction_pipeline.md) -- AnimeStudio: export scopes, provenance states, scheduling, DummyDll, shader recovery, change workflow | 1 | 246 |
+| [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md) -- one statement per family: which reader is fail-closed and where it stops | 2 | 313 |
 
 **Cross-lane**
 
