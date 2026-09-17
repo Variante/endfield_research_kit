@@ -109,13 +109,13 @@ animation. Neither is spatial, so neither belongs in the world lane.
 
 | File | Level | Lines |
 | --- | --- | --- |
-| [`gameplay_semantics.md`](gameplay_semantics.md) -- the root framing and the rules the 228 tracked contracts share | 4 | 186 |
+| [`gameplay_semantics.md`](gameplay_semantics.md) -- the root framing, the rules the 228 tracked contracts share, and what a decoded action row may be labelled | 4 | 205 |
 
 **Story lane** -- the carriers that activate and place Story.
 
 | File | Level | Lines |
 | --- | --- | --- |
-| [`story_carriers.md`](story_carriers.md) -- what a LevelScript action, Timeline record, or spatial carrier proves, and the gates on it | 4 | 50 |
+| [`story_carriers.md`](story_carriers.md) -- what a LevelScript action, Timeline record, or spatial carrier proves, its identity domain and slot action bindings, and the gates on all of it | 4 | 102 |
 
 **Catalog lane** -- the `ExtendData` and `BundleManifest` blocks.
 

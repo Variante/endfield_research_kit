@@ -1648,13 +1648,11 @@ def build_event_rows(
             "eventIds": set(),
             "mediaIds": set(),
             "selectionEventIds": set(),
-            "visitedObjectTypeOccurrences": Counter(),
         })
         bank["eventIds"].add(key)
         bank["mediaIds"].update(str(value) for value in evidence.get("mediaIds") or [])
         if selection_types:
             bank["selectionEventIds"].add(key)
-        bank["visitedObjectTypeOccurrences"].update(object_types)
 
     current_wwise_event_hashes = {
         int(row.get("eventHash")) & 0xFFFFFFFF
@@ -1913,13 +1911,11 @@ def build_event_rows(
             "eventIds": set(),
             "mediaIds": set(),
             "selectionEventIds": set(),
-            "visitedObjectTypeOccurrences": Counter(),
         })
         bank["eventIds"].add(key)
         bank["mediaIds"].update(str(value) for value in inventory.get("mediaIds") or [])
         if selection_types:
             bank["selectionEventIds"].add(key)
-        bank["visitedObjectTypeOccurrences"].update(object_types)
 
     display_names: dict[str, str] = {}
     for value in audio_index.get("eventNames") or []:
@@ -2391,8 +2387,6 @@ def build_event_rows(
             "eventCount": len(bank["eventIds"]),
             "namedEventCount": named_event_count,
             "mediaCount": len(bank["mediaIds"]),
-            "selectionEventCount": len(bank["selectionEventIds"]),
-            "visitedObjectTypeOccurrences": dict(sorted(bank["visitedObjectTypeOccurrences"].items())),
         })
     banks.sort(key=lambda row: (str(row.get("bank") or ""), int(row.get("bankId") or 0)))
     return rows, media_to_events, banks

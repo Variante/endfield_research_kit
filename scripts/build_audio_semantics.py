@@ -38,7 +38,6 @@ if __package__ == "scripts":
         dialog_lifecycle,
         event_projection,
         event_summary,
-        external_source,
         identifiers,
         interactive_components,
         managed_literals,
@@ -66,7 +65,6 @@ elif not __package__:
         dialog_lifecycle,
         event_projection,
         event_summary,
-        external_source,
         identifiers,
         interactive_components,
         managed_literals,
@@ -13231,11 +13229,6 @@ def build_audio_semantic_data(
                 f"AnimeStudio object-index gate failed: {exc}"
             ),
         }
-    external_source_event_identity_audit = external_source.collect_event_identity_audit(
-        audio_index,
-        language=language,
-        export_root=export_root,
-    )
     metadata_event_symbol_catalog = collect_metadata_event_symbol_aliases(
         metadata_path,
         current_wwise_event_hashes,
@@ -14029,38 +14022,7 @@ def build_audio_semantic_data(
                 for key, value in animation_action_ownership.items()
                 if key not in {"schemaVersion", "evidenceBoundary"}
             },
-            "eventRecords": len(events),
-            "runtimeObservedEventRecords": int(
-                runtime_observation_projection.get("eventCount") or 0
-            ),
-            "runtimeObservedMediaRecords": int(
-                runtime_observation_projection.get("mediaCount") or 0
-            ),
-            "sceneBackgroundExactNamedScenes": int(
-                (scene_background_semantics.get("counts") or {}).get(
-                    "exactNamedScenes", 0
-                )
-            ),
-            "sceneBackgroundGlobalEventOccurrences": int(
-                (scene_background_semantics.get("counts") or {}).get(
-                    "sceneGlobalEventOccurrences", 0
-                )
-            ),
-            "sceneBackgroundEmitterEventRequests": int(
-                (scene_background_semantics.get("counts") or {}).get(
-                    "sceneEmitterEventRequests", 0
-                )
-            ),
-            "sceneGlobalCompactExactEvents": len(scene_global_exact_events),
-            "sceneGlobalCompactExactContexts": scene_global_exact_context_count,
-            "sceneGlobalCompactExactScenes": len(scene_global_exact_scene_ids),
-            "sceneGlobalCompactUnavailableEvents": len(scene_global_unavailable_events),
-            "sceneEmitterCompactExactEvents": len(scene_emitter_exact_events),
-            "sceneEmitterCompactExactScenes": len(scene_emitter_exact_scene_ids),
-            "sceneEmitterCompactPrefabLocalEvents": len(scene_emitter_prefab_local_events),
-            "sceneEmitterCompactUnavailableEvents": len(scene_emitter_unavailable_events),
             "namedEvents": len(named_event_ids),
-            "eventsFoundInWwise": linked_events,
             "wwiseEventObjectHashes": sum(
                 row.get("foundInWwise") for row in events
             ),
@@ -14069,29 +14031,6 @@ def build_audio_semantic_data(
                 row.get("eventIdentityStatus") == "wwiseObjectWithoutRecoveredTriggerName"
                 for row in events
             ),
-            "wwisePlaybackEvents": sum(row.get("playbackRole") == "playback" for row in events),
-            "wwiseMixedPlaybackAndControlEvents": sum(
-                row.get("playbackRole") == "mixedPlaybackAndControl" for row in events
-            ),
-            "wwiseControlOnlyEvents": sum(row.get("playbackRole") == "controlOnly" for row in events),
-            "wwiseEventsWithUnresolvedActionRole": sum(
-                row.get("playbackRole") == "unresolved" for row in events
-            ),
-            "wwiseEmptyEventDefinitions": sum(
-                row.get("playbackRole") == "emptyEventDefinition" for row in events
-            ),
-            "eventsWithAuthoredSharedPlayTargetSet": shared_play_target_event_count,
-            "eventsWithAuthoredSharedMediaLeafSet": shared_media_leaf_event_count,
-            "eventsWithAuthoredSharedMediaLeafCategory": shared_media_leaf_category_event_count,
-            "eventsWithAuthoredNamePatternCategory": authored_name_category_event_count,
-            "mediaWithSemanticCategory": sum(
-                bool(row.get("semanticCategory")) for row in media
-            ),
-            "mediaWithSemanticCategoryFromRelatedEvent": sum(
-                row.get("semanticCategoryEvidence") == "exactUniqueRelatedWwiseEventCategory"
-                for row in media
-            ),
-            "mediaSemanticCategoryCounts": dict(sorted(media_semantic_categories.items())),
             "audioDialogWwiseEventAliases": len(
                 audio_index.get("audioDialogWwiseEventAliases") or []
             ),
@@ -14118,21 +14057,6 @@ def build_audio_semantic_data(
                     "expectedCoincidentalPreimages"
                 )
                 or 0.0
-            ),
-            "snsVoiceMessageEvents": context_kind_event_counts.get("snsVoiceMessageEvent", 0),
-            "voiceNarratingChannelEvents": context_kind_event_counts.get("voiceNarratingChannelEvent", 0),
-            "voiceRadioChannelEvents": context_kind_event_counts.get("voiceRadioChannelEvent", 0),
-            "audioDialogOverrideWwiseEvents": context_kind_event_counts.get("audioDialogOverrideWwiseEvent", 0),
-            "responsiveVoiceEventTemplates": context_kind_event_counts.get("responsiveVoiceEventTemplate", 0),
-            "uiAnimationOpenEvents": context_kind_event_counts.get("uiAnimationOpenEvent", 0),
-            "activityPushPopupBgmEvents": context_kind_event_counts.get("activityPushPopupBgmEvent", 0),
-            "activityCenterBgmEvents": context_kind_event_counts.get("activityCenterBgmEvent", 0),
-            "uiVideoAudioEvents": context_kind_event_counts.get("uiVideoAudioEvent", 0),
-            "domainRegionSwitchEvents": context_kind_event_counts.get("domainRegionSwitchEvent", 0),
-            "domainUpgradeAnimationEvents": context_kind_event_counts.get("domainUpgradeAnimationEvent", 0),
-            "responsiveDialogWwiseEvents": sum(
-                any(context.get("kind") == "responsiveDialogVoice" for context in row.get("contexts") or [])
-                for row in events
             ),
             "purposeUnknownEvents": sum(
                 row.get("purposeInvestigationPriority") == "highest"
@@ -14162,58 +14086,10 @@ def build_audio_semantic_data(
                 row.get("purposeInvestigationPriority") == "resolvedTerminal"
                 for row in media
             ),
-            "aiBarkResponsiveWwiseEvents": sum(
-                any(
-                    context.get("kind") == "responsiveDialogVoice"
-                    and bool(context.get("aiBarkRequests"))
-                    for context in row.get("contexts") or []
-                )
-                for row in events
-            ),
-            "aiBarkResponsiveWwiseEventContexts": sum(
-                context.get("kind") == "responsiveDialogVoice"
-                and bool(context.get("aiBarkRequests"))
-                for row in events
-                for context in row.get("contexts") or []
-                if isinstance(context, dict)
-            ),
-            "aiBarkIdsLinkedToResponsiveWwiseEvents": len({
-                str(request.get("barkId") or "")
-                for row in events
-                for context in row.get("contexts") or []
-                if isinstance(context, dict)
-                and context.get("kind") == "responsiveDialogVoice"
-                for request in context.get("aiBarkRequests") or []
-                if isinstance(request, dict) and str(request.get("barkId") or "")
-            }),
-            "enemyTriggerVoiceActionResponsiveWwiseEvents": sum(
-                any(
-                    context.get("kind") == "responsiveDialogVoice"
-                    and bool(context.get("enemyTriggerVoiceAction"))
-                    for context in row.get("contexts") or []
-                    if isinstance(context, dict)
-                )
-                for row in events
-            ),
-            "enemyTriggerVoiceActionResponsiveWwiseEventContexts": sum(
-                context.get("kind") == "responsiveDialogVoice"
-                and bool(context.get("enemyTriggerVoiceAction"))
-                for row in events
-                for context in row.get("contexts") or []
-                if isinstance(context, dict)
-            ),
-            "wwiseVoiceToneVariantEvents": sum(
-                any(context.get("kind") == "voiceToneVariant" for context in row.get("contexts") or [])
-                for row in events
-            ),
             "authoredEventsUnresolvedToWwise": sum(
                 not row.get("foundInWwise") for row in events
             ),
             "mediaPlaybackLocationUnknown": media_playback_location_counts.get("unknown", 0),
-            "definitionOnlyDecodedMedia": sum(
-                row.get("audioLibraryObjectStatus") == "wwiseSoundDefinitionWithoutEventPath"
-                for row in media
-            ),
             "recoveredOrphanExternalMediaIdentities": sum(
                 row.get("externalMediaIdentityStatus") == "recoveredAuthoredPathHash"
                 for row in media
@@ -14221,66 +14097,6 @@ def build_audio_semantic_data(
             "mediaWithEventRelationOnly": media_playback_location_counts.get("eventRelationOnly", 0),
             "mediaWithAuthoredEventContext": media_playback_location_counts.get("authoredEventContext", 0),
             "directDialogMedia": media_playback_location_counts.get("directDialogMedia", 0),
-            "mediaWithPostProcessRoutes": sum(
-                int(row.get("postProcessRouteCount") or 0) > 0
-                for row in media
-            ),
-            "mediaWithPostProcessUnresolvedBusPaths": sum(
-                bool(row.get("postProcessUnresolvedBusProcessingIds"))
-                for row in media
-            ),
-            "eventPossibleMedia": sum(int(row.get("possibleMediaCount") or 0) for row in events),
-            "eventMediaCandidates": sum(int(row.get("possibleMediaCount") or 0) for row in events),
-            "banksWithIndexedEvents": len(banks),
-            "banksWithNamedEvents": sum(
-                int(bank.get("namedEventCount") or 0) > 0 for bank in banks
-            ),
-            "runtimeSelectionUnresolved": selection_events,
-            "typedTraversalComplete": sum(row.get("traversalStatus") == "complete" for row in events),
-            "typedTraversalPartial": sum(row.get("traversalStatus") == "partial" for row in events),
-            "eventsWithMultiplePlayRoots": sum(int(row.get("playRootCount") or 0) > 1 for row in events),
-            "wwiseCodecSourceReferences": wwise_source_reference_counts.get("codecMedia", 0),
-            "wwiseExternalSourceReferences": wwise_source_reference_counts.get("externalSourceCodec", 0),
-            "wwiseSynthesizedSourceReferences": wwise_source_reference_counts.get("synthesizedSource", 0),
-            "wwiseEventsWithExternalSource": wwise_source_event_counts.get("externalSourceCodec", 0),
-            "wwiseEventsWithSynthesizedSource": wwise_source_event_counts.get("synthesizedSource", 0),
-            "externalSourceEventIdentityEvents": external_source_event_identity_audit.get(
-                "externalSourceEventCount", 0
-            ),
-            "externalSourceEventIdentityVoiceTableMatches": external_source_event_identity_audit.get(
-                "externalEventsWithVoiceTableAlias", 0
-            ),
-            "externalSourceEventIdentityAudioDialogMatches": external_source_event_identity_audit.get(
-                "externalEventsWithAudioDialogAlias", 0
-            ),
-            "externalSourceEventIdentityDecodedMediaMatches": external_source_event_identity_audit.get(
-                "externalEventsWithDecodedMedia", 0
-            ),
-            "externalSourceEventIdentityZeroResolvedMedia": external_source_event_identity_audit.get(
-                "externalEventsWithZeroResolvedMedia", 0
-            ),
-            "externalSourceOverridePathEvents": external_source_event_identity_audit.get(
-                "externalEventsWithOverridePathCandidates", 0
-            ),
-            "externalSourceOverridePathUniqueEvents": external_source_event_identity_audit.get(
-                "externalEventsWithUniqueOverridePath", 0
-            ),
-            "externalSourceOverridePathCandidates": external_source_event_identity_audit.get(
-                "externalOverridePathCandidateCount", 0
-            ),
-            "externalSourceOverridePathDecodedCandidates": external_source_event_identity_audit.get(
-                "externalOverridePathCandidatesWithDecodedMedia", 0
-            ),
-            "externalSourceChannelPathEvents": external_source_event_identity_audit.get(
-                "externalEventsWithChannelPathCandidates", 0
-            ),
-            "externalSourceChannelPathUniqueCandidates": external_source_event_identity_audit.get(
-                "externalChannelPathUniqueCandidateCount", 0
-            ),
-            "externalSourceChannelPathDecodedCandidates": external_source_event_identity_audit.get(
-                "externalChannelPathUniqueCandidatesWithDecodedMedia", 0
-            ),
-            "wwiseSourcePluginIds": len(wwise_source_plugin_counts),
             "sharedPlayableCharacterAnimationEvents": sum(
                 int(row.get("playableCharacterAnimationOwnerCount") or 0) > 1
                 for row in events
@@ -14295,48 +14111,13 @@ def build_audio_semantic_data(
             "customFootstepParameterVariants": (
                 custom_footstep_model.get("corpus") or {}
             ).get("parameterVariantCount", 0),
-            "binaryManagedAudioLiterals": len(managed_literal_names),
-            "binaryManagedLiteralWwiseEvents": managed_literal_hirc_matches,
             "metadataEventSymbolAliases": int(
                 metadata_event_symbol_catalog.get("matchCount") or 0
             ),
             "luaPostEventNames": context_kind_event_counts.get("luaPostEvent", 0),
             "luaPostEventContexts": context_kind_counts.get("luaPostEvent", 0),
-            "luaPostEventNamesFoundInWwise": sum(
-                bool(row.get("foundInWwise"))
-                and any(
-                    isinstance(context, dict) and context.get("kind") == "luaPostEvent"
-                    for context in row.get("contexts") or []
-                )
-                for row in events
-            ),
-            "authoredTableEventHashes": len(table_event_hashes),
-            "authoredTableEventHashesFound": table_event_hash_matches,
             "runtimeSystems": len(runtime_systems),
-            "interactiveAudioTriggerEvents": context_kind_event_counts.get("interactiveAudioTrigger", 0),
-            "interactiveAudioTriggerContexts": context_kind_counts.get("interactiveAudioTrigger", 0),
-            "interactiveComponentTriggerEvents": context_kind_event_counts.get("interactiveComponentTrigger", 0),
-            "interactiveComponentTriggerContexts": context_kind_counts.get("interactiveComponentTrigger", 0),
-            "interactiveComponentPropertyAudioEvents": context_kind_event_counts.get("interactiveComponentPropertyAudio", 0),
-            "interactiveComponentPropertyAudioContexts": context_kind_counts.get("interactiveComponentPropertyAudio", 0),
-            "interactivePropertyMapAudioEvents": context_kind_event_counts.get("interactivePropertyMapAudio", 0),
-            "interactivePropertyMapAudioContexts": context_kind_counts.get("interactivePropertyMapAudio", 0),
-            "interactiveTemplateConfigAudioEvents": context_kind_event_counts.get("interactiveTemplateConfigAudio", 0),
-            "interactiveTemplateConfigAudioContexts": context_kind_counts.get("interactiveTemplateConfigAudio", 0),
-            "interactiveTemplateActionAudioEvents": context_kind_event_counts.get("interactiveTemplateActionAudio", 0),
-            "interactiveTemplateActionAudioContexts": context_kind_counts.get("interactiveTemplateActionAudio", 0),
-            "interactiveEmbeddedActionAudioEvents": context_kind_event_counts.get("interactiveEmbeddedActionAudio", 0),
-            "interactiveEmbeddedActionAudioContexts": context_kind_counts.get("interactiveEmbeddedActionAudio", 0),
-            "audioGlobalConfigEvents": (
-                context_kind_event_counts.get("audioGlobalConfigEvent", 0)
-                + context_kind_event_counts.get("audioGlobalConfigEventHash", 0)
-            ),
-            "audioGlobalConfigContexts": (
-                context_kind_counts.get("audioGlobalConfigEvent", 0)
-                + context_kind_counts.get("audioGlobalConfigEventHash", 0)
-            ),
             "projectileSoundEvents": context_kind_event_counts.get("projectileSoundField", 0),
-            "projectileSoundContexts": context_kind_counts.get("projectileSoundField", 0),
             "spawnerPreWarnAudioEvents": context_kind_event_counts.get("spawnerPreWarnAudio", 0),
             "spawnerPreWarnAudioContexts": context_kind_counts.get("spawnerPreWarnAudio", 0),
             "spawnerPreWarnAudioEventsFoundInWwise": sum(
@@ -14370,163 +14151,31 @@ def build_audio_semantic_data(
                 not row.get("foundInWwise") for row in physics_audio_event_rows
             ),
             "physicsAudioRtpcControls": len(physics_audio_semantics.get("rtpcParameters") or []),
-            "physicsAudioConsumerIdentities": (
-                (physics_audio_semantics.get("stats") or {}).get("physicsAudioConsumerIdentities") or 0
-            ),
-            "modelViewStateAudioEvents": (
-                context_kind_event_counts.get("modelViewStateAudioEvent", 0)
-                + context_kind_event_counts.get("modelViewStatePositionAudioEvent", 0)
-            ),
-            "modelViewStateAudioEventContexts": (
-                context_kind_counts.get("modelViewStateAudioEvent", 0)
-                + context_kind_counts.get("modelViewStatePositionAudioEvent", 0)
-            ),
+            "physicsAudioConsumerIdentities": (physics_audio_semantics.get("stats") or {}).get("physicsAudioConsumerIdentities") or 0,
+            "modelViewStateAudioEvents": context_kind_event_counts.get("modelViewStateAudioEvent", 0)
+                + context_kind_event_counts.get("modelViewStatePositionAudioEvent", 0),
             "modelViewStateAudioEventsFoundInWwise": sum(
                 bool(row.get("foundInWwise")) for row in model_view_event_rows
             ),
             "modelViewStateAudioEventsUnresolved": sum(
                 not row.get("foundInWwise") for row in model_view_event_rows
             ),
-            "modelViewStatePositionDirectEvents": context_kind_event_counts.get("modelViewStatePositionAudioEvent", 0),
-            "modelViewStatePositionDirectEventContexts": context_kind_counts.get("modelViewStatePositionAudioEvent", 0),
-            "modelViewStatePositionedCustomStateControls": context_kind_counts.get("modelViewStatePositionedCustomStateControl", 0),
-            "modelViewStatePositionedEntityStateControls": context_kind_counts.get("modelViewStatePositionedEntityStateControl", 0),
-            "modelViewStatePositionedControls": (
-                context_kind_counts.get("modelViewStatePositionedCustomStateControl", 0)
-                + context_kind_counts.get("modelViewStatePositionedEntityStateControl", 0)
-            ),
-            "modelViewStateRtpcControls": len(model_view_semantics.get("rtpcParameters") or []),
+            "modelViewStatePositionedControls": context_kind_counts.get("modelViewStatePositionedCustomStateControl", 0)
+                + context_kind_counts.get("modelViewStatePositionedEntityStateControl", 0),
             "modelViewStateSpatialControls": len(model_view_semantics.get("spatialControls") or []),
             "modelViewStateCustomAudioControls": len(model_view_semantics.get("customAudioControls") or []),
-            "levelScriptAudioActionEvents": context_kind_event_counts.get("levelScriptAudioAction", 0),
-            "levelScriptAudioActionContexts": context_kind_counts.get("levelScriptAudioAction", 0),
             "levelScriptAudioCueInvocations": len(levelscript_semantics.get("cueInvocations") or []),
-            "levelScriptAudioCueInvocationsResolved": (
-                (levelscript_semantics.get("stats") or {}).get("cueDefinitionStatusCounts") or {}
-            ).get("resolved", 0),
-            "levelScriptAudioCueInvocationsMissing": (
-                (levelscript_semantics.get("stats") or {}).get("cueDefinitionStatusCounts") or {}
-            ).get("missing", 0),
-            "levelScriptAudioCueBehaviorEvents": context_kind_event_counts.get("levelScriptAudioCueBehaviorEvent", 0),
-            "levelScriptAudioCueBehaviorContexts": context_kind_counts.get("levelScriptAudioCueBehaviorEvent", 0),
             "levelScriptDynamicAudioBindings": len(levelscript_semantics.get("dynamicEventBindings") or []),
-            "levelScriptResolvedDynamicAudioBindings": len(
-                levelscript_semantics.get("resolvedDynamicEventBindings") or []
-            ),
-            "levelScriptRadioActions": (
-                (radio_catalog.get("counts") or {}).get(
-                    "levelScriptRadioActionRecords", 0
-                )
-            ),
-            "levelScriptConstantRadioBindings": (
-                (radio_catalog.get("counts") or {}).get("constantRadioBindings", 0)
-            ),
-            "levelScriptDynamicRadioBindings": (
-                (radio_catalog.get("counts") or {}).get("dynamicRadioBindings", 0)
-            ),
-            "radioTableDefinitions": (
-                (radio_catalog.get("counts") or {}).get("radioTableDefinitions", 0)
-            ),
-            "radioTableLines": (
-                (radio_catalog.get("counts") or {}).get("radioTableLines", 0)
-            ),
-            "radioTableDecodedDirectMedia": (
-                (radio_catalog.get("counts") or {}).get("decodedDirectMedia", 0)
-            ),
+            "radioTableDefinitions": (radio_catalog.get("counts") or {}).get("radioTableDefinitions", 0),
+            "radioTableLines": (radio_catalog.get("counts") or {}).get("radioTableLines", 0),
             "levelScriptAudioControls": len(levelscript_semantics.get("controlActions") or []),
             "levelScriptDynamicControlBindings": len(levelscript_semantics.get("dynamicControlBindings") or []),
-            "levelSequenceAudioEvents": context_kind_event_counts.get("levelSequenceAudio", 0),
-            "levelSequenceAudioContexts": context_kind_counts.get("levelSequenceAudio", 0),
-            "timelineAudioCueBehaviorEvents": context_kind_event_counts.get(
-                "timelineAudioCueBehaviorEvent", 0
-            ),
-            "timelineAudioCueBehaviorContexts": context_kind_counts.get(
-                "timelineAudioCueBehaviorEvent", 0
-            ),
-            "timelineAudioCueInvocations": (
-                (timeline_cue_semantics.get("stats") or {}).get("timelineCueInvocations", 0)
-            ),
-            "timelineAudioCueInvocationsResolved": (
-                (timeline_cue_semantics.get("stats") or {}).get("timelineCueInvocationsResolved", 0)
-            ),
-            "timelineAudioCueInvocationsMissing": (
-                (timeline_cue_semantics.get("stats") or {}).get("timelineCueInvocationsMissing", 0)
-            ),
-            "levelSequenceExactContextEvents": sum(
-                any(
-                    isinstance(context, dict)
-                    and context.get("kind") == "levelSequenceAudio"
-                    and context.get("confidence") == "exact"
-                    for context in row.get("contexts") or []
-                )
-                for row in events
-            ),
-            "levelSequenceInferredContextEvents": sum(
-                any(
-                    isinstance(context, dict)
-                    and context.get("kind") == "levelSequenceAudio"
-                    and context.get("confidence") == "inferred"
-                    for context in row.get("contexts") or []
-                )
-                for row in events
-            ),
-            "levelSequenceOwnershipGapEvents": sum(
-                any(
-                    isinstance(context, dict)
-                    and context.get("kind") == "levelSequenceAudio"
-                    and context.get("confidence") == "gap"
-                    for context in row.get("contexts") or []
-                )
-                for row in events
-            ),
-            "levelSequenceTimelineCarrierEvents": (
-                (levelsequence_semantics.get("stats") or {}).get(
-                    "eventsWithAnyTimelineCarrier", 0
-                )
-            ),
-            "levelSequencePlayActionExactEvents": (
-                (levelsequence_semantics.get("stats") or {}).get(
-                    "eventsWithExactLevelSequenceAction", 0
-                )
-            ),
-            "levelSequenceDirectorLinkContexts": (
-                (levelsequence_semantics.get("stats") or {}).get(
-                    "contextsWithPlayableDirector", 0
-                )
-            ),
-            "levelSequenceDirectorLinkGapContexts": (
-                (levelsequence_semantics.get("stats") or {}).get(
-                    "contextsWithoutPlayableDirector", 0
-                )
-            ),
-            "levelSequenceRuntimeActivationUnobservedEvents": context_kind_event_counts.get(
-                "levelSequenceAudio", 0
-            ),
-            "levelEventAudioConditionDefinitions": len(LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS),
-            "levelEventAudioConditionAuthoredOccurrences": sum(
-                int(row.get("authoredOccurrenceCount") or 0)
-                for row in LEVEL_EVENT_AUDIO_CONDITION_DEFINITIONS
-            ),
             "authoredPlaySoundActionEvents": play_sound_action_events,
-            "authoredPlaySoundActionContexts": play_sound_action_contexts,
             "authoredPlaySoundActionOccurrences": play_sound_action_occurrences,
             "exactSkillConfigTriggerEvents": trigger_status_event_counts.get("exactSkillConfig", 0),
-            "inferredSkillConfigOwnerEvents": trigger_status_event_counts.get("inferredSkillConfigOwner", 0),
-            "exactEnemyBornBuffTriggerEvents": trigger_status_event_counts.get("exactEnemyBornBuffConfig", 0),
             "exactSkillConfigTriggerContexts": trigger_status_context_counts.get("exactSkillConfig", 0),
-            "inferredSkillConfigOwnerContexts": trigger_status_context_counts.get("inferredSkillConfigOwner", 0),
-            "exactEnemyBornBuffTriggerContexts": trigger_status_context_counts.get("exactEnemyBornBuffConfig", 0),
-            "runtimeTypesMissing": len(runtime_model.get("missingTypes") or []),
             "triggerContexts": int(
                 (trigger_context_catalog.get("counts") or {}).get("total") or 0
-            ),
-            "triggerContextsWithPlayableMedia": int(
-                (trigger_context_catalog.get("counts") or {}).get("withPlayableMedia") or 0
-            ),
-            "triggerContextsRuntimeExecutionUnobserved": int(
-                (trigger_context_catalog.get("counts") or {}).get(
-                    "runtimeExecutionUnobserved", 0
-                )
             ),
         },
         "coverage": {
@@ -14744,7 +14393,6 @@ def build_audio_semantic_data(
         },
         "runtimeModel": runtime_model,
         "runtimeObservations": runtime_observation_projection,
-        "externalSourceEventIdentityAudit": external_source_event_identity_audit,
         "evidenceBoundary": {
             "decodedMedia": "A decoded FLAC/WAV/WEM is a source media object, not proof that it played.",
             "eventMedia": "Possible media leaves use typed Wwise v150 Event -> Action -> reciprocal Children -> Sound/MusicTrack AkBankSourceData edges. Ordinary Codec sources may join decoded media; External Source codec and synthesized Source-plugin records remain non-media playback sources. Play roots and random/sequence/switch/layer relations are preserved; runtime selection and source instantiation are not evaluated. Unsupported plugins, music nodes, and unparsed child structures fail closed.",
@@ -14795,9 +14443,6 @@ def build_audio_semantic_data(
                 "lifetime handling; they are not a live execution trace, active state, or selected media leaf."
             ),
             "runtimeObservations": runtime_observation_projection.get(
-                "evidenceBoundary", ""
-            ),
-            "externalSourceEventIdentity": external_source_event_identity_audit.get(
                 "evidenceBoundary", ""
             ),
         },

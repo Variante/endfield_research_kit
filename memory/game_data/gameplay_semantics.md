@@ -173,6 +173,25 @@ matched config-object/path counts and marks IDs absent from that serialized
 registry with a structured unresolved reason; it does not infer names from
 Buff ids.
 
+### What a decoded action row may be labelled
+
+A label is allowed only where the contract's own decoding supplies it, and the
+refusals below are the ones that were each once assumed instead of read:
+
+- a blackboard calculation row carries the native `HpRatio` type and the
+  operation the contract decoded, including `Floor`, `Ceil` and `RoundToInt`.
+- `SimpleCalcBBAction` shows its **decoded** operation. Division is not the
+  default and was not assumed.
+- `CompareFloat` shows the exact blackboard comparison; `SpellInfliction`
+  carries its elemental type; a complex-entity `ConvertToTargetContext` row
+  carries the decoded target-conversion and translation-rotation modes.
+- common `TargetSettings` fields -- target/group, context, owner, source and
+  selector values -- are readable even when the enclosing action is partial,
+  and a partial enclosing action stays partial.
+- complex-entity spawn, projectile, heal-calculation,
+  `DamageUnit`/`EffectActionCfg` and unresolved selector payloads **stay
+  unresolved**; a neighbouring decoded field does not name them.
+
 ## Tags, projectiles, and consumer freshness
 
 - Gameplay tag names come from exact predefined/config registries or validated

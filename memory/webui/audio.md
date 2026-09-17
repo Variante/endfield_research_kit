@@ -36,6 +36,40 @@ semantic shards, scene backgrounds, and Gameplay audio sidecars.
   does not prove that playback occurred in a captured session.
 - Manual notes are user annotations and never upgrade confidence.
 
+### What each rendered state refuses to claim
+
+The frontend renders these status tokens verbatim (they are listed in
+[`../../webui/README.md`](../../webui/README.md)); this is what each one is
+allowed to mean:
+
+- an authored `monoBehaviourAudioIdField` role is a serialized field
+  projection. No field is executed, posted, selected, or audible.
+- a prefab source row is not a recovered level instance.
+  `sceneId`/`sourceName`/`sourcePath` appear only on an exact scene containment
+  row, and disagreeing component and prefab-path identity fail closed with
+  `conflictingPrefabInstanceIdentityJoins` rather than one route being chosen.
+- a grammar-hash-preimage name is a weaker source than a shipped literal. It
+  supplies only the owner and category its spelling encodes, and no caller,
+  trigger, execution, branch, or audibility.
+- `noExplicitOutputBusSerialized` is an absence of serialized output-bus nodes.
+  It implies no default or parent routing, no silence, and no effect-free path.
+- `ownerKind=npc` requires the agreeing table pair plus an exact channel key. A
+  mixed Event keeps the NPC on occurrence/Clip evidence only and receives no
+  single NPC owner.
+- namespace and native-response groups are identity-only. Shared media lists
+  every named owner, while generic templates, live speaker choice, Wwise
+  selection, and concrete playback locations stay unresolved.
+- the AudioCue AST shows structure only: no condition truth, runtime variable
+  value, handler dispatch, cue execution, branch selection, or audibility.
+- `controlCatalog.staticRtpcAlignment` is authored static evidence. A missing,
+  mismatched, malformed, or stale gate withholds the static names instead of
+  showing stale identities, and `0x1802`/`0x1804` are never renamed.
+- serialized effect-chain, RTPC, State, Aux-send, and ducking rows are possible
+  routes. Runtime DSP order, effective inheritance, live control values, branch
+  selection, and audibility remain unresolved.
+- a recovered semantic category or coarse ownership never upgrades playback
+  placement or runtime status.
+
 ## Focused refresh
 
 ```bat
