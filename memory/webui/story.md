@@ -58,5 +58,5 @@ coherent batch boundary described in `AGENTS.md`.
 - Reduce unresolved option placement without weakening manual/generated labels.
 - Keep definition-only media, authored placement, and observed playback separate.
 
-See [`../game_story_recovery.md`](../game_story_recovery.md) for the durable
+See [`story_recovery.md`](story_recovery.md) for the durable
 Story reconstruction model and reports.

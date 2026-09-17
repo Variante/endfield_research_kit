@@ -47,4 +47,5 @@ Use `--debug-assets` only for broad investigation. Prefer
 - Recover exact renderer/material/texture and animation ownership.
 - Keep broad resource browsing packageable without inflating normal-page loads.
 
-See [`../asset_recovery.md`](../asset_recovery.md) for durable asset semantics.
+See [`../game_data/unity_assets.md`](../game_data/unity_assets.md) for durable
+asset identity and binding semantics.

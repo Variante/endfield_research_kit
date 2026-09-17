@@ -18,10 +18,14 @@ tmp
 blender
 Plugins
 *.zip
-ue5*
-unity*
 *.exe.stackdump
 *.obj
 webui/data/
 *.log
 *.txt
+standalone
+
+# Test and trial scripts are not tracked. They stay in place under
+# scripts/tests/ so the suite still runs locally; see the Tests section in
+# AGENTS.md.
+scripts/tests/

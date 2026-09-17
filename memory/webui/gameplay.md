@@ -56,6 +56,7 @@ Story inputs changed.
 - Buff coverage is reported without a current denominator: the page consumes
   exported BuffData with Persistent precedence, but no provenance-matched
   BuffData census exists. See the BuffData corpus gap in
-  [`../animestudio_recovery.md`](../animestudio_recovery.md); until it closes,
+  [`../game_data/extraction_payload_boundaries.md`](../game_data/extraction_payload_boundaries.md);
+  until it closes,
   an absent lifecycle/stacking/trigger tail cannot be distinguished from an
   unextracted one.

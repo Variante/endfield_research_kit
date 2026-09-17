@@ -1,8 +1,7 @@
-# This reviewed contract is gated by its exact file bytes.
-scripts/game_data/streaming_field2_native.json text eol=lf
-scripts/game_data/streaming_marker17_native.json text eol=lf
-scripts/game_data/streaming_marker13_native.json text eol=lf
-scripts/game_data/streaming_marker2_native.json text eol=lf
-# These linked visual-recovery reports retain exact evidence file hashes.
-reports/assets/character_recovery/effect_texture_native_source_inventory.json -text
-reports/assets/character_recovery/effect_native_textures_418.json -text
+# Contract JSON under scripts/ is byte-pinned evidence: its readers hash the
+# file's exact bytes (CONTRACT_SHA256 in the *_native.py modules, contractSha256
+# in the MemoryPack audit) and fail closed on any mismatch. 217 of these files
+# are CRLF on disk and three are deliberately mixed, so git must never convert
+# their line endings -- `eol=lf` here would rewrite them on checkout and break
+# every pin with no other symptom. `-text` disables all EOL conversion.
+scripts/**/*.json -text

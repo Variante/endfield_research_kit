@@ -193,8 +193,16 @@ def short_type(value: str) -> str:
 
 
 def natural_key(value: str) -> tuple:
-    parts = re.split(r"(\d+)", str(value or ""))
-    return tuple(int(part) if part.isdigit() else part for part in parts)
+    # The digit runs are compared as integers, which makes "q#1" and "q#01"
+    # equal keys. `sorted` is stable, so tied ids then keep their input order --
+    # and when the input is a set that order varies per process, producing
+    # reports that differ between identical runs. Appending the original string
+    # breaks every such tie deterministically; it is only ever reached when all
+    # preceding parts are equal, so ordering is otherwise unchanged.
+    text = str(value or "")
+    parts = re.split(r"(\d+)", text)
+    split = tuple(int(part) if part.isdigit() else part for part in parts)
+    return (split, text)
 
 
 def unique_preserve(values: list[Any]) -> list[Any]:

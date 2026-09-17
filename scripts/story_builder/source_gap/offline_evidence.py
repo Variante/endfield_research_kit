@@ -88,6 +88,7 @@ from .data import (
     OFFLINE_EXHAUSTION_GAMEOBJECT_ROW_COUNTS,
     OFFLINE_EXHAUSTION_ROOT_PLAYBACK_ALIASES,
     OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS,
+    OFFLINE_EXHAUSTION_PATTERN_DIALOG_KEYS,
     OFFLINE_EXHAUSTION_POSITIVE_DIALOG_KEYS,
     OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS,
     OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS,
@@ -1738,10 +1739,7 @@ def build_offline_exhaustion_index(
     # This deliberately makes a new plain DialogTree eligible without adding
     # its id, filename, hash, lines, options, or branch groups to this module.
     dialog_context_definitions = _declared_dialog_context_definitions()
-    pattern_dialog_keys = (
-        set(OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS)
-        - set(dialog_context_definitions)
-    )
+    pattern_dialog_keys = set(OFFLINE_EXHAUSTION_PATTERN_DIALOG_KEYS)
     declared_absent_binary_tokens = {
         story_key: token
         for story_key, token
@@ -8645,8 +8643,9 @@ def build_offline_exhaustion_index(
                 "DialogId registration -> exact hashed DialogTree TextAsset -> "
                 "Timeline/action/native/object/binary consumer census"
             ),
-            "declaredDefinitionRows": len(
-                OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS
+            "declaredDefinitionRows": (
+                len(OFFLINE_EXHAUSTION_DIALOG_DEFINITIONS)
+                + len(OFFLINE_EXHAUSTION_PATTERN_DIALOG_KEYS)
             ),
             "declaredExternalContextRows": len(
                 dialog_context_definitions

@@ -1,0 +1,109 @@
+# Unity assets: identity, and semantic bindings
+
+Part of [`../game_data_recovery.md`](../game_data_recovery.md). See
+[`README.md`](README.md) for the level and lane map.
+
+**Level 4, Unity assets lane.** The `Bundle` block's payloads and what they can
+be bound to. This topic owns semantic bindings between exported Unity assets and Story, characters, gameplay entities, world objects, audio, and video. The Assets page only inventories browser-visible files; AnimeStudio only extracts them.
+
+Extraction correctness belongs to
+[`extraction_pipeline.md`](extraction_pipeline.md); page publication belongs to
+[`../webui/assets.md`](../webui/assets.md). This file owns the identity rules and
+the binding evidence order that several pages and the source graph reuse.
+
+## What is strong, and what is not
+
+## Current status
+
+Asset extraction and discovery are strong. The project can index images,
+models, materials, textures, shaders, animations, effects, audio, and video;
+resolve many PathID-backed dependencies; and connect authored gameplay or Story
+records to asset candidates with explicit provenance.
+
+The main gap is semantic binding. Exporting an object does not prove its live
+prefab composition, selected material variant, animation state, effect
+activation, or placement time.
+
+## Refresh
+
+```bat
+.\export.bat --from-game --with-assets
+.\export_assets.bat
+.\export_assets.bat --from-game
+python scripts\build_assets.py
+python tools\endfield_source_graph.py build
+```
+
+Asset modes, from narrowest to broadest, are `--focused-assets`,
+`--default-assets`, and `--debug-assets`.
+
+Primary outputs:
+
+```text
+export_full/recovered/AnimeStudio-cli/
+export_full/structured/Audio/
+webui/data/assets/index.json
+webui/data/assets/gameplay_refs.json
+webui/data/assets/story_media.json
+webui/data/assets/videos.json
+webui/data/lang/<LANG>/audio/index.json
+webui/data/lang/<LANG>/audio/{events,media}.json
+webui/data/lang/<LANG>/gameplay/sound_effects.json
+reports/assets/
+reports/source_graph/
+```
+
+## Evidence order
+
+Prefer:
+
+1. authored asset/prefab path or direct table key;
+2. source root plus PathID/PPtr;
+3. exported prefab/component dependency;
+4. material-to-texture/shader reference;
+5. exact controller, clip, effect, audio, or video consumer;
+6. stable normalized identity;
+7. labeled name/token similarity.
+
+Preserve source roots, PathIDs, LOD/state suffixes, material slots, texture
+roles, and evidence kind. Never treat a global PathID or similar filename as a
+unique binding.
+
+## Current strengths
+
+- WebUI asset and Story-media indexes.
+- Renderable asset-entity grouping for many models and prefabs.
+- Material, texture, shader, controller, animation, audio, and video links.
+- Compact Gameplay-to-image/model links and playable Wwise-event media
+  candidates for projectiles, character skills, and bounded enemy ownership.
+- Debug-only audio semantics that keep Wwise Event identity, numeric media id,
+  and each physical `(storageRoot, relativePath)` occurrence separate. Same-id
+  files in different folders or language/shared scopes remain visible instead
+  of being collapsed by filename stem.
+- Exact character post-model enumeration and baseline prefab generation.
+- `chen` and `chenpast` are separate identities: the playable `chen` row owns
+  the `P_actor_chen_*` model family, while the historical NPC `chenpast` row
+  owns the independent `S_npc_major_chenpast_*` mesh family; their exported
+  model PathIDs do not overlap. The Characters builder keeps them as two
+  records accordingly, so folding them together is a display-layer error, not a
+  recovery conclusion. Note that `webui/overrides/character_merges.json` is
+  applied by the Characters page in the browser and never by a builder: a merge
+  entry there overrides this conclusion for every reader of the page while
+  leaving generated data correct, so a contradiction between the two is
+  invisible in the exported JSON.
+- Selected static world placements and gameplay/entity associations.
+
+## Remaining gaps
+
+- Exact runtime prefab assembly and entity-to-renderable ownership.
+- Material keyword/pass/queue selection and runtime overrides.
+- Native texture descriptors and mip payloads outside validated families.
+- Animation/effect activation and controller execution.
+- Modular NPC and VFX composition.
+- World visibility/spawn policy.
+- Broader exact audio/video trigger ownership.
+- Runtime-selected Wwise switch/random media and stronger inferred
+  skill/enemy sound ownership.
+
+The goal is an evidence-first catalog, not a claim that every gameplay id has
+one uniquely reconstructed renderable prefab.

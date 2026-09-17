@@ -1,0 +1,158 @@
+# Gameplay: Tables, MemoryPack, and the native action contracts
+
+Part of [`../game_data_recovery.md`](../game_data_recovery.md). See
+[`README.md`](README.md) for the level and lane map.
+
+**Level 4, gameplay lane.** Where authored `Table` config joins exact MemoryPack
+framing and selected native enum contracts to become gameplay meaning.
+
+The per-action layouts are **not** in this file. They live in the 213 tracked
+`scripts/game_data/buff_*_native.json` contracts, one per union tag, plus the
+`finder_*`, `validator_*` and `postprocessor_*` contracts beside them. Each
+records its own member order, nested profiles, null paths and pinned native
+inputs, and each is reviewable and diffable in git. For a specific tag, read its
+contract. What is durable here and nowhere else is the root framing, the reading
+rules every contract shares, and what stays unresolved for all of them.
+
+## What gameplay recovery joins
+
+Gameplay recovery joins authored Tables, exact binary/serialized structures,
+selected native enum contracts, Assets, Audio, and the curated graph.
+
+- Enemy variants resolve their exact attribute template before stats are shown.
+- Authored level points, cooldowns, modifiers, formulas, and Buff actions are
+  preserved as source values. Final runtime values across other Buffs, IFix,
+  equipment, and server state remain uncomputed.
+- Action/condition unions publish only the typed prefix or body that consumes
+  exactly. Unknown selectors, enums, tags, blackboard operations, and nested
+  payloads stay unresolved.
+
+## BuffData's root, and the union encoding
+
+The root is framed forward from byte zero; the per-action bodies hang off it.
+
+- `memorypack.buff_actions` frames the anonymous first collection forward from
+  byte zero under each retained filename-anchor candidate's hard limit. It
+  supports the current IfElse/Sequence grammar, the selected member-five child
+  profile, nulls and bounded counts, records completed nested spans, and stops
+  at the first unsupported union. Atomic spans plus an explicit physical-file
+  remainder tile the bytes; **that remainder is opaque, not a decoded record.**
+- `buff_root_prefix_native.json` pins root members 2-4 after that first
+  collection: scalar payload, directly counted raw DWORD array, then a
+  member-two collection profile. The array helper copies four bytes per entry
+  with no element header, and the `GameplayTag` type name does not select the
+  separate tag-list wrapper grammar. Only a non-null collection has the
+  terminal byte.
+- `buff_root_fifth_native.json` pins the next root collection to a
+  `List<DataPair>` context: member-four elements read a byte, a signed nullable
+  byte payload, eight raw bytes, then another nullable payload. The eight-byte
+  load is independently pinned -- do not reuse the scalar profile's four-byte
+  value, and do not read the leading byte as a union tag.
+- `buff_root_sixth_native.json` pins the following `List<BuffActionMap>`: FF or
+  member two, a nullable Sequence array, then a required inline DWORD. This
+  **reverses** the first collection's scalar/array order, so equal member counts
+  do not make the maps interchangeable.
+- **Extended unions consume `FA` followed by a little-endian unsigned tag**, and
+  reports retain the decoded tag rather than the escape byte. Supporting a
+  decoded tag does not admit its reserved single-byte physical encoding: those
+  stay unsupported until separately authenticated.
+- The recurring action prefix is one byte plus three scalar32 values. It is a
+  shared shape, not an identifier: it cannot select which reader applies.
+
+## The rules every contract shares
+
+These are why the catalog was worth keeping as rules rather than as prose. Each
+one has been violated at least once and caught.
+
+**On selecting a reader.**
+
+- **Equal member counts never select a layout.** Two tags with the same header
+  count routinely have different member orders. Select from an independent
+  token/module or registered-type join, never from arity, a managed name, or
+  byte length alone.
+- **A shared type argument permits profile reuse, not instance merging.**
+  Repeated target or scalar contexts are separate serialized instances, each
+  with its own bounded profile and null state.
+- **Structural equivalence is not shared behavior.** Two tags may share one
+  parser branch while keeping distinct union identities and unrelated gameplay
+  effects.
+- **Do not import legacy tag/name aliases to improve coverage.** Current-build
+  routes contradict the legacy reader's tag/name map, and exact byte consumption
+  alone does not validate a legacy label.
+
+**On reading order.**
+
+- **Source cursor order, not destination layout.** A field's later object offset
+  never moves it later on the wire. Output-side setters, getters, casts, stores
+  and cached constructions consume no source bytes and add no members; an
+  output-store inventory misses serialized members.
+- **Enum and static type contexts identify which helper consumes a scalar.**
+  They add no nested header and do not narrow the allowed bits.
+- **A normal exit may tail-jump to the write barrier.** Pin the whole
+  instruction and the separate null rejoin rather than assuming a `RET`.
+  Readers also cross chained unwind regions -- the first `.pdata` end is not a
+  record or function end.
+
+**On bounds and null states.**
+
+- **Null, empty, and null-wrapper are three distinct states.** Negative lengths
+  below -1 fail closed, and no standard MemoryPack UTF-16 or negative-length
+  variant is guessed.
+- **A completed child never makes a later required field optional.** Terminal
+  bytes and DWORDs stay required even when every preceding profile is null.
+- **Lists reserve the remaining minimum tail before iterating**, and count,
+  null and loop framing stays conditional on the shared reference-list consumer.
+  A provider bridge alone proves neither element width nor runtime selection.
+- **An unknown tag or nested union stops in place**, at its own first byte,
+  without scanning for a later marker. Unwind depth on failure, retain completed
+  children, and leave incomplete parents unrecorded.
+- **Raw widths stay anonymous.** A four-byte read keeps four bytes whatever its
+  managed name says -- several `Double`-named payloads consume exactly four. A
+  vector may be three variable-width scalar payloads rather than twelve raw
+  bytes, and only the consumer's own advance decides which.
+
+**On what a name proves.**
+
+- **A managed action, type or enum name establishes nothing** about gameplay
+  behavior, numeric units, boolean meaning, ownership, activation roles, or
+  runtime execution order. A registered name is an identity, not a semantic.
+
+## What stays unresolved for every action
+
+Recorded once here rather than repeated per tag, because it applies to all of
+them:
+
+- **live provider selection** -- a concrete static reader is structural
+  evidence, not proof that the formatter executes; selected IfElse paths
+  overwrite the callsite companion in native thunks, and reuse reaches
+  state-dependent provider dispatch with the same reader and output;
+- **whole-`BuffData` EOF and suffix ownership** -- a closed forward record is
+  not file closure, and the physical remainder stays opaque;
+- **field meaning, payload encoding, and gameplay semantics** for every
+  anonymous scalar, byte span and enum.
+
+`buff_corpus` publishes a separate prefix success/failure/unsupported/ambiguity
+denominator and fails its gate on malformed prefixes even when the legacy suffix
+reader succeeds. `memorypack.buff_1b_corpus` joins exact-closed root-continuation
+tag `0x1B` records to re-streamed current logical bytes and the selected
+`BlowOffAction_Data` reader contract; the continuation profile does not
+authenticate root-field ownership. Changing coverage belongs in
+`reports/animestudio/buff_1b_current_latest.{json,md}` and the matching
+`buff_corpus` report, not here.
+
+**Recovery queue.** Close the most frequent unsupported child consumers before
+extending this grammar, including the unsupported actions reached inside the
+sixth root collection -- until those close, not all sixth-member endpoints are
+known.
+
+## Tags, projectiles, and consumer freshness
+
+- Gameplay tag names come from exact predefined/config registries or validated
+  runtime capture under the same native gate. CRC/context-derived names retain
+  their derivation label; raw unmapped ids remain visible.
+- Projectile behavior is immutable authored data. Skill/projectile ownership,
+  event hashes, decoded media, and asset references keep separate provenance.
+- Combat/source-graph consumers reject stale inputs and publish a degraded
+  reason rather than accepting old edges.
+
+Page publication belongs in [`webui/gameplay.md`](../webui/gameplay.md).

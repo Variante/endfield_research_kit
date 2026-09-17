@@ -117,6 +117,7 @@ a degraded reason instead of using them as direct evidence.
 | Story | `story_builder/build.py` | `webui/data/lang/<LANG>/` |
 | Mission Pipeline recovery | `build_mission_pipeline_data.py` | standalone recovery reports/data |
 | Map | `export.bat` runs map data, then `recover_map_streaming_instances.py --all-published-map-scenes`, then preview publication; a sidecar failure stops the phase instead of silently degrading to registry points. The recovery streams installed-game `InitChunkData` through AnimeStudio.CLI and joins the exported AssetMap/Mesh; colored output additionally needs Material JSON and Texture2D from the default asset scope. `build_map_recovery_data.py --with-preview` remains the direct data/preview path, while `--preview-only` reuses current map data and sidecars. `--jobs N` bounds both the per-level data workers and preview processes; maps sharing one exact Streaming scene remain together so their shared bounds and outputs cannot race. Preview rendering checkpoints each completed exact streaming, point, and inferred HLOD render under `reports/assets/map_recovery/render_cache/`; matching map, matrix, mesh, material, texture, renderer-index, bounds, density, and renderer-version inputs reuse the published PNG/sample set across runs. Missing outputs or changed inputs invalidate only that checkpoint, and the CLI reports cache hits/writes; pass `build_map_recovery_preview.py --no-render-cache` for a forced rerender. `--refresh-exact-fallbacks-only` cheaply refreshes registry/quest point fallbacks. | `reports/assets/map_recovery/terrain_height_index.json`, `export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances/`, `reports/assets/map_recovery/`, `webui/data/map_recovery/` |
+| Map01 RegionMap3D package | `build_map_region3d.py` | a self-contained package plus its provenance sidecar; separate from the WebUI map renderer and the authored 2D minimap |
 | Lua consumer index | `story_builder/lua_consumer_references.py` | fingerprinted Mission Pipeline evidence |
 | Characters | `build_character_data.py` | character indexes and versioned final-catalog snapshots |
 | Gameplay | `build_gameplay.py` | Gameplay datasets |
@@ -384,7 +385,7 @@ Object indexes may be JSONL or
 uses one `{ "pathId": N, "source": "...", "type": "..." }` request per line,
 and `schema-diff` compares shape rather than values. Keep probes and request
 fixtures under `scratch/animestudio/`; promote stable results to the matching
-`reports/` topic. See `memory/animestudio_recovery.md` for the Ruri retirement
+`reports/` topic. See `memory/game_data/extraction_pipeline.md` for the Ruri retirement
 gate and shader fixture requirements.
 
 Direct Story builds take several minutes. Allow at least 15 minutes for the
@@ -1737,6 +1738,19 @@ python tools\endfield_source_graph.py story STORY_KEY
 python tools\endfield_source_graph.py issues --limit 20
 ```
 
+Reviewed per-build native facts are stored as data, not prose:
+`scripts/game_data/*_native.json` for raw-format consumers and MemoryPack
+formatter windows, and `scripts/story_builder/native_contracts/` for Story
+builders. These JSON files **are tracked**: what they record is a data
+structure, and the per-build anchors beside each field are its provenance. The
+digest of a named consumer contract is pinned as `CONTRACT_SHA256` in its
+`*_native.py` module and re-checked at load, so editing the JSON without
+updating that pin fails closed. The pin covers exact bytes, so
+`.gitattributes` marks `scripts/**/*.json -text` and their line endings must
+never be converted. See the native-contract rules in `AGENTS.md` before adding
+or regenerating one, and never carry an RVA, registration index, or code-window
+hash over from a previous installed build.
+
 ## Output hygiene
 
 - Generated reports belong in topic directories under `reports/`.
@@ -1746,3 +1760,20 @@ python tools\endfield_source_graph.py issues --limit 20
   removed after validation.
 - New maintained scripts must support the WebUI or the Unity character lab;
   otherwise keep them in `scratch/` or `tmp/`.
+- Track a file only if it is reusable and general enough to explain the data. A
+  corpus gate, native validator, or audit tool is tracked, and so is a contract
+  that documents a data structure; the reports, ledgers, and receipts those
+  tools write are not.
+- Keep declarations in a contract the module loads, not as a large block of
+  pinned hashes and addresses inside a tracked module.
+- `reports/`, `webui/data/`, `scratch/`, `tmp/`, and
+  `scripts/tests/` are gitignored, and so is every `*.json` outside
+  `webui/overrides/` and `scripts/`. A generated report is local-only, so keep
+  the durable conclusion in its `memory/` topic rather than resting it on a
+  path under those roots. `AGENTS.md` has the full tracked-versus-local-only
+  table.
+- Tests for maintained scripts belong in `scripts/tests/` and run by explicit
+  module path, for example
+  `python -m unittest scripts.tests.test_build_assets`. `unittest discover`
+  does not reach that directory. The suite is untracked and stays in place; do
+  not re-track it or move it.

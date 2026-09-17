@@ -8,17 +8,20 @@ ownership, not by investigation date.
 - [`webui_recovery.md`](webui_recovery.md): WebUI-wide export flow, shared
   contracts, verification, and links to each page guide.
 - [`webui/`](webui/README.md): one recovery guide for each active WebUI page:
-  Story, Map, Characters, Gameplay, Audio, Assets, Text, and Updates.
-- [`game_story_recovery.md`](game_story_recovery.md): Story evidence, ownership,
-  branches, ordering, validation, and remaining reconstruction gaps.
+  Story, Map, Characters, Gameplay, Audio, Assets, Text, and Updates, plus
+  [`webui/story_recovery.md`](webui/story_recovery.md): Story evidence,
+  ownership, branches, ordering, validation, and remaining reconstruction gaps,
+  shared by every consumer of Story evidence.
 - [`game_data_recovery.md`](game_data_recovery.md): installed formats, gameplay
   and audio semantics, native evidence, and source graph.
-- [`asset_recovery.md`](asset_recovery.md): models, materials, media, and
-  semantic asset bindings.
-- [`animestudio_recovery.md`](animestudio_recovery.md): extraction architecture,
-  VFS/schema boundaries, diagnostics, and exporter recovery workflow.
+- [`game_data/`](game_data/README.md): one detail file per installed-data
+  evidence domain below that topic: payload families, gameplay semantics, the
+  Wwise/HIRC chain, irradiance volumes, terrain layers, chunk/streaming
+  schemas, and the consolidated slot and HIRC state.
 - [`character_render_and_animation_recovery.md`](character_render_and_animation_recovery.md):
-  character models, rendering, animation, and parity gaps.
+  character models, rendering, animation, and parity gaps. Framing, ownership,
+  and the evidence hierarchy only; the detail lives in
+  `endfield_reconstruction_lab/docs/`.
 
 ## Retention boundary
 
@@ -28,10 +31,8 @@ no longer exist independently of the proposed owner:
 | Topic | Why it is not a WebUI page document |
 | --- | --- |
 | WebUI recovery | Owns the shared export and publication sequence across pages. |
-| Story recovery | Supplies Story evidence to Map, Audio, Mission Pipeline, and the source graph as well as Story. |
+| Story recovery (`webui/story_recovery.md`) | Supplies Story evidence to Map, Audio, Mission Pipeline, and the source graph as well as Story. |
 | Game-data recovery | Defines raw formats, overlays, native gates, and cross-domain semantics before page projection. |
-| Asset recovery | Defines semantic Unity asset/entity ownership reused by several pages and tools. |
-| AnimeStudio recovery | Owns extraction correctness and diagnostics, not page semantics. |
 | Character render/animation | Owns the optional Unity parity lab and retail observation gates; it is not part of WebUI export. |
 
 ## Writing rules
@@ -45,7 +46,17 @@ no longer exist independently of the proposed owner:
   belong in `scripts/README.md` or the matching project skill.
 - Put changing counts, hashes, inventories, and generated audits in `reports/`.
   Put revisitable experiments in `scratch/` and disposable intermediates in
-  `tmp/`.
+  `tmp/`. Those three and `scripts/tests/` are gitignored, so a fact that
+  exists only there is not in the repository: keep
+  the durable interpretation here, and do not cite such a path as a
+  conclusion's only evidence. See the tracked-versus-local-only table in
+  `AGENTS.md`.
 - Add a new top-level topic only for a genuinely new durable ownership domain.
   Add a WebUI page guide only when that page is active, and update both WebUI
   indexes in the same change.
+- `webui/` and `game_data/` are the only subdirectories. A `game_data/` file
+  owns one installed-data evidence domain; its cross-family rules, refresh
+  commands, and remaining gaps stay in `game_data_recovery.md`. Add one only
+  for a genuinely separate family, and update
+  [`game_data/README.md`](game_data/README.md), the parent file's index, and
+  this file together.

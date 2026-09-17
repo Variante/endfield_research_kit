@@ -53,5 +53,7 @@ audio logic in the semantic publisher or import either entry point as a helper.
 - Recover selector/parameter meaning without conflating control with playback.
 - Keep unsupported codecs, missing chunks, and unobserved runtime branches visible.
 
-See [`../game_data_recovery.md`](../game_data_recovery.md) for durable Wwise,
-serialized-data, and native-consumer conclusions.
+See [`../game_data_recovery.md`](../game_data_recovery.md) for durable
+serialized-data and native-consumer conclusions, and
+[`../game_data/audio_overview.md`](../game_data/audio_overview.md) plus the
+HIRC files beside it for the Wwise chain.

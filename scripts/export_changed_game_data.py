@@ -22,6 +22,15 @@ from contextlib import contextmanager
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable, Iterator
 
+try:
+    import msvcrt
+except ImportError:  # pragma: no cover - POSIX
+    msvcrt = None  # type: ignore[assignment]
+try:
+    import fcntl
+except ImportError:  # pragma: no cover - Windows
+    fcntl = None  # type: ignore[assignment]
+
 if __package__:
     from .common import ROOT, read_json
     from .export_full_from_game import (
@@ -57,31 +66,82 @@ DEFAULT_EXPORT_SUMMARY = DEFAULT_REPORTS / "export_full_summary.json"
 DEFAULT_REPORT = DEFAULT_REPORTS / "local_changed_export_latest.json"
 LOCAL_STATE_REL = Path("recovered/AnimeStudio-cli/local_incremental")
 MAX_REGEX_CHARS = 6000
+LOCK_BYTE_COUNT = 1
 
 
 class ChangedExportError(RuntimeError):
     pass
 
 
+def _acquire_workflow_lock(descriptor: int) -> None:
+    """Take the advisory lock byte without blocking.
+
+    Never replace this with a liveness probe of the recorded pid: on Windows
+    ``os.kill(pid, 0)`` does not test liveness, it opens the process and calls
+    TerminateProcess, so a staleness check written that way kills the running
+    export instead of detecting it.
+    """
+
+    if msvcrt is not None:
+        os.lseek(descriptor, 0, os.SEEK_SET)
+        msvcrt.locking(descriptor, msvcrt.LK_NBLCK, 1)
+    elif fcntl is not None:
+        fcntl.flock(descriptor, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    else:  # pragma: no cover - every supported interpreter ships one of the two
+        raise ChangedExportError("no advisory file-locking primitive is available")
+
+
+def _release_workflow_lock(descriptor: int) -> None:
+    if msvcrt is not None:
+        os.lseek(descriptor, 0, os.SEEK_SET)
+        msvcrt.locking(descriptor, msvcrt.LK_UNLCK, 1)
+    elif fcntl is not None:
+        fcntl.flock(descriptor, fcntl.LOCK_UN)
+
+
+def _workflow_lock_holder(lock: Path) -> str:
+    """Best-effort description of the holder, for the refusal message only."""
+
+    try:
+        with lock.open("rb") as stream:
+            stream.seek(LOCK_BYTE_COUNT)
+            recorded = stream.read(64).decode("ascii", "replace").strip()
+    except OSError:
+        return "holder unknown"
+    return recorded or "holder unknown"
+
+
 @contextmanager
 def _exclusive_lock(output_root: Path) -> Iterator[None]:
+    """Serialize the workflow on a lock the OS releases when its holder dies.
+
+    The lock is a byte-range lock rather than the lock file's existence, so a
+    crashed or killed run cannot leave a stale lock that blocks every later
+    export until someone deletes the file by hand.  The file is kept on disk
+    and records the holder's pid past the locked byte, where another process
+    can still read it for diagnostics.
+    """
+
     state_root = output_root / LOCAL_STATE_REL
     state_root.mkdir(parents=True, exist_ok=True)
     lock = state_root / "workflow.lock"
+    descriptor = os.open(lock, os.O_CREAT | os.O_RDWR)
     try:
-        descriptor = os.open(lock, os.O_CREAT | os.O_EXCL | os.O_WRONLY)
-    except FileExistsError as exc:
-        raise ChangedExportError(f"another local changed-only export is active, or left a stale lock: {lock}") from exc
-    try:
-        os.write(descriptor, f"pid={os.getpid()}\n".encode("ascii"))
-        os.close(descriptor)
-        yield
-    finally:
         try:
-            os.close(descriptor)
-        except OSError:
-            pass
-        lock.unlink(missing_ok=True)
+            _acquire_workflow_lock(descriptor)
+        except OSError as exc:
+            raise ChangedExportError(
+                f"another local changed-only export is holding {lock} ({_workflow_lock_holder(lock)})"
+            ) from exc
+        try:
+            os.lseek(descriptor, LOCK_BYTE_COUNT, os.SEEK_SET)
+            os.write(descriptor, f"pid={os.getpid()}\n".encode("ascii"))
+            os.truncate(descriptor, LOCK_BYTE_COUNT + len(f"pid={os.getpid()}\n"))
+            yield
+        finally:
+            _release_workflow_lock(descriptor)
+    finally:
+        os.close(descriptor)
 
 
 def _slash(path: str | Path) -> str:
@@ -422,9 +482,55 @@ def stage_changed_files(
     return expected
 
 
+class PublishJournal:
+    """Undo log for one publication, spanning every source it covers.
+
+    A prepare publishes StreamingAssets and Persistent as a single transaction.
+    Unwinding only the failing source would leave export_full/ half-updated
+    with nothing on disk recording it: no manifest is written, so the next
+    changed-only run correctly redoes the work, but a plain export.bat run in
+    between would build WebUI data from the mixed tree while
+    verify_export_freshness still reported fresh, because it compares the
+    recorded source fingerprints against the client and never the export
+    contents.
+    """
+
+    def __init__(self) -> None:
+        self._moved_backups: list[tuple[Path, Path]] = []
+        self._published: list[Path] = []
+
+    def record_backup(self, backup_path: Path, destination: Path) -> None:
+        self._moved_backups.append((backup_path, destination))
+
+    def record_publish(self, destination: Path) -> None:
+        self._published.append(destination)
+
+    def roll_back(self) -> None:
+        for destination in reversed(self._published):
+            destination.unlink(missing_ok=True)
+        self._published.clear()
+        for backup_path, destination in reversed(self._moved_backups):
+            destination.parent.mkdir(parents=True, exist_ok=True)
+            os.replace(backup_path, destination)
+        self._moved_backups.clear()
+
+
 def publish_transaction(
-    *, output_root: Path, source: str, staged: dict[PurePosixPath, Path], deleted: list[dict[str, Any]], backup: Path
+    *,
+    output_root: Path,
+    source: str,
+    staged: dict[PurePosixPath, Path],
+    deleted: list[dict[str, Any]],
+    backup: Path,
+    journal: PublishJournal | None = None,
 ) -> None:
+    """Publish one source's changed files.
+
+    Pass a shared ``journal`` to enlist in a multi-source transaction; the
+    caller then owns rollback for every source.  Omitting it keeps the call
+    self-contained and rolls itself back on failure.
+    """
+
     destination_root = (output_root / "structured" / source).resolve()
     destination_root.mkdir(parents=True, exist_ok=True)
     actions: dict[PurePosixPath, Path | None] = dict(staged)
@@ -433,8 +539,8 @@ def publish_transaction(
         if relative in actions:
             raise ChangedExportError(f"delete/write collision for structured output {relative}")
         actions[relative] = None
-    moved_backups: list[tuple[Path, Path]] = []
-    published: list[Path] = []
+    owned = journal is None
+    active = PublishJournal() if journal is None else journal
     try:
         for relative, staged_path in sorted(actions.items(), key=lambda item: str(item[0])):
             destination = destination_root.joinpath(*relative.parts).resolve()
@@ -452,17 +558,14 @@ def publish_transaction(
                 backup_path = backup.joinpath(*relative.parts)
                 backup_path.parent.mkdir(parents=True, exist_ok=True)
                 os.replace(destination, backup_path)
-                moved_backups.append((backup_path, destination))
+                active.record_backup(backup_path, destination)
             if staged_path is not None:
                 destination.parent.mkdir(parents=True, exist_ok=True)
                 os.replace(staged_path, destination)
-                published.append(destination)
+                active.record_publish(destination)
     except Exception:
-        for destination in reversed(published):
-            destination.unlink(missing_ok=True)
-        for backup_path, destination in reversed(moved_backups):
-            destination.parent.mkdir(parents=True, exist_ok=True)
-            os.replace(backup_path, destination)
+        if owned:
+            active.roll_back()
         raise
 
 
@@ -637,18 +740,34 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
             })
 
         if not args.check:
-            for source, staged, deleted, _current_rows in prepared:
-                publish_transaction(
-                    output_root=output_root, source=source, staged=staged, deleted=deleted, backup=work / "backup" / source
-                )
-            for source, _staged, _deleted, current_rows in prepared:
-                _write_snapshot(_pending_snapshot_path(output_root, source), {
-                    "schemaVersion": SCHEMA_VERSION,
-                    "source": source,
-                    "structuredDumpMode": args.structured_dump_mode,
-                    "sourceFingerprint": current_sizes[source],
-                    "files": current_rows,
-                })
+            # Publication and its pending snapshots are one transaction across
+            # every source: a failure anywhere must leave export_full/ exactly
+            # as it was, because nothing else on disk would record a partial
+            # apply.
+            journal = PublishJournal()
+            try:
+                for source, staged, deleted, _current_rows in prepared:
+                    publish_transaction(
+                        output_root=output_root,
+                        source=source,
+                        staged=staged,
+                        deleted=deleted,
+                        backup=work / "backup" / source,
+                        journal=journal,
+                    )
+                for source, _staged, _deleted, current_rows in prepared:
+                    _write_snapshot(_pending_snapshot_path(output_root, source), {
+                        "schemaVersion": SCHEMA_VERSION,
+                        "source": source,
+                        "structuredDumpMode": args.structured_dump_mode,
+                        "sourceFingerprint": current_sizes[source],
+                        "files": current_rows,
+                    })
+            except Exception:
+                for source in SOURCES:
+                    _pending_snapshot_path(output_root, source).unlink(missing_ok=True)
+                journal.roll_back()
+                raise
 
     payload = {
         "schemaVersion": SCHEMA_VERSION,
