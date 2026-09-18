@@ -137,7 +137,6 @@ PROJECTILE_SOUND_PHASES = {
 # Endfield banks.  The event payload preserves the raw numeric type as the
 # authoritative value; these names are presentation labels, not a claim that
 # selection behavior was evaluated offline.
-SELECTION_HIRC_TYPES = frozenset({5, 6, 12, 13})
 
 
 # These are static managed-metadata surfaces for the string-key Timeline
