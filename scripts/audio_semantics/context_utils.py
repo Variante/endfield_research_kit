@@ -97,3 +97,9 @@ def iter_asset_map_objects(path: Path, required_text: str | None = None) -> Any:
                     yield json.loads(text.rstrip(",\r\n"))
                 except json.JSONDecodeError:
                     continue
+
+ROOT = Path(__file__).resolve().parents[2]
+
+
+def display_path(path: Path) -> str:
+    return normalize_posix(path.relative_to(ROOT)) if path.is_relative_to(ROOT) else str(path)
