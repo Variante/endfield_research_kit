@@ -110,6 +110,16 @@ per-tag Buff action layouts live in their contracts, and
 [`game_data/gameplay_semantics.md`](game_data/gameplay_semantics.md) keeps only
 the root framing and the rules every contract shares.
 
+The story lane's code sits on this side too. The serialized-gameplay readers
+(`scripts/game_data/levelscript_binary.py`, the other `*_binary.py` readers and
+their `codecs/`) and the reviewed native facts that Story, Mission Pipeline and
+Map consume (`scripts/game_data/native_contracts/`) are installed-data code, and
+those builders import them rather than decoding bytes themselves. The
+conclusions do not move. What a decoded carrier proves stays in
+[`game_data/story_carriers.md`](game_data/story_carriers.md), and what it
+means for published Story stays in
+[`webui/story_recovery.md`](webui/story_recovery.md).
+
 ## Asset and spatial semantics
 
 AssetMap rows, PPtrs, prefab/component dependencies, material slots, textures,
