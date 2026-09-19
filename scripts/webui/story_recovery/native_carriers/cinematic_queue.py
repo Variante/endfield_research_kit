@@ -26,7 +26,7 @@ from scripts.common import (
     resolve_installed_game_data_root,
     sha256_file as sha256_path,
 )
-from scripts.webui.story.native_contracts.cinematic_queue import (
+from scripts.game_data.native_contracts.cinematic_queue import (
     DEFAULT_CONTRACT,
     reconcile_runtime_audit,
     validate_cinematic_queue_contract,

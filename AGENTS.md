@@ -860,7 +860,7 @@ from that layout:
   fingerprinted Lua consumer index that Mission Pipeline reads directly.
   Refreshing it requires an explicit complete plaintext-Lua extraction, because
   standard extraction omits Lua.
-- `scripts/webui/story/native_contracts/` holds reviewed current-build native
+- `scripts/game_data/native_contracts/` holds reviewed current-build native
   facts consumed by builders. Recovery hooks must reference or validate those
   contracts rather than duplicate them.
 - A production builder must not import or execute a `scripts/webui/story_recovery/`

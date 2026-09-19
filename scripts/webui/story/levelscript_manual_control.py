@@ -10,9 +10,9 @@ from typing import Any
 from scripts.common import ROOT, rel_path
 
 from scripts.webui.story.context import LEVELSCRIPT_DIR
-from scripts.webui.story.codecs.levelscript import manual_control as levelscript_manual_codec
+from scripts.game_data.codecs.levelscript import manual_control as levelscript_manual_codec
 from scripts.webui.story.level_bindings import _load_levelscript_binding_data
-from scripts.webui.story.levelscript_binary import (
+from scripts.game_data.levelscript_binary import (
     decode_levelscript_action_map_header,
     decode_levelscript_record_payload,
 )

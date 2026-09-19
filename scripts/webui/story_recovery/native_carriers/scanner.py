@@ -1073,7 +1073,7 @@ def run(args: argparse.Namespace) -> int:
     write_report_json(args.json, report)
     write_text_if_changed(args.markdown, markdown_report(report))
     if args.carrier_type == "Beyond.Gameplay.TeleportParam":
-        from scripts.webui.story.native_contracts.teleport_param import (
+        from scripts.game_data.native_contracts.teleport_param import (
             DEFAULT_CONTRACT,
             reconcile_generic_audit,
         )

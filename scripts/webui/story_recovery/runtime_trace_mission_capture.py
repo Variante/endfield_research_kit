@@ -22,7 +22,7 @@ from typing import Any
 
 from scripts.webui.story_recovery import runtime_trace_core as core
 
-from scripts.webui.story.native_contracts.mission_task_paths import (
+from scripts.game_data.native_contracts.mission_task_paths import (
     MissionTaskPathContractError,
     load_mission_task_paths,
 )

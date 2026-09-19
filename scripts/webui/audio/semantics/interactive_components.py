@@ -18,8 +18,8 @@ from scripts.game_data.memorypack.interactive import (
     parse_interactive_audio_component,
     parse_interactive_trigger_zone_audio_property_component,
 )
-from scripts.webui.story.interactive_binary import decode_interactive_table
-from scripts.webui.story.levelscript_binary import (
+from scripts.game_data.interactive_binary import decode_interactive_table
+from scripts.game_data.levelscript_binary import (
     find_embedded_action_serialized_map_audio,
 )
 

@@ -5,8 +5,8 @@ from __future__ import annotations
 import struct
 from typing import Any
 
-from scripts.webui.story.codecs.levelscript import active_shapes
-from scripts.webui.story.codecs.levelscript import trigger_volumes
+from scripts.game_data.codecs.levelscript import active_shapes
+from scripts.game_data.codecs.levelscript import trigger_volumes
 
 
 START_TYPE_NAMES = {

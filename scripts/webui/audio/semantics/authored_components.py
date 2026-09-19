@@ -14,7 +14,7 @@ from scripts.webui.audio.semantics.context_utils import append_context as _appen
 from scripts.webui.audio.semantics.context_utils import normalize_posix
 
 
-from scripts.webui.story.interactive_binary import (
+from scripts.game_data.interactive_binary import (
     decode_interactive_table,
     decode_model_view_state_controller,
     find_physics_audio_components,

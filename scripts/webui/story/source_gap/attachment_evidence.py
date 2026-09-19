@@ -15,7 +15,7 @@ from scripts.webui.story.source_gap.foundation import (
 )
 from scripts.webui.story.source_gap.contracts import STORY_BINDING_COVERAGE_SCHEMA_VERSION
 from scripts.webui.story.level_bindings import _load_levelscript_binding_data
-from scripts.webui.story.levelscript_binary import levelscript_action_map_membership
+from scripts.game_data.levelscript_binary import levelscript_action_map_membership
 from scripts.webui.story.mission_recovery import natural_key
 
 

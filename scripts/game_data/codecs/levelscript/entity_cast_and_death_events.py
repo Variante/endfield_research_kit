@@ -5,7 +5,7 @@ from __future__ import annotations
 import struct
 from typing import Any
 
-from scripts.webui.story.codecs.levelscript import params
+from scripts.game_data.codecs.levelscript import params
 
 
 ENTITY_CAST_SKILL = "LevelEvent_OnEntityCastSkill"

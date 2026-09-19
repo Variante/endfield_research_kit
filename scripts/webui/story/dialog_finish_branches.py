@@ -45,7 +45,7 @@ from scripts.webui.story.dialog_tree_routes import (
     resolve_serialized_field,
     short_type as _short_type,
 )
-from scripts.webui.story.levelscript_binary import (
+from scripts.game_data.levelscript_binary import (
     decode_levelscript_task_conditions,
     scan_levelscript_task_condition_fragments,
 )

@@ -21,7 +21,7 @@ from scripts.webui.story.level_bindings import (
     LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
     decode_levelscript_native_action_topology,
 )
-from scripts.webui.story.levelscript_binary import (
+from scripts.game_data.levelscript_binary import (
     decode_levelscript_binary_summary,
     decode_levelscript_task_conditions,
 )

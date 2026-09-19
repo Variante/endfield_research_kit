@@ -19,7 +19,7 @@ if __package__ in {None, ""}:
         "python -m scripts.game_data.extraction.export_full_from_game"
     )
 
-from scripts.webui.assets.media_resolver import (
+from scripts.game_data.media_resolver import (
     ENV_EMOJI_FALLBACK_LAYER_STEMS,
     ENV_EMOJI_PREFAB_LAYER_STEMS,
     collect_inline_image_ids,

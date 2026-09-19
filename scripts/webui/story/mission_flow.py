@@ -41,7 +41,7 @@ from scripts.webui.story.level_bindings import (
     classify_levelscript_record,
     levelscript_native_action_name,
 )
-from scripts.webui.story.levelscript_binary import (
+from scripts.game_data.levelscript_binary import (
     decode_levelscript_record_payload,
     levelscript_action_map_membership,
     levelscript_record_semantic_key,

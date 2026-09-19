@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from scripts.webui.assets import media_resolver
+from scripts.game_data import media_resolver
 from scripts.common import ASSET_DIR, OUT_DIR, write_json
 
 

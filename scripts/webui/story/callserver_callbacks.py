@@ -33,7 +33,7 @@ from scripts.webui.story.level_bindings import (
     levelscript_native_action_name,
     levelscript_record_semantic_key,
 )
-from scripts.webui.story.levelscript_binary import (
+from scripts.game_data.levelscript_binary import (
     compact_callserver_serialized_contract,
     decode_levelscript_record_payload,
     extract_levelscript_uid_records,

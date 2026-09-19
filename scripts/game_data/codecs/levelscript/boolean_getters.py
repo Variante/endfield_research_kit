@@ -5,7 +5,7 @@ from __future__ import annotations
 import struct
 from typing import Any
 
-from scripts.webui.story.codecs.levelscript.params import decode_bool_param, decode_i32_param
+from scripts.game_data.codecs.levelscript.params import decode_bool_param, decode_i32_param
 
 
 def _decode_pure_bool_getter_ref(

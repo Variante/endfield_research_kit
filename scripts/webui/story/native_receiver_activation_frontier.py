@@ -62,7 +62,7 @@ from scripts.webui.story.level_bindings import (
     parse_leveldata_levelscript_brief_dictionary,
     resolve_active_levelscript_evidence,
 )
-from scripts.webui.story.levelscript_binary import (
+from scripts.game_data.levelscript_binary import (
     LEVELSCRIPT_NATIVE_EVENT_PAYLOAD_MAPPING_ID,
     classify_local_trigger_volume_context,
     decode_levelscript_task_conditions,

@@ -28,7 +28,7 @@ from scripts.common import (
     write_report_json,
     write_text_if_changed,
 )
-from scripts.webui.story.native_contracts.cinematic_queue import (
+from scripts.game_data.native_contracts.cinematic_queue import (
     DEFAULT_CONTRACT as DEFAULT_CINEMATIC_CONTRACT,
     load_cinematic_queue_contract,
 )

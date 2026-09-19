@@ -462,7 +462,7 @@ def collect_spawner_pre_warn_semantics(
 ) -> dict[str, Any]:
     """Recover exact current SpawnerEnemyLibraryItem pre-warning Events."""
     if decoder is None:
-        from scripts.webui.story.spawner_binary import decode_spawner_enemy_library
+        from scripts.game_data.spawner_binary import decode_spawner_enemy_library
         decoder = decode_spawner_enemy_library
 
     spawner_root: Path | None = None
@@ -735,7 +735,7 @@ def collect_char_interact_audio_semantics(
 ) -> dict[str, Any]:
     """Recover exact numeric AudioEvent actions from current interaction performs."""
     if decoder is None:
-        from scripts.webui.story.char_interact_perform_binary import (
+        from scripts.game_data.char_interact_perform_binary import (
             decode_char_interact_audio_actions,
         )
         decoder = decode_char_interact_audio_actions

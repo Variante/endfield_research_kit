@@ -5,7 +5,7 @@ from __future__ import annotations
 import struct
 from typing import Any
 
-from scripts.webui.story.codecs.levelscript.params import decode_param_tail
+from scripts.game_data.codecs.levelscript.params import decode_param_tail
 
 
 _INTEGER_SWITCH_CONFIG = {

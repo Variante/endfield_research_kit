@@ -31,7 +31,7 @@ from scripts.webui.story.level_bindings import (
     build_levelscript_unhosted_reading_popup_receiver_index,
     parse_leveldata_levelscript_brief_dictionary,
 )
-from scripts.webui.story.levelscript_binary import (
+from scripts.game_data.levelscript_binary import (
     decode_levelscript_record_payload,
     decode_levelscript_task_conditions,
     extract_levelscript_uid_records,

@@ -52,7 +52,7 @@ from scripts.webui.story.context import (
     _NPC_PROXY_EX_CACHE,
 )
 from scripts.webui.story.scene_graph import _scene_graph_node_kind, _scene_graph_runtime_payload_key
-from scripts.webui.story.levelscript_binary import (
+from scripts.game_data.levelscript_binary import (
     LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID,
     LEVELSCRIPT_NATIVE_HEADER_NAMES,
     LEVELSCRIPT_TASK_MISSION_STATE_MAPPING_ID,
@@ -70,33 +70,33 @@ from scripts.webui.story.levelscript_binary import (
     _extract_levelscript_plain_ascii_strings,
     _extract_levelscript_tagged_ascii_strings,
 )
-from scripts.webui.story.native_contracts.callserver_callback import (
+from scripts.game_data.native_contracts.callserver_callback import (
     load_callserver_callback_contract,
 )
-from scripts.webui.story.native_contracts.actionbase_formatter import (
+from scripts.game_data.native_contracts.actionbase_formatter import (
     load_actionbase_formatter_names as _load_actionbase_formatter_names,
 )
-from scripts.webui.story.native_contracts.action_entity_fields import (
+from scripts.game_data.native_contracts.action_entity_fields import (
     NATIVE_MAPPING_ID as ACTION_ENTITY_FIELD_NATIVE_MAPPING_ID,
     load_action_entity_field_contract,
 )
-from scripts.webui.story.native_contracts.entityptr_script_slot import (
+from scripts.game_data.native_contracts.entityptr_script_slot import (
     NATIVE_MAPPING_ID as ENTITYPTR_SCRIPT_SLOT_NATIVE_MAPPING_ID,
     load_entityptr_script_slot_contract,
 )
-from scripts.webui.story.native_contracts.entityptr_output_alias import (
+from scripts.game_data.native_contracts.entityptr_output_alias import (
     NATIVE_MAPPING_ID as ENTITYPTR_OUTPUT_ALIAS_NATIVE_MAPPING_ID,
     load_entityptr_output_alias_contract,
 )
-from scripts.webui.story.native_contracts.entityptr_property_initialization import (
+from scripts.game_data.native_contracts.entityptr_property_initialization import (
     NATIVE_MAPPING_ID as ENTITYPTR_PROPERTY_INITIALIZATION_NATIVE_MAPPING_ID,
     load_entityptr_property_initialization_contract,
 )
-from scripts.webui.story.native_contracts.entityptr_getter import (
+from scripts.game_data.native_contracts.entityptr_getter import (
     NATIVE_MAPPING_ID as ENTITYPTR_GETTER_NATIVE_MAPPING_ID,
     load_entityptr_getter_contract,
 )
-from scripts.webui.story.codecs.leveldata.memorypack import (
+from scripts.game_data.codecs.leveldata.memorypack import (
     read_bool as _read_leveldata_bool,
     read_count as _read_leveldata_count,
     read_f32 as _read_leveldata_f32,
@@ -108,12 +108,12 @@ from scripts.webui.story.codecs.leveldata.memorypack import (
     skip_bytes as _skip_leveldata_bytes,
     skip_string as _skip_leveldata_memorypack_string,
 )
-from scripts.webui.story.codecs.leveldata.radio_contexts import (
+from scripts.game_data.codecs.leveldata.radio_contexts import (
     parse_airwall_groups,
     parse_function_area_radio_trigger,
 )
-from scripts.webui.story.codecs.leveldata import interactive_layout
-from scripts.webui.story.codecs.levelscript.params import (
+from scripts.game_data.codecs.leveldata import interactive_layout
+from scripts.game_data.codecs.levelscript.params import (
     decode_bool_param,
     decode_constant_entity_ptr_param,
     decode_constant_string_param,

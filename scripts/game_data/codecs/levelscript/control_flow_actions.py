@@ -5,7 +5,7 @@ from __future__ import annotations
 import struct
 from typing import Any
 
-from scripts.webui.story.codecs.levelscript.params import decode_bool_param
+from scripts.game_data.codecs.levelscript.params import decode_bool_param
 
 
 SPLIT = (0x0495, 0x09)

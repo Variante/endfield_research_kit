@@ -51,7 +51,10 @@ from pathlib import Path
 
 from scripts.common import (
     ASSET_DIR,
+    DATA_JSON_DIR,
     EXPORT_ROOT,
+    PERSISTENT_ASSETS_DIR,
+    STREAMING_ASSETS_DIR,
     LANG_DIR,
     OUT_DIR,
     STORY_REPORTS_DIR,
@@ -74,7 +77,6 @@ from scripts.common import (
 from scripts.source_paths import (
     _existing_unique_paths,
     _resolve_recovered_dir,
-    _resolve_structured_source_dir,
 )
 from scripts.webui.story.scene_order_gap_shared import (
     analyze_scene_order_disorder as shared_analyze_scene_order_disorder,
@@ -100,12 +102,9 @@ from scripts.webui.story.timeline_recovery import (
 STORY_SOURCE_LINKS_PATH = EXPORT_ROOT / "recovered" / "story_source_links.json"
 
 
-STREAMING_ASSETS_DIR = _resolve_structured_source_dir(EXPORT_ROOT, "StreamingAssets")
-PERSISTENT_ASSETS_DIR = _resolve_structured_source_dir(EXPORT_ROOT, "Persistent")
 STREAMING_TABLE_DIR = STREAMING_ASSETS_DIR / "Table"
 PERSISTENT_TABLE_DIR = PERSISTENT_ASSETS_DIR / "Table"
 TABLE_DIR = STREAMING_TABLE_DIR
-DATA_JSON_DIR = STREAMING_ASSETS_DIR / "Data" / "Json"
 PERSISTENT_DATA_JSON_DIR = PERSISTENT_ASSETS_DIR / "Data" / "Json"
 LEVELDATA_DIR = DATA_JSON_DIR / "LevelData"
 LEVELSCRIPT_DIR = DATA_JSON_DIR / "LevelScriptData"

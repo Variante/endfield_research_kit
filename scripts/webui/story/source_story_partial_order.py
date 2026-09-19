@@ -56,7 +56,7 @@ from scripts.webui.story.anime_assets import (
     recover_dialog_tree_narrative_mask_actions,
     recover_dialog_tree_open_ui_content_actions,
 )
-from scripts.webui.story.spawner_binary import (
+from scripts.game_data.spawner_binary import (
     SPAWNER_WAVE_RUNTIME_MAPPING_ID,
     SpawnerWaveDecodeError,
     decode_spawner_wave_map,

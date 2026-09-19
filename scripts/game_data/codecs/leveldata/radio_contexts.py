@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from scripts.webui.story.codecs.leveldata.memorypack import (
+from scripts.game_data.codecs.leveldata.memorypack import (
     read_bool,
     read_count,
     read_i32,

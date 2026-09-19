@@ -36,11 +36,11 @@ from scripts.common import (
     read_bytes_cached,
     read_json,
     resolve_installed_game_data_root,
-    story_root_playback_aliases,
     write_report_json,
     write_text_if_changed,
 )
-from scripts.webui.story.levelscript_binary import (
+from scripts.webui.story.animestudio_story_objects.reverse import story_root_playback_aliases
+from scripts.game_data.levelscript_binary import (
     compact_callserver_serialized_contract,
     decode_levelscript_action_map_lists,
     decode_levelscript_action_header_validation,
@@ -61,17 +61,17 @@ from scripts.webui.story.lua_consumer_references import (
     DEFAULT_INDEX as DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
     SCHEMA_VERSION as LUA_CONSUMER_REFERENCE_SCHEMA,
 )
-from scripts.webui.story.native_contracts.identity_carrier_boundaries import (
+from scripts.game_data.native_contracts.identity_carrier_boundaries import (
     load_identity_carrier_boundaries_contract,
 )
-from scripts.webui.story.native_contracts.ifix_patch import (
+from scripts.game_data.native_contracts.ifix_patch import (
     fixed_method_prefix_matches,
     load_ifix_patch_contract,
 )
-from scripts.webui.story.native_contracts.cross_system_consumers import (
+from scripts.game_data.native_contracts.cross_system_consumers import (
     load_cross_system_consumers_contract,
 )
-from scripts.webui.story.native_contracts.teleport_param import (
+from scripts.game_data.native_contracts.teleport_param import (
     load_teleport_param_contract,
 )
 from scripts.webui.story.dynamic_scene import load_dynamic_scene_context

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from scripts.webui.story.codecs.leveldata.memorypack import read_count, read_i32, read_string
+from scripts.game_data.codecs.leveldata.memorypack import read_count, read_i32, read_string
 
 
 def level_interactive_data_list_frames(

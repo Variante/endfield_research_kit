@@ -348,7 +348,7 @@ from scripts.webui.story.cutscene_semantics import (
     select_subtitle_text_group_from_display_names,
     validated_lua_cutscene_playback_keys,
 )
-from scripts.webui.story.ability_binary import (
+from scripts.game_data.ability_binary import (
     build_battle_signal_producer_index,
     match_battle_signal_story_producers,
 )

@@ -37,7 +37,7 @@ from scripts.common import (
     sha256_file as shared_sha256_file,
 )
 
-from scripts.webui.story.native_contracts.ifix_patch import (
+from scripts.game_data.native_contracts.ifix_patch import (
     DEFAULT_CONTRACT as DEFAULT_IFIX_CONTRACT,
     load_ifix_patch_contract,
     project_current_ifix_evidence,

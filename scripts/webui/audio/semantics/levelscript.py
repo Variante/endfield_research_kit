@@ -653,7 +653,7 @@ def collect_levelscript_audio_semantics(
     )
 
     if decode_file is None:
-        from scripts.webui.story.levelscript_binary import (
+        from scripts.game_data.levelscript_binary import (
             decode_levelscript_record_payload,
             extract_levelscript_uid_records,
             levelscript_action_map_membership,

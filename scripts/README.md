@@ -722,7 +722,7 @@ python tools\endfield_source_graph.py issues --limit 20
 
 Reviewed per-build native facts are stored as data, not prose:
 `scripts/game_data/*_native.json` for raw-format consumers and MemoryPack
-formatter windows, and `scripts/webui/story/native_contracts/` for Story
+formatter windows, and `scripts/game_data/native_contracts/` for Story
 builders. These JSON files **are tracked**: what they record is a data
 structure, and the per-build anchors beside each field are its provenance. The
 digest of a named consumer contract is pinned as `CONTRACT_SHA256` in its

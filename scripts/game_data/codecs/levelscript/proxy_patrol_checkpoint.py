@@ -6,7 +6,7 @@ import re
 import struct
 from typing import Any
 
-from scripts.webui.story.codecs.levelscript.params import (
+from scripts.game_data.codecs.levelscript.params import (
     decode_constant_string_param,
     decode_i32_param,
     decode_param_output,

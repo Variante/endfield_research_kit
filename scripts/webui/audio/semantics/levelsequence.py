@@ -92,7 +92,7 @@ def collect_levelsequence_play_actions(
     """
 
     if decode_file is None:
-        from scripts.webui.story.levelscript_binary import (
+        from scripts.game_data.levelscript_binary import (
             decode_levelscript_record_payload,
             extract_levelscript_uid_records,
             levelscript_record_semantic_key,
