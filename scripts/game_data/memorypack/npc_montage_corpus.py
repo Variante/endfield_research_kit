@@ -27,6 +27,7 @@ from scripts.game_data.memorypack.npc_montage import (
     NpcMontageFramingError,
     frame_npc_montage,
 )
+from scripts.common import canonical_json_sha256
 
 
 NPC_MONTAGE_PATTERN = re.compile(
@@ -400,22 +401,22 @@ def build_current_census(
         vfs._fail(
             "outer-provenance-drift",
             source=str(outer_path),
-            expected=vfs._canonical_sha256(provenance_start),
-            actual=vfs._canonical_sha256(provenance_end),
+            expected=canonical_json_sha256(provenance_start),
+            actual=canonical_json_sha256(provenance_end),
         )
     if outer != outer_end or selected != selected_end:
         vfs._fail(
             "current-ledger-drift",
             source=str(ledger_path),
-            expected=vfs._canonical_sha256(selected),
-            actual=vfs._canonical_sha256(selected_end),
+            expected=canonical_json_sha256(selected),
+            actual=canonical_json_sha256(selected_end),
         )
     if snapshot_start != snapshot_end:
         vfs._fail(
             "current-input-drift",
             source="NPC Montage corpus gate inputs",
-            expected=vfs._canonical_sha256(snapshot_start),
-            actual=vfs._canonical_sha256(snapshot_end),
+            expected=canonical_json_sha256(snapshot_start),
+            actual=canonical_json_sha256(snapshot_end),
         )
     for output in outputs:
         vfs._guard_output_path(
@@ -462,7 +463,7 @@ def build_current_census(
             ],
         },
         "summary": summary,
-        "identitySetSha256": vfs._canonical_sha256(identity_rows),
+        "identitySetSha256": canonical_json_sha256(identity_rows),
         "wholeFamilyFrameExact": complete,
         "evidenceBoundary": (
             "Every selected NPC Montage identity is joined one-for-one from the "

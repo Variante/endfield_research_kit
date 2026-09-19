@@ -76,6 +76,7 @@ from scripts.webui.story.mission_recovery import (
     decode_mission_script_conditions,
     decode_mission_world_entity_condition_refs,
 )
+from scripts.webui.story.mission_recovery import const_value as _unwrap_const
 
 
 SCHEMA = "nativeReceiverActivationFrontier.v29"
@@ -3208,11 +3209,6 @@ def annotate_task_sources(
         if bindings:
             task["subGameMainTaskBindings"] = bindings
 
-
-def _unwrap_const(value: Any) -> Any:
-    if isinstance(value, dict) and "constValue" in value:
-        return value.get("constValue")
-    return value
 
 
 def _short_type_name(value: Any) -> str:

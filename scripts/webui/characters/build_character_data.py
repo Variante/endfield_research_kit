@@ -17,6 +17,7 @@ if __package__ in {None, ""}:
     )
 
 from scripts.common import EXPORT_ROOT, LANG_DIR, OUT_DIR, rel_path, write_json
+from scripts.common import read_json
 
 
 TABLE_ROOT_RELS = (
@@ -115,12 +116,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     return parser.parse_args(argv)
 
-
-def read_json(path: Path, default: Any = None) -> Any:
-    try:
-        return json.loads(path.read_text(encoding="utf-8-sig"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return default
 
 
 def merge_payload(base: Any, overlay: Any) -> Any:

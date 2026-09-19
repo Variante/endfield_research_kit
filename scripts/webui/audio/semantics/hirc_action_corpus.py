@@ -16,6 +16,7 @@ from typing import Any
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import sha256_file_upper as sha256_file
 
 ROOT = REPO_ROOT
 DEFAULT_OUTER = ROOT / "reports/animestudio/vfs_understanding_latest.json"
@@ -175,13 +176,6 @@ AUDIO_BLOCKS = frozenset(
     }
 )
 
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
 
 
 def sha256_bytes(data: bytes) -> str:

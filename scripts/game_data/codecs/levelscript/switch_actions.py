@@ -6,6 +6,7 @@ import struct
 from typing import Any
 
 from scripts.game_data.codecs.levelscript.params import decode_param_tail
+from scripts.game_data.codecs.levelscript.params import decode_i32_param as _decode_i32_param
 
 
 _INTEGER_SWITCH_CONFIG = {
@@ -67,19 +68,6 @@ def _read_string_list(
         cursor += size
     return values, cursor
 
-
-def _decode_i32_param(
-    payload: bytes,
-    cursor: int,
-) -> tuple[dict[str, Any], int] | None:
-    if cursor + 5 > len(payload) or payload[cursor] != 0x04:
-        return None
-    value = struct.unpack_from("<i", payload, cursor + 1)[0]
-    tail = decode_param_tail(payload, cursor + 5)
-    if tail is None:
-        return None
-    detail, end = tail
-    return {"value": value, **detail}, end
 
 
 def _decode_string_param(

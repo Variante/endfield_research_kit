@@ -19,6 +19,7 @@ from scripts.game_data.il2cpp_protocol import (
 SCHEMA = "endfield.terrain-tret-native-contract.v1"
 DEFAULT_CONTRACT = Path(__file__).with_name("terrain_tret_native.json")
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import sha256_file_upper as _sha256_file
 
 METADATA_HELPER = (
     REPO_ROOT
@@ -34,13 +35,6 @@ CONTRACT_SHA256 = "4A7BC679B01AFD5D81B909FB16F1359FF680B31970F88BEBE9BB857440ED7
 def _sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest().upper()
 
-
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        while chunk := stream.read(1024 * 1024):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
 
 
 def _pe_file_offset(image: bytes, rva: int) -> int:

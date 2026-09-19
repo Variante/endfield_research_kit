@@ -54,6 +54,7 @@ from scripts.webui.story.level_bindings import (
     build_npc_proxy_segment_script_host_index,
     parse_leveldata_levelscript_brief_dictionary,
 )
+from scripts.webui.story.level_bindings import _source_file_label as source_label
 
 
 ROOT = _REPO_ROOT
@@ -424,12 +425,6 @@ def _native_gate_diagnostic(validator: str, native: Any) -> str:
         for path, actual, expected in drifted
     )
 
-
-def source_label(path: Path) -> str:
-    try:
-        return path.resolve().relative_to(ROOT.resolve()).as_posix()
-    except (OSError, ValueError):
-        return path.resolve().as_posix()
 
 
 def resolve_source(value: str) -> Path:

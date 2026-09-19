@@ -532,15 +532,7 @@ def as_float(value, default: float = 0.0) -> float:
         return default
 
 
-def as_int(value) -> int | None:
-    if isinstance(value, int):
-        return value
-    if isinstance(value, str):
-        try:
-            return int(value)
-        except ValueError:
-            return None
-    return None
+as_int = as_path_id
 
 
 def iter_structural_ref_ids(payload: dict):

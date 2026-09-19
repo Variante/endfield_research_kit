@@ -23,6 +23,7 @@ from scripts.game_data import streaming as fmt
 from scripts.game_data import streaming_corpus as corpus
 from scripts.game_data.streaming_marker17 import TAG5_RECORD_WIDTHS, FIXED_BODY_PROFILES, TAG5_BODY_KEYS, parse_marker17_body
 from scripts.game_data.streaming_marker17_native import validate_marker17_native_contract
+from scripts.common import sha256_file_upper as sha256_file
 
 SCHEMA = "endfield.streaming-marker17-bodies-corpus.v2"
 V15_SCHEMA = "endfield.streaming-root-subgraphs-corpus.v15"
@@ -31,13 +32,6 @@ V15_SCHEMA = "endfield.streaming-root-subgraphs-corpus.v15"
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest().upper()
 
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest().upper()
 
 
 def _failure(source: str, stage: str, expected: Any, actual: Any,

@@ -20,6 +20,8 @@ from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
 from scripts.common import fast_glob_files
+from scripts.webui.story.mission_recovery import load_json as read_json
+from scripts.webui.story.timeline_recovery import rel_path
 
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_RECOVERY_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"
@@ -76,20 +78,10 @@ _ACTION_EVIDENCE_CACHE: dict[str, list[dict]] | None = None
 _ACTION_EVIDENCE_CACHE_PATH: Path | None = None
 
 
-def rel_path(path: Path) -> str:
-    try:
-        return path.relative_to(ROOT).as_posix()
-    except ValueError:
-        return path.as_posix()
-
 
 def log(message: str) -> None:
     print(f"[timeline-action-evidence] {message}")
 
-
-def read_json(path: Path) -> Any:
-    with path.open(encoding="utf-8-sig") as f:
-        return json.load(f)
 
 
 def object_identity(row: dict[str, Any]) -> tuple[str, int]:

@@ -18,6 +18,9 @@ from scripts.webui.story.node_attachment import (
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import write_canonical_json as _write_json
+from scripts.common import read_json_strict as _read_json
+from scripts.common import repo_path as _repo_path
 
 ROOT = REPO_ROOT
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "mission_graph"
@@ -98,29 +101,6 @@ def classify_spatial_route_mission_ownership_gate(
     }
 
 
-def _read_json(path: Path) -> Any:
-    with path.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
-
-
-def _write_json(path: Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    encoded = json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    path.write_text(encoded + "\n", encoding="utf-8", newline="\n")
-
-
-def _repo_path(path: Path) -> str:
-    path = path.resolve()
-    return (
-        path.relative_to(ROOT).as_posix()
-        if path.is_relative_to(ROOT)
-        else path.as_posix()
-    )
 
 
 def publish_quest_objective_story_scope(

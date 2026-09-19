@@ -22,6 +22,8 @@ from scripts.game_data.streaming_marker13_native import (
     EXPECTED_ABSENT_WITNESS, validate_marker13_native_contract,
 )
 from scripts.game_data.streaming_pairs import index_ordered_pairs, bind_current_pair
+from scripts.common import sha256_file_upper as sha256_file
+from scripts.game_data.corpus_common import is_bounded_diagnostic_output as _is_bounded_diagnostic_output
 
 
 SCHEMA = "endfield.streaming-marker13-corpus.v2"
@@ -31,13 +33,6 @@ ROOT_SCHEMA = "endfield.streaming-root-subgraphs-corpus.v15"
 def sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest().upper()
 
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b""):
-            digest.update(block)
-    return digest.hexdigest().upper()
 
 
 def failure(source: str, stage: str, expected: Any, actual: Any,
@@ -829,13 +824,6 @@ def render_markdown(report: dict[str, Any]) -> str:
         "Certified adjacency bounds 16- or 18-byte physical gaps; native supplies only a conditional 16-byte read window. Any residual stays opaque. Serialized extent, native EOF, runtime receipt and semantics remain unresolved.", "",
     ])
 
-
-def _is_bounded_diagnostic_output(path: Path, repo_root: Path) -> bool:
-    resolved = path.resolve()
-    return any(
-        resolved == base or base in resolved.parents
-        for base in (repo_root / "tmp", repo_root / "scratch")
-    )
 
 
 from scripts.repo_paths import REPO_ROOT

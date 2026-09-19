@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
+from scripts.common import sha256_file_upper as _sha256_file
 
 
 SCHEMA = "endfield.streaming-field2-native-contract.v8"
@@ -20,13 +21,6 @@ CONTRACT_SHA256 = "436F51D0C6C0BF0009D2EBF439C8BEC1A13E94404E983E5ADD0E09A604A82
 def _sha256_bytes(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest().upper()
 
-
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        while chunk := stream.read(1024 * 1024):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
 
 
 def _pe_file_offset(image: bytes, rva: int, *, size: int = 1) -> int:

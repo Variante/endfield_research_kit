@@ -10,42 +10,15 @@ from scripts.common import sha256_file as _sha256_path
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import write_canonical_json as _write_json
+from scripts.common import read_json_strict as _read_json
+from scripts.common import repo_path as _repo_path
+from scripts.webui.mission_pipeline.quest_keys import natural_quest_key as _natural_quest_key
 
 ROOT = REPO_ROOT
 
 
-def _read_json(path: Path) -> Any:
-    with path.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
 
-
-def _write_json(path: Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    encoded = json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    path.write_text(encoded + "\n", encoding="utf-8", newline="\n")
-
-
-def _repo_path(path: Path) -> str:
-    path = path.resolve()
-    return (
-        path.relative_to(ROOT).as_posix()
-        if path.is_relative_to(ROOT)
-        else path.as_posix()
-    )
-
-
-def _natural_quest_key(value: str) -> tuple[str, int, str]:
-    mission, marker, suffix = str(value).partition("_q#")
-    try:
-        number = int(suffix) if marker else 10**9
-    except ValueError:
-        number = 10**9
-    return mission, number, suffix
 
 
 def _iter_hashed_source_references(

@@ -136,6 +136,7 @@ ENEMY_RESILIENCE_FIELDS = (
     ("pushedBackCoefficient", "Pushed-back coefficient"),
 )
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import read_json
 
 NATIVE_METADATA_HELPER = REPO_ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 NATIVE_MODIFIER_ENUM_TYPES = {
@@ -322,12 +323,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     return parser.parse_args(argv)
 
-
-def read_json(path: Path, default: Any = None) -> Any:
-    try:
-        return json.loads(path.read_text(encoding="utf-8-sig"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return default
 
 
 def load_table(table_dir: Path, name: str, default: Any = None) -> Any:

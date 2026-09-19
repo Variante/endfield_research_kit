@@ -19,6 +19,7 @@ from typing import Any, Iterable, Mapping
 
 HEX64 = re.compile(r"^[0-9A-F]{64}$")
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import sha256_file_upper as _sha256_file
 
 MODULE_REPO_ROOT = REPO_ROOT
 DEFAULT_OUTER = MODULE_REPO_ROOT / "reports/animestudio/vfs_understanding_latest.json"
@@ -52,13 +53,6 @@ class CensusGateError(ValueError):
 def _fail(code: str, *, source: str, expected: Any = None, actual: Any = None, offset: Any = None) -> None:
     raise CensusGateError(code, source=source, expected=expected, actual=actual, offset=offset)
 
-
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
 
 
 def _fingerprint(path: Path) -> dict[str, Any]:
@@ -153,10 +147,6 @@ def _require_int(value: Any, *, source: str, minimum: int = 0) -> int:
         _fail("invalid-integer", source=source, expected=f"int >= {minimum}", actual=value)
     return value
 
-
-def _canonical_sha256(value: Any) -> str:
-    raw = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
-    return hashlib.sha256(raw).hexdigest().upper()
 
 
 def _snapshot_pinned_files(rows: list[Mapping[str, Any]], *, label: str) -> list[dict[str, Any]]:

@@ -25,6 +25,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Mapping
 
+from scripts.common import canonical_json_sha256 as _canonical_sha256
 from scripts.game_data.memorypack.corpus_gate import (
     DEFAULT_CLI,
     DEFAULT_LEDGER,
@@ -33,7 +34,6 @@ from scripts.game_data.memorypack.corpus_gate import (
     MODULE_REPO_ROOT,
     CensusGateError,
     _atomic_write_json,
-    _canonical_sha256,
     _chunk_fingerprints,
     _chunk_selection_snapshot,
     _discover_blc_paths,

@@ -11,15 +11,8 @@ import copy
 import json
 from collections.abc import Callable
 from typing import Any
+from scripts.webui.mission_pipeline.quest_keys import natural_quest_key as _natural_quest_key
 
-
-def _natural_quest_key(value: str) -> tuple[str, int, str]:
-    mission, marker, suffix = str(value).partition("_q#")
-    try:
-        number = int(suffix) if marker else 10**9
-    except ValueError:
-        number = 10**9
-    return mission, number, suffix
 
 
 def unique_route_strings(*values: Any) -> list[str]:

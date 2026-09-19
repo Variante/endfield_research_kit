@@ -1,7 +1,6 @@
 """Project graph-neutral offline recovery rows onto the Story manifest."""
 from __future__ import annotations
 
-import json
 from pathlib import Path
 from typing import Any
 
@@ -9,22 +8,12 @@ from scripts.webui.mission_pipeline import offline_shell_projection
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import read_json_strict as _read_json
+from scripts.common import repo_path as _repo_path
 
 ROOT = REPO_ROOT
 
 
-def _read_json(path: Path) -> Any:
-    with path.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
-
-
-def _repo_path(path: Path) -> str:
-    path = path.resolve()
-    return (
-        path.relative_to(ROOT).as_posix()
-        if path.is_relative_to(ROOT)
-        else path.as_posix()
-    )
 
 
 def publish_offline_story_recovery(

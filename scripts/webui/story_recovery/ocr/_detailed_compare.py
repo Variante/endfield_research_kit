@@ -29,6 +29,7 @@ from scripts.common import (
 )
 
 from scripts.webui.story_recovery.ocr import match as matcher
+from scripts.webui.story_recovery.ocr.match import float_value as safe_float
 
 
 REPORT_DIR = REPORTS_DIR / "gameplay_video_ocr"
@@ -62,12 +63,6 @@ def safe_int(value: Any, default: int = 0) -> int:
     except (TypeError, ValueError):
         return default
 
-
-def safe_float(value: Any, default: float = 0.0) -> float:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return default
 
 
 def selected_report(

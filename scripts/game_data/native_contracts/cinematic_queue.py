@@ -71,24 +71,9 @@ BOUNDARY = (
 )
 
 
-from scripts.repo_paths import REPO_ROOT
+from scripts.common import repo_path as _source_file
+from scripts.common import canonical_json_sha256 as _canonical_sha256
 
-def _source_file(path: Path) -> str:
-    root = REPO_ROOT
-    try:
-        return path.resolve().relative_to(root).as_posix()
-    except ValueError:
-        return path.resolve().as_posix()
-
-
-def _canonical_sha256(value: Any) -> str:
-    raw = json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    ).encode("utf-8")
-    return hashlib.sha256(raw).hexdigest().upper()
 
 
 def validate_cinematic_queue_contract(

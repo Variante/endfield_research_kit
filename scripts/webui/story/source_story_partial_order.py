@@ -68,6 +68,7 @@ from scripts.webui.story.dialog_tree_control_flow import (
     project_serialized_family_node,
     recover_static_port_family_contract,
 )
+from scripts.webui.story.timeline_recovery import rel_path as _repo_path
 
 
 SCHEMA = "sourceStoryPartialOrder.v46"
@@ -4577,12 +4578,6 @@ def _quest_lifecycle_definition_rows(
         ),
     )
 
-
-def _repo_path(path: Path) -> str:
-    try:
-        return path.relative_to(ROOT).as_posix()
-    except ValueError:
-        return path.as_posix()
 
 
 def _find_spawner_config(

@@ -12,7 +12,6 @@ from __future__ import annotations
 import argparse
 import base64
 import copy
-import hashlib
 import json
 import os
 import re
@@ -138,6 +137,13 @@ from scripts.webui.mission_pipeline import story_order_projection
 from scripts.webui.mission_pipeline import story_binding_coverage_projection
 from scripts.webui.mission_pipeline import story_binding_coverage_publisher
 from scripts.webui.mission_pipeline import story_trigger_route_projection
+from scripts.common import write_canonical_json as write_json
+from scripts.common import read_json_strict as read_json
+from scripts.common import repo_path
+from scripts.webui.mission_pipeline.quest_keys import natural_quest_key
+from scripts.webui.story.mission_recovery import const_value
+from scripts.webui.story.mission_recovery import vector3 as vector3_row
+from scripts.webui.mission_pipeline.source_order_shells import _resolve_report_source_path
 
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
@@ -2523,16 +2529,6 @@ def parse_args() -> argparse.Namespace:
     return parser.parse_args()
 
 
-def read_json(path: Path) -> Any:
-    with path.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
-
-
-def write_json(path: Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    encoded = json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
-    path.write_text(encoded + "\n", encoding="utf-8", newline="\n")
-
 
 def refresh_source_story_gap_queue(
     language: str,
@@ -2693,12 +2689,6 @@ def refresh_source_story_gap_queue(
         f"{repo_path(queue_path)}"
     )
     return report
-
-
-def repo_path(path: Path) -> str:
-    path = path.resolve()
-    return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
-
 
 
 
@@ -5865,11 +5855,6 @@ def type_name(value: Any) -> str:
     return value.split(",", 1)[0].rsplit(".", 1)[-1]
 
 
-def const_value(value: Any) -> Any:
-    if isinstance(value, dict) and "constValue" in value:
-        return value.get("constValue")
-    return value
-
 
 def iter_dicts(value: Any) -> Iterable[dict[str, Any]]:
     if isinstance(value, dict):
@@ -5880,14 +5865,6 @@ def iter_dicts(value: Any) -> Iterable[dict[str, Any]]:
         for child in value:
             yield from iter_dicts(child)
 
-
-def natural_quest_key(value: str) -> tuple[str, int, str]:
-    mission, marker, suffix = str(value).partition("_q#")
-    try:
-        number = int(suffix) if marker else 10**9
-    except ValueError:
-        number = 10**9
-    return mission, number, suffix
 
 
 def compact_scalar(value: Any) -> Any:
@@ -5970,18 +5947,6 @@ def condition_tree(condition: Any) -> dict[str, Any] | None:
         row["children"] = children
     return row
 
-
-def vector3_row(value: Any) -> dict[str, float] | None:
-    if not isinstance(value, dict):
-        return None
-    try:
-        return {
-            "x": float(value.get("x", 0.0)),
-            "y": float(value.get("y", 0.0)),
-            "z": float(value.get("z", 0.0)),
-        }
-    except (TypeError, ValueError):
-        return None
 
 
 def tracking_info_row(info: Any, index: int) -> dict[str, Any] | None:
@@ -7834,10 +7799,6 @@ def build_all(
     write_json(output_root / "index.json", index)
     return index
 
-
-def _resolve_report_source_path(source: str) -> Path:
-    path = Path(source)
-    return path if path.is_absolute() else ROOT / path
 
 
 def main() -> int:

@@ -458,6 +458,74 @@ def sha256_file(path: Path, *, chunk_bytes: int = 1024 * 1024) -> str:
     return result
 
 
+def sha256_file_upper(path: Path) -> str:
+    """Uppercase hex SHA-256, the form contracts and corpus gates record."""
+    return sha256_file(path).upper()
+
+
+def canonical_json_sha256(value: Any) -> str:
+    """Uppercase SHA-256 of ``value`` as sorted, compact UTF-8 JSON."""
+    raw = json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(raw).hexdigest().upper()
+
+
+def repo_path(path: Path) -> str:
+    """Resolved repository-relative POSIX path; the resolved absolute path
+    when it lies outside the repository.
+
+    Unlike :func:`rel_path`, this resolves symlinks and ``..`` first, which is
+    what a provenance field naming a contract or report needs.
+    """
+    path = Path(path).resolve()
+    return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
+
+
+def read_json_strict(path: Path) -> Any:
+    """Parse a UTF-8 JSON file, raising on a missing or malformed file.
+
+    Use :func:`read_json` instead when a default should replace a bad file.
+    """
+    with Path(path).open("r", encoding="utf-8") as handle:
+        return json.load(handle)
+
+
+def read_json_object_bytes(path: Path) -> tuple[dict[str, Any], bytes, str | None]:
+    """Read a JSON object with its exact bytes for hashing.
+
+    Returns ``(payload, raw, error)``: ``error`` is ``None`` on success, and a
+    bounded message when the file is unreadable, malformed, or not an object.
+    """
+    try:
+        raw = path.read_bytes()
+        payload = json.loads(raw.decode("utf-8-sig"))
+    except (OSError, UnicodeError, json.JSONDecodeError) as error:
+        return {}, b"", str(error)[:400]
+    if not isinstance(payload, dict):
+        return {}, raw, f"expected object, found {type(payload).__name__}"
+    return payload, raw, None
+
+
+def write_canonical_json(path: Path, value: Any) -> None:
+    """Write sorted, compact JSON with a trailing LF, always rewriting.
+
+    This is the byte-stable form Mission Pipeline publishes. Use
+    :func:`write_json` for change-detecting writes.
+    """
+    path.parent.mkdir(parents=True, exist_ok=True)
+    encoded = json.dumps(
+        value,
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    path.write_text(encoded + "\n", encoding="utf-8", newline="\n")
+
+
 def resolve_installed_game_data_root(
     export_summary_path: Path = EXPORT_FULL_SUMMARY,
 ) -> Path:

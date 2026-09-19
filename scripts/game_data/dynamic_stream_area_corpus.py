@@ -25,6 +25,7 @@ from scripts.game_data.dynamic_streaming import (
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import sha256_file_upper as sha256_file
 
 ROOT = REPO_ROOT
 DEFAULT_OUTER = ROOT / "reports/animestudio/vfs_understanding_latest.json"
@@ -38,13 +39,6 @@ SHA256_RE = re.compile(r"^[0-9A-F]{64}$")
 STREAM_AREA_NAME_RE = re.compile(r"(?:^|/)FBStreamArea\.bytes$", re.IGNORECASE)
 STREAM_AREA_FILE_REGEX = r"(?:^|/)FBStreamArea\.bytes$"
 
-
-def sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
 
 
 def sha256_bytes(data: bytes) -> str:

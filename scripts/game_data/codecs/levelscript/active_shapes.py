@@ -3,8 +3,9 @@
 from __future__ import annotations
 
 import math
-import struct
 from typing import Any
+from scripts.game_data.codecs.levelscript.primitives import u32 as _u32
+from scripts.game_data.codecs.levelscript.primitives import f32 as _f32
 
 
 SHAPE_TYPE_NAMES = {
@@ -22,16 +23,6 @@ END_TYPE_NAMES = {
 }
 
 
-def _u32(data: bytes, offset: int) -> int | None:
-    if offset < 0 or offset + 4 > len(data):
-        return None
-    return struct.unpack_from("<I", data, offset)[0]
-
-
-def _f32(data: bytes, offset: int) -> float | None:
-    if offset < 0 or offset + 4 > len(data):
-        return None
-    return struct.unpack_from("<f", data, offset)[0]
 
 
 def _offset_hex(offset: int | None) -> str:

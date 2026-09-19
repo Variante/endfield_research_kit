@@ -6,6 +6,7 @@ import struct
 from typing import Any
 
 from scripts.game_data.codecs.levelscript.params import decode_bool_param, decode_i32_param
+from scripts.game_data.codecs.levelscript.params import finish_getter_fields as _finish_getter_fields
 
 
 def _decode_pure_bool_getter_ref(
@@ -37,21 +38,6 @@ def _decode_bool_operand(
         return getter_ref
     return decode_bool_param(payload, cursor)
 
-
-def _finish_getter_fields(
-    payload: bytes,
-    end: int,
-    detail: dict[str, Any],
-) -> dict[str, Any]:
-    """Accept exact subtype EOF or one proven outer-list u32 trailer."""
-    if end == len(payload):
-        return detail
-    if end + 4 != len(payload):
-        return {}
-    return {
-        **detail,
-        "trailingActionMapFramingU32": struct.unpack_from("<I", payload, end)[0],
-    }
 
 
 def decode_boolean_compare(payload: bytes) -> dict[str, Any]:

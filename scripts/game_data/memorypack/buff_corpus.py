@@ -19,6 +19,7 @@ from pathlib import Path
 from scripts.game_data.memorypack import corpus_gate as vfs
 from scripts.game_data.memorypack.buff import decode_buff_post_id_prefix_at, buff_post_id_result_is_exact_tail, decode_buff_pre_id_modifier_prefix
 from scripts.game_data.memorypack.buff_actions import event_prefix, root_continuation
+from scripts.common import canonical_json_sha256
 
 PREFIX='Data/Json/BuffData/'
 PATTERN=re.compile(r'^Data/Json/BuffData/[^/]+[.]json$')
@@ -245,7 +246,7 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
     for role,(old,new) in comparisons.items():
         if old!=new:
             vfs._fail('buff-corpus-input-drift',source='BuffData census.'+role,
-                expected=vfs._canonical_sha256(old),actual=vfs._canonical_sha256(new))
+                expected=canonical_json_sha256(old),actual=canonical_json_sha256(new))
     guard();counts=Counter(row['coverageStatus'] for row in rows)
     prefix_counts=Counter(c['prefixProbe']['readerStatus'] for row in rows for c in row.get('candidates',[])
         if c.get('prefixProbe') is not None)
@@ -282,7 +283,7 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
              'currentRootContinuation':root_summary,
              'byteBoundaryEvidence':boundary_evidence_summary(rows),
              'logicalBytes':sum(row['length'] for row in selected)},
-        'identitySetSha256':vfs._canonical_sha256([{'identity':r['identity'],'logicalSha256':r['logicalSha256']} for r in rows]),'files':rows}
+        'identitySetSha256':canonical_json_sha256([{'identity':r['identity'],'logicalSha256':r['logicalSha256']} for r in rows]),'files':rows}
 
 
 def main(argv=None):

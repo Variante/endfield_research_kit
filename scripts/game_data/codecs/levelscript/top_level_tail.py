@@ -7,6 +7,7 @@ from typing import Any
 
 from scripts.game_data.codecs.levelscript import active_shapes
 from scripts.game_data.codecs.levelscript import trigger_volumes
+from scripts.game_data.codecs.levelscript.primitives import list_status as _list_status
 
 
 START_TYPE_NAMES = {
@@ -22,15 +23,6 @@ def _u32(data: bytes, offset: int | None) -> int | None:
         return None
     return struct.unpack_from("<I", data, offset)[0]
 
-
-def _list_status(raw_count: int | None) -> tuple[str, int | None]:
-    if raw_count is None:
-        return "missing", None
-    if raw_count == 0xFFFFFFFF:
-        return "null", None
-    if raw_count <= 64:
-        return "present", raw_count
-    return "unknown", raw_count
 
 
 def _offset_hex(offset: int | None) -> str:

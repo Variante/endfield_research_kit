@@ -4,6 +4,10 @@ from __future__ import annotations
 
 import struct
 from typing import Any
+from scripts.game_data.codecs.levelscript.primitives import u32 as _u32
+from scripts.game_data.codecs.levelscript.primitives import i32 as _i32
+from scripts.game_data.codecs.levelscript.primitives import f32 as _f32
+from scripts.game_data.codecs.levelscript.primitives import list_status as _list_status
 
 
 # ``LevelScriptTriggerVolumeData`` is a MemoryPack union. The current
@@ -48,32 +52,8 @@ WRAPPER_PROLOGUE = bytes.fromhex(
 )
 
 
-def _u32(data: bytes, offset: int) -> int | None:
-    if offset < 0 or offset + 4 > len(data):
-        return None
-    return struct.unpack_from("<I", data, offset)[0]
 
 
-def _i32(data: bytes, offset: int) -> int | None:
-    if offset < 0 or offset + 4 > len(data):
-        return None
-    return struct.unpack_from("<i", data, offset)[0]
-
-
-def _f32(data: bytes, offset: int) -> float | None:
-    if offset < 0 or offset + 4 > len(data):
-        return None
-    return struct.unpack_from("<f", data, offset)[0]
-
-
-def _list_status(raw_count: int | None) -> tuple[str, int | None]:
-    if raw_count is None:
-        return "missing", None
-    if raw_count == 0xFFFFFFFF:
-        return "null", None
-    if raw_count <= 64:
-        return "present", raw_count
-    return "unknown", raw_count
 
 
 def _drop_empty(row: dict[str, Any]) -> dict[str, Any]:

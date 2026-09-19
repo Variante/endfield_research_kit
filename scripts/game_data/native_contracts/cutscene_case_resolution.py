@@ -53,24 +53,9 @@ MATCH_FIELDS = (
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import repo_path as _source_file
+from scripts.common import read_json_object_bytes as _read_json
 
-def _source_file(path: Path) -> str:
-    root = REPO_ROOT
-    try:
-        return path.resolve().relative_to(root).as_posix()
-    except ValueError:
-        return path.resolve().as_posix()
-
-
-def _read_json(path: Path) -> tuple[dict[str, Any], bytes, str | None]:
-    try:
-        raw = path.read_bytes()
-        payload = json.loads(raw.decode("utf-8-sig"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as error:
-        return {}, b"", str(error)[:400]
-    if not isinstance(payload, dict):
-        return {}, raw, f"expected object, found {type(payload).__name__}"
-    return payload, raw, None
 
 
 def load_cutscene_case_resolution_contract(

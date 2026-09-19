@@ -17,13 +17,11 @@ from scripts.game_data.native_contracts.cutscene_case_resolution import (
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import repo_path as _repo_path
+from scripts.webui.mission_pipeline.quest_keys import natural_quest_key as _natural_quest_key
 
 ROOT = REPO_ROOT
 
-
-def _repo_path(path: Path) -> str:
-    path = path.resolve()
-    return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
 
 
 def _bind_runtime_contract_to_live_file(contract: dict[str, Any]) -> dict[str, Any]:
@@ -43,14 +41,6 @@ def _bind_runtime_contract_to_live_file(contract: dict[str, Any]) -> dict[str, A
         return contract
     return {**contract, "report": _repo_path(live)}
 
-
-def _natural_quest_key(value: str) -> tuple[str, int, str]:
-    mission, marker, suffix = str(value).partition("_q#")
-    try:
-        number = int(suffix) if marker else 10**9
-    except ValueError:
-        number = 10**9
-    return mission, number, suffix
 
 
 def _lua_phase(module: str) -> str:

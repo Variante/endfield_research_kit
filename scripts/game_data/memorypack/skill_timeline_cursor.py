@@ -44,6 +44,7 @@ from scripts.game_data.memorypack.skill_corpus import (
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import sha256_file_upper as _sha256_file
 
 ROOT = REPO_ROOT
 DEFAULT_CORPUS = ROOT / 'reports/animestudio/skilldata_current_latest.json'
@@ -553,13 +554,6 @@ def _extend_following_play_animation(alignment: dict[str, Any], raw: bytes, *,
 def _sha256_bytes(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest().upper()
 
-
-def _sha256_file(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open('rb') as stream:
-        for block in iter(lambda: stream.read(1024 * 1024), b''):
-            digest.update(block)
-    return digest.hexdigest().upper()
 
 
 def _read_json(path: Path, *, label: str) -> tuple[dict[str, Any], str]:

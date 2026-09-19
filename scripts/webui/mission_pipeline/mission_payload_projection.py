@@ -4,15 +4,8 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
+from scripts.webui.mission_pipeline.quest_keys import natural_quest_key as _natural_quest_key
 
-
-def _natural_quest_key(value: str) -> tuple[str, int, str]:
-    mission, marker, suffix = str(value).partition("_q#")
-    try:
-        number = int(suffix) if marker else 10**9
-    except ValueError:
-        number = 10**9
-    return mission, number, suffix
 
 
 def build_mission(

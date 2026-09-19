@@ -44,6 +44,8 @@ from scripts.common import (
     RECORDED_NATIVE_METADATA_SHA256,
     read_bytes_cached,
 )
+from scripts.game_data.codecs.levelscript.primitives import u32 as _u32
+from scripts.game_data.codecs.levelscript.primitives import i32 as _i32
 
 
 SCRIPT_POINTER_REF_RECORDS = {
@@ -907,16 +909,6 @@ class LevelScriptTopLevelFramingError(ValueError):
     """Raised when a strict partial top-level frame cannot be proved."""
 
 
-def _u32(data: bytes, offset: int) -> int | None:
-    if offset < 0 or offset + 4 > len(data):
-        return None
-    return struct.unpack_from("<I", data, offset)[0]
-
-
-def _i32(data: bytes, offset: int) -> int | None:
-    if offset < 0 or offset + 4 > len(data):
-        return None
-    return struct.unpack_from("<i", data, offset)[0]
 
 
 def _u64_offsets(data: bytes, value: int) -> list[int]:
@@ -935,15 +927,6 @@ def _u64_offsets(data: bytes, value: int) -> list[int]:
 def _is_plausible_levelscript_id(value: int) -> bool:
     return 1_000_000 <= value <= 999_999_999_999
 
-
-def _list_status(raw_count: int | None) -> tuple[str, int | None]:
-    if raw_count is None:
-        return "missing", None
-    if raw_count == 0xFFFFFFFF:
-        return "null", None
-    if raw_count <= 64:
-        return "present", raw_count
-    return "unknown", raw_count
 
 
 def _drop_empty(row: dict[str, Any]) -> dict[str, Any]:

@@ -38,6 +38,7 @@ BOUNDARY = (
 )
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import canonical_json_sha256
 
 REPO_ROOT = REPO_ROOT
 GAME_DATA_ROOT = Path(__file__).resolve().parents[1]
@@ -1328,8 +1329,8 @@ def build_current_census(
         vfs._fail(
             "buff-1b-native-evidence-drift",
             source=str(native_report_path),
-            expected=vfs._canonical_sha256(native_before),
-            actual=vfs._canonical_sha256(native_after),
+            expected=canonical_json_sha256(native_before),
+            actual=canonical_json_sha256(native_after),
         )
     gate_source_after = vfs._fingerprint(Path(__file__))
     if gate_source_before != gate_source_after:

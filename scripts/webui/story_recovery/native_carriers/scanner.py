@@ -66,12 +66,6 @@ def load_module(name: str, path: Path) -> Any:
 
 
 
-def source_path(path: Path) -> str:
-    try:
-        return path.resolve().relative_to(ROOT.resolve()).as_posix()
-    except (OSError, ValueError):
-        return str(path.resolve())
-
 
 def parse_hex(value: str | int | None) -> int:
     if isinstance(value, int):

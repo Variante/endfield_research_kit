@@ -1322,10 +1322,7 @@ def build_source_backed_scene_sequences(source_backed_scene_edges: list[dict]) -
     return sequences
 
 
-def _unwrap_const(value: Any) -> Any:
-    if isinstance(value, dict) and "constValue" in value:
-        return value.get("constValue")
-    return value
+_unwrap_const = const_value
 
 
 def _logic_id_from_entity_ptr(value: Any) -> int | None:

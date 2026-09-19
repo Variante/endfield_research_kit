@@ -7990,10 +7990,7 @@ def read_skill_u8_field(data: bytes, offset: int, field_name: str, *, max_value:
     return value, offset + 1
 
 
-def read_skill_i32_field(data: bytes, offset: int, field_name: str) -> tuple[int, int]:
-    if offset + 4 > len(data):
-        raise ValueError(f"{field_name}:truncated-i32")
-    return struct.unpack_from("<i", data, offset)[0], offset + 4
+read_skill_i32_field = read_buff_i32_field
 
 
 def read_skill_bool_field(data: bytes, offset: int, field_name: str) -> tuple[bool, int]:

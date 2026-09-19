@@ -20,6 +20,8 @@ from scripts.common import (
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import sha256_file_upper as _sha256
+from scripts.common import read_json_object_bytes as _read_json
 
 ROOT = REPO_ROOT
 SCHEMA = "dynamicSceneStoryContext.v1"
@@ -67,24 +69,6 @@ def _source_file(path: Path) -> str:
     except ValueError:
         return path.resolve().as_posix()
 
-
-def _read_json(path: Path) -> tuple[dict[str, Any], bytes, str | None]:
-    try:
-        raw = path.read_bytes()
-        payload = json.loads(raw.decode("utf-8-sig"))
-    except (OSError, UnicodeError, json.JSONDecodeError) as error:
-        return {}, b"", str(error)[:400]
-    if not isinstance(payload, dict):
-        return {}, raw, f"expected object, found {type(payload).__name__}"
-    return payload, raw, None
-
-
-def _sha256(path: Path) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        while chunk := stream.read(1024 * 1024):
-            digest.update(chunk)
-    return digest.hexdigest().upper()
 
 
 def _resolved_export_source(export_root: Path, relative: str) -> Path | None:

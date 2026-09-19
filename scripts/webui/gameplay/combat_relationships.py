@@ -30,6 +30,8 @@ except ImportError:  # direct script execution
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import write_canonical_json as write_json
+from scripts.common import read_json_strict as load_json
 
 ROOT = REPO_ROOT
 EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
@@ -76,21 +78,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--max-assets-per-effect", type=int, default=2)
     return parser.parse_args(argv)
 
-
-def load_json(path: Path) -> Any:
-    with path.open("r", encoding="utf-8") as handle:
-        return json.load(handle)
-
-
-def write_json(path: Path, value: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    encoded = json.dumps(
-        value,
-        ensure_ascii=False,
-        sort_keys=True,
-        separators=(",", ":"),
-    )
-    path.write_text(encoded + "\n", encoding="utf-8", newline="\n")
 
 
 def compact_source(value: Any) -> Any:

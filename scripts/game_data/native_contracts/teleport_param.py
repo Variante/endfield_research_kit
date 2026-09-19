@@ -110,14 +110,7 @@ EXPECTED_LOAD_FINISH_ACCESSES = [
 ]
 
 
-from scripts.repo_paths import REPO_ROOT
-
-def _source_file(path: Path) -> str:
-    root = REPO_ROOT
-    try:
-        return path.resolve().relative_to(root).as_posix()
-    except ValueError:
-        return path.resolve().as_posix()
+from scripts.common import repo_path as _source_file
 
 
 def _failure_status(*, raw: bytes, native_status: str) -> str:

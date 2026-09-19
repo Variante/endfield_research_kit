@@ -9,10 +9,8 @@ it does not contain a list of Story ids or per-object exceptions.
 from __future__ import annotations
 
 import argparse
-import importlib.util
 import json
 import re
-import sys
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
@@ -31,6 +29,7 @@ from scripts.game_data.native_contracts.cinematic_queue import (
     reconcile_runtime_audit,
     validate_cinematic_queue_contract,
 )
+from scripts.webui.story.timeline_embedded_story_runtime import load_module
 
 TOOLS = ROOT / "tools" / "endfield-il2cpp"
 DEFAULT_GAMEASSEMBLY = (
@@ -38,17 +37,6 @@ DEFAULT_GAMEASSEMBLY = (
 )
 DEFAULT_JSON = ROOT / "reports" / "story" / "recovery" / "cinematic_queue_runtime_audit.json"
 DEFAULT_MD = ROOT / "reports" / "story" / "recovery" / "cinematic_queue_runtime_audit.md"
-
-
-def load_module(name: str, path: Path) -> Any:
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise RuntimeError(f"unable to load helper: {path}")
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[spec.name] = module
-    spec.loader.exec_module(module)
-    return module
-
 
 
 
