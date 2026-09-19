@@ -1,31 +1,58 @@
 \.*
-export*
-!scripts/export_changed_game_data.py
-!export.bat
-!export_assets.bat
-tools/*
-!tools/endfield-il2cpp/
-reports/
-CLAUDE.md
-scratch
-cookies/
-videos/
+
+# -----------------------------------------------------------------------------
+# Python / generated caches
+# -----------------------------------------------------------------------------
+
 *.pyc
 *.nbc
 *.nbi
-Maps
-tmp
-blender
-Plugins
+
+# -----------------------------------------------------------------------------
+# Generated output / exports
+# -----------------------------------------------------------------------------
+
+/export_*/
+/reports/
+/webui/data/
+/standalone/
+
+# CLAUDE.md is a local symlink to AGENTS.md; edit AGENTS.md.
+/CLAUDE.md
+
+# -----------------------------------------------------------------------------
+# Local data / temporary files
+# -----------------------------------------------------------------------------
+
+/scratch/
+/tmp/
+/cookies/
+/videos/
+
+# -----------------------------------------------------------------------------
+# External / generated tools and assets
+# -----------------------------------------------------------------------------
+
+/tools/*
+!/tools/endfield-il2cpp/
+/blender/
+/Maps/
+/Plugins/
+
+# -----------------------------------------------------------------------------
+# Logs / dumps / packaged artifacts
+# -----------------------------------------------------------------------------
+
+*.log
 *.zip
 *.exe.stackdump
 *.obj
-webui/data/
-*.log
-*.txt
-standalone
+
+# -----------------------------------------------------------------------------
+# Tests / experiments
+# -----------------------------------------------------------------------------
 
 # Test and trial scripts are not tracked. They stay in place under
 # scripts/tests/ so the suite still runs locally; see the Tests section in
 # AGENTS.md.
-scripts/tests/
+/scripts/tests/
