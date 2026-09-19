@@ -54,7 +54,7 @@ probes, and report-only CLIs live in `scripts/webui/story_recovery/`.
 
 The dependency is one-way: recovery tools may import stable builder primitives;
 production builders must not import or execute recovery modules. Promote a
-recovery algorithm by moving its pure, tested core into `story_builder` and
+recovery algorithm by moving its pure, tested core into `scripts/webui/story/` and
 leaving only report/CLI orchestration in `story_recovery`.
 
 ## Story structure and media
@@ -114,7 +114,7 @@ hashes in both structured output and the CLI summary. Improve generic
 ## Maintained commands
 
 ```bat
-python scripts\game_data\extraction\verify_export_freshness.py
+python -m scripts.game_data.extraction.verify_export_freshness
 python -m scripts.webui.story.refresh_evidence
 python -m scripts.webui.story.source_links
 python -m scripts.webui.story.build --languages CN --default-language CN

@@ -16,7 +16,7 @@ build gates, runtime/static distinctions, and cross-domain graph provenance.
 ## Refresh and evidence rules
 
 ```bat
-python scripts\game_data\extraction\verify_export_freshness.py
+python -m scripts.game_data.extraction.verify_export_freshness
 .\export.bat --from-game
 python tools\endfield_source_graph.py build --relevant-asset-maps --skip-reference-rows --skip-followups
 ```

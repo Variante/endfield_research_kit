@@ -40,9 +40,9 @@ Primary outputs are `webui/data/lang/<LANG>/gameplay/**`,
 ## Focused refresh
 
 ```bat
-python scripts\webui\gameplay\build_gameplay.py
-python scripts\webui\gameplay\build_gameplay.py --stage projectiles
-python scripts\webui\gameplay\build_gameplay.py --stage asset-refs --default-language CN
+python -m scripts.webui.gameplay.build_gameplay
+python -m scripts.webui.gameplay.build_gameplay --stage projectiles
+python -m scripts.webui.gameplay.build_gameplay --stage asset-refs --default-language CN
 ```
 
 Use the canonical wrapper when cross-page Assets, Audio, source-graph, or

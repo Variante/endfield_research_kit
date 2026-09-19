@@ -508,7 +508,7 @@ input is in [`memory/webui_recovery.md`](../memory/webui_recovery.md). The
 shortest loop for frontend work is:
 
 ```bat
-python scripts\game_data\extraction\verify_export_freshness.py
+python -m scripts.game_data.extraction.verify_export_freshness
 .\export.bat
 python serve.py
 ```

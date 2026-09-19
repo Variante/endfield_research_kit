@@ -535,7 +535,7 @@ Updates remains the separate `build_updates.bat OLD NEW` workflow.
 `export.bat --from-game` calls:
 
 ```bat
-python .\scripts\game_data\extraction\export_full_from_game.py --animestudio-scope story --animestudio-stages maps json_by_type
+python -m scripts.game_data.extraction.export_full_from_game --animestudio-scope story --animestudio-stages maps json_by_type
 ```
 
 Its structured VFS dump defaults to `--structured-dump-mode focused`, which dumps
@@ -615,7 +615,7 @@ of failing the export.
 `export_assets.bat --from-game` defaults to the default asset mode:
 
 ```bat
-python .\scripts\game_data\extraction\export_full_from_game.py --skip-structured --animestudio-scope assets --animestudio-asset-mode default --animestudio-stages maps convert_by_type json_by_type
+python -m scripts.game_data.extraction.export_full_from_game --skip-structured --animestudio-scope assets --animestudio-asset-mode default --animestudio-stages maps convert_by_type json_by_type
 ```
 
 Full asset mode uses the MessagePack asset map for per-type stages when safe:

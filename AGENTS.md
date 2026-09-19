@@ -152,17 +152,20 @@ index can supply both names and hashes.
 
 ### Raw-format ownership in `scripts/game_data/`
 
-`scripts/game_data/` owns installed-format decoding below any page or semantic
-view: it reads bytes and proves framing, and it does not publish WebUI data.
-Its durable conclusions belong to the owning `memory/game_data/` file under
-`memory/game_data_recovery.md`; its commands belong to `scripts/README.md`.
-Modules are grouped by role:
+`scripts/game_data/` is the first of the two script lines: it owns extraction
+from the installed client and installed-format decoding below any page or
+semantic view. It reads bytes and proves framing, and it does not publish
+WebUI data. Its durable conclusions belong to the owning `memory/game_data/`
+file under `memory/game_data_recovery.md`; its commands belong to
+`scripts/README.md`. Modules are grouped by role:
 
+- `extraction/` runs AnimeStudio and writes `export_full/`: the full and
+  changed-file exporters, the freshness guard, the object index, and the
+  `animestudio/` maintenance commands;
 - exact framing readers, one per payload family: `streaming.py`,
   `irradiance_volume.py`, `extend_data_binary.py`, `bundle_manifest.py`,
-  `ifix_patch.py`, and `inverted_lz4.py`. Terrain is the one split family: the
-  reader is `scripts/game_data/terrain_tret.py` at the root while its validator is
-  `scripts/game_data/terrain_native.py`. Put a new reader in the package;
+  `ifix_patch.py`, `inverted_lz4.py`, `terrain_tret.py`, `terrain_height.py`,
+  and `dynamic_streaming.py`. Put a new reader in the package;
 - `*_corpus.py` current-corpus gates, which sweep the installed set and fail
   closed on an `--input-set-sha256`/`--expected-input-set-sha256` mismatch. The
   AnimeStudio VFS audit is the only producer of that value
@@ -179,7 +182,8 @@ Modules are grouped by role:
 - `memorypack/` for serialized gameplay payloads, with `core.py`/`schemas.py`
   shared and one module per domain;
 - `il2cpp_context.py` and `il2cpp_context_audit.py` for generic-instantiation
-  pointer tables.
+  pointer tables, and `il2cpp_protocol.py` for the shared IL2CPP and protobuf
+  primitives that validators and page builders both read.
 
 Keep a new family in its own reader plus its own corpus gate. Do not widen an
 existing reader to a second framing, and do not let a corpus gate infer a
@@ -428,7 +432,7 @@ Export freshness:
 
 - `export.bat` runs `scripts/game_data/extraction/verify_export_freshness.py` before rebuilding
   from an existing `export_full/`.
-- Run `python scripts\game_data\extraction\verify_export_freshness.py` directly when checking the
+- Run `python -m scripts.game_data.extraction.verify_export_freshness` directly when checking the
   guard, and pass `--game-root "...\Endfield_Data"` for non-default installs.
 - If freshness reports stale source roots, rerun
   `.\export.bat --from-game` before Story or asset builders read
@@ -830,12 +834,25 @@ export folder so the cached scanner baseline is rebuilt.
 ## Active Script Groups
 
 **The path-to-owner map is in [`scripts/README.md`](scripts/README.md)** under
-`## Layout`: extraction, installed formats, Story reconstruction, page builders,
-shared helpers, and tests. Do not keep a second copy here. The ownership rules
-that are not visible from that layout:
+`## Layout`. It has two lines that mirror the memory axes: `scripts/game_data/`
+(extraction and installed formats) and `scripts/webui/` (Story reconstruction,
+one folder per page, orchestration, and packaging), plus shared helpers and
+tests. Do not keep a second copy here. The ownership rules that are not visible
+from that layout:
 
-- `scripts/webui/gameplay/build_gameplay.py` owns every Gameplay page dataset. Stage modules
-  live in `scripts/webui/gameplay/`, and its `asset-refs` stage is the sole
+- Place new code by axis. If it reads the installed client or proves a format,
+  it goes under `scripts/game_data/`. If it projects exported data onto a page,
+  it goes in that page's `scripts/webui/<page>/` folder. Line 1 must not write
+  under `webui/data/`.
+- Run every entry point as `python -m scripts.…` from the repository root,
+  both in wrappers and in docs. Import with absolute `from scripts.… import`.
+  Resolve the repo root through `scripts.repo_paths.REPO_ROOT`, never
+  `Path(__file__).parents[N]`. Do not reintroduce `__package__`-dependent
+  import branches or `sys.path` bootstraps: they encode a file's location, and
+  a move breaks them silently. A documented entry point guards direct file
+  execution with a `SystemExit` naming its `-m` command.
+- `scripts/webui/gameplay/build_gameplay.py` owns every Gameplay page dataset. Its stage modules
+  sit beside it in `scripts/webui/gameplay/`, and its `asset-refs` stage is the sole
   writer of `webui/data/assets/gameplay_refs.json`.
 - `scripts/webui/audio/build_audio_semantics.py` is the Audio orchestrator/publisher;
   reusable Audio evidence owners live under `scripts/webui/audio/semantics/`.

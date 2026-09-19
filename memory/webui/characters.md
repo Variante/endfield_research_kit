@@ -45,7 +45,7 @@ Optional Updates sidecar: `webui/data/updates/characters.json`.
 ## Focused refresh
 
 ```bat
-python scripts\webui\characters\build_character_data.py --languages CN --default-language CN
+python -m scripts.webui.characters.build_character_data --languages CN --default-language CN
 ```
 
 Run `scripts.webui.assets.build_assets` first only when asset indexes changed; run the full

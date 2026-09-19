@@ -104,8 +104,8 @@ panel, layer, and inspector controls are in
 
 ```bat
 python -m scripts.webui.map.build_map_recovery_data --with-preview
-python scripts\webui\map\build_map_recovery_preview.py --level LEVEL
-python scripts\webui\map\build_map_recovery_preview.py --refresh-exact-fallbacks-only
+python -m scripts.webui.map.build_map_recovery_preview --level LEVEL
+python -m scripts.webui.map.build_map_recovery_preview --refresh-exact-fallbacks-only
 ```
 
 Exact streaming, point-layer, and inferred HLOD previews checkpoint after each

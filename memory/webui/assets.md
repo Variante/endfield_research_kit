@@ -33,7 +33,7 @@ separately owns `gameplay_refs.json`.
 ## Focused refresh
 
 ```bat
-python scripts\webui\assets\build_assets.py
+python -m scripts.webui.assets.build_assets
 .\export_assets.bat --from-game --focused-assets
 .\export_assets.bat --from-game --default-assets
 ```

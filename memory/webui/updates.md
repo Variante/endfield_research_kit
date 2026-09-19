@@ -42,7 +42,7 @@ WebUI source edits, generated reports, or scratch data as game updates.
 .\build_updates.bat OLD NEW
 .\build_updates.bat OLD NEW --no-audio
 .\build_updates.bat OLD NEW --exact
-python scripts\webui\updates\build_updates.py --refresh-previous-export-baseline
+python -m scripts.webui.updates.build_updates --refresh-previous-export-baseline
 ```
 
 ## Remaining gaps

@@ -239,7 +239,7 @@ exact evidence**, regenerates sibling names, and keeps candidates whose
 
 Producer/consumer links are admitted only for an **exact same-LevelScript
 source-root and source-path identity**, with one active final serialized slot
-and one unique output path. `story_builder.level_bindings` resolves
+and one unique output path. `scripts.webui.story.level_bindings` resolves
 `ParamSource=200` dynamic string properties **only** through the strict
 `LevelScriptBriefData` property formatter; `ParamSource=100` and
 unknown/runtime sources remain runtime-unresolved and **cannot become handles**.

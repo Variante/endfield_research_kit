@@ -73,9 +73,9 @@ allowed to mean:
 ## Focused refresh
 
 ```bat
-python scripts\webui\audio\build_audio.py
-python scripts\webui\audio\build_audio.py --skip-decode --refresh-hirc
-python scripts\webui\audio\build_audio_semantics.py --language CN
+python -m scripts.webui.audio.build_audio
+python -m scripts.webui.audio.build_audio --skip-decode --refresh-hirc
+python -m scripts.webui.audio.build_audio_semantics --language CN
 ```
 
 Inspect `--help` for non-CN or targeted maintenance options. Do not duplicate

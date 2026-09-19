@@ -9,7 +9,7 @@ python tools\endfield-il2cpp\catalog_option_flow_metadata.py --cache-metadata
 python tools\endfield-il2cpp\catalog_option_flow_metadata.py --only-focus
 python tools\endfield-il2cpp\catalog_option_flow_metadata.py --only-focus --body-context 4
 python tools\endfield-il2cpp\map_body_targets_to_gameassembly.py
-python scripts\game_data\extraction\animestudio\generate_dummydll.py --dry-run
+python -m scripts.game_data.extraction.animestudio.generate_dummydll --dry-run
 ```
 
 `catalog_option_flow_metadata.py` parses a validated `global-metadata.dat`
@@ -88,8 +88,8 @@ when the generated type is usable. Regenerate the repo-local set after a game
 update only when script schema recovery is needed:
 
 ```bat
-python scripts\game_data\extraction\animestudio\generate_dummydll.py --dry-run
-python scripts\game_data\extraction\animestudio\generate_dummydll.py --replace
+python -m scripts.game_data.extraction.animestudio.generate_dummydll --dry-run
+python -m scripts.game_data.extraction.animestudio.generate_dummydll --replace
 ```
 
 The dry run validates the installed `GameAssembly.dll` and

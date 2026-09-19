@@ -93,7 +93,7 @@ present in the current export. Use `--from-game` when that media has not yet
 been extracted or the installed client changed.
 
 `python serve.py` serves whatever has already been generated; it does not build
-page data. `python scripts\webui\package.py` packages the current generated WebUI
+page data. `python -m scripts.webui.package` packages the current generated WebUI
 without refreshing it.
 
 Mission Pipeline recovery remains available as a separate direct Python

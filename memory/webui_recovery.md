@@ -35,10 +35,10 @@ Choose the smallest workflow that owns the changed input:
 | Story is current; rebuild downstream views/assets/audio | `.\export_assets.bat` |
 | Story is current; refresh installed-game assets/audio first | `.\export_assets.bat --from-game` |
 | Compare two complete exports for Updates | `.\build_updates.bat OLD NEW` |
-| Serve / package | `python serve.py` / `python scripts\webui\package.py` |
+| Serve / package | `python serve.py` / `python -m scripts.webui.package` |
 
 Without `--from-game`, wrappers read the configured `export_full/` and first
-run `python scripts\game_data\extraction\verify_export_freshness.py`. Do not use `--from-game` for a
+run `python -m scripts.game_data.extraction.verify_export_freshness`. Do not use `--from-game` for a
 data-only rebuild. When both Story and assets need extraction, prefer one
 `--from-game --with-assets` run over two AnimeStudio passes.
 
@@ -108,7 +108,7 @@ gaps.
 
 ## Packaging contract
 
-`pack_webui.py` emits four matching archives; the commands are in
+`scripts/webui/package.py` emits four matching archives; the commands are in
 [`../scripts/README.md`](../scripts/README.md). The main archive owns WebUI
 code and generated text data. The `-media` archive owns images/videos referenced by
 Story, Text, Map, Characters, and Gameplay plus their compact asset index. The
