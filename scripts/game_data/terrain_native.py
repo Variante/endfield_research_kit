@@ -18,8 +18,10 @@ from scripts.story_builder.native_protocol.il2cpp import (
 
 SCHEMA = "endfield.terrain-tret-native-contract.v1"
 DEFAULT_CONTRACT = Path(__file__).with_name("terrain_tret_native.json")
+from scripts.repo_paths import REPO_ROOT
+
 METADATA_HELPER = (
-    Path(__file__).resolve().parents[2]
+    REPO_ROOT
     / "tools"
     / "endfield-il2cpp"
     / "catalog_option_flow_metadata.py"

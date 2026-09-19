@@ -5,10 +5,7 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
-if __package__:
-    from .common import write_report_json
-else:
-    from common import write_report_json
+from scripts.common import write_report_json
 
 
 # DialogIdTable registry: see scripts/story_builder/dialog_registry.py.

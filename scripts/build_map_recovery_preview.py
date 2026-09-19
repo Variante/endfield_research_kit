@@ -55,9 +55,15 @@ except ImportError:  # pragma: no cover - the maintained stdlib path remains val
     _np = None
     _numba_njit = None
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.build_map_recovery_preview"
+    )
+
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 
 from scripts.audit_map_asset_closure import iter_asset_entries, sha256_file
 from scripts.map_recovery_cache_evidence import (

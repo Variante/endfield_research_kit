@@ -13,7 +13,9 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 LEVEL_CONFIG_ROOT = ROOT / "export_full/structured/StreamingAssets/Data/Json/LevelConfig"
 STREAMING_INSTANCE_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances"
 

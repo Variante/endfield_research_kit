@@ -16,14 +16,9 @@ import zlib
 from pathlib import Path
 from typing import Any
 
-if __package__ == "scripts.gameplay_builder":
-    from ..common import EXPORT_ROOT, LANG_DIR, check_installed_native_inputs, rel_path, write_json
-    from ..game_data.memorypack.buff import buff_gameplay_semantics
-    from ..story_builder.native_protocol import il2cpp
-else:
-    from common import EXPORT_ROOT, LANG_DIR, check_installed_native_inputs, rel_path, write_json
-    from game_data.memorypack.buff import buff_gameplay_semantics
-    from story_builder.native_protocol import il2cpp
+from scripts.common import EXPORT_ROOT, LANG_DIR, check_installed_native_inputs, rel_path, write_json
+from scripts.game_data.memorypack.buff import buff_gameplay_semantics
+from scripts.story_builder.native_protocol import il2cpp
 
 
 DEFAULT_TABLE_SOURCE_RELS = (
@@ -140,7 +135,9 @@ ENEMY_RESILIENCE_FIELDS = (
     ("resilienceFullRecoverTime", "Full recovery time"),
     ("pushedBackCoefficient", "Pushed-back coefficient"),
 )
-NATIVE_METADATA_HELPER = Path(__file__).resolve().parents[2] / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
+from scripts.repo_paths import REPO_ROOT
+
+NATIVE_METADATA_HELPER = REPO_ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 NATIVE_MODIFIER_ENUM_TYPES = {
     "attributeTypes": "Beyond.GEnums.AttributeType",
     "modifierTypes": "Beyond.GEnums.ModifierType",

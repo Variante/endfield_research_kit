@@ -16,28 +16,22 @@ import sys
 from pathlib import Path
 from typing import Any
 
-if __package__:
-    from .common import ROOT, native_evidence_required, read_json, rel_path as slash
-    from .export_full_from_game import (
-        DEFAULT_GAME_ROOT,
-        DEFAULT_OUTPUT,
-        DEFAULT_REPORTS,
-        SOURCES,
-        animestudio_stage_dir,
-        collect_source_sizes,
-        structured_output_dir,
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.verify_export_freshness"
     )
-else:
-    from common import ROOT, native_evidence_required, read_json, rel_path as slash
-    from export_full_from_game import (
-        DEFAULT_GAME_ROOT,
-        DEFAULT_OUTPUT,
-        DEFAULT_REPORTS,
-        SOURCES,
-        animestudio_stage_dir,
-        collect_source_sizes,
-        structured_output_dir,
-    )
+
+from scripts.common import ROOT, native_evidence_required, read_json, rel_path as slash
+from scripts.export_full_from_game import (
+    DEFAULT_GAME_ROOT,
+    DEFAULT_OUTPUT,
+    DEFAULT_REPORTS,
+    SOURCES,
+    animestudio_stage_dir,
+    collect_source_sizes,
+    structured_output_dir,
+)
 
 
 DEFAULT_SUMMARY = DEFAULT_REPORTS / "export_full_summary.json"

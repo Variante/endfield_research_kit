@@ -37,7 +37,9 @@ BOUNDARY = (
     "invalidate an individually exact-closed earlier union range."
 )
 
-REPO_ROOT = Path(__file__).resolve().parents[3]
+from scripts.repo_paths import REPO_ROOT
+
+REPO_ROOT = REPO_ROOT
 GAME_DATA_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_NATIVE_REPORT = REPO_ROOT / "reports/animestudio/il2cpp_context_current_latest.json"
 DEFAULT_NATIVE_CONTRACT = GAME_DATA_ROOT / "buff_1b_native.json"

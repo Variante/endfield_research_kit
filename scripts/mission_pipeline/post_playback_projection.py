@@ -4,10 +4,7 @@ from __future__ import annotations
 from collections import Counter, defaultdict
 from typing import Any
 
-if __package__ and __package__.startswith("scripts."):
-    from scripts.common import compact_dict as _compact_dict
-else:
-    from common import compact_dict as _compact_dict
+from scripts.common import compact_dict as _compact_dict
 
 
 def build_post_playback_variable_bridge_audit(

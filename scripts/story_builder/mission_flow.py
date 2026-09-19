@@ -4,22 +4,12 @@ import json
 import re
 from collections import defaultdict
 
-if __package__ == "story_builder":
-    from common import (
-        ROOT,
-        read_bytes_cached,
-        unique_preserve as _unique_preserve,
-        walk_field_values as _walk_field_values,
-    )
-elif __package__ == "scripts.story_builder":
-    from ..common import (
-        ROOT,
-        read_bytes_cached,
-        unique_preserve as _unique_preserve,
-        walk_field_values as _walk_field_values,
-    )
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("import this module as scripts.story_builder.mission_flow")
+from scripts.common import (
+    ROOT,
+    read_bytes_cached,
+    unique_preserve as _unique_preserve,
+    walk_field_values as _walk_field_values,
+)
 
 from .anime_assets import (
     _canonical_cutscene_key,

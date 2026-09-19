@@ -32,29 +32,18 @@ from difflib import SequenceMatcher
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[3]
-if __package__ == "scripts.story_recovery.ocr":
-    from ...common import (
-        REPORTS_DIR,
-        md_escape,
-        read_json,
-        rel_path,
-        safe_key,
-        write_report_json,
-        write_text_if_changed,
-    )
-elif __package__ == "story_recovery.ocr":
-    from common import (
-        REPORTS_DIR,
-        md_escape,
-        read_json,
-        rel_path,
-        safe_key,
-        write_report_json,
-        write_text_if_changed,
-    )
-else:  # pragma: no cover - invalid embedding identity
-    raise ImportError(f"unsupported package identity: {__package__!r}")
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
+from scripts.common import (
+    REPORTS_DIR,
+    md_escape,
+    read_json,
+    rel_path,
+    safe_key,
+    write_report_json,
+    write_text_if_changed,
+)
 
 from .proposal import build_proposed_story_order
 

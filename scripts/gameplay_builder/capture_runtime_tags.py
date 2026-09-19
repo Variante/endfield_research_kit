@@ -21,10 +21,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from ..story_recovery import runtime_trace_core as core
+from scripts.story_recovery import runtime_trace_core as core
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_GAME_ROOT = core.DEFAULT_GAME_ROOT
 DEFAULT_MANIFEST = SCRIPT_DIR / "gameplay_tag_runtime_hooks.json"

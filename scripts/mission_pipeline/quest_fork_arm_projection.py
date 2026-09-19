@@ -5,15 +5,13 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
-if __package__ and __package__.startswith("scripts."):
-    from scripts.common import compact_dict as _compact_dict
-    from scripts.common import sha256_file as _sha256_path
-else:
-    from common import compact_dict as _compact_dict
-    from common import sha256_file as _sha256_path
+from scripts.common import compact_dict as _compact_dict
+from scripts.common import sha256_file as _sha256_path
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 
 
 def _read_json(path: Path) -> Any:

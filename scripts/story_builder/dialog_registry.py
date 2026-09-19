@@ -36,7 +36,9 @@ import sys
 from collections import defaultdict
 from pathlib import Path
 
-DEFAULT_ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+DEFAULT_ROOT = REPO_ROOT
 
 DEFAULT_INPUT  = DEFAULT_ROOT / "export_full/structured/StreamingAssets/Data/Json/GameplayConfig/DialogIdTable.json"
 DEFAULT_OUTPUT = DEFAULT_ROOT / "export_full/recovered/dialog_id_table_index.json"

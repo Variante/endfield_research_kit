@@ -8,16 +8,18 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[3]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 from .foundation import (
     read_json,
     resolve_installed_native_inputs,
     safe_key,
     sha256_file,
 )
-from ..mission_recovery import natural_key
-from ..story_keys import string_list as _string_list
-from ..mission_assets import (
+from scripts.story_builder.mission_recovery import natural_key
+from scripts.story_builder.story_keys import string_list as _string_list
+from scripts.story_builder.mission_assets import (
     mission_runtime_source_summary,
     select_complete_mission_runtime_root,
 )

@@ -20,7 +20,9 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-REPO_ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+REPO_ROOT = REPO_ROOT
 EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or REPO_ROOT / "export_full")
 DEFAULT_INPUTS = (
     EXPORT_ROOT / "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/MonoBehaviour",

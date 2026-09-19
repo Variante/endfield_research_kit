@@ -17,14 +17,9 @@ from .context_utils import json_dump
 from .context_utils import load_json_strict
 from .context_utils import normalize_posix
 
-if __package__ == "scripts.audio_semantics":
-    from scripts.animestudio_index_io import ObjectIndexUnavailable
-    from scripts.animestudio_index_io import iter_published_objects
-    from scripts.animestudio_index_io import raw_json_path_for_object
-else:
-    from animestudio_index_io import ObjectIndexUnavailable
-    from animestudio_index_io import iter_published_objects
-    from animestudio_index_io import raw_json_path_for_object
+from scripts.animestudio_index_io import ObjectIndexUnavailable
+from scripts.animestudio_index_io import iter_published_objects
+from scripts.animestudio_index_io import raw_json_path_for_object
 
 GAMEPLAY_INDEX_REL = Path("data/lang/{language}/gameplay/index.json")
 
@@ -1478,20 +1473,12 @@ def collect_buff_play_sound_actions(
     """
 
     if decoder is None:
-        if __package__:
-            from scripts.game_data.memorypack.buff import (
-                BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS,
-                BUFF_PLAY_SOUND_ACTION_TAG,
-                consume_buff_play_sound_action,
-            )
-            from scripts.game_data.memorypack.core import MEMORYPACK_UNION_WIDE_TAG
-        else:
-            from game_data.memorypack.buff import (
-                BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS,
-                BUFF_PLAY_SOUND_ACTION_TAG,
-                consume_buff_play_sound_action,
-            )
-            from game_data.memorypack.core import MEMORYPACK_UNION_WIDE_TAG
+        from scripts.game_data.memorypack.buff import (
+            BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS,
+            BUFF_PLAY_SOUND_ACTION_TAG,
+            consume_buff_play_sound_action,
+        )
+        from scripts.game_data.memorypack.core import MEMORYPACK_UNION_WIDE_TAG
 
         member_count = BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS[BUFF_PLAY_SOUND_ACTION_TAG]
         signature = bytes([MEMORYPACK_UNION_WIDE_TAG]) + int(BUFF_PLAY_SOUND_ACTION_TAG).to_bytes(2, "little") + bytes([member_count])

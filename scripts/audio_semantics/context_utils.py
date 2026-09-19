@@ -98,7 +98,9 @@ def iter_asset_map_objects(path: Path, required_text: str | None = None) -> Any:
                 except json.JSONDecodeError:
                     continue
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 
 
 def display_path(path: Path) -> str:

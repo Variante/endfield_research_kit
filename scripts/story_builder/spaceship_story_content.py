@@ -25,37 +25,22 @@ import sys
 from typing import Any, Iterable
 
 
-ROOT = Path(__file__).resolve().parents[2]
-if __package__ == "story_builder":
-    from common import (
-        InstalledNativeInputs,
-        check_installed_native_inputs,
-        md_escape,
-        native_evidence_required,
-        native_evidence_skip_message,
-        read_json,
-        rel_path,
-        safe_key,
-        sha256_file,
-        write_report_json,
-        write_text_if_changed,
-    )
-elif __package__ == "scripts.story_builder":
-    from scripts.common import (
-        InstalledNativeInputs,
-        check_installed_native_inputs,
-        md_escape,
-        native_evidence_required,
-        native_evidence_skip_message,
-        read_json,
-        rel_path,
-        safe_key,
-        sha256_file,
-        write_report_json,
-        write_text_if_changed,
-    )
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("run this module with python -m scripts.story_builder.spaceship_story_content")
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
+from scripts.common import (
+    InstalledNativeInputs,
+    check_installed_native_inputs,
+    md_escape,
+    native_evidence_required,
+    native_evidence_skip_message,
+    read_json,
+    rel_path,
+    safe_key,
+    sha256_file,
+    write_report_json,
+    write_text_if_changed,
+)
 from .anime_assets import (
     _get_anime_tree_path_index,
     _load_anime_resource_payload,

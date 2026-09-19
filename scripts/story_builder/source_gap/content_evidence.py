@@ -10,20 +10,22 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[3]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 from .foundation import (
     read_json,
     safe_key,
 )
-from ..level_bindings import (
+from scripts.story_builder.level_bindings import (
     LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
     decode_levelscript_native_action_topology,
 )
-from ..levelscript_binary import (
+from scripts.story_builder.levelscript_binary import (
     decode_levelscript_binary_summary,
     decode_levelscript_task_conditions,
 )
-from ..mission_recovery import natural_key
+from scripts.story_builder.mission_recovery import natural_key
 
 
 from .data import (

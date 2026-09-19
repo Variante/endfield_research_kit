@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from ..animestudio_index_io import (
+    from scripts.animestudio_index_io import (
         ObjectIndexUnavailable,
         iter_published_objects,
         raw_json_path_for_object,
@@ -29,7 +29,9 @@ except ImportError:  # direct script execution
     from animestudio_index_io import ObjectIndexUnavailable, iter_published_objects, raw_json_path_for_object
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
 DEFAULT_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_GRAPH = ROOT / "reports" / "source_graph" / "endfield_source_graph.sqlite"

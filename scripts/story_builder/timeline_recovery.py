@@ -36,13 +36,10 @@ from pathlib import Path
 from typing import Callable
 
 
-ROOT = Path(__file__).resolve().parents[2]
-if __package__ == "story_builder":
-    from common import fast_glob_files
-elif __package__ == "scripts.story_builder":
-    from scripts.common import fast_glob_files
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("run this module with python -m scripts.story_builder.timeline_recovery")
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
+from scripts.common import fast_glob_files
 
 from .story_keys import line_stem, timeline_stem_to_dialog_key
 

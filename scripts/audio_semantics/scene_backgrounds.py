@@ -27,21 +27,10 @@ from . import identifiers
 from .context_utils import append_context
 
 
-if __package__ == "scripts.audio_semantics":
-    from scripts.export_full_from_game import (
-        animestudio_object_index_dir,
-        load_animestudio_object_index_summary,
-    )
-elif __package__ == "audio_semantics":
-    from export_full_from_game import (
-        animestudio_object_index_dir,
-        load_animestudio_object_index_summary,
-    )
-else:  # pragma: no cover - only the two maintained package identities work.
-    raise ImportError(
-        "import as scripts.audio_semantics.scene_backgrounds or "
-        "audio_semantics.scene_backgrounds"
-    )
+from scripts.export_full_from_game import (
+    animestudio_object_index_dir,
+    load_animestudio_object_index_summary,
+)
 
 
 SCHEMA_VERSION = 1

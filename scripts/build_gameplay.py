@@ -20,6 +20,13 @@ import argparse
 import sys
 from pathlib import Path
 
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.build_gameplay"
+    )
+
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 
 ROOT = SCRIPT_DIR.parent
@@ -43,10 +50,7 @@ def build_asset_refs_stage(
 ) -> int:
     """Build the Gameplay-owned asset sidecar from explicit current inputs."""
 
-    if __package__:
-        from .asset_builder.gameplay_refs import build_from_paths
-    else:
-        from asset_builder.gameplay_refs import build_from_paths
+    from scripts.asset_builder.gameplay_refs import build_from_paths
 
     language = str(language or "CN").upper()
     gameplay_path = data_root / "lang" / language / "gameplay" / "index.json"
@@ -127,10 +131,7 @@ def run_stage(stage: str, args: argparse.Namespace) -> int:
     """Run one stage in-process and return its exit code."""
     languages = list(args.languages)
     if stage == "base":
-        if __package__:
-            from .gameplay_builder import base_data
-        else:
-            from gameplay_builder import base_data
+        from scripts.gameplay_builder import base_data
 
         return int(
             base_data.main(
@@ -149,26 +150,17 @@ def run_stage(stage: str, args: argparse.Namespace) -> int:
             or 0
         )
     if stage == "projectiles":
-        if __package__:
-            from .gameplay_builder import projectiles
-        else:
-            from gameplay_builder import projectiles
+        from scripts.gameplay_builder import projectiles
 
         return int(projectiles.main([]) or 0)
     if stage == "asset-refs":
         return build_asset_refs_stage(args.default_language)
     if stage == "combat":
-        if __package__:
-            from .gameplay_builder import combat_relationships
-        else:
-            from gameplay_builder import combat_relationships
+        from scripts.gameplay_builder import combat_relationships
 
         return int(combat_relationships.main([]) or 0)
     if stage == "audit":
-        if __package__:
-            from .gameplay_builder import recovery_audit
-        else:
-            from gameplay_builder import recovery_audit
+        from scripts.gameplay_builder import recovery_audit
 
         audit_scope = getattr(args, "audit_scope", "active")
         if audit_scope == "full":

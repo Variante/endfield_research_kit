@@ -14,31 +14,19 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[3]
-if __package__ == "scripts.story_recovery.ocr":
-    from ...common import (
-        REPORTS_DIR,
-        md_escape,
-        read_json,
-        rel_path,
-        safe_key,
-        write_report_json,
-        write_text_if_changed,
-    )
-    from ...story_builder.mission_recovery import natural_key
-elif __package__ == "story_recovery.ocr":
-    from common import (
-        REPORTS_DIR,
-        md_escape,
-        read_json,
-        rel_path,
-        safe_key,
-        write_report_json,
-        write_text_if_changed,
-    )
-    from story_builder.mission_recovery import natural_key
-else:  # pragma: no cover - invalid embedding identity
-    raise ImportError(f"unsupported package identity: {__package__!r}")
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
+from scripts.common import (
+    REPORTS_DIR,
+    md_escape,
+    read_json,
+    rel_path,
+    safe_key,
+    write_report_json,
+    write_text_if_changed,
+)
+from scripts.story_builder.mission_recovery import natural_key
 
 
 DEFAULT_OVERRIDE = ROOT / "webui" / "overrides" / "story_order.json"

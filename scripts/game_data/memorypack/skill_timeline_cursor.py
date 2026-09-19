@@ -43,7 +43,9 @@ from scripts.game_data.memorypack.skill_corpus import (
 )
 
 
-ROOT = Path(__file__).resolve().parents[3]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 DEFAULT_CORPUS = ROOT / 'reports/animestudio/skilldata_current_latest.json'
 DEFAULT_NATIVE = ROOT / 'reports/animestudio/il2cpp_context_current_latest.json'
 DEFAULT_BUFF = ROOT / 'reports/animestudio/buffdata_current_latest.json'

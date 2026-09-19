@@ -1,3 +1,5 @@
 @echo off
-python "%~dp0scripts\pack_webui.py" %*
+setlocal
+set "PYTHONPATH=%~dp0;%PYTHONPATH%"
+python -m scripts.pack_webui %*
 exit /b %errorlevel%

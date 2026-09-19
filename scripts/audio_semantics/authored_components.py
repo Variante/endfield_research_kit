@@ -14,23 +14,11 @@ from .context_utils import append_context as _append_context
 from .context_utils import normalize_posix
 
 
-if __package__ == "scripts.audio_semantics":
-    from scripts.story_builder.interactive_binary import (
-        decode_interactive_table,
-        decode_model_view_state_controller,
-        find_physics_audio_components,
-    )
-elif __package__ == "audio_semantics":
-    from story_builder.interactive_binary import (
-        decode_interactive_table,
-        decode_model_view_state_controller,
-        find_physics_audio_components,
-    )
-else:  # pragma: no cover - only package imports are supported.
-    raise ImportError(
-        "import as scripts.audio_semantics.authored_components or "
-        "audio_semantics.authored_components"
-    )
+from scripts.story_builder.interactive_binary import (
+    decode_interactive_table,
+    decode_model_view_state_controller,
+    find_physics_audio_components,
+)
 
 
 def collect_physics_audio_semantics(

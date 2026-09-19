@@ -22,18 +22,10 @@ from typing import Any
 
 from . import runtime_trace_core as core
 
-if __package__ == "scripts.story_recovery":
-    from ..story_builder.native_contracts.mission_task_paths import (
-        MissionTaskPathContractError,
-        load_mission_task_paths,
-    )
-elif __package__ == "story_recovery":
-    from story_builder.native_contracts.mission_task_paths import (
-        MissionTaskPathContractError,
-        load_mission_task_paths,
-    )
-else:  # pragma: no cover - invalid embedding identity
-    raise ImportError(f"unsupported package identity: {__package__!r}")
+from scripts.story_builder.native_contracts.mission_task_paths import (
+    MissionTaskPathContractError,
+    load_mission_task_paths,
+)
 
 ROOT = core.ROOT
 SCRIPT_DIR = Path(__file__).resolve().parent

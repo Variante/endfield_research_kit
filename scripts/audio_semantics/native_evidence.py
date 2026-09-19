@@ -14,12 +14,7 @@ import struct
 from pathlib import Path
 from typing import Any
 
-if __package__ == "scripts.audio_semantics":
-    from ..common import check_installed_native_inputs, native_evidence_required
-elif __package__ == "audio_semantics":
-    from common import check_installed_native_inputs, native_evidence_required
-else:  # pragma: no cover - package modules are not direct-file entry points.
-    raise ImportError("import as scripts.audio_semantics or audio_semantics")
+from scripts.common import check_installed_native_inputs, native_evidence_required
 
 
 EXPECTED_METADATA_SHA256 = (

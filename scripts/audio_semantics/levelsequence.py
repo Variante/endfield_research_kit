@@ -92,18 +92,11 @@ def collect_levelsequence_play_actions(
     """
 
     if decode_file is None:
-        if __package__ == "scripts.audio_semantics":
-            from scripts.story_builder.levelscript_binary import (
-                decode_levelscript_record_payload,
-                extract_levelscript_uid_records,
-                levelscript_record_semantic_key,
-            )
-        else:
-            from story_builder.levelscript_binary import (
-                decode_levelscript_record_payload,
-                extract_levelscript_uid_records,
-                levelscript_record_semantic_key,
-            )
+        from scripts.story_builder.levelscript_binary import (
+            decode_levelscript_record_payload,
+            extract_levelscript_uid_records,
+            levelscript_record_semantic_key,
+        )
 
         def decode_file(_path: Path, data: bytes) -> dict[str, Any]:
             records = extract_levelscript_uid_records(data)

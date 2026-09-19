@@ -19,26 +19,14 @@ if __package__ in {None, ""}:
         "Run this maintained entry point as: "
         "python -m scripts.story_recovery.build_option_override_coverage_audit"
     )
-if __package__ == "scripts.story_recovery":
-    from ..common import (
-        ROOT,
-        STORY_OPTION_REPORTS_DIR,
-        md_escape,
-        read_json,
-        rel_path,
-        write_report_json,
-    )
-elif __package__ == "story_recovery":
-    from common import (
-        ROOT,
-        STORY_OPTION_REPORTS_DIR,
-        md_escape,
-        read_json,
-        rel_path,
-        write_report_json,
-    )
-else:  # pragma: no cover - invalid embedding identity
-    raise ImportError(f"unsupported package identity: {__package__!r}")
+from scripts.common import (
+    ROOT,
+    STORY_OPTION_REPORTS_DIR,
+    md_escape,
+    read_json,
+    rel_path,
+    write_report_json,
+)
 
 OPTION_WARNING_CODES = {"inferredOptionLayout", "inferredOptionResponse"}
 

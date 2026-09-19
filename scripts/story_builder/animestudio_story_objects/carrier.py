@@ -18,27 +18,17 @@ import re
 from typing import Any, Iterable
 
 
-ROOT = Path(__file__).resolve().parents[3]
-if __package__ == "story_builder.animestudio_story_objects":
-    from animestudio_object_index import MergeError, validate_identity
-    from common import md_escape, read_json
-    from export_full_from_game import (
-        animestudio_object_index_dir,
-        load_animestudio_object_index_summary,
-    )
-elif __package__ == "scripts.story_builder.animestudio_story_objects":
-    from scripts.animestudio_object_index import MergeError, validate_identity
-    from scripts.common import md_escape, read_json
-    from scripts.export_full_from_game import (
-        animestudio_object_index_dir,
-        load_animestudio_object_index_summary,
-    )
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError(
-        "import this module as scripts.story_builder.animestudio_story_objects.carrier"
-    )
+from scripts.repo_paths import REPO_ROOT
 
-from ..object_index_io import iter_gzip_jsonl_objects
+ROOT = REPO_ROOT
+from scripts.animestudio_object_index import MergeError, validate_identity
+from scripts.common import md_escape, read_json
+from scripts.export_full_from_game import (
+    animestudio_object_index_dir,
+    load_animestudio_object_index_summary,
+)
+
+from scripts.story_builder.object_index_io import iter_gzip_jsonl_objects
 SCHEMA = "animestudioStoryCarrierAudit.v3"
 DEFAULT_GAP_QUEUE = (
     ROOT / "reports" / "mission_order" / "source_story_gap_queue_CN.json"

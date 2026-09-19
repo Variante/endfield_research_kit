@@ -6,32 +6,23 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
-if __package__ and __package__.startswith("scripts."):
-    from scripts.common import write_report_json, write_text_if_changed
-    from scripts.story_builder.source_story_partial_order import (
-        build_report as build_source_story_partial_order_report,
-        render_markdown as render_source_story_partial_order_markdown,
-    )
-    from scripts.story_builder.source_story_order_cross_reference import (
-        build_report as build_source_story_order_cross_reference_report,
-        render_markdown as render_source_story_order_cross_reference_markdown,
-    )
-else:
-    from common import write_report_json, write_text_if_changed
-    from story_builder.source_story_partial_order import (
-        build_report as build_source_story_partial_order_report,
-        render_markdown as render_source_story_partial_order_markdown,
-    )
-    from story_builder.source_story_order_cross_reference import (
-        build_report as build_source_story_order_cross_reference_report,
-        render_markdown as render_source_story_order_cross_reference_markdown,
-    )
+from scripts.common import write_report_json, write_text_if_changed
+from scripts.story_builder.source_story_partial_order import (
+    build_report as build_source_story_partial_order_report,
+    render_markdown as render_source_story_partial_order_markdown,
+)
+from scripts.story_builder.source_story_order_cross_reference import (
+    build_report as build_source_story_order_cross_reference_report,
+    render_markdown as render_source_story_order_cross_reference_markdown,
+)
 
 from . import story_order_projection
 from . import source_order_shells
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 
 
 def _read_json(path: Path) -> Any:

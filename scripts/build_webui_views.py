@@ -26,7 +26,15 @@ from pathlib import Path
 from typing import Sequence
 
 
-ROOT = Path(__file__).resolve().parents[1]
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.build_webui_views"
+    )
+
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 REPORT_DIR = ROOT / "reports" / "export"
 REPORT_JSON = REPORT_DIR / "webui_build_steps_latest.json"
 REPORT_MD = REPORT_DIR / "webui_build_steps_latest.md"

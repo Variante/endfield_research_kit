@@ -28,7 +28,9 @@ if hasattr(sys.stdout, "reconfigure"):
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
     sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
-ROOT = Path(__file__).resolve().parents[1]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 DEFAULT_BVIDS = ("BV1JdzMBsEUc", "BV1GczqBREHJ")
 DEFAULT_COOKIE_FILE = ROOT / "cookies" / "www.bilibili.com.cookies.json"
 DEFAULT_OUTPUT_DIR = ROOT / "videos"

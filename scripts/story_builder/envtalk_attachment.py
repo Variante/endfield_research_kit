@@ -48,27 +48,17 @@ from pathlib import Path
 from typing import Any, Iterator
 
 
-ROOT = Path(__file__).resolve().parents[2]
-if __package__ == "story_builder":
-    from common import (
-        md_escape,
-        read_json,
-        rel_path,
-        safe_key,
-        write_report_json,
-        write_text_if_changed,
-    )
-elif __package__ == "scripts.story_builder":
-    from scripts.common import (
-        md_escape,
-        read_json,
-        rel_path,
-        safe_key,
-        write_report_json,
-        write_text_if_changed,
-    )
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("run this module with python -m scripts.story_builder.envtalk_attachment")
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
+from scripts.common import (
+    md_escape,
+    read_json,
+    rel_path,
+    safe_key,
+    write_report_json,
+    write_text_if_changed,
+)
 from .mission_assets import select_complete_mission_runtime_root
 
 

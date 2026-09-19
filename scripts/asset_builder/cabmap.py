@@ -36,7 +36,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 DEFAULT_MAPS = ROOT / "export_full/recovered/AnimeStudio-cli/Maps"
 DEFAULT_OUTPUT = ROOT / "reports/assets/cabmap_current_latest.json"
 

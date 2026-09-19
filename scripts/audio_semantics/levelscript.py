@@ -586,14 +586,9 @@ def _load_levelscript_brief_property_sources(
     if cache_key in cache:
         return cache[cache_key]
 
-    if __package__ == "scripts.audio_semantics":
-        from scripts.story_builder.level_bindings import (
-            parse_leveldata_levelscript_brief_dictionary,
-        )
-    else:
-        from story_builder.level_bindings import (
-            parse_leveldata_levelscript_brief_dictionary,
-        )
+    from scripts.story_builder.level_bindings import (
+        parse_leveldata_levelscript_brief_dictionary,
+    )
 
     source_roots = [str(preferred_source_root)]
     source_roots.extend(
@@ -652,38 +647,21 @@ def collect_levelscript_audio_semantics(
 
     cue_semantics = cue_semantics or table_contexts.collect_audio_cue_semantics(export_root)
     cue_definitions = cue_semantics.get("cueDefinitions") or {}
-    if __package__ == "scripts.audio_semantics":
-        from scripts.story_builder.level_bindings import (
-            resolve_levelscript_dynamic_property_string,
-            resolve_levelscript_dynamic_property_string_list,
-        )
-    else:
-        from story_builder.level_bindings import (
-            resolve_levelscript_dynamic_property_string,
-            resolve_levelscript_dynamic_property_string_list,
-        )
+    from scripts.story_builder.level_bindings import (
+        resolve_levelscript_dynamic_property_string,
+        resolve_levelscript_dynamic_property_string_list,
+    )
 
     if decode_file is None:
-        if __package__ == "scripts.audio_semantics":
-            from scripts.story_builder.levelscript_binary import (
-                decode_levelscript_record_payload,
-                extract_levelscript_uid_records,
-                levelscript_action_map_membership,
-                levelscript_record_semantic_key,
-            )
-            from scripts.story_builder.level_bindings import (
-                decode_levelscript_native_action_topology,
-            )
-        else:
-            from story_builder.levelscript_binary import (
-                decode_levelscript_record_payload,
-                extract_levelscript_uid_records,
-                levelscript_action_map_membership,
-                levelscript_record_semantic_key,
-            )
-            from story_builder.level_bindings import (
-                decode_levelscript_native_action_topology,
-            )
+        from scripts.story_builder.levelscript_binary import (
+            decode_levelscript_record_payload,
+            extract_levelscript_uid_records,
+            levelscript_action_map_membership,
+            levelscript_record_semantic_key,
+        )
+        from scripts.story_builder.level_bindings import (
+            decode_levelscript_native_action_topology,
+        )
         target_keys = {
             # Audio ActionBase families registered by the current GameAssembly
             # formatter table.  Keep the member count as part of the key:

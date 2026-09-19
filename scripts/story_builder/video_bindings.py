@@ -63,13 +63,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-ROOT = Path(__file__).resolve().parents[2]
-if __package__ == "story_builder":
-    from common import fast_glob_files, path_id_export_base_stem
-elif __package__ == "scripts.story_builder":
-    from scripts.common import fast_glob_files, path_id_export_base_stem
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("run this module with python -m scripts.story_builder.video_bindings")
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
+from scripts.common import fast_glob_files, path_id_export_base_stem
 
 
 def compact_narrative_video_ref(ref: dict) -> dict:

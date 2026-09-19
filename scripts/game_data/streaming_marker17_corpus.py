@@ -15,7 +15,9 @@ import struct
 from pathlib import Path
 from typing import Any
 
-DEFAULT_REPO_ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+DEFAULT_REPO_ROOT = REPO_ROOT
 
 from scripts.game_data import streaming as fmt
 from scripts.game_data import streaming_corpus as corpus

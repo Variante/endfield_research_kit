@@ -7,12 +7,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-if __package__ == "scripts.story_builder.native_contracts":
-    from ...common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-elif __package__ == "story_builder.native_contracts":
-    from common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-else:  # pragma: no cover
-    raise ImportError(f"unsupported package identity: {__package__!r}")
+from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 
 SCHEMA = "entityPtrOutputAliasNativeContract.v1"
 DEFAULT_CONTRACT = Path(__file__).with_name("entityptr_output_alias.json")

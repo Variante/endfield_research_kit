@@ -31,7 +31,9 @@ FINAL_CALLSITE_RVA = 0x37DE99D
 HEX64_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 HEX_RE = re.compile(r"^(?:[0-9a-fA-F]{2})+$")
 SKILL_PREFIX = "Data/Json/SkillData/"
-REPO_ROOT = Path(__file__).resolve().parents[3]
+from scripts.repo_paths import REPO_ROOT
+
+REPO_ROOT = REPO_ROOT
 DEFAULT_CORPUS_REPORT = REPO_ROOT / "reports/animestudio/skilldata_current_latest.json"
 DEFAULT_NATIVE_CONTEXT = REPO_ROOT / "reports/animestudio/il2cpp_context_current_latest.json"
 

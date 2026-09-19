@@ -25,36 +25,19 @@ from pathlib import Path
 from typing import Any
 
 
-if __package__ == "story_builder":
-    from common import (
-        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-        RECORDED_NATIVE_METADATA_SHA256,
-        ROOT,
-        check_installed_native_inputs,
-        md_escape,
-        native_evidence_required,
-        native_evidence_skip_message,
-        resolve_installed_game_data_root,
-        sha256_file as file_sha256,
-        write_report_json,
-        write_text_if_changed,
-    )
-elif __package__ == "scripts.story_builder":
-    from scripts.common import (
-        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-        RECORDED_NATIVE_METADATA_SHA256,
-        ROOT,
-        check_installed_native_inputs,
-        md_escape,
-        native_evidence_required,
-        native_evidence_skip_message,
-        resolve_installed_game_data_root,
-        sha256_file as file_sha256,
-        write_report_json,
-        write_text_if_changed,
-    )
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("run this module with python -m scripts.story_builder.protocol_registry")
+from scripts.common import (
+    RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+    RECORDED_NATIVE_METADATA_SHA256,
+    ROOT,
+    check_installed_native_inputs,
+    md_escape,
+    native_evidence_required,
+    native_evidence_skip_message,
+    resolve_installed_game_data_root,
+    sha256_file as file_sha256,
+    write_report_json,
+    write_text_if_changed,
+)
 from .mission_assets import select_complete_mission_runtime_root
 from .native_protocol import il2cpp
 from .levelscript_binary import (

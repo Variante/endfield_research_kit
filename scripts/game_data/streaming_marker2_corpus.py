@@ -34,8 +34,10 @@ from scripts.game_data.streaming_pairs import bind_current_pair, index_ordered_p
 SCHEMA = "endfield.streaming-marker2-corpus.v1"
 ROOT_SCHEMA = "endfield.streaming-root-subgraphs-corpus.v15"
 # Candidate location is tmp/animestudio/<task>. The promoted maintained file
-# must change this to Path(__file__).resolve().parents[2].
-MODULE_REPO_ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+# must change this to REPO_ROOT.
+MODULE_REPO_ROOT = REPO_ROOT
 FRAMED_STATUS = "framed"
 UNSUPPORTED_STATUSES = frozenset((
     "unsupported-context", "unsupported-cluster", "unsupported-occupancy",

@@ -18,7 +18,9 @@ from pathlib import Path
 from typing import Any, Iterable, Mapping
 
 HEX64 = re.compile(r"^[0-9A-F]{64}$")
-MODULE_REPO_ROOT = Path(__file__).resolve().parents[3]
+from scripts.repo_paths import REPO_ROOT
+
+MODULE_REPO_ROOT = REPO_ROOT
 DEFAULT_OUTER = MODULE_REPO_ROOT / "reports/animestudio/vfs_understanding_latest.json"
 DEFAULT_LEDGER = MODULE_REPO_ROOT / "reports/animestudio/vfs_understanding_files_latest.jsonl.gz"
 DEFAULT_CLI = (

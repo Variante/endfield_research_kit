@@ -39,20 +39,11 @@ from .codecs.levelscript import top_level_tail as levelscript_top_level_tail
 from .codecs.levelscript import trigger_volumes as levelscript_trigger_volumes
 from .native_contracts.spawnerptr_getter import decode_spawnerptr_getter_member
 
-if __package__ == "story_builder":
-    from common import (
-        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-        RECORDED_NATIVE_METADATA_SHA256,
-        read_bytes_cached,
-    )
-elif __package__ == "scripts.story_builder":
-    from ..common import (
-        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-        RECORDED_NATIVE_METADATA_SHA256,
-        read_bytes_cached,
-    )
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("import this module as scripts.story_builder.levelscript_binary")
+from scripts.common import (
+    RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+    RECORDED_NATIVE_METADATA_SHA256,
+    read_bytes_cached,
+)
 
 
 SCRIPT_POINTER_REF_RECORDS = {

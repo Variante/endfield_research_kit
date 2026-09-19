@@ -18,7 +18,9 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-ROOT = Path(__file__).resolve().parents[3]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 
 from scripts.common import sha256_file as shared_sha256_file
 

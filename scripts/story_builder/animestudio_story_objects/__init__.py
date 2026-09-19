@@ -2,7 +2,9 @@
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[3]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 REPORT_ROOT = ROOT / "reports" / "story" / "recovery"
 DEFAULT_ANIMESTUDIO_CLI = (
     ROOT

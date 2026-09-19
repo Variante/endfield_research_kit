@@ -6,12 +6,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-if __package__ == "scripts.story_builder.native_contracts":
-    from ...common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-elif __package__ == "story_builder.native_contracts":
-    from common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-else:  # pragma: no cover - invalid embedding identity
-    raise ImportError(f"unsupported package identity: {__package__!r}")
+from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 
 
 SCHEMA = "actionBaseFormatterNativeContract.v1"
@@ -31,8 +26,10 @@ NATIVE_MAPPING_ID = (
 )
 
 
+from scripts.repo_paths import REPO_ROOT
+
 def _source_file(path: Path) -> str:
-    root = Path(__file__).resolve().parents[3]
+    root = REPO_ROOT
     try:
         return path.resolve().relative_to(root).as_posix()
     except ValueError:

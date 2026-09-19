@@ -11,24 +11,17 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
 
-if __package__ == "scripts":
-    from .story_builder.animestudio_story_objects import (
-        REVERSE_GAMEASSEMBLY_SHA256,
-        REVERSE_METADATA_SHA256,
-        REVERSE_NATIVE_MAPPING_ID,
-        REVERSE_REPORT_PATH,
-        REVERSE_SCHEMA,
-    )
-else:
-    from story_builder.animestudio_story_objects import (
-        REVERSE_GAMEASSEMBLY_SHA256,
-        REVERSE_METADATA_SHA256,
-        REVERSE_NATIVE_MAPPING_ID,
-        REVERSE_REPORT_PATH,
-        REVERSE_SCHEMA,
-    )
+from scripts.story_builder.animestudio_story_objects import (
+    REVERSE_GAMEASSEMBLY_SHA256,
+    REVERSE_METADATA_SHA256,
+    REVERSE_NATIVE_MAPPING_ID,
+    REVERSE_REPORT_PATH,
+    REVERSE_SCHEMA,
+)
 
-ROOT = Path(__file__).resolve().parents[1]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
 OUT_DIR = ROOT / "webui" / "data"
 LANG_DIR = OUT_DIR / "lang"

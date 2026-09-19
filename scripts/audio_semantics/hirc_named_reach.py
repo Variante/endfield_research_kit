@@ -44,7 +44,9 @@ from scripts.audio_semantics.identifiers import (
     collect_metadata_audio_literals,
 )
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 DEFAULT_OUTER = ROOT / "reports/animestudio/vfs_understanding_latest.json"
 DEFAULT_OUTPUT = ROOT / "reports/animestudio/hirc_named_reach_current_latest.json"
 DEFAULT_CLI = ROOT / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe"

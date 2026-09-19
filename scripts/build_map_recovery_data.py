@@ -32,16 +32,15 @@ import math
 import os
 import re
 import struct
-import sys
 import zlib
 from collections import Counter
 from collections.abc import Iterable
 from concurrent.futures import ProcessPoolExecutor
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 
 from scripts.story_builder.level_bindings import (
     ACTION_ENTITY_FIELD_DIAGNOSTICS_KEY,

@@ -10,7 +10,9 @@ from collections import Counter
 from pathlib import Path
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 DEFAULT_MAP = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json"
 
 

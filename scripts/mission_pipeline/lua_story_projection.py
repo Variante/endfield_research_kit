@@ -5,27 +5,19 @@ import re
 from pathlib import Path
 from typing import Any
 
-if __package__ and __package__.startswith("scripts."):
-    from scripts.common import sha256_file as _sha256_path
-    from scripts.story_builder.lua_consumer_references import (
-        read_index as read_lua_consumer_reference_index,
-    )
-    from scripts.story_builder.native_contracts.cutscene_case_resolution import (
-        load_cutscene_case_resolution_contract,
-        matches_reviewed_lua_playback,
-    )
-else:
-    from common import sha256_file as _sha256_path
-    from story_builder.lua_consumer_references import (
-        read_index as read_lua_consumer_reference_index,
-    )
-    from story_builder.native_contracts.cutscene_case_resolution import (
-        load_cutscene_case_resolution_contract,
-        matches_reviewed_lua_playback,
-    )
+from scripts.common import sha256_file as _sha256_path
+from scripts.story_builder.lua_consumer_references import (
+    read_index as read_lua_consumer_reference_index,
+)
+from scripts.story_builder.native_contracts.cutscene_case_resolution import (
+    load_cutscene_case_resolution_contract,
+    matches_reviewed_lua_playback,
+)
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 
 
 def _repo_path(path: Path) -> str:

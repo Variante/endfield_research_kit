@@ -22,7 +22,9 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 DEFAULT_ASSET_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/region3d"
 DEFAULT_OUTPUT_ROOT = ROOT / "standalone/map01_region3d"
 DEFAULT_REPORT_ROOT = DEFAULT_OUTPUT_ROOT

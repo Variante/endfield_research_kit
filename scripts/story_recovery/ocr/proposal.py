@@ -21,16 +21,12 @@ from collections import defaultdict
 from datetime import datetime, timezone
 from pathlib import Path
 
-if __package__ == "scripts.story_recovery.ocr":
-    from ...common import safe_key
-    from ...story_builder.mission_recovery import natural_key
-elif __package__ == "story_recovery.ocr":
-    from common import safe_key
-    from story_builder.mission_recovery import natural_key
-else:  # pragma: no cover - invalid embedding identity
-    raise ImportError(f"unsupported package identity: {__package__!r}")
+from scripts.common import safe_key
+from scripts.story_builder.mission_recovery import natural_key
 
-ROOT = Path(__file__).resolve().parents[3]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 PROPOSED_STORY_ORDER_PATH = (
     ROOT / "reports" / "gameplay_video_ocr" / "story_order_ocr_proposed_story_order.json"
 )

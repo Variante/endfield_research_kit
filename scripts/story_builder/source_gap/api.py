@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from ..mission_recovery import natural_key
-from ..source_story_partial_order import (
+from scripts.story_builder.mission_recovery import natural_key
+from scripts.story_builder.source_story_partial_order import (
     build_report as build_partial_order_report,
     load_mission_payload_with_variants,
 )
@@ -20,13 +20,15 @@ from .foundation import read_json, safe_key
 from .model import build_gap_report
 from .offline_evidence import build_offline_exhaustion_index
 from .report import GapReportPaths, publish_gap_report
-from ..level_bindings import (
+from scripts.story_builder.level_bindings import (
     build_levelscript_action_story_occurrences,
     build_levelscript_native_story_playback_index,
 )
 
 
-ROOT = Path(__file__).resolve().parents[3]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 
 
 @dataclass(frozen=True)

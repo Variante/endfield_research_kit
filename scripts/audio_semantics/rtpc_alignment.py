@@ -17,20 +17,12 @@ from __future__ import annotations
 from collections import Counter
 from typing import Any, Iterable, Mapping
 
-if __package__ == "scripts.audio_semantics":
-    from . import native_evidence
-    from .rtpc_contract import (
-        CANONICAL_METADATA_PREFIX,
-        CANONICAL_RTPC_HEX,
-        CANONICAL_RTPC_IDS,
-    )
-else:  # pragma: no cover - package modules are not direct-file entry points.
-    from audio_semantics import native_evidence
-    from audio_semantics.rtpc_contract import (
-        CANONICAL_METADATA_PREFIX,
-        CANONICAL_RTPC_HEX,
-        CANONICAL_RTPC_IDS,
-    )
+from scripts.audio_semantics import native_evidence
+from scripts.audio_semantics.rtpc_contract import (
+    CANONICAL_METADATA_PREFIX,
+    CANONICAL_RTPC_HEX,
+    CANONICAL_RTPC_IDS,
+)
 
 
 SCHEMA_VERSION = 1

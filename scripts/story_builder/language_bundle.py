@@ -93,12 +93,7 @@ def append_native_event_producer_family_diagnostic(
         else "one_exact_local_producer_family"
     )
 
-if __package__ == "story_builder":
-    from common import write_report_json, write_text_if_changed
-elif __package__ == "scripts.story_builder":
-    from scripts.common import write_report_json, write_text_if_changed
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("import this module as scripts.story_builder.language_bundle")
+from scripts.common import write_report_json, write_text_if_changed
 from .anime_assets import (
     _canonical_cutscene_key,
     _cutscene_component_summary,
@@ -340,10 +335,7 @@ from .option_anchor_reports import (
     inferred_option_anchor_row,
     write_inferred_option_anchors_report,
 )
-if __package__ == "story_builder":
-    from scene_order_gap_shared import write_scene_order_gap_reports
-else:
-    from scripts.scene_order_gap_shared import write_scene_order_gap_reports
+from scripts.scene_order_gap_shared import write_scene_order_gap_reports
 from .cutscene_semantics import (
     _line_id_list_equal,
     apply_cutscene_playback_use_postpass,
@@ -397,12 +389,14 @@ from .narrative_video_overrides import (
 )
 
 _FMV_CLIP_BINDINGS_PATH = VIDEO_BINDINGS_PATH
+from scripts.repo_paths import REPO_ROOT
+
 _NARRATIVE_VIDEO_OVERRIDES_PATH = (
-    _RadioContPath(__file__).resolve().parents[2]
+    REPO_ROOT
     / "webui" / "overrides" / "narrative_videos.json"
 )
 _STORY_ORDER_OVERRIDES_PATH = (
-    _RadioContPath(__file__).resolve().parents[2]
+    REPO_ROOT
     / "webui" / "overrides" / "story_order.json"
 )
 
@@ -20054,7 +20048,7 @@ def build_language_bundle(
     cutscene_payloads_by_key: dict[str, dict] = {}
     cutscene_scan_failures: list[dict] = []
     lua_audit_path = (
-        _RadioContPath(__file__).resolve().parents[2]
+        REPO_ROOT
         / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
     )
     try:

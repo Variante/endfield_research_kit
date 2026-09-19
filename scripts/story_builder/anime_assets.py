@@ -12,34 +12,18 @@ from collections import Counter, defaultdict, deque
 from functools import lru_cache
 from pathlib import Path
 
-if __package__ == "story_builder":
-    from common import (
-        fast_glob_files,
-        is_present,
-        path_id_export_base_stem,
-        path_id_export_path_id,
-        read_bytes_cached,
-        rel_path as repo_rel,
-        unique_preserve as _unique_preserve,
-        unique_strings,
-        walk_const_values as _walk_const_values,
-        walk_field_values as _walk_field_values,
-    )
-elif __package__ == "scripts.story_builder":
-    from ..common import (
-        fast_glob_files,
-        is_present,
-        path_id_export_base_stem,
-        path_id_export_path_id,
-        read_bytes_cached,
-        rel_path as repo_rel,
-        unique_preserve as _unique_preserve,
-        unique_strings,
-        walk_const_values as _walk_const_values,
-        walk_field_values as _walk_field_values,
-    )
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("import this module as scripts.story_builder.anime_assets")
+from scripts.common import (
+    fast_glob_files,
+    is_present,
+    path_id_export_base_stem,
+    path_id_export_path_id,
+    read_bytes_cached,
+    rel_path as repo_rel,
+    unique_preserve as _unique_preserve,
+    unique_strings,
+    walk_const_values as _walk_const_values,
+    walk_field_values as _walk_field_values,
+)
 
 from .context import (
     ANIME_RESOURCE_DIRS,

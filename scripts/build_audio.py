@@ -22,49 +22,36 @@ from pathlib import Path, PurePosixPath
 from struct import unpack_from
 from typing import Any
 
-if __package__:
-    from .common import resolve_installed_game_data_root, sha256_file as file_sha256
-    from .audio_semantics.identifiers import (
-        audio_hash_generator_compute,
-        collect_metadata_audio_literals,
-        hashed_event_key,
-        is_rtpc_parameter_name,
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.build_audio"
     )
-    from .audio_semantics import name_recovery
-    from .audio_semantics.table_contexts import collect_table_audio_events
-    from .audio_semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
-    from .audio_semantics.rtpc_contract import CANONICAL_RTPC_ENTRIES
-    from .audio_semantics.context_utils import SELECTION_HIRC_TYPES, json_dump, load_json_strict, normalize_posix, iter_asset_map_objects, display_path
-    from .audio_semantics.event_aliases import collect_audio_dialog_wwise_event_aliases, collect_skill_id_dictionary_wwise_event_aliases, collect_sns_voice_wwise_event_aliases, collect_typed_ui_table_wwise_event_aliases, collect_voice_table_wwise_event_aliases
-    from .audio_semantics.cutscene_audio import collect_fmv_cutscene_audio_events, collect_levelseq_cutscene_audio_events, collect_timeline_cutscene_audio_events, collect_video_binding_audio_containers, mono_behaviour_json_by_path_id, story_key_from_fmv_id, story_key_from_video_binding, strip_fmv_gender_prefix, timeline_audio_container_for
-    from .audio_semantics.projectile_audio import projectile_event_key, projectile_sound_hashes, projectile_sound_references, write_projectile_audio_sidecar
-    from .audio_semantics.gameplay_audio import animation_clip_action_kind, animation_clip_audio_events, animation_clip_context, animation_clip_path_id, animation_clip_reachability_status, animation_controller_contexts, animation_override_contexts, animation_override_reachability_status, animator_controller_state_clip_refs, animestudio_storage_root, annotate_play_sound_action_owner_links, collect_animation_controller_index, collect_animation_override_index, collect_buff_play_sound_actions, collect_gameplay_animation_audio, collect_gameplay_audio_references, collect_gameplay_profile_voices, compact_gameplay_audio_link, enemy_template_animation_tokens, enemy_template_skill_references, enemy_template_source_files, gameplay_buff_audio, gameplay_character_token_owners, gameplay_config_records, iter_json_strings, length_prefixed_matches, link_gameplay_audio, play_sound_action_marker, profile_voice_action_kind, seed_buff_play_sound_events
-    from .audio_semantics.hirc_v150 import HIRC_EFFECT_PARAMETER_CONTRACT, add_hirc_bus_definition_candidate, add_hirc_effect_definition_candidate, collect_hirc_decoded_sound_definitions, decode_hirc_v150_effect_parameters, finalize_hirc_post_process_catalog, hirc_action_target_id, hirc_action_type, hirc_bus_parent_path, hirc_event_action_ids, hirc_object_parent_id, hirc_reciprocal_child_list, hirc_v150_bus_processing, hirc_v150_control_action, hirc_v150_effect_definition, hirc_v150_empty_music_children, hirc_v150_layer_child_candidate, hirc_v150_layer_tail, hirc_v150_music_random_sequence_structure, hirc_v150_music_segment_structure, hirc_v150_music_structure, hirc_v150_music_switch_structure, hirc_v150_music_track, hirc_v150_node_processing, hirc_v150_playback_action, hirc_v150_random_sequence_properties, hirc_v150_sound_source, hirc_v150_switch_mapping, iter_bnk_sections, parse_hirc_objects, refine_hirc_v150_music_switch_selector_ownership, resolve_hirc_post_process_summary, summarize_hirc_action_dispatch, summarize_hirc_node_processing, summarize_hirc_object_types, traverse_hirc_event
-    from .build_audio_semantics import build_audio_semantic_data
-    from .animestudio_index_io import ObjectIndexUnavailable, iter_published_objects, raw_json_path_for_object
-else:
-    from common import resolve_installed_game_data_root, sha256_file as file_sha256
-    from audio_semantics.identifiers import (
-        audio_hash_generator_compute,
-        collect_metadata_audio_literals,
-        hashed_event_key,
-        is_rtpc_parameter_name,
-    )
-    from audio_semantics import name_recovery
-    from audio_semantics.table_contexts import collect_table_audio_events
-    from audio_semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
-    from audio_semantics.rtpc_contract import CANONICAL_RTPC_ENTRIES
-    from audio_semantics.context_utils import SELECTION_HIRC_TYPES, json_dump, load_json_strict, normalize_posix, iter_asset_map_objects, display_path
-    from audio_semantics.event_aliases import collect_audio_dialog_wwise_event_aliases, collect_skill_id_dictionary_wwise_event_aliases, collect_sns_voice_wwise_event_aliases, collect_typed_ui_table_wwise_event_aliases, collect_voice_table_wwise_event_aliases
-    from audio_semantics.cutscene_audio import collect_fmv_cutscene_audio_events, collect_levelseq_cutscene_audio_events, collect_timeline_cutscene_audio_events, collect_video_binding_audio_containers, mono_behaviour_json_by_path_id, story_key_from_fmv_id, story_key_from_video_binding, strip_fmv_gender_prefix, timeline_audio_container_for
-    from audio_semantics.projectile_audio import projectile_event_key, projectile_sound_hashes, projectile_sound_references, write_projectile_audio_sidecar
-    from audio_semantics.gameplay_audio import animation_clip_action_kind, animation_clip_audio_events, animation_clip_context, animation_clip_path_id, animation_clip_reachability_status, animation_controller_contexts, animation_override_contexts, animation_override_reachability_status, animator_controller_state_clip_refs, animestudio_storage_root, annotate_play_sound_action_owner_links, collect_animation_controller_index, collect_animation_override_index, collect_buff_play_sound_actions, collect_gameplay_animation_audio, collect_gameplay_audio_references, collect_gameplay_profile_voices, compact_gameplay_audio_link, enemy_template_animation_tokens, enemy_template_skill_references, enemy_template_source_files, gameplay_buff_audio, gameplay_character_token_owners, gameplay_config_records, iter_json_strings, length_prefixed_matches, link_gameplay_audio, play_sound_action_marker, profile_voice_action_kind, seed_buff_play_sound_events
-    from audio_semantics.hirc_v150 import HIRC_EFFECT_PARAMETER_CONTRACT, add_hirc_bus_definition_candidate, add_hirc_effect_definition_candidate, collect_hirc_decoded_sound_definitions, decode_hirc_v150_effect_parameters, finalize_hirc_post_process_catalog, hirc_action_target_id, hirc_action_type, hirc_bus_parent_path, hirc_event_action_ids, hirc_object_parent_id, hirc_reciprocal_child_list, hirc_v150_bus_processing, hirc_v150_control_action, hirc_v150_effect_definition, hirc_v150_empty_music_children, hirc_v150_layer_child_candidate, hirc_v150_layer_tail, hirc_v150_music_random_sequence_structure, hirc_v150_music_segment_structure, hirc_v150_music_structure, hirc_v150_music_switch_structure, hirc_v150_music_track, hirc_v150_node_processing, hirc_v150_playback_action, hirc_v150_random_sequence_properties, hirc_v150_sound_source, hirc_v150_switch_mapping, iter_bnk_sections, parse_hirc_objects, refine_hirc_v150_music_switch_selector_ownership, resolve_hirc_post_process_summary, summarize_hirc_action_dispatch, summarize_hirc_node_processing, summarize_hirc_object_types, traverse_hirc_event
-    from build_audio_semantics import build_audio_semantic_data
-    from animestudio_index_io import ObjectIndexUnavailable, iter_published_objects, raw_json_path_for_object
+
+from scripts.common import resolve_installed_game_data_root, sha256_file as file_sha256
+from scripts.audio_semantics.identifiers import (
+    audio_hash_generator_compute,
+    collect_metadata_audio_literals,
+    hashed_event_key,
+    is_rtpc_parameter_name,
+)
+from scripts.audio_semantics import name_recovery
+from scripts.audio_semantics.table_contexts import collect_table_audio_events
+from scripts.audio_semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
+from scripts.audio_semantics.rtpc_contract import CANONICAL_RTPC_ENTRIES
+from scripts.audio_semantics.context_utils import SELECTION_HIRC_TYPES, json_dump, load_json_strict, normalize_posix, iter_asset_map_objects, display_path
+from scripts.audio_semantics.event_aliases import collect_audio_dialog_wwise_event_aliases, collect_skill_id_dictionary_wwise_event_aliases, collect_sns_voice_wwise_event_aliases, collect_typed_ui_table_wwise_event_aliases, collect_voice_table_wwise_event_aliases
+from scripts.audio_semantics.cutscene_audio import collect_fmv_cutscene_audio_events, collect_levelseq_cutscene_audio_events, collect_timeline_cutscene_audio_events, collect_video_binding_audio_containers, mono_behaviour_json_by_path_id, story_key_from_fmv_id, story_key_from_video_binding, strip_fmv_gender_prefix, timeline_audio_container_for
+from scripts.audio_semantics.projectile_audio import projectile_event_key, projectile_sound_hashes, projectile_sound_references, write_projectile_audio_sidecar
+from scripts.audio_semantics.gameplay_audio import animation_clip_action_kind, animation_clip_audio_events, animation_clip_context, animation_clip_path_id, animation_clip_reachability_status, animation_controller_contexts, animation_override_contexts, animation_override_reachability_status, animator_controller_state_clip_refs, animestudio_storage_root, annotate_play_sound_action_owner_links, collect_animation_controller_index, collect_animation_override_index, collect_buff_play_sound_actions, collect_gameplay_animation_audio, collect_gameplay_audio_references, collect_gameplay_profile_voices, compact_gameplay_audio_link, enemy_template_animation_tokens, enemy_template_skill_references, enemy_template_source_files, gameplay_buff_audio, gameplay_character_token_owners, gameplay_config_records, iter_json_strings, length_prefixed_matches, link_gameplay_audio, play_sound_action_marker, profile_voice_action_kind, seed_buff_play_sound_events
+from scripts.audio_semantics.hirc_v150 import HIRC_EFFECT_PARAMETER_CONTRACT, add_hirc_bus_definition_candidate, add_hirc_effect_definition_candidate, collect_hirc_decoded_sound_definitions, decode_hirc_v150_effect_parameters, finalize_hirc_post_process_catalog, hirc_action_target_id, hirc_action_type, hirc_bus_parent_path, hirc_event_action_ids, hirc_object_parent_id, hirc_reciprocal_child_list, hirc_v150_bus_processing, hirc_v150_control_action, hirc_v150_effect_definition, hirc_v150_empty_music_children, hirc_v150_layer_child_candidate, hirc_v150_layer_tail, hirc_v150_music_random_sequence_structure, hirc_v150_music_segment_structure, hirc_v150_music_structure, hirc_v150_music_switch_structure, hirc_v150_music_track, hirc_v150_node_processing, hirc_v150_playback_action, hirc_v150_random_sequence_properties, hirc_v150_sound_source, hirc_v150_switch_mapping, iter_bnk_sections, parse_hirc_objects, refine_hirc_v150_music_switch_selector_ownership, resolve_hirc_post_process_summary, summarize_hirc_action_dispatch, summarize_hirc_node_processing, summarize_hirc_object_types, traverse_hirc_event
+from scripts.build_audio_semantics import build_audio_semantic_data
+from scripts.animestudio_index_io import ObjectIndexUnavailable, iter_published_objects, raw_json_path_for_object
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
 DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO

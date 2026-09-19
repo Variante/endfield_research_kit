@@ -26,13 +26,10 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[2]
-if __package__ == "story_builder":
-    from common import read_bytes_cached
-elif __package__ == "scripts.story_builder":
-    from ..common import read_bytes_cached
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("import this module as scripts.story_builder.mission_recovery")
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
+from scripts.common import read_bytes_cached
 
 from .mission_assets import select_complete_mission_runtime_root
 from .story_keys import canonical_cutscene_key, line_stem, timeline_stem_to_dialog_key

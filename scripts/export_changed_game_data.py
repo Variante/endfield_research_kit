@@ -31,32 +31,24 @@ try:
 except ImportError:  # pragma: no cover - Windows
     fcntl = None  # type: ignore[assignment]
 
-if __package__:
-    from .common import ROOT, read_json
-    from .export_full_from_game import (
-        DEFAULT_ANIMESTUDIO,
-        DEFAULT_GAME_ROOT,
-        DEFAULT_OUTPUT,
-        DEFAULT_REPORTS,
-        FOCUSED_STRUCTURED_BLOCK_TYPES,
-        SOURCE_FINGERPRINT_EXCLUDED_TOP_LEVEL,
-        SOURCES,
-        TERRAIN_HEIGHT_FILE_REGEX,
-        collect_source_sizes,
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.export_changed_game_data"
     )
-else:
-    from common import ROOT, read_json
-    from export_full_from_game import (
-        DEFAULT_ANIMESTUDIO,
-        DEFAULT_GAME_ROOT,
-        DEFAULT_OUTPUT,
-        DEFAULT_REPORTS,
-        FOCUSED_STRUCTURED_BLOCK_TYPES,
-        SOURCE_FINGERPRINT_EXCLUDED_TOP_LEVEL,
-        SOURCES,
-        TERRAIN_HEIGHT_FILE_REGEX,
-        collect_source_sizes,
-    )
+
+from scripts.common import ROOT, read_json
+from scripts.export_full_from_game import (
+    DEFAULT_ANIMESTUDIO,
+    DEFAULT_GAME_ROOT,
+    DEFAULT_OUTPUT,
+    DEFAULT_REPORTS,
+    FOCUSED_STRUCTURED_BLOCK_TYPES,
+    SOURCE_FINGERPRINT_EXCLUDED_TOP_LEVEL,
+    SOURCES,
+    TERRAIN_HEIGHT_FILE_REGEX,
+    collect_source_sizes,
+)
 
 
 SCHEMA_VERSION = 1

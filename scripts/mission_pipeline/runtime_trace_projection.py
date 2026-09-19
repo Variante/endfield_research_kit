@@ -8,7 +8,9 @@ from typing import Any
 
 
 SCHEMA = "missionRuntimeTrace.v1"
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 
 
 def _read_json(path: Path) -> Any:

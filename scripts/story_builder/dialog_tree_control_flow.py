@@ -29,19 +29,13 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-ROOT = Path(__file__).resolve().parents[2]
-if __package__ == "story_builder":
-    from common import (
-        resolve_installed_game_data_root,
-        sha256_file as shared_sha256_file,
-    )
-elif __package__ == "scripts.story_builder":
-    from ..common import (
-        resolve_installed_game_data_root,
-        sha256_file as shared_sha256_file,
-    )
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("import this module as scripts.story_builder.dialog_tree_control_flow")
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
+from scripts.common import (
+    resolve_installed_game_data_root,
+    sha256_file as shared_sha256_file,
+)
 
 from .native_contracts.ifix_patch import (
     DEFAULT_CONTRACT as DEFAULT_IFIX_CONTRACT,

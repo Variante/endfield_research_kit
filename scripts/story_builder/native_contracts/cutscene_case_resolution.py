@@ -6,22 +6,12 @@ import json
 from pathlib import Path
 from typing import Any
 
-if __package__ == "scripts.story_builder.native_contracts":
-    from ...common import (
-        NATIVE_EVIDENCE_MISSING,
-        NATIVE_EVIDENCE_MISMATCHED,
-        NATIVE_EVIDENCE_VALIDATED,
-        check_installed_native_inputs,
-    )
-elif __package__ == "story_builder.native_contracts":
-    from common import (
-        NATIVE_EVIDENCE_MISSING,
-        NATIVE_EVIDENCE_MISMATCHED,
-        NATIVE_EVIDENCE_VALIDATED,
-        check_installed_native_inputs,
-    )
-else:  # pragma: no cover - invalid embedding identity
-    raise ImportError(f"unsupported package identity: {__package__!r}")
+from scripts.common import (
+    NATIVE_EVIDENCE_MISSING,
+    NATIVE_EVIDENCE_MISMATCHED,
+    NATIVE_EVIDENCE_VALIDATED,
+    check_installed_native_inputs,
+)
 
 from .ifix_patch import (
     DEFAULT_CONTRACT as DEFAULT_IFIX_CONTRACT,
@@ -62,8 +52,10 @@ MATCH_FIELDS = (
 )
 
 
+from scripts.repo_paths import REPO_ROOT
+
 def _source_file(path: Path) -> str:
-    root = Path(__file__).resolve().parents[3]
+    root = REPO_ROOT
     try:
         return path.resolve().relative_to(root).as_posix()
     except ValueError:
@@ -275,7 +267,7 @@ def load_cutscene_case_resolution_contract(
         if actual_target != int(target, 16):
             reject(f"gender_select_{method_name}_call_target", target, hex(actual_target))
 
-    script_path = Path(__file__).resolve().parents[3] / str(bridge_script.get("sourceFile") or "")
+    script_path = REPO_ROOT / str(bridge_script.get("sourceFile") or "")
     try:
         script_hash = hashlib.sha256(script_path.read_bytes()).hexdigest().upper()
     except OSError as error:

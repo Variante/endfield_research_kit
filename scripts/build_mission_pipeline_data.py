@@ -22,222 +22,122 @@ from collections import Counter, defaultdict, deque
 from pathlib import Path
 from typing import Any, Iterable
 
-if not __package__:
-    from common import (
-        combined_non_mission_content_keys,
-        compact_dict,
-        native_evidence_required,
-        native_evidence_skip_message,
-        read_bytes_cached,
-        read_json,
-        resolve_installed_game_data_root,
-        story_root_playback_aliases,
-        write_report_json,
-        write_text_if_changed,
-    )
-    from story_builder.levelscript_binary import (
-        compact_callserver_serialized_contract,
-        decode_levelscript_action_map_lists,
-        decode_levelscript_action_header_validation,
-        decode_levelscript_encounter_module_target,
-        extract_levelscript_uid_records,
-    )
-    from story_builder.level_bindings import (
-        ACTIONBASE_FORMATTER_ACTION_NAMES,
-        ACTIONBASE_FORMATTER_NAME_AUDIT,
-        build_levelscript_native_story_playback_index,
-        decode_levelscript_native_action_topology,
-    )
-    from story_builder.mission_assets import (
-        mission_runtime_source_summary,
-        select_complete_mission_runtime_root,
-    )
-    from story_builder.lua_consumer_references import (
-        DEFAULT_INDEX as DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
-        SCHEMA_VERSION as LUA_CONSUMER_REFERENCE_SCHEMA,
-    )
-    from story_builder.native_contracts.identity_carrier_boundaries import (
-        load_identity_carrier_boundaries_contract,
-    )
-    from story_builder.native_contracts.ifix_patch import (
-        fixed_method_prefix_matches,
-        load_ifix_patch_contract,
-    )
-    from story_builder.native_contracts.cross_system_consumers import (
-        load_cross_system_consumers_contract,
-    )
-    from story_builder.native_contracts.teleport_param import (
-        load_teleport_param_contract,
-    )
-    from story_builder.dynamic_scene import load_dynamic_scene_context
-    from story_builder.envtalk_attachment import (
-        build_report as build_envtalk_attachment_report,
-    )
-    from story_builder.callserver_callbacks import (
-        DEFAULT_JSON as CALLSERVER_CALLBACK_AUDIT_JSON,
-        DEFAULT_MARKDOWN as CALLSERVER_CALLBACK_AUDIT_MARKDOWN,
-        build_report as build_callserver_callback_audit_report,
-        markdown_report as render_callserver_callback_audit_markdown,
-    )
-    from story_builder.dialog_finish_branches import (
-        DEFAULT_JSON as DIALOG_FINISH_BRANCH_AUDIT_JSON,
-        DEFAULT_MARKDOWN as DIALOG_FINISH_BRANCH_AUDIT_MARKDOWN,
-        NativeContractUnavailable as DialogFinishNativeUnavailable,
-        build_report as build_dialog_finish_branch_audit_report,
-        markdown_report as render_dialog_finish_branch_audit_markdown,
-        publish_to_pipeline_index as publish_dialog_finish_branch_audit,
-    )
-    from story_builder.mission_dependency_graph import (
-        build_report as build_mission_dependency_graph_report,
-    )
-    from story_builder.node_attachment import (
-        build_report as build_node_attachment_report,
-        render_markdown as render_node_attachment_markdown,
-    )
-    from story_builder.native_receiver_activation_frontier import (
-        DEFAULT_JSON as NATIVE_RECEIVER_FRONTIER_JSON,
-        DEFAULT_MARKDOWN as NATIVE_RECEIVER_FRONTIER_MARKDOWN,
-        build_report as build_native_receiver_activation_frontier_report,
-        markdown_report as render_native_receiver_activation_frontier_markdown,
-        publish_to_pipeline_index as publish_native_receiver_activation_frontier,
-    )
-    from story_builder.source_gap import build_source_gap_queue
-    from story_builder.timeline_embedded_story_runtime import (
-        DEFAULT_JSON as TIMELINE_EMBEDDED_RUNTIME_JSON,
-        DEFAULT_MD as TIMELINE_EMBEDDED_RUNTIME_MARKDOWN,
-        TimelineNativeUnavailable,
-        build_default_report as build_timeline_embedded_runtime_report,
-        render_markdown as render_timeline_embedded_runtime_markdown,
-    )
-else:
-    from scripts.common import (
-        combined_non_mission_content_keys,
-        compact_dict,
-        native_evidence_required,
-        native_evidence_skip_message,
-        read_bytes_cached,
-        read_json,
-        resolve_installed_game_data_root,
-        story_root_playback_aliases,
-        write_report_json,
-        write_text_if_changed,
-    )
-    from scripts.story_builder.levelscript_binary import (
-        compact_callserver_serialized_contract,
-        decode_levelscript_action_map_lists,
-        decode_levelscript_action_header_validation,
-        decode_levelscript_encounter_module_target,
-        extract_levelscript_uid_records,
-    )
-    from scripts.story_builder.level_bindings import (
-        ACTIONBASE_FORMATTER_ACTION_NAMES,
-        ACTIONBASE_FORMATTER_NAME_AUDIT,
-        build_levelscript_native_story_playback_index,
-        decode_levelscript_native_action_topology,
-    )
-    from scripts.story_builder.mission_assets import (
-        mission_runtime_source_summary,
-        select_complete_mission_runtime_root,
-    )
-    from scripts.story_builder.lua_consumer_references import (
-        DEFAULT_INDEX as DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
-        SCHEMA_VERSION as LUA_CONSUMER_REFERENCE_SCHEMA,
-    )
-    from scripts.story_builder.native_contracts.identity_carrier_boundaries import (
-        load_identity_carrier_boundaries_contract,
-    )
-    from scripts.story_builder.native_contracts.ifix_patch import (
-        fixed_method_prefix_matches,
-        load_ifix_patch_contract,
-    )
-    from scripts.story_builder.native_contracts.cross_system_consumers import (
-        load_cross_system_consumers_contract,
-    )
-    from scripts.story_builder.native_contracts.teleport_param import (
-        load_teleport_param_contract,
-    )
-    from scripts.story_builder.dynamic_scene import load_dynamic_scene_context
-    from scripts.story_builder.envtalk_attachment import (
-        build_report as build_envtalk_attachment_report,
-    )
-    from scripts.story_builder.callserver_callbacks import (
-        DEFAULT_JSON as CALLSERVER_CALLBACK_AUDIT_JSON,
-        DEFAULT_MARKDOWN as CALLSERVER_CALLBACK_AUDIT_MARKDOWN,
-        build_report as build_callserver_callback_audit_report,
-        markdown_report as render_callserver_callback_audit_markdown,
-    )
-    from scripts.story_builder.dialog_finish_branches import (
-        DEFAULT_JSON as DIALOG_FINISH_BRANCH_AUDIT_JSON,
-        DEFAULT_MARKDOWN as DIALOG_FINISH_BRANCH_AUDIT_MARKDOWN,
-        NativeContractUnavailable as DialogFinishNativeUnavailable,
-        build_report as build_dialog_finish_branch_audit_report,
-        markdown_report as render_dialog_finish_branch_audit_markdown,
-        publish_to_pipeline_index as publish_dialog_finish_branch_audit,
-    )
-    from scripts.story_builder.mission_dependency_graph import (
-        build_report as build_mission_dependency_graph_report,
-    )
-    from scripts.story_builder.node_attachment import (
-        build_report as build_node_attachment_report,
-        render_markdown as render_node_attachment_markdown,
-    )
-    from scripts.story_builder.native_receiver_activation_frontier import (
-        DEFAULT_JSON as NATIVE_RECEIVER_FRONTIER_JSON,
-        DEFAULT_MARKDOWN as NATIVE_RECEIVER_FRONTIER_MARKDOWN,
-        build_report as build_native_receiver_activation_frontier_report,
-        markdown_report as render_native_receiver_activation_frontier_markdown,
-        publish_to_pipeline_index as publish_native_receiver_activation_frontier,
-    )
-    from scripts.story_builder.source_gap import build_source_gap_queue
-    from scripts.story_builder.timeline_embedded_story_runtime import (
-        DEFAULT_JSON as TIMELINE_EMBEDDED_RUNTIME_JSON,
-        DEFAULT_MD as TIMELINE_EMBEDDED_RUNTIME_MARKDOWN,
-        TimelineNativeUnavailable,
-        build_default_report as build_timeline_embedded_runtime_report,
-        render_markdown as render_timeline_embedded_runtime_markdown,
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.build_mission_pipeline_data"
     )
 
+from scripts.common import (
+    combined_non_mission_content_keys,
+    compact_dict,
+    native_evidence_required,
+    native_evidence_skip_message,
+    read_bytes_cached,
+    read_json,
+    resolve_installed_game_data_root,
+    story_root_playback_aliases,
+    write_report_json,
+    write_text_if_changed,
+)
+from scripts.story_builder.levelscript_binary import (
+    compact_callserver_serialized_contract,
+    decode_levelscript_action_map_lists,
+    decode_levelscript_action_header_validation,
+    decode_levelscript_encounter_module_target,
+    extract_levelscript_uid_records,
+)
+from scripts.story_builder.level_bindings import (
+    ACTIONBASE_FORMATTER_ACTION_NAMES,
+    ACTIONBASE_FORMATTER_NAME_AUDIT,
+    build_levelscript_native_story_playback_index,
+    decode_levelscript_native_action_topology,
+)
+from scripts.story_builder.mission_assets import (
+    mission_runtime_source_summary,
+    select_complete_mission_runtime_root,
+)
+from scripts.story_builder.lua_consumer_references import (
+    DEFAULT_INDEX as DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
+    SCHEMA_VERSION as LUA_CONSUMER_REFERENCE_SCHEMA,
+)
+from scripts.story_builder.native_contracts.identity_carrier_boundaries import (
+    load_identity_carrier_boundaries_contract,
+)
+from scripts.story_builder.native_contracts.ifix_patch import (
+    fixed_method_prefix_matches,
+    load_ifix_patch_contract,
+)
+from scripts.story_builder.native_contracts.cross_system_consumers import (
+    load_cross_system_consumers_contract,
+)
+from scripts.story_builder.native_contracts.teleport_param import (
+    load_teleport_param_contract,
+)
+from scripts.story_builder.dynamic_scene import load_dynamic_scene_context
+from scripts.story_builder.envtalk_attachment import (
+    build_report as build_envtalk_attachment_report,
+)
+from scripts.story_builder.callserver_callbacks import (
+    DEFAULT_JSON as CALLSERVER_CALLBACK_AUDIT_JSON,
+    DEFAULT_MARKDOWN as CALLSERVER_CALLBACK_AUDIT_MARKDOWN,
+    build_report as build_callserver_callback_audit_report,
+    markdown_report as render_callserver_callback_audit_markdown,
+)
+from scripts.story_builder.dialog_finish_branches import (
+    DEFAULT_JSON as DIALOG_FINISH_BRANCH_AUDIT_JSON,
+    DEFAULT_MARKDOWN as DIALOG_FINISH_BRANCH_AUDIT_MARKDOWN,
+    NativeContractUnavailable as DialogFinishNativeUnavailable,
+    build_report as build_dialog_finish_branch_audit_report,
+    markdown_report as render_dialog_finish_branch_audit_markdown,
+    publish_to_pipeline_index as publish_dialog_finish_branch_audit,
+)
+from scripts.story_builder.mission_dependency_graph import (
+    build_report as build_mission_dependency_graph_report,
+)
+from scripts.story_builder.node_attachment import (
+    build_report as build_node_attachment_report,
+    render_markdown as render_node_attachment_markdown,
+)
+from scripts.story_builder.native_receiver_activation_frontier import (
+    DEFAULT_JSON as NATIVE_RECEIVER_FRONTIER_JSON,
+    DEFAULT_MARKDOWN as NATIVE_RECEIVER_FRONTIER_MARKDOWN,
+    build_report as build_native_receiver_activation_frontier_report,
+    markdown_report as render_native_receiver_activation_frontier_markdown,
+    publish_to_pipeline_index as publish_native_receiver_activation_frontier,
+)
+from scripts.story_builder.source_gap import build_source_gap_queue
+from scripts.story_builder.timeline_embedded_story_runtime import (
+    DEFAULT_JSON as TIMELINE_EMBEDDED_RUNTIME_JSON,
+    DEFAULT_MD as TIMELINE_EMBEDDED_RUNTIME_MARKDOWN,
+    TimelineNativeUnavailable,
+    build_default_report as build_timeline_embedded_runtime_report,
+    render_markdown as render_timeline_embedded_runtime_markdown,
+)
 
-ROOT = Path(__file__).resolve().parents[1]
+
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
-if __package__:
-    from .common import sha256_file as sha256_path
-    from .mission_pipeline import dialog_tree_projection
-    from .mission_pipeline import lua_story_projection
-    from .mission_pipeline import mission_context_projection
-    from .mission_pipeline import mission_payload_projection
-    from .mission_pipeline import offline_shell_projection
-    from .mission_pipeline import offline_recovery_projection
-    from .mission_pipeline import post_playback_projection
-    from .mission_pipeline import post_playback_enrichment
-    from .mission_pipeline import quest_fork_arm_projection
-    from .mission_pipeline import quest_payload_projection
-    from .mission_pipeline import quest_scope_projection
-    from .mission_pipeline import runtime_trace_projection
-    from .mission_pipeline import source_order_publication
-    from .mission_pipeline import story_order_projection
-    from .mission_pipeline import story_binding_coverage_projection
-    from .mission_pipeline import story_binding_coverage_publisher
-    from .mission_pipeline import story_trigger_route_projection
-else:
-    from common import sha256_file as sha256_path
-    from mission_pipeline import dialog_tree_projection
-    from mission_pipeline import lua_story_projection
-    from mission_pipeline import mission_context_projection
-    from mission_pipeline import mission_payload_projection
-    from mission_pipeline import offline_shell_projection
-    from mission_pipeline import offline_recovery_projection
-    from mission_pipeline import post_playback_projection
-    from mission_pipeline import post_playback_enrichment
-    from mission_pipeline import quest_fork_arm_projection
-    from mission_pipeline import quest_payload_projection
-    from mission_pipeline import quest_scope_projection
-    from mission_pipeline import runtime_trace_projection
-    from mission_pipeline import source_order_publication
-    from mission_pipeline import story_order_projection
-    from mission_pipeline import story_binding_coverage_projection
-    from mission_pipeline import story_binding_coverage_publisher
-    from mission_pipeline import story_trigger_route_projection
+from scripts.common import sha256_file as sha256_path
+from scripts.mission_pipeline import dialog_tree_projection
+from scripts.mission_pipeline import lua_story_projection
+from scripts.mission_pipeline import mission_context_projection
+from scripts.mission_pipeline import mission_payload_projection
+from scripts.mission_pipeline import offline_shell_projection
+from scripts.mission_pipeline import offline_recovery_projection
+from scripts.mission_pipeline import post_playback_projection
+from scripts.mission_pipeline import post_playback_enrichment
+from scripts.mission_pipeline import quest_fork_arm_projection
+from scripts.mission_pipeline import quest_payload_projection
+from scripts.mission_pipeline import quest_scope_projection
+from scripts.mission_pipeline import runtime_trace_projection
+from scripts.mission_pipeline import source_order_publication
+from scripts.mission_pipeline import story_order_projection
+from scripts.mission_pipeline import story_binding_coverage_projection
+from scripts.mission_pipeline import story_binding_coverage_publisher
+from scripts.mission_pipeline import story_trigger_route_projection
 
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"

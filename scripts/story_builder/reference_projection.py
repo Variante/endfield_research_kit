@@ -5,10 +5,7 @@ from __future__ import annotations
 import re
 from collections.abc import Callable, Collection
 
-if __package__ in {"story_builder", "scripts.story_builder"}:
-    from .bundle_primitives import brace_text
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("import this module as scripts.story_builder.reference_projection")
+from scripts.story_builder.bundle_primitives import brace_text
 
 
 def append_reference_line(

@@ -12,23 +12,16 @@ import json
 from pathlib import Path
 from typing import Any
 
-if __package__ == "story_builder":
-    from common import (
-        NATIVE_EVIDENCE_MISMATCHED,
-        NATIVE_EVIDENCE_VALIDATED,
-        check_installed_native_inputs,
-    )
-elif __package__ == "scripts.story_builder":
-    from scripts.common import (
-        NATIVE_EVIDENCE_MISMATCHED,
-        NATIVE_EVIDENCE_VALIDATED,
-        check_installed_native_inputs,
-    )
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("import this module as scripts.story_builder.dynamic_scene")
+from scripts.common import (
+    NATIVE_EVIDENCE_MISMATCHED,
+    NATIVE_EVIDENCE_VALIDATED,
+    check_installed_native_inputs,
+)
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 SCHEMA = "dynamicSceneStoryContext.v1"
 AUDIT_SCHEMA = "dynamicSceneStoryContextValidation.v1"
 DEFAULT_ARTIFACT = Path(__file__).with_name("dynamic_scene.json")

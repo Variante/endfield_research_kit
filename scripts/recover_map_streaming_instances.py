@@ -17,15 +17,14 @@ import json
 import re
 import struct
 import subprocess
-import sys
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 from typing import Any
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 
 from scripts.audit_map_asset_closure import iter_asset_entries, sha256_file
 from scripts.common import resolve_installed_game_data_root

@@ -30,78 +30,46 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
 
-if __package__ == "scripts":
-    from scripts.common import sha256_file as file_sha256
-    from .audio_semantics.entity_contexts import build_custom_footstep_model, collect_ability_voice_trigger_contexts, collect_char_interact_audio_semantics, collect_gameplay_contexts, collect_patrol_sub_action_audio_semantics, collect_spawner_pre_warn_semantics
-    from .audio_semantics.levelsequence import build_levelsequence_audio_contexts, collect_levelsequence_play_actions
-    from .audio_semantics.mono_behaviour import build_runtime_model, collect_metadata_event_symbol_aliases, collect_mono_behaviour_audio_id_contexts, AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS
-    from .audio_semantics.timeline import build_timeline_audio_cue_contexts, collect_timeline_audio_ownership, enrich_timeline_audio_ownership_from_raw_json, merge_timeline_audio_ownership, normalize_levelsequence_audio_id
-    from .audio_semantics.levelscript import attach_levelscript_radio_contexts, collect_levelscript_audio_semantics
-    from .audio_semantics.media_rows import annotate_media_event_contexts, annotate_media_post_process_effect_chains, annotate_media_trigger_contexts, annotate_media_trigger_semantic_categories, build_media_rows, split_media_row
-    from .audio_semantics.trigger_contexts import build_trigger_context_catalog
-    from scripts.audio_semantics import (
-        authored_components,
-        context_utils,
-        dialog_lifecycle,
-        event_projection,
-        event_summary,
-        identifiers,
-        interactive_components,
-        managed_literals,
-        media_ownership,
-        model_view_projection,
-        native_evidence,
-        purpose,
-        responsive_voice,
-        rtpc_alignment,
-        runtime_observations,
-        scene_backgrounds,
-        table_contexts,
-        build_contracts,
-        voice_requests,
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.build_audio_semantics"
     )
-    from scripts.animestudio_index_io import (
-        ObjectIndexUnavailable,
-        iter_published_objects,
-        published_object_index_path,
-    )
-elif not __package__:
-    from common import sha256_file as file_sha256
-    from audio_semantics.entity_contexts import build_custom_footstep_model, collect_ability_voice_trigger_contexts, collect_char_interact_audio_semantics, collect_gameplay_contexts, collect_patrol_sub_action_audio_semantics, collect_spawner_pre_warn_semantics
-    from audio_semantics.levelsequence import build_levelsequence_audio_contexts, collect_levelsequence_play_actions
-    from audio_semantics.mono_behaviour import build_runtime_model, collect_metadata_event_symbol_aliases, collect_mono_behaviour_audio_id_contexts, AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS
-    from audio_semantics.timeline import build_timeline_audio_cue_contexts, collect_timeline_audio_ownership, enrich_timeline_audio_ownership_from_raw_json, merge_timeline_audio_ownership, normalize_levelsequence_audio_id
-    from audio_semantics.levelscript import attach_levelscript_radio_contexts, collect_levelscript_audio_semantics
-    from audio_semantics.media_rows import annotate_media_event_contexts, annotate_media_post_process_effect_chains, annotate_media_trigger_contexts, annotate_media_trigger_semantic_categories, build_media_rows, split_media_row
-    from audio_semantics.trigger_contexts import build_trigger_context_catalog
-    from audio_semantics import (
-        authored_components,
-        context_utils,
-        dialog_lifecycle,
-        event_projection,
-        event_summary,
-        identifiers,
-        interactive_components,
-        managed_literals,
-        media_ownership,
-        model_view_projection,
-        native_evidence,
-        purpose,
-        responsive_voice,
-        rtpc_alignment,
-        runtime_observations,
-        scene_backgrounds,
-        table_contexts,
-        build_contracts,
-        voice_requests,
-    )
-    from animestudio_index_io import (
-        ObjectIndexUnavailable,
-        iter_published_objects,
-        published_object_index_path,
-    )
-else:  # pragma: no cover - this file has exactly two supported identities.
-    raise ImportError("import as scripts.build_audio_semantics or run the script directly")
+
+from scripts.common import sha256_file as file_sha256
+from scripts.audio_semantics.entity_contexts import build_custom_footstep_model, collect_ability_voice_trigger_contexts, collect_char_interact_audio_semantics, collect_gameplay_contexts, collect_patrol_sub_action_audio_semantics, collect_spawner_pre_warn_semantics
+from scripts.audio_semantics.levelsequence import build_levelsequence_audio_contexts, collect_levelsequence_play_actions
+from scripts.audio_semantics.mono_behaviour import build_runtime_model, collect_metadata_event_symbol_aliases, collect_mono_behaviour_audio_id_contexts, AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS
+from scripts.audio_semantics.timeline import build_timeline_audio_cue_contexts, collect_timeline_audio_ownership, enrich_timeline_audio_ownership_from_raw_json, merge_timeline_audio_ownership, normalize_levelsequence_audio_id
+from scripts.audio_semantics.levelscript import attach_levelscript_radio_contexts, collect_levelscript_audio_semantics
+from scripts.audio_semantics.media_rows import annotate_media_event_contexts, annotate_media_post_process_effect_chains, annotate_media_trigger_contexts, annotate_media_trigger_semantic_categories, build_media_rows, split_media_row
+from scripts.audio_semantics.trigger_contexts import build_trigger_context_catalog
+from scripts.audio_semantics import (
+    authored_components,
+    context_utils,
+    dialog_lifecycle,
+    event_projection,
+    event_summary,
+    identifiers,
+    interactive_components,
+    managed_literals,
+    media_ownership,
+    model_view_projection,
+    native_evidence,
+    purpose,
+    responsive_voice,
+    rtpc_alignment,
+    runtime_observations,
+    scene_backgrounds,
+    table_contexts,
+    build_contracts,
+    voice_requests,
+)
+from scripts.animestudio_index_io import (
+    ObjectIndexUnavailable,
+    iter_published_objects,
+    published_object_index_path,
+)
 
 
 AUDIO_MUSIC_NATIVE_STATE_GROUPS = build_contracts.AUDIO_MUSIC_NATIVE_STATE_GROUPS
@@ -109,7 +77,9 @@ AUDIO_MUSIC_NATIVE_STATE_GROUPS = build_contracts.AUDIO_MUSIC_NATIVE_STATE_GROUP
 AUDIO_SEMANTIC_SCHEMA_VERSION = context_utils.AUDIO_SEMANTIC_SCHEMA_VERSION
 
 
-ROOT = Path(__file__).resolve().parents[1]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 DEFAULT_EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_WEBUI_ROOT = ROOT / "webui"
 DEFAULT_METADATA_REL = Path("il2cpp_data/Metadata/global-metadata.dat")

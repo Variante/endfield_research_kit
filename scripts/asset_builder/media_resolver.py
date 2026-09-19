@@ -8,20 +8,12 @@ from pathlib import Path
 import re
 from typing import Iterable
 
-if __package__.startswith("scripts."):
-    from ..common import (
-        normalize_posix,
-        path_id_export_base_stem,
-        path_id_export_path_id,
-        rel_requires_path_id_export_name,
-    )
-else:
-    from common import (
-        normalize_posix,
-        path_id_export_base_stem,
-        path_id_export_path_id,
-        rel_requires_path_id_export_name,
-    )
+from scripts.common import (
+    normalize_posix,
+    path_id_export_base_stem,
+    path_id_export_path_id,
+    rel_requires_path_id_export_name,
+)
 
 
 IMAGE_TOKEN_RE = re.compile(

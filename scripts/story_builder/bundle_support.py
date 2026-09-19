@@ -4,12 +4,7 @@ import json
 import re
 from pathlib import Path
 
-if __package__ == "story_builder":
-    from source_paths import _existing_unique_paths
-elif __package__ == "scripts.story_builder":
-    from ..source_paths import _existing_unique_paths
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("import this module as scripts.story_builder.bundle_support")
+from scripts.source_paths import _existing_unique_paths
 
 from .context import (
     DEFAULT_LANGUAGE,

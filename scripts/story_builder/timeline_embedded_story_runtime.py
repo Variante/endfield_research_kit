@@ -24,34 +24,20 @@ from types import SimpleNamespace
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 TOOLS = ROOT / "tools" / "endfield-il2cpp"
-if __package__ == "story_builder":
-    from common import (
-        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-        RECORDED_NATIVE_METADATA_SHA256,
-        NativeEvidenceUnavailable,
-        check_installed_native_inputs,
-        native_evidence_required,
-        native_evidence_skip_message,
-        resolve_installed_game_data_root,
-        sha256_file as sha256_path,
-    )
-elif __package__ == "scripts.story_builder":
-    from ..common import (
-        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-        RECORDED_NATIVE_METADATA_SHA256,
-        NativeEvidenceUnavailable,
-        check_installed_native_inputs,
-        native_evidence_required,
-        native_evidence_skip_message,
-        resolve_installed_game_data_root,
-        sha256_file as sha256_path,
-    )
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError(
-        "run this module with python -m scripts.story_builder.timeline_embedded_story_runtime"
-    )
+from scripts.common import (
+    RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+    RECORDED_NATIVE_METADATA_SHA256,
+    NativeEvidenceUnavailable,
+    check_installed_native_inputs,
+    native_evidence_required,
+    native_evidence_skip_message,
+    resolve_installed_game_data_root,
+    sha256_file as sha256_path,
+)
 
 
 class TimelineNativeUnavailable(NativeEvidenceUnavailable):

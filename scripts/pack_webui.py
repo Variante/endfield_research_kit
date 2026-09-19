@@ -23,18 +23,17 @@ from dataclasses import dataclass
 from pathlib import Path, PurePosixPath
 from typing import Iterable
 
-if __package__:
-    from .common import (
-        EXPORT_ROOT,
-        ROOT as PROJECT_ROOT,
-        normalize_posix,
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.pack_webui"
     )
-else:
-    from common import (
-        EXPORT_ROOT,
-        ROOT as PROJECT_ROOT,
-        normalize_posix,
-    )
+
+from scripts.common import (
+    EXPORT_ROOT,
+    ROOT as PROJECT_ROOT,
+    normalize_posix,
+)
 
 WEBUI_ROOT = PROJECT_ROOT / "webui"
 ZIP_NAME_PREFIX = "endfield-story-exported"

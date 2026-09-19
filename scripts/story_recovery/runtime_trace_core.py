@@ -12,15 +12,12 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
-if __package__ == "scripts.story_recovery":
-    from ..common import resolve_installed_game_data_root, sha256_file
-elif __package__ == "story_recovery":
-    from common import resolve_installed_game_data_root, sha256_file
-else:  # pragma: no cover - invalid embedding identity
-    raise ImportError(f"unsupported package identity: {__package__!r}")
+from scripts.common import resolve_installed_game_data_root, sha256_file
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root().parent
 
 

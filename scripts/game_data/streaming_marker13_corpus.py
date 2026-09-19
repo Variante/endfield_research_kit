@@ -838,9 +838,11 @@ def _is_bounded_diagnostic_output(path: Path, repo_root: Path) -> bool:
     )
 
 
+from scripts.repo_paths import REPO_ROOT
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repo-root", type=Path, default=Path(__file__).resolve().parents[2])
+    parser.add_argument("--repo-root", type=Path, default=REPO_ROOT)
     parser.add_argument("--root-report", type=Path)
     parser.add_argument("--outer-summary", type=Path)
     parser.add_argument("--outer-ledger", type=Path)

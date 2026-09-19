@@ -30,13 +30,12 @@ from __future__ import annotations
 import json
 import os
 import re
-import sys
 from functools import lru_cache
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-if str(ROOT) not in sys.path:
-    sys.path.insert(0, str(ROOT))
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 
 from scripts.audit_map_asset_closure import iter_asset_entries, sha256_file
 from scripts.map_recovery_sources import projection_streaming_scene

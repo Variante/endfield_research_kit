@@ -137,7 +137,7 @@ rem - compare WebUI-facing text JSON in the two exports
 rem - compare CharacterTable rows and localized names for Characters-page tags
 rem - compare exported image/model/video/audio assets by default
 rem - write Updates feed and Characters-page change sidecar
-python .\scripts\build_updates.py%ROOT_ARGS%%MODE_ARGS%%EXTRA_ARGS%
+python -m scripts.build_updates%ROOT_ARGS%%MODE_ARGS%%EXTRA_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 
 endlocal

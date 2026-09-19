@@ -18,7 +18,9 @@ from typing import Any, Iterable
 from . import runtime_trace_core as core
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 EVENT_SCHEMA = "missionRuntimeTrace.event.v1"
 BUNDLE_SCHEMA = "missionRuntimeTrace.v1"
 DEFAULT_OUTPUT = ROOT / "reports" / "story" / "recovery" / "mission_runtime_trace.json"

@@ -10,26 +10,14 @@ from collections import Counter, defaultdict
 from functools import lru_cache, partial
 from pathlib import Path
 
-if __package__ == "story_builder":
-    from common import (
-        EXPORT_ROOT,
-        ROOT,
-        read_bytes_cached,
-        read_json_cached,
-        rel_path as repo_rel,
-        unique_preserve as _unique_preserve,
-    )
-elif __package__ == "scripts.story_builder":
-    from scripts.common import (
-        EXPORT_ROOT,
-        ROOT,
-        read_bytes_cached,
-        read_json_cached,
-        rel_path as repo_rel,
-        unique_preserve as _unique_preserve,
-    )
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("import this module as scripts.story_builder.level_bindings")
+from scripts.common import (
+    EXPORT_ROOT,
+    ROOT,
+    read_bytes_cached,
+    read_json_cached,
+    rel_path as repo_rel,
+    unique_preserve as _unique_preserve,
+)
 
 from .anime_assets import (
     _build_mission_area_index,

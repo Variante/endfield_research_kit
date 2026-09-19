@@ -11,33 +11,35 @@ from pathlib import Path
 from typing import Any, Iterator
 
 
-ROOT = Path(__file__).resolve().parents[3]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 from .foundation import (
     read_json,
     resolve_installed_native_inputs,
     safe_key,
 )
 from .contracts import target_set_sha256
-from ..animestudio_story_objects import (
+from scripts.story_builder.animestudio_story_objects import (
     CARRIER_REPORT_PATH,
     HIERARCHY_REPORT_PATH,
     REVERSE_REPORT_PATH,
 )
-from ..level_bindings import (
+from scripts.story_builder.level_bindings import (
     LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES,
     _levelscript_native_control_paths_to_record,
     build_levelscript_unhosted_reading_popup_receiver_index,
     parse_leveldata_levelscript_brief_dictionary,
 )
-from ..levelscript_binary import (
+from scripts.story_builder.levelscript_binary import (
     decode_levelscript_record_payload,
     decode_levelscript_task_conditions,
     extract_levelscript_uid_records,
     levelscript_action_map_membership,
     levelscript_record_semantic_key,
 )
-from ..anime_assets import recover_dialog_tree_definition_evidence
-from ..mission_recovery import natural_key
+from scripts.story_builder.anime_assets import recover_dialog_tree_definition_evidence
+from scripts.story_builder.mission_recovery import natural_key
 
 
 from .data import (

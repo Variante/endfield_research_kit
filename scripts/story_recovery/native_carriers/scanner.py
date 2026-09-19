@@ -27,25 +27,16 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
-ROOT = Path(__file__).resolve().parents[3]
-if __package__ == "scripts.story_recovery.native_carriers":
-    from ...common import (
-        md_escape,
-        resolve_installed_game_data_root,
-        sha256_file,
-        write_report_json,
-        write_text_if_changed,
-    )
-elif __package__ == "story_recovery.native_carriers":
-    from common import (
-        md_escape,
-        resolve_installed_game_data_root,
-        sha256_file,
-        write_report_json,
-        write_text_if_changed,
-    )
-else:  # pragma: no cover - invalid embedding identity
-    raise ImportError(f"unsupported package identity: {__package__!r}")
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
+from scripts.common import (
+    md_escape,
+    resolve_installed_game_data_root,
+    sha256_file,
+    write_report_json,
+    write_text_if_changed,
+)
 
 
 MAPPER_PATH = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
@@ -1082,18 +1073,10 @@ def run(args: argparse.Namespace) -> int:
     write_report_json(args.json, report)
     write_text_if_changed(args.markdown, markdown_report(report))
     if args.carrier_type == "Beyond.Gameplay.TeleportParam":
-        if __package__ == "scripts.story_recovery.native_carriers":
-            from ...story_builder.native_contracts.teleport_param import (
-                DEFAULT_CONTRACT,
-                reconcile_generic_audit,
-            )
-        elif __package__ == "story_recovery.native_carriers":
-            from story_builder.native_contracts.teleport_param import (
-                DEFAULT_CONTRACT,
-                reconcile_generic_audit,
-            )
-        else:  # pragma: no cover - checked at import time
-            raise ImportError(f"unsupported package identity: {__package__!r}")
+        from scripts.story_builder.native_contracts.teleport_param import (
+            DEFAULT_CONTRACT,
+            reconcile_generic_audit,
+        )
         try:
             contract = json.loads(DEFAULT_CONTRACT.read_text(encoding="utf-8-sig"))
             reconciliation_failures = reconcile_generic_audit(report, contract)

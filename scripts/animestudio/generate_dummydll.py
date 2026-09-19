@@ -21,13 +21,16 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[2]
-if __package__ == "scripts.animestudio":
-    from ..common import resolve_installed_game_data_root, sha256_file
-else:
-    if str(ROOT) not in sys.path:
-        sys.path.insert(0, str(ROOT))
-    from scripts.common import resolve_installed_game_data_root, sha256_file
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.animestudio.generate_dummydll"
+    )
+
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
+from scripts.common import resolve_installed_game_data_root, sha256_file
 DEFAULT_CPP2IL_SOURCE = ROOT / "tools" / "Cpp2IL-Endfield"
 DEFAULT_OUTPUT = ROOT / "tools" / "DummyDll"
 DEFAULT_ANIMESTUDIO = (

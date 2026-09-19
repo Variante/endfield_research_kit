@@ -14,10 +14,13 @@ import sys
 import time
 from typing import Any
 
-if __package__:
-    from .common import EXPORT_REPORTS_DIR, ROOT, rel_path
-else:
-    from common import EXPORT_REPORTS_DIR, ROOT, rel_path
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.benchmark_export"
+    )
+
+from scripts.common import EXPORT_REPORTS_DIR, ROOT, rel_path
 
 
 ACTIVE_ENV = "ENDFIELD_EXPORT_BENCHMARK_ACTIVE"

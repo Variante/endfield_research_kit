@@ -56,7 +56,7 @@ for %%A in (%*) do (
 if defined ENDFIELD_EXPORT_BENCHMARK_ACTIVE goto :parse_args
 set "ENDFIELD_EXPORT_BENCHMARK_ACTIVE=1"
 echo [export.bat %time%] Starting monitored export run; benchmark and peak-memory reports will be written under reports\export.
-python .\scripts\benchmark_export.py --label %BENCH_LABEL% -- "%~f0" %*
+python -m scripts.benchmark_export --label %BENCH_LABEL% -- "%~f0" %*
 exit /b %errorlevel%
 
 :parse_args
@@ -238,7 +238,7 @@ if "%BUILD_SCOPE%"=="story" echo [export.bat] Build scope: Story and Text Tables
 if "%BUILD_SCOPE%"=="assets" echo [export.bat] Build scope: assets, audio, and post-Story views; current Story is reused
 echo [export.bat] Post-Story worker limit: %WEBUI_JOBS%
 
-python .\scripts\build_webui_views.py %WEBUI_VIEW_ARGS% %GAME_ROOT_ARG% %EXPORT_ROOT_ARG% --dry-run >nul
+python -m scripts.build_webui_views %WEBUI_VIEW_ARGS% %GAME_ROOT_ARG% %EXPORT_ROOT_ARG% --dry-run >nul
 if errorlevel 1 exit /b 2
 
 rem WebUI export/build pipeline:
@@ -257,29 +257,29 @@ goto :extract_story
 
 :extract_changed
 call :stage "Indexing VFS metadata and exporting only changed structured logical files"
-python .\scripts\export_changed_game_data.py prepare %GAME_ROOT_ARG% --output "%CHANGED_OUTPUT_ROOT%" --structured-dump-mode "%STRUCTURED_DUMP_MODE%" --manifest "%CHANGED_MANIFEST%"
+python -m scripts.export_changed_game_data prepare %GAME_ROOT_ARG% --output "%CHANGED_OUTPUT_ROOT%" --structured-dump-mode "%STRUCTURED_DUMP_MODE%" --manifest "%CHANGED_MANIFEST%"
 if errorlevel 1 exit /b %errorlevel%
 set "CHANGED_PREPARED=1"
 call :stage "Recording the incremental structured refresh without re-exporting unchanged bundles"
-python .\scripts\export_full_from_game.py --skip-structured --structured-incremental-manifest "%CHANGED_MANIFEST%" --skip-animestudio %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG%
+python -m scripts.export_full_from_game --skip-structured --structured-incremental-manifest "%CHANGED_MANIFEST%" --skip-animestudio %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG%
 if errorlevel 1 goto :pipeline_failed
 goto :extract_done
 
 :extract_story
 call :stage "Extracting Story and Table inputs from the installed game (AnimeStudio maps and JSON)"
-python .\scripts\export_full_from_game.py --animestudio-scope story --animestudio-stages maps json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
+python -m scripts.export_full_from_game --animestudio-scope story --animestudio-stages maps json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 goto :extract_done
 
 :extract_story_and_assets
 call :stage "Extracting Story, Tables, assets, and materials in one AnimeStudio pass (scope: %ASSET_MODE%)"
-python .\scripts\export_full_from_game.py --animestudio-scope all --asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
+python -m scripts.export_full_from_game --animestudio-scope all --asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 goto :extract_done
 
 :extract_assets
 call :stage "Exporting images, models, materials, and audio from the installed game (scope: %ASSET_MODE%)"
-python .\scripts\export_full_from_game.py --skip-structured --animestudio-scope assets --asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
+python -m scripts.export_full_from_game --skip-structured --animestudio-scope assets --asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 goto :extract_done
 
@@ -294,7 +294,7 @@ call :stage "Checking export_full freshness against the installed game"
 if "%SKIP_FRESHNESS%"=="1" (
   echo [export.bat] Freshness check skipped by --skip-freshness.
 ) else (
-  python .\scripts\verify_export_freshness.py %GAME_ROOT_ARG%
+  python -m scripts.verify_export_freshness %GAME_ROOT_ARG%
   if errorlevel 1 goto :pipeline_failed
 )
 
@@ -326,13 +326,13 @@ if "%POST_STORY_VIEWS%"=="0" (
 if "%BUILD_SCOPE%"=="assets" call :stage "Building map recovery with exact Streaming sidecars, Characters, Gameplay, projectiles, Assets, CN audio, source graph, and combat relationships"
 if "%BUILD_SCOPE%"=="full" if "%WITH_ASSETS%"=="0" call :stage "Building Characters, Gameplay, map recovery with exact Streaming sidecars, source graph, and graph consumers"
 if "%BUILD_SCOPE%"=="full" if "%WITH_ASSETS%"=="1" call :stage "Building semantic views, asset indexes, CN audio, map recovery with exact Streaming sidecars, source graph, and graph consumers"
-python .\scripts\build_webui_views.py %WEBUI_VIEW_ARGS% %GAME_ROOT_ARG% %EXPORT_ROOT_ARG%
+python -m scripts.build_webui_views %WEBUI_VIEW_ARGS% %GAME_ROOT_ARG% %EXPORT_ROOT_ARG%
 if errorlevel 1 goto :pipeline_failed
 if "%BUILD_SCOPE%"=="assets" echo [export.bat] Post-Story semantic, asset, and audio refresh complete; Story was not rebuilt.
 
 if "%CHANGED_ONLY%"=="1" (
   call :stage "Committing the local changed-only source baseline"
-  python .\scripts\export_changed_game_data.py finalize --manifest "%CHANGED_MANIFEST%"
+  python -m scripts.export_changed_game_data finalize --manifest "%CHANGED_MANIFEST%"
   if errorlevel 1 goto :pipeline_failed
   set "CHANGED_PREPARED=0"
 )
@@ -346,7 +346,7 @@ exit /b 0
 set "PIPELINE_ERROR=%errorlevel%"
 if "%CHANGED_PREPARED%"=="1" (
   echo [export.bat] A later stage failed; the local VFS baseline will not advance.
-  python .\scripts\export_changed_game_data.py abort --manifest "%CHANGED_MANIFEST%"
+  python -m scripts.export_changed_game_data abort --manifest "%CHANGED_MANIFEST%"
 )
 endlocal & exit /b %PIPELINE_ERROR%
 
@@ -496,11 +496,11 @@ echo   "export.bat --from-game --world-scene-chunk MAP:X:Z" for those.
 echo   With --from-game, any other option is passed to
 echo   scripts\export_full_from_game.py. That is where the --animestudio-*
 echo   tuning and --world-scene-chunk MAP:X:Z live; run
-echo   "python scripts\export_full_from_game.py --help" to see them.
+echo   "python -m scripts.export_full_from_game --help" to see them.
 echo Companion wrappers:
 echo   export_assets.bat  Thin wrapper for --assets-only.
 echo   build_updates.bat  Build the Updates tab feed.
-echo   python scripts\pack_webui.py
+echo   python -m scripts.pack_webui
 echo                      Create split shareable WebUI zips.
 echo.
 endlocal

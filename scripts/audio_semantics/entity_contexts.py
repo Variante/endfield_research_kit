@@ -462,10 +462,7 @@ def collect_spawner_pre_warn_semantics(
 ) -> dict[str, Any]:
     """Recover exact current SpawnerEnemyLibraryItem pre-warning Events."""
     if decoder is None:
-        if __package__ == "scripts.audio_semantics":
-            from scripts.story_builder.spawner_binary import decode_spawner_enemy_library
-        else:
-            from story_builder.spawner_binary import decode_spawner_enemy_library
+        from scripts.story_builder.spawner_binary import decode_spawner_enemy_library
         decoder = decode_spawner_enemy_library
 
     spawner_root: Path | None = None
@@ -581,10 +578,7 @@ def collect_patrol_sub_action_audio_semantics(
 ) -> dict[str, Any]:
     """Recover exact authored ``PatrolSubPlayAudioData`` Event requests."""
     if decoder is None:
-        if __package__ == "scripts.audio_semantics":
-            from scripts.story_builder.level_bindings import decode_leveldata_npc_patrol_list
-        else:
-            from story_builder.level_bindings import decode_leveldata_npc_patrol_list
+        from scripts.story_builder.level_bindings import decode_leveldata_npc_patrol_list
         decoder = decode_leveldata_npc_patrol_list
 
     leveldata_root: Path | None = None
@@ -741,14 +735,9 @@ def collect_char_interact_audio_semantics(
 ) -> dict[str, Any]:
     """Recover exact numeric AudioEvent actions from current interaction performs."""
     if decoder is None:
-        if __package__ == "scripts.audio_semantics":
-            from scripts.story_builder.char_interact_perform_binary import (
-                decode_char_interact_audio_actions,
-            )
-        else:
-            from story_builder.char_interact_perform_binary import (
-                decode_char_interact_audio_actions,
-            )
+        from scripts.story_builder.char_interact_perform_binary import (
+            decode_char_interact_audio_actions,
+        )
         decoder = decode_char_interact_audio_actions
 
     roots = ("StreamingAssets", "Persistent")

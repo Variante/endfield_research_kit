@@ -11,7 +11,9 @@ from typing import Any, Iterable
 
 BUCKETS = ("attachInline", "suppressInline")
 RULE_FIELDS = frozenset({"stems", "audioFrom", "note"})
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 
 
 def _source_label(path: Path) -> str:

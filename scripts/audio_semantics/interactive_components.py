@@ -12,31 +12,16 @@ from .context_utils import append_context as _append_context
 from .context_utils import normalize_posix
 
 
-if __package__ == "scripts.audio_semantics":
-    from scripts.game_data.memorypack.interactive import (
-        decode_interactive_template_memorypack,
-        find_interactive_audio_property_maps,
-        parse_interactive_audio_component,
-        parse_interactive_trigger_zone_audio_property_component,
-    )
-    from scripts.story_builder.interactive_binary import decode_interactive_table
-    from scripts.story_builder.levelscript_binary import (
-        find_embedded_action_serialized_map_audio,
-    )
-elif __package__ == "audio_semantics":
-    from game_data.memorypack.interactive import (
-        decode_interactive_template_memorypack,
-        find_interactive_audio_property_maps,
-        parse_interactive_audio_component,
-        parse_interactive_trigger_zone_audio_property_component,
-    )
-    from story_builder.interactive_binary import decode_interactive_table
-    from story_builder.levelscript_binary import find_embedded_action_serialized_map_audio
-else:  # pragma: no cover - only package imports are supported.
-    raise ImportError(
-        "import as scripts.audio_semantics.interactive_components or "
-        "audio_semantics.interactive_components"
-    )
+from scripts.game_data.memorypack.interactive import (
+    decode_interactive_template_memorypack,
+    find_interactive_audio_property_maps,
+    parse_interactive_audio_component,
+    parse_interactive_trigger_zone_audio_property_component,
+)
+from scripts.story_builder.interactive_binary import decode_interactive_table
+from scripts.story_builder.levelscript_binary import (
+    find_embedded_action_serialized_map_audio,
+)
 
 
 def collect_interactive_component_contexts(

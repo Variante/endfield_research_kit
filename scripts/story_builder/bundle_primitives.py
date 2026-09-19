@@ -3,12 +3,7 @@
 import html
 import re
 
-if __package__ == "story_builder":
-    from common import is_present
-elif __package__ == "scripts.story_builder":
-    from ..common import is_present
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("import this module as scripts.story_builder.bundle_primitives")
+from scripts.common import is_present
 
 
 def clean_media_id_value(value: object) -> str:

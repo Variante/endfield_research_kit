@@ -24,7 +24,9 @@ from pathlib import Path
 from typing import Any, Iterator
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 DEFAULT_INPUT = ROOT / "webui" / "data" / "lang" / "CN" / "gameplay" / "index.json"
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "gameplay"
 REPORT_SCHEMA_VERSION = "gameplay-recovery-audit.v2"
@@ -642,10 +644,7 @@ def build_full_corpus_payload(export_root: Path) -> tuple[dict[str, Any], dict[s
     generated WebUI index and preserves bounded file/decode error samples.
     """
 
-    if __package__ and __package__.startswith("scripts."):
-        from scripts.game_data.memorypack.buff import buff_gameplay_semantics
-    else:
-        from game_data.memorypack.buff import buff_gameplay_semantics
+    from scripts.game_data.memorypack.buff import buff_gameplay_semantics
 
     export_root = export_root.resolve()
 

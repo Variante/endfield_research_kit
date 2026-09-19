@@ -11,14 +11,7 @@ from collections import Counter
 from datetime import datetime, timezone
 from typing import Any
 
-if __package__ == "story_builder":
-    from common import md_escape, safe_key
-elif __package__ == "scripts.story_builder":
-    from ..common import md_escape, safe_key
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError(
-        "import this module as scripts.story_builder.source_story_order_cross_reference"
-    )
+from scripts.common import md_escape, safe_key
 
 from .mission_recovery import natural_key
 

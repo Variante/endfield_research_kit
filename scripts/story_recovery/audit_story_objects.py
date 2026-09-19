@@ -6,46 +6,29 @@ from pathlib import Path
 from typing import Any
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 if __package__ in {None, ""}:
     raise SystemExit(
         "Run this maintained entry point as: "
         "python -m scripts.story_recovery.audit_story_objects"
     )
-if __package__ == "scripts.story_recovery":
-    from ..common import (
-        resolve_installed_game_data_root,
-        write_report_json,
-        write_text_if_changed,
-    )
-    from ..story_builder.animestudio_story_objects import (
-        CARRIER_REPORT_PATH,
-        DEFAULT_ANIMESTUDIO_CLI,
-        HIERARCHY_REPORT_PATH,
-        REVERSE_REPORT_PATH,
-        STAGES,
-        carrier,
-        hierarchy,
-        reverse,
-    )
-elif __package__ == "story_recovery":
-    from common import (
-        resolve_installed_game_data_root,
-        write_report_json,
-        write_text_if_changed,
-    )
-    from story_builder.animestudio_story_objects import (
-        CARRIER_REPORT_PATH,
-        DEFAULT_ANIMESTUDIO_CLI,
-        HIERARCHY_REPORT_PATH,
-        REVERSE_REPORT_PATH,
-        STAGES,
-        carrier,
-        hierarchy,
-        reverse,
-    )
-else:  # pragma: no cover - invalid embedding identity
-    raise ImportError(f"unsupported package identity: {__package__!r}")
+from scripts.common import (
+    resolve_installed_game_data_root,
+    write_report_json,
+    write_text_if_changed,
+)
+from scripts.story_builder.animestudio_story_objects import (
+    CARRIER_REPORT_PATH,
+    DEFAULT_ANIMESTUDIO_CLI,
+    HIERARCHY_REPORT_PATH,
+    REVERSE_REPORT_PATH,
+    STAGES,
+    carrier,
+    hierarchy,
+    reverse,
+)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:

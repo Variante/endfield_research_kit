@@ -16,12 +16,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-if __package__ == "story_builder":
-    from common import EXPORT_ROOT, ROOT, STORY_REPORTS_DIR, rel_path as slash
-elif __package__ == "scripts.story_builder":
-    from scripts.common import EXPORT_ROOT, ROOT, STORY_REPORTS_DIR, rel_path as slash
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("run this module with python -m scripts.story_builder.source_links")
+from scripts.common import EXPORT_ROOT, ROOT, STORY_REPORTS_DIR, rel_path as slash
 from .mission_assets import select_complete_mission_runtime_root
 
 DATA_JSON_DIR = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json"

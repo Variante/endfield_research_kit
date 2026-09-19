@@ -6,27 +6,20 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-if __package__ == "scripts.mission_pipeline":
-    from ..common import (
-        compact_dict,
-        write_report_json,
-        write_text_if_changed,
-    )
-    from ..story_builder.node_attachment import (
-        build_report as build_node_attachment_report,
-        render_markdown as render_node_attachment_markdown,
-    )
-elif __package__ == "mission_pipeline":
-    from common import compact_dict, write_report_json, write_text_if_changed
-    from story_builder.node_attachment import (
-        build_report as build_node_attachment_report,
-        render_markdown as render_node_attachment_markdown,
-    )
-else:  # pragma: no cover - direct file execution is intentionally unsupported
-    raise ImportError("import this module as scripts.mission_pipeline.quest_scope_projection")
+from scripts.common import (
+    compact_dict,
+    write_report_json,
+    write_text_if_changed,
+)
+from scripts.story_builder.node_attachment import (
+    build_report as build_node_attachment_report,
+    render_markdown as render_node_attachment_markdown,
+)
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 
 AUTHORITATIVE_LEVELDATA_MISSION_RELATIONS = frozenset({

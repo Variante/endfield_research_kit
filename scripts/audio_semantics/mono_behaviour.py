@@ -29,20 +29,12 @@ from .context_utils import json_dump as json_dump
 from .context_utils import load_json as load_json
 from .context_utils import normalize_posix as normalize_posix
 
-if __package__ == "scripts.audio_semantics":
-    from scripts.animestudio_index_io import (
-        ObjectIndexUnavailable,
-        iter_published_objects,
-        published_object_index_path,
-    )
-    from scripts.common import sha256_file as file_sha256
-else:
-    from animestudio_index_io import (
-        ObjectIndexUnavailable,
-        iter_published_objects,
-        published_object_index_path,
-    )
-    from common import sha256_file as file_sha256
+from scripts.animestudio_index_io import (
+    ObjectIndexUnavailable,
+    iter_published_objects,
+    published_object_index_path,
+)
+from scripts.common import sha256_file as file_sha256
 
 
 def _native_transition_callback(
@@ -160,7 +152,9 @@ def native_unmapped_playback_entry(
         "evidence": evidence,
     }
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 
 METADATA_HELPER = ROOT / "tools/endfield-il2cpp/catalog_option_flow_metadata.py"
 

@@ -24,7 +24,9 @@ from typing import Any, Iterable
 from . import runtime_trace_core as core
 
 
-ROOT = Path(__file__).resolve().parents[2]
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 EVENT_SCHEMA = "audioRuntimeTrace.event.v1"
 BUNDLE_SCHEMA = "audioRuntimeTrace.v1"
 EVENT_KINDS = {
