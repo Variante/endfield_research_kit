@@ -17,7 +17,7 @@ root wrappers; direct CLI commands are for focused recovery and diagnostics.
 | Layer | Owner |
 | --- | --- |
 | Installed VFS catalog, overlay, block reads, Unity objects, conversion | `tools/AnimeStudio/` |
-| Installed-game orchestration, scope, worker isolation, provenance | `scripts/export_full_from_game.py` |
+| Installed-game orchestration, scope, worker isolation, provenance | `scripts/game_data/extraction/export_full_from_game.py` |
 | Story/Text, Map, Characters, Gameplay, Audio, Assets publication | owning Python builders under `scripts/` |
 | Stable CLI mechanics and VFS evidence index | `.codex/skills/animestudio-workflow/references/animestudio.md` |
 | Per-build counts, hashes, failures, and audits | `reports/animestudio/` and `reports/export/` |
@@ -71,10 +71,10 @@ for render parity; consumers must verify the manifest and imported mip bytes.
 
 ```bat
 git submodule update --init tools/AnimeStudio
-.\scripts\animestudio\setup_dotnet9.bat
-.\scripts\animestudio\setup_vgmstream.bat
-.\scripts\animestudio\rebuild.bat -Target CLI
-.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+.\scripts\game_data\extraction\animestudio\setup_dotnet9.bat
+.\scripts\game_data\extraction\animestudio\setup_vgmstream.bat
+.\scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI
+.\scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI -NoRestore
 ```
 
 Expected executable:
@@ -140,9 +140,9 @@ changing shard counts or architecture when memory is constrained.
 ## DummyDll and MonoBehaviour schemas
 
 ```bat
-python -m scripts.animestudio.generate_dummydll --dry-run
-python -m scripts.animestudio.generate_dummydll --replace
-python -m scripts.animestudio.generate_dummydll --status-only
+python -m scripts.game_data.extraction.animestudio.generate_dummydll --dry-run
+python -m scripts.game_data.extraction.animestudio.generate_dummydll --replace
+python -m scripts.game_data.extraction.animestudio.generate_dummydll --status-only
 ```
 
 DummyDll generation is tied to the exact installed `GameAssembly.dll` and

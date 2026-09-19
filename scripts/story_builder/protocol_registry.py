@@ -39,7 +39,7 @@ from scripts.common import (
     write_text_if_changed,
 )
 from .mission_assets import select_complete_mission_runtime_root
-from .native_protocol import il2cpp
+from scripts.game_data import il2cpp_protocol as il2cpp
 from .levelscript_binary import (
     extract_levelscript_uid_records,
     levelscript_action_map_membership,

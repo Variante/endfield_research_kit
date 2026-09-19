@@ -9,7 +9,7 @@ python tools\endfield-il2cpp\catalog_option_flow_metadata.py --cache-metadata
 python tools\endfield-il2cpp\catalog_option_flow_metadata.py --only-focus
 python tools\endfield-il2cpp\catalog_option_flow_metadata.py --only-focus --body-context 4
 python tools\endfield-il2cpp\map_body_targets_to_gameassembly.py
-python scripts\animestudio\generate_dummydll.py --dry-run
+python scripts\game_data\extraction\animestudio\generate_dummydll.py --dry-run
 ```
 
 `catalog_option_flow_metadata.py` parses a validated `global-metadata.dat`
@@ -88,8 +88,8 @@ when the generated type is usable. Regenerate the repo-local set after a game
 update only when script schema recovery is needed:
 
 ```bat
-python scripts\animestudio\generate_dummydll.py --dry-run
-python scripts\animestudio\generate_dummydll.py --replace
+python scripts\game_data\extraction\animestudio\generate_dummydll.py --dry-run
+python scripts\game_data\extraction\animestudio\generate_dummydll.py --replace
 ```
 
 The dry run validates the installed `GameAssembly.dll` and
@@ -100,7 +100,7 @@ reuse registration addresses from an older game build.
 
 The real run clones Cpp2IL tag `2022.0.7` into the ignored local tool cache when
 needed, idempotently applies
-`scripts/animestudio/cpp2il-2022.0.7-endfield.patch`, builds it, and forces the
+`scripts/game_data/extraction/animestudio/cpp2il-2022.0.7-endfield.patch`, builds it, and forces the
 validated registrations through environment overrides added by that patch. It
 generates under `tmp/animestudio/dummydll/`, requires the output DLL names to
 exactly match the metadata images, checks that each DLL is a managed PE, and

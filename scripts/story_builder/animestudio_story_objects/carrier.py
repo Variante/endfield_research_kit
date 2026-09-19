@@ -21,9 +21,9 @@ from typing import Any, Iterable
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-from scripts.animestudio_object_index import MergeError, validate_identity
+from scripts.game_data.extraction.animestudio_object_index import MergeError, validate_identity
 from scripts.common import md_escape, read_json
-from scripts.export_full_from_game import (
+from scripts.game_data.extraction.export_full_from_game import (
     animestudio_object_index_dir,
     load_animestudio_object_index_summary,
 )

@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from scripts.dynamic_streaming import (
+from scripts.game_data.dynamic_streaming import (
     OBSERVED_ROOT_SHAPES,
     OBSERVED_STREAM_AREA_INLINE_WIDTHS,
     OBSERVED_STREAM_AREA_VECTOR_WIDTHS,
@@ -556,7 +556,7 @@ def run_current_gate(
     if not cli_path.is_file():
         raise ValueError(f"AnimeStudio CLI is missing: {cli_path}")
     cli_sha = str(provenance["streamCliFingerprint"]["currentSha256"])
-    parser_path = ROOT / "scripts/dynamic_streaming.py"
+    parser_path = ROOT / "scripts/game_data/dynamic_streaming.py"
     parser_sha = sha256_file(parser_path)
     gate_path = Path(__file__).resolve()
     gate_sha = sha256_file(gate_path)
@@ -633,7 +633,7 @@ def run_current_gate(
         "parser": {
             "path": str(parser_path),
             "sha256": parser_sha,
-            "entrypoint": "scripts.dynamic_streaming.parse_dynamic_file('stream_area', bytes)",
+            "entrypoint": "scripts.game_data.dynamic_streaming.parse_dynamic_file('stream_area', bytes)",
         },
         "gate": {"path": str(gate_path), "sha256": gate_sha},
         "corpus": {

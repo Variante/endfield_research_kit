@@ -13,9 +13,9 @@ from .context_utils import iter_asset_map_objects
 from .context_utils import load_json_strict
 from .context_utils import normalize_posix
 
-from scripts.animestudio_index_io import ObjectIndexUnavailable
-from scripts.animestudio_index_io import iter_published_objects
-from scripts.animestudio_index_io import raw_json_path_for_object
+from scripts.game_data.extraction.animestudio_index_io import ObjectIndexUnavailable
+from scripts.game_data.extraction.animestudio_index_io import iter_published_objects
+from scripts.game_data.extraction.animestudio_index_io import raw_json_path_for_object
 
 def mono_behaviour_json_by_path_id(
     export_root: Path,

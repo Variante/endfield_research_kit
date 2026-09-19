@@ -12,7 +12,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
+$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\..\..\.."))
 $animeRoot = Join-Path $repoRoot "tools\AnimeStudio"
 $localDotnetExe = Join-Path $animeRoot ".dotnet\dotnet.exe"
 $dotnetCliHome = Join-Path $animeRoot ".dotnet-cli"
@@ -65,7 +65,7 @@ function Get-DotnetExe {
         return $systemDotnet.Source
     }
 
-    throw "dotnet.exe was not found. Run .\scripts\animestudio\setup_dotnet9.bat first."
+    throw "dotnet.exe was not found. Run .\scripts\game_data\extraction\animestudio\setup_dotnet9.bat first."
 }
 
 $cliTarget = [pscustomobject]@{
@@ -119,7 +119,7 @@ if (-not $DryRun) {
             Write-Warning "Using non-.NET 9 SDK $sdkVersion because -UseSystemDotnet was specified."
         }
         else {
-            throw "Found SDK $sdkVersion at $dotnetExe. Run .\scripts\animestudio\setup_dotnet9.bat, or rerun with -UseSystemDotnet to override."
+            throw "Found SDK $sdkVersion at $dotnetExe. Run .\scripts\game_data\extraction\animestudio\setup_dotnet9.bat, or rerun with -UseSystemDotnet to override."
         }
     }
 

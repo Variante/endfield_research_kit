@@ -105,14 +105,14 @@ echo [setup] Optional submodules are not initialized: Cpp2IL-Endfield, EndfieldC
 
 echo.
 echo [setup 3/7] Installing the AnimeStudio audio decoder...
-call .\scripts\animestudio\setup_vgmstream.bat
+call .\scripts\game_data\extraction\animestudio\setup_vgmstream.bat
 if errorlevel 1 goto :failed
 
 echo.
 echo [setup 4/7] Building the AnimeStudio CLI...
-call .\scripts\animestudio\setup_dotnet9.bat
+call .\scripts\game_data\extraction\animestudio\setup_dotnet9.bat
 if errorlevel 1 goto :failed
-call .\scripts\animestudio\rebuild.bat -Target CLI
+call .\scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI
 if errorlevel 1 goto :failed
 if not exist "%ANIMESTUDIO_EXE%" (
   echo [setup] Expected AnimeStudio CLI was not found:

@@ -55,7 +55,7 @@ from scripts.story_builder.native_contracts.cutscene_case_resolution import (
     load_cutscene_case_resolution_contract,
 )
 from scripts.map_recovery_sources import authored_streaming_scene, isolated_art_source
-from scripts.terrain_height import render_height_layer, write_height_index
+from scripts.game_data.terrain_height import render_height_layer, write_height_index
 
 
 GAMEPLAY_CONFIG = "export_full/structured/StreamingAssets/Data/Json/GameplayConfig"

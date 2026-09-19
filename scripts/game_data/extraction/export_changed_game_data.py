@@ -34,11 +34,11 @@ except ImportError:  # pragma: no cover - Windows
 if __package__ in {None, ""}:
     raise SystemExit(
         "Run this maintained entry point as: "
-        "python -m scripts.export_changed_game_data"
+        "python -m scripts.game_data.extraction.export_changed_game_data"
     )
 
 from scripts.common import ROOT, read_json
-from scripts.export_full_from_game import (
+from scripts.game_data.extraction.export_full_from_game import (
     DEFAULT_ANIMESTUDIO,
     DEFAULT_GAME_ROOT,
     DEFAULT_OUTPUT,

@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 try:
-    from scripts.animestudio_index_io import (
+    from scripts.game_data.extraction.animestudio_index_io import (
         ObjectIndexUnavailable,
         iter_published_objects,
         raw_json_path_for_object,

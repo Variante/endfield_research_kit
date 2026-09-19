@@ -16,15 +16,15 @@ Initialize and build the tracked submodule:
 
 ```bat
 git submodule update --init tools/AnimeStudio
-.\scripts\animestudio\setup_dotnet9.bat
-.\scripts\animestudio\setup_vgmstream.bat
-.\scripts\animestudio\rebuild.bat -Target CLI
+.\scripts\game_data\extraction\animestudio\setup_dotnet9.bat
+.\scripts\game_data\extraction\animestudio\setup_vgmstream.bat
+.\scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI
 ```
 
 After the first restore, prefer:
 
 ```bat
-.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+.\scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI -NoRestore
 ```
 
 The expected executable is
@@ -112,8 +112,8 @@ schema-dependent work, and after an installed-game, generator, or pinned
 Cpp2IL-Endfield release change, check the repo-local set first:
 
 ```bat
-python -m scripts.animestudio.generate_dummydll --status-only
-python -m scripts.animestudio.generate_dummydll --dry-run
+python -m scripts.game_data.extraction.animestudio.generate_dummydll --status-only
+python -m scripts.game_data.extraction.animestudio.generate_dummydll --dry-run
 ```
 
 If status is missing, stale, invalid, or degraded and script schemas are in

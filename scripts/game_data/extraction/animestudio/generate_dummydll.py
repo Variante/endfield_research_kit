@@ -24,7 +24,7 @@ from typing import Any
 if __package__ in {None, ""}:
     raise SystemExit(
         "Run this maintained entry point as: "
-        "python -m scripts.animestudio.generate_dummydll"
+        "python -m scripts.game_data.extraction.animestudio.generate_dummydll"
     )
 
 from scripts.repo_paths import REPO_ROOT
@@ -614,7 +614,7 @@ def generation_manifest(
     return {
         "schema": 1,
         "generatedAtUtc": datetime.now(timezone.utc).isoformat(),
-        "generator": "scripts/animestudio/generate_dummydll.py",
+        "generator": "scripts/game_data/extraction/animestudio/generate_dummydll.py",
         "generatorSha256": sha256_file(Path(__file__)),
         "game": {
             "gameAssembly": str(gameassembly),

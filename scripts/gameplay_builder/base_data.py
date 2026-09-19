@@ -18,7 +18,7 @@ from typing import Any
 
 from scripts.common import EXPORT_ROOT, LANG_DIR, check_installed_native_inputs, rel_path, write_json
 from scripts.game_data.memorypack.buff import buff_gameplay_semantics
-from scripts.story_builder.native_protocol import il2cpp
+from scripts.game_data import il2cpp_protocol as il2cpp
 
 
 DEFAULT_TABLE_SOURCE_RELS = (

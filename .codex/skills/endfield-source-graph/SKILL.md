@@ -37,7 +37,7 @@ The canonical database is
 first run:
 
 ```bat
-python scripts\verify_export_freshness.py
+python scripts\game_data\extraction\verify_export_freshness.py
 ```
 
 Refresh stale installed-game inputs with `export.bat --from-game`. Then prefer

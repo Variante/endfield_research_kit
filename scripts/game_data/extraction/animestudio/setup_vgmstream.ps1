@@ -10,7 +10,7 @@ $ErrorActionPreference = "Stop"
 $version = "r2117"
 $archiveSha256 = "6c4a8a3813864fefed081bbd337dbc0ad93bf88e0b92f5db98d7ab258b22dc6c"
 $downloadUrl = "https://github.com/vgmstream/vgmstream/releases/download/$version/vgmstream-win64.zip"
-$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
+$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\..\..\.."))
 $installRoot = Join-Path $repoRoot "tools\vgmstream"
 $executable = Join-Path $installRoot "vgmstream-cli.exe"
 

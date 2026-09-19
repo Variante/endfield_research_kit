@@ -38,7 +38,7 @@ Choose the smallest workflow that owns the changed input:
 | Serve / package | `python serve.py` / `python scripts\pack_webui.py` |
 
 Without `--from-game`, wrappers read the configured `export_full/` and first
-run `python scripts\verify_export_freshness.py`. Do not use `--from-game` for a
+run `python scripts\game_data\extraction\verify_export_freshness.py`. Do not use `--from-game` for a
 data-only rebuild. When both Story and assets need extraction, prefer one
 `--from-game --with-assets` run over two AnimeStudio passes.
 

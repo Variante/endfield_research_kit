@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-from scripts.story_builder.native_protocol.il2cpp import (
+from scripts.game_data.il2cpp_protocol import (
     enum_members,
     field_defaults,
     load_metadata_helper,

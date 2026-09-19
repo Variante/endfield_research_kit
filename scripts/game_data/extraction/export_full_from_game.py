@@ -16,7 +16,7 @@ from typing import Any
 if __package__ in {None, ""}:
     raise SystemExit(
         "Run this maintained entry point as: "
-        "python -m scripts.export_full_from_game"
+        "python -m scripts.game_data.extraction.export_full_from_game"
     )
 
 from scripts.asset_builder.media_resolver import (
@@ -29,8 +29,8 @@ from scripts.asset_builder.media_resolver import (
     resolve_env_emoji_prefab_key,
 )
 from scripts.common import resolve_installed_game_data_root
-from scripts.animestudio.generate_dummydll import current_output_status as dummy_dll_status
-from scripts.animestudio_object_index import (
+from scripts.game_data.extraction.animestudio.generate_dummydll import current_output_status as dummy_dll_status
+from scripts.game_data.extraction.animestudio_object_index import (
     MERGE_CONTRACT as ANIMESTUDIO_OBJECT_INDEX_MERGE_CONTRACT,
     PART_SCHEMA_VERSION as ANIMESTUDIO_OBJECT_INDEX_PART_SCHEMA_VERSION,
     MergeError as AnimeStudioObjectIndexMergeError,

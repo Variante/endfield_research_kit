@@ -65,7 +65,7 @@ from scripts.audio_semantics import (
     build_contracts,
     voice_requests,
 )
-from scripts.animestudio_index_io import (
+from scripts.game_data.extraction.animestudio_index_io import (
     ObjectIndexUnavailable,
     iter_published_objects,
     published_object_index_path,

@@ -9,7 +9,7 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
-$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\.."))
+$repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot "..\..\..\.."))
 $animeRoot = Join-Path $repoRoot "tools\AnimeStudio"
 
 if (-not $InstallDir) {
@@ -87,4 +87,4 @@ Write-Step "Installed SDKs:"
 & $dotnetExe --list-sdks
 
 Write-Step "Local .NET 9 setup is ready."
-Write-Step "Next step: .\scripts\animestudio\rebuild.bat -Target CLI"
+Write-Step "Next step: .\scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI"

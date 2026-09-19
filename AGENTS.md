@@ -161,7 +161,7 @@ Modules are grouped by role:
 - exact framing readers, one per payload family: `streaming.py`,
   `irradiance_volume.py`, `extend_data_binary.py`, `bundle_manifest.py`,
   `ifix_patch.py`, and `inverted_lz4.py`. Terrain is the one split family: the
-  reader is `scripts/terrain_tret.py` at the root while its validator is
+  reader is `scripts/game_data/terrain_tret.py` at the root while its validator is
   `scripts/game_data/terrain_native.py`. Put a new reader in the package;
 - `*_corpus.py` current-corpus gates, which sweep the installed set and fail
   closed on an `--input-set-sha256`/`--expected-input-set-sha256` mismatch. The
@@ -426,9 +426,9 @@ Browser behavior:
 
 Export freshness:
 
-- `export.bat` runs `scripts/verify_export_freshness.py` before rebuilding
+- `export.bat` runs `scripts/game_data/extraction/verify_export_freshness.py` before rebuilding
   from an existing `export_full/`.
-- Run `python scripts\verify_export_freshness.py` directly when checking the
+- Run `python scripts\game_data\extraction\verify_export_freshness.py` directly when checking the
   guard, and pass `--game-root "...\Endfield_Data"` for non-default installs.
 - If freshness reports stale source roots, rerun
   `.\export.bat --from-game` before Story or asset builders read
@@ -460,7 +460,7 @@ Setup and export internals:
   optional script-schema recovery is wanted. Wrapper flags or
   `ANIMESTUDIO_DUMMY_DLLS` can supply it, but missing or stale DummyDll paths
   must warn and continue without failing normal exports.
-- `scripts\animestudio\generate_dummydll.py` is the maintained regeneration
+- `scripts\game_data\extraction\animestudio\generate_dummydll.py` is the maintained regeneration
   path. Run `--dry-run` first after a game update, then `--replace` only when
   script-derived schema recovery is needed. It discovers build-specific
   registrations, clones and verifies the pinned

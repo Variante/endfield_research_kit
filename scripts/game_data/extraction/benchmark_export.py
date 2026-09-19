@@ -17,7 +17,7 @@ from typing import Any
 if __package__ in {None, ""}:
     raise SystemExit(
         "Run this maintained entry point as: "
-        "python -m scripts.benchmark_export"
+        "python -m scripts.game_data.extraction.benchmark_export"
     )
 
 from scripts.common import EXPORT_REPORTS_DIR, ROOT, rel_path

@@ -29,7 +29,7 @@ from .context_utils import json_dump as json_dump
 from .context_utils import load_json as load_json
 from .context_utils import normalize_posix as normalize_posix
 
-from scripts.animestudio_index_io import (
+from scripts.game_data.extraction.animestudio_index_io import (
     ObjectIndexUnavailable,
     iter_published_objects,
     published_object_index_path,

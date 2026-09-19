@@ -16,7 +16,7 @@ from scripts.game_data.terrain_native import (
     DEFAULT_CONTRACT as DEFAULT_NATIVE_CONTRACT,
     validate_terrain_native_contract,
 )
-from scripts.terrain_tret import parse_tret_record
+from scripts.game_data.terrain_tret import parse_tret_record
 
 
 SCHEMA = "endfield.terrain-tret-corpus.v1"
@@ -203,7 +203,7 @@ def sweep(
             summary, header, outer_ledger_path, expected_input_set_sha256
         )
         provenance["parserSha256"] = _sha256_file(
-            Path(__file__).resolve().parents[1] / "terrain_tret.py"
+            Path(__file__).resolve().with_name("terrain_tret.py")
         )
         provenance["corpusGateSha256"] = _sha256_file(Path(__file__).resolve())
     except Exception as exc:

@@ -27,7 +27,7 @@ from . import identifiers
 from .context_utils import append_context
 
 
-from scripts.export_full_from_game import (
+from scripts.game_data.extraction.export_full_from_game import (
     animestudio_object_index_dir,
     load_animestudio_object_index_summary,
 )

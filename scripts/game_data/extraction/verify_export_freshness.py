@@ -19,11 +19,11 @@ from typing import Any
 if __package__ in {None, ""}:
     raise SystemExit(
         "Run this maintained entry point as: "
-        "python -m scripts.verify_export_freshness"
+        "python -m scripts.game_data.extraction.verify_export_freshness"
     )
 
 from scripts.common import ROOT, native_evidence_required, read_json, rel_path as slash
-from scripts.export_full_from_game import (
+from scripts.game_data.extraction.export_full_from_game import (
     DEFAULT_GAME_ROOT,
     DEFAULT_OUTPUT,
     DEFAULT_REPORTS,

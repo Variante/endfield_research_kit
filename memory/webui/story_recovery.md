@@ -114,7 +114,7 @@ hashes in both structured output and the CLI summary. Improve generic
 ## Maintained commands
 
 ```bat
-python scripts\verify_export_freshness.py
+python scripts\game_data\extraction\verify_export_freshness.py
 python -m scripts.story_builder.refresh_evidence
 python -m scripts.story_builder.source_links
 python -m scripts.story_builder.build --languages CN --default-language CN

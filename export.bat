@@ -56,7 +56,7 @@ for %%A in (%*) do (
 if defined ENDFIELD_EXPORT_BENCHMARK_ACTIVE goto :parse_args
 set "ENDFIELD_EXPORT_BENCHMARK_ACTIVE=1"
 echo [export.bat %time%] Starting monitored export run; benchmark and peak-memory reports will be written under reports\export.
-python -m scripts.benchmark_export --label %BENCH_LABEL% -- "%~f0" %*
+python -m scripts.game_data.extraction.benchmark_export --label %BENCH_LABEL% -- "%~f0" %*
 exit /b %errorlevel%
 
 :parse_args
@@ -257,29 +257,29 @@ goto :extract_story
 
 :extract_changed
 call :stage "Indexing VFS metadata and exporting only changed structured logical files"
-python -m scripts.export_changed_game_data prepare %GAME_ROOT_ARG% --output "%CHANGED_OUTPUT_ROOT%" --structured-dump-mode "%STRUCTURED_DUMP_MODE%" --manifest "%CHANGED_MANIFEST%"
+python -m scripts.game_data.extraction.export_changed_game_data prepare %GAME_ROOT_ARG% --output "%CHANGED_OUTPUT_ROOT%" --structured-dump-mode "%STRUCTURED_DUMP_MODE%" --manifest "%CHANGED_MANIFEST%"
 if errorlevel 1 exit /b %errorlevel%
 set "CHANGED_PREPARED=1"
 call :stage "Recording the incremental structured refresh without re-exporting unchanged bundles"
-python -m scripts.export_full_from_game --skip-structured --structured-incremental-manifest "%CHANGED_MANIFEST%" --skip-animestudio %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG%
+python -m scripts.game_data.extraction.export_full_from_game --skip-structured --structured-incremental-manifest "%CHANGED_MANIFEST%" --skip-animestudio %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG%
 if errorlevel 1 goto :pipeline_failed
 goto :extract_done
 
 :extract_story
 call :stage "Extracting Story and Table inputs from the installed game (AnimeStudio maps and JSON)"
-python -m scripts.export_full_from_game --animestudio-scope story --animestudio-stages maps json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
+python -m scripts.game_data.extraction.export_full_from_game --animestudio-scope story --animestudio-stages maps json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 goto :extract_done
 
 :extract_story_and_assets
 call :stage "Extracting Story, Tables, assets, and materials in one AnimeStudio pass (scope: %ASSET_MODE%)"
-python -m scripts.export_full_from_game --animestudio-scope all --asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
+python -m scripts.game_data.extraction.export_full_from_game --animestudio-scope all --asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 goto :extract_done
 
 :extract_assets
 call :stage "Exporting images, models, materials, and audio from the installed game (scope: %ASSET_MODE%)"
-python -m scripts.export_full_from_game --skip-structured --animestudio-scope assets --asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
+python -m scripts.game_data.extraction.export_full_from_game --skip-structured --animestudio-scope assets --asset-mode "%ASSET_MODE%" --animestudio-stages maps convert_by_type json_by_type %GAME_ROOT_ARG% %EXTRACTION_OUTPUT_ARG% %EXPORT_ARGS%
 if errorlevel 1 exit /b %errorlevel%
 goto :extract_done
 
@@ -294,7 +294,7 @@ call :stage "Checking export_full freshness against the installed game"
 if "%SKIP_FRESHNESS%"=="1" (
   echo [export.bat] Freshness check skipped by --skip-freshness.
 ) else (
-  python -m scripts.verify_export_freshness %GAME_ROOT_ARG%
+  python -m scripts.game_data.extraction.verify_export_freshness %GAME_ROOT_ARG%
   if errorlevel 1 goto :pipeline_failed
 )
 
@@ -332,7 +332,7 @@ if "%BUILD_SCOPE%"=="assets" echo [export.bat] Post-Story semantic, asset, and a
 
 if "%CHANGED_ONLY%"=="1" (
   call :stage "Committing the local changed-only source baseline"
-  python -m scripts.export_changed_game_data finalize --manifest "%CHANGED_MANIFEST%"
+  python -m scripts.game_data.extraction.export_changed_game_data finalize --manifest "%CHANGED_MANIFEST%"
   if errorlevel 1 goto :pipeline_failed
   set "CHANGED_PREPARED=0"
 )
@@ -346,7 +346,7 @@ exit /b 0
 set "PIPELINE_ERROR=%errorlevel%"
 if "%CHANGED_PREPARED%"=="1" (
   echo [export.bat] A later stage failed; the local VFS baseline will not advance.
-  python -m scripts.export_changed_game_data abort --manifest "%CHANGED_MANIFEST%"
+  python -m scripts.game_data.extraction.export_changed_game_data abort --manifest "%CHANGED_MANIFEST%"
 )
 endlocal & exit /b %PIPELINE_ERROR%
 
@@ -494,9 +494,9 @@ echo   The configured ENDFIELD_EXPORT_ROOT is used by extraction and builders.
 echo   Static world scene chunks need the structured export, so use
 echo   "export.bat --from-game --world-scene-chunk MAP:X:Z" for those.
 echo   With --from-game, any other option is passed to
-echo   scripts\export_full_from_game.py. That is where the --animestudio-*
+echo   scripts\game_data\extraction\export_full_from_game.py. That is where the --animestudio-*
 echo   tuning and --world-scene-chunk MAP:X:Z live; run
-echo   "python -m scripts.export_full_from_game --help" to see them.
+echo   "python -m scripts.game_data.extraction.export_full_from_game --help" to see them.
 echo Companion wrappers:
 echo   export_assets.bat  Thin wrapper for --assets-only.
 echo   build_updates.bat  Build the Updates tab feed.

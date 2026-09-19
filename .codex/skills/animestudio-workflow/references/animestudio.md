@@ -11,10 +11,10 @@ tools\AnimeStudio
 Primary parent-repo build wrappers:
 
 ```bat
-.\scripts\animestudio\setup_dotnet9.bat
-.\scripts\animestudio\setup_vgmstream.bat
-.\scripts\animestudio\rebuild.bat -Target CLI
-.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+.\scripts\game_data\extraction\animestudio\setup_dotnet9.bat
+.\scripts\game_data\extraction\animestudio\setup_vgmstream.bat
+.\scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI
+.\scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI -NoRestore
 ```
 
 `rebuild.ps1` uses the isolated SDK at `tools\AnimeStudio\.dotnet\dotnet.exe` unless `-UseSystemDotnet` is passed. Supported targets are `CLI`, `GUI`, `Patcher`, and `AllManaged`; common Endfield work normally needs only `CLI`.
@@ -75,7 +75,7 @@ Transform identities, hierarchy path, local/world position, and a
 position; unresolved parents, cycles, and depth limits remain explicit gaps.
 
 For a complete Story/all wrapper run, pass `--animestudio-object-index`
-directly to `scripts\export_full_from_game.py`. Relevant MonoBehaviour and
+directly to `scripts\game_data\extraction\export_full_from_game.py`. Relevant MonoBehaviour and
 PlayableDirector workers receive unique part paths. The deterministic merger
 publishes, per source:
 
@@ -135,7 +135,7 @@ output remains the existing JSON document.
 AnimeStudio executable:
 
 ```text
-scripts\export_full_from_game.py  DEFAULT_STRUCTURED_DUMPER = DEFAULT_ANIMESTUDIO
+scripts\game_data\extraction\export_full_from_game.py  DEFAULT_STRUCTURED_DUMPER = DEFAULT_ANIMESTUDIO
 scripts\build_audio.py            DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO
 ```
 
@@ -161,9 +161,9 @@ The stable code and fixture entry points are:
 | BundleManifest | `scripts/game_data/bundle_manifest.py` | `scripts/tests/test_bundle_manifest.py` |
 | IFixPatchOut | `scripts/game_data/ifix_patch.py` and the selected-build native contract | `scripts/tests/test_ifix_patch.py`, `test_ifix_patch_contract.py` |
 | Streaming | `scripts/game_data/streaming.py`, `scripts/game_data/streaming_corpus.py`, `scripts/game_data/streaming_native.py` | `scripts/tests/test_streaming.py`, `scripts/tests/test_streaming_corpus.py`, `scripts/tests/test_streaming_native.py` (all envelopes/roots, exact anonymous Info graphs, field-2 row slot partition plus terminal field-5 scalar32 vectors through EOF, selected-build native-gated fields 0--5 representations, family-level carrier base/length, and current filename-token relations, field3/4/5 first-level, and field6/7 paired-group subgraphs; concrete authenticated-file/final-cursor join, field names, field-5 key namespace/signedness, deeper parallel field-5 children, and semantics remain unresolved) |
-| DynamicStreaming | `scripts/dynamic_streaming.py` | `scripts/tests/test_dynamic_streaming.py` |
+| DynamicStreaming | `scripts/game_data/dynamic_streaming.py` | `scripts/tests/test_dynamic_streaming.py` |
 | Irradiance volume | `scripts/game_data/irradiance_volume.py` | `scripts/tests/test_irradiance_volume.py` (region framing, bounded index filename tables, and single/grouped v3 index-directed payload ranges) |
-| Terrain | `scripts/terrain_tret.py`, `scripts/game_data/terrain_native.py`, `scripts/game_data/terrain_corpus.py` | `scripts/tests/test_terrain_tret.py`, `test_terrain_native.py`, `test_terrain_corpus.py` (current native gate, exact selected-build tiling, negative framing/provenance fixtures; unsupported shapes fail closed) |
+| Terrain | `scripts/game_data/terrain_tret.py`, `scripts/game_data/terrain_native.py`, `scripts/game_data/terrain_corpus.py` | `scripts/tests/test_terrain_tret.py`, `test_terrain_native.py`, `test_terrain_corpus.py` (current native gate, exact selected-build tiling, negative framing/provenance fixtures; unsupported shapes fail closed) |
 | Table / SparkBuffer | `AnimeStudio/Endfield/Extraction/EndfieldSparkBuffer.cs` | `EndfieldSparkBufferTests.cs` |
 | JsonData / LipSync | `scripts/game_data/memorypack/lipsync.py` | `scripts/tests/test_memorypack_lipsync.py` |
 | JsonData / gameplay subfamilies | `scripts/story_builder/*_binary.py`, `scripts/game_data/memorypack/`, routed per virtual-path family | matching `scripts/tests/test_*_binary.py`, including `test_jsondata_binary.py`; `buff_1b_corpus.py` binds current root-continuation tag `0x1B` bytes to its exact-build action reader, while whole BuffData and SkillData / LevelData / LevelScriptData framing remain partial |
@@ -535,7 +535,7 @@ Updates remains the separate `build_updates.bat OLD NEW` workflow.
 `export.bat --from-game` calls:
 
 ```bat
-python .\scripts\export_full_from_game.py --animestudio-scope story --animestudio-stages maps json_by_type
+python .\scripts\game_data\extraction\export_full_from_game.py --animestudio-scope story --animestudio-stages maps json_by_type
 ```
 
 Its structured VFS dump defaults to `--structured-dump-mode focused`, which dumps
@@ -558,9 +558,9 @@ Pass an optional usable DummyDll folder to the story JSON export with:
 Generate or refresh the preferred repo-local folder with:
 
 ```bat
-python -m scripts.animestudio.generate_dummydll --status-only
-python -m scripts.animestudio.generate_dummydll --dry-run
-python -m scripts.animestudio.generate_dummydll --replace
+python -m scripts.game_data.extraction.animestudio.generate_dummydll --status-only
+python -m scripts.game_data.extraction.animestudio.generate_dummydll --dry-run
+python -m scripts.game_data.extraction.animestudio.generate_dummydll --replace
 ```
 
 The generator uses the installed `GameAssembly.dll` and matching
@@ -615,7 +615,7 @@ of failing the export.
 `export_assets.bat --from-game` defaults to the default asset mode:
 
 ```bat
-python .\scripts\export_full_from_game.py --skip-structured --animestudio-scope assets --animestudio-asset-mode default --animestudio-stages maps convert_by_type json_by_type
+python .\scripts\game_data\extraction\export_full_from_game.py --skip-structured --animestudio-scope assets --animestudio-asset-mode default --animestudio-stages maps convert_by_type json_by_type
 ```
 
 Full asset mode uses the MessagePack asset map for per-type stages when safe:
@@ -642,7 +642,7 @@ index from whatever files are browser-visible.
 The Python wrapper uses:
 
 ```text
-scripts\export_full_from_game.py
+scripts\game_data\extraction\export_full_from_game.py
 DEFAULT_ANIMESTUDIO = tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe
 ANIMESTUDIO_GAME = ArknightsEndfield
 ANIMESTUDIO_LOGGER_FLAGS = Warning, Error
@@ -770,7 +770,7 @@ Use `--dummy_dlls` only when script field recovery matters. Without usable Dummy
 
 This means the stage process continued after that asset failed. Causes include parser layout mismatches, invalid count fields, unsupported conversion data, missing external resources, and asset-specific converter errors.
 
-Wrapper summary code in `scripts\export_full_from_game.py` parses these lines and samples them in `reports\export\export_full_summary.md`. A nonzero subprocess means the stage failed at process level; an `Export ... error` line means an item failed within an otherwise running process.
+Wrapper summary code in `scripts\game_data\extraction\export_full_from_game.py` parses these lines and samples them in `reports\export\export_full_summary.md`. A nonzero subprocess means the stage failed at process level; an `Export ... error` line means an item failed within an otherwise running process.
 
 ## Memory And Count Guards
 
@@ -799,7 +799,7 @@ When fixing a suspected memory leak:
 ```bat
 rg -n "ReadInt32Count|EnsureCount|ReadInt32\(|new .*\[" tools\AnimeStudio\AnimeStudio -g "*.cs"
 rg -n "Export .* error|metadata-only JSON|ExportMonoBehaviour|dummy_dlls" tools\AnimeStudio -g "*.cs"
-rg -n "ANIMESTUDIO_|run_animestudio_stage|summarize_animestudio_log_issues" scripts\export_full_from_game.py
+rg -n "ANIMESTUDIO_|run_animestudio_stage|summarize_animestudio_log_issues" scripts\game_data\extraction\export_full_from_game.py
 ```
 
 ## Verification Pattern
@@ -807,14 +807,14 @@ rg -n "ANIMESTUDIO_|run_animestudio_stage|summarize_animestudio_log_issues" scri
 For parser or exporter edits:
 
 ```bat
-.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+.\scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI -NoRestore
 .\export.bat --from-game --asset-jobs 4 --animestudio-refresh-types StreamingAssets:json_by_type:MonoBehaviour
 ```
 
 For asset conversion edits:
 
 ```bat
-.\scripts\animestudio\rebuild.bat -Target CLI -NoRestore
+.\scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI -NoRestore
 .\export_assets.bat --from-game --asset-jobs 4 --animestudio-refresh-types StreamingAssets:convert_by_type:Texture2D
 ```
 

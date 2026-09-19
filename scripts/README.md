@@ -195,7 +195,7 @@ and do not feed active pages.
 ### Focused commands
 
 ```bat
-python scripts\verify_export_freshness.py
+python scripts\game_data\extraction\verify_export_freshness.py
 python -m scripts.story_builder.refresh_evidence
 python -m scripts.story_builder.source_links
 python -m scripts.story_builder.build --languages CN --default-language CN
@@ -442,8 +442,8 @@ results show disk contention rather than a speedup.
 Optional DummyDll regeneration is build-specific:
 
 ```bat
-python -m scripts.animestudio.generate_dummydll --dry-run
-python -m scripts.animestudio.generate_dummydll --replace
+python -m scripts.game_data.extraction.animestudio.generate_dummydll --dry-run
+python -m scripts.game_data.extraction.animestudio.generate_dummydll --replace
 ```
 
 The generator consumes a tag-and-commit-pinned release from
@@ -456,9 +456,9 @@ Managed-reference schema work can opt into a separate fail-closed JSONL sidecar
 without changing normal JSON or object-index output:
 
 ```bat
-python scripts\export_full_from_game.py --skip-structured --sources Persistent --animestudio-scope story --animestudio-stages json_by_type --animestudio-managed-reference-diagnostics
-python scripts\export_full_from_game.py --skip-structured --sources Persistent --animestudio-scope story --animestudio-stages json_by_type --animestudio-managed-reference-diagnostics --animestudio-managed-reference-diagnostic-type "AbilitySystemData$"
-python scripts\export_full_from_game.py --skip-structured --sources Persistent --animestudio-scope story --animestudio-stages json_by_type --animestudio-managed-reference-diagnostics --animestudio-managed-reference-diagnostic-type "AbilitySystemForEnemyPartData$" --animestudio-managed-reference-diagnostics-include-exact-matches
+python scripts\game_data\extraction\export_full_from_game.py --skip-structured --sources Persistent --animestudio-scope story --animestudio-stages json_by_type --animestudio-managed-reference-diagnostics
+python scripts\game_data\extraction\export_full_from_game.py --skip-structured --sources Persistent --animestudio-scope story --animestudio-stages json_by_type --animestudio-managed-reference-diagnostics --animestudio-managed-reference-diagnostic-type "AbilitySystemData$"
+python scripts\game_data\extraction\export_full_from_game.py --skip-structured --sources Persistent --animestudio-scope story --animestudio-stages json_by_type --animestudio-managed-reference-diagnostics --animestudio-managed-reference-diagnostic-type "AbilitySystemForEnemyPartData$" --animestudio-managed-reference-diagnostics-include-exact-matches
 ```
 
 Each MonoBehaviour worker writes a unique atomic part under
@@ -497,7 +497,7 @@ files or `ffmpeg`; decode and WebUI output are FLAC-only, so existing WAV/WEM
 files stay readable on an index-only maintenance run but are no longer produced
 or converted. WEM decoding uses the pinned 64-bit vgmstream CLI, installed by
 `setup.bat` under `tools/vgmstream/` or directly by
-`scripts\animestudio\setup_vgmstream.bat`. `--skip-decode --refresh-hirc` gives
+`scripts\game_data\extraction\animestudio\setup_vgmstream.bat`. `--skip-decode --refresh-hirc` gives
 a fresh HIRC bank pass while decoded audio is already current; plain
 `--skip-decode` reuses the existing event-media/HIRC cache. Use direct
 `build_audio.py` runs for non-CN languages or audio-only maintenance.
