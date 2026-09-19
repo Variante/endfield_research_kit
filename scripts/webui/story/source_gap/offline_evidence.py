@@ -2087,7 +2087,9 @@ def build_offline_exhaustion_index(
                 f"cutsceneDefinition:{story_key}:{index}"
             ] = sha256
     actual_hashes = {
-        name: _sha256_file(path) if isinstance(path, Path) else ""
+        # A missing source hashes to "" so it is reported as a mismatch and
+        # deactivates the index, instead of aborting the whole validation.
+        name: _sha256_file(path) if isinstance(path, Path) and path.is_file() else ""
         for name, path in source_paths.items()
         if name in expected_hashes
     }
