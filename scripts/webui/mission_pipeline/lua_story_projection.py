@@ -9,6 +9,7 @@ from scripts.common import sha256_file as _sha256_path
 from scripts.webui.story.lua_consumer_references import (
     read_index as read_lua_consumer_reference_index,
 )
+from scripts.webui.story.native_contracts import cinematic_queue
 from scripts.webui.story.native_contracts.cutscene_case_resolution import (
     load_cutscene_case_resolution_contract,
     matches_reviewed_lua_playback,
@@ -23,6 +24,24 @@ ROOT = REPO_ROOT
 def _repo_path(path: Path) -> str:
     path = path.resolve()
     return path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
+
+
+def _bind_runtime_contract_to_live_file(contract: dict[str, Any]) -> dict[str, Any]:
+    """Cite the recorded cinematic contract where it lives now.
+
+    The Lua audit records the contract it validated by repository path and by
+    content hash. The hash is the identity: when it still matches the live
+    contract's bytes, the recorded row describes that file, so its current
+    path replaces the recorded one and a moved contract never republishes a
+    stale location. A mismatch leaves the recorded row untouched.
+    """
+    recorded = str(contract.get("sha256") or "")
+    live = cinematic_queue.DEFAULT_CONTRACT
+    if not recorded or not live.is_file():
+        return contract
+    if _sha256_path(live).casefold() != recorded.casefold():
+        return contract
+    return {**contract, "report": _repo_path(live)}
 
 
 def _natural_quest_key(value: str) -> tuple[str, int, str]:
@@ -311,6 +330,7 @@ def load_lua_story_playback_evidence(
             f"expected=complete_binary_dispatch_family actual=invalid "
             f"source={_repo_path(lua_audit_path)}"
         )
+    runtime_contract = _bind_runtime_contract_to_live_file(runtime_contract)
     case_insensitive_associations = [{
         "storyKey": str(row.get("storyKey") or ""),
         "luaLiteral": str(row.get("luaLiteral") or ""),
