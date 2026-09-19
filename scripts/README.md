@@ -288,7 +288,7 @@ shell command, especially for multiple languages or forced Timeline recovery.
 
 Production parsing, validation, attachment, and generated schemas live in
 `webui/story/`. Audit and candidate-generation tools live in
-`story_recovery/`; they may import stable builder primitives, but production
+`webui/story_recovery/`; they may import stable builder primitives, but production
 builders must not import or execute recovery modules.
 
 The reconstruction helpers WebUI builders depend on:
@@ -391,7 +391,7 @@ python -m scripts.webui.story_recovery.audit_native_carriers radio-forbid
 ```
 
 Reusable implementations and the radio boundary live under
-`story_recovery/native_carriers/`; tests live under `scripts/tests/` rather
+`webui/story_recovery/native_carriers/`; tests live under `scripts/tests/` rather
 than beside recovery tools.
 
 Mission and audio runtime traces share one fail-closed CLI while retaining
