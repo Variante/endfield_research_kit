@@ -17,7 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import EXPORT_ROOT, ROOT, STORY_REPORTS_DIR, rel_path as slash
-from .mission_assets import select_complete_mission_runtime_root
+from scripts.webui.story.mission_assets import select_complete_mission_runtime_root
 
 DATA_JSON_DIR = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json"
 PERSISTENT_DATA_JSON_DIR = (

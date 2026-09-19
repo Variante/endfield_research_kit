@@ -43,7 +43,7 @@ from scripts.common import (
     write_text_if_changed,
 )
 
-from .context import (
+from scripts.webui.story.context import (
     GAMEPLAY_CONFIG_DIR,
     LEVELDATA_DIR,
     LEVELSCRIPT_DIR,
@@ -51,7 +51,7 @@ from .context import (
     PERSISTENT_DATA_JSON_DIR,
     SPAWNER_CONFIG_DIR,
 )
-from .level_bindings import (
+from scripts.webui.story.level_bindings import (
     _native_vector_close,
     _parse_leveldata_mission_host_name,
     build_active_levelscript_overlay_index,
@@ -62,17 +62,17 @@ from .level_bindings import (
     parse_leveldata_levelscript_brief_dictionary,
     resolve_active_levelscript_evidence,
 )
-from .levelscript_binary import (
+from scripts.webui.story.levelscript_binary import (
     LEVELSCRIPT_NATIVE_EVENT_PAYLOAD_MAPPING_ID,
     classify_local_trigger_volume_context,
     decode_levelscript_task_conditions,
     decode_levelscript_binary_file,
     decode_levelscript_binary_summary,
 )
-from .levelscript_manual_control import (
+from scripts.webui.story.levelscript_manual_control import (
     build_manual_control_index,
 )
-from .mission_recovery import (
+from scripts.webui.story.mission_recovery import (
     decode_mission_script_conditions,
     decode_mission_world_entity_condition_refs,
 )

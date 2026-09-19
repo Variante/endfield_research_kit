@@ -31,8 +31,8 @@ from scripts.repo_paths import REPO_ROOT
 ROOT = REPO_ROOT
 from scripts.common import read_bytes_cached
 
-from .mission_assets import select_complete_mission_runtime_root
-from .story_keys import canonical_cutscene_key, line_stem, timeline_stem_to_dialog_key
+from scripts.webui.story.mission_assets import select_complete_mission_runtime_root
+from scripts.webui.story.story_keys import canonical_cutscene_key, line_stem, timeline_stem_to_dialog_key
 
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_MRA_DIR = select_complete_mission_runtime_root(
@@ -736,7 +736,7 @@ def attach_timeline_evidence(
         # Import after story_builder.context has finished initializing.  That
         # module imports mission_recovery while defining the shared AnimeStudio
         # roots, so a module-level import here would observe a partial context.
-        from .anime_assets import recover_dialog_tree_definition_evidence
+        from scripts.webui.story.anime_assets import recover_dialog_tree_definition_evidence
 
         dialog_tree_loader = recover_dialog_tree_definition_evidence
     evidence: dict[str, list[dict]] = {}

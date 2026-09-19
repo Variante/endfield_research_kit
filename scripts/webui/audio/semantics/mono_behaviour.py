@@ -13,21 +13,21 @@ import shutil
 import struct
 import subprocess
 import sys
-from . import identifiers
-from . import managed_literals
-from . import scene_backgrounds
+from scripts.webui.audio.semantics import identifiers
+from scripts.webui.audio.semantics import managed_literals
+from scripts.webui.audio.semantics import scene_backgrounds
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from .build_contracts import AUDIO_MUSIC_NATIVE_STATE_GROUPS as AUDIO_MUSIC_NATIVE_STATE_GROUPS
-from .build_contracts import CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256 as CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256
-from .build_contracts import MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256 as MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256
-from .context_utils import AUDIO_SEMANTIC_SCHEMA_VERSION as AUDIO_SEMANTIC_SCHEMA_VERSION
-from .context_utils import append_context as _append_context
-from .context_utils import json_dump as json_dump
-from .context_utils import load_json as load_json
-from .context_utils import normalize_posix as normalize_posix
+from scripts.webui.audio.semantics.build_contracts import AUDIO_MUSIC_NATIVE_STATE_GROUPS as AUDIO_MUSIC_NATIVE_STATE_GROUPS
+from scripts.webui.audio.semantics.build_contracts import CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256 as CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256
+from scripts.webui.audio.semantics.build_contracts import MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256 as MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256
+from scripts.webui.audio.semantics.context_utils import AUDIO_SEMANTIC_SCHEMA_VERSION as AUDIO_SEMANTIC_SCHEMA_VERSION
+from scripts.webui.audio.semantics.context_utils import append_context as _append_context
+from scripts.webui.audio.semantics.context_utils import json_dump as json_dump
+from scripts.webui.audio.semantics.context_utils import load_json as load_json
+from scripts.webui.audio.semantics.context_utils import normalize_posix as normalize_posix
 
 from scripts.game_data.extraction.animestudio_index_io import (
     ObjectIndexUnavailable,

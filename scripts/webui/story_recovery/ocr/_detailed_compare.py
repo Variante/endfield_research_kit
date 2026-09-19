@@ -28,7 +28,7 @@ from scripts.common import (
     write_text_if_changed,
 )
 
-from . import match as matcher
+from scripts.webui.story_recovery.ocr import match as matcher
 
 
 REPORT_DIR = REPORTS_DIR / "gameplay_video_ocr"

@@ -28,8 +28,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Sequence
 
-from . import runtime_trace_audio_capture as audio_capture
-from . import runtime_trace_core as core
+from scripts.webui.story_recovery import runtime_trace_audio_capture as audio_capture
+from scripts.webui.story_recovery import runtime_trace_core as core
 
 
 DEFAULT_MANIFEST = audio_capture.DEFAULT_MANIFEST

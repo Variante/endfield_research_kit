@@ -5,7 +5,7 @@ from __future__ import annotations
 import struct
 from typing import Any
 
-from .script_event_scope import decode_script_event_header_scope
+from scripts.webui.story.codecs.levelscript.script_event_scope import decode_script_event_header_scope
 
 
 _EVENT_NAME = "ScriptEvent_OnScriptStageChanged"

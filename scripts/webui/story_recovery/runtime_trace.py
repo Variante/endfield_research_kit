@@ -23,10 +23,10 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.story_recovery.runtime_trace"
     )
 
-from . import runtime_trace_audio_capture as audio_capture
-from . import runtime_trace_audio_import as audio_import
-from . import runtime_trace_mission_capture as mission_capture
-from . import runtime_trace_mission_import as mission_import
+from scripts.webui.story_recovery import runtime_trace_audio_capture as audio_capture
+from scripts.webui.story_recovery import runtime_trace_audio_import as audio_import
+from scripts.webui.story_recovery import runtime_trace_mission_capture as mission_capture
+from scripts.webui.story_recovery import runtime_trace_mission_import as mission_import
 
 
 PROFILES = ("mission", "audio")

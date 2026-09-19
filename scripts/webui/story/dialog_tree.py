@@ -6,7 +6,7 @@ import json
 import re
 from collections import defaultdict, deque
 
-from .anime_assets import (
+from scripts.webui.story.anime_assets import (
     _anime_tree_logical_stem,
     _dialog_tree_semantic_signature,
     _find_anime_tree_path,
@@ -14,7 +14,7 @@ from .anime_assets import (
     _iter_related_dialog_tree_paths,
     _load_anime_resource_payload,
 )
-from .context import (
+from scripts.webui.story.context import (
     ANIME_RESOURCE_DIRS,
     OPTION_RE,
     SCENE_TOK,
@@ -31,9 +31,9 @@ from .context import (
     _unique_preserve,
     repo_rel,
 )
-from .scene_graph import _node_short_type
-from .story_keys import timeline_stem_to_dialog_key
-from .dialog_tree_routes import (
+from scripts.webui.story.scene_graph import _node_short_type
+from scripts.webui.story.story_keys import timeline_stem_to_dialog_key
+from scripts.webui.story.dialog_tree_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,
     recover_dialog_tree_option_routes,
 )

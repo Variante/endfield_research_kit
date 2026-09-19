@@ -10,16 +10,16 @@ from scripts.webui.story.source_story_partial_order import (
     build_report as build_partial_order_report,
     load_mission_payload_with_variants,
 )
-from .attachment_evidence import (
+from scripts.webui.story.source_gap.attachment_evidence import (
     build_general_quest_attachment_boundary_index,
     build_quest_attachment_diagnostic_index,
     load_story_trigger_manifest_evidence,
 )
-from .content_evidence import project_authored_story_content_keys
-from .foundation import read_json, safe_key
-from .model import build_gap_report
-from .offline_evidence import build_offline_exhaustion_index
-from .report import GapReportPaths, publish_gap_report
+from scripts.webui.story.source_gap.content_evidence import project_authored_story_content_keys
+from scripts.webui.story.source_gap.foundation import read_json, safe_key
+from scripts.webui.story.source_gap.model import build_gap_report
+from scripts.webui.story.source_gap.offline_evidence import build_offline_exhaustion_index
+from scripts.webui.story.source_gap.report import GapReportPaths, publish_gap_report
 from scripts.webui.story.level_bindings import (
     build_levelscript_action_story_occurrences,
     build_levelscript_native_story_playback_index,

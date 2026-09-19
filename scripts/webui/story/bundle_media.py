@@ -5,7 +5,7 @@ import json
 import re
 from collections.abc import Callable, Collection
 
-from .bundle_primitives import clean_media_id_value, inline_image_tag
+from scripts.webui.story.bundle_primitives import clean_media_id_value, inline_image_tag
 
 
 _INLINE_IMAGE_TAG_RE = re.compile(

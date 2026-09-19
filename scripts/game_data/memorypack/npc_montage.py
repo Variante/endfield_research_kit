@@ -13,7 +13,7 @@ import struct
 from pathlib import Path
 from typing import Any
 
-from .core import MEMORYPACK_NULL_COUNT, format_offset
+from scripts.game_data.memorypack.core import MEMORYPACK_NULL_COUNT, format_offset
 
 
 NPC_MONTAGE_ROOT_MEMBER_COUNT = 3

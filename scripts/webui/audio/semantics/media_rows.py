@@ -7,8 +7,8 @@ relation, not evidence that the media played."""
 from __future__ import annotations
 
 import json
-from . import event_projection
-from . import managed_literals
+from scripts.webui.audio.semantics import event_projection
+from scripts.webui.audio.semantics import managed_literals
 from collections import defaultdict
 from typing import Any, Iterable
 

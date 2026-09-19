@@ -11,7 +11,7 @@ from typing import Any
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-from .foundation import (
+from scripts.webui.story.source_gap.foundation import (
     read_json,
     resolve_installed_native_inputs,
     safe_key,
@@ -25,7 +25,7 @@ from scripts.webui.story.mission_assets import (
 )
 
 
-from .data import (
+from scripts.webui.story.source_gap.data import (
     NON_OWNING_DIAGNOSTIC_QUEST_ATTACH_SOURCES,
     NPC_PROXY_TRACKING_INFO_TYPE,
     NPC_PROXY_TRACKING_INFO_FIELDS,

@@ -9,9 +9,9 @@ from collections import Counter, defaultdict
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from . import identifiers
-from .context_utils import append_context as _append_context
-from .context_utils import normalize_posix
+from scripts.webui.audio.semantics import identifiers
+from scripts.webui.audio.semantics.context_utils import append_context as _append_context
+from scripts.webui.audio.semantics.context_utils import normalize_posix
 
 
 from scripts.webui.story.interactive_binary import (

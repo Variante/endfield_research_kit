@@ -15,7 +15,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from .buff import decode_buff_memorypack
+from scripts.game_data.memorypack.buff import decode_buff_memorypack
 
 
 def _sha256_file(path: Path) -> str:

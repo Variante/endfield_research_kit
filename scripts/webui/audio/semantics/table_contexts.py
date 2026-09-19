@@ -11,10 +11,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from . import audio_cue_native, identifiers, interactive_components
-from .context_utils import append_context as _append_context
-from .context_utils import load_json
-from .context_utils import normalize_posix
+from scripts.webui.audio.semantics import audio_cue_native, identifiers, interactive_components
+from scripts.webui.audio.semantics.context_utils import append_context as _append_context
+from scripts.webui.audio.semantics.context_utils import load_json
+from scripts.webui.audio.semantics.context_utils import normalize_posix
 
 
 NARRATIVE_AUDIO_TABLE_NAMES = (

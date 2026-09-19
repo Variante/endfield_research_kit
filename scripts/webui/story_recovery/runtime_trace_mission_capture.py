@@ -20,7 +20,7 @@ from pathlib import Path
 from typing import Any
 
 
-from . import runtime_trace_core as core
+from scripts.webui.story_recovery import runtime_trace_core as core
 
 from scripts.webui.story.native_contracts.mission_task_paths import (
     MissionTaskPathContractError,

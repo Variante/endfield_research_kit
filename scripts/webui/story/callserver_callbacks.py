@@ -23,8 +23,8 @@ from scripts.common import (
     write_report_json,
     write_text_if_changed,
 )
-from .context import LEVELSCRIPT_DIR
-from .level_bindings import (
+from scripts.webui.story.context import LEVELSCRIPT_DIR
+from scripts.webui.story.level_bindings import (
     CALLSERVER_CALLBACK_CONTRACT_AUDIT,
     _levelscript_native_action_successors,
     _levelscript_native_callserver_callback_successors,
@@ -33,7 +33,7 @@ from .level_bindings import (
     levelscript_native_action_name,
     levelscript_record_semantic_key,
 )
-from .levelscript_binary import (
+from scripts.webui.story.levelscript_binary import (
     compact_callserver_serialized_contract,
     decode_levelscript_record_payload,
     extract_levelscript_uid_records,

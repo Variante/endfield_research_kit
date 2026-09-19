@@ -7,37 +7,37 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from .codecs.levelscript import active_shapes as levelscript_active_shapes
-from .codecs.levelscript import boolean_getters as levelscript_boolean_getters
-from .codecs.levelscript import call_server as levelscript_call_server
-from .codecs.levelscript import compact_property_gate as levelscript_property_gate
-from .codecs.levelscript import control_flow_actions as levelscript_control_flow
-from .codecs.levelscript import entity_hp_changed as levelscript_entity_hp_changed
-from .codecs.levelscript import entity_event_scope as levelscript_entity_event_scope
-from .codecs.levelscript import entity_cast_and_death_events as levelscript_entity_events
-from .codecs.levelscript import exit_custom_performance as levelscript_exit_performance
-from .codecs.levelscript import fmv as levelscript_fmv
-from .codecs.levelscript import manual_control as levelscript_manual_control
-from .codecs.levelscript import npc_patrol_start as levelscript_npc_patrol_start
-from .codecs.levelscript import params as levelscript_params
-from .codecs.levelscript.params import (
+from scripts.webui.story.codecs.levelscript import active_shapes as levelscript_active_shapes
+from scripts.webui.story.codecs.levelscript import boolean_getters as levelscript_boolean_getters
+from scripts.webui.story.codecs.levelscript import call_server as levelscript_call_server
+from scripts.webui.story.codecs.levelscript import compact_property_gate as levelscript_property_gate
+from scripts.webui.story.codecs.levelscript import control_flow_actions as levelscript_control_flow
+from scripts.webui.story.codecs.levelscript import entity_hp_changed as levelscript_entity_hp_changed
+from scripts.webui.story.codecs.levelscript import entity_event_scope as levelscript_entity_event_scope
+from scripts.webui.story.codecs.levelscript import entity_cast_and_death_events as levelscript_entity_events
+from scripts.webui.story.codecs.levelscript import exit_custom_performance as levelscript_exit_performance
+from scripts.webui.story.codecs.levelscript import fmv as levelscript_fmv
+from scripts.webui.story.codecs.levelscript import manual_control as levelscript_manual_control
+from scripts.webui.story.codecs.levelscript import npc_patrol_start as levelscript_npc_patrol_start
+from scripts.webui.story.codecs.levelscript import params as levelscript_params
+from scripts.webui.story.codecs.levelscript.params import (
     DEFAULT_PARAM_TAIL as _DEFAULT_PARAM_TAIL,
     decode_constant_string_param as _decode_constant_string_param,
     decode_bool_param as _decode_bool_param,
     decode_i32_param as _decode_i32_param,
     decode_param_tail as _decode_param_tail,
 )
-from .codecs.levelscript import play3d_radio as levelscript_play3d_radio
-from .codecs.levelscript import proxy_patrol_checkpoint as levelscript_proxy_patrol
-from .codecs.levelscript import raise_custom_script_event as levelscript_custom_event
-from .codecs.levelscript import scalar_value_getters as levelscript_scalar_getters
-from .codecs.levelscript import script_event_scope as levelscript_script_event_scope
-from .codecs.levelscript import script_stage_changed as levelscript_script_stage_changed
-from .codecs.levelscript import spawner_events as levelscript_spawner_events
-from .codecs.levelscript import switch_actions as levelscript_switch_actions
-from .codecs.levelscript import top_level_tail as levelscript_top_level_tail
-from .codecs.levelscript import trigger_volumes as levelscript_trigger_volumes
-from .native_contracts.spawnerptr_getter import decode_spawnerptr_getter_member
+from scripts.webui.story.codecs.levelscript import play3d_radio as levelscript_play3d_radio
+from scripts.webui.story.codecs.levelscript import proxy_patrol_checkpoint as levelscript_proxy_patrol
+from scripts.webui.story.codecs.levelscript import raise_custom_script_event as levelscript_custom_event
+from scripts.webui.story.codecs.levelscript import scalar_value_getters as levelscript_scalar_getters
+from scripts.webui.story.codecs.levelscript import script_event_scope as levelscript_script_event_scope
+from scripts.webui.story.codecs.levelscript import script_stage_changed as levelscript_script_stage_changed
+from scripts.webui.story.codecs.levelscript import spawner_events as levelscript_spawner_events
+from scripts.webui.story.codecs.levelscript import switch_actions as levelscript_switch_actions
+from scripts.webui.story.codecs.levelscript import top_level_tail as levelscript_top_level_tail
+from scripts.webui.story.codecs.levelscript import trigger_volumes as levelscript_trigger_volumes
+from scripts.webui.story.native_contracts.spawnerptr_getter import decode_spawnerptr_getter_member
 
 from scripts.common import (
     RECORDED_NATIVE_GAMEASSEMBLY_SHA256,

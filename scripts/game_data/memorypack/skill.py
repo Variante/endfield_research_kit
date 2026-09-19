@@ -11,8 +11,8 @@ from __future__ import annotations
 import struct
 from typing import Any
 
-from .schemas import SKILL_MEMBER_COUNT
-from .skill_terminal import TerminalError, frame_skill_terminal_at
+from scripts.game_data.memorypack.schemas import SKILL_MEMBER_COUNT
+from scripts.game_data.memorypack.skill_terminal import TerminalError, frame_skill_terminal_at
 
 
 SKILL_TERMINAL_SHAPE_NOTE = (

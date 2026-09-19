@@ -23,7 +23,7 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.story_recovery.ocr_story_order"
     )
 
-from .ocr import _detailed_compare, compare, extract, match, proposal
+from scripts.webui.story_recovery.ocr import _detailed_compare, compare, extract, match, proposal
 
 
 COMMANDS: dict[str, tuple[str, Callable[[list[str] | None], int]]] = {

@@ -8,8 +8,8 @@ from collections import defaultdict
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from .context_utils import append_context as _append_context
-from .context_utils import normalize_posix
+from scripts.webui.audio.semantics.context_utils import append_context as _append_context
+from scripts.webui.audio.semantics.context_utils import normalize_posix
 
 
 from scripts.game_data.memorypack.interactive import (

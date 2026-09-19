@@ -45,7 +45,7 @@ from scripts.common import (
     write_text_if_changed,
 )
 
-from .proposal import build_proposed_story_order
+from scripts.webui.story_recovery.ocr.proposal import build_proposed_story_order
 
 CONV_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "conv"
 ACTIVE_STORY_ORDER_PATH = ROOT / "webui" / "overrides" / "story_order.json"
@@ -2370,7 +2370,7 @@ def main(argv: list[str] | None = None) -> int:
 
     # Distill the OCR order into a small WebUI-served reference so the story
     # debug mode can compare it against the static recovery order/override.
-    from .proposal import build_webui_ocr_order
+    from scripts.webui.story_recovery.ocr.proposal import build_webui_ocr_order
 
     webui_ocr_path = build_webui_ocr_order(proposed_story_order_path)
     print(f"Wrote {rel_path(webui_ocr_path)} (WebUI OCR order reference)")

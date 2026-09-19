@@ -7,7 +7,7 @@ from collections import Counter, defaultdict
 from pathlib import PurePosixPath
 from typing import Any, Iterable
 
-from . import identifiers, purpose
+from scripts.webui.audio.semantics import identifiers, purpose
 
 EVENT_CATEGORY_PREFIXES = (
     ("au_sfx_", "sfx"),

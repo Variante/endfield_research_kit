@@ -13,7 +13,7 @@ from typing import Any
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-from .foundation import (
+from scripts.webui.story.source_gap.foundation import (
     read_json,
     safe_key,
 )
@@ -28,7 +28,7 @@ from scripts.webui.story.levelscript_binary import (
 from scripts.webui.story.mission_recovery import natural_key
 
 
-from .data import (
+from scripts.webui.story.source_gap.data import (
     OFFLINE_EXHAUSTION_DIALOG_ROW_FIELDS,
     OFFLINE_EXHAUSTION_RADIO_AUDIO_VARIANTS,
     OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS,
@@ -41,7 +41,7 @@ from .data import (
     DIALOG_OPTION_ROW_FIELDS,
 )
 
-from .providers import (
+from scripts.webui.story.source_gap.providers import (
     _generic_registered_dialog_tree_definition_facts,
     _repo_source_path,
     _sha256_file,

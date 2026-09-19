@@ -11,7 +11,7 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.story_recovery.audit_native_carriers"
     )
 
-from .native_carriers import cinematic_queue, radio_forbid, scanner
+from scripts.webui.story_recovery.native_carriers import cinematic_queue, radio_forbid, scanner
 
 
 ProfileRunner = Callable[[argparse.Namespace], int]

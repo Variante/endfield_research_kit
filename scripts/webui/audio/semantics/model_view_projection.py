@@ -11,7 +11,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any, Iterable
 
-from . import identifiers, native_evidence
+from scripts.webui.audio.semantics import identifiers, native_evidence
 
 
 _MEDIA_REF_FIELDS = (

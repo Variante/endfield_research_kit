@@ -20,7 +20,7 @@ from typing import Any, Mapping
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 
-from . import buff_corpus, corpus_gate as vfs
+from scripts.game_data.memorypack import buff_corpus, corpus_gate as vfs
 
 
 TAG = 0x1B

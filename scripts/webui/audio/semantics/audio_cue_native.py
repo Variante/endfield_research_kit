@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from . import native_evidence
+from scripts.webui.audio.semantics import native_evidence
 
 
 AUDIO_CUE_EXPRESSION_TYPES = {

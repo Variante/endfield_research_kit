@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 from typing import Any
 
-from . import context_utils, identifiers, native_evidence
+from scripts.webui.audio.semantics import context_utils, identifiers, native_evidence
 
 
 NATIVE_STRING_EVENT_PLAYBACK = {

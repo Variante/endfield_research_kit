@@ -12,10 +12,10 @@ from collections import Counter, defaultdict, deque
 from struct import unpack_from
 from pathlib import Path, PurePosixPath
 from typing import Any
-from .context_utils import iter_asset_map_objects
-from .context_utils import json_dump
-from .context_utils import load_json_strict
-from .context_utils import normalize_posix
+from scripts.webui.audio.semantics.context_utils import iter_asset_map_objects
+from scripts.webui.audio.semantics.context_utils import json_dump
+from scripts.webui.audio.semantics.context_utils import load_json_strict
+from scripts.webui.audio.semantics.context_utils import normalize_posix
 
 from scripts.game_data.extraction.animestudio_index_io import ObjectIndexUnavailable
 from scripts.game_data.extraction.animestudio_index_io import iter_published_objects

@@ -9,7 +9,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from .core import (
+from scripts.game_data.memorypack.core import (
     MEMORYPACK_NULL_COUNT,
     MEMORYPACK_SCHEMA_SOURCE_NOTE,
     STRING_SAMPLE_MAX_CHARS,
@@ -23,7 +23,7 @@ from .core import (
     scan_length_prefixed_utf8_string_hits,
     unique_strings,
 )
-from .schemas import MEMORYPACK_FIELD_SCHEMAS
+from scripts.game_data.memorypack.schemas import MEMORYPACK_FIELD_SCHEMAS
 
 
 BAMBOO_RAFT_TASK_TABLE_REL = "Json/NonGeneratedConfigs/BambooRaftTaskTable.json"

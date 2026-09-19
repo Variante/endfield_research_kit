@@ -8,8 +8,8 @@ from __future__ import annotations
 from collections import defaultdict
 from pathlib import Path
 from typing import Any
-from .context_utils import json_dump
-from .context_utils import load_json_strict
+from scripts.webui.audio.semantics.context_utils import json_dump
+from scripts.webui.audio.semantics.context_utils import load_json_strict
 
 PROJECTILE_DATA_REL = Path("data/gameplay/projectiles.json")
 

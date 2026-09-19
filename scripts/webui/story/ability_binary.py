@@ -13,8 +13,8 @@ from collections import defaultdict
 from functools import lru_cache
 from pathlib import Path
 
-from .context import DATA_JSON_DIR, ROOT, read_bytes_cached, repo_rel
-from .levelscript_binary import LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID
+from scripts.webui.story.context import DATA_JSON_DIR, ROOT, read_bytes_cached, repo_rel
+from scripts.webui.story.levelscript_binary import LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID
 
 
 BATTLE_SIGNAL_ACTION_TAG = 0x0134

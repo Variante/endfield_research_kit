@@ -5,7 +5,7 @@ from __future__ import annotations
 import struct
 from typing import Any
 
-from .params import decode_constant_string_param, decode_param_tail
+from scripts.webui.story.codecs.levelscript.params import decode_constant_string_param, decode_param_tail
 
 def decode_call_server_action(payload: bytes) -> dict[str, Any]:
     """Decode the six generated fields in the current ``CallServer`` prefix.

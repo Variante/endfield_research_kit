@@ -23,8 +23,8 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from . import identifiers
-from .context_utils import append_context
+from scripts.webui.audio.semantics import identifiers
+from scripts.webui.audio.semantics.context_utils import append_context
 
 
 from scripts.game_data.extraction.export_full_from_game import (

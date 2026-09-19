@@ -5,7 +5,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from .level_bindings import _load_levelscript_binding_data
+from scripts.webui.story.level_bindings import _load_levelscript_binding_data
 
 
 StoryKeyResolver = Callable[[str], str]

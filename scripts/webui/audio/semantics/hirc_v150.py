@@ -11,10 +11,10 @@ import math
 import struct
 from collections import Counter, deque
 from typing import Any
-from .event_projection import HIRC_OBJECT_TYPE_LABELS
+from scripts.webui.audio.semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
 
 from struct import unpack_from
-from .context_utils import SELECTION_HIRC_TYPES
+from scripts.webui.audio.semantics.context_utils import SELECTION_HIRC_TYPES
 
 HIRC_ACTION_OPERATION_LABELS = {
     0x0100: "stop",

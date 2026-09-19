@@ -11,7 +11,7 @@ from scripts.common import (
     walk_field_values as _walk_field_values,
 )
 
-from .anime_assets import (
+from scripts.webui.story.anime_assets import (
     _canonical_cutscene_key,
     _combine_eval_string,
     _condition_short_type,
@@ -25,7 +25,7 @@ from .anime_assets import (
     _resolve_tracking_hint,
     _tracking_hint_pin,
 )
-from .context import (
+from scripts.webui.story.context import (
     LEVELSCRIPT_DIR,
     MRA_DIR,
     _CUTSCENE_REF_FIELDS,
@@ -34,14 +34,14 @@ from .context import (
     _RADIO_REF_FIELDS,
     _REMOTECOMM_REF_FIELDS,
 )
-from .level_bindings import (
+from scripts.webui.story.level_bindings import (
     LEVELSCRIPT_NATIVE_ACTION_MAPPING_ID,
     _load_levelscript_binding_data,
     _load_npc_proxy_ex,
     classify_levelscript_record,
     levelscript_native_action_name,
 )
-from .levelscript_binary import (
+from scripts.webui.story.levelscript_binary import (
     decode_levelscript_record_payload,
     levelscript_action_map_membership,
     levelscript_record_semantic_key,

@@ -17,7 +17,7 @@ import math
 import struct
 from typing import TypeAlias
 
-from .core import MEMORYPACK_NULL_COUNT
+from scripts.game_data.memorypack.core import MEMORYPACK_NULL_COUNT
 
 
 LIPSYNC_FIELD_NAMES = (

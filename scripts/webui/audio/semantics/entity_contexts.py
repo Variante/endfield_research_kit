@@ -10,16 +10,16 @@ import hashlib
 import json
 import re
 import struct
-from . import build_contracts
-from . import context_utils
-from . import event_projection
-from . import identifiers
+from scripts.webui.audio.semantics import build_contracts
+from scripts.webui.audio.semantics import context_utils
+from scripts.webui.audio.semantics import event_projection
+from scripts.webui.audio.semantics import identifiers
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from .context_utils import append_context as _append_context
-from .context_utils import load_json as load_json
+from scripts.webui.audio.semantics.context_utils import append_context as _append_context
+from scripts.webui.audio.semantics.context_utils import load_json as load_json
 
 MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256 = build_contracts.MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256
 

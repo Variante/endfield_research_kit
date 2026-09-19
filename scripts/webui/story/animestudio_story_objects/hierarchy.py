@@ -34,7 +34,7 @@ from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
 
-from . import carrier
+from scripts.webui.story.animestudio_story_objects import carrier
 
 SCHEMA = "animestudioStoryGameObjectAudit.v3"
 SOURCES = ("StreamingAssets", "Persistent")

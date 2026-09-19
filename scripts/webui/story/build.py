@@ -5,12 +5,12 @@ import shutil
 import time
 from pathlib import Path
 
-from .bundle_support import (
+from scripts.webui.story.bundle_support import (
     discover_languages,
     language_info,
     normalize_language_selection,
 )
-from .context import (
+from scripts.webui.story.context import (
     BUILD_PROFILES,
     DEFAULT_BUILD_PROFILE,
     DEFAULT_LANGUAGE,
@@ -18,9 +18,9 @@ from .context import (
     OUT_DIR,
     write_json,
 )
-from .language_bundle import build_language_bundle, load_reused_reference_stats
-from .timeline_action_evidence import build_timeline_action_evidence_for_build
-from .timeline_recovery import (
+from scripts.webui.story.language_bundle import build_language_bundle, load_reused_reference_stats
+from scripts.webui.story.timeline_action_evidence import build_timeline_action_evidence_for_build
+from scripts.webui.story.timeline_recovery import (
     TIMELINE_RECOVERY_MODES,
     ensure_timeline_orders_current,
 )

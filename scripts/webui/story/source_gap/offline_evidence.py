@@ -14,12 +14,12 @@ from typing import Any, Iterator
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-from .foundation import (
+from scripts.webui.story.source_gap.foundation import (
     read_json,
     resolve_installed_native_inputs,
     safe_key,
 )
-from .contracts import target_set_sha256
+from scripts.webui.story.source_gap.contracts import target_set_sha256
 from scripts.webui.story.animestudio_story_objects import (
     CARRIER_REPORT_PATH,
     HIERARCHY_REPORT_PATH,
@@ -42,7 +42,7 @@ from scripts.webui.story.anime_assets import recover_dialog_tree_definition_evid
 from scripts.webui.story.mission_recovery import natural_key
 
 
-from .data import (
+from scripts.webui.story.source_gap.data import (
     CORE_STORY_NODE_KINDS,
     NPC_PROXY_DIALOG_SELECTION_MAPPING_ID,
     NPC_PROXY_DIALOG_SELECTION_GAMEASSEMBLY_SHA256,
@@ -100,7 +100,7 @@ from .data import (
     OFFLINE_EXHAUSTION_RADIO_MISSING_AUDIO_IDS,
 )
 
-from .providers import (
+from scripts.webui.story.source_gap.providers import (
     _build_mission_npc_proxy_tracking_index,
     _configured_game_assembly_path,
     _generic_mission_npc_proxy_tracking_contexts,
@@ -110,7 +110,7 @@ from .providers import (
     _sha256_file,
     _string_list,
 )
-from .content_evidence import (
+from scripts.webui.story.source_gap.content_evidence import (
     _compose_registered_dialog_tree_npc_proxy_evidence,
     _generic_dialog_timeline_definition_facts,
     _generic_missionless_npc_proxy_dialog_facts,

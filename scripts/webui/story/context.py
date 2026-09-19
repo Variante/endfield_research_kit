@@ -87,9 +87,9 @@ from scripts.webui.story.scene_order_gap_shared import (
 
 REPORTS_DIR = STORY_REPORTS_DIR
 
-from .mission_assets import select_complete_mission_runtime_root
-from .source_links import build_source_links
-from .timeline_recovery import (
+from scripts.webui.story.mission_assets import select_complete_mission_runtime_root
+from scripts.webui.story.source_links import build_source_links
+from scripts.webui.story.timeline_recovery import (
     TimelineRecoveryConfig,
     default_order_out as timeline_recovery_order_out,
     discover_asset_maps as discover_timeline_asset_maps,

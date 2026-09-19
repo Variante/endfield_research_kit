@@ -35,14 +35,14 @@ from scripts.common import (
     write_text_if_changed,
 )
 
-from .mission_recovery import (
+from scripts.webui.story.mission_recovery import (
     STRONG_ORDER_EDGE_KINDS,
     WEAK_ORDER_EDGE_KINDS,
     build_scene_order_candidate_kinds,
     natural_key,
     scene_order_infer_kind,
 )
-from .level_bindings import (
+from scripts.webui.story.level_bindings import (
     LEVELSCRIPT_NATIVE_ACTION_NAMES,
     LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS,
     LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES,
@@ -52,17 +52,17 @@ from .level_bindings import (
     resolve_active_levelscript_source,
     resolve_active_levelscript_evidence,
 )
-from .anime_assets import (
+from scripts.webui.story.anime_assets import (
     recover_dialog_tree_narrative_mask_actions,
     recover_dialog_tree_open_ui_content_actions,
 )
-from .spawner_binary import (
+from scripts.webui.story.spawner_binary import (
     SPAWNER_WAVE_RUNTIME_MAPPING_ID,
     SpawnerWaveDecodeError,
     decode_spawner_wave_map,
 )
-from .story_keys import string_list as _string_list
-from .dialog_tree_control_flow import (
+from scripts.webui.story.story_keys import string_list as _string_list
+from scripts.webui.story.dialog_tree_control_flow import (
     ContractError as DialogTreeControlContractError,
     OPEN_UI_FAMILY,
     project_serialized_family_node,

@@ -16,9 +16,9 @@ import struct
 from collections import Counter
 from pathlib import Path
 
-from . import corpus_gate as vfs
-from .buff import decode_buff_post_id_prefix_at, buff_post_id_result_is_exact_tail, decode_buff_pre_id_modifier_prefix
-from .buff_actions import event_prefix, root_continuation
+from scripts.game_data.memorypack import corpus_gate as vfs
+from scripts.game_data.memorypack.buff import decode_buff_post_id_prefix_at, buff_post_id_result_is_exact_tail, decode_buff_pre_id_modifier_prefix
+from scripts.game_data.memorypack.buff_actions import event_prefix, root_continuation
 
 PREFIX='Data/Json/BuffData/'
 PATTERN=re.compile(r'^Data/Json/BuffData/[^/]+[.]json$')

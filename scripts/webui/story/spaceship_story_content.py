@@ -41,7 +41,7 @@ from scripts.common import (
     write_report_json,
     write_text_if_changed,
 )
-from .anime_assets import (
+from scripts.webui.story.anime_assets import (
     _get_anime_tree_path_index,
     _load_anime_resource_payload,
     extract_dialog_tree_definition_evidence,

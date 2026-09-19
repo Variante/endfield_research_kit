@@ -6,7 +6,7 @@ from pathlib import Path
 
 from scripts.source_paths import _existing_unique_paths
 
-from .context import (
+from scripts.webui.story.context import (
     DEFAULT_LANGUAGE,
     I18N_FILE_RE,
     LANGUAGE_INFO,
@@ -18,7 +18,7 @@ from .context import (
     TYPE_RE,
     _JSON_FILE_CACHE,
 )
-from .source_links import build_source_links
+from scripts.webui.story.source_links import build_source_links
 
 def discover_languages() -> list[str]:
     found: list[str] = []

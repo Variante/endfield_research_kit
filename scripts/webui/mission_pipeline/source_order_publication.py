@@ -16,8 +16,8 @@ from scripts.webui.story.source_story_order_cross_reference import (
     render_markdown as render_source_story_order_cross_reference_markdown,
 )
 
-from . import story_order_projection
-from . import source_order_shells
+from scripts.webui.mission_pipeline import story_order_projection
+from scripts.webui.mission_pipeline import source_order_shells
 
 
 from scripts.repo_paths import REPO_ROOT

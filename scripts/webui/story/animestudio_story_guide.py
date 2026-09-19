@@ -43,7 +43,7 @@ from scripts.game_data.extraction.export_full_from_game import (
     load_animestudio_object_index_summary,
 )
 
-from .object_index_io import iter_gzip_jsonl_objects
+from scripts.webui.story.object_index_io import iter_gzip_jsonl_objects
 
 
 SCHEMA = "animestudioStoryGuideConsumerAudit.v1"

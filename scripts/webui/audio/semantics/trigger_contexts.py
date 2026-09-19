@@ -11,13 +11,13 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable
 
-from . import managed_literals
-from . import model_view_projection
-from . import native_evidence
-from . import table_contexts
-from .context_utils import load_json as load_json
-from .context_utils import normalize_posix as normalize_posix
-from .build_contracts import TIMELINE_AUDIO_RUNTIME_CONTRACTS as TIMELINE_AUDIO_RUNTIME_CONTRACTS
+from scripts.webui.audio.semantics import managed_literals
+from scripts.webui.audio.semantics import model_view_projection
+from scripts.webui.audio.semantics import native_evidence
+from scripts.webui.audio.semantics import table_contexts
+from scripts.webui.audio.semantics.context_utils import load_json as load_json
+from scripts.webui.audio.semantics.context_utils import normalize_posix as normalize_posix
+from scripts.webui.audio.semantics.build_contracts import TIMELINE_AUDIO_RUNTIME_CONTRACTS as TIMELINE_AUDIO_RUNTIME_CONTRACTS
 
 TRIGGER_CONTEXT_SCHEMA_VERSION = 39
 

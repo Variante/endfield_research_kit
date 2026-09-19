@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from .codecs.leveldata.memorypack import read_count, read_i32, read_string
+from scripts.webui.story.codecs.leveldata.memorypack import read_count, read_i32, read_string
 
 
 class LevelDataTopLevelFramingError(ValueError):

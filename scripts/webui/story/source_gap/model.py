@@ -12,12 +12,12 @@ from typing import Any
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-from .foundation import (
+from scripts.webui.story.source_gap.foundation import (
     combined_non_mission_content_keys,
     read_json,
     safe_key,
 )
-from .contracts import (
+from scripts.webui.story.source_gap.contracts import (
     BUCKET_ORDER,
     FRONTIER_ORDER,
     LEVELDATA_INTERACTIVE_HORN_MAPPING_ID,
@@ -40,7 +40,7 @@ from scripts.webui.story.anime_assets import (
 from scripts.webui.story.mission_recovery import natural_key
 
 
-from .data import (
+from scripts.webui.story.source_gap.data import (
     CORE_STORY_NODE_KINDS,
     KNOWN_NON_PLAYBACK_ACTIONS,
     KNOWN_NON_PLAYBACK_MAPPING_ID,
@@ -50,7 +50,7 @@ from .data import (
     OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
 )
 
-from .providers import (
+from scripts.webui.story.source_gap.providers import (
     _build_mission_npc_proxy_tracking_index,
     _configured_game_assembly_path,
     _diagnostic_quest_attachments,

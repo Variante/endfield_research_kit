@@ -7,16 +7,16 @@ from __future__ import annotations
 
 import hashlib
 import re
-from . import identifiers
-from . import table_contexts
+from scripts.webui.audio.semantics import identifiers
+from scripts.webui.audio.semantics import table_contexts
 from collections import Counter, defaultdict
 from pathlib import Path, PurePosixPath
 from typing import Any
 
-from .context_utils import append_context as _append_context
-from .context_utils import load_json as load_json
-from .context_utils import normalize_posix as normalize_posix
-from . import media_rows
+from scripts.webui.audio.semantics.context_utils import append_context as _append_context
+from scripts.webui.audio.semantics.context_utils import load_json as load_json
+from scripts.webui.audio.semantics.context_utils import normalize_posix as normalize_posix
+from scripts.webui.audio.semantics import media_rows
 
 RADIO_MEDIA_CONTEXT_LIMIT = 64
 

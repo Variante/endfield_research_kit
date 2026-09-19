@@ -29,7 +29,7 @@ from scripts.repo_paths import REPO_ROOT
 ROOT = REPO_ROOT
 SCRIPT_DIR = Path(__file__).resolve().parent
 
-from . import runtime_trace_core as core
+from scripts.webui.story_recovery import runtime_trace_core as core
 
 
 DEFAULT_MANIFEST = SCRIPT_DIR / "audio_runtime_trace_hooks.json"

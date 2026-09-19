@@ -9,15 +9,15 @@ from __future__ import annotations
 import json
 import os
 import re
-from . import identifiers
-from . import build_contracts
+from scripts.webui.audio.semantics import identifiers
+from scripts.webui.audio.semantics import build_contracts
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from .context_utils import append_context as _append_context
-from .context_utils import load_json as load_json
-from .context_utils import normalize_posix as normalize_posix
+from scripts.webui.audio.semantics.context_utils import append_context as _append_context
+from scripts.webui.audio.semantics.context_utils import load_json as load_json
+from scripts.webui.audio.semantics.context_utils import normalize_posix as normalize_posix
 
 AUDIO_MUSIC_ACTION_TYPE_LABELS = {
     0: "DIALOG_MUSIC",

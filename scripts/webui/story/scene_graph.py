@@ -3,8 +3,8 @@ from __future__ import annotations
 import re
 from collections import Counter, defaultdict
 
-from .anime_assets import _canonical_cutscene_key, _resolve_payload_scene_key
-from .context import MISSION_SCENE_ENTRY_KINDS
+from scripts.webui.story.anime_assets import _canonical_cutscene_key, _resolve_payload_scene_key
+from scripts.webui.story.context import MISSION_SCENE_ENTRY_KINDS
 
 
 def graph_fragments_text(fragments: list[dict]) -> str:

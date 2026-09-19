@@ -13,7 +13,7 @@ from difflib import SequenceMatcher
 from functools import lru_cache as _radio_cont_lru_cache
 from pathlib import Path
 from pathlib import Path as _RadioContPath
-from .context import (
+from scripts.webui.story.context import (
     ADMIN_ACTOR_IDS,
     ATMOS_CLUSTER_TABLE_PATH,
     BLACK_RE,
@@ -94,7 +94,7 @@ def append_native_event_producer_family_diagnostic(
     )
 
 from scripts.common import write_report_json, write_text_if_changed
-from .anime_assets import (
+from scripts.webui.story.anime_assets import (
     _canonical_cutscene_key,
     _cutscene_component_summary,
     _infer_cutscene_mission_and_scene,
@@ -110,14 +110,14 @@ from .anime_assets import (
     recover_dialog_tree_quest_state_dependencies,
     recover_dialog_tree_story_playback_carriers,
 )
-from .mission_recovery import (
+from scripts.webui.story.mission_recovery import (
     EVIDENCE_POLICY as MISSION_TIMELINE_EVIDENCE_POLICY,
     build_scene_order_candidate_kinds as build_mission_scene_order_candidate_kinds,
     build_scene_order_info as build_mission_scene_order_info,
     render_markdown as render_mission_timeline_markdown,
     write_json as write_mission_timeline_recovery_json,
 )
-from .scene_graph import (
+from scripts.webui.story.scene_graph import (
     _compact_scene_graph_sequence,
     _compact_scene_graph_sequence_steps,
     _detect_scene_graph_entries,
@@ -130,7 +130,7 @@ from .scene_graph import (
     scene_link_option_payload,
     scene_links_text,
 )
-from .level_bindings import (
+from scripts.webui.story.level_bindings import (
     GLOBAL_SCRIPT_ID_SCALE,
     _build_level_binding_groups,
     _build_levelscript_cross_file_scene_pairs,
@@ -178,17 +178,17 @@ from .level_bindings import (
     resolve_interactive_condition_script_entity,
     select_leveldata_native_event_story_context,
 )
-from .mission_flow import (
+from scripts.webui.story.mission_flow import (
     build_mission_map_pins,
     level_host_type,
     load_mission_flow,
     parse_level_ref_name,
 )
-from .dialog_tree_connection_projection import (
+from scripts.webui.story.dialog_tree_connection_projection import (
     dialog_tree_narrative_connection,
     dialog_tree_story_playback_connection,
 )
-from .dialog_tree import (
+from scripts.webui.story.dialog_tree import (
     _dialog_tree_option_prefix,
     _load_dialog_tree_source,
     _nearest_visible_timeline_anchor,
@@ -207,7 +207,7 @@ from .dialog_tree import (
     recover_foreign_dialog_timeline_containments,
     resolve_scene_line_order,
 )
-from .bundle_support import (
+from scripts.webui.story.bundle_support import (
     load,
     load_json_path,
     load_optional_table_json,
@@ -218,17 +218,17 @@ from .bundle_support import (
     scene_sort_value,
     slot_misc,
 )
-from .bundle_media import (
+from scripts.webui.story.bundle_media import (
     collect_payload_media_tags,
     media_id_looks_like_media,
     sns_media_text_from_params,
 )
-from .dialog_timeline_projection import (
+from scripts.webui.story.dialog_timeline_projection import (
     attach_duplicate_timestamp_warning,
     attach_timeline_action_evidence,
     attach_timeline_timestamp_regression_warning,
 )
-from .cutscene_subtitle_projection import (
+from scripts.webui.story.cutscene_subtitle_projection import (
     build_cutscene_texttable_line,
     build_fallback_track_line,
     line_has_explicit_gender_switch,
@@ -240,12 +240,12 @@ from .cutscene_subtitle_projection import (
     subtitle_start_key,
     subtitle_tracks_for_language,
 )
-from .cutscene_text_projection import (
+from scripts.webui.story.cutscene_text_projection import (
     CutsceneTextCallbacks,
     CutsceneTextInputs,
     project_cutscene_text_lines,
 )
-from .bundle_primitives import (
+from scripts.webui.story.bundle_primitives import (
     brace_text,
     env_group,
     env_story_mission,
@@ -265,40 +265,40 @@ from .bundle_primitives import (
     text_sequence_fingerprint,
     written_path_key,
 )
-from .story_issue_labels import (
+from scripts.webui.story.story_issue_labels import (
     dialog_option_issue_targets,
     dialog_story_issue_codes,
 )
-from .option_timeline_continuation import (
+from scripts.webui.story.option_timeline_continuation import (
     classify_runtime_jump_option_routes,
     classify_timeline_clip_option_index_routes,
     classify_zero_index_timeline_continuation,
 )
-from .option_branch_projection import (
+from scripts.webui.story.option_branch_projection import (
     all_option_response_risk_line_ids,
     collect_local_scene_link_options,
     expand_transparent_single_option_branch,
     normalize_group_branch_convergence,
     option_risk_line_ids,
 )
-from .option_projection import apply_source_hub_option_groups, attach_submenu_targets, dialog_recovery_methods
-from .option_following_line_projection import following_line_risk_for_group
-from .option_route_projection import (
+from scripts.webui.story.option_projection import apply_source_hub_option_groups, attach_submenu_targets, dialog_recovery_methods
+from scripts.webui.story.option_following_line_projection import following_line_risk_for_group
+from scripts.webui.story.option_route_projection import (
     dialog_tree_option_node_layout_for_group,
     preferred_timeline_option_route,
     preferred_timeline_option_row,
     timeline_route_branch_for_group,
 )
-from .linked_reading_projection import append_linked_reading_content_lines
-from .sibling_scene_projection import sibling_scene_template_branch_for_group
-from .option_sibling_timeline_projection import (
+from scripts.webui.story.linked_reading_projection import append_linked_reading_content_lines
+from scripts.webui.story.sibling_scene_projection import sibling_scene_template_branch_for_group
+from scripts.webui.story.option_sibling_timeline_projection import (
     dialog_line_text_signature,
     foreign_timeline_option_definition_for_group,
     option_signature_sequence,
     sibling_scene_text_branch_for_group,
 )
-from .radio_continuation import build_radio_continuation_candidates
-from .reference_projection import (
+from scripts.webui.story.radio_continuation import build_radio_continuation_candidates
+from scripts.webui.story.reference_projection import (
     append_reference_line,
     collection_bucket,
     collection_bucket_from_key,
@@ -330,13 +330,13 @@ from .reference_projection import (
     responsive_summary_rows,
     sim_duplicate_actor_from_key,
 )
-from .timeline_action_evidence import build_conversation_action_debug
-from .option_anchor_reports import (
+from scripts.webui.story.timeline_action_evidence import build_conversation_action_debug
+from scripts.webui.story.option_anchor_reports import (
     inferred_option_anchor_row,
     write_inferred_option_anchors_report,
 )
 from scripts.webui.story.scene_order_gap_shared import write_scene_order_gap_reports
-from .cutscene_semantics import (
+from scripts.webui.story.cutscene_semantics import (
     _line_id_list_equal,
     apply_cutscene_playback_use_postpass,
     cutscene_semantic_shape,
@@ -348,11 +348,11 @@ from .cutscene_semantics import (
     select_subtitle_text_group_from_display_names,
     validated_lua_cutscene_playback_keys,
 )
-from .ability_binary import (
+from scripts.webui.story.ability_binary import (
     build_battle_signal_producer_index,
     match_battle_signal_story_producers,
 )
-from .mission_recovery import (
+from scripts.webui.story.mission_recovery import (
     build_mission_timeline_recovery_report,
     decode_mission_interactive_script_entity_conditions,
     decode_mission_script_conditions,
@@ -364,23 +364,23 @@ from .mission_recovery import (
     natural_key,
     typed_cutscene_single_char_parameter_action,
 )
-from .source_provenance import (
+from scripts.webui.story.source_provenance import (
     enrich_story_connection_original_files,
     render_story_connection_original_files_markdown,
 )
-from .source_links import (
+from scripts.webui.story.source_links import (
     compact_story_source_link,
     story_source_link_index_summary,
     story_source_link_search_text,
 )
-from .video_bindings import (
+from scripts.webui.story.video_bindings import (
     compact_narrative_video_ref,
     narrative_video_index_summary,
     narrative_video_search_text,
     narrative_video_sort_key,
 )
-from .standalone_video_projection import emit_standalone_video_outputs
-from .narrative_video_overrides import (
+from scripts.webui.story.standalone_video_projection import emit_standalone_video_outputs
+from scripts.webui.story.narrative_video_overrides import (
     NarrativeVideoOverrideValidationError,
     load_narrative_video_overrides,
     normalize_video_override_stem,

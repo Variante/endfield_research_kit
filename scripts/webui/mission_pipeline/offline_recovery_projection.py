@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 from typing import Any
 
-from . import offline_shell_projection
+from scripts.webui.mission_pipeline import offline_shell_projection
 
 
 from scripts.repo_paths import REPO_ROOT

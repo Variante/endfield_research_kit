@@ -13,7 +13,7 @@ from typing import Any
 
 from scripts.common import md_escape, safe_key
 
-from .mission_recovery import natural_key
+from scripts.webui.story.mission_recovery import natural_key
 
 
 SCHEMA = "sourceStoryOrderCrossReference.v1"

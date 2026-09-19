@@ -38,18 +38,18 @@ from scripts.common import (
     sha256_file,
 )
 
-from .dialog_tree_routes import (
+from scripts.webui.story.dialog_tree_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,
     recover_dialog_tree_finish_endpoints,
     recover_dialog_tree_option_routes,
     resolve_serialized_field,
     short_type as _short_type,
 )
-from .levelscript_binary import (
+from scripts.webui.story.levelscript_binary import (
     decode_levelscript_task_conditions,
     scan_levelscript_task_condition_fragments,
 )
-from .level_bindings import (
+from scripts.webui.story.level_bindings import (
     build_leveldata_authoritative_scope_script_host_index,
     build_npc_proxy_segment_script_host_index,
     parse_leveldata_levelscript_brief_dictionary,

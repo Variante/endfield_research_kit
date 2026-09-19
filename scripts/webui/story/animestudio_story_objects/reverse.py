@@ -24,9 +24,9 @@ ROOT = REPO_ROOT
 
 from scripts.common import sha256_file as shared_sha256_file
 
-from . import carrier
-from . import hierarchy as gameobjects
-from . import (
+from scripts.webui.story.animestudio_story_objects import carrier
+from scripts.webui.story.animestudio_story_objects import hierarchy as gameobjects
+from scripts.webui.story.animestudio_story_objects import (
     REVERSE_GAMEASSEMBLY_SHA256,
     REVERSE_METADATA_SHA256,
     REVERSE_NATIVE_MAPPING_ID,

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable
 
-from .option_sibling_timeline_projection import option_signature_sequence
+from scripts.webui.story.option_sibling_timeline_projection import option_signature_sequence
 
 
 def sibling_scene_template_branch_for_group(

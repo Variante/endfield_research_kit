@@ -8,7 +8,7 @@ from typing import Any
 
 from scripts.common import sha256_file as _sha256_path
 
-from . import story_order_projection
+from scripts.webui.mission_pipeline import story_order_projection
 
 
 from scripts.repo_paths import REPO_ROOT

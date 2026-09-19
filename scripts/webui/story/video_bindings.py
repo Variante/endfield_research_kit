@@ -724,7 +724,7 @@ def collect_levelscript_fmv_actions(
 ) -> list[dict[str, Any]]:
     """Return exact native LevelScript FMV target fields and Story keys."""
     if occurrences is None:
-        from .level_bindings import (  # noqa: PLC0415
+        from scripts.webui.story.level_bindings import (  # noqa: PLC0415
             build_levelscript_action_story_occurrences,
         )
 

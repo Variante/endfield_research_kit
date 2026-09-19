@@ -5,7 +5,7 @@ from __future__ import annotations
 import struct
 from typing import Any
 
-from . import params
+from scripts.webui.story.codecs.levelscript import params
 
 
 FLOAT_NEW_COMPARE = (0x0049, 0x0A)

@@ -25,7 +25,7 @@ from scripts.common import (
     walk_field_values as _walk_field_values,
 )
 
-from .context import (
+from scripts.webui.story.context import (
     ANIME_RESOURCE_DIRS,
     EXPORT_ROOT,
     GAMEPLAY_CONFIG_DIR,
@@ -40,12 +40,12 @@ from .context import (
     _RADIO_REF_FIELDS,
     _REMOTECOMM_REF_FIELDS,
 )
-from .dialog_tree_routes import (
+from scripts.webui.story.dialog_tree_routes import (
     DIALOG_TREE_RUNTIME_DEFAULTS,
     recover_dialog_tree_finish_endpoints,
     recover_dialog_tree_option_routes,
 )
-from .story_keys import canonical_cutscene_key as mission_canonical_cutscene_key
+from scripts.webui.story.story_keys import canonical_cutscene_key as mission_canonical_cutscene_key
 
 
 _DIALOG_TREE_TYPE = "Beyond.Gameplay.DialogTree"

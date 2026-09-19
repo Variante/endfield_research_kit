@@ -15,7 +15,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
-from . import runtime_trace_core as core
+from scripts.webui.story_recovery import runtime_trace_core as core
 
 
 from scripts.repo_paths import REPO_ROOT

@@ -10,7 +10,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any
 
-from .core import (
+from scripts.game_data.memorypack.core import (
     MEMORYPACK_NULL_COUNT,
     MEMORYPACK_SCHEMA_SOURCE_NOTE,
     MEMORYPACK_UNION_WIDE_TAG,
@@ -20,7 +20,7 @@ from .core import (
     scan_length_prefixed_utf8_string_hits,
     unique_strings,
 )
-from .schemas import BUFF_MEMBER_COUNT, MEMORYPACK_FIELD_SCHEMAS
+from scripts.game_data.memorypack.schemas import BUFF_MEMBER_COUNT, MEMORYPACK_FIELD_SCHEMAS
 
 
 BUFF_MEMORYPACK_FIELD_TYPES = {

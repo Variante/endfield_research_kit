@@ -38,15 +38,15 @@ from scripts.common import (
     write_report_json,
     write_text_if_changed,
 )
-from .mission_assets import select_complete_mission_runtime_root
+from scripts.webui.story.mission_assets import select_complete_mission_runtime_root
 from scripts.game_data import il2cpp_protocol as il2cpp
-from .levelscript_binary import (
+from scripts.webui.story.levelscript_binary import (
     extract_levelscript_uid_records,
     levelscript_action_map_membership,
     levelscript_native_header_contract,
     summarize_levelscript_native_header_records,
 )
-from .native_contracts.mission_task_paths import (
+from scripts.webui.story.native_contracts.mission_task_paths import (
     DEFAULT_CONTRACT as MISSION_TASK_PATH_CONTRACT,
     load_mission_task_paths,
 )

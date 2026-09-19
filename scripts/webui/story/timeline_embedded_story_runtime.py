@@ -77,8 +77,8 @@ def _story_builder_modules() -> tuple[Any, Any]:
     current serialized shapes; no dialog, mission, level, or script identifiers
     are declared here.
     """
-    from . import context as story_context
-    from . import level_bindings
+    from scripts.webui.story import context as story_context
+    from scripts.webui.story import level_bindings
     return story_context, level_bindings
 
 
@@ -2394,7 +2394,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             f"actual={failure.get('actual')!r}"
         )
 
-    from .timeline_recovery import recover_timeline_text_attachments
+    from scripts.webui.story.timeline_recovery import recover_timeline_text_attachments
     families = tuple(
         str(row["serializedAssetType"]) for row in contract["families"]
     )

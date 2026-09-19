@@ -6,8 +6,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .contracts import BUCKET_ORDER, SCORE_WEIGHTS
-from .foundation import (
+from scripts.webui.story.source_gap.contracts import BUCKET_ORDER, SCORE_WEIGHTS
+from scripts.webui.story.source_gap.foundation import (
     md_escape,
     safe_key,
     write_report_json,

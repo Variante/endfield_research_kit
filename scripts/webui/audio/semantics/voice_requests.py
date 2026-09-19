@@ -7,9 +7,9 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from .context_utils import append_context as _append_context
-from .context_utils import normalize_posix as _normalize_posix
-from .native_evidence import (
+from scripts.webui.audio.semantics.context_utils import append_context as _append_context
+from scripts.webui.audio.semantics.context_utils import normalize_posix as _normalize_posix
+from scripts.webui.audio.semantics.native_evidence import (
     ANIMATION_VOICE_TRIGGER_MAPPING_ID,
     ANIMATION_VOICE_TRIGGER_NATIVE,
     NATIVE_VOICE_TRIGGER_MAPPING_ID,

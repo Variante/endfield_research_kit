@@ -41,7 +41,7 @@ from scripts.repo_paths import REPO_ROOT
 ROOT = REPO_ROOT
 from scripts.common import fast_glob_files
 
-from .story_keys import line_stem, timeline_stem_to_dialog_key
+from scripts.webui.story.story_keys import line_stem, timeline_stem_to_dialog_key
 
 EXPORT_ROOT = ROOT / "export_full"
 DEFAULT_RECOVERY_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"

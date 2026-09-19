@@ -11,8 +11,8 @@ from collections import Counter, defaultdict
 from pathlib import Path, PurePosixPath
 from typing import Any, Iterable
 
-from .context_utils import append_context as _append_context
-from .context_utils import normalize_posix as normalize_posix
+from scripts.webui.audio.semantics.context_utils import append_context as _append_context
+from scripts.webui.audio.semantics.context_utils import normalize_posix as normalize_posix
 
 LEVELSEQUENCE_PLAY_ACTION_DEFINITIONS = {
     (0x0360, 0x0F): {

@@ -8,9 +8,9 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
-from .context_utils import display_path
-from .context_utils import load_json_strict
-from .identifiers import audio_hash_generator_compute
+from scripts.webui.audio.semantics.context_utils import display_path
+from scripts.webui.audio.semantics.context_utils import load_json_strict
+from scripts.webui.audio.semantics.identifiers import audio_hash_generator_compute
 
 def collect_audio_dialog_wwise_event_aliases(
     audio_dialog_paths: list[Path],

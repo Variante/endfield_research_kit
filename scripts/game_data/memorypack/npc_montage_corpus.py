@@ -21,8 +21,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-from . import corpus_gate as vfs
-from .npc_montage import (
+from scripts.game_data.memorypack import corpus_gate as vfs
+from scripts.game_data.memorypack.npc_montage import (
     NPC_MONTAGE_RELATIVE_PREFIX,
     NpcMontageFramingError,
     frame_npc_montage,

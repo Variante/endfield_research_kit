@@ -73,7 +73,7 @@ from scripts.common import (
     write_report_json,
     write_text_if_changed,
 )
-from .mission_assets import select_complete_mission_runtime_root
+from scripts.webui.story.mission_assets import select_complete_mission_runtime_root
 
 
 SCHEMA = "missionDependencyGraph.v1"

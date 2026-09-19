@@ -21,8 +21,8 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable, Mapping
 
-from . import corpus_gate as vfs
-from .lipsync import (
+from scripts.game_data.memorypack import corpus_gate as vfs
+from scripts.game_data.memorypack.lipsync import (
     LIPSYNC_FIELD_NAMES,
     LipSyncDecodeError,
     decode_lipsync_memorypack,

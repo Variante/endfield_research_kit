@@ -12,10 +12,10 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any
 
-from .context_utils import append_context as _append_context
-from .context_utils import load_json as _load_json
-from .context_utils import normalize_posix as _normalize_posix
-from .native_evidence import (
+from scripts.webui.audio.semantics.context_utils import append_context as _append_context
+from scripts.webui.audio.semantics.context_utils import load_json as _load_json
+from scripts.webui.audio.semantics.context_utils import normalize_posix as _normalize_posix
+from scripts.webui.audio.semantics.native_evidence import (
     AI_BARK_NATIVE_RUNTIME,
     ENEMY_TRIGGER_VOICE_ACTION_NATIVE,
     NativeAudioEvidence,
