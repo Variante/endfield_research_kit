@@ -1624,7 +1624,7 @@ def decode_interactive_template_memorypack(path: Path, data: bytes, size: int) -
                                 decode_embedded_action_serialized_map_audio,
                             )
                         except ImportError:
-                            from scripts.story_builder.levelscript_binary import (
+                            from scripts.webui.story.levelscript_binary import (
                                 decode_embedded_action_serialized_map_audio,
                             )
                         template_action_map_audio = (

@@ -136,7 +136,7 @@ AnimeStudio executable:
 
 ```text
 scripts\game_data\extraction\export_full_from_game.py  DEFAULT_STRUCTURED_DUMPER = DEFAULT_ANIMESTUDIO
-scripts\build_audio.py            DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO
+scripts\webui\audio\build_audio.py            DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO
 ```
 
 ### VFS recovery evidence index
@@ -166,12 +166,12 @@ The stable code and fixture entry points are:
 | Terrain | `scripts/game_data/terrain_tret.py`, `scripts/game_data/terrain_native.py`, `scripts/game_data/terrain_corpus.py` | `scripts/tests/test_terrain_tret.py`, `test_terrain_native.py`, `test_terrain_corpus.py` (current native gate, exact selected-build tiling, negative framing/provenance fixtures; unsupported shapes fail closed) |
 | Table / SparkBuffer | `AnimeStudio/Endfield/Extraction/EndfieldSparkBuffer.cs` | `EndfieldSparkBufferTests.cs` |
 | JsonData / LipSync | `scripts/game_data/memorypack/lipsync.py` | `scripts/tests/test_memorypack_lipsync.py` |
-| JsonData / gameplay subfamilies | `scripts/story_builder/*_binary.py`, `scripts/game_data/memorypack/`, routed per virtual-path family | matching `scripts/tests/test_*_binary.py`, including `test_jsondata_binary.py`; `buff_1b_corpus.py` binds current root-continuation tag `0x1B` bytes to its exact-build action reader, while whole BuffData and SkillData / LevelData / LevelScriptData framing remain partial |
+| JsonData / gameplay subfamilies | `scripts/webui/story/*_binary.py`, `scripts/game_data/memorypack/`, routed per virtual-path family | matching `scripts/tests/test_*_binary.py`, including `test_jsondata_binary.py`; `buff_1b_corpus.py` binds current root-continuation tag `0x1B` bytes to its exact-build action reader, while whole BuffData and SkillData / LevelData / LevelScriptData framing remain partial |
 | JsonData / NPC Montage | `scripts/game_data/memorypack/npc_montage.py`, `scripts/game_data/memorypack/npc_montage_corpus.py` | `scripts/tests/test_memorypack_npc_montage.py`, `scripts/tests/test_memorypack_npc_montage_corpus.py` (authenticated current ledger/stream join; exact EOF gate; report: `reports/animestudio/npc_montage_current_latest.{json,md}`) |
 | ExtendData / CompressData | `AnimeStudio/Endfield/Extraction/EndfieldCompressData.cs`, `scripts/game_data/extend_data_binary.py` | AnimeStudio CLI fixtures and `scripts/tests/test_mmap_extend_data.py` |
 | Lua | `AnimeStudio/Endfield/Extraction/EndfieldLuaDecoder.cs` | AnimeStudio CLI fixtures plus the `lua-sweep` mode |
 | Video / USM | `AnimeStudio/Endfield/Extraction/EndfieldUsmConverter.cs` | AnimeStudio CLI USM framing fixtures |
-| Audio / AKPK-Wwise | `AnimeStudio/Endfield/Audio/EndfieldAkpkPackage.cs`, CLI `audio-audit`, `scripts/build_audio.py` | `EndfieldAkpkTests.cs` plus audio-domain tests under `scripts/tests/` |
+| Audio / AKPK-Wwise | `AnimeStudio/Endfield/Audio/EndfieldAkpkPackage.cs`, CLI `audio-audit`, `scripts/webui/audio/build_audio.py` | `EndfieldAkpkTests.cs` plus audio-domain tests under `scripts/tests/` |
 
 The mmap ExtendData reader proves file-provided counts, fixed record widths,
 bounded string/TRS ranges, observed lookup/table overlaps, non-overlap of
@@ -426,7 +426,7 @@ Python under `tmp/` and prove the mirror against an already-closed type first --
 the current mirror reproduces all 48,740 type `0x07` bodies exactly, which is why
 its music-type failures can be believed.
 
-One endpoint now has a witness. `scripts/audio_semantics/hirc_named_reach.py`
+One endpoint now has a witness. `scripts/webui/audio/semantics/hirc_named_reach.py`
 hashes the exact audio-like `stringLiteral` rows out of `global-metadata.dat`
 with FNV-1 over UTF-16 code units and joins them to HIRC object identities. Every
 current match lands on numeric type `0x04` and none on any other type, which is

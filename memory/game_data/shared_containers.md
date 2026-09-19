@@ -90,7 +90,7 @@ single-level surfaces; the layer maps are 1024x1024 with a full 11-level chain.*
   744-file "name not terrain shaped" bucket was.
 - The six tile channels are exactly balanced: 7,570 files each across 37 scenes, so
   every tile ships all six.
-- Read by `scripts/asset_builder/terrain_header.py`; report at
+- Read by `scripts/webui/assets/terrain_header.py`; report at
   [`reports/assets/terrain_header_current_latest.json`](../../reports/assets/terrain_header_current_latest.json).
   Terrain rows are `encrypted=False`, which is why a plain span read works here
   and not on the manifest.
@@ -160,5 +160,5 @@ single-level surfaces; the layer maps are 1024x1024 with a full 11-level chain.*
 - **A warning about the shape of this problem, kept:** payload counts look almost
   reconcilable by hand and it is easy to fit one file. Accept a formula that closes
   thousands, exactly, and agrees with the file.
-- Read by `scripts/asset_builder/terrain_stream.py`; report at
+- Read by `scripts/webui/assets/terrain_stream.py`; report at
   [`reports/assets/terrain_stream_current_latest.json`](../../reports/assets/terrain_stream_current_latest.json).

@@ -11,7 +11,7 @@ other pages, not proof that an asset was used at runtime.
 1. AnimeStudio builds source-scoped AssetMaps and exports the selected asset
    scope. Focused mode targets referenced textures; default adds WebUI-facing
    model/material/animation needs; debug is exhaustive diagnostics.
-2. `scripts.build_assets` indexes available outputs and publishes media lookup,
+2. `scripts.webui.assets.build_assets` indexes available outputs and publishes media lookup,
    Story media, and video catalogs.
 3. Gameplay's `asset-refs` stage consumes the Assets index and owns its
    consumer-specific join; the Assets builder does not write that sidecar.
@@ -33,7 +33,7 @@ separately owns `gameplay_refs.json`.
 ## Focused refresh
 
 ```bat
-python scripts\build_assets.py
+python scripts\webui\assets\build_assets.py
 .\export_assets.bat --from-game --focused-assets
 .\export_assets.bat --from-game --default-assets
 ```

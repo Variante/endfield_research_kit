@@ -8,14 +8,14 @@ and behavior contracts remain in [`../webui/README.md`](../webui/README.md).
 
 | Page | Recovery guide | Primary builder |
 | --- | --- | --- |
-| Story | [`webui/story.md`](webui/story.md) | `scripts.story_builder` |
-| Map | [`webui/map.md`](webui/map.md) | `scripts.build_map_recovery_data` |
-| Characters | [`webui/characters.md`](webui/characters.md) | `scripts.build_character_data` |
-| Gameplay | [`webui/gameplay.md`](webui/gameplay.md) | `scripts.build_gameplay` |
-| Audio | [`webui/audio.md`](webui/audio.md) | `scripts.build_audio` and `scripts.build_audio_semantics` |
-| Assets | [`webui/assets.md`](webui/assets.md) | `scripts.build_assets` |
-| Text | [`webui/text.md`](webui/text.md) | `scripts.story_builder` |
-| Updates | [`webui/updates.md`](webui/updates.md) | `scripts.build_updates` |
+| Story | [`webui/story.md`](webui/story.md) | `scripts.webui.story` |
+| Map | [`webui/map.md`](webui/map.md) | `scripts.webui.map.build_map_recovery_data` |
+| Characters | [`webui/characters.md`](webui/characters.md) | `scripts.webui.characters.build_character_data` |
+| Gameplay | [`webui/gameplay.md`](webui/gameplay.md) | `scripts.webui.gameplay.build_gameplay` |
+| Audio | [`webui/audio.md`](webui/audio.md) | `scripts.webui.audio.build_audio` and `scripts.webui.audio.build_audio_semantics` |
+| Assets | [`webui/assets.md`](webui/assets.md) | `scripts.webui.assets.build_assets` |
+| Text | [`webui/text.md`](webui/text.md) | `scripts.webui.story` |
+| Updates | [`webui/updates.md`](webui/updates.md) | `scripts.webui.updates.build_updates` |
 
 Mission Pipeline is a standalone recovery workflow, not a WebUI page or normal
 export stage. Retired Progression and Combat & Projectiles pages stay retired;
@@ -35,7 +35,7 @@ Choose the smallest workflow that owns the changed input:
 | Story is current; rebuild downstream views/assets/audio | `.\export_assets.bat` |
 | Story is current; refresh installed-game assets/audio first | `.\export_assets.bat --from-game` |
 | Compare two complete exports for Updates | `.\build_updates.bat OLD NEW` |
-| Serve / package | `python serve.py` / `python scripts\pack_webui.py` |
+| Serve / package | `python serve.py` / `python scripts\webui\package.py` |
 
 Without `--from-game`, wrappers read the configured `export_full/` and first
 run `python scripts\game_data\extraction\verify_export_freshness.py`. Do not use `--from-game` for a

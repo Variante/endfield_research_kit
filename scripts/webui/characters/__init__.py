@@ -1,0 +1,1 @@
+"""Characters page builder."""

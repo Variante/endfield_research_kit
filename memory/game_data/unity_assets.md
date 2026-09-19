@@ -30,7 +30,7 @@ activation, or placement time.
 .\export.bat --from-game --with-assets
 .\export_assets.bat
 .\export_assets.bat --from-game
-python scripts\build_assets.py
+python scripts\webui\assets\build_assets.py
 python tools\endfield_source_graph.py build
 ```
 

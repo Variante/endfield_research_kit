@@ -36,12 +36,12 @@ because the sweep is reusable, while everything it emits goes to `reports/`.
 | Refresh Story from the game | `.\export.bat --from-game` |
 | Refresh Story and assets together | `.\export.bat --from-game --with-assets` |
 | Refresh changed local game files and all WebUI views, excluding Updates | `.\export.bat --changed-only` |
-| Story recovery loop | `python -m scripts.story_builder.build --languages CN --default-language CN` |
-| Mission Pipeline recovery (standalone, not WebUI) | `python -m scripts.build_mission_pipeline_data --refresh-source-story-gap-queue` |
+| Story recovery loop | `python -m scripts.webui.story.build --languages CN --default-language CN` |
+| Mission Pipeline recovery (standalone, not WebUI) | `python -m scripts.webui.mission_pipeline.build_mission_pipeline_data --refresh-source-story-gap-queue` |
 | Rebuild post-Story views, assets, and CN audio | `.\export_assets.bat` |
 | Refresh assets/audio and rebuild post-Story views | `.\export_assets.bat --from-game` |
 | Compare exports for Updates | `.\build_updates.bat OLD NEW` |
-| Serve or package | `python serve.py` / `python scripts\pack_webui.py` |
+| Serve or package | `python serve.py` / `python scripts\webui\package.py` |
 
 The wrappers load `endfield_paths.bat`, then apply explicit path flags. Run any
 wrapper with `--help` for its supported options.
@@ -179,8 +179,8 @@ registry before rebuilding the base stage. Start the capture first so it can
 attach during client startup, then load the title/menu or a gameplay scene:
 
 ```bat
-tools\frida-runtime\venv\Scripts\python.exe -m scripts.gameplay_builder.capture_runtime_tags --duration 600 --output scratch\reverse_engineering\gameplay_tag_runtime\capture.jsonl
-python scripts\build_gameplay.py --stage base --languages CN --default-language CN --runtime-tag-capture scratch\reverse_engineering\gameplay_tag_runtime\capture.jsonl
+tools\frida-runtime\venv\Scripts\python.exe -m scripts.webui.gameplay.capture_runtime_tags --duration 600 --output scratch\reverse_engineering\gameplay_tag_runtime\capture.jsonl
+python scripts\webui\gameplay\build_gameplay.py --stage base --languages CN --default-language CN --runtime-tag-capture scratch\reverse_engineering\gameplay_tag_runtime\capture.jsonl
 ```
 
 The capture is read-only and refuses to attach unless the selected
@@ -196,16 +196,16 @@ and do not feed active pages.
 
 ```bat
 python scripts\game_data\extraction\verify_export_freshness.py
-python -m scripts.story_builder.refresh_evidence
-python -m scripts.story_builder.source_links
-python -m scripts.story_builder.build --languages CN --default-language CN
-python scripts\build_character_data.py --languages CN --default-language CN
-python scripts\build_mission_pipeline_data.py
-python scripts\build_gameplay.py
-python scripts\build_assets.py
-python scripts\build_audio.py
-python scripts\build_audio.py --skip-decode --refresh-hirc
-python scripts\pack_webui.py
+python -m scripts.webui.story.refresh_evidence
+python -m scripts.webui.story.source_links
+python -m scripts.webui.story.build --languages CN --default-language CN
+python scripts\webui\characters\build_character_data.py --languages CN --default-language CN
+python scripts\webui\mission_pipeline\build_mission_pipeline_data.py
+python scripts\webui\gameplay\build_gameplay.py
+python scripts\webui\assets\build_assets.py
+python scripts\webui\audio\build_audio.py
+python scripts\webui\audio\build_audio.py --skip-decode --refresh-hirc
+python scripts\webui\package.py
 ```
 
 ### Offline recovery probes
@@ -306,12 +306,12 @@ omits Lua, so refresh this tracked index only from an explicit complete
 plaintext-Lua extraction. To refresh it and optionally render Markdown, run:
 
 ```bat
-python -m scripts.story_builder.lua_consumer_references --markdown
+python -m scripts.webui.story.lua_consumer_references --markdown
 ```
 
 To refresh and reconcile the optional full cinematic native audit against the
 compact contract, run
-`python -m scripts.story_recovery.audit_native_carriers cinematic`. Use
+`python -m scripts.webui.story_recovery.audit_native_carriers cinematic`. Use
 `--skip-contract-reconciliation` only while reviewing a new installed build
 before intentionally updating the versioned contract.
 
@@ -339,7 +339,7 @@ Review manual option coverage, stale targets, and current generated response
 candidate conflicts with the single maintained option audit:
 
 ```bat
-python -m scripts.story_recovery.build_option_override_coverage_audit --language CN
+python -m scripts.webui.story_recovery.build_option_override_coverage_audit --language CN
 ```
 
 Manual Story order is user-managed in `webui/overrides/story_order.json`.
@@ -352,10 +352,10 @@ WebUI reference, and `compare` reports differences without editing the active
 override:
 
 ```bat
-python -m scripts.story_recovery.ocr_story_order sample --dry-run
-python -m scripts.story_recovery.ocr_story_order match
-python -m scripts.story_recovery.ocr_story_order publish
-python -m scripts.story_recovery.ocr_story_order compare
+python -m scripts.webui.story_recovery.ocr_story_order sample --dry-run
+python -m scripts.webui.story_recovery.ocr_story_order match
+python -m scripts.webui.story_recovery.ocr_story_order publish
+python -m scripts.webui.story_recovery.ocr_story_order compare
 ```
 
 AnimeStudio Story-object recovery uses one staged audit. `reverse` publishes
@@ -364,7 +364,7 @@ the fail-closed playback-alias evidence consumed by builders; `carrier` and
 dependency order:
 
 ```bat
-python -m scripts.story_recovery.audit_story_objects --stage reverse
+python -m scripts.webui.story_recovery.audit_story_objects --stage reverse
 ```
 
 Native value-carrier work also uses one profile command. `generic` is the
@@ -373,9 +373,9 @@ contract and its existing report paths, and `radio-forbid` validates the small
 versioned negative boundary recorded for the pinned build:
 
 ```bat
-python -m scripts.story_recovery.audit_native_carriers generic --carrier-type TYPE --focus-field FIELD
-python -m scripts.story_recovery.audit_native_carriers cinematic
-python -m scripts.story_recovery.audit_native_carriers radio-forbid
+python -m scripts.webui.story_recovery.audit_native_carriers generic --carrier-type TYPE --focus-field FIELD
+python -m scripts.webui.story_recovery.audit_native_carriers cinematic
+python -m scripts.webui.story_recovery.audit_native_carriers radio-forbid
 ```
 
 Reusable implementations and the radio boundary live under
@@ -386,17 +386,17 @@ Mission and audio runtime traces share one fail-closed CLI while retaining
 separate hook manifests, Frida agents, schemas, and evidence boundaries:
 
 ```bat
-tools\frida-runtime\venv\Scripts\python.exe -m scripts.story_recovery.runtime_trace capture --profile mission
-tools\frida-runtime\venv\Scripts\python.exe -m scripts.story_recovery.runtime_trace capture --profile audio
-python -m scripts.story_recovery.runtime_trace import --profile mission CAPTURE.jsonl
-python -m scripts.story_recovery.runtime_trace import --profile audio CAPTURE.jsonl
+tools\frida-runtime\venv\Scripts\python.exe -m scripts.webui.story_recovery.runtime_trace capture --profile mission
+tools\frida-runtime\venv\Scripts\python.exe -m scripts.webui.story_recovery.runtime_trace capture --profile audio
+python -m scripts.webui.story_recovery.runtime_trace import --profile mission CAPTURE.jsonl
+python -m scripts.webui.story_recovery.runtime_trace import --profile audio CAPTURE.jsonl
 ```
 
 To publish a verified imported capture onto the Audio Event/media detail rows,
 rerun the semantic publisher with its JSON bundle:
 
 ```bat
-python scripts\build_audio_semantics.py --language CN --runtime-trace-bundle reports\story\recovery\audio_runtime_trace.json
+python scripts\webui\audio\build_audio_semantics.py --language CN --runtime-trace-bundle reports\story\recovery\audio_runtime_trace.json
 ```
 
 The projection requires the bundle's current schema, matching language, and
@@ -487,9 +487,9 @@ Gameplay sidecars. It writes shared SFX/music once under
 `export_full/structured/Audio/<LANG>/`.
 
 ```bat
-python scripts\build_audio.py
-python scripts\build_audio.py --skip-decode
-python scripts\build_audio.py --skip-decode --refresh-hirc
+python scripts\webui\audio\build_audio.py
+python scripts\webui\audio\build_audio.py --skip-decode
+python scripts\webui\audio\build_audio.py --skip-decode --refresh-hirc
 ```
 
 AnimeStudio streams decoded PCM into lossless FLAC without intermediate WAV
@@ -513,8 +513,8 @@ Both gates are current-corpus bound: pass the exact `inputSetSha256` from
 `--expected-input-set-sha256` argument.
 
 ```bat
-python -m scripts.audio_semantics.hirc_action_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
-python -m scripts.audio_semantics.hirc_named_reach --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.webui.audio.semantics.hirc_action_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.webui.audio.semantics.hirc_named_reach --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 ```
 
 `hirc_action_corpus` binds verified package MD5/chunk/physical-source identities
@@ -556,7 +556,7 @@ Audio evidence page; page data changes only after a formal semantic rebuild
 (normally `export.bat`, or the targeted run below).
 
 ```bat
-python scripts\build_audio_semantics.py --language CN
+python scripts\webui\audio\build_audio_semantics.py --language CN
 ```
 
 Maintained domain code lives under `audio_semantics/`: `native_evidence.py`
@@ -621,10 +621,10 @@ packaging flow. Validate the single manifest and payload contract before any
 authorized staging:
 
 ```bat
-python -m scripts.story_recovery.runtime_trace_audio_native_capture --check-only --native-library PATH\AudioCapture.dll
-tools\frida-runtime\venv\Scripts\python.exe -m scripts.story_recovery.runtime_trace capture --profile audio --check-only
-tools\frida-runtime\venv\Scripts\python.exe -m scripts.story_recovery.runtime_trace capture --profile audio
-python -m scripts.story_recovery.runtime_trace import --profile audio CAPTURE.jsonl
+python -m scripts.webui.story_recovery.runtime_trace_audio_native_capture --check-only --native-library PATH\AudioCapture.dll
+tools\frida-runtime\venv\Scripts\python.exe -m scripts.webui.story_recovery.runtime_trace capture --profile audio --check-only
+tools\frida-runtime\venv\Scripts\python.exe -m scripts.webui.story_recovery.runtime_trace capture --profile audio
+python -m scripts.webui.story_recovery.runtime_trace import --profile audio CAPTURE.jsonl
 ```
 
 The experimental native fallback under `tools/audio-runtime-capture/` verifies
@@ -664,7 +664,7 @@ process; the scanner is an internal component rather than a second CLI.
 .\build_updates.bat OLD NEW --text-only
 .\build_updates.bat OLD NEW --no-audio
 .\build_updates.bat OLD NEW --exact
-python scripts\build_updates.py --refresh-previous-export-baseline
+python scripts\webui\updates\build_updates.py --refresh-previous-export-baseline
 ```
 
 The default scan covers WebUI-facing exported text plus image, model, video,
@@ -710,7 +710,7 @@ python tools\endfield_source_graph.py issues --limit 20
 
 Reviewed per-build native facts are stored as data, not prose:
 `scripts/game_data/*_native.json` for raw-format consumers and MemoryPack
-formatter windows, and `scripts/story_builder/native_contracts/` for Story
+formatter windows, and `scripts/webui/story/native_contracts/` for Story
 builders. These JSON files **are tracked**: what they record is a data
 structure, and the per-build anchors beside each field are its provenance. The
 digest of a named consumer contract is pinned as `CONTRACT_SHA256` in its

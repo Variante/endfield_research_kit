@@ -12,7 +12,7 @@ but does not imply narrative ownership.
    effective installed-data overlay.
 2. Story reference discovery classifies supported tables and preserves source
    metadata.
-3. `scripts.story_builder.source_links` and `scripts.story_builder.build`
+3. `scripts.webui.story.source_links` and `scripts.webui.story.build`
    publish localized reference indexes and shards under
    `webui/data/lang/<LANG>/reference/`.
 4. The frontend renders known row shapes and retains raw JSON for fields that
@@ -30,8 +30,8 @@ but does not imply narrative ownership.
 ## Focused refresh
 
 ```bat
-python -m scripts.story_builder.source_links
-python -m scripts.story_builder.build --languages CN --default-language CN
+python -m scripts.webui.story.source_links
+python -m scripts.webui.story.build --languages CN --default-language CN
 ```
 
 Refresh from the installed game first only when freshness validation says the

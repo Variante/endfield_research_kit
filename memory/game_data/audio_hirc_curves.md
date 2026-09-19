@@ -699,7 +699,7 @@ that later fails says nothing, because the walk that reached it may be desynchro
   `global-metadata.dat` -- not the 221 audio-filtered ones -- **all twelve offsets
   score 0**. Expected chance matches are **0.024**, so a single hit would have been
   conclusive and there are none.
-- `scripts/audio_semantics/hirc_named_reach.py` already exposes `broad_literals()` for
+- `scripts/webui/audio/semantics/hirc_named_reach.py` already exposes `broad_literals()` for
   exactly this: identifier-shaped literals without the audio prefix vocabulary. **The
   population I said I would need was already a function in the repo.**
 - So `0x0B`'s `+12`, `+20` and `+32` are eliminated as object references (same-bank

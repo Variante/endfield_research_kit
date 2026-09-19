@@ -11,11 +11,11 @@ inference into one confidence class.
 
 1. AnimeStudio exports Table/JsonData plus broad `TextAsset`, `MonoBehaviour`,
    and `PlayableDirector` evidence from both installed roots.
-2. `scripts.story_builder.refresh_evidence` refreshes source evidence and
+2. `scripts.webui.story.refresh_evidence` refreshes source evidence and
    fail-closed native-gated reports.
-3. `scripts.story_builder.source_links` joins mission/runtime references to
+3. `scripts.webui.story.source_links` joins mission/runtime references to
    Story keys.
-4. `scripts.story_builder.build` localizes, groups, orders, and publishes
+4. `scripts.webui.story.build` localizes, groups, orders, and publishes
    conversations and references.
 5. Manual inputs in `webui/overrides/story_order.json`, `options.json`, and
    `narrative_videos.json` are applied without being overwritten.
@@ -47,9 +47,9 @@ Primary outputs are `webui/data/manifest.json`,
 ## Focused refresh
 
 ```bat
-python -m scripts.story_builder.refresh_evidence
-python -m scripts.story_builder.source_links
-python -m scripts.story_builder.build --languages CN --default-language CN
+python -m scripts.webui.story.refresh_evidence
+python -m scripts.webui.story.source_links
+python -m scripts.webui.story.build --languages CN --default-language CN
 ```
 
 When Timeline and Table inputs are unchanged, the maintained edit-loop command

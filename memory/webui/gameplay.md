@@ -9,13 +9,13 @@ Combat & Projectiles pages.
 
 ## Inputs and recovery flow
 
-1. `scripts.build_gameplay --stage base --stage audit` reads gameplay Tables
+1. `scripts.webui.gameplay.build_gameplay --stage base --stage audit` reads gameplay Tables
    and exact binary/serialized contracts, localizes entries, and publishes
    sharded data.
 2. `--stage projectiles` publishes immutable projectile behavior separately.
 3. `--stage asset-refs` joins current Gameplay identities to the Assets index
    and is the sole writer of `webui/data/assets/gameplay_refs.json`.
-4. `scripts.build_audio` publishes language-specific projectile and gameplay
+4. `scripts.webui.audio.build_audio` publishes language-specific projectile and gameplay
    sound sidecars.
 5. After the curated source graph is current, `--stage combat` publishes
    relationships or an explicit stale/degraded reason.
@@ -40,9 +40,9 @@ Primary outputs are `webui/data/lang/<LANG>/gameplay/**`,
 ## Focused refresh
 
 ```bat
-python scripts\build_gameplay.py
-python scripts\build_gameplay.py --stage projectiles
-python scripts\build_gameplay.py --stage asset-refs --default-language CN
+python scripts\webui\gameplay\build_gameplay.py
+python scripts\webui\gameplay\build_gameplay.py --stage projectiles
+python scripts\webui\gameplay\build_gameplay.py --stage asset-refs --default-language CN
 ```
 
 Use the canonical wrapper when cross-page Assets, Audio, source-graph, or

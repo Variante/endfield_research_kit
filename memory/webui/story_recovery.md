@@ -49,8 +49,8 @@ spelling. A folded match is accepted only when unique; collisions fail closed.
 ## Maintained code boundary
 
 Production parsers, validators, joins, attachment logic, and generated schemas
-live in `scripts/story_builder/`. Audits, candidate enumeration, OCR, native
-probes, and report-only CLIs live in `scripts/story_recovery/`.
+live in `scripts/webui/story/`. Audits, candidate enumeration, OCR, native
+probes, and report-only CLIs live in `scripts/webui/story_recovery/`.
 
 The dependency is one-way: recovery tools may import stable builder primitives;
 production builders must not import or execute recovery modules. Promote a
@@ -115,11 +115,11 @@ hashes in both structured output and the CLI summary. Improve generic
 
 ```bat
 python scripts\game_data\extraction\verify_export_freshness.py
-python -m scripts.story_builder.refresh_evidence
-python -m scripts.story_builder.source_links
-python -m scripts.story_builder.build --languages CN --default-language CN
-python -m scripts.build_mission_pipeline_data --refresh-source-story-gap-queue
-python -m scripts.build_map_recovery_data --with-preview
+python -m scripts.webui.story.refresh_evidence
+python -m scripts.webui.story.source_links
+python -m scripts.webui.story.build --languages CN --default-language CN
+python -m scripts.webui.mission_pipeline.build_mission_pipeline_data --refresh-source-story-gap-queue
+python -m scripts.webui.map.build_map_recovery_data --with-preview
 ```
 
 Reference reuse is allowed only when exported Timeline and Table inputs are

@@ -1,0 +1,208 @@
+"""Build the behavior datasets behind the Gameplay WebUI page.
+
+The page reads these four behavior/asset payloads plus the language-specific
+``projectile_audio.json`` sidecar owned by ``build_audio.py``. The Gameplay
+builders still run as separate stages because the export pipeline
+schedules them in different dependency phases -- projectiles and the base index
+need nothing, the asset sidecar needs a current Assets index, and combat
+relationships need the source graph -- but the page now has one command:
+
+    python scripts/webui/gameplay/build_gameplay.py                    # every stage
+    python scripts/webui/gameplay/build_gameplay.py --stage projectiles
+
+Behavior stage implementations live in ``scripts/webui/gameplay/``. The
+asset-ref stage calls ``asset_builder.gameplay_refs`` directly so this command
+remains the sole owner of its consumer-specific sidecar.
+"""
+from __future__ import annotations
+
+import argparse
+import sys
+from pathlib import Path
+
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.webui.gameplay.build_gameplay"
+    )
+
+
+SCRIPT_DIR = Path(__file__).resolve().parent
+
+ROOT = SCRIPT_DIR.parent
+WEBUI_DATA_ROOT = ROOT / "webui" / "data"
+
+STAGES = ("base", "projectiles", "asset-refs", "combat", "audit")
+
+STAGE_HELP = {
+    "base": "Gameplay base index (data/lang/<LANG>/gameplay/index.json).",
+    "projectiles": "Exact projectile behavior and event hashes (data/gameplay/projectiles.json).",
+    "asset-refs": "Compact Gameplay-to-Assets sidecar; needs a current Assets index.",
+    "combat": "Debug-only combat relationships; needs a current source graph.",
+    "audit": "Gameplay recovery coverage/schema audit reports (read-only).",
+}
+
+
+def build_asset_refs_stage(
+    language: str,
+    *,
+    data_root: Path = WEBUI_DATA_ROOT,
+) -> int:
+    """Build the Gameplay-owned asset sidecar from explicit current inputs."""
+
+    from scripts.webui.assets.gameplay_refs import build_from_paths
+
+    language = str(language or "CN").upper()
+    gameplay_path = data_root / "lang" / language / "gameplay" / "index.json"
+    asset_index_path = data_root / "assets" / "index.json"
+    output_path = data_root / "assets" / "gameplay_refs.json"
+    missing = next(
+        (path for path in (gameplay_path, asset_index_path) if not path.is_file()),
+        None,
+    )
+    if missing is not None:
+        print(f"{language}: Gameplay asset refs skipped (missing {missing})")
+        return 0
+    payload = build_from_paths(gameplay_path, asset_index_path, output_path)
+    counts = payload.get("counts") or {}
+    display = output_path.relative_to(ROOT) if output_path.is_relative_to(ROOT) else output_path
+    print(
+        f"{language}: {counts.get('matchedEntries', 0)} matched Gameplay entries; "
+        f"{counts.get('withImages', 0)} with images; "
+        f"{counts.get('withModels', 0)} with models -> {display}"
+    )
+    return 0
+
+
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+    )
+    parser.add_argument(
+        "--stage",
+        action="append",
+        choices=STAGES,
+        help=(
+            "Run only this stage; repeatable. Default runs every stage in "
+            "dependency order. "
+            + " ".join(f"`{name}`: {text}" for name, text in STAGE_HELP.items())
+        ),
+    )
+    parser.add_argument(
+        "--languages",
+        nargs="+",
+        default=["CN"],
+        help="Languages for the localized stages (default: CN).",
+    )
+    parser.add_argument(
+        "--default-language",
+        default="CN",
+        help="Default language for the localized stages (default: CN).",
+    )
+    parser.add_argument(
+        "--runtime-tag-capture",
+        type=Path,
+        help=(
+            "Hash-gated GameplayTag runtime JSONL to merge during the base stage."
+        ),
+    )
+    parser.add_argument(
+        "--audit-scope",
+        choices=("active", "full"),
+        default="active",
+        help="Audit scope for the audit stage (default: active; full scans exported BuffData).",
+    )
+    parser.add_argument(
+        "--export-root",
+        type=Path,
+        help="Export root for --audit-scope full.",
+    )
+    args = parser.parse_args(argv)
+    selected_stages = set(args.stage or STAGES)
+    if args.export_root is not None and args.audit_scope != "full":
+        parser.error("--export-root requires --audit-scope full")
+    if (args.audit_scope != "active" or args.export_root is not None) and "audit" not in selected_stages:
+        parser.error("--audit-scope/--export-root require the audit stage to be selected")
+    return args
+
+
+def run_stage(stage: str, args: argparse.Namespace) -> int:
+    """Run one stage in-process and return its exit code."""
+    languages = list(args.languages)
+    if stage == "base":
+        from scripts.webui.gameplay import base_data
+
+        return int(
+            base_data.main(
+                [
+                    "--languages",
+                    *languages,
+                    "--default-language",
+                    args.default_language,
+                    *(
+                        ["--runtime-tag-capture", str(args.runtime_tag_capture)]
+                        if args.runtime_tag_capture
+                        else []
+                    ),
+                ]
+            )
+            or 0
+        )
+    if stage == "projectiles":
+        from scripts.webui.gameplay import projectiles
+
+        return int(projectiles.main([]) or 0)
+    if stage == "asset-refs":
+        return build_asset_refs_stage(args.default_language)
+    if stage == "combat":
+        from scripts.webui.gameplay import combat_relationships
+
+        return int(combat_relationships.main([]) or 0)
+    if stage == "audit":
+        from scripts.webui.gameplay import recovery_audit
+
+        audit_scope = getattr(args, "audit_scope", "active")
+        if audit_scope == "full":
+            audit_args = ["--full-corpus"]
+            export_root = getattr(args, "export_root", None)
+            if export_root:
+                audit_args.extend(("--export-root", str(export_root)))
+            return int(recovery_audit.main(audit_args) or 0)
+        for language in languages:
+            input_path = (
+                WEBUI_DATA_ROOT / "lang" / str(language).upper() / "gameplay" / "index.json"
+            )
+            if not input_path.is_file():
+                print(
+                    f"{language}: Gameplay recovery audit input missing: {input_path}",
+                    file=sys.stderr,
+                )
+                return 1
+            audit_args = ["--input", str(input_path)]
+            result = int(recovery_audit.main(audit_args) or 0)
+            if result:
+                return result
+        return 0
+    raise ValueError(f"unknown gameplay stage: {stage}")
+
+
+def main(argv: list[str] | None = None) -> int:
+    args = parse_args(argv)
+    # Preserve dependency order regardless of the order flags were given.
+    selected = [stage for stage in STAGES if not args.stage or stage in args.stage]
+    for stage in selected:
+        print(f"[gameplay] stage {stage}", flush=True)
+        returncode = run_stage(stage, args)
+        if returncode:
+            print(
+                f"[gameplay] stage {stage} failed with {returncode}",
+                file=sys.stderr,
+                flush=True,
+            )
+            return returncode
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

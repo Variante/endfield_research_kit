@@ -15,7 +15,7 @@ shared script context, or available assets into ownership.
 3. AnimeStudio maps and converted Mesh/Material/Texture2D outputs provide asset
    identity. `recover_map_streaming_instances.py` streams installed
    `InitChunkData` and joins exact matrices to those exports.
-4. `scripts.build_map_recovery_data` publishes the index and per-level payloads;
+4. `scripts.webui.map.build_map_recovery_data` publishes the index and per-level payloads;
    its preview phase publishes minimap, terrain, HLOD/streaming surface, water,
    and point layers as independent evidence.
 
@@ -103,9 +103,9 @@ panel, layer, and inspector controls are in
 ## Focused refresh
 
 ```bat
-python -m scripts.build_map_recovery_data --with-preview
-python scripts\build_map_recovery_preview.py --level LEVEL
-python scripts\build_map_recovery_preview.py --refresh-exact-fallbacks-only
+python -m scripts.webui.map.build_map_recovery_data --with-preview
+python scripts\webui\map\build_map_recovery_preview.py --level LEVEL
+python scripts\webui\map\build_map_recovery_preview.py --refresh-exact-fallbacks-only
 ```
 
 Exact streaming, point-layer, and inferred HLOD previews checkpoint after each

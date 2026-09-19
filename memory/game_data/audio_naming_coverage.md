@@ -176,7 +176,7 @@ runtime setter, caller, trigger, selected branch, execution, or audibility.**
 
 ### Grammar name recovery, for the Events no shipped string reaches
 
-`scripts/audio_semantics/name_recovery.py` names Events that no shipped string
+`scripts/webui/audio/semantics/name_recovery.py` names Events that no shipped string
 reaches. Sweeping the whole IL2CPP literal blob and every metadata type/field
 name resolves only a handful of hash-only Events, so the module instead mines
 head/tail name templates per naming family **from the names already proven by

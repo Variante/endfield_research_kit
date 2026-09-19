@@ -1176,7 +1176,7 @@ def decode_dialog_id_table_memorypack(rel: str, data: bytes, size: int) -> dict[
         "decoded": {
             "memberCount": DIALOG_ID_TABLE_ROOT_MEMBER_COUNT,
             "format": "memorypack",
-            "schemaSource": "DialogIdTable runtime class and registry semantics from scripts/story_builder/dialog_registry.py plus IL2CPP MemoryPack formatter metadata; table and nested DialogBriefInfo fields recovered by exact byte boundaries",
+            "schemaSource": "DialogIdTable runtime class and registry semantics from scripts/webui/story/dialog_registry.py plus IL2CPP MemoryPack formatter metadata; table and nested DialogBriefInfo fields recovered by exact byte boundaries",
             "decodedPreviewFields": [
                 "dialogBriefInfoDict",
                 "DialogBriefInfo.afterMaskBlendData",

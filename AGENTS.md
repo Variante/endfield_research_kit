@@ -141,7 +141,7 @@ build-specific catalog across files:
 Audio code follows the same ownership boundary. `build_audio.py` owns decode,
 Wwise indexing, relinking, and Gameplay sidecars;
 `build_audio_semantics.py` owns orchestration and publication only; reusable
-semantic domains live under `scripts/audio_semantics/`. Add logic to its
+semantic domains live under `scripts/webui/audio/semantics/`. Add logic to its
 domain owner instead of growing either entry point or importing the entry
 point as a helper library. Native claims must use the explicit selected
 `global-metadata.dat` plus `GameAssembly.dll` gate, fail closed on
@@ -246,7 +246,7 @@ what a reader of that file would still get wrong.
 
 - Export and rebuild commands are long-running. Give them a generous timeout
   and wait; do not poll or re-check while one is still running.
-- `scripts/story_builder/build.py` takes about 3 minutes for the default CN
+- `scripts/webui/story/build.py` takes about 3 minutes for the default CN
   lean build. Multi-language or forced timeline recovery takes longer -- allow
   10-15 minutes (`timeout_ms` of at least `900000`).
 - Before starting a WebUI server, check whether the default
@@ -728,7 +728,7 @@ a broad audit of all files under the two export roots.
 `build_updates.bat` reads the saved previous export and current export roots
 from `endfield_paths.bat`
 (`ENDFIELD_PREVIOUS_EXPORT_ROOT` and `ENDFIELD_EXPORT_ROOT`). The underlying
-`scripts/build_updates.py` defaults to comparing:
+`scripts/webui/updates/build_updates.py` defaults to comparing:
 
 ```text
 export_1d2
@@ -834,25 +834,25 @@ export folder so the cached scanner baseline is rebuilt.
 shared helpers, and tests. Do not keep a second copy here. The ownership rules
 that are not visible from that layout:
 
-- `scripts/build_gameplay.py` owns every Gameplay page dataset. Stage modules
-  live in `scripts/gameplay_builder/`, and its `asset-refs` stage is the sole
+- `scripts/webui/gameplay/build_gameplay.py` owns every Gameplay page dataset. Stage modules
+  live in `scripts/webui/gameplay/`, and its `asset-refs` stage is the sole
   writer of `webui/data/assets/gameplay_refs.json`.
-- `scripts/build_audio_semantics.py` is the Audio orchestrator/publisher;
-  reusable Audio evidence owners live under `scripts/audio_semantics/`.
-- `scripts/story_builder/lua_consumer_references.py` owns the canonical
+- `scripts/webui/audio/build_audio_semantics.py` is the Audio orchestrator/publisher;
+  reusable Audio evidence owners live under `scripts/webui/audio/semantics/`.
+- `scripts/webui/story/lua_consumer_references.py` owns the canonical
   fingerprinted Lua consumer index that Mission Pipeline reads directly.
   Refreshing it requires an explicit complete plaintext-Lua extraction, because
   standard extraction omits Lua.
-- `scripts/story_builder/native_contracts/` holds reviewed current-build native
+- `scripts/webui/story/native_contracts/` holds reviewed current-build native
   facts consumed by builders. Recovery hooks must reference or validate those
   contracts rather than duplicate them.
-- A production builder must not import or execute a `scripts/story_recovery/`
+- A production builder must not import or execute a `scripts/webui/story_recovery/`
   module. Recovery tools may import stable builder primitives, not the reverse.
 - Native carrier audits go through the single
-  `scripts/story_recovery/audit_native_carriers.py` profile CLI; reusable
+  `scripts/webui/story_recovery/audit_native_carriers.py` profile CLI; reusable
   scanner/profile code and versioned negative boundaries live in
-  `scripts/story_recovery/native_carriers/`.
-- `scripts/download_bilibili_video.py` is optional intake for the OCR/audio
+  `scripts/webui/story_recovery/native_carriers/`.
+- `scripts/webui/story_recovery/download_bilibili_video.py` is optional intake for the OCR/audio
   story-order workflow. It needs `requests`, `ffmpeg`, and browser-exported
   cookies, and is outside the stdlib-only export path.
 - `scripts/game_data/memorypack/` holds the maintained stdlib-only MemoryPack

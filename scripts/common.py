@@ -11,7 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any, Iterable
 
-from scripts.story_builder.animestudio_story_objects import (
+from scripts.webui.story.animestudio_story_objects import (
     REVERSE_GAMEASSEMBLY_SHA256,
     REVERSE_METADATA_SHA256,
     REVERSE_NATIVE_MAPPING_ID,

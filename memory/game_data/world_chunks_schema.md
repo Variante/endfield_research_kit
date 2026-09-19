@@ -15,7 +15,7 @@ placements -- the single most productive move in this family.
 
 - **312 of 312 decode with the maintained terrain codec.** The custom LZ4 with
   big-endian offsets and bit-interleaved tokens in
-  `scripts/asset_builder/terrain_stream.py` -- built for `Terrain_*` -- decodes these
+  `scripts/webui/assets/terrain_stream.py` -- built for `Terrain_*` -- decodes these
   byte-exactly, each to the length its own leading word declares. *The container is
   shared across two families that no naming convention connects.*
 - **All 312 decoded payloads are valid FlatBuffers**: root offset in range, vtable

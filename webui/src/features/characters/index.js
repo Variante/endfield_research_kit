@@ -1423,7 +1423,7 @@
       return data;
     } catch (error) {
       if (token !== state.loadToken) return null;
-      if (state.container) state.container.innerHTML = `<div class="characters-empty characters-error">${ui("Character data could not be loaded. Rebuild it with scripts/build_character_data.py.", "无法加载人物数据。请运行 scripts/build_character_data.py 重新生成。")}<br><code>${esc(error.message)}</code></div>`;
+      if (state.container) state.container.innerHTML = `<div class="characters-empty characters-error">${ui("Character data could not be loaded. Rebuild it with python -m scripts.webui.characters.build_character_data.", "无法加载人物数据。请运行 python -m scripts.webui.characters.build_character_data 重新生成。")}<br><code>${esc(error.message)}</code></div>`;
       return null;
     }
   }

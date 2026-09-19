@@ -1,0 +1,4994 @@
+#!/usr/bin/env python3
+"""Build inferred HLOD top-down previews for every recovered map.
+
+The HLOD bundles publish `Mesh`, `Material` and `Texture2D` only - no
+`GameObject` or `Transform` record survives the export - so a cluster's world
+placement cannot be read out and has to be inferred from its name. A cluster is
+named `S_HLOD<lod>_<i>_<j>_Cluster_<hash>`, and its vertices are stored centred
+on the cluster's own origin, so the only unknowns are the grid cell size and the
+grid origin.
+
+Both are recovered rather than assumed:
+
+  * current-build `DynamicSceneUtil.GetGridSizeByLen` uses 32 m as the base
+    grid length and doubles it per encoded level. The exported HLOD indices
+    halve between adjacent levels, so `HLOD0` is 32 m and `HLOD1` is 64 m.
+  * the origin is fitted per level by asking which origin makes the level's own
+    exact marker transforms land on cells that actually carry geometry, at every
+    LOD at once. The fit is corroborated across levels: one shared, power-of-two
+    aligned origin explains every `map01_*`/`indie_*` level and another explains
+    every `map02_*` level, which a per-level curve fit would not produce.
+
+The result is still an inferred diagnostic backdrop, not an exact scene
+transform, and every manifest publishes the fit that produced it - coverage,
+sample size and how many origins tied - so a weak background is visible as weak.
+A level whose fit is under-determined publishes no background at all.
+"""
+
+from __future__ import annotations
+
+import argparse
+import functools
+import hashlib
+import io
+import json
+import math
+import os
+import re
+import struct
+import subprocess
+import sys
+import zlib
+from array import array
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+
+try:  # Optional: only the PNG unfilter loop below is accelerated by it.
+    from PIL import Image as _PILImage
+except ImportError:  # pragma: no cover - exercised by the stdlib fallback path
+    _PILImage = None
+
+try:  # Optional acceleration for the depth-tested triangle hot loop.
+    import numpy as _np
+    from numba import njit as _numba_njit
+except ImportError:  # pragma: no cover - the maintained stdlib path remains valid
+    _np = None
+    _numba_njit = None
+
+if __package__ in {None, ""}:
+    raise SystemExit(
+        "Run this maintained entry point as: "
+        "python -m scripts.webui.map.build_map_recovery_preview"
+    )
+
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
+
+from scripts.webui.map.audit_map_asset_closure import iter_asset_entries, sha256_file
+from scripts.webui.map.map_recovery_cache_evidence import (
+    asset_map_sha256,
+    binding_relations,
+    file_content_evidence,
+    repo_rel,
+    source_evidence_list,
+    streaming_source_evidence,
+)
+from scripts.webui.map.map_recovery_sources import isolated_art_source, projection_streaming_scene
+from scripts.webui.map.recover_map_streaming_instances import DEFAULT_CLI as STREAMING_CLI
+
+DEFAULT_ASSET_MAP = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json"
+MESH_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
+TEXTURE_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
+MATERIAL_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material"
+RENDERER_INDEX = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/renderer_index/renderers.jsonl"
+MAPS_ROOT = ROOT / "webui/data/map_recovery/maps"
+OUTPUT_ROOT = ROOT / "webui/data/map_recovery/render"
+HLOD_INDEX = ROOT / "reports/assets/map_recovery/hlod_grid_index.json"
+RENDER_CACHE_ROOT = ROOT / "reports/assets/map_recovery/render_cache"
+STREAMING_SCENE_COST_CACHE = ROOT / "reports/assets/map_recovery/streaming_scene_costs.json"
+STREAMING_SCENE_COST_SCHEMA = 1
+ASSET_INDEX = ROOT / "webui/data/assets/index.json"
+
+CLUSTER_RE = re.compile(r"^S_HLOD(\d+)_(-?\d+)_(-?\d+)_Cluster_")
+# `.../<levelId>_art/hlod_v2/pc/hlod<n>/mesh` - the container names the level
+# directly, so no per-level needle scan of the 750 MB asset map is needed.
+LEVEL_RE = re.compile(r"/([a-z0-9_]+)_art/hlod_v2/", re.IGNORECASE)
+REGION_LEVEL_RE = re.compile(r"^(map0[12])_lv\d+$", re.IGNORECASE)
+OVERHEAD_COVER_RE = re.compile(r"(?:roof|ceiling)", re.IGNORECASE)
+DETAIL_STRUCTURAL_RE = re.compile(r"(?:^|[_+])(?:floor|roof|ceiling|ground|terrain)(?:[_+]|$)", re.IGNORECASE)
+DETAIL_PROP_RE = re.compile(r"(?:^|[_+])(?:prop|decal|bush|tree|vine)(?:[_+]|$)", re.IGNORECASE)
+WATER_SECTOR_RE = re.compile(
+    r"/lunascenes/([^/]+)/releasedata/waterdata/sector/t_(-?\d+)_(-?\d+)[.]asset$",
+    re.IGNORECASE,
+)
+
+# Current-build GameAssembly's DynamicSceneUtil.GetGridSizeByLen starts at
+# 32 m. Exported HLOD0/HLOD1/HLOD2 indices halve at each adjacent level, so
+# their numeric suffix is the same doubling exponent used by the runtime grid.
+BASE_CELL = 32.0
+COVERAGE_TOLERANCE = 0.03  # origins this close to the best fit stay candidates
+MIN_COVERAGE = 0.90  # below this the fit is not published as a background
+MIN_SAMPLES = 50  # marker transforms needed before an origin is claimed
+VIEW_ASPECT = 1024 / 1280  # the page's SVG viewBox, so the raster is undistorted
+BOUNDS_PAD = 0.08
+LONG_EDGE = 1100  # long side of the rendered raster, in pixels
+# A browser scene is an optional inspection aid, not the full HLOD export.
+# Keep its manifest bounded so opening a map never schedules hundreds of large
+# OBJ downloads.  The PNG remains the complete, cheap backdrop.
+MAX_SCENE_MESHES = 24
+MAX_SCENE_TRIANGLES = 120_000
+NO_HIT = -1e30  # empty depth-buffer sentinel
+EDGE_EPSILON = 0.002  # half-pixel slack so adjacent triangles do not seam
+
+# Elevation layers use a bounded grow-and-smooth pass while surface and point
+# layers retain only exact depth hits.
+FILL_ROUNDS = 6  # pixels of surface grown into gaps between scattered props
+BLUR_RADIUS = 3
+BLUR_PASSES = 2
+HILLSHADE_AZIMUTH = 315.0
+HILLSHADE_ALTITUDE = 45.0
+HILLSHADE_SCALE = 1.6
+AMBIENT = 0.80  # hillshade only modulates the top 20%, keeping the wash calm
+# Grown pixels are more transparent than pixels that carry real geometry, so the
+# reader can still see where the export actually had a surface.
+ALPHA_REAL = 210
+ALPHA_GROWN = 150
+
+# A full oblique projection would move every marker by world Y and break the
+# page's X/Z overlay contract.  For dg002 retain the exact top-down anchor and
+# add one lighter, height-proportional sample toward screen +Z.  This exposes
+# elevated roofs/towers without filling side walls that the HLOD evidence does
+# not actually contain.
+# dg002's screenshot-era appearance came from irregular mesh samples, not a
+# screen-space stipple over filled triangles. Keep that choice level-scoped;
+# other HLOD maps retain the conservative depth-point renderer.
+LEVEL_SCAN_MODES = {"indie_dg002": "mesh_vertices"}
+LEVEL_PREFERRED_LODS = {"indie_dg002": 0}
+BASE_TEXTURE_SLOTS = ("_BaseColorMap", "_BaseMap", "_MainTex", "_Layer1BaseMap")
+HLOD_CLUSTER_RE = re.compile(r"^S_HLOD(?P<lod>\d+)_-?\d+_-?\d+_Cluster_(?P<hash>-?\d+)$", re.IGNORECASE)
+HLOD_MATERIAL_REL_RE = re.compile(
+    r"/Material/M_auto_generated_HLOD(?P<lod>\d+)_(?P<level>.+?)_art_(?P<hash>-?\d+)_p[0-9A-F]+[.]json$",
+    re.IGNORECASE,
+)
+HLOD_MATERIAL_NAME_RE = re.compile(
+    r"^M_auto_generated_HLOD(?P<lod>\d+)_(?P<level>.+?)_art_(?P<hash>-?\d+)$",
+    re.IGNORECASE,
+)
+HLOD_MATERIAL_CONTAINER_RE = re.compile(
+    r"/material/m_auto_generated_HLOD(?P<lod>\d+)_(?P<level>.+?)_art_(?P<hash>-?\d+)[.]mat$",
+    re.IGNORECASE,
+)
+HLOD_DIFFUSE_NAME_RE = re.compile(
+    r"^T_auto_generated_HLOD(?P<lod>\d+)_(?P<level>.+?)_art_-?\d+_D$",
+    re.IGNORECASE,
+)
+TEXTURE_PREVIEW_EDGE = 96
+WATER_SECTOR_SIZE = 128.0
+DETAIL_HORIZONTAL_NORMAL_Y = 0.985
+DETAIL_HORIZONTAL_AREA = 0.1
+DETAIL_PROP_ONLY_LEVELS = {"base01_lv001", "base01_lv003"}
+DEFAULT_SURFACE_POINT_DENSITY = 0.25  # deterministic world-space samples per square metre
+# 2: sources are identified by asset-map object hash / content SHA-256 instead
+# of size+mtime, so a `--from-game` rewrite of unchanged bytes still hits.
+POINT_RENDER_CACHE_SCHEMA = 2
+# Bump whenever a rendering rule changes without changing its explicit inputs.
+POINT_RENDER_ALGORITHM_VERSION = 1
+_USE_RENDER_CACHE = True
+# HLOD cluster indices use one fixed region grid. The dominant exact fits are
+# Map01=(-1024,-1024) and Map02=(-2048,-2048); individual level marker
+# occupancy must not move a member by one cell. GameAssembly's map UI path maps
+# world coordinates linearly through UILevelMapLoadConfig and has no per-level
+# presentation scale/translation, so no image-registration correction belongs
+# in the render manifest.
+REGION_HLOD_GRID_ORIGINS = {"map01": (-1024.0, -1024.0), "map02": (-2048.0, -2048.0)}
+LEVEL_RENDER_ALIGNMENTS = {}
+
+_TEXTURE_BINDINGS: dict[str, dict] | None = None
+_HLOD_TEXTURE_BINDINGS: dict[tuple[str, int, int], dict] | None = None
+_RENDERER_TEXTURE_BINDINGS: dict[tuple[str, int], dict] | None = None
+_TEXTURE_PREVIEWS: dict[Path, tuple[int, int, bytes] | None] = {}
+_MATERIAL_PARAMS: dict[tuple[Path, str], dict] = {}
+_RENDER_CACHE_STATS = {"hits": 0, "writes": 0}
+
+
+def preview_level_groups(maps_root: Path, levels: set[str] | None = None) -> list[tuple[str, ...]]:
+    """Group independently renderable levels without splitting shared scenes.
+
+    Several gameplay maps can publish one exact Streaming scene. Their bounds
+    and output image are intentionally computed once from the complete member
+    set, so every member of such a scene must stay in one worker shard. A map
+    whose own level id is another group's scene id stays with that group too,
+    because both would otherwise own the same render/cache filename prefix.
+    """
+    selected = levels or set()
+    level_ids = [
+        path.stem
+        for path in sorted(maps_root.glob("*.json"))
+        if not selected or path.stem in selected
+    ]
+    parents = {level_id: level_id for level_id in level_ids}
+
+    def find(level_id: str) -> str:
+        while parents[level_id] != level_id:
+            parents[level_id] = parents[parents[level_id]]
+            level_id = parents[level_id]
+        return level_id
+
+    def union(left: str, right: str) -> None:
+        left_root, right_root = find(left), find(right)
+        if left_root != right_root:
+            parents[max(left_root, right_root)] = min(left_root, right_root)
+
+    scene_owner: dict[str, str] = {}
+    for level_id in level_ids:
+        projection = projection_streaming_scene(level_id)
+        if not projection:
+            continue
+        scene_id = str(projection["sceneId"])
+        owner = scene_owner.setdefault(scene_id, level_id)
+        union(level_id, owner)
+        if scene_id in parents:
+            union(level_id, scene_id)
+
+    groups: dict[str, list[str]] = {}
+    for level_id in level_ids:
+        groups.setdefault(find(level_id), []).append(level_id)
+    return [tuple(sorted(groups[key])) for key in sorted(groups)]
+
+
+def _streaming_scene_cost(source: Path) -> float:
+    """Estimate one exact Streaming scene's rasterizer work from its sidecar.
+
+    Triangle count is proportional to how much OBJ geometry each instance
+    draws, and an OBJ's byte size is the only proxy for that which does not
+    mean parsing fifteen gigabytes of OBJ text, so only `stat` is used here.
+    """
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    sizes: dict[str, int] = {}
+    total = 0.0
+    instances = 0
+    for row in payload.get("entityBases") or []:
+        meshes = row.get("meshes")
+        count = row.get("instanceCount")
+        count = count if isinstance(count, int) and count > 0 else 1
+        instances += count
+        if not isinstance(meshes, list):
+            continue
+        for mesh in meshes:
+            value = str((mesh or {}).get("obj") or "") if isinstance(mesh, dict) else ""
+            if not value:
+                continue
+            if value not in sizes:
+                mesh_path = ROOT / value
+                sizes[value] = mesh_path.stat().st_size if mesh_path.is_file() else 0
+            total += sizes[value] * count
+    # A sidecar whose meshes are all unexported still costs one pass over its
+    # instances, so instance count remains the fallback ordering signal.
+    return total or float(instances)
+
+
+def _load_streaming_scene_costs() -> dict:
+    if not STREAMING_SCENE_COST_CACHE.is_file():
+        return {}
+    cached = json.loads(STREAMING_SCENE_COST_CACHE.read_text(encoding="utf-8"))
+    scenes = cached.get("scenes")
+    if cached.get("schemaVersion") != STREAMING_SCENE_COST_SCHEMA or not isinstance(scenes, dict):
+        return {}
+    return scenes
+
+
+def _write_streaming_scene_costs(scenes: dict) -> None:
+    STREAMING_SCENE_COST_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    temporary = STREAMING_SCENE_COST_CACHE.with_name(f"{STREAMING_SCENE_COST_CACHE.name}.{os.getpid()}.tmp")
+    temporary.write_text(
+        json.dumps(
+            {"schemaVersion": STREAMING_SCENE_COST_SCHEMA, "scenes": scenes},
+            ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+        ) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(STREAMING_SCENE_COST_CACHE)
+
+
+def preview_scene_costs(groups: list[tuple[str, ...]]) -> dict[str, float]:
+    """Estimated render cost per level id, each Streaming scene counted once.
+
+    The members of a shared scene rasterize it once between them, so the
+    scene's cost is split evenly across its members. `preview_level_groups`
+    already keeps those members in one group, so summing a group's level costs
+    reconstructs the scene cost instead of a multiple of it.
+
+    Only the parent process needs this, and it is persisted per scene under the
+    sidecar's own `InitChunkData` content evidence, which a cheap prefix scan
+    reads. Otherwise every parallel run would re-parse a gigabyte of sidecar
+    JSON - a third of it the single 343 MB `map02` file - to re-derive numbers
+    that only change when the export does.
+    """
+    scene_costs: dict[str, float] = {}
+    scene_members: dict[str, list[str]] = {}
+    costs: dict[str, float] = {}
+    persisted = _load_streaming_scene_costs()
+    rebuilt = False
+    for group in groups:
+        for level_id in group:
+            projection = projection_streaming_scene(level_id)
+            source = Path(projection["instanceSource"]) if projection else None
+            if source is None or not source.is_file():
+                costs[level_id] = 1.0
+                continue
+            scene_id = str(projection["sceneId"])
+            if scene_id not in scene_costs:
+                evidence = streaming_source_evidence(level_id)
+                # Without packed-chunk evidence there is nothing to key a
+                # reusable cost on, so that scene is measured every time.
+                reusable = evidence.get("evidence") == "initChunkDataPackedSha256"
+                # The evidence is only ever compared for equality, and a
+                # region's per-chunk hash list is megabytes, so the table
+                # stores its digest rather than the evidence itself.
+                digest = hashlib.sha256(
+                    json.dumps(evidence, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+                ).hexdigest()
+                entry = persisted.get(scene_id) if reusable else None
+                if isinstance(entry, dict) and entry.get("evidenceSha256") == digest and isinstance(
+                    entry.get("cost"), (int, float)
+                ):
+                    scene_costs[scene_id] = float(entry["cost"])
+                else:
+                    scene_costs[scene_id] = _streaming_scene_cost(source)
+                    if reusable:
+                        persisted[scene_id] = {
+                            "evidenceSha256": digest,
+                            "evidenceKind": evidence.get("evidence"),
+                            "cost": scene_costs[scene_id],
+                        }
+                        rebuilt = True
+            scene_members.setdefault(scene_id, []).append(level_id)
+    if rebuilt:
+        _write_streaming_scene_costs(persisted)
+    for scene_id, members in scene_members.items():
+        share = scene_costs[scene_id] / len(members)
+        for level_id in members:
+            costs[level_id] = share
+    return costs
+
+
+def _preview_group_cost(group: tuple[str, ...], costs: dict[str, float] | None) -> float:
+    """One group's estimated cost; equal weights keep the old even spread."""
+    if not costs:
+        return 1.0
+    return max(1.0, sum(costs.get(level_id, 0.0) for level_id in group))
+
+
+def preview_worker_shards(
+    groups: list[tuple[str, ...]], jobs: int, costs: dict[str, float] | None = None,
+) -> list[tuple[str, ...]]:
+    """Balance stable scene groups across long-lived workers by rendering cost.
+
+    Round-robin by sorted group name left three of four workers idle for most
+    of a full run, because the single `map02` group carries more geometry than
+    every other group put together. Longest-processing-time-first keeps the
+    heavy groups on separate workers; a shared Streaming scene still never
+    splits, because the group, not the level, is the unit being placed.
+    """
+    worker_count = max(1, min(jobs, len(groups)))
+    shards: list[list[str]] = [[] for _ in range(worker_count)]
+    loads = [0.0] * worker_count
+    ordered = sorted(
+        range(len(groups)),
+        key=lambda index: (-_preview_group_cost(groups[index], costs), index),
+    )
+    for index in ordered:
+        target = min(range(worker_count), key=lambda worker: (loads[worker], worker))
+        shards[target].extend(groups[index])
+        loads[target] += _preview_group_cost(groups[index], costs)
+    return [tuple(shard) for shard in shards if shard]
+
+
+def _preview_worker_command(args: argparse.Namespace, levels: tuple[str, ...]) -> list[str]:
+    command = [
+        sys.executable,
+        str(Path(__file__).resolve()),
+        "--asset-map", str(args.asset_map),
+        "--mesh-root", str(args.mesh_root),
+        "--texture-root", str(args.texture_root),
+        "--maps-root", str(args.maps_root),
+        "--output-root", str(args.output_root),
+        "--hlod-index", str(args.hlod_index),
+        "--jobs", "1",
+        "--scan-mode", str(args.scan_mode),
+        "--surface-point-density", str(args.surface_point_density),
+    ]
+    if args.no_render_cache:
+        command.append("--no-render-cache")
+    if args.lod is not None:
+        command.extend(("--lod", str(args.lod)))
+    for level_id in levels:
+        command.extend(("--level", level_id))
+    return command
+
+
+def _run_preview_worker(command: list[str]) -> int:
+    try:
+        return subprocess.run(command, cwd=ROOT, check=False).returncode
+    except OSError as exc:
+        print(f"map previews: worker launch failed: {type(exc).__name__}: {exc}", file=sys.stderr)
+        return 1
+
+
+def run_parallel_preview_workers(args: argparse.Namespace) -> int | None:
+    """Render independent level shards concurrently, or return None for serial."""
+    groups = preview_level_groups(args.maps_root, set(args.level))
+    costs = preview_scene_costs(groups) if args.jobs > 1 and len(groups) > 1 else None
+    shards = preview_worker_shards(groups, args.jobs, costs)
+    if len(shards) <= 1:
+        return None
+
+    # Make the shared HLOD index and binding tables current once before the
+    # workers read them. This avoids four concurrent rebuilds of the same
+    # derived caches after an AssetMap refresh.
+    if args.asset_map.is_file():
+        index = load_hlod_index(args.asset_map, args.hlod_index, args.refresh_index)
+        prepare_render_bindings(args.asset_map, index, args.texture_root)
+
+    print(
+        f"map previews: {len(groups)} independent scene groups across "
+        f"{len(shards)} worker processes",
+        flush=True,
+    )
+    commands = [_preview_worker_command(args, shard) for shard in shards]
+    with ThreadPoolExecutor(max_workers=len(commands)) as executor:
+        returncodes = list(executor.map(_run_preview_worker, commands))
+    return next((code for code in returncodes if code), 0)
+
+
+def _path_id_file(index: dict[str, Path], path_id: int) -> Path | None:
+    unsigned = path_id & ((1 << 64) - 1)
+    return index.get(f"{unsigned:016X}") or index.get(f"{unsigned:X}")
+
+
+_raster_mesh_numba = None
+_sample_mesh_numba = None
+_transform_vertices_numba = None
+_origin_lod_coverage_numba = None
+if _numba_njit is not None:
+    @_numba_njit(cache=True)
+    def _origin_lod_coverage_numba(
+        xs, zs, base_cell, size, kx_lo, kx_count, kz_lo, kz_count, occupied, i_min, j_min,
+    ):
+        """Marker occupancy of one LOD over a whole rectangle of candidate origins.
+
+        The cell index along X depends only on the candidate's kx, so it is
+        computed once per kx row instead of once per candidate per marker.
+        """
+        count = xs.shape[0]
+        rows = occupied.shape[0]
+        columns = occupied.shape[1]
+        coverage = _np.empty((kx_count, kz_count), dtype=_np.float64)
+        cell_i = _np.empty(count, dtype=_np.int64)
+        for a in range(kx_count):
+            origin_x = (kx_lo + a) * base_cell
+            for index in range(count):
+                cell_i[index] = int(math.floor((xs[index] - origin_x) / size)) - i_min
+            for b in range(kz_count):
+                origin_z = (kz_lo + b) * base_cell
+                hits = 0
+                for index in range(count):
+                    i = cell_i[index]
+                    if i < 0 or i >= rows:
+                        continue
+                    j = int(math.floor((zs[index] - origin_z) / size)) - j_min
+                    if 0 <= j < columns and occupied[i, j]:
+                        hits += 1
+                coverage[a, b] = hits / count
+        return coverage
+
+    @_numba_njit(cache=True)
+    def _transform_vertices_numba(raw, matrix):
+        """Apply one column-major instance matrix to a whole OBJ's vertices.
+
+        AnimeStudio's OBJ conversion mirrors Unity X, so the mirror is undone
+        before the matrix multiply, in the same float64 operation order the
+        per-vertex Python comprehension used.
+        """
+        count = raw.shape[0]
+        world = _np.empty((count, 3), dtype=_np.float64)
+        for index in range(count):
+            local_x = -raw[index, 0]
+            obj_y = raw[index, 1]
+            obj_z = raw[index, 2]
+            world[index, 0] = matrix[0] * local_x + matrix[4] * obj_y + matrix[8] * obj_z + matrix[12]
+            world[index, 1] = matrix[1] * local_x + matrix[5] * obj_y + matrix[9] * obj_z + matrix[13]
+            world[index, 2] = matrix[2] * local_x + matrix[6] * obj_y + matrix[10] * obj_z + matrix[14]
+        return world
+
+    @_numba_njit(cache=True)
+    def _raster_mesh_numba(
+        depth, detail_depth, color_depth, detail_color_depth, albedo, detail_albedo,
+        width, height, min_x, max_z, span_x, span_z,
+        world, face_vertices, face_valid, face_texcoords, face_uv_ok, texcoords,
+        first_face, last_face, detail_mode,
+        has_texture, texture_pixels, texture_width, texture_height,
+        scale_u, scale_v, offset_u, offset_v, cutoff_alpha, tint_lut, edge_epsilon,
+    ):
+        """Compiled equivalent of the streaming rasterizer, one submesh run at a time.
+
+        The per-triangle screen setup, the detail classification and the pixel
+        loop all run here so that a mesh instance costs one compiled call
+        instead of one interpreted call per face.
+        """
+        drawn = 0
+        textured = 0
+        detail_count = 0
+        excluded_count = 0
+        textured_hit = 0
+        for face in range(first_face, last_face):
+            if not face_valid[face]:
+                continue
+            index_a = face_vertices[face, 0]
+            index_b = face_vertices[face, 1]
+            index_c = face_vertices[face, 2]
+            x_a = world[index_a, 0]
+            y_a = world[index_a, 1]
+            z_a = world[index_a, 2]
+            x_b = world[index_b, 0]
+            y_b = world[index_b, 1]
+            z_b = world[index_b, 2]
+            x_c = world[index_c, 0]
+            y_c = world[index_c, 1]
+            z_c = world[index_c, 2]
+            if detail_mode == 0:
+                detail_face = False
+            elif detail_mode == 1:
+                detail_face = True
+            else:
+                ux = x_b - x_a
+                uy = y_b - y_a
+                uz = z_b - z_a
+                vx = x_c - x_a
+                vy = y_c - y_a
+                vz = z_c - z_a
+                nx = uy * vz - uz * vy
+                ny = uz * vx - ux * vz
+                nz = ux * vy - uy * vx
+                magnitude = math.sqrt(nx * nx + ny * ny + nz * nz)
+                large_horizontal = False
+                if magnitude > 1e-9 and abs(ny) / magnitude >= DETAIL_HORIZONTAL_NORMAL_Y:
+                    large_horizontal = abs(ux * vz - uz * vx) * 0.5 >= DETAIL_HORIZONTAL_AREA
+                detail_face = not large_horizontal
+            if detail_face:
+                detail_count += 1
+            else:
+                excluded_count += 1
+            face_textured = has_texture and face_uv_ok[face]
+            screen_x0 = (x_a - min_x) / span_x * width
+            screen_x1 = (x_b - min_x) / span_x * width
+            screen_x2 = (x_c - min_x) / span_x * width
+            screen_y0 = (max_z - z_a) / span_z * height
+            screen_y1 = (max_z - z_b) / span_z * height
+            screen_y2 = (max_z - z_c) / span_z * height
+            x0 = max(0, int(min(screen_x0, screen_x1, screen_x2)))
+            x1 = min(width - 1, int(max(screen_x0, screen_x1, screen_x2)) + 1)
+            y0 = max(0, int(min(screen_y0, screen_y1, screen_y2)))
+            y1 = min(height - 1, int(max(screen_y0, screen_y1, screen_y2)) + 1)
+            if x0 > x1 or y0 > y1:
+                continue
+            area = ((screen_y1 - screen_y2) * (screen_x0 - screen_x2)
+                    + (screen_x2 - screen_x1) * (screen_y0 - screen_y2))
+            if abs(area) < 1e-12:
+                continue
+            drawn += 1
+            u_a = 0.0
+            v_a = 0.0
+            u_b = 0.0
+            v_b = 0.0
+            u_c = 0.0
+            v_c = 0.0
+            if face_textured:
+                textured += 1
+                uv_a = face_texcoords[face, 0]
+                uv_b = face_texcoords[face, 1]
+                uv_c = face_texcoords[face, 2]
+                u_a = texcoords[uv_a, 0]
+                v_a = texcoords[uv_a, 1]
+                u_b = texcoords[uv_b, 0]
+                v_b = texcoords[uv_b, 1]
+                u_c = texcoords[uv_c, 0]
+                v_c = texcoords[uv_c, 1]
+            inv_area = 1.0 / area
+            w0_dx = (screen_y1 - screen_y2) * inv_area
+            w0_dy = (screen_x2 - screen_x1) * inv_area
+            w1_dx = (screen_y2 - screen_y0) * inv_area
+            w1_dy = (screen_x0 - screen_x2) * inv_area
+            first_x = x0 + 0.5
+            first_y = y0 + 0.5
+            row_w0 = (((screen_y1 - screen_y2) * (first_x - screen_x2)
+                       + (screen_x2 - screen_x1) * (first_y - screen_y2)) * inv_area)
+            row_w1 = (((screen_y2 - screen_y0) * (first_x - screen_x2)
+                       + (screen_x0 - screen_x2) * (first_y - screen_y2)) * inv_area)
+            for pixel_y in range(y0, y1 + 1):
+                base = pixel_y * width
+                w0 = row_w0
+                w1 = row_w1
+                for pixel_x in range(x0, x1 + 1):
+                    w2 = 1.0 - w0 - w1
+                    if w0 >= -edge_epsilon and w1 >= -edge_epsilon and w2 >= -edge_epsilon:
+                        elevation = w0 * y_a + w1 * y_b + w2 * y_c
+                        index = base + pixel_x
+                        wins_full = elevation > depth[index]
+                        wins_detail = detail_face and elevation > detail_depth[index]
+                        wins_color = face_textured and elevation > color_depth[index]
+                        wins_detail_color = face_textured and detail_face and elevation > detail_color_depth[index]
+                        if wins_full or wins_detail or wins_color or wins_detail_color:
+                            visible = True
+                            red = green = blue = alpha = 0
+                            if face_textured:
+                                u = (w0 * u_a + w1 * u_b + w2 * u_c) * scale_u + offset_u
+                                v = (w0 * v_a + w1 * v_b + w2 * v_c) * scale_v + offset_v
+                                texture_x = min(texture_width - 1, int((u % 1.0) * texture_width))
+                                texture_y = min(texture_height - 1, int(((1.0 - v) % 1.0) * texture_height))
+                                alpha = texture_pixels[texture_y, texture_x, 3]
+                                if alpha < cutoff_alpha:
+                                    visible = False
+                                else:
+                                    red = tint_lut[0, texture_pixels[texture_y, texture_x, 0]]
+                                    green = tint_lut[1, texture_pixels[texture_y, texture_x, 1]]
+                                    blue = tint_lut[2, texture_pixels[texture_y, texture_x, 2]]
+                            if visible:
+                                if wins_full:
+                                    depth[index] = elevation
+                                if wins_color:
+                                    color_depth[index] = elevation
+                                    albedo[index, 0] = red
+                                    albedo[index, 1] = green
+                                    albedo[index, 2] = blue
+                                    albedo[index, 3] = alpha
+                                    textured_hit = 1
+                                if wins_detail:
+                                    detail_depth[index] = elevation
+                                if wins_detail_color:
+                                    detail_color_depth[index] = elevation
+                                    detail_albedo[index, 0] = red
+                                    detail_albedo[index, 1] = green
+                                    detail_albedo[index, 2] = blue
+                                    detail_albedo[index, 3] = alpha
+                    w0 += w0_dx
+                    w1 += w1_dx
+                row_w0 += w0_dy
+                row_w1 += w1_dy
+        return drawn, textured, detail_count, excluded_count, textured_hit
+
+    @_numba_njit(cache=True)
+    def _sample_mesh_numba(
+        world, face_vertices, face_valid, face_texcoords, face_uv_ok, texcoords,
+        first_face, last_face, skip_horizontal,
+        has_texture, texture_pixels, texture_width, texture_height,
+        scale_u, scale_v, offset_u, offset_v, cutout, transparent, cutoff, tint_lut,
+        spacing, min_x, max_x, min_z, max_z, span_x, span_z, width, height,
+        edge_epsilon, epsilon,
+        head, chain, sample_index, sample_y, sample_rgba, count,
+    ):
+        """Compiled equivalent of the world-lattice surface sampler.
+
+        Returns the first face it did not finish. The caller grows the record
+        buffers and resumes there, which never double counts because a face
+        only touches a counter after the buffer check has passed.
+        """
+        excluded_horizontal = 0
+        unresolved_material = 0
+        unresolved_uv = 0
+        sampled_triangles = 0
+        source_samples = 0
+        used_texture = 0
+        needed = 0
+        capacity = sample_y.shape[0]
+        face = first_face
+        while face < last_face:
+            if not face_valid[face]:
+                face += 1
+                continue
+            index_a = face_vertices[face, 0]
+            index_b = face_vertices[face, 1]
+            index_c = face_vertices[face, 2]
+            x_a = world[index_a, 0]
+            y_a = world[index_a, 1]
+            z_a = world[index_a, 2]
+            x_b = world[index_b, 0]
+            y_b = world[index_b, 1]
+            z_b = world[index_b, 2]
+            x_c = world[index_c, 0]
+            y_c = world[index_c, 1]
+            z_c = world[index_c, 2]
+            if skip_horizontal:
+                ux = x_b - x_a
+                uy = y_b - y_a
+                uz = z_b - z_a
+                vx = x_c - x_a
+                vy = y_c - y_a
+                vz = z_c - z_a
+                nx = uy * vz - uz * vy
+                ny = uz * vx - ux * vz
+                nz = ux * vy - uy * vx
+                magnitude = math.sqrt(nx * nx + ny * ny + nz * nz)
+                large_horizontal = False
+                if magnitude > 1e-9 and abs(ny) / magnitude >= DETAIL_HORIZONTAL_NORMAL_Y:
+                    large_horizontal = abs(ux * vz - uz * vx) * 0.5 >= DETAIL_HORIZONTAL_AREA
+                if large_horizontal:
+                    excluded_horizontal += 1
+                    face += 1
+                    continue
+            if not has_texture:
+                unresolved_material += 1
+                face += 1
+                continue
+            area = (z_b - z_c) * (x_a - x_c) + (x_c - x_b) * (z_a - z_c)
+            if abs(area) < 1e-12:
+                face += 1
+                continue
+            min_kx = int(math.ceil(min(x_a, x_b, x_c) / spacing - 0.5))
+            max_kx = int(math.floor(max(x_a, x_b, x_c) / spacing - 0.5))
+            min_kz = int(math.ceil(min(z_a, z_b, z_c) / spacing - 0.5))
+            max_kz = int(math.floor(max(z_a, z_b, z_c) / spacing - 0.5))
+            if not face_uv_ok[face]:
+                unresolved_uv += 1
+                face += 1
+                continue
+            cells_x = max_kx - min_kx + 1
+            cells_z = max_kz - min_kz + 1
+            budget = cells_x * cells_z if cells_x > 0 and cells_z > 0 else 0
+            if count + budget > capacity:
+                needed = count + budget
+                return (face, count, excluded_horizontal, unresolved_material,
+                        unresolved_uv, sampled_triangles, source_samples, used_texture, needed)
+            uv_a = face_texcoords[face, 0]
+            uv_b = face_texcoords[face, 1]
+            uv_c = face_texcoords[face, 2]
+            u_a = texcoords[uv_a, 0]
+            v_a = texcoords[uv_a, 1]
+            u_b = texcoords[uv_b, 0]
+            v_b = texcoords[uv_b, 1]
+            u_c = texcoords[uv_c, 0]
+            v_c = texcoords[uv_c, 1]
+            landed = False
+            for kz in range(min_kz, max_kz + 1):
+                world_z = (kz + 0.5) * spacing
+                if world_z < min_z or world_z > max_z:
+                    continue
+                for kx in range(min_kx, max_kx + 1):
+                    world_x = (kx + 0.5) * spacing
+                    if world_x < min_x or world_x > max_x:
+                        continue
+                    w0 = ((z_b - z_c) * (world_x - x_c) + (x_c - x_b) * (world_z - z_c)) / area
+                    w1 = ((z_c - z_a) * (world_x - x_c) + (x_a - x_c) * (world_z - z_c)) / area
+                    w2 = 1.0 - w0 - w1
+                    if min(w0, w1, w2) < -edge_epsilon:
+                        continue
+                    world_y = w0 * y_a + w1 * y_b + w2 * y_c
+                    pixel_x = int(round((world_x - min_x) / span_x * (width - 1)))
+                    pixel_y = int(round((max_z - world_z) / span_z * (height - 1)))
+                    if pixel_x < 0 or pixel_x >= width or pixel_y < 0 or pixel_y >= height:
+                        continue
+                    u = (w0 * u_a + w1 * u_b + w2 * u_c) * scale_u + offset_u
+                    v = (w0 * v_a + w1 * v_b + w2 * v_c) * scale_v + offset_v
+                    texture_x = min(texture_width - 1, int((u % 1.0) * texture_width))
+                    texture_y = min(texture_height - 1, int(((1.0 - v) % 1.0) * texture_height))
+                    alpha = int(texture_pixels[texture_y, texture_x, 3])
+                    if cutout and alpha / 255 < cutoff:
+                        continue
+                    red = tint_lut[0, texture_pixels[texture_y, texture_x, 0]]
+                    green = tint_lut[1, texture_pixels[texture_y, texture_x, 1]]
+                    blue = tint_lut[2, texture_pixels[texture_y, texture_x, 2]]
+                    out_alpha = alpha if transparent else 255
+                    used_texture = 1
+                    pixel_index = pixel_y * width + pixel_x
+                    node = head[pixel_index]
+                    duplicate = False
+                    while node != -1:
+                        if abs(sample_y[node] - world_y) <= epsilon:
+                            duplicate = True
+                            break
+                        node = chain[node]
+                    if not duplicate:
+                        sample_index[count] = pixel_index
+                        sample_y[count] = world_y
+                        sample_rgba[count, 0] = red
+                        sample_rgba[count, 1] = green
+                        sample_rgba[count, 2] = blue
+                        sample_rgba[count, 3] = out_alpha
+                        chain[count] = head[pixel_index]
+                        head[pixel_index] = count
+                        count += 1
+                    source_samples += 1
+                    landed = True
+            if landed:
+                sampled_triangles += 1
+            face += 1
+        return (face, count, excluded_horizontal, unresolved_material,
+                unresolved_uv, sampled_triangles, source_samples, used_texture, needed)
+
+
+def _binding_source_paths(binding: dict | None) -> list[Path]:
+    if not isinstance(binding, dict):
+        return []
+    paths = []
+    for key in ("materialPath", "texturePath"):
+        value = binding.get(key)
+        if isinstance(value, Path):
+            paths.append(value)
+        elif isinstance(value, str) and value:
+            paths.append(Path(value))
+    for child in binding.get("submeshBindings") or []:
+        paths.extend(_binding_source_paths(child))
+    return paths
+
+
+def _point_render_cache_signature(
+    level_id: str,
+    positions: list[tuple[float, float, float]],
+    map_payload: dict | None,
+    bounds: dict[str, float],
+    density: float,
+    resolved: list[dict],
+    bindings: dict[str, dict],
+) -> str:
+    source_paths: set[Path] = set()
+    # Only the relations this scene actually draws belong in its signature; the
+    # supplied map is the global binding table plus this scene's overrides.
+    used_bindings: dict[str, dict] = {}
+    for instance in resolved:
+        for mesh in _instance_meshes(instance):
+            value = mesh.get("obj")
+            if value:
+                source_paths.add((ROOT / str(value)).resolve())
+            asset_rel = _asset_rel_from_obj(value)
+            binding = bindings.get(asset_rel)
+            if binding is not None:
+                used_bindings[asset_rel] = binding
+            source_paths.update(path.resolve() for path in _binding_source_paths(binding))
+    payload = {
+        "schema": POINT_RENDER_CACHE_SCHEMA,
+        "algorithm": POINT_RENDER_ALGORITHM_VERSION,
+        "levelId": level_id,
+        "positions": positions,
+        "mapPayload": map_payload or {},
+        "bounds": bounds,
+        "density": density,
+        "renderConstants": {
+            "longEdge": LONG_EDGE,
+            "edgeEpsilon": EDGE_EPSILON,
+            "detailNormalY": DETAIL_HORIZONTAL_NORMAL_Y,
+            "detailArea": DETAIL_HORIZONTAL_AREA,
+        },
+        # Content evidence, never size+mtime: a `--from-game` re-export rewrites
+        # every one of these files without changing what they contain.
+        "sources": source_evidence_list(source_paths, DEFAULT_ASSET_MAP),
+        "rendererIndex": file_content_evidence(RENDERER_INDEX),
+        # The exporter itself is an input: a rebuilt CLI can change the OBJ and
+        # PNG conversion without changing any Unity object hash.
+        "cli": exporter_cli_evidence(),
+        # The asset map contributes to a render only through the relations it
+        # resolves for this scene, so record those instead of a whole-map token
+        # that every unrelated object in the 845 MB export would invalidate.
+        "bindingRelations": binding_relations(used_bindings),
+        "streamingSource": streaming_source_evidence(level_id),
+    }
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _manifest_output_paths(manifest: dict, output_root: Path) -> list[Path]:
+    result: set[Path] = set()
+
+    def visit(value: object) -> None:
+        if isinstance(value, dict):
+            for child in value.values():
+                visit(child)
+        elif isinstance(value, list):
+            for child in value:
+                visit(child)
+        elif isinstance(value, str) and value.startswith("render/"):
+            result.add(output_root / value.removeprefix("render/"))
+
+    visit(manifest)
+    return sorted(result, key=str)
+
+
+def _load_point_render_cache(output_root: Path, level_id: str, signature: str) -> dict | None:
+    if not _USE_RENDER_CACHE:
+        return None
+    path = _point_render_cache_path(output_root, level_id)
+    try:
+        cached = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    manifest = cached.get("manifest")
+    if cached.get("schemaVersion") != POINT_RENDER_CACHE_SCHEMA or cached.get("signature") != signature:
+        return None
+    if not isinstance(manifest, dict) or not all(path.is_file() for path in _manifest_output_paths(manifest, output_root)):
+        return None
+    _RENDER_CACHE_STATS["hits"] += 1
+    return manifest
+
+
+def _write_point_render_cache(output_root: Path, level_id: str, signature: str, manifest: dict) -> None:
+    if not _USE_RENDER_CACHE:
+        return
+    output_root.mkdir(parents=True, exist_ok=True)
+    path = _point_render_cache_path(output_root, level_id)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_suffix(".json.tmp")
+    temporary.write_text(
+        json.dumps({
+            "schemaVersion": POINT_RENDER_CACHE_SCHEMA,
+            "signature": signature,
+            "manifest": manifest,
+        }, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+    _RENDER_CACHE_STATS["writes"] += 1
+
+
+def _point_render_cache_path(output_root: Path, level_id: str) -> Path:
+    cache_root = RENDER_CACHE_ROOT if output_root.resolve() == OUTPUT_ROOT.resolve() else output_root / ".cache"
+    return cache_root / f"{level_id}.json"
+
+
+def _hlod_render_cache_signature(
+    level_id: str,
+    clusters: list[dict],
+    lod: int,
+    fit: dict,
+    bounds: dict[str, float],
+    mesh_files: dict[str, Path],
+    scan_mode: str,
+    bindings: dict[int, dict],
+) -> str:
+    mesh_paths = {
+        path.resolve()
+        for cluster in clusters
+        if (path := _path_id_file(mesh_files, int(cluster["pathId"]))) is not None
+    }
+    binding_paths = {
+        path.resolve()
+        for binding in bindings.values()
+        for path in _binding_source_paths(binding)
+    }
+    payload = {
+        "schema": POINT_RENDER_CACHE_SCHEMA,
+        "algorithm": POINT_RENDER_ALGORITHM_VERSION,
+        "kind": "hlod",
+        "levelId": level_id,
+        "clusters": clusters,
+        "lod": lod,
+        "fit": fit,
+        "bounds": bounds,
+        "scanMode": scan_mode,
+        "renderConstants": {"longEdge": LONG_EDGE, "edgeEpsilon": EDGE_EPSILON},
+        # Content evidence, never size+mtime - see `_point_render_cache_signature`.
+        "sources": source_evidence_list(mesh_paths | binding_paths, DEFAULT_ASSET_MAP),
+        # `hlod_texture_bindings` is already scoped to this level and LOD, so
+        # its resolved relations replace the whole-asset-map token.
+        "bindingRelations": binding_relations(bindings),
+        # The cluster OBJs and atlas PNGs are exporter output, and no object
+        # hash changes when the exporter's conversion does.
+        "cli": exporter_cli_evidence(),
+    }
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _load_render_cache(output_root: Path, cache_name: str, signature: str) -> dict | None:
+    if not _USE_RENDER_CACHE:
+        return None
+    cache_root = RENDER_CACHE_ROOT if output_root.resolve() == OUTPUT_ROOT.resolve() else output_root / ".cache"
+    path = cache_root / f"{cache_name}.json"
+    try:
+        cached = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return None
+    manifest = cached.get("manifest")
+    if cached.get("schemaVersion") != POINT_RENDER_CACHE_SCHEMA or cached.get("signature") != signature:
+        return None
+    if not isinstance(manifest, dict) or not all(path.is_file() for path in _manifest_output_paths(manifest, output_root)):
+        return None
+    _RENDER_CACHE_STATS["hits"] += 1
+    return manifest
+
+
+def _write_render_cache(output_root: Path, cache_name: str, signature: str, manifest: dict) -> None:
+    if not _USE_RENDER_CACHE:
+        return
+    cache_root = RENDER_CACHE_ROOT if output_root.resolve() == OUTPUT_ROOT.resolve() else output_root / ".cache"
+    cache_root.mkdir(parents=True, exist_ok=True)
+    path = cache_root / f"{cache_name}.json"
+    temporary = path.with_suffix(".json.tmp")
+    temporary.write_text(
+        json.dumps({
+            "schemaVersion": POINT_RENDER_CACHE_SCHEMA,
+            "signature": signature,
+            "manifest": manifest,
+        }, ensure_ascii=False, separators=(",", ":")) + "\n",
+        encoding="utf-8",
+    )
+    temporary.replace(path)
+    _RENDER_CACHE_STATS["writes"] += 1
+
+
+def build_hlod_index(asset_map: Path) -> dict:
+    """One streaming pass over the asset map, grouped by level and LOD."""
+    levels: dict[str, dict[str, list]] = {}
+    water_sectors: dict[str, list[dict]] = {}
+    material_containers: dict[str, dict[str, list[dict]]] = {}
+    for entry in iter_asset_entries(asset_map):
+        container = str(entry.get("Container", "")).replace("\\", "/")
+        material_match = (
+            HLOD_MATERIAL_NAME_RE.fullmatch(str(entry.get("Name", "")))
+            or HLOD_MATERIAL_CONTAINER_RE.search(container)
+        )
+        diffuse_match = HLOD_DIFFUSE_NAME_RE.fullmatch(str(entry.get("Name", "")))
+        if material_match and entry.get("Type") == "Material":
+            material_containers.setdefault(container, {"materials": [], "diffuse": []})["materials"].append({
+                "level": material_match.group("level").lower(),
+                "lod": int(material_match.group("lod")),
+                "hash": int(material_match.group("hash")),
+                "pathId": entry.get("PathID"),
+                "name": entry.get("Name"),
+            })
+        elif diffuse_match and entry.get("Type") == "Texture2D":
+            material_containers.setdefault(container, {"materials": [], "diffuse": []})["diffuse"].append({
+                "level": diffuse_match.group("level").lower(),
+                "lod": int(diffuse_match.group("lod")),
+                "pathId": entry.get("PathID"),
+                "name": entry.get("Name"),
+            })
+        water = WATER_SECTOR_RE.search(str(entry.get("Container", "")))
+        if (water and entry.get("Type") == "Texture2D"
+                and str(entry.get("Name", "")).lower().startswith("t_water_sector_flowmap_")):
+            water_sectors.setdefault(water.group(1), []).append({
+                "i": int(water.group(2)),
+                "j": int(water.group(3)),
+                "pathId": entry.get("PathID"),
+                "name": entry.get("Name"),
+            })
+        if entry.get("Type") != "Mesh":
+            continue
+        matched = CLUSTER_RE.match(str(entry.get("Name", "")))
+        if not matched:
+            continue
+        level = LEVEL_RE.search(str(entry.get("Container", "")))
+        if not level:
+            continue
+        levels.setdefault(level.group(1), {}).setdefault(matched.group(1), []).append({
+            "i": int(matched.group(2)),
+            "j": int(matched.group(3)),
+            "pathId": entry.get("PathID"),
+            "name": entry.get("Name"),
+        })
+    diffuse_bindings = []
+    for container, rows in material_containers.items():
+        # A generated HLOD material container normally owns one material and
+        # its baked D/N atlases. Fail closed if either side is ambiguous and
+        # select only the authored `_D` diffuse atlas, never the blue normal.
+        if len(rows["materials"]) != 1 or len(rows["diffuse"]) != 1:
+            continue
+        material, diffuse = rows["materials"][0], rows["diffuse"][0]
+        if (material["level"], material["lod"]) != (diffuse["level"], diffuse["lod"]):
+            continue
+        diffuse_bindings.append({
+            **material,
+            "texturePathId": diffuse["pathId"],
+            "textureName": diffuse["name"],
+            "container": container,
+        })
+    material_identities = [
+        material
+        for rows in material_containers.values()
+        for material in rows["materials"]
+        if isinstance(material.get("pathId"), int)
+    ]
+    return {
+        "schemaVersion": 4,
+        "assetMap": str(asset_map),
+        "assetMapSha256": sha256_file(asset_map),
+        "levels": levels,
+        "waterSectors": water_sectors,
+        "hlodDiffuseBindings": diffuse_bindings,
+        "hlodMaterialIdentities": material_identities,
+    }
+
+
+def load_hlod_index(asset_map: Path, cache: Path, refresh: bool) -> dict:
+    if not refresh and cache.exists():
+        cached = json.loads(cache.read_text(encoding="utf-8"))
+        if cached.get("schemaVersion") == 4 and cached.get("assetMapSha256") == sha256_file(asset_map):
+            return cached
+    index = build_hlod_index(asset_map)
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    cache.write_text(json.dumps(index, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")
+    return index
+
+
+def _alignment_bits(value: float) -> int:
+    """How many times the origin divides by two; a proxy for grid alignment."""
+    magnitude = abs(int(value))
+    if magnitude == 0:
+        return 99
+    bits = 0
+    while magnitude % 2 == 0:
+        magnitude //= 2
+        bits += 1
+    return bits
+
+
+def cell_size(lod: int) -> float:
+    return BASE_CELL * (2 ** lod)
+
+
+def _grid_occupancy(lods: dict[str, list]) -> dict[int, set[tuple[int, int]]]:
+    """Per-LOD set of occupied cluster cells; depends only on the level's LODs."""
+    return {int(lod): {(row["i"], row["j"]) for row in rows} for lod, rows in lods.items()}
+
+
+def _occupancy_coverage(
+    occupancy: dict[int, set[tuple[int, int]]],
+    points: list[tuple[float, float]],
+    origin_x: float,
+    origin_z: float,
+) -> float:
+    return min(
+        sum(
+            1 for x, z in points
+            if (math.floor((x - origin_x) / cell_size(lod)),
+                math.floor((z - origin_z) / cell_size(lod))) in cells
+        ) / len(points)
+        for lod, cells in occupancy.items()
+    )
+
+
+def origin_coverage(lods: dict[str, list], points: list[tuple[float, float]], origin_x: float, origin_z: float) -> float:
+    """Return the worst per-LOD marker occupancy for one fixed grid origin."""
+    if not points:
+        return 0.0
+    occupancy = _grid_occupancy(lods)
+    if 0 not in occupancy:
+        return 0.0
+    return _occupancy_coverage(occupancy, points, origin_x, origin_z)
+
+
+def _score_origin_grid(
+    occupancy: dict[int, set[tuple[int, int]]],
+    points: list[tuple[float, float]],
+    kx_values: range,
+    kz_values: range,
+) -> list[tuple[float, float, float]]:
+    """Worst-LOD coverage of every candidate origin, in kx-major order.
+
+    The interpreted form rebuilt the occupancy sets and recomputed
+    `cell_size(lod)` once per marker per candidate origin, which is where a
+    `--level` run spent most of its startup. The arithmetic is unchanged: the
+    same `floor((coordinate - origin) / cell_size)` in float64 and the same
+    integer hit count divided by the same sample size.
+    """
+    if _origin_lod_coverage_numba is None:
+        return [
+            (_occupancy_coverage(occupancy, points, kx * BASE_CELL, kz * BASE_CELL),
+             kx * BASE_CELL, kz * BASE_CELL)
+            for kx in kx_values for kz in kz_values
+        ]
+    xs = _np.array([point[0] for point in points], dtype=_np.float64)
+    zs = _np.array([point[1] for point in points], dtype=_np.float64)
+    worst = None
+    for lod, cells in occupancy.items():
+        if cells:
+            i_min = min(cell[0] for cell in cells)
+            j_min = min(cell[1] for cell in cells)
+            occupied = _np.zeros(
+                (max(cell[0] for cell in cells) - i_min + 1,
+                 max(cell[1] for cell in cells) - j_min + 1),
+                dtype=_np.bool_,
+            )
+            for cell_i, cell_j in cells:
+                occupied[cell_i - i_min, cell_j - j_min] = True
+        else:
+            # No cell can be hit, so every origin scores zero for this LOD.
+            i_min = j_min = 0
+            occupied = _np.zeros((0, 0), dtype=_np.bool_)
+        coverage = _origin_lod_coverage_numba(
+            xs, zs, BASE_CELL, cell_size(lod),
+            kx_values.start, len(kx_values), kz_values.start, len(kz_values),
+            occupied, i_min, j_min,
+        )
+        worst = coverage if worst is None else _np.minimum(worst, coverage)
+    flat = worst.reshape(-1).tolist()
+    return [
+        (flat[index * len(kz_values) + offset], kx * BASE_CELL, kz * BASE_CELL)
+        for index, kx in enumerate(kx_values)
+        for offset, kz in enumerate(kz_values)
+    ]
+
+
+def select_shared_origin(fits: list[dict]) -> tuple[float, float] | None:
+    """Choose one region origin by marker-weighted agreement across levels."""
+    votes: dict[tuple[float, float], int] = {}
+    for fit in fits:
+        key = (float(fit["originX"]), float(fit["originZ"]))
+        votes[key] = votes.get(key, 0) + int(fit.get("samplePoints") or 0)
+    if not votes:
+        return None
+    return max(
+        votes,
+        key=lambda key: (votes[key], min(_alignment_bits(key[0]), _alignment_bits(key[1]))),
+    )
+
+
+def fit_origin(lods: dict[str, list], points: list[tuple[float, float]]) -> dict | None:
+    """Recover the grid origin that best explains the level's own transforms.
+
+    Every LOD has to agree at once: a candidate origin is scored by its *worst*
+    per-LOD marker coverage, so an origin cannot win by suiting one coarse LOD
+    while misplacing the fine one. Among origins within `COVERAGE_TOLERANCE` of
+    the best score the most power-of-two aligned one is chosen, because a
+    streaming grid origin is aligned and a stray marker outside the art should
+    not drag the answer off that alignment by one cell.
+    """
+    if len(points) < MIN_SAMPLES:
+        return None
+    occupancy = _grid_occupancy(lods)
+    if 0 not in occupancy:
+        return None
+    base = occupancy[0]
+    i_min, i_max = min(c[0] for c in base), max(c[0] for c in base)
+    j_min, j_max = min(c[1] for c in base), max(c[1] for c in base)
+    xs = [p[0] for p in points]
+    zs = [p[1] for p in points]
+
+    scored = _score_origin_grid(
+        occupancy,
+        points,
+        range(int(min(xs) // BASE_CELL) - i_max - 1, int(max(xs) // BASE_CELL) - i_min + 2),
+        range(int(min(zs) // BASE_CELL) - j_max - 1, int(max(zs) // BASE_CELL) - j_min + 2),
+    )
+    if not scored:
+        return None
+
+    best = max(row[0] for row in scored)
+    band = [row for row in scored if row[0] >= best - COVERAGE_TOLERANCE]
+    coverage, origin_x, origin_z = max(
+        band, key=lambda row: (min(_alignment_bits(row[1]), _alignment_bits(row[2])), row[0])
+    )
+    return {
+        "originX": origin_x,
+        "originZ": origin_z,
+        "baseCellSize": BASE_CELL,
+        "coverage": round(coverage, 4),
+        "bestCoverage": round(best, 4),
+        "samplePoints": len(points),
+        "tiedOrigins": sum(1 for row in scored if row[0] >= best - COVERAGE_TOLERANCE),
+        "alignmentBits": min(_alignment_bits(origin_x), _alignment_bits(origin_z)),
+        "lods": sorted(occupancy),
+    }
+
+
+def plot_bounds(points: list[tuple[float, float]], min_pad: float = 32.0) -> dict[str, float]:
+    """Marker bounds padded out to the page's viewBox aspect.
+
+    The frontend projects onto these bounds when they are declared, so matching
+    the SVG aspect here is what keeps the raster from being stretched against
+    the marker positions drawn over it.
+    """
+    xs = [p[0] for p in points]
+    zs = [p[1] for p in points]
+    min_x, max_x = min(xs), max(xs)
+    min_z, max_z = min(zs), max(zs)
+    pad_x = max((max_x - min_x) * BOUNDS_PAD, min_pad)
+    pad_z = max((max_z - min_z) * BOUNDS_PAD, min_pad)
+    min_x, max_x = min_x - pad_x, max_x + pad_x
+    min_z, max_z = min_z - pad_z, max_z + pad_z
+
+    width, height = max_x - min_x, max_z - min_z
+    if width / height > VIEW_ASPECT:
+        extra = width / VIEW_ASPECT - height
+        min_z -= extra / 2
+        max_z += extra / 2
+    else:
+        extra = height * VIEW_ASPECT - width
+        min_x -= extra / 2
+        max_x += extra / 2
+    return {"minX": min_x, "maxX": max_x, "minZ": min_z, "maxZ": max_z}
+
+
+def shade(value: float) -> int:
+    """Clamp a 0..1 channel to a byte."""
+    return max(0, min(255, round(value * 255)))
+
+
+def write_png(path: Path, width: int, height: int, rows: list[bytes], compression: int = 9) -> None:
+    def chunk(kind: bytes, data: bytes) -> bytes:
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+
+    raw = b"".join(b"\0" + row for row in rows)
+    png = b"\x89PNG\r\n\x1a\n"
+    png += chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 6, 0, 0, 0))
+    png += chunk(b"IDAT", zlib.compress(raw, compression))
+    png += chunk(b"IEND", b"")
+    path.write_bytes(png)
+
+
+def _paeth(left: int, up: int, upper_left: int) -> int:
+    estimate = left + up - upper_left
+    left_distance = abs(estimate - left)
+    up_distance = abs(estimate - up)
+    upper_left_distance = abs(estimate - upper_left)
+    if left_distance <= up_distance and left_distance <= upper_left_distance:
+        return left
+    return up if up_distance <= upper_left_distance else upper_left
+
+
+def read_png_preview(path: Path, max_edge: int = TEXTURE_PREVIEW_EDGE) -> tuple[int, int, bytes] | None:
+    """Decode an exported 8-bit RGBA PNG into a bounded nearest-sample preview."""
+    try:
+        payload = path.read_bytes()
+    except OSError:
+        return None
+    if payload[:8] != b"\x89PNG\r\n\x1a\n":
+        return None
+    cursor = 8
+    width = height = 0
+    compressed = bytearray()
+    while cursor + 12 <= len(payload):
+        length = struct.unpack_from(">I", payload, cursor)[0]
+        kind = payload[cursor + 4:cursor + 8]
+        data = payload[cursor + 8:cursor + 8 + length]
+        cursor += 12 + length
+        if kind == b"IHDR":
+            width, height, bit_depth, color_type, compression, filtering, interlace = struct.unpack(
+                ">IIBBBBB", data
+            )
+            if (bit_depth, color_type, compression, filtering, interlace) != (8, 6, 0, 0, 0):
+                return None
+        elif kind == b"IDAT":
+            compressed.extend(data)
+        elif kind == b"IEND":
+            break
+    if width <= 0 or height <= 0 or not compressed:
+        return None
+    stride = width * 4
+    scale = max(width / max_edge, height / max_edge, 1.0)
+    sample_width = max(1, round(width / scale))
+    sample_height = max(1, round(height / scale))
+    sample_x = [min(width - 1, int(index * width / sample_width)) for index in range(sample_width)]
+    sample_y = {min(height - 1, int(index * height / sample_height)): index for index in range(sample_height)}
+    rows = _unfilter_rgba8_rows(payload, bytes(compressed), width, height)
+    if rows is None:
+        return None
+    sampled = bytearray(sample_width * sample_height * 4)
+    # Only sampled rows are ever read, so this walks the preview grid rather
+    # than every scanline in the source image.
+    for source_y, target_y in sample_y.items():
+        row = source_y * stride
+        target = target_y * sample_width * 4
+        for target_x, source_x in enumerate(sample_x):
+            source = row + source_x * 4
+            sampled[target + target_x * 4:target + target_x * 4 + 4] = rows[source:source + 4]
+    return sample_width, sample_height, bytes(sampled)
+
+
+def _unfilter_rgba8_rows(payload: bytes, compressed: bytes, width: int, height: int) -> bytes | None:
+    """Return the image's unfiltered 8-bit RGBA rows, without the filter bytes.
+
+    PNG's Sub/Average/Paeth filters each depend on the pixel to their left, so
+    the reconstruction cannot be vectorised along a scanline and the stdlib
+    loop below costs about three quarters of a full preview build. Pillow does
+    the same reconstruction in C, so it is used when importable and the pure
+    Python loop stays as an exact fallback. Both paths are byte-identical: the
+    caller has already rejected anything that is not non-interlaced 8-bit RGBA,
+    which is the one layout where Pillow's ``RGBA`` buffer is precisely these
+    reconstructed rows. Pillow inflates the IDAT stream itself, so the caller
+    hands over the still-compressed bytes and only the fallback pays for a
+    ``zlib.decompress``; a stream Pillow cannot decode raises and is rejected
+    here exactly as a short inflate was before.
+    """
+    if _PILImage is not None:
+        try:
+            with _PILImage.open(io.BytesIO(payload)) as image:
+                if image.mode != "RGBA":
+                    return None
+                return image.tobytes()
+        except Exception:
+            return None
+    stride = width * 4
+    try:
+        raw = zlib.decompress(compressed)
+    except zlib.error:
+        return None
+    if len(raw) != (stride + 1) * height:
+        return None
+    rows = bytearray(stride * height)
+    previous = bytearray(stride)
+    for y in range(height):
+        start = y * (stride + 1)
+        filter_type = raw[start]
+        current = bytearray(raw[start + 1:start + 1 + stride])
+        for index in range(stride):
+            left = current[index - 4] if index >= 4 else 0
+            up = previous[index]
+            upper_left = previous[index - 4] if index >= 4 else 0
+            if filter_type == 1:
+                current[index] = (current[index] + left) & 255
+            elif filter_type == 2:
+                current[index] = (current[index] + up) & 255
+            elif filter_type == 3:
+                current[index] = (current[index] + ((left + up) >> 1)) & 255
+            elif filter_type == 4:
+                current[index] = (current[index] + _paeth(left, up, upper_left)) & 255
+            elif filter_type != 0:
+                return None
+        rows[y * stride:(y + 1) * stride] = current
+        previous = current
+    return bytes(rows)
+
+
+@functools.lru_cache(maxsize=256)
+def _resolved_directory(path: Path) -> Path | None:
+    """`Path.resolve` for one directory, cached; on Windows it is a syscall."""
+    try:
+        return path.resolve()
+    except OSError:
+        return None
+
+
+def _relation_path(relative: str, source_roots: dict[str, str]) -> Path | None:
+    normalized = str(relative or "").replace("\\", "/")
+    if "/" not in normalized:
+        return None
+    source, tail = normalized.split("/", 1)
+    configured = source_roots.get(source)
+    if not configured:
+        return None
+    path = Path(configured)
+    base = path if path.is_absolute() else ROOT / path
+    # Containment is decided on the handful of configured source roots rather
+    # than by resolving each of the 51k relation paths, which was the single
+    # most expensive syscall in startup. A relation tail is exported file
+    # names, so `..` is the only way it could leave its root, and it is
+    # rejected outright instead of being collapsed by `Path.resolve`.
+    if ".." in tail.split("/"):
+        return None
+    resolved_base = _resolved_directory(base)
+    resolved_root = _resolved_directory(ROOT)
+    if resolved_base is None or resolved_root is None or not resolved_base.is_relative_to(resolved_root):
+        return None
+    return base / tail
+
+
+def _asset_rel_from_obj(value: object) -> str:
+    obj = str(value or "").replace("\\", "/")
+    parts = obj.split("/recovered/AnimeStudio-cli/", 1)
+    if len(parts) != 2:
+        return ""
+    tail = parts[1].split("/")
+    if len(tail) < 4 or tail[1] != "convert_by_type":
+        return ""
+    return f"{tail[0]}/{'/'.join(tail[2:])}"
+
+
+def texture_bindings() -> dict[str, dict]:
+    """Compact exact one-material Mesh -> base-color texture relations."""
+    global _TEXTURE_BINDINGS, _HLOD_TEXTURE_BINDINGS
+    if _TEXTURE_BINDINGS is not None:
+        return _TEXTURE_BINDINGS
+    _TEXTURE_BINDINGS = {}
+    _HLOD_TEXTURE_BINDINGS = {}
+    if not ASSET_INDEX.is_file():
+        return _TEXTURE_BINDINGS
+    try:
+        payload = json.loads(ASSET_INDEX.read_text(encoding="utf-8"))
+    except (OSError, UnicodeError, json.JSONDecodeError):
+        return _TEXTURE_BINDINGS
+    source_roots = payload.get("sourceRoots") or {}
+    for asset_rel, relation in (payload.get("relations") or {}).items():
+        material_match = HLOD_MATERIAL_REL_RE.search(str(asset_rel).replace("\\", "/"))
+        if material_match and isinstance(relation, dict):
+            selected = None
+            for slot in BASE_TEXTURE_SLOTS:
+                candidates = [
+                    row for row in (relation.get("textures") or [])
+                    if row.get("slot") == slot and row.get("rel")
+                ]
+                if candidates:
+                    if len(candidates) == 1:
+                        selected = candidates[0]
+                    break
+            texture_path = _relation_path(selected["rel"], source_roots) if selected else None
+            material_path = _relation_path(asset_rel, source_roots)
+            key = (
+                material_match.group("level").lower(),
+                int(material_match.group("lod")),
+                int(material_match.group("hash")),
+            )
+            # Ownership is ambiguous as soon as a second generated material
+            # claims the same level/LOD/signed suffix, even if only one of the
+            # candidates happens to have an exportable texture today.
+            if key in _HLOD_TEXTURE_BINDINGS:
+                _HLOD_TEXTURE_BINDINGS[key] = None
+                continue
+            _HLOD_TEXTURE_BINDINGS[key] = None
+            if selected and texture_path and material_path and texture_path.is_file() and material_path.is_file():
+                binding = {
+                    "slot": selected["slot"],
+                    "textureRel": selected["rel"],
+                    "texturePath": texture_path,
+                    "materialRel": asset_rel,
+                    "materialPath": material_path,
+                    "mappingMethod": "exact_hlod_level_lod_signed_suffix_to_generated_material",
+                }
+                _HLOD_TEXTURE_BINDINGS[key] = binding
+        if "/Mesh/" not in asset_rel or not isinstance(relation, dict):
+            continue
+        materials = relation.get("materials") or []
+        if len(materials) != 1 or not materials[0].get("rel"):
+            continue
+        selected = None
+        for slot in BASE_TEXTURE_SLOTS:
+            candidates = [
+                row for row in (relation.get("textures") or [])
+                if row.get("slot") == slot and row.get("rel")
+            ]
+            if candidates:
+                if len(candidates) == 1:
+                    selected = candidates[0]
+                break
+        if not selected:
+            continue
+        texture_path = _relation_path(selected["rel"], source_roots)
+        material_path = _relation_path(materials[0]["rel"], source_roots)
+        if texture_path and material_path and texture_path.is_file() and material_path.is_file():
+            _TEXTURE_BINDINGS[asset_rel] = {
+                "slot": selected["slot"],
+                "textureRel": selected["rel"],
+                "texturePath": texture_path,
+                "materialRel": materials[0]["rel"],
+                "materialPath": material_path,
+            }
+    del payload
+    return _TEXTURE_BINDINGS
+
+
+def hlod_texture_bindings(level_id: str, lod: int, clusters: list[dict]) -> dict[int, dict]:
+    """Bind HLOD clusters to generated materials by their exact authored suffix contract."""
+    texture_bindings()
+    available = _HLOD_TEXTURE_BINDINGS or {}
+    result = {}
+    for cluster in clusters:
+        match = HLOD_CLUSTER_RE.fullmatch(str(cluster.get("name") or ""))
+        if not match or int(match.group("lod")) != lod:
+            continue
+        binding = available.get((level_id.lower(), lod, int(match.group("hash"))))
+        path_id = cluster.get("pathId")
+        if binding and isinstance(path_id, int):
+            result[path_id] = binding
+    return result
+
+
+def install_asset_map_hlod_diffuse_bindings(index: dict, texture_files: dict[str, Path]) -> int:
+    """Fill missing generated-HLOD relations from exact AssetMap containers."""
+    texture_bindings()
+    available = _HLOD_TEXTURE_BINDINGS
+    installed = 0
+    for row in index.get("hlodDiffuseBindings") or []:
+        path_id = row.get("texturePathId")
+        if not isinstance(path_id, int):
+            continue
+        texture_path = _path_id_file(texture_files, path_id)
+        if texture_path is None:
+            continue
+        key = (str(row["level"]).lower(), int(row["lod"]), int(row["hash"]))
+        if available.get(key):
+            continue
+        available[key] = {
+            "slot": "_BakedHlodDiffuse",
+            "textureRel": f"StreamingAssets/Texture2D/{texture_path.name}",
+            "texturePath": texture_path,
+            "materialRel": row["container"],
+            "materialPath": ROOT / "__asset_map_baked_hlod_material__",
+            "mappingMethod": "exact_assetmap_material_container_baked_diffuse",
+        }
+        installed += 1
+    return installed
+
+
+def install_hlod_material_json_bindings(
+    material_root: Path,
+    texture_files: dict[str, Path],
+    index: dict | None = None,
+) -> tuple[int, int]:
+    """Install exact HLOD Material `_BaseColorMap` PPtr bindings.
+
+    These serialized references are the complete authority for generated HLOD
+    atlas ownership. No filename similarity, nearest material, or presentation
+    color is accepted as a substitute.
+    """
+    texture_bindings()
+    available = _HLOD_TEXTURE_BINDINGS
+    installed = unresolved = 0
+    if not material_root.is_dir():
+        return installed, unresolved
+    identities = {
+        int(row["pathId"]): (str(row["level"]).lower(), int(row["lod"]), int(row["hash"]))
+        for row in ((index or {}).get("hlodMaterialIdentities") or [])
+        if isinstance(row.get("pathId"), int)
+    }
+    for material_path in material_root.glob("*.json"):
+        stem = material_path.stem.rsplit("_p", 1)[0]
+        matched = HLOD_MATERIAL_NAME_RE.fullmatch(stem)
+        identity = None
+        if matched:
+            identity = (matched.group("level").lower(), int(matched.group("lod")), int(matched.group("hash")))
+        elif "_p" in material_path.stem:
+            try:
+                unsigned_path_id = int(material_path.stem.rsplit("_p", 1)[1], 16)
+                signed_path_id = unsigned_path_id - (1 << 64) if unsigned_path_id >= (1 << 63) else unsigned_path_id
+                identity = identities.get(signed_path_id)
+            except ValueError:
+                pass
+        if identity is None:
+            continue
+        try:
+            payload = json.loads(material_path.read_text(encoding="utf-8"))
+            env = ((payload.get("m_SavedProperties") or {}).get("m_TexEnvs") or {}).get("_BaseColorMap") or {}
+            path_id = (env.get("m_Texture") or {}).get("m_PathID")
+        except (OSError, UnicodeError, json.JSONDecodeError, AttributeError):
+            unresolved += 1
+            continue
+        if not isinstance(path_id, int):
+            unresolved += 1
+            continue
+        texture_path = _path_id_file(texture_files, path_id)
+        if texture_path is None:
+            unresolved += 1
+            continue
+        key = identity
+        available[key] = {
+            "slot": "_BaseColorMap",
+            "textureRel": f"StreamingAssets/Texture2D/{texture_path.name}",
+            "texturePath": texture_path,
+            "materialRel": f"StreamingAssets-materials/Material/{material_path.name}",
+            "materialPath": material_path,
+            "mappingMethod": "exact_serialized_hlod_material_base_color_pptr",
+        }
+        installed += 1
+    return installed, unresolved
+
+
+TEXTURE_BINDING_TABLE_CACHE = ROOT / "reports/assets/map_recovery/texture_binding_tables.json"
+TEXTURE_BINDING_TABLE_SCHEMA = 1
+
+
+@functools.lru_cache(maxsize=1)
+def exporter_cli_evidence() -> dict:
+    """Content evidence for the exporter that produced every OBJ/PNG/Material.
+
+    A rebuilt `AnimeStudio.CLI` can change the conversion without changing any
+    Unity object hash, so it belongs in every render signature. Hashed once per
+    process, then reused by both cache signatures and the binding tables.
+    """
+    return file_content_evidence(STREAMING_CLI)
+
+
+def _binding_to_json(binding: dict | None) -> dict | None:
+    if binding is None:
+        return None
+    return {key: (repo_rel(value) if isinstance(value, Path) else value) for key, value in binding.items()}
+
+
+def _binding_from_json(row: dict | None) -> dict | None:
+    if row is None:
+        return None
+    return {
+        key: (ROOT / value if key in ("texturePath", "materialPath") else value)
+        for key, value in row.items()
+    }
+
+
+def _texture_binding_table_signature(
+    asset_map: Path, texture_files: dict[str, Path], material_root: Path,
+) -> str:
+    """Content evidence for every input the binding tables are derived from.
+
+    The tables are a pure function of the WebUI asset index, the exported
+    Material/Texture2D trees and the exporter. The asset map's own SHA-256 is
+    the export identity the rest of this pipeline already keys on, and the two
+    exported-file counts catch a tree that lost files without the asset map
+    being rewritten.
+    """
+    payload = {
+        "schema": TEXTURE_BINDING_TABLE_SCHEMA,
+        "assetIndex": file_content_evidence(ASSET_INDEX),
+        "assetMapSha256": asset_map_sha256(asset_map),
+        "assetMap": repo_rel(asset_map),
+        "baseTextureSlots": list(BASE_TEXTURE_SLOTS),
+        "textureRoot": repo_rel(TEXTURE_ROOT),
+        "materialRoot": repo_rel(material_root),
+        "exportedTextureCount": len(texture_files),
+        "exportedMaterialCount": sum(1 for _ in material_root.glob("*.json")) if material_root.is_dir() else 0,
+        "cli": exporter_cli_evidence(),
+    }
+    encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _read_texture_binding_tables(signature: str) -> dict | None:
+    if not TEXTURE_BINDING_TABLE_CACHE.is_file():
+        return None
+    cached = json.loads(TEXTURE_BINDING_TABLE_CACHE.read_text(encoding="utf-8"))
+    if cached.get("schemaVersion") != TEXTURE_BINDING_TABLE_SCHEMA or cached.get("signature") != signature:
+        return None
+    if not isinstance(cached.get("meshBindings"), dict) or not isinstance(cached.get("hlodBindings"), list):
+        return None
+    return cached
+
+
+def _write_texture_binding_tables(signature: str, diffuse: int, material: int, unresolved: int) -> None:
+    payload = {
+        "schemaVersion": TEXTURE_BINDING_TABLE_SCHEMA,
+        "signature": signature,
+        "counts": {"diffuse": diffuse, "material": material, "unresolvedMaterial": unresolved},
+        "meshBindings": {key: _binding_to_json(row) for key, row in (_TEXTURE_BINDINGS or {}).items()},
+        "hlodBindings": [
+            [[key[0], key[1], key[2]], _binding_to_json(row)]
+            for key, row in sorted((_HLOD_TEXTURE_BINDINGS or {}).items())
+        ],
+    }
+    TEXTURE_BINDING_TABLE_CACHE.parent.mkdir(parents=True, exist_ok=True)
+    # Workers can reach this together after an export change; a PID-unique
+    # temporary keeps each writer's replace atomic.
+    temporary = TEXTURE_BINDING_TABLE_CACHE.with_name(f"{TEXTURE_BINDING_TABLE_CACHE.name}.{os.getpid()}.tmp")
+    temporary.write_text(
+        json.dumps(payload, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8",
+    )
+    temporary.replace(TEXTURE_BINDING_TABLE_CACHE)
+
+
+def prepare_render_bindings(
+    asset_map: Path, index: dict, texture_root: Path, material_root: Path = MATERIAL_ROOT,
+) -> tuple[dict[str, Path], int, int, int]:
+    """Resolve every base-color binding table once per export, not per process.
+
+    Rebuilding them parses the 168 MB WebUI asset index, stats 51k exported
+    relation files and reads 17k HLOD material JSONs - about twenty seconds
+    that the parent and all four preview workers each used to repeat. The
+    tables are a pure function of the export, so they are persisted under the
+    export's own content evidence and every later process just reads them.
+    """
+    global _TEXTURE_BINDINGS, _HLOD_TEXTURE_BINDINGS
+    texture_files = texture_file_index(texture_root) if (
+        index.get("waterSectors") or index.get("hlodDiffuseBindings")
+    ) else {}
+    signature = (
+        _texture_binding_table_signature(asset_map, texture_files, material_root)
+        if asset_map.is_file() and ASSET_INDEX.is_file() else None
+    )
+    if signature is not None:
+        cached = _read_texture_binding_tables(signature)
+        if cached is not None:
+            _TEXTURE_BINDINGS = {
+                key: _binding_from_json(row) for key, row in cached["meshBindings"].items()
+            }
+            _HLOD_TEXTURE_BINDINGS = {
+                (str(key[0]), int(key[1]), int(key[2])): _binding_from_json(row)
+                for key, row in cached["hlodBindings"]
+            }
+            counts = cached["counts"]
+            return texture_files, counts["diffuse"], counts["material"], counts["unresolvedMaterial"]
+    texture_bindings()
+    diffuse = install_asset_map_hlod_diffuse_bindings(index, texture_files)
+    material, unresolved = install_hlod_material_json_bindings(material_root, texture_files, index)
+    if signature is not None:
+        _write_texture_binding_tables(signature, diffuse, material, unresolved)
+    return texture_files, diffuse, material, unresolved
+
+
+def _material_render_params(binding: dict) -> dict:
+    key = (Path(binding["materialPath"]), str(binding["slot"]))
+    if key in _MATERIAL_PARAMS:
+        return _MATERIAL_PARAMS[key]
+    result = {
+        "scale": (1.0, 1.0), "offset": (0.0, 0.0), "tint": (1.0, 1.0, 1.0),
+        "alphaMode": "opaque", "cutoff": 0.05,
+    }
+    try:
+        payload = json.loads(key[0].read_text(encoding="utf-8"))
+        saved = payload.get("m_SavedProperties") or {}
+        env = (saved.get("m_TexEnvs") or {}).get(key[1]) or {}
+        scale = env.get("m_Scale") or {}
+        offset = env.get("m_Offset") or {}
+        result["scale"] = (float(scale.get("X", 1.0)), float(scale.get("Y", 1.0)))
+        result["offset"] = (float(offset.get("X", 0.0)), float(offset.get("Y", 0.0)))
+        colors = saved.get("m_Colors") or {}
+        tint = colors.get("_BaseColor") or colors.get("_Color") or colors.get("_SurfaceAlbedo") or {}
+        result["tint"] = tuple(max(0.0, float(tint.get(channel, 1.0))) for channel in ("r", "g", "b"))
+        floats = saved.get("m_Floats") or {}
+        result["cutoff"] = max(0.0, min(1.0, float(floats.get("_AlphaClipThreshold", 0.05))))
+        valid_keywords = {str(value).upper() for value in (payload.get("m_ValidKeywords") or [])}
+        render_type = str((payload.get("m_StringTagMap") or {}).get("RenderType") or "").lower()
+        queue = int(payload.get("m_CustomRenderQueue", -1))
+        if "_ALPHATEST_ON" in valid_keywords or render_type in {"transparentcutout", "alphatest"}:
+            result["alphaMode"] = "cutout"
+        elif "transparent" in render_type or queue >= 3000:
+            result["alphaMode"] = "transparent"
+    except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
+        pass
+    _MATERIAL_PARAMS[key] = result
+    return result
+
+
+def _texture_render_source(binding: dict | None) -> dict | None:
+    if not binding:
+        return None
+    path = Path(binding["texturePath"])
+    if path not in _TEXTURE_PREVIEWS:
+        _TEXTURE_PREVIEWS[path] = read_png_preview(path)
+    preview = _TEXTURE_PREVIEWS[path]
+    if not preview:
+        return None
+    width, height, pixels = preview
+    params = _material_render_params(binding)
+    tint_lut = tuple(
+        bytes(_tint_srgb_channel(encoded, tint) for encoded in range(256))
+        for tint in params["tint"]
+    )
+    return {**params, "width": width, "height": height, "pixels": pixels, "tintLut": tint_lut,
+            "textureRel": binding["textureRel"], "materialRel": binding["materialRel"]}
+
+
+def _srgb_to_linear(value: float) -> float:
+    return value / 12.92 if value <= 0.04045 else ((value + 0.055) / 1.055) ** 2.4
+
+
+def _linear_to_srgb(value: float) -> float:
+    value = max(0.0, value)
+    return value * 12.92 if value <= 0.0031308 else 1.055 * value ** (1.0 / 2.4) - 0.055
+
+
+@functools.lru_cache(maxsize=65_536)
+def _tint_srgb_channel(encoded: int, linear_tint: float) -> int:
+    """Apply a Unity material tint without multiplying gamma-encoded bytes.
+
+    Base-color PNGs are sRGB display data, while serialized material colors are
+    shader values used after the texture sample has been decoded to linear
+    light. The recovered preview is itself an sRGB PNG, so reproduce that
+    decode/multiply/encode sequence here.
+    """
+    linear = _srgb_to_linear(encoded / 255.0) * max(0.0, linear_tint)
+    return min(255, round(_linear_to_srgb(linear) * 255.0))
+
+
+def _sample_texture(texture: dict, u: float, v: float) -> tuple[int, int, int, int] | None:
+    texture_x = min(texture["width"] - 1, int((u % 1.0) * texture["width"]))
+    texture_y = min(texture["height"] - 1, int(((1.0 - v) % 1.0) * texture["height"]))
+    offset = (texture_y * texture["width"] + texture_x) * 4
+    source = texture["pixels"]
+    alpha = source[offset + 3]
+    alpha_mode = texture.get("alphaMode", "opaque")
+    if alpha_mode == "cutout" and alpha / 255 < texture["cutoff"]:
+        return None
+    tint_lut = texture.get("tintLut")
+    if tint_lut is None:
+        tint = texture["tint"]
+        tint_lut = tuple(
+            bytes(_tint_srgb_channel(encoded, channel) for encoded in range(256))
+            for channel in tint
+        )
+    return (
+        tint_lut[0][source[offset]],
+        tint_lut[1][source[offset + 1]],
+        tint_lut[2][source[offset + 2]],
+        alpha if alpha_mode == "transparent" else 255,
+    )
+
+
+_EMPTY_TEXTURE_PIXELS = None
+_IDENTITY_TINT_LUT = None
+if _np is not None:
+    # Read-only views, so an untextured run and a textured run present numba
+    # with one identical argument type and share a single compiled signature.
+    _EMPTY_TEXTURE_PIXELS = _np.frombuffer(bytes(4), dtype=_np.uint8).reshape(1, 1, 4)
+    _IDENTITY_TINT_LUT = _np.frombuffer(bytes(range(256)) * 3, dtype=_np.uint8).reshape(3, 256)
+
+
+def _depth_texture_arrays(texture: dict) -> dict:
+    """Attach the compiled rasterizer's pixel and tint views to a record once."""
+    if "_npPixels" not in texture:
+        texture["_npPixels"] = _np.frombuffer(texture["pixels"], dtype=_np.uint8).reshape(
+            texture["height"], texture["width"], 4
+        )
+        texture["_npTintLut"] = _np.frombuffer(
+            b"".join(texture["tintLut"]), dtype=_np.uint8
+        ).reshape(3, 256)
+    return texture
+
+
+def _sample_texture_arrays(texture: dict) -> dict:
+    """Attach `_sample_texture`'s pixel and tint views to a record once.
+
+    A record that carries no precomputed tint LUT builds the same one
+    `_sample_texture` would have built per sample, now once per texture.
+    """
+    if "_npSamplePixels" not in texture:
+        texture["_npSamplePixels"] = _np.frombuffer(texture["pixels"], dtype=_np.uint8).reshape(
+            texture["height"], texture["width"], 4
+        )
+        tint_lut = texture.get("tintLut")
+        if tint_lut is None:
+            tint_lut = tuple(
+                bytes(_tint_srgb_channel(encoded, channel) for encoded in range(256))
+                for channel in texture["tint"]
+            )
+        texture["_npSampleTintLut"] = _np.frombuffer(
+            b"".join(tint_lut[:3]), dtype=_np.uint8
+        ).reshape(3, 256)
+    return texture
+
+
+def _run_texture(
+    cache: dict[tuple[str, int], dict | None],
+    bindings: dict[str, dict] | None,
+    asset_rel: str,
+    submesh_index: int | None,
+) -> dict | None:
+    """Resolve one submesh's base-color record once per mesh and submesh slot.
+
+    The record is rebuilt from the PNG and the material JSON, including a
+    3x256 tint LUT, so resolving it per face - as the renderer used to - cost
+    two orders of magnitude more than rasterizing the face.
+    """
+    key = (asset_rel, -1 if submesh_index is None else submesh_index)
+    if key not in cache:
+        binding = (bindings or {}).get(asset_rel)
+        cache[key] = _texture_render_source(_submesh_binding(binding, submesh_index))
+    return cache[key]
+
+
+def level_positions(path: Path) -> list[tuple[float, float, float]]:
+    """Exact registry/quest X/Y/Z positions published for one map."""
+    payload = json.loads(path.read_text(encoding="utf-8"))
+    points = []
+    for node in [*(payload.get("markers") or []), *(payload.get("questPoints") or [])]:
+        position = node.get("position") or {}
+        x, y, z = position.get("x"), position.get("y"), position.get("z")
+        if all(isinstance(value, (int, float)) and not isinstance(value, bool) for value in (x, y, z)):
+            points.append((float(x), float(y), float(z)))
+    return points
+
+
+def _instance_meshes(instance: dict) -> list[dict]:
+    """Return the current composite mesh list for one streaming instance."""
+    meshes = instance.get("meshes")
+    return [row for row in meshes if isinstance(row, dict)] if isinstance(meshes, list) else []
+
+
+def _is_explicit_overhead_cover(instance: dict) -> bool:
+    """Recognize authored roof/ceiling instances without guessing by height."""
+    names = [instance.get("entityBase"), instance.get("name")]
+    names.extend(mesh.get("name") for mesh in _instance_meshes(instance))
+    return any(OVERHEAD_COVER_RE.search(str(name or "")) for name in names)
+
+
+def _is_detail_structural(instance: dict, mesh: dict) -> bool:
+    """Exclude explicitly authored broad structure from analytical detail."""
+    names = (instance.get("entityBase"), instance.get("name"), mesh.get("name"))
+    return any(DETAIL_STRUCTURAL_RE.search(str(name or "")) for name in names)
+
+
+def _is_detail_prop(instance: dict, mesh: dict) -> bool:
+    """Keep authored props and vegetation even when their useful top is flat."""
+    names = (instance.get("entityBase"), instance.get("name"), mesh.get("name"))
+    return any(DETAIL_PROP_RE.search(str(name or "")) for name in names)
+
+
+def _is_large_horizontal_triangle(points: list[tuple[float, float, float]]) -> bool:
+    """Recognize slab interiors while retaining small table/prop tops."""
+    a, b, c = points
+    ux, uy, uz = b[0] - a[0], b[1] - a[1], b[2] - a[2]
+    vx, vy, vz = c[0] - a[0], c[1] - a[1], c[2] - a[2]
+    nx = uy * vz - uz * vy
+    ny = uz * vx - ux * vz
+    nz = ux * vy - uy * vx
+    magnitude = math.sqrt(nx * nx + ny * ny + nz * nz)
+    if magnitude <= 1e-9 or abs(ny) / magnitude < DETAIL_HORIZONTAL_NORMAL_Y:
+        return False
+    projected_area = abs(ux * vz - uz * vx) * 0.5
+    return projected_area >= DETAIL_HORIZONTAL_AREA
+
+
+def streaming_projection_payload(source: Path) -> tuple[list[tuple[float, float, float]], dict]:
+    """Adapt one exact InitChunkData sidecar to the renderer's compact input."""
+    payload = json.loads(source.read_text(encoding="utf-8"))
+    mesh_by_base = {
+        row.get("entityBase"): row.get("meshes")
+        for row in payload.get("entityBases") or []
+        if row.get("entityBase") and isinstance(row.get("meshes"), list) and row.get("meshes")
+    }
+    positions = []
+    markers = []
+    for instance in payload.get("instances") or []:
+        matrix = instance.get("matrixColumnMajor")
+        if not isinstance(matrix, list) or len(matrix) != 16:
+            continue
+        position = (float(matrix[12]), float(matrix[13]), float(matrix[14]))
+        positions.append(position)
+        meshes = mesh_by_base.get(instance.get("entityBase")) or []
+        markers.append({
+            "streamingInstance": {
+                "entityId": instance.get("entityId"),
+                "entityBase": instance.get("entityBase"),
+                "name": instance.get("name"),
+                "matrixColumnMajor": matrix,
+                "sourceFile": instance.get("sourceFile"),
+                "meshes": meshes,
+            },
+        })
+    return positions, {
+        "markers": markers,
+        "exactHlodMatrices": (payload.get("hlodIdentityContract") or {}).get("status") == "exact",
+    }
+
+
+def render_point_cloud(
+    level_id: str,
+    positions: list[tuple[float, float, float]],
+    output_root: Path,
+    map_payload: dict | None = None,
+    bounds_override: dict[str, float] | None = None,
+    surface_point_density: float = DEFAULT_SURFACE_POINT_DENSITY,
+) -> dict | None:
+    """Render an evidence-only height-tinted point cloud when no map art exists.
+
+    This deliberately draws only exact published transforms. It gives sparse
+    scenes a spatial backdrop without connecting points into invented terrain
+    or claiming that registry entities are recovered scene meshes.
+    """
+    if not positions:
+        return None
+    streaming = [
+        row.get("streamingInstance")
+        for row in ((map_payload or {}).get("markers") or [])
+        if isinstance(row.get("streamingInstance"), dict)
+    ]
+    exact_hlod_matrices = bool((map_payload or {}).get("exactHlodMatrices"))
+    streaming_xz = [
+        (float(row["matrixColumnMajor"][12]), float(row["matrixColumnMajor"][14]))
+        for row in streaming
+        if isinstance(row.get("matrixColumnMajor"), list) and len(row["matrixColumnMajor"]) == 16
+    ]
+    # A recovered streaming scene with hundreds of transforms is not the old
+    # sparse registry fallback. Four metres keeps its exact extents readable;
+    # small evidence sets retain the conservative 32 m context margin.
+    bounds = bounds_override or plot_bounds(
+        streaming_xz or [(x, z) for x, _y, z in positions],
+        min_pad=1.0 if streaming_xz else (4.0 if len(positions) >= 100 else 32.0),
+    )
+    span_x = max(bounds["maxX"] - bounds["minX"], 1.0)
+    span_z = max(bounds["maxZ"] - bounds["minZ"], 1.0)
+    # The PNG is later fitted to this exact world rectangle. Giving every
+    # streaming scene the UI canvas aspect silently stretched its geometry
+    # when the rectangle was square or portrait (most visibly Dijiang).
+    width, height = raster_size(span_x, span_z)
+    pixels = [bytearray(width * 4) for _ in range(height)]
+    sparse_point_depth = [NO_HIT] * (width * height)
+    ys = [row[1] for row in positions]
+    low, high = min(ys), max(ys)
+    y_span = max(high - low, 1.0)
+    radius = max(2, min(6, round(9 - math.log2(max(len(positions), 2)) / 2)))
+
+    def blend(
+        px: int,
+        py: int,
+        color: tuple[int, int, int],
+        alpha: int,
+        point_height: float | None = None,
+    ) -> None:
+        if not (0 <= px < width and 0 <= py < height) or alpha <= 0:
+            return
+        if point_height is not None:
+            index = py * width + px
+            sparse_point_depth[index] = max(sparse_point_depth[index], point_height)
+        row = pixels[py]
+        offset = px * 4
+        inverse = 255 - alpha
+        row[offset] = (color[0] * alpha + row[offset] * inverse) // 255
+        row[offset + 1] = (color[1] * alpha + row[offset + 1] * inverse) // 255
+        row[offset + 2] = (color[2] * alpha + row[offset + 2] * inverse) // 255
+        row[offset + 3] = min(255, alpha + row[offset + 3] * inverse // 255)
+
+    # Elevation and material surfaces retain floors and other authored
+    # environment geometry, but explicit roof/ceiling covers remain omitted.
+    overhead_covers = [
+        row for row in streaming
+        if _instance_meshes(row) and _is_explicit_overhead_cover(row)
+    ]
+    resolved = [
+        row for row in streaming
+        if _instance_meshes(row) and not _is_explicit_overhead_cover(row)
+    ]
+    render_bindings = streaming_texture_bindings(level_id, resolved) if resolved else {}
+    cache_signature = _point_render_cache_signature(
+        level_id,
+        positions,
+        map_payload,
+        bounds,
+        surface_point_density,
+        resolved,
+        render_bindings,
+    )
+    cached = _load_point_render_cache(output_root, level_id, cache_signature)
+    if cached is not None:
+        print(f"{level_id}: reused persistent point/streaming render cache")
+        return cached
+    rendered_instances = rendered_triangles = rendered_vertex_samples = 0
+    textured_instances = textured_triangles = textured_pixels = 0
+    used_textures: list[str] = []
+    real_pixel_ratio = 0.0
+    surface_depth: list[float] | None = None
+    detail_depth: list[float] | None = None
+    detail_albedo: bytearray | None = None
+    detail_triangles = excluded_detail_triangles = 0
+    if resolved:
+        detail_props_only = level_id in DETAIL_PROP_ONLY_LEVELS
+        if detail_props_only:
+            raster = rasterise_streaming_depth(
+                resolved, bounds, width, height, render_bindings, detail_props_only=True
+            )
+        else:
+            raster = rasterise_streaming_depth(resolved, bounds, width, height, render_bindings)
+        depth = raster["depth"]
+        albedo = raster["albedo"]
+        surface_depth = depth
+        detail_depth = raster.get("detailDepth", depth)
+        detail_albedo = raster.get("detailAlbedo", albedo)
+        rendered_instances = raster["usedInstances"]
+        textured_instances = raster["texturedInstances"]
+        rendered_triangles = raster["triangles"]
+        textured_triangles = raster["texturedTriangles"]
+        rendered_vertex_samples = raster["vertexSamples"]
+        textured_pixels = raster["texturedPixels"]
+        used_textures = raster["usedTextures"]
+        detail_triangles = raster.get("detailTriangles", rendered_triangles)
+        excluded_detail_triangles = raster.get("excludedDetailTriangles", 0)
+        real = [value > NO_HIT for value in depth]
+        covered = [value for value in depth if value > NO_HIT]
+        if covered:
+            mesh_low, mesh_high = min(covered), max(covered)
+            mesh_span = max(mesh_high - mesh_low, 1.0)
+            real_pixel_ratio = sum(real) / (width * height)
+            low, high = mesh_low, mesh_high
+            for py in range(height):
+                row = pixels[py]
+                for px in range(width):
+                    value = depth[py * width + px]
+                    if value <= NO_HIT:
+                        continue
+                    tint = (value - mesh_low) / mesh_span
+                    offset = px * 4
+                    color_offset = (py * width + px) * 4
+                    if albedo[color_offset + 3]:
+                        row[offset:offset + 4] = bytes((
+                            albedo[color_offset],
+                            albedo[color_offset + 1],
+                            albedo[color_offset + 2],
+                            albedo[color_offset + 3],
+                        ))
+    if not rendered_instances:
+        # Sparse fallbacks remain exact transform points. This also covers a
+        # resolved streaming mesh that produces zero analytical hits (for
+        # example indie_dg011's sole structural floor is intentionally
+        # excluded from the point/elevation pass). A soft halo keeps isolated
+        # transforms legible without connecting them.
+        for x, y, z in sorted(positions, key=lambda row: row[1]):
+            px = round((x - bounds["minX"]) / span_x * (width - 1))
+            py = round((bounds["maxZ"] - z) / span_z * (height - 1))
+            height_t = (y - low) / y_span
+            color = (8, 10, 11)
+            height_alpha = 0.78 + 0.22 * height_t
+            for dy in range(-radius * 2, radius * 2 + 1):
+                for dx in range(-radius * 2, radius * 2 + 1):
+                    distance = math.hypot(dx, dy)
+                    if distance <= radius * 2:
+                        blend(
+                            px + dx, py + dy, color,
+                            round(42 * height_alpha * (1 - distance / (radius * 2 + 0.01))), y,
+                        )
+            for dy in range(-radius, radius + 1):
+                for dx in range(-radius, radius + 1):
+                    distance = math.hypot(dx, dy)
+                    if distance <= radius:
+                        blend(
+                            px + dx, py + dy, color,
+                            round(210 * height_alpha * (1 - 0.55 * distance / (radius + 0.01))), y,
+                        )
+
+    mesh_rows: dict[str, dict] = {}
+    for row in resolved:
+        for mesh in _instance_meshes(row):
+            obj = str(mesh.get("obj") or "").replace("\\", "/")
+            parts = obj.split("/recovered/AnimeStudio-cli/", 1)
+            asset_rel = ""
+            if len(parts) == 2:
+                tail = parts[1].split("/")
+                if len(tail) >= 4 and tail[1] == "convert_by_type":
+                    asset_rel = f"{tail[0]}/{'/'.join(tail[2:])}"
+            key = str(mesh.get("pathId") or mesh.get("name") or obj)
+            current = mesh_rows.setdefault(key, {
+                "name": mesh.get("name"),
+                "pathId": mesh.get("pathId"),
+                "assetRel": asset_rel,
+                "instanceCount": 0,
+            })
+            current["instanceCount"] += 1
+
+    output_root.mkdir(parents=True, exist_ok=True)
+    elevation_underlay = None
+    point_cloud_overlay = None
+    if rendered_instances and detail_depth:
+        # Material and grayscale elevation layers retain the full recovered
+        # depth surface, including floors. Structural filtering is a
+        # point-cloud presentation rule only.
+        elevation_depth = surface_depth or detail_depth
+        elevation_underlay = render_elevation_underlay(
+            level_id, elevation_depth, width, height, output_root,
+            image_suffix="streaming_elevation",
+            source_label=(
+                "full exact streaming-mesh triangle depth"
+                if exact_hlod_matrices else "full recovered streaming-mesh triangle depth"
+            ),
+        )
+        point_cloud_overlay = (
+            render_streaming_surface_samples(
+                level_id, resolved, bounds, width, height, output_root,
+                surface_point_density, render_bindings,
+            )
+            if exact_hlod_matrices else
+            render_depth_point_overlay(
+                level_id, detail_depth, width, height, output_root,
+                image_suffix="streaming_points",
+                material_colors=detail_albedo,
+            )
+        )
+    image_name = (
+        f"{level_id}_streaming_textured_topdown.png" if textured_pixels else
+        f"{level_id}_streaming_topdown.png" if rendered_instances else
+        f"{level_id}_registry_point_cloud.png"
+    )
+    write_png(output_root / image_name, width, height, [bytes(row) for row in pixels])
+    point_height_mask = None if rendered_instances else render_point_height_mask(
+        level_id, sparse_point_depth, width, height, output_root,
+        image_suffix="registry_height_mask", sampling="all",
+    )
+    if not rendered_instances:
+        elevation_underlay = render_sparse_point_elevation(
+            level_id, sparse_point_depth, width, height, output_root,
+        )
+        # Registry transforms carry positions but no renderer/material/UV
+        # evidence. Keep them in the explicitly grayscale analytical layer;
+        # publishing colored dots as a point-cloud overlay would imply a
+        # texture relation that does not exist.
+        point_cloud_overlay = None
+    published_src = (
+        elevation_underlay["src"]
+        if not rendered_instances and elevation_underlay else
+        f"render/{image_name}"
+    )
+    manifest = {
+        "schemaVersion": 1,
+        "status": (
+            "recovered_streaming_textured_topdown" if textured_pixels else
+            "recovered_streaming_mesh_topdown" if rendered_instances else
+            "exact_registry_transform_elevation_only"
+        ),
+        "levelId": level_id,
+        "src": published_src,
+        "elevationUnderlay": elevation_underlay,
+        "pointCloudOverlay": point_cloud_overlay,
+        "worldBounds": bounds,
+        "coordinateSystem": "Unity world X/Z; image top is +Z; tint derives from exact world Y",
+        "render": {
+            "method": (
+                "exact_streaming_matrix_obj_uv_material_texture_depth_pass" if textured_pixels else
+                "exact_streaming_matrix_obj_depth_pass" if rendered_instances else
+                "exact_registry_transform_elevation_only"
+            ),
+            "pointCount": 0 if rendered_instances else len(positions),
+            "pointRadius": 0 if rendered_instances else radius,
+            "renderedInstanceCount": rendered_instances,
+            "renderedTriangleCount": rendered_triangles,
+            "renderedVertexSampleCount": rendered_vertex_samples,
+            "texturedInstanceCount": textured_instances,
+            "texturedTriangleCount": textured_triangles,
+            "texturedPixelCount": textured_pixels,
+            "rasterBackend": raster.get("rasterBackend") if rendered_instances else None,
+            "detailTriangleCount": detail_triangles,
+            "excludedDetailTriangleCount": excluded_detail_triangles,
+            "detailRule": (
+                "authored prop/decal/vegetation instances only"
+                if level_id in DETAIL_PROP_ONLY_LEVELS else
+                "exclude explicitly named floor/roof/ceiling/ground/terrain meshes and near-horizontal "
+                f"non-prop triangles >= {DETAIL_HORIZONTAL_AREA:g} m2"
+            ),
+            "baseColorTextureCount": len(used_textures),
+            "baseColorTextures": used_textures,
+            "excludedOverheadCoverInstanceCount": len(overhead_covers),
+            "overheadCoverRule": "authored entity/mesh name contains roof or ceiling",
+            "realPixelRatio": round(real_pixel_ratio, 4),
+            "elevationRange": {"min": low, "max": high},
+        },
+        "modelScene": {
+            "status": "streaming_meshes_rasterized" if rendered_instances else "no_recovered_scene_meshes",
+            "positionStatus": "exact_streaming_matrix" if mesh_rows else "unavailable",
+            "meshes": list(mesh_rows.values()),
+            "meshCount": len(mesh_rows),
+            "instanceCount": len(resolved),
+        },
+        "boundary": (
+            f"Orthographic depth raster of {rendered_instances} static OBJ instances placed by their recovered "
+            f"InitChunkData 4x4 matrices ({rendered_triangles} triangles and {rendered_vertex_samples} "
+            f"legacy vertex samples). The point layer retains {detail_triangles} detail triangles and "
+            f"exclude {excluded_detail_triangles} broad structural/slab triangles. {textured_pixels} visible pixels sample {len(used_textures)} exact "
+            "single-material base-color texture bindings through exported OBJ UVs; when any exact color is recovered, "
+            "unresolved or multi-material surface pixels remain transparent and their geometry stays available only on "
+            f"the separate grayscale elevation layer. {len(overhead_covers)} explicitly named roof/ceiling instances are "
+            "omitted so capped interiors remain readable; no height-based structural culling is applied. The remaining "
+            f"{len(streaming) - rendered_instances} non-rasterized instances are not drawn as location dots."
+            if rendered_instances else
+            f"Evidence-only point cloud drawn from {len(positions)} exact published registry and quest X/Y/Z transforms. "
+            "Points are not connected into terrain and do not claim recovered scene geometry."
+        ),
+    }
+    _write_point_render_cache(output_root, level_id, cache_signature, manifest)
+    return manifest
+
+
+def mesh_file_index(mesh_root: Path) -> dict[str, Path]:
+    """Exported OBJ files keyed by the PathID hex suffix AnimeStudio appends."""
+    if not mesh_root.is_dir():
+        return {}
+    return {path.stem.rsplit("_p", 1)[-1].upper(): path for path in mesh_root.glob("*.obj") if "_p" in path.stem}
+
+
+def texture_file_index(texture_root: Path) -> dict[str, Path]:
+    """Exported PNG files keyed by AnimeStudio's PathID hex suffix."""
+    if not texture_root.is_dir():
+        return {}
+    return {
+        path.stem.rsplit("_p", 1)[-1].upper(): path
+        for path in texture_root.glob("*.png") if "_p" in path.stem
+    }
+
+
+def material_file_index(material_root: Path) -> dict[str, Path]:
+    """Exported Material JSON files keyed by AnimeStudio's PathID suffix."""
+    if not material_root.is_dir():
+        return {}
+    return {
+        path.stem.rsplit("_p", 1)[-1].upper(): path
+        for path in material_root.glob("*.json") if "_p" in path.stem
+    }
+
+
+def water_scene_id(level_id: str, source_scene: str | None = None) -> str:
+    """Map gameplay slices to the LunaScene that owns WaterData sectors."""
+    candidate = source_scene or level_id
+    # The map01 WaterData flow fields do not establish an authored minimap
+    # water surface; cyan segmentation there misclassifies Wuling terrain.
+    # Valley map screens are the validated regional consumer of the shared
+    # map02 WaterData sectors. Other/isolated scenes keep their own exact id.
+    matched = re.match(r"^(map02)_lv[0-9]+$", candidate, re.IGNORECASE)
+    return matched.group(1) if matched else candidate
+
+
+def render_water_overlay(
+    level_id: str,
+    scene_id: str,
+    bounds: dict[str, float],
+    sectors_by_scene: dict[str, list[dict]],
+    texture_files: dict[str, Path],
+    output_root: Path,
+) -> dict | None:
+    """Render authored minimap water colors as an independent transparent layer.
+
+    WaterData's ``T_water_*flowmap*`` textures are vector/height fields, not
+    binary coverage masks. Treating their blue channel as occupancy produced
+    long rays and bands that do not describe shore geometry. Until the actual
+    water-surface mesh consumer is recovered, maps without authored minimap art
+    deliberately publish no water layer.
+    """
+    sectors = sectors_by_scene.get(scene_id) or []
+    if not sectors:
+        return None
+    minimap_path = output_root / f"{level_id}_minimap.png"
+    preview = read_png_preview(minimap_path, LONG_EDGE) if minimap_path.is_file() else None
+    if not preview:
+        return None
+    span_x = bounds["maxX"] - bounds["minX"]
+    span_z = bounds["maxZ"] - bounds["minZ"]
+    width, height = raster_size(span_x, span_z)
+    rows = [bytearray(width * 4) for _ in range(height)]
+    source_width, source_height, pixels = preview
+    water_pixels = 0
+    for target_y in range(height):
+        source_y = min(source_height - 1, int((target_y + 0.5) / height * source_height))
+        row = rows[target_y]
+        for target_x in range(width):
+            source_x = min(source_width - 1, int((target_x + 0.5) / width * source_width))
+            source = (source_y * source_width + source_x) * 4
+            red, green, blue, alpha = pixels[source:source + 4]
+            # Authored Wuling/Valley minimaps paint water in a stable cyan
+            # family. Blue and green must both dominate red; requiring a
+            # visible midtone rejects transparent padding and near-black map
+            # shadows without tracing roads or the flowmap's vector rays.
+            if not (
+                alpha > 0 and green > red * 1.12 and blue > red * 1.18
+                and green > 55 and blue > 55 and blue > green * 0.62
+            ):
+                continue
+            target = target_x * 4
+            row[target:target + 4] = bytes((32, 142, 184, 168))
+            water_pixels += 1
+    if not water_pixels:
+        return None
+    image_name = f"{level_id}_water.png"
+    write_png(output_root / image_name, width, height, [bytes(row) for row in rows])
+    return {
+        "src": f"render/{image_name}",
+        "status": "recovered_authored_minimap_water_color_mask",
+        "method": "authored minimap cyan-family water-color segmentation",
+        "worldBounds": bounds,
+        "sceneId": scene_id,
+        "sectorSize": WATER_SECTOR_SIZE,
+        "sourceSectorCount": len(sectors),
+        "renderedSectorCount": 0,
+        "waterPixelRatio": round(water_pixels / (width * height), 4),
+        "boundary": (
+            "Independent authored-minimap water-color layer. WaterData sector flowmaps corroborate that the "
+            "scene uses HGWater, but are not treated as coverage: their packed flow/height channels contain "
+            "long vector bands. Maps without authored minimap art remain empty until water meshes are recovered."
+        ),
+    }
+
+
+def _scene_meshes(
+    used: list[dict],
+    mesh_files: dict[str, Path],
+    *,
+    lod: int,
+    fit: dict,
+) -> list[dict]:
+    """Publish a bounded, safe OBJ scene manifest for the frontend viewer.
+
+    The rasterizer has already established that these meshes landed in the
+    recovered grid.  Reusing that exact list keeps the optional 3D inspection
+    view from inventing a second asset selection algorithm.  Paths are only
+    published when they resolve below the repository's ``export_full`` tree;
+    custom probe directories and absolute paths therefore fail closed.  The
+    viewer receives the same inferred cell transform and axis conversion as
+    the PNG renderer, so it can label this as diagnostic geometry rather than
+    presenting it as an authored scene transform.
+    """
+    export_root = (ROOT / "export_full").resolve()
+    cell = cell_size(lod)
+    rows: list[dict] = []
+    triangles = 0
+    for cluster in used:
+        try:
+            path_id = int(cluster.get("pathId"))
+        except (TypeError, ValueError):
+            continue
+        path = _path_id_file(mesh_files, path_id)
+        if path is None:
+            continue
+        try:
+            resolved = path.resolve()
+            relative = resolved.relative_to(export_root).as_posix()
+        except (OSError, ValueError):
+            # Do not publish a file URL outside the selected export.  This is
+            # important when a developer points --mesh-root at a scratch tree.
+            continue
+        try:
+            mesh_triangles = max(0, int(cluster.get("triangles") or 0))
+        except (TypeError, ValueError):
+            continue
+        if rows and triangles + mesh_triangles > MAX_SCENE_TRIANGLES:
+            break
+        match = CLUSTER_RE.match(str(cluster.get("name") or ""))
+        if not match:
+            continue
+        grid_i, grid_j = int(match.group(2)), int(match.group(3))
+        # Keep the compact asset-index spelling alongside the direct raw URL.
+        # This lets the map link into the existing Assets OBJ viewer without
+        # making that page scan or understand map-recovery manifests.
+        asset_rel = ""
+        relative_parts = relative.split("/")
+        if len(relative_parts) >= 5 and relative_parts[0:2] == ["recovered", "AnimeStudio-cli"]:
+            source = relative_parts[2]
+            if len(relative_parts) >= 5 and relative_parts[3] == "convert_by_type":
+                asset_rel = f"{source}/{'/'.join(relative_parts[4:])}"
+        if mesh_triangles > MAX_SCENE_TRIANGLES:
+            # One pathological OBJ must not defeat the scene cap by being the
+            # first accepted row; the PNG path already rendered it safely.
+            continue
+        rows.append({
+            "name": str(cluster.get("name") or resolved.stem),
+            "pathId": path_id,
+            "src": f"/export_full/{relative}",
+            "assetRel": asset_rel,
+            "triangles": mesh_triangles,
+            "gridIndex": {"i": grid_i, "j": grid_j},
+            "translation": {
+                "x": fit["originX"] + grid_i * cell + cell / 2,
+                "y": 0.0,
+                "z": fit["originZ"] + grid_j * cell + cell / 2,
+            },
+        })
+        triangles += mesh_triangles
+        if len(rows) >= MAX_SCENE_MESHES:
+            break
+    return rows
+
+
+def raster_size(span_x: float, span_z: float) -> tuple[int, int]:
+    """Raster dimensions for a world area, preserving its aspect."""
+    if span_x >= span_z:
+        return LONG_EDGE, max(1, round(LONG_EDGE * span_z / span_x))
+    return max(1, round(LONG_EDGE * span_x / span_z)), LONG_EDGE
+
+
+def _read_cluster(path: Path):
+    """Vertices and triangles of one exported cluster OBJ.
+
+    Vertex normals are deliberately not read: the published scan view only
+    needs triangle positions for its orthographic world-Y depth pass.
+    """
+    vertices = []
+    faces = []
+    try:
+        stream = path.open("r", encoding="utf-8", errors="strict")
+    except OSError:
+        return None
+    with stream:
+        for line in stream:
+            if line.startswith("v "):
+                parts = line.split()
+                try:
+                    vertices.append((float(parts[1]), float(parts[2]), float(parts[3])))
+                except (IndexError, ValueError):
+                    return None
+            elif line.startswith("f "):
+                corners = []
+                for token in line.split()[1:4]:
+                    try:
+                        corners.append(int(token.split("/")[0]) - 1)
+                    except ValueError:
+                        corners = []
+                        break
+                if len(corners) == 3:
+                    faces.append(tuple(corners))
+    return vertices, faces
+
+
+def _read_textured_mesh(path: Path):
+    """Read OBJ positions, UVs, and their triangle-corner indices."""
+    vertices = []
+    texcoords = []
+    faces = []
+    base_group = None
+    submesh_index = None
+    try:
+        stream = path.open("r", encoding="utf-8", errors="strict")
+    except OSError:
+        return None
+    with stream:
+        for line in stream:
+            if line.startswith("v "):
+                parts = line.split()
+                try:
+                    vertices.append((float(parts[1]), float(parts[2]), float(parts[3])))
+                except (IndexError, ValueError):
+                    return None
+            elif line.startswith("vt "):
+                parts = line.split()
+                try:
+                    texcoords.append((float(parts[1]), float(parts[2])))
+                except (IndexError, ValueError):
+                    return None
+            elif line.startswith("g "):
+                group = line[2:].strip()
+                if base_group is None:
+                    base_group = group
+                    submesh_index = None
+                elif group.startswith(base_group + "_"):
+                    suffix = group[len(base_group) + 1:]
+                    submesh_index = int(suffix) if suffix.isdigit() else None
+                else:
+                    submesh_index = None
+            elif line.startswith("f "):
+                vertex_indices = []
+                texture_indices = []
+                for token in line.split()[1:4]:
+                    fields = token.split("/")
+                    try:
+                        vertex_indices.append(int(fields[0]) - 1)
+                        texture_indices.append(int(fields[1]) - 1 if len(fields) > 1 and fields[1] else -1)
+                    except ValueError:
+                        vertex_indices = []
+                        break
+                if len(vertex_indices) == 3:
+                    faces.append((tuple(vertex_indices), tuple(texture_indices), submesh_index))
+    return vertices, texcoords, faces
+
+
+_STREAMING_OBJ_PATHS: dict[tuple[Path, str], Path | None] = {}
+
+
+def _streaming_obj_path(value: str, export_root: Path) -> Path | None:
+    """Resolve and sandbox one instance OBJ reference once per process.
+
+    Hundreds of thousands of instances name a few thousand OBJ files, and
+    `Path.resolve` is a filesystem call, so the answer is memoized per source
+    string rather than recomputed per instance.
+    """
+    key = (ROOT, value)
+    if key not in _STREAMING_OBJ_PATHS:
+        path = (ROOT / value).resolve()
+        _STREAMING_OBJ_PATHS[key] = path if path.is_relative_to(export_root) else None
+    return _STREAMING_OBJ_PATHS[key]
+
+
+_STREAMING_MESH_ARRAYS: dict[Path, dict | None] = {}
+_STREAMING_MESH_ARRAY_BYTES = 0
+# One worker renders several scenes in sequence. A whole region's OBJ set stays
+# resident for that scene's depth and lattice passes and is then released, so
+# the arrays never accumulate across unrelated scenes.
+_STREAMING_MESH_ARRAY_LIMIT = 3 << 30
+
+
+def _read_textured_mesh_arrays(path: Path) -> dict | None:
+    """`_read_textured_mesh` into contiguous arrays, with the same parse rules.
+
+    Triangle corners are resolved here once: Python list indexing wraps a
+    negative OBJ index and raises past the end, so the compiled kernels only
+    ever see in-range corners plus the mask of faces the interpreter skipped.
+    """
+    positions: list[tuple[float, float, float]] = []
+    uvs: list[tuple[float, float]] = []
+    corner_vertices: list[int] = []
+    corner_texcoords: list[int] = []
+    face_submeshes: list[int] = []
+    base_group = None
+    submesh_index = -1
+    try:
+        stream = path.open("r", encoding="utf-8", errors="strict")
+    except OSError:
+        return None
+    with stream:
+        for line in stream:
+            if line.startswith("v "):
+                parts = line.split()
+                try:
+                    positions.append((float(parts[1]), float(parts[2]), float(parts[3])))
+                except (IndexError, ValueError):
+                    return None
+            elif line.startswith("vt "):
+                parts = line.split()
+                try:
+                    uvs.append((float(parts[1]), float(parts[2])))
+                except (IndexError, ValueError):
+                    return None
+            elif line.startswith("g "):
+                group = line[2:].strip()
+                if base_group is None:
+                    base_group = group
+                    submesh_index = -1
+                elif group.startswith(base_group + "_"):
+                    suffix = group[len(base_group) + 1:]
+                    submesh_index = int(suffix) if suffix.isdigit() else -1
+                else:
+                    submesh_index = -1
+            elif line.startswith("f "):
+                vertex_indices = []
+                texture_indices = []
+                for token in line.split()[1:4]:
+                    fields = token.split("/")
+                    try:
+                        vertex_indices.append(int(fields[0]) - 1)
+                        texture_indices.append(int(fields[1]) - 1 if len(fields) > 1 and fields[1] else -1)
+                    except ValueError:
+                        vertex_indices = []
+                        break
+                if len(vertex_indices) == 3:
+                    corner_vertices.extend(vertex_indices)
+                    corner_texcoords.extend(texture_indices)
+                    face_submeshes.append(submesh_index)
+
+    vertex_count = len(positions)
+    texcoord_count = len(uvs)
+    face_count = len(face_submeshes)
+    vertices = _np.array(positions, dtype=_np.float64) if vertex_count else _np.zeros((0, 3), dtype=_np.float64)
+    texcoords = _np.array(uvs, dtype=_np.float64) if texcoord_count else _np.zeros((0, 2), dtype=_np.float64)
+    if face_count:
+        raw_vertices = _np.array(corner_vertices, dtype=_np.int64).reshape(face_count, 3)
+        raw_texcoords = _np.array(corner_texcoords, dtype=_np.int64).reshape(face_count, 3)
+        submeshes = _np.array(face_submeshes, dtype=_np.int64)
+    else:
+        raw_vertices = _np.zeros((0, 3), dtype=_np.int64)
+        raw_texcoords = _np.zeros((0, 3), dtype=_np.int64)
+        submeshes = _np.zeros(0, dtype=_np.int64)
+    resolved = _np.where(raw_vertices < 0, raw_vertices + vertex_count, raw_vertices)
+    face_valid = ((resolved >= 0) & (resolved < vertex_count)).all(axis=1)
+    resolved[~face_valid] = 0
+    face_uv_ok = ((raw_texcoords >= 0) & (raw_texcoords < texcoord_count)).all(axis=1)
+    raw_texcoords = _np.where(face_uv_ok[:, None], raw_texcoords, 0)
+    # Every retained corner is now inside its own array, so the region's worth
+    # of index data halves without any chance of a truncated OBJ index.
+    resolved = resolved.astype(_np.int32)
+    raw_texcoords = raw_texcoords.astype(_np.int32)
+    # OBJ `g` lines partition the face list, so equal submesh slots are already
+    # contiguous; one run is one compiled call with one resolved texture.
+    breaks = _np.flatnonzero(submeshes[1:] != submeshes[:-1]).tolist() if face_count else []
+    starts = [0, *(index + 1 for index in breaks)]
+    stops = [*(index + 1 for index in breaks), face_count]
+    runs = [
+        (start, stop, None if submeshes[start] < 0 else int(submeshes[start]))
+        for start, stop in zip(starts, stops)
+    ] if face_count else []
+    return {
+        "vertices": vertices,
+        "texcoords": texcoords,
+        "faceVertices": resolved,
+        "faceValid": face_valid,
+        "faceTexcoords": raw_texcoords,
+        "faceUvOk": face_uv_ok,
+        "runs": runs,
+        "validFaceCount": int(face_valid.sum()),
+        "bytes": int(
+            vertices.nbytes + texcoords.nbytes + resolved.nbytes
+            + face_valid.nbytes + raw_texcoords.nbytes + face_uv_ok.nbytes
+        ),
+    }
+
+
+def _textured_mesh_arrays(path: Path) -> dict | None:
+    """Parse one streaming OBJ at most once per process.
+
+    Both the depth pass and the lattice pass read the same arrays, and a single
+    region reuses a few thousand OBJs across hundreds of thousands of
+    instances, so the parse is the one place that must not repeat.
+    """
+    global _STREAMING_MESH_ARRAY_BYTES
+    if path in _STREAMING_MESH_ARRAYS:
+        return _STREAMING_MESH_ARRAYS[path]
+    arrays = _read_textured_mesh_arrays(path)
+    if arrays is not None and _STREAMING_MESH_ARRAY_BYTES + arrays["bytes"] > _STREAMING_MESH_ARRAY_LIMIT:
+        _STREAMING_MESH_ARRAYS.clear()
+        _STREAMING_MESH_ARRAY_BYTES = 0
+    _STREAMING_MESH_ARRAYS[path] = arrays
+    if arrays is not None:
+        _STREAMING_MESH_ARRAY_BYTES += arrays["bytes"]
+    return arrays
+
+
+def _submesh_binding(binding: dict | None, submesh_index: int | None) -> dict | None:
+    slots = (binding or {}).get("submeshBindings")
+    if slots is None:
+        return binding
+    if submesh_index is None or not 0 <= submesh_index < len(slots):
+        return None
+    return slots[submesh_index]
+
+
+def rasterise_vertices(clusters, lod, fit, bounds, mesh_files, width, height):
+    """Project actual OBJ vertices, preserving their irregular scan spacing."""
+    span_x = bounds["maxX"] - bounds["minX"]
+    span_z = bounds["maxZ"] - bounds["minZ"]
+    depth = [NO_HIT] * (width * height)
+    used = []
+    vertex_count = 0
+    size = cell_size(lod)
+    for cluster in clusters:
+        path = _path_id_file(mesh_files, int(cluster["pathId"]))
+        if path is None:
+            continue
+        parsed = _read_cluster(path)
+        if not parsed:
+            continue
+        raw_vertices, faces = parsed
+        translate_x = fit["originX"] + cluster["i"] * size + size / 2
+        translate_z = fit["originZ"] + cluster["j"] * size + size / 2
+        landed = 0
+        for obj_x, obj_y, obj_z in raw_vertices:
+            world_x = translate_x - obj_x
+            world_z = translate_z + obj_z
+            px = round((world_x - bounds["minX"]) / span_x * (width - 1))
+            py = round((bounds["maxZ"] - world_z) / span_z * (height - 1))
+            if not (0 <= px < width and 0 <= py < height):
+                continue
+            index = py * width + px
+            depth[index] = max(depth[index], obj_y)
+            landed += 1
+        if landed:
+            vertex_count += landed
+            used.append({
+                "pathId": cluster["pathId"],
+                "name": cluster["name"],
+                "vertices": landed,
+                "triangles": len(faces),
+            })
+    return depth, used, vertex_count
+
+
+def render_hlod_point_samples(
+    level_id: str,
+    clusters: list[dict],
+    lod: int,
+    fit: dict,
+    bounds: dict[str, float],
+    mesh_files: dict[str, Path],
+    width: int,
+    height: int,
+    output_root: Path,
+    bindings: dict[int, dict] | None = None,
+) -> dict | None:
+    """Preserve every projected HLOD vertex so height cuts reveal lower geometry."""
+    span_x = bounds["maxX"] - bounds["minX"]
+    span_z = bounds["maxZ"] - bounds["minZ"]
+    size = cell_size(lod)
+    samples: dict[int, list[tuple[float, tuple[int, int, int, int] | None]]] = {}
+    used_textures: set[str] = set()
+    epsilon = 1e-4
+
+    def add(index: int, world_y: float, color: tuple[int, int, int, int] | None) -> None:
+        rows = samples.setdefault(index, [])
+        for position, (existing_y, existing_color) in enumerate(rows):
+            if abs(existing_y - world_y) <= epsilon:
+                if existing_color is None and color is not None:
+                    rows[position] = (world_y, color)
+                return
+        rows.append((world_y, color))
+
+    for cluster in clusters:
+        path = _path_id_file(mesh_files, int(cluster["pathId"]))
+        if path is None:
+            continue
+        texture = _texture_render_source((bindings or {}).get(cluster.get("pathId")))
+        if texture is None:
+            continue
+        parsed = _read_textured_mesh(path)
+        if not parsed:
+            continue
+        translate_x = fit["originX"] + cluster["i"] * size + size / 2
+        translate_z = fit["originZ"] + cluster["j"] * size + size / 2
+        raw_vertices, texcoords, faces = parsed
+        used_textures.add(texture["textureRel"])
+        corners = []
+        for vertex_face, texture_face, _submesh_index in faces:
+            corners.extend(zip(vertex_face, texture_face))
+        for vertex_index, texture_index in corners:
+            try:
+                obj_x, obj_y, obj_z = raw_vertices[vertex_index]
+            except IndexError:
+                continue
+            world_x = translate_x - obj_x
+            world_z = translate_z + obj_z
+            px = round((world_x - bounds["minX"]) / span_x * (width - 1))
+            py = round((bounds["maxZ"] - world_z) / span_z * (height - 1))
+            if not (0 <= px < width and 0 <= py < height):
+                continue
+            if texture_index < 0:
+                continue
+            try:
+                u, v = texcoords[texture_index]
+            except IndexError:
+                continue
+            color = _sample_texture(texture, u * texture["scale"][0] + texture["offset"][0],
+                                    v * texture["scale"][1] + texture["offset"][1])
+            if color is None:
+                continue
+            add(py * width + px, obj_y, color)
+
+    all_heights = [world_y for rows in samples.values() for world_y, _color in rows]
+    if not all_heights:
+        return None
+    low, high = min(all_heights), max(all_heights)
+    top_depth = [NO_HIT] * (width * height)
+    top_colors = bytearray(width * height * 4)
+    records = bytearray(b"MRPS" + struct.pack("<HHII", 1, 12, width, height))
+    record_count = 0
+    for index in sorted(samples):
+        ordered = sorted(samples[index], key=lambda row: row[0])
+        for world_y, color in ordered:
+            records.extend(struct.pack("<IfBBBB", index, world_y, *color))
+            record_count += 1
+        top_y, top_color = ordered[-1]
+        top_depth[index] = top_y
+        offset = index * 4
+        top_colors[offset:offset + 4] = bytes(top_color)
+
+    output_root.mkdir(parents=True, exist_ok=True)
+    image_name = f"{level_id}_hlod_vertex_points.png"
+    write_png(
+        output_root / image_name, width, height,
+        [bytes(top_colors[row * width * 4:(row + 1) * width * 4]) for row in range(height)],
+    )
+    sample_name = f"{level_id}_hlod_vertex_points.samples"
+    (output_root / sample_name).write_bytes(records)
+    height_mask = render_point_height_mask(
+        level_id, top_depth, width, height, output_root,
+        image_suffix="hlod_vertex_points_height_mask", sampling="all",
+    )
+    return {
+        "src": f"render/{image_name}",
+        "method": "orthographic_hlod_layered_mesh_vertex_samples",
+        "defaultOpacity": 0.72,
+        "pointDensity": 1.0,
+        "heightMask": height_mask,
+        "sampleSet": {
+            "src": f"render/{sample_name}",
+            "encoding": "mrps_v1_le_u32_pixel_f32_height_rgba8",
+            "width": width,
+            "height": height,
+            "recordCount": record_count,
+            "pixelCount": len(samples),
+            "elevationRange": {"min": low, "max": high},
+            "dedupeEpsilon": epsilon,
+        },
+        "baseColorTextures": sorted(used_textures),
+        "boundary": (
+            "Every projected OBJ vertex is retained by pixel and world Y. The default PNG shows the highest sample; "
+            "the sample sidecar lets a bounded height filter reveal the next lower sample without changing surface depth."
+        ),
+    }
+
+
+def rasterise_streaming_depth(streaming, bounds, width, height, bindings=None, detail_props_only=False):
+    """Rasterize exact static instances, sampling proven material base textures."""
+    if _raster_mesh_numba is not None:
+        return _rasterise_streaming_depth_batched(
+            streaming, bounds, width, height, bindings, detail_props_only,
+        )
+    return _rasterise_streaming_depth_stdlib(
+        streaming, bounds, width, height, bindings, detail_props_only,
+    )
+
+
+def _rasterise_streaming_depth_batched(streaming, bounds, width, height, bindings, detail_props_only):
+    """One compiled call per mesh instance and submesh run, not per triangle."""
+    min_x = bounds["minX"]
+    max_z = bounds["maxZ"]
+    span_x = bounds["maxX"] - min_x
+    span_z = max_z - bounds["minZ"]
+    pixels = width * height
+    depth = _np.full(pixels, NO_HIT, dtype=_np.float64)
+    detail_depth = _np.full(pixels, NO_HIT, dtype=_np.float64)
+    color_depth = _np.full(pixels, NO_HIT, dtype=_np.float64)
+    detail_color_depth = _np.full(pixels, NO_HIT, dtype=_np.float64)
+    albedo = _np.zeros((pixels, 4), dtype=_np.uint8)
+    detail_albedo = _np.zeros((pixels, 4), dtype=_np.uint8)
+    textures: dict[tuple[str, int], dict | None] = {}
+    used_instances = 0
+    textured_instances = 0
+    triangles = 0
+    textured_triangles = 0
+    detail_triangles = 0
+    excluded_detail_triangles = 0
+    used_textures: set[str] = set()
+    export_root = (ROOT / "export_full").resolve()
+
+    for instance in streaming:
+        matrix = instance.get("matrixColumnMajor")
+        meshes = _instance_meshes(instance)
+        if not meshes or not isinstance(matrix, list) or len(matrix) != 16:
+            continue
+        matrix_values = _np.asarray(matrix, dtype=_np.float64)
+        instance_drawn = False
+        instance_textured = False
+        for mesh in meshes:
+            path = _streaming_obj_path(str(mesh.get("obj") or ""), export_root)
+            if path is None:
+                continue
+            arrays = _textured_mesh_arrays(path)
+            if arrays is None:
+                continue
+            # The detail rule is per mesh except for the geometric slab test,
+            # which stays per face and is evaluated inside the kernel.
+            if detail_props_only:
+                detail_mode = 1 if _is_detail_prop(instance, mesh) else 0
+            elif _is_detail_structural(instance, mesh):
+                detail_mode = 0
+            elif _is_detail_prop(instance, mesh):
+                detail_mode = 1
+            else:
+                detail_mode = 2
+            asset_rel = _asset_rel_from_obj(mesh.get("obj"))
+            world = _transform_vertices_numba(arrays["vertices"], matrix_values)
+            drawn = 0
+            for first_face, last_face, submesh_index in arrays["runs"]:
+                texture = _run_texture(textures, bindings, asset_rel, submesh_index)
+                if texture is None:
+                    has_texture = False
+                    texture_pixels = _EMPTY_TEXTURE_PIXELS
+                    tint_lut = _IDENTITY_TINT_LUT
+                    texture_width = 1
+                    texture_height = 1
+                    scale_u = scale_v = 1.0
+                    offset_u = offset_v = cutoff_alpha = 0.0
+                else:
+                    _depth_texture_arrays(texture)
+                    has_texture = True
+                    texture_pixels = texture["_npPixels"]
+                    tint_lut = texture["_npTintLut"]
+                    texture_width = texture["width"]
+                    texture_height = texture["height"]
+                    scale_u, scale_v = texture["scale"]
+                    offset_u, offset_v = texture["offset"]
+                    cutoff_alpha = texture["cutoff"] * 255.0
+                run_drawn, run_textured, run_detail, run_excluded, run_hit = _raster_mesh_numba(
+                    depth, detail_depth, color_depth, detail_color_depth, albedo, detail_albedo,
+                    width, height, min_x, max_z, span_x, span_z,
+                    world, arrays["faceVertices"], arrays["faceValid"],
+                    arrays["faceTexcoords"], arrays["faceUvOk"], arrays["texcoords"],
+                    first_face, last_face, detail_mode,
+                    has_texture, texture_pixels, texture_width, texture_height,
+                    scale_u, scale_v, offset_u, offset_v, cutoff_alpha, tint_lut, EDGE_EPSILON,
+                )
+                drawn += run_drawn
+                textured_triangles += run_textured
+                detail_triangles += run_detail
+                excluded_detail_triangles += run_excluded
+                if run_textured:
+                    used_textures.add(texture["textureRel"])
+                if run_hit:
+                    instance_textured = True
+            if drawn:
+                instance_drawn = True
+                triangles += drawn
+        if instance_drawn:
+            used_instances += 1
+        if instance_textured:
+            textured_instances += 1
+    return {
+        "depth": depth.tolist(),
+        "detailDepth": detail_depth.tolist(),
+        "albedo": bytearray(albedo.tobytes()),
+        "detailAlbedo": bytearray(detail_albedo.tobytes()),
+        "usedInstances": used_instances,
+        "texturedInstances": textured_instances,
+        "triangles": triangles,
+        "texturedTriangles": textured_triangles,
+        "detailTriangles": detail_triangles,
+        "excludedDetailTriangles": excluded_detail_triangles,
+        "vertexSamples": 0,
+        "texturedPixels": int(_np.count_nonzero(albedo[:, 3])),
+        "usedTextures": sorted(used_textures),
+        "rasterBackend": "numpy_numba",
+    }
+
+
+def _rasterise_streaming_depth_stdlib(streaming, bounds, width, height, bindings, detail_props_only):
+    """Maintained interpreter path for an environment without NumPy/Numba."""
+    span_x = bounds["maxX"] - bounds["minX"]
+    span_z = bounds["maxZ"] - bounds["minZ"]
+    depth = [NO_HIT] * (width * height)
+    detail_depth = [NO_HIT] * (width * height)
+    color_depth = [NO_HIT] * (width * height)
+    detail_color_depth = [NO_HIT] * (width * height)
+    albedo = bytearray(width * height * 4)
+    detail_albedo = bytearray(width * height * 4)
+    cache: dict[Path, tuple[list, list, list] | None] = {}
+    textures: dict[tuple[str, int], dict | None] = {}
+    used_instances = 0
+    textured_instances = 0
+    triangles = 0
+    textured_triangles = 0
+    detail_triangles = 0
+    excluded_detail_triangles = 0
+    vertex_samples = 0
+    used_textures: set[str] = set()
+    export_root = (ROOT / "export_full").resolve()
+
+    for instance in streaming:
+        matrix = instance.get("matrixColumnMajor")
+        meshes = _instance_meshes(instance)
+        if not meshes or not isinstance(matrix, list) or len(matrix) != 16:
+            continue
+        instance_drawn = False
+        instance_textured = False
+        for mesh in meshes:
+            path = _streaming_obj_path(str(mesh.get("obj") or ""), export_root)
+            if path is None:
+                continue
+            if path not in cache:
+                cache[path] = _read_textured_mesh(path)
+            parsed = cache[path]
+            if not parsed:
+                continue
+            raw_vertices, texcoords, faces = parsed
+            structural_detail = _is_detail_structural(instance, mesh)
+            authored_detail_prop = _is_detail_prop(instance, mesh)
+            asset_rel = _asset_rel_from_obj(mesh.get("obj"))
+            # AnimeStudio's OBJ conversion mirrors Unity X. Undo that conversion
+            # before applying the recovered Unity column-major instance matrix.
+            vertices = []
+            for obj_x, obj_y, obj_z in raw_vertices:
+                local_x = -obj_x
+                vertices.append((
+                    matrix[0] * local_x + matrix[4] * obj_y + matrix[8] * obj_z + matrix[12],
+                    matrix[1] * local_x + matrix[5] * obj_y + matrix[9] * obj_z + matrix[13],
+                    matrix[2] * local_x + matrix[6] * obj_y + matrix[10] * obj_z + matrix[14],
+                ))
+            drawn = 0
+            for vertex_face, texture_face, submesh_index in faces:
+                texture = _run_texture(textures, bindings, asset_rel, submesh_index)
+                try:
+                    points = [vertices[index] for index in vertex_face]
+                except IndexError:
+                    continue
+                detail_face = (
+                    authored_detail_prop
+                    if detail_props_only else
+                    not structural_detail
+                    and (authored_detail_prop or not _is_large_horizontal_triangle(points))
+                )
+                if detail_face:
+                    detail_triangles += 1
+                else:
+                    excluded_detail_triangles += 1
+                uvs = None
+                if texture and min(texture_face) >= 0:
+                    try:
+                        uvs = [texcoords[index] for index in texture_face]
+                    except IndexError:
+                        uvs = None
+                screen_x = [(point[0] - bounds["minX"]) / span_x * width for point in points]
+                screen_y = [(bounds["maxZ"] - point[2]) / span_z * height for point in points]
+                x0, x1 = max(0, int(min(screen_x))), min(width - 1, int(max(screen_x)) + 1)
+                y0, y1 = max(0, int(min(screen_y))), min(height - 1, int(max(screen_y)) + 1)
+                if x0 > x1 or y0 > y1:
+                    continue
+                area = ((screen_y[1] - screen_y[2]) * (screen_x[0] - screen_x[2])
+                        + (screen_x[2] - screen_x[1]) * (screen_y[0] - screen_y[2]))
+                if abs(area) < 1e-12:
+                    continue
+                drawn += 1
+                if uvs is not None:
+                    textured_triangles += 1
+                    used_textures.add(texture["textureRel"])
+                inv_area = 1.0 / area
+                w0_dx = (screen_y[1] - screen_y[2]) * inv_area
+                w0_dy = (screen_x[2] - screen_x[1]) * inv_area
+                w1_dx = (screen_y[2] - screen_y[0]) * inv_area
+                w1_dy = (screen_x[0] - screen_x[2]) * inv_area
+                first_x = x0 + 0.5
+                first_y = y0 + 0.5
+                row_w0 = (((screen_y[1] - screen_y[2]) * (first_x - screen_x[2])
+                           + (screen_x[2] - screen_x[1]) * (first_y - screen_y[2])) * inv_area)
+                row_w1 = (((screen_y[2] - screen_y[0]) * (first_x - screen_x[2])
+                           + (screen_x[0] - screen_x[2]) * (first_y - screen_y[2])) * inv_area)
+                for pixel_y in range(y0, y1 + 1):
+                    base = pixel_y * width
+                    w0 = row_w0
+                    w1 = row_w1
+                    for pixel_x in range(x0, x1 + 1):
+                        w2 = 1.0 - w0 - w1
+                        if min(w0, w1, w2) >= -EDGE_EPSILON:
+                            elevation = w0 * points[0][1] + w1 * points[1][1] + w2 * points[2][1]
+                            index = base + pixel_x
+                            wins_full = elevation > depth[index]
+                            wins_detail = detail_face and elevation > detail_depth[index]
+                            wins_color = uvs is not None and elevation > color_depth[index]
+                            wins_detail_color = uvs is not None and detail_face and elevation > detail_color_depth[index]
+                            if wins_full or wins_detail or wins_color or wins_detail_color:
+                                sampled = None
+                                sample_visible = True
+                                if uvs is not None:
+                                    scale_u, scale_v = texture["scale"]
+                                    offset_u, offset_v = texture["offset"]
+                                    u = (w0 * uvs[0][0] + w1 * uvs[1][0] + w2 * uvs[2][0]) * scale_u + offset_u
+                                    v = (w0 * uvs[0][1] + w1 * uvs[1][1] + w2 * uvs[2][1]) * scale_v + offset_v
+                                    texture_x = min(texture["width"] - 1, int((u % 1.0) * texture["width"]))
+                                    texture_y = min(texture["height"] - 1, int(((1.0 - v) % 1.0) * texture["height"]))
+                                    texture_offset = (texture_y * texture["width"] + texture_x) * 4
+                                    source = texture["pixels"]
+                                    alpha = source[texture_offset + 3]
+                                    if alpha / 255 < texture["cutoff"]:
+                                        sample_visible = False
+                                    else:
+                                        tint_lut = texture["tintLut"]
+                                        sampled = (
+                                            tint_lut[0][source[texture_offset]],
+                                            tint_lut[1][source[texture_offset + 1]],
+                                            tint_lut[2][source[texture_offset + 2]],
+                                            alpha,
+                                        )
+                                if sample_visible:
+                                    if wins_full:
+                                        depth[index] = elevation
+                                    if wins_color and sampled:
+                                        color_depth[index] = elevation
+                                        color_offset = index * 4
+                                        albedo[color_offset:color_offset + 4] = bytes(sampled)
+                                        instance_textured = True
+                                    if wins_detail:
+                                        detail_depth[index] = elevation
+                                    if wins_detail_color and sampled:
+                                        detail_color_depth[index] = elevation
+                                        color_offset = index * 4
+                                        detail_albedo[color_offset:color_offset + 4] = bytes(sampled)
+                        w0 += w0_dx
+                        w1 += w1_dx
+                    row_w0 += w0_dy
+                    row_w1 += w1_dy
+            if drawn:
+                instance_drawn = True
+                triangles += drawn
+        if instance_drawn:
+            used_instances += 1
+        if instance_textured:
+            textured_instances += 1
+    return {
+        "depth": depth,
+        "detailDepth": detail_depth,
+        "albedo": albedo,
+        "detailAlbedo": detail_albedo,
+        "usedInstances": used_instances,
+        "texturedInstances": textured_instances,
+        "triangles": triangles,
+        "texturedTriangles": textured_triangles,
+        "detailTriangles": detail_triangles,
+        "excludedDetailTriangles": excluded_detail_triangles,
+        "vertexSamples": vertex_samples,
+        "texturedPixels": sum(1 for index in range(3, len(albedo), 4) if albedo[index]),
+        "usedTextures": sorted(used_textures),
+        "rasterBackend": "stdlib_python",
+    }
+
+
+def rasterise_depth(
+    clusters, lod, fit, bounds, mesh_files, width, height,
+    bindings: dict[int, dict] | None = None,
+    material_colors: bytearray | None = None,
+):
+    """Render the level's triangles into a top-down height field.
+
+    This is an orthographic depth pass from directly above: every triangle is
+    rasterised with a depth test on world Y so the surface nearest the camera
+    wins. The result is a digital elevation model of the level, which is what
+    the shading below works from.
+    """
+    span_x = bounds["maxX"] - bounds["minX"]
+    span_z = bounds["maxZ"] - bounds["minZ"]
+    depth = [NO_HIT] * (width * height)
+    used = []
+    triangles = 0
+    size = cell_size(lod)
+
+    for cluster in clusters:
+        path = _path_id_file(mesh_files, int(cluster["pathId"]))
+        if path is None:
+            continue
+        texture = _texture_render_source((bindings or {}).get(cluster.get("pathId")))
+        parsed = _read_textured_mesh(path) if texture else _read_cluster(path)
+        if not parsed:
+            continue
+        if texture:
+            raw_vertices, texcoords, textured_faces = parsed
+            faces = [row[0] for row in textured_faces]
+            texture_faces = [row[1] for row in textured_faces]
+        else:
+            raw_vertices, faces = parsed
+            texcoords = []
+            texture_faces = [(-1, -1, -1)] * len(faces)
+        # The cluster's vertices are centred on its own origin, so its world
+        # position is the centre of the grid cell its name declares. AnimeStudio
+        # writes OBJ right-handed, so X is mirrored back onto Unity's world.
+        translate_x = fit["originX"] + cluster["i"] * size + size / 2
+        translate_z = fit["originZ"] + cluster["j"] * size + size / 2
+        vertices = [(translate_x - v[0], v[1], translate_z + v[2]) for v in raw_vertices]
+
+        drawn = 0
+        for face_index, face in enumerate(faces):
+            try:
+                points = [vertices[index] for index in face]
+            except IndexError:
+                continue
+            screen_x = [(p[0] - bounds["minX"]) / span_x * width for p in points]
+            screen_y = [(bounds["maxZ"] - p[2]) / span_z * height for p in points]
+            x0 = max(0, int(min(screen_x)))
+            x1 = min(width - 1, int(max(screen_x)) + 1)
+            y0 = max(0, int(min(screen_y)))
+            y1 = min(height - 1, int(max(screen_y)) + 1)
+            if x0 > x1 or y0 > y1:
+                continue
+            area = ((screen_y[1] - screen_y[2]) * (screen_x[0] - screen_x[2])
+                    + (screen_x[2] - screen_x[1]) * (screen_y[0] - screen_y[2]))
+            if abs(area) < 1e-12:
+                continue
+            drawn += 1
+            inv_area = 1.0 / area
+            w0_dx = (screen_y[1] - screen_y[2]) * inv_area
+            w0_dy = (screen_x[2] - screen_x[1]) * inv_area
+            w1_dx = (screen_y[2] - screen_y[0]) * inv_area
+            w1_dy = (screen_x[0] - screen_x[2]) * inv_area
+            first_x = x0 + 0.5
+            first_y = y0 + 0.5
+            row_w0 = (((screen_y[1] - screen_y[2]) * (first_x - screen_x[2])
+                       + (screen_x[2] - screen_x[1]) * (first_y - screen_y[2])) * inv_area)
+            row_w1 = (((screen_y[2] - screen_y[0]) * (first_x - screen_x[2])
+                       + (screen_x[0] - screen_x[2]) * (first_y - screen_y[2])) * inv_area)
+            for pixel_y in range(y0, y1 + 1):
+                base = pixel_y * width
+                w0 = row_w0
+                w1 = row_w1
+                for pixel_x in range(x0, x1 + 1):
+                    w2 = 1.0 - w0 - w1
+                    if w0 >= -EDGE_EPSILON and w1 >= -EDGE_EPSILON and w2 >= -EDGE_EPSILON:
+                        elevation = w0 * points[0][1] + w1 * points[1][1] + w2 * points[2][1]
+                        index = base + pixel_x
+                        if elevation > depth[index]:
+                            sampled = None
+                            sample_visible = True
+                            texture_face = texture_faces[face_index]
+                            if texture and min(texture_face) >= 0:
+                                try:
+                                    uvs = [texcoords[uv_index] for uv_index in texture_face]
+                                except IndexError:
+                                    uvs = None
+                                if uvs:
+                                    scale_u, scale_v = texture["scale"]
+                                    offset_u, offset_v = texture["offset"]
+                                    u = (w0 * uvs[0][0] + w1 * uvs[1][0] + w2 * uvs[2][0]) * scale_u + offset_u
+                                    v = (w0 * uvs[0][1] + w1 * uvs[1][1] + w2 * uvs[2][1]) * scale_v + offset_v
+                                    texture_x = min(texture["width"] - 1, int((u % 1.0) * texture["width"]))
+                                    texture_y = min(texture["height"] - 1, int(((1.0 - v) % 1.0) * texture["height"]))
+                                    texture_offset = (texture_y * texture["width"] + texture_x) * 4
+                                    source = texture["pixels"]
+                                    alpha = source[texture_offset + 3]
+                                    if alpha / 255 < texture["cutoff"]:
+                                        sample_visible = False
+                                    else:
+                                        tint_lut = texture["tintLut"]
+                                        sampled = (
+                                            tint_lut[0][source[texture_offset]],
+                                            tint_lut[1][source[texture_offset + 1]],
+                                            tint_lut[2][source[texture_offset + 2]],
+                                            alpha,
+                                        )
+                            if sample_visible:
+                                depth[index] = elevation
+                                if material_colors is not None:
+                                    color_offset = index * 4
+                                    material_colors[color_offset:color_offset + 4] = bytes(sampled or (0, 0, 0, 0))
+                    w0 += w0_dx
+                    w1 += w1_dx
+                row_w0 += w0_dy
+                row_w1 += w1_dy
+        if drawn:
+            triangles += drawn
+            used.append({
+                "pathId": cluster["pathId"],
+                "name": cluster["name"],
+                "triangles": drawn,
+                "materialColor": bool(texture),
+                "baseColorTexture": texture["textureRel"] if texture else None,
+            })
+    return depth, used, triangles
+
+
+def grow_surface(depth, width, height, rounds=FILL_ROUNDS):
+    """Grow the height field a few pixels into the gaps between props.
+
+    HLOD publishes cliffs and props but no ground, so a raw depth pass is a
+    cloud of disconnected shards. Growing the surface outward joins them into
+    the landform they sit on. Only the frontier is visited each round, so this
+    stays proportional to the coverage edge rather than to the whole image.
+    """
+    filled = list(depth)
+    real = [value > NO_HIT for value in depth]
+    frontier = set()
+    for index, covered in enumerate(real):
+        if not covered:
+            continue
+        y, x = divmod(index, width)
+        for dy in (-1, 0, 1):
+            ny = y + dy
+            if ny < 0 or ny >= height:
+                continue
+            for dx in (-1, 0, 1):
+                nx = x + dx
+                if 0 <= nx < width and filled[ny * width + nx] <= NO_HIT:
+                    frontier.add(ny * width + nx)
+
+    for _ in range(rounds):
+        if not frontier:
+            break
+        updates = {}
+        for index in frontier:
+            y, x = divmod(index, width)
+            total = 0.0
+            count = 0
+            for dy in (-1, 0, 1):
+                ny = y + dy
+                if ny < 0 or ny >= height:
+                    continue
+                for dx in (-1, 0, 1):
+                    nx = x + dx
+                    if nx < 0 or nx >= width:
+                        continue
+                    value = filled[ny * width + nx]
+                    if value > NO_HIT:
+                        total += value
+                        count += 1
+            if count:
+                updates[index] = total / count
+        if not updates:
+            break
+        next_frontier = set()
+        for index, value in updates.items():
+            filled[index] = value
+            y, x = divmod(index, width)
+            for dy in (-1, 0, 1):
+                ny = y + dy
+                if ny < 0 or ny >= height:
+                    continue
+                for dx in (-1, 0, 1):
+                    nx = x + dx
+                    if 0 <= nx < width and filled[ny * width + nx] <= NO_HIT:
+                        next_frontier.add(ny * width + nx)
+        frontier = next_frontier
+    return filled, real
+
+
+def _blur_axis(values, mask, width, height, radius, horizontal):
+    """One separable box-blur pass over covered pixels, with a sliding window."""
+    out = list(values)
+    outer, inner = (height, width) if horizontal else (width, height)
+    for a in range(outer):
+        def at(b):
+            return a * width + b if horizontal else b * width + a
+
+        total = 0.0
+        count = 0
+        for b in range(min(radius, inner - 1) + 1):
+            index = at(b)
+            if mask[index]:
+                total += values[index]
+                count += 1
+        for b in range(inner):
+            index = at(b)
+            if mask[index] and count:
+                out[index] = total / count
+            drop = b - radius
+            if drop >= 0:
+                dropped = at(drop)
+                if mask[dropped]:
+                    total -= values[dropped]
+                    count -= 1
+            add = b + radius + 1
+            if add < inner:
+                added = at(add)
+                if mask[added]:
+                    total += values[added]
+                    count += 1
+    return out
+
+
+def smooth_surface(values, mask, width, height, radius=BLUR_RADIUS, passes=BLUR_PASSES):
+    """Blur the height field so shading follows landforms, not single props."""
+    current = list(values)
+    for _ in range(passes):
+        current = _blur_axis(current, mask, width, height, radius, True)
+        current = _blur_axis(current, mask, width, height, radius, False)
+    return current
+
+
+def hillshade(dem, mask, width, height):
+    """Standard DEM hillshade from the smoothed height field's own gradient."""
+    azimuth = math.radians(360.0 - HILLSHADE_AZIMUTH + 90.0)
+    altitude = math.radians(HILLSHADE_ALTITUDE)
+    sin_alt = math.sin(altitude)
+    cos_alt = math.cos(altitude)
+    out = [0.0] * (width * height)
+    for y in range(height):
+        row = y * width
+        up = max(0, y - 1) * width
+        down = min(height - 1, y + 1) * width
+        for x in range(width):
+            index = row + x
+            if not mask[index]:
+                continue
+            left = max(0, x - 1)
+            right = min(width - 1, x + 1)
+            dzdx = (dem[row + right] - dem[row + left]) * 0.5 * HILLSHADE_SCALE
+            dzdy = (dem[down + x] - dem[up + x]) * 0.5 * HILLSHADE_SCALE
+            slope = math.atan(math.sqrt(dzdx * dzdx + dzdy * dzdy))
+            aspect = math.atan2(dzdy, -dzdx)
+            value = sin_alt * math.cos(slope) + cos_alt * math.sin(slope) * math.cos(azimuth - aspect)
+            out[index] = max(0.0, min(1.0, value))
+    return out
+
+
+def render_elevation_underlay(
+    level_id: str,
+    depth: list[float],
+    width: int,
+    height: int,
+    output_root: Path,
+    image_suffix: str = "hlod_elevation",
+    source_label: str = "HLOD triangle depth",
+    material_colors: bytearray | bytes | None = None,
+) -> dict | None:
+    """Restore a neutral grayscale DEM below a point scan.
+
+    The elevation layer is analytical rather than an authored surface, so it
+    must never inherit material colors. Material/texture evidence remains
+    available on the separate surface and point layers.
+    """
+    grown, real = grow_surface(depth, width, height)
+    mask = [value > NO_HIT for value in grown]
+    if not any(mask):
+        return None
+    dem = smooth_surface(grown, mask, width, height)
+    lighting = hillshade(dem, mask, width, height)
+    covered = [dem[index] for index, present in enumerate(mask) if present]
+    low, high = min(covered), max(covered)
+    span = max(high - low, 1.0)
+    rows = []
+    for y in range(height):
+        row = bytearray()
+        for x in range(width):
+            index = y * width + x
+            if not mask[index]:
+                row.extend((255, 255, 255, 0))
+                continue
+            tint = (dem[index] - low) / span
+            shade = round((54 + 154 * (1.0 - tint)) * (0.84 + 0.16 * lighting[index]))
+            shade = max(24, min(224, shade))
+            row.extend((shade, shade, shade, 225 if real[index] else 165))
+        rows.append(bytes(row))
+    image_name = f"{level_id}_{image_suffix}.png"
+    write_png(output_root / image_name, width, height, rows)
+    return {
+        "src": f"render/{image_name}",
+        "method": "orthographic_depth_pass_grayscale_hillshade",
+        "defaultOpacity": 1.0,
+        "hillshade": {
+            "azimuth": HILLSHADE_AZIMUTH,
+            "altitude": HILLSHADE_ALTITUDE,
+            "scale": HILLSHADE_SCALE,
+            "growRounds": FILL_ROUNDS,
+            "blurRadius": BLUR_RADIUS,
+            "blurPasses": BLUR_PASSES,
+        },
+        "realPixelRatio": round(sum(real) / (width * height), 4),
+        "coveredPixelRatio": round(sum(mask) / (width * height), 4),
+        "elevationRange": {"min": low, "max": high},
+        "boundary": (
+            f"Recovered {source_label} only. This analytical elevation layer is intentionally grayscale; "
+            "material color remains confined to the separate surface/point layers. Gap growth is visibly "
+            "translucent and does not claim authored ground geometry."
+        ),
+    }
+
+
+def render_sparse_point_elevation(
+    level_id: str,
+    depth: list[float],
+    width: int,
+    height: int,
+    output_root: Path,
+) -> dict | None:
+    """Render exact point footprints as grayscale elevation without inventing a surface."""
+    real = [value > NO_HIT for value in depth]
+    covered = [value for value in depth if value > NO_HIT]
+    if not covered:
+        return None
+    low, high = min(covered), max(covered)
+    span = max(high - low, 1.0)
+    rows = []
+    for y in range(height):
+        row = bytearray()
+        for x in range(width):
+            value = depth[y * width + x]
+            if value <= NO_HIT:
+                row.extend((255, 255, 255, 0))
+                continue
+            shade = max(32, min(224, round(224 - 176 * ((value - low) / span))))
+            row.extend((shade, shade, shade, 225))
+        rows.append(bytes(row))
+    image_name = f"{level_id}_registry_elevation_points.png"
+    write_png(output_root / image_name, width, height, rows)
+    ratio = round(sum(real) / (width * height), 4)
+    return {
+        "src": f"render/{image_name}",
+        "method": "exact_registry_transform_grayscale_elevation_points",
+        "defaultOpacity": 1.0,
+        "realPixelRatio": ratio,
+        "coveredPixelRatio": ratio,
+        "elevationRange": {"min": low, "max": high},
+        "boundary": (
+            "Grayscale elevation is drawn only on the visible footprints of exact published registry/quest "
+            "X/Y/Z points. Transparent gaps remain empty; no growth, smoothing, triangulation, or inferred "
+            "terrain is applied."
+        ),
+    }
+
+
+def refresh_water_overlay_manifests(
+    level_ids: list[str],
+    sectors_by_scene: dict[str, list[dict]],
+    texture_files: dict[str, Path],
+    output_root: Path,
+) -> int:
+    """Refresh only derived water layers in already-rendered map manifests."""
+    refreshed = 0
+    for level_id in level_ids:
+        manifest_path = output_root / f"{level_id}_hlod_grid_inferred.json"
+        if not manifest_path.is_file():
+            raise RuntimeError(f"water-only refresh requires existing manifest: {manifest_path}")
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        bounds = manifest.get("worldBounds")
+        if not isinstance(bounds, dict):
+            raise RuntimeError(f"water-only refresh requires worldBounds: {manifest_path}")
+        projection = manifest.get("projectionSource") or {}
+        scene_id = water_scene_id(level_id, projection.get("sceneId"))
+        overlay = render_water_overlay(
+            level_id, scene_id, bounds, sectors_by_scene, texture_files, output_root,
+        )
+        if overlay is None:
+            stale_image = output_root / f"{level_id}_water.png"
+            if stale_image.is_file():
+                stale_image.unlink()
+        manifest["waterOverlay"] = overlay
+        manifest_path.write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8",
+        )
+        refreshed += 1
+    return refreshed
+
+
+def elevation_color(tint: float) -> tuple[int, int, int]:
+    """A restrained terrain palette for geometry with no proven material binding."""
+    stops = ((91, 126, 116), (167, 151, 105), (151, 104, 82))
+    value = max(0.0, min(1.0, tint)) * 2
+    left = min(1, int(value))
+    mix = value - left
+    return tuple(round(stops[left][channel] * (1 - mix) + stops[left + 1][channel] * mix) for channel in range(3))
+
+
+def render_depth_surface(
+    level_id: str,
+    depth: list[float],
+    width: int,
+    height: int,
+    output_root: Path,
+    image_suffix: str,
+    material_colors: bytearray | bytes | None = None,
+) -> dict | None:
+    """Render only exact texture-backed depth hits as a surface layer."""
+    real = [value > NO_HIT for value in depth]
+    covered = [value for value in depth if value > NO_HIT]
+    if not covered:
+        return None
+    low, high = min(covered), max(covered)
+    rows = []
+    emitted = 0
+    for y in range(height):
+        row = bytearray()
+        for x in range(width):
+            index = y * width + x
+            if not real[index]:
+                row.extend((255, 255, 255, 0))
+                continue
+            color_offset = index * 4
+            if material_colors is not None and len(material_colors) > color_offset + 3 and material_colors[color_offset + 3]:
+                base = tuple(material_colors[color_offset + channel] for channel in range(3))
+                alpha = material_colors[color_offset + 3]
+            else:
+                row.extend((255, 255, 255, 0))
+                continue
+            row.extend((*base, alpha))
+            emitted += 1
+        rows.append(bytes(row))
+    if not emitted:
+        return None
+    image_name = f"{level_id}_{image_suffix}.png"
+    write_png(output_root / image_name, width, height, rows)
+    return {
+        "src": f"render/{image_name}",
+        "method": "orthographic_exact_depth_texture_color_surface",
+        "defaultOpacity": 1.0,
+        "realPixelRatio": round(sum(real) / (width * height), 4),
+        "elevationRange": {"min": low, "max": high},
+        "boundary": "Only exact triangle depth hits with a proven base-color texture and UV sample are filled; all other pixels remain transparent.",
+    }
+
+
+def render_depth_point_overlay(
+    level_id: str,
+    depth: list[float],
+    width: int,
+    height: int,
+    output_root: Path,
+    image_suffix: str,
+    material_colors: bytearray | bytes | None = None,
+) -> dict | None:
+    """Render a transparent colored point scan from exact triangle depth hits."""
+    covered = [value for value in depth if value > NO_HIT]
+    if not covered:
+        return None
+    low, high = min(covered), max(covered)
+    emitted = 0
+    emitted_depth = [NO_HIT] * len(depth)
+    rows = []
+    for y in range(height):
+        row = bytearray(width * 4)
+        for x in range(width):
+            index = y * width + x
+            value = depth[index]
+            if value <= NO_HIT or ((x * 37 + y * 17) % 11) >= 6:
+                continue
+            color_offset = index * 4
+            if material_colors is not None and len(material_colors) > color_offset + 3 and material_colors[color_offset + 3]:
+                color = tuple(material_colors[color_offset + channel] for channel in range(4))
+            else:
+                continue
+            offset = x * 4
+            row[offset:offset + 4] = bytes(color)
+            emitted_depth[index] = value
+            emitted += 1
+        rows.append(bytes(row))
+    if not emitted:
+        return None
+    image_name = f"{level_id}_{image_suffix}.png"
+    write_png(output_root / image_name, width, height, rows)
+    height_mask = render_point_height_mask(
+        level_id, emitted_depth, width, height, output_root,
+        image_suffix=f"{image_suffix}_height_mask",
+        sampling="streaming",
+    )
+    return {
+        "src": f"render/{image_name}",
+        "method": "orthographic_exact_depth_texture_color_points",
+        "defaultOpacity": 0.72,
+        "pointDensity": 6 / 11,
+        "pointPixelCount": emitted,
+        "elevationRange": {"min": low, "max": high},
+        "heightMask": height_mask,
+        "boundary": (
+            "Only exact triangle depth-hit pixels with a proven base-color texture and UV sample emit points; "
+            "unresolved pixels remain transparent. No geometry is grown."
+        ),
+    }
+
+
+def render_point_height_mask(
+    level_id: str,
+    depth: list[float],
+    width: int,
+    height: int,
+    output_root: Path,
+    image_suffix: str,
+    sampling: str,
+) -> dict | None:
+    """Encode exact emitted-point height as opaque unsigned 16-bit RG pixels."""
+    covered = [value for value in depth if value > NO_HIT]
+    if not covered:
+        return None
+    low, high = min(covered), max(covered)
+    span = max(high - low, 1e-9)
+    rows = []
+    encoded_pixels = 0
+    for y in range(height):
+        row = bytearray(width * 4)
+        for x in range(width):
+            index = y * width + x
+            value = depth[index]
+            if value <= NO_HIT:
+                continue
+            sample = (x * 37 + y * 17) % 11
+            if sampling == "streaming" and sample >= 6:
+                continue
+            if sampling == "hlod_depth" and sample >= 8:
+                continue
+            encoded = max(0, min(65535, round((value - low) / span * 65535)))
+            offset = x * 4
+            row[offset:offset + 4] = bytes((encoded >> 8, encoded & 255, 0, 255))
+            encoded_pixels += 1
+        rows.append(bytes(row))
+    if not encoded_pixels:
+        return None
+    image_name = f"{level_id}_{image_suffix}.png"
+    write_png(output_root / image_name, width, height, rows)
+    return {
+        "src": f"render/{image_name}",
+        "encoding": "uint16_rg_normalized_world_y",
+        "elevationRange": {"min": low, "max": high},
+        "pointPixelCount": encoded_pixels,
+        "boundary": "Opaque pixels correspond exactly to emitted point pixels; RG stores normalized world Y.",
+    }
+
+
+def render_level(
+    level_id: str,
+    clusters: list[dict],
+    lod: int,
+    fit: dict,
+    bounds: dict[str, float],
+    mesh_files: dict[str, Path],
+    output_root: Path,
+    scan_mode: str | None = None,
+    bindings: dict[int, dict] | None = None,
+) -> dict | None:
+    """Render recovered HLOD geometry as a dense orthographic point cloud."""
+    width, height = raster_size(bounds["maxX"] - bounds["minX"], bounds["maxZ"] - bounds["minZ"])
+    mode = scan_mode or LEVEL_SCAN_MODES.get(level_id, "depth_points")
+    cache_signature = _hlod_render_cache_signature(
+        level_id, clusters, lod, fit, bounds, mesh_files, mode, bindings or {},
+    )
+    cached = _load_render_cache(output_root, f"{level_id}.hlod", cache_signature)
+    if cached is not None:
+        print(f"{level_id}: reused persistent HLOD render cache")
+        return cached
+    material_colors = bytearray(width * height * 4) if bindings else None
+    if mode == "mesh_vertices":
+        depth, used, primitive_count = rasterise_vertices(
+            clusters, lod, fit, bounds, mesh_files, width, height
+        )
+        triangles = 0
+    else:
+        depth, used, triangles = rasterise_depth(
+            clusters, lod, fit, bounds, mesh_files, width, height,
+            bindings=bindings, material_colors=material_colors,
+        )
+        primitive_count = triangles
+    if not used:
+        return None
+
+    real = [value > NO_HIT for value in depth]
+    covered = [depth[index] for index in range(len(depth)) if real[index]]
+    if not covered:
+        return None
+    low, high = min(covered), max(covered)
+    rows = [bytearray(width * 4) for _ in range(height)]
+    for y in range(height):
+        row = rows[y]
+        base_index = y * width
+        for x in range(width):
+            index = base_index + x
+            if not real[index]:
+                continue
+            # The screenshot-era vertex scan is irregular because its samples
+            # are mesh vertices. The depth mode retains the later deterministic
+            # 8/11 screen-door alternative for explicit comparisons.
+            if mode == "depth_points" and ((x * 37 + y * 17) % 11) >= 8:
+                continue
+            offset = x * 4
+            color_offset = index * 4
+            if material_colors is not None and material_colors[color_offset + 3]:
+                row[offset:offset + 4] = material_colors[color_offset:color_offset + 4]
+
+    output_root.mkdir(parents=True, exist_ok=True)
+    image_name = f"{level_id}_hlod_grid_inferred.png"
+    write_png(output_root / image_name, width, height, rows)
+    if mode == "mesh_vertices":
+        surface_depth, surface_used, surface_triangles = rasterise_depth(
+            clusters, lod, fit, bounds, mesh_files, width, height,
+            bindings=bindings, material_colors=material_colors,
+        )
+    else:
+        surface_depth, surface_used, surface_triangles = depth, used, triangles
+    elevation_underlay = render_elevation_underlay(
+        level_id, surface_depth, width, height, output_root
+    ) if surface_used else None
+    surface_render = render_depth_surface(
+        level_id, surface_depth, width, height, output_root, "hlod_surface",
+        material_colors=material_colors,
+    ) if surface_used else None
+    textured_pixels = sum(
+        1 for index in range(3, len(material_colors or ()), 4)
+        if material_colors[index]
+    )
+    layered_point_overlay = render_hlod_point_samples(
+        level_id, clusters, lod, fit, bounds, mesh_files, width, height, output_root,
+        bindings=bindings,
+    )
+    point_cloud_overlay = layered_point_overlay or render_depth_point_overlay(
+        level_id, depth, width, height, output_root, "hlod_texture_points",
+        material_colors=material_colors,
+    )
+    size = cell_size(lod)
+    scene_meshes = _scene_meshes(used, mesh_files, lod=lod, fit=fit)
+    result = {
+        "schemaVersion": 3,
+        "status": "inferred_hlod_textured_preview" if textured_pixels else "inferred_hlod_grid_preview",
+        "levelId": level_id,
+        "src": surface_render["src"] if surface_render else f"render/{image_name}",
+        "elevationUnderlay": elevation_underlay,
+        "pointCloudOverlay": point_cloud_overlay if surface_render else None,
+        "surfaceRender": surface_render,
+        "worldBounds": bounds,
+        "coordinateSystem": "Unity world X/Z; image top is +Z",
+        "hlodLevel": lod,
+        "render": {
+            "method": "orthographic_hlod_mesh_vertex_scan" if mode == "mesh_vertices" else "orthographic_hlod_depth_black_point_density",
+            "shading": "exact exported base-color texture samples only; unresolved pixels remain transparent",
+            "pointDensity": 1.0 if mode == "mesh_vertices" else 8 / 11,
+            "sourceSampleCount": primitive_count,
+            "materialBindingCount": len(bindings or {}),
+            "materialColoredMeshCount": sum(1 for row in surface_used if row.get("materialColor")),
+            "materialColoredPixelCount": textured_pixels,
+            "baseColorTextures": sorted({
+                row["baseColorTexture"] for row in surface_used if row.get("baseColorTexture")
+            }),
+            "materialMappingMethod": (
+                "exact_hlod_level_lod_signed_suffix_to_generated_material_then_base_color_pathid"
+                if textured_pixels else None
+            ),
+            "heightEcho": {
+                "enabled": False,
+                "boundary": "Disabled for the mesh-vertex scan: height is encoded by tone without duplicating coordinates.",
+            },
+            "realPixelRatio": round(sum(1 for value in real if value) / (width * height), 4),
+            "coveredPixelRatio": round(sum(1 for value in real if value) / (width * height), 4),
+            "elevationRange": {"min": low, "max": high},
+            "boundary": (
+                "Only recovered OBJ vertices emit points; triangle interiors, gaps and side walls are not filled."
+                if mode == "mesh_vertices" else
+                "Only pixels hit by recovered HLOD triangles can emit points; gaps are not filled."
+            ),
+        },
+        "transform": {
+            "objAxisConversion": "worldX = translationX - objX; worldZ = translationZ + objZ",
+            "cellSize": size,
+            "translation": f"translation = origin + gridIndex * {size:g} + {size / 2:g}",
+            "originX": fit["originX"],
+            "originZ": fit["originZ"],
+            "status": fit.get("method", "origin_fitted_to_exact_marker_occupancy_not_scene_transform"),
+        },
+        "gridFit": fit,
+        "candidateMeshCount": len(clusters),
+        "renderedMeshCount": len(used),
+        "renderedTriangleCount": surface_triangles,
+        "renderedPrimitiveCount": primitive_count,
+        "imageSize": {"width": width, "height": height},
+        "meshes": used,
+        # The browser may offer a lightweight interactive OBJ inspection view
+        # when these files are present.  It is deliberately separate from the
+        # PNG contract: consumers can always fall back to the raster backdrop
+        # without treating an incomplete scene as a complete map.
+        "modelScene": {
+            "status": "obj_cluster_subset" if scene_meshes else "obj_cluster_files_unavailable",
+            "method": "recovered_hlod_obj_clusters",
+            "meshes": scene_meshes,
+            "meshCount": len(scene_meshes),
+            "triangleCount": sum(row["triangles"] for row in scene_meshes),
+            "coordinateSystem": "Unity world X/Y/Z; Map01/Map02 use their fixed shared HLOD grid origin",
+            "axisConversion": "worldX = translationX - objX; worldY = objY; worldZ = translationZ + objZ",
+            "boundary": (
+                "Optional diagnostic OBJ inspection only. HLOD files carry mesh geometry but no authored "
+                "GameObject/Transform; generated material ownership is accepted only through the exact "
+                "level/LOD/signed-suffix naming contract. Missing or failed files must leave the "
+                "PNG/marker map visible rather than inventing scene placement."
+            ),
+        },
+        "boundary": (
+            "Diagnostic orthographic HLOD preview. The HLOD bundles publish no GameObject or Transform "
+            "record, so cluster placement uses the grid index in each cluster's name. Map01/Map02 share one "
+            "fixed regional grid origin; marker occupancy remains validation, not a per-level transform. Material color is sampled only when the "
+            "cluster and generated material share one exact level/LOD/signed suffix and that material owns "
+            "one exact base-color PathID; every missing or ambiguous link remains transparent."
+        ),
+    }
+    alignment = LEVEL_RENDER_ALIGNMENTS.get(level_id)
+    if alignment:
+        result["renderAlignment"] = alignment
+    _write_render_cache(output_root, f"{level_id}.hlod", cache_signature, result)
+    return result
+
+
+def streaming_texture_bindings(level_id: str, instances: list[dict]) -> dict[str, dict]:
+    """Add exact generated-HLOD material bindings to ordinary Mesh bindings."""
+    generic = dict(texture_bindings())
+    renderer_bindings = renderer_texture_bindings()
+    for instance in instances:
+        for mesh in _instance_meshes(instance):
+            asset_rel = _asset_rel_from_obj(mesh.get("obj"))
+            name, path_id = str(mesh.get("name") or "").casefold(), mesh.get("pathId")
+            if asset_rel and isinstance(path_id, int):
+                binding = renderer_bindings.get((name, path_id))
+                if binding:
+                    generic[asset_rel] = binding
+    available = _HLOD_TEXTURE_BINDINGS or {}
+    for instance in instances:
+        for mesh in _instance_meshes(instance):
+            match = HLOD_CLUSTER_RE.fullmatch(str(mesh.get("name") or ""))
+            asset_rel = _asset_rel_from_obj(mesh.get("obj"))
+            if not match or not asset_rel:
+                continue
+            binding = available.get((level_id.lower(), int(match.group("lod")), int(match.group("hash"))))
+            if binding:
+                generic[asset_rel] = binding
+    return generic
+
+
+def renderer_texture_bindings() -> dict[tuple[str, int], dict]:
+    """Load globally unambiguous Mesh -> ordered Material -> texture PPtrs.
+
+    The renderer sidecar is authoritative only with a terminal complete
+    summary. A mesh identity observed with different ordered material lists
+    stays unresolved. Multi-material lists bind only to the exact OBJ submesh
+    indices exported by AnimeStudio; a missing material/texture leaves just
+    that slot transparent. Names participate only alongside the exact PathID.
+    """
+    global _RENDERER_TEXTURE_BINDINGS
+    if _RENDERER_TEXTURE_BINDINGS is not None:
+        return _RENDERER_TEXTURE_BINDINGS
+    _RENDERER_TEXTURE_BINDINGS = {}
+    if not RENDERER_INDEX.is_file():
+        return _RENDERER_TEXTURE_BINDINGS
+    asset_targets: dict[tuple[str, int], list[dict]] = {}
+    if DEFAULT_ASSET_MAP.is_file():
+        try:
+            for asset in iter_asset_entries(DEFAULT_ASSET_MAP):
+                asset_type, path_id = asset.get("Type"), asset.get("PathID")
+                if isinstance(asset_type, str) and isinstance(path_id, int):
+                    asset_targets.setdefault((asset_type, path_id), []).append(asset)
+        except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
+            asset_targets = {}
+
+    def pointer_target(pointer: dict, asset_type: str) -> dict | None:
+        target = pointer.get("target") or {}
+        if isinstance(target.get("pathId"), int):
+            return target
+        path_id = pointer.get("pathId")
+        candidates = asset_targets.get((asset_type, path_id), []) if isinstance(path_id, int) else []
+        if len(candidates) != 1:
+            return None
+        asset = candidates[0]
+        return {
+            "name": asset.get("Name"),
+            "source": asset.get("Source"),
+            "pathId": path_id,
+        }
+
+    relationships: dict[tuple[str, int], set[tuple[tuple[str, int], ...]]] = {}
+    terminal_summary = None
+    try:
+        with RENDERER_INDEX.open(encoding="utf-8") as stream:
+            for line in stream:
+                row = json.loads(line)
+                if row.get("kind") == "summary":
+                    terminal_summary = row
+                    continue
+                if row.get("kind") != "renderer":
+                    continue
+                mesh = pointer_target(row.get("mesh") or {}, "Mesh") or {}
+                name, path_id = str(mesh.get("name") or "").casefold(), mesh.get("pathId")
+                if not name or not isinstance(path_id, int):
+                    continue
+                material_targets = [
+                    pointer_target(pointer, "Material")
+                    for pointer in (row.get("materials") or [])
+                    if isinstance(pointer, dict) and pointer.get("pathId")
+                ]
+                # Never collapse a missing material slot: OBJ submesh indices
+                # align to the serialized ordered array. An external pointer is
+                # accepted only when Type+PathID is unique in the exact AssetMap.
+                if not material_targets or any(target is None for target in material_targets):
+                    continue
+                materials = tuple(
+                    (str(target.get("source") or "").casefold(), int(target["pathId"]))
+                    for target in material_targets
+                )
+                relationships.setdefault((name, path_id), set()).add(materials)
+    except (OSError, UnicodeError, json.JSONDecodeError, TypeError, ValueError):
+        return _RENDERER_TEXTURE_BINDINGS
+    if not terminal_summary or terminal_summary.get("complete") is not True:
+        return _RENDERER_TEXTURE_BINDINGS
+    material_files = material_file_index(MATERIAL_ROOT)
+    texture_files = texture_file_index(TEXTURE_ROOT)
+
+    def material_binding(material_path_id: int) -> dict | None:
+        material_path = _path_id_file(material_files, material_path_id)
+        if material_path is None:
+            return None
+        try:
+            payload = json.loads(material_path.read_text(encoding="utf-8"))
+            environments = (payload.get("m_SavedProperties") or {}).get("m_TexEnvs") or {}
+        except (OSError, UnicodeError, json.JSONDecodeError, AttributeError):
+            return None
+        selected = None
+        for slot in BASE_TEXTURE_SLOTS:
+            env = environments.get(slot) or {}
+            texture_path_id = (env.get("m_Texture") or {}).get("m_PathID")
+            if isinstance(texture_path_id, int):
+                selected = (slot, texture_path_id)
+                break
+        if selected is None:
+            return None
+        texture_path = _path_id_file(texture_files, selected[1])
+        if texture_path is None:
+            return None
+        return {
+            "slot": selected[0],
+            "textureRel": f"StreamingAssets/Texture2D/{texture_path.name}",
+            "texturePath": texture_path,
+            "materialRel": f"StreamingAssets-materials/Material/{material_path.name}",
+            "materialPath": material_path,
+            "mappingMethod": "exact_renderer_material_base_color_pptr",
+        }
+
+    for mesh_key, candidates in relationships.items():
+        if len(candidates) != 1:
+            continue
+        materials = next(iter(candidates))
+        if not materials:
+            continue
+        slots = [material_binding(material[1]) for material in materials]
+        if len(slots) == 1 and slots[0] is not None:
+            slots[0]["mappingMethod"] = "exact_renderer_mesh_single_material_base_color_pptr"
+            _RENDERER_TEXTURE_BINDINGS[mesh_key] = slots[0]
+        elif len(slots) > 1 and any(slot is not None for slot in slots):
+            _RENDERER_TEXTURE_BINDINGS[mesh_key] = {
+                "submeshBindings": slots,
+                "mappingMethod": "exact_renderer_ordered_material_obj_submesh_index",
+            }
+    return _RENDERER_TEXTURE_BINDINGS
+
+
+def _grow_sample_buffer(values, capacity):
+    grown = _np.empty((capacity, *values.shape[1:]), dtype=values.dtype)
+    grown[:values.shape[0]] = values
+    return grown
+
+
+def _collect_streaming_surface_samples_batched(
+    streaming, bounds, width, height, bindings, spacing, epsilon,
+):
+    """Sample the world lattice with one compiled call per submesh run."""
+    min_x, max_x = bounds["minX"], bounds["maxX"]
+    min_z, max_z = bounds["minZ"], bounds["maxZ"]
+    span_x = max_x - min_x
+    span_z = max_z - min_z
+    pixels = width * height
+    head = _np.full(pixels, -1, dtype=_np.int64)
+    capacity = 1 << 16
+    chain = _np.empty(capacity, dtype=_np.int64)
+    sample_index = _np.empty(capacity, dtype=_np.int64)
+    sample_y = _np.empty(capacity, dtype=_np.float64)
+    sample_rgba = _np.empty((capacity, 4), dtype=_np.uint8)
+    count = 0
+    textures: dict[tuple[str, int], dict | None] = {}
+    used_textures: set[str] = set()
+    sampled_triangles = source_samples = 0
+    excluded_structural_triangles = excluded_horizontal_triangles = 0
+    unresolved_material_triangles = unresolved_uv_triangles = 0
+    export_root = (ROOT / "export_full").resolve()
+
+    for instance in streaming:
+        matrix = instance.get("matrixColumnMajor")
+        if not isinstance(matrix, list) or len(matrix) != 16:
+            continue
+        matrix_values = _np.asarray(matrix, dtype=_np.float64)
+        for mesh in _instance_meshes(instance):
+            path = _streaming_obj_path(str(mesh.get("obj") or ""), export_root)
+            if path is None:
+                continue
+            arrays = _textured_mesh_arrays(path)
+            if arrays is None:
+                continue
+            if _is_detail_structural(instance, mesh):
+                excluded_structural_triangles += arrays["validFaceCount"]
+                continue
+            skip_horizontal = not _is_detail_prop(instance, mesh)
+            asset_rel = _asset_rel_from_obj(mesh.get("obj"))
+            world = _transform_vertices_numba(arrays["vertices"], matrix_values)
+            for first_face, last_face, submesh_index in arrays["runs"]:
+                texture = _run_texture(textures, bindings, asset_rel, submesh_index)
+                if texture is None:
+                    has_texture = False
+                    texture_pixels = _EMPTY_TEXTURE_PIXELS
+                    tint_lut = _IDENTITY_TINT_LUT
+                    texture_width = 1
+                    texture_height = 1
+                    scale_u = scale_v = 1.0
+                    offset_u = offset_v = 0.0
+                    cutout = transparent = False
+                    cutoff = 0.0
+                else:
+                    _sample_texture_arrays(texture)
+                    has_texture = True
+                    texture_pixels = texture["_npSamplePixels"]
+                    tint_lut = texture["_npSampleTintLut"]
+                    texture_width = texture["width"]
+                    texture_height = texture["height"]
+                    scale_u, scale_v = texture["scale"]
+                    offset_u, offset_v = texture["offset"]
+                    alpha_mode = texture.get("alphaMode", "opaque")
+                    cutout = alpha_mode == "cutout"
+                    transparent = alpha_mode == "transparent"
+                    cutoff = texture["cutoff"] if cutout else 0.0
+                face = first_face
+                while face < last_face:
+                    (
+                        face, count, run_horizontal, run_material, run_uv,
+                        run_sampled, run_samples, run_used, needed,
+                    ) = _sample_mesh_numba(
+                        world, arrays["faceVertices"], arrays["faceValid"],
+                        arrays["faceTexcoords"], arrays["faceUvOk"], arrays["texcoords"],
+                        face, last_face, skip_horizontal,
+                        has_texture, texture_pixels, texture_width, texture_height,
+                        scale_u, scale_v, offset_u, offset_v,
+                        cutout, transparent, cutoff, tint_lut,
+                        spacing, min_x, max_x, min_z, max_z, span_x, span_z, width, height,
+                        EDGE_EPSILON, epsilon,
+                        head, chain, sample_index, sample_y, sample_rgba, count,
+                    )
+                    excluded_horizontal_triangles += run_horizontal
+                    unresolved_material_triangles += run_material
+                    unresolved_uv_triangles += run_uv
+                    sampled_triangles += run_sampled
+                    source_samples += run_samples
+                    if run_used:
+                        used_textures.add(texture["textureRel"])
+                    if face < last_face:
+                        capacity = max(needed, capacity * 2)
+                        chain = _grow_sample_buffer(chain, capacity)
+                        sample_index = _grow_sample_buffer(sample_index, capacity)
+                        sample_y = _grow_sample_buffer(sample_y, capacity)
+                        sample_rgba = _grow_sample_buffer(sample_rgba, capacity)
+
+    if not count:
+        return None
+    # `sorted(samples)` then a stable sort by height is exactly an ascending
+    # (pixel, height) order; no two retained heights in one pixel can tie
+    # because the dedupe epsilon already removed them.
+    order = _np.lexsort((sample_y[:count], sample_index[:count]))
+    ordered_index = sample_index[:count][order]
+    ordered_y = sample_y[:count][order]
+    ordered_rgba = sample_rgba[:count][order]
+    rows = _np.empty(count, dtype=_np.dtype([
+        ("index", "<u4"), ("height", "<f4"),
+        ("red", "u1"), ("green", "u1"), ("blue", "u1"), ("alpha", "u1"),
+    ]))
+    rows["index"] = ordered_index
+    rows["height"] = ordered_y
+    rows["red"] = ordered_rgba[:, 0]
+    rows["green"] = ordered_rgba[:, 1]
+    rows["blue"] = ordered_rgba[:, 2]
+    rows["alpha"] = ordered_rgba[:, 3]
+    records = bytearray(b"MRPS" + struct.pack("<HHII", 1, 12, width, height))
+    records.extend(rows.tobytes())
+    top = _np.empty(count, dtype=bool)
+    top[-1] = True
+    top[:-1] = ordered_index[1:] != ordered_index[:-1]
+    top_depth = _np.full(pixels, NO_HIT, dtype=_np.float64)
+    top_depth[ordered_index[top]] = ordered_y[top]
+    top_colors = _np.zeros((pixels, 4), dtype=_np.uint8)
+    top_colors[ordered_index[top]] = ordered_rgba[top]
+    return {
+        "records": records,
+        "recordCount": count,
+        "pixelCount": int(_np.count_nonzero(top)),
+        "low": float(ordered_y.min()),
+        "high": float(ordered_y.max()),
+        "topDepth": top_depth.tolist(),
+        "topColors": bytearray(top_colors.tobytes()),
+        "sampledTriangles": sampled_triangles,
+        "sourceSamples": source_samples,
+        "excludedStructuralTriangles": excluded_structural_triangles,
+        "excludedHorizontalTriangles": excluded_horizontal_triangles,
+        "unresolvedMaterialTriangles": unresolved_material_triangles,
+        "unresolvedUvTriangles": unresolved_uv_triangles,
+        "usedTextures": used_textures,
+    }
+
+
+def _collect_streaming_surface_samples_stdlib(
+    streaming, bounds, width, height, bindings, spacing, epsilon,
+):
+    """Maintained interpreter path for an environment without NumPy/Numba."""
+    span_x = bounds["maxX"] - bounds["minX"]
+    span_z = bounds["maxZ"] - bounds["minZ"]
+    samples: dict[int, list[tuple[float, tuple[int, int, int, int] | None]]] = {}
+    cache: dict[Path, tuple[list, list, list] | None] = {}
+    textures: dict[tuple[str, int], dict | None] = {}
+    used_textures: set[str] = set()
+    sampled_triangles = source_samples = 0
+    excluded_structural_triangles = excluded_horizontal_triangles = 0
+    unresolved_material_triangles = unresolved_uv_triangles = 0
+    export_root = (ROOT / "export_full").resolve()
+
+    def add(index: int, world_y: float, color: tuple[int, int, int, int] | None) -> None:
+        rows = samples.setdefault(index, [])
+        for position, (existing_y, existing_color) in enumerate(rows):
+            if abs(existing_y - world_y) <= epsilon:
+                if existing_color is None and color is not None:
+                    rows[position] = (world_y, color)
+                return
+        rows.append((world_y, color))
+
+    for instance in streaming:
+        matrix = instance.get("matrixColumnMajor")
+        if not isinstance(matrix, list) or len(matrix) != 16:
+            continue
+        for mesh in _instance_meshes(instance):
+            path = _streaming_obj_path(str(mesh.get("obj") or ""), export_root)
+            if path is None:
+                continue
+            if path not in cache:
+                cache[path] = _read_textured_mesh(path)
+            parsed = cache[path]
+            if not parsed:
+                continue
+            raw_vertices, texcoords, faces = parsed
+            structural_detail = _is_detail_structural(instance, mesh)
+            authored_detail_prop = _is_detail_prop(instance, mesh)
+            asset_rel = _asset_rel_from_obj(mesh.get("obj"))
+            vertices = []
+            for obj_x, obj_y, obj_z in raw_vertices:
+                local_x = -obj_x  # undo AnimeStudio OBJ's Unity-X mirror
+                vertices.append((
+                    matrix[0] * local_x + matrix[4] * obj_y + matrix[8] * obj_z + matrix[12],
+                    matrix[1] * local_x + matrix[5] * obj_y + matrix[9] * obj_z + matrix[13],
+                    matrix[2] * local_x + matrix[6] * obj_y + matrix[10] * obj_z + matrix[14],
+                ))
+            for vertex_face, texture_face, submesh_index in faces:
+                texture = _run_texture(textures, bindings, asset_rel, submesh_index)
+                try:
+                    points = [vertices[index] for index in vertex_face]
+                except IndexError:
+                    continue
+                if structural_detail:
+                    excluded_structural_triangles += 1
+                    continue
+                if not authored_detail_prop and _is_large_horizontal_triangle(points):
+                    excluded_horizontal_triangles += 1
+                    continue
+                if texture is None:
+                    unresolved_material_triangles += 1
+                    continue
+                x0, x1, x2 = (point[0] for point in points)
+                z0, z1, z2 = (point[2] for point in points)
+                area = (z1 - z2) * (x0 - x2) + (x2 - x1) * (z0 - z2)
+                if abs(area) < 1e-12:
+                    continue
+                min_kx = math.ceil(min(x0, x1, x2) / spacing - 0.5)
+                max_kx = math.floor(max(x0, x1, x2) / spacing - 0.5)
+                min_kz = math.ceil(min(z0, z1, z2) / spacing - 0.5)
+                max_kz = math.floor(max(z0, z1, z2) / spacing - 0.5)
+                landed = False
+                uvs = None
+                if texture and min(texture_face) >= 0:
+                    try:
+                        uvs = [texcoords[index] for index in texture_face]
+                    except IndexError:
+                        uvs = None
+                if uvs is None:
+                    unresolved_uv_triangles += 1
+                    continue
+                for kz in range(min_kz, max_kz + 1):
+                    world_z = (kz + 0.5) * spacing
+                    if not bounds["minZ"] <= world_z <= bounds["maxZ"]:
+                        continue
+                    for kx in range(min_kx, max_kx + 1):
+                        world_x = (kx + 0.5) * spacing
+                        if not bounds["minX"] <= world_x <= bounds["maxX"]:
+                            continue
+                        w0 = ((z1 - z2) * (world_x - x2) + (x2 - x1) * (world_z - z2)) / area
+                        w1 = ((z2 - z0) * (world_x - x2) + (x0 - x2) * (world_z - z2)) / area
+                        w2 = 1.0 - w0 - w1
+                        if min(w0, w1, w2) < -EDGE_EPSILON:
+                            continue
+                        world_y = w0 * points[0][1] + w1 * points[1][1] + w2 * points[2][1]
+                        px = round((world_x - bounds["minX"]) / span_x * (width - 1))
+                        py = round((bounds["maxZ"] - world_z) / span_z * (height - 1))
+                        if not (0 <= px < width and 0 <= py < height):
+                            continue
+                        scale_u, scale_v = texture["scale"]
+                        offset_u, offset_v = texture["offset"]
+                        u = (w0 * uvs[0][0] + w1 * uvs[1][0] + w2 * uvs[2][0]) * scale_u + offset_u
+                        v = (w0 * uvs[0][1] + w1 * uvs[1][1] + w2 * uvs[2][1]) * scale_v + offset_v
+                        color = _sample_texture(texture, u, v)
+                        if color is None:
+                            continue
+                        used_textures.add(texture["textureRel"])
+                        add(py * width + px, world_y, color)
+                        source_samples += 1
+                        landed = True
+                if landed:
+                    sampled_triangles += 1
+
+    all_heights = [world_y for rows in samples.values() for world_y, _color in rows]
+    if not all_heights:
+        return None
+    top_depth = [NO_HIT] * (width * height)
+    top_colors = bytearray(width * height * 4)
+    records = bytearray(b"MRPS" + struct.pack("<HHII", 1, 12, width, height))
+    record_count = 0
+    for index in sorted(samples):
+        ordered = sorted(samples[index], key=lambda row: row[0])
+        for world_y, color in ordered:
+            records.extend(struct.pack("<IfBBBB", index, world_y, *color))
+            record_count += 1
+        top_y, top_color = ordered[-1]
+        top_depth[index] = top_y
+        offset = index * 4
+        top_colors[offset:offset + 4] = bytes(top_color)
+    return {
+        "records": records,
+        "recordCount": record_count,
+        "pixelCount": len(samples),
+        "low": min(all_heights),
+        "high": max(all_heights),
+        "topDepth": top_depth,
+        "topColors": top_colors,
+        "sampledTriangles": sampled_triangles,
+        "sourceSamples": source_samples,
+        "excludedStructuralTriangles": excluded_structural_triangles,
+        "excludedHorizontalTriangles": excluded_horizontal_triangles,
+        "unresolvedMaterialTriangles": unresolved_material_triangles,
+        "unresolvedUvTriangles": unresolved_uv_triangles,
+        "usedTextures": used_textures,
+    }
+
+
+def render_streaming_surface_samples(
+    level_id: str,
+    streaming: list[dict],
+    bounds: dict[str, float],
+    width: int,
+    height: int,
+    output_root: Path,
+    density: float,
+    bindings: dict[str, dict] | None = None,
+) -> dict | None:
+    """Sample exact transformed triangle surfaces on a global X/Z lattice."""
+    spacing = math.sqrt(1.0 / density)
+    epsilon = 1e-4
+    collect = (
+        _collect_streaming_surface_samples_batched if _sample_mesh_numba is not None
+        else _collect_streaming_surface_samples_stdlib
+    )
+    collected = collect(streaming, bounds, width, height, bindings, spacing, epsilon)
+    if collected is None:
+        return None
+
+    top_colors = collected["topColors"]
+    output_root.mkdir(parents=True, exist_ok=True)
+    image_name = f"{level_id}_streaming_surface_points.png"
+    write_png(
+        output_root / image_name, width, height,
+        [bytes(top_colors[row * width * 4:(row + 1) * width * 4]) for row in range(height)],
+    )
+    sample_name = f"{level_id}_streaming_surface_points.samples"
+    (output_root / sample_name).write_bytes(collected["records"])
+    height_mask = render_point_height_mask(
+        level_id, collected["topDepth"], width, height, output_root,
+        image_suffix="streaming_surface_points_height_mask", sampling="all",
+    )
+    return {
+        "src": f"render/{image_name}",
+        "method": "exact_matrix_world_surface_area_samples",
+        "defaultOpacity": 0.72,
+        "densityPerSquareMeter": density,
+        "spacingMeters": spacing,
+        "sourceSampleCount": collected["sourceSamples"],
+        "sampledTriangleCount": collected["sampledTriangles"],
+        "excludedStructuralTriangleCount": collected["excludedStructuralTriangles"],
+        "excludedHorizontalTriangleCount": collected["excludedHorizontalTriangles"],
+        "unresolvedMaterialTriangleCount": collected["unresolvedMaterialTriangles"],
+        "unresolvedUvTriangleCount": collected["unresolvedUvTriangles"],
+        "heightMask": height_mask,
+        "sampleSet": {
+            "src": f"render/{sample_name}",
+            "encoding": "mrps_v1_le_u32_pixel_f32_height_rgba8",
+            "width": width,
+            "height": height,
+            "recordCount": collected["recordCount"],
+            "pixelCount": collected["pixelCount"],
+            "elevationRange": {"min": collected["low"], "max": collected["high"]},
+            "dedupeEpsilon": epsilon,
+        },
+        "baseColorTextures": sorted(collected["usedTextures"]),
+        "boundary": (
+            "Deterministic world-space X/Z lattice samples on exact matrix-transformed detail triangle surfaces. "
+            "Every visible point samples its exact exported base-color texture through the triangle UVs; "
+            "triangles without one unambiguous material binding and usable UVs remain transparent. "
+            "Named floor/roof/ceiling/ground/terrain geometry and broad near-horizontal non-prop slabs are excluded. "
+            "The density changes presentation only; it does not change transforms, bounds, or alignment."
+        ),
+    }
+
+
+def level_points(path: Path) -> list[tuple[float, float]]:
+    return [(x, z) for x, _y, z in level_positions(path)]
+
+
+def refresh_exact_point_fallback_manifests(
+    maps_root: Path,
+    output_root: Path,
+    only: set[str],
+    surface_point_density: float,
+) -> int:
+    """Attach cheap exact point layers without rerasterizing HLOD meshes."""
+    refreshed = 0
+    for map_path in sorted(maps_root.glob("*.json")):
+        level_id = map_path.stem
+        if only and level_id not in only:
+            continue
+        manifest_path = output_root / f"{level_id}_hlod_grid_inferred.json"
+        if not manifest_path.is_file():
+            continue
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if not str(manifest.get("status") or "").startswith("inferred_hlod_"):
+            continue
+        payload = json.loads(map_path.read_text(encoding="utf-8"))
+        fallback = render_point_cloud(
+            level_id, level_positions(map_path), output_root, payload,
+            surface_point_density=surface_point_density,
+        )
+        if fallback is None:
+            continue
+        manifest["exactPointFallback"] = fallback
+        manifest_path.write_text(json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+        refreshed += 1
+    return refreshed
+
+
+def minimap_world_bounds(payload: dict) -> dict[str, float] | None:
+    """Return the authoritative screen rectangle when in-game art exists."""
+    bounds = (payload.get("minimap") or {}).get("worldBounds") or {}
+    keys = ("minX", "maxX", "minZ", "maxZ")
+    if not all(isinstance(bounds.get(key), (int, float)) for key in keys):
+        return None
+    normalized = {key: float(bounds[key]) for key in keys}
+    if normalized["maxX"] <= normalized["minX"] or normalized["maxZ"] <= normalized["minZ"]:
+        return None
+    return normalized
+
+
+def union_bounds(rows: list[dict[str, float]]) -> dict[str, float] | None:
+    if not rows:
+        return None
+    return {
+        "minX": min(row["minX"] for row in rows),
+        "maxX": max(row["maxX"] for row in rows),
+        "minZ": min(row["minZ"] for row in rows),
+        "maxZ": max(row["maxZ"] for row in rows),
+    }
+
+
+def preferred_background_preview(exact: dict | None, hlod: dict | None) -> dict | None:
+    """Prefer transform-backed scene geometry; keep inferred HLOD as fallback.
+
+    A registry-only point plot does not supersede a recovered HLOD surface, but
+    a streaming render whose meshes use exact InitChunkData matrices does.
+    """
+    if exact and exact.get("status") in {
+        "recovered_streaming_textured_topdown",
+        "recovered_streaming_mesh_topdown",
+    }:
+        return exact
+    return hlod or exact
+
+
+def main(argv: list[str] | None = None) -> int:
+    global _USE_RENDER_CACHE
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--asset-map", type=Path, default=DEFAULT_ASSET_MAP)
+    parser.add_argument("--mesh-root", type=Path, default=MESH_ROOT)
+    parser.add_argument("--texture-root", type=Path, default=TEXTURE_ROOT)
+    parser.add_argument("--maps-root", type=Path, default=MAPS_ROOT)
+    parser.add_argument("--output-root", type=Path, default=OUTPUT_ROOT)
+    parser.add_argument("--hlod-index", type=Path, default=HLOD_INDEX)
+    parser.add_argument("--refresh-index", action="store_true", help="rescan the asset map even if the cache matches")
+    parser.add_argument(
+        "--jobs",
+        type=int,
+        default=1,
+        help="parallel preview worker processes; shared Streaming scenes remain in one worker",
+    )
+    parser.add_argument(
+        "--no-render-cache",
+        action="store_true",
+        help="rerender point/streaming layers even when their persistent source signature matches",
+    )
+    parser.add_argument("--lod", type=int, default=None, help="preferred HLOD level; overrides the verified per-level choice")
+    parser.add_argument(
+        "--scan-mode", choices=("auto", "mesh_vertices", "depth_points"), default="auto",
+        help="HLOD sampling method; auto uses the verified per-level choice",
+    )
+    parser.add_argument("--level", action="append", default=[], help="build only these level ids (repeatable)")
+    parser.add_argument(
+        "--water-only", action="store_true",
+        help="refresh derived water overlays in existing manifests without rerendering model geometry",
+    )
+    parser.add_argument(
+        "--exact-point-fallback-only", action="store_true",
+        help="skip inferred HLOD rendering and publish only exact registry/quest transform point layers",
+    )
+    parser.add_argument(
+        "--refresh-exact-fallbacks-only", action="store_true",
+        help="attach exact registry/quest point layers to existing inferred HLOD manifests without rerasterizing meshes",
+    )
+    parser.add_argument(
+        "--surface-point-density", type=float, default=DEFAULT_SURFACE_POINT_DENSITY,
+        help=("exact-matrix HLOD surface samples per square metre; default 0.25 "
+              "(approximately 2 m spacing); presentation only"),
+    )
+    args = parser.parse_args(argv)
+    if args.jobs < 1:
+        parser.error("--jobs must be at least 1")
+    _USE_RENDER_CACHE = not args.no_render_cache
+    _RENDER_CACHE_STATS.update(hits=0, writes=0)
+    if not math.isfinite(args.surface_point_density) or args.surface_point_density <= 0:
+        raise SystemExit("--surface-point-density must be a finite number greater than zero")
+    if (
+        args.jobs > 1
+        and not args.water_only
+        and not args.exact_point_fallback_only
+        and not args.refresh_exact_fallbacks_only
+    ):
+        returncode = run_parallel_preview_workers(args)
+        if returncode is not None:
+            return returncode
+    if args.refresh_exact_fallbacks_only:
+        refreshed = refresh_exact_point_fallback_manifests(
+            args.maps_root, args.output_root, set(args.level), args.surface_point_density,
+        )
+        print(f"map previews: refreshed {refreshed} exact point fallbacks")
+        return 0
+
+    # Asset export is optional. HLOD rendering needs the AssetMap, while the
+    # exact-transform point-cloud fallback remains available without it.
+    index = load_hlod_index(args.asset_map, args.hlod_index, args.refresh_index) if args.asset_map.is_file() else {"levels": {}, "assetMapSha256": None}
+    if args.exact_point_fallback_only:
+        index = {"levels": {}, "waterSectors": {}, "assetMapSha256": None}
+    if not args.asset_map.is_file():
+        print(f"map previews: HLOD skipped - AssetMap not found: {args.asset_map}")
+    mesh_files = mesh_file_index(args.mesh_root) if index["levels"] else {}
+    (
+        texture_files,
+        installed_diffuse_bindings,
+        installed_material_bindings,
+        unresolved_material_bindings,
+    ) = prepare_render_bindings(args.asset_map, index, args.texture_root)
+    if installed_diffuse_bindings:
+        print(f"map previews: recovered {installed_diffuse_bindings} baked HLOD diffuse bindings from AssetMap containers")
+    if installed_material_bindings or unresolved_material_bindings:
+        print(
+            f"map previews: recovered {installed_material_bindings} serialized HLOD material diffuse bindings"
+            f"; {unresolved_material_bindings} unresolved"
+        )
+    installed_renderer_bindings = len(renderer_texture_bindings())
+    if installed_renderer_bindings:
+        print(f"map previews: recovered {installed_renderer_bindings} exact renderer material bindings")
+    only = set(args.level)
+    if args.water_only:
+        if not args.level:
+            raise SystemExit("--water-only requires at least one --level")
+        refreshed = refresh_water_overlay_manifests(
+            args.level, index.get("waterSectors") or {}, texture_files, args.output_root,
+        )
+        print(f"map previews: refreshed {refreshed} water overlays")
+        return 0
+
+    published, skipped = [], []
+    published_ids: set[str] = set()
+    diagnostic_hlods: dict[str, dict] = {}
+    # Map01 and Map02 are seamless authored regions. Their HLOD cell indices
+    # share one grid origin, so a sparse member is not allowed to drift by one
+    # cell merely because its own occupancy score has several near ties.
+    local_fits: dict[str, dict] = {}
+    region_fits: dict[str, list[dict]] = {}
+    for candidate_id, candidate_lods in index["levels"].items():
+        match = REGION_LEVEL_RE.match(candidate_id)
+        candidate_map = args.maps_root / f"{candidate_id}.json"
+        if not match or not candidate_map.is_file():
+            continue
+        candidate_fit = fit_origin(candidate_lods, level_points(candidate_map))
+        if candidate_fit is None:
+            continue
+        local_fits[candidate_id] = candidate_fit
+        region_fits.setdefault(match.group(1).lower(), []).append(candidate_fit)
+    shared_origins = {
+        region: origin
+        for region, fits in region_fits.items()
+        if (origin := select_shared_origin(fits)) is not None
+    }
+    for level_id, lods in sorted(index["levels"].items()):
+        if only and level_id not in only:
+            continue
+        map_path = args.maps_root / f"{level_id}.json"
+        if not map_path.exists():
+            skipped.append((level_id, "no published map"))
+            continue
+        payload = json.loads(map_path.read_text(encoding="utf-8"))
+        if projection_streaming_scene(level_id):
+            # Exact InitChunkData matrices supersede the older grid-name/origin
+            # diagnostic. Do not spend time rendering or publish an inferred
+            # transform when the authored matrix path is available.
+            continue
+        points = level_points(map_path)
+        fit = local_fits.get(level_id) or fit_origin(lods, points)
+        if fit is None:
+            skipped.append((level_id, f"origin under-determined ({len(points)} marker transforms)"))
+            continue
+        region_match = REGION_LEVEL_RE.match(level_id)
+        region_key = region_match.group(1).lower() if region_match else None
+        shared_origin = REGION_HLOD_GRID_ORIGINS.get(region_key) or shared_origins.get(region_key)
+        if shared_origin:
+            local_origin = (fit["originX"], fit["originZ"])
+            shared_coverage = origin_coverage(lods, points, *shared_origin)
+            fit = {
+                **fit,
+                "originX": shared_origin[0],
+                "originZ": shared_origin[1],
+                "coverage": round(shared_coverage, 4),
+                "method": "fixed_region_hlod_grid_origin",
+                "localBestOrigin": {"x": local_origin[0], "z": local_origin[1]},
+                "localBestCoverage": fit["bestCoverage"],
+                "regionMemberCount": len(region_fits.get(region_key, [])),
+            }
+        if fit["coverage"] < MIN_COVERAGE and not shared_origin:
+            skipped.append((level_id, f"best origin only explains {fit['coverage']:.0%} of markers"))
+            continue
+
+        preferred_lod = args.lod if args.lod is not None else LEVEL_PREFERRED_LODS.get(level_id, 1)
+        lod = preferred_lod if str(preferred_lod) in lods else min(int(key) for key in lods)
+        render_bounds = minimap_world_bounds(payload) or plot_bounds(points)
+        manifest = render_level(
+            level_id, lods[str(lod)], lod, fit, render_bounds, mesh_files, args.output_root,
+            None if args.scan_mode == "auto" else args.scan_mode,
+            bindings=hlod_texture_bindings(level_id, lod, lods[str(lod)]),
+        )
+        if manifest is None:
+            skipped.append((level_id, "no exported cluster mesh landed in bounds"))
+            continue
+        manifest["waterOverlay"] = render_water_overlay(
+            level_id, water_scene_id(level_id), manifest["worldBounds"],
+            index.get("waterSectors") or {}, texture_files, args.output_root,
+        )
+        manifest["assetMapSha256"] = index["assetMapSha256"]
+        # The inferred HLOD surface is deliberately suppressed by the
+        # publisher until its authored transform is recovered. Preserve this
+        # map's independently exact registry/quest point layer regardless of
+        # whether an authored minimap exists, so suppression does not leave a
+        # level without its own spatial preview.
+        manifest["exactPointFallback"] = render_point_cloud(
+            level_id, level_positions(map_path), args.output_root, payload,
+            surface_point_density=args.surface_point_density,
+        )
+        exact_projection = projection_streaming_scene(level_id)
+        manifest_name = (
+            f"{level_id}_hlod_diagnostic.json" if exact_projection else
+            f"{level_id}_hlod_grid_inferred.json"
+        )
+        (args.output_root / manifest_name).write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        if exact_projection:
+            diagnostic_hlods[level_id] = manifest
+        else:
+            published.append((level_id, manifest))
+            published_ids.add(level_id)
+        print(
+            f"{level_id}: HLOD{lod} {manifest['renderedMeshCount']}/{manifest['candidateMeshCount']} clusters, "
+            f"{manifest['renderedPrimitiveCount']} source samples, {manifest['render']['realPixelRatio']:.0%} real geometry"
+            f" / {manifest['render']['pointDensity']:.0%} point density, "
+            f"origin ({fit['originX']:g},{fit['originZ']:g}), "
+            f"fit {fit['coverage']:.0%} of {fit['samplePoints']} markers"
+        )
+    map_paths = [
+        path for path in sorted(args.maps_root.glob("*.json"))
+        if not only or path.stem in only
+    ]
+    # Non-seamless dungeon maps can reuse one large-world art level but are not
+    # members of that level's WebUI region. Reuse the source level's recovered
+    # HLOD grid transform, crop it around the danger map's own exact markers,
+    # and publish an independent layered diagnostic surface.
+    source_fits: dict[str, dict | None] = {}
+    for map_path in map_paths:
+        level_id = map_path.stem
+        if level_id in published_ids:
+            continue
+        payload = json.loads(map_path.read_text(encoding="utf-8"))
+        art_source = isolated_art_source(level_id)
+        if not art_source:
+            continue
+        source_level = str(art_source["levelId"])
+        lods = index["levels"].get(source_level)
+        source_map_path = args.maps_root / f"{source_level}.json"
+        if not lods or not source_map_path.is_file():
+            skipped.append((level_id, f"source art level {source_level} has no recoverable HLOD/map payload"))
+            continue
+        if source_level not in source_fits:
+            source_fits[source_level] = fit_origin(lods, level_points(source_map_path))
+        fit = source_fits[source_level]
+        if not fit or fit["coverage"] < MIN_COVERAGE:
+            skipped.append((level_id, f"source art level {source_level} has no validated HLOD grid fit"))
+            continue
+        points = level_points(map_path)
+        if not points:
+            skipped.append((level_id, "no exact marker bounds for source-art HLOD crop"))
+            continue
+        lod = 0 if "0" in lods else min(int(key) for key in lods)
+        manifest = render_level(
+            level_id, lods[str(lod)], lod, fit, plot_bounds(points, min_pad=64.0),
+            mesh_files, args.output_root, "depth_points",
+            bindings=hlod_texture_bindings(source_level, lod, lods[str(lod)]),
+        )
+        if manifest is None:
+            skipped.append((level_id, f"source art HLOD {source_level} has no geometry in danger-map crop"))
+            continue
+        manifest["waterOverlay"] = render_water_overlay(
+            level_id, water_scene_id(level_id, water_scene_id(source_level)), manifest["worldBounds"],
+            index.get("waterSectors") or {}, texture_files, args.output_root,
+        )
+        manifest["assetMapSha256"] = index["assetMapSha256"]
+        manifest["projectionSource"] = {
+            "sourceArtLevelId": source_level,
+            "mappingMethod": art_source["method"],
+            "mapConfigSource": art_source["source"],
+            "cropMethod": "independent_dungeon_exact_marker_bounds_with_64m_pad",
+            "boundary": "Source-art reuse only; this non-seamless gameplay map remains an independent WebUI region.",
+        }
+        manifest["exactPointFallback"] = render_point_cloud(
+            level_id, level_positions(map_path), args.output_root, payload,
+            surface_point_density=args.surface_point_density,
+        )
+        (args.output_root / f"{level_id}_hlod_grid_inferred.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        published.append((level_id, manifest))
+        published_ids.add(level_id)
+        print(f"{level_id}: independent dungeon crop from {source_level} HLOD{lod}")
+    # Every remaining published map without in-game art first resolves its
+    # authored streaming scene. Several gameplay map ids can point at one
+    # shared art scene (the blackbox tutorials are the main example), so render
+    # that exact scene once and publish level-specific manifests that reuse it.
+    # Only maps without such evidence fall back to registry transform points.
+    point_clouds = []
+    shared_streaming_payloads: dict[str, tuple[list[tuple[float, float, float]], dict]] = {}
+    shared_streaming_renders: dict[str, dict] = {}
+    scene_level_positions: dict[str, list[tuple[float, float, float]]] = {}
+    scene_minimap_bounds: dict[str, list[dict[str, float]]] = {}
+    for map_path in map_paths:
+        projection = projection_streaming_scene(map_path.stem)
+        if projection:
+            scene_id = str(projection["sceneId"])
+            scene_level_positions.setdefault(scene_id, []).extend(level_positions(map_path))
+            payload = json.loads(map_path.read_text(encoding="utf-8"))
+            exact_bounds = minimap_world_bounds(payload)
+            if exact_bounds:
+                scene_minimap_bounds.setdefault(scene_id, []).append(exact_bounds)
+
+    for map_path in map_paths:
+        level_id = map_path.stem
+        payload = json.loads(map_path.read_text(encoding="utf-8"))
+        if level_id in published_ids:
+            continue
+        projection = projection_streaming_scene(level_id)
+        manifest = None
+        if projection:
+            scene_id = str(projection["sceneId"])
+            if scene_id not in shared_streaming_payloads:
+                shared_streaming_payloads[scene_id] = streaming_projection_payload(Path(projection["instanceSource"]))
+            scene_positions, scene_payload = shared_streaming_payloads[scene_id]
+            group_positions = scene_level_positions.get(scene_id) or scene_positions
+            exact_minimap_bounds = union_bounds(scene_minimap_bounds.get(scene_id, []))
+            # Small interior scenes can have only one or two registry markers,
+            # whose generous view padding used to reduce the recovered props
+            # to a few pixels (the simulation training room exposed this).
+            # Their own InitChunkData translations are the tighter exact
+            # placement envelope. Large shared scenes retain the member-union
+            # crop so unrelated streaming cells do not enlarge the view.
+            if exact_minimap_bounds:
+                group_bounds = exact_minimap_bounds
+            elif scene_positions and len(scene_positions) <= 200:
+                group_bounds = plot_bounds([(x, z) for x, _y, z in scene_positions], min_pad=32.0)
+            else:
+                group_bounds = plot_bounds([(x, z) for x, _y, z in group_positions], min_pad=128.0)
+            # Instance translations just outside the member-union crop can own
+            # geometry that crosses its edge. Retain a conservative 128 m
+            # collar while the published image stays on the stitched rectangle.
+            collar = 128.0
+            selected_markers = []
+            for row in scene_payload.get("markers") or []:
+                instance = row.get("streamingInstance") or {}
+                matrix = instance.get("matrixColumnMajor")
+                if not isinstance(matrix, list) or len(matrix) != 16:
+                    continue
+                if (group_bounds["minX"] - collar <= float(matrix[12]) <= group_bounds["maxX"] + collar
+                        and group_bounds["minZ"] - collar <= float(matrix[14]) <= group_bounds["maxZ"] + collar):
+                    selected_markers.append(row)
+            base_manifest = shared_streaming_renders.get(scene_id)
+            if base_manifest is None:
+                selected_positions = [
+                    (float(row["streamingInstance"]["matrixColumnMajor"][12]),
+                     float(row["streamingInstance"]["matrixColumnMajor"][13]),
+                     float(row["streamingInstance"]["matrixColumnMajor"][14]))
+                    for row in selected_markers
+                ]
+                base_manifest = render_point_cloud(
+                    scene_id,
+                    selected_positions or group_positions,
+                    args.output_root,
+                    {
+                        "markers": selected_markers,
+                        "exactHlodMatrices": bool(scene_payload.get("exactHlodMatrices")),
+                    },
+                    bounds_override=group_bounds,
+                    surface_point_density=args.surface_point_density,
+                )
+                if base_manifest:
+                    shared_streaming_renders[scene_id] = base_manifest
+            if base_manifest:
+                manifest = {**base_manifest,
+                    "levelId": level_id,
+                    "projectionSource": {
+                        "sceneId": scene_id,
+                        "mappingMethod": projection["method"],
+                        "mapConfigSource": projection["source"],
+                        "instanceSource": str(Path(projection["instanceSource"]).relative_to(ROOT)).replace("\\", "/"),
+                        "cropMethod": (
+                            "authoritative_member_minimap_world_bounds_with_128m_instance_collar"
+                            if exact_minimap_bounds else
+                            "exact_sparse_scene_instance_bounds_with_32m_view_pad_and_instance_collar"
+                            if scene_positions and len(scene_positions) <= 200 else
+                            "shared_scene_member_transform_union_with_128m_view_pad_and_instance_collar"
+                        ),
+                    },
+                }
+                manifest["waterOverlay"] = render_water_overlay(
+                    level_id, water_scene_id(level_id, scene_id), manifest["worldBounds"],
+                    index.get("waterSectors") or {}, texture_files, args.output_root,
+                )
+                if scene_id != level_id:
+                    manifest["boundary"] = (
+                        f"This gameplay map declares the shared art scene {scene_id}; the orthographic image is that "
+                        "scene's exact static projection. Level-specific registry and mission markers remain separate. "
+                        + str(base_manifest.get("boundary") or "")
+                    )
+        if manifest is None:
+            manifest = render_point_cloud(
+                level_id, level_positions(map_path), args.output_root, payload,
+                surface_point_density=args.surface_point_density,
+            )
+        manifest = preferred_background_preview(manifest, diagnostic_hlods.get(level_id))
+        if manifest is None:
+            skipped.append((level_id, "no exact X/Y/Z positions for point-cloud fallback"))
+            continue
+        if "waterOverlay" not in manifest:
+            manifest["waterOverlay"] = render_water_overlay(
+                level_id, water_scene_id(level_id), manifest["worldBounds"],
+                index.get("waterSectors") or {}, texture_files, args.output_root,
+            )
+        (args.output_root / f"{level_id}_hlod_grid_inferred.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+        point_clouds.append((level_id, manifest))
+        published_ids.add(level_id)
+
+    skipped = [(level_id, reason) for level_id, reason in skipped if level_id not in published_ids]
+    for level_id, reason in skipped:
+        print(f"{level_id}: skipped - {reason}")
+    print(f"map previews: {len(published)} HLOD, {len(point_clouds)} point clouds, {len(skipped)} skipped")
+    print(
+        "map previews: persistent render cache "
+        f"{_RENDER_CACHE_STATS['hits']} hits, {_RENDER_CACHE_STATS['writes']} writes"
+    )
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -44,7 +44,7 @@ content kinds -- **more than this directory documents**:
 | `Table` | 724 single-instance config tables | **gameplay** (Buff/Skill) and **text** | here for gameplay; [`../webui/story_recovery.md`](../webui/story_recovery.md) for Story/Text Tables |
 | `JsonData` | ~1,264 JSON name shapes: LipSync, NPC Montage, conversations | **text**, partly **world** | [`install_and_vfs.md`](install_and_vfs.md) for LipSync/Montage framing; [`../webui/story_recovery.md`](../webui/story_recovery.md) for conversations |
 | `ExtendData`, `InitialExtendData` | `StringPathHash.bin`, `FacBoneTRS.bin`, `CompressData.bin` | **catalog** | here |
-| `Lua` | mission and consumer scripts | **code** | [`../webui/story_recovery.md`](../webui/story_recovery.md); index built by `scripts/story_builder/lua_consumer_references.py` |
+| `Lua` | mission and consumer scripts | **code** | [`../webui/story_recovery.md`](../webui/story_recovery.md); index built by `scripts/webui/story/lua_consumer_references.py` |
 | `IFixPatch` | runtime code patches | **code** | nowhere -- reader is `scripts/game_data/ifix_patch.py` |
 | `BundleManifest` | one 50 MB `manifest.hgmmap` | **catalog** | [`extend_data.md`](extend_data.md): entropy is indistinguishable from random, so it is opaque |
 | `Audit*` (5 kinds) | audit variants of streaming, dynamic streaming, IV, audio, video | provenance | [`extraction_pipeline.md`](extraction_pipeline.md) |

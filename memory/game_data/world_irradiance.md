@@ -226,7 +226,7 @@ bytes of UTF-16. The 980-byte index carries `u32 24` followed by `iv_0_0.bytes`.
 
 ### The index IS framed: 86 of 92, and the other 6 are fenced by name
 
-`scripts/asset_builder/irradiance_index.py`, with
+`scripts/webui/assets/irradiance_index.py`, with
 `scripts/tests/test_irradiance_index.py`:
 
 ```

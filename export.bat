@@ -238,7 +238,7 @@ if "%BUILD_SCOPE%"=="story" echo [export.bat] Build scope: Story and Text Tables
 if "%BUILD_SCOPE%"=="assets" echo [export.bat] Build scope: assets, audio, and post-Story views; current Story is reused
 echo [export.bat] Post-Story worker limit: %WEBUI_JOBS%
 
-python -m scripts.build_webui_views %WEBUI_VIEW_ARGS% %GAME_ROOT_ARG% %EXPORT_ROOT_ARG% --dry-run >nul
+python -m scripts.webui.views %WEBUI_VIEW_ARGS% %GAME_ROOT_ARG% %EXPORT_ROOT_ARG% --dry-run >nul
 if errorlevel 1 exit /b 2
 
 rem WebUI export/build pipeline:
@@ -301,16 +301,16 @@ if "%SKIP_FRESHNESS%"=="1" (
 if "%STORY_BUILD%"=="0" goto :story_reused
 if "%ANIMESTUDIO_OBJECT_INDEX%"=="0" goto :refresh_evidence
 call :stage "Refreshing AnimeStudio guide-runtime Story consumer evidence"
-python -m scripts.story_builder.animestudio_story_guide
+python -m scripts.webui.story.animestudio_story_guide
 if errorlevel 1 goto :pipeline_failed
 
 :refresh_evidence
 call :stage "Refreshing Story recovery evidence and source links"
-python -m scripts.story_builder.refresh_evidence
+python -m scripts.webui.story.refresh_evidence
 if errorlevel 1 goto :pipeline_failed
 
 call :stage "Building CN Story conversations, missions, and Text Tables"
-python -m scripts.story_builder.build --languages CN --default-language CN %STORY_BUILD_ARGS%
+python -m scripts.webui.story.build --languages CN --default-language CN %STORY_BUILD_ARGS%
 if errorlevel 1 goto :pipeline_failed
 goto :story_done
 
@@ -326,7 +326,7 @@ if "%POST_STORY_VIEWS%"=="0" (
 if "%BUILD_SCOPE%"=="assets" call :stage "Building map recovery with exact Streaming sidecars, Characters, Gameplay, projectiles, Assets, CN audio, source graph, and combat relationships"
 if "%BUILD_SCOPE%"=="full" if "%WITH_ASSETS%"=="0" call :stage "Building Characters, Gameplay, map recovery with exact Streaming sidecars, source graph, and graph consumers"
 if "%BUILD_SCOPE%"=="full" if "%WITH_ASSETS%"=="1" call :stage "Building semantic views, asset indexes, CN audio, map recovery with exact Streaming sidecars, source graph, and graph consumers"
-python -m scripts.build_webui_views %WEBUI_VIEW_ARGS% %GAME_ROOT_ARG% %EXPORT_ROOT_ARG%
+python -m scripts.webui.views %WEBUI_VIEW_ARGS% %GAME_ROOT_ARG% %EXPORT_ROOT_ARG%
 if errorlevel 1 goto :pipeline_failed
 if "%BUILD_SCOPE%"=="assets" echo [export.bat] Post-Story semantic, asset, and audio refresh complete; Story was not rebuilt.
 
@@ -476,9 +476,9 @@ echo   export.bat --from-game
 echo   export.bat --from-game --with-assets --focused-assets
 echo   export.bat --assets-only --from-game --focused-assets
 echo   export.bat --from-game --game-root "E:\Games\Endfield Game\Endfield_Data"
-echo   python -m scripts.story_builder.protocol_registry --ensure-current
-echo   python -m scripts.build_mission_pipeline_data --refresh-source-story-gap-queue
-echo   python -m scripts.build_map_recovery_data --with-preview
+echo   python -m scripts.webui.story.protocol_registry --ensure-current
+echo   python -m scripts.webui.mission_pipeline.build_mission_pipeline_data --refresh-source-story-gap-queue
+echo   python -m scripts.webui.map.build_map_recovery_data --with-preview
 echo.
 echo Notes:
 echo   For repeated runs, edit endfield_paths.bat instead of passing --game-root.
@@ -500,7 +500,7 @@ echo   "python -m scripts.game_data.extraction.export_full_from_game --help" to 
 echo Companion wrappers:
 echo   export_assets.bat  Thin wrapper for --assets-only.
 echo   build_updates.bat  Build the Updates tab feed.
-echo   python -m scripts.pack_webui
+echo   python -m scripts.webui.package
 echo                      Create split shareable WebUI zips.
 echo.
 endlocal

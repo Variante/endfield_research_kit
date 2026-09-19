@@ -10,12 +10,12 @@ user research notes without modifying generated evidence.
 
 1. AnimeStudio reads AKPK/Wwise payloads from StreamingAssets with Persistent
    overlay/fallback and decodes lossless FLAC directly.
-2. `scripts.build_audio` owns decode, Wwise bank indexing, event-to-media
+2. `scripts.webui.audio.build_audio` owns decode, Wwise bank indexing, event-to-media
    traversal, Story relinking, and Gameplay sound sidecars. Shared SFX/music is
    written once under `structured/Audio/shared/`; language voice belongs under
    `structured/Audio/<LANG>/`.
-3. `scripts.build_audio_semantics` orchestrates semantic domains under
-   `scripts/audio_semantics/` and publishes the compact page index/shards.
+3. `scripts.webui.audio.build_audio_semantics` orchestrates semantic domains under
+   `scripts/webui/audio/semantics/` and publishes the compact page index/shards.
 4. Optional verified runtime-trace bundles add only their matching observed
    request relation.
 5. `webui/overrides/audio_notes.json` stores searchable manual notes through
@@ -73,9 +73,9 @@ allowed to mean:
 ## Focused refresh
 
 ```bat
-python scripts\build_audio.py
-python scripts\build_audio.py --skip-decode --refresh-hirc
-python scripts\build_audio_semantics.py --language CN
+python scripts\webui\audio\build_audio.py
+python scripts\webui\audio\build_audio.py --skip-decode --refresh-hirc
+python scripts\webui\audio\build_audio_semantics.py --language CN
 ```
 
 Inspect `--help` for non-CN or targeted maintenance options. Do not duplicate

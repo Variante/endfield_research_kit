@@ -84,7 +84,7 @@ has no source root, and a source root is half of Unity object identity.
   time in this domain that the two-root layout turned a correct measurement into a
   wrong conclusion; the other two were chunk-vs-block coverage and the CABMap
   offset join.
-- Read by `scripts/asset_builder/cabmap.py`; report at
+- Read by `scripts/webui/assets/cabmap.py`; report at
   [`reports/assets/cabmap_current_latest.json`](../../reports/assets/cabmap_current_latest.json).
   This is a container index only -- it says nothing about the objects inside a CAB,
   their types, names or path ids, and an offset is not a readable object without
