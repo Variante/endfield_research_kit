@@ -28,7 +28,7 @@ from scripts.game_data.extraction.export_full_from_game import (
     load_animestudio_object_index_summary,
 )
 
-from scripts.webui.story.object_index_io import iter_gzip_jsonl_objects
+from scripts.game_data.extraction.animestudio_index_io import iter_gzip_jsonl_objects
 SCHEMA = "animestudioStoryCarrierAudit.v3"
 DEFAULT_GAP_QUEUE = (
     ROOT / "reports" / "mission_order" / "source_story_gap_queue_CN.json"
