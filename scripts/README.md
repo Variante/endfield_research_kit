@@ -18,20 +18,32 @@ axis. A path appears under exactly one owner.
 | Line | Path | Responsibility |
 | --- | --- | --- |
 | **1. Game data** | `game_data/extraction/` | installed client to `export_full/`: the export and changed-file exporters, freshness guard, export benchmark, AnimeStudio object index, and `animestudio/` maintenance commands; never publishes page data |
-| | `game_data/` | exact framing readers (including `terrain_tret.py`, `terrain_height.py`, `dynamic_streaming.py`), `*_corpus.py` gates, `*_native.py` validators and their reviewed contracts, `il2cpp_protocol.py`, `il2cpp_context*.py` |
+| | `game_data/` | exact framing readers (Streaming, Terrain, DynamicStreaming, irradiance, extend data, bundle manifest, IFix, and the LevelScript, LevelData, Ability, Interactive, Spawner, CharInteractPerform and AnimationConfig `*_binary.py` readers), `*_corpus.py` gates with `corpus_common.py`, `*_native.py` validators and their reviewed contracts, `il2cpp_protocol.py`, `il2cpp_context*.py`, `media_resolver.py` (game-media naming and asset resolution) |
+| | `game_data/codecs/` | per-record LevelScript and LevelData codecs behind the `*_binary.py` readers |
+| | `game_data/native_contracts/` | reviewed native facts about the installed binary, each a loader plus its byte-pinned JSON |
 | | `game_data/memorypack/` | MemoryPack codecs and their corpus gates |
 | **2. WebUI** | `webui/views.py`, `webui/package.py` | page-build orchestration, and packaging |
-| | `webui/story/` | Story and Text page data plus shared Story evidence, including `native_contracts/` |
+| | `webui/story/` | Story and Text page data plus shared Story evidence |
 | | `webui/story_recovery/` | Story audits, OCR ordering, runtime traces, candidate generation |
 | | `webui/mission_pipeline/` | standalone Mission Pipeline recovery (not a WebUI page) |
 | | `webui/{assets,audio,characters,gameplay,map,updates}/` | one folder per page: its `build_*.py` entry point and helper modules |
 | **Shared** | `common.py`, `source_paths.py`, `repo_paths.py` | helpers used by both lines; `repo_paths.REPO_ROOT` is the only repo-root anchor |
 | **Tests** | `tests/` | stdlib `unittest`, untracked, run by explicit module path |
 
-Three rules keep that split honest. Line 1 never writes under `webui/data/`.
-A production builder must not import or execute a recovery/audit module. A
-corpus gate or native validator is tracked because the sweep is reusable,
-while everything it emits goes to `reports/`.
+Dependencies point one way: shared helpers import neither line, line 1
+imports only shared helpers, and line 2 imports both. Reuse is the point of
+that direction. A page builder calls a `game_data` reader or contract instead
+of re-decoding bytes, and a helper that both lines need goes in `common.py`
+under its own name, not in a private copy. The local
+`tests/test_scripts_layout_boundaries.py` checks the direction statically and
+at import time. The one sanctioned
+crossing is data, not code: focused asset export reads the published
+`webui/data` media references to scope which textures it extracts.
+
+Three more rules keep the split honest. Line 1 never writes under
+`webui/data/`. A production builder must not import or execute a
+recovery/audit module. A corpus gate or native validator is tracked because
+the sweep is reusable, while everything it emits goes to `reports/`.
 
 Every entry point runs as a module from the repository root, e.g.
 `python -m scripts.webui.audio.build_audio`. Imports are absolute
@@ -304,7 +316,6 @@ The reconstruction helpers WebUI builders depend on:
 | `webui/story/timeline_action_evidence.py` | typed Timeline action evidence |
 | `webui/story/mission_recovery.py` | mission reconstruction |
 | `webui/story/lua_consumer_references.py` | the fingerprinted Lua consumer index |
-| `webui/story/native_contracts/` | reviewed current-build native facts |
 | `scene_order_gap_shared.py` | shared scene-order gap logic |
 
 Mission Pipeline is a standalone recovery/reporting workflow; the WebUI export
@@ -312,7 +323,7 @@ does not run it. It reads the canonical shipped-Lua consumer index through
 `webui.story.lua_consumer_references`; it does not consume a recovery-script
 artifact. Cinematic-handle classification and typed action-producer joins come
 from the reviewed, installed-build-gated
-`webui/story/native_contracts/cinematic_queue.json`; the full native carrier
+`game_data/native_contracts/cinematic_queue.json`; the full native carrier
 report is not a production input. Standard WebUI extraction intentionally
 omits Lua, so refresh this tracked index only from an explicit complete
 plaintext-Lua extraction. To refresh it and optionally render Markdown, run:
@@ -416,8 +427,8 @@ verified GameAssembly path/size/SHA-256 facts. It records observed managed
 request boundaries and exact Event-to-media relations, but never promotes a
 capture to selected Wwise branch, decoded leaf, or audibility evidence.
 
-The reviewed LevelScript task paths are builder-owned in
-`webui/story/native_contracts/mission_task_paths.json`. The protocol registry
+The reviewed LevelScript task paths live in
+`game_data/native_contracts/mission_task_paths.json`. The protocol registry
 reads that contract directly; the mission runtime hook manifest references and
 validates the same contract before rendering its Frida agent, so task RVAs,
 message IDs, and field offsets have one mutable source of truth.
@@ -652,7 +663,7 @@ reporting the session armed. A denial, incomplete module gate, hook attachment
 failure, or unsupported profile stops without retry or fallback.
 
 The Frida audio hook manifest verifies `AkSoundEngine.dll` and reads the
-builder-owned native contracts rather than pinning its own copy of a task RVA,
+contracts in `game_data/native_contracts/` rather than pinning its own copy of a task RVA,
 message ID, or field offset; `runtime_trace_audio_import.py` publishes the
 observed relations, and what a capture does and does not prove is recorded in
 [`memory/game_data/audio_native_hooks.md`](../memory/game_data/audio_native_hooks.md).
@@ -722,8 +733,8 @@ python tools\endfield_source_graph.py issues --limit 20
 
 Reviewed per-build native facts are stored as data, not prose:
 `scripts/game_data/*_native.json` for raw-format consumers and MemoryPack
-formatter windows, and `scripts/game_data/native_contracts/` for Story
-builders. These JSON files **are tracked**: what they record is a data
+formatter windows, and `scripts/game_data/native_contracts/` for the native
+facts Story, Mission Pipeline, Map and the recovery tools consume. These JSON files **are tracked**: what they record is a data
 structure, and the per-build anchors beside each field are its provenance. The
 digest of a named consumer contract is pinned as `CONTRACT_SHA256` in its
 `*_native.py` module and re-checked at load, so editing the JSON without

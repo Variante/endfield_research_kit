@@ -165,7 +165,17 @@ file under `memory/game_data_recovery.md`; its commands belong to
 - exact framing readers, one per payload family: `streaming.py`,
   `irradiance_volume.py`, `extend_data_binary.py`, `bundle_manifest.py`,
   `ifix_patch.py`, `inverted_lz4.py`, `terrain_tret.py`, `terrain_height.py`,
-  and `dynamic_streaming.py`. Put a new reader in the package;
+  `dynamic_streaming.py`, and the serialized-gameplay readers
+  `levelscript_binary.py`, `leveldata_binary.py`, `ability_binary.py`,
+  `interactive_binary.py`, `spawner_binary.py`,
+  `char_interact_perform_binary.py` and `animation_config_binary.py`, with
+  their per-record codecs under `codecs/`. Put a new reader in the package,
+  never beside the page builder that first needs it;
+- `native_contracts/`, reviewed native facts about the installed binary that
+  Story, Mission Pipeline, Map and the recovery tools consume: one loader per
+  contract plus its byte-pinned JSON;
+- `media_resolver.py`, game-media naming (inline image tags, env-emoji prefab
+  layers, SNS and video naming) and asset-candidate resolution;
 - `*_corpus.py` current-corpus gates, which sweep the installed set and fail
   closed on an `--input-set-sha256`/`--expected-input-set-sha256` mismatch. The
   AnimeStudio VFS audit is the only producer of that value
@@ -212,6 +222,13 @@ different shapes:
   `postprocessor_*`, `streaming_*`) carry `schemaVersion`, `methods` as
   `[metadata index, type name, method, RVA]`, and `codeWindows` with a
   per-window `sha256` and `boundary`. `memorypack/` and the audit read them.
+
+`scripts/game_data/native_contracts/` holds a third set, one loader module per
+contract JSON of the same name. Every loader except `mission_task_paths` gates
+on the installed native inputs itself. That contract is validated by its
+consumers, the protocol registry and the mission trace hook manifest. Where a
+loader declares a `CONTRACT_SHA256`, the same edit-requires-pin rule below
+applies.
 
 `evidenceBoundary` is the vocabulary to use when recording what a contract
 proves, in both the JSON and any memory prose that cites it: `exact` for what
@@ -844,6 +861,18 @@ from that layout:
   it goes under `scripts/game_data/`. If it projects exported data onto a page,
   it goes in that page's `scripts/webui/<page>/` folder. Line 1 must not write
   under `webui/data/`.
+- Dependencies point one way: `common.py`, `source_paths.py` and
+  `repo_paths.py` import neither line, `scripts/game_data/` imports only
+  those, and `scripts/webui/` imports both. Import rather than copy. A page
+  builder calls the `game_data` reader or contract. A helper both lines need
+  goes into `common.py` under a name that states its behaviour
+  (`sha256_file_upper`, `write_canonical_json`). Do not paste a private
+  copy. When an existing helper differs even slightly (casing, key order,
+  change detection), add a separately named one, because swapping it in would
+  change output bytes. The only line-1 read of line-2 output is data: focused
+  asset export reads published `webui/data` media references to scope its
+  Texture2D filter. The local `scripts/tests/test_scripts_layout_boundaries.py`
+  checks the direction statically and at import time.
 - Run every entry point as `python -m scripts.…` from the repository root,
   both in wrappers and in docs. Import with absolute `from scripts.… import`.
   Resolve the repo root through `scripts.repo_paths.REPO_ROOT`, never
