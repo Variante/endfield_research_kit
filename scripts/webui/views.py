@@ -12,6 +12,7 @@ consumers, not every builder that happens to be queued behind it.
 """
 from __future__ import annotations
 
+
 import argparse
 import json
 import os
@@ -31,6 +32,9 @@ if __package__ in {None, ""}:
         "Run this maintained entry point as: "
         "python -m scripts.webui.views"
     )
+
+from scripts.common import require_export_layout
+from scripts.source_paths import ExportLayout
 
 from scripts.repo_paths import REPO_ROOT
 
@@ -107,7 +111,7 @@ def build_tasks(args: argparse.Namespace) -> list[TaskSpec]:
     # Mission Pipeline is a standalone recovery tool now. Keep map recovery
     # in the WebUI build, but do not make the export wrapper run Mission
     # Pipeline's expensive native/story recovery pass.
-    # Reads export_full/structured + the AnimeStudio export, both complete
+    # Reads the export root's game/ tree, complete
     # before this runner starts, so it has no in-runner dependency.
     tasks.append(
         TaskSpec(
@@ -215,7 +219,7 @@ def build_tasks(args: argparse.Namespace) -> list[TaskSpec]:
         # scene_backgrounds.collect_scene_background_semantics ->
         # _load_streaming_instance_identity_catalog (scene_backgrounds.py:2779
         # -> :168), globbing
-        # export_full/recovered/AnimeStudio-cli/*/map_streaming_instances/*.json.
+        # webui/data/_build/map/world_placements/*.json.
         # The old barrier plan ran audio in the same phase as the streaming
         # extractor, so it could read that directory while it was being
         # rewritten; the edge closes that race.
@@ -238,11 +242,10 @@ def build_tasks(args: argparse.Namespace) -> list[TaskSpec]:
     if args.game_root:
         streaming_args.extend(("--game-root", str(args.game_root)))
     if args.export_root:
-        anime_root = args.export_root / "recovered/AnimeStudio-cli/StreamingAssets"
+        layout = ExportLayout(args.export_root)
         streaming_args.extend((
-            "--asset-map", str(anime_root / "maps/endfield_streamingassets_assets.json"),
-            "--mesh-root", str(anime_root / "convert_by_type/Mesh"),
-            "--output-root", str(anime_root / "map_streaming_instances"),
+            "--asset-map", str(layout.asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"),
+            "--mesh-root", str(layout.unity_type_dir("Mesh")),
         ))
     tasks.append(
         TaskSpec(
@@ -702,6 +705,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.dry_run:
         print_plan(tasks)
         return 0
+    require_export_layout(getattr(args, 'export_root', None))
 
     started = time.perf_counter()
     returncode, runs = run_graph(tasks, args.jobs)

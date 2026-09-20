@@ -8,6 +8,7 @@ relationships from similarly named levels.
 """
 
 from __future__ import annotations
+from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
 
 import re
 from functools import lru_cache
@@ -16,8 +17,8 @@ from pathlib import Path
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-LEVEL_CONFIG_ROOT = ROOT / "export_full/structured/StreamingAssets/Data/Json/LevelConfig"
-STREAMING_INSTANCE_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances"
+LEVEL_CONFIG_ROOT = EXPORT_LAYOUT.json_dir / "LevelConfig"
+STREAMING_INSTANCE_ROOT = WEBUI_BUILD_DIR / "map" / "world_placements"
 
 _BINARY_SCENE_PATH_RE = re.compile(
     rb"([A-Za-z0-9_]+)/([A-Za-z0-9_]+?)(?:_art)?_streaming[.]asset"

@@ -14,6 +14,8 @@ published.
 """
 
 from __future__ import annotations
+from scripts.source_paths import INSTALLED_LAYERS, ExportLayout
+from scripts.common import WEBUI_BUILD_DIR
 
 import gzip
 import hashlib
@@ -31,6 +33,8 @@ from scripts.game_data.extraction.export_full_from_game import (
     animestudio_object_index_dir,
     load_animestudio_object_index_summary,
 )
+from scripts.game_data.extraction.animestudio_index_io import EffectiveObjectRows
+from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 
 
 SCHEMA_VERSION = 1
@@ -117,15 +121,17 @@ def audio_map_event_scalar(
     return (event_hash, role) if event_hash else None
 
 
-def _streaming_instance_paths(export_root: Path) -> list[Path]:
+# The map builder publishes InitChunkData world-placement sidecars as WebUI
+# build output: they are derived from the export, not part of it.
+WORLD_PLACEMENT_SIDECAR_REL = "webui/data/_build/map/world_placements"
+WORLD_PLACEMENT_SIDECAR_DIR = WEBUI_BUILD_DIR / "map" / "world_placements"
+
+
+def _streaming_instance_paths(sidecar_dir: Path) -> list[Path]:
     """Return generated InitChunkData sidecars without treating names as IDs."""
-    root = export_root / "recovered" / "AnimeStudio-cli"
-    paths: list[Path] = []
-    for source in ("StreamingAssets", "Persistent"):
-        sidecar_root = root / source / "map_streaming_instances"
-        if sidecar_root.is_dir():
-            paths.extend(sorted(path for path in sidecar_root.glob("*.json") if path.is_file()))
-    return paths
+    if not sidecar_dir.is_dir():
+        return []
+    return sorted(path for path in sidecar_dir.glob("*.json") if path.is_file())
 
 
 def _prefab_identity_key(value: Any) -> SceneIdentityKey | None:
@@ -144,7 +150,9 @@ def _prefab_identity_key(value: Any) -> SceneIdentityKey | None:
     return ("assetMap", tokens[0], path_id)
 
 
-def _load_streaming_instance_identity_catalog(export_root: Path) -> dict[str, Any]:
+def _load_streaming_instance_identity_catalog(
+    sidecar_dir: Path = WORLD_PLACEMENT_SIDECAR_DIR,
+) -> dict[str, Any]:
     """Load exact prefab->level instance facts, or publish bounded gaps.
 
     The currently validated InitChunkData sidecars contain entity IDs, names,
@@ -154,7 +162,7 @@ def _load_streaming_instance_identity_catalog(export_root: Path) -> dict[str, An
     or chunk filenames.  A future exporter may add an exact ``prefabIdentity``
     object to each instance; only that object can enter ``entries``.
     """
-    paths = _streaming_instance_paths(export_root)
+    paths = _streaming_instance_paths(sidecar_dir)
     diagnostics: list[dict[str, Any]] = []
     sources: list[dict[str, Any]] = []
     entries: list[dict[str, Any]] = []
@@ -169,7 +177,8 @@ def _load_streaming_instance_identity_catalog(export_root: Path) -> dict[str, An
             diagnostics.append({"status": status, "reason": reason, **extra})
 
     for path in paths:
-        relative = str(path.relative_to(export_root)).replace("\\", "/")
+        # The canonical label, independent of where a caller keeps the folder.
+        relative = f"{WORLD_PLACEMENT_SIDECAR_REL}/{path.name}"
         try:
             payload = json.loads(path.read_text(encoding="utf-8"))
         except (OSError, UnicodeDecodeError, json.JSONDecodeError) as exc:
@@ -322,7 +331,7 @@ def _normalise_asset_path(value: Any) -> str | None:
 
 
 def _canonical_streaming_sidecar_path(value: Any) -> str | None:
-    """Accept only the exporter-relative, forward-slash sidecar path."""
+    """Accept only the repo-relative, forward-slash world-placement sidecar path."""
 
     if not isinstance(value, str) or not value or value != value.strip():
         return None
@@ -331,15 +340,9 @@ def _canonical_streaming_sidecar_path(value: Any) -> str | None:
     parts = value.split("/")
     if any(not part or part in {".", ".."} for part in parts):
         return None
-    if len(parts) != 5 or parts[:2] != ["recovered", "AnimeStudio-cli"]:
+    if len(parts) != 6 or parts[:5] != WORLD_PLACEMENT_SIDECAR_REL.split("/"):
         return None
-    if parts[2] not in {"StreamingAssets", "Persistent"}:
-        return None
-    if (
-        parts[3] != "map_streaming_instances"
-        or not parts[4]
-        or not parts[4].endswith(".json")
-    ):
+    if not parts[5].endswith(".json"):
         return None
     return value
 
@@ -1106,10 +1109,9 @@ def _iter_asset_map_entries(
 
 
 def _asset_map_paths(export_root: Path) -> list[Path]:
-    root = export_root / "recovered" / "AnimeStudio-cli"
     paths: list[Path] = []
-    for source in ("StreamingAssets", "Persistent"):
-        maps_root = root / source / "maps"
+    for source in INSTALLED_LAYERS:
+        maps_root = ExportLayout(export_root).asset_map_dir(source)
         if not maps_root.is_dir():
             continue
         paths.extend(sorted(path for path in maps_root.glob("*_assets.json") if path.is_file()))
@@ -1337,46 +1339,27 @@ def _merge_context_maps(
     return dict(merged)
 
 
-def _mirrored_json(
+def _game_json(
     export_root: Path,
     relative_path: Path,
 ) -> tuple[Any, list[dict[str, Any]]]:
-    versions: dict[str, list[tuple[str, Path]]] = defaultdict(list)
-    data_by_hash: dict[str, bytes] = {}
-    for source in ("Persistent", "StreamingAssets"):
-        path = export_root / "structured" / source / relative_path
-        if not path.is_file():
-            continue
-        try:
-            data = path.read_bytes()
-        except OSError as exc:
-            raise SceneBackgroundError(f"cannot read {path}: {exc}") from exc
-        digest = hashlib.sha256(data).hexdigest()
-        versions[digest].append((source, path))
-        data_by_hash[digest] = data
-    if not versions:
+    """Read one game/ JSON file with its hash evidence, or (None, [])."""
+    path = ExportLayout(export_root).game / relative_path
+    if not path.is_file():
         return None, []
-    if len(versions) != 1:
-        details = ", ".join(
-            f"{digest}:{'/'.join(source for source, _path in rows)}"
-            for digest, rows in sorted(versions.items())
-        )
-        raise SceneBackgroundError(
-            f"conflicting mirrored {relative_path.as_posix()}: {details}"
-        )
-    digest = next(iter(versions))
     try:
-        payload = json.loads(data_by_hash[digest])
+        data = path.read_bytes()
+    except OSError as exc:
+        raise SceneBackgroundError(f"cannot read {path}: {exc}") from exc
+    try:
+        payload = json.loads(data)
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-        raise SceneBackgroundError(
-            f"invalid mirrored JSON {relative_path.as_posix()}: {exc}"
-        ) from exc
-    evidence = [{
-        "source": source,
+        raise SceneBackgroundError(f"invalid JSON {relative_path.as_posix()}: {exc}") from exc
+    return payload, [{
+        "source": "game",
         "path": str(path.relative_to(export_root)).replace("\\", "/"),
-        "sha256": digest,
-    } for source, path in versions[digest]]
-    return payload, evidence
+        "sha256": hashlib.sha256(data).hexdigest(),
+    }]
 
 
 def _collect_audio_level_semantics(
@@ -1384,14 +1367,14 @@ def _collect_audio_level_semantics(
     wwise_by_hash: dict[int, dict[str, Any]],
     media_by_id: dict[int, dict[str, Any]],
 ) -> dict[str, Any]:
-    payload, evidence = _mirrored_json(export_root, Path("Table/AudioLevel.json"))
+    payload, evidence = _game_json(export_root, Path("Table/AudioLevel.json"))
     if payload is None:
         return {
             "status": "unavailable",
             "sources": [],
             "levels": [],
             "eventContexts": {},
-            "error": "Table/AudioLevel.json is missing from both structured roots",
+            "error": "game/Table/AudioLevel.json is missing",
         }
     if not isinstance(payload, dict):
         raise SceneBackgroundError("Table/AudioLevel.json root is not an object")
@@ -1449,10 +1432,7 @@ def _collect_audio_level_semantics(
 
 
 def _collect_mission_scene_refs(export_root: Path) -> dict[str, Any]:
-    roots = [
-        export_root / "structured" / source / "Data/Json/MissionRuntimeAsset"
-        for source in ("Persistent", "StreamingAssets")
-    ]
+    roots = [ExportLayout(export_root).game / "Json/MissionRuntimeAsset"]
     refs: dict[str, dict[str, Any]] = {}
     conflicts: list[dict[str, Any]] = []
     physical_files = 0
@@ -1571,10 +1551,7 @@ SCENE_GLOBAL_COMPACT_DIAGNOSTIC_LIMIT = 8
 SCENE_GLOBAL_CONTEXT_STATUS_EXACT = "exact"
 SCENE_GLOBAL_CONTEXT_STATUS_UNAVAILABLE = "unavailable"
 _SCENE_GLOBAL_ROOTS = frozenset({"StreamingAssets", "Persistent"})
-_SCENE_GLOBAL_AUDIO_LEVEL_SOURCES = frozenset({
-    "structured/Persistent/Table/AudioLevel.json",
-    "structured/StreamingAssets/Table/AudioLevel.json",
-})
+_SCENE_GLOBAL_AUDIO_LEVEL_SOURCES = frozenset({"game/Table/AudioLevel.json"})
 _SCENE_GLOBAL_REQUIRED_RUNTIME_STATUSES = frozenset({
     "authoredDefinitionOnly",
     "runtimeActivationNotObserved",
@@ -2702,6 +2679,7 @@ def collect_scene_background_semantics(
     *,
     sources: tuple[str, ...] = ("StreamingAssets", "Persistent"),
     scene_containment_index: Any = None,
+    world_placement_dir: Path = WORLD_PLACEMENT_SIDECAR_DIR,
 ) -> dict[str, Any]:
     """Load each validated merged index once and build a source-scoped catalog.
 
@@ -2710,6 +2688,7 @@ def collect_scene_background_semantics(
     or containment edge is joined across the missing-source boundary.
     """
     rows_by_source: dict[str, Iterable[dict[str, Any]]] = {}
+    slot_keys = effective_chunk_slot_keys(export_root)
     evidence: list[dict[str, Any]] = []
     source_diagnostics: list[dict[str, Any]] = []
     expected_counts: dict[str, int] = {}
@@ -2746,7 +2725,7 @@ def collect_scene_background_semantics(
             })
             continue
         index_dir = animestudio_object_index_dir(export_root, source)
-        rows_by_source[source] = _iter_gzip_rows(index_dir / relative_name)
+        rows_by_source[source] = EffectiveObjectRows(_iter_gzip_rows(index_dir / relative_name), slot_keys)
         expected_counts[source] = int((summary.get("counts") or {}).get("objects") or 0)
         evidence.append({
             "source": source,
@@ -2765,7 +2744,7 @@ def collect_scene_background_semantics(
             diagnostics or "no validated published object index is available"
         )
 
-    streaming_instance_catalog = _load_streaming_instance_identity_catalog(export_root)
+    streaming_instance_catalog = _load_streaming_instance_identity_catalog(world_placement_dir)
     result = build_scene_background_catalog(
         rows_by_source,
         audio_index,
@@ -2778,9 +2757,8 @@ def collect_scene_background_semantics(
         streaming_instance_catalog=streaming_instance_catalog,
         asset_map_export_root=export_root,
     )
-    actual_counts = (result.get("counts") or {}).get("objectRowsScannedBySource") or {}
     for source, expected in expected_counts.items():
-        actual = int(actual_counts.get(source) or 0)
+        actual = rows_by_source[source].read
         if actual != expected:
             raise SceneBackgroundError(
                 f"{source}: merged object count mismatch: {actual} parsed, {expected} published"

@@ -55,109 +55,35 @@ from scripts.webui.story.level_bindings import (
     parse_leveldata_levelscript_brief_dictionary,
 )
 from scripts.webui.story.level_bindings import _source_file_label as source_label
+from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
 
 
 ROOT = _REPO_ROOT
 DEFAULT_PIPELINE_ROOT = ROOT / "webui" / "data" / "mission_pipeline"
 DEFAULT_TIMELINE_ORDERS = (
-    ROOT
-    / "export_full"
-    / "recovered"
-    / "AnimeStudio-cli"
-    / "timeline_line_orders.json"
+    WEBUI_BUILD_DIR / "story" / "timeline_line_orders.json"
 )
 DEFAULT_DIALOG_TREE_ROOT = (
-    ROOT
-    / "export_full"
-    / "recovered"
-    / "AnimeStudio-cli"
-    / "StreamingAssets"
-    / "json_by_type"
-    / "TextAsset"
+    EXPORT_LAYOUT.unity_type_dir("TextAsset")
 )
 DEFAULT_LEVELSCRIPT_ROOTS = (
-    ROOT
-    / "export_full"
-    / "structured"
-    / "StreamingAssets"
-    / "Data"
-    / "Json"
-    / "LevelScriptData",
-    ROOT
-    / "export_full"
-    / "structured"
-    / "Persistent"
-    / "Data"
-    / "Json"
-    / "LevelScriptData",
+    EXPORT_LAYOUT.json_dir / "LevelScriptData",
 )
 DEFAULT_LEVELDATA_ROOTS = (
-    ROOT
-    / "export_full"
-    / "structured"
-    / "StreamingAssets"
-    / "Data"
-    / "Json"
-    / "LevelData",
-    ROOT
-    / "export_full"
-    / "structured"
-    / "Persistent"
-    / "Data"
-    / "Json"
-    / "LevelData",
+    EXPORT_LAYOUT.json_dir / "LevelData",
 )
 DEFAULT_MISSION_RUNTIME_ROOTS = (
-    ROOT
-    / "export_full"
-    / "structured"
-    / "StreamingAssets"
-    / "Data"
-    / "Json"
-    / "MissionRuntimeAsset",
-    ROOT
-    / "export_full"
-    / "structured"
-    / "Persistent"
-    / "Data"
-    / "Json"
-    / "MissionRuntimeAsset",
+    EXPORT_LAYOUT.json_dir / "MissionRuntimeAsset",
 )
 DEFAULT_TASK_CARRIER_ROOTS = (
-    ROOT
-    / "export_full"
-    / "structured"
-    / "StreamingAssets"
-    / "Data"
-    / "Json",
-    ROOT
-    / "export_full"
-    / "structured"
-    / "Persistent"
-    / "Data"
-    / "Json",
+    EXPORT_LAYOUT.json_dir,
 )
 TASK_CARRIER_DEFINITION_FAMILIES = {
     "LevelScriptData",
     "LevelScriptTemplateData",
 }
 DEFAULT_SUBGAME_TABLES = (
-    ROOT
-    / "export_full"
-    / "structured"
-    / "StreamingAssets"
-    / "Data"
-    / "Json"
-    / "GameplayConfig"
-    / "SubGameInstanceDataTable.json",
-    ROOT
-    / "export_full"
-    / "structured"
-    / "Persistent"
-    / "Data"
-    / "Json"
-    / "GameplayConfig"
-    / "SubGameInstanceDataTable.json",
+    EXPORT_LAYOUT.json_dir / "GameplayConfig" / "SubGameInstanceDataTable.json",
 )
 DEFAULT_SUBGAME_TABLE = next(
     (path for path in reversed(DEFAULT_SUBGAME_TABLES) if path.is_file()),
@@ -4478,14 +4404,10 @@ def main() -> int:
     parser.add_argument("--timeline-orders", type=Path, default=DEFAULT_TIMELINE_ORDERS)
     parser.add_argument("--dialog-tree-root", type=Path, default=DEFAULT_DIALOG_TREE_ROOT)
     parser.add_argument(
-        "--streaming-levelscript-root",
+        "--levelscript-root",
         type=Path,
-        default=DEFAULT_LEVELSCRIPT_ROOTS[0],
-    )
-    parser.add_argument(
-        "--persistent-levelscript-root",
-        type=Path,
-        default=DEFAULT_LEVELSCRIPT_ROOTS[1],
+        action="append",
+        help="LevelScriptData root; repeat to model an explicit overlay, fallback first.",
     )
     parser.add_argument("--subgame-table", type=Path, default=DEFAULT_SUBGAME_TABLE)
     parser.add_argument("--game-assembly", type=Path, default=DEFAULT_GAME_ASSEMBLY)
@@ -4513,10 +4435,7 @@ def main() -> int:
         args.timeline_orders,
         args.dialog_tree_root,
         native_contract=native,
-        levelscript_roots=(
-            args.streaming_levelscript_root,
-            args.persistent_levelscript_root,
-        ),
+        levelscript_roots=tuple(args.levelscript_root or DEFAULT_LEVELSCRIPT_ROOTS),
         subgame_table_path=args.subgame_table,
     )
     write_json(args.json, report)

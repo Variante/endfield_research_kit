@@ -4,6 +4,7 @@ Reads authored LevelScript output and its lifecycle sources. A decoded control o
 binding is authored evidence; it does not establish that the action ran."""
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import hashlib
 import re
@@ -225,7 +226,10 @@ def _levelscript_lifecycle_identity(row: dict[str, Any]) -> dict[str, Any]:
         if row.get(key) not in (None, "", [])
     }
 
+# "game" is the export's single effective tree (layout v2); the layer names
+# remain valid for rows recorded against an explicit installed layer.
 _LEVELSCRIPT_LIFECYCLE_SOURCE_ROOTS = frozenset({
+    "game",
     "StreamingAssets",
     "Persistent",
 })
@@ -255,7 +259,7 @@ def _levelscript_lifecycle_source_identity(
     normalized_level_script_id = PurePosixPath(level_script_id).as_posix()
     level_parts = PurePosixPath(level_script_id).parts
     expected_prefix = (
-        f"structured/{source_root}/Data/Json/LevelScriptData/"
+        f"game/Json/LevelScriptData/"
     )
     expected_path = f"{expected_prefix}{normalized_level_script_id}.json"
     if (
@@ -592,16 +596,16 @@ def _load_levelscript_brief_property_sources(
 
     source_roots = [str(preferred_source_root)]
     source_roots.extend(
-        source for source in ("StreamingAssets", "Persistent")
+        source for source in ("game",)
         if source not in source_roots
     )
     for source_root in source_roots:
         script_dir = (
-            export_root / "structured" / source_root / "Data" / "Json"
+            ExportLayout(export_root).game / "Json"
             / "LevelScriptData" / level_id
         )
         leveldata_dir = (
-            export_root / "structured" / source_root / "Data" / "Json"
+            ExportLayout(export_root).game / "Json"
             / "LevelData" / level_id
         )
         if not script_dir.is_dir() or not leveldata_dir.is_dir():
@@ -754,8 +758,8 @@ def collect_levelscript_audio_semantics(
             }
 
     overlay: dict[str, tuple[str, Path]] = {}
-    for source_root in ("StreamingAssets", "Persistent"):
-        root = export_root / "structured" / source_root / "Data" / "Json" / "LevelScriptData"
+    for source_root in ("game",):
+        root = ExportLayout(export_root).game / "Json" / "LevelScriptData"
         if not root.exists():
             continue
         for path in root.rglob("*.json"):
@@ -1324,10 +1328,10 @@ def attach_levelscript_radio_contexts(
     """
 
     table_path = next((
-        export_root / "structured" / source_root / "Table" / "RadioTable.json"
-        for source_root in ("Persistent", "StreamingAssets")
+        ExportLayout(export_root).game / "Table" / "RadioTable.json"
+        for source_root in ("game",)
         if (
-            export_root / "structured" / source_root / "Table" / "RadioTable.json"
+            ExportLayout(export_root).game / "Table" / "RadioTable.json"
         ).is_file()
     ), None)
     payload = load_json(table_path, {}) if table_path else {}

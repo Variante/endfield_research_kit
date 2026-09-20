@@ -6,9 +6,12 @@ remains unobserved."""
 
 from __future__ import annotations
 
+import gzip
 import json
 import os
 import re
+from scripts.game_data.extraction.animestudio_index_io import is_effective_row
+from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 from scripts.webui.audio.semantics import identifiers
 from scripts.webui.audio.semantics import build_contracts
 from collections import Counter, defaultdict
@@ -18,6 +21,7 @@ from typing import Any, Iterable
 from scripts.webui.audio.semantics.context_utils import append_context as _append_context
 from scripts.webui.audio.semantics.context_utils import load_json as load_json
 from scripts.webui.audio.semantics.context_utils import normalize_posix as normalize_posix
+from scripts.source_paths import ExportLayout
 
 AUDIO_MUSIC_ACTION_TYPE_LABELS = {
     0: "DIALOG_MUSIC",
@@ -31,6 +35,13 @@ AUDIO_MUSIC_TRIGGER_ON_SKIP_LABELS = {
 }
 
 TIMELINE_AUDIO_RUNTIME_CONTRACTS = build_contracts.TIMELINE_AUDIO_RUNTIME_CONTRACTS
+
+def _open_index_text(path: Path):
+    """Open an object-index stream, compressed (published) or plain (fixtures)."""
+    if path.suffix == ".gz":
+        return gzip.open(path, "rt", encoding="utf-8")
+    return path.open("r", encoding="utf-8")
+
 
 def normalize_levelsequence_audio_id(value: Any) -> str:
     """Return the authored sequence id only for the exact ``_Audio`` suffix."""
@@ -91,11 +102,9 @@ def _object_index_path(
 ) -> Path:
     if explicit is not None:
         return Path(explicit)
-    return (
-        export_root / "recovered" / "AnimeStudio-cli" / "StreamingAssets"
-        / "object_index" / "parts"
-        / f"StreamingAssets_animestudio_json_by_type_{class_name}.jsonl"
-    )
+    # The merged per-layer index holds every indexed class; readers filter
+    # rows by Unity classId, so one file serves MonoBehaviour and PlayableDirector.
+    return ExportLayout(export_root).object_index_dir("StreamingAssets") / "objects.jsonl.gz"
 
 def collect_timeline_audio_ownership(
     export_root: Path,
@@ -127,6 +136,9 @@ def collect_timeline_audio_ownership(
     }
     mono_file = _object_index_path(export_root, "MonoBehaviour", mono_path)
     directors_file = _object_index_path(export_root, "PlayableDirector", director_path)
+    # A layer's index still lists objects from bundles the newer manifest
+    # replaced or deleted; only rows the client loads take part.
+    slot_keys = effective_chunk_slot_keys(export_root)
     playable_events: dict[tuple[str, int], str] = {}
     playable_cues: dict[tuple[str, int], dict[str, str]] = {}
     carriers: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -138,13 +150,19 @@ def collect_timeline_audio_ownership(
     # AudioMusicPlayable after its Track is still an exact PPtr join.  This is
     # deliberately not a full object-index materialization.
     if mono_file.is_file():
-        with mono_file.open("r", encoding="utf-8") as handle:
+        with _open_index_text(mono_file) as handle:
             for line in handle:
                 try:
                     record = json.loads(line)
                 except (json.JSONDecodeError, TypeError):
                     continue
-                if not isinstance(record, dict) or record.get("recordType") != "object":
+                if (
+                    not isinstance(record, dict)
+                    or record.get("recordType") != "object"
+                    or not is_effective_row(record, slot_keys)
+                ):
+                    continue
+                if record.get("classId") not in (None, 114):
                     continue
                 name = str(record.get("name") or "")
                 script_name = _scalar_value(record, "$.m_Name")
@@ -183,14 +201,20 @@ def collect_timeline_audio_ownership(
                         stats["audioMusicPlayableRecords"] += 1
 
     if mono_file.is_file():
-        with mono_file.open("r", encoding="utf-8") as handle:
+        with _open_index_text(mono_file) as handle:
             for line in handle:
                 try:
                     record = json.loads(line)
                 except (json.JSONDecodeError, TypeError):
                     stats["decodeFailures"] += 1
                     continue
-                if not isinstance(record, dict) or record.get("recordType") != "object":
+                if (
+                    not isinstance(record, dict)
+                    or record.get("recordType") != "object"
+                    or not is_effective_row(record, slot_keys)
+                ):
+                    continue
+                if record.get("classId") not in (None, 114):
                     continue
                 stats["monoObjects"] += 1
                 name = str(record.get("name") or "")
@@ -419,14 +443,20 @@ def collect_timeline_audio_ownership(
     parent_keys.discard(None)
     director_rows: dict[tuple[str, int], list[dict[str, Any]]] = defaultdict(list)
     if directors_file.is_file() and parent_keys:
-        with directors_file.open("r", encoding="utf-8") as handle:
+        with _open_index_text(directors_file) as handle:
             for line in handle:
                 try:
                     record = json.loads(line)
                 except (json.JSONDecodeError, TypeError):
                     stats["directorDecodeFailures"] += 1
                     continue
-                if not isinstance(record, dict) or record.get("recordType") != "object":
+                if (
+                    not isinstance(record, dict)
+                    or record.get("recordType") != "object"
+                    or not is_effective_row(record, slot_keys)
+                ):
+                    continue
+                if record.get("classId") not in (None, 320):
                     continue
                 stats["playableDirectorRecords"] += 1
                 playable_asset = _resolved_pptr(record, "$.m_PlayableAsset")
@@ -611,11 +641,8 @@ def _timeline_raw_mono_payloads(
     }
     if not wanted:
         return cache
-    for source in ("StreamingAssets", "Persistent"):
-        raw_root = (
-            export_root / "recovered" / "AnimeStudio-cli" / source
-            / "json_by_type" / "MonoBehaviour"
-        )
+    for source in ("game",):
+        raw_root = ExportLayout(export_root).unity_type_dir("MonoBehaviour")
         if not raw_root.is_dir():
             continue
         try:

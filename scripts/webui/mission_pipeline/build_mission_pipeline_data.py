@@ -27,6 +27,8 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.mission_pipeline.build_mission_pipeline_data"
     )
 
+from scripts.common import require_export_layout
+
 from scripts.common import (
     combined_non_mission_content_keys,
     compact_dict,
@@ -54,7 +56,6 @@ from scripts.webui.story.level_bindings import (
 )
 from scripts.webui.story.mission_assets import (
     mission_runtime_source_summary,
-    select_complete_mission_runtime_root,
 )
 from scripts.webui.story.lua_consumer_references import (
     DEFAULT_INDEX as DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
@@ -118,7 +119,9 @@ from scripts.webui.story.timeline_embedded_story_runtime import (
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
+from scripts.common import EXPORT_LAYOUT
+
+EXPORT_ROOT = EXPORT_LAYOUT.root
 from scripts.common import sha256_file as sha256_path
 from scripts.webui.mission_pipeline import dialog_tree_projection
 from scripts.webui.mission_pipeline import lua_story_projection
@@ -147,29 +150,14 @@ from scripts.webui.mission_pipeline.source_order_shells import _resolve_report_s
 
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_GAME_ASSEMBLY = DEFAULT_GAME_ROOT.parent / "GameAssembly.dll"
-STREAMING_MISSION_ROOT = (
-    EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset"
-)
-PERSISTENT_MISSION_ROOT = (
-    EXPORT_ROOT / "structured" / "Persistent" / "Data" / "Json"
-    / "MissionRuntimeAsset"
-)
-DEFAULT_MISSION_ROOT = select_complete_mission_runtime_root(
-    STREAMING_MISSION_ROOT,
-    PERSISTENT_MISSION_ROOT,
-)
+DEFAULT_MISSION_ROOT = EXPORT_LAYOUT.json_dir / "MissionRuntimeAsset"
 DEFAULT_SUBGAME_TABLE = (
-    EXPORT_ROOT
-    / "structured"
-    / "StreamingAssets"
-    / "Data"
-    / "Json"
-    / "GameplayConfig"
-    / "SubGameInstanceDataTable.json"
+    EXPORT_LAYOUT.json_dir
+    / "GameplayConfig" / "SubGameInstanceDataTable.json"
 )
-DEFAULT_TABLE_ROOT = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+DEFAULT_TABLE_ROOT = EXPORT_LAYOUT.table_dir
 DEFAULT_GAMEPLAY_CONFIG_ROOT = (
-    EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "GameplayConfig"
+    EXPORT_LAYOUT.json_dir / "GameplayConfig"
 )
 
 # Shipped Lua is scanned as a corpus. No Story key, module, symbol, or phase is
@@ -181,17 +169,11 @@ DEFAULT_SCRIPT_TASK_EXTRA_INFO_TABLE = (
     DEFAULT_GAMEPLAY_CONFIG_ROOT / "ScriptTaskExtraInfoTable.json"
 )
 DEFAULT_LEVEL_SCRIPT_DATA_ROOT = (
-    EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json"
-    / "LevelScriptData"
+    EXPORT_LAYOUT.json_dir / "LevelScriptData"
 )
-DEFAULT_PERSISTENT_LEVEL_SCRIPT_DATA_ROOT = (
-    EXPORT_ROOT / "structured" / "Persistent" / "Data" / "Json"
-    / "LevelScriptData"
-)
-DEFAULT_LEVEL_SCRIPT_DATA_ROOTS = (
-    DEFAULT_LEVEL_SCRIPT_DATA_ROOT,
-    DEFAULT_PERSISTENT_LEVEL_SCRIPT_DATA_ROOT,
-)
+# The export's game/ tree is already the client's effective view, so the
+# default overlay has one root; callers may still pass several.
+DEFAULT_LEVEL_SCRIPT_DATA_ROOTS = (DEFAULT_LEVEL_SCRIPT_DATA_ROOT,)
 DEFAULT_PROTOCOL_REGISTRY_AUDIT = (
     ROOT / "reports" / "story" / "recovery" / "protocol_registry_audit.json"
 )
@@ -208,12 +190,7 @@ DEFAULT_TEXT_VO_ID_TABLE = DEFAULT_TABLE_ROOT / "TextVoIdTable.json"
 DEFAULT_SUBMIT_ITEM_TABLE = DEFAULT_TABLE_ROOT / "SubmitItem.json"
 DEFAULT_OUTPUT_ROOT = ROOT / "webui" / "data" / "mission_pipeline"
 DEFAULT_LEVEL_SEQUENCE_TEXTASSET_ROOT = (
-    EXPORT_ROOT
-    / "recovered"
-    / "AnimeStudio-cli"
-    / "StreamingAssets"
-    / "json_by_type"
-    / "TextAsset"
+    EXPORT_LAYOUT.unity_type_dir("TextAsset")
 )
 DEFAULT_STORY_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "build"
@@ -6098,10 +6075,8 @@ def resolve_active_level_script_source(
 ) -> tuple[Path | None, dict[str, Any]]:
     """Resolve one logical LevelScript through an ordered source overlay.
 
-    Roots are fallback-to-override.  Default production lookup therefore uses
-    StreamingAssets followed by Persistent, while callers that pass a custom
-    singular root keep the historical one-root behavior unless they explicitly
-    provide ``level_script_roots``.
+    Roots are fallback-to-override.  Production passes the single effective
+    game/ root; tests and probes may pass several to model an overlay.
     """
     if level_script_roots is None:
         roots = (
@@ -6146,7 +6121,7 @@ def resolve_active_level_script_source(
     return (
         active["path"] if active else None,
         {
-            "rule": "later root wins; Persistent overrides StreamingAssets",
+            "rule": "later root wins",
             "searchedSources": searched,
             "activeSourceFile": active["sourceFile"] if active else None,
             "activeSha256": active["sha256"] if active else None,
@@ -7485,15 +7460,8 @@ def build_all(
         if stale.name not in produced:
             stale.unlink()
     summaries.sort(key=lambda row: natural_quest_key(row["id"]))
-    default_mission_root = select_complete_mission_runtime_root(
-        STREAMING_MISSION_ROOT,
-        PERSISTENT_MISSION_ROOT,
-    )
-    if mission_root.resolve() == default_mission_root.resolve():
-        source_summary = mission_runtime_source_summary(
-            STREAMING_MISSION_ROOT,
-            PERSISTENT_MISSION_ROOT,
-        )
+    if mission_root.resolve() == DEFAULT_MISSION_ROOT.resolve():
+        source_summary = mission_runtime_source_summary(DEFAULT_MISSION_ROOT)
         source_summary["selectedRoot"] = repo_path(
             Path(source_summary["selectedRoot"])
         )
@@ -7803,6 +7771,7 @@ def build_all(
 
 def main() -> int:
     args = parse_args()
+    require_export_layout(getattr(args, 'export_root', None))
     output_root = args.output_root.resolve()
     index = build_all(
         args.mission_root.resolve(),

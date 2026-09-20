@@ -3,22 +3,25 @@
 This module is the canonical Timeline recovery pipeline for the WebUI Story
 build:
 
-1. Discover AnimeStudio CLI AssetMaps under export_full/recovered/AnimeStudio-cli.
+1. Discover AnimeStudio CLI AssetMaps under the export's meta/<Layer>/asset_map.
 2. Select dialog Timeline asset folders in a general way (`dlgtl_*`, `f_dlgtl_*`,
    and `m_dlgtl_*` under gameplay/dialog/timeline).
-3. Prefer the full AnimeStudio MonoBehaviour JSON export when it already
-   contains the needed Timeline tracks and is small enough to scan cheaply.
-4. Fall back to filtered AnimeStudio CLI `--filter_data` exports for focused
-   diagnostics or when the full export has no recoverable Timeline tracks.
+3. Read the published game/Unity/MonoBehaviour export through a targeted
+   reader that opens only Timeline roots and the objects they reference.
+4. Use a filtered AnimeStudio CLI `--filter_data` re-export, written under
+   tmp/, only for focused diagnostics or when the full export has no
+   recoverable Timeline tracks.
 
 The main output is:
-  export_full/recovered/AnimeStudio-cli/timeline_line_orders.json
+  webui/data/_build/story/timeline_line_orders.json
 
 `scripts/webui/story/build.py` imports that JSON directly when present, using
 line clips for conversation order and option clips/bindings for authored choice
 placement.
 """
 from __future__ import annotations
+from scripts.common import EXPORT_LAYOUT
+from scripts.source_paths import INSTALLED_LAYERS, ExportLayout
 
 import argparse
 import hashlib
@@ -42,12 +45,14 @@ ROOT = REPO_ROOT
 from scripts.common import fast_glob_files
 
 from scripts.webui.story.story_keys import line_stem, timeline_stem_to_dialog_key
+from scripts.common import WEBUI_BUILD_DIR
 
-EXPORT_ROOT = ROOT / "export_full"
-DEFAULT_RECOVERY_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"
-DEFAULT_EXTRACT_DIR = DEFAULT_RECOVERY_ROOT / "timeline_extract"
-DEFAULT_ORDER_OUT = DEFAULT_RECOVERY_ROOT / "timeline_line_orders.json"
-DEFAULT_DIALOG_REGISTRY = EXPORT_ROOT / "recovered" / "dialog_id_table_index.json"
+EXPORT_ROOT = EXPORT_LAYOUT.root
+# The focused CLI re-export is a disposable debugging aid; it never lives in
+# the export root. Normal runs read the published game/Unity/MonoBehaviour.
+DEFAULT_EXTRACT_DIR = EXPORT_LAYOUT.work_dir / "timeline_extract"
+DEFAULT_ORDER_OUT = WEBUI_BUILD_DIR / "story" / "timeline_line_orders.json"
+DEFAULT_DIALOG_REGISTRY = WEBUI_BUILD_DIR / "story" / "dialog_id_table_index.json"
 DEFAULT_PARENT_VALIDATION_REPORT = (
     ROOT / "reports" / "story" / "build" / "timeline_parent_chain_validation.json"
 )
@@ -110,19 +115,19 @@ class TimelineRecoveryConfig:
     min_lines: int = 1
     copy_to_webui: Path | None = None
     prefer_full_monobehaviour: bool = True
-    full_monobehaviour_scan_limit: int = 200_000
-
-
-def recovery_root(export_root: Path = EXPORT_ROOT) -> Path:
-    return export_root / "recovered" / "AnimeStudio-cli"
+    # 0 disables the limit. The targeted reader lists file names and opens
+    # only Timeline roots and the objects they reference, so a large folder is
+    # no reason to fall back to a second, per-bundle export.
+    full_monobehaviour_scan_limit: int = 0
 
 
 def default_extract_dir(export_root: Path = EXPORT_ROOT) -> Path:
-    return recovery_root(export_root) / "timeline_extract"
+    return ExportLayout(export_root).work_dir / "timeline_extract"
 
 
 def default_order_out(export_root: Path = EXPORT_ROOT) -> Path:
-    return recovery_root(export_root) / "timeline_line_orders.json"
+    # Builder output: one per WebUI build, whatever export root it read.
+    return DEFAULT_ORDER_OUT
 
 
 def ensure_timeline_orders_current(
@@ -221,8 +226,8 @@ def resolve_cli(cli: Path | None = None) -> Path:
 
 def discover_asset_maps(export_root: Path = EXPORT_ROOT) -> list[Path]:
     maps: list[Path] = []
-    for source_name in ("StreamingAssets", "Persistent"):
-        map_dir = recovery_root(export_root) / source_name / "maps"
+    for source_name in INSTALLED_LAYERS:
+        map_dir = ExportLayout(export_root).asset_map_dir(source_name)
         if not map_dir.is_dir():
             continue
         maps.extend(sorted(map_dir.glob("*_assets.json")))
@@ -1814,12 +1819,8 @@ def validate_timeline_sources_before_reset(chks: list[str]) -> None:
 
 
 def discover_full_monobehaviour_dirs(export_root: Path) -> list[Path]:
-    root = recovery_root(export_root)
-    candidates = [
-        root / "StreamingAssets" / "json_by_type" / "MonoBehaviour",
-        root / "Persistent" / "json_by_type" / "MonoBehaviour",
-    ]
-    return [path for path in candidates if path.is_dir()]
+    mono_dir = ExportLayout(export_root).unity_type_dir("MonoBehaviour")
+    return [mono_dir] if mono_dir.is_dir() else []
 
 
 def monobehaviour_dir_exceeds_scan_limit(mono_dir: Path, limit: int) -> bool:
@@ -2051,10 +2052,7 @@ def recover_timeline_text_attachments(
     # files instead of silently dropping containment evidence.  A full root is
     # admitted only when it contains an exact serialized Actor-root filename
     # already named by timeline_line_orders.json.
-    full_mono_roots = [
-        extract_dir.parent / "StreamingAssets" / "json_by_type" / "MonoBehaviour",
-        extract_dir.parent / "Persistent" / "json_by_type" / "MonoBehaviour",
-    ]
+    full_mono_roots = [EXPORT_LAYOUT.unity_type_dir("MonoBehaviour")]
     allowed_full_mono_roots = {
         str(path.resolve()).lower()
         for path in full_mono_roots
@@ -2655,7 +2653,7 @@ def recover_timeline_line_orders(config: TimelineRecoveryConfig | None = None) -
 
     map_paths = config.maps or ([] if config.parse_only else discover_asset_maps(export_root))
     if not map_paths and not config.parse_only:
-        raise FileNotFoundError(f"No AnimeStudio CLI AssetMaps found under {recovery_root(export_root)}")
+        raise FileNotFoundError(f"No AnimeStudio CLI AssetMaps found under {ExportLayout(export_root).meta}")
 
     loaded_maps: list[tuple[Path, list[dict]]] = []
     available_counts: Counter = Counter()

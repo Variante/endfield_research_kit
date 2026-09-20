@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import argparse
 import ast
+import gzip
 import json
 import re
 import sys
@@ -19,41 +20,19 @@ from typing import Any
 from scripts.common import EXPORT_ROOT, LANG_DIR, check_installed_native_inputs, rel_path, write_json
 from scripts.game_data.memorypack.buff import buff_gameplay_semantics
 from scripts.game_data import il2cpp_protocol as il2cpp
+from scripts.game_data.extraction.animestudio_index_io import is_effective_row
+from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
+from scripts.source_paths import INSTALLED_LAYERS, ExportLayout
 
 
-DEFAULT_TABLE_SOURCE_RELS = (
-    ("StreamingAssets", Path("structured") / "StreamingAssets" / "Table"),
-    ("Persistent", Path("structured") / "Persistent" / "Table"),
-)
-DEFAULT_GAMEPLAY_CONFIG_SOURCE_RELS = (
-    (
-        "StreamingAssets",
-        Path("structured") / "StreamingAssets" / "Data" / "Json" / "GameplayConfig",
-    ),
-    (
-        "Persistent",
-        Path("structured") / "Persistent" / "Data" / "Json" / "GameplayConfig",
-    ),
-)
-DEFAULT_GAMEPLAY_TAG_INDEX_RELS = (
-    (
-        "StreamingAssets",
-        Path("recovered")
-        / "AnimeStudio-cli"
-        / "StreamingAssets"
-        / "object_index"
-        / "parts"
-        / "StreamingAssets_animestudio_json_by_type_MonoBehaviour.jsonl",
-    ),
-    (
-        "Persistent",
-        Path("recovered")
-        / "AnimeStudio-cli"
-        / "Persistent"
-        / "object_index"
-        / "parts"
-        / "Persistent_animestudio_json_by_type_MonoBehaviour.jsonl",
-    ),
+# Paths relative to an export root (layout v2). The export holds the client's
+# effective data once, so each list has a single source.
+DEFAULT_TABLE_SOURCE_RELS = (("game", Path("game") / "Table"),)
+DEFAULT_GAMEPLAY_CONFIG_SOURCE_RELS = (("game", Path("game") / "Json" / "GameplayConfig"),)
+# The merged object index is per installed layer; each carries its own rows.
+DEFAULT_GAMEPLAY_TAG_INDEX_RELS = tuple(
+    (layer, Path("meta") / layer / "object_index" / "objects.jsonl.gz")
+    for layer in INSTALLED_LAYERS
 )
 PLACEHOLDER_RE = re.compile(r"\{([^}:]+)(?::([^}]+))?\}")
 TAG_RE = re.compile(r"</?@[^>]*>|</>|<#[^>]+>")
@@ -137,6 +116,7 @@ ENEMY_RESILIENCE_FIELDS = (
 )
 from scripts.repo_paths import REPO_ROOT
 from scripts.common import read_json
+from scripts.source_paths import ExportLayout
 
 NATIVE_METADATA_HELPER = REPO_ROOT / "tools" / "endfield-il2cpp" / "catalog_option_flow_metadata.py"
 NATIVE_MODIFIER_ENUM_TYPES = {
@@ -305,7 +285,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--export-root",
         type=Path,
         default=EXPORT_ROOT,
-        help="Export root containing structured/{StreamingAssets,Persistent}/Table.",
+        help="Export root (layout v2) containing game/Table.",
     )
     parser.add_argument(
         "--out-dir",
@@ -424,11 +404,7 @@ def _load_gameplay_tag_config_names(
         "serializedPathCount": 0,
     }
     script_path_ids: set[str] = set()
-    script_glob = (
-        export_root
-        / "recovered"
-        / "AnimeStudio-cli"
-    ).glob("*/json_by_type/MonoScript/GameplayTagConfig_p*.json")
+    script_glob = ExportLayout(export_root).unity_type_dir("MonoScript").glob("GameplayTagConfig_p*.json")
     for script_path in script_glob:
         try:
             script_row = json.loads(script_path.read_text(encoding="utf-8"))
@@ -440,6 +416,7 @@ def _load_gameplay_tag_config_names(
     if not script_path_ids:
         return names, sources, evidence
     matched_objects: set[tuple[str, str]] = set()
+    slot_keys = effective_chunk_slot_keys(export_root)
     for label, relative in DEFAULT_GAMEPLAY_TAG_INDEX_RELS:
         path = export_root / relative
         if not path.is_file():
@@ -447,19 +424,18 @@ def _load_gameplay_tag_config_names(
         source = {"kind": label, "path": rel_path(path)}
         sources.append(source)
         try:
-            handle = path.open("r", encoding="utf-8")
+            handle = gzip.open(path, "rt", encoding="utf-8")
         except OSError:
             continue
         with handle:
             for line in handle:
-                if (
-                    '"recordType":"object"' not in line
-                    or not any(path_id in line for path_id in script_path_ids)
-                ):
+                if '"recordType"' not in line or not any(path_id in line for path_id in script_path_ids):
                     continue
                 try:
                     row = json.loads(line)
                 except (TypeError, ValueError):
+                    continue
+                if row.get("recordType") != "object" or not is_effective_row(row, slot_keys):
                     continue
                 pptrs = row.get("pptrs") or []
                 if not any(
@@ -1592,12 +1568,9 @@ def build_gameplay_buff_catalog(
     native_semantics: dict[str, Any] | None = None,
     gameplay_tag_registry: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
-    """Resolve referenced BuffData with Persistent overlay precedence."""
+    """Resolve referenced BuffData from the export's effective game/ tree."""
 
-    source_roots = (
-        ("StreamingAssets", export_root / "structured" / "StreamingAssets" / "Data" / "Json" / "BuffData"),
-        ("Persistent", export_root / "structured" / "Persistent" / "Data" / "Json" / "BuffData"),
-    )
+    source_roots = (("game", ExportLayout(export_root).json_dir / "BuffData"),)
     catalog: dict[str, Any] = {}
     for buff_id in buff_ids:
         selected: tuple[str, Path] | None = None

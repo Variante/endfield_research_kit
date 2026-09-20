@@ -28,6 +28,8 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.map.recover_map_streaming_instances"
     )
 
+from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
+
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
@@ -38,9 +40,9 @@ from scripts.game_data.inverted_lz4 import decompress_inverted_lz4
 from scripts.webui.map.map_recovery_sources import authored_streaming_scene
 
 DEFAULT_CLI = ROOT / "tools/AnimeStudio/AnimeStudio.CLI/bin/Release/net9.0-windows/AnimeStudio.CLI.exe"
-DEFAULT_ASSET_MAP = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json"
-DEFAULT_MESH_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
-DEFAULT_OUTPUT_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/map_streaming_instances"
+DEFAULT_ASSET_MAP = EXPORT_LAYOUT.asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
+DEFAULT_MESH_ROOT = EXPORT_LAYOUT.unity_type_dir("Mesh")
+DEFAULT_OUTPUT_ROOT = WEBUI_BUILD_DIR / "map" / "world_placements"
 DEFAULT_PUBLISHED_MAPS_ROOT = ROOT / "webui/data/map_recovery/maps"
 LEVEL_RE = re.compile(r"^[a-z0-9_]+$", re.IGNORECASE)
 REGION_LEVEL_RE = re.compile(r"^(map0[12])_lv(\d+)$", re.IGNORECASE)

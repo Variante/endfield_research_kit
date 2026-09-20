@@ -1,6 +1,7 @@
 """InteractiveData audio component and ownership recovery."""
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import hashlib
 import struct
@@ -35,8 +36,8 @@ def collect_interactive_component_contexts(
     ``InteractiveData`` files are core-template definitions, while
     ``InteractiveTable`` maps those definitions to configured interactive
     identities.  The component body itself proves the request, but the file
-    name is not by itself an entity owner.  When both table mirrors decode to
-    the same exact mapping, add the template path and all configured consumer
+    name is not by itself an entity owner.  When the table decodes to an
+    exact mapping, add the template path and all configured consumer
     identities to each context.  A missing or ambiguous table mapping stays an
     explicit association gap rather than being guessed from the file stem.
     """
@@ -118,10 +119,10 @@ def collect_interactive_component_contexts(
     if table_decoder is None:
         table_decoder = decode_interactive_table
     table_versions: list[tuple[str, Path, bytes, str]] = []
-    for source_root in ("Persistent", "StreamingAssets"):
+    for source_root in ("game",):
         table_path = (
-            export_root / "structured" / source_root
-            / "Data/Json/Interactive/InteractiveTable.json"
+            ExportLayout(export_root).game
+            / "Json/Interactive/InteractiveTable.json"
         )
         if not table_path.is_file():
             continue
@@ -165,8 +166,8 @@ def collect_interactive_component_contexts(
             for consumer_id, template_id in (table.get("objectToTemplate") or {}).items():
                 consumers_by_template[str(template_id)].append(str(consumer_id))
     paths_by_identity: dict[str, list[Path]] = defaultdict(list)
-    for source_root in ("Persistent", "StreamingAssets"):
-        root = export_root / "structured" / source_root / "Data/Json/Interactive/InteractiveData"
+    for source_root in ("game",):
+        root = ExportLayout(export_root).game / "Json/Interactive/InteractiveData"
         if not root.is_dir():
             continue
         for path in sorted(root.glob("*.json")):

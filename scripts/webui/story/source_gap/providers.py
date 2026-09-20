@@ -21,7 +21,6 @@ from scripts.webui.story.mission_recovery import natural_key
 from scripts.webui.story.story_keys import string_list as _string_list
 from scripts.webui.story.mission_assets import (
     mission_runtime_source_summary,
-    select_complete_mission_runtime_root,
 )
 
 
@@ -29,6 +28,8 @@ from scripts.webui.story.source_gap.data import (
     NON_OWNING_DIAGNOSTIC_QUEST_ATTACH_SOURCES,
     NPC_PROXY_TRACKING_INFO_TYPE,
     NPC_PROXY_TRACKING_INFO_FIELDS,
+    NPC_PROXY_TRACKING_INFO_UNREVIEWED_EMPTY_FIELDS,
+    npc_proxy_tracking_fields_are_exact,
 )
 
 
@@ -288,19 +289,10 @@ def _repo_source_path(path: Path) -> str:
         return resolved.relative_to(ROOT).as_posix()
     return resolved.as_posix()
 
-def _build_mission_npc_proxy_tracking_index(
-    streaming_root: Path,
-    persistent_root: Path,
-) -> dict[str, Any]:
-    """Index typed NPC tracking rows from one complete active mission corpus."""
-    selected_root = select_complete_mission_runtime_root(
-        streaming_root,
-        persistent_root,
-    )
-    source_summary = mission_runtime_source_summary(
-        streaming_root,
-        persistent_root,
-    )
+def _build_mission_npc_proxy_tracking_index(mission_root: Path) -> dict[str, Any]:
+    """Index typed NPC tracking rows from the exported mission corpus."""
+    selected_root = mission_root
+    source_summary = mission_runtime_source_summary(mission_root)
     rows_by_proxy: dict[str, list[dict[str, Any]]] = defaultdict(list)
     scan_failures: list[dict[str, Any]] = []
     source_hashes: dict[str, str] = {}
@@ -403,7 +395,7 @@ def _build_mission_npc_proxy_tracking_index(
                         "sourceFile": source_file,
                         "sourceSha256": source_sha256,
                         "qualified": (
-                            set(tracking) == NPC_PROXY_TRACKING_INFO_FIELDS
+                            npc_proxy_tracking_fields_are_exact(tracking)
                             and tracking.get("useFilterCondition") is False
                             and isinstance(
                                 tracking.get("guidingArea"), (int, float)
@@ -539,6 +531,7 @@ def _generic_mission_npc_proxy_tracking_contexts(
                 "sourceSha256": source_sha256,
                 "expected": {
                     "trackingFields": sorted(NPC_PROXY_TRACKING_INFO_FIELDS),
+                    "unreviewedFieldsMustBeEmpty": dict(NPC_PROXY_TRACKING_INFO_UNREVIEWED_EMPTY_FIELDS),
                     "useFilterCondition": False,
                     "guidingArea": "number",
                     "uniqueRowIdentities": True,

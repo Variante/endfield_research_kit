@@ -12,7 +12,9 @@ from collections import Counter, defaultdict, deque
 from functools import lru_cache
 from pathlib import Path
 
+from scripts.source_paths import ASSET_SOURCE_GAME
 from scripts.common import (
+    EXPORT_LAYOUT,
     fast_glob_files,
     is_present,
     path_id_export_base_stem,
@@ -32,8 +34,6 @@ from scripts.webui.story.context import (
     LEVELDATA_DIR,
     NARRATIVE_VIDEO_EXTENSIONS,
     NPC_PROXY_TABLE_PATH,
-    PERSISTENT_ASSETS_DIR,
-    STREAMING_ASSETS_DIR,
     VIDEO_BINDINGS_PATH,
     _CUTSCENE_REF_FIELDS,
     _DIALOG_REF_FIELDS,
@@ -156,7 +156,7 @@ def _find_anime_tree_path(filename: str) -> Path:
     fallback = (
         ANIME_RESOURCE_DIRS[0]
         if ANIME_RESOURCE_DIRS
-        else EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "__missing_resource_dir__"
+        else EXPORT_LAYOUT.unity_dir / "__missing_resource_dir__"
     )
     return fallback / "__missing_path_id_export__" / filename
 
@@ -3393,26 +3393,9 @@ def _relative_asset_ref(label: str, source_root: Path, path: Path) -> str:
 
 
 def _iter_narrative_video_roots(kind_dir: str):
-    structured_roots = (
-        ("StreamingAssets-structured", STREAMING_ASSETS_DIR),
-        ("Persistent-structured", PERSISTENT_ASSETS_DIR),
-    )
-    for label, source_root in structured_roots:
-        video_dir = source_root / "Data" / "Video" / "PC" / "Narrative" / kind_dir
-        if video_dir.exists():
-            yield label, source_root, video_dir
-
-    raw_vfs_root = EXPORT_ROOT / "raw_vfs"
-    for source in ("StreamingAssets", "Persistent"):
-        files_root = raw_vfs_root / source / "files"
-        if not files_root.exists():
-            continue
-        for bucket_dir in sorted(files_root.iterdir()):
-            if not bucket_dir.is_dir():
-                continue
-            video_dir = bucket_dir / "Data" / "Video" / "PC" / "Narrative" / kind_dir
-            if video_dir.exists():
-                yield "raw_vfs", raw_vfs_root, video_dir
+    video_dir = EXPORT_LAYOUT.video_dir / "PC" / "Narrative" / kind_dir
+    if video_dir.exists():
+        yield ASSET_SOURCE_GAME, EXPORT_LAYOUT.game, video_dir
 
 
 def _strip_gender_video_prefix(stem: str) -> tuple[str, str]:
@@ -3468,7 +3451,7 @@ def _narrative_video_key_candidates(kind: str, stem: str) -> list[str]:
 
 
 def _load_video_bindings_index() -> dict[str, dict]:
-    """Read recovered/video_bindings.json keyed by fmvId.
+    """Read webui/data/_build/story/video_bindings.json keyed by fmvId.
 
     Empty dict if the recovery output is missing or unreadable; downstream code
     must treat any missing entry as "no authoritative binding, fall back to

@@ -1,16 +1,18 @@
 """Authored table, cue, and runtime-configuration Audio contexts."""
 
 from __future__ import annotations
+from scripts.source_paths import INSTALLED_LAYERS, ExportLayout
 
+import gzip
 import json
 import math
 import re
-import shutil
-import subprocess
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any, Iterable
 
+from scripts.game_data.extraction.animestudio_index_io import is_effective_row
+from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 from scripts.webui.audio.semantics import audio_cue_native, identifiers, interactive_components
 from scripts.webui.audio.semantics.context_utils import append_context as _append_context
 from scripts.webui.audio.semantics.context_utils import load_json
@@ -60,9 +62,9 @@ def collect_remote_common_event_contexts(
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
     table_sources: list[tuple[str, dict[str, Any], str]] = []
-    for source_root in ("StreamingAssets", "Persistent"):
+    for source_root in ("game",):
         table_path = (
-            export_root / "structured" / source_root / "Table"
+            ExportLayout(export_root).game / "Table"
             / "RemoteCommonTable.json"
         )
         if not table_path.is_file():
@@ -189,12 +191,8 @@ def collect_remote_common_event_contexts(
 
 
 def _first_recovered_mono_behaviour(export_root: Path, stem: str) -> Path | None:
-    root = export_root / "recovered/AnimeStudio-cli"
-    for source_root in ("Persistent", "StreamingAssets"):
-        matches = sorted((root / source_root / "json_by_type/MonoBehaviour").glob(f"{stem}_p*.json"))
-        if matches:
-            return matches[0]
-    return None
+    matches = sorted(ExportLayout(export_root).unity_type_dir("MonoBehaviour").glob(f"{stem}_p*.json"))
+    return matches[0] if matches else None
 
 
 def _inflate_object_index_scalars(scalars: Iterable[Any]) -> dict[str, Any]:
@@ -255,38 +253,15 @@ def _audio_global_config_from_object_index(
 ) -> tuple[dict[str, Any], str, dict[str, Any]] | None:
     """Recover retained AudioGlobalConfig scalars when raw JSON was not exported."""
 
-    root = export_root / "recovered/AnimeStudio-cli"
-    for source_root in ("Persistent", "StreamingAssets"):
-        path = (
-            root / source_root / "object_index" / "parts"
-            / f"{source_root}_animestudio_json_by_type_MonoBehaviour.jsonl"
-        )
+    slot_keys = effective_chunk_slot_keys(export_root)
+    for source_root in reversed(INSTALLED_LAYERS):
+        path = ExportLayout(export_root).object_index_dir(source_root) / "objects.jsonl.gz"
         if not path.is_file():
             continue
-        rows: Iterable[str]
-        rg = shutil.which("rg")
-        if rg:
-            process = subprocess.run(
-                [
-                    rg, "--no-filename", "--no-line-number", "--fixed-strings",
-                    "Beyond.Gameplay.Audio.AudioGlobalConfig", str(path),
-                ],
-                capture_output=True,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-                check=False,
-            )
-            if process.returncode not in (0, 1):
-                raise RuntimeError(
-                    f"rg AudioGlobalConfig object-index lookup failed for {path}: "
-                    f"{process.stderr.strip() or f'exit {process.returncode}'}"
-                )
-            rows = process.stdout.splitlines()
-        else:
-            rows = path.open("r", encoding="utf-8", errors="replace")
-        try:
+        with gzip.open(path, "rt", encoding="utf-8", errors="replace") as rows:
             for line in rows:
+                if "Beyond.Gameplay.Audio.AudioGlobalConfig" not in line:
+                    continue
                 try:
                     row = json.loads(line)
                 except json.JSONDecodeError:
@@ -295,6 +270,7 @@ def _audio_global_config_from_object_index(
                 if (
                     row.get("recordType") != "object"
                     or script.get("fullName") != "Beyond.Gameplay.Audio.AudioGlobalConfig"
+                    or not is_effective_row(row, slot_keys)
                 ):
                     continue
                 payload = _inflate_object_index_scalars(row.get("scalars") or [])
@@ -308,9 +284,6 @@ def _audio_global_config_from_object_index(
                     "scalarsTruncated": bool(row.get("scalarsTruncated")),
                 }
                 return payload, normalize_posix(path.relative_to(export_root)), provenance
-        finally:
-            if not rg and hasattr(rows, "close"):
-                rows.close()
     return None
 
 
@@ -941,9 +914,9 @@ def collect_audio_cue_semantics(
     """Project AudioCue definitions without evaluating their expressions."""
 
     table_path = next((
-        export_root / "structured" / source_root / "Table" / "AudioCueTable.json"
-        for source_root in ("Persistent", "StreamingAssets")
-        if (export_root / "structured" / source_root / "Table" / "AudioCueTable.json").is_file()
+        ExportLayout(export_root).game / "Table" / "AudioCueTable.json"
+        for source_root in ("game",)
+        if (ExportLayout(export_root).game / "Table" / "AudioCueTable.json").is_file()
     ), None)
     payload = load_json(table_path, {}) if table_path else {}
     source = normalize_posix(table_path.relative_to(export_root)) if table_path else ""
@@ -1359,9 +1332,9 @@ def collect_table_contexts(
         if table_name == "AudioCueTable.json":
             continue
         path = next((
-            export_root / "structured" / source_root / "Table" / table_name
-            for source_root in ("Persistent", "StreamingAssets")
-            if (export_root / "structured" / source_root / "Table" / table_name).is_file()
+            ExportLayout(export_root).game / "Table" / table_name
+            for source_root in ("game",)
+            if (ExportLayout(export_root).game / "Table" / table_name).is_file()
         ), None)
         if path is None:
             continue

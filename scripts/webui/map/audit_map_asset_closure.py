@@ -2,6 +2,7 @@
 """Audit a map's candidate AssetMap closure without loading the full map."""
 
 from __future__ import annotations
+from scripts.common import EXPORT_LAYOUT
 
 import argparse
 import hashlib
@@ -13,7 +14,7 @@ from pathlib import Path
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-DEFAULT_MAP = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json"
+DEFAULT_MAP = EXPORT_LAYOUT.asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
 
 
 def sha256_file(path: Path, chunk_size: int = 1 << 20) -> str:

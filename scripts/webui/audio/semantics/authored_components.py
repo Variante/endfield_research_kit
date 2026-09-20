@@ -1,6 +1,7 @@
 """Authored PhysicsAudio and ModelViewState audio recovery."""
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import hashlib
 import json
@@ -32,16 +33,15 @@ def collect_physics_audio_semantics(
     ``InteractiveTable`` is the ownership boundary: its core-template path
     identifies the one serialized definition, while ``interactiveDataDict``
     identifies every configured object id that consumes that definition.
-    StreamingAssets/Persistent mirrors must agree byte-for-byte before either
-    table or template data is accepted.
+    Both are read from the export's single effective game/ tree.
     """
     if component_decoder is None or table_decoder is None:
         component_decoder = component_decoder or find_physics_audio_components
         table_decoder = table_decoder or decode_interactive_table
 
-    source_roots = ("StreamingAssets", "Persistent")
+    source_roots = ("game",)
     table_paths = [
-        export_root / "structured" / source_root / "Data/Json/Interactive/InteractiveTable.json"
+        ExportLayout(export_root).game / "Json/Interactive/InteractiveTable.json"
         for source_root in source_roots
     ]
     table_versions: dict[str, list[tuple[str, Path]]] = defaultdict(list)
@@ -149,7 +149,7 @@ def collect_physics_audio_semantics(
             continue
         existing: list[tuple[str, Path, bytes, str]] = []
         for source_root in source_roots:
-            path = export_root / "structured" / source_root / Path(*pure_path.parts)
+            path = ExportLayout(export_root).game_file(template_path)
             if not path.is_file():
                 continue
             try:
@@ -354,7 +354,7 @@ def collect_model_view_state_audio_semantics(
         controller_decoder = controller_decoder or decode_model_view_state_controller
         table_decoder = table_decoder or decode_interactive_table
 
-    source_roots = ("StreamingAssets", "Persistent")
+    source_roots = ("game",)
     controller_rel = PurePosixPath(
         "Data/Json/Interactive/ModelViewStateControllerData"
     )
@@ -362,7 +362,7 @@ def collect_model_view_state_audio_semantics(
     physical_files = 0
     files_by_name: dict[str, list[tuple[str, Path, bytes, str]]] = defaultdict(list)
     for source_root in source_roots:
-        directory = export_root / "structured" / source_root / Path(*controller_rel.parts)
+        directory = ExportLayout(export_root).game_file(str(controller_rel))
         if not directory.is_dir():
             continue
         for path in sorted(directory.glob("*.json")):
@@ -484,7 +484,7 @@ def collect_model_view_state_audio_semantics(
     table_sha256 = ""
     table_versions: list[tuple[str, Path, bytes, str]] = []
     for source_root in source_roots:
-        table_path = export_root / "structured" / source_root / "Data/Json/Interactive/InteractiveTable.json"
+        table_path = ExportLayout(export_root).game / "Json/Interactive/InteractiveTable.json"
         if not table_path.is_file():
             continue
         try:
@@ -532,7 +532,7 @@ def collect_model_view_state_audio_semantics(
                     continue
                 candidates: list[bytes] = []
                 for source_root in reversed(source_roots):
-                    path = export_root / "structured" / source_root / Path(*pure_path.parts)
+                    path = ExportLayout(export_root).game_file(template_path)
                     if path.is_file():
                         try:
                             candidates.append(path.read_bytes())

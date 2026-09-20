@@ -15,6 +15,7 @@ from typing import Any
 
 from scripts.source_paths import (
     _asset_source_family,
+    prune_nested_source_dirs,
     resolve_asset_source_roots,
     resolve_material_source_roots,
 )
@@ -712,6 +713,7 @@ def scan_exported_media_assets(
     print(f"\nScanning exported media assets from {_label_text(media_root_labels, export_root)}...")
     for source, source_root in asset_roots:
         for dirpath, dirnames, filenames in os.walk(source_root):
+            prune_nested_source_dirs(source, source_root, dirpath, dirnames)
             dirnames.sort()
             filenames.sort()
             base_dir = Path(dirpath)

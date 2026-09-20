@@ -13,6 +13,7 @@ Example::
 The default outputs are ignored generated reports under ``reports/gameplay``.
 """
 from __future__ import annotations
+from scripts.common import EXPORT_LAYOUT
 
 import argparse
 import hashlib
@@ -25,6 +26,7 @@ from typing import Any, Iterator
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.source_paths import ExportLayout
 
 ROOT = REPO_ROOT
 DEFAULT_INPUT = ROOT / "webui" / "data" / "lang" / "CN" / "gameplay" / "index.json"
@@ -638,7 +640,7 @@ def _diagnostics(
 
 
 def build_full_corpus_payload(export_root: Path) -> tuple[dict[str, Any], dict[str, Any]]:
-    """Decode every exported BuffData file with Persistent overlay precedence.
+    """Decode every exported BuffData file in the effective game/ tree.
 
     This is intentionally an audit-only view.  It never writes or mutates the
     generated WebUI index and preserves bounded file/decode error samples.
@@ -648,10 +650,7 @@ def build_full_corpus_payload(export_root: Path) -> tuple[dict[str, Any], dict[s
 
     export_root = export_root.resolve()
 
-    source_roots = {
-        "StreamingAssets": export_root / "structured" / "StreamingAssets" / "Data" / "Json" / "BuffData",
-        "Persistent": export_root / "structured" / "Persistent" / "Data" / "Json" / "BuffData",
-    }
+    source_roots = {"game": ExportLayout(export_root).json_dir / "BuffData"}
     discovered: dict[str, dict[str, Path]] = {source: {} for source in source_roots}
     file_meta: dict[str, dict[str, dict[str, Any]]] = {source: {} for source in source_roots}
     manifest_hashes: dict[str, str] = {}
@@ -758,17 +757,13 @@ def build_full_corpus_payload(export_root: Path) -> tuple[dict[str, Any], dict[s
         }
         manifest_hashes[source] = hashlib.sha256("\n".join(manifest_rows).encode("utf-8")).hexdigest()
 
-    streaming_names = set(discovered["StreamingAssets"])
-    persistent_names = set(discovered["Persistent"])
-    selected_names = sorted(streaming_names | persistent_names)
-    persistent_only = sorted(persistent_names - streaming_names)
-    streaming_only = sorted(streaming_names - persistent_names)
+    selected_names = sorted(discovered["game"])
     selected_records: dict[str, Any] = {}
     selected_sources: dict[str, str] = {}
     selected_statuses: dict[str, str] = {}
 
     for name in selected_names:
-        source = "Persistent" if name in persistent_names else "StreamingAssets"
+        source = "game"
         path = discovered[source][name]
         selected_sources[name] = source
         try:
@@ -791,37 +786,12 @@ def build_full_corpus_payload(export_root: Path) -> tuple[dict[str, Any], dict[s
         selected_statuses[name] = str(record.get("status") or "<missing>")
 
     source_manifest: list[dict[str, Any]] = []
-    shadowed: list[dict[str, Any]] = []
-    for source in ("StreamingAssets", "Persistent"):
+    for source in source_roots:
         for name in sorted(file_meta[source]):
             meta = dict(file_meta[source][name])
             meta["sha"] = meta["sha256"]
-            selected_source = selected_sources.get(name)
-            is_selected = selected_source == source
-            meta["status"] = selected_statuses.get(name, "shadowed") if is_selected else "shadowed"
-            meta["selection"] = "selected" if is_selected else "shadowed"
-            if not is_selected:
-                counterpart = file_meta[selected_source][name]  # type: ignore[index]
-                same_bytes = meta["sha256"] == counterpart["sha256"]
-                meta["selectedSource"] = selected_source
-                meta["selectedPath"] = counterpart["path"]
-                meta["selectedSha256"] = counterpart["sha256"]
-                meta["selectedCounterpart"] = {
-                    "source": selected_source,
-                    "id": name,
-                    "path": counterpart["path"],
-                    "size": counterpart["size"],
-                    "sha256": counterpart["sha256"],
-                }
-                meta["sameBytesAsSelected"] = same_bytes
-                shadowed.append({
-                    "id": name,
-                    "source": source,
-                    "path": meta["path"],
-                    "selectedSource": selected_source,
-                    "selectedPath": counterpart["path"],
-                    "sameBytesAsSelected": same_bytes,
-                })
+            meta["status"] = selected_statuses.get(name, "<missing>")
+            meta["selection"] = "selected"
             source_manifest.append(meta)
     source_manifest.sort(key=lambda row: (str(row["source"]), str(row["id"])))
     selected_manifest = [row for row in source_manifest if row["selection"] == "selected"]
@@ -838,9 +808,6 @@ def build_full_corpus_payload(export_root: Path) -> tuple[dict[str, Any], dict[s
         "validSourceFileCounts": valid_file_counts,
         "selected": selected_names,
         "selectedSources": selected_sources,
-        "shadowed": shadowed,
-        "persistentOnly": persistent_only,
-        "streamingOnly": streaming_only,
         "missingRoots": missing_roots,
         "invalidFiles": invalid_files,
         "invalidFileCount": invalid_file_count,
@@ -950,7 +917,6 @@ def render_markdown(report: dict[str, Any]) -> str:
         lines.extend([
             f"- Full corpus status: {code(full_corpus.get('status', '<missing>'))}",
             f"- Selected BuffData files: **{len(full_corpus.get('selected') or [])}**",
-            f"- Shadowed by Persistent: **{len(full_corpus.get('shadowed') or [])}**",
             f"- Invalid files: **{full_corpus.get('invalidFileCount', 0)}**",
             f"- Missing roots: {code(', '.join(full_corpus.get('missingRoots') or []) or '<none>')}",
             "",
@@ -1054,7 +1020,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         help="Audit every exported BuffData file with Persistent overlay precedence.",
     )
     parser.add_argument(
-        "--export-root", type=Path, default=ROOT / "export_full",
+        "--export-root", type=Path, default=EXPORT_LAYOUT.root,
         help="Export root used by --full-corpus (default: export_full).",
     )
     parser.add_argument("--previous", type=Path, help="Earlier audit JSON for regression/schema comparison.")

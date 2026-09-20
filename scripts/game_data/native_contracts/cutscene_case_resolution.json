@@ -1,5 +1,5 @@
 {
-  "schema": "cutsceneCaseResolutionNativeContract.v2",
+  "schema": "cutsceneCaseResolutionNativeContract.v3",
   "status": "validated",
   "sources": {
     "gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
@@ -81,7 +81,7 @@
     "levelScript": {
       "levelId": "indie_dg002",
       "scriptId": 8700020000,
-      "sourceFile": "export_full/structured/Persistent/Data/Json/LevelScriptData/indie_dg002/8700020000.json",
+      "sourceFile": "game/Json/LevelScriptData/indie_dg002/8700020000.json",
       "sourceSha256": "86F89BFBCCDFF9111FFBE851CA73886B931B390753F8D5C4F7E3D7B6E6448B88",
       "headerLocalId": 12,
       "triggerSlotId": 80001,

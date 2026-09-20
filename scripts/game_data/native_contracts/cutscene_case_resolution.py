@@ -21,7 +21,7 @@ from scripts.game_data.native_contracts.ifix_patch import (
 )
 
 
-SCHEMA = "cutsceneCaseResolutionNativeContract.v2"
+SCHEMA = "cutsceneCaseResolutionNativeContract.v3"
 AUDIT_SCHEMA = "cutsceneCaseResolutionNativeContractAudit.v2"
 DEFAULT_CONTRACT = Path(__file__).with_name("cutscene_case_resolution.json")
 GAMEASSEMBLY_SHA256 = (
@@ -53,6 +53,7 @@ MATCH_FIELDS = (
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.source_paths import ExportLayout
 from scripts.common import repo_path as _source_file
 from scripts.common import read_json_object_bytes as _read_json
 
@@ -64,8 +65,13 @@ def load_cutscene_case_resolution_contract(
     ifix_contract_path: Path = DEFAULT_IFIX_CONTRACT,
     gameassembly: Path | None = None,
     metadata: Path | None = None,
+    export_root: Path | None = None,
 ) -> dict[str, Any]:
-    """Validate the pinned runtime fact and offline association policy."""
+    """Validate the pinned runtime fact and offline association policy.
+
+    ``export_root`` selects the export whose game/ tree holds the pinned
+    LevelScript; it defaults to the configured export root.
+    """
 
     path = Path(contract_path)
     source_file = _source_file(path)
@@ -207,9 +213,9 @@ def load_cutscene_case_resolution_contract(
     gameassembly_path = getattr(native, "gameassembly", None)
     try:
         image = Path(gameassembly_path).read_bytes() if gameassembly_path else b""
-    except OSError as error:
+    except OSError as read_error:
         image = b""
-        reject("read_gameassembly", True, str(error)[:400])
+        reject("read_gameassembly", True, str(read_error)[:400])
     bridge_methods = {
         "execute": ("0x06008b48", "0x18765b560"),
         "gameAction": ("0x0600800c", "0x1875eda48"),
@@ -252,11 +258,16 @@ def load_cutscene_case_resolution_contract(
         if actual_target != int(target, 16):
             reject(f"gender_select_{method_name}_call_target", target, hex(actual_target))
 
-    script_path = REPO_ROOT / str(bridge_script.get("sourceFile") or "")
+    # sourceFile is relative to the export root (layout v2), so the gate reads
+    # the configured export rather than a fixed export_full folder.
+    script_root = Path(export_root) if export_root is not None else ExportLayout.configured().root
+    script_path = script_root / str(bridge_script.get("sourceFile") or "")
     try:
         script_hash = hashlib.sha256(script_path.read_bytes()).hexdigest().upper()
-    except OSError as error:
-        script_hash = str(error)[:400]
+    except OSError as read_error:
+        # Not ``error``: that name holds the contract read result used below,
+        # and an ``except ... as`` target is unbound when its block ends.
+        script_hash = str(read_error)[:400]
     if script_hash != bridge_script.get("sourceSha256"):
         reject("gender_select_levelscript_sha256", bridge_script.get("sourceSha256"), script_hash)
 

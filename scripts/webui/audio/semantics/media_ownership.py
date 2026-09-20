@@ -17,28 +17,22 @@ from typing import Any, Iterable
 SCHEMA_VERSION = 4
 
 CHARACTER_TABLE_RELS = (
-    "structured/StreamingAssets/Table/CharacterTable.json",
-    "structured/Persistent/Table/CharacterTable.json",
+    "game/Table/CharacterTable.json",
 )
 ENEMY_TABLE_RELS = (
-    "structured/StreamingAssets/Table/EnemyTable.json",
-    "structured/Persistent/Table/EnemyTable.json",
+    "game/Table/EnemyTable.json",
 )
 ENEMY_TEMPLATE_TABLE_RELS = (
-    "structured/StreamingAssets/Table/EnemyTemplateTable.json",
-    "structured/Persistent/Table/EnemyTemplateTable.json",
+    "game/Table/EnemyTemplateTable.json",
 )
 NPC_INFO_TABLE_RELS = (
-    "structured/StreamingAssets/Table/NpcInfoTable.json",
-    "structured/Persistent/Table/NpcInfoTable.json",
+    "game/Table/NpcInfoTable.json",
 )
 NPC_TEMPLATE_GROUP_TABLE_RELS = (
-    "structured/StreamingAssets/Table/NpcTemplateGroupTable.json",
-    "structured/Persistent/Table/NpcTemplateGroupTable.json",
+    "game/Table/NpcTemplateGroupTable.json",
 )
 AUDIO_DIALOG_CHANNEL_TABLE_RELS = (
-    "structured/StreamingAssets/Table/AudioDialogChannel.json",
-    "structured/Persistent/Table/AudioDialogChannel.json",
+    "game/Table/AudioDialogChannel.json",
 )
 CHARACTER_KEY_RE = re.compile(r"^chr_(\d{4})_([a-z0-9]+)$", re.IGNORECASE)
 ENEMY_KEY_RE = re.compile(r"^eny_\d+_[a-z0-9]+(?:_[a-z0-9]+)*$", re.IGNORECASE)
@@ -1270,16 +1264,10 @@ def collect_animation_entity_catalog(export_root: Path | None) -> dict[str, Any]
         ("EnemyTable", enemy_sources, enemy_malformed, enemy_conflicts),
         ("EnemyTemplateTable", template_sources, template_malformed, template_conflicts),
     ):
-        persistent_malformed = any(
-            "/persistent/" in f"/{source}".casefold()
-            for source in malformed_for_table
-        )
-        if persistent_malformed:
-            table_statuses[table_name] = "malformedPersistentOverlay"
-        elif malformed_for_table:
+        if malformed_for_table:
             table_statuses[table_name] = "malformed"
         elif conflicts_for_table:
-            table_statuses[table_name] = "conflictedPersistentOverlay"
+            table_statuses[table_name] = "conflicted"
         elif sources_for_table:
             table_statuses[table_name] = "validated"
         else:

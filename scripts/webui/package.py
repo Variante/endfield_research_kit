@@ -34,6 +34,7 @@ from scripts.common import (
     ROOT as PROJECT_ROOT,
     normalize_posix,
 )
+from scripts.source_paths import ExportLayout
 
 WEBUI_ROOT = PROJECT_ROOT / "webui"
 ZIP_NAME_PREFIX = "endfield-story-exported"
@@ -81,6 +82,13 @@ PAGE_REFERENCE_LANGUAGE_RE = re.compile(
     r"^data/lang/[^/]+/(?:conv|mission|characters|gameplay)(?:/|$)"
 )
 RESOURCE_DATA_PREFIXES = ("data/audio/", "data/game_data/", "data/decoded/")
+# Builder output that is not a page file (evidence indexes, caches, comparison
+# inputs). No package ever ships it.
+BUILD_OUTPUT_PREFIX = "data/_build/"
+
+
+def is_build_output_path(rel: str) -> bool:
+    return normalize_posix(rel).startswith(BUILD_OUTPUT_PREFIX)
 RESOURCE_DATA_LANGUAGE_RE = re.compile(r"^data/lang/[^/]+/progression(?:/|$)")
 
 ASSET_VIEW_START_RE = re.compile(r'<section\s+id="assets-view"(?=[\s>])', re.IGNORECASE)
@@ -479,6 +487,8 @@ def iter_webui_text_files(webui_root: Path) -> Iterable[Path]:
         if "__pycache__" in path.parts:
             continue
         rel = path.relative_to(webui_root).as_posix()
+        if is_build_output_path(rel):
+            continue
         if is_resource_data_path(rel):
             continue
         if path.suffix.lower() in TEXT_EXTENSIONS:
@@ -490,6 +500,8 @@ def iter_page_local_media_files(webui_root: Path) -> Iterable[Path]:
         if not path.is_file() or "__pycache__" in path.parts:
             continue
         rel = path.relative_to(webui_root).as_posix()
+        if is_build_output_path(rel):
+            continue
         if is_companion_feature_path(rel) and path.suffix.lower() not in TEXT_EXTENSIONS:
             yield path
 
@@ -508,12 +520,14 @@ def iter_page_reference_files(webui_root: Path) -> Iterable[Path]:
         if not path.is_file() or "__pycache__" in path.parts:
             continue
         rel = path.relative_to(webui_root).as_posix()
+        if is_build_output_path(rel):
+            continue
         if is_page_reference_path(rel):
             yield path
 
 
 def iter_exported_audio_files(export_root: Path) -> Iterable[Path]:
-    audio_root = export_root / "structured" / "Audio"
+    audio_root = ExportLayout(export_root).audio_dir
     if not audio_root.exists():
         return
     for path in sorted(audio_root.rglob("*")):
@@ -522,7 +536,7 @@ def iter_exported_audio_files(export_root: Path) -> Iterable[Path]:
 
 
 def iter_exported_audio_indexes(export_root: Path) -> Iterable[Path]:
-    audio_root = export_root / "structured" / "Audio"
+    audio_root = ExportLayout(export_root).audio_dir
     if not audio_root.exists():
         return
     for path in sorted(audio_root.rglob("index.json")):
@@ -624,13 +638,13 @@ def collect_page_media_references(
             normalized = normalize_posix(raw).split("?", 1)[0].split("#", 1)[0]
             if normalized in known_asset_rels:
                 asset_rels.add(normalized)
-            for marker in ("StreamingAssets/", "Persistent/"):
+            for marker in ("Unity/", "Game/"):
                 marker_index = normalized.find(marker)
                 if marker_index >= 0:
                     candidate = normalized[marker_index:]
                     if candidate in known_asset_rels:
                         asset_rels.add(candidate)
-            audio_index = normalized.find("structured/Audio/")
+            audio_index = normalized.find("game/Audio/")
             if audio_index >= 0:
                 candidate = normalized[audio_index:]
                 if candidate in known_audio_rels:

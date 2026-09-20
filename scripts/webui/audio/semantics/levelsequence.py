@@ -4,6 +4,7 @@ Reads authored LevelSequence detail and the active LevelScript overlay. A decode
 play action is authored evidence; sequence evaluation is unobserved."""
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import hashlib
 import struct
@@ -43,9 +44,9 @@ def _active_levelscript_overlay(
             for path in sorted(root.rglob("*.json"))
         }
     overlay: dict[str, tuple[str, Path]] = {}
-    for source_root in ("StreamingAssets", "Persistent"):
+    for source_root in ("game",):
         root = (
-            export_root / "structured" / source_root / "Data" / "Json"
+            ExportLayout(export_root).game / "Json"
             / "LevelScriptData"
         )
         if not root.is_dir():

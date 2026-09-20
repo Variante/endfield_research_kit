@@ -14,8 +14,10 @@ from scripts.webui.audio.semantics.context_utils import load_json_strict
 from scripts.webui.audio.semantics.context_utils import normalize_posix
 
 from scripts.game_data.extraction.animestudio_index_io import ObjectIndexUnavailable
-from scripts.game_data.extraction.animestudio_index_io import iter_published_objects
+from scripts.game_data.extraction.animestudio_index_io import iter_effective_objects
 from scripts.game_data.extraction.animestudio_index_io import raw_json_path_for_object
+from scripts.common import WEBUI_BUILD_DIR
+from scripts.source_paths import ExportLayout
 
 def mono_behaviour_json_by_path_id(
     export_root: Path,
@@ -31,7 +33,8 @@ def mono_behaviour_json_by_path_id(
 
     out: dict[int, Path] = {}
     try:
-        for row in iter_published_objects(export_root, "StreamingAssets"):
+        # Both layers: cutscenes added by a hot update live only in Persistent.
+        for layer, row in iter_effective_objects(export_root):
             identity = row.get("object") if isinstance(row.get("object"), dict) else {}
             try:
                 path_id = int(identity.get("pathId"))
@@ -39,7 +42,7 @@ def mono_behaviour_json_by_path_id(
                 continue
             if wanted_path_ids is not None and path_id not in wanted_path_ids:
                 continue
-            path = raw_json_path_for_object(export_root, "StreamingAssets", row)
+            path = raw_json_path_for_object(export_root, layer, row)
             if path is not None:
                 out[path_id] = path
         return out
@@ -48,12 +51,7 @@ def mono_behaviour_json_by_path_id(
 
     # Explicit compatibility path for old exports without a complete index.
     root = (
-        export_root
-        / "recovered"
-        / "AnimeStudio-cli"
-        / "StreamingAssets"
-        / "json_by_type"
-        / "MonoBehaviour"
+        ExportLayout(export_root).unity_type_dir("MonoBehaviour")
     )
     if not root.exists():
         return out
@@ -85,12 +83,7 @@ def collect_fmv_cutscene_audio_events(
         return {}
     fmv_attach_overrides = fmv_attach_overrides or {}
     asset_map = (
-        export_root
-        / "recovered"
-        / "AnimeStudio-cli"
-        / "StreamingAssets"
-        / "maps"
-        / "endfield_streamingassets_assets.json"
+        ExportLayout(export_root).asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
     )
     wanted_tail = f"_others_au_{suffix}.playable"
     containers: dict[str, dict[str, Any]] = {}
@@ -196,7 +189,7 @@ def story_key_from_video_binding(binding: dict[str, Any]) -> str:
     )
 
 def collect_video_binding_audio_containers(export_root: Path) -> dict[str, str]:
-    path = export_root / "recovered" / "video_bindings.json"
+    path = WEBUI_BUILD_DIR / "story" / "video_bindings.json"
     payload = load_json_strict(path, {})
     bindings = payload.get("bindings") if isinstance(payload, dict) else {}
     out: dict[str, str] = {}
@@ -225,12 +218,7 @@ def collect_timeline_cutscene_audio_events(
     if not container_to_cutscene:
         return {}
     asset_map = (
-        export_root
-        / "recovered"
-        / "AnimeStudio-cli"
-        / "StreamingAssets"
-        / "maps"
-        / "endfield_streamingassets_assets.json"
+        ExportLayout(export_root).asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
     )
 
     event_path_ids: dict[int, str] = {}
@@ -276,12 +264,7 @@ def collect_levelseq_cutscene_audio_events(
     by_path_id: dict[int, Path] | None = None,
 ) -> dict[str, list[str]]:
     asset_map = (
-        export_root
-        / "recovered"
-        / "AnimeStudio-cli"
-        / "StreamingAssets"
-        / "maps"
-        / "endfield_streamingassets_assets.json"
+        ExportLayout(export_root).asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
     )
     event_path_ids: dict[int, str] = {}
     container_to_cutscene: dict[str, str] = {}

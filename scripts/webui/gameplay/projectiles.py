@@ -12,6 +12,7 @@ Examples:
 """
 
 from __future__ import annotations
+from scripts.common import EXPORT_LAYOUT
 
 import argparse
 import json
@@ -23,10 +24,9 @@ from typing import Any, Iterable
 from scripts.repo_paths import REPO_ROOT
 
 REPO_ROOT = REPO_ROOT
-EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or REPO_ROOT / "export_full")
+EXPORT_ROOT = EXPORT_LAYOUT.root
 DEFAULT_INPUTS = (
-    EXPORT_ROOT / "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/MonoBehaviour",
-    EXPORT_ROOT / "recovered/AnimeStudio-cli/Persistent/json_by_type/MonoBehaviour",
+    EXPORT_ROOT / "game/Unity/MonoBehaviour",
 )
 DEFAULT_OUTPUT = REPO_ROOT / "webui/data/gameplay/projectiles.json"
 EFFECT_LIST_FIELDS = (

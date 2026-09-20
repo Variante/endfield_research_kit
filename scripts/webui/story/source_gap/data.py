@@ -1,3 +1,4 @@
+from scripts.common import EXPORT_LAYOUT, rel_path as export_rel_path
 """Build-locked declarations used by source Story gap evidence.
 
 This module intentionally contains data rather than recovery algorithms. Its
@@ -49,6 +50,25 @@ NPC_PROXY_TRACKING_INFO_FIELDS = frozenset({
     "sceneId",
     "useFilterCondition",
 })
+# The client update that added this field put it on every tracking-info type;
+# its meaning is not yet reviewed (by name, an optional campfire jump target).
+# A row qualifies only while it holds the empty value 0, which every current
+# NpcProxyTrackingInfo row does; any other value fails closed.
+NPC_PROXY_TRACKING_INFO_UNREVIEWED_EMPTY_FIELDS = {"jumpToCampFireGlobalId": 0}
+
+
+def npc_proxy_tracking_fields_are_exact(tracking: dict) -> bool:
+    """The row has exactly the reviewed fields, plus unreviewed ones left empty."""
+    extra = set(tracking) - NPC_PROXY_TRACKING_INFO_FIELDS
+    if not NPC_PROXY_TRACKING_INFO_FIELDS <= set(tracking):
+        return False
+    for name in extra:
+        if name not in NPC_PROXY_TRACKING_INFO_UNREVIEWED_EMPTY_FIELDS:
+            return False
+        value = tracking[name]
+        if isinstance(value, bool) or value != NPC_PROXY_TRACKING_INFO_UNREVIEWED_EMPTY_FIELDS[name]:
+            return False
+    return True
 DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
     "dialog-tree-narrative-mask-connection-native-v1"
 )
@@ -234,7 +254,7 @@ OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
 OFFLINE_EXHAUSTION_MISSION_BRANCH_CONTEXTS = {
     "gm01m7": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm01m7.json"
         ),
         "sourceSha256":
@@ -305,7 +325,7 @@ OFFLINE_EXHAUSTION_MISSION_RELATED_ORIGINAL_DATA = {
 OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS = {
     "gm01m12": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm01m12.json"
         ),
         "sourceSha256":
@@ -319,7 +339,7 @@ OFFLINE_EXHAUSTION_MISSION_LINEAR_CONTEXTS = {
 OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     "gm01m15": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm01m15.json"
         ),
         "sourceSha256":
@@ -349,7 +369,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
     "gm01m4": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm01m4.json"
         ),
         "sourceSha256":
@@ -366,7 +386,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
     "gm02m13": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm02m13.json"
         ),
         "sourceSha256":
@@ -434,7 +454,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
     "gm02m8": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm02m8.json"
         ),
         "sourceSha256":
@@ -450,7 +470,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
     "gm02m14": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm02m14.json"
         ),
         "sourceSha256":
@@ -472,7 +492,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
     "gm02m15": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm02m15.json"
         ),
         "sourceSha256":
@@ -502,7 +522,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
                     "value": True,
                     "comparer": 0,
                     "sourceFile": (
-                        "export_full/structured/StreamingAssets/Data/Json/"
+                        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
                         "LevelScriptData/map02_lv006/25000120003.json"
                     ),
                 } for index, key in enumerate(
@@ -513,7 +533,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
     "gm02m21": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm02m21.json"
         ),
         "sourceSha256":
@@ -567,7 +587,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
                     "stageValue": stage,
                     "compareOperator": 3,
                     "sourceFile": (
-                        "export_full/structured/StreamingAssets/Data/Json/"
+                        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
                         "LevelScriptData/map02_lv007/10200190002.json"
                     ),
                 } for index, stage in enumerate((1, 2, 3, 4, 7))),
@@ -575,7 +595,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
         },
         "levelScriptPlaybackInventories": ({
             "sourceFile": (
-                "export_full/structured/StreamingAssets/Data/Json/"
+                export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
                 "LevelScriptData/map02_lv007/10200190002.json"
             ),
             "sourceSha256": (
@@ -594,7 +614,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
     "gm02m17": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm02m17.json"
         ),
         "sourceSha256":
@@ -613,7 +633,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
     "gm01m13": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm01m13.json"
         ),
         "sourceSha256":
@@ -634,7 +654,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
     "gm01m17": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm01m17.json"
         ),
         "sourceSha256":
@@ -697,7 +717,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
     "gm02m20": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm02m20.json"
         ),
         "sourceSha256":
@@ -729,7 +749,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
     "gm01m16": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm01m16.json"
         ),
         "sourceSha256":
@@ -754,7 +774,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
     "gm01m20": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm01m20.json"
         ),
         "sourceSha256":
@@ -774,7 +794,7 @@ OFFLINE_EXHAUSTION_MISSION_TOPOLOGY_CONTEXTS = {
     },
     "gm02m23": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/"
+            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
             "MissionRuntimeAsset/gm02m23.json"
         ),
         "sourceSha256":
@@ -815,13 +835,13 @@ OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
         "levelId": "map01_lv001",
         "scriptId": "2100210004",
         "levelDataFile": (
-            "export_full/structured/StreamingAssets/Data/Json/LevelData/"
+            export_rel_path(EXPORT_LAYOUT.json_dir / "LevelData") + "/"
             "map01_lv001/map01_lv001_lv_data_sub_gm01m2.json"
         ),
         "levelDataSha256":
             "E54CF09A81D8A54C4677DF4CA2C727711F9B7E1174551997D4F5814414561378",
         "levelScriptFile": (
-            "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/"
+            export_rel_path(EXPORT_LAYOUT.json_dir / "LevelScriptData") + "/"
             "map01_lv001/2100210004.json"
         ),
         "levelScriptSha256":
@@ -874,13 +894,13 @@ OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
         "levelId": "map01_lv006",
         "scriptId": "3500190001",
         "levelDataFile": (
-            "export_full/structured/StreamingAssets/Data/Json/LevelData/"
+            export_rel_path(EXPORT_LAYOUT.json_dir / "LevelData") + "/"
             "map01_lv006/map01_lv006_lv_data_sub_gm01m24.json"
         ),
         "levelDataSha256":
             "AA4A3915C3D1655CAA9A74F043EABAF7B1B9449CE2AC2990D5362D8E3BC21AC2",
         "levelScriptFile": (
-            "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/"
+            export_rel_path(EXPORT_LAYOUT.json_dir / "LevelScriptData") + "/"
             "map01_lv006/3500190001.json"
         ),
         "levelScriptSha256":
@@ -933,13 +953,13 @@ OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
         "levelId": "map01_lv007",
         "scriptId": "2800020003",
         "levelDataFile": (
-            "export_full/structured/StreamingAssets/Data/Json/LevelData/"
+            export_rel_path(EXPORT_LAYOUT.json_dir / "LevelData") + "/"
             "map01_lv007/map01_lv007_lv_data_sub_01.json"
         ),
         "levelDataSha256":
             "210C01BD69A88F6E8F66DB13EBA200E996A1F989615579B8E702923DD85A7DE0",
         "levelScriptFile": (
-            "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/"
+            export_rel_path(EXPORT_LAYOUT.json_dir / "LevelScriptData") + "/"
             "map01_lv007/2800020003.json"
         ),
         "levelScriptSha256":
@@ -993,13 +1013,13 @@ OFFLINE_EXHAUSTION_LEVELDATA_DIALOG_BRANCH_CONTEXTS = {
         "levelId": "map01_lv005",
         "scriptId": "3400010017",
         "levelDataFile": (
-            "export_full/structured/StreamingAssets/Data/Json/LevelData/"
+            export_rel_path(EXPORT_LAYOUT.json_dir / "LevelData") + "/"
             "map01_lv005/map01_lv005_lv_data_sub_01.json"
         ),
         "levelDataSha256":
             "7AEEE38BBBBEF778ACD6AE2F50A6F587652053E9CB57FACB5506621D091FD95D",
         "levelScriptFile": (
-            "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/"
+            export_rel_path(EXPORT_LAYOUT.json_dir / "LevelScriptData") + "/"
             "map01_lv005/3400010017.json"
         ),
         "levelScriptSha256":
@@ -1059,13 +1079,13 @@ OFFLINE_EXHAUSTION_EMPTY_LEVELSCRIPT_CONTEXTS = {
         "levelId": "map01_lv001",
         "scriptId": "2100100004",
         "levelDataFile": (
-            "export_full/structured/StreamingAssets/Data/Json/LevelData/"
+            export_rel_path(EXPORT_LAYOUT.json_dir / "LevelData") + "/"
             "map01_lv001/map01_lv001_lv_data_sub_gm01m5.json"
         ),
         "levelDataSha256":
             "3F32678F67E08B81AFCBFA05F2283EB098DE3E0E3C091E08D69AA502F9B0C6EB",
         "levelScriptFile": (
-            "export_full/structured/StreamingAssets/Data/Json/LevelScriptData/"
+            export_rel_path(EXPORT_LAYOUT.json_dir / "LevelScriptData") + "/"
             "map01_lv001/2100100004.json"
         ),
         "levelScriptSha256":
@@ -1078,7 +1098,7 @@ OFFLINE_EXHAUSTION_EMPTY_LEVELSCRIPT_CONTEXTS = {
 OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS = {
     "dlg_gm01m12_1": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/LevelScriptData/"
+            export_rel_path(EXPORT_LAYOUT.json_dir / "LevelScriptData") + "/"
             "map01_lv001/2100110001.json"
         ),
         "sourceSha256":
@@ -1098,7 +1118,7 @@ OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS = {
     },
     "dlg_gm01m12_3": {
         "sourceFile": (
-            "export_full/structured/Persistent/Data/Json/LevelScriptData/"
+            export_rel_path(EXPORT_LAYOUT.json_dir / "LevelScriptData") + "/"
             "map01_lv001/2100110003.json"
         ),
         "sourceSha256":
@@ -1186,55 +1206,55 @@ QUEST_ATTACHMENT_DIAGNOSTIC_MAPPING_ID = (
 )
 QUEST_ATTACHMENT_DIAGNOSTIC_SOURCE_PATHS = {
     "missionRuntime:e10m3d5": (
-        "export_full/structured/Persistent/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         "MissionRuntimeAsset/e10m3d5.json"
     ),
     "missionRuntime:e2m8": (
-        "export_full/structured/Persistent/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         "MissionRuntimeAsset/e2m8.json"
     ),
     "levelScript:map01_lv006/3500100002": (
-        "export_full/structured/StreamingAssets/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         "LevelScriptData/map01_lv006/3500100002.json"
     ),
     "levelData:map02_lv002/map02_lv002_lv_data_sub_e10m3": (
-        "export_full/structured/StreamingAssets/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         "LevelData/map02_lv002/map02_lv002_lv_data_sub_e10m3.json"
     ),
     "gameplayConfig:NpcProxyTable": (
-        "export_full/structured/Persistent/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         "GameplayConfig/NpcProxyTable.json"
     ),
     "gameplayConfig:WorldEntityRegistry": (
-        "export_full/structured/Persistent/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         "GameplayConfig/WorldEntityRegistry.json"
     ),
     "missionRuntime:e10m4d5": (
-        "export_full/structured/Persistent/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         "MissionRuntimeAsset/e10m4d5.json"
     ),
     "levelScript:dung02_rdg002/24400000018": (
-        "export_full/structured/StreamingAssets/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         "LevelScriptData/dung02_rdg002/24400000018.json"
     ),
     "missionRuntime:e5m2": (
-        "export_full/structured/Persistent/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         "MissionRuntimeAsset/e5m2.json"
     ),
     "missionRuntime:e5m2d5": (
-        "export_full/structured/Persistent/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         "MissionRuntimeAsset/e5m2d5.json"
     ),
     "levelScript:map02_lv001/10100070004": (
-        "export_full/structured/StreamingAssets/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         "LevelScriptData/map02_lv001/10100070004.json"
     ),
     "levelData:map02_lv001/map02_lv001_lv_data_sub_e5m2": (
-        "export_full/structured/StreamingAssets/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         "LevelData/map02_lv001/map02_lv001_lv_data_sub_e5m2.json"
     ),
     "gameplayConfig:NpcProxyExDataTable": (
-        "export_full/structured/StreamingAssets/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         "GameplayConfig/NpcProxyExDataTable.json"
     ),
 }
@@ -1791,7 +1811,7 @@ OFFLINE_EXHAUSTION_SNS_DEFINITIONS = {
         "optionDescriptionIds": {},
         "runtimeTracking": {
             "sourceFile": (
-                "export_full/structured/Persistent/Data/Json/"
+                export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
                 "MissionRuntimeAsset/gm01m12.json"
             ),
             "sourceSha256":
@@ -3374,10 +3394,9 @@ OFFLINE_EXHAUSTION_TEXT_ONLY_DIALOGS = {
             ),
             "targetQuestState": 2,
             "conditionEvalString": "{0} or {1} or {2} or {3} or {4} or {5} or {6}",
-            "sourceFile": (
-                "export_full/recovered/AnimeStudio-cli/StreamingAssets/"
-                "json_by_type/TextAsset/"
-                "dlg_a1m5_2_p28C9B9297D5DAF06.json"
+            "sourceFile": export_rel_path(
+                EXPORT_LAYOUT.unity_type_dir("TextAsset")
+                / "dlg_a1m5_2_p28C9B9297D5DAF06.json"
             ),
         },
     },
@@ -4303,7 +4322,7 @@ OFFLINE_EXHAUSTION_RADIO_CONTEXTS = {
     "radio_e1m5_3d5": {
         "sourceKey": "levelData:map01_lv002/map01_lv002_lv_data",
         "sourceFile": (
-            "export_full/structured/StreamingAssets/Data/Json/LevelData/"
+            export_rel_path(EXPORT_LAYOUT.json_dir / "LevelData") + "/"
             "map01_lv002/map01_lv002_lv_data.json"
         ),
         "sha256":

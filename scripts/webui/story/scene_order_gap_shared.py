@@ -5,7 +5,7 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
-from scripts.common import write_report_json
+from scripts.common import TABLE_DIR, WEBUI_BUILD_DIR, write_report_json
 
 
 # DialogIdTable registry: see scripts/webui/story/dialog_registry.py.
@@ -13,10 +13,7 @@ from scripts.common import write_report_json
 # Beyond.Gameplay.DialogIdTable via the binary table on disk). A sceneKey
 # present in this registry is loadable by the runtime; one absent is
 # unreachable cut/dead content.
-_DEFAULT_REGISTRY_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "export_full" / "recovered" / "dialog_id_table_index.json"
-)
+_DEFAULT_REGISTRY_PATH = WEBUI_BUILD_DIR / "story" / "dialog_id_table_index.json"
 
 
 @lru_cache(maxsize=4)
@@ -41,11 +38,7 @@ def load_dialog_id_registry(path: Path | None = None) -> dict:
 # game data -- a stronger "main-story relevance" signal than DialogIdTable
 # membership alone (a dialog can be runtime-registered without having a
 # canonical summary). Pure evidence surfacing, no inference.
-_DEFAULT_SUMMARY_MAP_PATH = (
-    Path(__file__).resolve().parent.parent
-    / "export_full" / "structured" / "StreamingAssets" / "Table"
-    / "DialogSummaryMapTable.json"
-)
+_DEFAULT_SUMMARY_MAP_PATH = TABLE_DIR / "DialogSummaryMapTable.json"
 
 
 @lru_cache(maxsize=4)

@@ -69,6 +69,7 @@ from scripts.webui.story.dialog_tree_control_flow import (
     recover_static_port_family_contract,
 )
 from scripts.webui.story.timeline_recovery import rel_path as _repo_path
+from scripts.common import EXPORT_LAYOUT
 
 
 SCHEMA = "sourceStoryPartialOrder.v46"
@@ -80,10 +81,7 @@ BRANCH_SEQUENCE_GAME_ASSEMBLY_SHA256 = (
 )
 _NATIVE_ACTION_TOPOLOGY_CACHE: dict[str, tuple[dict, dict | None]] = {}
 NATIVE_LEVELSCRIPT_ROOTS = (
-    ROOT / "export_full" / "structured" / "StreamingAssets"
-    / "Data" / "Json" / "LevelScriptData",
-    ROOT / "export_full" / "structured" / "Persistent"
-    / "Data" / "Json" / "LevelScriptData",
+    EXPORT_LAYOUT.json_dir / "LevelScriptData",
 )
 NATIVE_SERIALIZED_BRANCH_INVENTORY_SCHEMA = (
     "nativeSerializedBranchInventory.v11"
@@ -101,8 +99,7 @@ NATIVE_TYPED_CONTROL_ACTION_NAMES = frozenset(
     if pair in LEVELSCRIPT_NATIVE_ACTION_NAMES
 )
 READING_POPUP_TABLE_PATH = (
-    ROOT / "export_full" / "structured" / "StreamingAssets"
-    / "Table" / "ReadingPopUpTable.json"
+    EXPORT_LAYOUT.table_dir / "ReadingPopUpTable.json"
 )
 PROTOCOL_REGISTRY_AUDIT_PATH = (
     ROOT / "reports" / "story" / "recovery" / "protocol_registry_audit.json"
@@ -127,10 +124,7 @@ VARIANT_TIMELINE_DICT_FIELDS = (
     "scenePlacement",
 )
 SPAWNER_CONFIG_ROOTS = (
-    ROOT / "export_full" / "structured" / "StreamingAssets"
-    / "Data" / "Json" / "SpawnerConfig",
-    ROOT / "export_full" / "structured" / "Persistent"
-    / "Data" / "Json" / "SpawnerConfig",
+    EXPORT_LAYOUT.json_dir / "SpawnerConfig",
 )
 
 # These relations are original-data topology, but not strict chronology.
@@ -7189,11 +7183,7 @@ def _related_original_branch_files(
                 "sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
                 "relationship": level_relationship,
             })
-    for root_name in ("Persistent", "StreamingAssets"):
-        mission_source = (
-            ROOT / "export_full" / "structured" / root_name / "Data"
-            / "Json" / "MissionRuntimeAsset" / f"{mission}.json"
-        )
+    for mission_source in (EXPORT_LAYOUT.json_dir / "MissionRuntimeAsset" / f"{mission}.json",):
         if mission_source.is_file():
             related.append({
                 "kind": "original_mission_runtime",

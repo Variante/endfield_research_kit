@@ -13,6 +13,8 @@ Outputs:
     reports/story/recovery/animestudio_story_guide_consumer_audit.md
 """
 from __future__ import annotations
+from scripts.common import EXPORT_LAYOUT
+from scripts.source_paths import INSTALLED_LAYERS
 
 import argparse
 from collections import Counter, defaultdict
@@ -43,14 +45,17 @@ from scripts.game_data.extraction.export_full_from_game import (
     load_animestudio_object_index_summary,
 )
 
-from scripts.game_data.extraction.animestudio_index_io import iter_gzip_jsonl_objects
+from scripts.game_data.extraction.animestudio_index_io import is_effective_row, iter_gzip_jsonl_objects
+from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 
 
 SCHEMA = "animestudioStoryGuideConsumerAudit.v1"
-DEFAULT_OUTPUT_ROOT = ROOT / "export_full"
+DEFAULT_OUTPUT_ROOT = EXPORT_LAYOUT.root
 DEFAULT_EXPORT_SUMMARY = ROOT / "reports" / "export" / "export_full_summary.json"
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "recovery"
-DEFAULT_SOURCES = ("StreamingAssets",)
+# Both layers: with replaced-bundle rows filtered out, an updated object is
+# found only in the newer layer's index.
+DEFAULT_SOURCES = INSTALLED_LAYERS
 
 GUIDE_RUNTIME_ASSET = "Beyond.Gameplay.Actions.GuideRuntimeAsset"
 ACTION_CLASS = "FacSetInteractLockedState"
@@ -274,11 +279,15 @@ def scan_source(
     object_path = index_dir / relative_name
     actions: list[dict[str, Any]] = []
     object_count = 0
+    # Every row counts toward the integrity check below, but only objects the
+    # client loads (not ones from replaced or deleted bundles) yield actions.
+    slot_keys = effective_chunk_slot_keys(output_root)
     for row in iter_gzip_jsonl_objects(object_path, error_type=AuditError):
         if row.get("recordType") != "object":
             continue
         object_count += 1
-        actions.extend(audit_object_row(row, source))
+        if is_effective_row(row, slot_keys):
+            actions.extend(audit_object_row(row, source))
     expected_objects = int((summary.get("counts") or {}).get("objects") or 0)
     if object_count != expected_objects:
         raise AuditError(

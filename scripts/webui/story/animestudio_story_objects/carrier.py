@@ -29,6 +29,8 @@ from scripts.game_data.extraction.export_full_from_game import (
 )
 
 from scripts.game_data.extraction.animestudio_index_io import iter_gzip_jsonl_objects
+from scripts.game_data.extraction.animestudio_index_io import EffectiveObjectRows
+from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 SCHEMA = "animestudioStoryCarrierAudit.v3"
 DEFAULT_GAP_QUEUE = (
     ROOT / "reports" / "mission_order" / "source_story_gap_queue_CN.json"
@@ -442,17 +444,13 @@ def scan_published_source(
         raise AuditError(f"{source}: merged objects output path is invalid")
     index_dir = animestudio_object_index_dir(output_root, source)
     object_path = index_dir / relative_name
-    result = audit_object_rows(
-        iter_gzip_jsonl(object_path),
-        target_missions,
-        source,
-    )
+    rows = EffectiveObjectRows(iter_gzip_jsonl(object_path), effective_chunk_slot_keys(output_root))
+    result = audit_object_rows(rows, target_missions, source)
     expected_objects = int((summary.get("counts") or {}).get("objects") or 0)
-    if result["counts"].get("objectsScanned", 0) != expected_objects:
+    if rows.read != expected_objects:
         raise AuditError(
             f"{source}: merged object count mismatch: "
-            f"{result['counts'].get('objectsScanned', 0)} parsed, "
-            f"{expected_objects} published"
+            f"{rows.read} parsed, {expected_objects} published"
         )
     result["index"] = {
         "source": source,

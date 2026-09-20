@@ -1,5 +1,6 @@
 """Gap closure classification, scoring, and report model construction."""
 from __future__ import annotations
+from scripts.common import rel_path as export_rel_path
 
 import re
 from collections import Counter, defaultdict
@@ -65,31 +66,19 @@ from scripts.webui.story.source_gap.providers import (
     _string_list,
     _timeline,
 )
+from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
 
 @lru_cache(maxsize=1)
 def _current_tracked_proxy_dialog_sources() -> dict[str, Any]:
     gameplay_root = (
-        ROOT
-        / "export_full"
-        / "structured"
-        / "StreamingAssets"
-        / "Data"
-        / "Json"
-        / "GameplayConfig"
+        ROOT / export_rel_path(EXPORT_LAYOUT.json_dir) / "GameplayConfig"
     )
     dialog_index_path = (
-        ROOT / "export_full" / "recovered" / "dialog_id_table_index.json"
+        ROOT / export_rel_path(WEBUI_BUILD_DIR) / "story" / "dialog_id_table_index.json"
     )
     return {
         "trackingCorpus": _build_mission_npc_proxy_tracking_index(
             gameplay_root.parent / "MissionRuntimeAsset",
-            ROOT
-            / "export_full"
-            / "structured"
-            / "Persistent"
-            / "Data"
-            / "Json"
-            / "MissionRuntimeAsset",
         ),
         "npcProxyTablePath": gameplay_root / "NpcProxyTable.json",
         "npcProxyTable": read_json(
@@ -3677,7 +3666,7 @@ def _closed_exact_system_selector_isolated_scenes(
 @lru_cache(maxsize=1)
 def _current_dialog_id_index_for_validation() -> dict[str, Any]:
     value = read_json(
-        ROOT / "export_full" / "recovered" / "dialog_id_table_index.json",
+        ROOT / export_rel_path(WEBUI_BUILD_DIR) / "story" / "dialog_id_table_index.json",
         {},
     )
     return value if isinstance(value, dict) else {}
@@ -4264,11 +4253,11 @@ def _closed_exact_runtime_config_isolated_scenes(
             "snsContentIds": content_ids,
             "snsContentType": 12,
             "sourceFiles": [
-                "export_full/structured/StreamingAssets/Table/"
+                export_rel_path(EXPORT_LAYOUT.table_dir) + "/"
                 "SNSDialogTable.json",
-                "export_full/structured/StreamingAssets/Table/"
+                export_rel_path(EXPORT_LAYOUT.table_dir) + "/"
                 "SNSDialogOptionTable.json",
-                "export_full/structured/StreamingAssets/Table/"
+                export_rel_path(EXPORT_LAYOUT.table_dir) + "/"
                 "SNSChatTable.json",
             ],
             "activationBoundary": (
@@ -4346,7 +4335,7 @@ def _closed_exact_runtime_config_isolated_scenes(
                     "activation time or relative Story order"
                 ),
                 "sourceFile": (
-                    "export_full/structured/Persistent/Data/Json/"
+                    export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
                     f"MissionRuntimeAsset/{owner_mission}.json"
                 ),
             })
@@ -4402,7 +4391,7 @@ def _closed_exact_runtime_config_isolated_scenes(
                 "Story file"
             ),
             "sourceFile": (
-                "export_full/structured/Persistent/Data/Json/"
+                export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
                 f"MissionRuntimeAsset/{owner_mission}_meta.json"
             ),
         })
@@ -4924,7 +4913,7 @@ def _closed_exact_runtime_config_isolated_scenes(
             "sourceFiles": sorted({
                 safe_key(row.get("sourceFile"))
                 or (
-                    "export_full/structured/Persistent/Data/Json/"
+                    export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
                     f"MissionRuntimeAsset/{owner_mission}.json"
                 )
                 for row in rows
@@ -5069,9 +5058,9 @@ def _closed_exact_runtime_config_isolated_scenes(
         npc_proxy_ex_sources = [
             value
             for value in (
-                "export_full/structured/StreamingAssets/Data/Json/"
+                export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
                 "GameplayConfig/NpcProxyExDataTable.json",
-                "export_full/structured/Persistent/Data/Json/"
+                export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
                 "GameplayConfig/NpcProxyExDataTable.json",
             )
             if (ROOT / value).is_file()
@@ -7127,7 +7116,7 @@ def build_gap_report(
                 if owner_mission not in mission_payloads:
                     continue
                 mission_runtime_source = (
-                    "export_full/structured/Persistent/Data/Json/"
+                    export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
                     f"MissionRuntimeAsset/{context_mission}.json"
                 )
                 levelscript_source = safe_key(connection.get("sourceFile"))

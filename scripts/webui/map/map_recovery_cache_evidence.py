@@ -26,6 +26,7 @@ silently dropped, so it can never turn an unknown input into a cache hit.
 """
 
 from __future__ import annotations
+from scripts.common import EXPORT_LAYOUT
 
 import json
 import os
@@ -40,7 +41,7 @@ ROOT = REPO_ROOT
 from scripts.webui.map.audit_map_asset_closure import iter_asset_entries, sha256_file
 from scripts.webui.map.map_recovery_sources import projection_streaming_scene
 
-DEFAULT_ASSET_MAP = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json"
+DEFAULT_ASSET_MAP = EXPORT_LAYOUT.asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
 # Lives beside `hlod_grid_index.json`, which keys its own cache the same way.
 OBJECT_HASH_INDEX = ROOT / "reports/assets/map_recovery/asset_object_hashes.json"
 OBJECT_HASH_SCHEMA = 1

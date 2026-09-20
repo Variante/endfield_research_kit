@@ -28,6 +28,9 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.audio.build_audio"
     )
 
+from scripts.common import require_export_layout
+from scripts.common import WEBUI_BUILD_DIR
+
 from scripts.common import resolve_installed_game_data_root, sha256_file as file_sha256
 from scripts.webui.audio.semantics.identifiers import (
     audio_hash_generator_compute,
@@ -50,15 +53,17 @@ from scripts.game_data.extraction.animestudio_index_io import ObjectIndexUnavail
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import EXPORT_LAYOUT
+from scripts.source_paths import ExportLayout
 
 ROOT = REPO_ROOT
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
 DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
 DEFAULT_AUDIO_DUMPER = DEFAULT_ANIMESTUDIO
-DEFAULT_EXPORT_ROOT = ROOT / "export_full"
+DEFAULT_EXPORT_ROOT = EXPORT_LAYOUT.root
 DEFAULT_WEBUI_ROOT = ROOT / "webui"
-DEFAULT_AUDIO_ROOT = DEFAULT_EXPORT_ROOT / "structured" / "Audio"
-LUA_AUDIO_REFERENCE_CACHE_REL = Path("recovered/audio/lua_audio_references.json")
+DEFAULT_AUDIO_ROOT = EXPORT_LAYOUT.audio_dir
+LUA_AUDIO_REFERENCE_CACHE_PATH = WEBUI_BUILD_DIR / "audio" / "lua_audio_references.json"
 LUA_AUDIO_REFERENCE_SCHEMA_VERSION = 1
 LUA_AUDIO_NAME_RE = re.compile(r"(?i)\bau_[a-z0-9_]+")
 LUA_FILE_REGEX = r"(?i)\.lua(?:\.enc)*$"
@@ -457,14 +462,13 @@ def load_narrative_video_audio_source_overrides(webui_root: Path) -> dict[str, l
 
 def find_audio_dialog_tables(export_root: Path) -> list[Path]:
     candidates = [
-        export_root / "structured" / "StreamingAssets" / "Table" / "AudioDialog.json",
-        export_root / "structured" / "Persistent" / "Table" / "AudioDialog.json",
+        ExportLayout(export_root).table_dir / "AudioDialog.json",
     ]
     paths = [candidate for candidate in candidates if candidate.exists()]
     if paths:
         return paths
     raise SystemExit(
-        "AudioDialog.json not found under export_full/structured. "
+        "AudioDialog.json not found under the export root's game/Table. "
         "Run export.bat first, or pass --export-root."
     )
 
@@ -509,7 +513,7 @@ def collect_lua_audio_references(
             continue
         text = path.read_text(encoding="utf-8", errors="replace")
         source = (
-            normalize_posix(PurePosixPath("structured", source_root, "Lua", rel_source))
+            normalize_posix(PurePosixPath("game", "Lua", rel_source))
             if source_root
             else rel_source
         )
@@ -619,7 +623,7 @@ def refresh_lua_audio_reference_cache(args: argparse.Namespace) -> dict[str, Any
             "Only luaPostEvent rows are promoted to Wwise Event-name candidates."
         ),
     }
-    cache_path = args.export_root / LUA_AUDIO_REFERENCE_CACHE_REL
+    cache_path = LUA_AUDIO_REFERENCE_CACHE_PATH
     json_dump(cache_path, payload)
     print(
         "Lua audio references:"
@@ -636,7 +640,7 @@ def load_lua_audio_reference_cache(
 ) -> dict[str, Any]:
     if refresh:
         return refresh_lua_audio_reference_cache(args)
-    cache_path = args.export_root / LUA_AUDIO_REFERENCE_CACHE_REL
+    cache_path = LUA_AUDIO_REFERENCE_CACHE_PATH
     payload = load_json_strict(cache_path, {})
     if not isinstance(payload, dict) or int(payload.get("schemaVersion") or 0) != LUA_AUDIO_REFERENCE_SCHEMA_VERSION:
         return {}
@@ -1741,8 +1745,7 @@ def collect_audio_event_names(conv_dir: Path, export_root: Path) -> set[str]:
                     names.add(text)
 
     table_roots = [
-        export_root / "structured" / "StreamingAssets" / "Table",
-        export_root / "structured" / "Persistent" / "Table",
+        ExportLayout(export_root).table_dir,
     ]
     table_files = [
         "AudioCueTable.json",
@@ -1793,12 +1796,7 @@ def cutscene_audio_playable_path_ids(export_root: Path) -> set[int]:
     """
 
     asset_map = (
-        export_root
-        / "recovered"
-        / "AnimeStudio-cli"
-        / "StreamingAssets"
-        / "maps"
-        / "endfield_streamingassets_assets.json"
+        ExportLayout(export_root).asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
     )
     out: set[int] = set()
     for entry in iter_asset_map_objects(asset_map, '"Name": "Audio'):
@@ -1826,35 +1824,6 @@ def cutscene_audio_playable_path_ids(export_root: Path) -> set[int]:
 
 
 
-
-
-def event_bank_files(export_root: Path) -> list[Path]:
-    roots = [
-        export_root / "structured" / "Persistent" / "Data" / "Audio" / "PCK" / "Windows",
-        export_root / "structured" / "StreamingAssets" / "Data" / "Audio" / "PCK" / "Windows",
-    ]
-    files: list[Path] = []
-    seen: set[str] = set()
-    for root in roots:
-        if not root.exists():
-            continue
-        for path in sorted(root.rglob("*banks.pck")):
-            key = normalize_posix(path.relative_to(export_root))
-            if key in seen:
-                continue
-            seen.add(key)
-            files.append(path)
-    return files
-
-
-def event_bank_payloads_from_export(export_root: Path) -> list[tuple[str, bytes]]:
-    payloads: list[tuple[str, bytes]] = []
-    for bank_file in event_bank_files(export_root):
-        try:
-            payloads.append((normalize_posix(bank_file.relative_to(export_root)), bank_file.read_bytes()))
-        except OSError:
-            continue
-    return payloads
 
 
 def event_bank_payloads_from_vfs(args: argparse.Namespace) -> list[tuple[str, bytes]]:
@@ -1917,18 +1886,14 @@ def event_bank_payloads_from_vfs(args: argparse.Namespace) -> list[tuple[str, by
     if payloads:
         print(f"Audio events: streamed {len(payloads):,} bank PCK file(s) from VFS")
     elif stream_failed:
-        print("Audio events: VFS bank stream unavailable; falling back to exported bank files")
+        print("Audio events: VFS bank stream unavailable; no Event bank evidence this run")
     return payloads
 
 
 def event_bank_payloads(args: argparse.Namespace) -> list[tuple[str, bytes]]:
-    payloads = event_bank_payloads_from_vfs(args)
-    if payloads:
-        return payloads
-    payloads = event_bank_payloads_from_export(args.export_root)
-    if payloads:
-        print(f"Audio events: using {len(payloads):,} exported bank PCK file(s)")
-    return payloads
+    # Bank PCKs are raw VFS containers: they are streamed from the installed
+    # client and never dumped into the export root.
+    return event_bank_payloads_from_vfs(args)
 
 def collect_event_audio_index(
     event_names: set[str],
@@ -3564,13 +3529,6 @@ def link_conversation_audio(
 # wwise/<sfx|voice_events|music|ambience|ui|cues|unknown>/<id>.
 
 UNMAPPED_BANK_PRIORITY = ("main", "initial", "audit", "external", "hotfix")
-UNMAPPED_SCOPE_PCK_PARENTS = {
-    SHARED_AUDIO_STORAGE: ("main", "initial", "audit"),
-    "CN": ("chinese",),
-    "EN": ("english",),
-    "JP": ("japanese",),
-    "KR": ("korean",),
-}
 
 
 def unmapped_bank_for_pck_name(name: str) -> str:
@@ -3592,46 +3550,6 @@ def event_audio_category(event_id: Any) -> str:
         if name.startswith(prefix):
             return category
     return ""
-
-
-def all_audio_pck_files(export_root: Path) -> list[Path]:
-    roots = [
-        export_root / "structured" / "Persistent" / "Data" / "Audio" / "PCK" / "Windows",
-        export_root / "structured" / "StreamingAssets" / "Data" / "Audio" / "PCK" / "Windows",
-    ]
-    out: list[Path] = []
-    seen: set[str] = set()
-    for root in roots:
-        if not root.exists():
-            continue
-        for path in sorted(root.rglob("*.pck")):
-            key = normalize_posix(path.relative_to(root)).lower()
-            if key in seen:
-                continue
-            seen.add(key)
-            out.append(path)
-    return out
-
-
-def build_media_bank_map(export_root: Path, scope_parents: tuple[str, ...]) -> dict[str, str]:
-    """Map media-id -> source-bank folder by reading the AKPK indexes of the scope's PCKs."""
-    parents = {parent.lower() for parent in scope_parents}
-    out: dict[str, str] = {}
-    for pck in all_audio_pck_files(export_root):
-        if pck.parent.name.lower() not in parents:
-            continue
-        bank = unmapped_bank_for_pck_name(pck.name)
-        rank = UNMAPPED_BANK_PRIORITY.index(bank)
-        try:
-            ids = iter_akpk_media_ids_from_bytes(pck.read_bytes(), normalize_posix(pck))
-        except (OSError, ValueError):
-            continue
-        for media_id in ids:
-            key = str(media_id)
-            current = out.get(key)
-            if current is None or rank < UNMAPPED_BANK_PRIORITY.index(current):
-                out[key] = bank
-    return out
 
 
 def flat_unmapped_files(folder: Path) -> list[Path]:
@@ -3710,8 +3628,10 @@ def regroup_unmapped_by_bank(
     flat = flat_unmapped_files(folder)
     if not flat:
         return {}, {}
-    scope_parents = UNMAPPED_SCOPE_PCK_PARENTS.get(storage, ())
-    bank_map = build_media_bank_map(export_root, scope_parents) if scope_parents else {}
+    # Known gap: the source bank of an unmapped media id comes from the PCK
+    # AKPK index, and PCKs are VFS containers that are not dumped. Until the
+    # audio decoder records each media file's PCK, these stay "unknown".
+    bank_map: dict[str, str] = {}
     counts: dict[str, int] = defaultdict(int)
     metadata_by_rel: dict[tuple[str, str], dict[str, str]] = {}
     storage_root = audio_root / storage
@@ -4065,8 +3985,7 @@ def build_audio(args: argparse.Namespace) -> int:
     event_names = set().union(*event_name_source_sets.values())
     metadata_path = args.game_root / "il2cpp_data" / "Metadata" / "global-metadata.dat"
     if not metadata_path.is_file():
-        cached_metadata_path = args.export_root / "recovered" / "il2cpp" / "global-metadata.dat"
-        metadata_path = cached_metadata_path if cached_metadata_path.is_file() else None
+        metadata_path = None
     binary_managed_event_names = {
         name for name in collect_metadata_audio_literals(metadata_path)
         if not is_rtpc_parameter_name(name)
@@ -4514,7 +4433,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         "--audio-root",
         type=Path,
         default=None,
-        help="Decoded audio root containing shared and per-language folders. Default: <export-root>/structured/Audio.",
+        help="Decoded audio root containing shared and per-language folders. Default: <export-root>/game/Audio.",
     )
     args = parser.parse_args(argv)
     if args.streaming_assets is None:
@@ -4522,11 +4441,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     if args.fallback_assets is None:
         args.fallback_assets = args.game_root / "Persistent"
     if args.audio_root is None:
-        args.audio_root = args.export_root / "structured" / "Audio"
+        args.audio_root = ExportLayout(args.export_root).audio_dir
     if args.refresh_hirc and not args.skip_decode:
         parser.error("--refresh-hirc requires --skip-decode")
     return args
 
 
 if __name__ == "__main__":
-    raise SystemExit(build_audio(parse_args()))
+    _args = parse_args()
+    require_export_layout(_args.export_root)
+    raise SystemExit(build_audio(_args))

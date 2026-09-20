@@ -4,16 +4,12 @@ import json
 import re
 from pathlib import Path
 
-from scripts.source_paths import _existing_unique_paths
-
 from scripts.webui.story.context import (
     DEFAULT_LANGUAGE,
     I18N_FILE_RE,
     LANGUAGE_INFO,
     MISC_BUCKET_RE,
-    PERSISTENT_TABLE_DIR,
     STORY_SOURCE_LINKS_PATH,
-    STREAMING_TABLE_DIR,
     TABLE_DIR,
     TYPE_RE,
     _JSON_FILE_CACHE,
@@ -22,11 +18,10 @@ from scripts.webui.story.source_links import build_source_links
 
 def discover_languages() -> list[str]:
     found: list[str] = []
-    for table_dir in _existing_unique_paths([STREAMING_TABLE_DIR, PERSISTENT_TABLE_DIR]):
-        for path in table_dir.glob("I18nTextTable_*.json"):
-            match = I18N_FILE_RE.match(path.name)
-            if match:
-                found.append(match.group(1))
+    for path in TABLE_DIR.glob("I18nTextTable_*.json"):
+        match = I18N_FILE_RE.match(path.name)
+        if match:
+            found.append(match.group(1))
     return sorted(set(found))
 
 

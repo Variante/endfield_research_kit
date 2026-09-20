@@ -6,6 +6,7 @@ action joins.  It intentionally exposes context only: matching authored ids
 and shared local control flow do not prove mission ownership or Story order.
 """
 from __future__ import annotations
+from scripts.common import EXPORT_LAYOUT
 
 import hashlib
 import json
@@ -27,7 +28,7 @@ ROOT = REPO_ROOT
 SCHEMA = "dynamicSceneStoryContext.v1"
 AUDIT_SCHEMA = "dynamicSceneStoryContextValidation.v1"
 DEFAULT_ARTIFACT = Path(__file__).with_name("dynamic_scene.json")
-DEFAULT_EXPORT_ROOT = ROOT / "export_full"
+DEFAULT_EXPORT_ROOT = EXPORT_LAYOUT.root
 DEFAULT_EXPORT_SUMMARY = ROOT / "reports" / "export" / "export_full_summary.json"
 
 GAMEASSEMBLY_SHA256 = (

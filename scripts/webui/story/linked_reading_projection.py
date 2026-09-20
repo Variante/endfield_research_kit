@@ -15,7 +15,7 @@ def rich_content_row_for_source(
         return {}
     payload = collection_table_payload(table_source, "RichContentTable.json")
     row = payload.get(content_key) if isinstance(payload, dict) else None
-    if not isinstance(row, dict) and table_source != "streaming":
+    if not isinstance(row, dict):
         row = fallback_rich_content.get(content_key)
     return row if isinstance(row, dict) else {}
 

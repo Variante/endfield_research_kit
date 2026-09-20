@@ -9,6 +9,7 @@ Run from the repository root:
     python scripts/build_combat_relationships.py --languages CN EN JP
 """
 from __future__ import annotations
+from scripts.common import EXPORT_LAYOUT
 
 import argparse
 import json
@@ -22,11 +23,11 @@ from typing import Any
 try:
     from scripts.game_data.extraction.animestudio_index_io import (
         ObjectIndexUnavailable,
-        iter_published_objects,
+        iter_effective_objects,
         raw_json_path_for_object,
     )
 except ImportError:  # direct script execution
-    from animestudio_index_io import ObjectIndexUnavailable, iter_published_objects, raw_json_path_for_object
+    from animestudio_index_io import ObjectIndexUnavailable, iter_effective_objects, raw_json_path_for_object
 
 
 from scripts.repo_paths import REPO_ROOT
@@ -34,10 +35,10 @@ from scripts.common import write_canonical_json as write_json
 from scripts.common import read_json_strict as load_json
 
 ROOT = REPO_ROOT
-EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
+EXPORT_ROOT = EXPORT_LAYOUT.root
 DEFAULT_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_GRAPH = ROOT / "reports" / "source_graph" / "endfield_source_graph.sqlite"
-DEFAULT_ANIMESTUDIO_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"
+DEFAULT_ANIMESTUDIO_ROOT = EXPORT_LAYOUT.unity_dir
 SCHEMA_VERSION = 7
 
 GRAPH_EDGE_TYPES = {
@@ -495,18 +496,19 @@ class PayloadBuilder:
 
     def ability_entity_paths(self) -> list[Path]:
         paths: list[Path] = []
-        for source in ("Persistent", "StreamingAssets"):
+        export_root = self.animestudio_root.parent.parent
+        for source in ("game",):
             try:
                 indexed = [
-                    raw_json_path_for_object(self.animestudio_root.parent.parent, source, row)
-                    for row in iter_published_objects(self.animestudio_root.parent.parent, source)
+                    raw_json_path_for_object(export_root, layer, row)
+                    for layer, row in iter_effective_objects(export_root)
                     if str(row.get("name") or "").lower().startswith("data_abilityentity")
                 ]
                 paths.extend(path for path in indexed if path is not None)
                 continue
             except ObjectIndexUnavailable:
                 pass
-            directory = self.animestudio_root / source / "json_by_type" / "MonoBehaviour"
+            directory = self.animestudio_root / "MonoBehaviour"
             if directory.is_dir():
                 paths.extend(directory.glob("data_abilityentity*.json"))
         return sorted(paths, key=lambda path: path.as_posix().lower())
@@ -783,18 +785,19 @@ class PayloadBuilder:
 
     def add_character_target_settings(self) -> None:
         paths: list[Path] = []
-        for source in ("Persistent", "StreamingAssets"):
+        export_root = self.animestudio_root.parent.parent
+        for source in ("game",):
             try:
                 indexed = [
-                    raw_json_path_for_object(self.animestudio_root.parent.parent, source, row)
-                    for row in iter_published_objects(self.animestudio_root.parent.parent, source)
+                    raw_json_path_for_object(export_root, layer, row)
+                    for layer, row in iter_effective_objects(export_root)
                     if str(row.get("name") or "").lower().startswith("data_chr_")
                 ]
                 paths.extend(path for path in indexed if path is not None)
                 continue
             except ObjectIndexUnavailable:
                 pass
-            directory = self.animestudio_root / source / "json_by_type" / "MonoBehaviour"
+            directory = self.animestudio_root / "MonoBehaviour"
             if directory.is_dir():
                 paths.extend(directory.glob("data_chr_*.json"))
         paths = sorted(paths, key=lambda path: path.as_posix().lower())
@@ -1150,7 +1153,7 @@ class PayloadBuilder:
             },
             "abilityEntityEvidence": {
                 "available": self.ability_entity_available,
-                "source": "export_full/recovered/AnimeStudio-cli/*/json_by_type/MonoBehaviour/data_abilityentity*.json" if self.ability_entity_available else None,
+                "source": "game/Unity/MonoBehaviour/data_abilityentity*.json" if self.ability_entity_available else None,
                 "files": self.ability_entity_files,
                 "records": self.ability_entity_records,
                 "components": self.ability_entity_components,
@@ -1167,7 +1170,7 @@ class PayloadBuilder:
             },
             "targetSettingsEvidence": {
                 "available": self.target_settings_available,
-                "source": "export_full/recovered/AnimeStudio-cli/*/json_by_type/MonoBehaviour/data_chr_*.json" if self.target_settings_available else None,
+                "source": "game/Unity/MonoBehaviour/data_chr_*.json" if self.target_settings_available else None,
                 "files": self.target_settings_files,
                 "records": self.target_settings_records,
                 "attachedToGameplayRoots": self.target_settings_attached,
@@ -1232,8 +1235,7 @@ def build_language(args: argparse.Namespace, language: str) -> tuple[Path, dict[
         raise FileNotFoundError(f"Gameplay input not found: {input_path}")
     gameplay = load_json(input_path)
     freshness_inputs = [input_path, args.data_root.parent / "manifest.json", ROOT / "webui" / "data" / "assets" / "index.json"]
-    for source in ("Persistent", "StreamingAssets"):
-        directory = args.animestudio_root / source / "json_by_type" / "MonoBehaviour"
+    for directory in (args.animestudio_root / "MonoBehaviour",):
         if directory.is_dir():
             freshness_inputs.extend(directory.glob("data_abilityentity*.json"))
             freshness_inputs.extend(directory.glob("data_chr_*.json"))

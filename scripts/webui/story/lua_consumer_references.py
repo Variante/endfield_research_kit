@@ -32,18 +32,15 @@ from scripts.game_data.native_contracts.cinematic_queue import (
     DEFAULT_CONTRACT as DEFAULT_CINEMATIC_CONTRACT,
     load_cinematic_queue_contract,
 )
+from scripts.common import EXPORT_LAYOUT
 
 REPORT_DIR = ROOT / "reports" / "mission_order"
 DEFAULT_INDEX = REPORT_DIR / "lua_consumer_reference_audit.json"
 DEFAULT_MD = REPORT_DIR / "lua_consumer_reference_audit.md"
 SCHEMA_VERSION = "luaConsumerReferenceAudit.v5"
-DEFAULT_LUA_ROOTS = (
-    ROOT / "export_full" / "structured" / "Persistent" / "Lua",
-    ROOT / "export_full" / "structured" / "StreamingAssets" / "Lua",
-)
+DEFAULT_LUA_ROOTS = (EXPORT_LAYOUT.lua_dir,)
 DEFAULT_TABLE_ROOTS = (
-    ROOT / "export_full" / "structured" / "Persistent" / "Table",
-    ROOT / "export_full" / "structured" / "StreamingAssets" / "Table",
+    EXPORT_LAYOUT.table_dir,
 )
 DEFAULT_STORY_INDEX = ROOT / "webui" / "data" / "lang" / "CN" / "index.json"
 

@@ -1,5 +1,6 @@
 """Refresh independent Story builder evidence files in parallel."""
 from __future__ import annotations
+from scripts.common import require_export_layout
 
 import subprocess
 import sys
@@ -8,20 +9,10 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from pathlib import Path
 
-from scripts.common import ROOT, is_native_evidence_skip
-from scripts.webui.story.mission_assets import (
-    select_complete_mission_runtime_root,
-)
+from scripts.common import DATA_JSON_DIR, ROOT, is_native_evidence_skip
 
-DATA_JSON_DIR = ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json"
-PERSISTENT_DATA_JSON_DIR = (
-    ROOT / "export_full" / "structured" / "Persistent" / "Data" / "Json"
-)
 REQUIRED_SOURCE_LINK_ROOTS = (
-    select_complete_mission_runtime_root(
-        DATA_JSON_DIR / "MissionRuntimeAsset",
-        PERSISTENT_DATA_JSON_DIR / "MissionRuntimeAsset",
-    ),
+    DATA_JSON_DIR / "MissionRuntimeAsset",
     DATA_JSON_DIR / "LevelScriptData",
     DATA_JSON_DIR / "LevelScriptTemplateData",
 )
@@ -82,6 +73,7 @@ def print_stream(label: str, text: str) -> None:
 
 
 def main() -> int:
+    require_export_layout(None)
     if not any(path.is_dir() for path in REQUIRED_SOURCE_LINK_ROOTS):
         roots = ", ".join(str(path) for path in REQUIRED_SOURCE_LINK_ROOTS)
         print(

@@ -5,15 +5,16 @@ import argparse
 from pathlib import Path
 from typing import Any
 
-
-from scripts.repo_paths import REPO_ROOT
-
-ROOT = REPO_ROOT
 if __package__ in {None, ""}:
     raise SystemExit(
         "Run this maintained entry point as: "
         "python -m scripts.webui.story_recovery.audit_story_objects"
     )
+
+from scripts.common import EXPORT_LAYOUT
+from scripts.repo_paths import REPO_ROOT
+
+ROOT = REPO_ROOT
 from scripts.common import (
     resolve_installed_game_data_root,
     write_report_json,
@@ -34,7 +35,7 @@ from scripts.webui.story.animestudio_story_objects import (
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--stage", choices=(*STAGES, "all"), default="all")
-    parser.add_argument("--output-root", type=Path, default=ROOT / "export_full")
+    parser.add_argument("--output-root", type=Path, default=EXPORT_LAYOUT.root)
     parser.add_argument("--gap-queue", type=Path, default=carrier.DEFAULT_GAP_QUEUE)
     parser.add_argument("--story-index", type=Path, default=reverse.DEFAULT_STORY_INDEX)
     parser.add_argument("--game-root", type=Path, default=resolve_installed_game_data_root())

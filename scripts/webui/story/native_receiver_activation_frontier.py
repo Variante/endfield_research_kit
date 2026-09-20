@@ -48,7 +48,6 @@ from scripts.webui.story.context import (
     LEVELDATA_DIR,
     LEVELSCRIPT_DIR,
     MRA_DIR,
-    PERSISTENT_DATA_JSON_DIR,
     SPAWNER_CONFIG_DIR,
 )
 from scripts.webui.story.level_bindings import (
@@ -77,6 +76,7 @@ from scripts.webui.story.mission_recovery import (
     decode_mission_world_entity_condition_refs,
 )
 from scripts.webui.story.mission_recovery import const_value as _unwrap_const
+from scripts.common import EXPORT_LAYOUT
 
 
 SCHEMA = "nativeReceiverActivationFrontier.v29"
@@ -282,20 +282,10 @@ DEFAULT_SCRIPT_TASK_EXTRA_INFO_TABLE = (
 DEFAULT_WORLD_ENTITY_REGISTRY = GAMEPLAY_CONFIG_DIR / "WorldEntityRegistry.json"
 DEFAULT_SUBGAME_TABLE = GAMEPLAY_CONFIG_DIR / "SubGameInstanceDataTable.json"
 DEFAULT_GAME_MECHANIC_CONDITION_TABLE = (
-    ROOT
-    / "export_full"
-    / "structured"
-    / "StreamingAssets"
-    / "Table"
-    / "GameMechanicConditionTable.json"
+    EXPORT_LAYOUT.table_dir / "GameMechanicConditionTable.json"
 )
 DEFAULT_DUNGEON_TABLE = (
-    ROOT
-    / "export_full"
-    / "structured"
-    / "StreamingAssets"
-    / "Table"
-    / "DungeonTable.json"
+    EXPORT_LAYOUT.table_dir / "DungeonTable.json"
 )
 DEFAULT_STRUCTURED_JSON_ROOT = MRA_DIR.parent
 STRUCTURED_SCRIPT_IDENTITY_KEYS = frozenset({
@@ -717,7 +707,7 @@ def _source_file_sha256(source_file: str) -> str:
     if not normalized.startswith("export_full/"):
         return ""
     path = (ROOT / Path(normalized)).resolve()
-    export_root = (ROOT / "export_full").resolve()
+    export_root = EXPORT_LAYOUT.root.resolve()
     if not path.is_file() or not path.is_relative_to(export_root):
         return ""
     cached = _SOURCE_FILE_HASH_CACHE.get(path)
@@ -4909,14 +4899,8 @@ def build_report(
             and safe_text(manifest_row.get("kind")) == "dlg"
             and not (manifest_row.get("routes") or [])
         },
-        leveldata_roots=(
-            leveldata_root,
-            PERSISTENT_DATA_JSON_DIR / "LevelData",
-        ),
-        levelscript_roots=(
-            levelscript_root,
-            PERSISTENT_DATA_JSON_DIR / "LevelScriptData",
-        ),
+        leveldata_roots=(leveldata_root,),
+        levelscript_roots=(levelscript_root,),
         mission_runtime_root=mission_runtime_root,
     )
     story_trigger_zone_by_story = {

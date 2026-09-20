@@ -62,6 +62,7 @@ if __package__ in {None, ""}:
     )
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import EXPORT_LAYOUT, unity_asset_rel
 
 ROOT = REPO_ROOT
 
@@ -77,11 +78,16 @@ from scripts.webui.map.map_recovery_cache_evidence import (
 from scripts.webui.map.map_recovery_sources import isolated_art_source, projection_streaming_scene
 from scripts.webui.map.recover_map_streaming_instances import DEFAULT_CLI as STREAMING_CLI
 
-DEFAULT_ASSET_MAP = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/endfield_streamingassets_assets.json"
-MESH_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
-TEXTURE_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
-MATERIAL_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type/Material"
-RENDERER_INDEX = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/renderer_index/renderers.jsonl"
+DEFAULT_ASSET_MAP = EXPORT_LAYOUT.asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
+# Repository-relative, so every export-root check follows ROOT.
+# An export root outside the repository stays absolute; ROOT / it is itself.
+EXPORT_ROOT_REL = (
+    EXPORT_LAYOUT.root.relative_to(ROOT) if EXPORT_LAYOUT.root.is_relative_to(ROOT) else EXPORT_LAYOUT.root
+)
+MESH_ROOT = EXPORT_LAYOUT.unity_type_dir("Mesh")
+TEXTURE_ROOT = EXPORT_LAYOUT.unity_type_dir("Texture2D")
+MATERIAL_ROOT = EXPORT_LAYOUT.unity_type_dir("Material")
+RENDERER_INDEX = EXPORT_LAYOUT.renderer_index_dir("StreamingAssets") / "renderers.jsonl"
 MAPS_ROOT = ROOT / "webui/data/map_recovery/maps"
 OUTPUT_ROOT = ROOT / "webui/data/map_recovery/render"
 HLOD_INDEX = ROOT / "reports/assets/map_recovery/hlod_grid_index.json"
@@ -388,7 +394,9 @@ def preview_worker_shards(
 def _preview_worker_command(args: argparse.Namespace, levels: tuple[str, ...]) -> list[str]:
     command = [
         sys.executable,
-        str(Path(__file__).resolve()),
+        # Workers run as the module, like every entry point; a file path would
+        # hit the __package__ guard and cannot import scripts.*.
+        "-m", "scripts.webui.map.build_map_recovery_preview",
         "--asset-map", str(args.asset_map),
         "--mesh-root", str(args.mesh_root),
         "--texture-root", str(args.texture_root),
@@ -1463,14 +1471,7 @@ def _relation_path(relative: str, source_roots: dict[str, str]) -> Path | None:
 
 
 def _asset_rel_from_obj(value: object) -> str:
-    obj = str(value or "").replace("\\", "/")
-    parts = obj.split("/recovered/AnimeStudio-cli/", 1)
-    if len(parts) != 2:
-        return ""
-    tail = parts[1].split("/")
-    if len(tail) < 4 or tail[1] != "convert_by_type":
-        return ""
-    return f"{tail[0]}/{'/'.join(tail[2:])}"
+    return unity_asset_rel(str(value or ""))
 
 
 def texture_bindings() -> dict[str, dict]:
@@ -1588,7 +1589,7 @@ def install_asset_map_hlod_diffuse_bindings(index: dict, texture_files: dict[str
             continue
         available[key] = {
             "slot": "_BakedHlodDiffuse",
-            "textureRel": f"StreamingAssets/Texture2D/{texture_path.name}",
+            "textureRel": f"Unity/Texture2D/{texture_path.name}",
             "texturePath": texture_path,
             "materialRel": row["container"],
             "materialPath": ROOT / "__asset_map_baked_hlod_material__",
@@ -1651,9 +1652,9 @@ def install_hlod_material_json_bindings(
         key = identity
         available[key] = {
             "slot": "_BaseColorMap",
-            "textureRel": f"StreamingAssets/Texture2D/{texture_path.name}",
+            "textureRel": f"Unity/Texture2D/{texture_path.name}",
             "texturePath": texture_path,
-            "materialRel": f"StreamingAssets-materials/Material/{material_path.name}",
+            "materialRel": f"Unity/Material/{material_path.name}",
             "materialPath": material_path,
             "mappingMethod": "exact_serialized_hlod_material_base_color_pptr",
         }
@@ -2212,12 +2213,7 @@ def render_point_cloud(
     for row in resolved:
         for mesh in _instance_meshes(row):
             obj = str(mesh.get("obj") or "").replace("\\", "/")
-            parts = obj.split("/recovered/AnimeStudio-cli/", 1)
-            asset_rel = ""
-            if len(parts) == 2:
-                tail = parts[1].split("/")
-                if len(tail) >= 4 and tail[1] == "convert_by_type":
-                    asset_rel = f"{tail[0]}/{'/'.join(tail[2:])}"
+            asset_rel = unity_asset_rel(obj)
             key = str(mesh.get("pathId") or mesh.get("name") or obj)
             current = mesh_rows.setdefault(key, {
                 "name": mesh.get("name"),
@@ -2474,7 +2470,7 @@ def _scene_meshes(
     the PNG renderer, so it can label this as diagnostic geometry rather than
     presenting it as an authored scene transform.
     """
-    export_root = (ROOT / "export_full").resolve()
+    export_root = (ROOT / EXPORT_ROOT_REL).resolve()
     cell = cell_size(lod)
     rows: list[dict] = []
     triangles = 0
@@ -2506,12 +2502,7 @@ def _scene_meshes(
         # Keep the compact asset-index spelling alongside the direct raw URL.
         # This lets the map link into the existing Assets OBJ viewer without
         # making that page scan or understand map-recovery manifests.
-        asset_rel = ""
-        relative_parts = relative.split("/")
-        if len(relative_parts) >= 5 and relative_parts[0:2] == ["recovered", "AnimeStudio-cli"]:
-            source = relative_parts[2]
-            if len(relative_parts) >= 5 and relative_parts[3] == "convert_by_type":
-                asset_rel = f"{source}/{'/'.join(relative_parts[4:])}"
+        asset_rel = unity_asset_rel(relative)
         if mesh_triangles > MAX_SCENE_TRIANGLES:
             # One pathological OBJ must not defeat the scene cap by being the
             # first accepted row; the PNG path already rendered it safely.
@@ -2980,7 +2971,7 @@ def _rasterise_streaming_depth_batched(streaming, bounds, width, height, binding
     detail_triangles = 0
     excluded_detail_triangles = 0
     used_textures: set[str] = set()
-    export_root = (ROOT / "export_full").resolve()
+    export_root = (ROOT / EXPORT_ROOT_REL).resolve()
 
     for instance in streaming:
         matrix = instance.get("matrixColumnMajor")
@@ -3092,7 +3083,7 @@ def _rasterise_streaming_depth_stdlib(streaming, bounds, width, height, bindings
     excluded_detail_triangles = 0
     vertex_samples = 0
     used_textures: set[str] = set()
-    export_root = (ROOT / "export_full").resolve()
+    export_root = (ROOT / EXPORT_ROOT_REL).resolve()
 
     for instance in streaming:
         matrix = instance.get("matrixColumnMajor")
@@ -4119,9 +4110,9 @@ def renderer_texture_bindings() -> dict[tuple[str, int], dict]:
             return None
         return {
             "slot": selected[0],
-            "textureRel": f"StreamingAssets/Texture2D/{texture_path.name}",
+            "textureRel": f"Unity/Texture2D/{texture_path.name}",
             "texturePath": texture_path,
-            "materialRel": f"StreamingAssets-materials/Material/{material_path.name}",
+            "materialRel": f"Unity/Material/{material_path.name}",
             "materialPath": material_path,
             "mappingMethod": "exact_renderer_material_base_color_pptr",
         }
@@ -4171,7 +4162,7 @@ def _collect_streaming_surface_samples_batched(
     sampled_triangles = source_samples = 0
     excluded_structural_triangles = excluded_horizontal_triangles = 0
     unresolved_material_triangles = unresolved_uv_triangles = 0
-    export_root = (ROOT / "export_full").resolve()
+    export_root = (ROOT / EXPORT_ROOT_REL).resolve()
 
     for instance in streaming:
         matrix = instance.get("matrixColumnMajor")
@@ -4305,7 +4296,7 @@ def _collect_streaming_surface_samples_stdlib(
     sampled_triangles = source_samples = 0
     excluded_structural_triangles = excluded_horizontal_triangles = 0
     unresolved_material_triangles = unresolved_uv_triangles = 0
-    export_root = (ROOT / "export_full").resolve()
+    export_root = (ROOT / EXPORT_ROOT_REL).resolve()
 
     def add(index: int, world_y: float, color: tuple[int, int, int, int] | None) -> None:
         rows = samples.setdefault(index, [])

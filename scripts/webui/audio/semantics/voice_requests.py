@@ -18,8 +18,7 @@ from scripts.webui.audio.semantics.native_evidence import (
 )
 
 ANIMATION_VOICE_CLIP_RELS = (
-    Path("recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip"),
-    Path("recovered/AnimeStudio-cli/Persistent/convert_by_type/AnimationClip"),
+    Path("game/Unity/AnimationClip"),
 )
 
 ANIMATION_VOICE_CLIP_RE = re.compile(

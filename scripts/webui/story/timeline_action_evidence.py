@@ -6,6 +6,7 @@ This consumes AnimeStudio MonoBehaviour JSON with
 action-flow line sequence with the existing Timeline clip order.
 """
 from __future__ import annotations
+from scripts.common import EXPORT_LAYOUT
 
 import argparse
 import json
@@ -22,11 +23,13 @@ ROOT = REPO_ROOT
 from scripts.common import fast_glob_files
 from scripts.webui.story.mission_recovery import load_json as read_json
 from scripts.webui.story.timeline_recovery import rel_path
+from scripts.common import WEBUI_BUILD_DIR
+from scripts.source_paths import ExportLayout
 
-EXPORT_ROOT = ROOT / "export_full"
-DEFAULT_RECOVERY_ROOT = EXPORT_ROOT / "recovered" / "AnimeStudio-cli"
-DEFAULT_OUT = DEFAULT_RECOVERY_ROOT / "timeline_action_evidence.json"
-DEFAULT_LINE_ORDERS = DEFAULT_RECOVERY_ROOT / "timeline_line_orders.json"
+EXPORT_ROOT = EXPORT_LAYOUT.root
+STORY_BUILD_DIR = WEBUI_BUILD_DIR / "story"
+DEFAULT_OUT = STORY_BUILD_DIR / "timeline_action_evidence.json"
+DEFAULT_LINE_ORDERS = STORY_BUILD_DIR / "timeline_line_orders.json"
 
 ACTION_DISPLAY_LIMIT_PER_LINE = 8
 DETAIL_TIMELINE_LIMIT = 5
@@ -208,20 +211,14 @@ def _level_event_marker_row(
 
 def enrich_level_event_marker_payload(
     row: dict[str, Any],
-    index_root: Path,
+    unity_dir: Path,
 ) -> None:
     """Attach exact authored marker timing from its exported object JSON."""
     marker = row.get("marker") or {}
     name = str(marker.get("name") or "")
     path_id = int(marker.get("pathId") or 0)
     filename = f"{name}_p{path_id & ((1 << 64) - 1):016X}.json"
-    object_path = (
-        index_root
-        / str(row.get("source") or "")
-        / "json_by_type"
-        / "MonoBehaviour"
-        / filename
-    )
+    object_path = unity_dir / "MonoBehaviour" / filename
     row["markerObjectJson"] = rel_path(object_path) if object_path.is_file() else None
     row["timelineTimeSeconds"] = None
     row["retroactive"] = None
@@ -452,11 +449,8 @@ def compact_action(ref: dict) -> dict:
     return {key: value for key, value in out.items() if value not in (None, "")}
 
 
-def iter_default_mono_roots(recovery_root: Path = DEFAULT_RECOVERY_ROOT) -> list[Path]:
-    return [
-        recovery_root / "StreamingAssets" / "json_by_type" / "MonoBehaviour",
-        recovery_root / "Persistent" / "json_by_type" / "MonoBehaviour",
-    ]
+def iter_default_mono_roots(export_root: Path = EXPORT_ROOT) -> list[Path]:
+    return [ExportLayout(export_root).unity_type_dir("MonoBehaviour")]
 
 
 def iter_mono_dirs(roots: list[Path]) -> list[Path]:
@@ -874,15 +868,14 @@ def build_timeline_action_evidence(
 
 
 def default_evidence_out(export_root: Path = EXPORT_ROOT) -> Path:
-    return export_root / "recovered" / "AnimeStudio-cli" / "timeline_action_evidence.json"
+    return WEBUI_BUILD_DIR / "story" / "timeline_action_evidence.json"
 
 
 def build_timeline_action_evidence_for_build(export_root: Path = EXPORT_ROOT) -> dict:
-    recovery_root = export_root / "recovered" / "AnimeStudio-cli"
     return build_timeline_action_evidence(
-        mono_roots=iter_default_mono_roots(recovery_root),
-        line_orders_path=recovery_root / "timeline_line_orders.json",
-        out_path=recovery_root / "timeline_action_evidence.json",
+        mono_roots=iter_default_mono_roots(export_root),
+        line_orders_path=DEFAULT_LINE_ORDERS,
+        out_path=DEFAULT_OUT,
         write=True,
     )
 
@@ -1031,10 +1024,9 @@ def main(argv: list[str] | None = None) -> None:
     args = parser.parse_args(argv)
 
     export_root = args.export_root if args.export_root.is_absolute() else ROOT / args.export_root
-    recovery_root = export_root / "recovered" / "AnimeStudio-cli"
-    mono_roots = args.mono_root or iter_default_mono_roots(recovery_root)
-    line_orders = args.line_orders or recovery_root / "timeline_line_orders.json"
-    out_path = args.out or recovery_root / "timeline_action_evidence.json"
+    mono_roots = args.mono_root or iter_default_mono_roots(export_root)
+    line_orders = args.line_orders or DEFAULT_LINE_ORDERS
+    out_path = args.out or DEFAULT_OUT
     line_orders = line_orders if line_orders.is_absolute() else ROOT / line_orders
     out_path = out_path if out_path.is_absolute() else ROOT / out_path
     build_timeline_action_evidence(

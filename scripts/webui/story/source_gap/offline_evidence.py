@@ -1,5 +1,6 @@
 """Build-locked offline exhaustion evidence and validators."""
 from __future__ import annotations
+from scripts.common import rel_path as export_rel_path
 
 import base64
 import binascii
@@ -124,6 +125,7 @@ from scripts.webui.story.source_gap.content_evidence import (
     _generic_unregistered_dialog_definition_facts,
     _offline_radio_definition_validation_failure,
 )
+from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
 
 
 
@@ -1081,15 +1083,8 @@ def _audit_source_index_diagnostics(
     }
     failures: list[dict[str, Any]] = []
     for source in ("StreamingAssets", "Persistent"):
-        summary_path = (
-            ROOT
-            / "export_full"
-            / "recovered"
-            / "AnimeStudio-cli"
-            / source
-            / "object_index"
-            / "summary.json"
-        )
+        # ROOT-relative, so a test that relocates ROOT relocates this too.
+        summary_path = ROOT / export_rel_path(EXPORT_LAYOUT.object_index_dir(source)) / "summary.json"
         summary = read_json(summary_path, {})
         signature = safe_key(
             (summary.get("stageSignature") or {}).get("sha256")
@@ -1775,104 +1770,43 @@ def build_offline_exhaustion_index(
         "snsOptionTable": table_root / "SNSDialogOptionTable.json",
         "snsChatTable": table_root / "SNSChatTable.json",
         "npcProxyExDataTable": (
-            ROOT
-            / "export_full"
-            / "structured"
-            / "Persistent"
-            / "Data"
-            / "Json"
-            / "GameplayConfig"
-            / "NpcProxyExDataTable.json"
+            (ROOT / export_rel_path(EXPORT_LAYOUT.json_dir))
+            / "GameplayConfig" / "NpcProxyExDataTable.json"
         ),
         "npcProxyTable": (
-            ROOT
-            / "export_full"
-            / "structured"
-            / "StreamingAssets"
-            / "Data"
-            / "Json"
-            / "GameplayConfig"
-            / "NpcProxyTable.json"
+            (ROOT / export_rel_path(EXPORT_LAYOUT.json_dir))
+            / "GameplayConfig" / "NpcProxyTable.json"
         ),
         "dialogIdSource": (
-            ROOT
-            / "export_full"
-            / "structured"
-            / "StreamingAssets"
-            / "Data"
-            / "Json"
-            / "GameplayConfig"
-            / "DialogIdTable.json"
+            (ROOT / export_rel_path(EXPORT_LAYOUT.json_dir))
+            / "GameplayConfig" / "DialogIdTable.json"
         ),
         "dialogIdIndex": (
-            ROOT
-            / "export_full"
-            / "recovered"
-            / "dialog_id_table_index.json"
+            ROOT / export_rel_path(WEBUI_BUILD_DIR) / "story" / "dialog_id_table_index.json"
         ),
         "levelBasicInfoTable": (
-            ROOT
-            / "export_full"
-            / "structured"
-            / "StreamingAssets"
-            / "Data"
-            / "Json"
-            / "GameplayConfig"
-            / "LevelBasicInfoTable.json"
+            (ROOT / export_rel_path(EXPORT_LAYOUT.json_dir))
+            / "GameplayConfig" / "LevelBasicInfoTable.json"
         ),
         "levelConfigRoot": (
-            ROOT
-            / "export_full"
-            / "structured"
-            / "StreamingAssets"
-            / "Data"
-            / "Json"
-            / "LevelConfig"
+            (ROOT / export_rel_path(EXPORT_LAYOUT.json_dir)) / "LevelConfig"
         ),
         "levelDataRoot": (
-            ROOT
-            / "export_full"
-            / "structured"
-            / "StreamingAssets"
-            / "Data"
-            / "Json"
-            / "LevelData"
+            (ROOT / export_rel_path(EXPORT_LAYOUT.json_dir)) / "LevelData"
         ),
         "levelScriptRoot": (
-            ROOT
-            / "export_full"
-            / "structured"
-            / "StreamingAssets"
-            / "Data"
-            / "Json"
-            / "LevelScriptData"
+            (ROOT / export_rel_path(EXPORT_LAYOUT.json_dir)) / "LevelScriptData"
         ),
         "subGameInstanceDataTable": (
-            ROOT
-            / "export_full"
-            / "structured"
-            / "StreamingAssets"
-            / "Data"
-            / "Json"
-            / "GameplayConfig"
-            / "SubGameInstanceDataTable.json"
+            (ROOT / export_rel_path(EXPORT_LAYOUT.json_dir))
+            / "GameplayConfig" / "SubGameInstanceDataTable.json"
         ),
         "scriptTaskExtraInfoTable": (
-            ROOT
-            / "export_full"
-            / "structured"
-            / "StreamingAssets"
-            / "Data"
-            / "Json"
-            / "GameplayConfig"
-            / "ScriptTaskExtraInfoTable.json"
+            (ROOT / export_rel_path(EXPORT_LAYOUT.json_dir))
+            / "GameplayConfig" / "ScriptTaskExtraInfoTable.json"
         ),
         "timelineLineOrders": (
-            ROOT
-            / "export_full"
-            / "recovered"
-            / "AnimeStudio-cli"
-            / "timeline_line_orders.json"
+            ROOT / export_rel_path(WEBUI_BUILD_DIR) / "story" / "timeline_line_orders.json"
         ),
         "gameAssembly": game_assembly_path,
         "globalMetadata": global_metadata_path,
@@ -1883,13 +1817,7 @@ def build_offline_exhaustion_index(
     for context in OFFLINE_EXHAUSTION_RADIO_CONTEXTS.values():
         source_paths[context["sourceKey"]] = ROOT / context["sourceFile"]
     cutscene_definition_root = (
-        ROOT
-        / "export_full"
-        / "recovered"
-        / "AnimeStudio-cli"
-        / "StreamingAssets"
-        / "json_by_type"
-        / "TextAsset"
+        ROOT / export_rel_path(EXPORT_LAYOUT.unity_type_dir("TextAsset"))
     )
     source_paths["dialogTextAssetRoot"] = cutscene_definition_root
     for story_key, definition in (
@@ -2654,7 +2582,7 @@ def build_offline_exhaustion_index(
                         "mapId": map_id,
                         "scriptId": script_id,
                         "sourceFile": (
-                            "export_full/structured/StreamingAssets/Data/Json/"
+                            export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
                             f"LevelScriptData/{map_id}/{script_id}.json"
                         ),
                     }
@@ -3895,20 +3823,7 @@ def build_offline_exhaustion_index(
         {},
     )
     mission_tracking_corpus = _build_mission_npc_proxy_tracking_index(
-        ROOT
-        / "export_full"
-        / "structured"
-        / "StreamingAssets"
-        / "Data"
-        / "Json"
-        / "MissionRuntimeAsset",
-        ROOT
-        / "export_full"
-        / "structured"
-        / "Persistent"
-        / "Data"
-        / "Json"
-        / "MissionRuntimeAsset",
+        ROOT / export_rel_path(EXPORT_LAYOUT.json_dir) / "MissionRuntimeAsset",
     )
     generic_mission_tracking_validation_failures = list(
         mission_tracking_corpus.get("scanFailures") or []

@@ -16,14 +16,16 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.characters.build_character_data"
     )
 
+from scripts.common import require_export_layout
+
 from scripts.common import EXPORT_ROOT, LANG_DIR, OUT_DIR, rel_path, write_json
-from scripts.common import read_json
+from scripts.common import WEBUI_BUILD_DIR, read_json
+from scripts.source_paths import ExportLayout
 
 
-TABLE_ROOT_RELS = (
-    ("StreamingAssets", Path("structured") / "StreamingAssets" / "Table"),
-    ("Persistent", Path("structured") / "Persistent" / "Table"),
-)
+CONVERTED_MEDIA_TYPES = ("Texture2D", "Sprite", "Mesh", "Animator", "AnimationClip")
+# Relative to an export root (layout v2): one effective table set.
+TABLE_ROOT_RELS = (("game", Path("game") / "Table"),)
 ASSET_MARKERS = (
     # "lod" is a LOD-variant marker, not a name (e.g. M_actor_lod_aglina_* is
     # the LOD material set for "aglina") — skip over it to reach the real name.
@@ -110,8 +112,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=None,
         help=(
-            "Versioned character-catalog snapshot directory. Defaults to "
-            "<export-root>/recovered/WebUI/characters for Updates comparisons."
+            "Character-catalog directory that Updates compares. Defaults to "
+            "webui/data/_build/characters."
         ),
     )
     return parser.parse_args(argv)
@@ -181,7 +183,7 @@ def iter_asset_entries(asset_index_path: Path, export_root: Path) -> tuple[Itera
     if isinstance(entries, list):
         return entries, rel_path(asset_index_path)
 
-    recovered_root = export_root / "recovered" / "AnimeStudio-cli"
+    recovered_root = ExportLayout(export_root).unity_dir
 
     def scan() -> Iterable[dict[str, Any]]:
         if not recovered_root.is_dir():
@@ -192,8 +194,15 @@ def iter_asset_entries(asset_index_path: Path, export_root: Path) -> tuple[Itera
             ".mp4": "video", ".webm": "video",
             ".json": "json",
         }
-        for path in recovered_root.rglob("*"):
-            if not path.is_file() or "convert_by_type" not in path.parts:
+        # Converted media only (the former convert_by_type set), never the
+        # object JSON folders, which hold over a million files.
+        media_paths = (
+            path
+            for type_name in CONVERTED_MEDIA_TYPES
+            for path in (recovered_root / type_name).rglob("*")
+        )
+        for path in media_paths:
+            if not path.is_file():
                 continue
             kind = kind_by_suffix.get(path.suffix.lower())
             if not kind:
@@ -492,7 +501,8 @@ def build_language_payload(
             )
         sources.append({"source": "Story actor registry", "path": rel_path(actor_path), "rule": "all actorNames entries"})
 
-    entries, asset_source_path = iter_asset_entries(asset_index_path, roots[0][1].parents[2])
+    # roots[] are <export root>/game/Table; the export root is two levels up.
+    entries, asset_source_path = iter_asset_entries(asset_index_path, roots[0][1].parents[1])
     asset_entry_count = 0
     for entry in entries:
         if not isinstance(entry, dict):
@@ -512,12 +522,13 @@ def build_language_payload(
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    require_export_layout(getattr(args, 'export_root', None))
     roots = table_roots(args.export_root)
     if not roots:
-        print(f"Missing table directories under {args.export_root / 'structured'}")
+        print(f"Missing table directory {ExportLayout(args.export_root).table_dir}")
         return 2
     fallback = str(args.default_language).strip().upper() or "CN"
-    snapshot_dir = args.snapshot_dir or (args.export_root / "recovered/WebUI/characters")
+    snapshot_dir = args.snapshot_dir or (WEBUI_BUILD_DIR / "characters")
     outputs = []
     for raw_language in args.languages:
         language = str(raw_language).strip().upper()

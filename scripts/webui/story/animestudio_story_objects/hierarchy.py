@@ -19,6 +19,7 @@ promoted.
 """
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import json
 import mmap
@@ -35,6 +36,8 @@ from scripts.repo_paths import REPO_ROOT
 ROOT = REPO_ROOT
 
 from scripts.webui.story.animestudio_story_objects import carrier
+from scripts.game_data.extraction.animestudio_index_io import EffectiveObjectRows
+from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 
 SCHEMA = "animestudioStoryGameObjectAudit.v3"
 SOURCES = ("StreamingAssets", "Persistent")
@@ -224,14 +227,7 @@ def map_logical_bundles(
             raise AuditError(f"unexpected indexed source path: {source_path!r}")
         cache_key = (source, chunk_file)
         if cache_key not in chunk_cache:
-            index_path = (
-                output_root
-                / "recovered"
-                / "AnimeStudio-cli"
-                / source
-                / "vfs_index"
-                / "bundle_vfs_index.json"
-            )
+            index_path = ExportLayout(output_root).vfs_index_dir(source) / "bundle_vfs_index.json"
             chunk_cache[cache_key] = load_chunk_record(index_path, chunk_file)
         logical = logical_bundle_for_offset(
             chunk_cache[cache_key],
@@ -502,7 +498,9 @@ def collect_component_rows(
             raise AuditError(f"{source}: published object index is not complete")
         index_dir = carrier.animestudio_object_index_dir(output_root, source)
         object_path = index_dir / summary["outputs"]["objects"]["path"]
-        for row in carrier.iter_gzip_jsonl(object_path):
+        for row in EffectiveObjectRows(
+            carrier.iter_gzip_jsonl(object_path), effective_chunk_slot_keys(output_root)
+        ):
             if row.get("recordType") != "object":
                 continue
             identity = row.get("object") or {}
@@ -827,13 +825,12 @@ def build_report(
             raise AuditError(f"{source}: published object index is not complete")
         index_dir = carrier.animestudio_object_index_dir(output_root, source)
         object_path = index_dir / summary["outputs"]["objects"]["path"]
-        found, counts = collect_story_game_objects(
-            carrier.iter_gzip_jsonl(object_path),
-            target_missions,
-            source,
+        rows = EffectiveObjectRows(
+            carrier.iter_gzip_jsonl(object_path), effective_chunk_slot_keys(output_root)
         )
+        found, counts = collect_story_game_objects(rows, target_missions, source)
         expected_objects = int((summary.get("counts") or {}).get("objects") or 0)
-        if counts["objectsScanned"] != expected_objects:
+        if rows.read != expected_objects:
             raise AuditError(
                 f"{source}: merged object count mismatch: "
                 f"{counts['objectsScanned']} parsed, {expected_objects} "

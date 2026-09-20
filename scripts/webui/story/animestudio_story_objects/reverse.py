@@ -10,6 +10,7 @@ not create mission ownership or chronology.
 """
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import json
 import sys
@@ -32,6 +33,8 @@ from scripts.common import (
 
 from scripts.webui.story.animestudio_story_objects import carrier
 from scripts.webui.story.animestudio_story_objects import hierarchy as gameobjects
+from scripts.game_data.extraction.animestudio_index_io import EffectiveObjectRows
+from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 from scripts.webui.story.animestudio_story_objects import (
     REVERSE_GAMEASSEMBLY_SHA256,
     REVERSE_METADATA_SHA256,
@@ -643,14 +646,13 @@ def build_report(
         index_dir = carrier.animestudio_object_index_dir(output_root, source)
         object_path = index_dir / summary["outputs"]["objects"]["path"]
         expected = int((summary.get("counts") or {}).get("objects") or 0)
-        found, parsed = collect_targets(
-            carrier.iter_gzip_jsonl(object_path),
-            target_missions,
-            source,
+        rows = EffectiveObjectRows(
+            carrier.iter_gzip_jsonl(object_path), effective_chunk_slot_keys(output_root)
         )
-        if parsed != expected:
+        found, _effective_parsed = collect_targets(rows, target_missions, source)
+        if rows.read != expected:
             raise AuditError(
-                f"{source}: parsed {parsed} objects, expected {expected}"
+                f"{source}: parsed {rows.read} objects, expected {expected}"
             )
         for key, row in found.items():
             previous = targets.get(key)
@@ -882,14 +884,7 @@ def story_root_playback_aliases(
         )
         source_fingerprint = source_row.get("sourceFingerprint")
         export_fingerprint = source_sizes.get(source)
-        summary_path = (
-            Path(output_root)
-            / "recovered"
-            / "AnimeStudio-cli"
-            / source
-            / "object_index"
-            / "summary.json"
-        )
+        summary_path = ExportLayout(Path(output_root)).object_index_dir(source) / "summary.json"
         current_summary = read_json(summary_path, {})
         current_stage = current_summary.get("stageSignature")
         if (

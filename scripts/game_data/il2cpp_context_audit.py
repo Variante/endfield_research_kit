@@ -4,6 +4,7 @@ No runtime MethodInfo or serialized source cursor is inferred. Native tables
 are referenced PE extents, not a claim to consume the entire PE to EOF.
 """
 from __future__ import annotations
+from scripts.common import EXPORT_LAYOUT
 
 import hashlib
 import importlib.util
@@ -7472,7 +7473,7 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
         corpus, source='reports/animestudio/skilldata_current_latest.json')
     terminal_sample = skilldata_terminal_sample_byte_witness(
         terminal_collision, representative_sample_raw,
-        source='export_full/structured/StreamingAssets/Data/Json/SkillData/Potential_test.json')
+        source='game/Json/SkillData/Potential_test.json')
     terminal_tail_layout = skilldata_terminal_tail_layout(
         terminal_collision, terminal_sample, tail_reads, gameplay_tag_wrapper,
         source=source)
@@ -8508,12 +8509,10 @@ def audit():
     verify_current_report_inputs(corpus)
     terminal_branch_selections = select_skilldata_terminal_branch_samples(
         corpus, source=str(corpus_path))
-    skill_sample_path = (ROOT / 'export_full/structured/StreamingAssets/Data/Json/'
-                         'SkillData/Potential_test.json')
+    skill_sample_path = EXPORT_LAYOUT.game_file('Data/Json/SkillData/Potential_test.json')
     skill_sample_raw = skill_sample_path.read_bytes()
     terminal_branch_sample_paths = [
-        ROOT / 'export_full/structured/StreamingAssets' /
-        Path(*selection['row']['virtualPath'].split('/'))
+        EXPORT_LAYOUT.game_file(selection['row']['virtualPath'])
         for selection in terminal_branch_selections
     ]
     actiongroup_branch_census_rows = []
@@ -8523,8 +8522,7 @@ def audit():
                 record_lists[0]['count'] > 0):
             actiongroup_branch_census_rows.append(row)
     actiongroup_branch_census_sample_paths = [
-        ROOT / 'export_full/structured/StreamingAssets' /
-        Path(*row['virtualPath'].split('/'))
+        EXPORT_LAYOUT.game_file(row['virtualPath'])
         for row in actiongroup_branch_census_rows
     ]
     actiongroup_branch_sample_identities = [
@@ -8536,7 +8534,7 @@ def audit():
         'Data/Json/SkillData/abilityentity_interact_mud_carpet_passive.json',
     ]
     actiongroup_branch_sample_paths = [
-        ROOT / 'export_full/structured/StreamingAssets' / Path(*logical_path.split('/'))
+        EXPORT_LAYOUT.game_file(logical_path)
         for logical_path in actiongroup_branch_sample_identities
     ]
     skill_terminal_path = Path(__file__).with_name('memorypack') / 'skill_terminal.py'

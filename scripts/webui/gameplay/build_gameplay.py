@@ -26,10 +26,11 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.gameplay.build_gameplay"
     )
 
+from scripts.common import require_export_layout
+from scripts.repo_paths import REPO_ROOT
 
-SCRIPT_DIR = Path(__file__).resolve().parent
 
-ROOT = SCRIPT_DIR.parent
+ROOT = REPO_ROOT
 WEBUI_DATA_ROOT = ROOT / "webui" / "data"
 
 STAGES = ("base", "projectiles", "asset-refs", "combat", "audit")
@@ -189,6 +190,7 @@ def run_stage(stage: str, args: argparse.Namespace) -> int:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    require_export_layout(getattr(args, 'export_root', None))
     # Preserve dependency order regardless of the order flags were given.
     selected = [stage for stage in STAGES if not args.stage or stage in args.stage]
     for stage in selected:

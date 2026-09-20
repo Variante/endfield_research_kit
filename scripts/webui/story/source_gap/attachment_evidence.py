@@ -1,5 +1,6 @@
 """Quest attachment and generated Story-manifest validation."""
 from __future__ import annotations
+from scripts.common import EXPORT_LAYOUT, rel_path as export_rel_path
 
 import json
 from pathlib import Path
@@ -873,7 +874,7 @@ def _classify_server_placeholder_story_boundary(
             level_id = safe_key(connection.get("mapId"))
             script_id = safe_key(connection.get("scriptId"))
             path = (
-                "export_full/structured/StreamingAssets/Data/Json/"
+                export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
                 f"LevelScriptData/{level_id}/{script_id}.json"
             )
             if not level_id or not script_id or not (ROOT / path).is_file():
@@ -1071,7 +1072,7 @@ def _classify_levelscript_condition_story_boundary(
             "actual": {"levelId": level_id, "scriptId": script_id},
         }
     levelscript_file = (
-        "export_full/structured/StreamingAssets/Data/Json/"
+        export_rel_path(EXPORT_LAYOUT.json_dir) + "/"
         f"LevelScriptData/{level_id}/{script_id}.json"
     )
     levelscript_path = ROOT / levelscript_file

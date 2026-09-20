@@ -24,6 +24,8 @@ Story file and therefore never add Story files to a map marker.
 """
 
 from __future__ import annotations
+from scripts.common import require_export_layout
+from scripts.common import EXPORT_LAYOUT, rel_path as export_rel_path, unity_asset_rel
 
 import argparse
 import hashlib
@@ -58,44 +60,42 @@ from scripts.webui.map.map_recovery_sources import authored_streaming_scene, iso
 from scripts.game_data.terrain_height import render_height_layer, write_height_index
 
 
-GAMEPLAY_CONFIG = "export_full/structured/StreamingAssets/Data/Json/GameplayConfig"
+GAMEPLAY_CONFIG = export_rel_path(EXPORT_LAYOUT.json_dir / "GameplayConfig")
 REGISTRY_REL = f"{GAMEPLAY_CONFIG}/WorldEntityRegistry.json"
 REGISTRY = ROOT / REGISTRY_REL
 NPC_PROXY_TABLE_REL = f"{GAMEPLAY_CONFIG}/NpcProxyTable.json"
 NPC_PROXY_EX_REL = f"{GAMEPLAY_CONFIG}/NpcProxyExDataTable.json"
 ATMOSPHERIC_NPC_CLUSTER_REL = f"{GAMEPLAY_CONFIG}/AtmosphericNpcClusterDataTable.json"
-PERSISTENT_GAMEPLAY_CONFIG = (
-    "export_full/structured/Persistent/Data/Json/GameplayConfig"
-)
 LEVEL_BASIC_INFO_REL = f"{GAMEPLAY_CONFIG}/LevelBasicInfoTable.json"
 MAP_ID_TABLE_REL = f"{GAMEPLAY_CONFIG}/MapIdTable.json"
 TELEPORT_TABLE_REL = f"{GAMEPLAY_CONFIG}/LevelScriptTeleportValidationDataTable.json"
-READING_POPUP_REL = "export_full/structured/StreamingAssets/Table/ReadingPopUpTable.json"
-LEVEL_SCRIPT_DATA = "export_full/structured/StreamingAssets/Data/Json/LevelScriptData"
-LEVEL_DATA = "export_full/structured/StreamingAssets/Data/Json/LevelData"
-PERSISTENT_LEVEL_DATA = "export_full/structured/Persistent/Data/Json/LevelData"
-MISSION_RUNTIME_DIR = "export_full/structured/Persistent/Data/Json/MissionRuntimeAsset"
+READING_POPUP_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "ReadingPopUpTable.json")
+LEVEL_SCRIPT_DATA = export_rel_path(EXPORT_LAYOUT.json_dir / "LevelScriptData")
+EXPORT_ROOT_REL = export_rel_path(EXPORT_LAYOUT.root)
+LEVEL_DATA = export_rel_path(EXPORT_LAYOUT.json_dir / "LevelData")
+SPAWNER_CONFIG = export_rel_path(EXPORT_LAYOUT.json_dir / "SpawnerConfig")
+MISSION_RUNTIME_DIR = export_rel_path(EXPORT_LAYOUT.json_dir / "MissionRuntimeAsset")
 
-LEVEL_DESC_REL = "export_full/structured/StreamingAssets/Table/LevelDescTable.json"
-I18N_TEXT_REL = "export_full/structured/StreamingAssets/Table/I18nTextTable_{0}.json"
+LEVEL_DESC_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "LevelDescTable.json")
+I18N_TEXT_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "I18nTextTable_{0}.json")
 MISSION_NAMES_REL = "webui/data/lang/{0}/missions.json"
-TEXT_TABLE_REL = "export_full/structured/StreamingAssets/Table/TextTable.json"
-MAP_UI_CONFIG_DIR = "export_full/structured/StreamingAssets/Data/Json/UILevelMapLoadConfig"
-MAP_TILE_DIR = "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Texture2D"
-TERRAIN_HEIGHT_DIR = "export_full/structured/StreamingAssets/Data/Terrain/PC"
+TEXT_TABLE_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "TextTable.json")
+MAP_UI_CONFIG_DIR = export_rel_path(EXPORT_LAYOUT.json_dir / "UILevelMapLoadConfig")
+MAP_TILE_DIR = export_rel_path(EXPORT_LAYOUT.unity_type_dir("Texture2D"))
+TERRAIN_HEIGHT_DIR = export_rel_path(EXPORT_LAYOUT.terrain_dir / "PC")
 TERRAIN_HEIGHT_INDEX_REL = "reports/assets/map_recovery/terrain_height_index.json"
 ANIMESTUDIO_ASSET_MAP_REL = (
-    "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps/"
+    export_rel_path(EXPORT_LAYOUT.asset_map_dir("StreamingAssets")) + "/"
     "endfield_streamingassets_assets.json"
 )
-MODEL_ROOT_REL = "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/Mesh"
-MAP_MARK_TEMP_REL = "export_full/structured/StreamingAssets/Table/MapMarkTempTable.json"
+MODEL_ROOT_REL = export_rel_path(EXPORT_LAYOUT.unity_type_dir("Mesh"))
+MAP_MARK_TEMP_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "MapMarkTempTable.json")
 MODEL_TABLE_REL = f"{GAMEPLAY_CONFIG}/ModelTable.json"
-SPACESHIP_CONST_REL = "export_full/structured/StreamingAssets/Table/SpaceshipConst.json"
-FACTORY_BUILDING_REL = "export_full/structured/StreamingAssets/Table/FactoryBuildingTable.json"
-FACTORY_BATTLE_REL = "export_full/structured/StreamingAssets/Table/FactoryBattleTable.json"
-ENEMY_TEMPLATE_REL = "export_full/structured/StreamingAssets/Table/EnemyTemplateTable.json"
-ENEMY_TEMPLATE_DISPLAY_REL = "export_full/structured/StreamingAssets/Table/EnemyTemplateDisplayInfoTable.json"
+SPACESHIP_CONST_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "SpaceshipConst.json")
+FACTORY_BUILDING_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "FactoryBuildingTable.json")
+FACTORY_BATTLE_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "FactoryBattleTable.json")
+ENEMY_TEMPLATE_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "EnemyTemplateTable.json")
+ENEMY_TEMPLATE_DISPLAY_REL = export_rel_path(EXPORT_LAYOUT.table_dir / "EnemyTemplateDisplayInfoTable.json")
 MISSION_AREA_TABLE_REL = f"{GAMEPLAY_CONFIG}/MissionAreaTable.json"
 NATIVE_TRIGGER_FRONTIER_REL = "reports/story/recovery/native_receiver_activation_frontier.json"
 _NATIVE_TRIGGER_FRONTIER_CACHE: dict | None = None
@@ -676,12 +676,11 @@ def _exact_story_spawner_markers(level_id: str, language: str) -> list[dict]:
         return []
 
     leveldata_roots = [
-        ROOT / "export_full/structured/StreamingAssets/Data/Json/LevelData" / level_id,
-        ROOT / "export_full/structured/Persistent/Data/Json/LevelData" / level_id,
+        ROOT / LEVEL_DATA / level_id,
     ]
     markers: list[dict] = []
     for spawner_id, bindings in sorted(stories_by_id.items()):
-        config_matches = list((ROOT / "export_full/structured/StreamingAssets/Data/Json/SpawnerConfig" / level_id).glob(
+        config_matches = list((ROOT / SPAWNER_CONFIG / level_id).glob(
             f"sc_{level_id}_{spawner_id}.json"
         ))
         if len(config_matches) != 1:
@@ -855,15 +854,14 @@ def _exact_story_encounter_markers(level_id: str, language: str) -> list[dict]:
     markers: list[dict] = []
     for spawner_id, bindings in sorted(bindings_by_spawner.items()):
         config_matches = list((
-            ROOT / "export_full/structured/StreamingAssets/Data/Json/SpawnerConfig" / level_id
+            ROOT / SPAWNER_CONFIG / level_id
         ).glob(f"sc_{level_id}_{spawner_id}.json"))
         if len(config_matches) != 1:
             continue
         name = f"sc_{level_id}_{spawner_id}".encode("ascii")
         host_rows: list[dict] = []
         for root in (
-            ROOT / "export_full/structured/StreamingAssets/Data/Json/LevelData" / level_id,
-            ROOT / "export_full/structured/Persistent/Data/Json/LevelData" / level_id,
+            ROOT / LEVEL_DATA / level_id,
         ):
             if not root.is_dir():
                 continue
@@ -1133,15 +1131,11 @@ def _exact_story_entity_event_index(level_id: str) -> dict[str, list[dict]]:
 
 
 def _active_leveldata_files(level_id: str) -> list[Path]:
-    """Return complete-file Streaming/Persistent LevelData overlays."""
-    selected: dict[str, Path] = {}
-    for root in (ROOT / LEVEL_DATA, ROOT / PERSISTENT_LEVEL_DATA):
-        level_dir = root / level_id
-        if not level_dir.is_dir():
-            continue
-        for path in sorted(level_dir.glob("*.json")):
-            selected[path.name] = path
-    return [selected[name] for name in sorted(selected)]
+    """Return the level's LevelData files from the effective game/ tree."""
+    level_dir = ROOT / LEVEL_DATA / level_id
+    if not level_dir.is_dir():
+        return []
+    return sorted(level_dir.glob("*.json"), key=lambda path: path.name)
 
 
 def _leveldata_patrols_by_id(level_id: str) -> dict[int, list[dict]] | None:
@@ -1638,10 +1632,7 @@ def _conv_file_for_key(language: str, story_key: str) -> str | None:
 
 
 def _active_gameplay_config_path(filename: str) -> Path:
-    """Select one complete-file Persistent/Streaming gameplay-config overlay."""
-    persistent = ROOT / PERSISTENT_GAMEPLAY_CONFIG / filename
-    if persistent.is_file():
-        return persistent
+    """The gameplay-config file from the effective game/ tree."""
     return ROOT / GAMEPLAY_CONFIG / filename
 
 
@@ -4671,18 +4662,15 @@ def _unplaced_model_scene(level_id: str) -> dict:
     # 帝江号 decks look identical and would falsely assign assets to them.
     candidates = [path for path in _model_asset_index(mesh_root) if needle in path.stem.lower()]
     rows: list[dict] = []
-    export_root = (ROOT / "export_full").resolve()
+    export_root = (ROOT / EXPORT_ROOT_REL).resolve()
     for path in candidates:
         try:
             relative = path.resolve().relative_to(export_root).as_posix()
         except (OSError, ValueError):
             continue
-        parts = relative.split("/")
-        if len(parts) < 5 or parts[:2] != ["recovered", "AnimeStudio-cli"]:
+        asset_rel = unity_asset_rel(relative)
+        if not asset_rel:
             continue
-        if parts[2] != "StreamingAssets" or parts[3] != "convert_by_type":
-            continue
-        asset_rel = f"{parts[2]}/{'/'.join(parts[4:])}"
         rows.append({
             "name": path.stem,
             "pathId": path.stem.rsplit("_p", 1)[-1].upper() if "_p" in path.stem else None,
@@ -5881,6 +5869,7 @@ def build_previews_and_refresh(levels: list[str], jobs: int = 1) -> int:
 
 
 def main() -> int:
+    require_export_layout(None)
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--language", default="CN")
     parser.add_argument("--level", action="append", default=[], help="build only these level ids (repeatable)")

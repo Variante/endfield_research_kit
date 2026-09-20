@@ -32,6 +32,7 @@ if __package__ in {None, ""}:
     )
 
 from scripts.common import (
+    WEBUI_BUILD_DIR,
     EXPORT_ROOT,
     OUT_DIR,
     UPDATES_REPORTS_DIR,
@@ -44,19 +45,22 @@ from scripts.common import (
     write_json,
 )
 from scripts.webui.assets.index import ASSET_KIND_BY_EXT, VIDEO_EXTENSIONS
-from scripts.source_paths import resolve_asset_source_roots
+from scripts.source_paths import ExportLayout, ExportLayoutError, prune_nested_source_dirs, resolve_asset_source_roots
 from scripts.webui.updates.scanner import ScanConfig, scan_export_changes
-from scripts.webui.updates.characters import build_character_updates
+from scripts.webui.updates.characters import build_character_updates, comparison_character_catalog_dir
 
 DEFAULT_STATE_DIR = ROOT / ".game-data-tracker"
 DEFAULT_EXPORT_ROOT = EXPORT_ROOT
-DEFAULT_PREVIOUS_EXPORT_ROOT = ROOT / "export_1d2"
+DEFAULT_PREVIOUS_EXPORT_ROOT = ROOT / "export_full_1d4d1"
 DEFAULT_OUT = OUT_DIR / "updates" / "latest.json"
 DEFAULT_CHARACTERS_OUT = OUT_DIR / "updates" / "characters.json"
 DEFAULT_REPORT_JSON = UPDATES_REPORTS_DIR / "game-data-change-summary.json"
 DEFAULT_REPORT_MD = UPDATES_REPORTS_DIR / "game-data-change-summary.md"
 SCHEMA_VERSION = 1
-ASSET_STATE_SCHEMA_VERSION = 1
+# v2: asset keys use layout-v2 source labels (Unity/, Game/, Audio/). A state
+# cached under v1 labels (StreamingAssets/, Persistent-structured/) must not be
+# reused, or every old asset appears deleted.
+ASSET_STATE_SCHEMA_VERSION = 2
 EXPORT_BASELINE_CONFIG_SCHEMA_VERSION = 3
 STATUS_ORDER = {"added": 0, "modified": 1, "deleted": 2}
 ASSET_HASH_CHUNK_SIZE = 1024 * 1024
@@ -67,7 +71,7 @@ AUDIO_EXTENSIONS = {
     ".wav",
     ".wem",
 }
-AUDIO_EXPORT_RELATIVE_ROOT = "structured/Audio"
+AUDIO_EXPORT_RELATIVE_ROOT = "game/Audio"
 AUDIO_SOURCE_LABEL = "Audio"
 PRUNE_SAMPLE_LIMIT = 200
 IGNORED_GAME_PATH_PREFIXES = (
@@ -75,33 +79,20 @@ IGNORED_GAME_PATH_PREFIXES = (
     # These files churn between runs but are not installed content updates.
     "plugins/x86_64/wesight/crashsight_data/",
 )
-ANIMESTUDIO_INDEX_RELATIVE_DIRS = (
-    "recovered/AnimeStudio-cli/StreamingAssets/object_index",
-    "recovered/AnimeStudio-cli/StreamingAssets/field_index",
-    "recovered/AnimeStudio-cli/Persistent/object_index",
-    "recovered/AnimeStudio-cli/Persistent/field_index",
-)
-ANIMESTUDIO_INDEX_FILE_EXTENSIONS = (
-    ".idx", ".index", ".jsonl", ".jsonl.gz", ".ndjson", ".ndjson.gz",
-    ".partial", ".tmp", ".tmp.gz",
-)
+# Layout v2: only game/ is game data. meta/ (indexes, asset maps, provenance)
+# and the layout marker describe an export, so they never appear as updates.
+EXPORT_METADATA_RELATIVE_PATHS = ("meta", "layout.json")
 WEBUI_TEXT_JSON_RELATIVE_PATHS = (
-    "structured/StreamingAssets/Table",
-    "structured/Persistent/Table",
-    "structured/StreamingAssets/Data/Json/MissionRuntimeAsset",
-    "structured/Persistent/Data/Json/MissionRuntimeAsset",
-    "structured/StreamingAssets/Data/Json/LevelData",
-    "structured/StreamingAssets/Data/Json/LevelScriptData",
-    "structured/StreamingAssets/Data/Json/LevelScriptTemplateData",
-    "structured/StreamingAssets/Data/Json/GameplayConfig/DialogIdTable.json",
-    "structured/StreamingAssets/Data/Json/GameplayConfig/MissionAreaTable.json",
-    "structured/StreamingAssets/Data/Json/GameplayConfig/NpcProxyTable.json",
-    "structured/StreamingAssets/Data/Json/GameplayConfig/NpcProxyExDataTable.json",
-    "structured/StreamingAssets/Data/Json/GameplayConfig/AtmosphericNpcClusterDataTable.json",
-    "recovered/dialog_id_table_index.json",
-    "recovered/story_source_links.json",
-    "recovered/video_bindings.json",
-    "recovered/AnimeStudio-cli/timeline_line_orders.json",
+    "game/Table",
+    "game/Json/MissionRuntimeAsset",
+    "game/Json/LevelData",
+    "game/Json/LevelScriptData",
+    "game/Json/LevelScriptTemplateData",
+    "game/Json/GameplayConfig/DialogIdTable.json",
+    "game/Json/GameplayConfig/MissionAreaTable.json",
+    "game/Json/GameplayConfig/NpcProxyTable.json",
+    "game/Json/GameplayConfig/NpcProxyExDataTable.json",
+    "game/Json/GameplayConfig/AtmosphericNpcClusterDataTable.json",
 )
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -317,24 +308,12 @@ def classify_game_data_path(path: str) -> str:
     normalized = normalize_posix(path)
     lower = normalized.lower()
     parts = [part for part in lower.split("/") if part]
-    if parts[:1] == ["structured"]:
-        source = parts[1] if len(parts) > 1 else "unknown"
-        if len(parts) > 2 and parts[2] in {"data", "table"}:
-            return f"structured_{source}_{parts[2]}"
-        if len(parts) > 2:
-            return f"structured_{source}_{parts[2]}"
-        return f"structured_{source}"
-    if parts[:2] == ["recovered", "animestudio-cli"]:
-        source = parts[2] if len(parts) > 2 else "unknown"
-        stage = parts[3] if len(parts) > 3 else "root"
-        if source in {"persistent", "streamingassets"}:
-            return f"recovered_{source}_{stage}"
-        return "recovered_animestudio"
-    if parts[:1] == ["raw_vfs"]:
-        source = parts[1] if len(parts) > 1 else "unknown"
-        return f"raw_vfs_{source}"
-    if parts[:1] == ["unresolved"]:
-        return "unresolved_export"
+    if parts[:1] == ["game"]:
+        if len(parts) > 2 and parts[1] == "unity":
+            return f"unity_{parts[2]}"
+        return f"game_{parts[1]}" if len(parts) > 1 else "game"
+    if parts[:1] == ["meta"]:
+        return "export_metadata"
     if lower.startswith("streamingassets/"):
         if "/vfs/" in lower:
             return "streaming_vfs"
@@ -358,58 +337,16 @@ def classify_game_data_path(path: str) -> str:
 
 def is_ignored_game_update_path(path: str) -> bool:
     lower = normalize_posix(path).lower()
-    return any(lower.startswith(prefix) for prefix in IGNORED_GAME_PATH_PREFIXES) or is_ignored_animestudio_index_path(lower)
+    return any(lower.startswith(prefix) for prefix in IGNORED_GAME_PATH_PREFIXES) or is_ignored_export_metadata_path(lower)
 
 
-def is_ignored_animestudio_index_path(path: str) -> bool:
-    """Exclude AnimeStudio index products without excluding WebUI data."""
-    normalized = normalize_posix(path).lower()
-    marker = "recovered/animestudio-cli/"
-    if marker not in normalized:
-        return False
-    relative = normalized.split(marker, 1)[1]
-    segments = [segment for segment in relative.split("/") if segment]
-    if any(segment in {"object_index", "field_index", "parts"} for segment in segments[:-1]):
-        return True
-    filename = segments[-1] if segments else ""
-    return bool(filename) and filename.endswith(ANIMESTUDIO_INDEX_FILE_EXTENSIONS)
-
-
-def animestudio_index_scan_exclusions() -> tuple[str, ...]:
-    return tuple(ANIMESTUDIO_INDEX_RELATIVE_DIRS)
-
-
-def relocated_structured_counterpart(path: str) -> str | None:
-    """Return the same structured path under the other VFS source root."""
-    normalized = normalize_posix(path)
-    parts = normalized.split("/")
-    if len(parts) < 3 or parts[0].lower() != "structured":
-        return None
-    source = parts[1].lower()
-    if source == "streamingassets":
-        parts[1] = "Persistent"
-    elif source == "persistent":
-        parts[1] = "StreamingAssets"
-    else:
-        return None
-    return "/".join(parts)
-
-
-def is_structured_source_relocation(
-    status: str,
-    path: str,
-    *,
-    game_root: Path,
-    previous_game_root: Path | None,
-) -> bool:
-    counterpart = relocated_structured_counterpart(path)
-    if counterpart is None or previous_game_root is None:
-        return False
-    if status == "added":
-        return (previous_game_root / counterpart).is_file()
-    if status == "deleted":
-        return (game_root / counterpart).is_file()
-    return False
+def is_ignored_export_metadata_path(path: str) -> bool:
+    """Exclude export metadata (meta/, layout.json); game/ is the only game data."""
+    normalized = normalize_posix(path).lower().lstrip("/")
+    return any(
+        normalized == prefix or normalized.startswith(prefix + "/")
+        for prefix in EXPORT_METADATA_RELATIVE_PATHS
+    )
 
 
 def normalized_entry(status: str, raw: dict[str, Any], *, domain: str = "game") -> dict[str, Any]:
@@ -459,15 +396,6 @@ def filtered_game_entries(
                 continue
             if is_ignored_game_update_path(str(raw_entry.get("path") or "")):
                 ignored_counts[status] += 1
-                continue
-            if is_structured_source_relocation(
-                status,
-                str(raw_entry.get("path") or ""),
-                game_root=game_root,
-                previous_game_root=previous_game_root,
-            ):
-                ignored_counts[status] += 1
-                ignored_counts[f"{status}_structured_source_relocation"] += 1
                 continue
             entries.append(normalized_entry(status, raw_entry, domain=domain))
     return entries, ignored_counts
@@ -530,6 +458,7 @@ def build_asset_snapshot(
         if not source_root.exists():
             continue
         for dirpath, dirnames, filenames in os.walk(source_root):
+            prune_nested_source_dirs(source, source_root, dirpath, dirnames)
             dirnames.sort()
             filenames.sort()
             base_dir = Path(dirpath)
@@ -688,11 +617,10 @@ def assert_safe_previous_export_prune(previous_export_root: Path, current_export
         raise SystemExit("--prune-previous-export-untracked refuses to delete from the repository root.")
     if not previous_resolved.exists() or not previous_resolved.is_dir():
         raise SystemExit(f"Previous export root is not a directory: {previous_export_root}")
-    if not ((previous_resolved / "structured").exists() or (previous_resolved / "recovered").exists()):
-        raise SystemExit(
-            "--prune-previous-export-untracked expected an export tree with "
-            f"'structured' or 'recovered': {previous_export_root}"
-        )
+    try:
+        ExportLayout(previous_resolved).require()
+    except ExportLayoutError as exc:
+        raise SystemExit(f"--prune-previous-export-untracked needs a complete v2 export root: {exc}") from exc
 
 
 def remove_empty_dirs(root: Path) -> int:
@@ -816,22 +744,6 @@ def asset_is_modified(old_asset: dict[str, Any], new_asset: dict[str, Any]) -> b
     return True
 
 
-def relocated_asset_counterpart(rel_path: str) -> str | None:
-    normalized = normalize_posix(rel_path)
-    source_swaps = (
-        ("StreamingAssets/", "Persistent/"),
-        ("StreamingAssets-maps/", "Persistent-maps/"),
-        ("StreamingAssets-structured/", "Persistent-structured/"),
-        ("Persistent/", "StreamingAssets/"),
-        ("Persistent-maps/", "StreamingAssets-maps/"),
-        ("Persistent-structured/", "StreamingAssets-structured/"),
-    )
-    for source, counterpart in source_swaps:
-        if normalized.startswith(source):
-            return counterpart + normalized[len(source) :]
-    return None
-
-
 def build_asset_diff(
     old_assets: dict[str, dict[str, Any]],
     new_assets: dict[str, dict[str, Any]],
@@ -846,16 +758,8 @@ def build_asset_diff(
     new_paths = set(new_assets)
     added_paths = new_paths - old_paths
     deleted_paths = old_paths - new_paths
-    relocated_added_paths = {
-        rel_path
-        for rel_path in added_paths
-        if (relocated_asset_counterpart(rel_path) or "") in old_paths
-    }
-    relocated_deleted_paths = {
-        rel_path
-        for rel_path in deleted_paths
-        if (relocated_asset_counterpart(rel_path) or "") in new_paths
-    }
+    relocated_added_paths: set[str] = set()
+    relocated_deleted_paths: set[str] = set()
 
     for rel_path in sorted(added_paths - relocated_added_paths):
         added.append(asset_update_entry("added", new_assets[rel_path]))
@@ -987,10 +891,6 @@ def build_update_payload(
         "sampleLimit": sample_limit,
         "truncated": truncated,
         "ignoredVolatileChanges": dict(ignored_counts),
-        "ignoredStructuredSourceRelocations": {
-            status: int(ignored_counts.get(f"{status}_structured_source_relocation") or 0)
-            for status in ("added", "deleted")
-        },
         "ignoredVolatilePathPrefixes": list(IGNORED_GAME_PATH_PREFIXES),
         "suppressedInitialAdded": int(changes.get("added") or 0) if baseline_initialized else 0,
     }
@@ -1248,7 +1148,7 @@ def scan_export_tree(
             history_dir=state_dir / "history" if write_history else None,
             sample_limit=sample_limit,
             top_line_limit=top_line_limit,
-            ignore_relative_paths=animestudio_index_scan_exclusions(),
+            ignore_relative_paths=EXPORT_METADATA_RELATIVE_PATHS,
             include_relative_paths=tuple(normalized_relative_paths(include_relative_paths)),
         )
     )
@@ -1315,6 +1215,11 @@ def main(argv: list[str] | None = None) -> int:
     if args.reset_baseline and state_dir.exists():
         shutil.rmtree(state_dir)
 
+    for label, root in (("current", export_root), ("previous", previous_export_root)):
+        try:
+            ExportLayout(root).require()
+        except ExportLayoutError as exc:
+            raise SystemExit(f"{label} export root: {exc}") from exc
     if not export_root.exists():
         raise SystemExit(f"Current export root does not exist: {export_root}")
     if not export_root.is_dir():
@@ -1368,7 +1273,12 @@ def main(argv: list[str] | None = None) -> int:
         hash_asset_updates=bool(args.hash_asset_updates),
         skip_audio_updates=bool(args.skip_audio_updates),
     )
-    character_updates = build_character_updates(previous_export_root, export_root)
+    character_updates = build_character_updates(
+        comparison_character_catalog_dir(previous_export_root, state_dir),
+        comparison_character_catalog_dir(export_root, state_dir),
+        previous_source_root=previous_export_root,
+        source_root=export_root,
+    )
 
     prune_result: dict[str, Any] | None = None
     if prune_requested:

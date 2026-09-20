@@ -20,6 +20,7 @@ from typing import Any, Iterable
 
 from scripts.webui.audio.semantics.context_utils import append_context as _append_context
 from scripts.webui.audio.semantics.context_utils import load_json as load_json
+from scripts.source_paths import ExportLayout
 
 MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256 = build_contracts.MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256
 
@@ -467,8 +468,8 @@ def collect_spawner_pre_warn_semantics(
 
     spawner_root: Path | None = None
     source_root = ""
-    for candidate_root in ("StreamingAssets", "Persistent"):
-        candidate = export_root / "structured" / candidate_root / "Data/Json/SpawnerConfig"
+    for candidate_root in ("game",):
+        candidate = ExportLayout(export_root).game / "Json/SpawnerConfig"
         if candidate.is_dir():
             spawner_root = candidate
             source_root = candidate_root
@@ -583,8 +584,8 @@ def collect_patrol_sub_action_audio_semantics(
 
     leveldata_root: Path | None = None
     source_root = ""
-    for candidate_root in ("Persistent", "StreamingAssets"):
-        candidate = export_root / "structured" / candidate_root / "Data/Json/LevelData"
+    for candidate_root in ("game",):
+        candidate = ExportLayout(export_root).game / "Json/LevelData"
         if candidate.is_dir():
             leveldata_root = candidate
             source_root = candidate_root
@@ -740,12 +741,12 @@ def collect_char_interact_audio_semantics(
         )
         decoder = decode_char_interact_audio_actions
 
-    roots = ("StreamingAssets", "Persistent")
+    roots = ("game",)
     relative_versions: dict[str, list[tuple[str, Path, str]]] = defaultdict(list)
     for source_root in roots:
         root = (
-            export_root / "structured" / source_root
-            / "Data/Json/CharInteractPerformCfgs"
+            ExportLayout(export_root).game
+            / "Json/CharInteractPerformCfgs"
         )
         if not root.is_dir():
             continue
@@ -933,8 +934,7 @@ def collect_ability_voice_trigger_contexts(
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
     source_root = (
-        export_root / "structured" / "Persistent" / "Data" / "Json"
-        / "SkillData"
+        ExportLayout(export_root).json_dir / "SkillData"
     )
     if not source_root.is_dir() or not aliases_by_name:
         return {}

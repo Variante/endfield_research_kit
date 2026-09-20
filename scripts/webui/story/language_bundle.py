@@ -36,7 +36,6 @@ from scripts.webui.story.context import (
     NPC_PROXY_EX_PATH,
     NPC_PROXY_TABLE_PATH,
     OPTION_RE,
-    PERSISTENT_TABLE_DIR,
     RADIO_RE,
     REMOTECOMM_RE,
     REPORTS_DIR,
@@ -45,8 +44,8 @@ from scripts.webui.story.context import (
     SCENE_TOK,
     SNS_RE,
     STORY_SOURCE_LINKS_PATH,
-    STREAMING_TABLE_DIR,
     SUMMARY_RE,
+    TABLE_DIR,
     VIDEO_BINDINGS_PATH,
     _unique_preserve,
     is_present,
@@ -390,6 +389,7 @@ from scripts.webui.story.narrative_video_overrides import (
 
 _FMV_CLIP_BINDINGS_PATH = VIDEO_BINDINGS_PATH
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import WEBUI_BUILD_DIR
 
 _NARRATIVE_VIDEO_OVERRIDES_PATH = (
     REPO_ROOT
@@ -1867,10 +1867,12 @@ def build_language_bundle(
     conv_dir.mkdir(parents=True, exist_ok=True)
     if reuse_reference and not write_reference:
         raise ValueError("reuse_reference requires write_reference=True")
+    if not reuse_reference:
+        # A fresh build owns the whole folder, so earlier source folders
+        # (the v1 streaming/ and overlays/ split) do not linger.
+        shutil.rmtree(reference_dir, ignore_errors=True)
     if write_reference and not reuse_reference:
         reference_dir.mkdir(parents=True, exist_ok=True)
-    elif not reuse_reference:
-        shutil.rmtree(reference_dir, ignore_errors=True)
     dialog_id_registry = shared_load_dialog_id_registry()
     story_source_links = load_story_source_links()
     dialog_tree_open_ui_actions_by_key: dict[str, list[dict]] = defaultdict(list)
@@ -1971,24 +1973,14 @@ def build_language_bundle(
                 except OSError:
                     pass
     print(f"\n[{language_code}] Loading tables...")
-    i18n_by_source = {
-        "streaming": load(i18n_table_name),
-        "persistent": load_optional_table_json(
-            PERSISTENT_TABLE_DIR,
-            i18n_table_name,
-            f"Persistent/{i18n_table_name}",
-        ),
-    }
-    default_text_source = "persistent" if i18n_by_source.get("persistent") else "streaming"
+    i18n_by_source = {"game": load(i18n_table_name)}
+    default_text_source = "game"
     def apply_i18n_hotfixes() -> dict[str, dict[str, int]]:
         hotfix_type = I18N_HOTFIX_LANGUAGE_TYPES.get(language_code)
         stats: dict[str, dict[str, int]] = {}
         if hotfix_type is None:
             return stats
-        for source_name, table_dir in (
-            ("streaming", STREAMING_TABLE_DIR),
-            ("persistent", PERSISTENT_TABLE_DIR),
-        ):
+        for source_name, table_dir in (("game", TABLE_DIR),):
             target = i18n_by_source.get(source_name)
             if not isinstance(target, dict):
                 continue
@@ -2027,75 +2019,45 @@ def build_language_bundle(
             for source, row in sorted(hotfix_stats.items())
         )
         print(f"  applied {I18N_HOTFIX_TABLE}: {summary}")
-    def load_effective_table(name: str) -> dict:
-        streaming_payload = load(name)
-        persistent_payload = load_optional_table_json(
-            PERSISTENT_TABLE_DIR,
-            name,
-            f"Persistent/{name}",
-        )
-        if not persistent_payload:
-            return streaming_payload
-        if not streaming_payload:
-            print(f"  using Persistent/{name}: {len(persistent_payload)} row(s)")
-            return persistent_payload
-        streaming_keys = set(streaming_payload)
-        persistent_keys = set(persistent_payload)
-        only_persistent = len(persistent_keys - streaming_keys)
-        only_streaming = len(streaming_keys - persistent_keys)
-        if len(persistent_payload) >= int(len(streaming_payload) * 0.8):
-            if only_persistent or only_streaming:
-                print(
-                    f"  using Persistent/{name}: +{only_persistent} row(s), "
-                    f"-{only_streaming} row(s) versus StreamingAssets"
-                )
-            return persistent_payload
-        merged = dict(streaming_payload)
-        merged.update(persistent_payload)
-        print(
-            f"  merged Persistent/{name}: {only_persistent} added/updated row(s), "
-            f"{len(merged)} effective row(s)"
-        )
-        return merged
-    text_table = load_effective_table("TextTable.json")
-    dialogs = load_effective_table("DialogTextTable.json")
-    sns = load_effective_table("SNSDialogTable.json")
-    sns_chats = load_effective_table("SNSChatTable.json")
-    sns_opts = load_effective_table("SNSDialogOptionTable.json")
-    sns_topics = load_effective_table("SNSDialogTopicTable.json")
-    dlg_opts = load_effective_table("DialogOptionTable.json")
-    summaries = load_effective_table("DialogSummaryTable.json")
-    mission_extra_info = load_effective_table("MissionExtraInfoTable.json")
-    dungeons = load_effective_table("DungeonTable.json")
-    skill_patches = load_effective_table("SkillPatchTable.json")
-    char_growth = load_effective_table("CharGrowthTable.json")
-    game_mechanics = load_effective_table("GameMechanicTable.json")
-    loading_tips = load_effective_table("LoadingTipsTable.json")
-    error_codes = load_effective_table("ErrorCodeTable.json")
-    achievements = load_effective_table("AchievementTable.json")
-    achievement_types = load_effective_table("AchievementTypeTable.json")
-    mail_senders = load_effective_table("MailSenderTable.json")
-    mail_templates = load_effective_table("MailTemplateTable.json")
-    domain_depot_const = load_effective_table("DomainDepotConst.json")
-    domain_depot_dialogs = load_effective_table(
+    text_table = load("TextTable.json")
+    dialogs = load("DialogTextTable.json")
+    sns = load("SNSDialogTable.json")
+    sns_chats = load("SNSChatTable.json")
+    sns_opts = load("SNSDialogOptionTable.json")
+    sns_topics = load("SNSDialogTopicTable.json")
+    dlg_opts = load("DialogOptionTable.json")
+    summaries = load("DialogSummaryTable.json")
+    mission_extra_info = load("MissionExtraInfoTable.json")
+    dungeons = load("DungeonTable.json")
+    skill_patches = load("SkillPatchTable.json")
+    char_growth = load("CharGrowthTable.json")
+    game_mechanics = load("GameMechanicTable.json")
+    loading_tips = load("LoadingTipsTable.json")
+    error_codes = load("ErrorCodeTable.json")
+    achievements = load("AchievementTable.json")
+    achievement_types = load("AchievementTypeTable.json")
+    mail_senders = load("MailSenderTable.json")
+    mail_templates = load("MailTemplateTable.json")
+    domain_depot_const = load("DomainDepotConst.json")
+    domain_depot_dialogs = load(
         "DomainDepotDeliverTargetDialogTable.json"
     )
-    domain_depot_targets = load_effective_table(
+    domain_depot_targets = load(
         "DomainDepotDeliverTargetTable.json"
     )
-    skip_chapter_rows = load_effective_table("SkipChapterTable.json")
-    factory_building_panel_locks = load_effective_table(
+    skip_chapter_rows = load("SkipChapterTable.json")
+    factory_building_panel_locks = load(
         "FactoryBuildingPanelLock.json"
     )
-    character_rows = load_effective_table("CharacterTable.json")
-    character_tag_desc_rows = load_effective_table("CharacterTagDesTable.json")
-    item_rows = load_effective_table("ItemTable.json")
-    weapon_basic = load_effective_table("WeaponBasicTable.json")
-    enemy_display_info = load_effective_table("EnemyDisplayInfoTable.json")
-    enemy_template_display = load_effective_table("EnemyTemplateDisplayInfoTable.json")
-    enemy_ability_desc = load_effective_table("EnemyAbilityDescTable.json")
-    npc_rows = load_effective_table("NpcTable.json")
-    npc_templates = load_effective_table("NpcTemplateGroupTable.json")
+    character_rows = load("CharacterTable.json")
+    character_tag_desc_rows = load("CharacterTagDesTable.json")
+    item_rows = load("ItemTable.json")
+    weapon_basic = load("WeaponBasicTable.json")
+    enemy_display_info = load("EnemyDisplayInfoTable.json")
+    enemy_template_display = load("EnemyTemplateDisplayInfoTable.json")
+    enemy_ability_desc = load("EnemyAbilityDescTable.json")
+    npc_rows = load("NpcTable.json")
+    npc_templates = load("NpcTemplateGroupTable.json")
     npc_proxy_rows = load_json_path(NPC_PROXY_TABLE_PATH, "NpcProxyTable.json").get("dataTable") or {}
     npc_proxy_ex = _load_npc_proxy_ex()
     npc_proxy_info = npc_proxy_ex.get("proxyInfoData") or {}
@@ -2103,37 +2065,27 @@ def build_language_bundle(
     atmos_cluster_rows = load_json_path(
         ATMOS_CLUSTER_TABLE_PATH, "AtmosphericNpcClusterDataTable.json"
     ).get("dataTable") or {}
-    radios = load_effective_table("RadioTable.json")
-    remote_common = load_effective_table("RemoteCommonTable.json")
-    env_talks = load_effective_table("EnvTalkTable.json")
-    ai_bark_text = load_effective_table("AIBarkText.json")
-    audio_dialog = load_effective_table("AudioDialog.json")
-    responsive_dialog = load_effective_table("ResponsiveDialog.json")
-    rich_content = load_effective_table("RichContentTable.json")
-    reading_popups = load_effective_table("ReadingPopUpTable.json")
-    rich_content_persistent = load_optional_table_json(
-        PERSISTENT_TABLE_DIR,
-        "RichContentTable.json",
-        "Persistent/RichContentTable.json",
-    )
-    reading_popups_persistent = load_optional_table_json(
-        PERSISTENT_TABLE_DIR,
-        "ReadingPopUpTable.json",
-        "Persistent/ReadingPopUpTable.json",
-    )
-    prts_all_items = load_effective_table("PrtsAllItem.json")
-    prts_first_lv = load_effective_table("PrtsFirstLv.json")
-    prts_page = load_effective_table("PrtsPage.json")
-    prts_notes = load_effective_table("PrtsNote.json")
-    prts_categories = load_effective_table("PrtsCategory.json")
-    prts_investigate_categories = load_effective_table("PrtsInvestigateCategory.json")
-    wiki_categories = load_effective_table("WikiCategoryTable.json")
-    wiki_groups = load_effective_table("WikiGroupTable.json")
-    wiki_entry_data = load_effective_table("WikiEntryDataTable.json")
-    wiki_tutorial_pages = load_effective_table("WikiTutorialPageTable.json")
-    wiki_tutorial_pages_by_entry = load_effective_table("WikiTutorialPageByEntryTable.json")
-    wiki_craft_jump = load_effective_table("WikiCraftJumpTable.json")
-    wiki_default_craft = load_effective_table("WikiDefaultCraftTable.json")
+    radios = load("RadioTable.json")
+    remote_common = load("RemoteCommonTable.json")
+    env_talks = load("EnvTalkTable.json")
+    ai_bark_text = load("AIBarkText.json")
+    audio_dialog = load("AudioDialog.json")
+    responsive_dialog = load("ResponsiveDialog.json")
+    rich_content = load("RichContentTable.json")
+    reading_popups = load("ReadingPopUpTable.json")
+    prts_all_items = load("PrtsAllItem.json")
+    prts_first_lv = load("PrtsFirstLv.json")
+    prts_page = load("PrtsPage.json")
+    prts_notes = load("PrtsNote.json")
+    prts_categories = load("PrtsCategory.json")
+    prts_investigate_categories = load("PrtsInvestigateCategory.json")
+    wiki_categories = load("WikiCategoryTable.json")
+    wiki_groups = load("WikiGroupTable.json")
+    wiki_entry_data = load("WikiEntryDataTable.json")
+    wiki_tutorial_pages = load("WikiTutorialPageTable.json")
+    wiki_tutorial_pages_by_entry = load("WikiTutorialPageByEntryTable.json")
+    wiki_craft_jump = load("WikiCraftJumpTable.json")
+    wiki_default_craft = load("WikiDefaultCraftTable.json")
 
     def t(id_value, preferred_source: str | None = None) -> str:
         s = norm_id(id_value)
@@ -2141,9 +2093,8 @@ def build_language_bundle(
             return ""
         primary_source = preferred_source or default_text_source
         lookup_order = [primary_source]
-        for source_name in ("streaming", "persistent"):
-            if source_name not in lookup_order:
-                lookup_order.append(source_name)
+        if "game" not in lookup_order:
+            lookup_order.append("game")
         for source_name in lookup_order:
             text = (i18n_by_source.get(source_name) or {}).get(s, "")
             if text:
@@ -2175,7 +2126,7 @@ def build_language_bundle(
             "lookup": [],
             "text": resolved,
         }
-        if primary_source != "streaming":
+        if primary_source != "game":
             trace["preferredSource"] = primary_source
         if i18n_id:
             trace["lookup"].append({
@@ -5133,22 +5084,12 @@ def build_language_bundle(
                 return candidate
         return ""
     def rich_content_story_row(content_key: str, preferred_source: str) -> tuple[str, dict]:
-        sources = [preferred_source, "streaming", "persistent"]
-        seen_sources: set[str] = set()
-        for source_name in sources:
-            if source_name in seen_sources:
-                continue
-            seen_sources.add(source_name)
-            payload = rich_content_persistent if source_name == "persistent" else rich_content
-            row = payload.get(content_key) if isinstance(payload, dict) else None
-            if isinstance(row, dict):
-                return source_name, row
-        return preferred_source or "streaming", {}
+        row = rich_content.get(content_key) if isinstance(rich_content, dict) else None
+        if isinstance(row, dict):
+            return "game", row
+        return preferred_source or "game", {}
     popup_rows_by_content: dict[str, list[tuple[str, str, dict]]] = defaultdict(list)
-    for source_name, popup_table in (
-        ("streaming", reading_popups),
-        ("persistent", reading_popups_persistent),
-    ):
+    for source_name, popup_table in (("game", reading_popups),):
         if not isinstance(popup_table, dict):
             continue
         for row_id, row in popup_table.items():
@@ -5161,7 +5102,7 @@ def build_language_bundle(
         parts = story_text_key_parts(content_key)
         if not parts:
             continue
-        popup_rows.sort(key=lambda item: (0 if item[0] == "streaming" else 1, item[1]))
+        popup_rows.sort(key=lambda item: (0 if item[0] == "game" else 1, item[1]))
         primary_source, primary_row_id, primary_row = popup_rows[0]
         mission, scene = parts
         type_, act = parse_mission(mission)
@@ -6955,7 +6896,7 @@ def build_language_bundle(
         row_id: str,
         raw_value,
         *,
-        preferred_source: str = "streaming",
+        preferred_source: str = "game",
         path: str = "$",
         out: list[dict] | None = None,
     ) -> list[dict]:
@@ -7651,14 +7592,14 @@ def build_language_bundle(
             search_parts=[ability_id, title, desc],
         )
     training_death_tips = load_optional_table_json(
-        STREAMING_TABLE_DIR,
+        TABLE_DIR,
         "TrainingDeathTips.json",
-        "StreamingAssets/Table/TrainingDeathTips.json",
+        "Table/TrainingDeathTips.json",
     )
     training_type_info = load_optional_table_json(
-        STREAMING_TABLE_DIR,
+        TABLE_DIR,
         "TrainingTypeInfoTable.json",
-        "StreamingAssets/Table/TrainingTypeInfoTable.json",
+        "Table/TrainingTypeInfoTable.json",
     )
     if isinstance(training_death_tips, dict) or isinstance(training_type_info, dict):
         training_death_tips = training_death_tips if isinstance(training_death_tips, dict) else {}
@@ -7892,7 +7833,7 @@ def build_language_bundle(
         "WeaponBasicTable.json": weapon_basic,
     }
     collection_table_cache: dict[tuple[str, str], dict] = {
-        ("streaming", table_name): payload
+        ("game", table_name): payload
         for table_name, payload in collection_preloaded_tables.items()
     }
 
@@ -7903,7 +7844,7 @@ def build_language_bundle(
         cache_key = (table_source, table_name)
         if cache_key in collection_table_cache:
             return collection_table_cache[cache_key]
-        table_dir = STREAMING_TABLE_DIR if table_source == "streaming" else PERSISTENT_TABLE_DIR
+        table_dir = TABLE_DIR
         payload = load_optional_table_json(
             table_dir,
             table_name,
@@ -7912,7 +7853,7 @@ def build_language_bundle(
         collection_table_cache[cache_key] = payload if isinstance(payload, dict) else {}
         return collection_table_cache[cache_key]
 
-    def resolve_reference_raw_i18n(raw_value, *, preferred_source: str = "streaming"):
+    def resolve_reference_raw_i18n(raw_value, *, preferred_source: str = "game"):
         if isinstance(raw_value, dict):
             is_i18n_text = "id" in raw_value and "text" in raw_value
             resolved_text = t(raw_value.get("id"), preferred_source=preferred_source) if is_i18n_text else ""
@@ -7931,19 +7872,13 @@ def build_language_bundle(
         reference_dir.mkdir(parents=True, exist_ok=True)
         generated = int(time.time())
         table_index: list[dict] = []
-        base_reference_rows: dict[str, list[dict]] = {}
-        base_reference_files: dict[str, str] = {}
-        base_reference_hashes: dict[str, str] = {}
         total_rows = 0
         total_texts = 0
         total_bytes = 0
         def reference_payload_hash(payload: dict) -> str:
             text = json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
             return _reference_hashlib.sha256(text.encode("utf-8")).hexdigest()
-        for table_source, table_dir in (
-            ("streaming", STREAMING_TABLE_DIR),
-            ("persistent", PERSISTENT_TABLE_DIR),
-        ):
+        for table_source, table_dir in (("game", TABLE_DIR),):
             if not table_dir.exists():
                 continue
             source_out_dir = reference_dir / table_source
@@ -8011,58 +7946,9 @@ def build_language_bundle(
                     "rawRows": raw_rows,
                 }
                 storage = "full"
-                base_file = ""
-                overlay_rows = 0
-                removed_rows = 0
-                if table_source == "persistent" and table_name in base_reference_rows:
-                    base_rows = base_reference_rows.get(table_name) or []
-                    base_file = base_reference_files.get(table_name) or ""
-                    base_hash = base_reference_hashes.get(table_name) or ""
-                    base_by_id = {str(row.get("id") or ""): row for row in base_rows}
-                    current_by_id = {str(row.get("id") or ""): row for row in row_payloads}
-                    removed_ids = sorted(row_id for row_id in base_by_id if row_id not in current_by_id)
-                    changed_rows = [
-                        row for row in row_payloads
-                        if base_by_id.get(str(row.get("id") or "")) != row
-                    ]
-                    changed_raw_rows = {
-                        str(row.get("id") or ""): raw_rows.get(str(row.get("id") or ""))
-                        for row in changed_rows
-                        if str(row.get("id") or "") in raw_rows
-                    }
-                    overlay_rows = len(changed_rows)
-                    removed_rows = len(removed_ids)
-                    if not changed_rows and not removed_ids and base_file:
-                        rel_file = base_file
-                        storage = "shared"
-                        file_bytes = 0
-                        content_hash = base_hash
-                    else:
-                        rel_file = f"overlays/{table_source}/{table_path.stem}.json"
-                        out_payload = {
-                            "generated": generated,
-                            "language": language_code,
-                            "source": collection_source_label(table_source),
-                            "table": table_name,
-                            "label": collection_display_name(table_path.stem),
-                            "baseFile": base_file,
-                            "rowOrder": [str(row.get("id") or "") for row in row_payloads],
-                            "removedRows": removed_ids,
-                            "rows": changed_rows,
-                            "rawRows": changed_raw_rows,
-                        }
-                        content_hash = reference_payload_hash(out_payload)
-                        out_path = write_reference_payload(rel_file, out_payload)
-                        file_bytes = out_path.stat().st_size
-                        storage = "overlay"
-                else:
-                    content_hash = reference_payload_hash(out_payload)
-                    out_path = write_reference_payload(rel_file, out_payload)
-                    file_bytes = out_path.stat().st_size
-                    if table_source == "streaming":
-                        base_reference_rows[table_name] = row_payloads
-                        base_reference_files[table_name] = rel_file
-                        base_reference_hashes[table_name] = content_hash
+                content_hash = reference_payload_hash(out_payload)
+                out_path = write_reference_payload(rel_file, out_payload)
+                file_bytes = out_path.stat().st_size
                 total_bytes += file_bytes
                 total_rows += len(row_payloads)
                 total_texts += table_texts
@@ -8078,12 +7964,6 @@ def build_language_bundle(
                     "storage": storage,
                     "hash": content_hash,
                 }
-                if base_file:
-                    table_row["baseFile"] = base_file
-                if overlay_rows:
-                    table_row["overlayRows"] = overlay_rows
-                if removed_rows:
-                    table_row["removedRows"] = removed_rows
                 table_index.append(table_row)
         table_index.sort(key=lambda row: (row["source"], row["label"], row["table"]))
         index_payload = {
@@ -8172,10 +8052,8 @@ def build_language_bundle(
         return refs
     def write_generic_collection_pages(
         table_source: str,
-        *,
-        dedupe_against_streaming: bool = False,
     ) -> tuple[int, int]:
-        table_dir = STREAMING_TABLE_DIR if table_source == "streaming" else PERSISTENT_TABLE_DIR
+        table_dir = TABLE_DIR
         if not table_dir.exists():
             return (0, 0)
         generic_collection_paths = [
@@ -8185,9 +8063,9 @@ def build_language_bundle(
             and path.name not in collection_omit_tables
             and not path.name.startswith(collection_omit_prefixes)
             and not collection_is_redundant_support_table(path.name)
-            and (table_source != "streaming" or path.name not in collection_skip_tables)
+            and (table_source != "game" or path.name not in collection_skip_tables)
         ]
-        label = "generic" if table_source == "streaming" else "supplemental persistent"
+        label = "generic"
         print(
             f"Writing {label} collection pages from {len(generic_collection_paths)} tables..."
         )
@@ -8200,11 +8078,6 @@ def build_language_bundle(
                 continue
             table_pages = 0
             table_label = collection_display_name(table_path.stem)
-            streaming_payload = (
-                collection_table_payload("streaming", table_name)
-                if dedupe_against_streaming
-                else {}
-            )
             for row_index, (row_id, row) in enumerate(sorted(payload.items(), key=lambda item: str(item[0])), start=1):
                 row_key = str(row_id)
                 if table_name == "RichContentTable.json" and row_key in prts_content_ids:
@@ -8223,19 +8096,6 @@ def build_language_bundle(
                     and text_sequence_fingerprint(text_nodes) in wiki_text_fingerprints
                 ):
                     continue
-                variant = False
-                if dedupe_against_streaming:
-                    streaming_row = streaming_payload.get(row_key) if isinstance(streaming_payload, dict) else None
-                    if streaming_row is not None:
-                        streaming_nodes = collect_reference_text_nodes(
-                            table_name,
-                            row_key,
-                            streaming_row,
-                            preferred_source="streaming",
-                        )
-                        if collection_text_fingerprint(streaming_nodes) == collection_text_fingerprint(text_nodes):
-                            continue
-                        variant = bool(streaming_nodes)
                 bucket = collection_bucket(table_name, row_key, row if isinstance(row, dict) else None)
                 bucket_token = collection_bucket_token(bucket)
                 story_ref = collection_reading_story_ref(
@@ -8326,7 +8186,6 @@ def build_language_bundle(
                     row if isinstance(row, dict) else None,
                     bucket,
                     table_source=table_source,
-                    variant=variant,
                 )
                 debug_extra = {}
                 if linked_content_refs:
@@ -8352,7 +8211,6 @@ def build_language_bundle(
                     bucket,
                     row if isinstance(row, dict) else None,
                     table_source=table_source,
-                    variant=variant,
                 )
                 write_reference_page(
                     out_key,
@@ -8382,14 +8240,10 @@ def build_language_bundle(
                 print(f"  collection {table_source} {table_name}: {table_pages} pages")
         return generic_collection_pages, generic_collection_tables
     if include_reference_in_story_index:
-        generic_collection_pages, generic_collection_tables = write_generic_collection_pages("streaming")
-        persistent_collection_pages, persistent_collection_tables = write_generic_collection_pages(
-            "persistent",
-            dedupe_against_streaming=True,
-        )
+        generic_collection_pages, generic_collection_tables = write_generic_collection_pages("game")
         print(
-            f"Generic collection pages written: {generic_collection_pages + persistent_collection_pages} "
-            f"across {generic_collection_tables + persistent_collection_tables} tables"
+            f"Generic collection pages written: {generic_collection_pages} "
+            f"across {generic_collection_tables} tables"
         )
     else:
         print("Skipping generic table collection pages for lean story profile.")
@@ -8824,7 +8678,7 @@ def build_language_bundle(
         index_entries.append(entry)
 
 
-    responsive_refs = collection_ai_bark_refs("streaming")
+    responsive_refs = collection_ai_bark_refs("game")
     responsive_people: dict[str, dict] = {}
     for response_id, bark_row in sorted(ai_bark_text.items(), key=lambda item: str(item[0])):
         if not isinstance(bark_row, dict):
@@ -12594,10 +12448,7 @@ def build_language_bundle(
         return sorted({
             repo_rel(path)
             for name in names
-            for path in (
-                STREAMING_TABLE_DIR / name,
-                PERSISTENT_TABLE_DIR / name,
-            )
+            for path in (TABLE_DIR / name,)
             if path.is_file()
         })
 
@@ -14688,10 +14539,7 @@ def build_language_bundle(
                     repo_rel(NPC_PROXY_TABLE_PATH),
                     repo_rel(NPC_PROXY_EX_PATH),
                     repo_rel(
-                        ROOT
-                        / "export_full"
-                        / "recovered"
-                        / "dialog_id_table_index.json"
+                        WEBUI_BUILD_DIR / "story" / "dialog_id_table_index.json"
                     ),
                 } - {""}),
                 "npcProxyTableRow": context.get("npcProxyTableRow"),

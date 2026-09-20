@@ -19,6 +19,10 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
+from scripts.common import EXPORT_LAYOUT
+from scripts.repo_paths import REPO_ROOT
+from scripts.source_paths import ExportLayout, ExportLayoutError
+
 
 _ORIGINAL_BINARY_NAMES = {"GameAssembly.dll", "global-metadata.dat"}
 _SOURCE_REFERENCE_PREFIXES = (
@@ -47,6 +51,15 @@ _HASH_CACHE: dict[Path, str] = {}
 _BASENAME_INDEX_CACHE: dict[Path, dict[str, tuple[Path, ...]]] = {}
 _RESOLVED_PATH_CACHE: dict[Path, Path] = {}
 _CANDIDATE_PATHS_CACHE: dict[tuple[str, Path], list[Path]] = {}
+
+
+def _layout(root: Path) -> ExportLayout:
+    """The export layout under ``root`` (the repository root in production)."""
+    try:
+        relative = EXPORT_LAYOUT.root.relative_to(REPO_ROOT)
+    except ValueError:
+        return EXPORT_LAYOUT  # configured outside the repository
+    return ExportLayout(root / relative)
 
 
 def _resolved(path: Path) -> Path:
@@ -92,11 +105,7 @@ def _basename_index(root: Path) -> dict[str, tuple[Path, ...]]:
     if cached is not None:
         return cached
     index: dict[str, list[Path]] = defaultdict(list)
-    structured_root = root_resolved / "export_full" / "structured"
-    for data_root in (
-        structured_root / "StreamingAssets",
-        structured_root / "Persistent",
-    ):
+    for data_root in (_layout(root).game.resolve(),):
         if not data_root.is_dir():
             continue
         # ``data_root`` already descends from a resolved root and rglob reports
@@ -128,19 +137,17 @@ def _candidate_paths(reference: str, root: Path) -> list[Path]:
     if reference.startswith("export_full/"):
         candidates.append(root / Path(reference))
     else:
-        candidates.extend((
-            root / Path(reference),
-            root / "export_full" / "structured" / "StreamingAssets" / Path(reference),
-            root / "export_full" / "structured" / "Persistent" / Path(reference),
-        ))
-        if reference.startswith("StreamingAssets/"):
-            candidates.append(
-                root / "export_full" / "structured" / Path(reference)
-            )
-        if reference.startswith("Persistent/"):
-            candidates.append(
-                root / "export_full" / "structured" / Path(reference)
-            )
+        candidates.append(root / Path(reference))
+        # Older references may still carry an installed-layer prefix; the
+        # export keeps one effective tree, so the layer name is dropped.
+        logical = reference
+        for layer_prefix in ("StreamingAssets/", "Persistent/"):
+            if logical.startswith(layer_prefix):
+                logical = logical[len(layer_prefix):]
+        try:
+            candidates.append(_layout(root).game_file(logical))
+        except ExportLayoutError:
+            pass
         if "/" not in reference:
             candidates.extend(_basename_index(root).get(reference.lower(), ()))
     out: list[Path] = []
@@ -157,8 +164,8 @@ def _candidate_paths(reference: str, root: Path) -> list[Path]:
 
 def _is_original_game_file(path: Path, root: Path) -> bool:
     resolved = _resolved(path)
-    export_root = _resolved(root / "export_full")
-    if resolved.is_relative_to(export_root):
+    game_root = _resolved(_layout(root).game)
+    if resolved.is_relative_to(game_root):
         return True
     return resolved.name in _ORIGINAL_BINARY_NAMES and resolved.is_file()
 
@@ -177,7 +184,7 @@ def _kind_for_path(path: Path) -> str:
         return "original_game_binary"
     if path.name == "global-metadata.dat":
         return "original_game_metadata"
-    if "/recovered/" in text:
+    if "/game/Unity/" in text:
         return "recovered_game_asset"
     return "original_game_file"
 

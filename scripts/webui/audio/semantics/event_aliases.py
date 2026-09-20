@@ -5,6 +5,7 @@ dialog, skill-id dictionary -- and yields event aliases. An alias is an authored
 name for an event, not evidence that the event plays."""
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 from pathlib import Path
 from typing import Any
@@ -288,8 +289,8 @@ def collect_voice_table_wwise_event_aliases(
                     source=source,
                 )
 
-    for source_root in ("StreamingAssets", "Persistent"):
-        table_root = export_root / "structured" / source_root / "Table"
+    for source_root in ("game",):
+        table_root = ExportLayout(export_root).game / "Table"
         for table, fields in VOICE_TABLE_WWISE_EVENT_FIELDS.items():
             path = table_root / table
             if not path.is_file():
@@ -392,8 +393,8 @@ def collect_typed_ui_table_wwise_event_aliases(
             for index, child in enumerate(value):
                 visit(child, table=table, fields=fields, row_path=row_path + (str(index),), source=source)
 
-    for source_root in ("StreamingAssets", "Persistent"):
-        table_root = export_root / "structured" / source_root / "Table"
+    for source_root in ("game",):
+        table_root = ExportLayout(export_root).game / "Table"
         for table, fields in TYPED_UI_TABLE_WWISE_EVENT_FIELDS.items():
             path = table_root / table
             if not path.is_file():
@@ -442,8 +443,8 @@ def collect_sns_voice_wwise_event_aliases(
     }
     candidates: dict[int, dict[str, Any]] = {}
     conflicts: set[int] = set()
-    for source_root in ("StreamingAssets", "Persistent"):
-        path = export_root / "structured" / source_root / "Table" / "SNSDialogTable.json"
+    for source_root in ("game",):
+        path = ExportLayout(export_root).game / "Table" / "SNSDialogTable.json"
         payload = load_json_strict(path, {})
         if not isinstance(payload, dict):
             continue
@@ -525,13 +526,13 @@ def collect_skill_id_dictionary_wwise_event_aliases(
     }
     candidates: dict[int, dict[str, Any]] = {}
     conflicts: set[int] = set()
-    for source_root in ("StreamingAssets", "Persistent"):
-        table_path = export_root / "structured" / source_root / "Table" / "NumIdStrTable.json"
+    for source_root in ("game",):
+        table_path = ExportLayout(export_root).game / "Table" / "NumIdStrTable.json"
         payload = load_json_strict(table_path, {})
         skill_map = ((payload.get("skill_id") or {}).get("dic") or {}) if isinstance(payload, dict) else {}
         if not isinstance(skill_map, dict):
             continue
-        skill_root = export_root / "structured" / source_root / "Data" / "Json" / "SkillData"
+        skill_root = ExportLayout(export_root).game / "Json" / "SkillData"
         for raw_numeric_id, raw_name in skill_map.items():
             if not isinstance(raw_name, str) or not raw_name.strip():
                 continue

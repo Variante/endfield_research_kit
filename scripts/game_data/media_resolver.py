@@ -380,10 +380,8 @@ def score_wiki_video_asset(rel: str, device_type: str = "") -> int:
             break
     if is_browser_playable_video(rel_normalized):
         score += 40
-    if rel_lower.startswith(("streamingassets-structured/", "persistent-structured/")):
+    if rel_lower.startswith("game/"):
         score += 10
-    elif rel_lower.startswith("raw_vfs/"):
-        score += 1
     return score
 
 

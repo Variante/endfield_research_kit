@@ -37,9 +37,10 @@ from pathlib import Path
 from typing import Any, Iterator
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import EXPORT_LAYOUT
 
 ROOT = REPO_ROOT
-DEFAULT_MAPS = ROOT / "export_full/recovered/AnimeStudio-cli/Maps"
+DEFAULT_MAPS = EXPORT_LAYOUT.cab_map_dir
 DEFAULT_OUTPUT = ROOT / "reports/assets/cabmap_current_latest.json"
 
 # .NET writes a 7-bit encoded length in at most five bytes.

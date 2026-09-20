@@ -73,17 +73,12 @@ from scripts.common import (
     write_report_json,
     write_text_if_changed,
 )
-from scripts.webui.story.mission_assets import select_complete_mission_runtime_root
+from scripts.common import EXPORT_LAYOUT
 
 
 SCHEMA = "missionDependencyGraph.v1"
 
-DEFAULT_MISSION_ROOT = select_complete_mission_runtime_root(
-    ROOT / "export_full" / "structured" / "StreamingAssets" / "Data"
-    / "Json" / "MissionRuntimeAsset",
-    ROOT / "export_full" / "structured" / "Persistent" / "Data" / "Json"
-    / "MissionRuntimeAsset",
-)
+DEFAULT_MISSION_ROOT = EXPORT_LAYOUT.json_dir / "MissionRuntimeAsset"
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 
 # Condition ``$type`` short names that name another mission, and the field that

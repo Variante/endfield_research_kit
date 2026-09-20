@@ -235,10 +235,7 @@ def collection_story_ref_from_bucket(
 
 
 def collection_source_label(table_source: str) -> str:
-    return {
-        "streaming": "StreamingAssets/Table",
-        "persistent": "Persistent/Table",
-    }.get(table_source, table_source)
+    return {"game": "Table"}.get(table_source, table_source)
 
 
 def collection_row_title(
@@ -246,7 +243,7 @@ def collection_row_title(
     row_id: str,
     text_nodes: list[dict],
     *,
-    preferred_source: str = "streaming",
+    preferred_source: str = "game",
 ) -> str:
     preferred_fields = {
         "name",
@@ -275,17 +272,14 @@ def collection_summary_rows(
     row: dict | None,
     bucket: str,
     *,
-    table_source: str = "streaming",
-    variant: bool = False,
+    table_source: str = "game",
 ) -> list[dict]:
     rows = [
         {"text": f"Table: {collection_display_name(table_name.removesuffix('.json'))}"},
         {"text": f"Row: {row_id}"},
     ]
-    if table_source != "streaming":
+    if table_source != "game":
         rows.append({"text": f"Source: {collection_source_label(table_source)}"})
-    if variant:
-        rows.append({"text": "Variant: differs from StreamingAssets row"})
     bucket_label = collection_display_name(bucket)
     if bucket_label and bucket_label != "Misc":
         rows.append({"text": f"Group: {bucket_label}"})
@@ -382,8 +376,7 @@ def collection_tags(
     bucket: str,
     row: dict | None = None,
     *,
-    table_source: str = "streaming",
-    variant: bool = False,
+    table_source: str = "game",
 ) -> list[str]:
     stem = table_name.removesuffix(".json")
     tags = [
@@ -417,8 +410,6 @@ def collection_tags(
             continue
         if needle in lower and tag not in tags:
             tags.append(tag)
-    if variant:
-        tags.append("variant")
     bucket_slug = collection_slug(bucket)
     if bucket_slug and bucket_slug != "misc":
         tags.append(f"group_{bucket_slug}")

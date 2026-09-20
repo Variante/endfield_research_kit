@@ -46,11 +46,12 @@ from scripts.webui.story.anime_assets import (
     _load_anime_resource_payload,
     extract_dialog_tree_definition_evidence,
 )
+from scripts.common import EXPORT_LAYOUT, rel_path as export_rel_path
 
 
 SCHEMA = "spaceshipStoryContentAudit.v2"
 DEFAULT_TABLE_ROOT = (
-    ROOT / "export_full" / "structured" / "StreamingAssets" / "Table"
+    EXPORT_LAYOUT.table_dir
 )
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "recovery"
 
@@ -196,7 +197,7 @@ def collect_dialog_tree_classifications(
 ) -> tuple[list[dict[str, Any]], set[Path]]:
     expected = dialog_groups(dialog_rows)
     dialog_text_source = (
-        "export_full/structured/StreamingAssets/Table/DialogTextTable.json"
+        export_rel_path(EXPORT_LAYOUT.table_dir / "DialogTextTable.json")
     )
     by_story: dict[str, dict[str, Any]] = {}
     used_paths: set[Path] = set()
@@ -270,7 +271,7 @@ def collect_unconsumed_spaceship_dialog_definitions(
             typed_roots_by_context[context].append((asset_name, path, facts))
 
     dialog_text_source = (
-        "export_full/structured/StreamingAssets/Table/DialogTextTable.json"
+        export_rel_path(EXPORT_LAYOUT.table_dir / "DialogTextTable.json")
     )
     classifications: list[dict[str, Any]] = []
     used_paths: set[Path] = set()
@@ -431,9 +432,9 @@ def collect_profile_talk_classifications(
             "profileVoiceIds": sorted(row["profileVoiceIds"]),
             "profileVoiceIndexes": sorted(row["profileIndexes"]),
             "sourceFiles": [
-                "export_full/structured/StreamingAssets/Table/AudioDialog.json",
-                "export_full/structured/StreamingAssets/Table/CharacterTable.json",
-                "export_full/structured/StreamingAssets/Table/DialogTextTable.json",
+                export_rel_path(EXPORT_LAYOUT.table_dir / "AudioDialog.json"),
+                export_rel_path(EXPORT_LAYOUT.table_dir / "CharacterTable.json"),
+                export_rel_path(EXPORT_LAYOUT.table_dir / "DialogTextTable.json"),
             ],
             "nativeMappingId": NATIVE_MAPPING_ID,
             "orderBoundary": (

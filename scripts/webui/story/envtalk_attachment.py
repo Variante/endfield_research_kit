@@ -59,21 +59,16 @@ from scripts.common import (
     write_report_json,
     write_text_if_changed,
 )
-from scripts.webui.story.mission_assets import select_complete_mission_runtime_root
+from scripts.common import EXPORT_LAYOUT
 
 
 SCHEMA = "envTalkAttachment.v2"
 
-DEFAULT_TABLE_ROOT = ROOT / "export_full" / "structured" / "StreamingAssets" / "Table"
+DEFAULT_TABLE_ROOT = EXPORT_LAYOUT.table_dir
 DEFAULT_GAMEPLAY_CONFIG_ROOT = (
-    ROOT / "export_full" / "structured" / "StreamingAssets" / "Data" / "Json" / "GameplayConfig"
+    EXPORT_LAYOUT.json_dir / "GameplayConfig"
 )
-DEFAULT_MISSION_ROOT = select_complete_mission_runtime_root(
-    ROOT / "export_full" / "structured" / "StreamingAssets" / "Data"
-    / "Json" / "MissionRuntimeAsset",
-    ROOT / "export_full" / "structured" / "Persistent" / "Data" / "Json"
-    / "MissionRuntimeAsset",
-)
+DEFAULT_MISSION_ROOT = EXPORT_LAYOUT.json_dir / "MissionRuntimeAsset"
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "mission_graph"
 
 STORY_KEY_PREFIX = "env_"

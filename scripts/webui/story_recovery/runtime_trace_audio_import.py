@@ -25,6 +25,7 @@ from scripts.webui.story_recovery import runtime_trace_core as core
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import EXPORT_LAYOUT
 
 ROOT = REPO_ROOT
 EVENT_SCHEMA = "audioRuntimeTrace.event.v1"
@@ -42,7 +43,7 @@ EVENT_KINDS = {
     "session_end",
 }
 DEFAULT_OUTPUT = ROOT / "reports" / "story" / "recovery" / "audio_runtime_trace.json"
-DEFAULT_INDEX = ROOT / "export_full" / "structured" / "Audio" / "CN" / "index.json"
+DEFAULT_INDEX = EXPORT_LAYOUT.audio_dir / "CN" / "index.json"
 DEFAULT_TRIGGER_CONTEXTS = ROOT / "webui" / "data" / "lang" / "CN" / "audio" / "trigger_contexts.json"
 MAX_TRIGGER_CONTEXT_SAMPLES = 12
 MAX_NATIVE_POINTER_SAMPLES = 64

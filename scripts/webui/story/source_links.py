@@ -16,22 +16,14 @@ from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from scripts.common import EXPORT_ROOT, ROOT, STORY_REPORTS_DIR, rel_path as slash
-from scripts.webui.story.mission_assets import select_complete_mission_runtime_root
+from scripts.common import DATA_JSON_DIR, ROOT, STORY_REPORTS_DIR, WEBUI_BUILD_DIR, rel_path as slash
 
-DATA_JSON_DIR = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json"
-PERSISTENT_DATA_JSON_DIR = (
-    EXPORT_ROOT / "structured" / "Persistent" / "Data" / "Json"
-)
-DEFAULT_OUTPUT = EXPORT_ROOT / "recovered" / "story_source_links.json"
+DEFAULT_OUTPUT = WEBUI_BUILD_DIR / "story" / "story_source_links.json"
 DEFAULT_REPORT_JSON = STORY_REPORTS_DIR / "story_source_links.json"
 DEFAULT_REPORT_MD = STORY_REPORTS_DIR / "story_source_links.md"
 
 DEFAULT_SCAN_ROOTS = (
-    select_complete_mission_runtime_root(
-        DATA_JSON_DIR / "MissionRuntimeAsset",
-        PERSISTENT_DATA_JSON_DIR / "MissionRuntimeAsset",
-    ),
+    DATA_JSON_DIR / "MissionRuntimeAsset",
     DATA_JSON_DIR / "LevelScriptData",
     DATA_JSON_DIR / "LevelScriptTemplateData",
 )

@@ -40,12 +40,10 @@ from scripts.webui.story.context import (
     MRA_DIR,
     NPC_PROXY_EX_PATH,
     NPC_PROXY_TABLE_PATH,
-    PERSISTENT_ASSETS_DIR,
-    PERSISTENT_DATA_JSON_DIR,
     PRINTABLE_ASCII_MAX,
     PRINTABLE_ASCII_MIN,
     SPAWNER_CONFIG_DIR,
-    STREAMING_TABLE_DIR,
+    TABLE_DIR,
     _LEVELDATA_NAMED_TABLE_CACHE,
     _LEVELSCRIPT_BINDING_CACHE,
     _MISSION_LEVELSCRIPT_CACHE,
@@ -119,6 +117,7 @@ from scripts.game_data.codecs.levelscript.params import (
     decode_constant_string_param,
     decode_param_output,
 )
+from scripts.common import EXPORT_LAYOUT
 
 _LEVELSCRIPT_DIALOG_EXIT_TEXT_PAIR_CACHE: dict[str, list[dict]] = {}
 _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE: dict[str, list[dict]] | None = None
@@ -232,12 +231,27 @@ def _levelscript_file_sort_key(path: Path) -> tuple:
 LEVELSCRIPT_ACTIVE_OVERLAY_SCHEMA = "levelScriptActiveOverlay.v1"
 
 
-def _default_levelscript_overlay_roots() -> tuple[Path, Path]:
-    """Return the original LevelScript roots in overlay precedence order."""
-    return (
-        LEVELSCRIPT_DIR,
-        PERSISTENT_DATA_JSON_DIR / "LevelScriptData",
-    )
+def _distinct_mirror_evidence(mirror_path: Path, source_path: Path) -> str:
+    """A mirror file as evidence only when it is a different file.
+
+    The export keeps one effective tree, so the default mirror is the source
+    itself; agreeing with itself verifies nothing and is not reported.
+    """
+    try:
+        if Path(mirror_path).resolve() == Path(source_path).resolve():
+            return ""
+    except OSError:
+        return ""
+    return repo_rel(mirror_path)
+
+
+def _default_levelscript_overlay_roots() -> tuple[Path, ...]:
+    """The exported LevelScript roots, fallback first.
+
+    The export holds the client's effective view, so there is one root. Callers
+    may still pass several to model an overlay explicitly.
+    """
+    return (LEVELSCRIPT_DIR,)
 
 
 def _source_file_label(path: Path) -> str:
@@ -361,7 +375,10 @@ def build_active_levelscript_overlay_index(
             })
         chosen["shadowed"] = shadowed
         chosen["status"] = (
-            "fallback"
+            # One root is the export's effective view, not a fallback layer.
+            "effective_view"
+            if len(roots) == 1
+            else "fallback"
             if len(rows) == 1 and int(chosen["precedence"]) == 0
             else "persistent_only"
             if len(rows) == 1 and int(chosen["precedence"]) > 0
@@ -1305,8 +1322,8 @@ def match_levelscript_native_reading_popup_record(
     *,
     leveldata_root: Path = LEVELDATA_DIR,
     levelscript_root: Path = LEVELSCRIPT_DIR,
-    persistent_leveldata_root: Path = PERSISTENT_DATA_JSON_DIR / "LevelData",
-    reading_popup_path: Path = STREAMING_TABLE_DIR / "ReadingPopUpTable.json",
+    persistent_leveldata_root: Path = LEVELDATA_DIR,
+    reading_popup_path: Path = TABLE_DIR / "ReadingPopUpTable.json",
 ) -> dict | None:
     """Resolve one direct ShowUIReadingPopPanel id through the popup table.
 
@@ -1362,8 +1379,8 @@ def build_levelscript_unhosted_reading_popup_receiver_index(
     *,
     levelscript_root: Path = LEVELSCRIPT_DIR,
     leveldata_root: Path = LEVELDATA_DIR,
-    persistent_leveldata_root: Path = PERSISTENT_DATA_JSON_DIR / "LevelData",
-    reading_popup_path: Path = STREAMING_TABLE_DIR / "ReadingPopUpTable.json",
+    persistent_leveldata_root: Path = LEVELDATA_DIR,
+    reading_popup_path: Path = TABLE_DIR / "ReadingPopUpTable.json",
 ) -> dict[str, list[dict]]:
     """Return direct popup receivers and any exact script-entity producer.
 
@@ -6252,13 +6269,8 @@ def _load_interactive_object_template_index() -> dict:
         return _INTERACTIVE_OBJECT_TEMPLATE_CACHE
     source_path = DATA_JSON_DIR / "Interactive" / "InteractiveTable.json"
     mirror_path = (
-        EXPORT_ROOT
-        / "structured"
-        / "Persistent"
-        / "Data"
-        / "Json"
-        / "Interactive"
-        / "InteractiveTable.json"
+        EXPORT_LAYOUT.json_dir
+        / "Interactive" / "InteractiveTable.json"
     )
     try:
         data = read_bytes_cached(source_path)
@@ -6272,7 +6284,7 @@ def _load_interactive_object_template_index() -> dict:
     if parsed:
         parsed["sourceFile"] = repo_rel(source_path)
         if mirror_path.is_file():
-            parsed["verifiedMirrorFile"] = repo_rel(mirror_path)
+            parsed["verifiedMirrorFile"] = _distinct_mirror_evidence(mirror_path, source_path)
     _INTERACTIVE_OBJECT_TEMPLATE_CACHE = parsed
     return parsed
 
@@ -8097,9 +8109,7 @@ def build_entity_tracking_world_interactive_dialog_contexts(
     *,
     mission_runtime_root: Path = MRA_DIR,
     leveldata_root: Path = LEVELDATA_DIR,
-    leveldata_mirror_root: Path = (
-        PERSISTENT_ASSETS_DIR / "Data" / "Json" / "LevelData"
-    ),
+    leveldata_mirror_root: Path = LEVELDATA_DIR,
     world_entity_registry_path: Path = (
         GAMEPLAY_CONFIG_DIR / "WorldEntityRegistry.json"
     ),
@@ -8107,9 +8117,7 @@ def build_entity_tracking_world_interactive_dialog_contexts(
         DATA_JSON_DIR / "Interactive" / "InteractiveTable.json"
     ),
     interactive_table_mirror_path: Path = (
-        PERSISTENT_ASSETS_DIR
-        / "Data"
-        / "Json"
+        DATA_JSON_DIR
         / "Interactive"
         / "InteractiveTable.json"
     ),
@@ -8304,7 +8312,7 @@ def build_entity_tracking_world_interactive_dialog_contexts(
                         "interactiveListCountOffset": frame["listCountOffset"],
                         "recordIndex": record["recordIndex"],
                         "levelDataSourceFile": repo_rel(path),
-                        "levelDataVerifiedMirrorFile": repo_rel(mirror_path),
+                        "levelDataVerifiedMirrorFile": _distinct_mirror_evidence(mirror_path, path),
                     })
 
     rows: list[dict] = []
@@ -8346,12 +8354,12 @@ def build_entity_tracking_world_interactive_dialog_contexts(
                 world_entity_registry_path
             ),
             "interactiveTableSourceFile": repo_rel(interactive_table_path),
-            "interactiveTableVerifiedMirrorFile": repo_rel(
-                interactive_table_mirror_path
+            "interactiveTableVerifiedMirrorFile": _distinct_mirror_evidence(
+                interactive_table_mirror_path, interactive_table_path
             ),
             "interactiveTemplateSourceFile": repo_rel(template_path),
-            "interactiveTemplateVerifiedMirrorFile": repo_rel(
-                template_mirror_path
+            "interactiveTemplateVerifiedMirrorFile": _distinct_mirror_evidence(
+                template_mirror_path, template_path
             ),
             "ownership": False,
             "questPlayback": False,
@@ -9050,7 +9058,7 @@ def build_levelscript_interactive_narrative_story_contexts(
     available_story_keys: set[str],
     *,
     levelscript_root: Path = LEVELSCRIPT_DIR,
-    reading_popup_path: Path = STREAMING_TABLE_DIR / "ReadingPopUpTable.json",
+    reading_popup_path: Path = TABLE_DIR / "ReadingPopUpTable.json",
 ) -> list[dict]:
     """Bind Story files to exact typed LevelScript interactive configuration.
 
@@ -9061,7 +9069,7 @@ def build_levelscript_interactive_narrative_story_contexts(
     use_default_cache = (
         levelscript_root == LEVELSCRIPT_DIR
         and reading_popup_path
-        == STREAMING_TABLE_DIR / "ReadingPopUpTable.json"
+        == TABLE_DIR / "ReadingPopUpTable.json"
     )
     cache_key = frozenset(available_story_keys)
     if (
@@ -9213,7 +9221,7 @@ def _validated_leveldata_horn_template(
         return None
     return {
         "interactiveHornTemplateSourceFile": repo_rel(source_path),
-        "interactiveHornTemplateVerifiedMirrorFile": repo_rel(mirror_path),
+        "interactiveHornTemplateVerifiedMirrorFile": _distinct_mirror_evidence(mirror_path, source_path),
         "interactiveHornTemplateSha256": digest,
         "interactiveHornNativeMappingId":
             LEVELDATA_HORN_NATIVE_MAPPING_ID,
@@ -9225,11 +9233,9 @@ def build_leveldata_interactive_narrative_story_contexts(
     *,
     available_horn_dialog_definition_keys: set[str] | None = None,
     leveldata_root: Path = LEVELDATA_DIR,
-    persistent_leveldata_root: Path = (
-        PERSISTENT_DATA_JSON_DIR / "LevelData"
-    ),
+    persistent_leveldata_root: Path = LEVELDATA_DIR,
     levelscript_root: Path = LEVELSCRIPT_DIR,
-    reading_popup_path: Path = STREAMING_TABLE_DIR / "ReadingPopUpTable.json",
+    reading_popup_path: Path = TABLE_DIR / "ReadingPopUpTable.json",
     horn_template_path: Path = (
         DATA_JSON_DIR
         / "Interactive"
@@ -9237,7 +9243,7 @@ def build_leveldata_interactive_narrative_story_contexts(
         / "data_int_horn.json"
     ),
     persistent_horn_template_path: Path = (
-        PERSISTENT_DATA_JSON_DIR
+        DATA_JSON_DIR
         / "Interactive"
         / "InteractiveData"
         / "data_int_horn.json"
@@ -9250,11 +9256,11 @@ def build_leveldata_interactive_narrative_story_contexts(
     use_default_cache = (
         leveldata_root == LEVELDATA_DIR
         and persistent_leveldata_root
-        == PERSISTENT_DATA_JSON_DIR / "LevelData"
+        == LEVELDATA_DIR
         and levelscript_root == LEVELSCRIPT_DIR
         and not available_horn_dialog_definition_keys
         and reading_popup_path
-        == STREAMING_TABLE_DIR / "ReadingPopUpTable.json"
+        == TABLE_DIR / "ReadingPopUpTable.json"
         and horn_template_path
         == (
             DATA_JSON_DIR
@@ -9264,7 +9270,7 @@ def build_leveldata_interactive_narrative_story_contexts(
         )
         and persistent_horn_template_path
         == (
-            PERSISTENT_DATA_JSON_DIR
+            DATA_JSON_DIR
             / "Interactive"
             / "InteractiveData"
             / "data_int_horn.json"
@@ -9421,7 +9427,7 @@ def build_leveldata_interactive_narrative_story_contexts(
                     "levelId": path.parent.name,
                     "levelDataAsset": path.stem,
                     "sourceFile": repo_rel(path),
-                    "verifiedMirrorFile": repo_rel(mirror_path),
+                    "verifiedMirrorFile": _distinct_mirror_evidence(mirror_path, path),
                     "entityTemplateId": template_id,
                     "entityTemplatePath": str(
                         core_paths.get(template_id) or ""
@@ -9735,9 +9741,7 @@ def build_quest_progress_locked_interactive_story_contexts(
     *,
     mission_runtime_root: Path = MRA_DIR,
     leveldata_root: Path = LEVELDATA_DIR,
-    leveldata_mirror_root: Path = (
-        PERSISTENT_ASSETS_DIR / "Data" / "Json" / "LevelData"
-    ),
+    leveldata_mirror_root: Path = LEVELDATA_DIR,
     world_entity_registry_path: Path = (
         GAMEPLAY_CONFIG_DIR / "WorldEntityRegistry.json"
     ),
@@ -9898,7 +9902,7 @@ def build_quest_progress_locked_interactive_story_contexts(
                             ],
                             "recordIndex": record["recordIndex"],
                             "levelDataSourceFile": repo_rel(path),
-                            "levelDataVerifiedMirrorFile": repo_rel(mirror_path),
+                            "levelDataVerifiedMirrorFile": _distinct_mirror_evidence(mirror_path, path),
                         })
         leveldata_cache[cache_key] = candidates
         return candidates
@@ -10092,7 +10096,7 @@ def build_level_interactive_narrative_mission_story_contexts(
     mission_runtime_ids: set[str],
     *,
     leveldata_root: Path = LEVELDATA_DIR,
-    reading_popup_path: Path = STREAMING_TABLE_DIR / "ReadingPopUpTable.json",
+    reading_popup_path: Path = TABLE_DIR / "ReadingPopUpTable.json",
 ) -> list[dict]:
     """Recover same-entity narrative popup/mission-state dependencies.
 
@@ -12947,14 +12951,8 @@ def build_leveldata_authoritative_scope_script_host_index(
     # StreamingAssets is the fallback and Persistent is the complete-file
     # override.  Keep this selection local to the authoritative shell gate;
     # callers must never union dictionaries from shadowed files.
-    leveldata_roots = leveldata_roots or (
-        LEVELDATA_DIR,
-        PERSISTENT_DATA_JSON_DIR / "LevelData",
-    )
-    levelscript_roots = levelscript_roots or (
-        LEVELSCRIPT_DIR,
-        PERSISTENT_DATA_JSON_DIR / "LevelScriptData",
-    )
+    leveldata_roots = leveldata_roots or (LEVELDATA_DIR,)
+    levelscript_roots = levelscript_roots or (LEVELSCRIPT_DIR,)
     mission_runtime_root = mission_runtime_root or MRA_DIR
 
     mission_runtime_level_ids: dict[str, str] = {}
@@ -13032,7 +13030,9 @@ def build_leveldata_authoritative_scope_script_host_index(
                     ),
                     "missionRuntimeLevelId": level_id,
                     "activeOverlayStatus": (
-                        "persistent_override"
+                        "effective_view"
+                        if len(leveldata_roots) == 1
+                        else "persistent_override"
                         if precedence > 0 and candidate_count > 1
                         else "persistent_only"
                         if precedence > 0

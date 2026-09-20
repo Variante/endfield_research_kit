@@ -5,6 +5,8 @@ and decoded media. Ownership inferred from authored references is labelled as
 inferred; nothing here establishes runtime playback."""
 
 from __future__ import annotations
+from scripts.source_paths import INSTALLED_LAYERS, ExportLayout
+from scripts.game_data.extraction.unity_overlay import chunk_slot_key, effective_chunk_slot_keys
 
 import json
 import re
@@ -18,7 +20,7 @@ from scripts.webui.audio.semantics.context_utils import load_json_strict
 from scripts.webui.audio.semantics.context_utils import normalize_posix
 
 from scripts.game_data.extraction.animestudio_index_io import ObjectIndexUnavailable
-from scripts.game_data.extraction.animestudio_index_io import iter_published_objects
+from scripts.game_data.extraction.animestudio_index_io import iter_effective_layer_objects
 from scripts.game_data.extraction.animestudio_index_io import raw_json_path_for_object
 
 GAMEPLAY_INDEX_REL = Path("data/lang/{language}/gameplay/index.json")
@@ -54,32 +56,13 @@ ANIMATION_AUDIO_FUNCTIONS = frozenset({
     "OnCustomFootStep",
 })
 
-ANIMATOR_CONTROLLER_REL = Path(
-    "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorController"
-)
-
-ANIMATOR_CONTROLLER_RELS = (
-    ANIMATOR_CONTROLLER_REL,
-    Path("recovered/AnimeStudio-cli/Persistent/json_by_type/AnimatorController"),
-)
-
-ANIMATOR_OVERRIDE_CONTROLLER_REL = Path(
-    "recovered/AnimeStudio-cli/StreamingAssets/json_by_type/AnimatorOverrideController"
-)
-
-ANIMATOR_OVERRIDE_CONTROLLER_RELS = (
-    ANIMATOR_OVERRIDE_CONTROLLER_REL,
-    Path("recovered/AnimeStudio-cli/Persistent/json_by_type/AnimatorOverrideController"),
-)
-
-ANIMATION_CLIP_REL = Path(
-    "recovered/AnimeStudio-cli/StreamingAssets/convert_by_type/AnimationClip"
-)
-
-ANIMATION_CLIP_RELS = (
-    ANIMATION_CLIP_REL,
-    Path("recovered/AnimeStudio-cli/Persistent/convert_by_type/AnimationClip"),
-)
+# Export-root-relative Unity type folders (layout v2: one effective tree).
+ANIMATOR_CONTROLLER_REL = Path("game/Unity/AnimatorController")
+ANIMATOR_CONTROLLER_RELS = (ANIMATOR_CONTROLLER_REL,)
+ANIMATOR_OVERRIDE_CONTROLLER_REL = Path("game/Unity/AnimatorOverrideController")
+ANIMATOR_OVERRIDE_CONTROLLER_RELS = (ANIMATOR_OVERRIDE_CONTROLLER_REL,)
+ANIMATION_CLIP_REL = Path("game/Unity/AnimationClip")
+ANIMATION_CLIP_RELS = (ANIMATION_CLIP_REL,)
 
 ANIMATOR_OVERRIDE_IDENTITY_RE = re.compile(
     r"(?:^|_)((?:eny|chr)_\d+_[^_]+)", re.IGNORECASE
@@ -114,8 +97,8 @@ def length_prefixed_matches(data: bytes, pattern: re.Pattern[bytes]) -> set[str]
 
 def gameplay_config_records(export_root: Path, family: str) -> dict[str, dict[str, Any]]:
     records: dict[str, dict[str, Any]] = {}
-    for source in ("StreamingAssets", "Persistent"):
-        root = export_root / "structured" / source / "Data" / "Json" / family
+    for source in ("game",):
+        root = ExportLayout(export_root).game / "Json" / family
         if not root.exists():
             continue
         for path in sorted(root.glob("*.json")):
@@ -151,7 +134,7 @@ def enemy_template_source_files(export_root: Path) -> dict[str, list[Path]]:
     index_ok = False
     for source in ("Persistent", "StreamingAssets"):
         try:
-            for row in iter_published_objects(export_root, source):
+            for row in iter_effective_layer_objects(export_root, source):
                 name = str(row.get("name") or "")
                 if not name.lower().startswith("data_eny_"):
                     continue
@@ -166,9 +149,8 @@ def enemy_template_source_files(export_root: Path) -> dict[str, list[Path]]:
     if index_ok:
         return {identity: sorted(paths) for identity, paths in sorted(result.items())}
 
-    # Explicit compatibility path for exports predating the merged index.
-    for source in ("Persistent", "StreamingAssets"):
-        root = export_root / "recovered" / "AnimeStudio-cli" / source / "json_by_type" / "MonoBehaviour"
+    # Explicit fallback when no published object index is available.
+    for root in (ExportLayout(export_root).unity_type_dir("MonoBehaviour"),):
         if not root.exists():
             continue
         for path in root.glob("data_eny_*_p*.json"):
@@ -342,8 +324,8 @@ def collect_gameplay_profile_voices(
 
     character_table = {}
     character_source = ""
-    for source in ("Persistent", "StreamingAssets"):
-        path = export_root / "structured" / source / "Table" / "CharacterTable.json"
+    for source in ("game",):
+        path = ExportLayout(export_root).game / "Table" / "CharacterTable.json"
         payload = load_json_strict(path, {})
         if isinstance(payload, dict) and payload:
             character_table = payload
@@ -354,8 +336,8 @@ def collect_gameplay_profile_voices(
             break
 
     trigger_keys: set[str] = set()
-    for source in ("Persistent", "StreamingAssets"):
-        path = export_root / "structured" / source / "Table" / "AIBark.json"
+    for source in ("game",):
+        path = ExportLayout(export_root).game / "Table" / "AIBark.json"
         payload = load_json_strict(path, {})
         if not isinstance(payload, dict):
             continue
@@ -478,7 +460,12 @@ def animation_clip_path_id(path: Path) -> int | None:
     return value - (1 << 64) if value >= (1 << 63) else value
 
 def animestudio_storage_root(path: Path) -> str:
-    """Return the VFS storage root encoded in an AnimeStudio export path."""
+    """Return the storage partition of an exported Unity file.
+
+    The export keeps one effective game/Unity tree, so every exported file is
+    in the same partition; the empty key is that partition. A path that still
+    names an installed layer (a hand-made fixture) keeps that layer's key.
+    """
 
     lowered = {part.lower(): part for part in path.parts}
     for storage_root in ("StreamingAssets", "Persistent"):
@@ -855,11 +842,17 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
     # objects from the generated AssetMap.  This is stronger than a bare PathID
     # only for FileID=0 pointers, whose target is in the same serialized file.
     asset_sources: dict[tuple[str, str, int], list[str]] = defaultdict(list)
-    for storage_root in ("StreamingAssets", "Persistent"):
+    # Keep only entries from bundle slots the client loads (effective VFS
+    # catalogue). Without the catalogues, fall back to newest-layer precedence:
+    # a base entry is dropped when a newer layer already holds that key.
+    slot_keys = effective_chunk_slot_keys(export_root)
+    effective_keys: set[tuple[str, str, int]] = set()
+    for storage_root in reversed(INSTALLED_LAYERS):
         asset_map = (
-            export_root / "recovered" / "AnimeStudio-cli" / storage_root
-            / "maps" / f"endfield_{storage_root.lower()}_assets.json"
+            ExportLayout(export_root).asset_map_dir(storage_root)
+            / f"endfield_{storage_root.lower()}_assets.json"
         )
+        layer_keys: set[tuple[str, str, int]] = set()
         for entry in iter_asset_map_objects(asset_map):
             if not isinstance(entry, dict):
                 continue
@@ -870,9 +863,21 @@ def collect_animation_override_index(export_root: Path) -> dict[str, Any]:
             source = normalize_posix(str(entry.get("Source") or "")).lower()
             if asset_path_id is None or not source:
                 continue
-            key = (storage_root, asset_type, asset_path_id)
+            key = ("", asset_type, asset_path_id)
+            if slot_keys is not None:
+                # No recorded offset means no provable slot: skip rather than
+                # let it default to offset 0 and match a live bundle there.
+                offset = entry.get("Offset")
+                if not isinstance(offset, int) or isinstance(offset, bool):
+                    continue
+                if chunk_slot_key(str(entry.get("Source") or ""), offset) not in slot_keys:
+                    continue
+            elif key in effective_keys:
+                continue
+            layer_keys.add(key)
             if source not in asset_sources[key]:
                 asset_sources[key].append(source)
+        effective_keys |= layer_keys
 
     # PathID uniqueness is measured over the actual exported AnimationClip
     # files within one VFS storage root, not over names. Ambiguous or missing

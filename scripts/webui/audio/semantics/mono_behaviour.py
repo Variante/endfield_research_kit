@@ -4,6 +4,7 @@ Scans published MonoBehaviour objects for audio-id carriers and projects the
 runtime-system model. A carrier is a serialized field, not a playback claim."""
 
 from __future__ import annotations
+from scripts.source_paths import INSTALLED_LAYERS, ExportLayout
 
 import hashlib
 import importlib
@@ -31,7 +32,8 @@ from scripts.webui.audio.semantics.context_utils import normalize_posix as norma
 
 from scripts.game_data.extraction.animestudio_index_io import (
     ObjectIndexUnavailable,
-    iter_published_objects,
+    iter_effective_layer_objects,
+    load_published_schema_fields,
     published_object_index_path,
 )
 from scripts.common import sha256_file as file_sha256
@@ -153,12 +155,13 @@ def native_unmapped_playback_entry(
     }
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import WEBUI_BUILD_DIR
 
 ROOT = REPO_ROOT
 
 METADATA_HELPER = ROOT / "tools/endfield-il2cpp/catalog_option_flow_metadata.py"
 
-RUNTIME_CACHE_REL = Path("recovered/audio_semantics/runtime_metadata.json")
+RUNTIME_CACHE_PATH = WEBUI_BUILD_DIR / "audio" / "semantics" / "runtime_metadata.json"
 
 MONO_BEHAVIOUR_AUDIO_EVENT_FIELD_NAMES = frozenset({
     "_spawnAudioEvent", "_finishAudioEvent", "_onHitAudioEvent",
@@ -2829,7 +2832,7 @@ def _metadata_enum_values(module: Any, md: Any, type_def: Any) -> dict[str, int]
     return out
 
 def build_runtime_model(metadata_path: Path | None, export_root: Path) -> dict[str, Any]:
-    cache_path = export_root / RUNTIME_CACHE_REL
+    cache_path = RUNTIME_CACHE_PATH
     if metadata_path is None or not metadata_path.is_file():
         return {
             "status": "degraded",
@@ -2944,102 +2947,6 @@ def build_runtime_model(metadata_path: Path | None, export_root: Path) -> dict[s
     })
     return runtime
 
-def _iter_mono_audio_object_index_rows(path: Path) -> Iterable[dict[str, Any]]:
-    """Yield only object-index rows containing a maintained AudioId field.
-
-    The current StreamingAssets MonoBehaviour index is several gigabytes.  Use
-    ripgrep as a byte-level prefilter when available, while retaining a small
-    stdlib fallback for tests and environments without rg.
-    """
-
-    if not path.is_file():
-        return
-    rg = shutil.which("rg")
-    def matching_rows(patterns: Iterable[str]) -> Iterable[dict[str, Any]]:
-        text_patterns = tuple(patterns)
-        if rg:
-            command = [rg, "--no-filename", "--no-line-number", "--fixed-strings"]
-            for pattern in text_patterns:
-                command.extend(("-e", pattern))
-            command.append(str(path))
-            process = subprocess.Popen(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                text=True,
-                encoding="utf-8",
-                errors="replace",
-            )
-            assert process.stdout is not None
-            for line in process.stdout:
-                try:
-                    row = json.loads(line)
-                except json.JSONDecodeError:
-                    continue
-                if isinstance(row, dict):
-                    yield row
-            process.stdout.close()
-            error = process.stderr.read() if process.stderr is not None else ""
-            if process.stderr is not None:
-                process.stderr.close()
-            return_code = process.wait()
-            if return_code not in (0, 1):
-                raise RuntimeError(
-                    f"rg MonoBehaviour AudioId prefilter failed for {path}: "
-                    f"{error.strip() or f'exit {return_code}'}"
-                )
-            return
-        byte_patterns = tuple(value.encode("utf-8") for value in text_patterns)
-        with path.open("rb") as handle:
-            for raw_line in handle:
-                if not any(pattern in raw_line for pattern in byte_patterns):
-                    continue
-                try:
-                    row = json.loads(raw_line)
-                except (UnicodeDecodeError, json.JSONDecodeError):
-                    continue
-                if isinstance(row, dict):
-                    yield row
-
-    schema_ids: set[str] = set()
-    schema_fields: dict[str, frozenset[str]] = {}
-    seen_objects: set[tuple[str, int]] = set()
-    for row in matching_rows(MONO_BEHAVIOUR_AUDIO_EVENT_PREFILTERS):
-        if row.get("recordType") == "schema" and row.get("schemaId"):
-            schema_id = str(row["schemaId"])
-            schema_ids.add(schema_id)
-            schema_fields[schema_id] = frozenset(
-                str(value) for value in row.get("fields") or []
-            )
-            continue
-        if row.get("recordType") != "object":
-            continue
-        object_row = row.get("object") if isinstance(row.get("object"), dict) else {}
-        identity = (str(object_row.get("serializedFile") or ""), int(object_row.get("pathId") or 0))
-        if identity not in seen_objects:
-            seen_objects.add(identity)
-            enriched = dict(row)
-            enriched["_audioSchemaFields"] = schema_fields.get(
-                str(row.get("schemaId") or ""), frozenset()
-            )
-            yield enriched
-    if not schema_ids:
-        return
-    schema_patterns = [f'\"schemaId\":\"{schema_id}\"' for schema_id in sorted(schema_ids)]
-    for row in matching_rows(schema_patterns):
-        if row.get("recordType") != "object":
-            continue
-        object_row = row.get("object") if isinstance(row.get("object"), dict) else {}
-        identity = (str(object_row.get("serializedFile") or ""), int(object_row.get("pathId") or 0))
-        if identity in seen_objects:
-            continue
-        seen_objects.add(identity)
-        enriched = dict(row)
-        enriched["_audioSchemaFields"] = schema_fields.get(
-            str(row.get("schemaId") or ""), frozenset()
-        )
-        yield enriched
-
 def _mono_audio_event_scalar(path: Any, value: Any) -> tuple[int, str] | None:
     """Return a typed uint32 Event and authored role for a scalar path."""
 
@@ -3138,11 +3045,7 @@ def _iter_json_leaf_scalars(value: Any, path: str = "$") -> Iterable[tuple[str, 
 def _mono_audio_raw_json_paths(root: Path) -> Iterable[Path]:
     """Locate the bounded raw objects whose JSON contains maintained fields."""
 
-    directories = [
-        root / source / "json_by_type" / "MonoBehaviour"
-        for source in ("StreamingAssets", "Persistent")
-        if (root / source / "json_by_type" / "MonoBehaviour").is_dir()
-    ]
+    directories = [path for path in (root / "MonoBehaviour",) if path.is_dir()]
     if not directories:
         return
     rg = shutil.which("rg")
@@ -3196,29 +3099,26 @@ def collect_mono_behaviour_audio_id_contexts(
     that the configured callback/state executed.
     """
 
-    root = export_root / "recovered" / "AnimeStudio-cli"
-    index_paths = [
-        root / source / "object_index" / "parts"
-        / f"{source}_animestudio_json_by_type_MonoBehaviour.jsonl"
-        for source in ("StreamingAssets", "Persistent")
-    ]
-    source_fingerprint = [{
+    layout = ExportLayout(export_root)
+    root = layout.unity_dir
+    index_paths = [layout.object_index_dir(source) / "objects.jsonl.gz" for source in INSTALLED_LAYERS]
+    # The cache lives in webui/data/_build, shared by every export root, so
+    # the root itself is part of the key.
+    source_fingerprint: list[dict[str, Any]] = [{"exportRoot": normalize_posix(export_root.resolve())}]
+    source_fingerprint.extend({
         "path": normalize_posix(path.relative_to(export_root)),
         "size": path.stat().st_size,
         "mtimeNs": path.stat().st_mtime_ns,
-    } for path in index_paths if path.is_file()]
+    } for path in index_paths if path.is_file())
     source_fingerprint.extend({
         "path": normalize_posix(path.relative_to(export_root)),
         "kind": "directory",
         "mtimeNs": path.stat().st_mtime_ns,
-    } for path in (
-        root / source / "json_by_type" / "MonoBehaviour"
-        for source in ("StreamingAssets", "Persistent")
-    ) if path.is_dir())
+    } for path in (root / "MonoBehaviour",) if path.is_dir())
     event_hash_fingerprint = hashlib.sha256(
         "\n".join(f"{value & 0xFFFFFFFF:08x}" for value in sorted(current_wwise_event_hashes)).encode("ascii")
     ).hexdigest()
-    cache_path = export_root / "recovered" / "audio_semantics" / "mono_behaviour_audio_id_contexts.json"
+    cache_path = WEBUI_BUILD_DIR / "audio" / "semantics" / "mono_behaviour_audio_id_contexts.json"
     cached = load_json(cache_path, {})
     if (
         isinstance(cached, dict)
@@ -3248,25 +3148,20 @@ def collect_mono_behaviour_audio_id_contexts(
     complete_index_sources = 0
     incomplete_index_sources = 0
     index_fields_contract: dict[str, bool] = {}
-    for source_root in ("StreamingAssets", "Persistent"):
-        merged_path = root / source_root / "object_index" / "objects.jsonl.gz"
-        part_path = (
-            root / source_root / "object_index" / "parts"
-            / f"{source_root}_animestudio_json_by_type_MonoBehaviour.jsonl"
-        )
+    for source_root in INSTALLED_LAYERS:
+        merged_path = layout.object_index_dir(source_root) / "objects.jsonl.gz"
         try:
             published_object_index_path(export_root, source_root)
-            rows = iter_published_objects(export_root, source_root)
+            schema_fields = load_published_schema_fields(export_root, source_root)
+            rows = iter_effective_layer_objects(export_root, source_root)
             index_source_path = merged_path
             source_paths.append(normalize_posix(merged_path.relative_to(export_root)))
         except ObjectIndexUnavailable:
-            if not part_path.is_file():
-                continue
-            source_paths.append(normalize_posix(part_path.relative_to(export_root)))
-            rows = _iter_mono_audio_object_index_rows(part_path)
-            index_source_path = part_path
+            continue
         for row in rows:
             candidate_objects += 1
+            # AudioMap fields are accepted only against the complete typed schema.
+            row["_audioSchemaFields"] = schema_fields.get(str(row.get("schemaId") or ""), frozenset())
             fields = [
                 field for field in row.get("fields") or []
                 if isinstance(field, list) and len(field) >= 3
@@ -3504,9 +3399,9 @@ def collect_mono_behaviour_audio_id_contexts(
     # A complete merged index contains the same scalar evidence without the
     # expensive raw-directory content scan.  Raw JSON remains an explicit
     # fallback for old exports or indexes whose scalar set was truncated.
-    for source_root in ("StreamingAssets", "Persistent"):
+    for source_root in INSTALLED_LAYERS:
         try:
-            summary_path = root / source_root / "object_index" / "summary.json"
+            summary_path = layout.object_index_dir(source_root) / "summary.json"
             summary = load_json(summary_path, {})
             counts = summary.get("counts") if isinstance(summary, dict) else {}
             if (
@@ -3527,7 +3422,7 @@ def collect_mono_behaviour_audio_id_contexts(
         if not object_name:
             continue
         raw_path = (
-            root / source_root / "json_by_type" / "MonoBehaviour"
+            root / "MonoBehaviour"
             / f"{object_name}_p{candidate_path_id & ((1 << 64) - 1):016X}.json"
         )
         if raw_path.is_file():

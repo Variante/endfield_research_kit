@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Build compact WebUI data for Endfield audio semantics.
 
-The normal audio index under ``export_full/structured/Audio/<LANG>`` is the
+The normal audio index under ``<export root>/game/Audio/<LANG>`` is the
 lossless recovery surface and can be tens of megabytes.  This builder keeps
 that file authoritative, then publishes a compact overview plus lazy event and
 media shards for the Audio page.  Installed IL2CPP metadata is optional:
@@ -35,6 +35,10 @@ if __package__ in {None, ""}:
         "Run this maintained entry point as: "
         "python -m scripts.webui.audio.build_audio_semantics"
     )
+
+from scripts.common import require_export_layout
+from scripts.source_paths import ExportLayout
+from scripts.common import EXPORT_LAYOUT
 
 from scripts.common import sha256_file as file_sha256
 from scripts.webui.audio.semantics.entity_contexts import build_custom_footstep_model, collect_ability_voice_trigger_contexts, collect_char_interact_audio_semantics, collect_gameplay_contexts, collect_patrol_sub_action_audio_semantics, collect_spawner_pre_warn_semantics
@@ -80,7 +84,7 @@ AUDIO_SEMANTIC_SCHEMA_VERSION = context_utils.AUDIO_SEMANTIC_SCHEMA_VERSION
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-DEFAULT_EXPORT_ROOT = ROOT / "export_full"
+DEFAULT_EXPORT_ROOT = EXPORT_LAYOUT.root
 DEFAULT_WEBUI_ROOT = ROOT / "webui"
 DEFAULT_METADATA_REL = Path("il2cpp_data/Metadata/global-metadata.dat")
 
@@ -1264,15 +1268,11 @@ def build_audio_semantic_data(
     }
     levelsequence_play_actions = collect_levelsequence_play_actions(export_root)
     timeline_ownership_parts: list[dict[str, Any]] = []
-    object_index_root = export_root / "recovered" / "AnimeStudio-cli"
-    streaming_mono_index = (
-        object_index_root / "StreamingAssets" / "object_index" / "parts"
-        / "StreamingAssets_animestudio_json_by_type_MonoBehaviour.jsonl"
-    )
-    streaming_director_index = (
-        object_index_root / "StreamingAssets" / "object_index" / "parts"
-        / "StreamingAssets_animestudio_json_by_type_PlayableDirector.jsonl"
-    )
+    # Each installed layer's merged object index holds its MonoBehaviour and
+    # PlayableDirector rows together; the Timeline reader filters by classId.
+    layout = ExportLayout(export_root)
+    streaming_mono_index = layout.object_index_dir("StreamingAssets") / "objects.jsonl.gz"
+    streaming_director_index = streaming_mono_index
     if streaming_mono_index.is_file():
         timeline_ownership_parts.append(collect_timeline_audio_ownership(
             export_root,
@@ -1280,14 +1280,8 @@ def build_audio_semantic_data(
             mono_path=streaming_mono_index,
             director_path=streaming_director_index,
         ))
-    persistent_mono_index = (
-        object_index_root / "Persistent" / "object_index" / "parts"
-        / "Persistent_animestudio_json_by_type_MonoBehaviour.jsonl"
-    )
-    persistent_director_index = (
-        object_index_root / "Persistent" / "object_index" / "parts"
-        / "Persistent_animestudio_json_by_type_PlayableDirector.jsonl"
-    )
+    persistent_mono_index = layout.object_index_dir("Persistent") / "objects.jsonl.gz"
+    persistent_director_index = persistent_mono_index
     if persistent_mono_index.is_file():
         # Persistent carries the story Timeline assets that are absent from
         # the StreamingAssets-only semantic pass.  Scan all authored Event
@@ -1888,7 +1882,7 @@ def build_audio_semantic_data(
         "generated": audio_index.get("generated") or time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "language": language,
         "debugOnly": False,
-        "sourceIndex": f"export_full/structured/Audio/{language}/index.json",
+        "sourceIndex": f"game/Audio/{language}/index.json",
         "sourceIndexFingerprint": {
             "generated": audio_index.get("generated"),
             "eventEvidenceSchemaVersion": audio_index.get("eventEvidenceSchemaVersion"),
@@ -2538,8 +2532,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
+    require_export_layout(getattr(args, 'export_root', None))
     language = str(args.language or "CN").upper()
-    index_path = args.export_root / f"structured/Audio/{language}/index.json"
+    index_path = ExportLayout(args.export_root).audio_dir / language / "index.json"
     audio_index = load_json(index_path, {})
     if not isinstance(audio_index, dict) or not audio_index:
         raise SystemExit(f"Audio index not found or invalid: {index_path}")

@@ -6,6 +6,7 @@ when native binaries are missing, while build-locked dispatch claims fail closed
 """
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import json
 from collections import defaultdict
@@ -29,8 +30,8 @@ def collect_ai_bark_trigger_rows(
     """Index exact AIBark rows by the response trigger key they dispatch."""
 
     merged: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
-    for source_layer in ("StreamingAssets", "Persistent"):
-        path = export_root / "structured" / source_layer / "Table" / "AIBark.json"
+    for source_layer in ("game",):
+        path = ExportLayout(export_root).game / "Table" / "AIBark.json"
         payload = _load_json(path, {}) if path.is_file() else {}
         source = _normalize_posix(path.relative_to(export_root))
         for bark_id, group in (payload.items() if isinstance(payload, dict) else []):
@@ -115,9 +116,9 @@ def build_ai_bark_catalog(
         tuple[str, str, str, int, int], dict[str, Any]
     ] = {}
     source_response_occurrences = 0
-    for source_layer in ("StreamingAssets", "Persistent"):
+    for source_layer in ("game",):
         path = (
-            export_root / "structured" / source_layer / "Table"
+            ExportLayout(export_root).game / "Table"
             / "ResponsiveDialog.json"
         )
         payload = _load_json(path, {}) if path.is_file() else {}
@@ -299,9 +300,9 @@ def collect_responsive_voice_contexts(
     } if native_context.validated else {}
 
     extra_by_hash: dict[int, list[dict[str, Any]]] = defaultdict(list)
-    for source_layer in ("StreamingAssets", "Persistent"):
+    for source_layer in ("game",):
         extra_path = (
-            export_root / "structured" / source_layer / "Table"
+            ExportLayout(export_root).game / "Table"
             / "AudioVoiceExtraData.json"
         )
         payload = _load_json(extra_path, {}) if extra_path.is_file() else {}
@@ -347,9 +348,9 @@ def collect_responsive_voice_contexts(
         })
 
     responsive_paths = [
-        export_root / "structured" / source / "Table" / "ResponsiveDialog.json"
-        for source in ("StreamingAssets", "Persistent")
-        if (export_root / "structured" / source / "Table" / "ResponsiveDialog.json").is_file()
+        ExportLayout(export_root).game / "Table" / "ResponsiveDialog.json"
+        for source in ("game",)
+        if (ExportLayout(export_root).game / "Table" / "ResponsiveDialog.json").is_file()
     ]
     for responsive_path in responsive_paths:
         payload = _load_json(responsive_path, {})
@@ -417,9 +418,9 @@ def collect_responsive_voice_contexts(
                         })
 
     tone_paths = [
-        export_root / "structured" / source / "Table" / "AudioVoTone.json"
-        for source in ("StreamingAssets", "Persistent")
-        if (export_root / "structured" / source / "Table" / "AudioVoTone.json").is_file()
+        ExportLayout(export_root).game / "Table" / "AudioVoTone.json"
+        for source in ("game",)
+        if (ExportLayout(export_root).game / "Table" / "AudioVoTone.json").is_file()
     ]
     for tone_path in tone_paths:
         payload = _load_json(tone_path, {})

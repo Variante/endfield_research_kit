@@ -35,12 +35,14 @@ from scripts.game_data.memorypack.tables import (
     decode_dialog_id_table_memorypack,
     decode_model_view_state_controller_memorypack,
 )
-EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
+from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR, unity_asset_rel
+from scripts.source_paths import ExportLayout, ExportLayoutError
+EXPORT_ROOT = EXPORT_LAYOUT.root
 WEBUI_DATA = ROOT / "webui" / "data"
 MISSION_PIPELINE_ROOT = WEBUI_DATA / "mission_pipeline"
 SOURCE_GRAPH_SCHEMA_VERSION = "sourceGraph.v1"
 WEBUI_OPTION_OVERRIDES = ROOT / "webui" / "overrides" / "options.json"
-GAMEPLAY_CONFIG_ROOT = EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "GameplayConfig"
+GAMEPLAY_CONFIG_ROOT = EXPORT_LAYOUT.json_dir / "GameplayConfig"
 NPC_PROXY_TABLE_PATH = GAMEPLAY_CONFIG_ROOT / "NpcProxyTable.json"
 NPC_PROXY_EX_TABLE_PATH = GAMEPLAY_CONFIG_ROOT / "NpcProxyExDataTable.json"
 ATMOSPHERIC_NPC_CLUSTER_TABLE_PATH = GAMEPLAY_CONFIG_ROOT / "AtmosphericNpcClusterDataTable.json"
@@ -57,9 +59,8 @@ STORY_BUILD_REPORTS_DIR = ROOT / "reports" / "story" / "build"
 DEFAULT_DB = GRAPH_DIR / "endfield_source_graph.sqlite"
 DEFAULT_SUMMARY_JSON = GRAPH_DIR / "summary.json"
 DEFAULT_SUMMARY_MD = GRAPH_DIR / "summary.md"
-TIMELINE_LINE_ORDERS_REL = Path("recovered") / "AnimeStudio-cli" / "timeline_line_orders.json"
-TIMELINE_LINE_ORDERS_PATH = EXPORT_ROOT / TIMELINE_LINE_ORDERS_REL
-DIALOG_ID_TABLE_INDEX_PATH = EXPORT_ROOT / "recovered" / "dialog_id_table_index.json"
+TIMELINE_LINE_ORDERS_PATH = WEBUI_BUILD_DIR / "story" / "timeline_line_orders.json"
+DIALOG_ID_TABLE_INDEX_PATH = WEBUI_BUILD_DIR / "story" / "dialog_id_table_index.json"
 STORY_OPTION_REPORTS_DIR = ROOT / "reports" / "story" / "recovery" / "options"
 RUNTIME_OPTION_ROUTE_AUDIT_GLOB = "runtime_jump_option_route_audit_CN*_nearby*.json"
 LUA_CONSUMER_REFERENCE_AUDIT_PATH = ROOT / "reports" / "mission_order" / "lua_consumer_reference_audit.json"
@@ -72,20 +73,10 @@ TEXTURE2D_RAW_HASH_COLLISION_AUDIT_PATH = (
 )
 ASSET_MAPS = {
     "StreamingAssets": (
-        EXPORT_ROOT
-        / "recovered"
-        / "AnimeStudio-cli"
-        / "StreamingAssets"
-        / "maps"
-        / "endfield_streamingassets_assets.json"
+        EXPORT_LAYOUT.asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
     ),
     "Persistent": (
-        EXPORT_ROOT
-        / "recovered"
-        / "AnimeStudio-cli"
-        / "Persistent"
-        / "maps"
-        / "endfield_persistent_assets.json"
+        EXPORT_LAYOUT.asset_map_dir("Persistent") / "endfield_persistent_assets.json"
     ),
 }
 
@@ -1152,7 +1143,7 @@ def resolve_runtime_audit_asset_path(path_text: Any) -> dict[str, Any]:
             "assetTrackPathStatus": "missing",
             "assetTrackExists": False,
         }
-    search_root = EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "timeline_extract"
+    search_root = EXPORT_LAYOUT.work_dir / "timeline_extract"
     matches = sorted(search_root.rglob(basename)) if search_root.exists() else []
     if len(matches) == 1:
         return {
@@ -4775,8 +4766,16 @@ class SourceGraphBuilder:
         )
 
     def decoded_config_raw_path(self, entry: dict[str, Any]) -> Path:
-        rel = safe_key(entry.get("p"))
-        return self.export_root / "structured" / Path(rel)
+        """The raw file behind a config entry: an export-relative ``game/...``
+        path, or a logical VFS path such as ``Data/Json/...``."""
+        rel = safe_key(entry.get("p")).replace("\\", "/")
+        layout = ExportLayout(self.export_root)
+        if rel.startswith("game/"):
+            return layout.root / rel
+        try:
+            return layout.game_file(rel)
+        except ExportLayoutError:
+            return layout.game / "Json" / rel
 
     def read_decoded_config_bytes(self, entry: dict[str, Any]) -> bytes:
         path = self.decoded_config_raw_path(entry)
@@ -4904,15 +4903,15 @@ class SourceGraphBuilder:
     def active_decoded_config_manifest(self) -> list[dict[str, Any]]:
         """Return the in-memory overlay manifest for active SkillData/BuffData.
 
-        Persistent has precedence over StreamingAssets for the same relative
-        path.  All paths in the manifest are export-root-relative, so the
+        The export's game/ tree is the effective view, so each file is its own
+        selection.  All paths in the manifest are export-root-relative, so the
         selected source remains auditable without depending on module globals.
         """
         manifest: list[dict[str, Any]] = []
         for family in ACTIVE_DECODED_CONFIG_FAMILIES:
             candidates: dict[str, list[tuple[str, Path]]] = defaultdict(list)
-            for source in ("StreamingAssets", "Persistent"):
-                family_root = self.export_root / "structured" / source / "Data" / "Json" / family
+            for source in ("game",):
+                family_root = ExportLayout(self.export_root).game / "Json" / family
                 if not family_root.is_dir():
                     continue
                 try:
@@ -4926,20 +4925,13 @@ class SourceGraphBuilder:
                         continue
                     candidates[relative_path].append((source, path))
             for relative_path, source_paths in sorted(candidates.items()):
-                selected_source, selected_path = max(
-                    source_paths,
-                    key=lambda item: (item[0] == "Persistent", item[0], slash(item[1])),
-                )
+                selected_source, selected_path = source_paths[0]
                 try:
                     payload = selected_path.read_bytes()
                 except OSError:
                     continue
-                selected_export_path = (Path("structured") / selected_source / "Data" / "Json" / family / relative_path).as_posix()
-                overlay_paths = [
-                    (Path("structured") / source / "Data" / "Json" / family / rel).as_posix()
-                    for source, path in source_paths
-                    for rel in [relative_path]
-                ]
+                selected_export_path = (Path("game") / "Json" / family / relative_path).as_posix()
+                overlay_paths = [selected_export_path]
                 shadowed_paths = [path for path in overlay_paths if path != selected_export_path]
                 manifest.append(
                     {
@@ -4965,8 +4957,8 @@ class SourceGraphBuilder:
             "dataset",
             "active_gameplay_config_data",
             name="Active SkillData/BuffData",
-            source="export_full/structured",
-            path=slash(self.export_root / "structured"),
+            source="export_full/game",
+            path=slash(ExportLayout(self.export_root).game),
             data={"entryCount": len(manifest), "families": list(ACTIVE_DECODED_CONFIG_FAMILIES)},
         )
         for family in ACTIVE_DECODED_CONFIG_FAMILIES:
@@ -4975,20 +4967,20 @@ class SourceGraphBuilder:
                 "decoded_config_group",
                 f"active_{family}",
                 name=family,
-                source="export_full/structured",
-                path=slash(self.export_root / "structured"),
+                source="export_full/game",
+                path=slash(ExportLayout(self.export_root).game),
                 data={"entryCount": len(family_entries), "family": family, "active": True},
             )
-            self.add_edge(dataset, group_node, "has_decoded_config_group", source="export_full/structured", evidence=family)
+            self.add_edge(dataset, group_node, "has_decoded_config_group", source="export_full/game", evidence=family)
             for item in family_entries:
                 relative_path = item["relativeDataPath"]
                 selected_source = item["selectedSource"]
                 entry = {
-                    "p": f"{selected_source}/Data/Json/{family}/{relative_path}",
+                    "p": item["selectedPath"],
                     "dp": f"Data/Json/{family}/{relative_path}",
                     "source": selected_source,
-                    "graphSource": f"export_full/structured/{selected_source}",
-                    "domain": "export_full/structured",
+                    "graphSource": "export_full/game",
+                    "domain": "export_full/game",
                     "g": family,
                     "q": family,
                     "k": "memorypack",
@@ -9531,11 +9523,8 @@ class SourceGraphBuilder:
         video_nodes = sorted({node_id for node_id in self.alias_node_ids(stem, kind="video_stem") if node_id.startswith("video:")})
         if len(video_nodes) == 1:
             return video_nodes[0]
-        streaming_nodes = [node_id for node_id in video_nodes if node_id.startswith("video:StreamingAssets-structured/")]
-        if len(streaming_nodes) == 1:
-            return streaming_nodes[0]
-        persistent_nodes = [node_id for node_id in video_nodes if node_id.startswith("video:Persistent-structured/")]
-        return persistent_nodes[0] if len(persistent_nodes) == 1 else ""
+        game_nodes = [node_id for node_id in video_nodes if node_id.startswith("video:Game/")]
+        return game_nodes[0] if len(game_nodes) == 1 else ""
 
     def add_video_stem_edge(self, owner_node: str, value: Any, *, edge_kind: str, source: str, evidence: str, data: Any = None) -> None:
         video_node = self.video_node_by_stem(value)
@@ -9546,15 +9535,9 @@ class SourceGraphBuilder:
         rel = safe_key(value).replace("\\", "/")
         if not rel:
             return ""
-        marker = "export_full/structured/"
-        if rel.startswith(marker):
-            rel = rel[len(marker) :]
-        if rel.startswith("structured/"):
-            rel = rel[len("structured/") :]
-        if rel.startswith("StreamingAssets/"):
-            return f"StreamingAssets-structured/{rel[len('StreamingAssets/') :]}"
-        if rel.startswith("Persistent/"):
-            return f"Persistent-structured/{rel[len('Persistent/') :]}"
+        for marker in ("export_full/game/", "game/"):
+            if rel.startswith(marker):
+                return f"Game/{rel[len(marker):]}"
         return rel
 
     def recovered_source_root(self, value: Any) -> str:
@@ -9568,7 +9551,7 @@ class SourceGraphBuilder:
         return ""
 
     def ingest_video_bindings(self) -> None:
-        path = EXPORT_ROOT / "recovered" / "video_bindings.json"
+        path = WEBUI_BUILD_DIR / "story" / "video_bindings.json"
         payload = read_json(path, {})
         bindings = payload.get("bindings") if isinstance(payload, dict) else None
         if not isinstance(bindings, dict) or not bindings:
@@ -12745,7 +12728,7 @@ class SourceGraphBuilder:
                     self.add_edge(warning_node, line_node, "warning_candidate_line", source="webui/recovery", evidence=code)
 
     def ingest_timeline_line_orders(self) -> None:
-        path = self.export_root / TIMELINE_LINE_ORDERS_REL
+        path = TIMELINE_LINE_ORDERS_PATH
         payload = read_json(path, {})
         if not isinstance(payload, dict) or not payload:
             return
@@ -14056,7 +14039,7 @@ class SourceGraphBuilder:
                     self.add_edge(edge_node, offset_node, "option_flow_field_use_edge_uses_offset", source=source, evidence=str(offset_use.get("callOffset")), data=compact_payload(offset_use, depth=1))
 
     def ingest_story_source_links(self) -> None:
-        path = EXPORT_ROOT / "recovered" / "story_source_links.json"
+        path = WEBUI_BUILD_DIR / "story" / "story_source_links.json"
         payload = read_json(path, {})
         dataset = self.add_node("dataset", "story_source_links", path=slash(path), data=payload.get("summary"))
         for story_key, rows in (payload.get("links") or {}).items():
@@ -14074,8 +14057,8 @@ class SourceGraphBuilder:
                     self.add_edge(story_node, mission_node, "story_used_by_source", source=row.get("source") or "story_source_links")
 
     def ingest_materials(self) -> None:
-        for source in ("StreamingAssets", "Persistent"):
-            root = EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / source / "json_by_type" / "Material"
+        for source in ("Unity",):
+            root = EXPORT_LAYOUT.unity_type_dir("Material")
             if not root.is_dir():
                 continue
             if self.include_all_material_json:
@@ -14181,9 +14164,9 @@ class SourceGraphBuilder:
 
     def ingest_shader_programs(self) -> None:
         dataset = self.add_node("dataset", "animestudio_shader_program_exports", name="AnimeStudio shader program exports")
-        for source in ("StreamingAssets", "Persistent"):
-            root = EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / source / "convert_by_type" / "Shader"
-            status_path = EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / source / "asset_status" / "convert_by_type_Shader.json"
+        for source in ("Unity",):
+            root = EXPORT_LAYOUT.unity_type_dir("Shader")
+            status_path = EXPORT_LAYOUT.asset_status_dir("StreamingAssets") / "convert_by_type_Shader.json"
             if not root.is_dir():
                 continue
             status_payload = read_json(status_path, {})
@@ -14356,7 +14339,7 @@ class SourceGraphBuilder:
                 self.add_edge(manifest_node, clip_node, "has_animation_clip", source="unity_character_lab")
 
     def ingest_item_economy(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_item_economy", path=slash(table_root))
         for table_name in ITEM_ECONOMY_TABLES:
             path = table_root / table_name
@@ -14382,7 +14365,7 @@ class SourceGraphBuilder:
 
 
     def ingest_economy_metadata_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_economy_metadata", name="Structured economy, settlement tag, and money source metadata", path=slash(table_root))
         for table_name in ECONOMY_METADATA_TABLES:
             path = table_root / table_name
@@ -14498,7 +14481,7 @@ class SourceGraphBuilder:
             self.add_economy_source_type_edges(table, row_key, row, row_node, kind="money_gain_source", define_edge="defines_money_gain_source", text_edge="money_gain_source_name_text")
 
     def ingest_domain_core_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_domain_core", name="Structured domain, settlement, and mission-type core tables", path=slash(table_root))
         for table_name in DOMAIN_CORE_TABLES:
             path = table_root / table_name
@@ -14706,7 +14689,7 @@ class SourceGraphBuilder:
             self.add_mission_type_info_edges(table, row_key, row, row_node)
 
     def ingest_domain_depot_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_domain_depot", name="Structured domain depot tables", path=slash(table_root))
         depot_rows = read_json(table_root / "DomainDepotTable.json", {})
         depot_by_level: dict[str, list[str]] = defaultdict(list)
@@ -15047,7 +15030,7 @@ class SourceGraphBuilder:
                         self.add_edge(param_node, ref_node, edge_kind, source=source, evidence=evidence, data=data)
 
     def ingest_condition_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_conditions", name="Structured condition tables", path=slash(table_root))
         for table_name in CONDITION_SEMANTIC_TABLES:
             path = table_root / table_name
@@ -15100,7 +15083,7 @@ class SourceGraphBuilder:
         return self.add_semantic_node(kind, key, name=name, source=source, data=data)
 
     def ingest_world_energy_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_world_energy", name="Structured world energy and ether submit tables", path=slash(table_root))
         for table_name in WORLD_ENERGY_SEMANTIC_TABLES:
             path = table_root / table_name
@@ -15242,7 +15225,7 @@ class SourceGraphBuilder:
                     self.add_edge(submit_node, effect_node, "ether_submit_applies_effect", source=table, evidence=f"effectList[{index}]", data={"index": index})
 
     def ingest_world_harvestable_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_world_harvestables", name="Structured world harvestable and planting tables", path=slash(table_root))
         for table_name in WORLD_HARVESTABLE_TABLES:
             path = table_root / table_name
@@ -15362,7 +15345,7 @@ class SourceGraphBuilder:
                 self.add_alias(row.get("loopEffectId"), effect_node, kind="asset_stem", source=table)
 
     def ingest_item_submission_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_item_submission", name="Structured item submission and recovery tables", path=slash(table_root))
         for table_name in ITEM_SUBMISSION_TABLES:
             path = table_root / table_name
@@ -15876,7 +15859,7 @@ class SourceGraphBuilder:
                         self.add_edge(recycle_node, level_node, "recycle_bin_listed_for_level", source=table, evidence=f"recycleBinIds[{index}]", data={"index": index})
 
     def ingest_reward_catalog_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_reward_catalog", name="Structured reward and currency catalog tables", path=slash(table_root))
         for table_name in REWARD_CATALOG_TABLES:
             path = table_root / table_name
@@ -16060,7 +16043,7 @@ class SourceGraphBuilder:
                 self.add_tag_i18n_edges(important_node, row.get("desc"), source=table, edge_kind="important_reward_item_desc_text")
 
     def ingest_week_raid_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_week_raid", name="Structured Week Raid tables", path=slash(table_root))
         for table_name in WEEK_RAID_TABLES:
             path = table_root / table_name
@@ -16237,7 +16220,7 @@ class SourceGraphBuilder:
                     self.add_edge(condition_tech, tier_node, "week_raid_tech_required_by_battlepass_tier", source=table, evidence="conditionTech")
 
     def ingest_equipment_gem_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_equipment_gems", name="Structured equipment and gem tables", path=slash(table_root))
         for table_name in EQUIPMENT_GEM_TABLES:
             path = table_root / table_name
@@ -16521,7 +16504,7 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, drop_node, "defines_drop_gem_type", source=table)
 
     def ingest_equipment_progression_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_equipment_progression", name="Structured equipment progression tables", path=slash(table_root))
         for table_name in EQUIPMENT_PROGRESSION_TABLES:
             path = table_root / table_name
@@ -16737,7 +16720,7 @@ class SourceGraphBuilder:
                 self.add_edge(row_node, rule_node, "defines_equipment_enhance_guarantee_rule", source=table)
 
     def ingest_item_acquisition_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_item_acquisition", name="Structured item acquisition and grouping tables", path=slash(table_root))
         for table_name in ITEM_ACQUISITION_TABLES:
             path = table_root / table_name
@@ -16876,7 +16859,7 @@ class SourceGraphBuilder:
                     self.add_edge(preset_node, type_node, "item_type_used_by_limited_time_type", source=table, evidence="presetItemType", data={"daysBeforeExpireToNotify": row.get("daysBeforeExpireToNotify")})
 
     def ingest_cash_shop_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_cash_shop", name="Structured cash shop and recharge tables", path=slash(table_root))
         for table_name in CASH_SHOP_SEMANTIC_TABLES:
             path = table_root / table_name
@@ -17352,7 +17335,7 @@ class SourceGraphBuilder:
             self.add_shop_goods_edges(table, row_key, row, row_node)
 
     def ingest_attribute_dictionary(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_attribute_dictionary", path=slash(table_root))
         for table_name in ATTRIBUTE_DICTIONARY_TABLES:
             path = table_root / table_name
@@ -17615,7 +17598,7 @@ class SourceGraphBuilder:
             self.add_interactive_attribute_edges(table, row_key, row, row_node)
 
     def ingest_character_visual_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_character_visuals", name="Structured character visual tables", path=slash(table_root))
         for table_name in CHARACTER_VISUAL_TABLES:
             path = table_root / table_name
@@ -17667,7 +17650,7 @@ class SourceGraphBuilder:
             self.add_edge(image_node, token_node, edge_kind, source=table, evidence=field, data={"field": field})
 
     def ingest_character_support_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_character_support", path=slash(table_root))
         for table_name in CHARACTER_SUPPORT_TABLES:
             path = table_root / table_name
@@ -17692,7 +17675,7 @@ class SourceGraphBuilder:
                 self.add_character_support_row_edges(table_key, row_key, row, row_node)
 
     def ingest_character_progression_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_character_progression", name="Structured character progression tables", path=slash(table_root))
         for table_name in CHARACTER_PROGRESSION_TABLES:
             path = table_root / table_name
@@ -17963,7 +17946,7 @@ class SourceGraphBuilder:
                 self.add_i18n_used_by_edge(text_node, owner_node, source=source, evidence=text_id, edge_kind=edge_kind)
 
     def ingest_tag_taxonomy_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_tag_taxonomy", name="Structured tag taxonomy tables", path=slash(table_root))
         group_nodes: dict[str, str] = {}
         for table_name in TAG_TAXONOMY_TABLES:
@@ -18094,7 +18077,7 @@ class SourceGraphBuilder:
                 self.add_edge(label_node, tag_node, "ui_label_references_tag", source=table, evidence="tagId")
 
     def ingest_ui_label_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_ui_labels", name="Structured UI label tables", path=slash(table_root))
         for table_name, config in UI_LABEL_SEMANTIC_TABLES.items():
             path = table_root / table_name
@@ -18144,7 +18127,7 @@ class SourceGraphBuilder:
         return self.add_wiki_node("wiki_entry", entry_id, source=source, data=data)
 
     def ingest_wiki_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_wiki", name="Structured wiki/tutorial tables", path=slash(table_root))
         for table_name in WIKI_SEMANTIC_TABLES:
             path = table_root / table_name
@@ -18279,7 +18262,7 @@ class SourceGraphBuilder:
         return node
 
     def ingest_system_tip_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_system_tips", name="Structured system tips and errors", path=slash(table_root))
         for table_name in SYSTEM_TIP_SEMANTIC_TABLES:
             path = table_root / table_name
@@ -18369,7 +18352,7 @@ class SourceGraphBuilder:
         return node
 
     def ingest_profile_social_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_profile_social", name="Structured profile and social catalog tables", path=slash(table_root))
         for table_name in PROFILE_SOCIAL_TABLES:
             path = table_root / table_name
@@ -18516,7 +18499,7 @@ class SourceGraphBuilder:
         return node
 
     def ingest_battlepass_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_battlepass", name="Structured battle pass tables", path=slash(table_root))
         for table_name in BATTLEPASS_SEMANTIC_TABLES:
             path = table_root / table_name
@@ -18722,7 +18705,7 @@ class SourceGraphBuilder:
         return node
 
     def ingest_dungeon_training_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_dungeon_training", name="Structured dungeon and training tables", path=slash(table_root))
         for table_name in DUNGEON_TRAINING_TABLES:
             path = table_root / table_name
@@ -18923,7 +18906,7 @@ class SourceGraphBuilder:
         return self.add_game_mechanic_node("game_mechanic", mechanic_id, name=name, source=source, data=data)
 
     def ingest_tower_defense_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_tower_defense", name="Structured tower defense tables", path=slash(table_root))
         for table_name in TOWER_DEFENSE_TABLES:
             path = table_root / table_name
@@ -19002,7 +18985,7 @@ class SourceGraphBuilder:
                         self.add_edge(spawner_node, stage_node, "tower_defense_spawner_used_by_stage", source=table, evidence=f"spawnerIds[{index}]", data={"index": index})
 
     def ingest_photo_chain_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_photo_chain", name="Structured snapshot and kite station photo tables", path=slash(table_root))
         for table_name in PHOTO_CHAIN_TABLES:
             path = table_root / table_name
@@ -19222,7 +19205,7 @@ class SourceGraphBuilder:
                         self.add_reward_ref_edge(milestone_node, reward.get("rewardId"), edge_kind="kite_station_milestone_reward", source=table, evidence="rewardId", data={"collectionCnt": reward.get("collectionCnt")})
 
     def ingest_game_mechanic_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_game_mechanics", name="Structured game mechanic tables", path=slash(table_root))
         for table_name in GAME_MECHANIC_SEMANTIC_TABLES:
             path = table_root / table_name
@@ -19394,7 +19377,7 @@ class SourceGraphBuilder:
         return node
 
     def ingest_gacha_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_gacha", name="Structured gacha and pool tables", path=slash(table_root))
         for table_name in GACHA_SEMANTIC_TABLES:
             path = table_root / table_name
@@ -19730,7 +19713,7 @@ class SourceGraphBuilder:
                 )
 
     def ingest_weapon_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_weapon_semantics", name="Structured weapon tables", path=slash(table_root))
         for table_name in WEAPON_SEMANTIC_TABLES:
             path = table_root / table_name
@@ -20230,7 +20213,7 @@ class SourceGraphBuilder:
             self.add_bloc_data_edges(table, row_key, row, row_node)
 
     def ingest_spaceship_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_spaceship_semantics", path=slash(table_root))
         for table_name in SPACESHIP_SEMANTIC_TABLES:
             payload, sources = self.structured_table_payload(
@@ -20428,7 +20411,7 @@ class SourceGraphBuilder:
                     self.add_edge(text_node, ref_file_node, "i18n_top_text_used_by_file", source=source, evidence=f"topIds[{top_index}].files[{file_index}]")
 
     def ingest_i18n_text_values(self) -> None:
-        table_root = self.export_root / "structured" / "StreamingAssets" / "Table"
+        table_root = ExportLayout(self.export_root).table_dir
         languages = {value.upper() for value in self.i18n_value_languages}
         paths = sorted(table_root.glob("I18nTextTable_*.json"))
         if languages:
@@ -20474,7 +20457,7 @@ class SourceGraphBuilder:
         return node
 
     def ingest_text_reference_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_text_references", name="Structured text key to i18n id references", path=slash(table_root))
         for table_name in TEXT_REFERENCE_TABLES:
             path = table_root / table_name
@@ -20600,7 +20583,7 @@ class SourceGraphBuilder:
         return compact_payload({key: row.get(key) for key in keys if row.get(key) not in (None, "", [], {})}, depth=3)
 
     def ingest_settings_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_settings", name="Structured settings tables", path=slash(table_root))
         for table_name in SETTINGS_SEMANTIC_TABLES:
             path = table_root / table_name
@@ -20903,7 +20886,7 @@ class SourceGraphBuilder:
     def game_system_by_unlock_type(self) -> dict[str, dict[str, Any]]:
         if self.game_system_unlock_type_cache is not None:
             return self.game_system_unlock_type_cache
-        path = self.export_root / "structured" / "StreamingAssets" / "Table" / "GameSystemConfigTable.json"
+        path = ExportLayout(self.export_root).table_dir / "GameSystemConfigTable.json"
         payload = read_json(path, {})
         lookup: dict[str, dict[str, Any]] = {}
         if isinstance(payload, dict):
@@ -20992,7 +20975,7 @@ class SourceGraphBuilder:
             self.add_temp_map_mark_edges(table, table_node, payload)
 
     def ingest_display_metadata_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_display_metadata", name="Structured display, profile, share, and cash-shop metadata tables", path=slash(table_root))
         for table_name in DISPLAY_METADATA_TABLES:
             path = table_root / table_name
@@ -21191,7 +21174,7 @@ class SourceGraphBuilder:
             return
 
     def ingest_factory_interaction_lookup_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_factory_interaction_lookups", name="Structured factory, interaction, activity, and item lookup tables", path=slash(table_root))
         for table_name in FACTORY_INTERACTION_LOOKUP_TABLES:
             path = table_root / table_name
@@ -21400,7 +21383,7 @@ class SourceGraphBuilder:
             return
 
     def ingest_mode_constant_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_mode_constants", name="Structured mode constants and small mapping tables", path=slash(table_root))
         for table_name in MODE_CONSTANT_TABLES:
             path = table_root / table_name
@@ -22192,7 +22175,7 @@ class SourceGraphBuilder:
             self.add_spaceship_gift_gain_ratio_edges(table, row_key, row, row_node)
 
     def ingest_factory_tech_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_factory_tech_semantics", path=slash(table_root))
         for table_name in FACTORY_TECH_TABLES:
             path = table_root / table_name
@@ -22700,7 +22683,7 @@ class SourceGraphBuilder:
             self.add_manual_craft_upgrade_edges(table, row_key, row, row_node)
 
     def ingest_factory_logistics_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_factory_logistics", name="Structured factory logistics and capability tables", path=slash(table_root))
         for table_name in FACTORY_LOGISTICS_TABLES:
             path = table_root / table_name
@@ -23058,7 +23041,7 @@ class SourceGraphBuilder:
                         self.add_edge(region_node, building_node, "factory_region_requires_hub_building", source=table, evidence=f"list[{index}].requireHubBuildingId")
 
     def ingest_factory_utility_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_factory_utility", name="Structured factory utility numeric tables", path=slash(table_root))
         for table_name in FACTORY_UTILITY_TABLES:
             path = table_root / table_name
@@ -23292,7 +23275,7 @@ class SourceGraphBuilder:
                         self.add_factory_sewage_action_param_edges(sewage_level, level.get("actionParams"), source=table)
 
     def ingest_factory_reverse_social_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_factory_reverse_social", name="Structured factory reverse and social indexes", path=slash(table_root))
         for table_name in FACTORY_REVERSE_SOCIAL_TABLES:
             path = table_root / table_name
@@ -23403,7 +23386,7 @@ class SourceGraphBuilder:
                     self.add_edge(storage_node, building_node, "factory_storage_rule_for_building", source=table, evidence="id")
 
     def ingest_prts_archive_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_prts_archive_semantics", path=slash(table_root))
         for table_name in PRTS_ARCHIVE_TABLES:
             path = table_root / table_name
@@ -23802,7 +23785,7 @@ class SourceGraphBuilder:
             self.add_prts_investigation_category_edges(table, row_key, row, row_node)
 
     def ingest_npc_voice_bark_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_npc_voice_bark_semantics", path=slash(table_root))
         for table_name in NPC_VOICE_BARK_TABLES:
             payload, sources = self.structured_table_payload(
@@ -24103,32 +24086,15 @@ class SourceGraphBuilder:
         *,
         include_persistent: bool = False,
     ) -> tuple[Any, list[tuple[str, Path]]]:
-        """Read a structured table with an optional Persistent overlay.
+        """Read one structured table from the export's effective game/ tree.
 
-        The installed game exports the same logical table under both
-        StreamingAssets and Persistent.  Persistent is an additive overlay in
-        the current export and wins when an id is present in both layers.  The
-        returned source paths are kept separately so callers can retain both
-        file-level evidence while consuming one authoritative merged payload.
+        The client's VFS resolves each logical file to exactly one chunk, so
+        the effective table is a whole file, never a row-level merge of layers.
+        ``include_persistent`` is accepted for callers and has no effect.
         """
-        layers = ["StreamingAssets"]
-        if include_persistent:
-            layers.append("Persistent")
-        payload: Any = None
-        sources: list[tuple[str, Path]] = []
-        for layer in layers:
-            path = self.export_root / "structured" / layer / "Table" / table_name
-            current = read_json(path, None)
-            if current is None:
-                continue
-            sources.append((layer, path))
-            if isinstance(current, dict):
-                if not isinstance(payload, dict):
-                    payload = {}
-                payload.update(current)
-            else:
-                payload = current
-        return payload, sources
+        path = ExportLayout(self.export_root).table_dir / table_name
+        payload = read_json(path, None)
+        return payload, ([("game", path)] if payload is not None else [])
 
     def audio_dialog_rows(self) -> dict[str, Any]:
         if self.audio_dialog_row_cache is None:
@@ -24629,7 +24595,7 @@ class SourceGraphBuilder:
         return node
 
     def ingest_narrative_audio_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_narrative_audio_semantics", path=slash(table_root))
         for table_name in NARRATIVE_AUDIO_TABLES:
             payload, sources = self.structured_table_payload(table_name, include_persistent=True)
@@ -25096,7 +25062,7 @@ class SourceGraphBuilder:
             self.add_line_target_edge(owner_node, audio_dialog_key, edge_kind=line_edge, source=source, evidence=evidence)
 
     def ingest_audio_config_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_audio_config_semantics", path=slash(table_root))
         for table_name in AUDIO_CONFIG_TABLES:
             payload, sources = self.structured_table_payload(table_name, include_persistent=True)
@@ -25127,7 +25093,7 @@ class SourceGraphBuilder:
         rel = safe_key(entry.get("rel"))
         storage_root = safe_key(entry.get("storageRoot"))
         if rel and storage_root:
-            return slash(self.export_root / "structured" / "Audio" / storage_root / rel)
+            return slash(ExportLayout(self.export_root).audio_dir / storage_root / rel)
         src = safe_key(entry.get("src"))
         if src.startswith("/export_full/"):
             return slash(self.export_root / src.removeprefix("/export_full/"))
@@ -25189,7 +25155,7 @@ class SourceGraphBuilder:
             self.add_edge(bank_node, event_node, "wwise_bank_has_event", source=source, evidence=evidence)
 
     def ingest_decoded_audio_index(self) -> None:
-        index_path = self.export_root / "structured" / "Audio" / self.language / "index.json"
+        index_path = ExportLayout(self.export_root).audio_dir / self.language / "index.json"
         if not index_path.exists():
             return
         payload = read_json(index_path, {})
@@ -25895,7 +25861,7 @@ class SourceGraphBuilder:
 
 
     def ingest_dialog_support_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_dialog_support_semantics", path=slash(table_root))
         for table_name in DIALOG_SUPPORT_TABLES:
             payload, sources = self.structured_table_payload(table_name, include_persistent=True)
@@ -26336,7 +26302,7 @@ class SourceGraphBuilder:
             self.add_audio_dialog_config_edges(table, row_key, row, row_node)
 
     def ingest_activity_achievement_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_activity_achievement_semantics", path=slash(table_root))
         for table_name in ACTIVITY_ACHIEVEMENT_TABLES:
             path = table_root / table_name
@@ -27071,7 +27037,7 @@ class SourceGraphBuilder:
             self.add_achievement_statistic_edges(table, row_key, row, row_node)
 
     def ingest_activity_catalog_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_activity_catalog", name="Structured adventure and activity catalog tables", path=slash(table_root))
         for table_name in ACTIVITY_CATALOG_TABLES:
             path = table_root / table_name
@@ -27459,7 +27425,7 @@ class SourceGraphBuilder:
                 self.add_reward_ref_edge(stage_node, row.get("rewardItemId"), edge_kind="activity_web_stage_reward", source=table, evidence="rewardItemId")
 
     def ingest_combat_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_combat_semantics", path=slash(table_root))
         for table_name in COMBAT_SEMANTIC_TABLES:
             path = table_root / table_name
@@ -27484,7 +27450,7 @@ class SourceGraphBuilder:
                 self.add_combat_semantic_row_edges(table_key, row_key, row, row_node)
 
     def ingest_enemy_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_enemy_semantics", name="Structured enemy tables", path=slash(table_root))
         for table_name in ENEMY_SEMANTIC_TABLES:
             path = table_root / table_name
@@ -28110,7 +28076,7 @@ class SourceGraphBuilder:
             self.add_enemy_tag_table_edges(table, row_key, row, row_node)
 
     def ingest_world_semantics(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_tables_selected", path=slash(table_root))
         for table_name in WORLD_SEMANTIC_TABLES:
             path = table_root / table_name
@@ -28134,7 +28100,7 @@ class SourceGraphBuilder:
                 self.add_edge(table_node, row_node, "has_row", source="structured")
                 self.add_structured_row_edges(table_key, row_key, row, row_node)
     def ingest_selected_structured_tables(self) -> None:
-        table_root = EXPORT_ROOT / "structured" / "StreamingAssets" / "Table"
+        table_root = EXPORT_LAYOUT.table_dir
         dataset = self.add_node("dataset", "structured_tables_selected", path=slash(table_root))
         for table_name in SELECTED_STRUCTURED_TABLES:
             if table_name in WORLD_SEMANTIC_TABLES:
@@ -29677,7 +29643,7 @@ class SourceGraphBuilder:
             if entry_path:
                 file_node = self.add_file(entry_path, kind="monobehaviour_json", source=entry.get("source"), size=entry.get("size"), data={"status": entry.get("status"), "schema": entry.get("schema")})
                 self.add_edge(entry_node, file_node, "monobehaviour_frontier_entry_file", source=source, evidence="p")
-                decoded_path = ROOT / "export_full" / entry_path
+                decoded_path = EXPORT_ROOT / entry_path
                 decoded_payload = read_json(decoded_path, {}) if decoded_path.exists() else {}
                 if isinstance(decoded_payload, dict):
                     self.add_monobehaviour_frontier_semantic_refs(entry_node, decoded_payload, source_root=safe_key(entry.get("source")) or "decoded_index")
@@ -30169,15 +30135,7 @@ class SourceGraphBuilder:
                         self.add_edge(sample_node, hash_node, "texture2d_collision_sample_raw_map_hash", source="texture2d_raw_hash_collision_audit")
 
     def texture2d_collision_output_rel(self, source_root: str, output_path: str) -> str:
-        marker = f"AnimeStudio-cli\\{source_root}\\"
-        if marker not in output_path:
-            marker = f"AnimeStudio-cli/{source_root}/"
-        normalized = output_path.replace("/", "\\")
-        marker_normalized = marker.replace("/", "\\")
-        if marker_normalized not in normalized:
-            return ""
-        tail = normalized.split(marker_normalized, 1)[1].replace("\\", "/")
-        return f"{source_root}/{tail}"
+        return unity_asset_rel(output_path)
 
     def summary(self, started: float) -> dict[str, Any]:
         node_total = self.db.execute("SELECT COUNT(*) FROM nodes").fetchone()[0]

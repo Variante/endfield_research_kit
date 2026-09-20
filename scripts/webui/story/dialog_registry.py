@@ -37,11 +37,12 @@ from collections import defaultdict
 from pathlib import Path
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
 
 DEFAULT_ROOT = REPO_ROOT
 
-DEFAULT_INPUT  = DEFAULT_ROOT / "export_full/structured/StreamingAssets/Data/Json/GameplayConfig/DialogIdTable.json"
-DEFAULT_OUTPUT = DEFAULT_ROOT / "export_full/recovered/dialog_id_table_index.json"
+DEFAULT_INPUT  = EXPORT_LAYOUT.json_dir / "GameplayConfig" / "DialogIdTable.json"
+DEFAULT_OUTPUT = WEBUI_BUILD_DIR / "story" / "dialog_id_table_index.json"
 
 # Identifier extractor. Match standalone dlg_* / radio_* tokens, up to 80
 # chars. `option_dlg_*` contains a syntactically valid `dlg_*` substring; the

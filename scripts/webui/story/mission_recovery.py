@@ -6,7 +6,7 @@ This script builds a mission-level timeline graph from source data only:
 - MissionRuntimeAsset quest flow, properties, objective conditions, tracking,
   failed-condition guards, and client action maps.
 - recovered AnimeStudio timeline line-order evidence from
-  export_full/recovered/AnimeStudio-cli/timeline_line_orders.json.
+  webui/data/_build/story/timeline_line_orders.json.
 
 It intentionally does not use filename order, numeric suffix fallback, generated
 UI rank, or any other guessed ordering as timeline evidence. When the source only
@@ -31,17 +31,13 @@ from scripts.repo_paths import REPO_ROOT
 ROOT = REPO_ROOT
 from scripts.common import read_bytes_cached
 
-from scripts.webui.story.mission_assets import select_complete_mission_runtime_root
 from scripts.webui.story.story_keys import canonical_cutscene_key, line_stem, timeline_stem_to_dialog_key
+from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
+from scripts.source_paths import ExportLayout
 
-EXPORT_ROOT = ROOT / "export_full"
-DEFAULT_MRA_DIR = select_complete_mission_runtime_root(
-    EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json"
-    / "MissionRuntimeAsset",
-    EXPORT_ROOT / "structured" / "Persistent" / "Data" / "Json"
-    / "MissionRuntimeAsset",
-)
-DEFAULT_TIMELINE_ORDERS = EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json"
+EXPORT_ROOT = EXPORT_LAYOUT.root
+DEFAULT_MRA_DIR = EXPORT_LAYOUT.json_dir / "MissionRuntimeAsset"
+DEFAULT_TIMELINE_ORDERS = WEBUI_BUILD_DIR / "story" / "timeline_line_orders.json"
 DEFAULT_GENERATED_MISSION_DIR = ROOT / "webui" / "data" / "lang" / "CN" / "mission"
 DEFAULT_OUT_JSON = ROOT / "reports" / "story" / "build" / "mission_timeline_recovery_CN.json"
 DEFAULT_OUT_MD = ROOT / "reports" / "story" / "build" / "mission_timeline_recovery_CN.md"
@@ -1806,12 +1802,7 @@ def resolve_levelscript_source_path(source_file: str) -> Path | None:
     map_id, script_id = levelscript_path_components(text)
     if map_id and script_id:
         rel_tail = Path("Data") / "Json" / "LevelScriptData" / map_id / f"{script_id}.json"
-        candidates.extend([
-            EXPORT_ROOT / "structured" / "StreamingAssets" / rel_tail,
-            EXPORT_ROOT / "structured" / "Persistent" / rel_tail,
-            EXPORT_ROOT / "raw_vfs" / "StreamingAssets" / "files" / "775A31D1" / rel_tail,
-            EXPORT_ROOT / "raw_vfs" / "Persistent" / "files" / "775A31D1" / rel_tail,
-        ])
+        candidates.append(EXPORT_LAYOUT.game_file(rel_tail.as_posix()))
 
     seen: set[str] = set()
     for candidate in candidates:
@@ -4123,14 +4114,9 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
     export_root = args.export_root if args.export_root.is_absolute() else ROOT / args.export_root
-    mra_dir = args.mra_dir or select_complete_mission_runtime_root(
-        export_root / "structured" / "StreamingAssets" / "Data" / "Json"
-        / "MissionRuntimeAsset",
-        export_root / "structured" / "Persistent" / "Data" / "Json"
-        / "MissionRuntimeAsset",
-    )
+    mra_dir = args.mra_dir or ExportLayout(export_root).json_dir / "MissionRuntimeAsset"
     mra_dir = mra_dir if mra_dir.is_absolute() else ROOT / mra_dir
-    timeline_orders = args.timeline_orders or export_root / "recovered" / "AnimeStudio-cli" / "timeline_line_orders.json"
+    timeline_orders = args.timeline_orders or WEBUI_BUILD_DIR / "story" / "timeline_line_orders.json"
     timeline_orders = timeline_orders if timeline_orders.is_absolute() else ROOT / timeline_orders
     generated_mission_dir = None
     if not args.no_generated_mission_edges:

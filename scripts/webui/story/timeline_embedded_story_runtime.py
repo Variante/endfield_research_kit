@@ -8,6 +8,7 @@ objects by exact PathID references. It contains no Story-key, mission, dialog,
 Timeline, CAB, or PathID allowlist.
 """
 from __future__ import annotations
+from scripts.common import EXPORT_LAYOUT
 
 import argparse
 import hashlib
@@ -54,10 +55,8 @@ DEFAULT_METADATA = (
     DEFAULT_GAME_ROOT / "il2cpp_data" / "Metadata" / "global-metadata.dat"
 )
 DEFAULT_STORY_ROOT = ROOT / "webui" / "data" / "lang" / "CN" / "conv"
-DEFAULT_OUTPUT_ROOT = ROOT / "export_full"
-DEFAULT_EXTRACT_DIR = (
-    DEFAULT_OUTPUT_ROOT / "recovered" / "AnimeStudio-cli" / "timeline_extract"
-)
+DEFAULT_OUTPUT_ROOT = EXPORT_LAYOUT.root
+DEFAULT_EXTRACT_DIR = EXPORT_LAYOUT.work_dir / "timeline_extract"
 DEFAULT_ANIMESTUDIO_CLI = (
     ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin"
     / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"

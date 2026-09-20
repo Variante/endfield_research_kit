@@ -23,9 +23,12 @@ from typing import Any, Iterable
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import EXPORT_LAYOUT
 
 ROOT = REPO_ROOT
-DEFAULT_ASSET_ROOT = ROOT / "export_full/recovered/AnimeStudio-cli/StreamingAssets/region3d"
+# A targeted AnimeStudio re-export made only for this package; run
+# intermediate, so it lives in the export's tmp work area, not in game/.
+DEFAULT_ASSET_ROOT = EXPORT_LAYOUT.work_dir / "region3d"
 DEFAULT_OUTPUT_ROOT = ROOT / "standalone/map01_region3d"
 DEFAULT_REPORT_ROOT = DEFAULT_OUTPUT_ROOT
 
@@ -235,10 +238,11 @@ def load_config(export: ExportedObjects) -> tuple[int, dict[str, Any]]:
     matches = [
         (path_id, data)
         for path_id, data in export.objects.get("MonoBehaviour", {}).items()
-        if data.get("$animestudio", {}).get("name") == "MonoBehaviour#242"
+        # AnimeStudio names an unnamed MonoBehaviour after its script class.
+        if data.get("$animestudio", {}).get("name") == "RegionMapSetting"
     ]
     if len(matches) != 1:
-        raise RegionMap3DError(f"expected one RegionMapSetting MonoBehaviour#242, found {len(matches)}")
+        raise RegionMap3DError(f"expected one RegionMapSetting MonoBehaviour, found {len(matches)}")
     return matches[0]
 
 
@@ -496,7 +500,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             "jsonRoot": json_root.relative_to(ROOT).as_posix() if json_root.is_relative_to(ROOT) else str(json_root),
             "textureRoot": texture_root.relative_to(ROOT).as_posix() if texture_root.is_relative_to(ROOT) else str(texture_root),
             "assetClosure": "reports/assets/map_recovery/region3d_asset_closure.json",
-            "luaController": "structured/Persistent/Lua/Data/LuaScripts/UI/Panels/RegionMap3D/RegionMap3DCtrl.lua",
+            "luaController": "game/Lua/Data/LuaScripts/UI/Panels/RegionMap3D/RegionMap3DCtrl.lua",
         },
     }
     sidecar_path = output_root / "region3d.json"

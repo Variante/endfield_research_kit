@@ -27,6 +27,7 @@ from scripts.webui.story.level_bindings import (
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.common import EXPORT_LAYOUT, rel_path as export_rel_path
 
 ROOT = REPO_ROOT
 
@@ -47,9 +48,7 @@ def build_source_gap_queue(
     """Build and publish the canonical queue without spawning another Python."""
     language = str(language or "CN").upper()
     reports_dir = reports_dir or ROOT / "reports" / "mission_order"
-    table_root = table_root or (
-        ROOT / "export_full" / "structured" / "StreamingAssets" / "Table"
-    )
+    table_root = table_root or (ROOT / export_rel_path(EXPORT_LAYOUT.table_dir))
 
     partial_report = build_partial_order_report(language)
     action_story_occurrences = build_levelscript_action_story_occurrences()

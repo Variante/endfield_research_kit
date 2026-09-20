@@ -1,18 +1,18 @@
 """Preprocess Endfield exported tables into per-conversation JSON files for the WebUI.
 
 Reads:
-  export_full/structured/StreamingAssets/Table/I18nTextTable_*.json      (localized string dictionaries)
-  export_full/structured/StreamingAssets/Table/TextTable.json            (named text keys -> i18n ids)
-  export_full/structured/StreamingAssets/Table/DialogTextTable.json      (story dialog lines)
-  export_full/structured/StreamingAssets/Table/SNSDialogTable.json       (in-game phone chats)
-  export_full/structured/StreamingAssets/Table/SNSDialogOptionTable.json (chat reply choices)
-  export_full/structured/StreamingAssets/Table/SNSChatTable.json         (SNS chat metadata / icons)
-  export_full/structured/StreamingAssets/Table/DialogOptionTable.json    (dialog choices)
-  export_full/structured/StreamingAssets/Table/DialogSummaryTable.json   (dialog recaps)
-  export_full/structured/StreamingAssets/Table/MailSenderTable.json      (mail sender icon -> actor mapping)
-  export_full/structured/StreamingAssets/Table/RadioTable.json           (radio text)
-  export_full/structured/StreamingAssets/Table/RemoteCommonTable.json    (remote comm story calls)
-  export_full/structured/StreamingAssets/Table/EnvTalkTable.json         (ambient / environment talk)
+  <export root>/game/Table/I18nTextTable_*.json      (localized string dictionaries)
+  <export root>/game/Table/TextTable.json            (named text keys -> i18n ids)
+  <export root>/game/Table/DialogTextTable.json      (story dialog lines)
+  <export root>/game/Table/SNSDialogTable.json       (in-game phone chats)
+  <export root>/game/Table/SNSDialogOptionTable.json (chat reply choices)
+  <export root>/game/Table/SNSChatTable.json         (SNS chat metadata / icons)
+  <export root>/game/Table/DialogOptionTable.json    (dialog choices)
+  <export root>/game/Table/DialogSummaryTable.json   (dialog recaps)
+  <export root>/game/Table/MailSenderTable.json      (mail sender icon -> actor mapping)
+  <export root>/game/Table/RadioTable.json           (radio text)
+  <export root>/game/Table/RemoteCommonTable.json    (remote comm story calls)
+  <export root>/game/Table/EnvTalkTable.json         (ambient / environment talk)
 
 Uses the structured export_full layout produced by the current WebUI export.
 
@@ -52,12 +52,13 @@ from pathlib import Path
 from scripts.common import (
     ASSET_DIR,
     DATA_JSON_DIR,
+    EXPORT_LAYOUT,
     EXPORT_ROOT,
-    PERSISTENT_ASSETS_DIR,
-    STREAMING_ASSETS_DIR,
     LANG_DIR,
     OUT_DIR,
     STORY_REPORTS_DIR,
+    TABLE_DIR,
+    WEBUI_BUILD_DIR,
     ROOT,
     fast_glob_files,
     first_string_field as _first_string_field,
@@ -74,10 +75,6 @@ from scripts.common import (
     walk_field_values as _walk_field_values,
     write_json,
 )
-from scripts.source_paths import (
-    _existing_unique_paths,
-    _resolve_recovered_dir,
-)
 from scripts.webui.story.scene_order_gap_shared import (
     analyze_scene_order_disorder as shared_analyze_scene_order_disorder,
     build_scene_placement_index_from_timelines as shared_build_scene_placement_index_from_timelines,
@@ -89,7 +86,6 @@ from scripts.webui.story.scene_order_gap_shared import (
 
 REPORTS_DIR = STORY_REPORTS_DIR
 
-from scripts.webui.story.mission_assets import select_complete_mission_runtime_root
 from scripts.webui.story.source_links import build_source_links
 from scripts.webui.story.timeline_recovery import (
     TimelineRecoveryConfig,
@@ -99,31 +95,24 @@ from scripts.webui.story.timeline_recovery import (
     recover_timeline_line_orders,
     timeline_order_is_current,
 )
-STORY_SOURCE_LINKS_PATH = EXPORT_ROOT / "recovered" / "story_source_links.json"
+STORY_BUILD_DIR = WEBUI_BUILD_DIR / "story"
+STORY_SOURCE_LINKS_PATH = STORY_BUILD_DIR / "story_source_links.json"
 
 
-STREAMING_TABLE_DIR = STREAMING_ASSETS_DIR / "Table"
-PERSISTENT_TABLE_DIR = PERSISTENT_ASSETS_DIR / "Table"
-TABLE_DIR = STREAMING_TABLE_DIR
-PERSISTENT_DATA_JSON_DIR = PERSISTENT_ASSETS_DIR / "Data" / "Json"
 LEVELDATA_DIR = DATA_JSON_DIR / "LevelData"
 LEVELSCRIPT_DIR = DATA_JSON_DIR / "LevelScriptData"
 SPAWNER_CONFIG_DIR = DATA_JSON_DIR / "SpawnerConfig"
 GAMEPLAY_CONFIG_DIR = DATA_JSON_DIR / "GameplayConfig"
-MRA_DIR = select_complete_mission_runtime_root(
-    DATA_JSON_DIR / "MissionRuntimeAsset",
-    PERSISTENT_DATA_JSON_DIR / "MissionRuntimeAsset",
-)
+MRA_DIR = DATA_JSON_DIR / "MissionRuntimeAsset"
 NPC_PROXY_EX_PATH = GAMEPLAY_CONFIG_DIR / "NpcProxyExDataTable.json"
 NPC_PROXY_TABLE_PATH = GAMEPLAY_CONFIG_DIR / "NpcProxyTable.json"
 ATMOS_CLUSTER_TABLE_PATH = GAMEPLAY_CONFIG_DIR / "AtmosphericNpcClusterDataTable.json"
 FOCUS_MODE_INSTANCE_TABLE_PATH = GAMEPLAY_CONFIG_DIR / "FocusModeInstanceTable.json"
-ANIME_RESOURCE_DIRS = _existing_unique_paths([
-    EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "StreamingAssets" / "json_by_type" / "TextAsset",
-    EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "Persistent" / "json_by_type" / "TextAsset",
-    EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "StreamingAssets" / "json_by_type" / "MonoBehaviour",
-    EXPORT_ROOT / "recovered" / "AnimeStudio-cli" / "Persistent" / "json_by_type" / "MonoBehaviour",
-])
+ANIME_RESOURCE_DIRS = [
+    path
+    for path in (EXPORT_LAYOUT.unity_type_dir("TextAsset"), EXPORT_LAYOUT.unity_type_dir("MonoBehaviour"))
+    if path.exists()
+]
 DEFAULT_LANGUAGE = "CN"
 BUILD_PROFILES = ("lean", "full")
 DEFAULT_BUILD_PROFILE = "lean"
@@ -299,7 +288,7 @@ _CUTSCENE_SUBTITLE_TRACK_CACHE: dict[str, list[dict]] | None = None
 _NARRATIVE_VIDEO_CACHE: list[dict] | None = None
 _VIDEO_BINDINGS_CACHE: dict[str, dict] | None = None
 _VIDEO_DEFINITIONS_CACHE: dict[str, dict] | None = None
-VIDEO_BINDINGS_PATH = EXPORT_ROOT / "recovered" / "video_bindings.json"
+VIDEO_BINDINGS_PATH = STORY_BUILD_DIR / "video_bindings.json"
 _DIALOG_REF_FIELDS = ("_dialogId", "snsDialogId")
 _CUTSCENE_REF_FIELDS = ("_cutsceneId",)
 _REMOTECOMM_REF_FIELDS = ("_remoteCommId",)

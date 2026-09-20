@@ -38,7 +38,6 @@ from scripts.common import (
     write_report_json,
     write_text_if_changed,
 )
-from scripts.webui.story.mission_assets import select_complete_mission_runtime_root
 from scripts.game_data import il2cpp_protocol as il2cpp
 from scripts.game_data.levelscript_binary import (
     extract_levelscript_uid_records,
@@ -50,6 +49,7 @@ from scripts.game_data.native_contracts.mission_task_paths import (
     DEFAULT_CONTRACT as MISSION_TASK_PATH_CONTRACT,
     load_mission_task_paths,
 )
+from scripts.common import EXPORT_LAYOUT
 
 
 DEFAULT_GAME_DATA_ROOT = resolve_installed_game_data_root()
@@ -60,37 +60,9 @@ NATIVE_MAPPER_HELPER = (
     ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 )
 REPORT_ROOT = ROOT / "reports" / "story" / "recovery"
-MISSION_RUNTIME_ROOT = select_complete_mission_runtime_root(
-    ROOT
-    / "export_full"
-    / "structured"
-    / "StreamingAssets"
-    / "Data"
-    / "Json"
-    / "MissionRuntimeAsset",
-    ROOT
-    / "export_full"
-    / "structured"
-    / "Persistent"
-    / "Data"
-    / "Json"
-    / "MissionRuntimeAsset",
-)
+MISSION_RUNTIME_ROOT = EXPORT_LAYOUT.json_dir / "MissionRuntimeAsset"
 LEVELSCRIPT_ROOTS = (
-    ROOT
-    / "export_full"
-    / "structured"
-    / "StreamingAssets"
-    / "Data"
-    / "Json"
-    / "LevelScriptData",
-    ROOT
-    / "export_full"
-    / "structured"
-    / "Persistent"
-    / "Data"
-    / "Json"
-    / "LevelScriptData",
+    EXPORT_LAYOUT.json_dir / "LevelScriptData",
 )
 MESSAGE_125_SEND_GLOBAL_VA = 0x187BDFD38
 MESSAGE_125_PAYLOAD_TYPE = "Beyond.Gameplay.EventData"

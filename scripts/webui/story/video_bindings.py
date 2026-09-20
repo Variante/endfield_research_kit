@@ -33,11 +33,12 @@ uses heuristic filename matching.
 
 This script joins:
   - Every `BeyondFMVPlayableAsset*.json` (and clones) under
-    export_full/recovered/AnimeStudio-cli/timeline_extract/*/MonoBehaviour/.
+    tmp/game_data/export/<root>/timeline_extract/*/MonoBehaviour/ when a focused
+    Timeline re-export exists.
   - Every matching `BeyondFMVPlayableAsset*.json` / `Beyond FMV Track*.json`
     under the story-scoped AnimeStudio `json_by_type/MonoBehaviour` export.
   - The AssetEntries maps under
-    export_full/recovered/AnimeStudio-cli/{StreamingAssets,Persistent}/maps/
+    <export root>/meta/{StreamingAssets,Persistent}/asset_map/
     keyed by PathID to recover each playable's `dlgtl_<scene>_sub_<n>` or
     gameplay `cutscene_<scene>` container.
   - Every `Beyond FMV Track*.json` clip to capture timestamps and option
@@ -45,7 +46,7 @@ This script joins:
   - Every `Beyond.Gameplay.CheckFMVFinish._fmvId.constValue` in
     `MissionRuntimeAsset/*.json`.
 
-Output: export_full/recovered/video_bindings.json with the schema below.
+Output: webui/data/_build/story/video_bindings.json with the schema below.
 
 Scene-to-mission rule: the mission id is the dialog scene id with its trailing
 `_<digits>(d<digits>)?(letterSuffix)?` segment stripped. For standalone
@@ -53,6 +54,7 @@ Scene-to-mission rule: the mission id is the dialog scene id with its trailing
 `cs_video_` and the trailing `_<n>`.
 """
 from __future__ import annotations
+from scripts.common import WEBUI_BUILD_DIR
 
 import argparse
 import json
@@ -67,6 +69,7 @@ from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
 from scripts.common import fast_glob_files, path_id_export_base_stem
+from scripts.common import EXPORT_LAYOUT
 
 
 def compact_narrative_video_ref(ref: dict) -> dict:
@@ -111,11 +114,7 @@ def compact_narrative_video_ref(ref: dict) -> dict:
 
 
 def narrative_video_sort_key(ref: dict) -> tuple:
-    source_rank = {
-        "StreamingAssets-structured": 0,
-        "Persistent-structured": 1,
-        "raw_vfs": 2,
-    }.get(str(ref.get("source") or ""), 9)
+    source_rank = {"Game": 0}.get(str(ref.get("source") or ""), 9)
     format_rank = {
         "mp4": 0,
         "webm": 1,
@@ -179,36 +178,29 @@ def narrative_video_index_summary(refs: list[dict]) -> dict:
         "files": names[:5],
     }
 
-EXPORT_ROOT = ROOT / "export_full"
-RECOVERED_DIR = EXPORT_ROOT / "recovered"
-ANIMESTUDIO_CLI = RECOVERED_DIR / "AnimeStudio-cli"
-TIMELINE_EXTRACT = ANIMESTUDIO_CLI / "timeline_extract"
-MONOBEHAVIOUR_DIRS = (
-    ANIMESTUDIO_CLI / "StreamingAssets" / "json_by_type" / "MonoBehaviour",
-    ANIMESTUDIO_CLI / "Persistent" / "json_by_type" / "MonoBehaviour",
-)
+EXPORT_ROOT = EXPORT_LAYOUT.root
+# Optional: a focused Timeline re-export under tmp/, present only after a
+# diagnostic timeline_recovery run.
+TIMELINE_EXTRACT = EXPORT_LAYOUT.work_dir / "timeline_extract"
+MONOBEHAVIOUR_DIRS = (EXPORT_LAYOUT.unity_type_dir("MonoBehaviour"),)
 ASSET_MAPS = (
-    ANIMESTUDIO_CLI / "StreamingAssets" / "maps" / "endfield_streamingassets_assets.json",
-    ANIMESTUDIO_CLI / "Persistent" / "maps" / "endfield_persistent_assets.json",
+    EXPORT_LAYOUT.asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json",
+    EXPORT_LAYOUT.asset_map_dir("Persistent") / "endfield_persistent_assets.json",
 )
 FMV_ID_TABLES = (
-    EXPORT_ROOT / "structured" / "StreamingAssets" / "Table" / "NumIdStrTable.json",
-    EXPORT_ROOT / "structured" / "Persistent" / "Table" / "NumIdStrTable.json",
+    EXPORT_LAYOUT.table_dir / "NumIdStrTable.json",
 )
 
 MRA_DIRS = (
-    EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Json" / "MissionRuntimeAsset",
-    EXPORT_ROOT / "structured" / "Persistent" / "Data" / "Json" / "MissionRuntimeAsset",
+    EXPORT_LAYOUT.json_dir / "MissionRuntimeAsset",
 )
 
 NARRATIVE_VIDEO_DIRS = (
-    EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Video" / "PC" / "Narrative" / "Cutscene",
-    EXPORT_ROOT / "structured" / "StreamingAssets" / "Data" / "Video" / "PC" / "Narrative" / "RemoteComm",
-    EXPORT_ROOT / "structured" / "Persistent" / "Data" / "Video" / "PC" / "Narrative" / "Cutscene",
-    EXPORT_ROOT / "structured" / "Persistent" / "Data" / "Video" / "PC" / "Narrative" / "RemoteComm",
+    EXPORT_LAYOUT.video_dir / "PC" / "Narrative" / "Cutscene",
+    EXPORT_LAYOUT.video_dir / "PC" / "Narrative" / "RemoteComm",
 )
 
-DEFAULT_OUTPUT = RECOVERED_DIR / "video_bindings.json"
+DEFAULT_OUTPUT = WEBUI_BUILD_DIR / "story" / "video_bindings.json"
 DEFAULT_REPORT = ROOT / "reports" / "story" / "build" / "video_bindings.md"
 
 _DLGTL_FROM_CONTAINER = re.compile(
@@ -509,15 +501,8 @@ def _path_id_hex(path_id: Any) -> str:
 
 
 def _definition_resource_dirs(definition: dict[str, Any]) -> tuple[Path, ...]:
-    sources = definition.get("sources") or []
-    asset_paths = [
-        str(source.get("asset") or "")
-        for source in sources
-        if isinstance(source, dict)
-    ]
-    if any("/Persistent/" in path.replace("\\", "/") for path in asset_paths):
-        return (MONOBEHAVIOUR_DIRS[1],)
-    return (MONOBEHAVIOUR_DIRS[0],)
+    # One effective Unity tree holds every definition's objects.
+    return MONOBEHAVIOUR_DIRS
 
 
 def collect_definition_timeline_evidence(

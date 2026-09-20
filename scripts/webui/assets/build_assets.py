@@ -15,6 +15,8 @@ if __package__ in {None, ""}:
         "python -m scripts.webui.assets.build_assets"
     )
 
+from scripts.common import require_export_layout
+
 from scripts.webui.assets.index import AssetScanResult, scan_exported_media_assets
 from scripts.webui.assets.story_media import build_story_media_payload, write_story_media_payload
 from scripts.common import ASSET_DIR, EXPORT_ROOT, OUT_DIR, ROOT, write_json
@@ -142,6 +144,7 @@ def build_output_payloads(
 
 def main(argv: list[str] | None = None) -> None:
     args = parse_args(argv)
+    require_export_layout(getattr(args, 'export_root', None))
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     # Keep existing files so write-if-changed can avoid rewriting identical
     # indexes.

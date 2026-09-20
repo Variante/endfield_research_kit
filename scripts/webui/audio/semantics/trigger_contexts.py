@@ -4,6 +4,7 @@ Each collector answers one source of trigger evidence and returns compact contex
 rows. None of them establishes runtime execution, selection, or audibility."""
 
 from __future__ import annotations
+from scripts.source_paths import ExportLayout
 
 import hashlib
 import re
@@ -433,10 +434,7 @@ def _build_remote_common_trigger_contexts(
     }
     contexts: list[dict[str, Any]] = []
     seen: set[tuple[str, str, str]] = set()
-    table_paths = [
-        export_root / "structured" / source_root / "Table" / "RemoteCommonTable.json"
-        for source_root in ("Persistent", "StreamingAssets")
-    ]
+    table_paths = [ExportLayout(export_root).game / "Table" / "RemoteCommonTable.json"]
     for table_path in table_paths:
         payload = load_json(table_path, {})
         if not isinstance(payload, dict):
