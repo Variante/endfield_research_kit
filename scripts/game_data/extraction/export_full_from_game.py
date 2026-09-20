@@ -40,10 +40,12 @@ from scripts.game_data.extraction.animestudio_object_index import (
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.source_paths import INSTALLED_LAYERS, ExportLayout, configured_export_root
+from scripts.game_data.extraction.unity_overlay import load_overlay_catalog, normalize_chunk_path
 
 ROOT = REPO_ROOT
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
-DEFAULT_OUTPUT = ROOT / "export_full"
+DEFAULT_OUTPUT = configured_export_root()
 DEFAULT_REPORTS = ROOT / "reports" / "export"
 DEFAULT_REPORT_RUNS_TO_KEEP = 5
 DEFAULT_ANIMESTUDIO = ROOT / "tools" / "AnimeStudio" / "AnimeStudio.CLI" / "bin" / "Release" / "net9.0-windows" / "AnimeStudio.CLI.exe"
@@ -55,10 +57,9 @@ SOURCE_FINGERPRINT_EXCLUDED_TOP_LEVEL = {
 ANIMESTUDIO_STAGES = ("maps", "convert_by_type", "json_by_type")
 ANIMESTUDIO_SCOPES = ("story", "assets", "all")
 ANIMESTUDIO_ASSET_MODES = ("focused", "default", "debug")
-STRUCTURED_DUMP_MODES = ("focused", "default", "debug")
-WORLD_SCENE_CHUNK_SPEC_RE = re.compile(
-    r"^(?P<map>[A-Za-z0-9_]+):(?P<x>-?\d+):(?P<z>-?\d+)$"
-)
+# Only final files are dumped. Raw VFS containers (bundles, audio PCKs, world
+# streaming chunks) are read in place by AnimeStudio and are never dumped.
+STRUCTURED_DUMP_MODES = ("focused", "default")
 FOCUSED_STRUCTURED_BLOCK_TYPES = (
     "table",
     "json-data",
@@ -527,7 +528,7 @@ def animestudio_asset_cache_path(output_root: Path) -> Path:
 
 
 def animestudio_asset_status_path(output_root: Path, source: str, stage: str, type_name: str) -> Path:
-    return animestudio_source_root(output_root, source) / "asset_status" / f"{stage}_{type_name}.json"
+    return ExportLayout(output_root).asset_status_dir(source) / f"{stage}_{type_name}.json"
 
 
 def default_animestudio_asset_cache() -> dict[str, Any]:
@@ -1026,7 +1027,7 @@ def asset_entry_manifest_key(entry: dict[str, Any], item: dict[str, Any], plan: 
             "asset": asset_entry_identity(entry),
             "stage": plan.get("stage"),
             "type_spec": item.get("type_spec"),
-            "file_naming": "path_id_suffix_v1",
+            "file_naming": "path_id_suffix_v2_script_class",
         }
     )
 
@@ -1436,6 +1437,9 @@ def build_animestudio_asset_output_status(
     records_by_ab: dict[str, list[dict[str, Any]]] = {}
     ab_identities: dict[str, dict[str, Any]] = {}
     output_path_id_index = build_animestudio_output_path_id_index(output_root, source, stage, type_name)
+    # Objects in bundles the effective manifest replaced were skipped on
+    # purpose (--skip_sources_file); they are not missing outputs.
+    entries, overlay_skipped_entry_count = without_overlay_skipped_entries(source, entries)
 
     for entry in entries:
         resolved_output = resolve_animestudio_convert_output_path(
@@ -1696,6 +1700,7 @@ def build_animestudio_asset_output_status(
         "stage": stage,
         "type": type_name,
         "matched_entry_count": len(entries),
+        "overlay_skipped_entry_count": overlay_skipped_entry_count,
         "source_group_count": len(groups),
         "status_counts": status_counts,
         "clean_source_group_count": status_counts.get("clean_outputs", 0),
@@ -2131,7 +2136,10 @@ def build_animestudio_stage_signature(stage: str, options: dict[str, Any], type_
         "webui_asset_filter_signature": options.get("webui_asset_filter_signature"),
         "group_assets": "ByType",
         "game": ANIMESTUDIO_GAME,
-        "file_naming": "path_id_suffix_v1",
+        # v2: unnamed objects are named by script class, not a per-run counter.
+        "file_naming": "path_id_suffix_v2_script_class",
+        "exact_only": True,
+        "overlay_skip_sha256": options.get("overlay_skip_sha256"),
         "logger_flags": list(ANIMESTUDIO_LOGGER_FLAGS),
     }
     dependencies = animestudio_convert_parse_dependencies(stage, options.get("export_type"), type_spec)
@@ -2277,18 +2285,7 @@ def parse_args() -> argparse.Namespace:
         default="focused",
         help=(
             "`focused` dumps the compact Story/Table/video VFS set; `default` also dumps Terrain `_H` height grids. "
-            "Both skip audio PCK/media files. `debug` dumps every dumpable block type."
-        ),
-    )
-    parser.add_argument(
-        "--world-scene-chunk",
-        action="append",
-        default=[],
-        metavar="MAP:X:Z",
-        help=(
-            "Export one static world-streaming cell from the Streaming block, including its "
-            "InitChunkData and StreamingChunkData files. May be repeated. Chunk coordinates are "
-            "floor(world X / 128) and floor(world Z / 128); for example map02:2:-13."
+            "Neither dumps raw containers (bundles, audio PCKs, world streaming); those are read in place."
         ),
     )
     parser.add_argument(
@@ -2656,38 +2653,8 @@ def load_structured_incremental_manifest(
     return payload
 
 
-def parse_world_scene_chunks(values: list[str] | tuple[str, ...]) -> tuple[tuple[str, int, int], ...]:
-    chunks: list[tuple[str, int, int]] = []
-    seen: set[tuple[str, int, int]] = set()
-    for value in values:
-        text = str(value or "").strip()
-        match = WORLD_SCENE_CHUNK_SPEC_RE.fullmatch(text)
-        if match is None:
-            raise ValueError(
-                f"invalid world scene chunk {text!r}; expected MAP:X:Z, for example map02:2:-13"
-            )
-        chunk = (match.group("map").lower(), int(match.group("x")), int(match.group("z")))
-        if chunk not in seen:
-            chunks.append(chunk)
-            seen.add(chunk)
-    return tuple(chunks)
-
-
-def world_scene_chunk_file_regex(map_name: str, x: int, z: int) -> str:
-    escaped_map = re.escape(map_name)
-    return (
-        rf"^Data/Streaming/PC/{escaped_map}/Streaming/"
-        rf"(?:InitChunkData|StreamingChunkData)_{x}_{z}_[^/]+\.bytes$"
-    )
-
-
-def structured_dump_steps_with_world_scenes(
-    mode: str,
-    world_scene_chunks: tuple[tuple[str, int, int], ...],
-) -> list[dict[str, Any]]:
-    if mode == "debug":
-        return [{"name": "debug_all", "block_types": (), "file_regexes": ()}]
-    if mode not in {"focused", "default"}:
+def structured_dump_steps(mode: str) -> list[dict[str, Any]]:
+    if mode not in STRUCTURED_DUMP_MODES:
         raise ValueError(f"unsupported structured dump mode: {mode}")
     steps = [
         {
@@ -2706,19 +2673,6 @@ def structured_dump_steps_with_world_scenes(
                 "name": "terrain_height",
                 "block_types": ("terrain",),
                 "file_regexes": (TERRAIN_HEIGHT_FILE_REGEX,),
-                "sources": ("StreamingAssets",),
-            }
-        )
-    if world_scene_chunks:
-        steps.append(
-            {
-                "name": "world_scene_chunks",
-                "block_types": ("streaming",),
-                "file_regexes": tuple(
-                    world_scene_chunk_file_regex(map_name, x, z)
-                    for map_name, x, z in world_scene_chunks
-                ),
-                "sources": ("StreamingAssets",),
             }
         )
     return steps
@@ -2752,13 +2706,19 @@ def structured_dump_command_name(source: str, step: dict[str, Any], step_count: 
     return f"{source}_structured_dump_{step['name']}"
 
 
+def structured_staging_root(output_root: Path) -> Path:
+    # The structured dump lands here first and is published into game/ by
+    # publish_structured_dump, which drops the VFS `Data/` prefix.
+    return ExportLayout(output_root).work_dir / "structured"
+
+
 def structured_output_dir(output_root: Path, source: str) -> Path:
-    return output_root / "structured" / source
+    return structured_staging_root(output_root) / source
 
 
 def reset_structured_output_dir(output_root: Path, source: str) -> Path:
     target = structured_output_dir(output_root, source)
-    allowed_root = (output_root / "structured").resolve()
+    allowed_root = structured_staging_root(output_root).resolve()
     target_resolved = target.resolve()
     try:
         target_resolved.relative_to(allowed_root)
@@ -2777,15 +2737,11 @@ def reset_structured_output_dir(output_root: Path, source: str) -> Path:
 
 
 def resolve_existing_structured_output_dir(output_root: Path, source: str) -> Path:
-    preferred = structured_output_dir(output_root, source)
-    legacy = output_root / source
-    if preferred.exists() or not legacy.exists():
-        return preferred
-    return legacy
+    return structured_output_dir(output_root, source)
 
 
 def vfs_index_dir(output_root: Path, source: str) -> Path:
-    return output_root / "recovered" / "AnimeStudio-cli" / source / "vfs_index"
+    return ExportLayout(output_root).vfs_index_dir(source)
 
 
 VFS_INDEX_BLOCKS: tuple[tuple[str, str], ...] = (
@@ -2879,15 +2835,19 @@ def summarize_vfs_indexes(
 
 
 def animestudio_source_root(output_root: Path, source: str) -> Path:
-    return output_root / "recovered" / "AnimeStudio-cli" / source
+    # Per-layer AnimeStudio staging. It doubles as the per-asset reuse cache;
+    # publish_unity_outputs mirrors it into game/Unity as hardlinks.
+    return animestudio_work_dir(output_root) / source
 
 
 def animestudio_stage_dir(output_root: Path, source: str, stage: str) -> Path:
+    if stage == "maps":
+        return ExportLayout(output_root).asset_map_dir(source)
     return animestudio_source_root(output_root, source) / stage
 
 
 def animestudio_object_index_dir(output_root: Path, source: str) -> Path:
-    return animestudio_source_root(output_root, source) / "object_index"
+    return ExportLayout(output_root).object_index_dir(source)
 
 
 def animestudio_object_index_part_path(
@@ -2898,11 +2858,11 @@ def animestudio_object_index_part_path(
     safe_name = animestudio_log_suffix(command_name)
     if safe_name != command_name:
         safe_name = f"{safe_name}_{stable_hash(command_name)[:12]}"
-    return animestudio_object_index_dir(output_root, source) / "parts" / f"{safe_name}.jsonl"
+    return animestudio_work_dir(output_root) / "object_index_parts" / source / f"{safe_name}.jsonl"
 
 
 def animestudio_managed_reference_diagnostics_dir(output_root: Path, source: str) -> Path:
-    return animestudio_source_root(output_root, source) / "managed_reference_diagnostics"
+    return ExportLayout(output_root).layer_meta(source) / "managed_reference_diagnostics"
 
 
 def animestudio_managed_reference_diagnostics_part_path(
@@ -2980,7 +2940,220 @@ def invalidate_animestudio_object_index_commit_marker(
 
 
 def animestudio_work_dir(output_root: Path) -> Path:
-    return output_root / "recovered" / "AnimeStudio-cli"
+    return ExportLayout(output_root).work_dir / "animestudio"
+
+
+LAYOUT_V1_FOLDERS: tuple[str, ...] = ("structured", "recovered", "unresolved")
+UNITY_STAGING_STAGES: tuple[str, ...] = ("convert_by_type", "json_by_type")
+
+
+def _replace_tree(source: Path, target: Path, graveyard: Path) -> None:
+    """Move source to target, first moving any previous target into graveyard."""
+    if target.exists():
+        graveyard.mkdir(parents=True, exist_ok=True)
+        os.replace(target, graveyard / f"{target.name}-{time.time_ns()}")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    try:
+        os.replace(source, target)
+    except OSError:
+        shutil.move(str(source), str(target))
+
+
+def publish_structured_dump(output_root: Path, layer: str) -> dict[str, Any]:
+    """Publish the effective structured dump into game/, dropping the VFS `Data/` prefix."""
+    layout = ExportLayout(output_root)
+    staging = structured_output_dir(output_root, layer)
+    # Inside the export root: same volume as game/, so every move is a rename.
+    graveyard = layout.root / ".publish-replaced"
+    published: list[str] = []
+    for entry in sorted(staging.iterdir()) if staging.is_dir() else []:
+        if entry.name == "Data" and entry.is_dir():
+            for data_entry in sorted(entry.iterdir()):
+                target = layout.game_file(f"Data/{data_entry.name}/x").parent
+                _replace_tree(data_entry, target, graveyard)
+                published.append(target.name)
+        elif entry.name in ("Table", "Lua") and entry.is_dir():
+            _replace_tree(entry, layout.game / entry.name, graveyard)
+            published.append(entry.name)
+        else:
+            raise SystemExit(f"structured dump produced {entry}, which has no place in game/")
+    if graveyard.exists():
+        shutil.rmtree(graveyard)
+    log(f"  published structured dump from {layer}: {', '.join(published) or 'nothing'}")
+    return {"layer": layer, "folders": published}
+
+
+def _link_or_copy(source: Path, target: Path) -> None:
+    # Staging files are immutable once written: AnimeStudio deletes and
+    # recreates a file to change it, which gives it a new inode, and the size
+    # plus mtime check below then relinks. Never rewrite a staging file in
+    # place, or its published hardlink would change without a publish.
+    try:
+        os.link(source, target)
+    except OSError:
+        shutil.copy2(source, target)
+
+
+def publish_unity_outputs(
+    output_root: Path,
+    required_layers: tuple[str, ...],
+    *,
+    completed_types: dict[str, set[str]] | None = None,
+) -> dict[str, Any]:
+    """Mirror every layer's AnimeStudio staging into game/Unity/<Type> as hardlinks.
+
+    Staging already holds only effective objects (--skip_sources_file), so
+    the mirror is a plain union; on a same-name tie the later layer wins, which
+    is the same asset from the newer bundle. A type is synced only when every
+    installed layer ran the stage that exports it (its staging stage folder
+    exists; a layer may legitimately hold no objects of the type), so a lost
+    or partial staging cache never deletes published data. With
+    ``completed_types`` (the exporter passes it), every installed layer must
+    also have finished that type's item in this run; a run that covered only
+    some layers or types leaves the rest as published.
+    """
+    layout = ExportLayout(output_root)
+    desired: dict[str, dict[str, os.DirEntry]] = {}
+    stage_of_type: dict[str, str] = {}
+    staged_layers: dict[str, set[str]] = {}
+    for layer in INSTALLED_LAYERS:
+        for stage in UNITY_STAGING_STAGES:
+            stage_dir = animestudio_stage_dir(output_root, layer, stage)
+            if not stage_dir.is_dir():
+                continue
+            staged_layers.setdefault(stage, set()).add(layer)
+            for type_dir in os.scandir(stage_dir):
+                if not type_dir.is_dir():
+                    continue
+                stage_of_type[type_dir.name] = stage
+                files = desired.setdefault(type_dir.name, {})
+                for entry in os.scandir(type_dir.path):
+                    if entry.is_file():
+                        files[entry.name] = entry
+    counts = {"linked": 0, "unchanged": 0, "removed": 0}
+    def missing_layers(type_name: str) -> list[str]:
+        staged = staged_layers.get(stage_of_type[type_name], set())
+        missing = set(required_layers) - staged
+        if completed_types is not None:
+            missing |= {layer for layer in required_layers if type_name not in completed_types.get(layer, set())}
+        return sorted(missing)
+
+    incomplete = sorted(type_name for type_name in stage_of_type if missing_layers(type_name))
+    for type_name in incomplete:
+        log(f"  game/Unity/{type_name} left as published: {stage_of_type[type_name]} not completed this run for {missing_layers(type_name)}")
+        desired.pop(type_name, None)
+    if completed_types is not None and required_layers:
+        # A type every layer completed with no output has no staging folder;
+        # sync it as empty so its previously published files go too.
+        everywhere = set.intersection(*(set(completed_types.get(layer, set())) for layer in required_layers))
+        for type_name in sorted(everywhere - set(stage_of_type)):
+            if layout.unity_type_dir(type_name).is_dir():
+                desired[type_name] = {}
+    for type_name, files in sorted(desired.items()):
+        target_dir = ensure_dir(layout.unity_type_dir(type_name))
+        existing = {entry.name: entry for entry in os.scandir(target_dir) if entry.is_file()}
+        for name, source_entry in files.items():
+            current = existing.pop(name, None)
+            if current is not None:
+                a, b = current.stat(), source_entry.stat()
+                if a.st_size == b.st_size and a.st_mtime_ns == b.st_mtime_ns:
+                    counts["unchanged"] += 1
+                    continue
+                os.unlink(current.path)
+            _link_or_copy(Path(source_entry.path), target_dir / name)
+            counts["linked"] += 1
+        for stale in existing.values():
+            os.unlink(stale.path)
+            counts["removed"] += 1
+    log(
+        f"  published game/Unity: {len(desired)} type(s), linked={counts['linked']} "
+        f"unchanged={counts['unchanged']} removed={counts['removed']}"
+    )
+    return {"types": sorted(desired), "skippedIncompleteTypes": incomplete, **counts}
+
+
+def effective_structured_layer(game_root: Path, sources: tuple[str, ...]) -> str:
+    """The newest installed layer present: its dump, with fallback, is the effective view."""
+    for layer in reversed(INSTALLED_LAYERS):
+        if layer in sources and (game_root / layer / "VFS").is_dir():
+            return layer
+    raise SystemExit(f"no installed VFS layer under {game_root} among {list(sources)}")
+
+
+def write_overlay_skip_lists(
+    output_root: Path,
+    sources: tuple[str, ...],
+    signatures: dict[str, str],
+) -> dict[str, Path]:
+    """Write each layer's --skip_sources_file: its bundle slots the effective manifest dropped."""
+    base, effective = INSTALLED_LAYERS[0], INSTALLED_LAYERS[-1]
+    if base not in sources or effective not in sources:
+        return {}
+    layout = ExportLayout(output_root)
+    catalog = load_overlay_catalog(layout.vfs_index_dir(base), layout.vfs_index_dir(effective))
+    out: dict[str, Path] = {}
+    for layer in (base, effective):
+        slots = catalog.base if layer == base else catalog.effective
+        skipped = sorted(slot for slot in slots if slot not in catalog.effective)
+        rows = [{"Source": chunk, "Offset": offset} for chunk, offset in skipped]
+        payload = json.dumps(rows, ensure_ascii=False, separators=(",", ":"))
+        signatures[layer] = hashlib.sha256(payload.encode("utf-8")).hexdigest()
+        path = ensure_dir(animestudio_work_dir(output_root) / "overlay") / f"skip_{layer}.json"
+        path.write_text(payload, encoding="utf-8")
+        out[layer] = path
+        log(f"  overlay skip list {layer}: {len(rows)} superseded bundle slot(s) -> {path}")
+    for block in catalog.block_evidence:
+        log(
+            f"  overlay {block['block']}: base v{block['baseVersion']} ({block['baseFileCount']} files) -> "
+            f"effective v{block['effectiveVersion']} ({block['effectiveFileCount']} files)"
+        )
+    return out
+
+
+def animestudio_export_manifest_path(output_root: Path, source: str, command_name: str) -> Path:
+    safe_name = animestudio_log_suffix(command_name)
+    if safe_name != command_name:
+        safe_name = f"{safe_name}_{stable_hash(command_name)[:12]}"
+    return ExportLayout(output_root).layer_meta(source) / "export_manifest" / f"{safe_name}.jsonl"
+
+
+# Per-layer --skip_sources_file, set by main() once every layer's VFS catalogue
+# is indexed. Maps stages never skip: the asset map describes the whole layer.
+ANIMESTUDIO_SKIP_SOURCES_FILES: dict[str, Path] = {}
+
+
+def overlay_skipped_slots(source: str) -> frozenset[tuple[str, int]]:
+    """This layer's skipped bundle slots (normalized chunk path, offset)."""
+    path = ANIMESTUDIO_SKIP_SOURCES_FILES.get(source)
+    if path is None or not path.is_file():
+        return frozenset()
+    cached = _OVERLAY_SKIPPED_SLOTS.get(path)
+    if cached is None:
+        rows = json.loads(path.read_text(encoding="utf-8"))
+        cached = frozenset((normalize_chunk_path(row["Source"]), int(row["Offset"])) for row in rows)
+        _OVERLAY_SKIPPED_SLOTS[path] = cached
+    return cached
+
+
+_OVERLAY_SKIPPED_SLOTS: dict[Path, frozenset[tuple[str, int]]] = {}
+
+
+def without_overlay_skipped_entries(
+    source: str, entries: list[dict[str, Any]]
+) -> tuple[list[dict[str, Any]], int]:
+    """Asset-map entries minus those in this layer's skipped bundle slots."""
+    skipped = overlay_skipped_slots(source)
+    if not skipped:
+        return entries, 0
+    kept = [
+        entry for entry in entries
+        if not (
+            entry.get("Source") is not None
+            and entry.get("Offset") is not None
+            and (normalize_chunk_path(str(entry["Source"])), int(entry["Offset"])) in skipped
+        )
+    ]
+    return kept, len(entries) - len(kept)
 
 
 def count_files(path: Path) -> int:
@@ -3815,6 +3988,12 @@ def run_animestudio_stage(
     ]
     if export_type is not None:
         cmd.extend(["--export_type", export_type])
+    cmd.extend(["--cab_map_dir", str(ensure_dir(ExportLayout(output_root).cab_map_dir))])
+    if stage != "maps":
+        cmd.extend(["--export_manifest_jsonl", str(animestudio_export_manifest_path(output_root, source, name))])
+        skip_sources_file = ANIMESTUDIO_SKIP_SOURCES_FILES.get(source)
+        if skip_sources_file is not None:
+            cmd.extend(["--skip_sources_file", str(skip_sources_file)])
     if animestudio_dummy_dlls is not None:
         cmd.extend(["--dummy_dlls", str(animestudio_dummy_dlls)])
     expanded_types = animestudio_type_specs_for_export(stage, export_type, tuple(types))
@@ -5549,6 +5728,12 @@ def main() -> int:
         raise SystemExit("--structured-incremental-manifest requires --skip-structured")
     if args.structured_incremental_manifest and args.report_only:
         raise SystemExit("--structured-incremental-manifest cannot be used with --report-only")
+    v1_folders = [name for name in LAYOUT_V1_FOLDERS if (output_root / name).exists()]
+    if v1_folders:
+        raise SystemExit(
+            f"{output_root} still has layout-v1 folders {v1_folders}. "
+            f"Run: python -m scripts.game_data.extraction.migrate_export_layout --export-root \"{output_root}\""
+        )
     reports_root = ensure_dir(DEFAULT_REPORTS.resolve())
     report_run_id = current_report_run_id()
     reports_runs_root = ensure_dir(reports_root / "runs")
@@ -5599,16 +5784,7 @@ def main() -> int:
             "--animestudio-managed-reference-diagnostics requires a Story or all-scope "
             "AnimeStudio MonoBehaviour JSON export"
         )
-    try:
-        world_scene_chunks = parse_world_scene_chunks(args.world_scene_chunk)
-    except ValueError as exc:
-        raise SystemExit(str(exc)) from exc
-    if world_scene_chunks and args.skip_structured:
-        raise SystemExit("--world-scene-chunk cannot be combined with --skip-structured")
-    structured_dump_plan = structured_dump_steps_with_world_scenes(
-        args.structured_dump_mode,
-        world_scene_chunks,
-    )
+    structured_dump_plan = structured_dump_steps(args.structured_dump_mode)
     animestudio_stage_options = animestudio_stage_options_for_scope(args.animestudio_scope, args.animestudio_asset_mode)
     animestudio_asset_type_filter = normalize_animestudio_asset_type_filter(tuple(args.animestudio_asset_types))
     if animestudio_asset_type_filter and args.animestudio_scope == "story":
@@ -5707,14 +5883,6 @@ def main() -> int:
     if not args.skip_structured:
         log(f"  structured dump mode: {args.structured_dump_mode}")
         log(f"  structured dump plan: {describe_structured_dump_steps(structured_dump_plan)}")
-        log(
-            "  world scene chunks: "
-            + (
-                ", ".join(f"{map_name}:{x}:{z}" for map_name, x, z in world_scene_chunks)
-                if world_scene_chunks
-                else "none"
-            )
-        )
     log(f"  vfs index: {'enabled' if vfs_index_enabled else 'disabled'}")
     log("  raw vfs export: disabled")
     log(f"  animestudio export: {'disabled' if args.skip_animestudio else 'enabled'}")
@@ -5873,14 +6041,20 @@ def main() -> int:
         animestudio_summary = dict(previous_summary.get("animestudio") or animestudio_summary)
         animestudio_summary["reused_without_export"] = True
 
-    for source in selected_sources:
+    if not args.report_only:
+        # Readers refuse the root until finish_write below, so a failed or
+        # interrupted export is never read as complete.
+        ExportLayout(output_root).begin_write(producer="export_full_from_game")
+    # Every installed layer's VFS catalogue is indexed before any export, even
+    # in a run that exports only some layers: the base layer's export must skip
+    # the bundles the newer manifest replaced, and game/ is always the newest
+    # layer's view.
+    installed_layers = tuple(
+        layer for layer in INSTALLED_LAYERS if (game_root / layer / "VFS").is_dir()
+    )
+    for source in installed_layers:
         source_root = game_root / source
         source_report_dir = ensure_dir(reports_dir / source)
-        source_structured_dump_plan = structured_dump_steps_for_source(structured_dump_plan, source)
-        log(f"processing source {source}")
-        log(f"  source root: {source_root}")
-        log(f"  source reports: {source_report_dir}")
-
         current_vfs_index_paths = [
             vfs_index_path(output_root, source, block_name)
             for block_name, _cli_block_name in VFS_INDEX_BLOCKS
@@ -5917,7 +6091,34 @@ def main() -> int:
                     f"missing_chunks={vfs_index_summary[source].get('missing_chunk_count')}"
                 )
 
-        if not args.skip_structured and not args.report_only:
+
+    structured_dump_layer = effective_structured_layer(game_root, installed_layers)
+    log(f"structured dump layer (effective VFS view): {structured_dump_layer}")
+    ANIMESTUDIO_SKIP_SOURCES_FILES.clear()
+    overlay_skip_signatures: dict[str, str] = {}
+    if not args.skip_animestudio and not args.report_only:
+        ANIMESTUDIO_SKIP_SOURCES_FILES.update(
+            write_overlay_skip_lists(output_root, installed_layers, overlay_skip_signatures)
+        )
+
+    # Set when this run dumps the effective layer; only then is its staging
+    # current enough to publish into game/.
+    structured_dumped_this_run = False
+    # Per-layer Unity types whose stage item finished (ran or reused a valid
+    # cache) in this run, and every stage item that failed. Publishing uses
+    # these, not the mere presence of a staging folder.
+    unity_types_completed: dict[str, set[str]] = {}
+    unity_stage_failures: list[str] = []
+    for source in selected_sources:
+        source_root = game_root / source
+        source_report_dir = ensure_dir(reports_dir / source)
+        source_structured_dump_plan = structured_dump_steps_for_source(structured_dump_plan, source)
+        log(f"processing source {source}")
+        log(f"  source root: {source_root}")
+        log(f"  source reports: {source_report_dir}")
+
+        if not args.skip_structured and not args.report_only and source == structured_dump_layer:
+            structured_dumped_this_run = True
             structured_out = reset_structured_output_dir(output_root, source)
             log(f"  structured output dir: {structured_out}")
             fallback_source = "Persistent" if source == "StreamingAssets" else "StreamingAssets"
@@ -5937,7 +6138,7 @@ def main() -> int:
                 command_results.append(result)
                 command_results_by_name[result.name] = result
 
-        if not args.skip_structured:
+        if not args.skip_structured and source == structured_dump_layer:
             previous_structured = (previous_summary.get("structured") or {}).get(source, {})
             structured_steps: list[dict[str, Any]] = []
             stdout_parts: list[str] = []
@@ -6017,6 +6218,7 @@ def main() -> int:
                     managed_reference_diagnostics_include_exact_matches
                 )
                 options["asset_cache_enabled"] = animestudio_asset_cache_enabled
+                options["overlay_skip_sha256"] = overlay_skip_signatures.get(source)
                 options["asset_shards"] = args.animestudio_shards
                 if stage == "maps":
                     options["map_name"] = f"endfield_{source.lower()}_assets"
@@ -6063,7 +6265,10 @@ def main() -> int:
                     options=options,
                     cli_signature=animestudio_cli_signature,
                     dummy_dll_signature=animestudio_asset_cache_dummy_evidence,
-                    source_fingerprint=compact_source_fingerprint(source_sizes[source]),
+                    source_fingerprint={
+                        **compact_source_fingerprint(source_sizes[source]),
+                        "overlay_skip_sha256": overlay_skip_signatures.get(source),
+                    },
                 )
                 animestudio_stage_plans[stage] = plan
                 log(
@@ -6169,6 +6374,15 @@ def main() -> int:
                     failed_items = plan.get("failed_items", [])
                     if failed_items:
                         log(f"  animestudio stage {stage} for {source} failed items: {', '.join(failed_items)}")
+                    if stage in UNITY_STAGING_STAGES:
+                        failed_set = set(failed_items)
+                        for item in plan.get("items", []):
+                            item_name = str(item.get("item_name") or "")
+                            type_name = str(item.get("type_spec") or item_name).split(":", 1)[0]
+                            if item_name in failed_set:
+                                unity_stage_failures.append(f"{source}/{stage}/{item_name}")
+                            elif type_name:
+                                unity_types_completed.setdefault(source, set()).add(type_name)
 
                 def run_stage_driver(stage: str, call_pool: AnimeStudioCallPool) -> list[CommandResult]:
                     plan = animestudio_stage_plans[stage]
@@ -6334,7 +6548,30 @@ def main() -> int:
                 f"json={source_info['json_by_type']['file_count']}"
             )
 
-    unresolved_dir = ensure_dir(output_root / "unresolved")
+    publish_summary: dict[str, Any] = {}
+    failed_before_publish = [item.name for item in command_results if item.returncode != 0]
+    # A stage can exit 0 yet report failed items (for example missing outputs);
+    # those block publication just like a failed command.
+    failed_before_publish += unity_stage_failures
+    if not args.report_only and failed_before_publish:
+        # Leave game/ untouched and the marker at "writing": a failed run must
+        # neither look complete nor delete what an earlier run published.
+        log(f"  publish skipped: {len(failed_before_publish)} command(s) failed: {failed_before_publish[:5]}")
+        publish_summary["skipped"] = failed_before_publish
+    elif not args.report_only:
+        if not args.skip_structured:
+            if structured_dumped_this_run:
+                publish_summary["structured"] = publish_structured_dump(output_root, structured_dump_layer)
+            else:
+                log(f"  structured publish skipped: {structured_dump_layer} was not dumped in this run")
+        if not args.skip_animestudio:
+            publish_summary["unity"] = publish_unity_outputs(
+                output_root,
+                tuple(layer for layer in INSTALLED_LAYERS if (game_root / layer / "VFS").is_dir()),
+                completed_types=unity_types_completed,
+            )
+
+    unresolved_dir = ensure_dir(ExportLayout(output_root).extraction_failures_dir)
     log(f"writing unresolved summaries to {unresolved_dir}")
     failed_txt = unresolved_dir / "failed_to_decode.txt"
     manifest_txt = unresolved_dir / "manifest_reference_missing.txt"
@@ -6380,10 +6617,6 @@ def main() -> int:
         "commands": summary_commands,
         "vfs_index": vfs_index_summary,
         "structured": structured_summary,
-        "world_scene_chunks": [
-            {"map": map_name, "x": x, "z": z}
-            for map_name, x, z in world_scene_chunks
-        ],
         "raw_vfs": raw_summary,
         "animestudio": animestudio_summary,
         "failed_to_decode_txt": str(failed_txt),
@@ -6715,13 +6948,18 @@ def main() -> int:
         "manifest_entries": manifest_entry_count,
     }
     print(json.dumps(brief_summary, indent=2, ensure_ascii=False))
-    if command_failures:
+    if command_failures or unity_stage_failures:
         for failure in command_failures:
             log(
                 f"command failed: {failure.name} "
                 f"returncode={failure.returncode} stderr={failure.stderr_log}"
             )
+        for item in unity_stage_failures:
+            # A stage can exit 0 with failed items; the root stays "writing".
+            log(f"stage item failed: {item}")
         return 1
+    if not args.report_only:
+        ExportLayout(output_root).finish_write(producer="export_full_from_game", publish=publish_summary)
     return 0
 
 

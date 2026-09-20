@@ -38,6 +38,7 @@ if __package__ in {None, ""}:
     )
 
 from scripts.common import ROOT, read_json
+from scripts.source_paths import ExportLayout, ExportLayoutError
 from scripts.game_data.extraction.export_full_from_game import (
     DEFAULT_ANIMESTUDIO,
     DEFAULT_GAME_ROOT,
@@ -56,7 +57,16 @@ DEFAULT_AUDIT_LEDGER = ROOT / "reports" / "animestudio" / "vfs_understanding_fil
 DEFAULT_AUDIT_SUMMARY = ROOT / "reports" / "animestudio" / "vfs_understanding_latest.json"
 DEFAULT_EXPORT_SUMMARY = DEFAULT_REPORTS / "export_full_summary.json"
 DEFAULT_REPORT = DEFAULT_REPORTS / "local_changed_export_latest.json"
-LOCAL_STATE_REL = Path("recovered/AnimeStudio-cli/local_incremental")
+def _state_root(output_root: Path) -> Path:
+    return ExportLayout(output_root).extraction_incremental_dir
+
+
+def _effective_layer(game_root: Path) -> str:
+    """The layer whose dump, with the other as fallback, is the client's view."""
+    for layer in reversed(SOURCES):
+        if (game_root / layer / "VFS").is_dir():
+            return layer
+    raise ChangedExportError(f"no installed VFS layer under {game_root}")
 MAX_REGEX_CHARS = 6000
 LOCK_BYTE_COUNT = 1
 
@@ -114,7 +124,7 @@ def _exclusive_lock(output_root: Path) -> Iterator[None]:
     can still read it for diagnostics.
     """
 
-    state_root = output_root / LOCAL_STATE_REL
+    state_root = _state_root(output_root)
     state_root.mkdir(parents=True, exist_ok=True)
     lock = state_root / "workflow.lock"
     descriptor = os.open(lock, os.O_CREAT | os.O_RDWR)
@@ -523,7 +533,8 @@ def publish_transaction(
     self-contained and rolls itself back on failure.
     """
 
-    destination_root = (output_root / "structured" / source).resolve()
+    layout = ExportLayout(output_root)
+    destination_root = layout.game.resolve()
     destination_root.mkdir(parents=True, exist_ok=True)
     actions: dict[PurePosixPath, Path | None] = dict(staged)
     for row in deleted:
@@ -535,7 +546,10 @@ def publish_transaction(
     active = PublishJournal() if journal is None else journal
     try:
         for relative, staged_path in sorted(actions.items(), key=lambda item: str(item[0])):
-            destination = destination_root.joinpath(*relative.parts).resolve()
+            try:
+                destination = layout.game_file(relative.as_posix()).resolve()
+            except ExportLayoutError as exc:
+                raise ChangedExportError(str(exc)) from exc
             try:
                 destination.relative_to(destination_root)
             except ValueError as exc:
@@ -562,11 +576,11 @@ def publish_transaction(
 
 
 def _snapshot_path(output_root: Path, source: str) -> Path:
-    return output_root / LOCAL_STATE_REL / f"{source.lower()}_structured_vfs.json.gz"
+    return _state_root(output_root) / f"{source.lower()}_structured_vfs.json.gz"
 
 
 def _pending_snapshot_path(output_root: Path, source: str) -> Path:
-    return output_root / LOCAL_STATE_REL / f"pending_{source.lower()}_structured_vfs.json.gz"
+    return _state_root(output_root) / f"pending_{source.lower()}_structured_vfs.json.gz"
 
 
 def _fingerprint_equal(left: dict[str, Any], right: dict[str, Any]) -> bool:
@@ -611,6 +625,11 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
     previous_summary = read_json(args.export_summary, {})
     if not game_root.is_dir() or not output_root.is_dir():
         raise ChangedExportError(f"game/export root missing: game={game_root}, output={output_root}")
+    try:
+        # Only a complete layout-v2 root may be patched in place.
+        ExportLayout(output_root).require()
+    except ExportLayoutError as exc:
+        raise ChangedExportError(str(exc)) from exc
     if not executable.is_file():
         raise ChangedExportError(f"AnimeStudio CLI not found: {executable}")
     previous_game_root = Path(str(previous_summary.get("game_root") or "")).resolve()
@@ -737,8 +756,15 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
             # as it was, because nothing else on disk would record a partial
             # apply.
             journal = PublishJournal()
+            layout = ExportLayout(output_root)
+            layout.begin_write(producer="export_changed_game_data")
             try:
+                effective_layer = _effective_layer(game_root)
                 for source, staged, deleted, _current_rows in prepared:
+                    if source != effective_layer:
+                        # The base layer is scanned only to keep its snapshot
+                        # current; game/ holds the effective view alone.
+                        continue
                     publish_transaction(
                         output_root=output_root,
                         source=source,
@@ -759,7 +785,10 @@ def prepare(args: argparse.Namespace) -> dict[str, Any]:
                 for source in SOURCES:
                     _pending_snapshot_path(output_root, source).unlink(missing_ok=True)
                 journal.roll_back()
+                # The journal restored every file, so the root is whole again.
+                layout.finish_write(producer="export_changed_game_data", rolledBack=True)
                 raise
+            layout.finish_write(producer="export_changed_game_data")
 
     payload = {
         "schemaVersion": SCHEMA_VERSION,
@@ -794,7 +823,7 @@ def finalize(args: argparse.Namespace) -> dict[str, Any]:
         pending = _pending_snapshot_path(output_root, source)
         if not pending.is_file():
             raise ChangedExportError(f"pending local snapshot missing: {pending}")
-    state_root = output_root / LOCAL_STATE_REL
+    state_root = _state_root(output_root)
     with tempfile.TemporaryDirectory(prefix="finalize-", dir=state_root) as raw_backup:
         backup_root = Path(raw_backup)
         replaced: list[tuple[Path, Path | None]] = []
@@ -854,7 +883,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--export-summary", type=Path, default=DEFAULT_EXPORT_SUMMARY)
     parser.add_argument("--audit-ledger", type=Path, default=DEFAULT_AUDIT_LEDGER)
     parser.add_argument("--audit-summary", type=Path, default=DEFAULT_AUDIT_SUMMARY)
-    parser.add_argument("--manifest", type=Path, default=DEFAULT_OUTPUT / LOCAL_STATE_REL / "pending_manifest.json")
+    parser.add_argument("--manifest", type=Path, default=ExportLayout(DEFAULT_OUTPUT).extraction_incremental_dir / "pending_manifest.json")
     parser.add_argument("--report", type=Path, default=DEFAULT_REPORT)
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args(argv)

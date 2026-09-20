@@ -23,6 +23,7 @@ if __package__ in {None, ""}:
     )
 
 from scripts.common import ROOT, native_evidence_required, read_json, rel_path as slash
+from scripts.source_paths import ExportLayout, ExportLayoutError
 from scripts.game_data.extraction.export_full_from_game import (
     DEFAULT_GAME_ROOT,
     DEFAULT_OUTPUT,
@@ -30,16 +31,14 @@ from scripts.game_data.extraction.export_full_from_game import (
     SOURCES,
     animestudio_stage_dir,
     collect_source_sizes,
-    structured_output_dir,
 )
 
 
 DEFAULT_SUMMARY = DEFAULT_REPORTS / "export_full_summary.json"
-REQUIRED_ANIMESTUDIO_DIRS = (
-    ("maps",),
-    ("json_by_type", "TextAsset"),
-    ("json_by_type", "MonoBehaviour"),
-)
+# Published game data every WebUI build needs, and the per-layer metadata
+# that proves it. Unity types are single-tree; asset maps stay per layer.
+REQUIRED_GAME_DIRS = ("Table", "Json")
+REQUIRED_UNITY_TYPES = ("TextAsset", "MonoBehaviour")
 
 
 def ordered_unique(values: list[str] | tuple[str, ...]) -> tuple[str, ...]:
@@ -103,22 +102,26 @@ def output_dir_status(path: Path, *, exact_count: bool = False) -> dict[str, Any
 
 
 def required_output_status(output_root: Path, sources: tuple[str, ...], *, exact_counts: bool = False) -> list[dict[str, Any]]:
+    layout = ExportLayout(output_root)
     rows: list[dict[str, Any]] = []
+    for folder in REQUIRED_GAME_DIRS:
+        rows.append({
+            "source": "game",
+            "kind": f"game/{folder}",
+            **output_dir_status(layout.game / folder, exact_count=exact_counts),
+        })
+    for type_name in REQUIRED_UNITY_TYPES:
+        rows.append({
+            "source": "game",
+            "kind": f"game/Unity/{type_name}",
+            **output_dir_status(layout.unity_type_dir(type_name), exact_count=exact_counts),
+        })
     for source in sources:
         rows.append({
             "source": source,
-            "kind": "structured",
-            **output_dir_status(structured_output_dir(output_root, source), exact_count=exact_counts),
+            "kind": "meta/asset_map",
+            **output_dir_status(animestudio_stage_dir(output_root, source, "maps"), exact_count=exact_counts),
         })
-        for parts in REQUIRED_ANIMESTUDIO_DIRS:
-            path = animestudio_stage_dir(output_root, source, parts[0])
-            for part in parts[1:]:
-                path = path / part
-            rows.append({
-                "source": source,
-                "kind": "animestudio/" + "/".join(parts),
-                **output_dir_status(path, exact_count=exact_counts),
-            })
     return rows
 
 
@@ -259,6 +262,11 @@ def main(argv: list[str] | None = None) -> int:
     summary_output_root = summary.get("output_root") if isinstance(summary, dict) else None
     game_root = (args.game_root or Path(summary_game_root or DEFAULT_GAME_ROOT)).resolve()
     output_root = (args.output or Path(summary_output_root or DEFAULT_OUTPUT)).resolve()
+    try:
+        ExportLayout(output_root).require()
+    except ExportLayoutError as exc:
+        print(f"[verify_export_freshness] {exc}", file=sys.stderr)
+        return 1
     if not game_root.exists():
         # Rebuilding from an existing export_full does not need the client, so
         # only the freshness comparison itself is lost here.

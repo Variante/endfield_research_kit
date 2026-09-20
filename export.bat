@@ -42,7 +42,7 @@ if defined ENDFIELD_GAME_ROOT set "GAME_ROOT_ARG=--game-root "%ENDFIELD_GAME_ROO
 if defined ENDFIELD_EXPORT_ROOT set "EXPORT_ROOT_ARG=--export-root "%ENDFIELD_EXPORT_ROOT%""
 if defined ENDFIELD_EXPORT_ROOT set "EXTRACTION_OUTPUT_ARG=--output "%ENDFIELD_EXPORT_ROOT%""
 if defined ENDFIELD_EXPORT_ROOT (set "CHANGED_OUTPUT_ROOT=%ENDFIELD_EXPORT_ROOT%") else (set "CHANGED_OUTPUT_ROOT=%~dp0export_full")
-set "CHANGED_MANIFEST=%CHANGED_OUTPUT_ROOT%\recovered\AnimeStudio-cli\local_incremental\pending_manifest.json"
+set "CHANGED_MANIFEST=%CHANGED_OUTPUT_ROOT%\meta\extraction\incremental\pending_manifest.json"
 
 rem Answer any help request, and pick the benchmark label, before the benchmark
 rem wrapper re-runs this script.
@@ -215,10 +215,6 @@ if "%CHANGED_ONLY%"=="1" if not "%BUILD_SCOPE%"=="full" (
   echo --changed-only always runs the complete WebUI pipeline and cannot be combined with %SCOPE_FLAG%.
   exit /b 2
 )
-if "%CHANGED_ONLY%"=="1" if /I "%STRUCTURED_DUMP_MODE%"=="debug" (
-  echo --changed-only supports focused or default structured dump mode, not debug.
-  exit /b 2
-)
 if "%EXPORT_FROM_GAME%"=="1" if "%STORY_BUILD%"=="1" if "%ANIMESTUDIO_OBJECT_INDEX%"=="1" (
   echo %EXPORT_ARGS% | findstr /I /C:"--animestudio-object-index" >nul
   if errorlevel 1 set "EXPORT_ARGS=%EXPORT_ARGS% --animestudio-object-index"
@@ -244,7 +240,7 @@ if errorlevel 1 exit /b 2
 rem WebUI export/build pipeline:
 rem - rebuild from existing export_full by default
 rem - export from the installed game only when explicitly requested
-rem - skip raw_vfs, source inventory, structured data, and AnimeStudio by default
+rem - skip source inventory, structured data, and AnimeStudio by default
 rem - build only CN story/reference data by default
 rem - preserve OCR-managed Story sort order under webui\overrides
 rem - optionally rebuild Assets tab indexes and relink/decode CN audio with --with-assets
@@ -382,7 +378,7 @@ echo Missing value for --asset-jobs. Expected a worker count, for example 8.
 exit /b 2
 
 :missing_structured_dump_mode
-echo Missing value for --structured-dump-mode. Expected focused, default, or debug.
+echo Missing value for --structured-dump-mode. Expected focused or default.
 exit /b 2
 
 :validate_asset_mode
@@ -396,9 +392,9 @@ exit /b 2
 :validate_structured_dump_mode
 if /I "%~1"=="focused" exit /b 0
 if /I "%~1"=="default" exit /b 0
-if /I "%~1"=="debug" exit /b 0
 echo Invalid structured dump mode: "%~1"
-echo Expected focused, default, or debug.
+echo Expected focused or default. Raw VFS containers are read in place, never dumped;
+echo for a bounded probe run AnimeStudio.CLI dump --block-type ... into tmp\.
 exit /b 2
 
 :stage
@@ -436,7 +432,7 @@ echo                      combined AnimeStudio Story+asset export instead of
 echo                      two separate passes.
 echo   --focused-assets   Asset scope, narrowest to broadest. Each one implies
 echo   --default-assets   --with-assets. The default scope is --default-assets.
-echo   --debug-assets     --debug-assets also writes AnimeStudio diagnostics.
+echo   --debug-assets     --debug-assets exports every Unity class decoded exactly.
 echo   --game-root PATH   Installed Endfield_Data folder. Defaults to the one
 echo                      in endfield_paths.bat.
 echo   --skip-freshness   Skip the export_full freshness guard for this run.
@@ -491,11 +487,9 @@ echo   export.bat never rewrites it.
 echo   Every run writes a wall-time and RAM benchmark under reports\export.
 echo   --assets-only runs are labelled export_assets there.
 echo   The configured ENDFIELD_EXPORT_ROOT is used by extraction and builders.
-echo   Static world scene chunks need the structured export, so use
-echo   "export.bat --from-game --world-scene-chunk MAP:X:Z" for those.
 echo   With --from-game, any other option is passed to
 echo   scripts\game_data\extraction\export_full_from_game.py. That is where the --animestudio-*
-echo   tuning and --world-scene-chunk MAP:X:Z live; run
+echo   tuning lives; run
 echo   "python -m scripts.game_data.extraction.export_full_from_game --help" to see them.
 echo Companion wrappers:
 echo   export_assets.bat  Thin wrapper for --assets-only.
