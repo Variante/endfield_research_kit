@@ -41,6 +41,7 @@
       definitionRecoveryScope: "Definition files are discovered by pattern from the current DialogId registry and exact hashed DialogTree assets. Per-object filename, line, option, and branch declarations are not required; only typed consumers can attach or order a file.",
       missionSource: "MissionRuntime source",
       sourceCompletePersistent: "complete Persistent override",
+      sourceEffectiveVfsView: "effective VFS view (Persistent over StreamingAssets)",
       sourceStreamingFallback: "StreamingAssets fallback",
       sourceExplicitRoot: "explicit mission root",
       sourceChangedFiles: "changed base files",
@@ -1271,6 +1272,7 @@
       warning: "前置箭头只表示客户端可见的条件关系；下一个同步到客户端的任务状态仍由服务器决定。",
       missionSource: "MissionRuntime 来源",
       sourceCompletePersistent: "完整 Persistent 覆盖",
+      sourceEffectiveVfsView: "生效的 VFS 视图（Persistent 覆盖 StreamingAssets）",
       sourceStreamingFallback: "StreamingAssets 回退",
       sourceExplicitRoot: "显式任务根目录",
       sourceChangedFiles: "已变更基础文件",
@@ -2919,6 +2921,7 @@
     }
     const selectionLabels = {
       complete_persistent_override: t("sourceCompletePersistent"),
+      effective_vfs_view: t("sourceEffectiveVfsView"),
       streaming_assets_fallback: t("sourceStreamingFallback"),
       explicit_mission_root: t("sourceExplicitRoot"),
     };

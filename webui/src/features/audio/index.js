@@ -5682,10 +5682,10 @@
     if (/^(?:https?:|blob:|data:)/i.test(raw) || raw.startsWith("/")) return raw;
     raw = raw.replace(/^\.\//, "").replace(/^\/+/, "");
     if (raw.startsWith("export_full/")) return `/${raw}`;
-    if (raw.startsWith("structured/Audio/")) return `/export_full/${raw}`;
+    if (raw.startsWith("game/Audio/")) return `/export_full/${raw}`;
     const root = normalize(candidate?.storageRoot ?? parent?.storageRoot ?? candidate?.audioScope ?? parent?.audioScope);
-    if (root === "shared") return `/export_full/structured/Audio/shared/${encodePath(raw)}`;
-    return `/export_full/structured/Audio/${encodeURIComponent(state.language)}/${encodePath(raw)}`;
+    if (root === "shared") return `/export_full/game/Audio/shared/${encodePath(raw)}`;
+    return `/export_full/game/Audio/${encodeURIComponent(state.language)}/${encodePath(raw)}`;
   }
 
   function encodePath(path) {

@@ -5,7 +5,8 @@ Usage:
     python serve.py 9000   # custom port
 
 Serves the `webui` app at `/`, raw current exported assets at
-`/export_full/...`, raw StreamingAssets/Data and Persistent/Data files at `/export_data/...`, and
+`/export_full/...` (the export root: game/ and meta/), final game files from the
+export's game/ tree at `/export_data/...`, and
 saved previous-export assets at `/export_previous/...`.
 """
 from __future__ import annotations
@@ -60,7 +61,8 @@ def resolve_export_full_root() -> Path:
 
 
 EXPORT_FULL_ROOT = resolve_export_full_root()
-DEFAULT_DATA_EXPORT_ROOT = EXPORT_FULL_ROOT / "structured" / "StreamingAssets" / "Data"
+# The export's game/ tree: Table/, Json/, Video/, Audio/, Unity/ (layout v2).
+DEFAULT_DATA_EXPORT_ROOT = EXPORT_FULL_ROOT / "game"
 
 
 def resolve_data_export_root() -> Path:
@@ -299,14 +301,7 @@ class Handler(http.server.SimpleHTTPRequestHandler):
             request_path = "/" + request_path.removeprefix("/export_full").lstrip("/")
         elif export_data:
             request_path = "/" + request_path.removeprefix("/export_data").lstrip("/")
-            first_segment = request_path.strip("/").split("/", 1)[0]
-            if (
-                first_segment in {"StreamingAssets", "Persistent"}
-                and (EXPORT_FULL_ROOT / "structured" / first_segment / "Data").exists()
-            ):
-                root = EXPORT_FULL_ROOT / "structured"
-            else:
-                root = DATA_EXPORT_ROOT
+            root = DATA_EXPORT_ROOT
         elif export_previous:
             # The Updates feed can be rebuilt while this server is running.
             # Resolve its previous-export root for every request so links do
@@ -316,9 +311,16 @@ class Handler(http.server.SimpleHTTPRequestHandler):
 
         if not export_full and not export_previous and not export_data and request_path in ("", "/"):
             request_path = "/index.html"
-
         self.directory = str(root)
-        return super().translate_path(request_path)
+        translated = super().translate_path(request_path)
+        # Builder intermediates are not page files; never serve them. Checked
+        # on the decoded, normalized filesystem path, so percent-encoding
+        # (/data/%5fbuild) and case variants cannot reach them.
+        build_dir = os.path.normcase(os.path.abspath(WEBUI_ROOT / "data" / "_build"))
+        candidate = os.path.normcase(os.path.abspath(translated))
+        if candidate == build_dir or candidate.startswith(build_dir + os.sep):
+            return os.path.join(str(WEBUI_ROOT), "__build_output_not_served__")
+        return translated
 
     def log_message(self, fmt, *args):
         # Quiet down access logs (keep errors).

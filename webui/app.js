@@ -2660,8 +2660,7 @@ function scoreWikiVideoAsset(asset, deviceType = "") {
     }
   }
   if (isBrowserPlayableVideo(rel)) score += 40;
-  if (relLower.startsWith("streamingassets-structured/") || relLower.startsWith("persistent-structured/")) score += 10;
-  else if (relLower.startsWith("raw_vfs/")) score += 1;
+  if (relLower.startsWith("game/")) score += 10;
   return score;
 }
 
@@ -3096,9 +3095,7 @@ function scoreNarrativeVideoRef(ref) {
   if (format === "mp4") score += 100;
   else if (format === "webm" || format === "ogv") score += 80;
   else if (format === "usm") score += 10;
-  if (source === "StreamingAssets-structured") score += 60;
-  else if (source === "Persistent-structured") score += 50;
-  else if (source === "raw_vfs") score += 5;
+  if (source === "Game") score += 60;
   if (gender === activeGender) score += 90;
   else if (!gender) score += 60;
   return score;
@@ -9585,7 +9582,7 @@ function resolveAudioSource(value) {
   if (/^(?:https?:|blob:|data:)/i.test(raw) || raw.startsWith("/")) return raw;
   const normalized = raw.replace(/^\.\//, "").replace(/^\/+/, "");
   if (normalized.startsWith("export_full/")) return `/${normalized}`;
-  if (normalized.startsWith("structured/Audio/")) return `/export_full/${normalized}`;
+  if (normalized.startsWith("game/Audio/")) return `/export_full/${normalized}`;
   return raw;
 }
 

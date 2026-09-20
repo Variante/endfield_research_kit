@@ -3119,14 +3119,9 @@
   }
 
   const INTEGRATION_ASSET_SOURCE_ROOTS = Object.freeze({
-    StreamingAssets: "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type",
-    "StreamingAssets-maps": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps",
-    "StreamingAssets-structured": "export_full/structured/StreamingAssets",
-    Persistent: "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type",
-    "Persistent-maps": "export_full/recovered/AnimeStudio-cli/Persistent/maps",
-    "Persistent-structured": "export_full/structured/Persistent",
-    "StreamingAssets-materials": "export_full/recovered/AnimeStudio-cli/StreamingAssets/json_by_type",
-    "Persistent-materials": "export_full/recovered/AnimeStudio-cli/Persistent/json_by_type",
+    Unity: "export_full/game/Unity",
+    Game: "export_full/game",
+    Audio: "export_full/game/Audio",
   });
 
   function integrationPath(kind, language) {

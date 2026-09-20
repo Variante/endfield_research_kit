@@ -104,16 +104,12 @@
     return IMAGE_EXTENSIONS.has(name.slice(dotIdx).toLowerCase());
   }
   // Same fallback used by the Updates feature: the full sourceRoots map lives
-  // in the ~150MB assets/index.json, so this mirrors its convert_by_type
-  // layout instead of loading that file just to preview a thumbnail.
+  // in the ~150MB assets/index.json, so this mirrors its source labels
+  // instead of loading that file just to preview a thumbnail.
   const ASSET_SOURCE_ROOTS = {
-    StreamingAssets: "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type",
-    "StreamingAssets-maps": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps",
-    "StreamingAssets-structured": "export_full/structured/StreamingAssets",
-    Persistent: "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type",
-    "Persistent-maps": "export_full/recovered/AnimeStudio-cli/Persistent/maps",
-    "Persistent-structured": "export_full/structured/Persistent",
-    Audio: "export_full/structured/Audio",
+    Unity: "export_full/game/Unity",
+    Game: "export_full/game",
+    Audio: "export_full/game/Audio",
   };
   function assetImageHref(rel) {
     const exportFullHref = window.WebUI?.exportFullHref;

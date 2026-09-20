@@ -672,13 +672,9 @@
 
   function fallbackAssetSourceRoots() {
     return {
-      StreamingAssets: "export_full/recovered/AnimeStudio-cli/StreamingAssets/convert_by_type",
-      "StreamingAssets-maps": "export_full/recovered/AnimeStudio-cli/StreamingAssets/maps",
-      "StreamingAssets-structured": "export_full/structured/StreamingAssets",
-      Persistent: "export_full/recovered/AnimeStudio-cli/Persistent/convert_by_type",
-      "Persistent-maps": "export_full/recovered/AnimeStudio-cli/Persistent/maps",
-      "Persistent-structured": "export_full/structured/Persistent",
-      Audio: "export_full/structured/Audio",
+      Unity: "export_full/game/Unity",
+      Game: "export_full/game",
+      Audio: "export_full/game/Audio",
     };
   }
 
@@ -697,9 +693,11 @@
   }
 
   function defaultExportSourceRoot(source) {
-    if (String(source || "").toLowerCase() === "audio") return "structured/Audio";
-    const match = String(source || "").match(/^(.+)-structured$/i);
-    return match ? `structured/${match[1]}` : "";
+    const key = String(source || "").toLowerCase();
+    if (key === "audio") return "game/Audio";
+    if (key === "unity") return "game/Unity";
+    if (key === "game") return "game";
+    return "";
   }
 
   function exportRouteHref(rel, sourceRoots = {}, exportRoot = "", routeRoot = "export_full") {

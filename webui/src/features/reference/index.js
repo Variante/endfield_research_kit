@@ -64,9 +64,9 @@
   const ROW_RENDER_LIMIT = Infinity;
   const FILTER_PANEL_STORAGE_KEY = "reference_browser_filters_collapsed";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
+  // The export keeps one effective table set under game/Table (layout v2).
   const RAW_EXPORT_SOURCE_ROOTS = {
-    streaming: "StreamingAssets",
-    persistent: "Persistent",
+    game: "game",
   };
   const {
     $,
@@ -139,9 +139,8 @@
     return dataPath(`reference/${relativePath}`, currentLanguage());
   }
 
-  function referenceSourceKey(value) {
-    const raw = String(value || "").trim().toLowerCase();
-    return raw.includes("persistent") ? "persistent" : "streaming";
+  function referenceSourceKey() {
+    return "game";
   }
 
   function exportFullPath(parts) {
@@ -151,7 +150,7 @@
   function exportTablePath(sourceKey, tableName) {
     const root = RAW_EXPORT_SOURCE_ROOTS[referenceSourceKey(sourceKey)];
     const name = String(tableName || "").trim();
-    return root && name ? exportFullPath(["structured", root, "Table", name]) : "";
+    return root && name ? exportFullPath([root, "Table", name]) : "";
   }
 
   function rawDisplayPath(path) {

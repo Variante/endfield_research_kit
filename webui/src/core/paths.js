@@ -15,16 +15,22 @@
     return split ? split.base : "";
   }
 
+  // Asset references are "<label>/<path>" (layout v2): Unity is the decoded
+  // Unity tree, whose files carry a _p<PathID> suffix; Game is the export's
+  // game/ tree of final VFS files.
+  const DEFAULT_SOURCE_ROOTS = Object.freeze({
+    Unity: "game/Unity",
+    Game: "game",
+    Audio: "game/Audio",
+  });
+
   function relRequiresPathIdExportName(relPath) {
     const source = normalizeRelPath(relPath).split("/")[0] || "";
-    if (!source || /-structured$/i.test(source) || source.toLowerCase() === "raw_vfs") return false;
-    return ["streamingassets", "persistent"].includes(source.split("-")[0].toLowerCase());
+    return source.toLowerCase() === "unity";
   }
 
   function defaultSourceRoot(source) {
-    const match = String(source || "").match(/^(.+)-structured$/i);
-    if (!match) return "";
-    return `structured/${match[1]}`;
+    return DEFAULT_SOURCE_ROOTS[String(source || "")] || "";
   }
 
   function exportFullHref(relPath, sourceRoots = {}, exportRoot = "export_full") {
