@@ -12,14 +12,20 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from scripts.repo_paths import REPO_ROOT
-from scripts.source_paths import _resolve_structured_source_dir
+from scripts.source_paths import ExportLayout, ExportLayoutError
 
 ROOT = REPO_ROOT
-EXPORT_ROOT = Path(os.environ.get("ENDFIELD_EXPORT_ROOT") or ROOT / "export_full")
-STREAMING_ASSETS_DIR = _resolve_structured_source_dir(EXPORT_ROOT, "StreamingAssets")
-PERSISTENT_ASSETS_DIR = _resolve_structured_source_dir(EXPORT_ROOT, "Persistent")
-DATA_JSON_DIR = STREAMING_ASSETS_DIR / "Data" / "Json"
+# The configured export root (layout v2, see scripts/source_paths.py). Build
+# every path into it from EXPORT_LAYOUT; do not join its segments by hand.
+EXPORT_LAYOUT = ExportLayout.configured()
+EXPORT_ROOT = EXPORT_LAYOUT.root
+GAME_DIR = EXPORT_LAYOUT.game
+TABLE_DIR = EXPORT_LAYOUT.table_dir
+DATA_JSON_DIR = EXPORT_LAYOUT.json_dir
 OUT_DIR = ROOT / "webui" / "data"
+# Builder output that is not itself a page file: evidence indexes, caches, and
+# comparison inputs. Served and packaged builds exclude it.
+WEBUI_BUILD_DIR = OUT_DIR / "_build"
 LANG_DIR = OUT_DIR / "lang"
 ASSET_DIR = OUT_DIR / "assets"
 REPORTS_DIR = ROOT / "reports"
@@ -30,7 +36,7 @@ STORY_OPTION_REPORTS_DIR = STORY_RECOVERY_REPORTS_DIR / "options"
 UPDATES_REPORTS_DIR = REPORTS_DIR / "updates"
 ASSET_REPORTS_DIR = REPORTS_DIR / "assets"
 PATH_ID_EXPORT_STEM_RE = re.compile(r"^(?P<base>.+)_p(?P<path_id>[0-9A-Fa-f]{16})$")
-PATH_ID_EXPORT_SOURCE_FAMILIES = frozenset({"streamingassets", "persistent"})
+PATH_ID_EXPORT_SOURCE_FAMILIES = frozenset({"unity"})
 
 
 @lru_cache(maxsize=128)
@@ -183,10 +189,35 @@ def rel_requires_path_id_export_name(rel: str | Path) -> bool:
     source = normalized.split("/", 1)[0]
     if not source:
         return False
-    if source.lower().endswith("-structured") or source.lower() == "raw_vfs":
+    if source.lower() == "game":
         return False
     source_family = source.split("-", 1)[0].lower()
     return source_family in PATH_ID_EXPORT_SOURCE_FAMILIES
+
+
+def require_export_layout(export_root: Path | None = None) -> None:
+    """Refuse to build from a root that is missing, layout-v1, or mid-write."""
+    try:
+        ExportLayout(Path(export_root) if export_root is not None else EXPORT_ROOT).require()
+    except ExportLayoutError as exc:
+        raise SystemExit(f"export root not usable: {exc}") from exc
+
+
+def unity_asset_rel(value: str | Path) -> str:
+    """The ``Unity/<Type>/<file>`` asset reference for a path under game/Unity.
+
+    Accepts an absolute path, an export-root-relative path, or a URL path; any
+    other location returns "" so callers never guess a reference.
+    """
+    text = normalize_posix(str(value or ""))
+    marker = "/game/Unity/"
+    if text.startswith("game/Unity/"):
+        tail = text[len("game/Unity/"):]
+    elif marker in text:
+        tail = text.split(marker, 1)[1]
+    else:
+        return ""
+    return f"Unity/{tail}" if "/" in tail else ""
 
 
 def display_extension(value: str) -> str:
@@ -771,14 +802,7 @@ def guide_runtime_non_mission_content_keys(
         )
         source_fingerprint = source_row.get("sourceFingerprint")
         export_fingerprint = source_sizes.get(source)
-        summary_path = (
-            Path(output_root)
-            / "recovered"
-            / "AnimeStudio-cli"
-            / source
-            / "object_index"
-            / "summary.json"
-        )
+        summary_path = ExportLayout(Path(output_root)).object_index_dir(source) / "summary.json"
         current_summary = read_json(summary_path, {})
         current_stage = current_summary.get("stageSignature")
         if (
