@@ -32,6 +32,11 @@
       objPreviewUnavailable: "\u65e0\u6cd5\u9884\u89c8\u6b64 OBJ \u6587\u4ef6\u3002",
       objPreviewReady: "{vertices} \u9876\u70b9 / {faces} \u9762",
       visualDiff: "\u5dee\u5f02\u9ad8\u4eae",
+      audioDiff: "\u97f3\u9891\u6ce2\u5f62\u5dee\u5f02",
+      audioDiffOld: "\u65e7\u7248\u672c\u6ce2\u5f62",
+      audioDiffNew: "\u65b0\u7248\u672c\u6ce2\u5f62",
+      audioDiffDelta: "\u632f\u5e45\u5305\u7edc\u5dee\u5f02",
+      audioDiffSummary: "{oldDuration} \u2192 {newDuration} \u00b7 \u5e73\u5747\u5305\u7edc\u5dee\u5f02 {percent}",
       diffLoading: "\u6b63\u5728\u751f\u6210\u5dee\u5f02\u9884\u89c8...",
       diffUnavailable: "\u65e0\u6cd5\u751f\u6210\u5dee\u5f02\u9884\u89c8\u3002",
       diffChanged: "\u7ea6 {percent} \u50cf\u7d20\u53d8\u5316",
@@ -42,13 +47,21 @@
       sameHashFiles: "\u76f8\u540c\u54c8\u5e0c\u6587\u4ef6",
       diffTruncated: "\u5dee\u5f02\u8fc7\u957f\uff0c\u5df2\u622a\u65ad\u663e\u793a\u3002",
       status: "\u72b6\u6001",
+      changeKind: "\u53d8\u5316\u7c7b\u578b",
+      relocated: "\u8def\u5f84\u53d8\u66f4",
+      relocationMatch: "\u8bc6\u522b\u4f9d\u636e",
+      relocationUnityPathId: "\u7a33\u5b9a\u540d\u79f0\uff08\u5ffd\u7565\u5bfc\u51fa PathID\uff09",
+      relocationExactContentAndName: "\u6587\u4ef6\u540d\u4e0e\u5185\u5bb9\u5b8c\u5168\u4e00\u81f4",
+      relocationUniqueExactContent: "\u552f\u4e00\u5b8c\u5168\u76f8\u540c\u5185\u5bb9",
+      relocationFlacPcmAndName: "\u6587\u4ef6\u540d\u4e0e FLAC \u89e3\u7801\u97f3\u9891\u4e00\u81f4",
+      relocationUniqueFlacPcm: "\u552f\u4e00 FLAC \u89e3\u7801\u97f3\u9891\u4e00\u81f4",
       category: "\u5206\u7c7b",
       extension: "\u6269\u5c55\u540d",
       sort: "\u6392\u5e8f",
       all: "\u5168\u90e8",
       sortPath: "\u8def\u5f84 (A-Z)",
       sortStatus: "\u72b6\u6001",
-      sortSizeDelta: "\u5927\u5c0f\u53d8\u5316",
+      sortSize: "\u6587\u4ef6\u5927\u5c0f / \u53d8\u5316\u91cf",
       sortLineDelta: "\u884c\u6570\u53d8\u5316",
       listUnit: "\u6761",
       added: "\u65b0\u589e",
@@ -102,6 +115,11 @@
       objPreviewUnavailable: "Unable to preview this OBJ file.",
       objPreviewReady: "{vertices} vertices / {faces} faces",
       visualDiff: "Diff highlight",
+      audioDiff: "Audio waveform diff",
+      audioDiffOld: "Old waveform",
+      audioDiffNew: "New waveform",
+      audioDiffDelta: "Amplitude-envelope difference",
+      audioDiffSummary: "{oldDuration} \u2192 {newDuration} \u00b7 average envelope delta {percent}",
       diffLoading: "Building diff preview...",
       diffUnavailable: "Unable to build diff preview.",
       diffChanged: "About {percent} pixels changed",
@@ -110,13 +128,21 @@
       sameHashFiles: "Same-hash files",
       diffTruncated: "Diff is long, so only the first lines are shown.",
       status: "Status",
+      changeKind: "Change kind",
+      relocated: "Relocated",
+      relocationMatch: "Match basis",
+      relocationUnityPathId: "Stable name (export PathID ignored)",
+      relocationExactContentAndName: "Exact name and content",
+      relocationUniqueExactContent: "Unique exact content",
+      relocationFlacPcmAndName: "Same name and decoded FLAC audio",
+      relocationUniqueFlacPcm: "Unique decoded FLAC audio",
       category: "Category",
       extension: "Ext",
       sort: "Sort",
       all: "All",
       sortPath: "Path (A-Z)",
       sortStatus: "Status",
-      sortSizeDelta: "Size delta",
+      sortSize: "File size / delta",
       sortLineDelta: "Line delta",
       listUnit: "items",
       added: "Added",
@@ -218,6 +244,18 @@
     return updateText(String(status || ""));
   }
 
+  function relocationMatchLabel(method) {
+    const labels = {
+      unity_path_id: "relocationUnityPathId",
+      exact_content_and_name: "relocationExactContentAndName",
+      unique_exact_content: "relocationUniqueExactContent",
+      flac_pcm_and_name: "relocationFlacPcmAndName",
+      unique_flac_pcm: "relocationUniqueFlacPcm",
+    };
+    const value = String(method || "");
+    return labels[value] ? updateText(labels[value]) : value.replace(/_/g, " ");
+  }
+
   function categoryLabel(category) {
     const value = String(category || "other");
     if (value === "asset_image") return `${updateText("exportedAsset")} / image`;
@@ -291,6 +329,8 @@
       entry.new_asset_rel,
       entry.old_asset_export_rel,
       entry.new_asset_export_rel,
+      entry.change_kind,
+      entry.relocation_match,
       normalizeExtension(entry.extension),
     ].join(" ").toLowerCase();
   }
@@ -362,13 +402,19 @@
     return true;
   }
 
+  function entrySizeMagnitude(entry) {
+    if (entry.status === "added") return Math.abs(Number(entry.new_size || 0));
+    if (entry.status === "deleted") return Math.abs(Number(entry.old_size || 0));
+    return Math.abs(Number(entry.size_delta || 0));
+  }
+
   function compareEntries(a, b) {
     const mode = sortMode();
     if (mode === "status") {
       const statusDiff = (STATUS_ORDER[a.status] ?? 99) - (STATUS_ORDER[b.status] ?? 99);
       if (statusDiff) return statusDiff;
     } else if (mode === "size-delta") {
-      const diff = Math.abs(Number(b.size_delta || 0)) - Math.abs(Number(a.size_delta || 0));
+      const diff = entrySizeMagnitude(b) - entrySizeMagnitude(a);
       if (diff) return diff;
     } else if (mode === "line-delta") {
       const diff = Math.abs(Number(b.line_delta || 0)) - Math.abs(Number(a.line_delta || 0));
@@ -389,7 +435,7 @@
       ["#updates-sort-label", "sort"],
       ["#updates-sort-path", "sortPath"],
       ["#updates-sort-status", "sortStatus"],
-      ["#updates-sort-size-delta", "sortSizeDelta"],
+      ["#updates-sort-size-delta", "sortSize"],
       ["#updates-sort-line-delta", "sortLineDelta"],
       ["#updates-list-meta-label", "listUnit"],
       ["#updates-summary-total-label", "total"],
@@ -905,7 +951,7 @@
     const items = assetMediaItems(entry);
     if (!entry || entry.status !== "modified" || items.length < 2) return [];
     const kind = String(entry.asset_kind || "");
-    if (kind !== "image" && kind !== "video") return [];
+    if (kind !== "image" && kind !== "video" && kind !== "audio") return [];
     const oldItem = items.find((item) => item.label === updateText("previousAsset")) || items[0];
     const newItem = items.find((item) => item.label === updateText("currentAsset")) || items[1];
     if (!oldItem || !newItem || !oldItem.href || !newItem.href) return [];
@@ -916,6 +962,22 @@
     const [oldItem, newItem] = diffMediaItems(entry);
     if (!oldItem || !newItem) return "";
     const kind = String(entry.asset_kind || "");
+    if (kind === "audio") {
+      return (
+        `<section class="updates-detail-panel updates-media-diff updates-audio-diff">` +
+          `<h2>${escapeHtml(updateText("audioDiff"))}</h2>` +
+          `<div class="updates-audio-diff-stage">` +
+            `<canvas class="updates-audio-diff-canvas" data-old-src="${escapeHtml(oldItem.href)}" data-new-src="${escapeHtml(newItem.href)}" role="img" aria-label="${escapeHtml(updateText("audioDiff"))}"></canvas>` +
+          `</div>` +
+          `<div class="updates-audio-diff-legend" aria-hidden="true">` +
+            `<span class="is-old">${escapeHtml(updateText("audioDiffOld"))}</span>` +
+            `<span class="is-new">${escapeHtml(updateText("audioDiffNew"))}</span>` +
+            `<span class="is-delta">${escapeHtml(updateText("audioDiffDelta"))}</span>` +
+          `</div>` +
+          `<div class="updates-detail-note updates-media-diff-note">${escapeHtml(updateText("diffLoading"))}</div>` +
+        `</section>`
+      );
+    }
     const canvasAttrs = [
       `class="updates-media-diff-canvas"`,
       `data-diff-kind="${escapeHtml(kind)}"`,
@@ -1030,6 +1092,155 @@
     });
   }
 
+  function formatAudioDiffDuration(value) {
+    const seconds = Number(value);
+    if (!Number.isFinite(seconds) || seconds < 0) return "--:--";
+    const minutes = Math.floor(seconds / 60);
+    return `${minutes}:${(seconds % 60).toFixed(1).padStart(4, "0")}`;
+  }
+
+  async function decodeUpdateAudio(context, src) {
+    const response = await fetch(src);
+    if (!response.ok) throw new Error(`audio fetch failed: ${response.status}`);
+    const bytes = await response.arrayBuffer();
+    return new Promise((resolve, reject) => {
+      const result = context.decodeAudioData(bytes.slice(0), resolve, reject);
+      if (result && typeof result.then === "function") result.then(resolve, reject);
+    });
+  }
+
+  function audioEnvelope(buffer, bins, comparisonDuration) {
+    const rms = new Float32Array(bins);
+    const peak = new Float32Array(bins);
+    const sampleRate = Number(buffer.sampleRate) || 1;
+    const channels = Math.max(1, Number(buffer.numberOfChannels) || 1);
+    const globalStep = Math.max(1, Math.ceil((Number(buffer.length) || 0) / 1400000));
+    for (let bin = 0; bin < bins; bin++) {
+      const start = Math.max(0, Math.floor(bin / bins * comparisonDuration * sampleRate));
+      const end = Math.min(buffer.length, Math.ceil((bin + 1) / bins * comparisonDuration * sampleRate));
+      if (start >= end) continue;
+      let sumSquares = 0;
+      let sampleCount = 0;
+      let maxValue = 0;
+      for (let channel = 0; channel < channels; channel++) {
+        const samples = buffer.getChannelData(channel);
+        for (let index = start; index < end; index += globalStep) {
+          const value = Math.abs(samples[index] || 0);
+          sumSquares += value * value;
+          sampleCount += 1;
+          if (value > maxValue) maxValue = value;
+        }
+      }
+      rms[bin] = sampleCount ? Math.sqrt(sumSquares / sampleCount) : 0;
+      peak[bin] = maxValue;
+    }
+    return { rms, peak };
+  }
+
+  function drawAudioEnvelopeLane(ctx, values, centerY, laneHeight, width, color) {
+    const halfHeight = laneHeight / 2;
+    const step = width / Math.max(1, values.length - 1);
+    ctx.beginPath();
+    ctx.moveTo(0, centerY);
+    for (let index = 0; index < values.length; index++) {
+      ctx.lineTo(index * step, centerY - values[index] * halfHeight);
+    }
+    for (let index = values.length - 1; index >= 0; index--) {
+      ctx.lineTo(index * step, centerY + values[index] * halfHeight);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+  }
+
+  function drawAudioDiff(canvas, oldBuffer, newBuffer) {
+    const cssWidth = Math.max(320, Math.round(canvas.clientWidth || 900));
+    const cssHeight = 276;
+    const dpr = Math.min(2, window.devicePixelRatio || 1);
+    canvas.width = Math.round(cssWidth * dpr);
+    canvas.height = Math.round(cssHeight * dpr);
+    canvas.style.aspectRatio = `${cssWidth} / ${cssHeight}`;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.scale(dpr, dpr);
+
+    const bins = Math.max(180, Math.min(900, Math.floor(cssWidth * 0.9)));
+    const duration = Math.max(Number(oldBuffer.duration) || 0, Number(newBuffer.duration) || 0, 0.001);
+    const oldEnvelope = audioEnvelope(oldBuffer, bins, duration);
+    const newEnvelope = audioEnvelope(newBuffer, bins, duration);
+    let sharedPeak = 0;
+    for (const value of oldEnvelope.peak) sharedPeak = Math.max(sharedPeak, value);
+    for (const value of newEnvelope.peak) sharedPeak = Math.max(sharedPeak, value);
+    sharedPeak = sharedPeak || 1;
+    const oldValues = new Float32Array(bins);
+    const newValues = new Float32Array(bins);
+    const deltaValues = new Float32Array(bins);
+    let deltaTotal = 0;
+    for (let index = 0; index < bins; index++) {
+      oldValues[index] = oldEnvelope.rms[index] / sharedPeak;
+      newValues[index] = newEnvelope.rms[index] / sharedPeak;
+      deltaValues[index] = Math.abs(oldEnvelope.rms[index] - newEnvelope.rms[index]) / sharedPeak;
+      deltaTotal += deltaValues[index];
+    }
+
+    const styles = window.getComputedStyle(canvas);
+    const fgRgb = styles.getPropertyValue("--fg-rgb").trim() || "48, 56, 65";
+    const accentRgb = styles.getPropertyValue("--accent-rgb").trim() || "255, 87, 34";
+    ctx.clearRect(0, 0, cssWidth, cssHeight);
+    ctx.strokeStyle = `rgba(${fgRgb}, 0.12)`;
+    ctx.lineWidth = 1;
+    for (let index = 0; index <= 4; index++) {
+      const x = Math.round(index / 4 * cssWidth) + 0.5;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, cssHeight);
+      ctx.stroke();
+    }
+    for (const y of [46, 138, 230]) {
+      ctx.beginPath();
+      ctx.moveTo(0, y + 0.5);
+      ctx.lineTo(cssWidth, y + 0.5);
+      ctx.stroke();
+    }
+    drawAudioEnvelopeLane(ctx, oldValues, 46, 70, cssWidth, "rgba(207, 92, 84, 0.72)");
+    drawAudioEnvelopeLane(ctx, newValues, 138, 70, cssWidth, "rgba(42, 164, 139, 0.72)");
+    drawAudioEnvelopeLane(ctx, deltaValues, 230, 70, cssWidth, `rgba(${accentRgb}, 0.82)`);
+
+    return {
+      oldDuration: oldBuffer.duration,
+      newDuration: newBuffer.duration,
+      percent: deltaTotal / bins * 100,
+    };
+  }
+
+  async function initAudioDiff(section, canvas) {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) {
+      setDiffNote(section, updateText("diffUnavailable"), true);
+      return;
+    }
+    const context = new Ctx();
+    try {
+      const [oldBuffer, newBuffer] = await Promise.all([
+        decodeUpdateAudio(context, canvas.dataset.oldSrc || ""),
+        decodeUpdateAudio(context, canvas.dataset.newSrc || ""),
+      ]);
+      if (!canvas.isConnected) return;
+      const result = drawAudioDiff(canvas, oldBuffer, newBuffer);
+      if (!result) throw new Error("audio diff canvas unavailable");
+      const percent = result.percent >= 0.1 ? result.percent.toFixed(1) : result.percent.toFixed(2);
+      setDiffNote(section, updateText("audioDiffSummary", {
+        oldDuration: formatAudioDiffDuration(result.oldDuration),
+        newDuration: formatAudioDiffDuration(result.newDuration),
+        percent: `${percent}%`,
+      }));
+    } catch (error) {
+      setDiffNote(section, updateText("diffUnavailable"), true);
+    } finally {
+      context.close().catch(() => {});
+    }
+  }
+
   async function initImageDiff(section, canvas) {
     try {
       const [oldImg, newImg] = await Promise.all([
@@ -1112,6 +1323,12 @@
       canvas.dataset.diffInitialized = "1";
       if (canvas.dataset.diffKind === "image") initImageDiff(section, canvas);
       else if (canvas.dataset.diffKind === "video") initVideoDiff(section, canvas);
+    });
+    root.querySelectorAll(".updates-audio-diff-canvas").forEach((canvas) => {
+      const section = canvas.closest(".updates-media-diff");
+      if (canvas.dataset.diffInitialized === "1") return;
+      canvas.dataset.diffInitialized = "1";
+      initAudioDiff(section, canvas);
     });
   }
 
@@ -1439,6 +1656,8 @@
       factRow(updateText("path"), entry.path, { mono: true }),
       factRow(updateText("domain"), domainLabel(entry)),
       factRow(updateText("status"), statusLabel(entry.status)),
+      factRow(updateText("changeKind"), entry.change_kind === "relocated" ? updateText("relocated") : entry.change_kind),
+      factRow(updateText("relocationMatch"), relocationMatchLabel(entry.relocation_match)),
       factRow(updateText("category"), categoryLabel(entry.category)),
       factRow(updateText("assetKind"), entry.asset_kind),
       factRow(updateText("assetPath"), entry.asset_rel, { mono: true }),

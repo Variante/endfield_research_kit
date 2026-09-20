@@ -491,10 +491,33 @@ Updates displays the comparison of two complete export roots: WebUI-facing
 exported text plus image, model, video, and decoded audio assets, never a
 change under `webui/`, `reports/`, `memory/`, or `scratch/`.
 
+Selecting a modified media asset shows the old and new previews. Images and
+videos add a visual-difference highlight; decoded audio adds a client-side
+three-lane waveform view for the old envelope, new envelope, and their
+amplitude difference. The waveform uses the longer file as the shared timeline
+and does not require extra data in the Updates feed.
+
+When the builder proves that an exported-file relocation kept the same bytes
+or decoded FLAC PCM, it omits the path-only change from Updates. A stable Unity
+identity whose bytes also changed remains one `modified` item; its details show
+both paths and the PathID-independent match basis. For repeated decoded audio,
+exact size/duration/content plus an unchanged parent folder can disambiguate
+parallel category and `unknown` copies; multiple candidates within that folder
+remain separate additions and deletions.
+
+Obsolete numeric copies of authored AudioDialog voice are omitted when the
+builder proves the current authored path by its exact external-source hash,
+finds one surviving canonical voice file, and verifies identical bytes. This
+prevents duplicate-cleanup paths from appearing as deleted Story audio; any
+ambiguous basename or mismatched content remains visible.
+
 Controls: search plus filter sections `basic`, `category`, `extension`,
-`status`, and `sort` (path, status, size delta, line delta), the
+`status`, and `sort` (path, status, file size/change, line delta), the
 added/modified/deleted summary counts, the run metadata line, and an explicit
-truncation note.
+truncation note. File-size sorting uses current size for additions, previous
+size for deletions, and absolute size delta for modifications. Added, modified,
+and deleted status pills and status-filter chips use the same shared green,
+gold, and red semantic palette as Character update badges.
 
 ```bat
 .\build_updates.bat OLD NEW

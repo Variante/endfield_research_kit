@@ -33,6 +33,7 @@ from scripts.common import WEBUI_BUILD_DIR
 
 from scripts.common import resolve_installed_game_data_root, sha256_file as file_sha256
 from scripts.webui.audio.semantics.identifiers import (
+    audio_dialog_external_media_id,
     audio_hash_generator_compute,
     collect_metadata_audio_literals,
     hashed_event_key,
@@ -1108,17 +1109,6 @@ def audio_rel_for_dialog_path(dialog_path: str, extension: str) -> str:
     return canonical_audio_rel(
         normalize_posix(Path("voice") / strip_voice_batch_prefix(path.lower()))
     )
-
-
-def audio_dialog_external_media_id(dialog_path: str, dumper_language: str) -> int:
-    """Return the AKPK externals-sector id for an authored voice path."""
-
-    value = f"voice/{dumper_language}/{dialog_path}".replace("\\", "/").lower()
-    result = 0xCBF29CE484222325
-    for byte in value.encode("utf-8"):
-        result = (result * 0x100000001B3) & 0xFFFFFFFFFFFFFFFF
-        result ^= byte
-    return result
 
 
 def storage_root_for_block(block: str, language: str) -> str:

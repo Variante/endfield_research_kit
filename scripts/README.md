@@ -694,6 +694,29 @@ The default scan covers WebUI-facing exported text plus image, model, video,
 and decoded audio assets. `--text-only` omits all assets, `--no-audio` keeps
 other assets, `--exact` hashes contents, and `--full-export-scan` is for broad
 audits only.
+
+Asset identity normally follows the exported relative path. For unmatched
+add/delete pairs, the builder also recognizes one-to-one Unity exports whose
+stable name differs only by the generated `_p<PathID>` suffix, and decoded
+audio whose bytes match exactly. A second FLAC-only lane compares the decoded
+PCM identity from STREAMINFO, so metadata or encoder changes can still be
+recognized without an external decoder. Exact-byte hashing is limited to
+equal-size unmatched candidates, while STREAMINFO supplies exact duration and
+format. A shared filename is preferred; duplicate-content buckets may then pair
+one-to-one inside the same unchanged parent folder, otherwise each byte or PCM
+identity must be unique. Recognized relocations publish as no update when their
+effective content is unchanged. A stable Unity identity whose bytes also
+changed publishes as `modified` with both paths and its match basis. Multiple
+candidates inside one folder remain separate `added` and `deleted` entries
+rather than being guessed.
+
+The same reconciliation pass filters obsolete numeric AudioDialog copies when
+the numeric filename is the exact 64-bit external-source hash of one current
+authored dialog path, that dialog basename resolves to one canonical voice
+asset, the bytes match, and the canonical asset survives on both sides. These
+are redundant export copies rather than game deletions. A repeated basename,
+hash ambiguity, missing canonical peer, or content mismatch keeps the original
+add/delete entry visible.
 AnimeStudio `object_index`/`field_index` directories (including their
 `parts`) and exporter index-only JSONL, compressed, and temporary files are
 excluded from every Updates comparison and previous-export prune; ordinary

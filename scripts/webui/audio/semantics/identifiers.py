@@ -18,6 +18,13 @@ MANAGED_AUDIO_LITERAL_RE = re.compile(
     re.IGNORECASE,
 )
 
+AUDIO_DUMPER_LANGUAGE_BY_CODE = {
+    "CN": "chinese",
+    "EN": "english",
+    "JP": "japanese",
+    "KR": "korean",
+}
+
 
 def collect_metadata_literals_raw(metadata_path: Path | None) -> list[str]:
     """Every decodable IL2CPP string literal, with no vocabulary filter.
@@ -97,6 +104,17 @@ def audio_hash_generator_compute(value: str) -> int:
         hash_value = (hash_value * 0x01000193) & 0xFFFFFFFF
         hash_value ^= code_unit
     return hash_value
+
+
+def audio_dialog_external_media_id(dialog_path: str, dumper_language: str) -> int:
+    """Return the AKPK external-source id for an authored AudioDialog path."""
+
+    value = f"voice/{dumper_language}/{dialog_path}".replace("\\", "/").lower()
+    result = 0xCBF29CE484222325
+    for byte in value.encode("utf-8"):
+        result = (result * 0x100000001B3) & 0xFFFFFFFFFFFFFFFF
+        result ^= byte
+    return result
 
 
 def hashed_event_key(event_hash: int) -> str:

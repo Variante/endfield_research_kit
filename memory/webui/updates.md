@@ -21,12 +21,47 @@ WebUI source edits, generated reports, or scratch data as game updates.
    `webui/data/updates/characters.json`; scanner cache and history remain under
    `.game-data-tracker/`.
 
+Path identity is supplemented by two fail-closed relocation joins. Unity
+exports with generated `_p<PathID>` suffixes are paired only when their stable
+kind, extension, and suffix-stripped path are one-to-one. Unmatched decoded
+audio is paired only when equal-size candidates have byte-identical content;
+then unmatched FLAC candidates are compared by their STREAMINFO format, sample
+count, and decoded-PCM MD5 so lossless re-encodes and metadata changes can be
+recognized. Same-name pairs take precedence, and a content-only or PCM-only
+pair must be unique unless an unchanged parent folder makes each duplicate
+one-to-one. The exact-content lane already fixes size; STREAMINFO fixes format,
+sample count, duration, and decoded PCM. Pairs with unchanged effective content
+are omitted as path-only churn. A stable Unity identity with changed bytes
+remains one `modified` entry with both paths and an explicit match method.
+Multiple candidates in the same folder remain `added` plus `deleted`.
+
+The post-pass also suppresses an obsolete numeric `wwise/unknown` AudioDialog
+copy when its filename is the exact 64-bit FNV-1 external-source identity of one
+current authored dialog path, the authored basename resolves to exactly one
+canonical voice asset, identical bytes are verified, and that canonical asset
+exists in both exports. This records duplicate cleanup, not a deletion. A
+repeated basename, missing peer, hash ambiguity, or byte mismatch fails closed
+to the original add/delete result.
+
+Modified decoded audio is compared in the browser from the existing old/new
+asset URLs. The detail view plots both amplitude envelopes on a shared absolute
+timeline and a third envelope-delta lane, so duration changes, silence shifts,
+and broad loudness edits are visible without adding derived waveform data to
+the feed. This is a listening aid, not evidence of semantic event changes.
+
+Size sorting uses the absolute applicable magnitude: new file size for an
+addition, old file size for a deletion, and absolute size delta for a
+modification. This keeps add/delete rows meaningful in the same sort mode.
+
 ## Evidence boundary
 
 - The default feed covers WebUI-facing exported JSON plus exported image,
   model, video, and decoded audio assets.
 - `--no-audio` omits decoded audio only. `--text-only` omits all assets.
 - `--full-export-scan` is a broad audit, not the normal WebUI feed.
+- A recognized relocation proves export identity under its recorded matching
+  rule; it does not prove that the underlying game event or semantic owner is
+  unchanged.
 - Both complete roots are mandatory. There is no first-run installed-VFS mode.
 - Character tags fail closed when either `CharacterTable` is missing or
   invalid, including invalid overlays and tables without valid character rows;

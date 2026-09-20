@@ -43,6 +43,14 @@
   --selected: rgba(118, 171, 174, 0.22);
   --good: #76abae;
   --warn: #ff5722;
+  /* Shared version-change status colors. Characters and Updates use the same
+     semantic palette so an added/deleted tag reads consistently site-wide. */
+  --status-added: #287a4b;
+  --status-added-rgb: 40, 122, 75;
+  --status-modified: #9a6812;
+  --status-modified-rgb: 154, 104, 18;
+  --status-deleted: #b43f3f;
+  --status-deleted-rgb: 180, 63, 63;
 
   --accent-rgb: 255, 87, 34;
   --accent-2-rgb: 118, 171, 174;
@@ -6341,21 +6349,47 @@ body.is-resizing-filter * {
   font-size: 10px;
   font-weight: 700;
   text-align: center;
+  border: 1px solid currentColor;
 }
 
 .updates-status-added {
-  background: rgba(var(--fg-rgb), 0.18);
-  color: var(--text);
+  background: rgba(var(--status-added-rgb), 0.1);
+  color: var(--status-added);
 }
 
 .updates-status-modified {
-  background: rgba(var(--accent-rgb), 0.18);
-  color: var(--text);
+  background: rgba(var(--status-modified-rgb), 0.1);
+  color: var(--status-modified);
 }
 
 .updates-status-deleted {
-  background: rgba(var(--fg-rgb), 0.18);
-  color: var(--text);
+  background: rgba(var(--status-deleted-rgb), 0.1);
+  color: var(--status-deleted);
+}
+
+#updates-status-filter .updates-filter-chip[data-value="added"] {
+  border-color: rgba(var(--status-added-rgb), 0.55);
+  background: rgba(var(--status-added-rgb), 0.08);
+  color: var(--status-added);
+}
+
+#updates-status-filter .updates-filter-chip[data-value="modified"] {
+  border-color: rgba(var(--status-modified-rgb), 0.55);
+  background: rgba(var(--status-modified-rgb), 0.08);
+  color: var(--status-modified);
+}
+
+#updates-status-filter .updates-filter-chip[data-value="deleted"] {
+  border-color: rgba(var(--status-deleted-rgb), 0.55);
+  background: rgba(var(--status-deleted-rgb), 0.08);
+  color: var(--status-deleted);
+}
+
+#updates-status-filter .updates-filter-chip.on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--on-accent);
+  box-shadow: none;
 }
 
 .updates-domain-pill {
@@ -6684,6 +6718,50 @@ body.is-resizing-filter * {
 
 .updates-media-diff-note.is-error {
   color: #9d2323;
+}
+
+.updates-audio-diff-stage {
+  min-height: 220px;
+  overflow: hidden;
+  border: 1px solid rgba(var(--accent-rgb), 0.24);
+  border-radius: 6px;
+  background: var(--bg-3);
+}
+
+.updates-audio-diff-canvas {
+  display: block;
+  width: 100%;
+  min-height: 220px;
+}
+
+.updates-audio-diff-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin-top: 8px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.updates-audio-diff-legend span::before {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 6px;
+  border-radius: 2px;
+  content: "";
+}
+
+.updates-audio-diff-legend .is-old::before {
+  background: rgba(207, 92, 84, 0.86);
+}
+
+.updates-audio-diff-legend .is-new::before {
+  background: rgba(42, 164, 139, 0.86);
+}
+
+.updates-audio-diff-legend .is-delta::before {
+  background: rgba(var(--accent-rgb), 0.86);
 }
 
 .updates-media-open {

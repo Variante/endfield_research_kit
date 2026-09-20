@@ -22,7 +22,7 @@ import sqlite3
 import time
 from collections import Counter
 from contextlib import closing
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any
 
 if __package__ in {None, ""}:
@@ -45,6 +45,10 @@ from scripts.common import (
     write_json,
 )
 from scripts.webui.assets.index import ASSET_KIND_BY_EXT, VIDEO_EXTENSIONS
+from scripts.webui.audio.semantics.identifiers import (
+    AUDIO_DUMPER_LANGUAGE_BY_CODE,
+    audio_dialog_external_media_id,
+)
 from scripts.source_paths import ExportLayout, ExportLayoutError, prune_nested_source_dirs, resolve_asset_source_roots
 from scripts.webui.updates.scanner import ScanConfig, scan_export_changes
 from scripts.webui.updates.characters import build_character_updates, comparison_character_catalog_dir
@@ -689,7 +693,13 @@ def asset_content_digest(asset: dict[str, Any] | None) -> str:
     digest = str(asset.get("digest") or "")
     return "" if not digest or digest.startswith("size:") else digest
 
-def asset_update_entry(status: str, asset: dict[str, Any], old_asset: dict[str, Any] | None = None) -> dict[str, Any]:
+def asset_update_entry(
+    status: str,
+    asset: dict[str, Any],
+    old_asset: dict[str, Any] | None = None,
+    *,
+    relocation_match: str = "",
+) -> dict[str, Any]:
     rel_path = normalize_posix(str(asset.get("path") or (old_asset or {}).get("path") or ""))
     old_rel_path = normalize_posix(str((old_asset or {}).get("path") or ""))
     new_rel_path = normalize_posix(str(asset.get("path") or ""))
@@ -728,6 +738,9 @@ def asset_update_entry(status: str, asset: dict[str, Any], old_asset: dict[str, 
         entry["old_digest"] = old_digest
     if new_digest:
         entry["new_digest"] = new_digest
+    if relocation_match:
+        entry["change_kind"] = "relocated"
+        entry["relocation_match"] = relocation_match
     return entry
 
 
@@ -744,11 +757,383 @@ def asset_is_modified(old_asset: dict[str, Any], new_asset: dict[str, Any]) -> b
     return True
 
 
+def path_id_relocation_identity(asset: dict[str, Any]) -> str:
+    rel_path = normalize_posix(str(asset.get("path") or ""))
+    if not rel_path or not rel_requires_path_id_export_name(rel_path):
+        return ""
+    path = PurePosixPath(rel_path)
+    base_stem = path_id_export_base_stem(path.stem)
+    if not base_stem:
+        return ""
+    stable_path = str(path.with_name(f"{base_stem}{path.suffix.lower()}"))
+    return "|".join((
+        str(asset.get("kind") or ""),
+        str(asset.get("extension") or "").lower(),
+        stable_path.casefold(),
+    ))
+
+
+def unique_path_id_relocations(
+    old_assets: dict[str, dict[str, Any]],
+    new_assets: dict[str, dict[str, Any]],
+    deleted_paths: set[str],
+    added_paths: set[str],
+) -> dict[str, tuple[str, str]]:
+    old_by_identity: dict[str, list[str]] = {}
+    new_by_identity: dict[str, list[str]] = {}
+    for rel_path in deleted_paths:
+        identity = path_id_relocation_identity(old_assets[rel_path])
+        if identity:
+            old_by_identity.setdefault(identity, []).append(rel_path)
+    for rel_path in added_paths:
+        identity = path_id_relocation_identity(new_assets[rel_path])
+        if identity:
+            new_by_identity.setdefault(identity, []).append(rel_path)
+
+    matches: dict[str, tuple[str, str]] = {}
+    for identity in sorted(set(old_by_identity) & set(new_by_identity)):
+        old_paths = old_by_identity[identity]
+        new_paths = new_by_identity[identity]
+        if len(old_paths) == len(new_paths) == 1:
+            matches[new_paths[0]] = (old_paths[0], "unity_path_id")
+    return matches
+
+
+def asset_file_path(export_root: Path, asset: dict[str, Any]) -> Path | None:
+    export_rel = normalize_posix(str(asset.get("export_rel") or ""))
+    if not export_rel:
+        return None
+    root = export_root.resolve()
+    path = (root / export_rel).resolve()
+    try:
+        path.relative_to(root)
+    except ValueError:
+        return None
+    return path if path.is_file() else None
+
+
+def flac_pcm_identity(path: Path) -> tuple[int, int, int, int, str] | None:
+    """Return the lossless decoded-audio identity stored by FLAC STREAMINFO."""
+    try:
+        with path.open("rb") as stream:
+            if stream.read(4) != b"fLaC":
+                return None
+            header = stream.read(4)
+            if len(header) != 4 or (header[0] & 0x7F) != 0:
+                return None
+            block_size = int.from_bytes(header[1:4], "big")
+            if block_size != 34:
+                return None
+            streaminfo = stream.read(block_size)
+    except OSError:
+        return None
+    if len(streaminfo) != 34:
+        return None
+    packed = int.from_bytes(streaminfo[10:18], "big")
+    sample_rate = packed >> 44
+    channels = ((packed >> 41) & 0x07) + 1
+    bits_per_sample = ((packed >> 36) & 0x1F) + 1
+    total_samples = packed & ((1 << 36) - 1)
+    pcm_md5 = streaminfo[18:34].hex()
+    if sample_rate <= 0 or total_samples <= 0 or pcm_md5 == "0" * 32:
+        return None
+    return sample_rate, channels, bits_per_sample, total_samples, pcm_md5
+
+
+def add_unambiguous_audio_identity_matches(
+    matches: dict[str, tuple[str, str]],
+    old_by_identity: dict[Any, list[str]],
+    new_by_identity: dict[Any, list[str]],
+    *,
+    name_method: str,
+    parent_method: str,
+    unique_method: str,
+) -> None:
+    """Pair identity buckets without guessing among duplicate audio files."""
+    for identity in sorted(set(old_by_identity) & set(new_by_identity), key=str):
+        old_paths = old_by_identity[identity]
+        new_paths = new_by_identity[identity]
+        old_by_name: dict[str, list[str]] = {}
+        new_by_name: dict[str, list[str]] = {}
+        for rel_path in old_paths:
+            old_by_name.setdefault(PurePosixPath(rel_path).name.casefold(), []).append(rel_path)
+        for rel_path in new_paths:
+            new_by_name.setdefault(PurePosixPath(rel_path).name.casefold(), []).append(rel_path)
+        paired_old: set[str] = set()
+        paired_new: set[str] = set()
+        for name in sorted(set(old_by_name) & set(new_by_name)):
+            if len(old_by_name[name]) == len(new_by_name[name]) == 1:
+                old_path = old_by_name[name][0]
+                new_path = new_by_name[name][0]
+                matches[new_path] = (old_path, name_method)
+                paired_old.add(old_path)
+                paired_new.add(new_path)
+
+        # Numeric Wwise media ids can change while the same decoded file is
+        # exported into parallel category/unknown folders. The unchanged
+        # parent folder resolves those duplicate-content buckets without
+        # crossing categories or pairing multiple candidates in one folder.
+        remaining_old = [path for path in old_paths if path not in paired_old]
+        remaining_new = [path for path in new_paths if path not in paired_new]
+        old_by_parent: dict[str, list[str]] = {}
+        new_by_parent: dict[str, list[str]] = {}
+        for rel_path in remaining_old:
+            old_by_parent.setdefault(str(PurePosixPath(rel_path).parent).casefold(), []).append(rel_path)
+        for rel_path in remaining_new:
+            new_by_parent.setdefault(str(PurePosixPath(rel_path).parent).casefold(), []).append(rel_path)
+        for parent in sorted(set(old_by_parent) & set(new_by_parent)):
+            if len(old_by_parent[parent]) == len(new_by_parent[parent]) == 1:
+                old_path = old_by_parent[parent][0]
+                new_path = new_by_parent[parent][0]
+                matches[new_path] = (old_path, parent_method)
+                paired_old.add(old_path)
+                paired_new.add(new_path)
+
+        remaining_old = [path for path in old_paths if path not in paired_old]
+        remaining_new = [path for path in new_paths if path not in paired_new]
+        if len(remaining_old) == len(remaining_new) == 1:
+            matches[remaining_new[0]] = (remaining_old[0], unique_method)
+
+
+def exact_audio_relocations(
+    old_assets: dict[str, dict[str, Any]],
+    new_assets: dict[str, dict[str, Any]],
+    deleted_paths: set[str],
+    added_paths: set[str],
+    *,
+    previous_export_root: Path,
+    current_export_root: Path,
+) -> dict[str, tuple[str, str]]:
+    old_by_shape: dict[tuple[str, int], list[str]] = {}
+    new_by_shape: dict[tuple[str, int], list[str]] = {}
+    for rel_path in deleted_paths:
+        asset = old_assets[rel_path]
+        if not asset_is_audio(asset) or asset.get("size") is None:
+            continue
+        key = (str(asset.get("extension") or "").lower(), int(asset["size"]))
+        old_by_shape.setdefault(key, []).append(rel_path)
+    for rel_path in added_paths:
+        asset = new_assets[rel_path]
+        if not asset_is_audio(asset) or asset.get("size") is None:
+            continue
+        key = (str(asset.get("extension") or "").lower(), int(asset["size"]))
+        new_by_shape.setdefault(key, []).append(rel_path)
+
+    digest_cache: dict[tuple[str, str], str] = {}
+
+    def relocation_digest(side: str, rel_path: str) -> str:
+        cache_key = (side, rel_path)
+        if cache_key in digest_cache:
+            return digest_cache[cache_key]
+        asset = old_assets[rel_path] if side == "old" else new_assets[rel_path]
+        root = previous_export_root if side == "old" else current_export_root
+        path = asset_file_path(root, asset)
+        try:
+            digest = hash_file(path) if path is not None else ""
+        except OSError:
+            digest = ""
+        digest_cache[cache_key] = digest
+        return digest
+
+    matches: dict[str, tuple[str, str]] = {}
+    for shape in sorted(set(old_by_shape) & set(new_by_shape)):
+        old_by_digest: dict[str, list[str]] = {}
+        new_by_digest: dict[str, list[str]] = {}
+        for rel_path in old_by_shape[shape]:
+            digest = relocation_digest("old", rel_path)
+            if digest:
+                old_by_digest.setdefault(digest, []).append(rel_path)
+        for rel_path in new_by_shape[shape]:
+            digest = relocation_digest("new", rel_path)
+            if digest:
+                new_by_digest.setdefault(digest, []).append(rel_path)
+        for digest in sorted(set(old_by_digest) & set(new_by_digest)):
+            add_unambiguous_audio_identity_matches(
+                matches,
+                {digest: old_by_digest[digest]},
+                {digest: new_by_digest[digest]},
+                name_method="exact_content_and_name",
+                parent_method="exact_content_and_parent",
+                unique_method="unique_exact_content",
+            )
+
+    # Container metadata and encoder settings can change while the lossless
+    # decoded signal stays identical. FLAC's STREAMINFO MD5 is defined over the
+    # decoded PCM, so it is a stronger relocation identity than duration or a
+    # fuzzy waveform comparison and does not require an external decoder.
+    paired_new = set(matches)
+    paired_old = {old_path for old_path, _method in matches.values()}
+    old_by_pcm: dict[tuple[int, int, int, int, str], list[str]] = {}
+    new_by_pcm: dict[tuple[int, int, int, int, str], list[str]] = {}
+    for side, paths, assets, root, grouped in (
+        ("old", deleted_paths - paired_old, old_assets, previous_export_root, old_by_pcm),
+        ("new", added_paths - paired_new, new_assets, current_export_root, new_by_pcm),
+    ):
+        for rel_path in paths:
+            asset = assets[rel_path]
+            if str(asset.get("extension") or "").lower() != ".flac":
+                continue
+            path = asset_file_path(root, asset)
+            identity = flac_pcm_identity(path) if path is not None else None
+            if identity is not None:
+                grouped.setdefault(identity, []).append(rel_path)
+    add_unambiguous_audio_identity_matches(
+        matches,
+        old_by_pcm,
+        new_by_pcm,
+        name_method="flac_pcm_and_name",
+        parent_method="flac_pcm_and_parent",
+        unique_method="unique_flac_pcm",
+    )
+    return matches
+
+
+def audio_dialog_paths_by_external_id(export_root: Path) -> dict[tuple[str, int], list[str]]:
+    table_path = ExportLayout(export_root).table_dir / "AudioDialog.json"
+    payload = read_json(table_path, {})
+    if not isinstance(payload, dict):
+        return {}
+    paths_by_id: dict[tuple[str, int], list[str]] = {}
+    for row in payload.values():
+        if not isinstance(row, dict):
+            continue
+        dialog_path = normalize_posix(str(row.get("path") or "")).strip()
+        if not dialog_path:
+            continue
+        for language, dumper_language in AUDIO_DUMPER_LANGUAGE_BY_CODE.items():
+            external_id = audio_dialog_external_media_id(dialog_path, dumper_language)
+            paths_by_id.setdefault((language, external_id), []).append(dialog_path)
+    return paths_by_id
+
+
+def numeric_unknown_audio_identity(asset: dict[str, Any]) -> tuple[str, int] | None:
+    rel_path = PurePosixPath(normalize_posix(str(asset.get("path") or "")))
+    parts = rel_path.parts
+    if (
+        len(parts) != 5
+        or parts[0].casefold() != "audio"
+        or parts[2].casefold() != "wwise"
+        or parts[3].casefold() != "unknown"
+        or not rel_path.stem.isdigit()
+    ):
+        return None
+    media_id = int(rel_path.stem)
+    if media_id <= 0xFFFFFFFF:
+        return None
+    language = parts[1].upper()
+    if language not in AUDIO_DUMPER_LANGUAGE_BY_CODE:
+        return None
+    return language, media_id
+
+
+def authored_voice_candidates(
+    assets: dict[str, dict[str, Any]],
+) -> dict[tuple[str, str, str], list[str]]:
+    candidates: dict[tuple[str, str, str], list[str]] = {}
+    for rel_path, asset in assets.items():
+        if not asset_is_audio(asset):
+            continue
+        parts = PurePosixPath(rel_path).parts
+        if len(parts) < 4 or parts[0].casefold() != "audio" or parts[2].casefold() != "voice":
+            continue
+        key = (
+            parts[1].upper(),
+            PurePosixPath(rel_path).stem.casefold(),
+            str(asset.get("extension") or "").lower(),
+        )
+        candidates.setdefault(key, []).append(rel_path)
+    return candidates
+
+
+def redundant_audio_dialog_copies(
+    old_assets: dict[str, dict[str, Any]],
+    new_assets: dict[str, dict[str, Any]],
+    deleted_paths: set[str],
+    added_paths: set[str],
+    *,
+    previous_export_root: Path,
+    current_export_root: Path,
+) -> tuple[set[str], set[str]]:
+    """Find obsolete numeric copies when the authored voice file survives.
+
+    A numeric AKPK external-source id is joined to a current AudioDialog path
+    only by its exact 64-bit path hash. The authored basename must resolve to
+    one voice asset, and the numeric/canonical files must be byte-identical.
+    Same-name ambiguity therefore remains visible instead of being guessed.
+    """
+
+    dialog_paths = audio_dialog_paths_by_external_id(current_export_root)
+    old_voice = authored_voice_candidates(old_assets)
+    new_voice = authored_voice_candidates(new_assets)
+
+    def exact_match(
+        source_root: Path,
+        source_asset: dict[str, Any],
+        target_root: Path,
+        target_asset: dict[str, Any],
+    ) -> bool:
+        if source_asset.get("size") != target_asset.get("size"):
+            return False
+        source_path = asset_file_path(source_root, source_asset)
+        target_path = asset_file_path(target_root, target_asset)
+        if source_path is None or target_path is None:
+            return False
+        try:
+            return hash_file(source_path) == hash_file(target_path)
+        except OSError:
+            return False
+
+    ignored_deleted: set[str] = set()
+    for rel_path in deleted_paths:
+        asset = old_assets[rel_path]
+        identity = numeric_unknown_audio_identity(asset)
+        if identity is None:
+            continue
+        dialog_candidates = dialog_paths.get(identity, [])
+        if len(dialog_candidates) != 1:
+            continue
+        key = (
+            identity[0],
+            PurePosixPath(dialog_candidates[0]).stem.casefold(),
+            str(asset.get("extension") or "").lower(),
+        )
+        canonical_paths = new_voice.get(key, [])
+        if len(canonical_paths) != 1 or canonical_paths[0] not in old_assets:
+            continue
+        canonical_path = canonical_paths[0]
+        if exact_match(previous_export_root, asset, current_export_root, new_assets[canonical_path]):
+            ignored_deleted.add(rel_path)
+
+    ignored_added: set[str] = set()
+    for rel_path in added_paths:
+        asset = new_assets[rel_path]
+        identity = numeric_unknown_audio_identity(asset)
+        if identity is None:
+            continue
+        dialog_candidates = dialog_paths.get(identity, [])
+        if len(dialog_candidates) != 1:
+            continue
+        key = (
+            identity[0],
+            PurePosixPath(dialog_candidates[0]).stem.casefold(),
+            str(asset.get("extension") or "").lower(),
+        )
+        canonical_paths = old_voice.get(key, [])
+        if len(canonical_paths) != 1 or canonical_paths[0] not in new_assets:
+            continue
+        canonical_path = canonical_paths[0]
+        if exact_match(current_export_root, asset, previous_export_root, old_assets[canonical_path]):
+            ignored_added.add(rel_path)
+    return ignored_deleted, ignored_added
+
+
 def build_asset_diff(
     old_assets: dict[str, dict[str, Any]],
     new_assets: dict[str, dict[str, Any]],
     *,
     sample_limit: int,
+    previous_export_root: Path | None = None,
+    current_export_root: Path | None = None,
 ) -> dict[str, Any]:
     added: list[dict[str, Any]] = []
     modified: list[dict[str, Any]] = []
@@ -758,14 +1143,77 @@ def build_asset_diff(
     new_paths = set(new_assets)
     added_paths = new_paths - old_paths
     deleted_paths = old_paths - new_paths
-    relocated_added_paths: set[str] = set()
-    relocated_deleted_paths: set[str] = set()
+    ignored_deleted_paths: set[str] = set()
+    ignored_added_paths: set[str] = set()
+    if previous_export_root is not None and current_export_root is not None:
+        ignored_deleted_paths, ignored_added_paths = redundant_audio_dialog_copies(
+            old_assets,
+            new_assets,
+            deleted_paths,
+            added_paths,
+            previous_export_root=previous_export_root,
+            current_export_root=current_export_root,
+        )
+    effective_added_paths = added_paths - ignored_added_paths
+    effective_deleted_paths = deleted_paths - ignored_deleted_paths
+    relocation_matches = unique_path_id_relocations(
+        old_assets,
+        new_assets,
+        effective_deleted_paths,
+        effective_added_paths,
+    )
+    ignored_path_only_relocations: dict[str, tuple[str, str]] = {}
+    if previous_export_root is not None and current_export_root is not None:
+        path_id_matches = relocation_matches
+        relocation_matches = {}
+        for new_path, (old_path, match_method) in path_id_matches.items():
+            old_file = asset_file_path(previous_export_root, old_assets[old_path])
+            new_file = asset_file_path(current_export_root, new_assets[new_path])
+            if (
+                old_file is not None
+                and new_file is not None
+                and files_match_for_prune(old_file, new_file)
+            ):
+                ignored_path_only_relocations[new_path] = (old_path, match_method)
+            else:
+                relocation_matches[new_path] = (old_path, match_method)
 
-    for rel_path in sorted(added_paths - relocated_added_paths):
+        path_id_added = set(path_id_matches)
+        path_id_deleted = {old_path for old_path, _method in path_id_matches.values()}
+        ignored_path_only_relocations.update(exact_audio_relocations(
+            old_assets,
+            new_assets,
+            effective_deleted_paths - path_id_deleted,
+            effective_added_paths - path_id_added,
+            previous_export_root=previous_export_root,
+            current_export_root=current_export_root,
+        ))
+    ignored_relocation_added_paths = set(ignored_path_only_relocations)
+    ignored_relocation_deleted_paths = {
+        old_path for old_path, _method in ignored_path_only_relocations.values()
+    }
+    relocated_added_paths = set(relocation_matches)
+    relocated_deleted_paths = {
+        old_path for old_path, _method in relocation_matches.values()
+    }
+
+    for rel_path in sorted(
+        effective_added_paths - relocated_added_paths - ignored_relocation_added_paths
+    ):
         added.append(asset_update_entry("added", new_assets[rel_path]))
-    for rel_path in sorted(deleted_paths - relocated_deleted_paths):
+    for rel_path in sorted(
+        effective_deleted_paths - relocated_deleted_paths - ignored_relocation_deleted_paths
+    ):
         old_asset = old_assets[rel_path]
         deleted.append(asset_update_entry("deleted", old_asset, old_asset))
+    for new_path in sorted(relocation_matches):
+        old_path, match_method = relocation_matches[new_path]
+        modified.append(asset_update_entry(
+            "modified",
+            new_assets[new_path],
+            old_assets[old_path],
+            relocation_match=match_method,
+        ))
     for rel_path in sorted(old_paths & new_paths):
         old_asset = old_assets[rel_path]
         new_asset = new_assets[rel_path]
@@ -779,25 +1227,44 @@ def build_asset_diff(
     }
     totals["changed"] = totals["added"] + totals["modified"] + totals["deleted"]
 
-    limited_entries: list[dict[str, Any]] = []
+    published_entries: list[dict[str, Any]] = []
     truncated: dict[str, int] = {}
     for status, entries in (("added", added), ("modified", modified), ("deleted", deleted)):
-        limited_entries.extend(entries[:sample_limit])
-        truncated[status] = max(0, len(entries) - sample_limit)
+        status_entries = entries if sample_limit == 0 else entries[:sample_limit]
+        published_entries.extend(status_entries)
+        truncated[status] = len(entries) - len(status_entries)
 
-    kinds = Counter(str(entry.get("asset_kind") or "asset") for entry in limited_entries)
-    extensions = Counter(display_extension(str(entry.get("extension") or "")) for entry in limited_entries)
+    kinds = Counter(str(entry.get("asset_kind") or "asset") for entry in published_entries)
+    extensions = Counter(display_extension(str(entry.get("extension") or "")) for entry in published_entries)
     return {
         "totals": totals,
-        "entries": limited_entries,
+        "entries": published_entries,
         "truncated": truncated,
         "breakdown": {
             "byKind": dict(kinds.most_common()),
             "byExtension": dict(extensions.most_common()),
         },
         "ignoredStructuredSourceRelocations": {
-            "added": len(relocated_added_paths),
-            "deleted": len(relocated_deleted_paths),
+            "added": 0,
+            "deleted": 0,
+        },
+        "recognizedRelocations": {
+            "total": len(relocation_matches),
+            "byMethod": dict(Counter(
+                method for _old_path, method in relocation_matches.values()
+            ).most_common()),
+        },
+        "ignoredPathOnlyRelocations": {
+            "total": len(ignored_path_only_relocations),
+            "byMethod": dict(Counter(
+                method for _old_path, method in ignored_path_only_relocations.values()
+            ).most_common()),
+        },
+        "ignoredRedundantAudioCopies": {
+            "total": len(ignored_deleted_paths) + len(ignored_added_paths),
+            "added": len(ignored_added_paths),
+            "deleted": len(ignored_deleted_paths),
+            "matchMethod": "exactAudioDialogExternalPathHashAndContent",
         },
     }
 
@@ -1017,7 +1484,13 @@ def attach_asset_updates(
             hash_contents=hash_asset_updates,
             include_audio=include_audio_updates,
         )
-        diff = build_asset_diff(old_assets, new_assets, sample_limit=sample_limit)
+        diff = build_asset_diff(
+            old_assets,
+            new_assets,
+            sample_limit=sample_limit,
+            previous_export_root=previous_export_root,
+            current_export_root=export_root,
+        )
         asset_totals = diff["totals"]
         asset_entries = diff["entries"]
         write_asset_state(previous_asset_state_path, old_assets, export_root=previous_export_root)
@@ -1048,6 +1521,9 @@ def attach_asset_updates(
             "truncated": diff["truncated"],
             "breakdown": diff["breakdown"],
             "ignoredStructuredSourceRelocations": diff["ignoredStructuredSourceRelocations"],
+            "recognizedRelocations": diff["recognizedRelocations"],
+            "ignoredPathOnlyRelocations": diff["ignoredPathOnlyRelocations"],
+            "ignoredRedundantAudioCopies": diff["ignoredRedundantAudioCopies"],
         }
         payload.setdefault("entries", []).extend(asset_entries)
         payload["entries"].sort(key=lambda entry: (
@@ -1118,6 +1594,26 @@ def attach_asset_updates(
         "totals": asset_totals,
         "truncated": asset_truncated,
         "breakdown": asset_breakdown,
+        "recognizedRelocations": (
+            diff.get("recognizedRelocations")
+            if old_assets and game_changed and not game_baseline_initialized
+            else {"total": 0, "byMethod": {}}
+        ),
+        "ignoredPathOnlyRelocations": (
+            diff.get("ignoredPathOnlyRelocations")
+            if old_assets and game_changed and not game_baseline_initialized
+            else {"total": 0, "byMethod": {}}
+        ),
+        "ignoredRedundantAudioCopies": (
+            diff.get("ignoredRedundantAudioCopies")
+            if old_assets and game_changed and not game_baseline_initialized
+            else {
+                "total": 0,
+                "added": 0,
+                "deleted": 0,
+                "matchMethod": "exactAudioDialogExternalPathHashAndContent",
+            }
+        ),
     }
     payload.setdefault("entries", []).extend(asset_entries)
     payload["entries"].sort(key=lambda entry: (
