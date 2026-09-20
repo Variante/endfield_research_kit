@@ -40,8 +40,8 @@ Asset modes, from narrowest to broadest, are `--focused-assets`,
 Primary outputs:
 
 ```text
-export_full/recovered/AnimeStudio-cli/
-export_full/structured/Audio/
+<export root>/game/Unity/<Type>/
+<export root>/game/Audio/
 webui/data/assets/index.json
 webui/data/assets/gameplay_refs.json
 webui/data/assets/story_media.json

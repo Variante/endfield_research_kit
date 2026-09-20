@@ -110,7 +110,7 @@ surface. Only the behaviour `--help` does not give you is recorded here:
   encryption identity, applies only the delta, then runs the *complete* normal
   WebUI build. It never touches Updates -- no baseline change, no entry. Its
   private snapshot under
-  `export_full/recovered/AnimeStudio-cli/local_incremental/` advances only
+  `<export root>/meta/extraction/incremental/` advances only
   after every builder succeeds, so a late failure retries from the applied
   files rather than needing an older audit snapshot.
 - `--story-only` and `--assets-only` are mutually exclusive.
@@ -485,7 +485,7 @@ python -m scripts.game_data.extraction.export_full_from_game --skip-structured -
 ```
 
 Each MonoBehaviour worker writes a unique atomic part under
-`export_full/recovered/AnimeStudio-cli/<source>/managed_reference_diagnostics/parts/`.
+`<export root>/meta/<Layer>/managed_reference_diagnostics/`.
 Only partial managed references are included by default; repeat
 `--animestudio-managed-reference-diagnostic-type` to constrain capture by
 `assembly::namespace.class` regex, and
@@ -506,8 +506,8 @@ truncated, errored, or incomplete parts are not evidence.
 
 `build_audio.py` owns decode, Wwise bank/HIRC indexing, relinking, and the
 Gameplay sidecars. It writes shared SFX/music once under
-`export_full/structured/Audio/shared/` and language voice under
-`export_full/structured/Audio/<LANG>/`.
+`<export root>/game/Audio/shared/` and language voice under
+`<export root>/game/Audio/<LANG>/`.
 
 ```bat
 python -m scripts.webui.audio.build_audio
@@ -700,11 +700,14 @@ excluded from every Updates comparison and previous-export prune; ordinary
 WebUI JSON, media, and decoded audio remain in scope.
 
 Every Characters build also saves its final generated catalog under
-`export_full/recovered/WebUI/characters/<LANG>.json`. Every Updates comparison
-writes `webui/data/updates/characters.json` by comparing those version-owned
-catalog snapshots. The comparison therefore covers the same Table, Story actor,
-and exported-asset identities and evidence that formed each Characters page,
-not only `CharacterTable`. Only languages present on both sides participate.
+`webui/data/_build/characters/<LANG>.json` (the page's own snapshot). Every
+Updates comparison writes `webui/data/updates/characters.json` from two
+catalogs that Updates builds itself, one per export, with the current builder
+and cached in `.game-data-tracker/`: each from that export's own tables and
+converted media, without the Story actor registry that exists only for the
+built export. Builder changes and Story-only inputs therefore never appear as
+game updates; the comparison covers Table and exported-asset identities, not
+only `CharacterTable`. Only languages present on both sides participate.
 It reports `added`, `modified`, and `deleted` independently of asset flags,
 including under `--text-only`. Missing, invalid, empty, or legacy exports
 without snapshots publish an unavailable empty sidecar instead of treating the

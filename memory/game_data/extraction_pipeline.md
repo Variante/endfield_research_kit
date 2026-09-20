@@ -91,6 +91,53 @@ file-regex filters. Audio defaults to direct lossless FLAC: the CLI pipes PCM
 from the pinned repo-local vgmstream decoder into its in-process FLAC encoder,
 without an intermediate WAV file or `ffmpeg`.
 
+## Export root layout (v2)
+
+`ExportLayout` (`scripts/source_paths.py`) owns every export path. A root is
+`game/` (final, exactly decoded data: `Table Json Video Terrain Lua` with the
+VFS `Data/` prefix dropped, `Audio/<LANG|shared>`, `Unity/<Type>`) plus
+per-layer `meta/<Layer>/{vfs_index,asset_map,object_index,asset_status,export_manifest,renderer_index}`,
+`meta/cab_map`, and `meta/extraction/{failures,incremental}`. `layout.json`
+(`state` writing|complete) gates every reader.
+
+- `game/` is one effective tree: the Persistent block manifest (newer version)
+  resolves each logical file. The structured dump runs for that layer only;
+  each layer's Unity run gets `--skip_sources_file` with its superseded bundle
+  slots, so staging holds live objects only (`unity_overlay.py` fails closed on
+  a missing, incomplete, or older manifest). meta stays per layer because the
+  base catalogue is what proves a replacement. An object index built before
+  this skip (every migrated root) still lists replaced-bundle rows, so a
+  reader of a raw per-layer index keeps only rows whose (chunk, offset) slot is
+  effective (`animestudio_index_io.EffectiveObjectRows`), counting every
+  `object` row for its integrity check. Slots match by (chunk file name,
+  offset); the catalogue loader fails closed if one name denotes two chunks.
+- Staging (also the per-asset reuse cache), filters and index parts live under
+  `tmp/game_data/export/<root>-<hash>/`; `game/Unity` is a hardlink mirror,
+  synced per type only when every installed layer finished that type's item
+  in this run, never after a failed command or a failed stage item; the
+  structured tree is published only by a run that dumped the effective layer.
+  Catalogues, skip lists and the dump layer always follow the installed
+  layers, not the layers a run selected. Raw containers (bundles, PCKs, streaming chunks) are never dumped.
+- Exact only: non-exact sub-trees become `{"$undecoded": ...}` location stubs;
+  partial, metadata-only and TypeTree-less objects are not written, and the
+  export manifest records every written path (CAB, chunk, offset) and every
+  exclusion with its reason. Unnamed objects are named by script class.
+- Asset sources nest: `Game` is `game/`, which contains the `Unity` and `Audio`
+  sources, so a Game walk prunes them (`prune_nested_source_dirs`). Logical
+  VFS paths (`Data/Json/...`, as tables record them) reach disk only through
+  `ExportLayout.game_file`, never `game / logical`.
+- Builder output never lands here (`webui/data/_build/`); Updates diffs `game/`.
+- `migrate_export_layout` converts a v1 root by recorded same-volume renames
+  (`--dry-run`, `--rollback`), quarantining what has no v2 place; unproven Unity
+  outputs block it except exporter companions and types the asset maps do not
+  index, which use a bridge-only "newer layer wins by name" rule. An output
+  whose chunk sits in an indexed block folder, is in neither catalogue, and is
+  gone from the install is `stale` (left by a run against an older build) and
+  is quarantined; a chunk outside every indexed block, or one still on disk
+  (possibly newer than the catalogues), stays unproven. A type an older
+  exporter wrote through both stages keeps only the stage the current exporter
+  uses (TextAsset: JSON), file by file, and only where that sibling exists.
+
 ## Export model and provenance
 
 Keep these states distinct: indexed, loaded, exported, partial, and certified
@@ -114,9 +161,9 @@ Use the generated export summary first when diagnosing a run:
 reports/export/export_full_summary.md
 reports/export/runs/<timestamp>/
 reports/export/benchmarks/
-export_full/recovered/AnimeStudio-cli/animestudio_type_manifest.json
-export_full/recovered/AnimeStudio-cli/<source>/asset_status/
-export_full/unresolved/
+<export root>/meta/<Layer>/asset_status/
+<export root>/meta/<Layer>/export_manifest/
+<export root>/meta/extraction/failures/
 ```
 
 An `Export <Type>:<Name> error` may be object-local even when the process

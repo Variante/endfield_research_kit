@@ -66,6 +66,13 @@ domain is part of the identity:
 - NPC proxy rows use their own identity domain. A build-locked `NpcProxyGetter`
   reference can attach actions through an exact proxy-id/segment/table join; it
   **never reuses a numerically equal world-entity identity.**
+- MissionRuntimeAsset `trackingInfoList` rows gained `jumpToCampFireGlobalId`
+  on every tracking-info type in the current client (NpcProxy, Pos,
+  MissionArea, Entity, Sns, JumpToUI, NPC). It is 0 on every row but one
+  PosTrackingInfo; by name an optional campfire (fast-travel) jump target, not
+  yet reviewed against native code. The NpcProxy tracking reader accepts it
+  only at 0 (`npc_proxy_tracking_fields_are_exact`); any other value, or any
+  other new field, fails closed until its meaning is reviewed.
 - current-script slot actions resolve through a pinned native resolver
   contract: the runtime lookup is keyed by the current `LevelScriptRuntime`
   script id and slot in `EntityManager`. A unique WorldEntityRegistry

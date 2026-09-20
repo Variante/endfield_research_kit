@@ -153,7 +153,7 @@ Start wrapper diagnosis with:
 - `reports/export/export_full_summary.md` and its JSON companion.
 - The `reports_run_root` recorded in the latest summary.
 - Per-source stdout/stderr logs under `reports/export/runs/<timestamp>/`.
-- `export_full/recovered/AnimeStudio-cli/animestudio_type_manifest.json`.
+- `<export root>/meta/<Layer>/export_manifest/*.jsonl` and `meta/<Layer>/asset_status/`.
 
 An `Export <Type>:<Name> error` is a per-asset failure; the process may have
 continued. A nonzero subprocess return code fails the wrapper. A

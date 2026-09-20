@@ -470,7 +470,8 @@ Setup and export internals:
   irradiance volumes, extend-data bins, patch bytes, and Lua. `build_audio.py`
   streams Wwise bank metadata directly from VFS when relinking audio events.
   `--structured-dump-mode default` adds Terrain while retaining the production
-  exclusions; use `--structured-dump-mode debug` only for broad VFS diagnostics.
+  exclusions. Raw containers are never dumped; probe them with a bounded
+  `AnimeStudio.CLI dump` into `tmp/`.
 - `export_assets.bat --from-game` (that is, `export.bat --assets-only
   --from-game`) passes `--skip-structured`, writes a
   lightweight VFS metadata index, runs WebUI-facing image/model/Material
@@ -500,11 +501,12 @@ Setup and export internals:
 
 Browser data inputs and outputs:
 
-- Active inputs include `export_full/structured/StreamingAssets/Table/*.json`,
-  recovered AnimeStudio text/metadata under `export_full/recovered/`,
-  exported image/model/material outputs under
-  `export_full/recovered/AnimeStudio-cli/<source>/`, and generated data under
-  `webui/data/`.
+- Active inputs are the export root's `game/` tree (layout v2, see
+  `memory/game_data/extraction_pipeline.md`): `game/Table`, `game/Json`,
+  `game/Video`, `game/Audio`, and decoded Unity objects under
+  `game/Unity/<Type>/`, plus generated data under `webui/data/`. Builder
+  evidence and comparison inputs go to `webui/data/_build/`, which is neither
+  served nor packaged.
 - Generated browser outputs include `webui/data/manifest.json`,
   `webui/data/lang/<code>/index.json`, `conv/*.json`, `mission/*.json`,
   `reference/**`, `webui/data/gameplay/projectiles.json`,
@@ -752,7 +754,7 @@ from `endfield_paths.bat`
 `scripts/webui/updates/build_updates.py` defaults to comparing:
 
 ```text
-export_1d2
+export_full_1d4d1
 export_full
 ```
 

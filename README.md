@@ -99,6 +99,62 @@ without refreshing it.
 Mission Pipeline recovery remains available as a separate direct Python
 workflow, but is no longer a WebUI page or part of the WebUI export commands.
 
+## What an export produces
+
+`export_full/` holds one decoded copy of the game data. `game/` is what the
+client actually loads (the newer Persistent layer overlaid on StreamingAssets),
+and `meta/` only describes it, so nothing in `game/` is a duplicate or an
+intermediate result:
+
+```text
+export_full/
+  layout.json                 marker: schema + writing|complete
+  game/
+    Table/ Json/ Video/       final VFS files (the client's `Data/` prefix dropped)
+    Terrain/ Lua/             only when the export scope includes them
+    Audio/<LANG|shared>/      decoded Wwise audio
+    Unity/<Type>/             decoded Unity objects, one folder per type
+  meta/
+    <Layer>/…                 per-layer VFS index, asset map, object index,
+                              asset status, export manifest
+    cab_map/ extraction/      container map, failures, incremental state
+```
+
+Rough size of a complete export (`--from-game --with-assets`), from the current
+client:
+
+| Part | Files | Size |
+| --- | --- | --- |
+| `game/Unity` | ~1.9 M | ~94 GB |
+| `game/Audio` | ~93 K | ~30 GB |
+| `game/Video` | ~600 | ~6 GB |
+| `game/Json` | ~95 K | ~0.8 GB |
+| `game/Table` | ~700 | ~0.3 GB |
+| `meta` | ~120 | ~3 GB |
+| **Total** | **~2 M** | **~135 GB** |
+
+Budget roughly double that during a run: AnimeStudio stages into
+`tmp/game_data/export/` (which doubles as its per-asset reuse cache) and only
+then publishes into `game/` as hardlinks. Generated browser data in
+`webui/data/` adds a few GB more.
+
+Time and memory, measured on a desktop with 8 AnimeStudio workers (the
+`--asset-jobs` default):
+
+| Step | Time | Peak RAM |
+| --- | --- | --- |
+| `--from-game --with-assets` extraction | ~3-4 h | up to ~40 GB |
+| Story build (`export.bat` without `--from-game`) | ~25 min | a few GB |
+| Post-Story pages (Gameplay, Characters, Map, source graph) | ~15 min | a few GB |
+| `build_updates.bat` between two exports | ~10 min | a few GB |
+
+Plan for 64 GB of RAM for a full installed-client export, or pass
+`--asset-jobs 4` (or lower) to trade speed for a smaller footprint: peak memory
+scales with the number of parallel workers. The other commands are comfortable
+on a normal 16 GB machine. An interrupted export leaves `layout.json` at
+`writing` and publishes nothing, so `game/` keeps the previous complete export
+until a run finishes.
+
 ## Project map
 
 - `webui/`: static browser, runtime overrides, and generated data.

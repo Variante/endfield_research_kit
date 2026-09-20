@@ -22,7 +22,9 @@ portraits and model references, while retaining merge and naming provenance.
 Primary output: `webui/data/lang/<LANG>/characters/index.json` plus referenced
 Assets entries.
 
-Versioned comparison input: `export_full/recovered/WebUI/characters/<LANG>.json`.
+Page snapshot: `webui/data/_build/characters/<LANG>.json`. Updates builds both
+comparison catalogs itself, one per export, from that export's tables and media
+only (no Story actor registry), so both sides use identical inputs.
 
 Optional Updates sidecar: `webui/data/updates/characters.json`.
 

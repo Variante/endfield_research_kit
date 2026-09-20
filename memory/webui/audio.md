@@ -12,8 +12,8 @@ user research notes without modifying generated evidence.
    overlay/fallback and decodes lossless FLAC directly.
 2. `scripts.webui.audio.build_audio` owns decode, Wwise bank indexing, event-to-media
    traversal, Story relinking, and Gameplay sound sidecars. Shared SFX/music is
-   written once under `structured/Audio/shared/`; language voice belongs under
-   `structured/Audio/<LANG>/`.
+   written once under `game/Audio/shared/`; language voice belongs under
+   `game/Audio/<LANG>/`.
 3. `scripts.webui.audio.build_audio_semantics` orchestrates semantic domains under
    `scripts/webui/audio/semantics/` and publishes the compact page index/shards.
 4. Optional verified runtime-trace bundles add only their matching observed

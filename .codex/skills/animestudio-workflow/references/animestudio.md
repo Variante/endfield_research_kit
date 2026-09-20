@@ -113,7 +113,7 @@ AnimeStudio.CLI.exe dump --streaming-assets path\to\StreamingAssets --output exp
 AnimeStudio.CLI.exe dump --streaming-assets path\to\Persistent --output export_full\structured\Persistent --fallback-assets path\to\StreamingAssets --block-type table --block-type json-data
 AnimeStudio.CLI.exe audio --streaming-assets path\to\StreamingAssets --output export_full\structured\Audio\CN --language chinese --block all
 AnimeStudio.CLI.exe stream --streaming-assets path\to\StreamingAssets --block-type audio --file-regex banks\.pck
-AnimeStudio.CLI.exe vfs-index --streaming-assets path\to\StreamingAssets --output export_full\recovered\AnimeStudio-cli\StreamingAssets\vfs_index\bundle_vfs_index.json --block-type bundle
+AnimeStudio.CLI.exe vfs-index --streaming-assets path\to\StreamingAssets --output export_full\meta\StreamingAssets\vfs_index\bundle_vfs_index.json --block-type bundle
 AnimeStudio.CLI.exe vfs-index --jsonl --streaming-assets path\to\StreamingAssets --output tmp\updates\source_scan\streaming.jsonl
 AnimeStudio.CLI.exe list
 ```
@@ -546,7 +546,7 @@ and Lua. `build_audio.py` streams Wwise bank metadata directly from VFS when
 relinking audio events.
 `--structured-dump-mode default` adds only Terrain `_H` height grids (not the
 larger `C/T/S/A/N` families) while keeping the same production exclusions; pass
-`--structured-dump-mode debug` for the old broad dump when diagnosing VFS
+a bounded `AnimeStudio.CLI dump --block-type ...` into `tmp\` when diagnosing VFS
 coverage.
 
 Pass an optional usable DummyDll folder to the story JSON export with:
@@ -665,11 +665,10 @@ to explicitly combine every non-sharded type set.
 Stage outputs:
 
 ```text
-export_full\recovered\AnimeStudio-cli\StreamingAssets\maps
-export_full\recovered\AnimeStudio-cli\StreamingAssets\json_by_type
-export_full\recovered\AnimeStudio-cli\StreamingAssets\convert_by_type
-export_full\recovered\AnimeStudio-cli\Persistent\...
-export_full\recovered\AnimeStudio-cli\animestudio_type_manifest.json
+export_full\meta\<Layer>\asset_map
+export_full\meta\<Layer>\export_manifest
+export_full\game\Unity\<Type>
+tmp\game_data\export\<root>-<hash>\animestudio\<Layer>\{convert_by_type,json_by_type}  (staging and reuse cache)
 ```
 
 Story JSON types:
