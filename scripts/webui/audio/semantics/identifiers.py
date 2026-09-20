@@ -74,41 +74,8 @@ def collect_metadata_audio_literals(metadata_path: Path | None) -> list[str]:
     the row to a named Wwise Event object.
     """
 
-    if metadata_path is None or not metadata_path.is_file():
-        return []
-    data = metadata_path.read_bytes()
-    if len(data) < 24:
-        return []
-    magic = int.from_bytes(data[0:4], "little")
-    version = int.from_bytes(data[4:8], "little")
-    if magic != METADATA_MAGIC or version < 29:
-        return []
-    literal_offset = int.from_bytes(data[8:12], "little")
-    literal_size = int.from_bytes(data[12:16], "little", signed=True)
-    literal_data_offset = int.from_bytes(data[16:20], "little")
-    literal_data_size = int.from_bytes(data[20:24], "little", signed=True)
-    if (
-        literal_size < 0
-        or literal_data_size < 0
-        or literal_size % 8
-        or literal_offset + literal_size > len(data)
-        or literal_data_offset + literal_data_size > len(data)
-    ):
-        return []
-
     names: dict[str, str] = {}
-    literal_data_end = literal_data_offset + literal_data_size
-    for pos in range(literal_offset, literal_offset + literal_size, 8):
-        byte_length = int.from_bytes(data[pos : pos + 4], "little")
-        data_index = int.from_bytes(data[pos + 4 : pos + 8], "little")
-        start = literal_data_offset + data_index
-        end = start + byte_length
-        if start < literal_data_offset or end > literal_data_end:
-            continue
-        try:
-            value = data[start:end].decode("utf-8")
-        except UnicodeDecodeError:
-            continue
+    for value in collect_metadata_literals_raw(metadata_path):
         if MANAGED_AUDIO_LITERAL_RE.fullmatch(value):
             names.setdefault(value.lower(), value)
     return [names[key] for key in sorted(names)]

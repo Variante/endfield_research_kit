@@ -6,7 +6,7 @@ This consumes AnimeStudio MonoBehaviour JSON with
 action-flow line sequence with the existing Timeline clip order.
 """
 from __future__ import annotations
-from scripts.common import EXPORT_LAYOUT
+from scripts.common import EXPORT_LAYOUT, write_json
 
 import argparse
 import json
@@ -283,11 +283,6 @@ def collect_level_event_story_routes(
             )
         )
     return by_event
-
-
-def write_json(path: Path, payload: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def as_int(value: Any) -> int | None:
@@ -849,7 +844,7 @@ def build_timeline_action_evidence(
         "byDialogKey": by_dialog,
     }
     if write:
-        write_json(out_path, payload)
+        write_json(out_path, payload, indent=2, compact=False)
         log(
             f"wrote {rel_path(out_path)} "
             f"({payload['_meta']['dialogKeyCount']} dialog key(s), "

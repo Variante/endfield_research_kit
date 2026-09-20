@@ -34,7 +34,7 @@ from scripts.repo_paths import REPO_ROOT
 ROOT = REPO_ROOT
 from scripts.common import (
     resolve_installed_game_data_root,
-    sha256_file as shared_sha256_file,
+    sha256_file_upper as sha256_file,
 )
 
 from scripts.game_data.native_contracts.ifix_patch import (
@@ -148,10 +148,6 @@ def _load_module(name: str, path: Path) -> Any:
     sys.modules[name] = module
     spec.loader.exec_module(module)
     return module
-
-
-def sha256_file(path: Path) -> str:
-    return shared_sha256_file(path).upper()
 
 
 def repo_path(path: Path) -> str:

@@ -2,10 +2,9 @@
 """Audit a map's candidate AssetMap closure without loading the full map."""
 
 from __future__ import annotations
-from scripts.common import EXPORT_LAYOUT
+from scripts.common import EXPORT_LAYOUT, sha256_file
 
 import argparse
-import hashlib
 import json
 from collections import Counter
 from pathlib import Path
@@ -15,14 +14,6 @@ from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
 DEFAULT_MAP = EXPORT_LAYOUT.asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"
-
-
-def sha256_file(path: Path, chunk_size: int = 1 << 20) -> str:
-    digest = hashlib.sha256()
-    with path.open("rb") as stream:
-        for chunk in iter(lambda: stream.read(chunk_size), b""):
-            digest.update(chunk)
-    return digest.hexdigest()
 
 
 def iter_asset_entries(path: Path, chunk_size: int = 1 << 20):

@@ -26,7 +26,7 @@ silently dropped, so it can never turn an unknown input into a cache hit.
 """
 
 from __future__ import annotations
-from scripts.common import EXPORT_LAYOUT
+from scripts.common import EXPORT_LAYOUT, sha256_file
 
 import json
 import os
@@ -38,7 +38,7 @@ from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
 
-from scripts.webui.map.audit_map_asset_closure import iter_asset_entries, sha256_file
+from scripts.webui.map.audit_map_asset_closure import iter_asset_entries
 from scripts.webui.map.map_recovery_sources import projection_streaming_scene
 
 DEFAULT_ASSET_MAP = EXPORT_LAYOUT.asset_map_dir("StreamingAssets") / "endfield_streamingassets_assets.json"

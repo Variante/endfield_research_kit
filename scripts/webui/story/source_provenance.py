@@ -14,12 +14,11 @@ generic provenance pass rather than an object-specific recovery rule.
 """
 from __future__ import annotations
 
-import hashlib
 from collections import Counter, defaultdict
 from pathlib import Path
 from typing import Any
 
-from scripts.common import EXPORT_LAYOUT
+from scripts.common import EXPORT_LAYOUT, sha256_file
 from scripts.repo_paths import REPO_ROOT
 from scripts.source_paths import ExportLayout, ExportLayoutError
 
@@ -47,7 +46,6 @@ _FILE_SUFFIXES = {
     ".yaml",
     ".yml",
 }
-_HASH_CACHE: dict[Path, str] = {}
 _BASENAME_INDEX_CACHE: dict[Path, dict[str, tuple[Path, ...]]] = {}
 _RESOLVED_PATH_CACHE: dict[Path, Path] = {}
 _CANDIDATE_PATHS_CACHE: dict[tuple[str, Path], list[Path]] = {}
@@ -190,17 +188,7 @@ def _kind_for_path(path: Path) -> str:
 
 
 def _sha256(path: Path) -> str:
-    resolved = _resolved(path)
-    cached = _HASH_CACHE.get(resolved)
-    if cached:
-        return cached
-    digest = hashlib.sha256()
-    with resolved.open("rb") as handle:
-        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-            digest.update(chunk)
-    value = digest.hexdigest()
-    _HASH_CACHE[resolved] = value
-    return value
+    return sha256_file(_resolved(path))
 
 
 def _related_file(path: Path, *, reference: str, relation: str) -> dict[str, Any]:

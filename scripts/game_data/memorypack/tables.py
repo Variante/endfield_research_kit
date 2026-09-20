@@ -993,6 +993,64 @@ def summarize_dialog_id_table_registry(data: bytes) -> dict[str, Any]:
     }
 
 
+def parse_dialog_brief_info_records(
+    data: bytes,
+) -> tuple[list[dict[str, Any]], int]:
+    """Decode the complete first DialogIdTable member and return its boundary."""
+    if not data or data[0] != DIALOG_ID_TABLE_ROOT_MEMBER_COUNT:
+        raise ValueError("DialogIdTable.memberCount:invalid")
+    brief_count, offset = read_memorypack_u32_count(
+        data, 1, "dialogBriefInfoDict", max_count=20_000
+    )
+    starts: list[tuple[int, str]] = []
+    for candidate in range(offset, len(data) - 5):
+        key = dialog_id_table_row_start(data, candidate)
+        if key is not None:
+            starts.append((candidate, key))
+            if len(starts) >= brief_count + 1:
+                break
+    if len(starts) < brief_count or starts[0][0] != offset:
+        raise ValueError("dialogBriefInfoDict.rowStarts:not-found")
+
+    last_start = starts[brief_count - 1][0]
+    search_end = starts[brief_count][0] if len(starts) > brief_count else len(data)
+    field2_offset: int | None = None
+    for candidate in range(last_start + 1, search_end):
+        if candidate + 4 > len(data):
+            break
+        if struct.unpack_from("<I", data, candidate)[0] != brief_count:
+            continue
+        try:
+            _probe, probe_offset = parse_dialog_id_table_int_string_map(
+                data, candidate, "dialogIdByIntIdProbe", max_count=20_000
+            )
+        except (UnicodeDecodeError, struct.error, ValueError):
+            continue
+        if probe_offset <= len(data):
+            field2_offset = candidate
+            break
+    if field2_offset is None:
+        raise ValueError("dialogBriefInfoDict.end:not-found")
+
+    records: list[dict[str, Any]] = []
+    for row_index, (row_start, key) in enumerate(starts[:brief_count]):
+        row_end = starts[row_index + 1][0] if row_index + 1 < brief_count else field2_offset
+        key_length = struct.unpack_from("<I", data, row_start)[0]
+        payload_start = row_start + 4 + key_length + 1
+        if row_end < payload_start:
+            raise ValueError(f"dialogBriefInfoDict[{row_index}].payload:negative")
+        payload = data[payload_start:row_end]
+        records.append({
+            "key": key,
+            "rowStart": row_start,
+            "payload": payload,
+            "value": parse_dialog_brief_info_payload(
+                payload, key, f"dialogBriefInfoDict[{row_index}]"
+            ),
+        })
+    return records, field2_offset
+
+
 def decode_dialog_id_table_memorypack(rel: str, data: bytes, size: int) -> dict[str, Any] | None:
     if rel != DIALOG_ID_TABLE_REL:
         return None
@@ -1000,45 +1058,8 @@ def decode_dialog_id_table_memorypack(rel: str, data: bytes, size: int) -> dict[
         return None
 
     try:
-        offset = 1
-        brief_count, offset = read_memorypack_u32_count(
-            data,
-            offset,
-            "dialogBriefInfoDict",
-            max_count=20_000,
-        )
-        starts: list[tuple[int, str]] = []
-        for candidate in range(offset, len(data) - 5):
-            key = dialog_id_table_row_start(data, candidate)
-            if key is not None:
-                starts.append((candidate, key))
-                if len(starts) >= brief_count + 1:
-                    break
-        if len(starts) < brief_count or starts[0][0] != offset:
-            raise ValueError("dialogBriefInfoDict.rowStarts:not-found")
-
-        last_start = starts[brief_count - 1][0]
-        search_end = starts[brief_count][0] if len(starts) > brief_count else len(data)
-        field2_offset: int | None = None
-        for candidate in range(last_start + 1, search_end):
-            if candidate + 4 > len(data):
-                break
-            if struct.unpack_from("<I", data, candidate)[0] != brief_count:
-                continue
-            try:
-                _field2_probe, probe_offset = parse_dialog_id_table_int_string_map(
-                    data,
-                    candidate,
-                    "dialogIdByIntIdProbe",
-                    max_count=20_000,
-                )
-            except (UnicodeDecodeError, struct.error, ValueError):
-                continue
-            if probe_offset <= len(data):
-                field2_offset = candidate
-                break
-        if field2_offset is None:
-            raise ValueError("dialogBriefInfoDict.end:not-found")
+        brief_records, field2_offset = parse_dialog_brief_info_records(data)
+        brief_count = len(brief_records)
 
         brief_rows: list[dict[str, Any]] = []
         interesting_brief_rows: list[dict[str, Any]] = []
@@ -1053,15 +1074,12 @@ def decode_dialog_id_table_memorypack(rel: str, data: bytes, size: int) -> dict[
         brief_use_black_screen_counts: Counter[bool] = Counter()
         brief_mask_field_counts: dict[str, Counter[Any]] = defaultdict(Counter)
         dialog_brief_info_parsed_count = 0
-        for row_index, (row_start, key) in enumerate(starts[:brief_count]):
-            row_end = starts[row_index + 1][0] if row_index + 1 < brief_count else field2_offset
-            key_length = struct.unpack_from("<I", data, row_start)[0]
-            payload_start = row_start + 4 + key_length + 1
-            if row_end < payload_start:
-                raise ValueError(f"dialogBriefInfoDict[{row_index}].payload:negative")
-            payload = data[payload_start:row_end]
+        for record in brief_records:
+            row_start = record["rowStart"]
+            key = record["key"]
+            payload = record["payload"]
             payload_length_counts[len(payload)] += 1
-            parsed_brief = parse_dialog_brief_info_payload(payload, key, f"dialogBriefInfoDict[{row_index}]")
+            parsed_brief = record["value"]
             dialog_brief_info_parsed_count += 1
             if parsed_brief["dialogId"] == key:
                 duplicate_key_matches += 1

@@ -634,6 +634,44 @@ _SPATIAL_SPAWNER_EVENT_TYPES = {
 }
 
 
+def _leveldata_spawner_hosts(level_id: str, spawner_id: int) -> list[dict]:
+    name = f"sc_{level_id}_{spawner_id}".encode("ascii")
+    root = ROOT / LEVEL_DATA / level_id
+    if not root.is_dir():
+        return []
+    hosts: list[dict] = []
+    for path in root.glob("*.json"):
+        try:
+            data = path.read_bytes()
+        except OSError:
+            continue
+        cursor = 0
+        while True:
+            offset = data.find(name, cursor)
+            if offset < 0:
+                break
+            cursor = offset + 1
+            end = offset + len(name)
+            if (
+                offset < 4
+                or int.from_bytes(data[offset - 4:offset], "little") != len(name)
+                or end + 25 > len(data)
+                or data[end] != 0
+            ):
+                continue
+            values = struct.unpack_from("<6f", data, end + 1)
+            if not all(math.isfinite(value) for value in values):
+                continue
+            hosts.append({
+                "sourceFile": path.relative_to(ROOT).as_posix(),
+                "sourceSha256": hashlib.sha256(data).hexdigest(),
+                "recordOffset": offset - 4,
+                "position": {"x": values[0], "y": values[1], "z": values[2]},
+                "rotation": {"x": values[3], "y": values[4], "z": values[5]},
+            })
+    return hosts
+
+
 def _exact_story_spawner_markers(level_id: str, language: str) -> list[dict]:
     """Join exact SpawnerPtr event filters to typed LevelData host transforms."""
     report = _native_trigger_frontier()
@@ -675,9 +713,6 @@ def _exact_story_spawner_markers(level_id: str, language: str) -> list[dict]:
     if not stories_by_id:
         return []
 
-    leveldata_roots = [
-        ROOT / LEVEL_DATA / level_id,
-    ]
     markers: list[dict] = []
     for spawner_id, bindings in sorted(stories_by_id.items()):
         config_matches = list((ROOT / SPAWNER_CONFIG / level_id).glob(
@@ -685,40 +720,7 @@ def _exact_story_spawner_markers(level_id: str, language: str) -> list[dict]:
         ))
         if len(config_matches) != 1:
             continue
-        name = f"sc_{level_id}_{spawner_id}".encode("ascii")
-        host_rows: list[dict] = []
-        for root in leveldata_roots:
-            if not root.is_dir():
-                continue
-            for path in root.glob("*.json"):
-                try:
-                    data = path.read_bytes()
-                except OSError:
-                    continue
-                cursor = 0
-                while True:
-                    offset = data.find(name, cursor)
-                    if offset < 0:
-                        break
-                    cursor = offset + 1
-                    end = offset + len(name)
-                    if (
-                        offset < 4
-                        or int.from_bytes(data[offset - 4:offset], "little") != len(name)
-                        or end + 25 > len(data)
-                        or data[end] != 0
-                    ):
-                        continue
-                    values = struct.unpack_from("<6f", data, end + 1)
-                    if not all(math.isfinite(value) for value in values):
-                        continue
-                    host_rows.append({
-                        "sourceFile": str(path.relative_to(ROOT)).replace("\\", "/"),
-                        "sourceSha256": hashlib.sha256(data).hexdigest(),
-                        "recordOffset": offset - 4,
-                        "position": {"x": values[0], "y": values[1], "z": values[2]},
-                        "rotation": {"x": values[3], "y": values[4], "z": values[5]},
-                    })
+        host_rows = _leveldata_spawner_hosts(level_id, spawner_id)
         transforms = {
             tuple(row["position"].values()) + tuple(row["rotation"].values())
             for row in host_rows
@@ -858,39 +860,7 @@ def _exact_story_encounter_markers(level_id: str, language: str) -> list[dict]:
         ).glob(f"sc_{level_id}_{spawner_id}.json"))
         if len(config_matches) != 1:
             continue
-        name = f"sc_{level_id}_{spawner_id}".encode("ascii")
-        host_rows: list[dict] = []
-        for root in (
-            ROOT / LEVEL_DATA / level_id,
-        ):
-            if not root.is_dir():
-                continue
-            for path in root.glob("*.json"):
-                try:
-                    data = path.read_bytes()
-                except OSError:
-                    continue
-                cursor = 0
-                while True:
-                    offset = data.find(name, cursor)
-                    if offset < 0:
-                        break
-                    cursor = offset + 1
-                    end = offset + len(name)
-                    if (
-                        offset < 4
-                        or int.from_bytes(data[offset - 4:offset], "little") != len(name)
-                        or end + 25 > len(data)
-                        or data[end] != 0
-                    ):
-                        continue
-                    values = struct.unpack_from("<6f", data, end + 1)
-                    if all(math.isfinite(value) for value in values):
-                        host_rows.append({
-                            "sourceFile": str(path.relative_to(ROOT)).replace("\\", "/"),
-                            "position": {"x": values[0], "y": values[1], "z": values[2]},
-                            "rotation": {"x": values[3], "y": values[4], "z": values[5]},
-                        })
+        host_rows = _leveldata_spawner_hosts(level_id, spawner_id)
         transforms = {
             tuple(row["position"].values()) + tuple(row["rotation"].values())
             for row in host_rows

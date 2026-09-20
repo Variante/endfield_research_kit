@@ -32,222 +32,44 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import struct
 import sys
 from collections import defaultdict
 from pathlib import Path
 
 from scripts.repo_paths import REPO_ROOT
 from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
+from scripts.game_data.memorypack.tables import (
+    DIALOG_ID_TABLE_LINE_RE,
+    DIALOG_ID_TABLE_OPTION_RAW_RE,
+    DIALOG_ID_TABLE_OPTION_RE,
+    parse_dialog_brief_info_records,
+)
 
 DEFAULT_ROOT = REPO_ROOT
 
 DEFAULT_INPUT  = EXPORT_LAYOUT.json_dir / "GameplayConfig" / "DialogIdTable.json"
 DEFAULT_OUTPUT = WEBUI_BUILD_DIR / "story" / "dialog_id_table_index.json"
 
-# Identifier extractor. Match standalone dlg_* / radio_* tokens, up to 80
-# chars. `option_dlg_*` contains a syntactically valid `dlg_*` substring; the
-# fixed-width negative lookbehind prevents those option-only rows from being
-# misclassified as dialog roots or per-line runtime registrations.
-_ID_RE = re.compile(rb'(?<!option_)(dlg_[A-Za-z0-9_]{2,80}|radio_[A-Za-z0-9_]{2,80})')
-
-# Per-line form: <scene>_<trunkIdx>_<lineDigits>
-# Examples: dlg_e10m3_1_1_001, dlg_a1m10_1_3_002.
-_PER_LINE_RE = re.compile(r'^(?P<scene>dlg_[A-Za-z0-9_]+?)_(?P<trunk>[1-9]\d*)_(?P<line>\d{3,5})$')
-
-# Dialog option form: option_<scene>_<groupIdx>_<optionDigits>.
-# DialogOptionTable option suffixes are three digits; keeping this exact avoids
-# accidentally swallowing printable bytes that follow the MemoryPack string.
-_OPTION_RE = re.compile(rb'(option_dlg_[A-Za-z0-9_]+?_[1-9]\d*_\d{3})')
-_OPTION_ID_RE = re.compile(
-    r'^(?P<prefix>option_)(?P<scene>dlg_[A-Za-z0-9_]+?)_(?P<group>[1-9]\d*)_(?P<option>\d{3})$'
+_ID_RE = re.compile(
+    rb"(?<!option_)(dlg_[A-Za-z0-9_]{2,80}|radio_[A-Za-z0-9_]{2,80})"
 )
-def _read_i32(raw: bytes, offset: int) -> tuple[int, int] | None:
-    if offset < 0 or offset + 4 > len(raw):
-        return None
-    return int.from_bytes(raw[offset : offset + 4], "little", signed=True), offset + 4
 
-
-def _read_memorypack_string(raw: bytes, offset: int) -> tuple[str | None, int] | None:
-    decoded = _read_i32(raw, offset)
-    if decoded is None:
-        return None
-    length, offset = decoded
-    if length == -1:
-        return None, offset
-    if length < 0 or offset + length > len(raw):
-        return None
+def _dialog_timeline_ids(raw: bytes) -> dict[str, list[str]]:
     try:
-        text = raw[offset : offset + length].decode("utf-8")
-    except UnicodeDecodeError:
-        return None
-    return text, offset + length
-
-
-def _read_string_list(raw: bytes, offset: int) -> tuple[list[str] | None, int] | None:
-    decoded = _read_i32(raw, offset)
-    if decoded is None:
-        return None
-    count, offset = decoded
-    if count == -1:
-        return None, offset
-    if count < 0 or count > 100_000:
-        return None
-    values: list[str] = []
-    for _ in range(count):
-        item = _read_memorypack_string(raw, offset)
-        if item is None:
-            return None
-        text, offset = item
-        if text is None:
-            return None
-        values.append(text)
-    return values, offset
-
-
-def _skip_animation_curve(raw: bytes, offset: int) -> int | None:
-    if offset >= len(raw):
-        return None
-    header = raw[offset]
-    offset += 1
-    if header == 0xFF:
-        return offset
-    if header != 0x03 or offset + 8 > len(raw):
-        return None
-    offset += 8  # preWrapMode, postWrapMode
-    count_decoded = _read_i32(raw, offset)
-    if count_decoded is None:
-        return None
-    keyframe_count, offset = count_decoded
-    if keyframe_count < 0 or keyframe_count > 100_000:
-        return None
-    byte_count = keyframe_count * 28
-    if offset + byte_count > len(raw):
-        return None
-    return offset + byte_count
-
-
-def _skip_common_mask(raw: bytes, offset: int) -> int | None:
-    if offset >= len(raw):
-        return None
-    header = raw[offset]
-    offset += 1
-    if header == 0xFF:
-        return offset
-    if header != 0x06 or offset + 16 > len(raw):
-        return None
-    offset += 16  # AudioBlackScreenBehaviour unmanaged payload
-    offset = _skip_animation_curve(raw, offset)
-    if offset is None or offset + 13 > len(raw):
-        return None
-    offset += 12  # fadeIn, fadeOut, CommonMaskType
-    if raw[offset] not in (0, 1):
-        return None
-    return offset + 1
-
-
-def _read_dialog_brief_info(
-    raw: bytes,
-    offset: int,
-    expected_dialog_id: str,
-) -> tuple[list[str], int] | None:
-    if offset >= len(raw) or raw[offset] != 0x09:
-        return None
-    offset += 1
-    offset = _skip_common_mask(raw, offset)
-    if offset is None:
-        return None
-    offset = _skip_common_mask(raw, offset)
-    if offset is None:
-        return None
-
-    dialog_id_decoded = _read_memorypack_string(raw, offset)
-    if dialog_id_decoded is None:
-        return None
-    dialog_id, offset = dialog_id_decoded
-    if dialog_id != expected_dialog_id:
-        return None
-
-    dialog_type_decoded = _read_i32(raw, offset)
-    if dialog_type_decoded is None:
-        return None
-    _dialog_type, offset = dialog_type_decoded
-    if offset >= len(raw) or raw[offset] not in (0, 1):
-        return None
-    offset += 1  # enableSeamlessStartInSameFrame
-
-    if offset >= len(raw) or raw[offset] != 0x01:
-        return None
-    offset += 1  # LangKey object header
-    interact_key_decoded = _read_memorypack_string(raw, offset)
-    if interact_key_decoded is None:
-        return None
-    _interact_key, offset = interact_key_decoded
-
-    npc_ids_decoded = _read_string_list(raw, offset)
-    if npc_ids_decoded is None:
-        return None
-    _npc_ids, offset = npc_ids_decoded
-    if offset >= len(raw) or raw[offset] not in (0, 1):
-        return None
-    offset += 1  # useBlackScreen
-
-    timeline_ids_decoded = _read_string_list(raw, offset)
-    if timeline_ids_decoded is None:
-        return None
-    timeline_ids, offset = timeline_ids_decoded
-    return list(timeline_ids or []), offset
-
-
-def extract_dialog_brief_info_records(raw: bytes) -> dict[str, list[str]]:
-    """Decode the first complete DialogBriefInfo map by exact record boundary.
-
-    Every returned key is an authoritative runtime registration.  Values are
-    member-9 timeline ids and may be empty.
-    """
-    if len(raw) < 5 or raw[0] != 0x05:
+        records, _next_member_offset = parse_dialog_brief_info_records(raw)
+    except (UnicodeDecodeError, struct.error, ValueError):
         return {}
-    count_decoded = _read_i32(raw, 1)
-    if count_decoded is None:
-        return {}
-    declared_count, offset = count_decoded
-    if declared_count <= 0:
-        return {}
-    out: dict[str, list[str]] = {}
-    seen_dialog_ids: set[str] = set()
-    for _ in range(declared_count):
-        key_decoded = _read_memorypack_string(raw, offset)
-        if key_decoded is None:
-            return {}
-        dialog_id, offset = key_decoded
-        if not dialog_id or dialog_id in seen_dialog_ids:
-            return {}
-        seen_dialog_ids.add(dialog_id)
-        brief_decoded = _read_dialog_brief_info(raw, offset, dialog_id)
-        if brief_decoded is None:
-            return {}
-        timeline_ids, offset = brief_decoded
-        out[dialog_id] = timeline_ids
-    # The next top-level member is another 2,633-entry map in this build.  This
-    # equality proves the first dictionary ended on its exact field boundary.
-    next_count = _read_i32(raw, offset)
-    if next_count is None or next_count[0] != declared_count:
-        return {}
-    return out
-
-
-def extract_used_dialog_timeline_ids(raw: bytes) -> dict[str, list[str]]:
-    """Return non-empty timeline membership from exact DialogBriefInfo rows."""
     return {
-        dialog_id: timeline_ids
-        for dialog_id, timeline_ids in extract_dialog_brief_info_records(raw).items()
-        if timeline_ids
+        record["key"]: list(record["value"]["usedDialogTimelineIds"])
+        for record in records
     }
 
 
 def build_index(raw: bytes) -> dict:
     all_ids = sorted({m.group().decode("ascii") for m in _ID_RE.finditer(raw)})
-    option_ids = sorted({m.group().decode("ascii") for m in _OPTION_RE.finditer(raw)})
-    dialog_brief_records = extract_dialog_brief_info_records(raw)
+    option_ids = sorted({m.group().decode("ascii") for m in DIALOG_ID_TABLE_OPTION_RAW_RE.finditer(raw)})
+    dialog_brief_records = _dialog_timeline_ids(raw)
     used_timeline_ids = {
         dialog_id: timeline_ids
         for dialog_id, timeline_ids in dialog_brief_records.items()
@@ -262,7 +84,7 @@ def build_index(raw: bytes) -> dict:
         if ident.startswith("radio_"):
             root_keys.add(ident)
             continue
-        m = _PER_LINE_RE.match(ident)
+        m = DIALOG_ID_TABLE_LINE_RE.match(ident)
         if m:
             scene = m.group("scene")
             trunk = int(m.group("trunk"))
@@ -271,7 +93,7 @@ def build_index(raw: bytes) -> dict:
             root_keys.add(ident)
 
     for ident in option_ids:
-        m = _OPTION_ID_RE.match(ident)
+        m = DIALOG_ID_TABLE_OPTION_RE.match(ident)
         if not m:
             continue
         scene = m.group("scene")

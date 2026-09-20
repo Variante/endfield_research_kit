@@ -9,7 +9,7 @@ import time
 from pathlib import Path
 from typing import Any
 
-from scripts.common import ROOT, WEBUI_BUILD_DIR, rel_path
+from scripts.common import ROOT, WEBUI_BUILD_DIR, read_json, rel_path
 from scripts.source_paths import ExportLayout
 from scripts.webui.characters.build_character_data import CONVERTED_MEDIA_TYPES
 
@@ -66,13 +66,6 @@ def comparison_character_catalog_dir(export_root: Path, state_dir: Path) -> Path
     return catalog_dir
 
 
-def _read_json(path: Path) -> Any:
-    try:
-        return json.loads(path.read_text(encoding="utf-8-sig"))
-    except (OSError, UnicodeDecodeError, json.JSONDecodeError):
-        return None
-
-
 def _canonical(value: Any) -> str:
     return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
 
@@ -85,7 +78,7 @@ def _load_catalogs(root: Path) -> tuple[dict[str, dict[str, Any]], list[str], li
         return catalogs, sources, invalid
     for path in sorted(root.glob("*.json"), key=lambda item: item.name.casefold()):
         relative = rel_path(path)
-        payload = _read_json(path)
+        payload = read_json(path)
         records = payload.get("records") if isinstance(payload, dict) else None
         if not isinstance(records, list) or any(not isinstance(row, dict) for row in records):
             invalid.append(relative)

@@ -29,7 +29,7 @@ from typing import Any
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
-from scripts.common import read_bytes_cached
+from scripts.common import read_bytes_cached, write_json
 
 from scripts.webui.story.story_keys import canonical_cutscene_key, line_stem, timeline_stem_to_dialog_key
 from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
@@ -167,18 +167,6 @@ def source_ref(path: Path, field: str) -> dict:
 def load_json(path: Path) -> Any:
     with path.open(encoding="utf-8-sig") as f:
         return json.load(f)
-
-
-def write_json(path: Path, payload: Any) -> None:
-    path.parent.mkdir(parents=True, exist_ok=True)
-    # This generated evidence payload is currently around 90 MB when pretty
-    # printed. Its paired Markdown report is the human-readable view; compact
-    # JSON preserves the exact data while avoiding tens of megabytes of
-    # indentation and materially reducing every Story rebuild's write cost.
-    path.write_text(
-        json.dumps(payload, ensure_ascii=False, separators=(",", ":")),
-        encoding="utf-8",
-    )
 
 
 def short_type(value: str) -> str:
