@@ -27,7 +27,7 @@ from scripts.game_data.memorypack.buff_actions import (
 
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_shared_sequence_native.json"
 LABEL = "skillTimelineSharedSequence"
-CONTRACT_SHA256 = "011DE3B89F3C18CCF713BC3B857C2B2D031D527FC345A1835B00E40F5DE37EFF"
+CONTRACT_SHA256 = "E66B8762FCB99E6924A388DDDA5007BB1ACEF5902C10296E0573FDDC3B574855"
 JUMP_TO_ACTION_TAG = 0x00D9
 JUMP_TO_ACTION_MEMBER_COUNT = 6
 JUMP_TO_ACTION_READ_KINDS = (
@@ -154,7 +154,7 @@ def _contract() -> dict[str, Any]:
     if hashlib.sha256(raw).hexdigest().upper() != CONTRACT_SHA256:
         raise ValueError("skillTimelineSharedSequence.contract:sha256-mismatch")
     value = json.loads(raw)
-    if value.get("schema") != "endfield.skill-timeline-shared-sequence-native-contract.v1":
+    if value.get("schema") != "endfield.skill-timeline-shared-sequence-native-contract.v2":
         raise ValueError("skillTimelineSharedSequence.contract:unsupported-schema")
     dependency_values: dict[str, dict[str, Any]] = {}
     for dependency in value.get("dependencies", []):

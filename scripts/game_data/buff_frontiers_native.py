@@ -53,31 +53,31 @@ FRONTIERS: dict[str, Frontier] = {
         Frontier(
             "residual",
             "buff_residual_frontier.json",
-            "debabbbd6ea0465e4cf5bacffd489f0ca9b6c0838a7aa59088197c2dda6038f3",
+            "6ace2591280d7ce493c661e3db91b826c5b9b4bd3c4131bad9876cd9c6c39f4f",
             "endfield.buff-residual-frontier-native-contract.v1",
         ),
         Frontier(
             "frontier6",
             "buff_frontier6.json",
-            "fabf42c86746d668e099ed640aa9c1dd44570f6dc591425710d66ca7a36133c4",
+            "9a0c40e460297bf1b124e5aeee8fcef1714c34d87e72a3a5e8b9b45336d8b503",
             "endfield.buff-frontier6-native-contract.v1",
         ),
         Frontier(
             "frontier7",
             "buff_frontier7.json",
-            "100709c977caeb671d86a304f9a786b1df506edeed51d6506be09abf1136d0b3",
+            "928a17762e0c8c7db7f032639928df6fb788bbca25f6aaa87504591f1aae3f45",
             "endfield.buff-frontier7-native-contract.v1",
         ),
         Frontier(
             "frontier8",
             "buff_frontier8.json",
-            "196820a6fd2bcd811ccabacc5e17565289193e05c19e906ea2e29f0d0e91ddab",
+            "ea48e3f3fa3eac0b1de10a9b1db8c0afb4b80c43a943a4d0b5042dab911a1048",
             "endfield.buff-frontier8-native-contract.v1",
         ),
         Frontier(
             "frontier9",
             "buff_frontier9.json",
-            "52b0a641d077383f54eb692d18178f2dbe97cd22ce4de9148e596c1011b79810",
+            "10f26e776e950193d51697683abc0407be296e53e28dccc6256fe90425e6bf89",
             "endfield.buff-frontier9-native-contract.v1",
         ),
     )

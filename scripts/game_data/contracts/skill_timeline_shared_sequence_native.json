@@ -1,52 +1,73 @@
 {
-  "schema": "endfield.skill-timeline-shared-sequence-native-contract.v1",
+  "schema": "endfield.skill-timeline-shared-sequence-native-contract.v2",
   "status": "exact-current-build-composite",
-  "inputSetSha256": "0F1275C5FE9FEB3C0BAA801A49D37405CB3BA0C5BCD8A0A4160C48758283C497",
+  "inputSetSha256": "A916D545859C402CF4CD673817572D1D248BA60152E6B26D98B2A3B3BDD4B2AF",
   "nativeInputs": {
     "gameassemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
     "globalMetadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
     "unityplayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
   },
   "rootTags": [
-    "0x008C",
-    "0x00C9",
-    "0x00DE",
-    "0x0169",
-    "0x0118",
-    "0x009A",
-    "0x00A2",
-    "0x00B2",
-    "0x009B",
-    "0x003C",
-    "0x0081",
-    "0x0069",
-    "0x00D4",
-    "0x0119",
-    "0x0145",
-    "0x0183",
-    "0x00C5",
-    "0x001C",
-    "0x007C",
-    "0x0024",
-    "0x00B4",
+    "0x0001",
+    "0x0002",
+    "0x0005",
     "0x000B",
-    "0x016D",
-    "0x00EA",
-    "0x00B6",
-    "0x00EC",
+    "0x0016",
+    "0x001C",
+    "0x0024",
+    "0x002F",
+    "0x0032",
+    "0x0037",
+    "0x003C",
+    "0x004F",
     "0x0050",
     "0x0058",
     "0x0061",
+    "0x0069",
+    "0x007C",
+    "0x0081",
+    "0x008A",
+    "0x008C",
+    "0x0092",
+    "0x009A",
+    "0x009B",
+    "0x00A2",
+    "0x00AD",
+    "0x00B0",
+    "0x00B2",
+    "0x00B4",
+    "0x00B6",
     "0x00BD",
-    "0x0037",
-    "0x0016",
-    "0x0144",
+    "0x00C1",
+    "0x00C5",
+    "0x00C9",
+    "0x00D2",
+    "0x00D4",
+    "0x00DE",
+    "0x00EA",
+    "0x00EC",
     "0x00F6",
-    "0x014A",
+    "0x00F8",
+    "0x0115",
+    "0x0116",
+    "0x0117",
+    "0x0118",
+    "0x0119",
     "0x0120",
-    "0x0163",
+    "0x0121",
     "0x0140",
-    "0x0005"
+    "0x0144",
+    "0x0145",
+    "0x014A",
+    "0x0160",
+    "0x0163",
+    "0x0169",
+    "0x016D",
+    "0x0180",
+    "0x0183",
+    "0x0185",
+    "0x018F",
+    "0x0198"
   ],
   "createBuffMultiActionRoot": "0x0092",
   "allowedReachedRoutes": [
@@ -358,6 +379,204 @@
       "tag": "0x0183",
       "typeName": "TimeDilationAction",
       "memberCount": 16
+    },
+    {
+      "tag": "0x0001",
+      "typeName": "Beyond.Gameplay.Core.AbilityActions.BreakInteractiveAction+Data",
+      "memberCount": 9,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0002",
+      "typeName": "Beyond.Gameplay.Core.AbilityActions.FinishBuffAction+Data",
+      "memberCount": 12,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x000D",
+      "typeName": "Beyond.Gameplay.Core.AirborneAction+AirborneActionData",
+      "memberCount": 16,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x002F",
+      "typeName": "Beyond.Gameplay.Core.ChannelingAction+Data",
+      "memberCount": 10,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0032",
+      "typeName": "Beyond.Gameplay.Core.ChannelingDamageAction+Data",
+      "memberCount": 12,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x004F",
+      "typeName": "Beyond.Gameplay.Core.CommandToCharactersAction+CommandToCharactersActionData",
+      "memberCount": 14,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0060",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckEnemyRank+Data",
+      "memberCount": 6,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0064",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckHitColliderOptions+Data",
+      "memberCount": 6,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0087",
+      "typeName": "Beyond.Gameplay.Core.Conditions.OrConditionAction+Data",
+      "memberCount": 5,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x008A",
+      "typeName": "Beyond.Gameplay.Core.ContinuousFindTargetAction+Data",
+      "memberCount": 19,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x00AD",
+      "typeName": "Beyond.Gameplay.Core.EventListenerAction+Data",
+      "memberCount": 5,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x00B0",
+      "typeName": "Beyond.Gameplay.Core.FacBuildingPlayAnimationAction+Data",
+      "memberCount": 6,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x00B5",
+      "typeName": "Beyond.Gameplay.Core.FinishBuffByTag+Data",
+      "memberCount": 12,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x00BA",
+      "typeName": "Beyond.Gameplay.Core.ForceSpellStatusAction+Data",
+      "memberCount": 11,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x00BF",
+      "typeName": "Beyond.Gameplay.Core.GainBreakingAttackAtb+Data",
+      "memberCount": 7,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x00C1",
+      "typeName": "Beyond.Gameplay.Core.GetAITransDataAction+Data",
+      "memberCount": 6,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x00C8",
+      "typeName": "Beyond.Gameplay.Core.HurtAnimAction+Data",
+      "memberCount": 10,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x00D2",
+      "typeName": "Beyond.Gameplay.Core.InheritBuffAction+Data",
+      "memberCount": 9,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x00F8",
+      "typeName": "Beyond.Gameplay.Core.MoveToLocationAction+Data",
+      "memberCount": 23,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0114",
+      "typeName": "Beyond.Gameplay.Core.PickTargetAction+Data",
+      "memberCount": 7,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0115",
+      "typeName": "Beyond.Gameplay.Core.PlayAnimationAction+PlayAnimationActionData",
+      "memberCount": 16,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0116",
+      "typeName": "Beyond.Gameplay.Core.PlayAnimationWithStep+PlayAnimationWithStepData",
+      "memberCount": 30,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0117",
+      "typeName": "Beyond.Gameplay.Core.PlayNormalDashAnimAction+Data",
+      "memberCount": 5,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x011E",
+      "typeName": "Beyond.Gameplay.Core.PushBackAction+Data",
+      "memberCount": 20,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0121",
+      "typeName": "Beyond.Gameplay.Core.RayCastEffectAction+RayCastEffectActionData",
+      "memberCount": 33,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0148",
+      "typeName": "Beyond.Gameplay.Core.SetAbilityEntityToMainChar+Data",
+      "memberCount": 5,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0160",
+      "typeName": "Beyond.Gameplay.Core.ShowHideActorAction+ShowHideActorData",
+      "memberCount": 10,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x016B",
+      "typeName": "Beyond.Gameplay.Core.SpawnInteractiveGoldCoin+Data",
+      "memberCount": 6,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0176",
+      "typeName": "Beyond.Gameplay.Core.SwitchAction+Data",
+      "memberCount": 7,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0180",
+      "typeName": "Beyond.Gameplay.Core.ThrowPickupItemStartAction+Data",
+      "memberCount": 4,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0185",
+      "typeName": "Beyond.Gameplay.Core.ToggleMeshAction+ToggleMeshActionData",
+      "memberCount": 8,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x018F",
+      "typeName": "Beyond.Gameplay.Core.TyphoeaArcheryClearMissileAction+Data",
+      "memberCount": 5,
+      "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0198",
+      "typeName": "Beyond.Gameplay.Core.VoiceTriggerAction+VoiceTriggerActionData",
+      "memberCount": 11,
+      "evidence": "derivedPlanCorpusVerified"
     }
   ],
   "dependencies": [
@@ -595,11 +814,11 @@
     },
     {
       "path": "buff_frontier8.json",
-      "sha256": "196820A6FD2BCD811CCABACC5E17565289193E05C19E906EA2E29F0D0E91DDAB"
+      "sha256": "EA48E3F3FA3EAC0B1DE10A9B1DB8C0AFB4B80C43A943A4D0B5042DAB911A1048"
     },
     {
       "path": "../memorypack/buff_actions.py",
-      "sha256": "74FFE23471F7B712666E676C134DA626E467E00A731F391909AC641C754B9368"
+      "sha256": "F222941A7F486846BED4DB51305EF5F875D7216C99BB45F087424AA9753A36DE"
     }
   ],
   "evidenceBoundary": {
@@ -1106,5 +1325,12 @@
       "direct": "Current authenticated SkillData bytes reach tag 0x0118 as two first actions and one IfElse child, and all three rejoin independent following cursors.",
       "structuralOnly": "The stored values are named and typed; runtime animation choice and gameplay behavior are not inferred."
     }
+  },
+  "derivedRouteEvidence": {
+    "method": "Routes carrying evidence=derivedPlanCorpusVerified were not reviewed by hand. Their tag and memberCount come from scripts.game_data.memorypack.derived_schema, whose plans reproduce the frozen buff_actions reader's framing on 209 of 209 tags it also admits and close the exported BuffData family end to end.",
+    "corpusVerification": "Each was then reached on exported SkillData, where this decoder checks the route's memberCount against the payload's own member-count byte. Every one was verified that way on at least one file with no mismatch, which is why only reached routes were added: an unreached route would be an assertion.",
+    "boundary": "A derived route is corroborated framing, not a reviewed route. Its member count is checked on every file that reaches it, so a wrong one fails closed rather than producing plausible values; nothing here establishes the meaning of a field, and the originally reviewed rows remain the stronger evidence.",
+    "rootTagsAdded": 21,
+    "routesAdded": 33
   }
 }

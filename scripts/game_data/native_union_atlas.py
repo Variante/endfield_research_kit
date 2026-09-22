@@ -57,7 +57,7 @@ SUPPORTED_SCHEMAS: dict[str, tuple[str, frozenset[str | None]]] = {
     "endfield.skill-timeline-find-target-native-contract.v1": ("selector_routes", frozenset({"exact-current-build"})),
     "endfield.skill-timeline-play-animation-native-contract.v1": ("identity_only", frozenset({"exact-current-build"})),
     "endfield.skill-timeline-play-animation-step-native-contract.v1": ("dispatcher", frozenset({"exact-current-build"})),
-    "endfield.skill-timeline-shared-sequence-native-contract.v1": ("shared_sequence", frozenset({"exact-current-build-composite"})),
+    "endfield.skill-timeline-shared-sequence-native-contract.v2": ("shared_sequence", frozenset({"exact-current-build-composite"})),
 }
 
 

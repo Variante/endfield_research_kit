@@ -22,7 +22,7 @@ from scripts.game_data import buff_frontiers_native as buff_frontiers
 
 CONTRACT_PATH = CONTRACTS_DIR / "buff_residual_actions_native.json"
 LABEL = "buffResidualActions"
-CONTRACT_SHA256 = "4e766c17c96cb99537bd8121f532f40bcb83fbedb9bb3aa997c19b5ea45602bf"
+CONTRACT_SHA256 = "67C1567CF9BC244D8212DA2359BABBF55ABAC02F7A0DEB8AFA63D672AEE39819"
 
 
 def _contract() -> dict[str, Any]:
