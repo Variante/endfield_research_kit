@@ -30,6 +30,8 @@
     showDebug: false,
     sortKey: "default",
     sortDirection: "asc",
+    pager: null,
+    filterSignature: "",
   };
 
   const esc = (value) => String(value ?? "")
@@ -852,17 +854,20 @@
         <div id="characters-filter-splitter" class="filter-splitter" role="separator" aria-label="Resize character filters" aria-orientation="horizontal" tabindex="0"></div>
         <div id="characters-list-meta" class="characters-list-meta"></div>
         <div id="characters-list" class="characters-list"></div>
+        <footer id="characters-pager"></footer>
       </aside>
       <div id="characters-splitter" class="pane-splitter" role="separator" aria-label="Resize character sidebar" aria-orientation="vertical" tabindex="0"></div>
       <main id="characters-detail" class="characters-detail"></main>`;
     state.container.querySelector("#characters-q")?.addEventListener("input", (event) => {
       state.query = event.target.value;
+      state.pager?.reset();
       renderList();
     });
     state.container.querySelector("#characters-sort")?.addEventListener("change", (event) => {
       const nextKey = SORT_KEYS.includes(event.target.value) ? event.target.value : "default";
       state.sortKey = nextKey;
       state.sortDirection = DEFAULT_SORT_DIRECTIONS[nextKey] || "asc";
+      state.pager?.reset();
       const direction = state.container.querySelector("#characters-sort-direction");
       if (direction) {
         direction.value = state.sortDirection;
@@ -872,6 +877,7 @@
     });
     state.container.querySelector("#characters-sort-direction")?.addEventListener("change", (event) => {
       state.sortDirection = event.target.value === "desc" ? "desc" : "asc";
+      state.pager?.reset();
       renderList();
     });
     state.container.querySelector("#characters-reset")?.addEventListener("click", () => {
@@ -886,6 +892,7 @@
       state.updateFilters.clear();
       state.sortKey = "default";
       state.sortDirection = "asc";
+      state.pager?.reset();
       const search = state.container.querySelector("#characters-q");
       if (search) search.value = "";
       const sort = state.container.querySelector("#characters-sort");
@@ -899,6 +906,11 @@
       renderList();
     });
     bindFilterSections();
+    state.pager = window.WebUI.pagination?.createPager({
+      container: state.container.querySelector("#characters-pager"),
+      storageKey: "characters_browser_page_size",
+      onChange: renderList,
+    });
     renderFilterChips();
     setupFilterPanel();
     setupSplitters();
@@ -925,14 +937,31 @@
     const meta = state.container?.querySelector("#characters-list-meta");
     if (!list || !meta) return;
     syncFilterSectionActiveCounts();
+    const filterSignature = JSON.stringify({
+      query: state.query,
+      kind: state.kind,
+      source: state.source,
+      evidenceType: state.evidenceType,
+      identitiesRange: state.identitiesRange,
+      evidenceGroupsRange: state.evidenceGroupsRange,
+      assetCountRange: state.assetCountRange,
+      specialFilters: [...state.specialFilters].sort(),
+      updateFilters: [...state.updateFilters].sort(),
+      sortKey: state.sortKey,
+      sortDirection: state.sortDirection,
+    });
+    if (state.filterSignature && state.filterSignature !== filterSignature) state.pager?.reset();
+    state.filterSignature = filterSignature;
     const rows = filteredRecords();
+    state.pager?.setTotal(rows.length);
+    const pageRows = state.pager ? state.pager.slice(rows) : rows;
     if (state.selectedId && !rows.some((row) => row.id === state.selectedId)) state.selectedId = "";
     if (!state.selectedId && rows.length) state.selectedId = rows[0].id;
     const sortSummary = state.sortKey === "default"
       ? ""
       : ` · ${sortKeyLabel(state.sortKey)} ${state.sortDirection === "desc" ? "↓" : "↑"}`;
     meta.textContent = `${rows.length.toLocaleString()} ${ui("matching names", "个匹配名称")}${sortSummary}`;
-    list.innerHTML = rows.map((row) => {
+    list.innerHTML = pageRows.map((row) => {
       const evidenceTypes = [...new Set(row.records.flatMap((r) => (r.evidence || []).map((e) => e.type).filter(Boolean)))].sort();
       const typeTags = evidenceTypes.map((t) => `<span class="characters-evidence-type" data-evidence-type="${esc(t)}">${esc(evidenceTypeLabel(t))}</span>`).join("");
       const stats = rowStats(row);

@@ -446,6 +446,36 @@ def collection_table_name_tokens(table_name: str) -> list[str]:
     ]
 
 
+REFERENCE_ROW_NAME_FIELDS = (
+    "name",
+    "title",
+    "levelName",
+    "simLevelGroupName",
+    "chipName",
+    "dungeonName",
+    "areaName",
+    "itemName",
+    "weaponName",
+    "activityName",
+)
+
+
+def reference_row_name_i18n_id(row: dict | None):
+    """Return the i18n id of a row's display name, or ``None``.
+
+    Only the conventional exported name fields are read, and only when they
+    hold an ``{"id": ..., "text": ...}`` i18n node. Nothing is inferred from
+    the row key, so a table without a name field simply has no name.
+    """
+    if not isinstance(row, dict):
+        return None
+    for field in REFERENCE_ROW_NAME_FIELDS:
+        node = row.get(field)
+        if isinstance(node, dict) and node.get("id") not in (None, 0):
+            return node.get("id")
+    return None
+
+
 def reference_row_texts(text_nodes: list[dict]) -> list[dict]:
     rows: list[dict] = []
     for node in text_nodes:
@@ -547,6 +577,7 @@ __all__ = [
     "prts_archive_category_from_identifier",
     "prts_archive_category_from_row",
     "prts_attachment_aliases",
+    "reference_row_name_i18n_id",
     "reference_kind_from_tags",
     "reference_row_texts",
     "responsive_preview_values",

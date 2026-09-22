@@ -85,10 +85,12 @@ RESOURCE_DATA_PREFIXES = ("data/audio/", "data/game_data/", "data/decoded/")
 # Builder output that is not a page file (evidence indexes, caches, comparison
 # inputs). No package ever ships it.
 BUILD_OUTPUT_PREFIX = "data/_build/"
+LOCAL_ONLY_DATA_PREFIXES = ("data/data_inspector/",)
 
 
 def is_build_output_path(rel: str) -> bool:
-    return normalize_posix(rel).startswith(BUILD_OUTPUT_PREFIX)
+    normalized = normalize_posix(rel)
+    return normalized.startswith(BUILD_OUTPUT_PREFIX) or normalized.startswith(LOCAL_ONLY_DATA_PREFIXES)
 RESOURCE_DATA_LANGUAGE_RE = re.compile(r"^data/lang/[^/]+/progression(?:/|$)")
 
 ASSET_VIEW_START_RE = re.compile(r'<section\s+id="assets-view"(?=[\s>])', re.IGNORECASE)
@@ -97,10 +99,10 @@ ASSET_TAB_RE = re.compile(r'(<button\s+id="assets-tab"(?=[\s>]))([^>]*>)', re.IG
 ASSET_SHIM_JS = """(() => {
   const $ = (sel) => document.querySelector(sel);
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
-  const AVAILABLE_VIEWS = new Set(["story", "map-recovery", "characters", "gameplay", "audio", "reference", "updates"]);
+  const AVAILABLE_VIEWS = new Set(["story", "map-recovery", "characters", "gameplay", "audio", "reference", "updates", "recovery", "data-inspector"]);
   const HIDDEN_VIEWS = new Set(["assets"]);
-  const DEBUG_ONLY_VIEWS = new Set();
-  const DEBUG_VIEW_FALLBACKS = Object.freeze({ audio: "gameplay" });
+  const DEBUG_ONLY_VIEWS = new Set(["data-inspector"]);
+  const DEBUG_VIEW_FALLBACKS = Object.freeze({ audio: "gameplay", "data-inspector": "characters" });
   let activeView = "story";
 
   function resolveViewFromHash() {

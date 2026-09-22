@@ -128,7 +128,7 @@ class ScanConfig:
     history_dir: Path | None = None
     workers: int = DEFAULT_HASH_WORKERS
     hash_batch_size: int = 1024
-    sample_limit: int = 200
+    sample_limit: int = 0
     top_line_limit: int = 25
     ignore_relative_paths: tuple[str, ...] = ()
     include_relative_paths: tuple[str, ...] = ()
@@ -168,7 +168,7 @@ class ChangeAccumulator:
         self._line_order = 0
 
     def _remember_sample(self, bucket: list[ChangeEntry], entry: ChangeEntry) -> None:
-        if len(bucket) < self.sample_limit:
+        if self.sample_limit == 0 or len(bucket) < self.sample_limit:
             bucket.append(entry)
 
     def _remember_line_change(self, entry: ChangeEntry) -> None:

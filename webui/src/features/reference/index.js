@@ -29,6 +29,10 @@
       baseFile: "\u57fa\u7840\u6587\u4ef6",
       hash: "\u54c8\u5e0c",
       sameHashFiles: "\u76f8\u540c\u54c8\u5e0c\u6587\u4ef6",
+      fields: "\u7ed3\u6784\u5b57\u6bb5",
+      fieldUnresolved: "\u672a\u89e3\u6790",
+      fieldOpenRow: "\u5728\u6587\u672c\u8868\u4e2d\u6253\u5f00",
+      fieldRefMissing: "\u672a\u5bfc\u51fa\u6b64\u8868",
     },
     en: {
       tab: "Text",
@@ -59,6 +63,10 @@
       baseFile: "Base file",
       hash: "Hash",
       sameHashFiles: "Same-hash files",
+      fields: "Structured fields",
+      fieldUnresolved: "unresolved",
+      fieldOpenRow: "Open in Text Tables",
+      fieldRefMissing: "table not exported",
     },
   };
   const ROW_RENDER_LIMIT = Infinity;
@@ -94,6 +102,10 @@
     activeGroup: "",
     sourceFilters: new Set(),
     collapsedTablePrefixes: new Set(),
+    pager: null,
+    // Row id a maintained structured-field reference asked to focus after the
+    // next row render. Cleared once the row is scrolled into view.
+    focusRowId: "",
   };
 
   const ref$ = $;
@@ -567,6 +579,7 @@
     REF_STATE.contentMatches.clear();
     REF_STATE.contentScansDone.clear();
     REF_STATE.collapsedTablePrefixes.clear();
+    REF_STATE.focusRowId = "";
     clearTimeout(REF_STATE.contentScanTimer);
     REF_STATE.contentScanTimer = 0;
     REF_STATE.contentScanKey = "";
@@ -609,6 +622,7 @@
 
   function setReferenceGroupFilter(group) {
     REF_STATE.activeGroup = String(group || "");
+    REF_STATE.pager?.reset();
     buildReferenceGroupChips();
     renderReferenceList();
     renderReferenceRows();
@@ -623,6 +637,7 @@
     REF_STATE.contentScanTimer = 0;
     REF_STATE.contentScanKey = "";
     REF_STATE.contentScanToken += 1;
+    REF_STATE.pager?.reset();
     buildReferenceGroupChips();
     buildSourceChips();
     renderReferenceList();
@@ -656,6 +671,7 @@
       active: REF_STATE.sourceFilters,
       className: "reference-filter-chip",
       onToggle: () => {
+        REF_STATE.pager?.reset();
         renderReferenceList();
         renderReferenceRows();
       },
@@ -848,7 +864,9 @@
     const q = referenceQuery();
     syncReferenceFilterSectionActiveCounts();
     const sourceKey = sourceFilterKey();
-    const rows = filteredTables();
+    const rows = filteredTables().slice().sort(compareReferenceTablesForList);
+    REF_STATE.pager?.setTotal(rows.length);
+    const pageRows = REF_STATE.pager ? REF_STATE.pager.slice(rows) : rows;
     list.replaceChildren();
     ref$("#reference-count").textContent = String(REF_STATE.tables.length || 0);
     ref$("#reference-shown").textContent = String(rows.length);
@@ -856,7 +874,7 @@
 
     const sections = [];
     let current = null;
-    for (const table of rows.slice().sort(compareReferenceTablesForList)) {
+    for (const table of pageRows) {
       const prefix = tablePrefix(table);
       if (!current || current.prefix !== prefix) {
         current = { prefix, tables: [] };
@@ -901,6 +919,104 @@
     }
   }
 
+  // --- Maintained structured-field renderer --------------------------------
+  // A row payload may carry `fields`, produced by
+  // scripts/webui/story/reference_structured_fields.py. Each entry names the
+  // raw exported field, its maintained label, the verbatim exported value and,
+  // when the builder proved an exact row lookup, a `ref` naming the owning
+  // table and row. Nothing here matches by name; an entry with
+  // `resolved === false` is shown as unresolved rather than linked.
+
+  function referenceTableByStem(stem) {
+    const wanted = `${String(stem || "")}.json`.toLowerCase();
+    return REF_STATE.tables.find((table) => String(table.table || "").toLowerCase() === wanted) || null;
+  }
+
+  function focusReferenceRow(table, rowId) {
+    REF_STATE.focusRowId = String(rowId || "");
+    selectReferenceTable(table);
+  }
+
+  function applyReferenceRowFocus(wrap) {
+    const rowId = REF_STATE.focusRowId;
+    if (!rowId || !wrap) return;
+    const target = wrap.querySelector(`.reference-row[data-row-id="${CSS.escape(rowId)}"]`);
+    REF_STATE.focusRowId = "";
+    if (!target) return;
+    target.classList.add("is-focused");
+    target.scrollIntoView({ block: "center" });
+  }
+
+  function renderReferenceFieldValue(field) {
+    const node = document.createElement("div");
+    node.className = "reference-field-value";
+    const ref = field && field.ref;
+    const value = String(field && field.value || "");
+    if (!ref) {
+      node.textContent = value;
+      return node;
+    }
+    const target = referenceTableByStem(ref.table);
+    const resolved = field.resolved === true;
+    if (resolved && target) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "reference-field-link";
+      button.title = `${refText("fieldOpenRow")}: ${ref.table} / ${ref.row}`;
+      button.textContent = value;
+      button.addEventListener("click", () => focusReferenceRow(target, ref.row));
+      node.appendChild(button);
+    } else {
+      const text = document.createElement("span");
+      text.textContent = value;
+      node.appendChild(text);
+    }
+    const note = document.createElement("span");
+    note.className = "reference-field-ref";
+    const parts = [`${ref.table} / ${ref.row}`];
+    if (field.name) parts.push(field.name);
+    if (!resolved) parts.push(refText("fieldUnresolved"));
+    else if (!target) parts.push(refText("fieldRefMissing"));
+    note.textContent = parts.join(" | ");
+    if (!resolved) note.classList.add("is-unresolved");
+    node.appendChild(note);
+    return node;
+  }
+
+  function renderReferenceFields(item, row) {
+    const fields = Array.isArray(row && row.fields) ? row.fields : [];
+    if (!fields.length) return;
+    const section = document.createElement("div");
+    section.className = "reference-fields";
+
+    const heading = document.createElement("div");
+    heading.className = "reference-fields-title";
+    heading.textContent = refText("fields");
+    section.appendChild(heading);
+
+    for (const field of fields) {
+      const line = document.createElement("div");
+      line.className = "reference-field";
+      const label = document.createElement("div");
+      label.className = "reference-field-label";
+      label.textContent = String(field && field.label || field && field.field || "");
+      label.title = String(field && field.field || "");
+      line.appendChild(label);
+      line.appendChild(renderReferenceFieldValue(field));
+      section.appendChild(line);
+    }
+    item.appendChild(section);
+  }
+
+  function referenceRowFieldHaystack(row) {
+    const out = [];
+    for (const field of (row && row.fields) || []) {
+      out.push(field.field, field.label, field.value, field.name);
+      if (field.ref) out.push(field.ref.table, field.ref.row);
+    }
+    return out;
+  }
+
   function rowMatches(row, q) {
     const tokens = window.WebUI.parseQuery(q);
     if (!tokens.length) return true;
@@ -908,6 +1024,7 @@
     for (const item of row.texts || []) {
       haystack.push(item.field, item.hint, item.path, item.i18nId, item.text);
     }
+    haystack.push(...referenceRowFieldHaystack(row));
     return window.WebUI.queryMatches(haystack, tokens);
   }
 
@@ -917,7 +1034,13 @@
     if (!payload || !table) return;
 
     const q = referenceQuery();
-    const rows = (payload.rows || []).filter((row) => rowMatches(row, q));
+    // A row a maintained reference asked to focus stays visible even when the
+    // active search would hide it, so following a reference never lands on an
+    // empty pane. The filter is otherwise untouched.
+    const focusRowId = REF_STATE.focusRowId;
+    const rows = (payload.rows || []).filter(
+      (row) => rowMatches(row, q) || (focusRowId && String(row.id || "") === focusRowId),
+    );
     const shownRows = rows.slice(0, ROW_RENDER_LIMIT);
     const metaParts = [
       payload.table || table.table,
@@ -943,12 +1066,14 @@
     for (const row of shownRows) {
       const item = document.createElement("div");
       item.className = "reference-row";
+      item.dataset.rowId = String(row.id || "");
       const title = row.title && row.title !== row.id ? row.title : row.id;
       item.innerHTML =
         `<div class="reference-row-head">` +
           `<span class="reference-row-title">${escapeHtml(title)}</span>` +
           `<span class="reference-row-id">${escapeHtml(row.id || "")}</span>` +
         `</div>`;
+      renderReferenceFields(item, row);
       for (const text of row.texts || []) {
         const textNode = document.createElement("div");
         textNode.className = "reference-text";
@@ -961,6 +1086,7 @@
       }
       wrap.appendChild(item);
     }
+    applyReferenceRowFocus(wrap);
   }
 
   function referenceRawFiles(table) {
@@ -1081,6 +1207,7 @@
     if (reset) reset.addEventListener("click", resetReferenceFilters);
     const q = ref$("#reference-q");
     if (q) q.addEventListener("input", () => {
+      REF_STATE.pager?.reset();
       renderReferenceList();
       renderReferenceRows();
     });
@@ -1100,6 +1227,11 @@
 
   function initReference() {
     ensureReferencePanelToggle();
+    REF_STATE.pager = window.WebUI.pagination?.createPager({
+      container: "#reference-pager",
+      storageKey: "reference_browser_page_size",
+      onChange: renderReferenceList,
+    });
     applyReferenceStrings();
     bindReferenceEvents();
     maybeLoadReference();

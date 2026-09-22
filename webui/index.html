@@ -9,6 +9,8 @@
   <link rel="stylesheet" href="src/features/characters/style.css?v=20260902-character-updates">
   <link rel="stylesheet" href="src/features/map_recovery/style.css?v=20260823-map112">
   <link rel="stylesheet" href="src/features/audio/style.css?v=20260812-construction1">
+  <link rel="stylesheet" href="src/features/data_inspector/style.css?v=20260920-data-inspector13">
+  <link rel="stylesheet" href="src/features/recovery/style.css?v=20260921-recovery1">
 </head>
 <body data-active-view="story">
 <a class="skip-link" href="#views">Skip to current view</a>
@@ -37,6 +39,8 @@
       <button id="assets-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="assets-view" tabindex="-1" data-view="assets" data-i18n="assetsTab">资源</button>
       <button id="reference-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="reference-view" tabindex="-1" data-view="reference" data-i18n="referenceTab">文本</button>
       <button id="updates-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="updates-view" tabindex="-1" data-view="updates" data-i18n="updatesTab">更新</button>
+      <button id="recovery-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="recovery-view" tabindex="-1" data-view="recovery" data-i18n="recoveryTab">&#36827;&#24230;</button>
+      <button id="data-inspector-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="data-inspector-view" tabindex="-1" data-view="data-inspector" data-debug-view="1" data-i18n="dataInspectorTab" hidden>数据</button>
     </nav>
     <div class="topbar-actions">
       <label class="topbar-control" for="language">
@@ -231,6 +235,7 @@
 
           <div id="reference-list-meta"><span id="reference-shown">0</span> / <span id="reference-total">0</span> <span id="reference-list-unit">&#24352;&#34920;</span></div>
           <div id="reference-list"></div>
+          <footer id="reference-pager"></footer>
         </aside>
         <div id="reference-splitter" class="pane-splitter" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" tabindex="0"></div>
 
@@ -258,6 +263,10 @@
 
     <section id="characters-view" class="page-view" data-view="characters" role="tabpanel" aria-labelledby="characters-tab" tabindex="0" hidden>
       <div id="characters-app"></div>
+    </section>
+
+    <section id="data-inspector-view" class="page-view" data-view="data-inspector" role="tabpanel" aria-labelledby="data-inspector-tab" tabindex="0" hidden>
+      <div id="data-inspector-app"></div>
     </section>
 
     <section id="gameplay-view" class="page-view" data-view="gameplay" role="tabpanel" aria-labelledby="gameplay-tab" tabindex="0" hidden>
@@ -342,6 +351,7 @@
 
           <div id="gameplay-list-meta"><span id="gameplay-shown">0</span> / <span id="gameplay-total">0</span> <span id="gameplay-list-meta-label">entries</span></div>
           <div id="gameplay-list"></div>
+          <footer id="gameplay-pager"></footer>
         </aside>
         <div id="gameplay-splitter" class="pane-splitter" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" tabindex="0"></div>
 
@@ -368,6 +378,13 @@
 
     <section id="map-recovery-view" class="page-view" data-view="map-recovery" role="tabpanel" aria-labelledby="map-recovery-tab" tabindex="0" hidden>
       <div id="map-recovery-app"></div>
+    </section>
+
+    <section id="recovery-view" class="page-view" data-view="recovery" role="tabpanel" aria-labelledby="recovery-tab" tabindex="0" hidden>
+      <div id="recovery-app">
+        <div id="recovery-status" class="recovery-status" role="status" aria-live="polite" hidden></div>
+        <div id="recovery-body"></div>
+      </div>
     </section>
 
     <section id="updates-view" class="page-view" data-view="updates" role="tabpanel" aria-labelledby="updates-tab" tabindex="0" hidden>
@@ -433,6 +450,7 @@
 
           <div id="updates-list-meta"><span id="updates-shown">0</span> / <span id="updates-total">0</span> <span id="updates-list-meta-label">&#26465;</span></div>
           <div id="updates-list"></div>
+          <footer id="updates-pager"></footer>
         </aside>
         <div id="updates-splitter" class="pane-splitter" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" tabindex="0"></div>
 
@@ -541,6 +559,7 @@
             <div id="asset-list-spacer"></div>
             <div id="asset-list"></div>
           </div>
+          <footer id="asset-pager"></footer>
         </aside>
         <div id="asset-splitter" class="pane-splitter" role="separator" aria-label="Resize sidebar" aria-orientation="vertical" tabindex="0"></div>
 
@@ -639,11 +658,12 @@
 <script src="src/ui/media_player.js?v=20260812-multimedia5"></script>
 <script src="src/ui/splitter.js?v=20260701-gp5"></script>
 <script src="src/ui/filters.js?v=20260701-gp5"></script>
+<script src="src/ui/pagination.js?v=20260920-pagination1"></script>
 <script src="app_labels.js?v=20260821-mapnav1"></script>
 <script src="app_tree.js?v=20260809-storygendervariant1"></script>
 <script src="src/features/story_triggers.js?v=20260725-mplayout2"></script>
 <script src="app.js?v=20260809-storygendervariant1"></script>
-<script src="assets.js?v=20260809-audio1"></script>
+<script src="assets.js?v=20260920-json-categories1"></script>
   <script src="src/features/characters/index.js?v=20260902-character-updates"></script>
 <script src="src/features/gameplay/labels.js?v=20260814-gameplaybuff10"></script>
     <script src="src/features/gameplay/index.js?v=20260814-gameplaybuff10"></script>
@@ -652,5 +672,7 @@
 <script src="src/features/next_views.js?v=20260821-map1"></script>
 <script src="src/features/reference/index.js?v=20260808-titles1"></script>
 <script src="src/features/updates/index.js?v=20260920-audio-pcm1"></script>
+<script src="src/features/recovery/index.js?v=20260921-recovery1"></script>
+<script src="src/features/data_inspector/index.js?v=20260920-data-inspector20"></script>
 </body>
 </html>

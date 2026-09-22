@@ -51,6 +51,12 @@ allowed to mean:
 - a grammar-hash-preimage name is a weaker source than a shipped literal. It
   supplies only the owner and category its spelling encodes, and no caller,
   trigger, execution, branch, or audibility.
+- an Event named from an authored serialized payload literal
+  (`LevelScriptData`, `LevelScriptTemplateData`, `SpawnerConfig`, `Interactive`,
+  `LevelData`) is an exact shipped-string match on the FNV-1 hash, so the
+  spelling is proven. The payload root is provenance for the spelling only:
+  which serialized field holds the literal is unidentified, so it is **not** a
+  consumer, trigger or playback-location claim for that payload record.
 - `noExplicitOutputBusSerialized` is an absence of serialized output-bus nodes.
   It implies no default or parent routing, no silence, and no effect-free path.
 - `ownerKind=npc` requires the agreeing table pair plus an exact channel key. A
@@ -83,6 +89,15 @@ audio logic in the semantic publisher or import either entry point as a helper.
 
 ## Remaining gaps
 
+- Media under `wwise/unknown` are not unnamed media: `unknown` is the raw
+  physical category, and most such rows already carry an exact named Event.
+  The real residual is the media whose only reaching Event is still
+  `hashed-event:0x...`, plus the External-Source-shaped ids no Event reaches at
+  all. Quote those two, not the folder size.
+- Wwise Events named `Play_au_*` are outside the harvested
+  `au_`/`bark_`/`radio_` grammar, so a shipped payload literal spelling one of
+  them is currently dropped. Widening the grammar is a separate, measurable
+  step, not a prefix guess.
 - Close more authored consumer-to-Event and Event-to-media ownership paths.
 - Recover selector/parameter meaning without conflating control with playback.
 - Keep unsupported codecs, missing chunks, and unobserved runtime branches visible.

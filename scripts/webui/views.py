@@ -108,6 +108,15 @@ def build_tasks(args: argparse.Namespace) -> list[TaskSpec]:
 
     # ---- roots: builders that only read the completed export ----------------
 
+    # The decoded-data inspector reuses maintained data-side readers and the
+    # exported Unity JSON. It has no dependency on another WebUI dataset.
+    tasks.append(
+        TaskSpec(
+            "data_inspector",
+            (module("scripts.webui.data_inspector.build_data_inspector"),),
+        )
+    )
+
     # Mission Pipeline is a standalone recovery tool now. Keep map recovery
     # in the WebUI build, but do not make the export wrapper run Mission
     # Pipeline's expensive native/story recovery pass.

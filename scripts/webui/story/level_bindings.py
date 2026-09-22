@@ -111,6 +111,11 @@ from scripts.game_data.codecs.leveldata.radio_contexts import (
     parse_function_area_radio_trigger,
 )
 from scripts.game_data.codecs.leveldata import interactive_layout
+from scripts.game_data.codecs.leveldata.levelscript_brief import (
+    decode_levelscript_brief_data_entry as parse_levelscript_brief_data_entry,
+    find_levelscript_brief_data_entries,
+    parse_leveldata_levelscript_brief_dictionary,
+)
 from scripts.game_data.codecs.levelscript.params import (
     decode_bool_param,
     decode_constant_entity_ptr_param,
@@ -121,6 +126,7 @@ from scripts.common import EXPORT_LAYOUT
 
 _LEVELSCRIPT_DIALOG_EXIT_TEXT_PAIR_CACHE: dict[str, list[dict]] = {}
 _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE: dict[str, list[dict]] | None = None
+_LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE: list[dict] | None = None
 _LEVELSCRIPT_NATIVE_STORY_PLAYBACK_CACHE: dict[str, list[dict]] | None = None
 _LEVELSCRIPT_INTERACTIVE_NARRATIVE_CACHE: dict[
     frozenset[str],
@@ -722,6 +728,7 @@ LEVELSCRIPT_NATIVE_ACTION_NAMES: dict[tuple[int, int], str] = {
     (0x0357, 0x14): "PlayCutsceneAction",
     (0x0358, 0x14): "PlayCutsceneIgnoreCinematicQueue",
     (0x035E, 0x0E): "PlayFmvAction",
+    (0x0369, 0x0E): "PlayFmvAction",
     (0x036B, 0x13): "PostAudioCue",
     (0x0371, 0x0B): "PostAudioStatusEvent",
     (0x0373, 0x0C): "PostMusicEvent",
@@ -1201,6 +1208,7 @@ LEVELSCRIPT_OPCODE_TABLE: dict[tuple[int, int], str] = {
     (0x0357, 0x14): "play_cutscene",
     (0x0358, 0x14): "play_cutscene",
     (0x035E, 0x0E): "play_fmv",
+    (0x0369, 0x0E): "play_fmv",
     (0x0376, 0x0C): "preload_cutscene",
     (0x037E, 0x0A): "raise_custom_event",
     (0x0380, 0x0B): "raise_custom_event",
@@ -3666,15 +3674,18 @@ def build_levelscript_action_story_occurrences(
 ) -> dict[str, list[dict]]:
     """Return exact tagged Story ids in decoded LevelScript actionList rows."""
     global _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE
+    global _LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE
     root = level_script_root or LEVELSCRIPT_DIR
     use_default_cache = level_script_root is None
     if use_default_cache and _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE is not None:
         return _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE
     out: dict[str, list[dict]] = defaultdict(list)
+    fmv_scan_failures: list[dict] = []
     seen: set[tuple] = set()
     if not root.is_dir():
         if use_default_cache:
             _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE = {}
+            _LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE = []
         return {}
 
     for level_dir in sorted(path for path in root.iterdir() if path.is_dir()):
@@ -3733,6 +3744,26 @@ def build_levelscript_action_story_occurrences(
                 action_map_role = str(membership.get(record_start) or "")
                 if not action_map_role.startswith("actionList#"):
                     continue
+                fmv_id_candidates = sorted({
+                    str(hit.get("text") or "").strip()
+                    for hit in (record.get("strings") or [])
+                    if isinstance(hit, dict)
+                    and re.fullmatch(
+                        r"cs_video_[A-Za-z0-9][A-Za-z0-9_]*",
+                        str(hit.get("text") or "").strip(),
+                    )
+                })
+                if fmv_id_candidates and not record_class:
+                    fmv_scan_failures.append({
+                        "gate": "recognized_levelscript_fmv_action_opcode",
+                        "source": source_file,
+                        "sourceSha256": hashlib.sha256(data).hexdigest(),
+                        "recordOffset": record_start,
+                        "localId": record.get("localId"),
+                        "code": f"0x{int(record.get('code') or 0):04x}",
+                        "kind": f"0x{int(record.get('kind') or 0):02x}",
+                        "fmvIdCandidates": fmv_id_candidates,
+                    })
                 story_hits: dict[str, list[int]] = defaultdict(list)
                 for hit in record.get("strings") or []:
                     story_key = str(
@@ -3774,6 +3805,16 @@ def build_levelscript_action_story_occurrences(
                         and fmv_story_key
                         and isinstance(fmv_field_offset, int)
                     ):
+                        fmv_scan_failures.append({
+                            "gate": "decode_exact_levelscript_fmv_target_field",
+                            "source": source_file,
+                            "sourceSha256": hashlib.sha256(data).hexdigest(),
+                            "recordOffset": record_start,
+                            "localId": record.get("localId"),
+                            "code": f"0x{int(record.get('code') or 0):04x}",
+                            "kind": f"0x{int(record.get('kind') or 0):02x}",
+                            "fmvIdCandidates": fmv_id_candidates,
+                        })
                         continue
                     story_hits = {fmv_story_key: [fmv_field_offset]}
                 reading_popup_action: dict = {}
@@ -3911,7 +3952,18 @@ def build_levelscript_action_story_occurrences(
     result = dict(out)
     if use_default_cache:
         _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE = result
+        _LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE = fmv_scan_failures
     return result
+
+
+def build_levelscript_fmv_playback_scan_failures() -> list[dict]:
+    """Return bounded failures that make an unused-cutscene claim unsafe."""
+    if _LEVELSCRIPT_ACTION_STORY_OCCURRENCES_CACHE is None:
+        build_levelscript_action_story_occurrences()
+    return [
+        dict(row)
+        for row in (_LEVELSCRIPT_FMV_PLAYBACK_SCAN_FAILURES_CACHE or [])
+    ]
 
 
 def build_active_levelscript_action_story_occurrences(
@@ -10195,248 +10247,6 @@ def build_level_interactive_narrative_mission_story_contexts(
     return rows
 
 
-def parse_levelscript_brief_data_entry(
-    data: bytes,
-    offset: int,
-    *,
-    expected_script_id: int | None = None,
-) -> dict | None:
-    """Parse one native LevelData member-22 BriefData dictionary entry.
-
-    Current GameAssembly proves ``LevelData`` is a 43-member MemoryPack object
-    and serialized member 22 is the sole
-    ``Dictionary<ulong, LevelScriptBriefData>``.  The BriefData formatter has
-    eight members.  Requiring the final typed ``scriptId`` to repeat the
-    dictionary key rejects coincidental ``<u64><0x08>`` byte patterns in other
-    LevelData members.
-    """
-    key_decoded = _read_leveldata_u64(data, offset)
-    if key_decoded is None:
-        return None
-    key, cursor = key_decoded
-    if expected_script_id is not None and key != expected_script_id:
-        return None
-    if cursor >= len(data) or data[cursor] != 0x08:
-        return None
-    cursor += 1
-
-    data_path_decoded = _read_leveldata_u64(data, cursor)
-    if data_path_decoded is None:
-        return None
-    data_path_hash, cursor = data_path_decoded
-
-    type_decoded = _read_leveldata_i32(data, cursor)
-    if type_decoded is None:
-        return None
-    level_script_type, cursor = type_decoded
-    if not 0 <= level_script_type <= 5:
-        return None
-
-    max_stage_decoded = _read_leveldata_i32(data, cursor)
-    if max_stage_decoded is None:
-        return None
-    max_stage, cursor = max_stage_decoded
-    if max_stage < 0 or max_stage > 1_000_000:
-        return None
-
-    parent_decoded = _read_leveldata_u64(data, cursor)
-    if parent_decoded is None:
-        return None
-    parent_script_id, cursor = parent_decoded
-
-    properties_decoded = _read_leveldata_count(data, cursor)
-    if properties_decoded is None:
-        return None
-    property_count, cursor = properties_decoded
-    properties: list[dict] = []
-    for _ in range(max(0, property_count)):
-        if cursor >= len(data) or data[cursor] not in (0x02, 0xFF):
-            return None
-        property_header = data[cursor]
-        cursor += 1
-        if property_header == 0xFF:
-            continue
-        property_name_decoded = _read_leveldata_memorypack_string(
-            data,
-            cursor,
-            max_length=512,
-        )
-        if property_name_decoded is None:
-            return None
-        property_name, cursor = property_name_decoded
-        if cursor >= len(data) or data[cursor] not in (0x02, 0xFF):
-            return None
-        value_header = data[cursor]
-        cursor += 1
-        if value_header == 0xFF:
-            properties.append({"name": property_name, "value": None})
-            continue
-        value_type_decoded = _read_leveldata_i32(data, cursor)
-        if value_type_decoded is None:
-            return None
-        value_type, cursor = value_type_decoded
-        atoms_decoded = _read_leveldata_count(data, cursor)
-        if atoms_decoded is None:
-            return None
-        atom_count, cursor = atoms_decoded
-        atoms: list[dict | None] = []
-        for _ in range(max(0, atom_count)):
-            if cursor >= len(data) or data[cursor] not in (0x02, 0xFF):
-                return None
-            atom_header = data[cursor]
-            cursor += 1
-            if atom_header == 0xFF:
-                atoms.append(None)
-                continue
-            value_bits = _read_leveldata_u64(data, cursor)
-            if value_bits is None:
-                return None
-            value_bit64, cursor = value_bits
-            atom_text_decoded = _read_leveldata_memorypack_string(
-                data,
-                cursor,
-                max_length=4096,
-            )
-            if atom_text_decoded is None:
-                return None
-            atom_text, cursor = atom_text_decoded
-            atoms.append({
-                "valueBit64": value_bit64,
-                "text": atom_text,
-            })
-        properties.append({
-            "name": property_name,
-            "value": {
-                "valueType": value_type,
-                "atomCount": max(0, atom_count),
-                "atoms": atoms,
-            },
-        })
-
-    property_map_decoded = _read_leveldata_count(data, cursor)
-    if property_map_decoded is None:
-        return None
-    property_map_count, cursor = property_map_decoded
-    for _ in range(max(0, property_map_count)):
-        property_id_decoded = _read_leveldata_i32(data, cursor)
-        if property_id_decoded is None:
-            return None
-        _property_id, cursor = property_id_decoded
-        cursor = _skip_leveldata_memorypack_string(data, cursor)
-        if cursor is None:
-            return None
-
-    world_refs_decoded = _read_leveldata_count(data, cursor)
-    if world_refs_decoded is None:
-        return None
-    world_ref_count, cursor = world_refs_decoded
-    world_entity_ids: list[str] = []
-    for _ in range(max(0, world_ref_count)):
-        world_ref_decoded = _read_leveldata_u64(data, cursor)
-        if world_ref_decoded is None:
-            return None
-        world_entity_id, cursor = world_ref_decoded
-        world_entity_ids.append(str(world_entity_id))
-
-    final_script_decoded = _read_leveldata_u64(data, cursor)
-    if final_script_decoded is None:
-        return None
-    final_script_id, cursor = final_script_decoded
-    if final_script_id != key:
-        return None
-    return {
-        "keyOffset": offset,
-        "endOffset": cursor,
-        "scriptId": str(key),
-        "dataPathHash": str(data_path_hash),
-        "levelScriptType": level_script_type,
-        "maxStage": max_stage,
-        "parentLevelScriptId": str(parent_script_id),
-        "propertyCount": max(0, property_count),
-        "properties": properties,
-        "propertyMapCount": max(0, property_map_count),
-        "refWorldEntityCount": max(0, world_ref_count),
-        "refWorldEntityIds": world_entity_ids,
-    }
-
-
-def find_levelscript_brief_data_entries(data: bytes, script_id: int) -> list[dict]:
-    if not data or data[0] != 0x2B:
-        return []
-    needle = script_id.to_bytes(8, "little", signed=False)
-    out: list[dict] = []
-    for offset in _find_exact_bytes_offsets(data, needle):
-        entry = parse_levelscript_brief_data_entry(
-            data,
-            offset,
-            expected_script_id=script_id,
-        )
-        if entry is not None:
-            out.append(entry)
-    return out
-
-
-@lru_cache(maxsize=None)
-def _parse_leveldata_levelscript_brief_dictionary_cached(
-    data: bytes,
-    candidate_script_ids: tuple[int, ...],
-) -> dict[int, dict]:
-    """Locate and validate the complete LevelData member-22 dictionary.
-
-    Accepted BriefData values must form one contiguous key/value chain whose
-    immediately preceding signed count equals the chain length.  This proves
-    the member's dictionary framing without implementing the twenty unrelated
-    LevelData members that precede it.
-    """
-    if not data or data[0] != 0x2B:
-        return {}
-    entries: list[dict] = []
-    for script_id in candidate_script_ids:
-        entries.extend(find_levelscript_brief_data_entries(data, script_id))
-    if not entries:
-        return {}
-    entries.sort(key=lambda entry: int(entry["keyOffset"]))
-    if len({int(entry["keyOffset"]) for entry in entries}) != len(entries):
-        return {}
-    if any(
-        int(previous["endOffset"]) != int(current["keyOffset"])
-        for previous, current in zip(entries, entries[1:])
-    ):
-        return {}
-    count_offset = int(entries[0]["keyOffset"]) - 4
-    count_decoded = _read_leveldata_i32(data, count_offset)
-    if count_decoded is None or count_decoded[0] != len(entries):
-        return {}
-    by_script_id: dict[int, dict] = {}
-    for entry in entries:
-        script_id = int(entry["scriptId"])
-        if script_id in by_script_id:
-            return {}
-        by_script_id[script_id] = {
-            **entry,
-            "dictionaryCountOffset": count_offset,
-            "dictionaryEntryCount": len(entries),
-        }
-    return by_script_id
-
-
-def parse_leveldata_levelscript_brief_dictionary(
-    data: bytes,
-    candidate_script_ids: set[int],
-) -> dict[int, dict]:
-    """Return one immutable build-scoped decode of a LevelData dictionary.
-
-    Several independent exact-evidence passes inspect the same LevelData file
-    with the same scene script set. Reusing that validated decode avoids
-    rescanning every candidate u64 while preserving the fail-closed parser.
-    Callers treat the returned mapping as read-only.
-    """
-    return _parse_leveldata_levelscript_brief_dictionary_cached(
-        data,
-        tuple(sorted(candidate_script_ids)),
-    )
-
-
 def resolve_levelscript_dynamic_property_string(
     brief: dict | None,
     binding: dict | None,
@@ -14063,5 +13873,4 @@ def build_mission_scene_file_order(
             for loop in sorted(loops)
         ],
     }
-
 

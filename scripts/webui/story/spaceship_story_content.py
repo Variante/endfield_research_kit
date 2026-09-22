@@ -1,18 +1,18 @@
 #!/usr/bin/env python3
 """Build operator-spacecraft Story content evidence without inventing missions.
 
-Two original-data producer shapes are accepted:
+Two current-export producer shapes are accepted:
 
 * complete DialogText buckets contained by a typed DialogTree whose authored
   options use ``SpaceshipOptionGiftData`` or ``SpaceshipOptionWorkData``;
 * complete ``sim_talk`` buckets mirrored by CharacterTable ``profileVoice``
   rows, with an exact pair of profile/dialog AudioDialog records.
 
-The installed GameAssembly/global-metadata hashes pin the reviewed consumers;
-an absent or different client build skips this audit rather than publishing
-classifications its recorded native facts cannot back. No filename prefix alone
-admits a Story key, and no mission ownership or cross-file chronology is
-emitted.
+The audit uses only source-hash-checked tables and authored DialogTree payloads
+from the selected export. It carries no historical native addresses or client
+hash pin, so each run describes the currently selected export. No filename
+prefix alone admits a Story key, and no mission ownership or cross-file
+chronology is emitted.
 """
 from __future__ import annotations
 
@@ -29,11 +29,7 @@ from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
 from scripts.common import (
-    InstalledNativeInputs,
-    check_installed_native_inputs,
     md_escape,
-    native_evidence_required,
-    native_evidence_skip_message,
     read_json,
     rel_path,
     safe_key,
@@ -49,53 +45,11 @@ from scripts.webui.story.anime_assets import (
 from scripts.common import EXPORT_LAYOUT, rel_path as export_rel_path
 
 
-SCHEMA = "spaceshipStoryContentAudit.v2"
+SCHEMA = "spaceshipStoryContentAudit.v3"
 DEFAULT_TABLE_ROOT = (
     EXPORT_LAYOUT.table_dir
 )
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "recovery"
-
-EXPECTED_GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-)
-EXPECTED_METADATA_SHA256 = (
-    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-)
-NATIVE_MAPPING_ID = (
-    "gameassembly-2026-08-02-spaceship-story-consumers-v1"
-)
-NATIVE_METHODS = (
-    {
-        "type": "Beyond.Gameplay.Core.SpaceshipOptionHandler",
-        "method": "OnSelectWhenDialogEnd",
-        "methodPointerVa": "0x186e515f8",
-        "calls": ["_DoGiftAction", "_DoWorkAction"],
-    },
-    {
-        "type": "Beyond.Gameplay.Core.SpaceshipOptionHandler",
-        "method": "_DoGiftAction",
-        "methodPointerVa": "0x186e51798",
-        "calls": ["Beyond.Gameplay.SpaceshipSystem.RecvGiftFromChar"],
-    },
-    {
-        "type": "Beyond.Gameplay.Core.SpaceshipOptionHandler",
-        "method": "_DoWorkAction",
-        "methodPointerVa": "0x186e518ac",
-        "calls": [
-            "Beyond.Gameplay.Actions.GameAction.SpaceshipChangeCharWorkState",
-            "Beyond.Gameplay.Core.DialogManager.SelectDialogTreeIndex",
-        ],
-    },
-    {
-        "type": "Beyond.Gameplay.Core.SpaceshipNpcReactionManager",
-        "method": "_RefreshSingleNpcGift",
-        "methodPointerVa": "0x18709b7ec",
-        "calls": [
-            "Beyond.Cfg.SpaceshipSubCharGiftData.get_list",
-            "Beyond.Gameplay.Actions.GameAction.SetOverrideInteractDialogId",
-        ],
-    },
-)
 
 SPACESHIP_OPTION_TYPES = frozenset({
     "Beyond.Gameplay.SpaceshipOptionGiftData",
@@ -234,7 +188,6 @@ def collect_dialog_tree_classifications(
             "dialogTreeRoots": sorted(row["dialogTreeRoots"]),
             "consumerClasses": sorted(row["consumerClasses"]),
             "sourceFiles": sorted(row["sourceFiles"]),
-            "nativeMappingId": NATIVE_MAPPING_ID,
             "orderBoundary": (
                 "the typed DialogTree proves internal operator-spacecraft "
                 "content and branch membership, not mission ownership or "
@@ -329,7 +282,6 @@ def collect_unconsumed_spaceship_dialog_definitions(
                 dialog_text_source,
                 *(rel_path(path) for path in paths),
             }),
-            "nativeMappingId": NATIVE_MAPPING_ID,
             "consumerBoundary": (
                 "exact typed spaceship DialogTrees consume sibling lines for "
                 "the same authored actor/family pair, while no related typed "
@@ -436,7 +388,6 @@ def collect_profile_talk_classifications(
                 export_rel_path(EXPORT_LAYOUT.table_dir / "CharacterTable.json"),
                 export_rel_path(EXPORT_LAYOUT.table_dir / "DialogTextTable.json"),
             ],
-            "nativeMappingId": NATIVE_MAPPING_ID,
             "orderBoundary": (
                 "the character profile and byte-equivalent audio metadata "
                 "prove operator profile content, not mission ownership or "
@@ -456,7 +407,6 @@ def _source_row(path: Path) -> dict[str, Any]:
 
 def build_report(
     table_root: Path,
-    native: InstalledNativeInputs,
 ) -> dict[str, Any]:
     table_paths = {
         name: table_root / f"{name}.json"
@@ -465,13 +415,6 @@ def build_report(
     missing = [str(path) for path in table_paths.values() if not path.is_file()]
     if missing:
         raise AuditError("missing required table(s): " + ", ".join(missing))
-    if not native.validated:
-        raise AuditError(native.detail)
-    gameassembly = native.gameassembly
-    metadata = native.metadata
-    game_hash = native.gameassembly_sha256.upper()
-    metadata_hash = native.metadata_sha256.upper()
-
     audio_rows = read_json(table_paths["AudioDialog"], {})
     character_rows = read_json(table_paths["CharacterTable"], {})
     dialog_rows = read_json(table_paths["DialogTextTable"], {})
@@ -533,14 +476,13 @@ def build_report(
             ),
             "dialogTreeRoots": len(used_tree_paths),
         },
-        "nativeEvidence": {
-            "validated": True,
-            "mappingId": NATIVE_MAPPING_ID,
-            "gameAssembly": str(gameassembly),
-            "gameAssemblySha256": game_hash,
-            "metadata": str(metadata),
-            "metadataSha256": metadata_hash,
-            "methods": list(NATIVE_METHODS),
+        "evidenceBoundary": {
+            "kind": "source_only_current_export",
+            "detail": (
+                "Classifications are derived from the selected export's "
+                "source-hash-checked tables and authored DialogTree payloads; "
+                "no installed-binary version pin or native address is used."
+            ),
         },
         "sources": [_source_row(path) for path in source_paths],
         "classifications": classifications,
@@ -561,7 +503,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         "- Unconsumed typed-context definitions: "
         f"`{summary['unconsumedDialogDefinitionStoryKeys']}`",
         f"- Exact DialogTree roots: `{summary['dialogTreeRoots']}`",
-        f"- Native mapping: `{md_escape(report['nativeEvidence']['mappingId'])}`",
+        "- Evidence boundary: `source_only_current_export`",
         "",
         "| Story key | Evidence | Original consumers |",
         "|---|---|---|",
@@ -579,8 +521,6 @@ def render_markdown(report: dict[str, Any]) -> str:
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     parser.add_argument("--table-root", type=Path, default=DEFAULT_TABLE_ROOT)
-    parser.add_argument("--gameassembly", type=Path)
-    parser.add_argument("--metadata", type=Path)
     parser.add_argument(
         "--out",
         type=Path,
@@ -596,25 +536,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    native = check_installed_native_inputs(
-        EXPECTED_GAMEASSEMBLY_SHA256,
-        EXPECTED_METADATA_SHA256,
-        gameassembly=args.gameassembly,
-        metadata=args.metadata,
-    )
-    if not native.validated:
-        required = native_evidence_required()
-        print(
-            native_evidence_skip_message(
-                "spaceship-story-content", native, required=required
-            ),
-            file=sys.stderr,
-        )
-        # The published report stays as it is: its own source hashes decide
-        # whether the recorded classifications still describe current tables.
-        return 1 if required else 0
     try:
-        report = build_report(args.table_root, native)
+        report = build_report(args.table_root)
     except AuditError as exc:
         print(f"[spaceship-story-content] {exc}", file=sys.stderr)
         return 1

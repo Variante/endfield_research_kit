@@ -38,7 +38,7 @@ precedence; `WEBUI_PREVIOUS_EXPORT_ROOT` remains the server-specific override.
 
 ## Pages and routing
 
-Eight tabs, in navigation order. `data-view` is the tab token in `index.html`
+Nine tabs, in navigation order. `data-view` is the tab token in `index.html`
 and the value of `document.body.dataset.activeView`.
 
 | Page | `data-view` | Scope |
@@ -46,11 +46,16 @@ and the value of `document.body.dataset.activeView`.
 | Story | `story` | Reconstructed dialog, SNS, radio, options, cutscenes, media, and evidence-typed order |
 | Map | `map-recovery` | Authored world-space evidence with minimap, model, point, and water layers |
 | Characters | `characters` | Identity groups, source evidence, related assets, and live overrides |
-| Gameplay | `gameplay` | Characters, equipment, enemies, items, progression, skills, projectiles, assets, and sound |
+| Gameplay | `gameplay` | Characters, equipment, enemies, items, progression, skills, projectiles, and assets |
 | Audio | `audio` | Wwise Events/media, authored contexts, decoded playback candidates, and recovery state |
 | Assets | `assets` | Exported images, models, materials, video, and metadata |
 | Text | `reference` | Searchable localized table/reference rows |
 | Updates | `updates` | Exported game-data changes between two complete versions |
+| Recovery | `recovery` | How far the installed data is understood, by level and lane, with every figure marked measured or declared |
+
+`data-inspector` is a tenth, debug-only tab revealed by `Show debug info`. It
+browses decoder output and mounted raw export sources without turning recovery
+internals into normal semantic navigation.
 
 Deep links are query parameters kept current with `history.replaceState`.
 `#<view>` also selects a tab: the retired `#projectiles` falls back to
@@ -64,10 +69,11 @@ Gameplay, and any other unknown hash falls back to Story.
 | `?asset=` | Assets entry by relative path |
 | `?audio=` + `?audioKind=` | Audio record (`events` or a media shard) |
 | `?gameplay=` + `?gameplayId=` + `?entry=` | Gameplay list, item, and sub-entry |
+| `?inspectDataset=` + `?inspect=` | Decoded Data Inspector dataset and record |
 
 Factory, World, Presentation, Progression, the standalone Combat & Projectiles
 page, and the Mission Pipeline page are retired; their useful progression,
-projectile, and sound information lives in Gameplay. Mission Pipeline recovery
+and projectile information lives in Gameplay. Mission Pipeline recovery
 is a standalone Python workflow, and `webui/src/features/mission_pipeline/` is
 not loaded by `index.html`.
 
@@ -83,12 +89,14 @@ Load order, as `index.html` declares it:
 | `app_labels.js`, `app_tree.js`, `src/features/story_triggers.js`, `app.js` | Story/Text labels, tree rendering, trigger evidence, Story page |
 | `assets.js` | Assets page |
 | `src/features/characters/{index.js,style.css}` | Characters view and runtime overrides |
-| `src/features/gameplay/{labels.js,index.js}` | Gameplay datasets and sound players |
+| `src/features/gameplay/{labels.js,index.js}` | Gameplay datasets and detail rendering |
 | `src/features/audio/{index.js,style.css}` | Audio evidence browser |
 | `src/features/map_recovery/{index.js,style.css}` | Map view |
 | `src/features/next_views.js` | shared page-bootstrap wiring |
 | `src/features/reference/index.js` | localized Text Tables browser |
 | `src/features/updates/index.js` | Updates page |
+| `src/features/recovery/{index.js,style.css}` | Recovery progress page |
+| `src/features/data_inspector/{index.js,style.css}` | debug-only generic decoded-data browser |
 
 Generated data belongs in `webui/data/`; user-managed inputs belong in
 `webui/overrides/`. Do not hand-edit generated JSON.
@@ -115,9 +123,12 @@ webui/data/gameplay/projectiles.json
 webui/data/map_recovery/index.json
 webui/data/map_recovery/maps/<levelId>.json
 webui/data/map_recovery/render/*.{json,png}
-webui/data/assets/{index,gameplay_refs,story_media,videos}.json
+webui/data/assets/{index,gameplay_refs,story_media,table_owners,videos}.json
+webui/data/data_inspector/index.json
+webui/data/data_inspector/datasets/<datasetId>/{index,records.*}.json
 webui/data/updates/latest.json
 webui/data/updates/characters.json
+webui/data/recovery/index.json
 webui/data/story_order_ocr.json
 webui/data/mission_pipeline/index.json
 ```
@@ -126,13 +137,46 @@ Builders may add compact sidecars, but each page must tolerate an absent
 optional sidecar and display an explicit degraded state when the omission
 matters. Schema changes must be coordinated with their frontend consumer.
 
+The Decoded Data Inspector contract is documented in
+[`memory/webui/data_inspector.md`](../memory/webui/data_inspector.md). Its
+sidebar is the shared list-page shell used by Story, Assets, Audio and
+Gameplay: header toggle plus reset, collapsible `.filter-section` chip groups
+(data family, decode status, source folder, tags), a filter splitter, a
+virtualized list, a pager, and a pane splitter. Dataset catalogs are merged
+into one searchable list without loading detail shards; full exported Unity
+JSON is fetched from `/export_full/` only when requested.
+
+The detail pane is one general decoded-record viewer rather than a
+per-decoder layout. Scalar `facts` are quick-scan cards; everything the record
+published (`facts` and `payload`) is then shown as a single annotated tree that
+keeps the publisher's own structure. Semantics are layered on that structure by
+shape alone: a declared read order (`fieldOrder` / `<key>FieldOrder`) orders and
+numbers the members it names, members it names but that were not published are
+marked declared-not-decoded, keys published beside a declared order are marked
+as framing metadata, and byte ranges, member counts, decode status, null frames,
+Unity PPtr references, and evidence boundaries are surfaced as chips on the node
+that carries them. A field search, expand/collapse all (alt-click folds one
+branch recursively), a raw-JSON view, and an on-demand raw source preview sit
+beside it. The frontend is taught no decoder-specific schema.
+
+Field names are shown verbatim in every locale rather than translated, so a row
+stays searchable against the exported source and the owning reader; only page
+furniture and evidence vocabulary are localized. Header chips are deduplicated
+against the data family and decode status already shown above them.
+
+The two structure roots are labelled by provenance, from the record's required
+`payloadKind`: a `reader` payload is a maintained `scripts/game_data` reader's
+own result, while a `projection` payload was assembled by the publisher from an
+already-decoded source whose mounted raw file stays authoritative. `facts` is
+always the publisher's own projection and can hold more than `payload` does.
+
 ### Ownership rules that are easy to get wrong
 
-- `data/gameplay/projectiles.json` owns immutable projectile behavior and
-  authored event hashes; the language-specific `projectile_audio.json` owns
-  decoded media candidates. Gameplay joins them by projectile id, sound field,
-  and unsigned event hash and writes no audio row back into the behavior
-  payload.
+- `data/gameplay/projectiles.json` owns immutable projectile behavior. The
+  language-specific `projectile_audio.json` and `sound_effects.json` remain
+  generated recovery sidecars, but Gameplay does not currently load or render
+  them; audio presentation remains on the Audio page until the ownership model
+  is better understood.
 - `data/assets/gameplay_refs.json` is Gameplay-owned: the `asset-refs` stage
   joins the current Gameplay index to the Assets-owned broad index. The Assets
   builder never writes this consumer-specific sidecar.
@@ -163,7 +207,7 @@ outside `webui/overrides/`, and export tools never replace these files.
 
 ## Shared behavior
 
-- Normal navigation exposes exactly the eight pages above.
+- Normal navigation exposes exactly the nine pages above.
 - The top bar owns the data-language select (`#language`), the interface-locale
   select (`#ui-language`), and the shared `Show debug info` toggle
   (`#show-debug`).
@@ -172,8 +216,12 @@ outside `webui/overrides/`, and export tools never replace these files.
   filters remain visible in normal mode.
 - Every list page shares one layout: a search box (`#*-q`), a collapsible
   filter panel (`#*-filter-panel`, `#*-filter-toggle`) of named filter
-  sections, a reset button, shown/total counts, a resizable splitter, and a
-  detail pane on the right.
+  sections, a reset button, shown/total counts, a resizable splitter, a
+  paginated left list with a persisted custom 1-10000-items-per-page input
+  (50/100/200/500 remain suggestions), a direct page-number input, and a detail
+  pane on the right. Entering a page outside the available range clamps to the
+  first or last page. Story and Map keep their specialized hierarchical
+  navigation instead of applying flat-list pagination.
 - All search boxes accept case-insensitive regular expressions. Queries are
   split on whitespace with OR semantics, so `^npc_`, `boss|elite`, and `map0[12]`
   are useful examples; malformed expressions are treated as literal text.
@@ -239,8 +287,8 @@ Filter sections: `basic`, `kind`, `rarity`, `job`, `character-property`,
 `#gameplay-reveal-current`.
 
 Gameplay owns character progression, equipment, enemies, skills, projectiles,
-assets, and compact sound players. Evidence labels distinguish exact authored
-ownership from family-, animation-, or identifier-inferred placement.
+and assets. Audio sidecars are deliberately not attached to this page while
+their ownership model is under review.
 
 - Exact `chr_NNNN_token` namespaces are published even without a
   `CharacterTable` row, labeled namespace-only, leaving availability,
@@ -257,10 +305,8 @@ ownership from family-, animation-, or identifier-inferred placement.
   when the enclosing action is partial. Unresolved unions, selectors, and
   complex payloads stay visibly unresolved.
 - Projectile templates, spawned behavior, and playable-skill ownership remain
-  separate relations. Character-skill and enemy SFX players are collapsed
-  compactly with inferred ownership labeled, while raw identity, matching, and
-  unresolved candidates are debug-only. Shared animation Events are labeled as
-  global Wwise graphs unless a stronger owner edge exists.
+  separate relations. Audio event and media relationships are investigated on
+  the Audio page and are not rendered in Gameplay.
 - Native enum names, tag names, and gated event names disappear when the
   selected build gate does not validate; the authored rows remain.
 
@@ -480,10 +526,28 @@ and how each render layer earns its evidence grade are owned by
   and `sort`. The detail pane owns image/video/text preview with a selectable
   preview background, an OBJ/FBX model canvas with mesh stats, material,
   reference and related-asset lists, the original JSON/script source,
-  copy-path and download actions, and `?asset=` deep links.
+  copy-path and download actions, and `?asset=` deep links. JSON categories are
+  derived from the exported object lane, including distinct Unity `Material`,
+  `PlayableDirector`, `TextAsset`, `AnimatorController`, and
+  `AnimatorOverrideController` filters; unknown future Unity lanes remain
+  visible as their directory name instead of falling into an untyped bucket.
+- Assets: the detail pane's `Table owner` fact comes from
+  `data/assets/table_owners.json` and names the exported table row whose
+  asset-bearing field holds this asset's exact normalized stem. An asset with
+  no such row shows no owner; a shared name prefix never produces one, and the
+  sidecar is optional, so its absence only removes the fact.
 - Text: search plus filter sections `basic`, `group`, and `source`. Known row
   shapes render as rows; every row keeps its raw JSON beside the rendered view,
   so an unsupported shape stays searchable instead of being silently dropped.
+- Text maintained renderers: a row may carry a `fields` array, rendered above
+  its localized text as `Structured fields`. Each entry shows the maintained
+  label, the verbatim exported value, and the owning `table / row` when the
+  builder resolved an exact row lookup. A resolved reference whose table is in
+  the index is a button that selects that table and scrolls to that row inside
+  Text; an unresolved reference is shown as `unresolved` and is never linked.
+  Field values join the row search haystack, and a table covered by a
+  maintained renderer carries `renderer: "structured"` in the Text index.
+  Tables with structured fields but no localized text now appear on the page.
 
 ## Updates
 
@@ -513,14 +577,56 @@ ambiguous basename or mismatched content remains visible.
 
 Controls: search plus filter sections `basic`, `category`, `extension`,
 `status`, and `sort` (path, status, file size/change, line delta), the
-added/modified/deleted summary counts, the run metadata line, and an explicit
-truncation note. File-size sorting uses current size for additions, previous
-size for deletions, and absolute size delta for modifications. Added, modified,
-and deleted status pills and status-filter chips use the same shared green,
-gold, and red semantic palette as Character update badges.
+added/modified/deleted summary counts, the run metadata line, and pagination
+over the complete generated entry set. A feed built with the optional
+`--sample-limit` diagnostic cap still shows an explicit truncation note.
+File-size sorting uses current size for additions, previous size for deletions,
+and absolute size delta for modifications.
+Added, modified, and deleted status pills and status-filter chips use the same
+shared green, gold, and red semantic palette as Character update badges.
 
 ```bat
 .\build_updates.bat OLD NEW
+```
+
+## Recovery
+
+Recovery is a single scrolling dashboard, not a list/detail page, so it has no
+search box, filter panel, or pager. It reads one payload,
+`data/recovery/index.json`, and renders it as one segmented progress bar over
+the whole installed corpus, the same corpus broken down level by level, a
+lane x level matrix, four level cards, per-family JsonData named-byte bars, the
+MonoBehaviour census, and the recorded eliminations.
+
+- Every figure-bearing node in the payload carries `evidence: "measured"` or
+  `evidence: "declared"`. The page renders the two differently: a declared
+  figure sits in its own bordered panel with a visible `declared` chip and its
+  own reason, and it is never shown as a plain statistic beside measured ones.
+- Named bytes are labelled as a level-3 result. The page must not present a
+  100% named family as an understood family; the caveat is rendered as section
+  prose, not as a footnote.
+- Hover and keyboard focus reveal the same tooltip, so the graph is usable
+  without a pointer. Tooltips carry counts, bytes, the level's question, the
+  topic files behind a cell, and what is recorded as unreachable there.
+- A lane's bar is measured volume; its four level cells count documented topic
+  files. The page states that distinction rather than implying byte coverage
+  per level.
+- The corpus bar is one bar with one section per VFS block type, coloured by
+  lane, sized by linear byte share. The level-by-level bars below it reuse that
+  same total and show the part with no conclusion at that level as an explicit
+  hatched remainder, so a short bar cannot read as a small corpus. Their shared
+  basis line states that this is lane-documentation depth, not byte coverage.
+- The MonoBehaviour not-understood set is measured and gets the most prominent
+  block in its section. It is rendered as a range: the strict bound is the
+  headline, the floor is shown beside it as the looser reading, a two-tone range
+  bar spans them, and one line says why they differ. The classes between the
+  bounds are charted both by object count and by how many references land on
+  nothing named. What is open must read as loudly as what is closed.
+- The payload is optional: a 404 shows an explicit missing state naming the
+  build command, not an empty success state.
+
+```bat
+python -m scripts.webui.recovery.build_recovery
 ```
 
 ## Verification

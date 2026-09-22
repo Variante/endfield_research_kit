@@ -19,7 +19,8 @@ from scripts.common import require_export_layout
 
 from scripts.webui.assets.index import AssetScanResult, scan_exported_media_assets
 from scripts.webui.assets.story_media import build_story_media_payload, write_story_media_payload
-from scripts.common import ASSET_DIR, EXPORT_ROOT, OUT_DIR, ROOT, write_json
+from scripts.webui.assets.table_asset_owners import build_table_asset_owner_payload
+from scripts.common import ASSET_DIR, EXPORT_ROOT, OUT_DIR, ROOT, TABLE_DIR, write_json
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -84,13 +85,18 @@ def build_output_payloads(
     mode: str,
     root: Path,
     export_root: Path,
-) -> tuple[dict, dict, dict]:
-    """Derive every published/in-memory payload from one completed scan."""
+) -> tuple[dict, dict, dict, dict]:
+    """Derive every published/in-memory payload from one completed scan.
+
+    The fourth payload is always the complete asset index, even when the
+    published index is the focused Story/Wiki projection, so consumers that
+    need the full exported set (the table-owner sidecar) do not rescan.
+    """
     full_asset_payload, full_video_payload = scan.payloads(root=root, export_root=export_root)
     story_payload = build_story_media_payload(full_asset_payload, full_video_payload)
 
     if mode != "focused":
-        return full_asset_payload, full_video_payload, story_payload
+        return full_asset_payload, full_video_payload, story_payload, full_asset_payload
 
     entries = story_payload.get("entries") or []
     image_entries = [
@@ -139,7 +145,7 @@ def build_output_payloads(
         "entries": video_entries,
     }
 
-    return asset_payload, video_payload, story_payload
+    return asset_payload, video_payload, story_payload, full_asset_payload
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -153,13 +159,32 @@ def main(argv: list[str] | None = None) -> None:
     print(f"Building {args.mode} asset index from {EXPORT_ROOT}...")
     asset_index_path = ASSET_DIR / "index.json"
     scan = scan_exported_media_assets(root=ROOT, export_root=EXPORT_ROOT)
-    asset_payload, video_payload, story_payload = build_output_payloads(
+    asset_payload, video_payload, story_payload, full_asset_payload = build_output_payloads(
         scan,
         mode=args.mode,
         root=ROOT,
         export_root=EXPORT_ROOT,
     )
     write_json(asset_index_path, asset_payload)
+    # Exact table-row ownership for the indexed assets. The scan is the full
+    # index, not the focused Story/Wiki projection, so the sidecar describes
+    # every exported asset regardless of the published index mode.
+    owner_index_path = ASSET_DIR / "table_owners.json"
+    owner_payload = build_table_asset_owner_payload(
+        full_asset_payload.get("entries") or [],
+        TABLE_DIR,
+    )
+    write_json(owner_index_path, owner_payload)
+    owner_counts = owner_payload.get("counts") or {}
+    print(
+        "Table asset owners:",
+        owner_index_path,
+        (
+            f"({owner_counts.get('ownedStems', 0)} of {owner_counts.get('assetStems', 0)} "
+            f"asset stems owned by an exact table field across "
+            f"{owner_counts.get('tables', 0)} tables)"
+        ),
+    )
     story_media_stats = write_story_media_payload(story_payload)
     asset_stats, video_stats = _payload_stats(
         asset_payload,

@@ -19,9 +19,11 @@
     "assets",
     "reference",
     "updates",
+    "recovery",
+    "data-inspector",
   ]);
-  const DEBUG_ONLY_VIEWS = new Set();
-  const DEBUG_VIEW_FALLBACKS = Object.freeze({ audio: "gameplay" });
+  const DEBUG_ONLY_VIEWS = new Set(["data-inspector"]);
+  const DEBUG_VIEW_FALLBACKS = Object.freeze({ "data-inspector": "characters" });
   const RETIRED_VIEW_FALLBACKS = Object.freeze({ projectiles: "gameplay" });
   const SHARED_ASSET_NAME_PREFIXES = new Set(["S", "T", "P", "M"]);
   const MODEL_PREFIX_RE = /^([A-Z])_(.+)$/;
@@ -134,9 +136,17 @@
       factRelativePath: "\u76f8\u5bf9\u8def\u5f84",
       factImageCategory: "\u56fe\u7247\u5206\u7c7b",
       factModelTags: "\u6a21\u578b\u6807\u7b7e",
+      factJsonCategory: "JSON \u5bf9\u8c61\u7c7b\u578b",
+      jsonUnityMaterial: "Unity / \u6750\u8d28 (Material)",
+      jsonUnityPlayableDirector: "Unity / \u65f6\u95f4\u8f74 (PlayableDirector)",
+      jsonUnityTextAsset: "Unity / \u6587\u672c\u8d44\u6e90 (TextAsset)",
+      jsonUnityAnimatorController: "Unity / \u52a8\u753b\u63a7\u5236\u5668 (AnimatorController)",
+      jsonUnityAnimatorOverrideController: "Unity / \u52a8\u753b\u8986\u76d6\u63a7\u5236\u5668 (AnimatorOverrideController)",
+      jsonOther: "\u5176\u4ed6 JSON",
       factTextureRole: "\u8d34\u56fe\u89d2\u8272",
       factLod: "LOD",
       factFamily: "\u7cfb\u5217",
+      factTableOwner: "\u8868\u5f52\u5c5e",
       factPreviewProxy: "\u5ba1\u9605\u4ee3\u7406",
       categoryOther: "\u5176\u4ed6",
       textureRoleMaterial: "\u6750\u8d28 / \u5f15\u64ce\u8d34\u56fe",
@@ -242,9 +252,17 @@
       factRelativePath: "Relative path",
       factImageCategory: "Image category",
       factModelTags: "Model tags",
+      factJsonCategory: "JSON object type",
+      jsonUnityMaterial: "Unity / Material",
+      jsonUnityPlayableDirector: "Unity / PlayableDirector",
+      jsonUnityTextAsset: "Unity / TextAsset",
+      jsonUnityAnimatorController: "Unity / AnimatorController",
+      jsonUnityAnimatorOverrideController: "Unity / AnimatorOverrideController",
+      jsonOther: "Other JSON",
       factTextureRole: "Texture role",
       factLod: "LOD",
       factFamily: "Family",
+      factTableOwner: "Table owner",
       factPreviewProxy: "Review proxy",
       categoryOther: "Other",
       textureRoleMaterial: "Material / engine texture",
@@ -306,11 +324,16 @@
     totalH: 0,
     expanded: new Set(),
     relations: {},
+    // data/assets/table_owners.json: normalized asset stem -> exact exported
+    // table rows whose asset-bearing field holds that stem. Absent stems are
+    // unowned; nothing here is a name-prefix guess.
+    tableOwners: {},
     exportRoot: "",
     sourceRoots: {},
     selectedRel: null,
     selectedEntry: null,
     selectedVariantRel: null,
+    pager: null,
     initialAssetHandled: false,
     previewBackground: DEFAULT_PREVIEW_BACKGROUND,
     showOriginalMScript: false,
@@ -640,6 +663,8 @@
       assets: "assetsPageTitle",
       reference: "referencePageTitle",
       updates: "updatesPageTitle",
+      recovery: "recoveryPageTitle",
+      "data-inspector": "dataInspectorPageTitle",
     };
     const pageTitle = uiText(titleKeys[view] || titleKeys.story);
     document.title = `${pageTitle} \u00b7 ${uiText("siteTitle")}`;
@@ -812,6 +837,15 @@
         ASSET_STATE.entryByRel = hydrated.entryByRel;
         ASSET_STATE.rawEntryByRel = hydrated.rawEntryByRel;
         ASSET_STATE.relations = payload.relations || {};
+        // Optional sidecar: a missing or stale file leaves every asset
+        // unowned instead of failing the page.
+        fetch("data/assets/table_owners.json")
+          .then((res) => (res.ok ? res.json() : null))
+          .then((owners) => {
+            ASSET_STATE.tableOwners = (owners && owners.entries) || {};
+            if (ASSET_STATE.selectedEntry) renderSelectedAsset();
+          })
+          .catch(() => {});
         ASSET_STATE.exportRoot = String(payload.root || "").replace(/\\/g, "/").replace(/^\/+|\/+$/g, "");
         ASSET_STATE.sourceRoots = payload.sourceRoots && typeof payload.sourceRoots === "object"
           ? Object.fromEntries(
@@ -865,6 +899,19 @@
     const prefixMatch = value.match(/^model-prefix-([a-z])$/);
     if (prefixMatch) return `Model Prefix ${prefixMatch[1].toUpperCase()}`;
     if (MODEL_CATEGORY_LABELS[value]) return MODEL_CATEGORY_LABELS[value];
+    const unityJsonLabels = {
+      "json-unity-material": "jsonUnityMaterial",
+      "json-unity-playabledirector": "jsonUnityPlayableDirector",
+      "json-unity-textasset": "jsonUnityTextAsset",
+      "json-unity-animatorcontroller": "jsonUnityAnimatorController",
+      "json-unity-animatoroverridecontroller": "jsonUnityAnimatorOverrideController",
+    };
+    if (unityJsonLabels[value]) return assetUiText(unityJsonLabels[value]);
+    const unityJsonMatch = value.match(/^json-unity-(.+)$/);
+    if (unityJsonMatch) return `Unity / ${unityJsonMatch[1].replace(/[_-]/g, " ").replace(/\b[a-z]/g, (char) => char.toUpperCase())}`;
+    const sourceJsonMatch = value.match(/^json-source-(.+)$/);
+    if (sourceJsonMatch) return `${sourceJsonMatch[1].replace(/[_-]/g, " ").replace(/\b[a-z]/g, (char) => char.toUpperCase())} JSON`;
+    if (value === "json-other") return assetUiText("jsonOther");
     return value
       .replace(/[_-]/g, " ")
       .replace(/\b[a-z]/g, (char) => char.toUpperCase());
@@ -965,6 +1012,15 @@
     return categories;
   }
 
+  function deriveJsonCategories(kind, source, dirParts) {
+    if (kind !== "json") return [];
+    const normalizedSource = String(source || "").trim().toLowerCase();
+    const objectType = String(dirParts?.[0] || "").trim().toLowerCase().replace(/[^a-z0-9]+/g, "-");
+    if (normalizedSource === "unity" && objectType) return [`json-unity-${objectType}`];
+    if (normalizedSource) return [`json-source-${normalizedSource.replace(/[^a-z0-9]+/g, "-")}`];
+    return ["json-other"];
+  }
+
   function chooseImageExtraCategories(entries) {
     const values = new Set();
     for (const entry of entries || []) {
@@ -989,6 +1045,9 @@
     }
     if (entry.kind === "model") {
       return Array.isArray(entry.modelCategories) ? entry.modelCategories.filter(Boolean) : [];
+    }
+    if (entry.kind === "json") {
+      return Array.isArray(entry.jsonCategories) ? entry.jsonCategories.filter(Boolean) : [];
     }
     return [];
   }
@@ -1022,6 +1081,7 @@
       const imageExtraCategories = kind === "image" ? deriveImageExtraCategories({ imageCategory, stem, rawStem: stemInfo.rawStem }) : [];
       const materialLike = kind === "image" && !!raw.mt;
       const modelCategories = kind === "model" ? deriveModelCategories(kind, stem, ext) : [];
+      const jsonCategories = deriveJsonCategories(kind, source, dirParts);
       return {
         kind,
         rel,
@@ -1045,6 +1105,7 @@
         imageExtraCategories,
         materialLike,
         modelCategories,
+        jsonCategories,
         previewRel: String(raw.p || ""),
         decodedScriptSearchText: String(raw.sx || ""),
         searchText: "",
@@ -1154,6 +1215,7 @@
         entry.imageCategory,
         ...(entry.imageExtraCategories || []),
         ...(entry.modelCategories || []),
+        ...(entry.jsonCategories || []),
         entry.materialLike ? "material material-like texture engine" : "",
         entry.decodedScriptSearchText,
         entry.ext,
@@ -1220,6 +1282,7 @@
     for (const bucket of buckets.values()) {
       bucket.sort((a, b) => compareAssets(a, b, "path"));
       const primary = { ...bucket[0] };
+      primary.jsonCategories = Array.from(new Set(bucket.flatMap((entry) => entry.jsonCategories || []))).sort(naturalCompare);
       primary.duplicateCount = bucket.length;
       primary.rawRels = bucket.map((entry) => entry.rel);
       if (assetContentHash(primary)) {
@@ -1245,6 +1308,7 @@
           primary.searchText,
           ...bucket.slice(1).flatMap((entry) => [entry.rel, entry.dir, entry.pathId, entry.name]),
           ...primary.variants.map((variant) => variant.variantLabel),
+          ...primary.jsonCategories,
         ].join(" ").toLowerCase();
       }
       deduped.push(primary);
@@ -1291,6 +1355,7 @@
           imageExtraCategories: [],
           materialLike: false,
           modelCategories: [],
+          jsonCategories: [],
           variantCount: 0,
           duplicateCount: 0,
           contentHash: "",
@@ -1341,6 +1406,7 @@
         group.imageCategory,
         ...(group.imageExtraCategories || []),
         ...(group.modelCategories || []),
+        ...(group.jsonCategories || []),
         group.materialLike ? "material material-like texture engine" : "",
         ...group.variants.map((variant) => variant.searchText),
       ].join(" ").toLowerCase();
@@ -1460,6 +1526,7 @@
   }
 
   function applyAssetFilters() {
+    ASSET_STATE.pager?.reset();
     syncFilterSectionActiveCounts();
     const filters = ASSET_STATE.filters;
     const tokens = window.WebUI.parseQuery(filters.q);
@@ -1483,6 +1550,7 @@
     ASSET_STATE.searchTokens = tokens;
     ASSET_STATE.searchScores = tokens.length ? scores : null;
     ASSET_STATE.filtered.sort((a, b) => compareAssets(a, b, filters.sort));
+    ASSET_STATE.pager?.setTotal(ASSET_STATE.filtered.length);
     $("#asset-shown").textContent = ASSET_STATE.filtered.length.toLocaleString();
     $("#asset-total").textContent = ASSET_STATE.entries.length.toLocaleString();
     rebuildAssetTree();
@@ -1537,7 +1605,8 @@
     }
 
     const tree = {};
-    for (const entry of ASSET_STATE.filtered) {
+    const pageEntries = ASSET_STATE.pager ? ASSET_STATE.pager.slice(ASSET_STATE.filtered) : ASSET_STATE.filtered;
+    for (const entry of pageEntries) {
       const source = entry.source || assetUiText("rootFolder");
       (tree[source] ??= {});
       const bucket = (tree[source][entry.groupKey] ??= {
@@ -1612,7 +1681,8 @@
 
   function rebuildFlatAssetSearch({ resetScroll = true } = {}) {
     const scores = ASSET_STATE.searchScores || new Map();
-    const items = [...ASSET_STATE.filtered].sort((a, b) => {
+    const filteredItems = ASSET_STATE.pager ? ASSET_STATE.pager.slice(ASSET_STATE.filtered) : ASSET_STATE.filtered;
+    const items = [...filteredItems].sort((a, b) => {
       const delta = (scores.get(b) || 0) - (scores.get(a) || 0);
       return delta || compareAssets(a, b, ASSET_STATE.filters.sort);
     });
@@ -1809,6 +1879,7 @@
     if (!rel) return;
     const entry = ASSET_STATE.entryByRel.get(rel);
     if (!entry) return;
+    if (ASSET_STATE.pager?.showIndex(ASSET_STATE.filtered.indexOf(entry))) rebuildAssetTree();
     selectAsset(entry, { scrollIntoView: true, updateUrl: false, variantRel: rel });
   }
 
@@ -1942,6 +2013,21 @@
     link.textContent = assetUiText("downloadCurrentFile");
   }
 
+  // Exact table ownership only: the sidecar is keyed by the same normalized
+  // stem the index carries, so a lookup either hits an exported row that names
+  // this asset or the asset stays unowned. No prefix or family fallback.
+  function assetTableOwnerSummary(entry) {
+    const stem = String(entry?.stem || entry?.rawStem || "");
+    const record = stem ? ASSET_STATE.tableOwners[stem] : null;
+    const owners = (record && record.owners) || [];
+    if (!owners.length) return "";
+    const shown = owners.map((owner) => `${owner.table} / ${owner.row} (${owner.field})`);
+    const total = Number(record.ownerCount || owners.length);
+    return total > owners.length
+      ? `${shown.join("; ")} ... +${total - owners.length}`
+      : shown.join("; ");
+  }
+
   function renderFacts(entry) {
     const activeVariant = getActiveAssetFile(entry);
     const facts = [
@@ -1964,6 +2050,11 @@
       if (modelCategories.length) {
         facts.push([assetUiText("factModelTags"), modelCategories.map(assetCategoryLabel).join(" / ")]);
       }
+    } else if (entry.kind === "json") {
+      const jsonCategories = assetCategoryValues(activeFile).length ? assetCategoryValues(activeFile) : assetCategoryValues(entry);
+      if (jsonCategories.length) {
+        facts.push([assetUiText("factJsonCategory"), jsonCategories.map(assetCategoryLabel).join(" / ")]);
+      }
     }
     if (hasHiddenDuplicateFiles(entry)) {
       facts.push([assetUiText("factCopies"), String(entry.duplicateCount)]);
@@ -1983,6 +2074,8 @@
     }
     if ((activeVariant || entry).lod !== null) facts.push([assetUiText("factLod"), String((activeVariant || entry).lod)]);
     if (entry.family && entry.family !== entry.stem) facts.push([assetUiText("factFamily"), entry.family]);
+    const tableOwnerSummary = assetTableOwnerSummary(entry);
+    if (tableOwnerSummary) facts.push([assetUiText("factTableOwner"), tableOwnerSummary]);
 
     const wrap = $("#asset-facts");
     const fragment = document.createDocumentFragment();
@@ -3364,6 +3457,11 @@
     syncDebugViewVisibility();
     bindViewTabs();
     bindAssetEvents();
+    ASSET_STATE.pager = window.WebUI.pagination?.createPager({
+      container: "#asset-pager",
+      storageKey: "asset_browser_page_size",
+      onChange: () => rebuildAssetTree(),
+    });
     window.addEventListener("webui:ui-locale-changed", (event) => {
       setAssetUiLocale(event.detail && event.detail.locale);
     });

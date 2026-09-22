@@ -28,10 +28,8 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import struct
 import sys
 from collections import Counter
-from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Iterator
@@ -39,93 +37,21 @@ from typing import Any, Iterator
 from scripts.repo_paths import REPO_ROOT
 from scripts.common import EXPORT_LAYOUT
 
+# The framing and the entry record live in scripts/game_data/cabmap.py: the
+# CABMap is an installed-format index, and this module is its audit.
+# Imported rather than copied so the two cannot drift apart.
+from scripts.game_data.cabmap import (
+    MAXIMUM_CABS_PER_LOGICAL_FILE,
+    MAX_LENGTH_BYTES,
+    MINIMUM_ENTRY_BYTES,
+    CabEntry,
+    CabMapError,
+    parse_cabmap,
+)
+
 ROOT = REPO_ROOT
 DEFAULT_MAPS = EXPORT_LAYOUT.cab_map_dir
 DEFAULT_OUTPUT = ROOT / "reports/assets/cabmap_current_latest.json"
-
-# .NET writes a 7-bit encoded length in at most five bytes.
-MAX_LENGTH_BYTES = 5
-# A single entry is at least two empty strings, an int64 and an int32.
-MINIMUM_ENTRY_BYTES = 1 + 1 + 8 + 4
-# A logical file holds one CAB; two is the most this corpus shows.
-MAXIMUM_CABS_PER_LOGICAL_FILE = 2
-
-
-class CabMapError(ValueError):
-    """The bytes do not match the documented writer."""
-
-
-@dataclass(frozen=True)
-class CabEntry:
-    cab: str
-    path: str
-    offset: int
-    dependencies: tuple[str, ...]
-
-
-def _read_7bit_length(data: bytes, cursor: int) -> tuple[int, int]:
-    value = 0
-    shift = 0
-    for _ in range(MAX_LENGTH_BYTES):
-        if cursor >= len(data):
-            raise CabMapError(f"truncated 7-bit length at {cursor}")
-        byte = data[cursor]
-        cursor += 1
-        value |= (byte & 0x7F) << shift
-        if not byte & 0x80:
-            return value, cursor
-        shift += 7
-    raise CabMapError(f"unterminated 7-bit length at {cursor - MAX_LENGTH_BYTES}")
-
-
-def _read_string(data: bytes, cursor: int) -> tuple[str, int]:
-    length, cursor = _read_7bit_length(data, cursor)
-    if length < 0 or length > len(data) - cursor:
-        raise CabMapError(f"string of {length} bytes runs past the end at {cursor}")
-    try:
-        return data[cursor:cursor + length].decode("utf-8"), cursor + length
-    except UnicodeDecodeError as exc:
-        raise CabMapError(f"string at {cursor} is not UTF-8") from exc
-
-
-def _read_int(data: bytes, cursor: int, fmt: str, width: int, what: str) -> tuple[int, int]:
-    if cursor + width > len(data):
-        raise CabMapError(f"truncated {what} at {cursor}")
-    return struct.unpack_from(fmt, data, cursor)[0], cursor + width
-
-
-def parse_cabmap(data: bytes) -> tuple[str, list[CabEntry]]:
-    """Parse one CABMap, requiring the whole file to be consumed."""
-    base_folder, cursor = _read_string(data, 0)
-    count, cursor = _read_int(data, cursor, "<i", 4, "entry count")
-    if count < 0:
-        raise CabMapError(f"negative entry count: {count}")
-    # A count larger than the bytes could hold is a corrupt header, not a big map.
-    if count > (len(data) - cursor) // MINIMUM_ENTRY_BYTES + 1:
-        raise CabMapError(f"entry count {count} cannot fit in {len(data) - cursor} bytes")
-    entries: list[CabEntry] = []
-    for index in range(count):
-        cab, cursor = _read_string(data, cursor)
-        path, cursor = _read_string(data, cursor)
-        offset, cursor = _read_int(data, cursor, "<q", 8, f"offset of entry {index}")
-        if offset < 0:
-            raise CabMapError(f"negative offset in entry {index}: {offset}")
-        dependency_count, cursor = _read_int(
-            data, cursor, "<i", 4, f"dependency count of entry {index}"
-        )
-        if dependency_count < 0:
-            raise CabMapError(f"negative dependency count in entry {index}")
-        dependencies: list[str] = []
-        for _ in range(dependency_count):
-            dependency, cursor = _read_string(data, cursor)
-            dependencies.append(dependency)
-        entries.append(CabEntry(cab, path, offset, tuple(dependencies)))
-    if cursor != len(data):
-        raise CabMapError(
-            f"trailing bytes: consumed {cursor} of {len(data)}"
-        )
-    return base_folder, entries
-
 
 def summarise(path: Path, base_folder: str, entries: list[CabEntry]) -> dict[str, Any]:
     dependency_counts: Counter[int] = Counter(len(entry.dependencies) for entry in entries)

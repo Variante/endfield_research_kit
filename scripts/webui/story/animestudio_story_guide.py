@@ -21,7 +21,6 @@ from collections import Counter, defaultdict
 import json
 from pathlib import Path
 import re
-import sys
 from typing import Any, Iterable
 
 
@@ -29,11 +28,7 @@ from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
 from scripts.common import (
-    NativeEvidenceUnavailable,
-    check_installed_native_inputs,
     md_escape,
-    native_evidence_required,
-    native_evidence_skip_message,
     read_json,
     safe_key,
     sha256_file,
@@ -49,7 +44,7 @@ from scripts.game_data.extraction.animestudio_index_io import is_effective_row, 
 from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 
 
-SCHEMA = "animestudioStoryGuideConsumerAudit.v1"
+SCHEMA = "animestudioStoryGuideConsumerAudit.v2"
 DEFAULT_OUTPUT_ROOT = EXPORT_LAYOUT.root
 DEFAULT_EXPORT_SUMMARY = ROOT / "reports" / "export" / "export_full_summary.json"
 DEFAULT_REPORT_ROOT = ROOT / "reports" / "story" / "recovery"
@@ -75,16 +70,6 @@ OWNER_OR_RUNTIME_SEGMENTS = frozenset({
     "scenenumid",
     "scriptid",
 })
-
-# Current-build native evidence.  The audit refuses to publish classifications
-# against another GameAssembly until this mapping is revalidated.
-EXPECTED_GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-)
-NATIVE_MAPPING_ID = (
-    "gameassembly-2026-07-11-fac-set-interact-locked-state-execute-v1"
-)
-
 
 class AuditError(RuntimeError):
     pass
@@ -307,35 +292,14 @@ def scan_source(
 
 
 
-def resolve_gameassembly(explicit_path: Path | None) -> Path | None:
-    """Return an explicit binary, or ``None`` to let the shared gate resolve.
-
-    The gate already considers the export summary's ``game_root`` alongside
-    ENDFIELD_GAME_ROOT and endfield_paths.bat, so this keeps one precedence
-    order for every recovery step.
-    """
-    return explicit_path.resolve() if explicit_path is not None else None
-
-
 def build_report(
     output_root: Path,
     sources: Iterable[str],
     export_summary_path: Path,
-    gameassembly: Path | None,
 ) -> dict[str, Any]:
     export_summary = read_json(export_summary_path, {})
     if not isinstance(export_summary, dict):
         raise AuditError(f"{export_summary_path}: invalid export summary")
-    gameassembly_path = resolve_gameassembly(gameassembly)
-    native = check_installed_native_inputs(
-        EXPECTED_GAMEASSEMBLY_SHA256,
-        gameassembly=gameassembly_path,
-        require_metadata=False,
-    )
-    if not native.validated:
-        raise NativeEvidenceUnavailable(native)
-    gameassembly_sha256 = native.gameassembly_sha256.upper()
-
     source_rows = [
         scan_source(output_root, source, export_summary)
         for source in sources
@@ -378,22 +342,6 @@ def build_report(
                 for row in rows
                 for level_id in row["guideLevelIds"]
             }),
-            "nativeMappingId": NATIVE_MAPPING_ID,
-            "nativeMethod": {
-                "name":
-                    "Beyond.Gameplay.Actions."
-                    "FacSetInteractLockedState.Execute",
-                "token": "0x06008a6d",
-                "address": "0x187654fa0",
-            },
-            "nativeConsumer": {
-                "lockedBranch":
-                    "RemoteFactoryInteract.LockBuildingInteract("
-                    "instanceKey, radioId, false)",
-                "unlockedBranch":
-                    "RemoteFactoryInteract.UnlockBuildingInteract("
-                    "instanceKey, false)",
-            },
             "orderBoundary": (
                 "the guide action is non-mission factory tutorial content; "
                 "action ids, next ids, asset names, and object order do not "
@@ -431,27 +379,14 @@ def build_report(
         "_schema": SCHEMA,
         "exportSummary": str(export_summary_path),
         "sources": source_rows,
-        "nativeEvidence": {
-            "validated": True,
-            "gameAssembly": str(gameassembly_path),
-            "gameAssemblySha256": gameassembly_sha256,
-            "mappingId": NATIVE_MAPPING_ID,
-            "method": {
-                "name":
-                    "Beyond.Gameplay.Actions."
-                    "FacSetInteractLockedState.Execute",
-                "token": "0x06008a6d",
-                "address": "0x187654fa0",
-                "fieldOffsets": {
-                    "_isLocked": "0xd0",
-                    "_instKey": "0xd8",
-                    "_radioId": "0xe0",
-                },
-                "lockedBranchTarget":
-                    "RemoteFactoryInteract.LockBuildingInteract",
-                "unlockedBranchTarget":
-                    "RemoteFactoryInteract.UnlockBuildingInteract",
-            },
+        "evidenceBoundary": {
+            "kind": "source_only_current_export",
+            "detail": (
+                "Classifications use the selected export's complete object-index "
+                "stage signature, installed-source fingerprint, exact managed "
+                "reference type, and same-action serialized fields. No historical "
+                "native hash, address, or field offset is used."
+            ),
         },
         "summary": dict(counts),
         "classifications": classifications,
@@ -463,8 +398,7 @@ def build_report(
                 "typed GuideRuntimeAsset; exact FacSetInteractLockedState "
                 "managed reference; same-action radioId and factory instKey; "
                 "blackbox guide asset; no same-object mission, quest, scene, "
-                "LevelScript, or script identifier; current native Execute "
-                "mapping"
+                "LevelScript, or script identifier"
             ),
             "notAccepted": (
                 "filenames alone, Story-id prefixes, neighboring objects, "
@@ -488,11 +422,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Matching guide objects: `{summary['matchingObjects']}`",
         f"- Exact typed actions: `{summary['matchingActions']}`",
         f"- Classified Story keys: `{summary['classifiedStoryKeys']}`",
-        (
-            "- Native mapping: "
-            f"`{report['nativeEvidence']['mappingId']}` against "
-            f"`{report['nativeEvidence']['gameAssemblySha256']}`"
-        ),
+        "- Evidence boundary: `source_only_current_export`",
         "",
         "## Classifications",
         "",
@@ -531,7 +461,6 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         type=Path,
         default=DEFAULT_EXPORT_SUMMARY,
     )
-    parser.add_argument("--gameassembly", type=Path)
     parser.add_argument(
         "--source",
         action="append",
@@ -549,17 +478,7 @@ def main(argv: list[str] | None = None) -> int:
             args.output_root.resolve(),
             tuple(args.sources or DEFAULT_SOURCES),
             args.export_summary.resolve(),
-            args.gameassembly,
         )
-    except NativeEvidenceUnavailable as exc:
-        required = native_evidence_required()
-        print(
-            native_evidence_skip_message(
-                "animestudio-story-guide-consumer", exc.result, required=required
-            ),
-            file=sys.stderr,
-        )
-        return 1 if required else 0
     except (AuditError, ValueError) as exc:
         raise SystemExit(
             f"AnimeStudio Story guide consumer audit failed: {exc}"

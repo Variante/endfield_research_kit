@@ -15,8 +15,13 @@ but does not imply narrative ownership.
 3. `scripts.webui.story.source_links` and `scripts.webui.story.build`
    publish localized reference indexes and shards under
    `webui/data/lang/<LANG>/reference/`.
-4. The frontend renders known row shapes and retains raw JSON for fields that
-   have no maintained presentation.
+4. `scripts.webui.story.reference_structured_fields` declares the maintained
+   renderers: one rule set per exported table stem, naming each field's display
+   label and the table its value points at. The bundle builder resolves those
+   references by exact row lookup and attaches the result to the row as
+   `fields`.
+5. The frontend renders known row shapes plus `fields`, and retains raw JSON
+   for fields that have no maintained presentation.
 
 ## Evidence boundary
 
@@ -24,8 +29,17 @@ but does not imply narrative ownership.
   character, or asset consumes it.
 - Cross-page links require a typed source link; matching ids or text alone are
   not ownership.
+- A maintained `fields` reference is resolved only when the named table (or
+  `MissionRuntimeAsset`/`Level` pseudo-source) actually contains that row key.
+  An absent row is published as unresolved, never dropped and never
+  substituted by a similar id. A quest id resolves to a mission only through
+  the literal `<mission>_q#<n>` form.
+- Reference navigation is inside the Text page: a resolved reference selects
+  the owning table and row. There is no deep-link contract to Story,
+  Characters, or Gameplay, so a maintained field never claims one.
 - Unsupported row shapes remain raw and searchable rather than being silently
-  dropped.
+  dropped. A table with structured fields but no localized text is published
+  on its fields alone.
 
 ## Focused refresh
 
@@ -39,6 +53,10 @@ Table extraction is stale.
 
 ## Remaining gaps
 
-- Add maintained renderers for high-value table shapes.
-- Improve typed cross-page links while preserving source provenance.
+- Maintained renderers currently cover the Typhoea archery/shooting-range,
+  Parkour, and Foresight families. Extend them to the remaining high-value
+  configuration tables; the generic renderer stays the fallback.
+- The page has no cross-page deep-link target, so a maintained field cannot
+  open a mission on Story or an item on Gameplay. Either add a receiving
+  contract to those pages or keep such references as named provenance.
 - Keep large tables responsive without truncating searchable data.

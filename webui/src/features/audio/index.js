@@ -694,6 +694,7 @@
     notesPromise: null,
     filterPanel: null,
     renderFrame: 0,
+    pager: null,
   };
 
   const $ = (selector, root = document) => root.querySelector(selector);
@@ -1753,6 +1754,7 @@
           <div id="audio-filter-splitter" class="filter-splitter" role="separator" aria-label="Resize audio filters" aria-orientation="horizontal" tabindex="0"></div>
           <div id="audio-list-meta"><span id="audio-shown">0</span> / <span id="audio-total">0</span> <span id="audio-shown-label"></span></div>
           <div id="audio-list-wrap"><div id="audio-list-spacer"></div><div id="audio-list"></div></div>
+          <footer id="audio-pager"></footer>
         </aside>
         <div id="audio-splitter" class="pane-splitter" role="separator" aria-label="Resize audio sidebar" aria-orientation="vertical" tabindex="0"></div>
         <main id="audio-right">
@@ -1798,6 +1800,11 @@
       if (!row) return;
       event.preventDefault();
       selectRecord(state.filtered[Number(row.dataset.index)]);
+    });
+    state.pager = window.WebUI.pagination?.createPager({
+      container: $("#audio-pager", state.container),
+      storageKey: "audio_browser_page_size",
+      onChange: () => applyFilters({ resetScroll: true, resetPage: false }),
     });
   }
 
@@ -2060,7 +2067,8 @@
     });
   }
 
-  function applyFilters({ resetScroll = false } = {}) {
+  function applyFilters({ resetScroll = false, resetPage = resetScroll } = {}) {
+    if (resetPage) state.pager?.reset();
     const records = state.datasets[state.mode] || [];
     const tokens = window.WebUI.parseQuery(state.query);
     state.filtered = records.filter((record) => {
@@ -2091,7 +2099,10 @@
       }
       return a.title.localeCompare(b.title, undefined, { numeric: true }) || a.key.localeCompare(b.key, undefined, { numeric: true });
     });
-    state.rows = state.filtered.map((record, index) => ({ record, index, top: index * ROW_HEIGHT }));
+    state.pager?.setTotal(state.filtered.length);
+    const pageRecords = state.pager ? state.pager.slice(state.filtered) : state.filtered;
+    const pageStart = state.pager ? state.pager.page * state.pager.pageSize : 0;
+    state.rows = pageRecords.map((record, offset) => ({ record, index: pageStart + offset, top: offset * ROW_HEIGHT }));
     const spacer = $("#audio-list-spacer", state.container);
     if (spacer) spacer.style.height = `${state.rows.length * ROW_HEIGHT}px`;
     const wrap = $("#audio-list-wrap", state.container);

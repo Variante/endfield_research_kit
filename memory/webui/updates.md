@@ -21,6 +21,11 @@ WebUI source edits, generated reports, or scratch data as game updates.
    `webui/data/updates/characters.json`; scanner cache and history remain under
    `.game-data-tracker/`.
 
+The normal build publishes every matching added, modified, and deleted entry;
+the page paginates that complete set. `--sample-limit N` is only an explicit
+diagnostic cap, with `0` meaning unlimited. Oversized per-file text diff
+previews remain bounded independently and do not remove their update entries.
+
 Path identity is supplemented by two fail-closed relocation joins. Unity
 exports with generated `_p<PathID>` suffixes are paired only when their stable
 kind, extension, and suffix-stripped path are one-to-one. Unmatched decoded

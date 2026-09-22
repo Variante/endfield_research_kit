@@ -124,6 +124,7 @@
     showDebug: false,
     searchTokens: [],
     collapsedKinds: new Set(),
+    pager: null,
     levelFraction: 1,
     filters: {
       kinds: new Set(),
@@ -1887,8 +1888,6 @@
     const modes = movement.modes || [];
     const mode = modes[0] || {};
     const effectNames = [...new Set(Object.values(projectile?.effects?.lists || {}).flat().map((effect) => effect?.effectName).filter(Boolean))];
-    const soundRows = projectileSoundRows(projectile);
-    const audioCandidateCount = soundRows.reduce((total, row) => total + row.audio.length, 0);
     const behaviorSkills = projectileBehaviorSkillIds(projectile);
     const matchedActions = match?.matchMethod === "skill-family-identifier"
       ? []
@@ -1897,7 +1896,6 @@
       [text("projectileLifetimeShort"), projectileScalarText(lifetime.finishDuration)].filter(Boolean).join(" "),
       [text("projectileDistanceShort"), projectileScalarText(lifetime.finishDistance)].filter(Boolean).join(" "),
       [text("projectileHitsShort"), projectileHitLimitText(targeting.maxHitCount)].filter(Boolean).join(" "),
-      audioCandidateCount ? `${audioCandidateCount} ${text("projectileAudioShort")}` : "",
     ].filter(Boolean);
     const travelSummary = [
       modes.map((item) => [item.key, projectileScalarText(item.speed) ? `${text("projectileSpeed")} ${projectileScalarText(item.speed)}` : ""].filter(Boolean).join(" · ")).filter(Boolean).join("; "),
@@ -1911,7 +1909,6 @@
     ].filter(Boolean).join(" · ");
     const feedbackSummary = [
       effectNames.length ? `${effectNames.length} ${text("projectileEffectRefs")}` : "",
-      soundRows.length ? `${soundRows.length} ${text("projectileSoundPhases")}` : "",
     ].filter(Boolean).join(" · ");
     const detailFacts = [
       matchedActions.length ? [text("projectileAction"), matchedActions.join(", ")] : null,
@@ -1929,7 +1926,7 @@
     const complete = projectile?.confidence?.byteComplete;
     const overview = [travelSummary, hitSummary, feedbackSummary].filter(Boolean).join(" · ");
     const technical = STATE.showDebug ? `<details class="gameplay-projectile-technical"><summary>${escapeHtml(text("projectileTechnical"))}</summary><div class="gameplay-projectile-inline-details">${detailFacts.map(([label, value]) => `<span><b>${escapeHtml(label)}</b><code>${escapeHtml(value)}</code></span>`).join("")}</div></details>` : "";
-    return `<details class="gameplay-projectile-inline"><summary><span class="gameplay-projectile-friendly-name">${escapeHtml(projectileFriendlyName(projectile))}</span><span class="gameplay-projectile-status${complete ? " is-complete" : ""}">${escapeHtml(complete ? text("projectileComplete") : text("projectilePartial"))}</span><span class="gameplay-projectile-summary-chips">${summaryFacts.map((fact) => `<small>${escapeHtml(fact)}</small>`).join("")}</span></summary><div class="gameplay-projectile-body">${overview ? `<div class="gameplay-projectile-overview"><strong>${escapeHtml(text("projectileBehaviorSummary"))}</strong><span>${escapeHtml(overview)}</span></div>` : ""}${renderProjectileAudio(soundRows)}${technical}</div></details>`;
+    return `<details class="gameplay-projectile-inline"><summary><span class="gameplay-projectile-friendly-name">${escapeHtml(projectileFriendlyName(projectile))}</span><span class="gameplay-projectile-status${complete ? " is-complete" : ""}">${escapeHtml(complete ? text("projectileComplete") : text("projectilePartial"))}</span><span class="gameplay-projectile-summary-chips">${summaryFacts.map((fact) => `<small>${escapeHtml(fact)}</small>`).join("")}</span></summary><div class="gameplay-projectile-body">${overview ? `<div class="gameplay-projectile-overview"><strong>${escapeHtml(text("projectileBehaviorSummary"))}</strong><span>${escapeHtml(overview)}</span></div>` : ""}${technical}</div></details>`;
   }
 
   // One active skill (a skill group - Normal Attack / Skill / Ultimate /
@@ -2026,7 +2023,6 @@
         <div class="gameplay-skill-meta">${escapeHtml(meta)}</div>
         ${renderActiveSkillCombatMeta(group, character)}
         ${renderDescription(group.description)}
-        ${renderActiveSkillSoundEffects(group, character)}
       </div>
       ${renderActiveSkillLevels(group)}
       ${renderActiveSkillProjectiles(group)}
@@ -3672,14 +3668,13 @@
       const collision = projectile.collision || {};
       const targeting = projectile.targeting || {};
       const effects = projectileEffectCount(projectile);
-      const sounds = projectileSoundCount(projectile);
       const complete = projectile.confidence?.byteComplete;
       const facts = [
         [text("projectileLifetime"), [lifetime.finishDuration, lifetime.finishDistance].filter((value) => value !== null && value !== undefined && value !== "").map(formatValue).join(" / ")],
         [text("projectileMovement"), `${(movement.modes || []).length}`],
         [text("projectileCollision"), formatValue(collision.shapeType)],
         [text("projectileTargeting"), formatValue(targeting.maxHitCount)],
-        [text("projectileEffects"), `${effects} / ${sounds}`],
+        [text("projectileEffects"), `${effects}`],
       ].filter(([, value]) => value !== "" && value !== "undefined");
       const source = projectile.source || {};
       return `<article class="gameplay-projectile-card"><header><div><strong>${escapeHtml(projectileDisplayName(projectile))}</strong><code>${escapeHtml(projectile.id || "")}</code></div><span class="gameplay-projectile-status${complete ? " is-complete" : ""}">${escapeHtml(complete ? text("projectileComplete") : text("projectilePartial"))}</span></header><div class="gameplay-projectile-facts">${facts.map(([label, value]) => `<span><b>${escapeHtml(label)}</b><code>${escapeHtml(value)}</code></span>`).join("")}</div><div class="gameplay-integration-evidence"><code>${escapeHtml([source.root, source.assetName, source.pathId].filter(Boolean).join(" / "))}</code></div></article>`;
@@ -3789,6 +3784,8 @@
     if (!STATE.selected) return false;
     const list = gp$("#gameplay-list");
     if (!list) return false;
+    const selectedIndex = STATE.filtered.indexOf(STATE.selected);
+    if (STATE.pager?.showIndex(selectedIndex)) renderList();
     // Expand the selected entry's group if the user had collapsed it.
     if (STATE.collapsedKinds.has(STATE.selected.kind)) {
       STATE.collapsedKinds.delete(STATE.selected.kind);
@@ -3850,7 +3847,6 @@
     }
     if (empty) empty.hidden = true;
     detail.hidden = false;
-    ensureGameplayAnimationCatalog(entry);
     const title = entry.title || entry.id || "";
     gp$("#gameplay-detail-title").innerHTML = highlightText(title);
     const rendered = entry.kind === "weapon" ? renderWeaponDetail(entry) : entry.kind === "equipment" ? renderEquipmentDetail(entry) : entry.kind === "enemy" ? renderEnemyDetail(entry) : entry.kind === "item" ? renderItemDetail(entry) : renderCharacterDetail(entry);
@@ -3872,12 +3868,7 @@
       wikiSlot.hidden = !wiki;
     }
     const integrated = renderIntegratedSections(entry);
-    const trailingAudio = entry.kind === "enemy"
-      ? section(text("relatedSoundEffects"), renderEnemySoundEffects(entry))
-      : entry.kind === "character"
-        ? section(text("relatedSoundEffects"), renderCharacterSoundEffects(endministratorVariantEntry(entry)))
-        : "";
-    gp$("#gameplay-detail-body").innerHTML = `${rendered.body || ""}${integrated}${trailingAudio}`;
+    gp$("#gameplay-detail-body").innerHTML = `${rendered.body || ""}${integrated}`;
     bindGameplayMediaPlayers(detail);
     bindIntegratedLinks(detail);
     bindLevelSliders(detail);
@@ -3919,6 +3910,7 @@
     if (!list) return;
     gp$("#gameplay-shown").textContent = formatNumber(STATE.filtered.length);
     gp$("#gameplay-total").textContent = formatNumber(STATE.entries.length);
+    STATE.pager?.setTotal(STATE.filtered.length);
     if (!STATE.filtered.length) {
       renderListNote(text(STATE.entries.length ? "noResults" : "noData"));
       return;
@@ -3930,7 +3922,8 @@
 
     // Bucket by data type (kind), preserving the sorted order within each group.
     const buckets = new Map();
-    for (const entry of STATE.filtered) {
+    const pageEntries = STATE.pager ? STATE.pager.slice(STATE.filtered) : STATE.filtered;
+    for (const entry of pageEntries) {
       const kind = entry.kind || "other";
       if (!buckets.has(kind)) buckets.set(kind, []);
       buckets.get(kind).push(entry);
@@ -4137,6 +4130,7 @@
   }
 
   function applyFilters() {
+    STATE.pager?.reset();
     const tokens = parseQuery(gp$("#gameplay-q") && gp$("#gameplay-q").value);
     const scores = new Map();
     STATE.searchTokens = tokens;
@@ -4249,8 +4243,6 @@
     const requests = [
       ["combat", integrationPath("combat", nextLanguage), (payload) => payload && Array.isArray(payload.nodes) && Array.isArray(payload.edges)],
       ["projectiles", integrationPath("projectiles", nextLanguage), (payload) => payload && Array.isArray(payload.entries)],
-      ["projectileAudio", integrationPath("projectileAudio", nextLanguage), (payload) => payload?.schemaVersion === 1 && Array.isArray(payload.links)],
-      ["soundEffects", integrationPath("soundEffects", nextLanguage), validSoundEffectsPayload],
       ["assets", integrationPath("assets", nextLanguage), (payload) => payload && payload.entries && typeof payload.entries === "object"],
     ];
     const promise = Promise.all(requests.map(async ([kind, path, validator]) => {
@@ -4265,10 +4257,8 @@
         integration[result.kind] = result.payload;
         // Asset refs are an optional visual enhancement. Missing visual refs
         // must not turn a valid Gameplay/Combat/Projectile build into an error.
-        // Asset refs are purely visual. Audio sidecars are optional for the
-        // authored Gameplay page, but their failure must stay visible: an
-        // empty sound section otherwise looks like a valid zero-owner result.
-        if (result.error && !["assets", "projectileAudio"].includes(result.kind)) integration.errors.push({ kind: result.kind, message: result.error });
+        // Asset refs are a purely visual enhancement and remain optional.
+        if (result.error && result.kind !== "assets") integration.errors.push({ kind: result.kind, message: result.error });
       }
       integration.indexes = buildIntegrationIndexes();
       integration.status = "ready";
@@ -4366,6 +4356,11 @@
     STATE.collapsedKinds = loadCollapsedKinds();
     STATE.levelFraction = loadLevelFraction();
     ensurePanelToggle();
+    STATE.pager = window.WebUI.pagination?.createPager({
+      container: "#gameplay-pager",
+      storageKey: "gameplay_browser_page_size",
+      onChange: renderList,
+    });
     bindEvents();
     applyUiStrings();
     maybeLoadGameplay();

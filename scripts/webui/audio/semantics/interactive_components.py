@@ -17,7 +17,6 @@ from scripts.game_data.memorypack.interactive import (
     decode_interactive_template_memorypack,
     find_interactive_audio_property_maps,
     parse_interactive_audio_component,
-    parse_interactive_trigger_zone_audio_property_component,
 )
 from scripts.game_data.interactive_binary import decode_interactive_table
 from scripts.game_data.levelscript_binary import (
@@ -63,34 +62,14 @@ def collect_interactive_component_contexts(
                     "sourceOffset": candidate,
                     **parsed,
                 })
-            property_components: list[dict[str, Any]] = []
-            property_signature = bytes((0xF5, 0x03, 0xFF, 0xFF, 0xFF, 0xFF))
-            cursor = 0
-            while True:
-                candidate = data.find(property_signature, cursor)
-                if candidate < 0:
-                    break
-                cursor = candidate + 1
-                try:
-                    parsed, end = parse_interactive_trigger_zone_audio_property_component(
-                        data,
-                        candidate + 2,
-                        3,
-                    )
-                except (UnicodeDecodeError, struct.error, ValueError):
-                    continue
-                if end <= candidate + len(property_signature) or end > len(data):
-                    continue
-                property_components.append({
-                    "index": len(property_components),
-                    "sourceOffset": candidate,
-                    **parsed,
-                })
             template = decode_interactive_template_memorypack(_path, data, len(data))
             template_body = template.get("decoded") if isinstance(template, dict) else None
             return {"decoded": {
                 "componentAudioComponents": components,
-                "componentAudioPropertyComponents": property_components,
+                "componentAudioPropertyComponents": (
+                    template_body.get("componentAudioPropertyComponents") or []
+                    if isinstance(template_body, dict) else []
+                ),
                 "standaloneAudioPropertyMaps": find_interactive_audio_property_maps(data),
                 "templateConfigProperties": (
                     template_body.get("templateConfigProperties")

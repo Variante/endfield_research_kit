@@ -1,0 +1,204 @@
+{
+  "schema": "endfield.recovery-progress-declarations.v1",
+  "_note": "Declarations for the Recovery page. Everything here is a DECLARATION, not a measurement: no generated report under reports/ carries it, so the builder cannot derive it. Each entry states its own 'why'. Measured figures never appear in this file -- they are read from the reports named in scripts/webui/recovery/build_recovery.py and are marked evidence=measured in the published payload.",
+
+  "memoryIndexSections": {
+    "_why": "memory/game_data/README.md groups its topic files under bold lane headings. The heading text is prose, so the heading-to-lane mapping is declared here rather than guessed from the words. The per-file level and line count beside each row ARE parsed from that table.",
+    "Level 1 -- all lanes": { "lane": "shared", "defaultLevel": 1 },
+    "World lane": { "lane": "world" },
+    "Audio lane": { "lane": "audio" },
+    "Gameplay lane": { "lane": "gameplay" },
+    "Story lane": { "lane": "story" },
+    "Catalog lane": { "lane": "catalog" },
+    "Unity assets lane": { "lane": "unity_assets" },
+    "Extraction lane": { "lane": "extraction" },
+    "Cross-lane": { "lane": "cross_lane" }
+  },
+
+  "lanes": {
+    "_why": "The lane list and each lane's one-line scope restate memory/game_data/README.md. A lane is an editorial grouping of content kinds; nothing measures it.",
+    "order": [
+      "unity_assets",
+      "world",
+      "audio",
+      "gameplay",
+      "text",
+      "catalog",
+      "code",
+      "story",
+      "extraction",
+      "shared",
+      "cross_lane",
+      "provenance"
+    ],
+    "entries": {
+      "unity_assets": {
+        "label": "Unity assets",
+        "labelZh": "Unity 资源",
+        "blurb": "Asset bundles and FMV: models, materials, textures, prefabs, scenes, video.",
+        "blurbZh": "资源包与过场影片：模型、材质、贴图、预制体、场景、视频。",
+        "documentedHere": true
+      },
+      "world": {
+        "label": "World",
+        "labelZh": "世界",
+        "blurb": "Streaming chunks, terrain, dynamic streaming, irradiance volumes.",
+        "blurbZh": "流式区块、地形、动态流送、辐照度体积。",
+        "documentedHere": true
+      },
+      "audio": {
+        "label": "Audio",
+        "labelZh": "音频",
+        "blurb": "Wwise banks and media, from bank container to what is actually named.",
+        "blurbZh": "Wwise 音频库与媒体，从容器到实际命名。",
+        "documentedHere": true
+      },
+      "gameplay": {
+        "label": "Gameplay",
+        "labelZh": "玩法",
+        "blurb": "Authored config tables joined to native action contracts.",
+        "blurbZh": "配置表与原生行为契约的连接。",
+        "documentedHere": true
+      },
+      "text": {
+        "label": "Text",
+        "labelZh": "文本",
+        "blurb": "Presentation-facing table text and JsonData conversations.",
+        "blurbZh": "面向展示的表格文本与 JsonData 对话。",
+        "documentedHere": false,
+        "ownedElsewhere": "memory/webui/story_recovery.md"
+      },
+      "catalog": {
+        "label": "Catalog",
+        "labelZh": "目录",
+        "blurb": "Global path/hash catalogs and the opaque bundle manifest.",
+        "blurbZh": "全局路径/哈希目录与不透明的资源清单。",
+        "documentedHere": true
+      },
+      "code": {
+        "label": "Code",
+        "labelZh": "代码",
+        "blurb": "Lua mission and consumer scripts, plus runtime IFix patches.",
+        "blurbZh": "Lua 任务与消费者脚本，以及运行时 IFix 补丁。",
+        "documentedHere": false,
+        "ownedElsewhere": "memory/webui/story_recovery.md for Lua; IFixPatch has a reader but no durable conclusions"
+      },
+      "story": {
+        "label": "Story carriers",
+        "labelZh": "剧情载体",
+        "blurb": "Activation and placement carriers read out of Bundle and JsonData. No block of its own.",
+        "blurbZh": "从 Bundle 与 JsonData 中读出的激活与放置载体，没有独立的数据块。",
+        "documentedHere": true,
+        "noBlockOfItsOwn": true
+      },
+      "extraction": {
+        "label": "Extraction",
+        "labelZh": "提取",
+        "blurb": "The reader itself, and how far each family's reader is proven.",
+        "blurbZh": "读取器本身，以及每个家族的读取器被证明到哪一步。",
+        "documentedHere": true,
+        "noBlockOfItsOwn": true
+      },
+      "shared": {
+        "label": "Shared containers",
+        "labelZh": "共享容器",
+        "blurb": "Level-1 files every lane depends on: the block inventory, shared containers, CABMap.",
+        "blurbZh": "所有通道共用的第 1 层文件：数据块清单、共享容器、CABMap。",
+        "documentedHere": true,
+        "noBlockOfItsOwn": true,
+        "appliesToAllLanes": true,
+        "appliesToAllLanesWhy": "memory/game_data/README.md heads this section 'Level 1 -- all lanes': its conclusions hold for every block type, so a corpus-wide level breakdown must credit them to all lanes rather than to a lane with no block of its own."
+      },
+      "cross_lane": {
+        "label": "Cross-lane",
+        "labelZh": "跨通道",
+        "blurb": "Serialization framework, the native read path, and what is settled versus open.",
+        "blurbZh": "序列化框架、原生读取路径，以及已定论与未决内容。",
+        "documentedHere": true,
+        "noBlockOfItsOwn": true
+      },
+      "provenance": {
+        "label": "Provenance",
+        "labelZh": "来源校验",
+        "blurb": "Audit variants of other blocks; they carry no separate content.",
+        "blurbZh": "其他数据块的审计副本，不含独立内容。",
+        "documentedHere": false,
+        "ownedElsewhere": "memory/game_data/extraction_pipeline.md"
+      }
+    }
+  },
+
+  "blockTypeLanes": {
+    "_why": "memory/game_data/README.md names block types in collapsed form (`Audio` + `InitialAudio`, `Audit*`, per-language variants). The installed VFS enum emits concrete names. Pairing the two is a reading of that table, not a measurement, and an unmapped observed block type fails the build closed so a client update is noticed.",
+    "Bundle": { "lane": "unity_assets" },
+    "InitBundle": { "lane": "unity_assets" },
+    "Video": { "lane": "unity_assets" },
+    "Audio": { "lane": "audio" },
+    "InitAudio": { "lane": "audio" },
+    "HotfixAudio": { "lane": "audio" },
+    "AudioChinese": { "lane": "audio" },
+    "AudioEnglish": { "lane": "audio" },
+    "AudioJapanese": { "lane": "audio" },
+    "AudioKorean": { "lane": "audio" },
+    "AuditAudio": { "lane": "provenance" },
+    "Streaming": { "lane": "world" },
+    "DynamicStreaming": { "lane": "world" },
+    "Terrain": { "lane": "world" },
+    "IV": { "lane": "world" },
+    "Table": { "lane": "gameplay", "alsoLanes": ["text"] },
+    "JsonData": { "lane": "text", "alsoLanes": ["world", "gameplay", "story"] },
+    "ExtendData": { "lane": "catalog" },
+    "InitialExtendData": { "lane": "catalog" },
+    "BundleManifest": { "lane": "catalog" },
+    "Lua": { "lane": "code" },
+    "IFixPatchOut": { "lane": "code" }
+  },
+
+  "unreachableFromStaticData": {
+    "_why": "These are recorded eliminations, not open work. A generated report can show that nothing was recovered; only the owning memory topic records that nothing CAN be recovered from installed data alone. Presenting them as 'todo' would invite the same dead ends.",
+    "items": [
+      {
+        "id": "hirc-0a-0d",
+        "lane": "audio",
+        "level": 3,
+        "title": "HIRC object types 0x0A-0x0D",
+        "titleZh": "HIRC 对象类型 0x0A-0x0D",
+        "detail": "The engine's own shipped HIRC parser skips these types, so no installed byte establishes what they mean. Framing alone remains available.",
+        "detailZh": "游戏自带的 HIRC 解析器直接跳过这些类型，因此安装数据本身无法确定其含义，只能得到帧结构。",
+        "owner": "memory/game_data/audio_hirc_parser.md"
+      },
+      {
+        "id": "layer-c-consumer",
+        "lane": "world",
+        "level": 4,
+        "title": "The consumer of terrain LAYER_C",
+        "titleZh": "地形 LAYER_C 的消费者",
+        "detail": "The array is decoded end to end, but the recorded answer for what reads it was disconfirmed on re-test. No current static evidence names a consumer.",
+        "detailZh": "该数组已完整解码，但此前记录的消费者结论在复测中被推翻，目前没有静态证据指明消费者。",
+        "owner": "memory/game_data/world_terrain.md"
+      },
+      {
+        "id": "runtime-consumer-questions",
+        "lane": "cross_lane",
+        "level": 4,
+        "title": "Runtime-consumer questions in general",
+        "titleZh": "运行时消费者类问题",
+        "detail": "What a decoded record does at runtime -- which branch is taken, which value is effective -- is not in the installed bytes. It needs a bounded capture against the exact selected build, not more static decoding.",
+        "detailZh": "解码记录在运行时的实际行为（走哪个分支、哪个值生效）不在安装数据中，需要针对选定版本的有界捕获，而非继续静态解码。",
+        "owner": "memory/game_data/audio_native_hooks.md"
+      }
+    ]
+  },
+
+  "levelCaveats": {
+    "_why": "The page's central honesty rule. It is an editorial statement about what the measured numbers do and do not prove, so it is declared rather than derived.",
+    "namedIsNotUnderstood": {
+      "text": "Named bytes are a level-2/3 result: every byte is inside a framed, named field. That is not level 4. A 100% named family can still have fields whose meaning is unproven.",
+      "textZh": "“已命名字节”是第 2/3 层的结果：每个字节都落在已划分、已命名的字段内，但这不是第 4 层。100% 命名的家族仍可能有含义未经证明的字段。"
+    },
+    "documentedTopicsAreNotBytes": {
+      "text": "A lane's level strip counts documented topic files, not bytes. A level being reached means at least one conclusion at that level exists for that lane, never that the lane's data is understood at that level.",
+      "textZh": "通道的层级条统计的是已记录的主题文件，而非字节。某层被点亮只表示该通道在该层至少有一条结论，不表示该通道的数据在该层已被理解。"
+    }
+  }
+}

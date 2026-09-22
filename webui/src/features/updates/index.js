@@ -191,6 +191,7 @@
     filtered: [],
     selectedPath: "",
     selectedEntry: null,
+    pager: null,
     filters: {
       statuses: new Set(),
       categories: new Set(),
@@ -558,7 +559,10 @@
       className: "updates-filter-chip",
       label: labeler ? (value) => labeler(value) : undefined,
       count: counts,
-      onToggle: () => applyUpdateFilters(),
+      onToggle: () => {
+        UPDATE_STATE.pager?.reset();
+        applyUpdateFilters();
+      },
     });
   }
 
@@ -580,6 +584,7 @@
     UPDATE_STATE.filters.statuses.clear();
     UPDATE_STATE.filters.categories.clear();
     UPDATE_STATE.filters.extensions.clear();
+    UPDATE_STATE.pager?.reset();
     populateUpdateFilters();
     applyUpdateFilters();
   }
@@ -599,6 +604,7 @@
       ? (a, b) => ((scores.get(b) || 0) - (scores.get(a) || 0)) || compareEntries(a, b)
       : compareEntries);
     UPDATE_STATE.filtered = filtered;
+    UPDATE_STATE.pager?.setTotal(filtered.length);
     if (
       UPDATE_STATE.selectedEntry
       && !UPDATE_STATE.filtered.some((entry) => entry.path === UPDATE_STATE.selectedEntry.path && entry.status === UPDATE_STATE.selectedEntry.status)
@@ -660,7 +666,8 @@
     up$("#updates-total").textContent = String(UPDATE_STATE.entries.length);
 
     const fragment = document.createDocumentFragment();
-    for (const entry of UPDATE_STATE.filtered) {
+    const pageEntries = UPDATE_STATE.pager ? UPDATE_STATE.pager.slice(UPDATE_STATE.filtered) : UPDATE_STATE.filtered;
+    for (const entry of pageEntries) {
       const row = document.createElement("button");
       row.type = "button";
       row.className = `updates-row updates-row-${entry.status || "unknown"}`;
@@ -1704,7 +1711,10 @@
     if (reset) reset.addEventListener("click", resetUpdateFilters);
     for (const sel of ["#updates-q", "#updates-sort"]) {
       const node = up$(sel);
-      if (node) node.addEventListener(sel === "#updates-q" ? "input" : "change", applyUpdateFilters);
+      if (node) node.addEventListener(sel === "#updates-q" ? "input" : "change", () => {
+        UPDATE_STATE.pager?.reset();
+        applyUpdateFilters();
+      });
     }
     document.querySelectorAll(".view-tab").forEach((button) => {
       button.addEventListener("click", () => {
@@ -1724,6 +1734,11 @@
   function initUpdates() {
     UPDATE_STATE.uiLocale = resolveInitialUiLocale();
     ensureUpdatesPanelToggle();
+    UPDATE_STATE.pager = window.WebUI.pagination?.createPager({
+      container: "#updates-pager",
+      storageKey: "updates_browser_page_size",
+      onChange: renderUpdateList,
+    });
     applyUpdateStrings();
     bindUpdateEvents();
     renderUpdateSummary();

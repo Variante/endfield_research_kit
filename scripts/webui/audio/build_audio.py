@@ -40,6 +40,10 @@ from scripts.webui.audio.semantics.identifiers import (
     is_rtpc_parameter_name,
 )
 from scripts.webui.audio.semantics import name_recovery
+from scripts.webui.audio.semantics.authored_payload_event_names import (
+    collect_authored_payload_event_names,
+    summarize_authored_payload_event_name_recovery,
+)
 from scripts.webui.audio.semantics.table_contexts import collect_table_audio_events
 from scripts.webui.audio.semantics.event_projection import HIRC_OBJECT_TYPE_LABELS
 from scripts.webui.audio.semantics.rtpc_contract import CANONICAL_RTPC_ENTRIES
@@ -141,7 +145,10 @@ EVENT_BANK_VFS_BLOCK_TYPES = (
     "audio-korean",
 )
 EVENT_BANK_FILE_REGEX = r"(^|[\\/])(?:[^\\/]*banks|hotfix[^\\/]*)\.pck$"
-EVENT_EVIDENCE_SCHEMA_VERSION = 43
+# 44 adds the authored serialized-payload Event-name source. Bumping it retires
+# every cached Event index built before those names existed, so a stale cache
+# cannot keep publishing a hash-only identity for an Event that now has one.
+EVENT_EVIDENCE_SCHEMA_VERSION = 44
 HASHED_EVENT_KEY_RE = re.compile(r"^hashed-event:0x([0-9a-f]{8})$", re.IGNORECASE)
 
 # Wwise 2024.1 / bank version 150 HIRC action operations.  The serialized
@@ -3966,10 +3973,19 @@ def build_audio(args: argparse.Namespace) -> int:
         raise SystemExit(f"Conversation directory not found: {conv_dir}")
     table_event_names, table_event_hashes = collect_table_audio_events(args.export_root)
     stage.mark("collectTableAudioEvents")
+    # Level, interactive and spawner payloads ship the same length-prefixed
+    # au_* literals SkillData/BuffData do, and they must be in the name pool
+    # *before* the HIRC pass: names added afterwards can only relabel an
+    # inventory row, not give the Event-to-media links a spelling.
+    (
+        authored_payload_event_names,
+        authored_payload_event_name_audit,
+    ) = collect_authored_payload_event_names(args.export_root)
     event_name_source_sets: dict[str, set[str]] = {
         "storyOrCoreAudioTable": collect_audio_event_names(conv_dir, args.export_root),
         "typedAudioTableOrConfig": table_event_names,
         "luaPostEvent": set(lua_post_event_names),
+        "authoredPayloadLiteral": set(authored_payload_event_names),
     }
     stage.mark("collectAudioEventNames")
     event_names = set().union(*event_name_source_sets.values())
@@ -4185,6 +4201,15 @@ def build_audio(args: argparse.Namespace) -> int:
         ):
             row["eventIdentityStatus"] = "grammarHashPreimageNameRecovered"
     stage.mark("grammarEventNameRecovery")
+    # Measured after the pass, never asserted: the traversal decides which
+    # candidates a current Event object id actually claims.
+    authored_payload_event_name_recovery = summarize_authored_payload_event_name_recovery(
+        authored_payload_event_names,
+        authored_payload_event_name_audit,
+        wwise_event_inventory,
+        fnv1_32=fnv1_32,
+    )
+    stage.mark("authoredPayloadEventNameRecovery")
     event_entries = [
         entry
         for entries in event_audio_by_id.values()
@@ -4286,6 +4311,17 @@ def build_audio(args: argparse.Namespace) -> int:
             "grammarRecoveredWwiseEventNameExpectedCoincidences": float(
                 grammar_event_name_recovery.get("expectedCoincidentalPreimages") or 0.0
             ),
+            "authoredPayloadEventNameCandidates": int(
+                authored_payload_event_name_recovery.get("candidateCount") or 0
+            ),
+            "authoredPayloadRecoveredWwiseEventNames": int(
+                authored_payload_event_name_recovery.get("promotedCount") or 0
+            ),
+            "authoredPayloadEventNameExpectedCoincidences": float(
+                authored_payload_event_name_recovery.get(
+                    "expectedCoincidentalPreimages"
+                ) or 0.0
+            ),
             **duplicate_suppression_stats,
             "luaPostEventNames": len(lua_post_event_names),
             "luaPostEventContexts": sum(
@@ -4324,6 +4360,7 @@ def build_audio(args: argparse.Namespace) -> int:
             for key, value in grammar_event_name_recovery.items()
             if key != "entries"
         },
+        "authoredPayloadEventNameRecovery": authored_payload_event_name_recovery,
         "luaAudioReferenceSummary": lua_audio_payload.get("summary") or {},
         "luaAudioReferences": lua_audio_references,
         # Persist the exact Timeline/LevelSequence/FMV evidence used by the

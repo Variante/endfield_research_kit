@@ -16,6 +16,7 @@ and behavior contracts remain in [`../webui/README.md`](../webui/README.md).
 | Assets | [`webui/assets.md`](webui/assets.md) | `scripts.webui.assets.build_assets` |
 | Text | [`webui/text.md`](webui/text.md) | `scripts.webui.story` |
 | Updates | [`webui/updates.md`](webui/updates.md) | `scripts.webui.updates.build_updates` |
+| Decoded Data Inspector (debug-only) | [`webui/data_inspector.md`](webui/data_inspector.md) | `scripts.webui.data_inspector.build_data_inspector` |
 
 Mission Pipeline is a standalone recovery workflow, not a WebUI page or normal
 export stage. Retired Progression and Combat & Projectiles pages stay retired;
@@ -48,7 +49,8 @@ The canonical full flow is:
 2. If requested, use AnimeStudio to refresh structured Story/Table inputs and
    optionally asset/audio outputs.
 3. Refresh Story evidence and build localized Story and Text data.
-4. Run post-Story builders in dependency-safe phases: Map, Characters,
+4. Run post-Story builders in dependency-safe phases: Map, Characters, the
+   debug-only Decoded Data Inspector,
    Gameplay/projectiles, optional Assets/audio, joined sidecars, curated source
    graph, then graph consumers.
 5. Write step timings and process-tree memory benchmarks under
@@ -82,6 +84,18 @@ succeed.
 - Evidence types remain distinct: authored reference, recovered relation,
   inferred ownership, runtime observation, and user annotation are not
   interchangeable.
+- Gameplay does not load or render the generated projectile/audio sound
+  sidecars while their ownership model is under review; audio investigation
+  remains on the Audio page.
+  - Ordinary long-list pages (Characters, Gameplay, Audio, Assets, Text,
+    Updates, and the debug-only Data Inspector) share paginated left lists and a
+    persisted custom 1-10000-items-per-page input, with 50/100/200/500 offered
+    as suggestions, plus a direct page-number input that clamps to the valid
+    range. Filtering and sorting return to the first page; Story and Map retain
+    their hierarchical navigation.
+- Assets derives JSON filter categories from the exported source/object
+  directory. Unity object lanes remain separate, and same-hash collapsed rows
+  retain every contributing JSON lane rather than only the first path's type.
 - Reuse an existing `http://127.0.0.1:8765/` server before starting another.
 
 ## Verification
@@ -98,9 +112,11 @@ The frontend smoke test is, concretely: load every normal page and read the
 browser console; check Story reset, the recovery filters, and the SNS
 emoji/sticker fixtures named in [`../webui/README.md`](../webui/README.md);
 open one playable character and one enemy in Gameplay and verify variants,
-progression, skills, projectiles, sounds, and asset links; and confirm that an
+progression, skills, projectiles, and asset links; and confirm that an
 absent optional input produces a clear degraded state rather than an empty
-success.
+success. On each long-list page, also change the page size, move between pages,
+then filter and confirm the list returns to page one without losing the current
+detail unexpectedly.
 
 Changing counts and per-build inventories belong in `reports/`; page guides
 record only stable recovery logic, evidence boundaries, and the highest-value

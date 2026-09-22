@@ -15,11 +15,17 @@ other pages, not proof that an asset was used at runtime.
    Story media, and video catalogs.
 3. Gameplay's `asset-refs` stage consumes the Assets index and owns its
    consumer-specific join; the Assets builder does not write that sidecar.
-4. Packaging may publish a compact normal-page media index and a complete
+4. `scripts.webui.assets.table_asset_owners` recovers exact table-row
+   ownership: an exported Table row owns an asset when an asset-bearing field
+   (`icon`, `img`, `image`, `path`, `sprite`, `bg`, `avatar`, `bust`, `logo`,
+   `portrait`, `texture`, `model`, `prefab`, `pic`, `art`) holds a value equal
+   to the whole normalized asset stem. It always reads the complete scan, not
+   the focused projection.
+5. Packaging may publish a compact normal-page media index and a complete
    resource index. Extract the resources archive last so the complete index wins.
 
-Primary outputs: `webui/data/assets/{index,story_media,videos}.json`; Gameplay
-separately owns `gameplay_refs.json`.
+Primary outputs: `webui/data/assets/{index,story_media,table_owners,videos}.json`;
+Gameplay separately owns `gameplay_refs.json`.
 
 ## Evidence boundary
 
@@ -29,6 +35,11 @@ separately owns `gameplay_refs.json`.
 - Material/shader/texture presence does not establish runtime variant,
   renderer ownership, or final appearance.
 - Missing optional previews remain visible and do not erase the indexed asset.
+- Table ownership requires both gates: an asset-bearing field name and a
+  whole-stem value match. A shared name prefix, a family stem, or an
+  identifier field that coincides with an asset name is not ownership and is
+  not published as a candidate. Most exported assets therefore stay unowned,
+  because UI sprites are referenced from prefabs rather than from table rows.
 
 ## Focused refresh
 
@@ -45,6 +56,11 @@ Use `--debug-assets` only for broad investigation. Prefer
 
 - Improve object-level dependency and conversion diagnostics.
 - Recover exact renderer/material/texture and animation ownership.
+- Table rows cover only the sprites a table names directly. Activity
+  background sets, achievement icons, AI-bark portraits, attachment widget
+  models, and ability-entity models are referenced from prefabs and UI
+  layouts, so closing them needs a prefab/UI reference pass, not a wider name
+  rule.
 - Keep broad resource browsing packageable without inflating normal-page loads.
 
 See [`../game_data/unity_assets.md`](../game_data/unity_assets.md) for durable

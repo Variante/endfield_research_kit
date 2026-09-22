@@ -156,8 +156,8 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument(
         "--sample-limit",
         type=int,
-        default=5000,
-        help="Maximum entries per status to carry from the scanner.",
+        default=0,
+        help="Maximum entries per status to publish; 0 (the default) keeps every entry.",
     )
     parser.add_argument(
         "--top-line-limit",

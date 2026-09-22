@@ -850,6 +850,35 @@ textarea:focus-visible,
 #list, #asset-list { position: absolute; top: 0; left: 0; right: 0; }
 #list-spacer, #asset-list-spacer { width: 1px; }
 
+.list-pager {
+  display: grid;
+  grid-template-columns: auto minmax(64px, 1fr) auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-2);
+  color: var(--muted);
+  font-size: 11px;
+}
+.list-pager button,
+.list-pager input {
+  min-height: 28px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-3);
+  color: var(--text);
+  font-size: 11px;
+}
+.list-pager input { font-variant-numeric: tabular-nums; }
+.list-pager-page { display: flex; align-items: center; justify-content: center; gap: 4px; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.list-pager-page input { width: 52px; text-align: center; }
+.list-pager-size input { width: 72px; }
+.list-pager button { cursor: pointer; }
+.list-pager button:disabled { opacity: .45; cursor: default; }
+.list-pager-size { display: flex; align-items: center; gap: 5px; white-space: nowrap; }
+
 /* Tree rows (groups + leaf items) —both absolute-positioned for v-scroll. */
 .row {
   position: absolute; left: 0; right: 0;
@@ -4325,6 +4354,74 @@ body.is-resizing-filter * {
 
 .reference-row-title {
   font-weight: 700;
+}
+
+.reference-row.is-focused {
+  background: var(--panel-2, rgba(127, 127, 127, 0.12));
+  border-radius: 6px;
+}
+
+/* Maintained structured-field renderer (Text Tables). */
+.reference-fields {
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.reference-fields-title {
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+
+.reference-field {
+  display: grid;
+  grid-template-columns: minmax(120px, 220px) 1fr;
+  gap: 4px 12px;
+  padding: 2px 0;
+}
+
+.reference-field-label {
+  color: var(--muted);
+}
+
+.reference-field-value {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 8px;
+  font-family: ui-monospace, Consolas, monospace;
+  word-break: break-word;
+}
+
+.reference-field-link {
+  background: none;
+  border: none;
+  padding: 0;
+  color: var(--accent);
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+.reference-field-ref {
+  color: var(--muted);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.reference-field-ref.is-unresolved {
+  color: var(--warn, #c98a3a);
+}
+
+@media (max-width: 760px) {
+  .reference-field {
+    grid-template-columns: 1fr;
+  }
 }
 
 .reference-text + .reference-text {

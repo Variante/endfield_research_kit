@@ -11,6 +11,9 @@ its builder, generated contract, or frontend consumer.
 - [`assets.md`](assets.md): exported resource inventory and semantic references.
 - [`text.md`](text.md): localized table discovery and row rendering.
 - [`updates.md`](updates.md): previous/current export comparison.
+- [`recovery.md`](recovery.md): recovery progress by level and lane, and the
+  measured-versus-declared boundary the page enforces.
+- [`data_inspector.md`](data_inspector.md): generic decoded-dataset publication and debug inspection.
 
 One file here is not a page guide:
 

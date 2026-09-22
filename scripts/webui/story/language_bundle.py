@@ -152,6 +152,7 @@ from scripts.webui.story.level_bindings import (
     build_leveldata_npc_patrol_radio_story_contexts,
     build_leveldata_world_entity_quest_script_context,
     build_levelscript_action_story_occurrences,
+    build_levelscript_fmv_playback_scan_failures,
     build_levelscript_custom_event_story_producer_routes,
     build_levelscript_interactive_narrative_story_contexts,
     build_levelscript_manual_guide_group_story_routes,
@@ -323,11 +324,18 @@ from scripts.webui.story.reference_projection import (
     prts_archive_category_from_row,
     prts_attachment_aliases,
     reference_kind_from_tags,
+    reference_row_name_i18n_id,
     reference_row_texts,
     responsive_preview_values,
     responsive_sort_values,
     responsive_summary_rows,
     sim_duplicate_actor_from_key,
+)
+from scripts.webui.story.reference_structured_fields import (
+    LEVEL_SOURCE as STRUCTURED_LEVEL_SOURCE,
+    MISSION_SOURCE as STRUCTURED_MISSION_SOURCE,
+    ReferenceResolver,
+    structured_reference_fields,
 )
 from scripts.webui.story.timeline_action_evidence import build_conversation_action_debug
 from scripts.webui.story.option_anchor_reports import (
@@ -7868,6 +7876,43 @@ def build_language_bundle(
             return [resolve_reference_raw_i18n(value, preferred_source=preferred_source) for value in raw_value]
         return raw_value
 
+    # Exact row lookup for the maintained Text Tables field renderers. Only
+    # rows that exist in the exported set resolve; nothing is name-matched.
+    structured_mission_ids: set[str] = set()
+    structured_level_ids: set[str] = set()
+
+    def structured_row_exists(target_table: str, row_key: str) -> bool:
+        if target_table == STRUCTURED_MISSION_SOURCE:
+            if not structured_mission_ids:
+                structured_mission_ids.update(
+                    path.stem
+                    for path in MRA_DIR.glob("*.json")
+                    if not path.stem.endswith("_meta")
+                )
+            return row_key in structured_mission_ids
+        if target_table == STRUCTURED_LEVEL_SOURCE:
+            if not structured_level_ids:
+                structured_level_ids.update(
+                    path.name for path in LEVELDATA_DIR.glob("*") if path.is_dir()
+                )
+            return row_key in structured_level_ids
+        payload = collection_table_payload("game", f"{target_table}.json")
+        return isinstance(payload, dict) and row_key in payload
+
+    def structured_row_name(target_table: str, row_key: str) -> str:
+        payload = collection_table_payload("game", f"{target_table}.json")
+        if not isinstance(payload, dict):
+            return ""
+        i18n_id = reference_row_name_i18n_id(payload.get(row_key))
+        if i18n_id is None:
+            return ""
+        return brace_text(t(i18n_id, preferred_source="game")) or ""
+
+    structured_resolver = ReferenceResolver(
+        row_exists=structured_row_exists,
+        row_name=structured_row_name,
+    )
+
     def write_raw_reference_bundle() -> dict:
         reference_dir.mkdir(parents=True, exist_ok=True)
         generated = int(time.time())
@@ -7893,6 +7938,7 @@ def build_language_bundle(
                 row_payloads: list[dict] = []
                 raw_rows: dict[str, object] = {}
                 table_texts = 0
+                table_structured_rows = 0
                 for row_index, (row_id, row) in enumerate(
                     sorted(payload.items(), key=lambda item: str(item[0])),
                     start=1,
@@ -7904,7 +7950,13 @@ def build_language_bundle(
                         row,
                         preferred_source=table_source,
                     )
-                    if not text_nodes:
+                    structured_fields = structured_reference_fields(
+                        table_name,
+                        row_key,
+                        row,
+                        structured_resolver,
+                    )
+                    if not text_nodes and not structured_fields:
                         continue
                     texts = reference_row_texts(text_nodes)
                     table_texts += len(texts)
@@ -7928,6 +7980,9 @@ def build_language_bundle(
                         ),
                         "texts": texts,
                     }
+                    if structured_fields:
+                        row_payload["fields"] = structured_fields
+                        table_structured_rows += 1
                     row_payloads.append(row_payload)
                     raw_rows[row_key] = resolve_reference_raw_i18n(
                         row,
@@ -7964,6 +8019,10 @@ def build_language_bundle(
                     "storage": storage,
                     "hash": content_hash,
                 }
+                if table_structured_rows:
+                    # A maintained structured-field renderer covers this table.
+                    table_row["renderer"] = "structured"
+                    table_row["structuredRows"] = table_structured_rows
                 table_index.append(table_row)
         table_index.sort(key=lambda row: (row["source"], row["label"], row["table"]))
         index_payload = {
@@ -19894,7 +19953,9 @@ def build_language_bundle(
         *[pair[0] for pair in dialog_tree_narrative_groups],
     }
     cutscene_payloads_by_key: dict[str, dict] = {}
-    cutscene_scan_failures: list[dict] = []
+    cutscene_scan_failures: list[dict] = (
+        build_levelscript_fmv_playback_scan_failures()
+    )
     lua_audit_path = (
         REPO_ROOT
         / "reports" / "mission_order" / "lua_consumer_reference_audit.json"

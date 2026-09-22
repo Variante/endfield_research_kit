@@ -72,6 +72,18 @@ def classify_cutscene_playback_use(
             "caseInsensitiveDefinitionMatches": definition_matches,
             "failureGate": "unique_case_insensitive_definition_identity",
         }
+    playback_matches = sorted({
+        key for key in playback_story_keys if str(key).casefold() == folded
+    })
+    # Positive playback evidence does not require an exhaustive census. Only
+    # the negative "unused" conclusion depends on every carrier family being
+    # complete and non-degraded.
+    if playback_matches:
+        return {
+            "status": "playback_observed",
+            "automaticUnused": False,
+            "caseInsensitivePlaybackMatches": playback_matches,
+        }
     if scan_status != "validated_complete" or validation_failures:
         return {
             "status": "unresolved_playback_scan",
@@ -79,15 +91,6 @@ def classify_cutscene_playback_use(
             "failureGate": "complete_non_degraded_playback_carrier_scan",
             "scanStatus": scan_status,
             "validationFailureCount": len(validation_failures or []),
-        }
-    playback_matches = sorted({
-        key for key in playback_story_keys if str(key).casefold() == folded
-    })
-    if playback_matches:
-        return {
-            "status": "playback_observed",
-            "automaticUnused": False,
-            "caseInsensitivePlaybackMatches": playback_matches,
         }
     return {
         "status": "conclusive_no_playback_observed",
