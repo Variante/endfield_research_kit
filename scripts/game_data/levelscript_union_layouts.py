@@ -9,10 +9,14 @@ closed on the rest and the family's named-byte coverage stalls.
 This module closes the gap mechanically.  Two facts make it possible, and both
 are proved against the reviewed contract rather than assumed:
 
-* **Tag.**  A union's compact tag is its case-insensitive alphabetical rank
-  among the wrapper types of its family, ranked on the type name with the
-  `ForMemoryPack` suffix removed.  All 277 reviewed rows agree with that rank,
-  across three families whose tags run to 1341, 1101 and 216.
+* **Tag.**  A union's compact tag is its case-insensitive ordinal rank among
+  the wrapper types of its family, ranked on the wrapped type's full name.
+  The wrapper name flattens that name's `.`, `<`, `,` and `>` to `_`, so the
+  key restores `.` and a generic's closing `>`: ranking the flattened name
+  itself puts `IFixAction1.Data` before `IFixAction.Data` and
+  `ClientOnce<bool>` before `ClientOnce<bool, Vector2Int>`, the reverse of
+  the generator.  All 277 reviewed rows agree with that rank, and so does
+  every entry of every family whose formatter switch was read natively.
 * **Layout.**  A wrapper's members are its `set____name__` setters in
   declaration order, with the base chain's setters first, root first.  The
   declared type of each member is that setter's parameter type.  All 277
@@ -231,9 +235,20 @@ class UnionLayoutError(RuntimeError):
     """The derivation could not be trusted, so it produced nothing."""
 
 
-def _wrapper_sort_key(name: str) -> str:
+def _wrapper_sort_key(name: str, *, generic: bool) -> str:
+    """The generator's ordinal key, rebuilt from a flattened wrapper name.
+
+    Every flattened separator reads back as `.`: namespace and nesting dots
+    are what they were, and the rare `<`/`,` it also stands for sit below
+    every letter and digit either way. A generic's trailing `_` is its `>`,
+    which must sort after `,` so a longer argument list ranks first.
+    """
+
     base = name[: -len(WRAPPER_SUFFIX)] if name.endswith(WRAPPER_SUFFIX) else name
-    return base.lower()
+    base = base.lower()
+    if generic and base.endswith("_"):
+        base = base[:-1] + ">"
+    return base.replace("_", ".")
 
 
 class _TypeUniverse:
@@ -635,7 +650,20 @@ class _WrapperImage:
                 continue
             if root in self.base_chain(name):
                 found.append(name)
-        return sorted(set(found), key=_wrapper_sort_key)
+        return sorted(
+            set(found),
+            key=lambda name: _wrapper_sort_key(name, generic=self.wraps_generic(name)),
+        )
+
+    def wraps_generic(self, name: str) -> bool:
+        """Whether the wrapper's `__instance` setter takes a generic type."""
+
+        row = self.by_name[name]["row"]
+        for method_row, setter in self.image.setters(row):
+            if _member_name(setter) == INSTANCE_MEMBER:
+                declared = self.image.setter_parameter_type(method_row) or ""
+                return "<" in declared
+        return False
 
 
 #: Generic heads the codec frames itself. Everything else generic is an
@@ -1003,8 +1031,9 @@ def derive(
         "schema": SCHEMA,
         "evidenceBoundary": EVIDENCE_BOUNDARY,
         "interpretation": (
-            "Tag is the case-insensitive alphabetical rank of the wrapper type "
-            "name without its ForMemoryPack suffix, within the family. Members "
+            "Tag is the case-insensitive ordinal rank of the wrapped type's "
+            "full name within the family, read back from the flattened wrapper "
+            "name with `.` separators and a generic's closing `>`. Members "
             "are the base chain's setters, root first, then the type's own, in "
             "declaration order, typed by each setter's parameter. Enums are "
             "recorded as their int32 storage."
