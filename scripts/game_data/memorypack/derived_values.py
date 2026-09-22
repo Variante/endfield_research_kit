@@ -81,6 +81,19 @@ IDENTIFIER_MEMBERS = ("skillId", "id", "buffId")
 # A decoded string longer than this is truncated in the report rather than
 # inlined; the value reader itself keeps it whole.
 REPORT_STRING_LIMIT = 120
+#: Members whose decoded string names another exported record, and the family
+#: it names. These are cross-references, not the record's own identifier, which
+#: is why the census below counts nested occurrences only -- a root ``skillId``
+#: is the file's own name and resolves trivially, and counting it would inflate
+#: the result to near-certainty while measuring nothing.
+REFERENCE_MEMBERS = {
+    "buffId": "BuffData",
+    "buffIdList": "BuffData",
+    "skillId": "SkillData",
+    "projectileSkillId": "SkillData",
+}
+#: Depth at which a member stops being a root member of the record.
+NESTED_DEPTH = 1
 
 
 class ValueReader(DerivedPlanMixin, _FrozenReader):
@@ -283,6 +296,83 @@ def verify_identifier(directory: Path, definition: int, registry: PlanRegistry) 
     }
 
 
+def collect_references(value: Any, found: dict[str, set], depth: int = 0, name: str = "") -> None:
+    """Gather every nested string under a member named in ``REFERENCE_MEMBERS``.
+
+    A union's ``$tag``/``$type``/``$value`` keys are bookkeeping rather than
+    members, so they neither rename the member nor deepen it.
+    """
+    if isinstance(value, dict):
+        for key, item in value.items():
+            if key.startswith("$"):
+                collect_references(item, found, depth, name)
+            else:
+                collect_references(item, found, depth + 1, key)
+    elif isinstance(value, list):
+        for item in value:
+            collect_references(item, found, depth, name)
+    elif isinstance(value, str) and value and depth > NESTED_DEPTH:
+        if name in REFERENCE_MEMBERS:
+            found.setdefault(name, set()).add(value)
+
+
+def verify_references(
+    directories: dict[str, Path], registry: PlanRegistry, definitions: dict[str, int]
+) -> dict[str, Any]:
+    """Resolve each cross-reference member against the records that exist.
+
+    This is a semantic check rather than a structural one, and a much harder
+    thing to pass by accident than the identifier oracle: a wrong decode yields
+    strings that resolve to nothing, while a right one yields names that land
+    in a closed world. What it establishes is that the member holds a reference
+    to a record of that family. It does not establish what the reference is
+    *for*, and an unresolved name is reported rather than explained -- a name
+    absent from the export is not thereby shown to be wrong.
+    """
+    universes = {
+        family: {path.stem for path in directory.glob("*.json")}
+        for family, directory in directories.items() if directory.is_dir()
+    }
+    found: dict[str, set] = {}
+    for family, directory in directories.items():
+        definition = definitions.get(family)
+        if definition is None or not directory.is_dir():
+            continue
+        for path in sorted(directory.glob("*.json")):
+            try:
+                value, reached = decode_file(
+                    path.read_bytes(), definition, registry, source=path.name)
+            except (Unsupported, ValueError, IndexError, struct.error):
+                continue
+            if reached == path.stat().st_size:
+                collect_references(value, found)
+    members: dict[str, Any] = {}
+    for member, family in sorted(REFERENCE_MEMBERS.items()):
+        values = found.get(member, set())
+        universe = universes.get(family, set())
+        resolved = values & universe
+        members[member] = {
+            "family": family,
+            "distinct": len(values),
+            "resolved": len(resolved),
+            "unresolvedExamples": sorted(values - universe)[:5],
+        }
+    total = sum(row["distinct"] for row in members.values())
+    agreed = sum(row["resolved"] for row in members.values())
+    return {
+        "status": "validated" if total else "no-references",
+        "distinct": total,
+        "resolved": agreed,
+        "members": members,
+        "boundary": (
+            "Nested occurrences only: a root identifier is the file's own name and "
+            "would resolve trivially. Resolution shows the member names a record of "
+            "that family, not what the reference is for, and an unresolved name is "
+            "reported rather than explained."
+        ),
+    }
+
+
 def _summarize(value: Any, depth: int = 0) -> Any:
     """A bounded rendering of one decoded record for the report."""
     if isinstance(value, str):
@@ -326,16 +416,25 @@ def build(output: Path, export_root: Path | None = None) -> dict[str, Any]:
             value, _ = decode_file(
                 first[0].read_bytes(), definition, registry, source=first[0].name)
             samples[directory_name] = {"file": first[0].stem, "record": _summarize(value)}
+    references = verify_references(
+        {name: layout.json_dir / name for name in WHOLE_RECORD_FAMILIES},
+        registry,
+        {name: registry.named_roots.get(type_name)
+         for name, type_name in WHOLE_RECORD_FAMILIES.items()},
+    )
     statuses = {row.get("status") for row in families.values()}
     report = {
         "schema": "endfield.memorypack-derived-values.v2",
         "audit": audit,
         "identifierChecks": families,
+        "referenceCheck": references,
         "summary": {
             "status": "validated" if statuses == {"validated"} else "incomplete",
             "decoded": sum(row.get("decoded", 0) for row in families.values()),
             "identifierAgreed": sum(row.get("identifierAgreed", 0) for row in families.values()),
             "identifierChecked": sum(row.get("identifierChecked", 0) for row in families.values()),
+            "referencesResolved": references.get("resolved"),
+            "referencesDistinct": references.get("distinct"),
             "elapsedSeconds": round(time.perf_counter() - started, 3),
         },
         "samples": samples,

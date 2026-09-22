@@ -2031,9 +2031,27 @@ member order *and* the string decoding are simultaneously right. A wrong member
 order still decodes a string; it decodes the wrong one. **All 5,494 decoded
 identifiers equal their filenames**, with none refused and none missing.
 
-What this does not establish is what any member means. The names come from the
-same metadata the framing does and carry the same tier, a stored value is not a
-runtime value, and nothing here observes a field being overwritten after load.
+***A second check, semantic rather than structural.*** The decode surfaces a
+reference graph -- 3,554 distinct audio event names, 5,664 effect names, 1,675
+buff ids, named blackboard keys -- and a reference either lands in the exported
+world or it does not. Four members name another record of a known family, and
+they resolve at **1,662 of 1,675 (`buffId`), 501 of 508 (`buffIdList`), 291 of
+294 (`skillId`) and 277 of 279 (`projectileSkillId`)**. That is a far harder
+thing to pass by accident than the identifier oracle: a wrong decode yields
+strings that resolve to nothing.
+
+*The measurement needed one correction before it meant anything.* Counting
+every `skillId` gave 2,621 of 2,624, which looks conclusive and measures
+almost nothing -- SkillData's own identifier *is* `skillId`, so nearly every
+value counted was a file resolving to itself. Restricting the census to nested
+occurrences drops it to 294 genuine references, and the ratio survives.
+`verify_references` builds that restriction in.
+
+What none of this establishes is what any member means. The names come from the
+same metadata the framing does and carry the same tier; resolution shows that a
+member names a record of that family, not what the reference is *for*; a stored
+value is not a runtime value; and an unresolved name is reported rather than
+explained, since absence from the export does not make a name wrong.
 
 ### A list and an array do not frame their elements the same way
 
