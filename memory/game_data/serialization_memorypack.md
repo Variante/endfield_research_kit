@@ -1656,6 +1656,111 @@ already opened, joins a row only by explicit wrapper type definition or a
 unique assembly-qualified wrapper name, and reports a member-count conflict
 rather than overwriting the reviewed row.
 
+## The action dispatcher enumerates generically
+
+The AbilityActionData union has one switch table, and the chain each reviewed
+contract proves per tag -- switch entry, route target, the rip-relative usage
+cell that route's first instruction loads, the registered type index that cell
+encodes, the generated wrapper that index names -- is mechanical. Walking it
+for every entry resolves the whole union at once:
+`scripts.game_data.memorypack.action_dispatcher` currently resolves every
+route, agrees with every reviewed tag that records a wrapper definition, and
+names a large majority of tags that no contract covers. All routes are distinct,
+so there is no shared default target to disambiguate. Counts belong to
+`reports/game_data/memorypack_action_dispatcher.json`.
+
+The table's identity is not rediscovered or hard-coded: it is read from the
+reviewed contracts that already pin its RVA, entry count and SHA256, every such
+contract must agree, and the live image's bytes are re-hashed against that pin.
+A build whose dispatcher moved yields no routes.
+
+Member widths come with the names. A member's size is fixed by its type for
+every primitive, and for an enum by the primitive its generated `value__` field
+declares -- which is not always int32: this build has enums underlain by `byte`,
+`uint`, `short`, `ushort`, `long`, `sbyte` and `ulong`, so an assumed four-byte
+enum would mis-size several hundred types. Derived widths agree with every
+reviewed read-order token whose width is unambiguous, with no disagreement.
+Where every member of a wrapper is fixed, the derivation reports the members'
+summed width. That sum excludes whatever header the wrapper's own formatter
+writes, so it is a lower bound on a record's extent and not a proven boundary;
+resolving that header is what still separates a named tag from a readable one.
+
+This establishes a tag's *identity* and its wrapper's member names, tier
+`direct`. It reads no payload and proves no cursor, member width, nested extent
+or EOF, so an enumerated tag is not `exact` and still needs a reader plus a
+reviewed contract before its bytes are pinned. Its value is that an unreviewed
+tag stops being anonymous: the BuffData and SkillData readers' failure mode
+moves from an unknown union tag to a known wrapper with unnamed widths. A route
+whose prologue is not the expected rip-relative load is recorded with that
+status rather than guessed at, and a tag that contradicts its contract fails the
+run closed.
+
+## Fixed-width action bodies can be read from the derivation
+
+The frozen `buff_actions` reader frames a root action as a union tag, then
+either a `0xFF` null wrapper or one header byte equal to the serialized member
+count, then the members. Its `header()` rejects any other byte, so its whole
+tag-to-member-count table is confirmed by the authenticated corpus's own bytes.
+That table and the bulk derivation agree on every entry, which both validates
+the derivation against serialized data and fixes the framing constant: a
+record's extent is the tag width, plus one header byte, plus the members.
+
+Where every member of a wrapper is fixed-width, that makes the body a known
+length. `scripts.game_data.memorypack.derived_actions` admits exactly those
+tags on top of the frozen reader and names each field instead of taking it
+anonymously. It is strictly additive -- a tag the frozen reader admits is
+always delegated, never intercepted -- and it fails closed, so without the
+installed build it is the frozen reader. Its cross-check rebuilds a record from
+the derived member count and widths and feeds it to the frozen reader: on every
+tag the frozen reader admits, the record is consumed and ends exactly where the
+derivation predicts, with no disagreement.
+
+Reaching further than a flat body needs one more join. A nested member declares
+the type it holds, not the generated wrapper that frames it, and every wrapper
+stores what it wraps in a single field whose name varies by generator vintage
+(`__realInstance`, `__instance`, `___instance`). Reading that field's declared
+type maps wrapped type to wrapper for all 4,857 wrappers with no ambiguity, so
+the join is structural rather than a mangled-name match, and
+`wrapper_members.wrapped_type_index` exposes it. Measured against the
+dispatcher, recursing through fixed members, strings, nested wrappers and list
+elements determines a little under half the current routes; treating a
+recursive type as undeterminable is wrong, because recursion is bounded at read
+time by a depth limit rather than by a static width.
+
+A union's membership and tag order turn out to be recoverable from metadata
+alone, which matters because nothing in the image addresses a nested union's
+jump table with a rip-relative load, so the dispatcher walk does not reach one.
+A union's members are exactly the wrapper types descending from its base
+wrapper, and the tag is the member's position when those are ordered by a
+**case-insensitive** comparison of the wrapped type's full name, `+` separators
+included. Ordinal order is wrong (`animat` < `animato` < `anime`), and removing
+the separators is wrong. On the one union whose tags are walked natively the
+rule reproduces every route exactly, and it also reproduces the reviewed nested
+rows: the selector subtype routes a timeline contract records, and the tag each
+selector contract is filed under.
+
+`scripts.game_data.memorypack.union_subtypes` applies it, re-checking the
+walked union on every run and returning nothing when the rule stops reproducing
+it. Its tier is `structuralOnly`, below the dispatcher's `direct`: a predicted
+tag is an ordering inference corroborated against walked routes, not a route
+read out of the binary. Where a walked route exists it wins.
+
+What blocks nearly all of the rest is a single shape: a union base such as
+`Selector.Finder.Data` has no members of its own, because it is a discriminated
+union read as a tag plus a concrete wrapper, not a record. Enumerating those
+nested union dispatchers the way the root AbilityActionData dispatcher is
+enumerated is therefore the one remaining lever on this path, and it is the same
+mechanical walk. Unity value types and a `SerializeFieldDictionary` member are
+the small remainder, and that dictionary is exactly the family whose registered
+formatter does not frame like its member list.
+
+The tags the frozen reader does not admit are only shown to be self-consistent.
+That a real payload has that shape is not established by synthesis, and
+admitting a formerly unknown route can change a previously bounded row
+elsewhere in a record. The module is therefore opt-in and is not wired into the
+corpus gates; a whole-corpus run is the adoption gate, and it belongs at a batch
+boundary rather than after a focused edit.
+
 ## The generated wrapper reader, and `ListFormatter`
 
 The generated wrapper reader conditionally forwards the same reader after a

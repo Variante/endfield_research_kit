@@ -88,6 +88,8 @@ class ActionRoute:
     wrapper_name: str | None = None
     member_order: tuple[str, ...] = ()
     member_kinds: tuple[str, ...] = ()
+    member_widths: tuple[int | None, ...] = ()
+    member_width_sum: int | None = None
     inherited_member_count: int | None = None
 
     def row(self) -> dict[str, Any]:
@@ -110,6 +112,11 @@ class ActionRoute:
             row["inheritedMemberCount"] = self.inherited_member_count
             row["generatedMemberOrder"] = list(self.member_order)
             row["generatedMemberKinds"] = list(self.member_kinds)
+            row["generatedMemberWidths"] = list(self.member_widths)
+            # Present only when every member's size is fixed by its type. It is
+            # the members' own width, excluding whatever header the wrapper's
+            # formatter writes, so it is a lower bound rather than an extent.
+            row["memberWidthSum"] = self.member_width_sum
         return row
 
 
@@ -217,6 +224,8 @@ def _resolve_route(
         wrapper_type_definition=definition, wrapper_name=name,
         member_order=tuple(member.name for member in wrapper.members),
         member_kinds=tuple(member.kind for member in wrapper.members),
+        member_widths=tuple(member.width for member in wrapper.members),
+        member_width_sum=wrapper.fixed_width,
         inherited_member_count=len(wrapper.inherited_members),
         **common,
     )
@@ -351,6 +360,13 @@ def build(output: Path) -> dict[str, Any]:
             "reviewedAgreed": audit.get("reviewedComparison", {}).get("agreed"),
             "reviewedChecked": audit.get("reviewedComparison", {}).get("checked"),
             "newTags": sum(1 for tag in routes if tag not in reviewed_tags),
+            "fixedWidthBodies": sum(
+                1 for route in routes.values() if route.member_width_sum is not None
+            ),
+            "fixedWidthBodiesWithoutContract": sum(
+                1 for tag, route in routes.items()
+                if route.member_width_sum is not None and tag not in reviewed_tags
+            ),
             "elapsedSeconds": round(time.perf_counter() - started, 3),
         },
         "routes": [

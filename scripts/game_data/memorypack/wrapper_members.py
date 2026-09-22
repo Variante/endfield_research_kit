@@ -62,6 +62,20 @@ PRIMITIVE_KINDS = {
     "float": "float32", "double": "float64",
     "string": "string",
 }
+# Byte width of each fixed-width kind.  A kind absent here is variable-length or
+# an object, and only its own reader establishes an extent.
+KIND_WIDTHS = {
+    "bool": 1, "scalar8": 1, "scalar16": 2, "scalar32": 4, "scalar64": 8,
+    "float32": 4, "float64": 8,
+}
+# An enum is written as its underlying type, which is the type of its generated
+# ``value__`` field.  Most are int32, but this build has several that are not,
+# so the width is resolved rather than assumed.
+ENUM_UNDERLYING_FIELD = "value__"
+# Every generated wrapper stores the value it wraps in exactly one field, whose
+# name varies by generator vintage. Reading its declared type joins a wrapper to
+# the type it wraps without matching on mangled names.
+INSTANCE_FIELD_NAMES = ("__realInstance", "__instance", "___instance")
 DEFAULT_OUTPUT = REPO / "reports/game_data/memorypack_wrapper_members.json"
 # Chains deeper than this are a metadata cycle we refuse to walk, not a type.
 MAX_PARENT_DEPTH = 32
@@ -76,15 +90,27 @@ class WrapperMember:
     declared_type: str | None
     kind: str
     declaring_wrapper: str
+    underlying_kind: str | None = None
+    width: int | None = None
+
+    @property
+    def fixed_width(self) -> bool:
+        """Whether this member's size is fixed by its type alone."""
+        return self.width is not None
 
     def row(self) -> dict[str, Any]:
-        return {
+        row = {
             "name": self.name,
             "methodIndex": self.method_index,
             "declaredType": self.declared_type,
             "kind": self.kind,
             "declaringWrapper": self.declaring_wrapper,
         }
+        if self.underlying_kind is not None:
+            row["underlyingKind"] = self.underlying_kind
+        if self.width is not None:
+            row["width"] = self.width
+        return row
 
 
 @dataclass(frozen=True)
@@ -97,6 +123,7 @@ class WrapperType:
     parent_name: str | None
     own_members: tuple[WrapperMember, ...]
     inherited_members: tuple[WrapperMember, ...]
+    wrapped_type: str | None = None
 
     @property
     def members(self) -> tuple[WrapperMember, ...]:
@@ -106,15 +133,29 @@ class WrapperType:
     def serialized_member_count(self) -> int:
         return len(self.members)
 
+    @property
+    def fixed_width(self) -> int | None:
+        """The record's byte width when every member's size is type-fixed.
+
+        This is the width of the members alone. It does not include whatever
+        header the wrapper's own formatter writes, so it is a lower bound on a
+        record's extent, not a proven boundary.
+        """
+        if not self.members or not all(member.fixed_width for member in self.members):
+            return None
+        return sum(member.width or 0 for member in self.members)
+
     def row(self) -> dict[str, Any]:
         return {
             "typeDefinition": self.type_definition,
             "wrapperName": self.name,
             "parentTypeDefinition": self.parent_type_definition,
             "parentWrapperName": self.parent_name,
+            "wrappedType": self.wrapped_type,
             "serializedMemberCount": self.serialized_member_count,
             "inheritedMemberCount": len(self.inherited_members),
             "memberOrder": [member.name for member in self.members],
+            "memberWidthSum": self.fixed_width,
             "members": [member.row() for member in self.members],
         }
 
@@ -128,6 +169,7 @@ class _Deriver:
     _wrappers: dict[int, Any] = field(default_factory=dict)
     _own: dict[int, tuple[WrapperMember, ...]] = field(default_factory=dict)
     _resolved: dict[int, WrapperType] = field(default_factory=dict)
+    _enum_underlying_cache: dict[int, str | None] = field(default_factory=dict)
 
     # ---- runtime type table ------------------------------------------
 
@@ -163,22 +205,47 @@ class _Deriver:
 
     # ---- member kinds -------------------------------------------------
 
-    def _kind(self, type_index: int, declared: str | None) -> str:
-        """Group a member's declared type into the wire shape a reader sees.
+    def _wrapped_type(self, definition: int) -> str | None:
+        """The declared type this wrapper's instance field holds."""
+        metadata = self.image.metadata
+        for field_def in metadata.fields_for(metadata.types[definition]):
+            if metadata.string(field_def.name_index) in INSTANCE_FIELD_NAMES:
+                return self._declared_type_name(field_def.type_index)
+        return None
 
-        This names the shape the generated member has, not a proven width: an
+    def _enum_underlying(self, definition: int) -> str | None:
+        """The primitive an enum is written as, from its ``value__`` field."""
+        if definition in self._enum_underlying_cache:
+            return self._enum_underlying_cache[definition]
+        metadata = self.image.metadata
+        resolved: str | None = None
+        for field_def in metadata.fields_for(metadata.types[definition]):
+            if metadata.string(field_def.name_index) == ENUM_UNDERLYING_FIELD:
+                declared = self._declared_type_name(field_def.type_index)
+                resolved = PRIMITIVE_KINDS.get(declared) if declared else None
+                break
+        self._enum_underlying_cache[definition] = resolved
+        return resolved
+
+    def _kind(self, type_index: int, declared: str | None) -> tuple[str, str | None, int | None]:
+        """The wire shape a reader sees, its underlying kind, and its width.
+
+        The shape names what the generated member is, not a proven boundary: an
         ``object`` member still needs its own wrapper walked to know its extent.
+        A width is returned only for a kind whose size is fixed by its type.
         """
         if declared is None:
-            return "unresolved"
+            return "unresolved", None, None
         definition = self._type_definition_for(type_index)
         if definition is not None and definition in self.enum_definitions:
-            return "enum"
+            underlying = self._enum_underlying(definition)
+            return "enum", underlying, KIND_WIDTHS.get(underlying or "")
         if declared.startswith(LIST_PREFIX):
-            return "list"
+            return "list", None, None
         if declared.endswith("[]"):
-            return "array"
-        return PRIMITIVE_KINDS.get(declared, "object")
+            return "array", None, None
+        kind = PRIMITIVE_KINDS.get(declared, "object")
+        return kind, None, KIND_WIDTHS.get(kind)
 
     # ---- wrapper walk --------------------------------------------------
 
@@ -205,13 +272,16 @@ class _Deriver:
             parameters = metadata.parameters_for(method)
             type_index = parameters[0].type_index if len(parameters) == 1 else -1
             declared = self._declared_type_name(type_index) if type_index >= 0 else None
+            kind, underlying, width = self._kind(type_index, declared)
             rows.append(
                 WrapperMember(
                     name=match.group("member"),
                     method_index=method.index,
                     declared_type=declared,
-                    kind=self._kind(type_index, declared),
+                    kind=kind,
                     declaring_wrapper=wrapper_name,
+                    underlying_kind=underlying,
+                    width=width,
                 )
             )
         # The generated reader consumes members in setter declaration order,
@@ -243,6 +313,7 @@ class _Deriver:
             parent_name=parent_name,
             own_members=self._own_members(definition),
             inherited_members=inherited,
+            wrapped_type=self._wrapped_type(definition),
         )
         self._resolved[definition] = resolved
         return resolved
@@ -268,6 +339,21 @@ class _Deriver:
             resolved = self.resolve(definition)
             if resolved is not None:
                 yield resolved
+
+
+def wrapped_type_index(rows: dict[int, WrapperType]) -> dict[str, int]:
+    """Map each wrapped type name to the one wrapper that wraps it.
+
+    A nested member declares the type it holds, not the generated wrapper that
+    frames it, so this is the join a recursive reader needs. A name claimed by
+    more than one wrapper is dropped rather than resolved arbitrarily: an
+    ambiguous join is not an identity.
+    """
+    claims: dict[str, list[int]] = {}
+    for definition, wrapper in rows.items():
+        if wrapper.wrapped_type:
+            claims.setdefault(wrapper.wrapped_type, []).append(definition)
+    return {name: found[0] for name, found in claims.items() if len(found) == 1}
 
 
 def derive_from_image(image: NativeImage) -> dict[int, WrapperType]:
