@@ -136,6 +136,14 @@ audibility.
   `scripts/webui/audio/semantics/name_recovery.py` mines head/tail templates per
   naming family from names already proven by exact evidence, regenerates sibling
   names, and keeps candidates whose hash equals a current hash-only Event id.
+  A second generator swaps one token at a time (tokens seen at that position in
+  names of the same token count, plus lifecycle words and numbered variants),
+  because head/tail recombination cannot reach a sibling that differs in a middle
+  token (`..._attack03_hit` beside `..._attack01_hit`). Both generators feed one
+  match table, so a hash two generators spell differently is ambiguous. The
+  corroboration rule below is what makes the wider search safe: against an equal
+  number of random target hashes the substitution search produces the expected
+  handful of coincidental preimages, and every one of them stays isolated.
   Because a generated preimage is weaker than a shipped string, a hash with two
   distinct spellings is dropped and a name is promoted only when its head and tail
   each recur across other recovered Events at one shared split boundary;

@@ -8,7 +8,8 @@ can close the remaining set.
 
 Recovered Event names are, however, strongly templated
 (``au_eny_0094_hsfly_skill03_charge``).  This module mines that grammar from
-the names already recovered by exact evidence, regenerates sibling names, and
+the names already recovered by exact evidence, regenerates sibling names (head/tail
+recombination, plus single-token substitution for a swapped middle token), and
 keeps only candidates whose ``AudioHashGenerator`` hash equals a current
 hash-only Event id.
 
@@ -28,7 +29,7 @@ from collections import defaultdict
 from typing import Any, Iterable, Sequence
 
 
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 
 # Names shorter than this cannot be split into a head and a tail that each
 # carry meaning, so they yield no template.
@@ -155,6 +156,91 @@ def _search_pass(
                     name = f"{head}_{tail}"
                     matches[value].setdefault(name.casefold(), name)
     return matches, tried, skipped
+
+
+# Structural words an authored name ends in or swaps between siblings, beyond
+# the tokens observed at a position: lifecycle pairs and playback states.
+STRUCTURAL_TOKENS = (
+    "start", "stop", "end", "loop", "begin", "in", "out", "on", "off", "open",
+    "close", "hit", "cast", "idle", "enter", "exit", "fade", "play", "pause",
+    "resume",
+)
+# Variant suffixes an authored final token takes (``_01`` ... ``_20``, ``_1`` ...).
+NUMBERED_SUFFIXES = tuple(f"{n:02d}" for n in range(1, 21)) + tuple(str(n) for n in range(1, 10))
+
+
+def _substitution_pass(
+    names: Iterable[str],
+    target_hashes: set[int],
+) -> tuple[dict[int, dict[str, str]], int]:
+    """Regenerate names that differ from an observed name in one token.
+
+    The head/tail grammar recombines a prefix with a suffix, so it cannot swap a
+    token in the middle of a name (``au_eny_0021_x_attack01_hit`` from
+    ``..._attack02_hit``). This pass substitutes, at each position, every token
+    observed at that position in names of the same token count, plus the
+    structural words and numbered variants, and appends one structural or
+    numbered token. Candidate families that differ only at the substituted
+    position are generated once.
+    """
+
+    split = []
+    for name in sorted(set(names)):
+        tokens = split_tokens(name)
+        if len(tokens) >= MIN_TOKEN_COUNT and all(tokens):
+            split.append(tokens)
+    pools: dict[tuple[int, int], dict[str, str]] = defaultdict(dict)
+    for tokens in split:
+        for position, token in enumerate(tokens):
+            pools[(len(tokens), position)].setdefault(token.casefold(), token)
+    structural = {token: token for token in STRUCTURAL_TOKENS}
+    numbered = {token: token for token in NUMBERED_SUFFIXES}
+
+    matches: dict[int, dict[str, str]] = defaultdict(dict)
+    tried = 0
+    seen: set[tuple[tuple[str, ...], tuple[str, ...]]] = set()
+
+    units: dict[str, tuple[int, ...]] = {}
+
+    def probe(head: str, tail: str, pool: Iterable[str], skip: str) -> None:
+        nonlocal tried
+        head_state = _hash_units(_code_units(head)) if head else FNV1_OFFSET_BASIS
+        tail_units = _code_units(tail)
+        for token in pool:
+            if token.casefold() == skip:
+                continue
+            tried += 1
+            token_units = units.get(token)
+            if token_units is None:
+                token_units = units[token] = _code_units(token)
+            state = head_state
+            for code_unit in token_units + tail_units:
+                state = ((state * FNV1_PRIME) & 0xFFFFFFFF) ^ code_unit
+            value = state
+            if value in target_hashes:
+                name = f"{head}{token}{tail}"
+                matches[value].setdefault(name.casefold(), name)
+
+    for tokens in split:
+        folded = tuple(token.casefold() for token in tokens)
+        last = len(tokens) - 1
+        for position in range(len(tokens)):
+            key = (folded[:position], folded[position + 1:])
+            if key in seen:
+                continue
+            seen.add(key)
+            pool = dict(pools[(len(tokens), position)])
+            pool.update(structural)
+            if position == last:
+                pool.update(numbered)
+            head = "_".join(tokens[:position]) + ("_" if position else "")
+            tail = ("_" if position < last else "") + "_".join(tokens[position + 1:])
+            probe(head, tail, sorted(pool.values()), folded[position])
+        key = (folded, ())
+        if key not in seen:
+            seen.add(key)
+            probe("_".join(tokens) + "_", "", STRUCTURAL_TOKENS + NUMBERED_SUFFIXES[:10], "")
+    return matches, tried
 
 
 def _corroborate(
@@ -286,6 +372,12 @@ def recover_event_names(
             break
         grammar = build_grammar(sorted(grammar_names))
         matches, tried, skipped = _search_pass(grammar, remaining)
+        # Both generators feed one match table, so a hash spelled differently
+        # by each is ambiguous and dropped, exactly as within one generator.
+        substituted, substitution_tried = _substitution_pass(grammar_names, remaining)
+        for event_hash, spellings in substituted.items():
+            matches.setdefault(event_hash, {}).update(spellings)
+        tried += substitution_tried
         base["passes"] += 1
         base["candidateCount"] += tried
         base["skippedFamilyCount"] += skipped
