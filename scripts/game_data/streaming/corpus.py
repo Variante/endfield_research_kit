@@ -12,8 +12,8 @@ import re
 from pathlib import Path
 from typing import Any, Callable
 
-from scripts.game_data.streaming import parse_streaming_file
-from scripts.game_data.streaming_native import (
+from scripts.game_data.streaming.framing import parse_streaming_file
+from scripts.game_data.streaming.native import (
     DEFAULT_CONTRACT as STREAMING_NATIVE_CONTRACT,
     validate_streaming_field2_native_contract,
 )
@@ -258,9 +258,9 @@ def sweep(
             summary, header, outer_ledger_path, expected_input_set_sha256
         )
         module_root = Path(__file__).resolve().parent
-        parser_path = module_root / "streaming.py"
+        parser_path = module_root / "framing.py"
         gate_path = Path(__file__).resolve()
-        native_validator_path = module_root / "streaming_native.py"
+        native_validator_path = module_root / "native.py"
         provenance["parserSha256"] = _sha256_file(parser_path)
         provenance["corpusGateSha256"] = _sha256_file(gate_path)
         provenance["nativeValidatorSha256"] = _sha256_file(native_validator_path)

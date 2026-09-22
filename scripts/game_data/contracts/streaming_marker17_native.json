@@ -3,7 +3,7 @@
   "status": "validated-conditional-static",
   "nativeMappingId": "endfield-2026-09-04-streaming-marker17-slot3-body-profiles",
   "baseContract": {
-    "path": "scripts/game_data/streaming_field2_native.json",
+    "path": "scripts/game_data/contracts/streaming_field2_native.json",
     "schema": "endfield.streaming-field2-native-contract.v8",
     "sha256": "436F51D0C6C0BF0009D2EBF439C8BEC1A13E94404E983E5ADD0E09A604A82E60",
     "requiredUnityPlayerRoles": [

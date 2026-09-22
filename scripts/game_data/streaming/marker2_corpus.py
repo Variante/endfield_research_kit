@@ -20,15 +20,15 @@ import tempfile
 from pathlib import Path
 from typing import Any, Callable
 
-from scripts.game_data import streaming as fmt
-from scripts.game_data import streaming_corpus as root_corpus
-from scripts.game_data import streaming_marker13_corpus as shared
-from scripts.game_data.streaming_marker2_native import (
+from scripts.game_data.streaming import framing as fmt
+from scripts.game_data.streaming import corpus as root_corpus
+from scripts.game_data.streaming import marker13_corpus as shared
+from scripts.game_data.streaming.marker2_native import (
     PROFILE as NATIVE_PROFILE,
     validate_marker2_native_contract,
 )
-from scripts.game_data.streaming_marker2 import parse_marker2_gaps
-from scripts.game_data.streaming_pairs import bind_current_pair, index_ordered_pairs
+from scripts.game_data.streaming.marker2 import parse_marker2_gaps
+from scripts.game_data.streaming.pairs import bind_current_pair, index_ordered_pairs
 
 
 SCHEMA = "endfield.streaming-marker2-corpus.v1"
@@ -48,7 +48,7 @@ AMBIGUOUS_STATUSES = frozenset(("ambiguous-key", "ambiguous-target"))
 
 def source_paths(repo_root: Path) -> dict[str, Path]:
     return {
-        "rootParserSha256": repo_root / "scripts/game_data/streaming.py",
+        "rootParserSha256": repo_root / "scripts/game_data/streaming/framing.py",
         "orderedPairValidatorSha256": repo_root / "scripts/game_data/contracts/streaming_pairs.py",
         "invertedLz4DecoderSha256": repo_root / "scripts/game_data/inverted_lz4.py",
         "commonNativeGateSha256": repo_root / "scripts/common.py",

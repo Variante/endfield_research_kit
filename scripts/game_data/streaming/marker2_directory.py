@@ -12,7 +12,7 @@ import hashlib
 import struct
 from typing import Any, Iterable
 
-from scripts.game_data import streaming as fmt
+from scripts.game_data.streaming import framing as fmt
 
 
 # These representations are already bounded by the maintained root parser:

@@ -12,9 +12,9 @@ import hashlib
 import struct
 from typing import Any, Iterable
 
-from scripts.game_data import streaming as fmt
-from scripts.game_data.streaming_pairs import bind_pair_row
-from scripts.game_data.streaming_marker13_native import EXPECTED_ABSENT_WITNESS
+from scripts.game_data.streaming import framing as fmt
+from scripts.game_data.streaming.pairs import bind_pair_row
+from scripts.game_data.streaming.marker13_native import EXPECTED_ABSENT_WITNESS
 
 
 PROFILE = {

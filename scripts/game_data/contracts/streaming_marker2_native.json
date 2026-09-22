@@ -3,9 +3,9 @@
   "status": "validated-conditional-static",
   "nativeMappingId": "endfield-2026-09-05-streaming-marker2-selector6-slot1-read4",
   "dependency": {
-    "path": "scripts/game_data/streaming_marker17_native.json",
+    "path": "scripts/game_data/contracts/streaming_marker17_native.json",
     "schema": "endfield.streaming-marker17-native-contract.v2",
-    "sha256": "34E915707F363B55F572D867C1CC3C1B28A76D66D132EB0E212377A730DD2891",
+    "sha256": "83E98693213C0E1D0C8C01BDE5538DB090BD68451446B7DEDE39CFCE73590A72",
     "requiredUnityPlayerRoles": [],
     "registration": {
       "selector": 6,
@@ -17,7 +17,7 @@
     "boundary": "Only selector6 descriptor construction and publication are reused; slot3 consumer is not marker2 evidence."
   },
   "baseContract": {
-    "path": "scripts/game_data/streaming_field2_native.json",
+    "path": "scripts/game_data/contracts/streaming_field2_native.json",
     "schema": "endfield.streaming-field2-native-contract.v8",
     "sha256": "436F51D0C6C0BF0009D2EBF439C8BEC1A13E94404E983E5ADD0E09A604A82E60",
     "requiredUnityPlayerRoles": [

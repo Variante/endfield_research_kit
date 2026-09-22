@@ -5,14 +5,14 @@ import json
 import struct
 from pathlib import Path
 from typing import Any
-from scripts.game_data import streaming_native as base
-from scripts.game_data import streaming_marker17_native as dependency
+from scripts.game_data.streaming import native as base
+from scripts.game_data.streaming import marker17_native as dependency
 from scripts.game_data.contracts import CONTRACTS_DIR
 
 SCHEMA = 'endfield.streaming-marker2-native-contract.v1'
 DEFAULT_CONTRACT = CONTRACTS_DIR / 'streaming_marker2_native.json'
-CONTRACT_SHA256 = 'C3381F058BFBCB1AF9019FDC1C53B066EBC8CFC1138E38CDF1A16B2B1F2C828A'
-DEPENDENCY_SHA256 = '34E915707F363B55F572D867C1CC3C1B28A76D66D132EB0E212377A730DD2891'
+CONTRACT_SHA256 = 'EBFA76CC15AF41006C127FB42E384AB0EEF885EAE912E087631047DD48249F30'
+DEPENDENCY_SHA256 = '83E98693213C0E1D0C8C01BDE5538DB090BD68451446B7DEDE39CFCE73590A72'
 BASE_SHA256 = '436F51D0C6C0BF0009D2EBF439C8BEC1A13E94404E983E5ADD0E09A604A82E60'
 EXPECTED_INPUTS = {
     'gameAssemblySha256':'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89',

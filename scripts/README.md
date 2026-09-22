@@ -293,10 +293,10 @@ python -m scripts.game_data.memorypack.buff_corpus --expected-input-set-sha256 C
 python -m scripts.game_data.memorypack.skill_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --cursor-verification reports/animestudio/skilldata_cursor_verification_latest.json --output reports/animestudio/skilldata_current_latest.json --output-md reports/animestudio/skilldata_current_latest.md
 python -m scripts.game_data.jsondata_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.gpu_ui_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
-python -m scripts.game_data.streaming_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
-python -m scripts.game_data.streaming_marker17_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
-python -m scripts.game_data.streaming_marker13_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
-python -m scripts.game_data.streaming_marker2_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.game_data.streaming.corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.game_data.streaming.marker17_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.game_data.streaming.marker13_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.game_data.streaming.marker2_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.memorypack.skill_cursor_receipt --preflight
 python -m scripts.game_data.memorypack.skill_timeline_cursor --stream-jsonl CURRENT_SKILLDATA_STREAM_JSONL --native-context reports/animestudio/il2cpp_context_current_latest.json
 python -m scripts.game_data.memorypack.npc_montage_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
@@ -318,10 +318,10 @@ its result under `reports/animestudio/`:
 
 | Gate | Publishes |
 | --- | --- |
-| `game_data.streaming_corpus` | `streaming_root_subgraphs_latest.{json,md}` |
-| `game_data.streaming_marker17_corpus` | `streaming_marker17_bodies_latest.{json,md}` |
-| `game_data.streaming_marker13_corpus` | `streaming_marker13_latest.{json,md}` + inventory `.jsonl.gz` |
-| `game_data.streaming_marker2_corpus` | `streaming_marker2_latest.{json,md}` + inventory `.jsonl.gz` |
+| `game_data.streaming.corpus` | `streaming_root_subgraphs_latest.{json,md}` |
+| `game_data.streaming.marker17_corpus` | `streaming_marker17_bodies_latest.{json,md}` |
+| `game_data.streaming.marker13_corpus` | `streaming_marker13_latest.{json,md}` + inventory `.jsonl.gz` |
+| `game_data.streaming.marker2_corpus` | `streaming_marker2_latest.{json,md}` + inventory `.jsonl.gz` |
 | `game_data.jsondata_corpus` | `jsondata_current_latest.{json,md}` + per-file `.jsonl.gz` |
 | `game_data.gpu_ui_corpus` | `gpu_ui_current_latest.json`; authenticated GPUI named schemas, including native-gated DamageText |
 | `game_data.memorypack.skill_corpus` | `skilldata_current_latest.{json,md}` |

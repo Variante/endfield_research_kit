@@ -617,6 +617,32 @@ The rest -- MissionRuntimeAsset, UILevelMapLoadConfig, MapConfig, LevelConfig,
 LevelScriptTemplateData, CharInteractPerformCfgs, GPUISystemConfig and the
 small config families -- are at 100%.
 
+### EOF closure is necessary, not sufficient, and here is the proof
+
+A reader that consumes its payload exactly to EOF has shown that its *total* is
+right. It has not shown that its *fields* are. The two come apart whenever a
+mis-reading has the same width as the truth, and this lane has a confirmed case:
+
+**`spawner_binary.py` reads `preWarnEffectFixedRotation` as four consecutive
+`f32` axes. It is `Optional<Vector3>`** -- a `bool hasValue`, three bytes of ABI
+padding, then the `Vector3`. Sixteen bytes either way, so the reader consumes
+correctly and never fails, and the wrong value is published to the Audio page
+through `audio/semantics/entity_contexts.py` and `event_summary.py`.
+
+Measured across all 608 SpawnerConfig files: 17 distinct tuples, 1,452 all-zero
+rows (`hasValue == false`), and **every one of the 45 non-zero rows begins
+`1.401298464324817e-45`** -- float bits `0x00000001`, the `hasValue` byte read as
+a float. The remaining three components are `(0, yaw, 0)`, plain Euler-Y
+rotations of 90, 80, 78, 110 degrees. Boundary: `exact`.
+
+Two things follow. The fix is to apply the `Optional<T>` framing this lane
+already records for other families -- `levelscript_union_layouts.py` and the
+nullable-padding rule above both have it; spawner simply never used it. And when
+a framing conclusion rests on EOF closure, say so and look for a second
+signal: a boundary landing on a known marker, a value distribution that makes
+sense, a field whose domain is closed. Closure alone cannot distinguish a right
+reading from a same-width wrong one.
+
 ### Check the hand-written formatters first
 
 Every framing bug this lane has hit has been the same class: a type the build
@@ -739,7 +765,7 @@ what it explicitly leaves unresolved. The commands themselves are in
 [`../../scripts/README.md`](../../scripts/README.md); this is the boundary each
 one establishes.
 
-`streaming_corpus` reauthenticates block-15 rows from that ledger and writes
+`streaming.corpus` reauthenticates block-15 rows from that ledger and writes
 `reports/animestudio/streaming_root_subgraphs_latest.json` plus `.md`; pass the
 exact `inputSetSha256` from the current outer summary. The gate covers the
 anonymous field-2 vector, immediate table/vtable framing, and terminal row
@@ -757,25 +783,25 @@ calculation. The concrete runtime path is unavailable, FlatBuffer accessors
 receive no outer length, and no final cursor is exposed, so the carrier is not
 joined to one authenticated logical file. Key namespace and signedness, field
 names, and semantics remain unresolved.
-`streaming_marker17_corpus` reuses the source-bound marker17 directory from that
+`streaming.marker17_corpus` reuses the source-bound marker17 directory from that
 report, reauthenticates every listed physical range and refines the native-gated
-tag5 counted arrays and fixed tag1/4/6 profiles with `streaming_marker17`;
+tag5 counted arrays and fixed tag1/4/6 profiles with `streaming.marker17`;
 unknown keys remain explicitly opaque/unsupported. It writes
 `reports/animestudio/streaming_marker17_bodies_latest.json` plus `.md`.
 Partial `--max-files` probes require explicit output paths and are not eligible
 as complete-corpus evidence. Record fields and runtime selection remain unknown.
-`streaming_marker13_corpus` rereads the complete block-15 ledger through the
+`streaming.marker13_corpus` rereads the complete block-15 ledger through the
 source-bound Streaming parser, joins marker13 references to independently
 certified structural neighbours, and tests native-gated explicit-selector9 and
-byte-proven absent-selector profiles. `streaming_pairs` binds paired file
+byte-proven absent-selector profiles. `streaming.pairs` binds paired file
 identities, complete ordered vectors and exact serialized ordinals; absence is
 never rewritten to a stored zero. Its inventory separates structure, read windows,
 physical gaps and opaque remainder; a physical gap is not a serialized sizeof or native EOF.
 Outputs are `reports/animestudio/streaming_marker13_latest.json`/`.md` and
 `streaming_marker13_inventory_latest.jsonl.gz`; partial outputs must stay in
 `tmp/` or `scratch/`. The summary authenticates the inventory's content/hash.
-`streaming_marker2_directory` owns the complete nested reference/occupancy
-replay. `streaming_marker2_corpus` gates the separate selector6 finite-gap
+`streaming.marker2_directory` owns the complete nested reference/occupancy
+replay. `streaming.marker2_corpus` gates the separate selector6 finite-gap
 parser against the same source-bound ledger and ordered pairs; it publishes
 `streaming_marker2_latest.json`/`.md` and
 `streaming_marker2_inventory_latest.jsonl.gz` under `reports/animestudio/`.

@@ -4,10 +4,10 @@ import collections
 import copy
 import struct
 from typing import Any
-from scripts.game_data import streaming as fmt
-from scripts.game_data import streaming_marker2_directory as directory_module
-from scripts.game_data import streaming_marker2_native as native
-from scripts.game_data.streaming_pairs import bind_pair_row
+from scripts.game_data.streaming import framing as fmt
+from scripts.game_data.streaming import marker2_directory as directory_module
+from scripts.game_data.streaming import marker2_native as native
+from scripts.game_data.streaming.pairs import bind_pair_row
 
 PHYSICAL_GAP_LENGTHS=(4,6)
 

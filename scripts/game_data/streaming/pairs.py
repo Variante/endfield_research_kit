@@ -4,7 +4,7 @@ from __future__ import annotations
 import hashlib
 from typing import Any
 
-from scripts.game_data import streaming as fmt
+from scripts.game_data.streaming import framing as fmt
 
 
 IDENTITY_FIELDS = (

@@ -19,10 +19,10 @@ from scripts.repo_paths import REPO_ROOT
 
 DEFAULT_REPO_ROOT = REPO_ROOT
 
-from scripts.game_data import streaming as fmt
-from scripts.game_data import streaming_corpus as corpus
-from scripts.game_data.streaming_marker17 import TAG5_RECORD_WIDTHS, FIXED_BODY_PROFILES, TAG5_BODY_KEYS, parse_marker17_body
-from scripts.game_data.streaming_marker17_native import validate_marker17_native_contract
+from scripts.game_data.streaming import framing as fmt
+from scripts.game_data.streaming import corpus as corpus
+from scripts.game_data.streaming.marker17 import TAG5_RECORD_WIDTHS, FIXED_BODY_PROFILES, TAG5_BODY_KEYS, parse_marker17_body
+from scripts.game_data.streaming.marker17_native import validate_marker17_native_contract
 from scripts.common import sha256_file_upper as sha256_file
 
 SCHEMA = "endfield.streaming-marker17-bodies-corpus.v2"
@@ -56,7 +56,7 @@ def _require(failures: list[dict[str, Any]], source: str, stage: str,
 
 def _source_paths(repo_root: Path) -> dict[str, Path]:
     return {
-        "v15ParserSha256": repo_root / "scripts/game_data/streaming.py",
+        "v15ParserSha256": repo_root / "scripts/game_data/streaming/framing.py",
         "v15CorpusGateSha256": repo_root / "scripts/game_data/contracts/streaming_corpus.py",
         "v15NativeValidatorSha256": repo_root / "scripts/game_data/contracts/streaming_native.py",
         "v15NativeContractSha256": repo_root / "scripts/game_data/contracts/streaming_field2_native.json",

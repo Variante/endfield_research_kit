@@ -14,14 +14,14 @@ import tempfile
 from pathlib import Path
 from typing import Any, Callable, Mapping
 
-from scripts.game_data import streaming as fmt
-from scripts.game_data import streaming_corpus as root_corpus
-from scripts.game_data.streaming_marker13 import PROFILE as GAP_PROFILE
-from scripts.game_data.streaming_marker13 import parse_marker13_gaps
-from scripts.game_data.streaming_marker13_native import (
+from scripts.game_data.streaming import framing as fmt
+from scripts.game_data.streaming import corpus as root_corpus
+from scripts.game_data.streaming.marker13 import PROFILE as GAP_PROFILE
+from scripts.game_data.streaming.marker13 import parse_marker13_gaps
+from scripts.game_data.streaming.marker13_native import (
     EXPECTED_ABSENT_WITNESS, validate_marker13_native_contract,
 )
-from scripts.game_data.streaming_pairs import index_ordered_pairs, bind_current_pair
+from scripts.game_data.streaming.pairs import index_ordered_pairs, bind_current_pair
 from scripts.common import sha256_file_upper as sha256_file
 from scripts.game_data.corpus_common import is_bounded_diagnostic_output as _is_bounded_diagnostic_output
 
@@ -53,7 +53,7 @@ def require(failures: list[dict[str, Any]], source: str, stage: str,
 
 def source_paths(repo_root: Path) -> dict[str, Path]:
     return {
-        "rootParserSha256": repo_root / "scripts/game_data/streaming.py",
+        "rootParserSha256": repo_root / "scripts/game_data/streaming/framing.py",
         "orderedPairValidatorSha256": repo_root / "scripts/game_data/contracts/streaming_pairs.py",
         "invertedLz4DecoderSha256": repo_root / "scripts/game_data/inverted_lz4.py",
         "commonNativeGateSha256": repo_root / "scripts/common.py",

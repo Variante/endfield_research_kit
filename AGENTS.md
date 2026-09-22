@@ -163,7 +163,7 @@ file under `memory/game_data_recovery.md`; its commands belong to
 - `extraction/` runs AnimeStudio and writes `export_full/`: the full and
   changed-file exporters, the freshness guard, the object index, and the
   `animestudio/` maintenance commands;
-- exact framing readers, one per payload family: `streaming.py`,
+- exact framing readers, one per payload family: `streaming/framing.py`,
   `irradiance_volume.py`, `extend_data_binary.py`, `bundle_manifest.py`,
   `ifix_patch.py`, `inverted_lz4.py`, `terrain_tret.py`, `terrain_height.py`,
   `dynamic_streaming.py`, and the serialized-gameplay readers

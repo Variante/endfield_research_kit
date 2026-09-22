@@ -3,9 +3,9 @@
   "status": "validated-conditional-static",
   "nativeMappingId": "endfield-2026-09-05-streaming-marker13-selector9-slot4-slot5-read16-absent-selector-conditional-slot5",
   "dependency": {
-    "path": "scripts/game_data/streaming_marker17_native.json",
+    "path": "scripts/game_data/contracts/streaming_marker17_native.json",
     "schema": "endfield.streaming-marker17-native-contract.v2",
-    "sha256": "34E915707F363B55F572D867C1CC3C1B28A76D66D132EB0E212377A730DD2891",
+    "sha256": "83E98693213C0E1D0C8C01BDE5538DB090BD68451446B7DEDE39CFCE73590A72",
     "requiredUnityPlayerRoles": [
       "indexedCallbackAssignment"
     ],
