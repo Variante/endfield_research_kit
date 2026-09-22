@@ -79,6 +79,16 @@ INSTANCE_FIELD_NAMES = ("__realInstance", "__instance", "___instance")
 DEFAULT_OUTPUT = REPO / "reports/game_data/memorypack_wrapper_members.json"
 # Chains deeper than this are a metadata cycle we refuse to walk, not a type.
 MAX_PARENT_DEPTH = 32
+# .NET ``TypeAttributes.Abstract``, as the metadata type flags carry it.
+TYPE_ATTRIBUTE_ABSTRACT = 0x80
+# The generated method a wrapper that deserializes itself declares.
+DESERIALIZE_METHOD = "Deserialize"
+# ``FieldAttributes.Static``, in the ``attrs`` halfword of an ``Il2CppType``.
+FIELD_ATTRIBUTE_STATIC = 0x10
+# The two pointers every IL2CPP object carries before its fields. A value
+# type's recorded instance size is its boxed size, so the header comes off.
+IL2CPP_OBJECT_HEADER = 0x10
+VALUE_TYPE_BASE = "System.ValueType"
 
 
 @dataclass(frozen=True)
@@ -124,10 +134,56 @@ class WrapperType:
     own_members: tuple[WrapperMember, ...]
     inherited_members: tuple[WrapperMember, ...]
     wrapped_type: str | None = None
+    #: Whether the type this wrapper holds is a struct rather than a class.
+    wrapped_is_value_type: bool = False
+    #: Whether the wrapper's type is abstract, from its metadata type flags.
+    abstract: bool = False
+    #: Whether the wrapper declares a ``Deserialize`` of its own.
+    own_deserialize: bool = False
 
     @property
     def members(self) -> tuple[WrapperMember, ...]:
         return self.inherited_members + self.own_members
+
+    @property
+    def frames_as_raw_struct(self) -> bool:
+        """Whether this wrapper's body is its members laid down with no header.
+
+        MemoryPack writes an unmanaged struct as raw memory: no null marker and
+        no member-count header, because neither has anywhere to live in a value
+        that is copied byte for byte.  ``Beyond.Gameplay.Core.GameplayTag`` is
+        the case the reviewed reader proves -- a struct holding one ``int``,
+        which the frozen reader takes as four raw bytes -- and the settled
+        ``AudioId`` formatter body is the same rule with no wrapper at all.
+        A struct with a managed member is not raw, so every member must be
+        fixed-width for this to hold.
+        """
+        return bool(
+            self.wrapped_is_value_type
+            and self.members
+            and all(member.fixed_width for member in self.members)
+        )
+
+    @property
+    def frames_as_union(self) -> bool:
+        """Whether MemoryPack writes a tag before this wrapper's body.
+
+        A generated wrapper that deserializes itself carries its own
+        ``Deserialize`` and reads a member header; a union base has none,
+        because its generated union formatter reads the tag and dispatches to
+        the concrete subtype's formatter instead.  The two facts this combines
+        are independent -- being abstract comes from the type flags, having a
+        ``Deserialize`` from the method list -- and on the selected build they
+        agree on all 910 wrappers that have a subclass, with no exception.
+
+        Having a subclass is *not* the test, which is the error this replaces.
+        ``BlackboardString`` has one and is concrete, and the reviewed
+        ``paired_payload`` reads it as the plain three-member object its member
+        list describes, with no tag.  The natively walked root union
+        ``AbilityActionData`` is abstract and has no ``Deserialize``, so the
+        one union whose tags are read out of the binary satisfies this test.
+        """
+        return self.abstract and not self.own_deserialize
 
     @property
     def serialized_member_count(self) -> int:
@@ -156,6 +212,8 @@ class WrapperType:
             "inheritedMemberCount": len(self.inherited_members),
             "memberOrder": [member.name for member in self.members],
             "memberWidthSum": self.fixed_width,
+            "framesAsUnion": self.frames_as_union,
+            "framesAsRawStruct": self.frames_as_raw_struct,
             "members": [member.row() for member in self.members],
         }
 
@@ -212,6 +270,35 @@ class _Deriver:
             if metadata.string(field_def.name_index) in INSTANCE_FIELD_NAMES:
                 return self._declared_type_name(field_def.type_index)
         return None
+
+    def _wrapped_is_value_type(self, definition: int) -> bool:
+        """Whether the type this wrapper holds is a struct.
+
+        A struct is framed as raw memory, so this is what separates a wrapper
+        whose member header is written from one whose members are simply laid
+        down end to end.
+        """
+        metadata = self.image.metadata
+        for field_def in metadata.fields_for(metadata.types[definition]):
+            if metadata.string(field_def.name_index) not in INSTANCE_FIELD_NAMES:
+                continue
+            wrapped = self._type_definition_for(field_def.type_index)
+            if wrapped is None:
+                return False
+            parent = self._type_definition_for(metadata.types[wrapped].parent_index)
+            return parent is not None and metadata.type_full_name(
+                metadata.types[parent]) == "System.ValueType"
+        return False
+
+    def _field_attributes(self, type_index: int) -> int | None:
+        """The ``attrs`` halfword of the ``Il2CppType`` a field declares."""
+        type_va = self._type_va(type_index)
+        if type_va is None:
+            return None
+        offset, _section, _rva = self.image.pe.file_offset_for_va(type_va)
+        if offset is None:
+            return None
+        return struct.unpack_from("<H", self.image.pe.buf, offset + 8)[0]
 
     def _enum_underlying(self, definition: int) -> str | None:
         """The primitive an enum is written as, from its ``value__`` field."""
@@ -314,6 +401,12 @@ class _Deriver:
             own_members=self._own_members(definition),
             inherited_members=inherited,
             wrapped_type=self._wrapped_type(definition),
+            wrapped_is_value_type=self._wrapped_is_value_type(definition),
+            abstract=bool(getattr(type_def, "flags", 0) & TYPE_ATTRIBUTE_ABSTRACT),
+            own_deserialize=any(
+                metadata.string(method.name_index) == DESERIALIZE_METHOD
+                for method in metadata.methods_for(type_def)
+            ),
         )
         self._resolved[definition] = resolved
         return resolved
@@ -367,14 +460,150 @@ def derive_from_image(image: NativeImage) -> dict[int, WrapperType]:
     return {wrapper.type_definition: wrapper for wrapper in deriver.all_wrappers()}
 
 
-def load_wrapper_members(
+def enum_widths_from_image(image: NativeImage) -> dict[str, int]:
+    """Every enum's serialized width, keyed by full type name.
+
+    An enum is written as its underlying type, which is the declared type of
+    its ``value__`` field.  Deriving it for every enum definition -- not only
+    for the enums some wrapper happens to declare as a direct member -- is what
+    lets a member holding ``List<SomeEnum>`` or ``SomeEnum[]`` resolve: the
+    element type appears nowhere in a member list, so an incidental scan of
+    members cannot see it.
+    """
+    deriver = _Deriver(image)
+    deriver.index_wrappers()
+    metadata = image.metadata
+    widths: dict[str, int] = {}
+    for definition in sorted(deriver.enum_definitions):
+        width = KIND_WIDTHS.get(deriver._enum_underlying(definition) or "")
+        if width is not None:
+            widths[metadata.type_full_name(metadata.types[definition])] = width
+    return widths
+
+
+def unmanaged_value_sizes_from_image(image: NativeImage) -> dict[str, int]:
+    """Every blittable struct's size, keyed by full type name.
+
+    MemoryPack writes an unmanaged struct as raw memory, so its serialized
+    extent is its size in memory -- including the padding its field alignment
+    introduces, which is why a summed member width is the wrong answer.
+    ``CameraControlStateInitialParam`` is the case that proves it: four bools
+    and three floats sum to 16, the struct is 24, and the reviewed reader takes
+    24 raw bytes.
+
+    The size is not computed here. It is read from the build's own
+    ``Il2CppTypeDefinitionSizes`` table, whose ``instance_size`` is the boxed
+    size, so the object header comes off. Five independent checks agree with
+    it: ``GameplayTag`` 4 and ``CameraControlStateInitialParam`` 24 from the
+    frozen reader's own raw takes, ``AudioId`` 4 from its formatter body's
+    32-bit store, and ``Vector3`` 12 and ``Quaternion`` 16 from the widths that
+    reader already consumes.
+
+    Blittable is decided recursively and structurally: a value type qualifies
+    when every non-static field it declares is a primitive other than
+    ``string``, an enum, or another qualifying value type. A struct holding a
+    managed field is not raw memory and is left out rather than sized.
+    """
+    deriver = _Deriver(image)
+    deriver.index_wrappers()
+    metadata, pe = image.metadata, image.pe
+    table = int(image.registration["typeDefinitionsSizes"], 16)
+    value_types = {
+        type_def.index
+        for type_def in metadata.types
+        if (parent := deriver._type_definition_for(type_def.parent_index)) is not None
+        and metadata.type_full_name(metadata.types[parent]) == VALUE_TYPE_BASE
+    }
+
+    def instance_fields(definition: int) -> list[Any]:
+        rows = []
+        for field_def in metadata.fields_for(metadata.types[definition]):
+            attributes = deriver._field_attributes(field_def.type_index)
+            if attributes is None or attributes & FIELD_ATTRIBUTE_STATIC:
+                continue
+            rows.append(field_def)
+        return rows
+
+    blittable: dict[int, bool] = {}
+
+    def is_blittable(definition: int, stack: frozenset[int] = frozenset()) -> bool:
+        if definition in blittable:
+            return blittable[definition]
+        if definition in stack or definition not in value_types:
+            return False
+        if definition in deriver.enum_definitions:
+            blittable[definition] = True
+            return True
+        nested = stack | {definition}
+        result = True
+        for field_def in instance_fields(definition):
+            declared = deriver._declared_type_name(field_def.type_index)
+            kind = PRIMITIVE_KINDS.get(declared or "")
+            if kind is not None and kind != "string":
+                continue
+            field_type = deriver._type_definition_for(field_def.type_index)
+            if field_type is None or not is_blittable(field_type, nested):
+                result = False
+                break
+        blittable[definition] = result
+        return result
+
+    sizes: dict[str, int] = {}
+    for definition in sorted(value_types):
+        if not is_blittable(definition):
+            continue
+        pointer = pe.u64_at_va(table + definition * 8)
+        if not pointer:
+            continue
+        try:
+            instance_size = struct.unpack_from("<I", pe.bytes_at_va(pointer, 4))[0]
+        except (OSError, ValueError, struct.error):
+            continue
+        if instance_size > IL2CPP_OBJECT_HEADER:
+            sizes[metadata.type_full_name(metadata.types[definition])] = (
+                instance_size - IL2CPP_OBJECT_HEADER)
+    return sizes
+
+
+@dataclass(frozen=True)
+class DerivedTables:
+    """The type tables a plan resolver needs beside the wrappers.
+
+    Neither is visible from a member list: an enum reached only as a list
+    element is declared by no member, and a struct's serialized extent is its
+    aligned size rather than its members' summed widths.
+    """
+
+    enum_widths: dict[str, int]
+    value_sizes: dict[str, int]
+
+
+def load_derived_tables(
     *, gameassembly: Path | None = None, metadata: Path | None = None
+) -> tuple[dict[int, WrapperType], DerivedTables, dict[str, Any]]:
+    """Every wrapper and both type tables from one parse of the installed build.
+
+    A caller needing them takes them here rather than gating three times; the
+    metadata walk that finds the wrappers already classifies the enums and the
+    value types.
+    """
+    tables = DerivedTables({}, {})
+    rows, audit = load_wrapper_members(
+        gameassembly=gameassembly, metadata=metadata, _tables=tables
+    )
+    return rows, tables, audit
+
+
+def load_wrapper_members(
+    *, gameassembly: Path | None = None, metadata: Path | None = None,
+    _tables: "DerivedTables | None" = None,
 ) -> tuple[dict[int, WrapperType], dict[str, Any]]:
     """Return ``{typeDefinition: WrapperType}`` for the installed build.
 
     The gate carries no expected hashes because the derivation describes
     whichever build is installed; the measured hashes are recorded so a
-    consumer can pin what it read.
+    consumer can pin what it read.  ``_tables`` is filled in place for
+    ``load_derived_tables``, which needs the type tables off the same parse.
     """
     audit: dict[str, Any] = {"status": "derivation_failed", "failures": []}
     try:
@@ -393,9 +622,11 @@ def load_wrapper_members(
             "GameAssembly.dll": gate.gameassembly_sha256,
             "global-metadata.dat": gate.metadata_sha256,
         }
-        rows = derive_from_image(
-            NativeImage(gate.gameassembly, gate.metadata, label="wrapperMembers")
-        )
+        image = NativeImage(gate.gameassembly, gate.metadata, label="wrapperMembers")
+        rows = derive_from_image(image)
+        if _tables is not None:
+            _tables.enum_widths.update(enum_widths_from_image(image))
+            _tables.value_sizes.update(unmanaged_value_sizes_from_image(image))
         audit.update(
             status="validated",
             wrapperCount=len(rows),

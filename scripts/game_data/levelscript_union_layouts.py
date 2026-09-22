@@ -140,11 +140,15 @@ UNITY_FORMATTER_ALIASES = {
 #: `RectOffset`, `SendLuaEvent1`, `SendLuaEvent2`, `StringPathHash`, `string`,
 #: and the `SerializeFieldDictionary` / `SerializeReferenceDictionary` family.
 #:
-#: Two are settled. `StringPathHash`'s formatter matches its one int64 field,
+#: Three are settled. `StringPathHash`'s formatter matches its one int64 field,
 #: corroborated by SpawnerConfig and LevelConfig closing every file.
-#: `AnimationCurve`'s does not -- see the order override below. The rest are
-#: read from their field lists on the strength of nothing, so check this list
-#: first when a family stalls.
+#: `AudioId`'s matches its one int32 field: its `Deserialize` body is a
+#: class-init guard, one reader call and one 32-bit store, with no null-marker
+#: test, no member-count byte and no second call, and it is the same body shape
+#: as `StringPathHash`'s differing only in the store width, so the settled case
+#: fixes what the shape means. `AnimationCurve`'s does not match -- see the
+#: order override below. The rest are read from their field lists on the
+#: strength of nothing, so check this list first when a family stalls.
 FORMATTER_BACKED_TYPES = frozenset({
     "AnimationCurve", "AudioId", "BezierKnot", "Gradient", "RectOffset",
     "SendLuaEvent1", "SendLuaEvent2", "StringPathHash",

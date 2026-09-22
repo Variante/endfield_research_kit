@@ -277,6 +277,83 @@ def union_families(
     return families
 
 
+#: The per-tag serialized member counts the frozen ``buff_actions`` reader
+#: already reads for six nested unions, keyed by the base type each one wraps.
+#:
+#: This is not a build fingerprint and carries no address, hash or definition
+#: index: it is a transcription of what a reviewed, corpus-validated reader
+#: does, keyed by managed names that survive a client update. It is the
+#: sharpest available check on the ordering rule, because none of these six
+#: unions is natively walked -- the rule has to place every one of these tags
+#: correctly, and a wrong placement shows up as a member count that does not
+#: match rather than as a plausible name.
+REVIEWED_NESTED_TABLES: dict[str, dict[int, int]] = {
+    "Beyond.Gameplay.Core.Selector+Finder+Data": {
+        0: 0, 1: 0, 2: 0, 3: 4, 5: 0, 7: 8, 8: 0, 10: 0,
+        12: 1, 13: 1, 14: 2, 16: 9, 18: 11, 19: 4, 21: 0,
+    },
+    "Beyond.Gameplay.Core.Selector+Validator+Data": {
+        1: 2, 2: 2, 4: 3, 5: 0, 9: 0, 10: 0, 11: 1,
+    },
+    "Beyond.Gameplay.Core.Selector+PostProcessor+Data": {1: 1, 7: 6, 8: 2},
+    "Beyond.Gameplay.Core.DamageProcessorBase": {
+        0: 1, 2: 1, 3: 1, 4: 1, 5: 3, 6: 2, 9: 2, 10: 3,
+    },
+    "Beyond.Gameplay.Core.HealProcessorBase": {0: 2, 1: 3},
+    "Beyond.Gameplay.Core.CalculationBase": {0: 1, 1: 2, 2: 3, 3: 4, 5: 4},
+}
+
+
+def check_reviewed_nested_tables(
+    rows: dict[int, WrapperType], children: dict[int, list[int]]
+) -> dict[str, Any]:
+    """Re-place every tag the frozen reader's own nested tables record.
+
+    For each base, the ordering rule assigns the tags and this compares the
+    subtype it lands on against the member count the reviewed reader reads
+    there. A base the selected build does not have is reported missing rather
+    than skipped silently, so a rename is visible instead of shrinking the
+    check.
+    """
+    by_wrapped = {
+        wrapper.wrapped_type: definition
+        for definition, wrapper in rows.items()
+        if wrapper.wrapped_type
+    }
+    checked = agreed = 0
+    disagreements: list[dict[str, Any]] = []
+    missing: list[str] = []
+    for base_name, table in sorted(REVIEWED_NESTED_TABLES.items()):
+        definition = by_wrapped.get(base_name)
+        if definition is None:
+            missing.append(base_name)
+            continue
+        tags = union_tags(rows, children, definition)
+        for tag, expected in sorted(table.items()):
+            checked += 1
+            wrapper = tags.get(tag)
+            actual = len(wrapper.members) if wrapper is not None else None
+            if actual == expected:
+                agreed += 1
+            else:
+                disagreements.append({
+                    "base": base_name, "tag": tag,
+                    "expectedMemberCount": expected, "actualMemberCount": actual,
+                    "landedOn": wrapper.wrapped_type if wrapper is not None else None,
+                })
+    return {
+        "checked": checked,
+        "agreed": agreed,
+        "missingBases": missing,
+        "disagreements": disagreements[:20],
+        "boundary": (
+            "Agreement re-places a tag the reviewed reader already reads. It corroborates "
+            "the ordering rule at those tags; it does not walk a route, and a tag no "
+            "reviewed reader covers stays an ordering inference."
+        ),
+    }
+
+
 def build(output: Path) -> dict[str, Any]:
     started = time.perf_counter()
     output = output.resolve()
@@ -295,16 +372,21 @@ def build(output: Path) -> dict[str, Any]:
         nested = check_reviewed_nested_rows(
             by_name, REPO / "scripts/game_data/contracts"
         ) if families else {"checked": 0, "agreed": 0, "disagreements": []}
+        tables = check_reviewed_nested_tables(rows, children) if families else {
+            "checked": 0, "agreed": 0, "disagreements": [], "missingBases": []}
         report = {
             "schema": "endfield.memorypack-union-subtypes.v1",
             "audit": audit,
             "ruleCheck": rule,
             "reviewedNestedCheck": nested,
+            "reviewedNestedTableCheck": tables,
             "evidenceBoundary": {
                 "structuralOnly": (
                     "A tag here is the member's position under a metadata ordering rule, "
-                    "corroborated against the walked root union and the reviewed nested "
-                    "rows. It is not a route read out of the dispatcher."
+                    "corroborated against the walked root union, the reviewed nested "
+                    "rows, and the frozen reader's own per-tag member counts for six "
+                    "nested unions it never walks. It is not a route read out of the "
+                    "dispatcher."
                 ),
                 "conditional": (
                     "Every predicted tag is void unless the rule reproduces the walked "
@@ -315,6 +397,7 @@ def build(output: Path) -> dict[str, Any]:
                 "status": "validated" if rule["status"] == "validated" else rule["status"],
                 "ruleAgreed": rule.get("agreed"), "ruleChecked": rule.get("checked"),
                 "nestedAgreed": nested.get("agreed"), "nestedChecked": nested.get("checked"),
+                "tableAgreed": tables.get("agreed"), "tableChecked": tables.get("checked"),
                 "unions": len(families),
                 "subtypes": sum(len(family.tags) for family in families.values()),
                 "elapsedSeconds": round(time.perf_counter() - started, 3),
