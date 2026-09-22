@@ -370,6 +370,27 @@ recorded same-tag ambiguities split into distinct native tags. Tag identity read
 derived row's nested struct and enum declarations stay `direct` until their
 own codecs are proved.
 
+**Never write a union tag as a literal.** A tag is a rank, so a client update
+renumbers every type after an insertion; the ActionBase, PureGetter and
+ActionHeader families all shifted between the recorded builds and the current
+one. The Story record-hint lane had accumulated literals from several builds
+and silently matched nothing (published missions carried no Split, IfElse,
+Switch, Branch or While edges), while some stale pairs landed on unrelated
+current actions of equal member count and were decoded as the wrong action.
+LevelScript code now names the type and resolves it through
+`levelscript_union_tags`, regenerated from the native switches. A literal was
+converted only where the code itself named its type and the current member
+count agreed; literals with no recorded name, or whose type gained members,
+were left inert rather than guessed. The same applies to contracts: record
+tags as regenerated data keyed by type name, never as a key the next build
+reuses for another type.
+
+The EntityPtr output-alias, property-initialization and script-slot contracts
+remain on the recorded build. Their readings come from method bodies that the
+current build restructured (a single recorded 2,080-byte base `Process` is now
+a chain of smaller methods), so they need a fresh trace through the new call
+graph; equal body sizes elsewhere are not a substitute for that review.
+
 The derivation also closes the types those layouts refer to: 42 structs and 94
 enums, reached by running the reference set to a fixed point. Both are checked
 against the reviewed `primitiveEvidence` -- its `stringKeyStructs` must derive
