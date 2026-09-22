@@ -29,6 +29,7 @@ axis. A path appears under exactly one owner.
 | | `game_data/memorypack/derived_schema.py` | recursive read-plan resolution over the derived wrapper, union, enum and wrapped-type tables; models the counted-map framing a reviewed reader proves and refuses every other formatter-backed type rather than reading its member list |
 | | `game_data/memorypack/union_subtypes.py` | tag assignment for the nested unions the dispatcher walk cannot reach, inferred from the wrapper hierarchy and gated on the walked union reproducing exactly |
 | | `game_data/memorypack/derived_actions.py` | the narrow flat-body case of the same idea: adds only the routes whose members are all fixed-width or strings, with no plan registry. `derived_plans` is the superset |
+| | `webui/audio/semantics/runtime_capture_import.py` | validates one bounded EndfieldCapture audio session against the provider's own completeness counters and counts its callback payloads; decodes none of them, and records why a capture cannot name an Event |
 | | `webui/audio/semantics/decoded_payload_event_names.py` | Wwise Event names taken from the decoded member that holds them rather than from a spelling grammar; standalone, not yet wired into `build_audio` |
 | | `game_data/contracts_repin.py` | re-pins the exporter fingerprint an AnimeStudio rebuild invalidates, then settles the dependency rows and loader digests that follow from it; refuses unless the installed build matches both the audit and the contracts |
 | | `game_data/memorypack/derived_values.py` | decodes a plan into named values rather than only framing it, and checks each decoded record's own identifier against its filename |
@@ -334,6 +335,7 @@ python -m scripts.game_data.contracts_repin
 python -m scripts.game_data.contracts_repin --write
 python -m scripts.game_data.contracts_repin --verify
 python -m scripts.webui.audio.semantics.decoded_payload_event_names
+python -m scripts.webui.audio.semantics.runtime_capture_import
 ```
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE

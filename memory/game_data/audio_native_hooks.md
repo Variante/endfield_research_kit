@@ -424,6 +424,35 @@ match**, and no verified capture has produced the decoder continuity rows yet.
   the external descriptor and opened path with the selected stream callback and
   the resulting decoded data flow.
 
+## A capture cannot name an Event, and what it can do instead
+
+Worth stating exactly, because the opposite is easy to assume. The audio
+provider's post hook is
+`(uint32 eventId, uint64 audioObjectId, uint32 callbackType, ...)` -- it
+carries the hash and never the spelling -- so **no session run with the shipped
+hooks names a hash-only Event**. `AudioManager` does expose string overloads
+(`PostEvent(string)`, `PlaySoundAtPosition(string, ...)`,
+`PostAudioCue(string)`), so a *different* hook could observe a name, but that
+hook does not exist and building it would only reach names that ship as
+literals, which the static sources now read far more thoroughly.
+
+What a session can do is the continuity this file is waiting on, and
+`scripts/webui/audio/semantics/runtime_capture_import.py` is the consumer side
+of it. It validates a session against the provider's own counters in
+`audio/summary.json` -- dropped records, unpaired calls, a window still open at
+session stop, an incomplete session -- and refuses the whole session naming the
+gate rather than reporting a smaller number across a hole.
+
+**It stops short of the join, deliberately.** The per-callback records ship as
+opaque `payloadHex` blobs in `events.jsonl`, and their serialized layout is not
+the in-memory `CallbackRecord`: the payload is 208 bytes where that struct is
+larger, so the writer packs a different form. The importer counts those
+payloads by type and size and decodes no field, because choosing an offset
+without the writer's layout would invent facts. Recovering that layout is the
+one remaining step between a validated session and the
+key-to-file-to-decoder rows, and it is a reading of `EndfieldCapture`'s own
+writer rather than of the game.
+
 ## What remains unresolved
 
 The remaining address-taken codec callback/initialization targets, callback
