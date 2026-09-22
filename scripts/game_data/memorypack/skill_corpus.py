@@ -501,6 +501,92 @@ def _load_exact_json_provenance(
     return decoded, path
 
 
+#: The one build fingerprint whose change alone may carry a verification across
+#: input sets. The input-set hash covers the exporter binary, so rebuilding it
+#: moves the hash with the game data untouched.
+EXPORTER_FINGERPRINT_NAME = "animestudio.cli.exe"
+
+#: A timeline continuation the reader stopped short of field 42. It is a valid
+#: unverified state, not drift: the verified prefix stands and nothing more is
+#: promoted. Any other non-exact status still fails closed.
+PARTIAL_TOP_LEVEL_CONTINUATION = "stopped-at-unsupported-top-level-field"
+
+
+def _exporter_only_rebinding(
+    *,
+    verification: Mapping[str, Any],
+    source_corpus: Mapping[str, Any],
+    rows: list[Mapping[str, Any]],
+    expected_input_set_sha256: str,
+    identity_set_sha256: str,
+    build_fingerprints: list[Mapping[str, Any]],
+    blc_paths: list[str],
+    source: str,
+) -> dict[str, Any]:
+    """Prove a verification from another input set describes this corpus exactly.
+
+    Sound only when nothing the receipt observed can differ: the same selected
+    logical files with the same bytes and physical identities, the same game
+    build, the same asset roots, and the exporter binary as the only moved
+    fingerprint. Anything else is a different corpus and fails closed.
+    """
+
+    def by_name(fingerprints: Any) -> dict[str, tuple[Any, str]]:
+        if not isinstance(fingerprints, list):
+            _fail("cursor-rebind-fingerprints-missing", source=source, expected="fingerprint list", actual=fingerprints)
+        return {
+            Path(str(row.get("path"))).name.casefold(): (row.get("length"), str(row.get("sha256", "")).upper())
+            for row in fingerprints
+        }
+
+    source_provenance = source_corpus.get("provenance")
+    if not isinstance(source_provenance, Mapping):
+        _fail("cursor-rebind-source-provenance-missing", source=source, expected="provenance object", actual=source_provenance)
+    old = by_name(source_provenance.get("buildFingerprints"))
+    new = by_name(build_fingerprints)
+    if set(old) != set(new) or EXPORTER_FINGERPRINT_NAME not in new:
+        _fail("cursor-rebind-fingerprint-set-drift", source=source, expected=sorted(new), actual=sorted(old))
+    moved = sorted(name for name in new if old[name] != new[name])
+    if moved != [EXPORTER_FINGERPRINT_NAME]:
+        _fail("cursor-rebind-not-exporter-only", source=source, expected=[EXPORTER_FINGERPRINT_NAME], actual=moved)
+    if source_corpus.get("inputSetSha256") != verification.get("inputSetSha256"):
+        _fail("cursor-rebind-source-input-set-mismatch", source=source, expected=verification.get("inputSetSha256"), actual=source_corpus.get("inputSetSha256"))
+    if sorted(source_provenance.get("blcPaths") or []) != sorted(blc_paths):
+        _fail("cursor-rebind-asset-root-drift", source=source, expected="identical BLC path set", actual="BLC path set differs")
+    if source_corpus.get("identitySetSha256") != identity_set_sha256:
+        _fail("cursor-rebind-identity-drift", source=source, expected=identity_set_sha256, actual=source_corpus.get("identitySetSha256"))
+    old_files = {
+        row.get("virtualPath"): (row.get("logicalSha256"), row.get("length"))
+        for row in source_corpus.get("files") or []
+    }
+    new_files = {row["virtualPath"]: (row.get("logicalSha256"), row.get("length")) for row in rows}
+    if old_files != new_files:
+        changed = sorted(path for path in set(old_files) | set(new_files) if old_files.get(path) != new_files.get(path))
+        _fail("cursor-rebind-logical-file-drift", source=source, expected="identical logical bytes", actual=changed[:8])
+    return {
+        "status": "exporter-only-rebinding",
+        "fromInputSetSha256": verification.get("inputSetSha256"),
+        "toInputSetSha256": expected_input_set_sha256.upper(),
+        "movedFingerprint": {
+            "name": EXPORTER_FINGERPRINT_NAME,
+            "from": {"length": old[EXPORTER_FINGERPRINT_NAME][0], "sha256": old[EXPORTER_FINGERPRINT_NAME][1]},
+            "to": {"length": new[EXPORTER_FINGERPRINT_NAME][0], "sha256": new[EXPORTER_FINGERPRINT_NAME][1]},
+        },
+        "unchanged": {
+            "identitySetSha256": identity_set_sha256,
+            "logicalFiles": len(new_files),
+            "buildFingerprints": sorted(name for name in new if name != EXPORTER_FINGERPRINT_NAME),
+            "blcPaths": len(blc_paths),
+        },
+        "evidenceBoundary": (
+            "The receipt was observed under another input set. The selected "
+            "logical files, their bytes and physical identities, the game build "
+            "and the asset roots are identical; only the exporter binary moved. "
+            "A fresh capture under the current input set supersedes this."
+        ),
+    }
+
+
 def _apply_verified_terminal_selection(
     rows: list[dict[str, Any]],
     *,
@@ -508,6 +594,8 @@ def _apply_verified_terminal_selection(
     expected_input_set_sha256: str,
     identity_set_sha256: str,
     build_fingerprints: list[Mapping[str, Any]],
+    blc_paths: list[str] | None = None,
+    allow_exporter_rebind: bool = False,
 ) -> dict[str, Any]:
     """Replay and apply a hash-pinned runtime terminal selection to this corpus."""
     try:
@@ -520,10 +608,12 @@ def _apply_verified_terminal_selection(
     if (
         verification.get("schema") != CURSOR_VERIFICATION_SCHEMA
         or verification.get("status") != "complete"
-        or verification.get("inputSetSha256") != expected_input_set_sha256.upper()
         or verification.get("summary", {}).get("wholeSchemaExact") is not False
     ):
-        _fail("cursor-verification-gate-failed", source=str(verification_path), expected="complete current bounded verification", actual=verification.get("status"))
+        _fail("cursor-verification-gate-failed", source=str(verification_path), expected="complete bounded verification", actual={"schema": verification.get("schema"), "status": verification.get("status")})
+    rebinding_required = verification.get("inputSetSha256") != expected_input_set_sha256.upper()
+    if rebinding_required and not allow_exporter_rebind:
+        _fail("cursor-verification-input-set-mismatch", source=str(verification_path), expected=expected_input_set_sha256.upper(), actual=verification.get("inputSetSha256"))
     provenance = verification.get("provenance")
     if not isinstance(provenance, Mapping):
         _fail("cursor-verification-provenance-missing", source=str(verification_path), expected="provenance object", actual=provenance)
@@ -557,6 +647,18 @@ def _apply_verified_terminal_selection(
     recorded_identity = provenance.get("corpusReport", {}).get("identitySetSha256")
     if recorded_identity != identity_set_sha256:
         _fail("cursor-provenance-identity-drift", source=str(verification_path), expected=identity_set_sha256, actual=recorded_identity)
+    rebinding = None
+    if rebinding_required:
+        rebinding = _exporter_only_rebinding(
+            verification=verification,
+            source_corpus=source_corpus,
+            rows=rows,
+            expected_input_set_sha256=expected_input_set_sha256,
+            identity_set_sha256=identity_set_sha256,
+            build_fingerprints=build_fingerprints,
+            blc_paths=list(blc_paths or []),
+            source=str(verification_path),
+        )
     native_hashes = verification.get("nativeInputs")
     installed_hashes = {
         Path(str(row.get("path"))).name.casefold(): str(row.get("sha256", "")).upper()
@@ -866,6 +968,14 @@ def _apply_verified_terminal_selection(
             }
 
             continuation = timeline_profile.get("topLevelContinuation")
+            if (
+                isinstance(continuation, Mapping)
+                and continuation.get("status") == PARTIAL_TOP_LEVEL_CONTINUATION
+            ):
+                # The reader stopped at a top-level field it cannot frame yet.
+                # The verified prefix above still holds; the partial
+                # continuation is kept as recorded and promotes nothing.
+                continuation = None
             if continuation is not None:
                 fields = continuation.get("namedFields") if isinstance(continuation, Mapping) else None
                 if (
@@ -1005,6 +1115,7 @@ def _apply_verified_terminal_selection(
         "receipt": dict(provenance["receipt"]),
         "nativeContext": dict(provenance["nativeContext"]),
         "verifier": dict(provenance["verifier"]),
+        **({"rebinding": rebinding} if rebinding is not None else {}),
     }
 
 
@@ -1392,6 +1503,7 @@ def build_current_census(
     output_path: Path | None = None,
     output_md_path: Path | None = None,
     cursor_verification_path: Path | None = None,
+    allow_exporter_rebind: bool = False,
 ) -> dict[str, Any]:
     if max_files is not None:
         _require_int(max_files, source="maxFiles", minimum=1)
@@ -1414,7 +1526,7 @@ def build_current_census(
     if cli_key not in authenticated_build_paths:
         _fail("stream-cli-not-in-outer-build-fingerprints", source=str(cli_path.resolve()),
               expected=sorted(authenticated_build_paths), actual=cli_key)
-    parser_start = _parser_source_snapshots()
+    parser_start = _parser_source_snapshots(Path(__file__))
     gate_start = _fingerprint(Path(__file__))
     timeline_contract_paths = [
         TIMELINE_PLAY_ANIMATION_CONTRACT_PATH,
@@ -1500,7 +1612,7 @@ def build_current_census(
     stream_tool_end = _stream_tool_snapshot(cli_path)
     selected_chunks_end = _chunk_fingerprints(selected)
     chunk_selection_end = _chunk_selection_snapshot(selected, outer)
-    parser_end = _parser_source_snapshots()
+    parser_end = _parser_source_snapshots(Path(__file__))
     gate_end = _fingerprint(Path(__file__))
     timeline_contract_end = [_fingerprint(path) for path in timeline_contract_paths]
     if provenance_start != provenance_end:
@@ -1540,8 +1652,10 @@ def build_current_census(
             expected_input_set_sha256=expected_input_set_sha256,
             identity_set_sha256=identity_set_sha256,
             build_fingerprints=provenance_start["buildFingerprints"],
+            blc_paths=provenance_start["blcPaths"],
+            allow_exporter_rebind=allow_exporter_rebind,
         )
-        parser_after_verification = _parser_source_snapshots()
+        parser_after_verification = _parser_source_snapshots(Path(__file__))
         gate_after_verification = _fingerprint(Path(__file__))
         if parser_start != parser_after_verification or gate_start != gate_after_verification:
             _fail("code-drift", source="SkillData cursor integration", expected={"parser": parser_start, "corpusGate": gate_start}, actual={"parser": parser_after_verification, "corpusGate": gate_after_verification})
@@ -1686,6 +1800,14 @@ def main(argv: list[str] | None = None) -> int:
         "--cursor-verification", type=Path,
         help="complete SkillData cursor verification report to replay and apply fail-closed",
     )
+    parser.add_argument(
+        "--allow-exporter-rebind", action="store_true",
+        help=(
+            "accept a verification recorded under another input set when only the "
+            "AnimeStudio.CLI fingerprint moved and every selected logical file, "
+            "game-build fingerprint and asset root is identical"
+        ),
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--output-md", type=Path)
     args = parser.parse_args(argv)
@@ -1699,6 +1821,7 @@ def main(argv: list[str] | None = None) -> int:
             output_path=args.output,
             output_md_path=args.output_md,
             cursor_verification_path=args.cursor_verification,
+            allow_exporter_rebind=args.allow_exporter_rebind,
         )
         if args.output_md is not None:
             if args.max_files is not None:

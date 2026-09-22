@@ -352,7 +352,7 @@ def build_current_census(
             "selectedChunkFingerprints": vfs._chunk_fingerprints(selected),
             "selectedChunkResolution": vfs._chunk_selection_snapshot(selected, outer),
             "streamToolFingerprints": vfs._stream_tool_snapshot(cli_path),
-            "parser": vfs._parser_source_snapshots(),
+            "parser": vfs._parser_source_snapshots(Path(__file__)),
             "corpusGate": vfs._fingerprint(Path(__file__)),
         }
 

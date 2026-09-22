@@ -8,6 +8,7 @@ report format, and Markdown rendering; nothing here interprets payload bytes.
 
 from __future__ import annotations
 
+import ast
 import gzip
 import hashlib
 import json
@@ -389,11 +390,59 @@ def _stream_tool_snapshot(cli_path: Path) -> list[dict[str, Any]]:
     return result
 
 
-def _parser_source_snapshots() -> list[dict[str, Any]]:
+PARSER_PACKAGE = "scripts.game_data.memorypack"
+
+
+def _package_import_closure(entry: Path) -> list[Path]:
+    """Every module of the package that ``entry`` can execute, found statically.
+
+    Imports are followed wherever they appear, including inside functions, so
+    a newly split helper cannot run without being fingerprinted. The package
+    has no dynamic imports, which is what makes the static closure complete.
+    """
+
     source_root = MODULE_REPO_ROOT / "scripts/game_data/memorypack"
-    # Pin the complete small package so a newly split terminal helper cannot be
-    # executed without appearing in provenance.
-    return [_fingerprint(path) for path in sorted(source_root.glob("*.py"))]
+    pending = [entry.resolve()]
+    seen: set[Path] = set()
+    while pending:
+        path = pending.pop()
+        if path in seen:
+            continue
+        seen.add(path)
+        tree = ast.parse(path.read_bytes(), filename=str(path))
+        for node in ast.walk(tree):
+            names: list[str] = []
+            if isinstance(node, ast.Import):
+                names = [alias.name for alias in node.names]
+            elif isinstance(node, ast.ImportFrom):
+                if node.level:
+                    base = ".".join(PARSER_PACKAGE.split(".")[: len(PARSER_PACKAGE.split(".")) - node.level + 1])
+                    module = f"{base}.{node.module}" if node.module else base
+                else:
+                    module = node.module or ""
+                names = [module] + [f"{module}.{alias.name}" for alias in node.names]
+            for name in names:
+                if not name.startswith(PARSER_PACKAGE + "."):
+                    continue
+                leaf = name[len(PARSER_PACKAGE) + 1:].split(".")[0]
+                candidate = source_root / f"{leaf}.py"
+                if candidate.is_file():
+                    pending.append(candidate.resolve())
+    init = source_root / "__init__.py"
+    if init.is_file():
+        seen.add(init.resolve())
+    return sorted(seen)
+
+
+def _parser_source_snapshots(entry: Path) -> list[dict[str, Any]]:
+    """Fingerprint the parser modules one family's gate executes.
+
+    Pinning the whole package made every family's report stale whenever an
+    unrelated family's reader changed; the import closure keeps the guarantee
+    that matters -- nothing executed escapes provenance -- without that.
+    """
+
+    return [_fingerprint(path) for path in _package_import_closure(Path(entry))]
 
 
 def _guard_output_path(output_path: Path, protected_paths: Iterable[Path]) -> None:

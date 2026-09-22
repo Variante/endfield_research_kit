@@ -22,7 +22,7 @@ from scripts.game_data.il2cpp.context import type_parameter_owner, rgctx_range_e
 from scripts.game_data.il2cpp.context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
 from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp.protocol import load_metadata_helper, load_native_mapper
-from scripts.game_data.il2cpp.context_audit_common import CONSUMER_WINDOWS, CORPUS_REPORT_RELATIVE, CORPUS_SHA, GA_SHA, MD_SHA, NATIVE_CONTRACT_PATH, ROOT, UNITY_SHA, native_gate, require, sha, sweep, validate_selected_method_spec
+from scripts.game_data.il2cpp.context_audit_common import CONSUMER_WINDOWS, CORPUS_REPORT_RELATIVE, GA_SHA, MD_SHA, NATIVE_CONTRACT_PATH, ROOT, UNITY_SHA, native_gate, require, sha, sweep, validate_selected_method_spec
 from scripts.game_data.il2cpp.context_audit_memorypack import adapter_conversion_context, buff_action_read_order, buff_ifelse_forwarding, buff_ifelse_read_order, buff_sequence_read_order, buff_tag76_read_order, buff_union_routes, element_provider_state_flow, list_element_dispatch, list_element_null_probe, list_element_shared_context, list_element_value_flow, list_formatter_candidate, module_methods, nested_reader_context, reader_construction, reader_cursor_consumers, resource_carrier_consumers, serializer_return_consumers, skill_resource_context, wrapper_consumer
 from scripts.game_data.il2cpp.context_audit_skilldata import select_skilldata_terminal_branch_samples, skilldata_action_readers_from_locals, skilldata_action_union_c9_prefix_reader_evidence, skilldata_actiongroup_branch_sample_witness, skilldata_actiongroup_branch_static_alignment, skilldata_actiongroup_c9_nested_sequence_candidate_replay, skilldata_nested_branch_static_alignment, skilldata_positive_branch_reader_replay, skilldata_static_reader_order, skilldata_terminal_branch_sample_witness
 from scripts.game_data.il2cpp.context_audit_vfs import file_stream_open, native_file_read, resolver_key_comparison, resolver_prefix_query, stream_carrier_consumer, stream_source_identity, unity_conversion_exports, unity_loader_conversion, unity_loader_input, unity_module_lookup, unity_path_return, unity_registration_forwarder, unity_registration_pair, vfs_block_cursor, vfs_block_file_source, vfs_block_transform, vfs_bytebuf_consumer, vfs_descriptor_path, vfs_descriptor_producer, vfs_format_item, vfs_path_carrier, vfs_path_format_context, vfs_path_literals, vfs_root_resolver, vfs_stream_consumer, vfs_stream_identity, vfs_string_carrier
@@ -42,7 +42,11 @@ from scripts.game_data.il2cpp.context_audit_skilldata import (
 def audit():
     gate = native_gate()
     corpus_path = ROOT / CORPUS_REPORT_RELATIVE
-    require(sha(corpus_path), CORPUS_SHA, corpus_path)
+    # The basis is a regenerated local report, so it is authenticated by its
+    # live provenance (status, input set, tool/parser/chunk fingerprints), not
+    # by a digest pinned in code. The digest taken here only proves the file
+    # did not change while the audit ran, as for the BuffData input below.
+    corpus_sha = sha(corpus_path)
     corpus = json.loads(corpus_path.read_text(encoding='utf-8'))
     verify_current_report_inputs(corpus)
     terminal_branch_selections = select_skilldata_terminal_branch_samples(
@@ -1348,7 +1352,7 @@ def audit():
         require(hashlib.sha256(unity_pe.bytes_at_va(unity_pe.image_base+start,end-start)).hexdigest().upper(),expected,unity_path,start)
     require(sha(unity_path),UNITY_SHA,unity_path)
     native_gate()
-    require(sha(corpus_path), CORPUS_SHA, corpus_path)
+    require(sha(corpus_path), corpus_sha, corpus_path)
     verify_current_report_inputs(corpus)
     require(sha(buff_path),buff_sha,buff_path)
     verify_family_report_inputs(buff_corpus,expected_format='animestudio-buffdata-current-vfs-corpus',label='BuffData')
@@ -1359,7 +1363,7 @@ def audit():
         'inputSetSha256': corpus['inputSetSha256'],
         'buffCorpusReference':{'path':str(buff_path),'sha256':buff_sha,'summary':buff_corpus['summary'],
                                'inputSetSha256':buff_corpus['inputSetSha256']},
-        'corpusReference': {'path': str(corpus_path), 'sha256': CORPUS_SHA,
+        'corpusReference': {'path': str(corpus_path), 'sha256': corpus_sha,
                             'boundary': 'Authenticated corpus reference; this native audit does not restream VFS bytes.'},
         'nativeInputs': {'gameassembly': str(gate.gameassembly), 'gameassemblySha256': GA_SHA,
                          'metadata': str(gate.metadata), 'metadataSha256': MD_SHA,

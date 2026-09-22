@@ -313,7 +313,7 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
         return {'selectedChunkFingerprints':vfs._chunk_fingerprints(selected),
             'selectedChunkResolution':vfs._chunk_selection_snapshot(selected,outer),
             'streamToolFingerprints':vfs._stream_tool_snapshot(cli_path),
-            'parser':vfs._parser_source_snapshots(),
+            'parser':vfs._parser_source_snapshots(Path(__file__)),
             'buffFrontiersNative':[vfs._fingerprint(Path(buff_frontiers.__file__))]+[
                 vfs._fingerprint(spec.path) for spec in buff_frontiers.FRONTIERS.values()],
             'buffNamedSchema':vfs._fingerprint(Path(buff_named_schema.__file__)),
