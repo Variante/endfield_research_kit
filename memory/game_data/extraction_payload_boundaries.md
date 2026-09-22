@@ -409,7 +409,23 @@ traced to the raiser, not read off the header.*
 BuffData's frozen reader (`memorypack/buff.py`) carried the same stale-tag
 problem for AbilityActionData (48 of 51 constants named other actions); it is
 rekeyed through its own tag-name table via the AbilityActionData family in
-`levelscript_union_tags`.
+`levelscript_union_tags`. Every tag-keyed table must move with the names: the
+member-count table was missed once, which rejected most items and broke the
+audio build. Rekeying keeps each *reviewed* count, so an action whose current
+wrapper has a different member count (twelve on this build, EffectAction the
+largest) fails closed at the reviewed header rather than being read with a
+stale layout.
+
+Items the reviewed decoders cannot read, reshaped or never typed, are
+consumed by the build's derived plan (`derived_values.ValueReader`) and
+published as `decodeStatus=derived` with `evidenceTier=direct` and the
+wrapper's member names. A chain still splits only when every item is consumed
+and the cursor lands on the proven payload end, and without the installed
+build there are no plans. Where both decoders read an item they must end on
+the same byte; they agree on all but six items, every one a reviewed
+`CreateBuffAction` whose anchor scan ran into the following item, so a
+disagreement fails closed instead of choosing a side. With the fallback, no
+non-empty BuffData action payload remains unsplit or ambiguous.
 
 The derivation also closes the types those layouts refer to: 42 structs and 94
 enums, reached by running the reference set to a fixed point. Both are checked

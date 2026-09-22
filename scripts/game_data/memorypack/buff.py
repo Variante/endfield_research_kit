@@ -4925,7 +4925,106 @@ def build_buff_consumed_action_item_summary(
     }
 
 
+_DERIVED_ACTION_REGISTRY: list[Any] = []
+
+
+def derived_action_registry() -> Any:
+    """The selected build's derived AbilityActionData plans, loaded once.
+
+    Imported lazily because ``derived_plans`` builds on this module. Without
+    the installed build the registry is empty, so no derived route exists and
+    every item stays with the reviewed decoders.
+    """
+    if not _DERIVED_ACTION_REGISTRY:
+        from scripts.game_data.memorypack.derived_plans import load_registry
+
+        registry, _audit = load_registry()
+        _DERIVED_ACTION_REGISTRY.append(registry)
+    return _DERIVED_ACTION_REGISTRY[0]
+
+
+def consume_buff_ability_action_item_derived(
+    data: bytes,
+    offset: int,
+    limit: int,
+    index: int = 0,
+) -> tuple[dict[str, Any], int] | None:
+    """Consume one item with the build's derived plan, or return ``None``.
+
+    This is the route for an item the reviewed decoders do not admit: a type
+    with no typed consumer, or one whose current wrapper has a different member
+    count than the reviewed layout. The plan frames every member, and the values
+    are kept under the wrapper's member names. A plan agrees with the reviewed
+    reader on every tag both admit, but on its own it is ``direct`` evidence, so
+    the item says ``derived`` rather than ``exact`` and callers still require the
+    whole chain to land on the proven payload end.
+    """
+    from scripts.game_data.memorypack.derived_values import ValueReader
+    from scripts.game_data.memorypack.buff_actions import Unsupported
+
+    registry = derived_action_registry()
+    tag, tag_width, _raw = read_buff_timeline_first_union_tag(data, offset, limit)
+    definition = registry.roots.get(tag) if tag is not None else None
+    if definition is None:
+        return None
+    reader = ValueReader(data, "BuffData", limit, registry=registry)
+    reader.pos = offset + tag_width
+    try:
+        value = reader._value_object(definition, 0)
+    except (Unsupported, ValueError, struct.error):
+        return None
+    end = reader.pos
+    member_count = data[offset + tag_width]
+    wrapper = registry.wrapped_names.get(definition) or ""
+    return {
+        "index": index,
+        "offset": format_offset(offset),
+        "bytes": end - offset,
+        "tag": f"0x{tag:04x}",
+        "name": BUFF_ABILITY_ACTION_TAG_NAMES.get(tag) or wrapper,
+        "tagBytes": tag_width,
+        "memberCount": member_count,
+        "bodyBytes": end - offset - tag_width - 1,
+        "decodeStatus": "derived",
+        "boundaryProof": "derived-plan-consumption",
+        "evidenceTier": "direct",
+        "decoded": value,
+    }, end
+
+
 def consume_buff_ability_action_item(
+    data: bytes,
+    offset: int,
+    limit: int,
+    index: int = 0,
+    depth: int = 0,
+) -> tuple[dict[str, Any], int]:
+    """Consume one item: the reviewed decoder, else the build's derived plan.
+
+    Where both read the item they must end on the same byte. Several reviewed
+    decoders locate a later member by scanning for an anchor, and a scan can
+    run past the item into the next one; a plan frames every member instead.
+    Neither is preferred on a disagreement: the item raises, so the enclosing
+    chain stays opaque and the note names both ends.
+    """
+    try:
+        summary, end = consume_buff_ability_action_item_reviewed(data, offset, limit, index, depth)
+    except (struct.error, UnicodeDecodeError, ValueError):
+        derived = consume_buff_ability_action_item_derived(data, offset, limit, index)
+        if derived is None:
+            raise
+        return derived
+    derived = consume_buff_ability_action_item_derived(data, offset, limit, index)
+    if derived is not None and derived[1] != end:
+        raise ValueError(
+            f"abilityActionItem:reviewed-derived-end-disagree={summary.get('name')}"
+            f" at={format_offset(offset)} reviewed={format_offset(end)}"
+            f" derived={format_offset(derived[1])}"
+        )
+    return summary, end
+
+
+def consume_buff_ability_action_item_reviewed(
     data: bytes,
     offset: int,
     limit: int,
@@ -6727,7 +6826,10 @@ def split_buff_ability_action_items_opaque(
     if action_data_count == 1:
         header = read_buff_ability_action_item_header(data, offset, body_end)
         if header is None:
-            return "failed", [], ""
+            derived = consume_buff_ability_action_item_derived(data, offset, body_end)
+            if derived is None or derived[1] != body_end:
+                return "failed", [], ""
+            return "single-item", [derived[0]], ""
         tag, tag_width, member_count = header
         return "single-item", [
             build_buff_ability_action_item_summary(

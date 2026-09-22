@@ -39,6 +39,8 @@ FULL_ERROR_SAMPLE_LIMIT = 64
 FULL_BUFF_FILENAME_RE = re.compile(r"^buff_[A-Za-z0-9_]+\.json$")
 ACTION_STATUS_VALUES = frozenset({
     "exact",
+    # Framed and named by the build's derived plan; direct, not reviewed exact.
+    "derived",
     "partial",
     "opaque",
     "typed-failed",
