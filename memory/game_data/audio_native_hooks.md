@@ -506,11 +506,34 @@ subdirectory. That is the overlay fallback rule of
 [`../game_data_recovery.md`](../game_data_recovery.md) observed at runtime
 rather than inferred from the catalog.
 
-**What is still not joined.** Posts, prepared source keys and opened paths are
-counted separately. A key seen at two hooks in one session is a coincidence of
-numbers until ordering and identity are checked, and the key-to-file-to-decoder
-continuity therefore remains open: this session prepared no source keys at all,
-so it cannot speak to it.
+***The external-source post carries its own join, and it is many-to-one.*** A
+`_PostEventWithExternalSource` call passes both the source key and the media
+path in its own arguments, so that pair is a join the game makes rather than
+two facts observed near each other. A second session, 110 seconds over four
+windows with nothing dropped and nothing unpaired, shows what it looks like at
+scale: **87 external posts carrying 81 distinct voice paths under 10 distinct
+keys**, of which **one key alone names 66 different files**.
+
+So an `externalSourceKey` is **not** a media identifier. Any reading that
+treats it as one -- including any attempt to recover a file from a key -- is
+refuted by a single session. What the key selects is something coarser than
+the file, and this evidence does not say what.
+
+Two bounds on those paths are worth keeping. The capture's text field holds 96
+bytes, so a path is cut at 95 characters and six of this session's were; a cut
+path is counted separately rather than presented whole. And the media itself is
+never opened through `DefaultIoOpenDispatch`: both sessions show only bank
+opens -- `368289710.bnk`, then `1214305672.bnk` and `1645682467.bnk` -- each
+probed across `Persistent` and `StreamingAssets` with and without `Chinese`.
+Voice media is read by some path these hooks do not see.
+
+**What is still not joined, and one hook that never fires.** Posts, prepared
+source keys and opened paths are counted separately. More pointedly,
+`SourceProviderPreparation` recorded **nothing in either session**, including
+110 seconds of heavy voice playback -- so the key-to-file-to-decoder continuity
+is not merely unproven, it is not reachable through this hook for this content.
+Before spending further sessions on it, the hook itself needs re-examining: it
+may sit on a path only some external sources take.
 
 ## What remains unresolved
 
