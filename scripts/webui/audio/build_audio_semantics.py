@@ -2557,7 +2557,7 @@ def main(argv: list[str] | None = None) -> int:
     )
     print(
         "Audio semantic WebUI data:"
-        f" {payload['counts']['eventRecords']:,} Event records"
+        f" {payload['counts']['wwiseEventObjectHashes']:,} Wwise Event objects"
         f" ({payload['counts']['namedEvents']:,} authored names),"
         f" {payload['counts']['decodedMedia']:,} media,"
         f" {payload['counts']['runtimeSystems']:,} runtime systems"
