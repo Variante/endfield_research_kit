@@ -314,7 +314,7 @@ Page evidence limits are owned by
 [`memory/webui/gameplay.md`](../memory/webui/gameplay.md), what the datasets
 establish by
 [`memory/game_data/gameplay_semantics.md`](../memory/game_data/gameplay_semantics.md),
-and per-action layouts by their `scripts/game_data/buff_*_native.json`
+and per-action layouts by their `scripts/game_data/contracts/buff_*_native.json`
 contracts.
 
 ## Audio

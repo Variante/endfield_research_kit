@@ -8,10 +8,11 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs
+from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.animation_curve_native import _pe_file_offset
 
 
-CONTRACT_PATH = Path(__file__).with_suffix(".json")
+CONTRACT_PATH = CONTRACTS_DIR / "gpu_ui_damage_text_native.json"
 CONTRACT_SHA256 = "DE18498C2E987E866160EFE45A204D81E3C0A5DC55CAFC62FCBB9FBE2D6BEF43"
 SCHEMA = "endfield.gpui-damage-text-native-contract.v1"
 

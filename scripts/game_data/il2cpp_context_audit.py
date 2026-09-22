@@ -33,6 +33,7 @@ from scripts.game_data.il2cpp_context import method_spec_record, usage_method_sp
 from scripts.game_data.il2cpp_context import literal_record
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 ROOT = REPO_ROOT
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
@@ -3931,8 +3932,7 @@ def skilldata_action_readers_from_locals(local_values, *, source):
             continue
         tag = int(variable_match.group(1), 16)
         require(int(contract_match.group(1), 16), tag, source, tag)
-        expected_path = Path(__file__).with_name(
-            f'buff_{tag:02x}_native.json').resolve()
+        expected_path = CONTRACTS_DIR / f'buff_{tag:02x}_native.json'.resolve()
         require(contract_path, expected_path, source, tag)
         if not contract_path.is_file():
             raise ContextError(source, tag, 'current selected action reader contract file',
@@ -3978,8 +3978,7 @@ def skilldata_action_union_static_reader_evidence(tag, reader, buff_routes, *,
             'registeredTypeIndex': operand['registeredTypeIndex'],
         })
 
-    expected_contract = Path(__file__).with_name(
-        f'buff_{tag:02x}_native.json').resolve()
+    expected_contract = CONTRACTS_DIR / f'buff_{tag:02x}_native.json'.resolve()
     contract_path = Path(reader.get('contractPath', '')).resolve()
     require(contract_path, expected_contract, source, tag)
     if not expected_contract.is_file():
@@ -4684,7 +4683,7 @@ def skilldata_actiongroup_branch_static_alignment(witness, skilldata_reader,
     require(len(sequence_contexts), 1, source, 0)
     require(sequence_contexts[0].get('methodSpecIndex'), 610597, source, 0)
 
-    expected_shared_contract = Path(__file__).with_name('buff_b4_native.json').resolve()
+    expected_shared_contract = CONTRACTS_DIR / 'buff_b4_native.json'.resolve()
     shared_contract = Path(shared_list_reader.get('contractPath', '')).resolve()
     require(shared_contract, expected_shared_contract, source, 0)
     shared_contract_sha = hashlib.sha256(expected_shared_contract.read_bytes()).hexdigest().upper()
@@ -8608,229 +8607,229 @@ def audit():
                skill_sample_path, *terminal_branch_sample_paths,
                *actiongroup_branch_sample_paths,
                *actiongroup_branch_census_sample_paths,
-               Path(__file__).with_name('buff_ec_native.json'),
-               Path(__file__).with_name('buff_50_native.json'),
-               Path(__file__).with_name('buff_11f_native.json'),
-               Path(__file__).with_name('buff_b4_native.json'),
-               Path(__file__).with_name('buff_56_native.json'),
-               Path(__file__).with_name('buff_92_native.json'),
-               Path(__file__).with_name('buff_57_native.json'),
-               Path(__file__).with_name('buff_5b_native.json'),
-               Path(__file__).with_name('buff_3c_native.json'),
-               Path(__file__).with_name('buff_78_native.json'),
-               Path(__file__).with_name('buff_b2_native.json'),
-               Path(__file__).with_name('buff_68_native.json'),
-               Path(__file__).with_name('buff_81_native.json'),
-               Path(__file__).with_name('buff_58_native.json'),
-               Path(__file__).with_name('buff_02_native.json'),
-               Path(__file__).with_name('buff_9a_native.json'),
-               Path(__file__).with_name('buff_a2_native.json'),
-               Path(__file__).with_name('buff_65_native.json'),
-               Path(__file__).with_name('buff_169_native.json'),
-               Path(__file__).with_name('buff_157_native.json'),
-               Path(__file__).with_name('buff_6e_native.json'),
-               Path(__file__).with_name('buff_fe_native.json'),
-               Path(__file__).with_name('buff_96_native.json'),
-               Path(__file__).with_name('buff_fd_native.json'),
-               Path(__file__).with_name('buff_7c_native.json'),
-               Path(__file__).with_name('buff_b6_native.json'),
-               Path(__file__).with_name('buff_80_native.json'),
-               Path(__file__).with_name('buff_16e_native.json'),
-               Path(__file__).with_name('buff_7b_native.json'),
-               Path(__file__).with_name('buff_6d_native.json'),
-               Path(__file__).with_name('buff_136_native.json'),
-               Path(__file__).with_name('buff_163_native.json'),
-               Path(__file__).with_name('buff_69_native.json'),
-               Path(__file__).with_name('buff_44_native.json'),
-               Path(__file__).with_name('buff_10f_native.json'),
-               Path(__file__).with_name('buff_9b_native.json'),
-               Path(__file__).with_name('buff_c5_native.json'),
-               Path(__file__).with_name('buff_119_native.json'),
-               Path(__file__).with_name('buff_0a_native.json'),
-               Path(__file__).with_name('buff_7a_native.json'),
-               Path(__file__).with_name('buff_88_native.json'),
-               Path(__file__).with_name('buff_48_native.json'),
-               Path(__file__).with_name('buff_5a_native.json'),
-               Path(__file__).with_name('buff_c4_native.json'),
-               Path(__file__).with_name('buff_145_native.json'),
-               Path(__file__).with_name('buff_de_native.json'),
-               Path(__file__).with_name('buff_bd_native.json'),
-               Path(__file__).with_name('buff_6a_native.json'),
-               Path(__file__).with_name('buff_24_native.json'),
-               Path(__file__).with_name('buff_16b_native.json'),
-               Path(__file__).with_name('buff_7e_native.json'),
-               Path(__file__).with_name('buff_35_native.json'),
-               Path(__file__).with_name('buff_ea_native.json'),
-               Path(__file__).with_name('buff_61_native.json'),
-               Path(__file__).with_name('buff_3f_native.json'),
-               Path(__file__).with_name('buff_14d_native.json'),
-               Path(__file__).with_name('buff_73_native.json'),
-               Path(__file__).with_name('buff_5d_native.json'),
-               Path(__file__).with_name('buff_42_native.json'),
-               Path(__file__).with_name('buff_27_native.json'),
-               Path(__file__).with_name('buff_95_native.json'),
-               Path(__file__).with_name('buff_74_native.json'),
-               Path(__file__).with_name('buff_16d_native.json'),
-               Path(__file__).with_name('buff_160_native.json'),
-               Path(__file__).with_name('buff_89_native.json'),
-               Path(__file__).with_name('buff_171_native.json'),
-               Path(__file__).with_name('buff_132_native.json'),
-               Path(__file__).with_name('buff_d4_native.json'),
-               Path(__file__).with_name('buff_d5_native.json'),
-               Path(__file__).with_name('buff_d6_native.json'),
-               Path(__file__).with_name('buff_60_native.json'),
-               Path(__file__).with_name('buff_126_native.json'),
-               Path(__file__).with_name('buff_1c_native.json'),
-               Path(__file__).with_name('buff_06_native.json'),
-               Path(__file__).with_name('buff_142_native.json'),
-               Path(__file__).with_name('buff_03_native.json'),
-               Path(__file__).with_name('buff_51_native.json'),
-               Path(__file__).with_name('buff_5e_native.json'),
-               Path(__file__).with_name('buff_13b_native.json'),
-               Path(__file__).with_name('buff_84_native.json'),
-               Path(__file__).with_name('buff_174_native.json'),
-               Path(__file__).with_name('buff_41_native.json'),
-               Path(__file__).with_name('buff_a9_native.json'),
-               Path(__file__).with_name('buff_62_native.json'),
-               Path(__file__).with_name('buff_13c_native.json'),
-               Path(__file__).with_name('buff_90_native.json'),
-               Path(__file__).with_name('buff_bb_native.json'),
-               Path(__file__).with_name('buff_0b_native.json'),
-               Path(__file__).with_name('buff_2b_native.json'),
-               Path(__file__).with_name('buff_115_native.json'),
-               Path(__file__).with_name('buff_151_native.json'),
-               Path(__file__).with_name('buff_13f_native.json'),
-               Path(__file__).with_name('buff_140_native.json'),
-               Path(__file__).with_name('buff_98_native.json'),
-               Path(__file__).with_name('buff_176_native.json'),
-               Path(__file__).with_name('buff_93_native.json'),
-               Path(__file__).with_name('buff_175_native.json'),
-               Path(__file__).with_name('buff_fc_native.json'),
-               Path(__file__).with_name('buff_83_native.json'),
-               Path(__file__).with_name('buff_13a_native.json'),
-               Path(__file__).with_name('buff_86_native.json'),
-               Path(__file__).with_name('buff_63_native.json'),
-               Path(__file__).with_name('buff_6b_native.json'),
-               Path(__file__).with_name('buff_77_native.json'),
-               Path(__file__).with_name('buff_188_native.json'),
-               Path(__file__).with_name('buff_40_native.json'),
-               Path(__file__).with_name('buff_187_native.json'),
-               Path(__file__).with_name('buff_139_native.json'),
-               Path(__file__).with_name('buff_18a_native.json'),
-               Path(__file__).with_name('buff_135_native.json'),
-               Path(__file__).with_name('buff_122_native.json'),
-               Path(__file__).with_name('buff_5c_native.json'),
-               Path(__file__).with_name('buff_183_native.json'),
-               Path(__file__).with_name('buff_2f_native.json'),
-               Path(__file__).with_name('buff_15c_native.json'),
-               Path(__file__).with_name('buff_16f_native.json'),
-               Path(__file__).with_name('buff_05_native.json'),
-               Path(__file__).with_name('buff_3a_native.json'),
-               Path(__file__).with_name('buff_4c_native.json'),
-               Path(__file__).with_name('buff_150_native.json'),
-               Path(__file__).with_name('buff_a7_native.json'),
-               Path(__file__).with_name('buff_19e_native.json'),
-               Path(__file__).with_name('buff_08_native.json'),
-               Path(__file__).with_name('buff_120_native.json'),
-               Path(__file__).with_name('buff_9f_native.json'),
-               Path(__file__).with_name('buff_1b_native.json'),
-               Path(__file__).with_name('buff_87_native.json'),
-               Path(__file__).with_name('buff_52_native.json'),
-               Path(__file__).with_name('buff_8e_native.json'),
-               Path(__file__).with_name('finder_0a_native.json'),
-               Path(__file__).with_name('finder_15_native.json'),
-               Path(__file__).with_name('finder_0e_native.json'),
-               Path(__file__).with_name('buff_125_native.json'),
-               Path(__file__).with_name('buff_124_native.json'),
-               Path(__file__).with_name('buff_14f_native.json'),
-               Path(__file__).with_name('buff_71_native.json'),
-               Path(__file__).with_name('buff_70_native.json'),
-               Path(__file__).with_name('finder_10_native.json'),
-               Path(__file__).with_name('finder_01_native.json'),
-               Path(__file__).with_name('validator_01_native.json'),
-               Path(__file__).with_name('buff_root_prefix_native.json'),
-               Path(__file__).with_name('buff_root_fifth_native.json'),
-               Path(__file__).with_name('buff_root_sixth_native.json'),
-               Path(__file__).with_name('buff_159_native.json'),
-               Path(__file__).with_name('buff_16_native.json'),
-               Path(__file__).with_name('buff_178_native.json'),
-               Path(__file__).with_name('buff_c1_native.json'),
-               Path(__file__).with_name('buff_101_native.json'),
-               Path(__file__).with_name('buff_c7_native.json'),
-               Path(__file__).with_name('buff_19b_native.json'),
-               Path(__file__).with_name('buff_128_native.json'),
-               Path(__file__).with_name('buff_164_native.json'),
-               Path(__file__).with_name('buff_cf_native.json'),
-               Path(__file__).with_name('buff_12b_native.json'),
-               Path(__file__).with_name('buff_2c_native.json'),
-               Path(__file__).with_name('buff_damage_lists_native.json'),
-               Path(__file__).with_name('buff_calc5_native.json'),
-               Path(__file__).with_name('buff_calc1_native.json'),
-               Path(__file__).with_name('finder_00_native.json'),
-               Path(__file__).with_name('validator_02_native.json'),
-               Path(__file__).with_name('postprocessor_08_native.json'),
-               Path(__file__).with_name('buff_127_native.json'),
-               Path(__file__).with_name('buff_ab_native.json'),
-               Path(__file__).with_name('buff_f6_native.json'),
-               Path(__file__).with_name('buff_17c_native.json'),
-               Path(__file__).with_name('buff_186_native.json'),
-               Path(__file__).with_name('buff_b9_native.json'),
-               Path(__file__).with_name('buff_f4_native.json'),
-               Path(__file__).with_name('buff_133_native.json'),
-               Path(__file__).with_name('buff_14a_native.json'),
-               Path(__file__).with_name('buff_15d_native.json'),
-               Path(__file__).with_name('buff_37_native.json'),
-               Path(__file__).with_name('buff_12a_native.json'),
-               Path(__file__).with_name('buff_144_native.json'),
-               Path(__file__).with_name('buff_15b_native.json'),
-               Path(__file__).with_name('buff_07_native.json'),
-               Path(__file__).with_name('buff_18b_native.json'),
-               Path(__file__).with_name('buff_19c_native.json'),
-               Path(__file__).with_name('buff_8a_native.json'),
-               Path(__file__).with_name('postprocessor_01_native.json'),
-               Path(__file__).with_name('buff_14b_native.json'),
-               Path(__file__).with_name('buff_166_native.json'),
-               Path(__file__).with_name('buff_16c_native.json'),
-               Path(__file__).with_name('buff_85_native.json'),
-               Path(__file__).with_name('buff_94_native.json'),
-               Path(__file__).with_name('buff_179_native.json'),
-               Path(__file__).with_name('buff_158_native.json'),
-               Path(__file__).with_name('buff_15a_native.json'),
-               Path(__file__).with_name('buff_192_native.json'),
-               Path(__file__).with_name('buff_bc_native.json'),
-               Path(__file__).with_name('buff_14e_native.json'),
-               Path(__file__).with_name('buff_0d_native.json'),
-               Path(__file__).with_name('buff_0c_native.json'),
-               Path(__file__).with_name('buff_26_native.json'),
-               Path(__file__).with_name('buff_10c_native.json'),
-               Path(__file__).with_name('buff_e0_native.json'),
-               Path(__file__).with_name('buff_172_native.json'),
-               Path(__file__).with_name('buff_28_native.json'),
-               Path(__file__).with_name('buff_102_native.json'),
-               Path(__file__).with_name('buff_18e_native.json'),
-               Path(__file__).with_name('buff_ce_native.json'),
-               Path(__file__).with_name('buff_17_native.json'),
-               Path(__file__).with_name('buff_ad_native.json'),
-               Path(__file__).with_name('buff_198_native.json'),
-               Path(__file__).with_name('buff_197_native.json'),
-               Path(__file__).with_name('buff_91_native.json'),
-               Path(__file__).with_name('buff_184_native.json'),
-               Path(__file__).with_name('buff_df_native.json'),
-               Path(__file__).with_name('buff_1f_native.json'),
-               Path(__file__).with_name('buff_b7_native.json'),
-               Path(__file__).with_name('buff_f0_native.json'),
-               Path(__file__).with_name('buff_55_native.json'),
-               Path(__file__).with_name('buff_36_native.json'),
-               Path(__file__).with_name('buff_20_native.json'),
-               Path(__file__).with_name('buff_a8_native.json'),
-               Path(__file__).with_name('buff_23_native.json'),
-               Path(__file__).with_name('buff_16a_native.json'),
-               Path(__file__).with_name('buff_6f_native.json'),
-               Path(__file__).with_name('buff_161_native.json'),
-               Path(__file__).with_name('buff_c0_native.json'),
-               Path(__file__).with_name('buff_11c_native.json'),
-               Path(__file__).with_name('buff_8c_native.json'),
-               Path(__file__).with_name('buff_4e_native.json')]
+               CONTRACTS_DIR / 'buff_ec_native.json',
+               CONTRACTS_DIR / 'buff_50_native.json',
+               CONTRACTS_DIR / 'buff_11f_native.json',
+               CONTRACTS_DIR / 'buff_b4_native.json',
+               CONTRACTS_DIR / 'buff_56_native.json',
+               CONTRACTS_DIR / 'buff_92_native.json',
+               CONTRACTS_DIR / 'buff_57_native.json',
+               CONTRACTS_DIR / 'buff_5b_native.json',
+               CONTRACTS_DIR / 'buff_3c_native.json',
+               CONTRACTS_DIR / 'buff_78_native.json',
+               CONTRACTS_DIR / 'buff_b2_native.json',
+               CONTRACTS_DIR / 'buff_68_native.json',
+               CONTRACTS_DIR / 'buff_81_native.json',
+               CONTRACTS_DIR / 'buff_58_native.json',
+               CONTRACTS_DIR / 'buff_02_native.json',
+               CONTRACTS_DIR / 'buff_9a_native.json',
+               CONTRACTS_DIR / 'buff_a2_native.json',
+               CONTRACTS_DIR / 'buff_65_native.json',
+               CONTRACTS_DIR / 'buff_169_native.json',
+               CONTRACTS_DIR / 'buff_157_native.json',
+               CONTRACTS_DIR / 'buff_6e_native.json',
+               CONTRACTS_DIR / 'buff_fe_native.json',
+               CONTRACTS_DIR / 'buff_96_native.json',
+               CONTRACTS_DIR / 'buff_fd_native.json',
+               CONTRACTS_DIR / 'buff_7c_native.json',
+               CONTRACTS_DIR / 'buff_b6_native.json',
+               CONTRACTS_DIR / 'buff_80_native.json',
+               CONTRACTS_DIR / 'buff_16e_native.json',
+               CONTRACTS_DIR / 'buff_7b_native.json',
+               CONTRACTS_DIR / 'buff_6d_native.json',
+               CONTRACTS_DIR / 'buff_136_native.json',
+               CONTRACTS_DIR / 'buff_163_native.json',
+               CONTRACTS_DIR / 'buff_69_native.json',
+               CONTRACTS_DIR / 'buff_44_native.json',
+               CONTRACTS_DIR / 'buff_10f_native.json',
+               CONTRACTS_DIR / 'buff_9b_native.json',
+               CONTRACTS_DIR / 'buff_c5_native.json',
+               CONTRACTS_DIR / 'buff_119_native.json',
+               CONTRACTS_DIR / 'buff_0a_native.json',
+               CONTRACTS_DIR / 'buff_7a_native.json',
+               CONTRACTS_DIR / 'buff_88_native.json',
+               CONTRACTS_DIR / 'buff_48_native.json',
+               CONTRACTS_DIR / 'buff_5a_native.json',
+               CONTRACTS_DIR / 'buff_c4_native.json',
+               CONTRACTS_DIR / 'buff_145_native.json',
+               CONTRACTS_DIR / 'buff_de_native.json',
+               CONTRACTS_DIR / 'buff_bd_native.json',
+               CONTRACTS_DIR / 'buff_6a_native.json',
+               CONTRACTS_DIR / 'buff_24_native.json',
+               CONTRACTS_DIR / 'buff_16b_native.json',
+               CONTRACTS_DIR / 'buff_7e_native.json',
+               CONTRACTS_DIR / 'buff_35_native.json',
+               CONTRACTS_DIR / 'buff_ea_native.json',
+               CONTRACTS_DIR / 'buff_61_native.json',
+               CONTRACTS_DIR / 'buff_3f_native.json',
+               CONTRACTS_DIR / 'buff_14d_native.json',
+               CONTRACTS_DIR / 'buff_73_native.json',
+               CONTRACTS_DIR / 'buff_5d_native.json',
+               CONTRACTS_DIR / 'buff_42_native.json',
+               CONTRACTS_DIR / 'buff_27_native.json',
+               CONTRACTS_DIR / 'buff_95_native.json',
+               CONTRACTS_DIR / 'buff_74_native.json',
+               CONTRACTS_DIR / 'buff_16d_native.json',
+               CONTRACTS_DIR / 'buff_160_native.json',
+               CONTRACTS_DIR / 'buff_89_native.json',
+               CONTRACTS_DIR / 'buff_171_native.json',
+               CONTRACTS_DIR / 'buff_132_native.json',
+               CONTRACTS_DIR / 'buff_d4_native.json',
+               CONTRACTS_DIR / 'buff_d5_native.json',
+               CONTRACTS_DIR / 'buff_d6_native.json',
+               CONTRACTS_DIR / 'buff_60_native.json',
+               CONTRACTS_DIR / 'buff_126_native.json',
+               CONTRACTS_DIR / 'buff_1c_native.json',
+               CONTRACTS_DIR / 'buff_06_native.json',
+               CONTRACTS_DIR / 'buff_142_native.json',
+               CONTRACTS_DIR / 'buff_03_native.json',
+               CONTRACTS_DIR / 'buff_51_native.json',
+               CONTRACTS_DIR / 'buff_5e_native.json',
+               CONTRACTS_DIR / 'buff_13b_native.json',
+               CONTRACTS_DIR / 'buff_84_native.json',
+               CONTRACTS_DIR / 'buff_174_native.json',
+               CONTRACTS_DIR / 'buff_41_native.json',
+               CONTRACTS_DIR / 'buff_a9_native.json',
+               CONTRACTS_DIR / 'buff_62_native.json',
+               CONTRACTS_DIR / 'buff_13c_native.json',
+               CONTRACTS_DIR / 'buff_90_native.json',
+               CONTRACTS_DIR / 'buff_bb_native.json',
+               CONTRACTS_DIR / 'buff_0b_native.json',
+               CONTRACTS_DIR / 'buff_2b_native.json',
+               CONTRACTS_DIR / 'buff_115_native.json',
+               CONTRACTS_DIR / 'buff_151_native.json',
+               CONTRACTS_DIR / 'buff_13f_native.json',
+               CONTRACTS_DIR / 'buff_140_native.json',
+               CONTRACTS_DIR / 'buff_98_native.json',
+               CONTRACTS_DIR / 'buff_176_native.json',
+               CONTRACTS_DIR / 'buff_93_native.json',
+               CONTRACTS_DIR / 'buff_175_native.json',
+               CONTRACTS_DIR / 'buff_fc_native.json',
+               CONTRACTS_DIR / 'buff_83_native.json',
+               CONTRACTS_DIR / 'buff_13a_native.json',
+               CONTRACTS_DIR / 'buff_86_native.json',
+               CONTRACTS_DIR / 'buff_63_native.json',
+               CONTRACTS_DIR / 'buff_6b_native.json',
+               CONTRACTS_DIR / 'buff_77_native.json',
+               CONTRACTS_DIR / 'buff_188_native.json',
+               CONTRACTS_DIR / 'buff_40_native.json',
+               CONTRACTS_DIR / 'buff_187_native.json',
+               CONTRACTS_DIR / 'buff_139_native.json',
+               CONTRACTS_DIR / 'buff_18a_native.json',
+               CONTRACTS_DIR / 'buff_135_native.json',
+               CONTRACTS_DIR / 'buff_122_native.json',
+               CONTRACTS_DIR / 'buff_5c_native.json',
+               CONTRACTS_DIR / 'buff_183_native.json',
+               CONTRACTS_DIR / 'buff_2f_native.json',
+               CONTRACTS_DIR / 'buff_15c_native.json',
+               CONTRACTS_DIR / 'buff_16f_native.json',
+               CONTRACTS_DIR / 'buff_05_native.json',
+               CONTRACTS_DIR / 'buff_3a_native.json',
+               CONTRACTS_DIR / 'buff_4c_native.json',
+               CONTRACTS_DIR / 'buff_150_native.json',
+               CONTRACTS_DIR / 'buff_a7_native.json',
+               CONTRACTS_DIR / 'buff_19e_native.json',
+               CONTRACTS_DIR / 'buff_08_native.json',
+               CONTRACTS_DIR / 'buff_120_native.json',
+               CONTRACTS_DIR / 'buff_9f_native.json',
+               CONTRACTS_DIR / 'buff_1b_native.json',
+               CONTRACTS_DIR / 'buff_87_native.json',
+               CONTRACTS_DIR / 'buff_52_native.json',
+               CONTRACTS_DIR / 'buff_8e_native.json',
+               CONTRACTS_DIR / 'finder_0a_native.json',
+               CONTRACTS_DIR / 'finder_15_native.json',
+               CONTRACTS_DIR / 'finder_0e_native.json',
+               CONTRACTS_DIR / 'buff_125_native.json',
+               CONTRACTS_DIR / 'buff_124_native.json',
+               CONTRACTS_DIR / 'buff_14f_native.json',
+               CONTRACTS_DIR / 'buff_71_native.json',
+               CONTRACTS_DIR / 'buff_70_native.json',
+               CONTRACTS_DIR / 'finder_10_native.json',
+               CONTRACTS_DIR / 'finder_01_native.json',
+               CONTRACTS_DIR / 'validator_01_native.json',
+               CONTRACTS_DIR / 'buff_root_prefix_native.json',
+               CONTRACTS_DIR / 'buff_root_fifth_native.json',
+               CONTRACTS_DIR / 'buff_root_sixth_native.json',
+               CONTRACTS_DIR / 'buff_159_native.json',
+               CONTRACTS_DIR / 'buff_16_native.json',
+               CONTRACTS_DIR / 'buff_178_native.json',
+               CONTRACTS_DIR / 'buff_c1_native.json',
+               CONTRACTS_DIR / 'buff_101_native.json',
+               CONTRACTS_DIR / 'buff_c7_native.json',
+               CONTRACTS_DIR / 'buff_19b_native.json',
+               CONTRACTS_DIR / 'buff_128_native.json',
+               CONTRACTS_DIR / 'buff_164_native.json',
+               CONTRACTS_DIR / 'buff_cf_native.json',
+               CONTRACTS_DIR / 'buff_12b_native.json',
+               CONTRACTS_DIR / 'buff_2c_native.json',
+               CONTRACTS_DIR / 'buff_damage_lists_native.json',
+               CONTRACTS_DIR / 'buff_calc5_native.json',
+               CONTRACTS_DIR / 'buff_calc1_native.json',
+               CONTRACTS_DIR / 'finder_00_native.json',
+               CONTRACTS_DIR / 'validator_02_native.json',
+               CONTRACTS_DIR / 'postprocessor_08_native.json',
+               CONTRACTS_DIR / 'buff_127_native.json',
+               CONTRACTS_DIR / 'buff_ab_native.json',
+               CONTRACTS_DIR / 'buff_f6_native.json',
+               CONTRACTS_DIR / 'buff_17c_native.json',
+               CONTRACTS_DIR / 'buff_186_native.json',
+               CONTRACTS_DIR / 'buff_b9_native.json',
+               CONTRACTS_DIR / 'buff_f4_native.json',
+               CONTRACTS_DIR / 'buff_133_native.json',
+               CONTRACTS_DIR / 'buff_14a_native.json',
+               CONTRACTS_DIR / 'buff_15d_native.json',
+               CONTRACTS_DIR / 'buff_37_native.json',
+               CONTRACTS_DIR / 'buff_12a_native.json',
+               CONTRACTS_DIR / 'buff_144_native.json',
+               CONTRACTS_DIR / 'buff_15b_native.json',
+               CONTRACTS_DIR / 'buff_07_native.json',
+               CONTRACTS_DIR / 'buff_18b_native.json',
+               CONTRACTS_DIR / 'buff_19c_native.json',
+               CONTRACTS_DIR / 'buff_8a_native.json',
+               CONTRACTS_DIR / 'postprocessor_01_native.json',
+               CONTRACTS_DIR / 'buff_14b_native.json',
+               CONTRACTS_DIR / 'buff_166_native.json',
+               CONTRACTS_DIR / 'buff_16c_native.json',
+               CONTRACTS_DIR / 'buff_85_native.json',
+               CONTRACTS_DIR / 'buff_94_native.json',
+               CONTRACTS_DIR / 'buff_179_native.json',
+               CONTRACTS_DIR / 'buff_158_native.json',
+               CONTRACTS_DIR / 'buff_15a_native.json',
+               CONTRACTS_DIR / 'buff_192_native.json',
+               CONTRACTS_DIR / 'buff_bc_native.json',
+               CONTRACTS_DIR / 'buff_14e_native.json',
+               CONTRACTS_DIR / 'buff_0d_native.json',
+               CONTRACTS_DIR / 'buff_0c_native.json',
+               CONTRACTS_DIR / 'buff_26_native.json',
+               CONTRACTS_DIR / 'buff_10c_native.json',
+               CONTRACTS_DIR / 'buff_e0_native.json',
+               CONTRACTS_DIR / 'buff_172_native.json',
+               CONTRACTS_DIR / 'buff_28_native.json',
+               CONTRACTS_DIR / 'buff_102_native.json',
+               CONTRACTS_DIR / 'buff_18e_native.json',
+               CONTRACTS_DIR / 'buff_ce_native.json',
+               CONTRACTS_DIR / 'buff_17_native.json',
+               CONTRACTS_DIR / 'buff_ad_native.json',
+               CONTRACTS_DIR / 'buff_198_native.json',
+               CONTRACTS_DIR / 'buff_197_native.json',
+               CONTRACTS_DIR / 'buff_91_native.json',
+               CONTRACTS_DIR / 'buff_184_native.json',
+               CONTRACTS_DIR / 'buff_df_native.json',
+               CONTRACTS_DIR / 'buff_1f_native.json',
+               CONTRACTS_DIR / 'buff_b7_native.json',
+               CONTRACTS_DIR / 'buff_f0_native.json',
+               CONTRACTS_DIR / 'buff_55_native.json',
+               CONTRACTS_DIR / 'buff_36_native.json',
+               CONTRACTS_DIR / 'buff_20_native.json',
+               CONTRACTS_DIR / 'buff_a8_native.json',
+               CONTRACTS_DIR / 'buff_23_native.json',
+               CONTRACTS_DIR / 'buff_16a_native.json',
+               CONTRACTS_DIR / 'buff_6f_native.json',
+               CONTRACTS_DIR / 'buff_161_native.json',
+               CONTRACTS_DIR / 'buff_c0_native.json',
+               CONTRACTS_DIR / 'buff_11c_native.json',
+               CONTRACTS_DIR / 'buff_8c_native.json',
+               CONTRACTS_DIR / 'buff_4e_native.json']
     source_hashes = {str(p): sha(p) for p in dict.fromkeys(sources)}
     mapper = load('context_audit_mapper', mapper_path)
     catalog = load('context_audit_catalog', catalog_path)
@@ -9204,451 +9203,451 @@ def audit():
     buff_sequence=buff_sequence_read_order(pe,md,modules,image_owners,source=str(gate.gameassembly))
     buff_tag76=buff_tag76_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly))
     buff_ec=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_ec_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_ec_native.json')
     buff_50=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_50_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_50_native.json')
     buff_11f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_11f_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_11f_native.json')
     buff_b4=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_b4_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_b4_native.json')
     buff_56=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_56_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_56_native.json')
     buff_92=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_92_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_92_native.json')
     buff_57=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_57_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_57_native.json')
     buff_9a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_9a_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_9a_native.json')
     buff_a2=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_a2_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_a2_native.json')
     buff_65=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_65_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_65_native.json')
     buff_169=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_169_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_169_native.json')
     buff_157=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_157_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_157_native.json')
     buff_6e=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_6e_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_6e_native.json')
     buff_fe=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_fe_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_fe_native.json')
     buff_96=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_96_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_96_native.json')
     buff_fd=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_fd_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_fd_native.json')
     buff_7c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_7c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_7c_native.json')
     buff_b6=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_b6_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_b6_native.json')
     buff_80=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_80_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_80_native.json')
     buff_16e=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_16e_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_16e_native.json')
     buff_119=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_119_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_119_native.json')
     buff_0a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_0a_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_0a_native.json')
     buff_7a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_7a_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_7a_native.json')
     buff_88=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_88_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_88_native.json')
     buff_48=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_48_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_48_native.json')
     buff_5a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_5a_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_5a_native.json')
     buff_7e=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_7e_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_7e_native.json')
     buff_35=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_35_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_35_native.json')
     buff_ea=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_ea_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_ea_native.json')
     buff_61=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_61_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_61_native.json')
     buff_3f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_3f_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_3f_native.json')
     buff_14d=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_14d_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_14d_native.json')
     buff_73=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_73_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_73_native.json')
     buff_5d=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_5d_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_5d_native.json')
     buff_42=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_42_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_42_native.json')
     buff_27=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_27_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_27_native.json')
     buff_95=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_95_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_95_native.json')
     buff_74=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_74_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_74_native.json')
     buff_16d=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_16d_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_16d_native.json')
     buff_160=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_160_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_160_native.json')
     buff_89=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_89_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_89_native.json')
     buff_171=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_171_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_171_native.json')
     buff_132=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_132_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_132_native.json')
     buff_d4=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_d4_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_d4_native.json')
     buff_60=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_60_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_60_native.json')
     buff_126=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_126_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_126_native.json')
     buff_1c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_1c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_1c_native.json')
     buff_06=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_06_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_06_native.json')
     buff_142=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_142_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_142_native.json')
     buff_03=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_03_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_03_native.json')
     buff_51=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_51_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_51_native.json')
     buff_5e=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_5e_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_5e_native.json')
     buff_13b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_13b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_13b_native.json')
     buff_84=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_84_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_84_native.json')
     buff_174=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_174_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_174_native.json')
     buff_41=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_41_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_41_native.json')
     buff_a9=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_a9_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_a9_native.json')
     buff_62=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_62_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_62_native.json')
     buff_13c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_13c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_13c_native.json')
     buff_90=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_90_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_90_native.json')
     buff_bb=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_bb_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_bb_native.json')
     buff_0b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_0b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_0b_native.json')
     buff_0c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_0c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_0c_native.json')
     buff_26=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_26_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_26_native.json')
     buff_10c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_10c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_10c_native.json')
     buff_2b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_2b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_2b_native.json')
     buff_115=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_115_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_115_native.json')
     buff_151=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_151_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_151_native.json')
     buff_13f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_13f_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_13f_native.json')
     buff_140=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_140_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_140_native.json')
     buff_98=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_98_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_98_native.json')
     buff_176=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_176_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_176_native.json')
     buff_93=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_93_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_93_native.json')
     buff_175=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_175_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_175_native.json')
     buff_fc=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_fc_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_fc_native.json')
     buff_83=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_83_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_83_native.json')
     buff_13a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_13a_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_13a_native.json')
     buff_86=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_86_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_86_native.json')
     buff_63=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_63_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_63_native.json')
     buff_6b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_6b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_6b_native.json')
     buff_77=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_77_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_77_native.json')
     buff_188=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_188_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_188_native.json')
     buff_40=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_40_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_40_native.json')
     buff_187=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_187_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_187_native.json')
     buff_139=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_139_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_139_native.json')
     buff_18a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_18a_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_18a_native.json')
     buff_135=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_135_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_135_native.json')
     buff_122=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_122_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_122_native.json')
     buff_5c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_5c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_5c_native.json')
     buff_183=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_183_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_183_native.json')
     buff_2f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_2f_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_2f_native.json')
     buff_15c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_15c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_15c_native.json')
     buff_16f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_16f_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_16f_native.json')
     buff_05=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_05_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_05_native.json')
     buff_3a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_3a_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_3a_native.json')
     buff_4c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_4c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_4c_native.json')
     buff_150=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_150_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_150_native.json')
     buff_a7=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_a7_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_a7_native.json')
     buff_19e=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_19e_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_19e_native.json')
     buff_08=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_08_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_08_native.json')
     buff_120=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_120_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_120_native.json')
     buff_9f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_9f_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_9f_native.json')
     buff_1b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_1b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_1b_native.json')
     buff_87=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_87_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_87_native.json')
     buff_52=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_52_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_52_native.json')
     buff_8e=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_8e_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_8e_native.json')
     finder_0a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('finder_0a_native.json'))
+        contract_path=CONTRACTS_DIR / 'finder_0a_native.json')
     finder_15=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('finder_15_native.json'))
+        contract_path=CONTRACTS_DIR / 'finder_15_native.json')
     finder_0e=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('finder_0e_native.json'))
+        contract_path=CONTRACTS_DIR / 'finder_0e_native.json')
     buff_125=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_125_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_125_native.json')
     buff_124=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_124_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_124_native.json')
     buff_14f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_14f_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_14f_native.json')
     buff_71=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_71_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_71_native.json')
     buff_70=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_70_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_70_native.json')
     finder_10=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('finder_10_native.json'))
+        contract_path=CONTRACTS_DIR / 'finder_10_native.json')
     finder_00=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('finder_00_native.json'))
+        contract_path=CONTRACTS_DIR / 'finder_00_native.json')
     finder_01=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('finder_01_native.json'))
+        contract_path=CONTRACTS_DIR / 'finder_01_native.json')
     postprocessor_01=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('postprocessor_01_native.json'))
+        contract_path=CONTRACTS_DIR / 'postprocessor_01_native.json')
     postprocessor_08=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('postprocessor_08_native.json'))
+        contract_path=CONTRACTS_DIR / 'postprocessor_08_native.json')
     validator_02=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('validator_02_native.json'))
+        contract_path=CONTRACTS_DIR / 'validator_02_native.json')
     validator_01=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('validator_01_native.json'))
+        contract_path=CONTRACTS_DIR / 'validator_01_native.json')
     buff_root_prefix=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_root_prefix_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_root_prefix_native.json')
     buff_root_fifth=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_root_fifth_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_root_fifth_native.json')
     buff_root_sixth=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_root_sixth_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_root_sixth_native.json')
     buff_159=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_159_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_159_native.json')
     buff_16=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_16_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_16_native.json')
     buff_178=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_178_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_178_native.json')
     buff_c1=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_c1_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_c1_native.json')
     buff_101=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_101_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_101_native.json')
     buff_c7=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_c7_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_c7_native.json')
     buff_19b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_19b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_19b_native.json')
     buff_128=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_128_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_128_native.json')
     buff_164=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_164_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_164_native.json')
     buff_cf=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_cf_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_cf_native.json')
     buff_12b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_12b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_12b_native.json')
     buff_calc1=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_calc1_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_calc1_native.json')
     buff_calc5=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_calc5_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_calc5_native.json')
     buff_damage_lists=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_damage_lists_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_damage_lists_native.json')
     buff_2c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_2c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_2c_native.json')
     buff_127=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_127_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_127_native.json')
     buff_ab=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_ab_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_ab_native.json')
     buff_f6=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_f6_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_f6_native.json')
     buff_17c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_17c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_17c_native.json')
     buff_186=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_186_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_186_native.json')
     buff_b9=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_b9_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_b9_native.json')
     buff_f4=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_f4_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_f4_native.json')
     buff_133=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_133_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_133_native.json')
     buff_14a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_14a_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_14a_native.json')
     buff_15d=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_15d_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_15d_native.json')
     buff_37=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_37_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_37_native.json')
     buff_12a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_12a_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_12a_native.json')
     buff_144=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_144_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_144_native.json')
     buff_15b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_15b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_15b_native.json')
     buff_07=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_07_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_07_native.json')
     buff_18b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_18b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_18b_native.json')
     buff_19c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_19c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_19c_native.json')
     buff_8a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_8a_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_8a_native.json')
     buff_14b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_14b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_14b_native.json')
     buff_166=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_166_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_166_native.json')
     buff_16c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_16c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_16c_native.json')
     buff_85=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_85_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_85_native.json')
     buff_94=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_94_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_94_native.json')
     buff_179=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_179_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_179_native.json')
     buff_158=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_158_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_158_native.json')
     buff_15a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_15a_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_15a_native.json')
     buff_192=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_192_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_192_native.json')
     buff_bc=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_bc_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_bc_native.json')
     buff_14e=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_14e_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_14e_native.json')
     buff_e0=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_e0_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_e0_native.json')
     buff_0d=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_0d_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_0d_native.json')
     buff_172=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_172_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_172_native.json')
     buff_28=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_28_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_28_native.json')
     buff_102=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_102_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_102_native.json')
     buff_18e=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_18e_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_18e_native.json')
     buff_ce=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_ce_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_ce_native.json')
     buff_17=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_17_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_17_native.json')
     buff_ad=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_ad_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_ad_native.json')
     buff_d5=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_d5_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_d5_native.json')
     buff_d6=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_d6_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_d6_native.json')
     buff_198=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_198_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_198_native.json')
     buff_197=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_197_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_197_native.json')
     buff_91=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_91_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_91_native.json')
     buff_184=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_184_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_184_native.json')
     buff_df=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_df_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_df_native.json')
     buff_1f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_1f_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_1f_native.json')
     buff_b7=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_b7_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_b7_native.json')
     buff_f0=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_f0_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_f0_native.json')
     buff_55=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_55_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_55_native.json')
     buff_36=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_36_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_36_native.json')
     buff_20=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_20_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_20_native.json')
     buff_a8=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_a8_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_a8_native.json')
     buff_23=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_23_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_23_native.json')
     buff_16a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_16a_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_16a_native.json')
     buff_6f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_6f_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_6f_native.json')
     buff_161=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_161_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_161_native.json')
     buff_c0=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_c0_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_c0_native.json')
     buff_11c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_11c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_11c_native.json')
     buff_8c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_8c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_8c_native.json')
     buff_4e=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_4e_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_4e_native.json')
     buff_16b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_16b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_16b_native.json')
     buff_24=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_24_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_24_native.json')
     buff_6a=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_6a_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_6a_native.json')
     buff_bd=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_bd_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_bd_native.json')
     buff_de=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_de_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_de_native.json')
     buff_145=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_145_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_145_native.json')
     buff_c4=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_c4_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_c4_native.json')
     buff_c5=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_c5_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_c5_native.json')
     buff_9b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_9b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_9b_native.json')
     buff_10f=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_10f_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_10f_native.json')
     buff_44=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_44_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_44_native.json')
     buff_69=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_69_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_69_native.json')
     buff_163=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_163_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_163_native.json')
     buff_136=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_136_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_136_native.json')
     buff_6d=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_6d_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_6d_native.json')
     buff_7b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_7b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_7b_native.json')
     buff_02=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_02_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_02_native.json')
     buff_58=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_58_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_58_native.json')
     buff_81=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_81_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_81_native.json')
     buff_68=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_68_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_68_native.json')
     buff_b2=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_b2_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_b2_native.json')
     buff_78=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_78_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_78_native.json')
     buff_3c=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_3c_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_3c_native.json')
     buff_5b=buff_action_read_order(pe,md,reg,table,modules,image_owners,source=str(gate.gameassembly),
-        contract_path=Path(__file__).with_name('buff_5b_native.json'))
+        contract_path=CONTRACTS_DIR / 'buff_5b_native.json')
     buff_action_readers = skilldata_action_readers_from_locals(
         locals(), source=str(gate.gameassembly))
     verified_action_tags = set(buff_action_readers)

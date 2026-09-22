@@ -14,6 +14,7 @@ import json
 import struct
 from pathlib import Path
 from typing import Any
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 
 NULL_COUNT = 0xFFFFFFFF
@@ -26,7 +27,7 @@ CONTRACT_SHA256 = "eda3372ffdb67955b2f216d256f9d583d889a93c5f1f62de1525a891d7881
 
 
 def _load_action_contract() -> tuple[dict[int, tuple[bool, int]], dict[int, str]]:
-    path = Path(__file__).with_name("char_interact_perform_native.json")
+    path = CONTRACTS_DIR / "char_interact_perform_native.json"
     raw = path.read_bytes()
     digest = hashlib.sha256(raw).hexdigest()
     if digest != CONTRACT_SHA256:

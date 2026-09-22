@@ -10,10 +10,11 @@ from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.common import sha256_file_upper as _sha256_file
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 
 SCHEMA = "endfield.streaming-field2-native-contract.v8"
-DEFAULT_CONTRACT = Path(__file__).with_name("streaming_field2_native.json")
+DEFAULT_CONTRACT = CONTRACTS_DIR / "streaming_field2_native.json"
 # Updated only after the reviewed JSON contract is finalized.
 CONTRACT_SHA256 = "436F51D0C6C0BF0009D2EBF439C8BEC1A13E94404E983E5ADD0E09A604A82E60"
 

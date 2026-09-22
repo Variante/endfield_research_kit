@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.jsondata_named_schema import (
     load_schema_contract,
     make_fail,
@@ -18,7 +19,7 @@ class MissionRuntimeMainDecodeError(ValueError):
     pass
 
 
-CONTRACT_PATH = Path(__file__).with_name("mission_runtime_main_schema.json")
+CONTRACT_PATH = CONTRACTS_DIR / "mission_runtime_main_schema.json"
 CONTRACT_SHA256 = "B193E1C9B27D9A7190C008A65F24431DB260EB5D33238ED7CF7DB3DC80E0596E"
 CONTRACT_SCHEMA = "endfield.mission-runtime-main-json-schema.v1"
 _fail = make_fail(MissionRuntimeMainDecodeError)

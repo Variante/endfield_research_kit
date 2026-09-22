@@ -136,7 +136,7 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   concrete runtime-root or scheduler-to-Create receipt.
   Details and per-file witnesses belong to `streaming_root_subgraphs_latest`
   under `reports/animestudio/`; the native contract is
-  `scripts/game_data/streaming_field2_native.json`. Candidate marker15 native
+  `scripts/game_data/contracts/streaming_field2_native.json`. Candidate marker15 native
   reads remain in `reports/animestudio/streaming_marker15_native_latest.json`.
 - Terrain accepts the observed raw or length-prefixed inverted-LZ4 envelope and
   TRET versioned prefix. `_H` records close as row-major little-endian height

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from scripts.game_data.contracts import CONTRACTS_DIR
 import hashlib
 import json
 import struct
@@ -16,7 +17,7 @@ from scripts.common import (
 
 
 SCHEMA = "endfield.animation-curve-native-contract.v1"
-DEFAULT_CONTRACT = Path(__file__).with_name("animation_curve_native.json")
+DEFAULT_CONTRACT = CONTRACTS_DIR / "animation_curve_native.json"
 CONTRACT_SHA256 = "6CD01647D099CA52A8398F9DDB6EAB1753634D4CA7333C693D8EECF3B7BE1428"
 
 

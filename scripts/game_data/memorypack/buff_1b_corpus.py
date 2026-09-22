@@ -39,12 +39,13 @@ BOUNDARY = (
 
 from scripts.repo_paths import REPO_ROOT
 from scripts.common import canonical_json_sha256
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 REPO_ROOT = REPO_ROOT
 GAME_DATA_ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_NATIVE_REPORT = REPO_ROOT / "reports/animestudio/il2cpp_context_current_latest.json"
-DEFAULT_NATIVE_CONTRACT = GAME_DATA_ROOT / "buff_1b_native.json"
-DEFAULT_ROOT_SIXTH_CONTRACT = GAME_DATA_ROOT / "buff_root_sixth_native.json"
+DEFAULT_NATIVE_CONTRACT = CONTRACTS_DIR / "buff_1b_native.json"
+DEFAULT_ROOT_SIXTH_CONTRACT = CONTRACTS_DIR / "buff_root_sixth_native.json"
 DEFAULT_OUTPUT_JSON = REPO_ROOT / "reports/animestudio/buff_1b_current_latest.json"
 DEFAULT_OUTPUT_MD = REPO_ROOT / "reports/animestudio/buff_1b_current_latest.md"
 NATIVE_SOURCE_PATHS = (
@@ -52,8 +53,8 @@ NATIVE_SOURCE_PATHS = (
     GAME_DATA_ROOT / "il2cpp_context.py",
     REPO_ROOT / "scripts/common.py",
     GAME_DATA_ROOT / "memorypack/buff_actions.py",
-    GAME_DATA_ROOT / "buff_1b_native.json",
-    GAME_DATA_ROOT / "buff_root_sixth_native.json",
+    CONTRACTS_DIR / "buff_1b_native.json",
+    CONTRACTS_DIR / "buff_root_sixth_native.json",
 )
 SEQUENCE_TYPE = (
     "Beyond.MemoryPack."

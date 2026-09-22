@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
+from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.jsondata_named_schema import (
     load_schema_contract,
     make_fail,
@@ -19,7 +20,7 @@ class JsonDataTextSchemaDecodeError(ValueError):
     pass
 
 
-CONTRACT_PATH = Path(__file__).with_name("jsondata_text_schema.json")
+CONTRACT_PATH = CONTRACTS_DIR / "jsondata_text_schema.json"
 CONTRACT_SHA256 = "3CD8D5EB1241A446BD8B9844E2FA9EF3010447518881A40CDEDFFC1D68826659"
 CONTRACT_SCHEMA = "endfield.jsondata-text-schema.v1"
 SUPPORTED = frozenset({

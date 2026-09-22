@@ -7,7 +7,7 @@ Part of [`../game_data_recovery.md`](../game_data_recovery.md). See
 framing and selected native enum contracts to become gameplay meaning.
 
 The per-action layouts are **not** in this file. They live in the 213 tracked
-`scripts/game_data/buff_*_native.json` contracts, one per union tag, plus the
+`scripts/game_data/contracts/buff_*_native.json` contracts, one per union tag, plus the
 `finder_*`, `validator_*` and `postprocessor_*` contracts beside them. Each
 records its own member order, nested profiles, null paths and pinned native
 inputs, and each is reviewable and diffable in git. For a specific tag, read its

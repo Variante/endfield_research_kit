@@ -3,13 +3,9 @@
 from __future__ import annotations
 
 import struct
-from pathlib import Path
 from typing import Any
 
-from scripts.repo_paths import REPO_ROOT
-
-# Reviewed MemoryPack contract JSON lives beside the readers' parent package.
-CONTRACTS_DIR: Path = REPO_ROOT / "scripts" / "game_data"
+from scripts.game_data.contracts import CONTRACTS_DIR  # noqa: F401  (re-exported for the MemoryPack readers)
 
 MEMORYPACK_NULL_COUNT = 0xFFFFFFFF
 MEMORYPACK_UNION_WIDE_TAG = 0xFA

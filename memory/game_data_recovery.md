@@ -150,7 +150,7 @@ reopening `InitChunkData`/`StreamingChunkData` slot typing or HIRC type
 coverage. It records the conclusions a later session should not re-derive, and
 the inherited blockers that turned out to be misdiagnosed on re-test.
 
-Per-build member orders belong in their tracked `scripts/game_data/*_native.json`
+Per-build member orders belong in their tracked `scripts/game_data/contracts/*_native.json`
 contracts, not in memory prose. The gameplay lane is the worked example: 213
 per-tag Buff action layouts live in their contracts, and
 [`game_data/gameplay_semantics.md`](game_data/gameplay_semantics.md) keeps only

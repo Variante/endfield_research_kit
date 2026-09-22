@@ -104,7 +104,7 @@ stored schema, not proof of shader consumption or a resolved texture-hash join.
 The bounded prefix reader remains a fallback for unsupported nested layouts.
 DamageText's six-field `PrefabGroupSerializeData` now also closes by a real
 sequential cursor through every nested record and the root tail. Its reviewed
-[`gpu_ui_damage_text_native.json`](../../scripts/game_data/gpu_ui_damage_text_native.json)
+[`gpu_ui_damage_text_native.json`](../../scripts/game_data/contracts/gpu_ui_damage_text_native.json)
 contract pins current native inputs, generated reader order, original field
 types and offsets, and the selected reader windows. It names the six-member
 prefabs, five-member animations, twelve-member node metadata, and distinct
@@ -1065,7 +1065,7 @@ one-third weight bit patterns into an enum and erases increasing key times.
 The matching curve wrapper directly reads `keys`, `postWrapMode`, then
 `preWrapMode`. The byte-pinned identities,
 windows, offsets and helper joins live in
-`scripts/game_data/animation_curve_native.json`; its reader fails closed when
+`scripts/game_data/contracts/animation_curve_native.json`; its reader fails closed when
 the contract bytes or shape change. This closes character and ability
 frames with both empty and populated sync-group dictionaries, without resolving
 numeric hashes back to source paths. Positive `npcMontages` was the apparent

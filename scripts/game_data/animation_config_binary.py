@@ -10,6 +10,7 @@ import struct
 from typing import Any
 
 from scripts.game_data.memorypack.core import MEMORYPACK_NULL_COUNT
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 
 FIXED_72_PREFIX = bytes.fromhex(
@@ -107,7 +108,7 @@ CURVE_CONTRACT_SHA256 = "6cd01647d099ca52a8398f9ddb6eab1753634d4ca7333c693d8eecf
 
 
 def _load_curve_contract() -> tuple[tuple[str, ...], str, tuple[str, ...]]:
-    path = Path(__file__).with_name("animation_curve_native.json")
+    path = CONTRACTS_DIR / "animation_curve_native.json"
     raw = path.read_bytes()
     digest = hashlib.sha256(raw).hexdigest()
     if digest != CURVE_CONTRACT_SHA256:

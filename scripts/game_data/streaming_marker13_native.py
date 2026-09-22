@@ -9,10 +9,11 @@ from typing import Any
 
 from scripts.game_data import streaming_marker17_native as dependency
 from scripts.game_data import streaming_native as base
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 
 SCHEMA = "endfield.streaming-marker13-native-contract.v2"
-DEFAULT_CONTRACT = Path(__file__).with_name("streaming_marker13_native.json")
+DEFAULT_CONTRACT = CONTRACTS_DIR / "streaming_marker13_native.json"
 CONTRACT_SHA256 = "D605946A4DCB8DFF37F36570C206ACBE6CEFD9C2DD5EAE9A63E940DAA3842D74"
 DEPENDENCY_SHA256 = "34E915707F363B55F572D867C1CC3C1B28A76D66D132EB0E212377A730DD2891"
 EXPECTED_INPUTS = {

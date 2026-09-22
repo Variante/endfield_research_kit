@@ -594,11 +594,11 @@
       "sha256": "71597B80DE153C17064B940E3ACC108E675B6A543B1598039A449E4EE9619A6B"
     },
     {
-      "path": "native_contracts/buff_frontier8.json",
+      "path": "../native_contracts/buff_frontier8.json",
       "sha256": "196820A6FD2BCD811CCABACC5E17565289193E05C19E906EA2E29F0D0E91DDAB"
     },
     {
-      "path": "memorypack/buff_actions.py",
+      "path": "../memorypack/buff_actions.py",
       "sha256": "74FFE23471F7B712666E676C134DA626E467E00A731F391909AC641C754B9368"
     }
   ],
@@ -796,7 +796,7 @@
     "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_JumpToAction_DataForMemoryPack",
     "serializedMemberCount": 6,
     "sourceContract": {
-      "path": "native_contracts/buff_frontier8.json",
+      "path": "../native_contracts/buff_frontier8.json",
       "sha256": "196820A6FD2BCD811CCABACC5E17565289193E05C19E906EA2E29F0D0E91DDAB",
       "schema": "endfield.buff-frontier8-native-contract.v1"
     },

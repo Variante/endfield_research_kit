@@ -8,9 +8,10 @@ from typing import Any
 
 from scripts.game_data import streaming_native as base
 from scripts.game_data.streaming_marker17 import TAG5_RECORD_WIDTHS, FIXED_BODY_PROFILES
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 SCHEMA = 'endfield.streaming-marker17-native-contract.v2'
-DEFAULT_CONTRACT = Path(__file__).with_name('streaming_marker17_native.json')
+DEFAULT_CONTRACT = CONTRACTS_DIR / 'streaming_marker17_native.json'
 CONTRACT_SHA256 = '34E915707F363B55F572D867C1CC3C1B28A76D66D132EB0E212377A730DD2891'
 SELECTED_KEYS = {2: (4, 0, 0), 5: (5, 0, 0), 6: (9, 0, 0), 7: (8, 0, 0), 9: (255, 3, 0)}
 

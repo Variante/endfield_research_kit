@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
+from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp_protocol import (
     enum_members,
     field_defaults,
@@ -17,9 +18,10 @@ from scripts.game_data.il2cpp_protocol import (
 
 
 SCHEMA = "endfield.terrain-tret-native-contract.v1"
-DEFAULT_CONTRACT = Path(__file__).with_name("terrain_tret_native.json")
+DEFAULT_CONTRACT = CONTRACTS_DIR / "terrain_tret_native.json"
 from scripts.repo_paths import REPO_ROOT
 from scripts.common import sha256_file_upper as _sha256_file
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 METADATA_HELPER = (
     REPO_ROOT

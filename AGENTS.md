@@ -100,8 +100,9 @@ reviewed contracts under `scripts/` and the correction layer in
   ignored root -- a builder that starts writing JSON into `scripts/` or the
   repo root is the bug, not the `.gitignore`.
 - A new manual correction layer belongs in `webui/overrides/`; a new reviewed
-  contract belongs beside its reader under `scripts/`. Anything a tool writes
-  belongs in `reports/`.
+  contract belongs in `scripts/game_data/contracts/`, or beside its loader in
+  `scripts/game_data/native_contracts/` when the loader exists only for it.
+  Anything a tool writes belongs in `reports/`.
 - **Contract JSON is byte-pinned, so it must never be EOL-converted.** Readers
   hash the file's exact bytes and fail closed on a mismatch. 217 of these files
   are CRLF on disk and three are deliberately mixed, so `.gitattributes` marks
@@ -109,10 +110,11 @@ reviewed contracts under `scripts/` and the correction layer in
   the bytes on checkout and break every pin with no other visible symptom.
 - Prose still must not carry per-build addresses and hashes. They belong in the
   contract JSON, with the durable interpretation in the owning `memory/` topic.
-- Most contracts pin a superseded build and their consumers correctly produce
-  nothing. Tracking them makes that drift reviewable; it does not make a stale
-  row current. Check a contract's `nativeInputs` against the selected build
-  before trusting its rows.
+- A contract pins one build. When the installed build differs its consumers
+  correctly produce nothing, and tracking the contract makes that drift
+  reviewable without making a stale row current. Check a contract's
+  `nativeInputs` against the selected build before trusting its rows or
+  reading a consumer's empty result as current.
 
 ### Audio recovery documentation boundary
 
@@ -200,14 +202,14 @@ existing reader to a second framing, and do not let a corpus gate infer a
 schema the reader has not proven.
 
 The gate, validator, and audit scripts here are tracked because the sweep is
-reusable, and so are the contracts beside their readers, because those record a
-data structure. What a run emits is not: reports go to `reports/`. A script in
+reusable, and so are the contracts under `contracts/` and `native_contracts/`,
+because those record a data structure. What a run emits is not: reports go to `reports/`. A script in
 this package that cannot run against a future build without being rewritten
 belongs in `scratch/`, not here.
 
 ### Native contracts are versioned data with pinned hashes
 
-The `scripts/game_data/*_native.json` files are the versioned contracts that
+The `scripts/game_data/contracts/*_native.json` files are the versioned contracts that
 the rules above mean when they route per-build addresses and hashes out of
 prose. They are tracked, because what they record is a data structure; the
 per-build anchors beside each field are its provenance. Two families, with
@@ -251,10 +253,10 @@ Editing one of these JSON files is a code change:
 - never carry a registration index, RVA, or code-window hash over from a
   previous installed build; regenerate it against the selected build;
 
-Most contracts in the tree pin a superseded build and return `mismatched` on
-the current install, so their consumers correctly produce nothing. Check a
-contract's recorded `nativeInputs` against the selected build before treating
-its rows, or a consumer's empty result, as current.
+A contract whose pinned build differs from the installed one returns
+`mismatched`, and its consumers correctly produce nothing. Check a contract's
+recorded `nativeInputs` against the selected build before treating its rows,
+or a consumer's empty result, as current.
 
 ## Commands
 

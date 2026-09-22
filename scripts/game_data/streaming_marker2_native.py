@@ -7,9 +7,10 @@ from pathlib import Path
 from typing import Any
 from scripts.game_data import streaming_native as base
 from scripts.game_data import streaming_marker17_native as dependency
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 SCHEMA = 'endfield.streaming-marker2-native-contract.v1'
-DEFAULT_CONTRACT = Path(__file__).with_name('streaming_marker2_native.json')
+DEFAULT_CONTRACT = CONTRACTS_DIR / 'streaming_marker2_native.json'
 CONTRACT_SHA256 = 'C3381F058BFBCB1AF9019FDC1C53B066EBC8CFC1138E38CDF1A16B2B1F2C828A'
 DEPENDENCY_SHA256 = '34E915707F363B55F572D867C1CC3C1B28A76D66D132EB0E212377A730DD2891'
 BASE_SHA256 = '436F51D0C6C0BF0009D2EBF439C8BEC1A13E94404E983E5ADD0E09A604A82E60'

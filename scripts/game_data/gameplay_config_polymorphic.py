@@ -6,6 +6,7 @@ from functools import lru_cache
 from pathlib import Path, PurePosixPath
 from typing import Any
 
+from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.jsondata_named_schema import (
     load_schema_contract,
     make_fail,
@@ -19,7 +20,7 @@ class GameplayConfigPolymorphicDecodeError(ValueError):
     pass
 
 
-CONTRACT_PATH = Path(__file__).with_name("gameplay_config_polymorphic_schema.json")
+CONTRACT_PATH = CONTRACTS_DIR / "gameplay_config_polymorphic_schema.json"
 CONTRACT_SHA256 = "20383F5EFBD4B6D19F14174D555933C447EC03960985FB2B729A974A4A4F6453"
 CONTRACT_SCHEMA = "endfield.gameplay-config-polymorphic-json-schema.v1"
 PREFIX = "GameplayConfig/"
