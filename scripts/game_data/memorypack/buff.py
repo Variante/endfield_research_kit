@@ -8,7 +8,7 @@ import re
 import struct
 from collections import Counter
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 
 from scripts.game_data.memorypack.core import (
     MEMORYPACK_NULL_COUNT,
@@ -1157,6 +1157,225 @@ def decode_buff_pre_id_modifier_prefix(
             "error": str(exc),
         })
         return result
+
+
+def frame_buff_named_middle(
+    data: bytes,
+    start: int,
+    id_marker_offset: int,
+) -> dict[str, Any]:
+    """Advance BuffData fields 6-14 from a proved field-5 endpoint.
+
+    The current generated ``BuffDataForMemoryPack`` wrapper supplies the field
+    order. Damage and heal modifier elements use their current generated
+    wrapper order and only supported current processor union routes. Global
+    modifiers consume the generated four-member wrapper. An unsupported union
+    stops at its tag instead of searching for the following field.
+    ``iconConfig`` remains one named opaque range whose end is the independently
+    accepted top-level ``id`` marker.
+    """
+
+    fields: list[dict[str, Any]] = []
+    offset = start
+
+    def add_field(index: int, name: str, field_start: int, field_end: int, **extra: Any) -> None:
+        fields.append({
+            "index": index,
+            "name": name,
+            "start": field_start,
+            "end": field_end,
+            "boundaryClass": "exact-cursor",
+            **extra,
+        })
+
+    def read_empty_list(index: int, name: str) -> int:
+        nonlocal offset
+        field_start = offset
+        validate_buff_read_limit(data, offset, id_marker_offset, name)
+        if offset + 4 > id_marker_offset:
+            raise ValueError(f"{name}:truncated-count")
+        count = struct.unpack_from("<i", data, offset)[0]
+        offset += 4
+        if count not in (-1, 0):
+            raise ValueError(f"{name}:unsupported-positive-count={count}")
+        add_field(index, name, field_start, offset, count=count, isNull=count == -1)
+        return count
+
+    def read_modifier_list(index: int, name: str, method_name: str) -> int:
+        nonlocal offset
+        from scripts.game_data.memorypack.buff_actions import Reader
+
+        field_start = offset
+        reader = Reader(data, f"BuffData.{name}", id_marker_offset)
+        reader.pos = offset
+        count = getattr(reader, method_name)()
+        offset = reader.pos
+        add_field(index, name, field_start, offset, count=count, isNull=count == -1)
+        return count
+
+    def read_global_modifier_list() -> int:
+        nonlocal offset
+        field_start = offset
+        name = "globalModifier"
+        validate_buff_read_limit(data, offset, id_marker_offset, name)
+        if offset + 4 > id_marker_offset:
+            raise ValueError(f"{name}:truncated-count")
+        count = struct.unpack_from("<i", data, offset)[0]
+        offset += 4
+        if count < -1 or count > 256:
+            raise ValueError(f"{name}:invalid-count={count}")
+        values: list[dict[str, Any]] = []
+        for item_index in range(max(count, 0)):
+            item_name = f"{name}[{item_index}]"
+            item_start = offset
+            if offset >= id_marker_offset:
+                raise ValueError(f"{item_name}:truncated-member-count")
+            member_count = data[offset]
+            offset += 1
+            if member_count != 4:
+                raise ValueError(f"{item_name}:member-count={member_count}")
+            apply_to_return_atb_gain, offset = read_buff_bool_field_bounded(
+                data,
+                offset,
+                id_marker_offset,
+                f"{item_name}.applyToReturnAtbGain",
+            )
+            if offset + 4 > id_marker_offset:
+                raise ValueError(f"{item_name}.formulaItem:truncated-u32")
+            formula_item = struct.unpack_from("<I", data, offset)[0]
+            offset += 4
+            param, offset = read_buff_blackboard_float_raw_field_bounded(
+                data,
+                offset,
+                id_marker_offset,
+                f"{item_name}.param",
+            )
+            if offset + 4 > id_marker_offset:
+                raise ValueError(f"{item_name}.type:truncated-u32")
+            modifier_type = struct.unpack_from("<I", data, offset)[0]
+            offset += 4
+            values.append({
+                "memberCount": member_count,
+                "offset": format_offset(item_start),
+                "bytes": offset - item_start,
+                "applyToReturnAtbGain": apply_to_return_atb_gain,
+                "formulaItemRaw": formula_item,
+                "param": param,
+                "typeRaw": modifier_type,
+            })
+        add_field(
+            10,
+            name,
+            field_start,
+            offset,
+            count=count,
+            isNull=count == -1,
+            values=values,
+            itemFieldOrder=["applyToReturnAtbGain", "formulaItem", "param", "type"],
+            itemFieldOrderSource=(
+                "current generated GlobalModifier_DataForMemoryPack setter order"
+            ),
+        )
+        return count
+
+    result: dict[str, Any] = {
+        "status": "unresolved",
+        "startOffset": start,
+        "hardLimit": id_marker_offset,
+        "fieldOrderSource": "current generated BuffDataForMemoryPack setter order",
+        "namedFields": fields,
+        "wholeSchemaExact": False,
+    }
+    try:
+        if not isinstance(start, int) or not isinstance(id_marker_offset, int):
+            raise ValueError("middle-boundary:not-integer")
+        if not 1 <= start < id_marker_offset <= len(data):
+            raise ValueError(
+                f"middle-boundary:invalid start={start} idMarker={id_marker_offset} length={len(data)}"
+            )
+
+        read_modifier_list(6, "damageModifier", "damage_modifier_collection_profile")
+
+        field_start = offset
+        if offset + 8 > id_marker_offset:
+            raise ValueError("dispelConfig:truncated-raw8")
+        offset += 8
+        add_field(
+            7,
+            "dispelConfig",
+            field_start,
+            offset,
+            representation="current root reader raw8",
+        )
+
+        field_start = offset
+        duration, offset = read_buff_blackboard_float_raw_field_bounded(
+            data,
+            offset,
+            id_marker_offset,
+            "duration",
+        )
+        add_field(8, "duration", field_start, offset, value=duration)
+
+        field_start = offset
+        finish_on_repatriate, offset = read_buff_bool_field(data, offset, "finishOnRepatriate")
+        if offset > id_marker_offset:
+            raise ValueError("finishOnRepatriate:past-limit")
+        add_field(9, "finishOnRepatriate", field_start, offset, value=finish_on_repatriate)
+
+        read_global_modifier_list()
+
+        for index, name in ((11, "hasAddingCooldown"), (12, "hasIcon")):
+            field_start = offset
+            value, offset = read_buff_bool_field(data, offset, name)
+            if offset > id_marker_offset:
+                raise ValueError(f"{name}:past-limit")
+            add_field(index, name, field_start, offset, value=value)
+
+        read_modifier_list(13, "healModifier", "heal_modifier_collection_profile")
+
+        field_start = offset
+        if field_start >= id_marker_offset:
+            raise ValueError("iconConfig:empty-range")
+        member_count = data[field_start]
+        if member_count not in (19, 0xFF):
+            raise ValueError(f"iconConfig:member-count={member_count}")
+        if member_count == 0xFF and field_start + 1 != id_marker_offset:
+            raise ValueError("iconConfig:null-wrapper-has-trailing-bytes")
+        offset = id_marker_offset
+        add_field(
+            14,
+            "iconConfig",
+            field_start,
+            offset,
+            boundaryClass="named-opaque-range",
+            memberCount=None if member_count == 0xFF else member_count,
+            isNull=member_count == 0xFF,
+        )
+        result.update({
+            "status": "named-through-iconConfig",
+            "consumedEnd": offset,
+            "opaqueNestedRanges": [
+                {
+                    "field": "iconConfig",
+                    "start": field_start,
+                    "end": offset,
+                    "reason": "nested 19-member body not yet cursor-decoded",
+                }
+            ] if member_count != 0xFF else [],
+            "boundary": (
+                "Fields 6-13 advance a real cursor under the current wrapper order. "
+                "Field 14 is a named opaque range ending at the independently accepted id marker."
+            ),
+        })
+    except (struct.error, UnicodeDecodeError, ValueError) as exc:
+        result.update({
+            "status": "unsupported",
+            "consumedEnd": offset,
+            "diagnostic": str(exc),
+            "boundary": "Stopped at the first unsupported current-wrapper field without scanning.",
+        })
+    return result
 
 
 def buff_gameplay_semantics(path: Path) -> dict[str, Any]:
@@ -3714,6 +3933,7 @@ def read_buff_selector_union(
     family: str,
     field_name: str,
     depth: int,
+    subtype_tables: Mapping[str, dict[int, tuple[str, tuple | None]]] | None = None,
 ) -> tuple[dict[str, Any] | None, int]:
     if depth > BUFF_SELECTOR_MAX_NESTED_DEPTH:
         raise ValueError(f"{field_name}:selector-depth-exceeded")
@@ -3742,6 +3962,7 @@ def read_buff_selector_union(
     for member_name, kind in members:
         out[member_name], offset = read_buff_selector_member(
             data, offset, limit, kind, f"{field_name}.{subtype_name}.{member_name}", depth,
+            subtype_tables=subtype_tables,
         )
     return out, offset
 
@@ -3752,6 +3973,7 @@ def read_buff_selector_data_full(
     limit: int,
     field_name: str,
     depth: int,
+    subtype_tables: Mapping[str, dict[int, tuple[str, tuple | None]]] | None = None,
 ) -> tuple[dict[str, Any] | None, int]:
     # Beyond.Gameplay.Core.Selector+SelectorData, alphabetical:
     # finderData (union), postProcessorData (list of unions), validatorData
@@ -3761,20 +3983,23 @@ def read_buff_selector_data_full(
     present, offset = read_buff_selector_object_header(data, offset, limit, 3, field_name)
     if not present:
         return None, offset
+    tables = subtype_tables or {}
     finder, offset = read_buff_selector_union(
-        data, offset, limit, BUFF_SELECTOR_FINDER_SUBTYPES, "finder",
-        f"{field_name}.finderData", depth,
+        data, offset, limit, tables.get("finder", BUFF_SELECTOR_FINDER_SUBTYPES), "finder",
+        f"{field_name}.finderData", depth, subtype_tables,
     )
     post_processors, offset = read_buff_selector_list(
         data, offset, limit, f"{field_name}.postProcessorData",
         lambda d, o, l, n: read_buff_selector_union(
-            d, o, l, BUFF_SELECTOR_POSTPROCESSOR_SUBTYPES, "postProcessor", n, depth,
+            d, o, l, tables.get("postProcessor", BUFF_SELECTOR_POSTPROCESSOR_SUBTYPES),
+            "postProcessor", n, depth, subtype_tables,
         ),
     )
     validators, offset = read_buff_selector_list(
         data, offset, limit, f"{field_name}.validatorData",
         lambda d, o, l, n: read_buff_selector_union(
-            d, o, l, BUFF_SELECTOR_VALIDATOR_SUBTYPES, "validator", n, depth,
+            d, o, l, tables.get("validator", BUFF_SELECTOR_VALIDATOR_SUBTYPES),
+            "validator", n, depth, subtype_tables,
         ),
     )
     return {
@@ -3790,6 +4015,7 @@ def read_buff_target_settings_full(
     limit: int,
     field_name: str,
     depth: int,
+    subtype_tables: Mapping[str, dict[int, tuple[str, tuple | None]]] | None = None,
 ) -> tuple[dict[str, Any] | None, int]:
     # Beyond.Gameplay.Core.TargetSettings, 13 serialized members, alphabetical
     # (static Default excluded).
@@ -3802,6 +4028,7 @@ def read_buff_target_settings_full(
     out: dict[str, Any] = {}
     out["advancedDirection"], offset = read_buff_direction_settings_full(
         data, offset, limit, f"{field_name}.advancedDirection", depth + 1,
+        subtype_tables=subtype_tables,
     )
     out["centerContextKey"], offset = read_buff_memorypack_utf8_string_strict_bounded(
         data, offset, limit, f"{field_name}.centerContextKey", max_length=256,
@@ -3820,6 +4047,7 @@ def read_buff_target_settings_full(
     )
     out["selectorData"], offset = read_buff_selector_data_full(
         data, offset, limit, f"{field_name}.selectorData", depth + 1,
+        subtype_tables=subtype_tables,
     )
     out["selectorDirection"], offset = read_buff_selector_i32(
         data, offset, limit, f"{field_name}.selectorDirection",
@@ -3896,6 +4124,7 @@ def read_buff_direction_settings_full(
     limit: int,
     field_name: str,
     depth: int,
+    subtype_tables: Mapping[str, dict[int, tuple[str, tuple | None]]] | None = None,
 ) -> tuple[dict[str, Any] | None, int]:
     # Beyond.Gameplay.Core.DirectionSettings, 8 serialized members, alphabetical.
     if depth > BUFF_SELECTOR_MAX_NESTED_DEPTH:
@@ -3918,12 +4147,14 @@ def read_buff_direction_settings_full(
     )
     out["source"], offset = read_buff_target_settings_full(
         data, offset, limit, f"{field_name}.source", depth + 1,
+        subtype_tables=subtype_tables,
     )
     out["sourceMountPoint"], offset = read_buff_selector_i32(
         data, offset, limit, f"{field_name}.sourceMountPoint",
     )
     out["target"], offset = read_buff_target_settings_full(
         data, offset, limit, f"{field_name}.target", depth + 1,
+        subtype_tables=subtype_tables,
     )
     out["targetMountPoint"], offset = read_buff_selector_i32(
         data, offset, limit, f"{field_name}.targetMountPoint",
@@ -3938,6 +4169,8 @@ def read_buff_selector_member(
     kind: str,
     field_name: str,
     depth: int,
+    *,
+    subtype_tables: Mapping[str, dict[int, tuple[str, tuple | None]]] | None = None,
 ) -> tuple[Any, int]:
     if kind == "bool":
         return read_buff_selector_bool(data, offset, limit, field_name)
@@ -3973,11 +4206,20 @@ def read_buff_selector_member(
             lambda d, o, l, n: read_buff_selector_shape_data(d, o, l, n),
         )
     if kind == "targetsettings":
-        return read_buff_target_settings_full(data, offset, limit, field_name, depth + 1)
+        return read_buff_target_settings_full(
+            data, offset, limit, field_name, depth + 1,
+            subtype_tables=subtype_tables,
+        )
     if kind == "selectordata":
-        return read_buff_selector_data_full(data, offset, limit, field_name, depth + 1)
+        return read_buff_selector_data_full(
+            data, offset, limit, field_name, depth + 1,
+            subtype_tables=subtype_tables,
+        )
     if kind == "directionsettings":
-        return read_buff_direction_settings_full(data, offset, limit, field_name, depth + 1)
+        return read_buff_direction_settings_full(
+            data, offset, limit, field_name, depth + 1,
+            subtype_tables=subtype_tables,
+        )
     raise ValueError(f"{field_name}:unknown-member-kind={kind}")
 
 

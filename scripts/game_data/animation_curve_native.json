@@ -1,0 +1,183 @@
+{
+  "schema": "endfield.animation-curve-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "UnityPlayer.dll": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "fKeyframe": {
+    "image": "Common.Beyond.dll",
+    "namespace": "Beyond",
+    "typeName": "FKeyframe",
+    "typeDefinitionIndex": 31656,
+    "typeToken": "0x0200015d",
+    "nativeSize": 32,
+    "fieldOffsets": {
+      "time": 0,
+      "value": 4,
+      "inTangent": 8,
+      "outTangent": 12,
+      "tangentMode": 16,
+      "weightedMode": 20,
+      "inWeight": 24,
+      "outWeight": 28
+    },
+    "wrapperImage": "MemoryPack.Beyond.dll",
+    "wrapperTypeName": "Beyond.MemoryPack.Beyond_FKeyframeForMemoryPack",
+    "wrapperTypeDefinitionIndex": 15101,
+    "wrapperTypeToken": "0x020005c6",
+    "deserializeMethodIndex": 113303,
+    "deserializeToken": "0x06002b6e",
+    "deserializeRva": "0x922ecc4",
+    "codeWindow": {
+      "rva": "0x922ecc4",
+      "length": 415,
+      "sha256": "50a3d3eaedf4f4248db9acd6c0582d47e97fa1e78412976c4e9852e66292c6a3",
+      "boundary": "complete generated wrapper Deserialize body through its normal RET"
+    },
+    "standaloneWrapperReadOrder": [
+      {
+        "field": "inTangent",
+        "wireType": "float32",
+        "destinationOffset": 8,
+        "readHelperRva": "0x2ca8bb0"
+      },
+      {
+        "field": "inWeight",
+        "wireType": "float32",
+        "destinationOffset": 24,
+        "readHelperRva": "0x2ca8bb0"
+      },
+      {
+        "field": "outTangent",
+        "wireType": "float32",
+        "destinationOffset": 12,
+        "readHelperRva": "0x2ca8bb0"
+      },
+      {
+        "field": "outWeight",
+        "wireType": "float32",
+        "destinationOffset": 28,
+        "readHelperRva": "0x2ca8bb0"
+      },
+      {
+        "field": "tangentMode",
+        "wireType": "int32",
+        "destinationOffset": 16,
+        "readHelperRva": "0x2ca86b0"
+      },
+      {
+        "field": "time",
+        "wireType": "float32",
+        "destinationOffset": 0,
+        "readHelperRva": "0x2ca8bb0"
+      },
+      {
+        "field": "value",
+        "wireType": "float32",
+        "destinationOffset": 4,
+        "readHelperRva": "0x2ca8bb0"
+      },
+      {
+        "field": "weightedMode",
+        "wireType": "int32",
+        "destinationOffset": 20,
+        "readHelperRva": "0x2ca86b0"
+      }
+    ],
+    "bulkArrayElementWireLayout": [
+      {
+        "field": "time",
+        "wireType": "float32",
+        "nativeOffset": 0
+      },
+      {
+        "field": "value",
+        "wireType": "float32",
+        "nativeOffset": 4
+      },
+      {
+        "field": "inTangent",
+        "wireType": "float32",
+        "nativeOffset": 8
+      },
+      {
+        "field": "outTangent",
+        "wireType": "float32",
+        "nativeOffset": 12
+      },
+      {
+        "field": "tangentMode",
+        "wireType": "int32",
+        "nativeOffset": 16
+      },
+      {
+        "field": "weightedMode",
+        "wireType": "int32",
+        "nativeOffset": 20
+      },
+      {
+        "field": "inWeight",
+        "wireType": "float32",
+        "nativeOffset": 24
+      },
+      {
+        "field": "outWeight",
+        "wireType": "float32",
+        "nativeOffset": 28
+      }
+    ]
+  },
+  "fAnimationCurve": {
+    "image": "Common.Beyond.dll",
+    "namespace": "Beyond",
+    "typeName": "FAnimationCurve",
+    "typeDefinitionIndex": 31657,
+    "typeToken": "0x0200015e",
+    "fieldOffsets": {
+      "keys": 0,
+      "preWrapMode": 8,
+      "postWrapMode": 12
+    },
+    "wrapperImage": "MemoryPack.Beyond.dll",
+    "wrapperTypeName": "Beyond.MemoryPack.Beyond_FAnimationCurveForMemoryPack",
+    "wrapperTypeDefinitionIndex": 13981,
+    "wrapperTypeToken": "0x02000166",
+    "deserializeMethodIndex": 105331,
+    "deserializeToken": "0x06000c4a",
+    "deserializeRva": "0x3995980",
+    "codeWindow": {
+      "rva": "0x3995980",
+      "length": 319,
+      "sha256": "eac0604d77c6635e39e2437f08c1be3dc118b9702b2b1683ade8d09b13b4bd97",
+      "boundary": "complete generated wrapper Deserialize normal path through its first normal RET"
+    },
+    "serializedReadOrder": [
+      "keys",
+      "postWrapMode",
+      "preWrapMode"
+    ],
+    "keysRepresentation": {
+      "managedType": "Beyond.FKeyframe[]",
+      "wireBoundary": "signed count followed by contiguous 32-byte unmanaged elements",
+      "elementLayoutSource": "fKeyframe.bulkArrayElementWireLayout",
+      "bulkReaderRva": "0x3d503e0",
+      "elementSize": 32,
+      "countScale": "count << 5",
+      "codeWindow": {
+        "rva": "0x3d503e0",
+        "length": 276,
+        "sha256": "26c5ea480e34d5274edc00cc9778ac08ec7b7a809a4d0e24a373f576691e0485",
+        "boundary": "complete selected generic array reader normal path through its first normal RET"
+      },
+      "directBehavior": "reads signed count, preserves -1 and zero, bounds count-times-32, allocates the selected array, copies count-times-32 source bytes, and advances the reader by the same byte count"
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "Selected-build metadata identities, registered native field offsets, complete generated Deserialize code windows, helper calls, destination stores, and the selected bulk array reader establish both supported representations byte-for-byte.",
+    "direct": "The standalone FKeyframe wrapper reads generated setter order and stores each value at the authenticated native field offset. FAnimationCurve reads keys, postWrapMode, then preWrapMode. Its selected keys reader multiplies the count by 32, copies exactly that many source bytes into the selected array, and advances by the same extent, so each element uses the registered FKeyframe native offsets rather than standalone-wrapper order.",
+    "structuralOnly": "The contract proves stored curve values and exact framing. It does not prove that any particular AnimationConfig curve is selected or evaluated at runtime.",
+    "unresolved": "Runtime curve ownership, evaluation time, interpolation behavior outside the stored fields, and renderer-visible effects require consumer or live evidence."
+  }
+}

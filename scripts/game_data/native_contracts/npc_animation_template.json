@@ -1,0 +1,479 @@
+{
+  "schema": "endfield.npc-animation-template-native.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "evidenceBoundary": {
+    "exact": "Current native path helper, metadata literals and static field offsets.",
+    "direct": "Unpatched CPU asset loader forwards the generated resource path to the asset loader and returns an NPCCPUAnimationAssetsSO only for a valid non-error handle.",
+    "conditional": "Path construction follows an admitted GameplayTag on the unpatched cache-miss branch with at least three segments. The audit restricts input to the NPC/AnimationConfig hierarchy.",
+    "unresolved": "IFix overrides, runtime cache mutation, live NPC and Character Info actor ownership, montage selection and draw consumption."
+  },
+  "codeWindows": [
+    {
+      "name": "stringTemplateToTag",
+      "rva": "0x327f460",
+      "length": 108,
+      "sha256": "84e70607784ebe06c1a041347f6de1922ae31fa2ca697662759fdd486d325c0b",
+      "boundary": "Requests GameplayTag from the supplied string and invokes the tag path overload."
+    },
+    {
+      "name": "tagPath",
+      "rva": "0x327f4e0",
+      "length": 833,
+      "sha256": "f0494264d5419b231c183f7421d8b74b3b68f178996f7d777d6e36a2e965baa5",
+      "boundary": "Cache lookup then segment-count/segment-name reads and two ZConcat path branches, followed by cache insertion."
+    },
+    {
+      "name": "assetConstants",
+      "rva": "0x45c5620",
+      "length": 944,
+      "sha256": "93cb6739d172b8ef4d3d2377d66703c21981ad549964eb09644b0656f42356ba",
+      "boundary": "Initializes the NPC asset root and Animation/ subdirectory with String.Concat."
+    },
+    {
+      "name": "cpuAssetLoader",
+      "rva": "0x5dd6efc",
+      "length": 174,
+      "sha256": "6efd447f6631f8cb68ba3fabbc28a963229dc4c2ff1f2d0d2e5f9cf6d9bcc150",
+      "boundary": "Generates path and loads CPU asset; invalid/error handles return null."
+    },
+    {
+      "name": "getStateClip",
+      "rva": "0x36a9b30",
+      "length": 280,
+      "sha256": "de0595c0a7fcecf9732c3253cc39c555348965bf739e8278cd409e7219624439",
+      "boundary": "Looks up the requested state name in allBaseClips; this is separate from the Character Info controller route."
+    },
+    {
+      "name": "tagSegmentCount",
+      "rva": "0x316c510",
+      "length": 96,
+      "sha256": "c8689d94ec5ef046207d1d9ec15efa2c20abb3242859516e36769aa92c3128af",
+      "boundary": "Reads segment collection count through the GameplayTag context."
+    },
+    {
+      "name": "tagSegmentName",
+      "rva": "0x316c570",
+      "length": 160,
+      "sha256": "c252b723f890d14a49b6c43fa7b93fdfd199620c119d7bc5c58b9378aee8f72f",
+      "boundary": "Retrieves requested GameplayTag segment."
+    }
+  ],
+  "pathRule": {
+    "root": "Assets/Beyond/DynamicAssets/Gameplay/NPC/Animation/",
+    "humanoidSelector": "Humanoid",
+    "humanoidPrefix": "Humanoid/",
+    "leafPrefix": "/data_npc_cpuAnimData_",
+    "suffix": ".asset",
+    "selectorFromEnd": 3,
+    "directoryFromEnd": 2,
+    "nameFromEnd": 1
+  },
+  "literalAndMethodEvidence": [
+    {
+      "usageRva": "0x45c563d",
+      "slotRva": "0xd0efb60",
+      "index": 38247,
+      "value": "manifest.json"
+    },
+    {
+      "usageRva": "0x45c5649",
+      "slotRva": "0xcfe0df0",
+      "index": 3704,
+      "value": "AnimBindings/Downgrade/"
+    },
+    {
+      "usageRva": "0x45c5655",
+      "slotRva": "0xcfe0df8",
+      "index": 4093,
+      "value": "Assets/Beyond/DynamicAssets/Gameplay/NPC/Json/data_npc_lodconfig.json"
+    },
+    {
+      "usageRva": "0x45c5661",
+      "slotRva": "0xcfe0e08",
+      "index": 4088,
+      "value": "Assets/Beyond/DynamicAssets/Gameplay/NPC/"
+    },
+    {
+      "usageRva": "0x45c566d",
+      "slotRva": "0xcfe0e18",
+      "index": 4413,
+      "value": "AvatarMesh/"
+    },
+    {
+      "usageRva": "0x45c5679",
+      "slotRva": "0xcfe0e20",
+      "index": 7927,
+      "value": "Data/Json/NPC/MontageJson/"
+    },
+    {
+      "usageRva": "0x45c5685",
+      "slotRva": "0xcfe0e28",
+      "index": 3726,
+      "value": "Animation/"
+    },
+    {
+      "usageRva": "0x45c5691",
+      "slotRva": "0xcfe0e30",
+      "index": 19045,
+      "value": "PrefabInfo/"
+    },
+    {
+      "usageRva": "0x45c569d",
+      "slotRva": "0xcfe0e40",
+      "index": 15801,
+      "value": "Montage/"
+    },
+    {
+      "usageRva": "0x45c56a9",
+      "slotRva": "0xcfe0e50",
+      "index": 3741,
+      "value": "AnimatorController/Downgrade_LookAt/"
+    },
+    {
+      "usageRva": "0x45c56b5",
+      "slotRva": "0xcfe0e60",
+      "index": 3181,
+      "value": "Ability/"
+    },
+    {
+      "usageRva": "0x45c56c1",
+      "slotRva": "0xcfe0da8",
+      "index": 7926,
+      "value": "Data/Json/NPC/"
+    },
+    {
+      "usageRva": "0x45c56cd",
+      "slotRva": "0xcfe0db0",
+      "index": 33309,
+      "value": "data_npc_global_mountconfig.asset"
+    },
+    {
+      "usageRva": "0x45c56d9",
+      "slotRva": "0xcfe0db8",
+      "index": 4094,
+      "value": "Assets/Beyond/DynamicAssets/Gameplay/NPC/Json/data_npc_prefabtable.json"
+    },
+    {
+      "usageRva": "0x45c56e5",
+      "slotRva": "0xcfe0dc0",
+      "index": 15809,
+      "value": "MontageNew/"
+    },
+    {
+      "usageRva": "0x45c56f1",
+      "slotRva": "0xcfe0dc8",
+      "index": 4415,
+      "value": "AvatarTemplet/"
+    },
+    {
+      "usageRva": "0x45c56fd",
+      "slotRva": "0xcfe0dd0",
+      "index": 3740,
+      "value": "AnimatorController/Downgrade/"
+    },
+    {
+      "usageRva": "0x45c5732",
+      "slotRva": "0xcfe0e08",
+      "index": 4088,
+      "value": "Assets/Beyond/DynamicAssets/Gameplay/NPC/"
+    },
+    {
+      "usageRva": "0x45c575b",
+      "slotRva": "0xcfe0e20",
+      "index": 7927,
+      "value": "Data/Json/NPC/MontageJson/"
+    },
+    {
+      "usageRva": "0x45c578b",
+      "slotRva": "0xcfe0da8",
+      "index": 7926,
+      "value": "Data/Json/NPC/"
+    },
+    {
+      "usageRva": "0x45c57be",
+      "slotRva": "0xcfe0e30",
+      "index": 19045,
+      "value": "PrefabInfo/"
+    },
+    {
+      "usageRva": "0x45c5808",
+      "slotRva": "0xd0efb60",
+      "index": 38247,
+      "value": "manifest.json"
+    },
+    {
+      "usageRva": "0x45c584f",
+      "slotRva": "0xcfe0db8",
+      "index": 4094,
+      "value": "Assets/Beyond/DynamicAssets/Gameplay/NPC/Json/data_npc_prefabtable.json"
+    },
+    {
+      "usageRva": "0x45c587f",
+      "slotRva": "0xcfe0df8",
+      "index": 4093,
+      "value": "Assets/Beyond/DynamicAssets/Gameplay/NPC/Json/data_npc_lodconfig.json"
+    },
+    {
+      "usageRva": "0x45c58b2",
+      "slotRva": "0xcfe0dc8",
+      "index": 4415,
+      "value": "AvatarTemplet/"
+    },
+    {
+      "usageRva": "0x45c58fc",
+      "slotRva": "0xcfe0e18",
+      "index": 4413,
+      "value": "AvatarMesh/"
+    },
+    {
+      "usageRva": "0x45c5946",
+      "slotRva": "0xcfe0e18",
+      "index": 4413,
+      "value": "AvatarMesh/"
+    },
+    {
+      "usageRva": "0x45c5990",
+      "slotRva": "0xcfe0e28",
+      "index": 3726,
+      "value": "Animation/"
+    },
+    {
+      "usageRva": "0x45c59da",
+      "slotRva": "0xcfe0e60",
+      "index": 3181,
+      "value": "Ability/"
+    },
+    {
+      "usageRva": "0x45c5a24",
+      "slotRva": "0xcfe0e40",
+      "index": 15801,
+      "value": "Montage/"
+    },
+    {
+      "usageRva": "0x45c5a6e",
+      "slotRva": "0xcfe0dc0",
+      "index": 15809,
+      "value": "MontageNew/"
+    },
+    {
+      "usageRva": "0x45c5abc",
+      "slotRva": "0xcfe0dc0",
+      "index": 15809,
+      "value": "MontageNew/"
+    },
+    {
+      "usageRva": "0x45c5b02",
+      "slotRva": "0xcfe0dd0",
+      "index": 3740,
+      "value": "AnimatorController/Downgrade/"
+    },
+    {
+      "usageRva": "0x327f54f",
+      "methodSpec": 543529,
+      "signature": {
+        "methodIndex": 286427,
+        "type": "System.Collections.Generic.Dictionary`2",
+        "method": "TryGetValue",
+        "token": "0x06003006",
+        "returnTypeName": "System.Boolean"
+      }
+    },
+    {
+      "usageRva": "0x327f5cf",
+      "slotRva": "0xd0f66e0",
+      "index": 12689,
+      "value": "Humanoid"
+    },
+    {
+      "usageRva": "0x327f5e3",
+      "slotRva": "0xcfc4810",
+      "index": 12690,
+      "value": "Humanoid/"
+    },
+    {
+      "usageRva": "0x327f660",
+      "slotRva": "0xd030f50",
+      "index": 1923,
+      "value": ".asset"
+    },
+    {
+      "usageRva": "0x327f667",
+      "slotRva": "0xcfc47d0",
+      "index": 2041,
+      "value": "/data_npc_cpuAnimData_"
+    },
+    {
+      "usageRva": "0x327f672",
+      "methodSpec": 621827,
+      "signature": {
+        "methodIndex": 450250,
+        "type": "Beyond.StringUtils",
+        "method": "ZConcat",
+        "token": "0x06000037",
+        "returnTypeName": "System.String"
+      }
+    },
+    {
+      "usageRva": "0x327f6c3",
+      "methodSpec": 543530,
+      "signature": {
+        "methodIndex": 286407,
+        "type": "System.Collections.Generic.Dictionary`2",
+        "method": "set_Item",
+        "token": "0x06002ff2",
+        "returnTypeName": "System.Void"
+      }
+    },
+    {
+      "usageRva": "0x327f6f6",
+      "slotRva": "0xd030f50",
+      "index": 1923,
+      "value": ".asset"
+    },
+    {
+      "usageRva": "0x327f6fd",
+      "slotRva": "0xcfc47d0",
+      "index": 2041,
+      "value": "/data_npc_cpuAnimData_"
+    },
+    {
+      "usageRva": "0x327f708",
+      "methodSpec": 621825,
+      "signature": {
+        "methodIndex": 450249,
+        "type": "Beyond.StringUtils",
+        "method": "ZConcat",
+        "token": "0x06000036",
+        "returnTypeName": "System.String"
+      }
+    },
+    {
+      "usageRva": "0x327f73e",
+      "methodSpec": 543528,
+      "signature": {
+        "methodIndex": 286389,
+        "type": "System.Collections.Generic.Dictionary`2",
+        "method": ".ctor",
+        "token": "0x06002fe0",
+        "returnTypeName": "System.Void"
+      }
+    }
+  ],
+  "fieldOffsets": {
+    "NPCAvatarAssetsConstants": {
+      "INVALID_ID": 0,
+      "NPC_ASSETS_PACKED_DATA_ROOT_PATH": 8,
+      "NPC_MONTAGE_JSON_DATA_ROOT_DIR": 16,
+      "NPC_JSON_DATA_ROOT_DIR": 24,
+      "NPC_PREFAB_INFO_JSON_DATA_PATH": 32,
+      "NPC_PREFAB_TABLE_JSON_DATA_PATH_MANIFEST": 40,
+      "NPC_PREFAB_TABLE_JSON_DATA_PATH": 48,
+      "LOD_SETTING_JSON_DATA_PATH": 56,
+      "AVATAR_TEMPLET_DATA_ROOT_DIR": 64,
+      "AVATAR_MESH_DATA_ROOT_DIR": 72,
+      "AVATAR_MESH_JSON_ROOT_DIR": 80,
+      "ANIMATION_DATA_ROOT_DIR": 88,
+      "ABILITY_DATA_ROOT_DIR": 96,
+      "MONTAGE_DATA_ROOT_DIR": 104,
+      "NEW_MONTAGE_DATA_ROOT_DIR": 112,
+      "NEW_MONTAGE_JSON_DATA_ROOT_DIR": 120,
+      "CONTROLLER_DATA_ROOT_DIR": 128,
+      "BINDINGS_DATA_ROOT_DIR": 136,
+      "LOOKAT_CONTROLLER_DATA_ROOT_DIR": 144,
+      "GLOBAL_MOUNT_CONFIG_PATH": 152
+    },
+    "NPCCPUAnimationAssetsSO": {
+      "configTag": 24,
+      "avatar": 32,
+      "bIsOptimizeGameObjects": 40,
+      "lodBoneMask": 48,
+      "animatorLods": 56,
+      "dlgController": 64,
+      "dlgControllerPath": 72,
+      "dlgControllerOpt": 80,
+      "dlgControllerOptPath": 88,
+      "m_dlgControllerHandle": 96,
+      "m_dlgControllerOptHandle": 116,
+      "downgradeController": 136,
+      "lookAtController": 144,
+      "speicalIdleCount": 152,
+      "preLoadMontageTags": 160,
+      "isUsingNewAnimator": 168,
+      "attachSlotInfos": 176,
+      "lookAtIKInfo": 184,
+      "lookAtControllerParams": 192,
+      "animatedShaderPropertyCfg": 200,
+      "m_attachSlotInfoDict": 208,
+      "validMontages": 216,
+      "validCurveClip": 224,
+      "mainEmptyClip": 232,
+      "allBaseClips": 240,
+      "allBlendTrees": 248,
+      "syncGroupCurves": 256,
+      "inverseSyncGroupCurves": 264,
+      "bindings": 272,
+      "frameRate": 280,
+      "sourcePrefabGuid": 284,
+      "sourcePrefabPathHash": 304,
+      "clipInfos": 312,
+      "textureGuid": 320,
+      "texturePathHash": 336,
+      "subMeshLOD4": 344,
+      "normalIdle2SpidleTime": 352,
+      "spIdle2normalIdleTime": 356,
+      "spIdleRandomWaitTimeMin": 360,
+      "spIdleRandomWaitTimeMax": 364,
+      "enableDownGradeSpIdle": 368,
+      "idleStartAudio": 372,
+      "idleEndAudio": 376,
+      "walkStartAudio": 380,
+      "walkEndAudio": 384,
+      "runStartAudio": 388,
+      "runEndAudio": 392,
+      "sprintStartAudio": 396,
+      "sprintEndAudio": 400,
+      "gpuBoneNameToIndex": 408
+    }
+  },
+  "methods": [
+    {
+      "methodIndex": 2382,
+      "type": "Beyond.NPC.Animation.NPCAnimDefine",
+      "method": "GetAnimationAssetsPath",
+      "token": "0x0600094f",
+      "returnTypeName": "System.String"
+    },
+    {
+      "methodIndex": 2383,
+      "type": "Beyond.NPC.Animation.NPCAnimDefine",
+      "method": "GetAnimationAssetsPath",
+      "token": "0x06000950",
+      "returnTypeName": "System.String"
+    },
+    {
+      "methodIndex": 2399,
+      "type": "Beyond.NPC.Animation.NPCCPUAnimationAssetsSO",
+      "method": "GetStateClip",
+      "token": "0x06000960",
+      "returnTypeName": "UnityEngine.AnimationClip"
+    },
+    {
+      "methodIndex": 3408,
+      "type": "Beyond.NPC.Avatar.NPCAvatarManager",
+      "method": "LoadCPUAnimAssetByName",
+      "token": "0x06000d51",
+      "returnTypeName": "Beyond.NPC.Animation.NPCCPUAnimationAssetsSO"
+    },
+    {
+      "methodIndex": 3570,
+      "type": "Beyond.NPC.Avatar.NPCAvatarDefine+NPCAvatarAssetsConstants",
+      "method": ".cctor",
+      "token": "0x06000df3",
+      "returnTypeName": "System.Void"
+    }
+  ]
+}

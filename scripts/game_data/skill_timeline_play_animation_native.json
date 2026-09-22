@@ -1,0 +1,291 @@
+{
+  "schema": "endfield.skill-timeline-play-animation-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "inputSetSha256": "0F1275C5FE9FEB3C0BAA801A49D37405CB3BA0C5BCD8A0A4160C48758283C497",
+  "dependencies": [
+    {
+      "path": "buff_115_native.json",
+      "sha256": "4D085781F663FB11963C9BD56CAE462805F60CB143609E604F645028C152A0CE",
+      "role": "tag 0x0115 selected union route and PlayAnimationActionData member16 source reads"
+    }
+  ],
+  "methods": [
+    [
+      104346,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+      "Deserialize",
+      60582560
+    ],
+    [
+      104347,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack+Beyond_Gameplay_Core_SequenceActionDataForMemoryPackFormatter",
+      "Deserialize",
+      60582464
+    ],
+    [
+      104653,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPack",
+      "Deserialize",
+      53268336
+    ],
+    [
+      104654,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPack+Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPackFormatter",
+      "Deserialize",
+      53274816
+    ],
+    [
+      107909,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPack",
+      "Deserialize",
+      53273776
+    ],
+    [
+      107910,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPack+Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPackFormatter",
+      "Deserialize",
+      53274720
+    ],
+    [
+      121849,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayAnimationAction_PlayAnimationActionDataForMemoryPack",
+      "Deserialize",
+      58159072
+    ],
+    [
+      121850,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayAnimationAction_PlayAnimationActionDataForMemoryPack+Beyond_Gameplay_Core_PlayAnimationAction_PlayAnimationActionDataForMemoryPackFormatter",
+      "Deserialize",
+      58161040
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 53268336,
+      "endRva": 53269111,
+      "sha256": "CB497F6362D9DA9396D6533F6CC037536FC9499D67848F1E8BBBAC8AA2F03688",
+      "boundary": "TimelineActionData selected source-read path and bounded failure/return fragments"
+    },
+    {
+      "startRva": 53273776,
+      "endRva": 53274460,
+      "sha256": "1FB17BEDE173176E0BC082E7C315267B6FC6F3CE76796DB90A627E9B0E9D7767",
+      "boundary": "ForceSyncAnimData selected source-read path and bounded failure/return fragments"
+    },
+    {
+      "startRva": 53274720,
+      "endRva": 53274816,
+      "sha256": "1F6F3F32B14A6DCBB87743E94C1DB14106B3AB3EE17D6C6EBB14F7DB0347A3EB",
+      "boundary": "ForceSyncAnimData formatter forwarding window"
+    },
+    {
+      "startRva": 53274816,
+      "endRva": 53274912,
+      "sha256": "D0D022A7D27D843AD4BFFE86FEC8A5FA07037249273A8ECB5AEC0167FEF98F33",
+      "boundary": "TimelineActionData formatter forwarding window"
+    }
+  ],
+  "instructionWindows": [
+    [
+      60582505,
+      "4533C0488BD3488BCF488B5C24304883C4205FE91F000000",
+      "SequenceActionData formatter forwarding edge"
+    ],
+    [
+      60582786,
+      "4080FE030F85DD030000",
+      "SequenceActionData accepts member-count three"
+    ],
+    [
+      60582904,
+      "488B43508B28448B73304183EE047911BA04000000488BCBE82BB5100284C07511488343500483434004834344044489733048634344488B4B18482BC84863C5483BC80F8C78030000",
+      "SequenceActionData reads signed action count and checks remaining bytes"
+    ],
+    [
+      60583653,
+      "4084ED0F95C0884119",
+      "SequenceActionData first trailing bool stores at object offset 0x19"
+    ],
+    [
+      60583751,
+      "4084ED4C8B6C2428488B6C24680F95C04C8B742420884118",
+      "SequenceActionData second trailing bool stores at object offset 0x18"
+    ]
+  ],
+  "wrappers": [
+    {
+      "typeDefinition": 13911,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPack",
+      "setterMethods": [
+        [
+          104647,
+          "set____endFrame__"
+        ],
+        [
+          104648,
+          "set____sequenceActionData__"
+        ],
+        [
+          104649,
+          "set____startFrame__"
+        ],
+        [
+          104650,
+          "set___forceSyncAnimData__"
+        ]
+      ],
+      "selectedReadOrder": [
+        "_endFrame",
+        "_sequenceActionData",
+        "_startFrame",
+        "forceSyncAnimData"
+      ]
+    },
+    {
+      "typeDefinition": 14317,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_ForceSyncAnimDataForMemoryPack",
+      "setterMethods": [
+        [
+          107903,
+          "set___forceSync__"
+        ],
+        [
+          107904,
+          "set___montageName__"
+        ],
+        [
+          107905,
+          "set___playbackSpeed__"
+        ],
+        [
+          107906,
+          "set___targetFrame__"
+        ]
+      ],
+      "selectedReadOrder": [
+        "forceSync",
+        "montageName",
+        "playbackSpeed",
+        "targetFrame"
+      ]
+    },
+    {
+      "typeDefinition": 16321,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayAnimationAction_PlayAnimationActionDataForMemoryPack",
+      "setterMethods": [
+        [
+          121835,
+          "set___animName__"
+        ],
+        [
+          121836,
+          "set___blendDuration__"
+        ],
+        [
+          121837,
+          "set___blendOut__"
+        ],
+        [
+          121838,
+          "set___blendOutNextStateHash__"
+        ],
+        [
+          121839,
+          "set___duration__"
+        ],
+        [
+          121840,
+          "set___executeOnNormalEndOnly__"
+        ],
+        [
+          121841,
+          "set___exitToIdle__"
+        ],
+        [
+          121842,
+          "set___onEndAction__"
+        ],
+        [
+          121843,
+          "set___playbackSpeed__"
+        ],
+        [
+          121844,
+          "set___startTime__"
+        ],
+        [
+          121845,
+          "set___startTimeBlackboardKey__"
+        ],
+        [
+          121846,
+          "set___useStartTimeBlackboardKey__"
+        ]
+      ],
+      "selectedReadOrder": [
+        "animName",
+        "blendDuration",
+        "blendOut",
+        "blendOutNextStateHash",
+        "duration",
+        "executeOnNormalEndOnly",
+        "exitToIdle",
+        "onEndAction",
+        "playbackSpeed",
+        "startTime",
+        "startTimeBlackboardKey",
+        "useStartTimeBlackboardKey"
+      ]
+    }
+  ],
+  "layouts": {
+    "abilityActionDataPrefix": [
+      "isEnable",
+      "priorityLevel",
+      "priorityOffset",
+      "serverActionIndex"
+    ],
+    "sequenceActionData": [
+      "actionData",
+      "onlyExecuteWhenSourceIsGuard",
+      "onlyExecuteWhenSourceIsMainChar"
+    ],
+    "timelineActionData": [
+      "_endFrame",
+      "_sequenceActionData",
+      "_startFrame",
+      "forceSyncAnimData"
+    ],
+    "forceSyncAnimData": [
+      "forceSync",
+      "montageName",
+      "playbackSpeed",
+      "targetFrame"
+    ],
+    "playAnimationActionData": [
+      "animName",
+      "blendDuration",
+      "blendOut",
+      "blendOutNextStateHash",
+      "duration",
+      "executeOnNormalEndOnly",
+      "exitToIdle",
+      "onEndAction",
+      "playbackSpeed",
+      "startTime",
+      "startTimeBlackboardKey",
+      "useStartTimeBlackboardKey"
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "The pinned current generated wrappers name each selected read in TimelineActionData, ForceSyncAnimData and PlayAnimationActionData. The current union route maps extended tag 0x0115 to the pinned member-16 PlayAnimation reader. Exact cursor promotion requires the observed one-action outer SequenceActionData and empty nested onEndAction shape to close at their physical endpoints.",
+    "structuralOnly": "Priority enum values, hashes, frame meanings, animation asset resolution and action execution behavior are not inferred from serialized values.",
+    "conditional": "Provider/cache selection is static current-build evidence. Corpus promotion additionally requires the authenticated input-set identity and exact byte grammar.",
+    "unresolved": "Other first timeline action tags and later TimelineActionData list elements remain unsupported by this contract."
+  }
+}

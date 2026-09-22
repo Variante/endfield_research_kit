@@ -22,6 +22,12 @@ def read_u64(data: bytes, offset: int) -> tuple[int, int] | None:
     return int.from_bytes(data[offset : offset + 8], "little", signed=False), offset + 8
 
 
+def read_i64(data: bytes, offset: int) -> tuple[int, int] | None:
+    if offset < 0 or offset + 8 > len(data):
+        return None
+    return int.from_bytes(data[offset : offset + 8], "little", signed=True), offset + 8
+
+
 def skip_string(data: bytes, offset: int) -> int | None:
     decoded = read_i32(data, offset)
     if decoded is None:

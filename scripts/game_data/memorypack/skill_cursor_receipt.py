@@ -1,9 +1,9 @@
 """Verify bounded runtime SkillData cursor receipts against the current corpus.
 
 The receipt's source bytes are treated as private input: output rows retain the
-SHA-256 and structural ranges, never the supplied hex payload. A promoted row
-proves only the observed terminal candidate cursor under the maintained
-anonymous framer, not whole-schema semantics.
+SHA-256 and observed cursor ranges, never the supplied hex payload. A promoted
+row proves the executed direct-field cursor vector and terminal candidate under
+the maintained framer; field meaning remains separately native-authenticated.
 """
 
 from __future__ import annotations
@@ -21,13 +21,26 @@ from scripts.game_data.memorypack.skill import (
     frame_skill_common_prefix,
     frame_skill_memorypack,
 )
+from scripts.game_data.memorypack.schemas import MEMORYPACK_FIELD_SCHEMAS
 
 
-SCHEMA = "endfieldCapture.skillDataCursorCapture.v1"
-OUTPUT_SCHEMA = "endfield.skillDataCursorVerification.v1"
+SCHEMA = "endfieldCapture.skillDataCursorCapture.v2"
+OUTPUT_SCHEMA = "endfield.skillDataCursorVerification.v2"
 SKILL_REPORT_FORMAT = "animestudio-skilldata-current-vfs-corpus"
 START_CALLSITE_RVA = 0x37DE8C5
 FINAL_CALLSITE_RVA = 0x37DE99D
+FIELD_CALLS = (
+    (0,0x37DE0E6),(1,0x37DE11A),(2,0x37DE145),(3,0x37DE170),(4,0x37DE1AB),(5,0x37DE1E6),(6,0x37DE21A),(7,0x37DE241),(8,0x37DE268),(9,0x37DE28F),(10,0x37DE2BD),(11,0x37DE2F8),(12,0x37DE32D),(13,0x37DE351),(14,0x37DE378),(15,0x37DE3AC),(16,0x37DE3E0),(18,0x37DE461),(19,0x37DE485),(20,0x37DE4A9),(21,0x37DE4D9),(22,0x37DE4FD),(23,0x37DE52B),(24,0x37DE54F),(25,0x37DE576),(26,0x37DE59D),(27,0x37DE5C1),(28,0x37DE5E8),(29,0x37DE616),(30,0x37DE63A),(31,0x37DE668),(32,0x37DE68C),(33,0x37DE6BA),(34,0x37DE6EE),(35,0x37DE71C),(36,0x37DE751),(37,0x37DE77C),(38,0x37DE7B7),(39,0x37DE7F2),(40,0x37DE827),(41,0x37DE857),(42,0x37DE891),(43,0x37DE8C5),(44,0x37DE8F3),(45,0x37DE92E),(46,0x37DE969),(47,0x37DE99D),
+)
+ACTION_GROUP_CALLS = ((0,0x3E4005C),(1,0x3E40091))
+REQUIRED_SOURCE_LENGTHS = (424, 533)
+TERMINAL_FIELD_CONTRACT = (
+    (43, "switchToCenterBeforeCast", 46827712, "bool"),
+    (44, "tagDuringAttach", 47864976, "counted-member-record-list"),
+    (45, "toggleBuffs", 58849520, "counted-nested-object-list"),
+    (46, "uiRangeHints", 58849520, "counted-nested-object-list"),
+    (47, "useAIExclusiveFrame", 46827712, "bool"),
+)
 HEX64_RE = re.compile(r"^[0-9a-fA-F]{64}$")
 HEX_RE = re.compile(r"^(?:[0-9a-fA-F]{2})+$")
 SKILL_PREFIX = "Data/Json/SkillData/"
@@ -92,6 +105,15 @@ def _load_json_with_sha256(path: Path, *, label: str) -> tuple[dict[str, Any], s
     if not isinstance(value, dict):
         raise ReceiptVerificationError(f"{label}: expected a JSON object")
     return value, hashlib.sha256(raw).hexdigest().upper()
+
+
+def _file_provenance(path: Path, sha256: str) -> dict[str, Any]:
+    resolved = path.resolve()
+    return {
+        "path": resolved.as_posix(),
+        "length": resolved.stat().st_size,
+        "sha256": _sha256_text(sha256, source=f"{resolved.name}.sha256"),
+    }
 
 
 def _normalise_required_path(value: str) -> str:
@@ -198,6 +220,37 @@ def _validate_report_gates(
         raise ReceiptVerificationError(
             "SkillData corpus report bytes differ from nativeContext.corpusReference.sha256"
         )
+    skill_reader = native_context.get("selectedSkillDataReaderOrder")
+    observer = skill_reader.get("runtimeCursorObserver") if isinstance(skill_reader, Mapping) else None
+    field_sites = observer.get("fieldCallsites") if isinstance(observer, Mapping) else None
+    child_sites = observer.get("actionGroupChildCallsites") if isinstance(observer, Mapping) else None
+    source_lengths = observer.get("sourceLengths") if isinstance(observer, Mapping) else None
+    if not isinstance(field_sites, list) or [
+        (_integer(row.get("fieldIndex"), source="native observer fieldIndex"),
+         _integer(row.get("callInstructionRva"), source="native observer callInstructionRva"))
+        for row in field_sites if isinstance(row, Mapping)
+    ] != list(FIELD_CALLS):
+        raise ReceiptVerificationError("IL2CPP context lacks the exact SkillData field cursor vector")
+    if not isinstance(child_sites, list) or [
+        (_integer(row.get("childIndex"), source="native observer childIndex"),
+         _integer(row.get("callInstructionRva"), source="native observer child callInstructionRva"))
+        for row in child_sites if isinstance(row, Mapping)
+    ] != list(ACTION_GROUP_CALLS):
+        raise ReceiptVerificationError("IL2CPP context lacks the exact ActionGroup checkpoint vector")
+    if source_lengths != list(REQUIRED_SOURCE_LENGTHS):
+        raise ReceiptVerificationError("IL2CPP context lacks the required SkillData source lengths")
+    terminal_sites = field_sites[-len(TERMINAL_FIELD_CONTRACT):]
+    terminal_actual = [
+        (
+            _integer(row.get("fieldIndex"), source="native terminal fieldIndex"),
+            row.get("fieldName"),
+            _integer(row.get("targetRva"), source="native terminal targetRva"),
+        )
+        for row in terminal_sites
+    ]
+    terminal_expected = [row[:3] for row in TERMINAL_FIELD_CONTRACT]
+    if terminal_actual != terminal_expected:
+        raise ReceiptVerificationError("IL2CPP context lacks the exact SkillData terminal reader vector")
     return rows
 
 
@@ -416,38 +469,81 @@ def _verify_observation(
         "boundaryClass": "ambiguous" if candidates else "unsupported",
     }
     try:
-        if _integer(observation.get("startCallsiteRva"), source="startCallsiteRva") != START_CALLSITE_RVA:
-            raise ReceiptVerificationError("start-callsite-mismatch")
-        if _integer(observation.get("finalCallsiteRva"), source="finalCallsiteRva") != FINAL_CALLSITE_RVA:
-            raise ReceiptVerificationError("final-callsite-mismatch")
         if observation.get("sameReader") is not True or observation.get("sameThread") is not True:
             raise ReceiptVerificationError("reader-or-thread-identity-drift")
-        start_before = _offset(observation.get("startCursorBefore"), source="startCursorBefore", maximum=source_length)
-        start_after = _offset(observation.get("startCursorAfter"), source="startCursorAfter", maximum=source_length)
-        final_before = _offset(observation.get("finalCursorBefore"), source="finalCursorBefore", maximum=source_length)
-        final_after = _offset(observation.get("finalCursorAfter"), source="finalCursorAfter", maximum=source_length)
-        start_byte = _integer(observation.get("startByte"), source="startByte", minimum=0)
-        final_byte = _integer(observation.get("finalByte"), source="finalByte", minimum=0)
-        start_result = observation.get("startResult")
-        final_result = observation.get("finalResult")
-        if type(start_result) is not bool:
-            raise ReceiptVerificationError("start-result-not-boolean")
-        if type(final_result) is not bool:
-            raise ReceiptVerificationError("final-result-not-boolean")
-        if start_byte > 255 or final_byte > 255:
-            raise ReceiptVerificationError("observed-byte-out-of-range")
+        field_rows = observation.get("fieldCursors")
+        child_rows = observation.get("actionGroupCheckpoints")
+        if not isinstance(field_rows, list) or len(field_rows) != len(FIELD_CALLS):
+            raise ReceiptVerificationError("field-cursor-vector-shape-mismatch")
+        if not isinstance(child_rows, list) or len(child_rows) != len(ACTION_GROUP_CALLS):
+            raise ReceiptVerificationError("action-group-checkpoint-shape-mismatch")
+        verified_fields = []
+        previous_after = 0
+        for position, ((field_index, callsite), row) in enumerate(zip(FIELD_CALLS, field_rows)):
+            if not isinstance(row, Mapping):
+                raise ReceiptVerificationError("field-cursor-row-not-object")
+            if _integer(row.get("fieldIndex"), source="fieldIndex") != field_index:
+                raise ReceiptVerificationError("field-index-mismatch")
+            if _integer(row.get("callsiteRva"), source="callsiteRva") != callsite:
+                raise ReceiptVerificationError("field-callsite-mismatch")
+            before = _offset(row.get("cursorBefore"), source="cursorBefore", maximum=source_length)
+            after = _offset(row.get("cursorAfter"), source="cursorAfter", maximum=source_length)
+            if row.get("valid") is not True or before < previous_after or after < before:
+                raise ReceiptVerificationError("field-cursor-order-invalid")
+            if position == 0:
+                if before != 1 or data[0] != 48:
+                    raise ReceiptVerificationError("skilldata-header-cursor-mismatch")
+            elif field_index != 18 and before != previous_after:
+                raise ReceiptVerificationError("field-cursor-gap")
+            verified_fields.append({"fieldIndex": field_index, "callsiteRva": callsite,
+                                    "cursorBefore": before, "cursorAfter": after})
+            previous_after = after
+        verified_children = []
+        field_zero = verified_fields[0]
+        previous_child = field_zero["cursorBefore"]
+        for (child_index, callsite), row in zip(ACTION_GROUP_CALLS, child_rows):
+            if not isinstance(row, Mapping):
+                raise ReceiptVerificationError("action-group-checkpoint-not-object")
+            if (_integer(row.get("childIndex"), source="childIndex") != child_index
+                    or _integer(row.get("callsiteRva"), source="childCallsiteRva") != callsite
+                    or row.get("valid") is not True):
+                raise ReceiptVerificationError("action-group-checkpoint-mismatch")
+            child_after = _offset(row.get("cursorAfter"), source="childCursorAfter",
+                                  maximum=source_length)
+            if child_after < previous_child or child_after > field_zero["cursorAfter"]:
+                raise ReceiptVerificationError("action-group-child-cursor-order-invalid")
+            verified_children.append({"childIndex": child_index, "callsiteRva": callsite,
+                                      "cursorAfter": child_after})
+            previous_child = child_after
+        start = next(row for row in verified_fields if row["fieldIndex"] == 43)
+        final = verified_fields[-1]
+        start_before, start_after = start["cursorBefore"], start["cursorAfter"]
+        final_before, final_after = final["cursorBefore"], final["cursorAfter"]
         if start_after != start_before + 1 or start_before >= source_length:
             raise ReceiptVerificationError("start-cursor-step-invalid")
-        if data[start_before] != start_byte or start_byte not in (0, 1):
+        if data[start_before] not in (0, 1):
             raise ReceiptVerificationError("start-byte-does-not-match-source-bool")
-        if start_result != (start_byte == 1):
-            raise ReceiptVerificationError("start-result-does-not-match-source-byte")
         if final_after != final_before + 1 or final_before >= source_length:
             raise ReceiptVerificationError("final-cursor-step-invalid")
-        if data[final_before] != final_byte or final_byte not in (0, 1):
+        if data[final_before] not in (0, 1):
             raise ReceiptVerificationError("final-byte-does-not-match-source-bool")
-        if final_result != (final_byte == 1):
-            raise ReceiptVerificationError("final-result-does-not-match-source-byte")
+        result["fieldCursors"] = verified_fields
+        result["actionGroupCheckpoints"] = verified_children
+        field_names = MEMORYPACK_FIELD_SCHEMAS["SkillData"]
+        runtime_ranges = [
+            {"fieldIndex": row["fieldIndex"], "fieldName": field_names[row["fieldIndex"]],
+             "start": row["cursorBefore"], "end": row["cursorAfter"],
+             "kind": "observed-direct-field"}
+            for row in verified_fields
+        ]
+        field16 = next(row for row in verified_fields if row["fieldIndex"] == 16)
+        field18 = next(row for row in verified_fields if row["fieldIndex"] == 18)
+        runtime_ranges.insert(17, {
+            "fieldIndex": 17, "fieldName": field_names[17],
+            "start": field16["cursorAfter"], "end": field18["cursorBefore"],
+            "kind": "inline-field-between-observed-neighbors",
+        })
+        result["runtimeFieldRanges"] = runtime_ranges
     except (ReceiptVerificationError, ValueError, TypeError, KeyError) as exc:
         result["boundaryClass"] = "unsupported"
         result["diagnostic"] = str(exc).split(": ", 1)[-1]
@@ -525,13 +621,17 @@ def verify_skilldata_cursor_capture(
     corpus_report_path: Path = DEFAULT_CORPUS_REPORT,
     native_context_path: Path = DEFAULT_NATIVE_CONTEXT,
     required_logical_paths: Sequence[str] = (),
+    receipt_path: Path | None = None,
+    receipt_sha256: str | None = None,
 ) -> dict[str, Any]:
     """Verify receipt gates, source-hash joins, native pins and observed cursors."""
     input_set, game_hash, metadata_hash, receipt_unsupported = _require_capture_gates(receipt)
     corpus_report, corpus_report_sha256 = _load_json_with_sha256(
         corpus_report_path, label="SkillData corpus report"
     )
-    native_context = _load_json(native_context_path, label="IL2CPP context report")
+    native_context, native_context_sha256 = _load_json_with_sha256(
+        native_context_path, label="IL2CPP context report"
+    )
     corpus_rows = _validate_report_gates(
         input_set, game_hash, metadata_hash, corpus_report, native_context,
         corpus_report_sha256,
@@ -547,6 +647,10 @@ def verify_skilldata_cursor_capture(
         if row.get("boundaryClass") == "exact-closed"
     }
     missing_required = [path for path in required if path not in exact_paths]
+    verified_source_lengths = sorted({
+        int(row["hardLimit"])
+        for row in rows if row.get("boundaryClass") == "exact-closed"
+    })
     opaque_by_row = [
         _merge_opaque_ranges([
             *row.get("opaqueByteRanges", []),
@@ -574,7 +678,16 @@ def verify_skilldata_cursor_capture(
         ),
     }
     all_rows_closed = bool(rows) and counts["exactClosed"] == len(rows)
-    status = "complete" if all_rows_closed and not missing_required else "failed"
+    status = (
+        "complete"
+        if all_rows_closed
+        and not missing_required
+        and verified_source_lengths == list(REQUIRED_SOURCE_LENGTHS)
+        else "failed"
+    )
+    receipt_provenance = None
+    if receipt_path is not None and receipt_sha256 is not None:
+        receipt_provenance = _file_provenance(receipt_path, receipt_sha256)
     return {
         "schema": OUTPUT_SCHEMA,
         "status": status,
@@ -583,12 +696,37 @@ def verify_skilldata_cursor_capture(
             "gameAssemblySha256": game_hash,
             "metadataSha256": metadata_hash,
         },
+        "provenance": {
+            "receipt": receipt_provenance,
+            "corpusReport": {
+                **_file_provenance(corpus_report_path, corpus_report_sha256),
+                "identitySetSha256": corpus_report.get("identitySetSha256"),
+            },
+            "nativeContext": _file_provenance(native_context_path, native_context_sha256),
+            "verifier": _file_provenance(
+                Path(__file__), hashlib.sha256(Path(__file__).read_bytes()).hexdigest().upper()
+            ),
+        },
+        "terminalSelectionContract": {
+            "candidateEncoding": "one-member-wrapper",
+            "rejectedAlternativeEncoding": "counted",
+            "fieldStartIndex": 43,
+            "fieldEndIndex": 47,
+            "memberKinds": [row[3] for row in TERMINAL_FIELD_CONTRACT],
+            "nativeReaderTargets": [
+                {"fieldIndex": index, "fieldName": name, "targetRva": target}
+                for index, name, target, _kind in TERMINAL_FIELD_CONTRACT
+            ],
+            "requiredSourceLengths": list(REQUIRED_SOURCE_LENGTHS),
+            "wholeSchemaExact": False,
+        },
         "summary": {
             "observations": len(rows),
             **counts,
             "requiredLogicalPaths": required,
             "verifiedRequiredLogicalPaths": [path for path in required if path in exact_paths],
             "missingRequiredLogicalPaths": missing_required,
+            "verifiedSourceLengths": verified_source_lengths,
             "wholeSchemaExact": False,
             "boundary": (
             "exactClosed counts only runtime-selected terminal candidates that the maintained "
@@ -634,12 +772,16 @@ def main(argv: list[str] | None = None) -> int:
     if args.receipt is None:
         parser.error("receipt is required unless --preflight is selected")
     try:
-        receipt = _load_json(args.receipt, label="capture receipt")
+        receipt, receipt_sha256 = _load_json_with_sha256(
+            args.receipt, label="capture receipt"
+        )
         result = verify_skilldata_cursor_capture(
             receipt,
             corpus_report_path=args.corpus_report,
             native_context_path=args.native_context,
             required_logical_paths=args.required_logical_path,
+            receipt_path=args.receipt,
+            receipt_sha256=receipt_sha256,
         )
     except ReceiptVerificationError as exc:
         result = {"schema": OUTPUT_SCHEMA, "status": "failed", "diagnostic": str(exc)}

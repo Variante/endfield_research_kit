@@ -1,0 +1,135 @@
+{
+  "schema": "endfield.skill-timeline-play-animation-step-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "inputSetSha256": "0F1275C5FE9FEB3C0BAA801A49D37405CB3BA0C5BCD8A0A4160C48758283C497",
+  "dependencies": [
+    {
+      "path": "skill_timeline_play_animation_native.json",
+      "sha256": "3C9138B45A410A161DE9610E1C6402E49CC0E773FFC30E6EE0D8EF9DF2292B54",
+      "role": "inherited PlayAnimationActionData member16 source reads and shared TimelineActionData framing"
+    }
+  ],
+  "dispatcher": {
+    "unionTag": 278,
+    "encodingHex": "FA1601",
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59832278,
+    "routeWindow": {
+      "startRva": 59832278,
+      "endRva": 59832328,
+      "sha256": "B291760FB50B71D32FC14050D6532B7DD4C3D870DBCFD1CAEEA831E4957765F8"
+    },
+    "usageCellRva": 218124000,
+    "usageRawHex": "7543032000000000",
+    "registeredTypeIndex": 106938,
+    "wrapperTypeDefinition": 16323,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayAnimationWithStep_PlayAnimationWithStepDataForMemoryPack"
+  },
+  "methods": [
+    [
+      121874,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayAnimationWithStep_PlayAnimationWithStepDataForMemoryPack",
+      "Deserialize",
+      58165648
+    ],
+    [
+      121875,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayAnimationWithStep_PlayAnimationWithStepDataForMemoryPack+Beyond_Gameplay_Core_PlayAnimationWithStep_PlayAnimationWithStepDataForMemoryPackFormatter",
+      "Deserialize",
+      58168288
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58165648,
+      "endRva": 58166839,
+      "sha256": "A9CA4DA5D3F604EDC15DF482FD9ADBFA70ECCE298EB1AAB6B81EE8B272EDF207",
+      "boundary": "member30 initialization and normal source reads through RET"
+    },
+    {
+      "startRva": 58166839,
+      "endRva": 58166935,
+      "sha256": "745A210AC06BE238A6F664082F934B34A8D89ED55F5581264278B40A274EEBF8",
+      "boundary": "complete lazy initialization and failure rejoin"
+    },
+    {
+      "startRva": 58168288,
+      "endRva": 58168381,
+      "sha256": "C8686147DE7F552CAB82304E29D8575ED978685425E697BAD0F39EF6A1E82865",
+      "boundary": "formatter initialization and forwarding through tail jump"
+    }
+  ],
+  "nestedContextUsage": [
+    {
+      "fieldName": "speed",
+      "instructionRva": 58166609,
+      "instructionHex": "488B15C8B88709",
+      "cellRva": 218056224,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble"
+    },
+    {
+      "fieldName": "stepTarget",
+      "instructionRva": 58166752,
+      "instructionHex": "488B1521898E09",
+      "cellRva": 218502920,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings"
+    }
+  ],
+  "wrapper": {
+    "typeDefinition": 16323,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayAnimationWithStep_PlayAnimationWithStepDataForMemoryPack",
+    "parentTypeDefinition": 16321,
+    "parentTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayAnimationAction_PlayAnimationActionDataForMemoryPack",
+    "serializedMemberCount": 30,
+    "setterMethods": [
+      [121858, "set___animBlendInAfterStep__", "System.Single"],
+      [121859, "set___battlePoseWhenStep__", "System.Boolean"],
+      [121860, "set___frameToOriginAnim__", "System.Int32"],
+      [121861, "set___hideWeapon__", "System.Boolean"],
+      [121862, "set___hideWeaponFrame__", "System.Int32"],
+      [121863, "set___montageName__", "System.String"],
+      [121864, "set___snapDistance__", "System.Single"],
+      [121865, "set___snapFrame__", "System.Int32"],
+      [121866, "set___speed__", "Beyond.Blackboard+BlackboardDouble"],
+      [121867, "set___speedCurveKey__", "System.String"],
+      [121868, "set___stepBlendIn__", "System.Single"],
+      [121869, "set___stepDistance__", "System.Single"],
+      [121870, "set___stepTarget__", "Beyond.Gameplay.Core.TargetSettings"],
+      [121871, "set___useFixSpeed__", "System.Boolean"]
+    ],
+    "selectedReadOrder": [
+      "animBlendInAfterStep",
+      "battlePoseWhenStep",
+      "frameToOriginAnim",
+      "hideWeapon",
+      "hideWeaponFrame",
+      "montageName",
+      "snapDistance",
+      "snapFrame",
+      "speed",
+      "speedCurveKey",
+      "stepBlendIn",
+      "stepDistance",
+      "stepTarget",
+      "useFixSpeed"
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "The pinned dispatcher maps physical union tag 0x0116 to the named member30 wrapper; method, code, setter parameter and dependency hashes identify the exact current reader.",
+    "direct": "The selected Deserialize body reads the inherited member16 prefix followed by the fourteen named wrapper members in the recorded order.",
+    "structuralOnly": "The contract proves wire layout and cursor advance; it does not establish runtime animation behavior or coordinate conventions."
+  }
+}

@@ -224,7 +224,7 @@ def _join_and_frame(
             )
         member3_count = len(frame["member3Records"])
         member3_inner_count = sum(
-            len(record["innerRecords"]) for record in frame["member3Records"]
+            len(record["extraEffects"]) for record in frame["member3Records"]
         )
         member18_count = len(frame["member18Records"])
         results.append(

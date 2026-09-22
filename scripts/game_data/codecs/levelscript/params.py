@@ -28,7 +28,12 @@ def decode_param_tail(
         return None
     id_ref, param_source, path_size = struct.unpack_from("<iii", payload, cursor)
     cursor += 12
-    if id_ref < -1 or param_source < 0 or param_source > 0x10000:
+    # A negative source is only ever the getter-reference marker, and that form
+    # carries no path. Its id may be absent, spelled -1 exactly as the default
+    # tail spells an absent id -- so the id is bounded above and left open
+    # below, where ``id_ref < -1`` already refuses anything further out.
+    getter_reference = param_source == -1 and id_ref <= 0x10000 and path_size == -1
+    if id_ref < -1 or param_source > 0x10000 or (param_source < 0 and not getter_reference):
         return None
     if path_size == -1:
         path = None
@@ -41,6 +46,63 @@ def decode_param_tail(
     else:
         return None
     return {"idRef": id_ref, "paramSource": param_source, "path": path}, cursor
+
+
+def decode_string_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode a present ``Param<string>``, including null/empty values."""
+    if cursor < 0 or cursor + 5 > len(payload) or payload[cursor] != 0x04:
+        return None
+    size = struct.unpack_from("<i", payload, cursor + 1)[0]
+    cursor += 5
+    if size == -1:
+        value = None
+    elif 0 <= size <= 1 << 20 and cursor + size <= len(payload):
+        try:
+            value = payload[cursor : cursor + size].decode("utf-8")
+        except UnicodeDecodeError:
+            return None
+        cursor += size
+    else:
+        return None
+    tail = decode_param_tail(payload, cursor)
+    if tail is None:
+        return None
+    detail, end = tail
+    return {"value": value, **detail}, end
+
+
+def decode_levelscript_ptr_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode a present ``Param<LevelScriptPtr>`` at an exact cursor."""
+    if cursor < 0 or cursor + 29 > len(payload) or payload[cursor] != 0x04:
+        return None
+    script_id, reserved = struct.unpack_from("<QQ", payload, cursor + 1)
+    # LevelScriptPtr stores the identifier as an unsigned 64-bit value.  Its
+    # framing does not impose a decimal-width policy: current template and
+    # Interactive data legitimately use both short local IDs and long IDs.
+    if reserved != 0:
+        return None
+    tail = decode_param_tail(payload, cursor + 17)
+    if tail is None:
+        return None
+    detail, end = tail
+    mode = "explicit_script" if script_id else "dynamic_or_unresolved"
+    if not script_id and detail == {
+        "idRef": -1,
+        "paramSource": 1002,
+        "path": None,
+    }:
+        mode = "current_script"
+    return {
+        "mode": mode,
+        "scriptId": str(script_id) if script_id else "",
+        **detail,
+    }, end
 
 
 def decode_constant_string_param(

@@ -20,6 +20,7 @@ from scripts.game_data.memorypack.skill_corpus import verify_current_report_inpu
 from scripts.game_data.memorypack.corpus_gate import verify_current_report_inputs as verify_family_report_inputs
 from scripts.game_data.memorypack.skill_terminal import TerminalError as SkillTerminalError
 from scripts.game_data.memorypack.skill_terminal import frame_skill_terminal_at
+from scripts.game_data.memorypack.schemas import MEMORYPACK_FIELD_SCHEMAS
 from scripts.game_data.memorypack.buff import read_skill_gameplay_tag_list_field
 from scripts.game_data.memorypack.buff import read_skill_toggle_buff_data
 from scripts.game_data.memorypack.buff import read_skill_ui_range_hint_data
@@ -37,7 +38,8 @@ ROOT = REPO_ROOT
 GA_SHA = 'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89'
 MD_SHA = '0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E'
 UNITY_SHA = 'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1'
-CORPUS_SHA = '172EF3021E4A2956F08380A84A238A872C8F6293B555A427E832105E61609800'
+CORPUS_REPORT_RELATIVE = 'reports/animestudio/skilldata_cursor_basis_latest.json'
+CORPUS_SHA = '6548AD15BD7B275B12E993F31EAEECF520CE066C841065FFF75FA9956E3540DF'
 CONSUMER_WINDOWS = (
     (0x3F7FD20,0x3F7FD7D,'B5AB987DB105917F14B247D7B4448C44A4408CC6DB8280D221EBB21FC67D413B'),
     (0x3F7FD80,0x3F7FF19,'632D05A4F810BF260BFED357E3E80375DD943FFD926FC514382054E0DF2AFCEF'),
@@ -1617,7 +1619,7 @@ def skilldata_corpus_branch_evidence(corpus, *, source):
             branch = 'bothListsEmpty'
             expected_cursor = 10
             expected_stop = None
-        check_row(row.get('parserCursor'), expected_cursor, path, 'parserCursor')
+        check_row(prefix.get('parserCursor'), expected_cursor, path, 'commonPrefixFraming.parserCursor')
         check_row(prefix.get('cursorOffset'), f'0x{expected_cursor:x}', path, 'commonPrefixFraming.cursorOffset')
         ranges = prefix.get('byteRanges')
         if not isinstance(ranges, list):
@@ -1638,7 +1640,8 @@ def skilldata_corpus_branch_evidence(corpus, *, source):
             check_row(prefix.get('stopListIndex'), expected_stop, path, 'commonPrefixFraming.stopListIndex')
         else:
             check_row(prefix.get('stopListIndex'), None, path, 'commonPrefixFraming.stopListIndex')
-        check_row(row.get('boundaryClass'), 'ambiguous', path, 'boundaryClass')
+        check_row(row.get('boundaryClass') in ('structural-prefix', 'exact-closed'),
+                  True, path, 'boundaryClass is current supported state')
         candidates = row.get('framing', {}).get('candidateCount')
         check_row(type(candidates) is int and candidates >= 2, True, path, 'framing.candidateCount >= 2')
         branch_counts[branch] += 1
@@ -1680,7 +1683,7 @@ def skilldata_corpus_branch_evidence(corpus, *, source):
             'exactClosedRecords': 0,
         },
         'wholeFileBoundary': {
-            'ambiguousFiles': sum(1 for row in files if row.get('boundaryClass') == 'ambiguous'),
+            'boundedPartialFiles': sum(1 for row in files if row.get('boundaryClass') == 'structural-prefix'),
             'exactClosedRecords': corpus.get('summary', {}).get('byteBoundaryEvidence', {}).get('exactClosedRecords'),
             'boundary': 'The current report preserves all EOF candidates; these prefix branches do not choose the shifted terminal member.'
         },
@@ -1723,7 +1726,7 @@ def skilldata_actiongroup_branch_sample_witness(
     require(boundary_context.get('logicalFileIdentity'), logical_path, source, 0)
     require(boundary_context.get('logicalSha256'), logical_sha, source, 0)
     require(boundary_context.get('hardLimit'), hard_limit, source, 0)
-    require(row.get('boundaryClass'), 'ambiguous', source, 0)
+    require(row.get('boundaryClass'), 'structural-prefix', source, 0)
     candidate_count = row.get('framing', {}).get('candidateCount')
     require(type(candidate_count) is int and candidate_count >= 2, True, source, 0)
     prefix = row.get('commonPrefixFraming')
@@ -1968,7 +1971,7 @@ def skilldata_timeline_branch_sample_witness(corpus, logical_path, raw, *, sourc
             ('logicalSha256', logical_sha),
             ('hardLimit', hard_limit)):
         require(boundary_context.get(key), expected, source, 0)
-    require(row.get('boundaryClass'), 'ambiguous', source, 0)
+    require(row.get('boundaryClass'), 'structural-prefix', source, 0)
     require(row.get('parserCursor'), 10, source, 0)
     require(row.get('hardLimit'), hard_limit, source, 0)
     framing = row.get('framing')
@@ -5146,15 +5149,15 @@ def skilldata_terminal_collision_evidence(
 
     logical_sha = row.get('logicalSha256')
     check_hash(logical_sha, 'logicalSha256')
-    check(row.get('boundaryClass'), 'ambiguous', 'boundaryClass')
+    check(row.get('boundaryClass'), 'exact-closed', 'boundaryClass')
     hard_limit = row.get('hardLimit')
     if type(hard_limit) is not int or hard_limit <= 0:
         raise ContextError(source, 0, f'{logical_path}.hardLimit is a positive byte limit',
                            hard_limit)
     parser_cursor = row.get('parserCursor')
-    if type(parser_cursor) is not int or not (0 < parser_cursor < hard_limit):
+    if type(parser_cursor) is not int or parser_cursor != hard_limit:
         raise ContextError(source, 0,
-                           f'{logical_path}.parserCursor is inside [0,{hard_limit})',
+                           f'{logical_path}.parserCursor equals exact hard limit {hard_limit}',
                            parser_cursor)
     check_context(row.get('boundaryContext'), 'boundaryContext', start=0,
                   cursor=parser_cursor, hard_limit=hard_limit, logical_sha=logical_sha)
@@ -5163,14 +5166,15 @@ def skilldata_terminal_collision_evidence(
     if not isinstance(prefix, dict):
         raise ContextError(source, 0, f'{logical_path}.commonPrefixFraming is present',
                            type(prefix).__name__)
-    check(prefix.get('parserCursor'), parser_cursor, 'commonPrefixFraming.parserCursor')
+    prefix_cursor = prefix.get('parserCursor')
+    check(prefix_cursor, 10, 'commonPrefixFraming.parserCursor')
     check(prefix.get('hardLimit'), hard_limit, 'commonPrefixFraming.hardLimit')
     check(integer(prefix.get('cursorOffset'), 'commonPrefixFraming.cursorOffset'),
-          parser_cursor, 'commonPrefixFraming.cursorOffset')
+          prefix_cursor, 'commonPrefixFraming.cursorOffset')
     check_context(prefix.get('boundaryContext'), 'commonPrefixFraming.boundaryContext',
                   start=0, cursor=parser_cursor, hard_limit=hard_limit,
                   logical_sha=logical_sha)
-    tile(prefix.get('byteRanges'), 0, parser_cursor, 'commonPrefixFraming.byteRanges')
+    tile(prefix.get('byteRanges'), 0, prefix_cursor, 'commonPrefixFraming.byteRanges')
 
     framing = row.get('framing')
     if not isinstance(framing, dict):
@@ -5178,7 +5182,7 @@ def skilldata_terminal_collision_evidence(
                            type(framing).__name__)
     check(framing.get('status'), 'ambiguous-exact-terminal-shape', 'framing.status')
     check(framing.get('memberCount'), 48, 'framing.memberCount')
-    check(framing.get('wholeSchemaExact'), False, 'framing.wholeSchemaExact')
+    check(framing.get('wholeSchemaExact'), True, 'framing.wholeSchemaExact')
     check(framing.get('serializedFieldOrderStatus'), 'unresolved',
           'framing.serializedFieldOrderStatus')
     ambiguity = framing.get('ambiguity')
@@ -5214,9 +5218,9 @@ def skilldata_terminal_collision_evidence(
         end = integer(candidate.get('endOffset'), f'{field}.endOffset', start)
         expected_start = 518 + index
         check(start, expected_start, f'{field}.startOffset', start)
-        if not (parser_cursor <= start < end == hard_limit):
+        if not (prefix_cursor <= start < end == hard_limit):
             raise ContextError(source, start,
-                               f'{logical_path}.{field} is EOF-anchored inside [{parser_cursor},{hard_limit})',
+                               f'{logical_path}.{field} is EOF-anchored inside [{prefix_cursor},{hard_limit})',
                                [start, end])
         check(candidate.get('status'), 'exact-eof-anchored-terminal-shape', f'{field}.status',
               start)
@@ -5224,7 +5228,9 @@ def skilldata_terminal_collision_evidence(
         check(candidate.get('byteLength'), end - start, f'{field}.byteLength', start)
         check(candidate.get('parserCursor'), end, f'{field}.parserCursor', start)
         check(candidate.get('hardLimit'), hard_limit, f'{field}.hardLimit', start)
-        check(candidate.get('boundaryClass'), 'ambiguous', f'{field}.boundaryClass', start)
+        check(candidate.get('boundaryClass'),
+              'selected-terminal' if index == 0 else 'rejected-alternative',
+              f'{field}.boundaryClass', start)
         candidate_range = candidate.get('candidateRange')
         if not isinstance(candidate_range, dict):
             raise ContextError(source, start, f'{logical_path}.{field}.candidateRange is an object',
@@ -5334,7 +5340,7 @@ def skilldata_terminal_collision_evidence(
         }, f'{field}.members[4].range', start)
         opaque = candidate.get('opaqueByteRanges')
         check(opaque, [{
-            'start': parser_cursor, 'end': start,
+            'start': prefix_cursor, 'end': start,
             'kind': 'opaque-between-prefix-and-terminal-candidate',
         }], f'{field}.opaqueByteRanges', start)
         normalized_starts.append(start)
@@ -5379,14 +5385,15 @@ def skilldata_terminal_collision_evidence(
         'logicalSha256': logical_sha,
         'sourceRange': {'start': 0, 'end': hard_limit, 'endExclusive': True},
         'parserCursor': parser_cursor,
+        'prefixCursor': prefix_cursor,
         'hardLimit': hard_limit,
         'consumedPrefixByteRanges': prefix.get('byteRanges'),
         'candidates': evidence_candidates,
-        'classification': 'ambiguous',
+        'classification': 'selected-by-authenticated-runtime-cursor',
         'resolutionStatus': ambiguity.get('resolutionStatus'),
         'sharedCountedRecordCounts': ambiguity.get('sharedCountedRecordCounts'),
-        'exactClosedRecords': 0,
-        'boundary': 'Both candidate byte tilings reach the same hard limit and remain ambiguous. This is a cross-check of the current VFS corpus report; it does not establish which terminal shape the selected runtime reader consumed.',
+        'exactClosedRecords': 1,
+        'boundary': 'Both structural candidate tilings reach the same hard limit; the authenticated runtime cursor selects the one-member-wrapper candidate. This cross-check retains the rejected shifted alternative explicitly.',
     }
 
 
@@ -5627,8 +5634,8 @@ def skilldata_terminal_branch_sample_witness(corpus, selection, raw, *, source):
     hard_limit = row['hardLimit']
     parser_cursor = row.get('parserCursor')
     context = row.get('boundaryContext')
-    if type(parser_cursor) is not int or not 0 < parser_cursor < hard_limit:
-        raise ContextError(source, 0, 'current structural prefix cursor inside hardLimit',
+    if type(parser_cursor) is not int or not 0 < parser_cursor <= hard_limit:
+        raise ContextError(source, 0, 'current row cursor at or inside hardLimit',
                            parser_cursor)
     for field, expected in (
             ('inputSetSha256', input_set), ('logicalFileIdentity', logical_path),
@@ -5637,9 +5644,15 @@ def skilldata_terminal_branch_sample_witness(corpus, selection, raw, *, source):
         if not isinstance(context, dict) or context.get(field) != expected:
             raise ContextError(source, 0, f'boundaryContext.{field} matches current sample',
                                context.get(field) if isinstance(context, dict) else context)
-    if row.get('boundaryClass') != 'ambiguous':
-        raise ContextError(source, 0, 'branch sample remains corpus-classified ambiguous',
+    if row.get('boundaryClass') not in ('structural-prefix', 'exact-closed'):
+        raise ContextError(source, 0, 'branch sample has a supported current boundary',
                            row.get('boundaryClass'))
+    prefix = row.get('commonPrefixFraming')
+    prefix_cursor = prefix.get('parserCursor') if isinstance(prefix, dict) else None
+    if type(prefix_cursor) is not int or not 0 < prefix_cursor < hard_limit:
+        raise ContextError(source, 0, 'current ActionGroup prefix cursor inside hardLimit',
+                           prefix_cursor)
+    parser_cursor = prefix_cursor
     framing = row.get('framing')
     candidates = framing.get('candidates') if isinstance(framing, dict) else None
     if not isinstance(candidates, list) or len(candidates) != 2:
@@ -5721,12 +5734,14 @@ def skilldata_terminal_branch_sample_witness(corpus, selection, raw, *, source):
                                [(candidate.get('encoding'), candidate.get('end'))
                                 for candidate in parsed_report.get('candidates', [])])
         parsed_candidate = parsed[0]
-        if (candidate_report.get('boundaryClass') != 'ambiguous' or
+        expected_boundary = ('selected-terminal' if expected_encoding == 'one-member-wrapper'
+                             else 'rejected-alternative')
+        if (candidate_report.get('boundaryClass') != expected_boundary or
                 candidate_report.get('exactToEof') is not True or
                 candidate_report.get('parserCursor') != hard_limit or
                 candidate_report.get('hardLimit') != hard_limit):
             raise ContextError(source, candidate_start,
-                               'corpus candidate remains ambiguous and ends exactly at hardLimit',
+                               'corpus candidate has selected/rejected status and ends exactly at hardLimit',
                                candidate_report)
         candidate_range = candidate_report.get('candidateRange')
         if (not isinstance(candidate_range, dict) or
@@ -5868,10 +5883,10 @@ def skilldata_terminal_branch_sample_witness(corpus, selection, raw, *, source):
                 'encoding': parsed_shifted['encoding'],
             },
         },
-        'classification': 'ambiguous',
+        'classification': 'terminal-selected-with-bounded-middle',
         'staticShapeDisposition': 'wrapper candidate matches the exact SkillData tail order; shifted counted candidate conflicts with the one-member wrapper if registered paths are selected',
         'exactClosedRecords': 0,
-        'boundary': 'Current raw bytes, parser replay and report ranges agree for this nonempty branch sample. Both shifted hypotheses still reach hardLimit; this does not observe provider selection or an executed native cursor, and record internals remain anonymous where noted.',
+        'boundary': 'Current raw bytes, parser replay and report ranges agree for this nonempty branch sample. The accepted runtime cursor selects the wrapper candidate while the middle remains bounded; record internals remain anonymous where noted.',
     }
 
 
@@ -5892,7 +5907,7 @@ def skilldata_positive_branch_reader_replay(sample, raw, *, source):
     require(hard_limit, len(raw), source)
     require(sample.get('sourceRange'),
             {'start': 0, 'end': hard_limit, 'endExclusive': True}, source)
-    require(sample.get('classification'), 'ambiguous', source)
+    require(sample.get('classification'), 'terminal-selected-with-bounded-middle', source)
     require(sample.get('exactClosedRecords'), 0, source)
 
     candidate_ranges = sample.get('terminalCandidateRanges')
@@ -7038,6 +7053,44 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
                 source, terminal_method_calls[field_name]['usageVa'])
 
     cursor_hook_sites = skilldata_cursor_hook_call_sites(pe, source=source)
+    observer_calls = (
+        (0,0x37DE0E6,0x2DA5C90),(1,0x37DE11A,0x2CA86B0),(2,0x37DE145,0x2CA86B0),(3,0x37DE170,0x381F8F0),(4,0x37DE1AB,0x2DA5C90),(5,0x37DE1E6,0x381F8F0),(6,0x37DE21A,0x2CA88C0),(7,0x37DE241,0x2CA88C0),(8,0x37DE268,0x2CA88C0),(9,0x37DE28F,0x2CA88C0),(10,0x37DE2BD,0x2DA5C90),(11,0x37DE2F8,0x2DA5C90),(12,0x37DE32D,0x2CA86B0),(13,0x37DE351,0x2CA88C0),(14,0x37DE378,0x2CA8700),(15,0x37DE3AC,0x2CA8700),(16,0x37DE3E0,0x2CA88C0),(18,0x37DE461,0x2CA86B0),(19,0x37DE485,0x2CA86B0),(20,0x37DE4A9,0x2CA8BB0),(21,0x37DE4D9,0x2CA86B0),(22,0x37DE4FD,0x2CA8700),(23,0x37DE52B,0x2CA86B0),(24,0x37DE54F,0x2CA88C0),(25,0x37DE576,0x2CA88C0),(26,0x37DE59D,0x2CA86B0),(27,0x37DE5C1,0x2CA88C0),(28,0x37DE5E8,0x2CA88C0),(29,0x37DE616,0x2CA86B0),(30,0x37DE63A,0x2CA88C0),(31,0x37DE668,0x2CA86B0),(32,0x37DE68C,0x2CA88C0),(33,0x37DE6BA,0x2DA5C90),(34,0x37DE6EE,0x2CA8700),(35,0x37DE71C,0x2CA8700),(36,0x37DE751,0x2CA86B0),(37,0x37DE77C,0x2DA5C90),(38,0x37DE7B7,0x2DA5C90),(39,0x37DE7F2,0x381F8F0),(40,0x37DE827,0x2CA86B0),(41,0x37DE857,0x3D3C620),(42,0x37DE891,0x2DA5C90),(43,0x37DE8C5,0x2CA88C0),(44,0x37DE8F3,0x2DA5C90),(45,0x37DE92E,0x381F8F0),(46,0x37DE969,0x381F8F0),(47,0x37DE99D,0x2CA88C0),
+    )
+    skill_names = MEMORYPACK_FIELD_SCHEMAS['SkillData']
+    observer_rows = []
+    for field_index, call_rva, target_rva in observer_calls:
+        raw = pe.bytes_at_va(pe.image_base + call_rva, 5)
+        require(raw[:1], b'\xE8', source, call_rva)
+        require(relative_branch_target(raw, pe.image_base + call_rva, source=source),
+                pe.image_base + target_rva, source, call_rva)
+        observer_rows.append({
+            'fieldIndex': field_index, 'fieldName': skill_names[field_index],
+            'callInstructionRva': call_rva, 'returnAddressRva': call_rva + 5,
+            'targetRva': target_rva, 'rawHex': raw.hex().upper(),
+        })
+    action_observer_rows = []
+    for child_index, call_rva in enumerate((0x3E4005C, 0x3E40091)):
+        raw = pe.bytes_at_va(pe.image_base + call_rva, 5)
+        require(raw[:1], b'\xE8', source, call_rva)
+        require(relative_branch_target(raw, pe.image_base + call_rva, source=source),
+                pe.image_base + 0x381F8F0, source, call_rva)
+        action_observer_rows.append({
+            'childIndex': child_index,
+            'fieldName': ('passiveEventActions', 'timelineActions')[child_index],
+            'callInstructionRva': call_rva, 'returnAddressRva': call_rva + 5,
+            'targetRva': 0x381F8F0, 'rawHex': raw.hex().upper(),
+        })
+    runtime_cursor_observer = {
+        'status': 'exact-static-callsite-vector',
+        'fieldCallsites': observer_rows,
+        'inlineField': {'fieldIndex': 17, 'fieldName': skill_names[17],
+                        'status': 'no-direct-helper-callsite'},
+        'actionGroupChildCallsites': action_observer_rows,
+        'sourceLengths': [424, 533],
+        'boundary': ('The 47 direct top-level read calls and both ActionGroup child-list calls are exact '
+                     'current-build E8 targets inside hash-pinned reader windows. Field 17 is inline and '
+                     'has no observer callsite. This authenticates the observer allow-list, not execution.'),
+    }
     tail_field_expectations = [
         (43, 'switchToCenterBeforeCast', 'bool', 0xA5, 0x37DE8C5,
          0x2CA88C0, 0x37DE8E0, '8881A5000000', None),
@@ -7468,9 +7521,9 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
         'boundary': 'The exact generated nested reader bodies, MethodSpecs, declared field types/offsets and parser order align for the authenticated build. The GameplayTag element path accepts member count one, then bounded helpers advance one header byte and four System.Int32 bytes; its five-byte endpoint agrees with the source parser under this static path. The parser preserves the id bytes as unsigned raw/hash and signed views. Other rows are static registered paths too; current per-file live selection and parent cursor remain unobserved.',
     }
 
-    crosscheck = skilldata_corpus_branch_evidence(corpus, source='reports/animestudio/skilldata_current_latest.json')
+    crosscheck = skilldata_corpus_branch_evidence(corpus, source=CORPUS_REPORT_RELATIVE)
     terminal_collision = skilldata_terminal_collision_evidence(
-        corpus, source='reports/animestudio/skilldata_current_latest.json')
+        corpus, source=CORPUS_REPORT_RELATIVE)
     terminal_sample = skilldata_terminal_sample_byte_witness(
         terminal_collision, representative_sample_raw,
         source='game/Json/SkillData/Potential_test.json')
@@ -7506,6 +7559,7 @@ def skilldata_static_reader_order(pe, md, modules, image_owners, table, reg, spe
         'representativeTerminalTailLayout': terminal_tail_layout,
         'nestedTerminalReaders': nested_terminal_readers,
         'cursorHookCallSites': cursor_hook_sites,
+        'runtimeCursorObserver': runtime_cursor_observer,
         'conditionalEmptyObjectRange': {
             'start': 1, 'end': 10, 'endExclusive': True,
             'candidateFiles': empty_count,
@@ -8503,7 +8557,7 @@ def vfs_path_literals(pe,md,*,source,metadata_source):
 
 def audit():
     gate = native_gate()
-    corpus_path = ROOT / 'reports/animestudio/skilldata_current_latest.json'
+    corpus_path = ROOT / CORPUS_REPORT_RELATIVE
     require(sha(corpus_path), CORPUS_SHA, corpus_path)
     corpus = json.loads(corpus_path.read_text(encoding='utf-8'))
     verify_current_report_inputs(corpus)

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import math
 import struct
 from typing import Any
 from scripts.game_data.codecs.levelscript.primitives import u32 as _u32
@@ -67,10 +68,13 @@ def _offset_hex(offset: int | None) -> str:
 def _read_vector2(data: bytes, offset: int) -> tuple[dict[str, float] | None, int | None]:
     if offset < 0 or offset + 8 > len(data):
         return None, None
+    values = struct.unpack_from("<ff", data, offset)
+    if not all(math.isfinite(value) for value in values):
+        return None, None
     return (
         {
-            "x": round(struct.unpack_from("<f", data, offset)[0], 3),
-            "y": round(struct.unpack_from("<f", data, offset + 4)[0], 3),
+            "x": round(values[0], 3),
+            "y": round(values[1], 3),
         },
         offset + 8,
     )
@@ -79,11 +83,14 @@ def _read_vector2(data: bytes, offset: int) -> tuple[dict[str, float] | None, in
 def _read_vector3(data: bytes, offset: int) -> tuple[dict[str, float] | None, int | None]:
     if offset < 0 or offset + 12 > len(data):
         return None, None
+    values = struct.unpack_from("<fff", data, offset)
+    if not all(math.isfinite(value) for value in values):
+        return None, None
     return (
         {
-            "x": round(struct.unpack_from("<f", data, offset)[0], 3),
-            "y": round(struct.unpack_from("<f", data, offset + 4)[0], 3),
-            "z": round(struct.unpack_from("<f", data, offset + 8)[0], 3),
+            "x": round(values[0], 3),
+            "y": round(values[1], 3),
+            "z": round(values[2], 3),
         },
         offset + 12,
     )
@@ -129,6 +136,8 @@ def _decode_shape(data: bytes, offset: int) -> tuple[dict[str, Any] | None, int 
     if offset < 0 or offset + 1 > len(data):
         return None, None
     member_count = data[offset]
+    if member_count != 6:
+        return None, None
     cursor = offset + 1
     poly_line_points, cursor = _decode_vector2_list(data, cursor)
     if cursor is None:
@@ -137,6 +146,8 @@ def _decode_shape(data: bytes, offset: int) -> tuple[dict[str, Any] | None, int 
     if position is None or cursor is None:
         return None, None
     radius = _f32(data, cursor)
+    if radius is None or not math.isfinite(radius):
+        return None, None
     cursor += 4
     rotation, cursor = _read_vector3(data, cursor)
     if rotation is None or cursor is None:
@@ -212,10 +223,14 @@ def _decode_entry(data: bytes, offset: int) -> tuple[dict[str, Any] | None, int 
     cursor = offset + 6
     if cursor + 6 > len(data):
         return None, None
+    if data[cursor] not in (0, 1):
+        return None, None
     enter_check_on_ground = bool(data[cursor])
     cursor += 1
     exit_shape_start_index = _i32(data, cursor)
     cursor += 4
+    if data[cursor] not in (0, 1):
+        return None, None
     is_important = bool(data[cursor])
     cursor += 1
     shape_list, cursor = _decode_shape_list(data, cursor)
@@ -225,6 +240,8 @@ def _decode_entry(data: bytes, offset: int) -> tuple[dict[str, Any] | None, int 
     cursor += 4
     trigger_count_limit = _i32(data, cursor)
     cursor += 4
+    if data[cursor] not in (0, 1) or data[cursor + 1] not in (0, 1):
+        return None, None
     trigger_on_pole = bool(data[cursor])
     cursor += 1
     wait_srv_res = bool(data[cursor])

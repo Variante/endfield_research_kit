@@ -1,0 +1,483 @@
+{
+  "schema": "endfield.buff-frontier6-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "inputSetSha256": "0F1275C5FE9FEB3C0BAA801A49D37405CB3BA0C5BCD8A0A4160C48758283C497",
+  "actions": [
+    {
+      "unionTag": 158,
+      "serializedMemberCount": 4,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DisableRootMotionAction_DataForMemoryPack",
+      "wrapperTypeDefinition": 16071,
+      "actualTypeName": "Beyond.Gameplay.Core.DisableRootMotionAction+Data",
+      "actualTypeDefinition": 9407,
+      "registeredTypeIndex": 106566,
+      "switchTableRva": 59855640,
+      "switchEntryCount": 416,
+      "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+      "switchTargetRva": 59829678,
+      "routeWindow": {
+        "startRva": 59829678,
+        "endRva": 59829728,
+        "sha256": "18F7B1702043DFCA52C027F20DEE37884FDDD73D2BF0A1038A68BB80ED30805A"
+      },
+      "usageCellRva": 218730016,
+      "usageRawHex": "8D40032000000000",
+      "methods": [
+        [
+          119899,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_DisableRootMotionAction_DataForMemoryPack",
+          "Deserialize",
+          69890720
+        ],
+        [
+          119900,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_DisableRootMotionAction_DataForMemoryPack+Beyond_Gameplay_Core_DisableRootMotionAction_DataForMemoryPackFormatter",
+          "Deserialize",
+          69890624
+        ]
+      ],
+      "setterMethods": [],
+      "codeWindows": [
+        {
+          "startRva": 69890720,
+          "endRva": 69891006,
+          "sha256": "24FB6929B84E7E819886853F121AA50061A4D93D6E9F212ADEBEEC6142E9FBD1",
+          "boundary": "complete normal-path reader through RET"
+        },
+        {
+          "startRva": 69890624,
+          "endRva": 69890689,
+          "sha256": "BD1B5A2CB2A577F25D224DD0096E9114490FA070264D38F5240713CAA4631095",
+          "boundary": "complete formatter initialization and forwarding through tail JMP"
+        }
+      ],
+      "readOrder": [
+        "byte",
+        "scalar32",
+        "scalar32",
+        "scalar32"
+      ],
+      "generatedOwnFields": [],
+      "reachedFile": "Data/Json/BuffData/buff_eny_0046_lbshamman_hdg022.json",
+      "reachedOffset": 1093
+    },
+    {
+      "unionTag": 42,
+      "serializedMemberCount": 5,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangePushBackDistanceFactor_DataForMemoryPack",
+      "wrapperTypeDefinition": 15983,
+      "actualTypeName": "Beyond.Gameplay.Core.ChangePushBackDistanceFactor+Data",
+      "actualTypeDefinition": 9299,
+      "registeredTypeIndex": 106365,
+      "switchTableRva": 59855640,
+      "switchEntryCount": 416,
+      "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+      "switchTargetRva": 59853190,
+      "routeWindow": {
+        "startRva": 59853190,
+        "endRva": 59853240,
+        "sha256": "C04CAAFF3C00B6DF2A4B120394E37E496E5E1978A1693B45D1156582C8466A8D"
+      },
+      "usageCellRva": 218695264,
+      "usageRawHex": "FB3E032000000000",
+      "methods": [
+        [
+          119211,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangePushBackDistanceFactor_DataForMemoryPack",
+          "Deserialize",
+          73622592
+        ],
+        [
+          119212,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangePushBackDistanceFactor_DataForMemoryPack+Beyond_Gameplay_Core_ChangePushBackDistanceFactor_DataForMemoryPackFormatter",
+          "Deserialize",
+          73622496
+        ]
+      ],
+      "setterMethods": [
+        [
+          119208,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangePushBackDistanceFactor_DataForMemoryPack",
+          "set___newFactor__",
+          "Beyond.Blackboard+BlackboardDouble"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 73622592,
+          "endRva": 73622974,
+          "sha256": "33294F34855C6FE471E3872FADDAFD8CB74F3250FD5E9550A46DE2AC4DA56BE5",
+          "boundary": "complete normal-path reader through RET"
+        },
+        {
+          "startRva": 73622496,
+          "endRva": 73622585,
+          "sha256": "E22524259A2D63483EF11C9C56F3CE746076280AF65CEF01978A18856C3C97F7",
+          "boundary": "complete formatter initialization and forwarding through tail JMP"
+        }
+      ],
+      "readOrder": [
+        "byte",
+        "scalar32",
+        "scalar32",
+        "scalar32",
+        "blackboard-double"
+      ],
+      "generatedOwnFields": [
+        "newFactor"
+      ],
+      "reachedFile": "Data/Json/BuffData/buff_common_pushdistance_decrease.json",
+      "reachedOffset": 66
+    },
+    {
+      "unionTag": 228,
+      "serializedMemberCount": 5,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_LockMainCharacterToggleAction_DataForMemoryPack",
+      "wrapperTypeDefinition": 16225,
+      "actualTypeName": "Beyond.Gameplay.Core.LockMainCharacterToggleAction+Data",
+      "actualTypeDefinition": 9562,
+      "registeredTypeIndex": 106799,
+      "switchTableRva": 59855640,
+      "switchEntryCount": 416,
+      "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+      "switchTargetRva": 59835578,
+      "routeWindow": {
+        "startRva": 59835578,
+        "endRva": 59835628,
+        "sha256": "C7CFC1622236E0D6882BC6B590736FF4033D74EC134700D9D995DA1B62756359"
+      },
+      "usageCellRva": 218746472,
+      "usageRawHex": "5F42032000000000",
+      "methods": [
+        [
+          121079,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_LockMainCharacterToggleAction_DataForMemoryPack",
+          "Deserialize",
+          72560976
+        ],
+        [
+          121080,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_LockMainCharacterToggleAction_DataForMemoryPack+Beyond_Gameplay_Core_LockMainCharacterToggleAction_DataForMemoryPackFormatter",
+          "Deserialize",
+          72560880
+        ]
+      ],
+      "setterMethods": [
+        [
+          121075,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_LockMainCharacterToggleAction_DataForMemoryPack",
+          "set___lockMainCharacter__",
+          "System.Boolean"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 72560976,
+          "endRva": 72561296,
+          "sha256": "760DDAFBC2F549DE69F549E4995C34083D064374B7F0E46F6B803D50FA272F55",
+          "boundary": "complete normal-path reader through RET"
+        },
+        {
+          "startRva": 72560880,
+          "endRva": 72560945,
+          "sha256": "F24361FEA9D2886F6CF0C2FFB4525513895B82D7DDEB16AAE789717AE84149EA",
+          "boundary": "complete formatter initialization and forwarding through tail JMP"
+        }
+      ],
+      "readOrder": [
+        "byte",
+        "scalar32",
+        "scalar32",
+        "scalar32",
+        "bool"
+      ],
+      "generatedOwnFields": [
+        "lockMainCharacter"
+      ],
+      "reachedFile": "Data/Json/BuffData/buff_common_manual_main_character_lock_icon.json",
+      "reachedOffset": 43
+    },
+    {
+      "unionTag": 303,
+      "serializedMemberCount": 5,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ReplaceAnimationShake_DataForMemoryPack",
+      "wrapperTypeDefinition": 16371,
+      "actualTypeName": "Beyond.Gameplay.Core.ReplaceAnimationShake+Data",
+      "actualTypeDefinition": 9742,
+      "registeredTypeIndex": 106995,
+      "switchTableRva": 59855640,
+      "switchEntryCount": 416,
+      "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+      "switchTargetRva": 59854890,
+      "routeWindow": {
+        "startRva": 59854890,
+        "endRva": 59854940,
+        "sha256": "0D88BECF264D8567A793ABB0380D0556AAE06CFFCC67AB1E89505735AF12DD4E"
+      },
+      "usageCellRva": 218194384,
+      "usageRawHex": "E743032000000000",
+      "methods": [
+        [
+          122291,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_ReplaceAnimationShake_DataForMemoryPack",
+          "Deserialize",
+          73826528
+        ],
+        [
+          122292,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_ReplaceAnimationShake_DataForMemoryPack+Beyond_Gameplay_Core_ReplaceAnimationShake_DataForMemoryPackFormatter",
+          "Deserialize",
+          73826432
+        ]
+      ],
+      "setterMethods": [
+        [
+          122288,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_ReplaceAnimationShake_DataForMemoryPack",
+          "set___replacedAnimationShakeKey__",
+          "System.String"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 73826528,
+          "endRva": 73826891,
+          "sha256": "D911176B2BA9EF98DF81363BD24858ED994A5B1570D6EE235B46B29319AEE7B7",
+          "boundary": "complete normal-path reader through RET"
+        },
+        {
+          "startRva": 73826432,
+          "endRva": 73826521,
+          "sha256": "80207827315B369DAFFD394A0632FE37FB7533469D4908EABA1E4DAEF5D35DB6",
+          "boundary": "complete formatter initialization and forwarding through tail JMP"
+        }
+      ],
+      "readOrder": [
+        "byte",
+        "scalar32",
+        "scalar32",
+        "scalar32",
+        "string"
+      ],
+      "generatedOwnFields": [
+        "replacedAnimationShakeKey"
+      ],
+      "reachedFile": "Data/Json/BuffData/buff_eny_0078_nefarp1_poise_break.json",
+      "reachedOffset": 43
+    },
+    {
+      "unionTag": 397,
+      "serializedMemberCount": 5,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaArcheryBrainToggleRegisterAction_DataForMemoryPack",
+      "wrapperTypeDefinition": 16555,
+      "actualTypeName": "Beyond.Gameplay.Core.TyphoeaArcheryBrainToggleRegisterAction+Data",
+      "actualTypeDefinition": 9957,
+      "registeredTypeIndex": 107219,
+      "switchTableRva": 59855640,
+      "switchEntryCount": 416,
+      "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+      "switchTargetRva": 59855490,
+      "routeWindow": {
+        "startRva": 59855490,
+        "endRva": 59855540,
+        "sha256": "12DFB576E3507F08085CADF5A83A07788144E7DB5D0A47253BC30865DC1C0E42"
+      },
+      "usageCellRva": 218256344,
+      "usageRawHex": "A745032000000000",
+      "methods": [
+        [
+          123710,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaArcheryBrainToggleRegisterAction_DataForMemoryPack",
+          "Deserialize",
+          73830752
+        ],
+        [
+          123711,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaArcheryBrainToggleRegisterAction_DataForMemoryPack+Beyond_Gameplay_Core_TyphoeaArcheryBrainToggleRegisterAction_DataForMemoryPackFormatter",
+          "Deserialize",
+          73830656
+        ]
+      ],
+      "setterMethods": [
+        [
+          123706,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaArcheryBrainToggleRegisterAction_DataForMemoryPack",
+          "set___register__",
+          "System.Boolean"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 73830752,
+          "endRva": 73831115,
+          "sha256": "2FE4E6058FBC86074F0A21D67A9A40A60D0A2E83144DFA0D9071CBC00CF32888",
+          "boundary": "complete normal-path reader through RET"
+        },
+        {
+          "startRva": 73830656,
+          "endRva": 73830745,
+          "sha256": "C38FBBA1B4CC71D4F666143EF26B2966B316C77BA65B44CD460D289EF7C8BAF6",
+          "boundary": "complete formatter initialization and forwarding through tail JMP"
+        }
+      ],
+      "readOrder": [
+        "byte",
+        "scalar32",
+        "scalar32",
+        "scalar32",
+        "bool"
+      ],
+      "generatedOwnFields": [
+        "register"
+      ],
+      "reachedFile": "Data/Json/BuffData/buff_common_typhoea_missile.json",
+      "reachedOffset": 3749
+    },
+    {
+      "unionTag": 215,
+      "serializedMemberCount": 5,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_IntRollingStoneRepatriateAction_IntRollingStoneRepatriateActionDataForMemoryPack",
+      "wrapperTypeDefinition": 16191,
+      "actualTypeName": "Beyond.Gameplay.Core.IntRollingStoneRepatriateAction+IntRollingStoneRepatriateActionData",
+      "actualTypeDefinition": 9528,
+      "registeredTypeIndex": 106691,
+      "switchTableRva": 59855640,
+      "switchEntryCount": 416,
+      "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+      "switchTargetRva": 59854090,
+      "routeWindow": {
+        "startRva": 59854090,
+        "endRva": 59854140,
+        "sha256": "E922E366520E57E1A3510234B6B79433E294150B67A0484EAA2A6D52E47B4BF9"
+      },
+      "usageCellRva": 218750184,
+      "usageRawHex": "8741032000000000",
+      "methods": [
+        [
+          120811,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_IntRollingStoneRepatriateAction_IntRollingStoneRepatriateActionDataForMemoryPack",
+          "Deserialize",
+          73611616
+        ],
+        [
+          120812,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_IntRollingStoneRepatriateAction_IntRollingStoneRepatriateActionDataForMemoryPack+Beyond_Gameplay_Core_IntRollingStoneRepatriateAction_IntRollingStoneRepatriateActionDataForMemoryPackFormatter",
+          "Deserialize",
+          73611520
+        ]
+      ],
+      "setterMethods": [
+        [
+          120808,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_IntRollingStoneRepatriateAction_IntRollingStoneRepatriateActionDataForMemoryPack",
+          "set___defender__",
+          "Beyond.Gameplay.Core.TargetSettings"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 73611616,
+          "endRva": 73611998,
+          "sha256": "AADD53BCB96473E0EAFA90E8DD54F52EAE465C13D514257009FA16EB2DF7B79C",
+          "boundary": "complete normal-path reader through RET"
+        },
+        {
+          "startRva": 73611520,
+          "endRva": 73611609,
+          "sha256": "B9505667576CD6D456E187C0FFFC5CA276B9AAD15E89BC7EC5F7F9B9ECEF38C2",
+          "boundary": "complete formatter initialization and forwarding through tail JMP"
+        }
+      ],
+      "readOrder": [
+        "byte",
+        "scalar32",
+        "scalar32",
+        "scalar32",
+        "target-settings"
+      ],
+      "generatedOwnFields": [
+        "defender"
+      ],
+      "reachedFile": "Data/Json/BuffData/buff_abilityentity_interact_rolling_stone.json",
+      "reachedOffset": 136
+    },
+    {
+      "unionTag": 273,
+      "serializedMemberCount": 5,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PausePoiseRecover_DataForMemoryPack",
+      "wrapperTypeDefinition": 16313,
+      "actualTypeName": "Beyond.Gameplay.Core.PausePoiseRecover+Data",
+      "actualTypeDefinition": 9660,
+      "registeredTypeIndex": 106928,
+      "switchTableRva": 59855640,
+      "switchEntryCount": 416,
+      "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+      "switchTargetRva": 59854690,
+      "routeWindow": {
+        "startRva": 59854690,
+        "endRva": 59854740,
+        "sha256": "700FC4FD47FB7B8E8EF2552554437A390B7D4FA3F5FC7D5935D452065FE5BC4D"
+      },
+      "usageCellRva": 218124264,
+      "usageRawHex": "6143032000000000",
+      "methods": [
+        [
+          121771,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_PausePoiseRecover_DataForMemoryPack",
+          "Deserialize",
+          73610688
+        ],
+        [
+          121772,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_PausePoiseRecover_DataForMemoryPack+Beyond_Gameplay_Core_PausePoiseRecover_DataForMemoryPackFormatter",
+          "Deserialize",
+          73610592
+        ]
+      ],
+      "setterMethods": [
+        [
+          121768,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_PausePoiseRecover_DataForMemoryPack",
+          "set___target__",
+          "Beyond.Gameplay.Core.TargetSettings"
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 73610688,
+          "endRva": 73611070,
+          "sha256": "8F8CCBDC3F101BA282166D7B5B22ED3DFA9C35954493EE671895A56238AE2867",
+          "boundary": "complete normal-path reader through RET"
+        },
+        {
+          "startRva": 73610592,
+          "endRva": 73610681,
+          "sha256": "F0E7DA48BE8E4E07FD1EF65E40D7BEC948FB52B1BC90D27D4E0A4F5E66A87ADA",
+          "boundary": "complete formatter initialization and forwarding through tail JMP"
+        }
+      ],
+      "readOrder": [
+        "byte",
+        "scalar32",
+        "scalar32",
+        "scalar32",
+        "target-settings"
+      ],
+      "generatedOwnFields": [
+        "target"
+      ],
+      "reachedFile": "Data/Json/BuffData/buff_eny_0061_palecore_poiserectime.json",
+      "reachedOffset": 43
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Pinned dispatcher routes, registered wrapper identities, method-token pointers, generated actual-type fields/setters, and complete normal reader windows establish each serialized member count and source read order.",
+    "direct": "Each union tag is reached at the named current-corpus BuffData cursor; a bounded projection using the existing nested profiles rejoins the independently accepted named middle through iconConfig.",
+    "structuralOnly": "The rows establish wire layout and cursor advance; they do not establish runtime action behavior or whole-file semantics."
+  }
+}

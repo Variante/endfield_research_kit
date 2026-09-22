@@ -59,7 +59,7 @@ DIALOG_ID_TABLE_REL = "Json/GameplayConfig/DialogIdTable.json"
 DIALOG_ID_TABLE_ROOT_MEMBER_COUNT = 5
 
 
-DIALOG_ID_TABLE_BRIEF_MEMBER_COUNT = 7
+DIALOG_ID_TABLE_BRIEF_MEMBER_COUNT = 9
 
 
 DIALOG_ID_TABLE_KEY_RE = re.compile(r"^(?:dlg|radio)_[A-Za-z0-9_]{2,140}$")
@@ -908,6 +908,10 @@ def parse_dialog_brief_info_payload(payload: bytes, key: str, field_name: str) -
             dialog_type, offset = read_memorypack_i32(payload, offset)
             if dialog_type < 0 or dialog_type > 32:
                 raise ValueError(f"{field_name}.dialogType:out-of-range={dialog_type}")
+            if offset >= len(payload) or payload[offset] not in (0, 1):
+                raise ValueError(f"{field_name}.enableSeamlessStartInSameFrame:invalid")
+            enable_seamless_start = bool(payload[offset])
+            offset += 1
             interact_text, offset = parse_dialog_id_table_lang_key(payload, offset, f"{field_name}.interactText")
             npc_proxy_ids, offset = parse_dialog_id_table_string_list(payload, offset, f"{field_name}.npcProxyIds")
             if offset >= len(payload):
@@ -916,6 +920,12 @@ def parse_dialog_brief_info_payload(payload: bytes, key: str, field_name: str) -
             offset += 1
             if use_black_screen_byte not in (0, 1):
                 raise ValueError(f"{field_name}.useBlackScreen:invalid={use_black_screen_byte}")
+            used_timeline_ids, offset = parse_dialog_id_table_string_list(
+                payload,
+                offset,
+                f"{field_name}.usedDialogTimelineIds",
+                max_count=256,
+            )
             if offset != len(payload):
                 raise ValueError(f"{field_name}:trailing-bytes={len(payload) - offset}")
             return {
@@ -924,11 +934,13 @@ def parse_dialog_brief_info_payload(payload: bytes, key: str, field_name: str) -
                 "beforeMaskBlendData": before_mask,
                 "dialogId": dialog_id,
                 "dialogType": dialog_type,
+                "enableSeamlessStartInSameFrame": enable_seamless_start,
                 "interactText": interact_text["value"],
                 "interactTextMemberCount": interact_text["memberCount"],
                 "npcProxyIdCount": npc_proxy_ids["count"],
                 "npcProxyIds": npc_proxy_ids["values"],
                 "useBlackScreen": bool(use_black_screen_byte),
+                "usedDialogTimelineIds": used_timeline_ids["values"],
             }
         except (UnicodeDecodeError, struct.error, ValueError) as exc:
             last_error = str(exc)
@@ -1201,9 +1213,11 @@ def decode_dialog_id_table_memorypack(rel: str, data: bytes, size: int) -> dict[
                 "DialogBriefInfo.beforeMaskBlendData",
                 "DialogBriefInfo.dialogId",
                 "DialogBriefInfo.dialogType",
+                "DialogBriefInfo.enableSeamlessStartInSameFrame",
                 "DialogBriefInfo.interactText",
                 "DialogBriefInfo.npcProxyIds",
                 "DialogBriefInfo.useBlackScreen",
+                "DialogBriefInfo.usedDialogTimelineIds",
                 "dialogIdByIntId",
                 "optionIdByIntId",
                 "intIdByDialogOrOptionId",
@@ -1216,9 +1230,11 @@ def decode_dialog_id_table_memorypack(rel: str, data: bytes, size: int) -> dict[
                 "beforeMaskBlendData",
                 "dialogId",
                 "dialogType",
+                "enableSeamlessStartInSameFrame",
                 "interactText",
                 "npcProxyIds",
                 "useBlackScreen",
+                "usedDialogTimelineIds",
             ],
             "dialogBriefInfoCount": brief_count,
             "dialogBriefInfoParsedCount": dialog_brief_info_parsed_count,

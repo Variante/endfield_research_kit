@@ -1,0 +1,89 @@
+{
+  "schema": "endfield.levelscript-task-condition-native.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e",
+    "UnityPlayer.dll": "bee7be52370adddd67ba61e4937ca51b7f272656841d187e95e505496da798d1"
+  },
+  "evidenceBoundary": {
+    "exact": "The current GameCondition formatter switch entry, tag-1 type usage, MetadataRegistration type pointer, generated wrapper inheritance and setter order establish this stored union layout.",
+    "direct": "The selected dispatcher branch constructs the registered wrapper for union tag 0x012f.",
+    "conditional": "The row applies only after the installed native-input and code-window gates validate and the serialized member count is eight.",
+    "unresolved": "Condition evaluation, server authority, entity resolution and gameplay outcome are not established by serialization."
+  },
+  "dispatcher": {
+    "typeDefinition": 13922,
+    "methodToken": "0x060009fd",
+    "methodRva": "0x41825d0",
+    "switchTableRva": "0x41854e8",
+    "maxTag": "0x0139"
+  },
+  "codeWindows": [
+    {
+      "name": "GameCondition.tag_0x012f.branch",
+      "rva": "0x4f8b449",
+      "length": 88,
+      "sha256": "4e323a3c27738a3d57d1f5179a5d4be82342d69035fb14b10a84d16367246e13",
+      "boundary": "Exact switch target through the next unique switch target."
+    }
+  ],
+  "rows": [
+    {
+      "tag": "0x012f",
+      "memberCount": 8,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveCheckBoolForMemoryPack",
+      "generatedDeclaration": "public class Beyond_Gameplay_InteractiveCheckBoolForMemoryPack : Beyond_Gameplay_GameConditionServerForMemoryPack, IMemoryPackDeSerializeWrapper, IMemoryPackDeSerializeWrapper<InteractiveCheckBool>, IMemoryPackDeSerializeType",
+      "generatedSetterOrder": [
+        "__instance",
+        "___compareValue__",
+        "___entityId__",
+        "___key__",
+        "___levelId__"
+      ],
+      "fields": [
+        [
+          "scopeMask",
+          "int32"
+        ],
+        [
+          "uniqueId",
+          "string"
+        ],
+        [
+          "useCurrentScope",
+          "bool"
+        ],
+        [
+          "useGraphScope",
+          "bool"
+        ],
+        [
+          "compareValue",
+          "Param<bool>"
+        ],
+        [
+          "entityId",
+          "Param<EntityPtr>"
+        ],
+        [
+          "key",
+          "Param<string>"
+        ],
+        [
+          "levelId",
+          "Param<string>"
+        ]
+      ],
+      "nativeIdentity": {
+        "switchTargetRva": "0x4f8b449",
+        "usageCellRva": "0xd0ab8f0",
+        "usageRawHex": "9546032000000000",
+        "registeredTypeIndex": 107338,
+        "typePointerRva": "0xd204c78",
+        "typeDefinition": 15017
+      },
+      "conditionType": "InteractiveCheckBool"
+    }
+  ]
+}

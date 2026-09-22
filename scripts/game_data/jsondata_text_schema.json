@@ -1,0 +1,3214 @@
+{
+  "schema": "endfield.jsondata-text-schema.v1",
+  "status": "named_exact",
+  "evidenceBoundary": "Every ordered object shape, array member, scalar JSON type, and observed $type identity in the eight current named text tables is validated. Only explicitly named ID dictionaries are dynamic.",
+  "tables": {
+    "AIConfig/AIGlobalSetting.json": {
+      "dynamicDictionaries": {},
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "centerBattleNumRange",
+              "characterBattleNumRange",
+              "characterAttackRandomDelay",
+              "characterRefreshTargetInstantlyCD",
+              "randomStopAttackTime",
+              "confrontToRunDis",
+              "runToConfrontDis",
+              "gaitChangeCD",
+              "leaveTrapTime",
+              "idleRelaxTime",
+              "closeToHealTargetGait",
+              "closeToHealTargetTime",
+              "seatLeaveDis",
+              "seatSearchRadius",
+              "seatSearchHeight",
+              "unlockSeatTime",
+              "seatOffset",
+              "checkEnemyColliderInterval",
+              "checkEnemyColliderDuration",
+              "skillTeleportOffset",
+              "teleportSlotOffset",
+              "farmingSearchRadius",
+              "speedWeightCurve",
+              "disPredictTime",
+              "dodgePredictMinDist",
+              "dodgeRadius",
+              "dodgeHalfHeight",
+              "dodgeAngle",
+              "dodgeAngleDelta",
+              "singleDodgeCD",
+              "commonDodgeCD",
+              "pickupRadius",
+              "pickupHeight",
+              "pickupEnemyRadius",
+              "pickupEnemyHeight",
+              "evadeStartRadius",
+              "evadeEndRadius",
+              "strafeSwitchCD",
+              "strafeSwitchProb",
+              "strafeSwitchProbAdd",
+              "strafeSwitchTargetDis",
+              "strafeSwitchRootmotionDis",
+              "strafeSwitchPosDisRange",
+              "strafeSwitchAngle",
+              "strafeSwitchTime",
+              "settlementSearchRadius",
+              "settlementSearchHeight",
+              "settlementLoseTargetRadius",
+              "maxSensorVigilance",
+              "maxSensorDistance",
+              "nearSensorDisVigilance",
+              "farSensorDisVigilance",
+              "damageSensorCD",
+              "damageSensorFactor",
+              "moveToOuterRadiusOffset",
+              "moveRotateCurve",
+              "moveToTargetMinDis",
+              "moveToTargetMinAngle",
+              "moveToTargetForceDis",
+              "maxTouchDetectDistance",
+              "touchVigilanceStep",
+              "touchRemoteDetectDistance",
+              "touchRemoteMaxVigilance",
+              "stimulateSettingDatas",
+              "switchSteadyMinMax",
+              "playerStopAtkTime",
+              "enemyHateProbability",
+              "enemyIgnoreMainCD",
+              "enemyAttackerUpdateTargetPeriod",
+              "meleeCharDynamicWeight",
+              "rangedCharDynamicWeight",
+              "charDistanceDynamicWeight",
+              "pursueRangeOffset",
+              "enemyDisengageNoDamageDuration",
+              "enemyDisengageCheckInterval",
+              "enemyDisengageNavDisconnectCount",
+              "enemyDisengageLosDisconnectCount",
+              "enemyDisengageNavAndLosDisconnectCount",
+              "npcAttractStopLengthFactor",
+              "npcAttractStopWidthFactor",
+              "npcAttractStopBackwardsOffset",
+              "npcAttractUnoccupiedDis",
+              "npcCalcRVOTimeRandom",
+              "npcCalcRVOTimeout",
+              "mainCharCalcRVOTimeout",
+              "npcRVODeflectionAngle",
+              "mainCharStillInterval",
+              "mainCharStillFloatDist",
+              "npcFallbackAnimVirtualTag",
+              "charFallbackAnimVirtualTag",
+              "spaceShipSearchMinDis",
+              "blurDetectDis",
+              "npcDetectDis",
+              "disCountPerTick",
+              "idlePqsConfig",
+              "healtargetPqsConfig",
+              "pickupPqsConfig",
+              "focusImportantConfig",
+              "barkExploreConfig",
+              "followPqsConfig",
+              "confrontFallbackPqsConfig",
+              "tauntPqsConfig",
+              "skillMovePqsConfig",
+              "revivePqsConfig",
+              "skillTeleportPQSConfig",
+              "enemyCastSkillPqsConfig",
+              "preloadPerform",
+              "mainCharCreateObstacleTime",
+              "navigationBlockTimeout",
+              "navigationBlockDetectDist",
+              "navLinkAdditiveDist",
+              "factoryNavObstacleMinLength",
+              "enemyPathAreaTypeMask",
+              "enemyPathAreaType",
+              "enemyWalkingAreaTypeMask",
+              "enemyWalkingAreaType",
+              "characterPathAreaTypeMask",
+              "characterPathAreaType",
+              "characterWalkingAreaTypeMask",
+              "characterWalkingAreaType",
+              "mainCharWalkingAreaTypeMask",
+              "mainCharWalkingAreaType",
+              "charfindPointAreaMask",
+              "charfindPointAreaType",
+              "npcfindPointAreaMask",
+              "npcfindPointAreaType"
+            ]
+          ]
+        },
+        "$.centerBattleNumRange": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
+          ]
+        },
+        "$.centerBattleNumRange.x": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.centerBattleNumRange.y": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.characterBattleNumRange": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.characterAttackRandomDelay": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.characterAttackRandomDelay[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "time",
+              "value",
+              "inTangent",
+              "outTangent",
+              "inWeight",
+              "outWeight",
+              "weightedMode"
+            ]
+          ]
+        },
+        "$.characterAttackRandomDelay[].time": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.characterAttackRandomDelay[].value": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.characterAttackRandomDelay[].inTangent": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.characterAttackRandomDelay[].outTangent": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.characterAttackRandomDelay[].inWeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.characterAttackRandomDelay[].outWeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.characterAttackRandomDelay[].weightedMode": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.characterRefreshTargetInstantlyCD": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.randomStopAttackTime": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
+          ]
+        },
+        "$.randomStopAttackTime.x": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.randomStopAttackTime.y": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.confrontToRunDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.runToConfrontDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.gaitChangeCD": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.leaveTrapTime": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.idleRelaxTime": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.closeToHealTargetGait": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.closeToHealTargetTime": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.seatLeaveDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.seatSearchRadius": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.seatSearchHeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.unlockSeatTime": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.seatOffset": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.checkEnemyColliderInterval": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.checkEnemyColliderDuration": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.skillTeleportOffset": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.skillTeleportOffset[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
+          ]
+        },
+        "$.skillTeleportOffset[].x": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.skillTeleportOffset[].y": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.teleportSlotOffset": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.teleportSlotOffset[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
+          ]
+        },
+        "$.teleportSlotOffset[].x": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.teleportSlotOffset[].y": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.farmingSearchRadius": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.speedWeightCurve": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.speedWeightCurve[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "time",
+              "value",
+              "inTangent",
+              "outTangent",
+              "inWeight",
+              "outWeight",
+              "weightedMode"
+            ]
+          ]
+        },
+        "$.speedWeightCurve[].time": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.speedWeightCurve[].value": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.speedWeightCurve[].inTangent": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.speedWeightCurve[].outTangent": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.speedWeightCurve[].inWeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.speedWeightCurve[].outWeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.speedWeightCurve[].weightedMode": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.disPredictTime": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.dodgePredictMinDist": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.dodgeRadius": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.dodgeHalfHeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.dodgeAngle": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.dodgeAngleDelta": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.singleDodgeCD": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.commonDodgeCD": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.pickupRadius": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.pickupHeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.pickupEnemyRadius": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.pickupEnemyHeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.evadeStartRadius": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.evadeEndRadius": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.strafeSwitchCD": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.strafeSwitchProb": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.strafeSwitchProbAdd": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.strafeSwitchTargetDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.strafeSwitchRootmotionDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.strafeSwitchPosDisRange": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
+          ]
+        },
+        "$.strafeSwitchPosDisRange.x": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.strafeSwitchPosDisRange.y": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.strafeSwitchAngle": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.strafeSwitchTime": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.settlementSearchRadius": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.settlementSearchHeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.settlementLoseTargetRadius": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.maxSensorVigilance": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.maxSensorDistance": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.nearSensorDisVigilance": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.farSensorDisVigilance": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.damageSensorCD": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.damageSensorFactor": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.moveToOuterRadiusOffset": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.moveRotateCurve": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.moveRotateCurve[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "time",
+              "value",
+              "inTangent",
+              "outTangent",
+              "inWeight",
+              "outWeight",
+              "weightedMode"
+            ]
+          ]
+        },
+        "$.moveRotateCurve[].time": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.moveRotateCurve[].value": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.moveRotateCurve[].inTangent": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.moveRotateCurve[].outTangent": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.moveRotateCurve[].inWeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.moveRotateCurve[].outWeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.moveRotateCurve[].weightedMode": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.moveToTargetMinDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.moveToTargetMinAngle": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.moveToTargetForceDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.maxTouchDetectDistance": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.touchVigilanceStep": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.touchRemoteDetectDistance": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.touchRemoteMaxVigilance": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "Default",
+              "Far",
+              "Middle"
+            ]
+          ]
+        },
+        "$.stimulateSettingDatas.Default": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "envConfrontXZDis",
+              "envConfrontHeight",
+              "battleConfrontXZDis",
+              "battleConfrontHeight",
+              "searNpcSafeAreaDis",
+              "npcEnvConfrontTriggerXZ",
+              "npcEnvConfrontTriggerY"
+            ]
+          ]
+        },
+        "$.stimulateSettingDatas.Default.envConfrontXZDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Default.envConfrontHeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Default.battleConfrontXZDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Default.battleConfrontHeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Default.searNpcSafeAreaDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Default.npcEnvConfrontTriggerXZ": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Default.npcEnvConfrontTriggerY": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Far": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "envConfrontXZDis",
+              "envConfrontHeight",
+              "battleConfrontXZDis",
+              "battleConfrontHeight",
+              "searNpcSafeAreaDis",
+              "npcEnvConfrontTriggerXZ",
+              "npcEnvConfrontTriggerY"
+            ]
+          ]
+        },
+        "$.stimulateSettingDatas.Far.envConfrontXZDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Far.envConfrontHeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Far.battleConfrontXZDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Far.battleConfrontHeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Far.searNpcSafeAreaDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Far.npcEnvConfrontTriggerXZ": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Far.npcEnvConfrontTriggerY": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Middle": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "envConfrontXZDis",
+              "envConfrontHeight",
+              "battleConfrontXZDis",
+              "battleConfrontHeight",
+              "searNpcSafeAreaDis",
+              "npcEnvConfrontTriggerXZ",
+              "npcEnvConfrontTriggerY"
+            ]
+          ]
+        },
+        "$.stimulateSettingDatas.Middle.envConfrontXZDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Middle.envConfrontHeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Middle.battleConfrontXZDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Middle.battleConfrontHeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Middle.searNpcSafeAreaDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Middle.npcEnvConfrontTriggerXZ": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.stimulateSettingDatas.Middle.npcEnvConfrontTriggerY": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.switchSteadyMinMax": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
+          ]
+        },
+        "$.switchSteadyMinMax.x": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.switchSteadyMinMax.y": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.playerStopAtkTime": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.enemyHateProbability": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "UltraLow",
+              "Low",
+              "Middle",
+              "High",
+              "UltraHigh"
+            ]
+          ]
+        },
+        "$.enemyHateProbability.UltraLow": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.enemyHateProbability.Low": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.enemyHateProbability.Middle": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.enemyHateProbability.High": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.enemyHateProbability.UltraHigh": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.enemyIgnoreMainCD": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.enemyAttackerUpdateTargetPeriod": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.meleeCharDynamicWeight": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.rangedCharDynamicWeight": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.charDistanceDynamicWeight": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.pursueRangeOffset": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.enemyDisengageNoDamageDuration": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.enemyDisengageCheckInterval": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.enemyDisengageNavDisconnectCount": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.enemyDisengageLosDisconnectCount": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.enemyDisengageNavAndLosDisconnectCount": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.npcAttractStopLengthFactor": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.npcAttractStopWidthFactor": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.npcAttractStopBackwardsOffset": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.npcAttractUnoccupiedDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.npcCalcRVOTimeRandom": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.npcCalcRVOTimeRandom.x": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.npcCalcRVOTimeRandom.y": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.npcCalcRVOTimeRandom.z": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.npcCalcRVOTimeout": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.mainCharCalcRVOTimeout": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.npcRVODeflectionAngle": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.mainCharStillInterval": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.mainCharStillFloatDist": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.npcFallbackAnimVirtualTag": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tagId"
+            ]
+          ]
+        },
+        "$.npcFallbackAnimVirtualTag.tagId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.charFallbackAnimVirtualTag": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tagId"
+            ]
+          ]
+        },
+        "$.charFallbackAnimVirtualTag.tagId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.spaceShipSearchMinDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.blurDetectDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.npcDetectDis": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.disCountPerTick": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.idlePqsConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "assetGuid",
+              "assetPath"
+            ]
+          ]
+        },
+        "$.idlePqsConfig.assetGuid": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.idlePqsConfig.assetPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.healtargetPqsConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "assetGuid",
+              "assetPath"
+            ]
+          ]
+        },
+        "$.healtargetPqsConfig.assetGuid": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.healtargetPqsConfig.assetPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.pickupPqsConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "assetGuid",
+              "assetPath"
+            ]
+          ]
+        },
+        "$.pickupPqsConfig.assetGuid": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.pickupPqsConfig.assetPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.focusImportantConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "assetGuid",
+              "assetPath"
+            ]
+          ]
+        },
+        "$.focusImportantConfig.assetGuid": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.focusImportantConfig.assetPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.barkExploreConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "assetGuid",
+              "assetPath"
+            ]
+          ]
+        },
+        "$.barkExploreConfig.assetGuid": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.barkExploreConfig.assetPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.followPqsConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "assetGuid",
+              "assetPath"
+            ]
+          ]
+        },
+        "$.followPqsConfig.assetGuid": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.followPqsConfig.assetPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.confrontFallbackPqsConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "assetGuid",
+              "assetPath"
+            ]
+          ]
+        },
+        "$.confrontFallbackPqsConfig.assetGuid": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.confrontFallbackPqsConfig.assetPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.tauntPqsConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "assetGuid",
+              "assetPath"
+            ]
+          ]
+        },
+        "$.tauntPqsConfig.assetGuid": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.tauntPqsConfig.assetPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.skillMovePqsConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "assetGuid",
+              "assetPath"
+            ]
+          ]
+        },
+        "$.skillMovePqsConfig.assetGuid": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.skillMovePqsConfig.assetPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.revivePqsConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "assetGuid",
+              "assetPath"
+            ]
+          ]
+        },
+        "$.revivePqsConfig.assetGuid": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.revivePqsConfig.assetPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.skillTeleportPQSConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "assetGuid",
+              "assetPath"
+            ]
+          ]
+        },
+        "$.skillTeleportPQSConfig.assetGuid": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.skillTeleportPQSConfig.assetPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.enemyCastSkillPqsConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "assetGuid",
+              "assetPath"
+            ]
+          ]
+        },
+        "$.enemyCastSkillPqsConfig.assetGuid": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.enemyCastSkillPqsConfig.assetPath": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.preloadPerform": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.preloadPerform[]": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.mainCharCreateObstacleTime": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.navigationBlockTimeout": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.navigationBlockDetectDist": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.navLinkAdditiveDist": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.factoryNavObstacleMinLength": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.enemyPathAreaTypeMask": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.enemyPathAreaType": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.enemyPathAreaType[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.enemyWalkingAreaTypeMask": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.enemyWalkingAreaType": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.enemyWalkingAreaType[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.characterPathAreaTypeMask": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.characterPathAreaType": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.characterPathAreaType[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.characterWalkingAreaTypeMask": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.characterWalkingAreaType": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.characterWalkingAreaType[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.mainCharWalkingAreaTypeMask": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.mainCharWalkingAreaType": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.mainCharWalkingAreaType[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.charfindPointAreaMask": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.charfindPointAreaType": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.charfindPointAreaType[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.npcfindPointAreaMask": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.npcfindPointAreaType": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.npcfindPointAreaType[]": {
+          "types": [
+            "integer"
+          ]
+        }
+      },
+      "taggedObjects": {}
+    },
+    "AIConfig/EnemyTemplateDataSummary.json": {
+      "dynamicDictionaries": {
+        "$.preloadEnemyTemplateId2Path": {
+          "keyPattern": "^eny_[A-Za-z0-9_]+$",
+          "valuePath": "$.preloadEnemyTemplateId2Path.*",
+          "meaning": "enemy template ID to Unity asset path"
+        }
+      },
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "preloadEnemyTemplateId2Path"
+            ]
+          ]
+        },
+        "$.preloadEnemyTemplateId2Path": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.preloadEnemyTemplateId2Path.*": {
+          "types": [
+            "string"
+          ]
+        }
+      },
+      "taggedObjects": {}
+    },
+    "GameplayConfigNpcProxyTable.json": {
+      "dynamicDictionaries": {},
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "dataTable",
+              "__AssemblyName__",
+              "__TypeName__"
+            ]
+          ]
+        },
+        "$.dataTable": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            []
+          ]
+        },
+        "$.__AssemblyName__": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.__TypeName__": {
+          "types": [
+            "string"
+          ]
+        }
+      },
+      "taggedObjects": {}
+    },
+    "GameplayConfigScriptTaskExtraInfoTable.json": {
+      "dynamicDictionaries": {
+        "$.dataTable": {
+          "keyPattern": "^[A-Za-z0-9_]+$",
+          "valuePath": "$.dataTable.*",
+          "meaning": "level ID to script task dictionary"
+        },
+        "$.dataTable.*": {
+          "keyPattern": "^[0-9]+$",
+          "valuePath": "$.dataTable.*.*",
+          "meaning": "numeric task ID to variant dictionary"
+        },
+        "$.dataTable.*.*": {
+          "keyPattern": "^[0-9a-f]{8}$",
+          "valuePath": "$.dataTable.*.*.*",
+          "meaning": "eight-hex task variant key to task display schema"
+        }
+      },
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "dataTable",
+              "__AssemblyName__",
+              "__TypeName__"
+            ]
+          ]
+        },
+        "$.dataTable": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.dataTable.*": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.dataTable.*.*": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.dataTable.*.*.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "taskTitle",
+              "useSingleDescription",
+              "singleDescriptionFormatProgress",
+              "singleDescription",
+              "objectiveCount",
+              "trackingInfoDict"
+            ]
+          ]
+        },
+        "$.dataTable.*.*.*.taskTitle": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [],
+            [
+              "key"
+            ]
+          ]
+        },
+        "$.dataTable.*.*.*.useSingleDescription": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.dataTable.*.*.*.singleDescriptionFormatProgress": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.dataTable.*.*.*.singleDescription": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            []
+          ]
+        },
+        "$.dataTable.*.*.*.objectiveCount": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.dataTable.*.*.*.trackingInfoDict": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "Objective1"
+            ]
+          ]
+        },
+        "$.dataTable.*.*.*.trackingInfoDict.Objective1": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "needFormatProgress",
+              "progressDisplayMode",
+              "description",
+              "trackPointType"
+            ]
+          ]
+        },
+        "$.dataTable.*.*.*.trackingInfoDict.Objective1.needFormatProgress": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "$.dataTable.*.*.*.trackingInfoDict.Objective1.progressDisplayMode": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.dataTable.*.*.*.trackingInfoDict.Objective1.description": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "key"
+            ]
+          ]
+        },
+        "$.dataTable.*.*.*.trackingInfoDict.Objective1.description.key": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.dataTable.*.*.*.trackingInfoDict.Objective1.trackPointType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.dataTable.*.*.*.taskTitle.key": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.__AssemblyName__": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.__TypeName__": {
+          "types": [
+            "string"
+          ]
+        }
+      },
+      "taggedObjects": {}
+    },
+    "InteractiveData/Collections.json": {
+      "dynamicDictionaries": {
+        "$": {
+          "keyPattern": "^[0-9]+$",
+          "valuePath": "$.*",
+          "meaning": "numeric sublevel ID to interactive collection counts"
+        }
+      },
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.*": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "sceneId",
+              "totalCnt"
+            ]
+          ]
+        },
+        "$.*.sceneId": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.*.totalCnt": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.*.totalCnt[]": {
+          "types": [
+            "integer"
+          ]
+        }
+      },
+      "taggedObjects": {}
+    },
+    "LevelGenForRuntime/DoodadGroupTable.json": {
+      "dynamicDictionaries": {
+        "$": {
+          "keyPattern": "^[0-9]+$",
+          "valuePath": "$.*",
+          "meaning": "numeric sublevel ID to doodad group rows"
+        }
+      },
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.*": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.*[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "doodadGroupId",
+              "centerId",
+              "outerId",
+              "upgradeSource",
+              "upgradeSceneGrade",
+              "refreshGroupUpperLimitLevel",
+              "refreshGroupNumLevel",
+              "outputSpeedPercentage",
+              "factoryPosition",
+              "doodadGroupType"
+            ],
+            [
+              "doodadGroupId",
+              "mapMarkInstId",
+              "centerId",
+              "outerId",
+              "upgradeSource",
+              "upgradeSceneGrade",
+              "refreshGroupUpperLimitLevel",
+              "refreshGroupNumLevel",
+              "outputSpeedPercentage",
+              "factoryPosition",
+              "doodadGroupType"
+            ]
+          ]
+        },
+        "$.*[].doodadGroupId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*[].centerId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*[].outerId": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.*[].outerId[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*[].upgradeSource": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*[].upgradeSceneGrade": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.*[].upgradeSceneGrade[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*[].refreshGroupUpperLimitLevel": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.*[].refreshGroupUpperLimitLevel[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*[].refreshGroupNumLevel": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.*[].refreshGroupNumLevel[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*[].outputSpeedPercentage": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.*[].outputSpeedPercentage[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*[].factoryPosition": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.*[].factoryPosition.x": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*[].factoryPosition.y": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*[].factoryPosition.z": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*[].doodadGroupType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.*[].mapMarkInstId": {
+          "types": [
+            "string"
+          ]
+        }
+      },
+      "taggedObjects": {}
+    },
+    "LevelGenForRuntime/TotalFactoryRegions.json": {
+      "dynamicDictionaries": {},
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "regions"
+            ]
+          ]
+        },
+        "$.regions": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.regions[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "subDataParentId",
+              "regionId",
+              "sceneId",
+              "mines"
+            ]
+          ]
+        },
+        "$.regions[].subDataParentId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.regions[].regionId": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.regions[].sceneId": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.regions[].mines": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.regions[].mines[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "protoId",
+              "offset",
+              "logicMineDataId",
+              "mineHeight",
+              "itemId",
+              "densityLevel",
+              "trans"
+            ]
+          ]
+        },
+        "$.regions[].mines[].protoId": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.regions[].mines[].offset": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.regions[].mines[].logicMineDataId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.regions[].mines[].mineHeight": {
+          "types": [
+            "number"
+          ]
+        },
+        "$.regions[].mines[].itemId": {
+          "types": [
+            "string"
+          ]
+        },
+        "$.regions[].mines[].densityLevel": {
+          "types": [
+            "array"
+          ]
+        },
+        "$.regions[].mines[].densityLevel[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.regions[].mines[].trans": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "position",
+              "voxelPosition",
+              "face"
+            ]
+          ]
+        },
+        "$.regions[].mines[].trans.position": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y"
+            ]
+          ]
+        },
+        "$.regions[].mines[].trans.position.x": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.regions[].mines[].trans.position.y": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.regions[].mines[].trans.voxelPosition": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "$.regions[].mines[].trans.voxelPosition.x": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.regions[].mines[].trans.voxelPosition.y": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.regions[].mines[].trans.voxelPosition.z": {
+          "types": [
+            "integer"
+          ]
+        },
+        "$.regions[].mines[].trans.face": {
+          "types": [
+            "integer"
+          ]
+        }
+      },
+      "taggedObjects": {}
+    },
+    "SpaceshipCabinData.json": {
+      "dynamicDictionaries": {
+        "$.cabinSpawnInfos": {
+          "keyPattern": "^[A-Za-z0-9_]+$",
+          "valuePath": "$.cabinSpawnInfos.*",
+          "meaning": "cabin type to typed cabin spawn configuration"
+        }
+      },
+      "nodes": {
+        "$": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "cabinSpawnInfos"
+            ]
+          ]
+        },
+        "$.cabinSpawnInfos": {
+          "types": [
+            "object"
+          ]
+        },
+        "$.cabinSpawnInfos.*": {
+          "types": [
+            "object"
+          ],
+          "allowedTags": [
+            "Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond",
+            "Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.dynamicSceneUniqueId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "interactiveTemplateId",
+              "spawnPosition",
+              "spawnRotation",
+              "interactiveRelativeCameraConfig"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveTemplateId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition.x": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition.y": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition.z": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation.x": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation.y": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation.z": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "default",
+              "upgrade"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig.default": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig.upgrade": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "position",
+              "linkTo",
+              "linkLane",
+              "uuid",
+              "isGate",
+              "gateLaneCount",
+              "isPoiPoint",
+              "mainId",
+              "level"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].position": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].position.x": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].position.y": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].position.z": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].linkTo": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].linkTo[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].linkLane": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].linkLane[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "totalLane",
+              "laneDir"
+            ],
+            [
+              "totalLane"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].linkLane[].totalLane": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].linkLane[].laneDir": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].linkLane[].laneDir[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].uuid": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].isGate": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].gateLaneCount": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].isPoiPoint": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].mainId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.worldWayPointData[].level": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "searchName",
+              "position",
+              "rotation",
+              "linkedWayPoints",
+              "wayPointRate",
+              "wayPointStartUuid",
+              "wayPointEndUuid",
+              "wayLineHash",
+              "uuid",
+              "linkedAttractPoints",
+              "enableAtInit",
+              "attractObjectType",
+              "moveToMethod",
+              "movementStyleType",
+              "actionType",
+              "animVirtualTag",
+              "animNameTag",
+              "animMaskType",
+              "actionEndType",
+              "waitTime",
+              "activeLookAt",
+              "spaceshipBehaviorType",
+              "ownerRoomId",
+              "spaceshipDetailAnimType",
+              "spaceshipTag",
+              "spaceshipGeneralAnimType",
+              "useEmoji",
+              "startDelay",
+              "envTalkString",
+              "chairID",
+              "chairCheckDistance",
+              "isPoiPoint",
+              "mainId",
+              "level"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].searchName": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].position": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].position.x": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].position.y": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].position.z": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z",
+              "w"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.x": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.y": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.z": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.w": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].linkedWayPoints": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].wayPointRate": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].wayPointStartUuid": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].wayPointEndUuid": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].wayLineHash": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].uuid": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].linkedAttractPoints": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].enableAtInit": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].attractObjectType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].moveToMethod": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].movementStyleType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].actionType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].animVirtualTag": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tagId"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].animVirtualTag.tagId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].animNameTag": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tagId"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].animNameTag.tagId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].animMaskType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].actionEndType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].waitTime": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].activeLookAt": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].spaceshipBehaviorType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].ownerRoomId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].spaceshipDetailAnimType": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].spaceshipTag": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].spaceshipGeneralAnimType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].useEmoji": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].startDelay": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].envTalkString": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].chairID": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].chairCheckDistance": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].isPoiPoint": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].mainId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].level": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.npcAttractPointData[].linkedWayPoints[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond.manufacturingStationMp": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.dynamicSceneUniqueId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "interactiveTemplateId",
+              "spawnPosition",
+              "spawnRotation",
+              "interactiveRelativeCameraConfig"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveTemplateId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition.x": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition.y": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnPosition.z": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation.x": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation.y": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.spawnRotation.z": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "default",
+              "upgrade"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig.default": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.mainInteractiveSpawnInfo.interactiveRelativeCameraConfig.upgrade": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "position",
+              "linkTo",
+              "linkLane",
+              "uuid",
+              "isGate",
+              "gateLaneCount",
+              "isPoiPoint",
+              "mainId",
+              "level"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].position": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].position.x": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].position.y": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].position.z": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].linkTo": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].linkTo[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].linkLane": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].linkLane[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "totalLane",
+              "laneDir"
+            ],
+            [
+              "totalLane"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].linkLane[].totalLane": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].linkLane[].laneDir": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].linkLane[].laneDir[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].uuid": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].isGate": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].gateLaneCount": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].isPoiPoint": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].mainId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.worldWayPointData[].level": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[]": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "searchName",
+              "position",
+              "rotation",
+              "linkedWayPoints",
+              "wayPointRate",
+              "wayPointStartUuid",
+              "wayPointEndUuid",
+              "wayLineHash",
+              "uuid",
+              "linkedAttractPoints",
+              "enableAtInit",
+              "attractObjectType",
+              "moveToMethod",
+              "movementStyleType",
+              "actionType",
+              "animVirtualTag",
+              "animNameTag",
+              "animMaskType",
+              "actionEndType",
+              "waitTime",
+              "activeLookAt",
+              "spaceshipBehaviorType",
+              "ownerRoomId",
+              "spaceshipDetailAnimType",
+              "spaceshipTag",
+              "spaceshipGeneralAnimType",
+              "useEmoji",
+              "startDelay",
+              "envTalkString",
+              "chairID",
+              "chairCheckDistance",
+              "isPoiPoint",
+              "mainId",
+              "level"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].searchName": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].position": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].position.x": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].position.y": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].position.z": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "x",
+              "y",
+              "z",
+              "w"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.x": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.y": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.z": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].rotation.w": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].linkedWayPoints": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].linkedWayPoints[]": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].wayPointRate": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].wayPointStartUuid": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].wayPointEndUuid": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].wayLineHash": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].uuid": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].linkedAttractPoints": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].enableAtInit": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].attractObjectType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].moveToMethod": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].movementStyleType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].actionType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].animVirtualTag": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tagId"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].animVirtualTag.tagId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].animNameTag": {
+          "types": [
+            "object"
+          ],
+          "shapes": [
+            [
+              "tagId"
+            ]
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].animNameTag.tagId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].animMaskType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].actionEndType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].waitTime": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].activeLookAt": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].spaceshipBehaviorType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].ownerRoomId": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].spaceshipDetailAnimType": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].spaceshipTag": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].spaceshipGeneralAnimType": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].useEmoji": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].startDelay": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].envTalkString": {
+          "types": [
+            "string"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].chairID": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].chairCheckDistance": {
+          "types": [
+            "number"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].isPoiPoint": {
+          "types": [
+            "boolean"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].mainId": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.npcAttractPointData[].level": {
+          "types": [
+            "integer"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.growBoxMps": {
+          "types": [
+            "array"
+          ]
+        },
+        "@Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond.growBoxMps[]": {
+          "types": [
+            "integer"
+          ]
+        }
+      },
+      "taggedObjects": {
+        "Beyond.Gameplay.ManufacturingCabinInfo, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "dynamicSceneUniqueId",
+              "mainInteractiveSpawnInfo",
+              "worldWayPointData",
+              "npcAttractPointData",
+              "manufacturingStationMp"
+            ]
+          ]
+        },
+        "Beyond.Gameplay.GrowCabinInfo, Gameplay.Beyond": {
+          "shapes": [
+            [
+              "$type",
+              "dynamicSceneUniqueId",
+              "mainInteractiveSpawnInfo",
+              "worldWayPointData",
+              "npcAttractPointData",
+              "growBoxMps"
+            ]
+          ]
+        }
+      }
+    }
+  }
+}

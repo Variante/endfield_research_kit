@@ -1,0 +1,297 @@
+{
+  "schema": "endfield.levelscript-camera-look-at.v1",
+  "evidenceBoundary": "exact",
+  "nativeInputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "unionTag": 287,
+  "memberCount": 39,
+  "nativeIdentity": {
+    "tag": 287,
+    "typeDefinition": 18389,
+    "registeredTypeIndex": 103900,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_LevelCameraLookAtForMemoryPack",
+    "generatedSetterOrder": [
+      "__instance",
+      "__alpha__",
+      "__blendCurveKey__",
+      "__blendStyle__",
+      "__blendTime__",
+      "__controlState__",
+      "__controlStateId__",
+      "__direction1__",
+      "__direction2__",
+      "__exitParam__",
+      "__flattenLookAt__",
+      "__horizontalBaseAngle__",
+      "__horizontalSpeedFactor__",
+      "__initParam__",
+      "__lookAt1__",
+      "__lookAt1Type__",
+      "__lookAt2__",
+      "__lookAt2Type__",
+      "__lookAtHeight__",
+      "__mountPoint1__",
+      "__mountPoint2__",
+      "__noInputDampingTime__",
+      "__npcProxyId1__",
+      "__npcProxyId2__",
+      "__position1__",
+      "__position2__",
+      "__rotation1__",
+      "__rotation2__",
+      "__useExitParam__",
+      "__useInitialParam__",
+      "__verticalBaseValue__",
+      "__verticalSpeedFactor__"
+    ],
+    "switchTargetVa": "0x182936c2c",
+    "branchBodyVa": "0x18294c09d",
+    "usageCellVa": "0x18d05aea0"
+  },
+  "fields": [
+    [
+      "alpha",
+      "Param<float>"
+    ],
+    [
+      "blendCurveKey",
+      "Param<CameraBlendCurveKey>"
+    ],
+    [
+      "blendStyle",
+      "Param<CinemachineBlendDefinition.Style>"
+    ],
+    [
+      "blendTime",
+      "Param<float>"
+    ],
+    [
+      "controlState",
+      "ParamOutput<CameraControlState>"
+    ],
+    [
+      "controlStateId",
+      "ParamOutput<int>"
+    ],
+    [
+      "direction1",
+      "Param<Vector3>"
+    ],
+    [
+      "direction2",
+      "Param<Vector3>"
+    ],
+    [
+      "exitParam",
+      "Param<CameraControlStateInitialParam>"
+    ],
+    [
+      "flattenLookAt",
+      "Param<bool>"
+    ],
+    [
+      "horizontalBaseAngle",
+      "Param<float>"
+    ],
+    [
+      "horizontalSpeedFactor",
+      "Param<float>"
+    ],
+    [
+      "initParam",
+      "Param<CameraControlStateInitialParam>"
+    ],
+    [
+      "lookAt1",
+      "Param<EntityPtr>"
+    ],
+    [
+      "lookAt1Type",
+      "Param<NodeLookAtType>"
+    ],
+    [
+      "lookAt2",
+      "Param<EntityPtr>"
+    ],
+    [
+      "lookAt2Type",
+      "Param<NodeLookAtType>"
+    ],
+    [
+      "lookAtHeight",
+      "Param<float>"
+    ],
+    [
+      "mountPoint1",
+      "Param<MountPoint>"
+    ],
+    [
+      "mountPoint2",
+      "Param<MountPoint>"
+    ],
+    [
+      "noInputDampingTime",
+      "Param<float>"
+    ],
+    [
+      "npcProxyId1",
+      "Param<string>"
+    ],
+    [
+      "npcProxyId2",
+      "Param<string>"
+    ],
+    [
+      "position1",
+      "Param<Vector3>"
+    ],
+    [
+      "position2",
+      "Param<Vector3>"
+    ],
+    [
+      "rotation1",
+      "Param<Vector3>"
+    ],
+    [
+      "rotation2",
+      "Param<Vector3>"
+    ],
+    [
+      "useExitParam",
+      "Param<bool>"
+    ],
+    [
+      "useInitialParam",
+      "Param<bool>"
+    ],
+    [
+      "verticalBaseValue",
+      "Param<float>"
+    ],
+    [
+      "verticalSpeedFactor",
+      "Param<float>"
+    ]
+  ],
+  "initialParam": {
+    "wire": "mc4 + 24-byte unmanaged constant + ordinary Param tail",
+    "size": 24,
+    "fields": [
+      [
+        "applyHorizontalAngle",
+        "bool",
+        0
+      ],
+      [
+        "horizontalAngleRelativeToCharacter",
+        "bool",
+        1
+      ],
+      [
+        "horizontalAngle",
+        "float32",
+        4
+      ],
+      [
+        "applyVerticalValue",
+        "bool",
+        8
+      ],
+      [
+        "verticalValue",
+        "float32",
+        12
+      ],
+      [
+        "applyZoomScale",
+        "bool",
+        16
+      ],
+      [
+        "zoomScale",
+        "float32",
+        20
+      ]
+    ],
+    "paddingRanges": [
+      [
+        2,
+        4
+      ],
+      [
+        9,
+        12
+      ],
+      [
+        17,
+        20
+      ]
+    ],
+    "paddingBoundary": "structuralOnly; preserve raw bytes, do not assign meaning or require zero"
+  },
+  "enums": {
+    "MountPoint": "Beyond.Gameplay.MountPoint: System.Int32",
+    "NodeLookAtType": "Beyond.Gameplay.Actions.NodeLookAtType: System.Int32",
+    "CinemachineBlendDefinition.Style": "Cinemachine.CinemachineBlendDefinition.Style: System.Int32"
+  },
+  "output": "mc2, Int32 paramTarget, nullable UTF8 string path. Generic argument serializes no value.",
+  "codeWindows": [
+    {
+      "name": "Param<CameraControlStateInitialParam>.Deserialize",
+      "va": "0x183438430",
+      "length": 284,
+      "sha256": "dc2653c7c901e7b1c608f13e54969d2ff3655fc64eb43e8cf8ce6369e906c7c3",
+      "evidenceBoundary": "direct",
+      "boundary": "Reads mc4 then exactly 24 raw bytes, idRef Int32, paramSource Int32, path string."
+    },
+    {
+      "name": "CameraControlStateInitialParam wrapper.Deserialize",
+      "va": "0x18968d44c",
+      "length": 384,
+      "sha256": "95ede7935ce71f685371622d665ebe3148d75a3db707fe9b6355bfd7cbfdf674",
+      "evidenceBoundary": "direct",
+      "boundary": "Seven wrapper setters establish raw struct offsets: bool0,bool8,bool16,float4,bool1,float12,float20 relative to instance+0x10; this wrapper is not the Param constant wire framing."
+    },
+    {
+      "name": "ParamOutput<CameraControlState>.Deserialize",
+      "va": "0x184600e80",
+      "length": 160,
+      "sha256": "f41cd1c65f56b1c3956855e4e13c1446b332956000b094207bda1cbd7d706086",
+      "evidenceBoundary": "direct",
+      "boundary": "Reads mc2 then Int32 paramTarget and string path; no camera object value is serialized."
+    },
+    {
+      "name": "LevelCameraLookAt.Deserialize",
+      "va": "0x184074030",
+      "length": 4096,
+      "sha256": "6949ead83a07e12a07828eb0cd6d4e3168aa47230116461d94b9a121122d13c9",
+      "evidenceBoundary": "direct",
+      "boundary": "Concrete generated wrapper in selected native inputs; setter order carries 31 own fields after 8 inherited fields."
+    },
+    {
+      "name": "Param<CameraBlendCurveKey>.Deserialize",
+      "va": "0x18969de2c",
+      "length": 382,
+      "sha256": "6249e00ea5783a9f19f834ea28ae271ce0b473a6fb9474620ce95201c7bc60ef",
+      "evidenceBoundary": "direct",
+      "boundary": "Param reads mc4 then the typed CameraBlendCurveKey wrapper and ordinary idRef/source/path tail; key wrapper reads mc1 then one nullable UTF8 string."
+    },
+    {
+      "name": "CameraBlendCurveKey wrapper.Deserialize",
+      "va": "0x18969c324",
+      "length": 250,
+      "sha256": "051ff605ed1d070193472a538eb5c4fd9798b6af78eef68344629bb0cea4c165",
+      "evidenceBoundary": "direct",
+      "boundary": "Param reads mc4 then the typed CameraBlendCurveKey wrapper and ordinary idRef/source/path tail; key wrapper reads mc1 then one nullable UTF8 string."
+    }
+  ],
+  "interpretation": "Sequential serialized data only; no runtime camera activation or execution-order claim.",
+  "curveKey": {
+    "managedType": "Beyond.CameraBlendCurveKey",
+    "wire": "mc4 Param, mc1 string-key wrapper, nullable UTF8 key, ordinary Param tail",
+    "evidenceBoundary": "direct"
+  }
+}

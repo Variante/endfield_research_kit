@@ -1,0 +1,205 @@
+{
+  "schema": "endfield.buff-icon-config-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "inputSetSha256": "0F1275C5FE9FEB3C0BAA801A49D37405CB3BA0C5BCD8A0A4160C48758283C497",
+  "codeRegistrationVa": 6619194944,
+  "methods": [
+    [
+      104562,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIconConfigForMemoryPack+Beyond_Gameplay_Core_BuffIconConfigForMemoryPackFormatter",
+      "Deserialize",
+      58587008
+    ],
+    [
+      104561,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIconConfigForMemoryPack",
+      "Deserialize",
+      58587104
+    ],
+    [
+      107756,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIconConfig_OrderPriorityConfigForMemoryPack+Beyond_Gameplay_Core_BuffIconConfig_OrderPriorityConfigForMemoryPackFormatter",
+      "Deserialize",
+      156115220
+    ],
+    [
+      107755,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIconConfig_OrderPriorityConfigForMemoryPack",
+      "Deserialize",
+      156115352
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 58587008,
+      "endRva": 58587104,
+      "sha256": "89FD1EBCF3C3E342F91BDEF580743F6E9CF19DF0DEDE200D04A02E98AAF698DA",
+      "boundary": "complete formatter method extent to next registered pointer"
+    },
+    {
+      "startRva": 58587104,
+      "endRva": 58588224,
+      "sha256": "BFA7303F9DBC929C12582C6FDEF03D98C83E92FBF65AFCB368FC4BA652A158EB",
+      "boundary": "complete 19-member reader extent to next registered pointer"
+    },
+    {
+      "startRva": 156115220,
+      "endRva": 156115312,
+      "sha256": "949F4F81D9F3B00ED3CC6B4A78FB6DCA09A0A1BD813DE890055559A34DCAF553",
+      "boundary": "complete priority formatter method extent to next registered pointer"
+    },
+    {
+      "startRva": 156115352,
+      "endRva": 156115664,
+      "sha256": "8388524BE040C5F52B753330B2B07B106BE3E4A3CE29AC5FE3BF0E92A7561049",
+      "boundary": "complete three-member priority reader extent to next registered pointer"
+    }
+  ],
+  "wrappers": [
+    {
+      "typeDefinition": 13899,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIconConfigForMemoryPack",
+      "setterMethods": [
+        [
+          104540,
+          "set____orderPriorityConfig__"
+        ],
+        [
+          104541,
+          "set____spritePath__"
+        ],
+        [
+          104542,
+          "set___abnormalColorType__"
+        ],
+        [
+          104543,
+          "set___blinkInMainCharHpBar__"
+        ],
+        [
+          104544,
+          "set___charHpBarVfxType__"
+        ],
+        [
+          104545,
+          "set___forceRaiseIconEvent__"
+        ],
+        [
+          104546,
+          "set___hasCharHpBarVfxType__"
+        ],
+        [
+          104547,
+          "set___iconStyleInSquad__"
+        ],
+        [
+          104548,
+          "set___onlyShowForMainCharacter__"
+        ],
+        [
+          104549,
+          "set___playStrongInAnimation__"
+        ],
+        [
+          104550,
+          "set___showDirectlyInHeadBuff__"
+        ],
+        [
+          104551,
+          "set___showInHeadBarAttached__"
+        ],
+        [
+          104552,
+          "set___showInHeadBarCommon__"
+        ],
+        [
+          104553,
+          "set___showInSquadIcon__"
+        ],
+        [
+          104554,
+          "set___showProgressInHpBar__"
+        ],
+        [
+          104555,
+          "set___showProgressInNormalSkillButton__"
+        ],
+        [
+          104556,
+          "set___showProgressInUltimateSkillButton__"
+        ],
+        [
+          104557,
+          "set___showWarningBackground__"
+        ],
+        [
+          104558,
+          "set___useWeakProgressInNormalSkillButton__"
+        ]
+      ]
+    },
+    {
+      "typeDefinition": 14305,
+      "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffIconConfig_OrderPriorityConfigForMemoryPack",
+      "setterMethods": [
+        [
+          107749,
+          "set___priorityEnum__"
+        ],
+        [
+          107750,
+          "set___priorityValue__"
+        ],
+        [
+          107751,
+          "set___useDirectoryValue__"
+        ]
+      ]
+    }
+  ],
+  "selectedReadOrder": [
+    "orderPriorityConfig",
+    "spritePath",
+    "abnormalColorType",
+    "blinkInMainCharHpBar",
+    "charHpBarVfxType",
+    "forceRaiseIconEvent",
+    "hasCharHpBarVfxType",
+    "iconStyleInSquad",
+    "onlyShowForMainCharacter",
+    "playStrongInAnimation",
+    "showDirectlyInHeadBuff",
+    "showInHeadBarAttached",
+    "showInHeadBarCommon",
+    "showInSquadIcon",
+    "showProgressInHpBar",
+    "showProgressInNormalSkillButton",
+    "showProgressInUltimateSkillButton",
+    "showWarningBackground",
+    "useWeakProgressInNormalSkillButton"
+  ],
+  "orderPriorityRepresentation": {
+    "serializedBytes": 12,
+    "nativeFieldOrder": [
+      "useDirectoryValue",
+      "reservedPadding[3]",
+      "priorityValue",
+      "priorityEnum"
+    ],
+    "standaloneSetterOrder": [
+      "priorityEnum",
+      "priorityValue",
+      "useDirectoryValue"
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "The pinned generated setters name all 19 icon members and the nested priority fields. The selected current reader consumes a 19-member wrapper, direct raw12 native-value priority layout, UTF-8 string, enum-like DWORDs, and booleans in the recorded order. Exact cursors must end at the independently selected following id marker.",
+    "structuralOnly": "Enum numeric meanings, icon presentation behavior, and the three reserved priority bytes are not inferred from their values.",
+    "unresolved": "This contract does not close unsupported Buff action unions or assign runtime UI ownership."
+  }
+}

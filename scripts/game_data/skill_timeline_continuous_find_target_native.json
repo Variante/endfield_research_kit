@@ -1,0 +1,53 @@
+{
+  "schema": "endfield.skill-timeline-continuous-find-target-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "inputSetSha256": "0F1275C5FE9FEB3C0BAA801A49D37405CB3BA0C5BCD8A0A4160C48758283C497",
+  "dependencies": [
+    {
+      "path": "buff_8a_native.json",
+      "sha256": "3FD7549989E480E967B1B741AAB88B335F2526B04DB2C71AF81A4F65150E653E",
+      "role": "tag 0x008A selected union route, ContinuousFindTargetAction.Data member19 source order, and terminal findInterval float"
+    },
+    {
+      "path": "skill_timeline_play_animation_native.json",
+      "sha256": "3C9138B45A410A161DE9610E1C6402E49CC0E773FFC30E6EE0D8EF9DF2292B54",
+      "role": "ActionGroupData, TimelineActionData, SequenceActionData, and ForceSyncAnimData source order"
+    },
+    {
+      "path": "skill_timeline_find_target_native.json",
+      "sha256": "3B8E6D59E86A420D0A242F8B0D5BC9032A32FBBD9B97AC94D80551868CE167DF",
+      "role": "current reached selector subtype routes shared by SkillData target-selection actions"
+    }
+  ],
+  "selectedSubtypeRoutes": {
+    "finder": {
+      "7": "HitBoxFinder",
+      "8": "InFightEnemyFinder",
+      "12": "OwnerPartsFinder",
+      "13": "OwnerSpawnedEntityFinder",
+      "19": "SmartTargetFinder"
+    },
+    "validator": {
+      "4": "DistanceValidator",
+      "5": "ExcludeOwnerValidator",
+      "9": "MainCharacterValidator",
+      "10": "SkillCastIdValidator",
+      "11": "TagValidator"
+    },
+    "postProcessor": {
+      "4": "ExcludeTarget"
+    }
+  },
+  "selectedSubtypeLayouts": {
+    "ExcludeTarget": [
+      "excludedTargetSettings",
+      "processTargetType"
+    ]
+  },
+  "evidenceBoundary": "The selected current-build AbilityActionData dispatcher routes physical tag 0x008A to ContinuousFindTargetAction.Data member19. The dependency contracts authenticate the complete source read order, the enclosing first TimelineActionData grammar, reached current SkillData selector subtype routes, and the current two-member ExcludeTarget wrapper order. This narrow decoder admits only one-action first timeline records whose nested selectors use the listed exact routes; it consumes the required terminal findInterval float. Unlisted subtype tags, changed subtype member counts, and additional sequence actions stop at their first unsupported byte."
+}

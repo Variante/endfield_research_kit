@@ -1,0 +1,157 @@
+{
+  "schema": "endfield.levelscript-template-param-list-native.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89",
+    "global-metadata.dat": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  },
+  "evidenceBoundary": "exact",
+  "interpretation": "ParamListForGraph is a one-member wrapper whose generated value setter accepts List<ParamKeyValue>. Its elements use the same ParamKeyValue/ParamValue/ParamValueAtom serialization already decoded for LevelScript properties and interactive properties. This contract establishes stored fields only, not graph execution or the meanings of parameter references.",
+  "layout": {
+    "type": "Beyond.Gameplay.ParamListForGraph",
+    "memberCount": 1,
+    "fields": [
+      [
+        "value",
+        "List<ParamKeyValue>"
+      ]
+    ],
+    "elementCodec": "scripts.game_data.codecs.levelscript.interactives.decode_param_key_value_list"
+  },
+  "generatedWrapperDeclaration": "public class Beyond_Gameplay_ParamListForGraphForMemoryPack : IMemoryPackDeSerializeWrapper<ParamListForGraph>",
+  "generatedValueDeclaration": "public List<ParamKeyValue> __value__ { set; }",
+  "nativeEvidence": [
+    {
+      "name": "Beyond.Gameplay.ParamListForGraph",
+      "typeDefinition": 2331,
+      "image": "Gameplay.Beyond.dll",
+      "fields": [
+        {
+          "index": 15424,
+          "name": "value",
+          "typeIndex": 58550,
+          "typeName": "<type-index:58550>",
+          "token": "0x04003c41",
+          "registeredTypePointer": "0x18c388298",
+          "registeredTypeBytes": "f877258d010000000600150000000000",
+          "il2cppTypeCode": 21
+        }
+      ],
+      "methods": [],
+      "declarations": [
+        "public class ParamListForGraph"
+      ]
+    },
+    {
+      "name": "Beyond.MemoryPack.Beyond_Gameplay_ParamListForGraphForMemoryPack",
+      "typeDefinition": 14225,
+      "image": "MemoryPack.Beyond.dll",
+      "fields": [
+        {
+          "index": 122220,
+          "name": "__instance",
+          "typeIndex": 134793,
+          "typeName": "<type-index:134793>",
+          "token": "0x04000145",
+          "registeredTypePointer": "0x18d24a158",
+          "registeredTypeBytes": "1b090000000000000100120000000000",
+          "il2cppTypeCode": 18
+        }
+      ],
+      "methods": [
+        {
+          "method": "set____instance",
+          "token": "0x600132b",
+          "pointer": "0x182e0a490",
+          "code96": "488951104883c110e9a3c621fdcccccc48895c2408574883ec20803d305d0a0b008bfa488bd9742b4c8b0579922e0a488d4b188bd7e8a65b770184c0740a33d2488bcbe82811f8ff488b5c24304883c4205fc3488d0d4e922e0ae8716d23fdc6",
+          "code96Sha256": "965ba05306fae2ff51e70ee2b3e861ebf37edbd64e2d3a263d3521fea1ccfb64"
+        },
+        {
+          "method": "set___value__",
+          "token": "0x600132e",
+          "pointer": "0x183207ac0",
+          "code96": "4883ec28488b49104885c97411488951104883c1104883c428e962f0e1fce831698afdcccccccccccccccccccccccccc48895c2408574883ec20803d61c2c90a00488bf9743a488b0d6bf0e809e84ee5e1fc488bd84885c07447488b152ff0e8",
+          "code96Sha256": "e1eccbb3bb9e69f8746c060483ba7054788e7b6fb270667979b186a34929a4ab"
+        },
+        {
+          "method": "Deserialize",
+          "token": "0x6001331",
+          "pointer": "0x183c13a60",
+          "code96": "48895c2408488974241048897c241841564883ec20803d906d290a004c8bf2488bd90f8492000000837b30010f8ca48a2c01488b43500fb6308b7b3083ef010f88a78a2c0148ff4350ff4340ff4344897b304080feff745649833e000f84a48a",
+          "code96Sha256": "adad620b9ceb52068841fb629baa2b25698140b65531321b08bb9655fa689f67"
+        }
+      ],
+      "declarations": [
+        "public class Beyond_Gameplay_ParamListForGraphForMemoryPack : IMemoryPackDeSerializeWrapper, IMemoryPackDeSerializeWrapper<ParamListForGraph>, IMemoryPackDeSerializeType"
+      ]
+    },
+    {
+      "name": "Beyond.MemoryPack.Beyond_Gameplay_ParamListForGraphForMemoryPack+Beyond_Gameplay_ParamListForGraphForMemoryPackFormatter",
+      "typeDefinition": 14224,
+      "image": "MemoryPack.Beyond.dll",
+      "fields": [],
+      "methods": [
+        {
+          "method": "Deserialize",
+          "token": "0x6001332",
+          "pointer": "0x183c13910",
+          "code96": "48895c2408488974241048897c241841564883ec20803de16e290a004d8bf0488bda0f84bb000000488b0d61f44c0983b9e0000000000f84bf000000803db96e290a000f84bc000000837b30010f8c378b2c01488b43500fb6308b7b3083ef01",
+          "code96Sha256": "66a2652e1bd1d8e3bb414013a4e9188f5d26f265eb85e49b4ba9f057ec9f1430"
+        }
+      ],
+      "declarations": [
+        "public class Beyond_Gameplay_ParamListForGraphForMemoryPack : IMemoryPackDeSerializeWrapper, IMemoryPackDeSerializeWrapper<ParamListForGraph>, IMemoryPackDeSerializeType"
+      ]
+    },
+    {
+      "name": "Beyond.MemoryPack.Beyond_Gameplay_ParamKeyValueForMemoryPack",
+      "typeDefinition": 13821,
+      "image": "MemoryPack.Beyond.dll",
+      "fields": [
+        {
+          "index": 122003,
+          "name": "__instance",
+          "typeIndex": 134789,
+          "typeName": "<type-index:134789>",
+          "token": "0x0400006c",
+          "registeredTypePointer": "0x18d12d5f8",
+          "registeredTypeBytes": "19090000000000000100120000000000",
+          "il2cppTypeCode": 18
+        }
+      ],
+      "methods": [
+        {
+          "method": "set____instance",
+          "token": "0x6000718",
+          "pointer": "0x182e0a490",
+          "code96": "488951104883c110e9a3c621fdcccccc48895c2408574883ec20803d305d0a0b008bfa488bd9742b4c8b0579922e0a488d4b188bd7e8a65b770184c0740a33d2488bcbe82811f8ff488b5c24304883c4205fc3488d0d4e922e0ae8716d23fdc6",
+          "code96Sha256": "965ba05306fae2ff51e70ee2b3e861ebf37edbd64e2d3a263d3521fea1ccfb64"
+        },
+        {
+          "method": "set___key__",
+          "token": "0x600071b",
+          "pointer": "0x1832cef10",
+          "code96": "48895c2410574883ec20488b59104885db7459833de202bd0a004889531074414c8d431049c1e80c488d0d313c970a4181e0ffff1f00418bc048c1e8064183e03f488d14c10f0d0a0f1f840000000000488b02488bc84c0fabc1f0480fb10a75",
+          "code96Sha256": "3bbeb726f1b699f7258c27d2adaa13570217b3fc5c39a72b8226ceb7df2d40e3"
+        },
+        {
+          "method": "set___value__",
+          "token": "0x600071c",
+          "pointer": "0x1832ce760",
+          "code96": "48895c2410574883ec20488b59104885db7459833d920abd0a004889531874414c8d431849c1e80c488d0de143970a4181e0ffff1f00418bc048c1e8064183e03f488d14c10f0d0a0f1f840000000000488b02488bc84c0fabc1f0480fb10a75",
+          "code96Sha256": "333f7052bfaea2abbf537da14620b6a778894b305adc0b83cde52fbdbe41ccf0"
+        },
+        {
+          "method": "Deserialize",
+          "token": "0x600071f",
+          "pointer": "0x1832d28d0",
+          "code96": "48895c24185556574883ec20803d1860bd0a00488bf2488bd97537488d0d3e99d209e869e9d6fc488d0d3a99d209e85de9d6fc488d0d3e99d209e851e9d6fc488d0d5a38dd09e845e9d6fcc605d95fbd0a01837b30017d104533c0ba01000000",
+          "code96Sha256": "eaad52bf5c72c28cd853f31906af8d248b86e546e367778fced986e0acf52586"
+        }
+      ],
+      "declarations": [
+        "public class Beyond_Gameplay_ParamKeyValueForMemoryPack : IMemoryPackDeSerializeWrapper, IMemoryPackDeSerializeWrapper<ParamKeyValue>, IMemoryPackDeSerializeType"
+      ]
+    }
+  ]
+}

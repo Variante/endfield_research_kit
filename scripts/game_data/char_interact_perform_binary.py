@@ -9,7 +9,10 @@ the prefilter is never semantic evidence by itself.
 """
 from __future__ import annotations
 
+import hashlib
+import json
 import struct
+from pathlib import Path
 from typing import Any
 
 
@@ -17,8 +20,33 @@ NULL_COUNT = 0xFFFFFFFF
 OUTER_MEMBER_COUNT = 27
 AUDIO_EVENT_TAG = 0x02
 AUDIO_EVENT_MEMBER_COUNT = 15
-SCHEMA_MAPPING_ID = "gameassembly-0c557367-char-interact-audio-event-v1"
-UNION_MAPPING_ID = "gameassembly-0c557367-char-interact-action-union-v1"
+SCHEMA_MAPPING_ID = "endfield.char-interact-perform-runtime-cfg.v1"
+UNION_MAPPING_ID = "endfield.char-interact-perform-native-contract.v1"
+CONTRACT_SHA256 = "eda3372ffdb67955b2f216d256f9d583d889a93c5f1f62de1525a891d78816ac"
+
+
+def _load_action_contract() -> tuple[dict[int, tuple[bool, int]], dict[int, str]]:
+    path = Path(__file__).with_name("char_interact_perform_native.json")
+    raw = path.read_bytes()
+    digest = hashlib.sha256(raw).hexdigest()
+    if digest != CONTRACT_SHA256:
+        raise RuntimeError(
+            f"{path}: contract SHA256 {digest} does not match {CONTRACT_SHA256}"
+        )
+    payload = json.loads(raw)
+    if payload.get("schema") != UNION_MAPPING_ID or payload.get("status") != "validated":
+        raise RuntimeError(f"{path}: unsupported or unvalidated contract")
+    tags = {int(tag): str(name) for tag, name in payload.get("tags", [])}
+    if set(tags) != set(range(37)):
+        raise RuntimeError(f"{path}: action union tags are not the exact 0..36 range")
+    layouts = {
+        int(tag): (bool(row[0]), int(row[1]))
+        for tag, row in payload.get("observedLayouts", {}).items()
+    }
+    return layouts, tags
+
+
+ACTION_LAYOUTS, ACTION_TAG_NAMES = _load_action_contract()
 
 
 class CharInteractPerformDecodeError(ValueError):
@@ -29,7 +57,9 @@ class _Reader:
     def __init__(self, data: bytes) -> None:
         self.data = data
         self.offset = 0
+        self.actions: list[dict[str, Any]] = []
         self.audio_actions: list[dict[str, Any]] = []
+        self.owner_actor_collections: dict[str, list[dict[str, Any]]] = {}
 
     def _need(self, size: int, field: str) -> None:
         if size < 0 or self.offset + size > len(self.data):
@@ -138,18 +168,20 @@ class _Reader:
         self.i32(field + ".CustomId")
         self.string(field + ".CustomName")
 
-    def actor(self, field: str) -> None:
+    def actor(self, field: str) -> dict[str, Any]:
         self.member(10, field)
-        self.i32(field + ".actorType")
-        self.i32(field + ".charType")
-        self.u64(field + ".decoId")
-        self.string(field + ".effectPath")
-        self.string(field + ".interactivePath")
-        self.i32(field + ".interactiveType")
-        self.string(field + ".npcId")
-        self.boolean(field + ".performEndNotDestroy")
-        self.string(field + ".tmpObjectPath")
-        self.i64(field + ".tmpObjectPathHash")
+        return {
+            "actorType": self.i32(field + ".actorType"),
+            "charType": self.i32(field + ".charType"),
+            "decoId": self.u64(field + ".decoId"),
+            "effectPath": self.string(field + ".effectPath"),
+            "interactivePath": self.string(field + ".interactivePath"),
+            "interactiveType": self.i32(field + ".interactiveType"),
+            "npcId": self.string(field + ".npcId"),
+            "performEndNotDestroy": self.boolean(field + ".performEndNotDestroy"),
+            "tmpObjectPath": self.string(field + ".tmpObjectPath"),
+            "tmpObjectPathHash": self.i64(field + ".tmpObjectPathHash"),
+        }
 
     def transform(self, field: str) -> None:
         if not self.member(4, field, nullable=True):
@@ -162,6 +194,20 @@ class _Reader:
         self.boolean(field + ".useRot")
 
     def animation_curve(self, field: str) -> None:
+        if not self.member(3, field, nullable=True):
+            return
+        self.i32(field + ".postWrapMode")
+        self.i32(field + ".preWrapMode")
+        count = self.count(field + ".keys")
+        for index in range(count or 0):
+            item = f"{field}.keys[{index}]"
+            for name in ("inTangent", "inWeight", "outTangent", "outWeight"):
+                self.f32(f"{item}.{name}")
+            self.f32(item + ".time")
+            self.f32(item + ".value")
+            self.i32(item + ".weightedMode")
+
+    def f_animation_curve(self, field: str) -> None:
         if not self.member(3, field, nullable=True):
             return
         count = self.count(field + ".keys")
@@ -181,18 +227,34 @@ class _Reader:
         self.member(3, field)
         self.i32(field + "._blendOption")
         self.f32(field + "._blendTime")
-        self.animation_curve(field + "._customCurve")
+        self.f_animation_curve(field + "._customCurve")
 
     def special_entry(self, field: str) -> None:
-        if not self.member(3, field, nullable=True):
+        tag = self.u8(field + ".unionTag")
+        if tag == 0xFF:
             return
-        condition_count = self.count(field + ".conditions")
-        if condition_count:
+        if tag != 0:
             raise CharInteractPerformDecodeError(
-                f"{field}.conditions: unsupported non-empty condition union"
+                f"{field}: unsupported special-entry union tag 0x{tag:02x}"
             )
+        self.member(3, field)
+        condition_count = self.count(field + ".conditions")
+        for index in range(condition_count or 0):
+            self.special_condition(f"{field}.conditions[{index}]")
         self.string(field + ".memo")
         self.list(field + ".performIds", self.string)
+
+    def special_condition(self, field: str) -> None:
+        tag = self.u8(field + ".unionTag")
+        if tag != 0:
+            raise CharInteractPerformDecodeError(
+                f"{field}: unsupported special-condition union tag 0x{tag:02x}"
+            )
+        self.member(2, field)
+        for axis in "xy":
+            self.f32(f"{field}.cdTimeRange.{axis}")
+        for axis in "xy":
+            self.f32(f"{field}.loopWaitTimeRange.{axis}")
 
     def special_entry_data(self, field: str) -> None:
         if not self.member(1, field, nullable=True):
@@ -227,18 +289,36 @@ class _Reader:
             "useEvent": use_event,
         }
 
-    def _char_anim(self, field: str) -> None:
-        self.string(field + ".animName")
-        self.boolean(field + ".autoBlendOut")
-        self.f32(field + ".blendInTime")
+    def _char_anim(self, field: str) -> dict[str, Any]:
+        """Decode and retain the exact CharAnimActionData payload.
+
+        Earlier callers consumed these fields only to prove the cursor.  Keeping
+        the values makes the same exact frame useful to animation reconstruction
+        without promoting runtime selection or playback.
+        """
+        anim_name = self.string(field + ".animName")
+        auto_blend_out = self.boolean(field + ".autoBlendOut")
+        blend_in_time = self.f32(field + ".blendInTime")
         self.alpha_blend(field + ".blendOut")
-        for name in ("endFalling", "exitFalling", "overrideBlendOut", "overrideStopBlendOut"):
-            self.boolean(f"{field}.{name}")
-        self.f32(field + ".rootMotionWrapTime")
+        flags = {
+            name: self.boolean(f"{field}.{name}")
+            for name in ("endFalling", "exitFalling", "overrideBlendOut", "overrideStopBlendOut")
+        }
+        root_motion_wrap_time = self.f32(field + ".rootMotionWrapTime")
         self.transform(field + ".startTransform")
-        self.f32(field + ".stopBlendOutTime")
-        for name in ("useAutoTime", "useCurrent", "useRootMotion", "useRootMotionDest"):
-            self.boolean(f"{field}.{name}")
+        stop_blend_out_time = self.f32(field + ".stopBlendOutTime")
+        flags.update({
+            name: self.boolean(f"{field}.{name}")
+            for name in ("useAutoTime", "useCurrent", "useRootMotion", "useRootMotionDest")
+        })
+        return {
+            "animName": anim_name,
+            "autoBlendOut": auto_blend_out,
+            "blendInTime": blend_in_time,
+            **flags,
+            "rootMotionWrapTime": root_motion_wrap_time,
+            "stopBlendOutTime": stop_blend_out_time,
+        }
 
     def _char_npc_montage(self, field: str) -> None:
         self.boolean(field + ".autoBlendOut")
@@ -251,27 +331,52 @@ class _Reader:
         self.boolean(field + ".useDynamicEntity")
         self.boolean(field + ".useTemplateSeparateTag")
 
-    def _effect_play(self, field: str) -> None:
+    def _effect_play(self, field: str) -> dict[str, Any]:
+        """Decode and retain exact effect admission fields from one action."""
+        attached_actor_type = self.i32(field + ".attachedActorType")
+        char_index = self.i32(field + ".charIndex")
+        effect_move_type = self.i32(field + ".effectMoveType")
+        init_use_root_rot = self.boolean(field + ".initUseRootRot")
+        is_vfx = self.boolean(field + ".isVFX")
+        mount_point = self.i32(field + ".mountPoint")
+        self.transform(field + ".mountPointOffset")
+        not_rot_follow = self.boolean(field + ".notRotFollow")
+        show = self.boolean(field + ".show")
+        use_char_ik = self.boolean(field + ".useCharIk")
+        return {
+            "attachedActorType": attached_actor_type,
+            "charIndex": char_index,
+            "effectMoveType": effect_move_type,
+            "initUseRootRot": init_use_root_rot,
+            "isVFX": is_vfx,
+            "mountPoint": mount_point,
+            "notRotFollow": not_rot_follow,
+            "show": show,
+            "useCharIk": use_char_ik,
+        }
+
+    def _npc_montage(self, field: str) -> None:
+        self.boolean(field + ".endStop")
+        self.member(5, field + ".montageDesc")
+        self.i32(field + ".montageDesc.montageMaskType")
+        self.i32(field + ".montageDesc.montageState")
+        self.u32(field + ".montageDesc.montageTag")
+        self.boolean(field + ".montageDesc.overrideMontageState")
+        self.boolean(field + ".montageDesc.useRootMotion")
+
+    def _object_show(self, field: str) -> None:
         self.i32(field + ".attachedActorType")
         self.i32(field + ".charIndex")
-        self.i32(field + ".effectMoveType")
-        self.boolean(field + ".initUseRootRot")
-        self.boolean(field + ".isVFX")
         self.i32(field + ".mountPoint")
         self.transform(field + ".mountPointOffset")
-        self.boolean(field + ".notRotFollow")
+        self.i32(field + ".objectMoveType")
         self.boolean(field + ".show")
         self.boolean(field + ".useCharIk")
 
     def action(self, field: str, placement: str, index: int) -> None:
         start = self.offset
         tag = self.u8(field + ".unionTag")
-        layouts = {
-            2: (False, 5), 3: (False, 5), 6: (False, 4),
-            8: (True, 15), 15: (True, 9), 16: (True, 7),
-            25: (True, 10), 33: (False, 2),
-        }
-        layout = layouts.get(tag)
+        layout = ACTION_LAYOUTS.get(tag)
         if layout is None:
             raise CharInteractPerformDecodeError(
                 f"{field}: unsupported current action union tag 0x{tag:02x}"
@@ -284,9 +389,15 @@ class _Reader:
                 f"{field}: tag 0x{tag:02x} member count {member_count}, expected {expected}"
             )
         base = self._base_action(field)
+        actor_index: int | None = None
         if actor_derived:
-            self.i32(field + ".actorIndex")
-        if tag == 2:
+            actor_index = self.i32(field + ".actorIndex")
+        subtype_fields: dict[str, Any] = {}
+        if tag == 1:
+            self.list(field + ".activeTags", self.gameplay_tag)
+            self.boolean(field + ".endRemove")
+            self.list(field + ".guardActiveTags", self.gameplay_tag)
+        elif tag == 2:
             attached_actor_type = self.i32(field + ".attachedActorType")
             audio_event = self.u32(field + ".audioEvent")
             char_index = self.i32(field + ".charIndex")
@@ -324,7 +435,25 @@ class _Reader:
             self.string(field + ".id")
             self.boolean(field + ".overrideBlend")
         elif tag == 8:
-            self._char_anim(field)
+            subtype_fields = self._char_anim(field)
+        elif tag == 10:
+            self.string(field + ".referenceMontageName")
+            self.u32(field + ".referenceMontageTag")
+            self.i32(field + ".targetActorIndex")
+            self.i32(field + ".targetActorType")
+            self.i32(field + ".targetType")
+            self.boolean(field + ".useMontageLength")
+        elif tag == 11:
+            self.f32(field + ".forwardSpeed")
+            self.boolean(field + ".noHorizontalDampingInAir")
+            self.f32(field + ".upSpeed")
+        elif tag == 13:
+            self.boolean(field + ".applyToAll")
+            self.i32(field + ".meshGroup")
+            self.boolean(field + ".show")
+        elif tag == 14:
+            self.i32(field + ".desiredGait")
+            self.transform(field + ".targetTransform")
         elif tag == 15:
             self._char_npc_montage(field)
         elif tag == 16:
@@ -335,11 +464,55 @@ class _Reader:
             self.i32(field + ".targetActorType")
             self.transform(field + ".targetTransform")
             self.boolean(field + ".useTargetTransform")
+        elif tag in (17, 26):
+            pass
+        elif tag == 18:
+            self.animation_curve(field + ".curve")
+            self.boolean(field + ".overrideCurve")
+            self.transform(field + ".targetTransform")
+        elif tag == 20:
+            self.i32(field + ".targetState")
+            self.list(field + ".weaponIds", self.i32)
+        elif tag == 21:
+            self.f32(field + ".intensity")
+            for axis in "xyz":
+                self.f32(f"{field}.offset.{axis}")
+            self.f32(field + ".radius")
+        elif tag == 23:
+            self.string(field + ".animName")
         elif tag == 25:
-            self._effect_play(field)
+            subtype_fields = self._effect_play(field)
+        elif tag == 29:
+            self._npc_montage(field)
+        elif tag == 31:
+            self.string(field + ".animName")
+            self.boolean(field + ".useTrigger")
+        elif tag == 32:
+            self._object_show(field)
         elif tag == 33:
             self.i32(field + ".interruptType")
             self.boolean(field + ".removeTag")
+        elif tag == 35:
+            self.transform(field + ".targetTransform")
+
+        action = {
+            "sourceOffset": start,
+            "endOffset": self.offset,
+            "byteLength": self.offset - start,
+            "unionTag": tag,
+            "unionTagHex": f"0x{tag:04x}",
+            "typeName": ACTION_TAG_NAMES[tag],
+            "memberCount": member_count,
+            "placement": placement,
+            "actionIndex": index,
+            "actorDerived": actor_derived,
+            **base,
+        }
+        if subtype_fields:
+            action["subtypeFields"] = subtype_fields
+        if actor_index is not None:
+            action["actorIndex"] = actor_index
+        self.actions.append(action)
 
     def action_list(self, field: str, placement: str) -> None:
         count = self.count(field)
@@ -355,11 +528,11 @@ class _Reader:
         self.boolean("allowInheritPerform")
         self.serialized_dictionary("bodyTypeActDataDict", self.u32, self.body_type_action_data)
         self.i32("charPerformType")
-        self.list("chars", self.actor)
-        self.list("decos", self.actor)
+        self.owner_actor_collections["chars"] = self.list("chars", self.actor)
+        self.owner_actor_collections["decos"] = self.list("decos", self.actor)
         self.special_entry_data("defaultSubPerformEntry")
         self.boolean("disableIKAndFollow")
-        self.list("effects", self.actor)
+        self.owner_actor_collections["effects"] = self.list("effects", self.actor)
         self.action_list("endActions", "endActions")
         self.f32("fixedTime")
         self.boolean("forceExitCommandsContinuous")
@@ -367,16 +540,16 @@ class _Reader:
         self.list("guardInterruptReasons", self.i32)
         self.boolean("hideWeapon")
         self.list("inheritPerformIds", self.string)
-        self.list("interactives", self.actor)
+        self.owner_actor_collections["interactives"] = self.list("interactives", self.actor)
         self.list("interruptReasons", self.i32)
         self.boolean("keepFightState")
         self.action_list("loopActions", "loopActions")
-        self.list("npcs", self.actor)
+        self.owner_actor_collections["npcs"] = self.list("npcs", self.actor)
         self.i32("performType")
         self.action_list("preStartActions", "preStartActions")
         self.action_list("startActions", "startActions")
         self.serialized_dictionary("subPerformEntries", self.string, self.special_entry_data)
-        self.list("tmpObjects", self.actor)
+        self.owner_actor_collections["tmpObjects"] = self.list("tmpObjects", self.actor)
         self.boolean("usePreStartActions")
         if self.offset != len(self.data):
             raise CharInteractPerformDecodeError(
@@ -430,9 +603,49 @@ def decode_char_interact_complete_frame(data: bytes) -> dict[str, Any]:
     actions = reader.decode()
     return {
         "status": "exact_current_char_interact_frame",
+        "schemaStatus": "named_exact",
+        "wholeSchemaExact": True,
         "schemaMappingId": SCHEMA_MAPPING_ID,
+        "unionMappingId": UNION_MAPPING_ID,
         "serializedMemberCount": OUTER_MEMBER_COUNT,
         "bytesConsumed": len(payload),
-        "actionCount": len(actions),
+        "actionCount": len(reader.actions),
+        "actionTypeCounts": {
+            name: sum(1 for row in reader.actions if row["typeName"] == name)
+            for name in sorted({str(row["typeName"]) for row in reader.actions})
+        },
+        "actions": reader.actions,
+        "actorCollections": reader.owner_actor_collections,
+        "audioActionCount": len(actions),
         "audioActions": actions,
+        "evidenceBoundary": (
+            "The exact current 27-member root and every reached concrete action "
+            "wrapper are consumed in generated field order through physical EOF. "
+            "The byte-pinned native contract supplies the complete 0..36 tag-to-type "
+            "mapping; unknown tags, member counts, or trailing bytes fail closed."
+        ),
+    }
+
+
+def frame_char_interact_prefix(data: bytes) -> dict[str, Any]:
+    """Validate the first two named root members and leave later unions opaque."""
+    if not isinstance(data, (bytes, bytearray, memoryview)):
+        raise CharInteractPerformDecodeError("input: expected bytes-like payload")
+    reader = _Reader(bytes(data))
+    if reader.u8("CharInteractPerformRuntimeCfg.memberCount") != OUTER_MEMBER_COUNT:
+        raise CharInteractPerformDecodeError(
+            "CharInteractPerformRuntimeCfg member count changed"
+        )
+    active_tags = reader.list("activeTags", reader.gameplay_tag)
+    allow_inherit = reader.boolean("allowInheritPerform")
+    return {
+        "status": "bounded_prefix",
+        "schemaStatus": "named_prefix_opaque_remainder",
+        "serializedMemberCount": OUTER_MEMBER_COUNT,
+        "bytesConsumed": reader.offset,
+        "activeTagCount": len(active_tags),
+        "activeTags": active_tags,
+        "allowInheritPerform": allow_inherit,
+        "opaqueRemainderOffset": reader.offset,
+        "opaqueRemainderLength": len(data) - reader.offset,
     }

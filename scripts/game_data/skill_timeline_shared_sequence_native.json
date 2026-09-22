@@ -1,0 +1,1110 @@
+{
+  "schema": "endfield.skill-timeline-shared-sequence-native-contract.v1",
+  "status": "exact-current-build-composite",
+  "inputSetSha256": "0F1275C5FE9FEB3C0BAA801A49D37405CB3BA0C5BCD8A0A4160C48758283C497",
+  "nativeInputs": {
+    "gameassemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "globalMetadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityplayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "rootTags": [
+    "0x008C",
+    "0x00C9",
+    "0x00DE",
+    "0x0169",
+    "0x0118",
+    "0x009A",
+    "0x00A2",
+    "0x00B2",
+    "0x009B",
+    "0x003C",
+    "0x0081",
+    "0x0069",
+    "0x00D4",
+    "0x0119",
+    "0x0145",
+    "0x0183",
+    "0x00C5",
+    "0x001C",
+    "0x007C",
+    "0x0024",
+    "0x00B4",
+    "0x000B",
+    "0x016D",
+    "0x00EA",
+    "0x00B6",
+    "0x00EC",
+    "0x0050",
+    "0x0058",
+    "0x0061",
+    "0x00BD",
+    "0x0037",
+    "0x0016",
+    "0x0144",
+    "0x00F6",
+    "0x014A",
+    "0x0120",
+    "0x0163",
+    "0x0140",
+    "0x0005"
+  ],
+  "createBuffMultiActionRoot": "0x0092",
+  "allowedReachedRoutes": [
+    {
+      "tag": "0x0005",
+      "typeName": "InterruptCurSkillAction",
+      "memberCount": 5
+    },
+    {
+      "tag": "0x0006",
+      "typeName": "AchieveSpecialGameEventAction",
+      "memberCount": 5
+    },
+    {
+      "tag": "0x0008",
+      "typeName": "AddDynamicCcsAction",
+      "memberCount": 50
+    },
+    {
+      "tag": "0x000B",
+      "typeName": "AddTagAction",
+      "memberCount": 8
+    },
+    {
+      "tag": "0x0016",
+      "typeName": "AuraAction",
+      "memberCount": 30
+    },
+    {
+      "tag": "0x001B",
+      "typeName": "BlowOffAction",
+      "memberCount": 17
+    },
+    {
+      "tag": "0x001C",
+      "typeName": "BlowOffCharacterAction",
+      "memberCount": 15
+    },
+    {
+      "tag": "0x0024",
+      "typeName": "CameraImpulseAction",
+      "memberCount": 12
+    },
+    {
+      "tag": "0x0027",
+      "typeName": "CastSkill",
+      "memberCount": 10
+    },
+    {
+      "tag": "0x0035",
+      "typeName": "CharHurtAnimAction",
+      "memberCount": 15
+    },
+    {
+      "tag": "0x0037",
+      "typeName": "CharWeaponVisibleAction",
+      "memberCount": 10
+    },
+    {
+      "tag": "0x003C",
+      "typeName": "CheckBuffStackNumAdvanced",
+      "memberCount": 10
+    },
+    {
+      "tag": "0x0042",
+      "typeName": "CheckDistanceCondition",
+      "memberCount": 10
+    },
+    {
+      "tag": "0x0050",
+      "typeName": "CompareFloat",
+      "memberCount": 7
+    },
+    {
+      "tag": "0x0058",
+      "typeName": "CheckBuffStackNum",
+      "memberCount": 8
+    },
+    {
+      "tag": "0x0061",
+      "typeName": "CheckEntityNum",
+      "memberCount": 10
+    },
+    {
+      "tag": "0x0068",
+      "typeName": "CheckMainCharacterCondition",
+      "memberCount": 5
+    },
+    {
+      "tag": "0x0069",
+      "typeName": "CheckObjectTypeMatch",
+      "memberCount": 6
+    },
+    {
+      "tag": "0x007C",
+      "typeName": "CheckTagMatch",
+      "memberCount": 6
+    },
+    {
+      "tag": "0x0081",
+      "typeName": "CheckTimedMarkerCondition",
+      "memberCount": 9
+    },
+    {
+      "tag": "0x0088",
+      "typeName": "Probablity",
+      "memberCount": 5
+    },
+    {
+      "tag": "0x008C",
+      "typeName": "ConvertToTargetContext",
+      "memberCount": 12
+    },
+    {
+      "tag": "0x0092",
+      "typeName": "CreateBuffAction",
+      "memberCount": 19
+    },
+    {
+      "tag": "0x0096",
+      "typeName": "CreateTimedMarker",
+      "memberCount": 9
+    },
+    {
+      "tag": "0x009A",
+      "typeName": "DamageAction",
+      "memberCount": 11
+    },
+    {
+      "tag": "0x009B",
+      "typeName": "DebugPrintAction",
+      "memberCount": 9
+    },
+    {
+      "tag": "0x00A2",
+      "typeName": "EffectAction",
+      "memberCount": 18
+    },
+    {
+      "tag": "0x00A9",
+      "typeName": "EnemyHurtAnimAction",
+      "memberCount": 28
+    },
+    {
+      "tag": "0x00B2",
+      "typeName": "FindTargetAction",
+      "memberCount": 18
+    },
+    {
+      "tag": "0x00B4",
+      "typeName": "FinishBuffAdvanced",
+      "memberCount": 13
+    },
+    {
+      "tag": "0x00B6",
+      "typeName": "FinishOwnerAction",
+      "memberCount": 6
+    },
+    {
+      "tag": "0x00BD",
+      "typeName": "ForEachAction",
+      "memberCount": 6
+    },
+    {
+      "tag": "0x00C5",
+      "typeName": "HealAction",
+      "memberCount": 16
+    },
+    {
+      "tag": "0x00C7",
+      "typeName": "HitStopAction",
+      "memberCount": 12
+    },
+    {
+      "tag": "0x00C9",
+      "typeName": "IfElseAction",
+      "memberCount": 8,
+      "providerRef": "ifElseNestedSequenceProvider"
+    },
+    {
+      "tag": "0x00D4",
+      "typeName": "InterruptAction",
+      "memberCount": 8
+    },
+    {
+      "tag": "0x00D9",
+      "typeName": "JumpToAction",
+      "memberCount": 6,
+      "providerRef": "jumpToNestedSequenceProvider"
+    },
+    {
+      "tag": "0x00DE",
+      "typeName": "LaunchProjectile",
+      "memberCount": 37
+    },
+    {
+      "tag": "0x00EA",
+      "typeName": "MergeTargetAction",
+      "memberCount": 7
+    },
+    {
+      "tag": "0x00EC",
+      "typeName": "ModifyDynamicBlackboard",
+      "memberCount": 10
+    },
+    {
+      "tag": "0x00F6",
+      "typeName": "MoveToAction",
+      "memberCount": 46
+    },
+    {
+      "tag": "0x00FE",
+      "typeName": "ObtainCostAction",
+      "memberCount": 20
+    },
+    {
+      "tag": "0x0118",
+      "typeName": "PlayPerfectDodgeAnim",
+      "memberCount": 6,
+      "providerRef": "playPerfectDodgeAnimProvider"
+    },
+    {
+      "tag": "0x0119",
+      "typeName": "PlaySoundAction",
+      "memberCount": 22
+    },
+    {
+      "tag": "0x011C",
+      "typeName": "PullAction",
+      "memberCount": 19
+    },
+    {
+      "tag": "0x0120",
+      "typeName": "RandomAction",
+      "memberCount": 8
+    },
+    {
+      "tag": "0x0128",
+      "typeName": "RecoverPoiseAction",
+      "memberCount": 11
+    },
+    {
+      "tag": "0x0136",
+      "typeName": "SaveBuffStackNumAdvanced",
+      "memberCount": 9
+    },
+    {
+      "tag": "0x0140",
+      "typeName": "SaveTargetDistanceAction",
+      "memberCount": 7
+    },
+    {
+      "tag": "0x0144",
+      "typeName": "SelfRotateAction",
+      "memberCount": 18
+    },
+    {
+      "tag": "0x0145",
+      "typeName": "SendBattleSignalToLevel",
+      "memberCount": 6
+    },
+    {
+      "tag": "0x0147",
+      "typeName": "SetAbilityEntityTarget",
+      "memberCount": 5,
+      "providerRef": "setAbilityEntityTargetProvider"
+    },
+    {
+      "tag": "0x014A",
+      "typeName": "SetAnimatorParamAction",
+      "memberCount": 8
+    },
+    {
+      "tag": "0x0163",
+      "typeName": "SimpleCalcBBAction",
+      "memberCount": 8
+    },
+    {
+      "tag": "0x0166",
+      "typeName": "SlowAction",
+      "memberCount": 13
+    },
+    {
+      "tag": "0x0169",
+      "typeName": "SpawnAbilityEntity",
+      "memberCount": 38
+    },
+    {
+      "tag": "0x016A",
+      "typeName": "SpawnEnemyAction",
+      "memberCount": 18
+    },
+    {
+      "tag": "0x016D",
+      "typeName": "SpellInfliction",
+      "memberCount": 8
+    },
+    {
+      "tag": "0x016E",
+      "typeName": "SpellInflictionOnChar",
+      "memberCount": 13
+    },
+    {
+      "tag": "0x0171",
+      "typeName": "StoreAttributeValue",
+      "memberCount": 13
+    },
+    {
+      "tag": "0x0183",
+      "typeName": "TimeDilationAction",
+      "memberCount": 16
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "buff_136_native.json",
+      "sha256": "93FBDCD0CEFF945F7681E333A780680CA0E12281521817F7E53D812DF11E5650"
+    },
+    {
+      "path": "buff_128_native.json",
+      "sha256": "1B81B51EA3990329B4D78A94D7C4CA0315605CDE762C45E29F762C5E29F431FD"
+    },
+    {
+      "path": "buff_140_native.json",
+      "sha256": "5863AAE7BF92ADF317B593F5AA1E948300BE5A457038733C536752D1C7AABD04"
+    },
+    {
+      "path": "buff_05_native.json",
+      "sha256": "B5EB475165CFA7886D22DE8A09A591786A8B9E8762D2A0B0F9C40D3AF2EEC482"
+    },
+    {
+      "path": "buff_16a_native.json",
+      "sha256": "B1140A962A9C207513C60BEF059104529735B915C06B1E6811BDDE183027664E"
+    },
+    {
+      "path": "buff_1b_native.json",
+      "sha256": "190E9FD0C5799FAD3722758A6DDA225108D54837B34C6FBCA46ABE998909E435"
+    },
+    {
+      "path": "buff_06_native.json",
+      "sha256": "B7C608205DE61D5DCF6EE3BA5A14EBE3D88ECE8CB9FCBF807227A17B43188CA3"
+    },
+    {
+      "path": "buff_144_native.json",
+      "sha256": "C9102B1A1EB36623BC9E6B0081448EE4DDC17C1861136E44DDB7FDE39A9B8DC5"
+    },
+    {
+      "path": "buff_f6_native.json",
+      "sha256": "476110FC9C63E172FCEFEF7FACC8B67942E2B5C6EAA6BB2CAF3FE88BAAA5EAF7"
+    },
+    {
+      "path": "buff_42_native.json",
+      "sha256": "AFA35C54E71E46FC9DF3C3BD6220E14F41AD1FB32B5ED44AEEE432F486594419"
+    },
+    {
+      "path": "buff_14a_native.json",
+      "sha256": "40CC69121F664E8C0B34A66C2A4D99D3AE7CCA6195F76842E1EF5E265C3640DA"
+    },
+    {
+      "path": "buff_120_native.json",
+      "sha256": "98B9FBD96FAC2404CFCDF4D238853A4C8F52AF738DC13C6CCAFF741C42109CCB"
+    },
+    {
+      "path": "buff_16_native.json",
+      "sha256": "08B7737E71A92F3CDDE7976A4521A1A1C0A3EF336422D0680BD5B924586AA897"
+    },
+    {
+      "path": "buff_37_native.json",
+      "sha256": "7319F980384E5C673B4B3F273600B658618448EF1034CC7655ADC3A6C66016C5"
+    },
+    {
+      "path": "buff_bd_native.json",
+      "sha256": "096C04016EF4264A34C4CEF921949CB7723393E55C4256434BA2D6935B04B964"
+    },
+    {
+      "path": "buff_08_native.json",
+      "sha256": "FA94A0DF32108057B6F80CD9482446B0E5AF3D0014BF4F188506F70BBACEE568"
+    },
+    {
+      "path": "buff_11c_native.json",
+      "sha256": "7EA5AEAABEEF46D931936162647F4EB4A4706E0B9B82469255F6ED196EF140CD"
+    },
+    {
+      "path": "buff_163_native.json",
+      "sha256": "98F46ECB4897823A507B1382425D2BDA489A23DC18CA550A00FAF22A13C6A292"
+    },
+    {
+      "path": "buff_0b_native.json",
+      "sha256": "9B249AE264EE38B03610ADF2D6851314C69FA6AB9B0A1822FFBAF96A730749A1"
+    },
+    {
+      "path": "buff_119_native.json",
+      "sha256": "E47E2076CC4F98DC7D65463A2E9F8AF2D8085CF775D7C84FF191D45607569EBD"
+    },
+    {
+      "path": "buff_145_native.json",
+      "sha256": "AEC09B4A7FF09F87B79D77CAA2230FC3F6C4898D171831CAF6C97FAC95CB5364"
+    },
+    {
+      "path": "buff_166_native.json",
+      "sha256": "346DEC82FFBE10A1283DC382EB2DAFF5E6C84259999C61EA19C2D96D6099ADB4"
+    },
+    {
+      "path": "buff_169_native.json",
+      "sha256": "F188AC60DB7C17576D4C0C48F7F59D122DB65BC58BECA038BB99A6B22E8263D0"
+    },
+    {
+      "path": "buff_16d_native.json",
+      "sha256": "3FDBDE4A7941565832FABC8F4332C8D8EA05052F27EEFD4FCDA4761F741E51DD"
+    },
+    {
+      "path": "buff_16e_native.json",
+      "sha256": "78B05482797A51C15185DA9CF984C426E4E66269196FB84251D219550FAC6137"
+    },
+    {
+      "path": "buff_171_native.json",
+      "sha256": "ABB0C10EA07903E1136CC8315156BE92CE2F7E16EAA1EAB41D9B4BC7B46FE643"
+    },
+    {
+      "path": "buff_183_native.json",
+      "sha256": "F1E9D9A5BE97C5E3922F8D14BFFF78FDC39A77DA8CAE13EA24E0A2B07073AE87"
+    },
+    {
+      "path": "buff_1c_native.json",
+      "sha256": "0E7FEC73B8287EFFFD75436E461CDD7053C1075F0014549B46499EBC7F1C3A52"
+    },
+    {
+      "path": "buff_24_native.json",
+      "sha256": "F294BAAB30A05C95BFDD4641AAD4CB67B377A6A8B0FD18D8E3DCA364B7EE5413"
+    },
+    {
+      "path": "buff_27_native.json",
+      "sha256": "2F19D81D2184D3E98CDD71AC6B6AE42820226D224ABC504591676ED3DEFA7DD3"
+    },
+    {
+      "path": "buff_35_native.json",
+      "sha256": "64DBC996FCAD85B26B096A4C5C93040965577EB25A0E7F926C9F5C9564CB137D"
+    },
+    {
+      "path": "buff_3c_native.json",
+      "sha256": "4D43B6CBA8E2353132738846A13DBA44B3C8D011AB9B91A85788B04254B7C9E5"
+    },
+    {
+      "path": "buff_50_native.json",
+      "sha256": "34476A8DACFEF56F2349D518BBDCAFEE324881EAD6B15FF7678A3EAE92B30AE9"
+    },
+    {
+      "path": "buff_58_native.json",
+      "sha256": "74542E9E5B7B30E0B147C5E96CC1B80C3EF9561CBBCD947A77D59CF775A16F0A"
+    },
+    {
+      "path": "buff_61_native.json",
+      "sha256": "43CEC3462707D00E38197240DDE8EE27345612598CC8F31D151B2262FCC871E9"
+    },
+    {
+      "path": "buff_68_native.json",
+      "sha256": "D98ED75E70126F274B7619ECD4CA6B6D0D8C90B57044F692A3446775A9B9934C"
+    },
+    {
+      "path": "buff_69_native.json",
+      "sha256": "829F0C16DE45C48147C60A41C9D49DF6FF74284BE7372CC478B9D4CEEEF47DAB"
+    },
+    {
+      "path": "buff_7c_native.json",
+      "sha256": "782FFCA63A4548A25F5DEFCD199C1CD95472238869D9D46F607EBEB435566692"
+    },
+    {
+      "path": "buff_81_native.json",
+      "sha256": "492CF9EC3B997311CC0C14FFC78286525FC0DA54580B2B871785C6D345874E31"
+    },
+    {
+      "path": "buff_88_native.json",
+      "sha256": "EC9EBFEE77CFCFF0D8F77AE02C86DE3C8B10B7B2BF3C4EEE3E89ACB97789A641"
+    },
+    {
+      "path": "buff_8c_native.json",
+      "sha256": "25A0711C3B7F0BC5F4D85ADF7F4B28AC79B5A5314D1B4FC85827A3FF91188290"
+    },
+    {
+      "path": "buff_92_native.json",
+      "sha256": "D3FE6B7AA5D8BF2B03F670946706F318D091CBC05D9E92982B82D8F96231D26A"
+    },
+    {
+      "path": "buff_96_native.json",
+      "sha256": "B97187C43CDFD855446EB401A0511BCFBE4091C40CAB74DF5D372B52337F5891"
+    },
+    {
+      "path": "buff_9a_native.json",
+      "sha256": "EBD0AAAD5660D5A21EF3A1ACB27139D7DA17ED5E992B81F875FCA93DB85AB75C"
+    },
+    {
+      "path": "buff_9b_native.json",
+      "sha256": "AAE6AEF1DC05F5FAB853D2FDCA1ADE0E976BBBB7E2812CCF3933ED81EB163A46"
+    },
+    {
+      "path": "buff_a2_native.json",
+      "sha256": "1BBA5E4FB6E2A7330CBADE76F3FAF6D699E4813B24BB4D666E7AEDC97FCE5766"
+    },
+    {
+      "path": "buff_a9_native.json",
+      "sha256": "46F034221D5512CD48141A0F6534A211B495AC46B5EAEF1F18E73C8839486608"
+    },
+    {
+      "path": "buff_b2_native.json",
+      "sha256": "738B27AF41A661832BA6D30E7F86FF07EBF7E6241178DFF35B0C007FC0B8CED7"
+    },
+    {
+      "path": "buff_b4_native.json",
+      "sha256": "F6CAAABD807B8D7F346BF96DB6F90AF2E6B7446AAA3A688B3F56C2361460220D"
+    },
+    {
+      "path": "buff_b6_native.json",
+      "sha256": "A7ED5FF53CCDC4B1A3E69997AC9601026CEF573D94A0E11751526A9806858BCD"
+    },
+    {
+      "path": "buff_c0_native.json",
+      "sha256": "B58BF7A077BCD2BC22372F45B6E70EF508AA25492E090D6D7D728E9D5865AFE3"
+    },
+    {
+      "path": "buff_c5_native.json",
+      "sha256": "DF8D3BF278E4C2C4AD7C708BB29EF53A3EE5434C96A40EEBF44C76D300D4AD2B"
+    },
+    {
+      "path": "buff_c7_native.json",
+      "sha256": "35F5273F38C6859596A3EA0540036D6890ADD975485DF74E4610F4BF4D58BF6E"
+    },
+    {
+      "path": "buff_d4_native.json",
+      "sha256": "0C1B4064869081CD2BEBF42831D44518ED31FD79DF5B8A56682A54A3C08BB9F2"
+    },
+    {
+      "path": "buff_de_native.json",
+      "sha256": "C1B7C9C44CF9BBDD4A6D617C98AFDB8D972F035F77FC69A57FE1224BBF0FCC6D"
+    },
+    {
+      "path": "buff_ea_native.json",
+      "sha256": "796C7F22C08E16CC7772704D3D32EA47914AB3C2F4B9CF0C599471B6912E7BAD"
+    },
+    {
+      "path": "buff_ec_native.json",
+      "sha256": "59F3C41A010BEF314E9E74E2E4940BDD65C16462B5A1001A7124182FDF4E8396"
+    },
+    {
+      "path": "buff_fe_native.json",
+      "sha256": "71597B80DE153C17064B940E3ACC108E675B6A543B1598039A449E4EE9619A6B"
+    },
+    {
+      "path": "native_contracts/buff_frontier8.json",
+      "sha256": "196820A6FD2BCD811CCABACC5E17565289193E05C19E906EA2E29F0D0E91DDAB"
+    },
+    {
+      "path": "memorypack/buff_actions.py",
+      "sha256": "74FFE23471F7B712666E676C134DA626E467E00A731F391909AC641C754B9368"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Each allowed route composes an existing byte-pinned current-build formatter contract with the maintained finite structural reader. The shared decoder admits only listed physical tags/member counts and exact cursors. Byte-pinned action dependencies admit a first root only when the complete finite grammar rejoins the authenticated top-level cursor. This includes the broad Damage, Effect and FindTarget roots and the lower-frequency exact roots listed in rootTags. Tag 0x0118 pins PlayPerfectDodgeAnim and its six stored fields; C9 additionally pins its switch route and mechanically validated nested SequenceActionData MethodSpec/provider chain.",
+    "direct": "The first root is restricted to the listed authenticated routes; every listed root is admitted only where its complete nested body reaches the independent following cursor. Nested and later actions must also be in allowedReachedRoutes. IfElseAction requires the pinned SequenceActionData provider chain; JumpToAction reuses that provider; SetAbilityEntityTarget uses the pinned TargetSettings provider.",
+    "structuralOnly": "Anonymous nested member kinds retain the dependency contract boundary; union wrapper identity and record extent are named, while gameplay meaning is not inferred.",
+    "unresolved": "Any listed root with an unsupported nested profile remains bounded at its first unresolved child. C9 branches containing subtype-one nested profiles, positive DamageUnit member-ten GameplayTag lists, or positive EffectActionCfg arrays remain bounded and unsupported."
+  },
+  "ifElseNestedSequenceProvider": {
+    "status": "authenticated-static-provider-chain-with-exact-corpus-cursor",
+    "physicalTag": "0x00C9",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_IfElseAction_IfElseActionDataForMemoryPack",
+    "serializedMemberCount": 8,
+    "dispatcherRoute": {
+      "switchTableRva": 59855640,
+      "switchEntryCount": 416,
+      "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+      "unionTag": 201,
+      "switchTargetRva": 59824778,
+      "usageCellRva": "0xD09F690",
+      "usageRawHex": "6141032000000000",
+      "registeredTypeIndex": 106672,
+      "typePointerVa": "0x18D2180C8",
+      "wrapperTypeDefinition": 16163,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_IfElseAction_IfElseActionDataForMemoryPack"
+    },
+    "methods": [
+      [
+        120613,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_IfElseAction_IfElseActionDataForMemoryPack",
+        "Deserialize",
+        58146912
+      ],
+      [
+        120614,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_IfElseAction_IfElseActionDataForMemoryPack+Beyond_Gameplay_Core_IfElseAction_IfElseActionDataForMemoryPackFormatter",
+        "Deserialize",
+        58144368
+      ],
+      [
+        104346,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+        "Deserialize",
+        60582560
+      ],
+      [
+        104347,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack+Beyond_Gameplay_Core_SequenceActionDataForMemoryPackFormatter",
+        "Deserialize",
+        60582464
+      ]
+    ],
+    "codeWindows": [
+      {
+        "startRva": 58146912,
+        "endRva": 58147496,
+        "sha256": "AC1FF978FEF71639E74980B43AE00D9746518A9DD94B41772F2867963A596ED8",
+        "boundary": "complete selected IfElseAction reader"
+      },
+      {
+        "startRva": 60582560,
+        "endRva": 60583847,
+        "sha256": "6444AF67AF86E7809AF5A50AE6DEE922B699DCB1CA686DC81F4C3584AB817B90",
+        "boundary": "complete selected SequenceActionData reader"
+      }
+    ],
+    "instructionWindows": [
+      [
+        58146963,
+        "837B30010F8C089A6B01488B43500FB6288B733083EE010F880B9A6B0148FF4350FF4340FF43448973304080FDFF0F8482010000"
+      ],
+      [
+        58147066,
+        "4080FD080F85D1996B01"
+      ],
+      [
+        58147082,
+        "E8B14753FF"
+      ],
+      [
+        58147125,
+        "E8764553FF"
+      ],
+      [
+        58147161,
+        "E8524553FF"
+      ],
+      [
+        58147197,
+        "E82E4553FF"
+      ],
+      [
+        58147233,
+        "E81A4753FF"
+      ],
+      [
+        58147274,
+        "E8C11A63FF"
+      ],
+      [
+        58147315,
+        "E8981A63FF"
+      ],
+      [
+        58147356,
+        "E86F1A63FF"
+      ],
+      [
+        58147261,
+        "488B15A40C8809"
+      ],
+      [
+        58147302,
+        "488B157B0C8809"
+      ],
+      [
+        58147343,
+        "488B15520C8809"
+      ]
+    ],
+    "orderedSourceReads": [
+      {
+        "memberIndex": 0,
+        "kind": "anonymous-nonzero-byte",
+        "byteWidth": 1
+      },
+      {
+        "memberIndex": 1,
+        "kind": "anonymous-scalar32",
+        "byteWidth": 4
+      },
+      {
+        "memberIndex": 2,
+        "kind": "anonymous-scalar32",
+        "byteWidth": 4
+      },
+      {
+        "memberIndex": 3,
+        "kind": "anonymous-scalar32",
+        "byteWidth": 4
+      },
+      {
+        "memberIndex": 4,
+        "kind": "anonymous-nonzero-byte",
+        "byteWidth": 1
+      },
+      {
+        "memberIndex": 5,
+        "kind": "SequenceActionData",
+        "methodSpecIndex": 619962
+      },
+      {
+        "memberIndex": 6,
+        "kind": "SequenceActionData",
+        "methodSpecIndex": 619962
+      },
+      {
+        "memberIndex": 7,
+        "kind": "SequenceActionData",
+        "methodSpecIndex": 619962
+      }
+    ],
+    "nestedMethodSpec": {
+      "index": 619962,
+      "rawHex": "B0890600FFFFFFFF18400000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "genericInstantiationIndex": 16408,
+      "argumentTypeRawHex": "F2230000000000000000120000000000",
+      "methodSpecProvider": true,
+      "usageCellRva": "0xCFF4E68",
+      "usageRawHex": "75EB12C000000000",
+      "callsiteRvas": [
+        58147261,
+        58147302,
+        58147343
+      ],
+      "methodDefinition": 428464,
+      "classInstantiationIndex": -1,
+      "methodInstantiationIndex": 16408
+    },
+    "recursionLimit": 64,
+    "evidenceBoundary": {
+      "exact": "The selected C9 route, wrapper and SequenceActionData reader/formatter identities, complete reader windows, three identical generic MethodSpec operands, ordered scalar widths, and recursive finite grammar are pinned to the current native inputs.",
+      "direct": "All three nested calls use MethodSpec 619962 whose sole concrete argument is Beyond.Gameplay.Core.SequenceActionData. Current authenticated C9 source bytes reach independent following TimelineActionData boundaries when every recursively reached child route is contracted.",
+      "conditional": "Live cache state is not read. Promotion additionally requires the authenticated input-set identity, member header eight, bounded depth at most 64, every nested route/member count in allowedReachedRoutes, and an exact following cursor.",
+      "unresolved": "Nested subtype-one profiles, positive DamageUnit member-ten GameplayTag lists, and positive EffectActionCfg arrays remain unsupported and stop before their unresolved child bytes."
+    }
+  },
+  "jumpToNestedSequenceProvider": {
+    "status": "authenticated-static-provider-chain-with-exact-corpus-cursor",
+    "providerKind": "nested-sequence-action",
+    "physicalTag": "0x00D9",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_JumpToAction_DataForMemoryPack",
+    "serializedMemberCount": 6,
+    "sourceContract": {
+      "path": "native_contracts/buff_frontier8.json",
+      "sha256": "196820A6FD2BCD811CCABACC5E17565289193E05C19E906EA2E29F0D0E91DDAB",
+      "schema": "endfield.buff-frontier8-native-contract.v1"
+    },
+    "orderedSourceReads": [
+      {
+        "memberIndex": 0,
+        "kind": "anonymous-nonzero-byte"
+      },
+      {
+        "memberIndex": 1,
+        "kind": "anonymous-scalar32"
+      },
+      {
+        "memberIndex": 2,
+        "kind": "anonymous-scalar32"
+      },
+      {
+        "memberIndex": 3,
+        "kind": "anonymous-scalar32"
+      },
+      {
+        "memberIndex": 4,
+        "kind": "SequenceActionData"
+      },
+      {
+        "memberIndex": 5,
+        "kind": "int32"
+      }
+    ],
+    "nestedMethodSpec": {
+      "index": 619962,
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData"
+    },
+    "evidenceBoundary": {
+      "exact": "The current dispatcher route, wrapper/member count, complete reader windows, generated setters, nested SequenceActionData MethodSpec, and source read order are pinned by buff_frontier8.json.",
+      "direct": "Three reached 0x00D9 records advance to their independent following action boundaries in the current SkillData row.",
+      "conditional": "Promotion requires the authenticated native/input-set hashes, header six, exact nested sequence cursor, and contracted reached children.",
+      "unresolved": "Later TimelineActionData records in the same file remain outside this first-record decoder."
+    }
+  },
+  "setAbilityEntityTargetProvider": {
+    "status": "authenticated-static-provider-chain-with-exact-corpus-cursor",
+    "providerKind": "target-settings-action",
+    "physicalTag": "0x0147",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAbilityEntityTarget_DataForMemoryPack",
+    "wrapperTypeDefinition": 16421,
+    "actualTypeName": "Beyond.Gameplay.Core.SetAbilityEntityTarget+Data",
+    "actualTypeDefinition": 9800,
+    "serializedMemberCount": 5,
+    "dispatcherRoute": {
+      "switchTableRva": 59855640,
+      "switchEntryCount": 416,
+      "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+      "unionTag": 327,
+      "switchTargetRva": 82217977,
+      "routeWindow": {
+        "startRva": 82217977,
+        "endRva": 82218027,
+        "sha256": "8D25472451F91819C68EDA55F8DCA1BBABC4F67DD64EF6E64BA4FFAE4E72DFCE"
+      },
+      "usageCellRva": 218185608,
+      "usageRawHex": "9344032000000000",
+      "registeredTypeIndex": 107081
+    },
+    "methods": [
+      [
+        122661,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAbilityEntityTarget_DataForMemoryPack",
+        "Deserialize",
+        153822856
+      ],
+      [
+        122662,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAbilityEntityTarget_DataForMemoryPack+Beyond_Gameplay_Core_SetAbilityEntityTarget_DataForMemoryPackFormatter",
+        "Deserialize",
+        153822624
+      ]
+    ],
+    "codeWindows": [
+      {
+        "startRva": 153822856,
+        "endRva": 153823304,
+        "sha256": "94E9CB5F534557A1249D38690A9E85177655DC5388C27B7B633438B44482E835",
+        "boundary": "complete selected reader through RET"
+      },
+      {
+        "startRva": 153822624,
+        "endRva": 153822716,
+        "sha256": "AE6353FED5345366201243CD3F8400F39D60C2864C7DA065F4B9DCF7734F72EB",
+        "boundary": "complete formatter forwarding body"
+      }
+    ],
+    "generatedOwnFields": [
+      "targetSettings"
+    ],
+    "setterMethods": [
+      [
+        122654,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAbilityEntityTarget_DataForMemoryPack",
+        "set___instance",
+        "Beyond.Gameplay.Core.SetAbilityEntityTarget+Data"
+      ],
+      [
+        122658,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SetAbilityEntityTarget_DataForMemoryPack",
+        "set___targetSettings__",
+        "Beyond.Gameplay.Core.TargetSettings"
+      ]
+    ],
+    "orderedSourceReads": [
+      {
+        "memberIndex": 0,
+        "kind": "anonymous-nonzero-byte"
+      },
+      {
+        "memberIndex": 1,
+        "kind": "anonymous-scalar32"
+      },
+      {
+        "memberIndex": 2,
+        "kind": "anonymous-scalar32"
+      },
+      {
+        "memberIndex": 3,
+        "kind": "anonymous-scalar32"
+      },
+      {
+        "memberIndex": 4,
+        "kind": "TargetSettings"
+      }
+    ],
+    "nestedMethodSpec": {
+      "index": 619977,
+      "rawHex": "B0890600FFFFFFFF98410000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "genericInstantiationIndex": 16792,
+      "argumentTypeRawHex": "28280000000000000000120000000000",
+      "usageCellRva": 218502920,
+      "usageRawHex": "93EB12C000000000",
+      "callsiteRvas": [
+        153823183
+      ]
+    },
+    "reachedFile": "Data/Json/SkillData/chr_0033_camille_normal_skill_projhit_sub.json",
+    "reachedOffset": 495,
+    "evidenceBoundary": {
+      "exact": "The current dispatcher route, registered wrapper, generated setter identity, complete reader windows, member count five, ordered source reads, and TargetSettings MethodSpec are pinned to the selected native inputs.",
+      "direct": "The current SkillData row advances from physical tag 0x0147 through its TargetSettings member to the independent following action boundary; its sole TimelineActionData and ActionGroupData then close exactly.",
+      "conditional": "Promotion requires the authenticated native/input-set hashes, extended FA 47 01 tag, header five, and an exact TargetSettings cursor.",
+      "unresolved": "TargetSettings nested values retain their existing structural-only semantics."
+    }
+  },
+  "positiveFirstDamageUnitCostListProvider": {
+    "status": "authenticated-static-provider-chain-with-exact-corpus-cursor",
+    "damageUnitMemberIndex": 5,
+    "listMethodSpecIndex": 610882,
+    "listMethodSpec": [
+      428462,
+      -1,
+      62667
+    ],
+    "listCallsiteRva": 58585243,
+    "listUsageCellVa": 6660445320,
+    "listUsageRawHex": "85A412C000000000",
+    "listTypeName": "System.Collections.Generic.List`1",
+    "elementTypeName": "Beyond.Gameplay.Core.CastData+CostData",
+    "elementTypeDefinition": 9061,
+    "elementInstantiationIndex": 17015,
+    "elementArgumentRawHex": "65230000000000000000120000000000",
+    "elementMemberCount": 3,
+    "sourceContracts": [
+      {
+        "path": "buff_9a_native.json",
+        "sha256": "EBD0AAAD5660D5A21EF3A1ACB27139D7DA17ED5E992B81F875FCA93DB85AB75C",
+        "boundary": "DamageUnit member-five generic list provider and CostData element join"
+      },
+      {
+        "path": "buff_c0_native.json",
+        "sha256": "B58BF7A077BCD2BC22372F45B6E70EF508AA25492E090D6D7D728E9D5865AFE3",
+        "boundary": "CostData formatter/reader, header three, and ordered element reads"
+      }
+    ],
+    "orderedElementReads": [
+      {
+        "memberIndex": 0,
+        "kind": "anonymous-raw4",
+        "byteWidth": 4
+      },
+      {
+        "memberIndex": 1,
+        "kind": "anonymous-scalar32",
+        "byteWidth": 4
+      },
+      {
+        "memberIndex": 2,
+        "kind": "anonymous-raw4",
+        "byteWidth": 4
+      }
+    ],
+    "evidenceBoundary": {
+      "exact": "The current DamageUnit reader member-five callsite, generic List MethodSpec, CostData type argument, CostData formatter/reader windows, header three, and three ordered four-byte reads are byte-pinned by the two source contracts.",
+      "direct": "All six reached positive member-five lists in the authenticated SkillData corpus advance through their CostData elements and land on independently contracted following DamageUnit members and TimelineActionData boundaries.",
+      "conditional": "Promotion requires the current native/input-set hashes, a bounded signed list count, each element encoded as null or header three, and an exact downstream cursor through every reached action.",
+      "unresolved": "Positive DamageUnit member-ten GameplayTag lists and EffectActionCfg arrays remain unsupported. BuffData keeps its independent fail-closed policy for positive member-five lists."
+    }
+  },
+  "playPerfectDodgeAnimProvider": {
+    "status": "authenticated-static-provider-chain-with-exact-corpus-cursor",
+    "providerKind": "simple-action",
+    "physicalTag": "0x0118",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayPerfectDodgeAnim_DataForMemoryPack",
+    "serializedMemberCount": 6,
+    "dispatcherRoute": {
+      "switchTableRva": 59855640,
+      "switchEntryCount": 416,
+      "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+      "unionTag": 280,
+      "switchTargetRva": 59837128,
+      "routeWindow": {
+        "startRva": 59837128,
+        "endRva": 59837178,
+        "sha256": "7C6DE4D25BD8A2DA178FE5F199552FEE5584219B449F7E4E42089D54BAA45270"
+      },
+      "usageCellRva": "0xD004F20",
+      "usageRawHex": "7943032000000000",
+      "registeredTypeIndex": 106940,
+      "typePointerVa": "0x18D212458",
+      "wrapperTypeDefinition": 16327,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayPerfectDodgeAnim_DataForMemoryPack"
+    },
+    "methods": [
+      [
+        121899,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayPerfectDodgeAnim_DataForMemoryPack",
+        "Deserialize",
+        72847792
+      ],
+      [
+        121900,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayPerfectDodgeAnim_DataForMemoryPack+Beyond_Gameplay_Core_PlayPerfectDodgeAnim_DataForMemoryPackFormatter",
+        "Deserialize",
+        72847696
+      ]
+    ],
+    "codeWindows": [
+      {
+        "startRva": 72847696,
+        "endRva": 72847785,
+        "sha256": "F9C18B8AF63C723123280DF4965CBBB6E343BB41AF885496DBC2ADB06B45A647",
+        "boundary": "complete selected formatter forwarder"
+      },
+      {
+        "startRva": 72847792,
+        "endRva": 72848189,
+        "sha256": "277EA6032880C9C53B572778CE54CD5C07423A9EE36A0D39BF9475530EC5A96D",
+        "boundary": "complete selected six-member reader main body"
+      }
+    ],
+    "orderedSourceReads": [
+      {
+        "memberIndex": 0,
+        "fieldName": "isEnable",
+        "kind": "bool-byte",
+        "setterMethodIndex": 107646,
+        "setterParameterType": "System.Boolean"
+      },
+      {
+        "memberIndex": 1,
+        "fieldName": "priorityLevel",
+        "kind": "enum-int32",
+        "setterMethodIndex": 107647,
+        "setterParameterType": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+      },
+      {
+        "memberIndex": 2,
+        "fieldName": "priorityOffset",
+        "kind": "int32",
+        "setterMethodIndex": 107648,
+        "setterParameterType": "System.Int32"
+      },
+      {
+        "memberIndex": 3,
+        "fieldName": "serverActionIndex",
+        "kind": "int32",
+        "setterMethodIndex": 107649,
+        "setterParameterType": "System.Int32"
+      },
+      {
+        "memberIndex": 4,
+        "fieldName": "forceFightIdle",
+        "kind": "bool-byte",
+        "setterMethodIndex": 121895,
+        "setterParameterType": "System.Boolean"
+      },
+      {
+        "memberIndex": 5,
+        "fieldName": "forceFightIdleDuration",
+        "kind": "float32-bits",
+        "setterMethodIndex": 121896,
+        "setterParameterType": "System.Single"
+      }
+    ],
+    "evidenceBoundary": {
+      "exact": "The selected physical tag, registered wrapper type, member-count compare, complete reader body and generated setter parameter types pin the six stored reads on the current native inputs.",
+      "direct": "Current authenticated SkillData bytes reach tag 0x0118 as two first actions and one IfElse child, and all three rejoin independent following cursors.",
+      "structuralOnly": "The stored values are named and typed; runtime animation choice and gameplay behavior are not inferred."
+    }
+  }
+}

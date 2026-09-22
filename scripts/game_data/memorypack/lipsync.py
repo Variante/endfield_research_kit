@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import math
 import struct
-from typing import TypeAlias
+from typing import Any, TypeAlias
 
 from scripts.game_data.memorypack.core import MEMORYPACK_NULL_COUNT
 
@@ -144,6 +144,27 @@ def lip_sync_keyframes(channels: LipSyncChannels, field_name: str) -> tuple[dict
     return tuple(dict(zip(LIPSYNC_ROW_FIELDS, row, strict=True)) for row in rows)
 
 
+def frame_lipsync(data: bytes) -> dict[str, Any]:
+    """Frame one LipSync payload for the JsonData coverage sweep.
+
+    ``decode_lipsync_memorypack`` already refuses any payload it does not close
+    at EOF, so framing adds no reading: it reports the same decode in the shape
+    the coverage sweep scores, and every byte it reaches is a named channel
+    row. Only each channel's row count is carried out, so a sweep over 700 MB
+    keeps one file's rows alive at a time rather than the family's.
+    """
+
+    channels = decode_lipsync_memorypack(data)
+    return {
+        "status": "exact_current_schema",
+        "schemaStatus": "exact",
+        "bytesConsumed": len(data),
+        "channels": {
+            name: (None if rows is None else len(rows)) for name, rows in channels.items()
+        },
+    }
+
+
 __all__ = [
     "LIPSYNC_FIELD_NAMES",
     "LIPSYNC_ROW_FIELDS",
@@ -153,5 +174,6 @@ __all__ = [
     "LipSyncChannels",
     "LipSyncRows",
     "decode_lipsync_memorypack",
+    "frame_lipsync",
     "lip_sync_keyframes",
 ]

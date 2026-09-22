@@ -10,6 +10,11 @@ LEVELSCRIPT_NATIVE_FMV_ACTION_MAPPING_ID = (
     "gameassembly-2026-07-11-memorypack-play-fmv-action-fields"
 )
 
+PLAY_FMV_ACTION_SEMANTIC_KEYS = frozenset({
+    (0x035E, 0x0E),
+    (0x0369, 0x0E),
+})
+
 
 def _offset_hex(offset: int | None) -> str:
     return f"0x{offset:x}" if isinstance(offset, int) and offset >= 0 else ""
@@ -70,7 +75,7 @@ def decode_fmv_action(
         ),
         key=lambda hit: int(hit["offset"]),
     )
-    if semantic_key == (0x035E, 0x0E):
+    if semantic_key in PLAY_FMV_ACTION_SEMANTIC_KEYS:
         if len(tagged_strings) != 1:
             return {}
         hit = tagged_strings[0]

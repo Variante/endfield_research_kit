@@ -269,6 +269,264 @@ def decode_spawner_enemy_library(data: bytes) -> dict[str, Any]:
     }
 
 
+def _decode_patrol_sub_action(
+    data: bytes,
+    offset: int,
+    field: str,
+) -> tuple[dict[str, Any], int]:
+    """Decode the authored member-26 ``PatrolSubAction`` profile.
+
+    The current corpus has 97 rows.  Their blackboard-pair lists are empty and
+    their polymorphic ``subActionData`` values are null; both boundaries stay
+    fail-closed until an authored positive fixture exists.
+    """
+
+    start = offset
+    if offset >= len(data) or data[offset] != 26:
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: PatrolSubAction member count changed")
+    offset += 1
+    values: dict[str, Any] = {}
+    for name in ("actionEndType", "animKeyTag", "animMaskType"):
+        values[name], offset = _enemy_read_i32(data, offset, f"{field}.{name}")
+    values["animName"], offset = _enemy_read_string(data, offset, f"{field}.animName")
+    for name in ("configMovementStyle", "configSnap"):
+        values[name], offset = _enemy_read_bool(data, offset, f"{field}.{name}")
+    values["duration"], offset = _enemy_read_f32(data, offset, f"{field}.duration")
+    pair_count, offset = _enemy_read_count(
+        data, offset, f"{field}.eventBBDataPairs", MAX_BLACKBOARD_COUNT
+    )
+    if pair_count:
+        raise SpawnerEnemyLibraryDecodeError(
+            f"{field}.eventBBDataPairs: positive list count {pair_count} has no current fixture"
+        )
+    values["eventBBDataPairs"] = []
+    values["eventKey"], offset = _enemy_read_string(data, offset, f"{field}.eventKey")
+    values["eventToLevelType"], offset = _enemy_read_i32(
+        data, offset, f"{field}.eventToLevelType"
+    )
+    values["ignoreAnimDis"], offset = _enemy_read_f32(data, offset, f"{field}.ignoreAnimDis")
+    values["movementStyle"], offset = _enemy_read_i32(data, offset, f"{field}.movementStyle")
+    for name in ("npcPlayAnimationTimeEndForceToIdle", "overrideSpeed"):
+        values[name], offset = _enemy_read_bool(data, offset, f"{field}.{name}")
+    values["overrideSpeedValue"], offset = _enemy_read_f32(
+        data, offset, f"{field}.overrideSpeedValue"
+    )
+    values["radioId"], offset = _enemy_read_string(data, offset, f"{field}.radioId")
+    for name in ("radioWaitTime", "radius"):
+        values[name], offset = _enemy_read_f32(data, offset, f"{field}.{name}")
+    for name in ("repeatAnim", "rootMotion"):
+        values[name], offset = _enemy_read_bool(data, offset, f"{field}.{name}")
+    for name in ("rotationOffset", "rotationY"):
+        values[name], offset = _enemy_read_f32(data, offset, f"{field}.{name}")
+    values["snapToGround"], offset = _enemy_read_i32(data, offset, f"{field}.snapToGround")
+    if offset >= len(data) or data[offset] != 0xFF:
+        marker = data[offset] if offset < len(data) else None
+        raise SpawnerEnemyLibraryDecodeError(
+            f"{field}.subActionData: expected current null marker, got {marker}"
+        )
+    offset += 1
+    values["subActionData"] = None
+    values["type"], offset = _enemy_read_i32(data, offset, f"{field}.type")
+    values["waitTime"], offset = _enemy_read_f32(data, offset, f"{field}.waitTime")
+    return {"sourceOffset": start, "endOffset": offset, "memberCount": 26, **values}, offset
+
+
+def _decode_patrol_action(
+    data: bytes,
+    offset: int,
+    field: str,
+) -> tuple[dict[str, Any], int]:
+    start = offset
+    if offset >= len(data) or data[offset] != 4:
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: PatrolAction member count changed")
+    offset += 1
+    action_type, offset = _enemy_read_i32(data, offset, f"{field}.actionType")
+    position: list[float] = []
+    for axis in range(3):
+        value, offset = _enemy_read_f32(data, offset, f"{field}.position[{axis}]")
+        position.append(value)
+    sub_action_count, offset = _enemy_read_count(
+        data, offset, f"{field}.subActions", MAX_GROUP_COUNT
+    )
+    sub_actions: list[dict[str, Any]] = []
+    for index in range(sub_action_count):
+        row, offset = _decode_patrol_sub_action(data, offset, f"{field}.subActions[{index}]")
+        sub_actions.append(row)
+    sub_position_count, offset = _enemy_read_count(
+        data, offset, f"{field}.subPositions", MAX_GROUP_COUNT
+    )
+    sub_positions: list[list[float]] = []
+    for index in range(sub_position_count):
+        vector: list[float] = []
+        for axis in range(3):
+            value, offset = _enemy_read_f32(
+                data, offset, f"{field}.subPositions[{index}][{axis}]"
+            )
+            vector.append(value)
+        sub_positions.append(vector)
+    return {
+        "sourceOffset": start,
+        "endOffset": offset,
+        "memberCount": 4,
+        "actionType": action_type,
+        "position": position,
+        "subActions": sub_actions,
+        "subPositions": sub_positions,
+    }, offset
+
+
+def _decode_patrol_data(
+    data: bytes,
+    offset: int,
+    field: str,
+) -> tuple[dict[str, Any], int]:
+    """Decode the generated 39-member patrol profile and its authored actions."""
+
+    start = offset
+    if offset >= len(data) or data[offset] != 39:
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: PatrolData member count changed")
+    offset += 1
+    raw_action_count, offset = _enemy_read_u32(data, offset, f"{field}.actions")
+    action_count = 0 if raw_action_count == NULL_COUNT else raw_action_count
+    if action_count > MAX_GROUP_COUNT:
+        raise SpawnerEnemyLibraryDecodeError(
+            f"{field}.actions: implausible count {action_count}"
+        )
+    actions: list[dict[str, Any]] = []
+    for index in range(action_count):
+        action, offset = _decode_patrol_action(data, offset, f"{field}.actions[{index}]")
+        actions.append(action)
+    values: dict[str, Any] = {
+        "actions": None if raw_action_count == NULL_COUNT else actions,
+    }
+    readers = (
+        ("addBornPositionAsCheckpoint", _enemy_read_bool),
+        ("bornMoveStyle", _enemy_read_i32),
+        ("bornOverrideSpeed", _enemy_read_f32),
+        ("bornPositionWaitDuration", _enemy_read_f32),
+        ("changePlayerMoveStyle", _enemy_read_bool),
+        ("coolDownBetweenWalkAndStop", _enemy_read_f32),
+        ("enableBornAction", _enemy_read_bool),
+        ("enableBornSpeedOverride", _enemy_read_bool),
+        ("forbidNpcInteract", _enemy_read_bool),
+        ("forcePlayerMoveStyle", _enemy_read_i32),
+        ("id", _enemy_read_i32),
+        ("inLocalSpace", _enemy_read_bool),
+        ("isLimitPlayerActionWhenGaitLimit", _enemy_read_bool),
+        ("isStopDistance", _enemy_read_bool),
+        ("isUseCatmull", _enemy_read_bool),
+        ("limitPlayerActionType", _enemy_read_i32),
+        ("loop", _enemy_read_i32),
+        ("motionEnterDis", _enemy_read_f32),
+        ("motionType", _enemy_read_i32),
+        ("moveStyleWithoutLead", _enemy_read_i32),
+        ("pauseActionWhenPatrolDisabled", _enemy_read_bool),
+        ("playerChangeLimitDelayTime", _enemy_read_f32),
+        ("runAheadRadius", _enemy_read_f32),
+        ("runBehindRadius", _enemy_read_f32),
+        ("snap", _enemy_read_i32),
+        ("sprintAheadRadius", _enemy_read_f32),
+        ("sprintBehindRadius", _enemy_read_f32),
+        ("stop2WalkBufferTime", _enemy_read_f32),
+        ("stopWalkInplace", _enemy_read_bool),
+        ("turnCheck", _enemy_read_bool),
+        ("turnCheckAngle", _enemy_read_f32),
+        ("turnCheckDis", _enemy_read_f32),
+        ("turnCheckTime", _enemy_read_f32),
+        ("turnRadio", _enemy_read_f32),
+        ("usePatrolPointEnterGaitAsLimitGait", _enemy_read_bool),
+        ("useWorldOffset", _enemy_read_bool),
+        ("waitDistance", _enemy_read_f32),
+    )
+    for name, reader in readers:
+        values[name], offset = reader(data, offset, f"{field}.{name}")
+    world_offset: list[float] = []
+    for axis in range(3):
+        value, offset = _enemy_read_f32(data, offset, f"{field}.worldOffset[{axis}]")
+        world_offset.append(value)
+    values["worldOffset"] = world_offset
+    return {
+        "sourceOffset": start,
+        "endOffset": offset,
+        "memberCount": 39,
+        **values,
+    }, offset
+
+
+def decode_spawner_named_prefix(data: bytes) -> dict[str, Any]:
+    """Decode configId, enemyLibrary, routeMap and settings at one cursor.
+
+    Route patrols are accepted only for the current profile whose polymorphic
+    action list is null or empty. The returned ``waveMapOffset`` is therefore
+    an exact generated-order cursor, not a byte-pattern candidate.
+    """
+
+    enemy_prefix = decode_spawner_enemy_library(data)
+    offset = int(enemy_prefix["enemyLibraryEndOffset"])
+    raw_route_count, offset = _enemy_read_u32(data, offset, "routeMap.count")
+    route_count = 0 if raw_route_count == NULL_COUNT else raw_route_count
+    if route_count > MAX_GROUP_COUNT:
+        raise SpawnerEnemyLibraryDecodeError(f"routeMap: implausible count {route_count}")
+    routes: list[dict[str, Any]] = []
+    for index in range(route_count):
+        entry_start = offset
+        map_key, offset = _enemy_read_i32(data, offset, f"routeMap[{index}].key")
+        if offset >= len(data) or data[offset] != 2:
+            raise SpawnerEnemyLibraryDecodeError(
+                f"routeMap[{index}]: SpawnerRouteData member count changed"
+            )
+        offset += 1
+        patrol, offset = _decode_patrol_data(
+            data, offset, f"routeMap[{index}].patrolData"
+        )
+        route_id, offset = _enemy_read_i32(data, offset, f"routeMap[{index}].routeId")
+        routes.append({
+            "sourceOffset": entry_start,
+            "endOffset": offset,
+            "mapKey": map_key,
+            "patrolData": patrol,
+            "routeId": route_id,
+        })
+
+    settings_start = offset
+    if offset >= len(data) or data[offset] != 6:
+        raise SpawnerEnemyLibraryDecodeError("settings: SpawnerSettings member count changed")
+    offset += 1
+    settings: dict[str, Any] = {"sourceOffset": settings_start, "memberCount": 6}
+    for name in (
+        "autoComplete", "enemyLevelUseLevelGrade", "forbidDrop", "noNavmeshMove",
+    ):
+        settings[name], offset = _enemy_read_bool(data, offset, f"settings.{name}")
+    raw_effect_count, offset = _enemy_read_u32(data, offset, "settings.preloadEffectKeyList")
+    effect_count = 0 if raw_effect_count == NULL_COUNT else raw_effect_count
+    if effect_count > MAX_BUFF_COUNT:
+        raise SpawnerEnemyLibraryDecodeError(
+            f"settings.preloadEffectKeyList: implausible count {effect_count}"
+        )
+    effects: list[str] = []
+    for index in range(effect_count):
+        value, offset = _enemy_read_string(
+            data, offset, f"settings.preloadEffectKeyList[{index}]", max_bytes=4096
+        )
+        effects.append(value or "")
+    settings["preloadEffectKeyList"] = (
+        None if raw_effect_count == NULL_COUNT else effects
+    )
+    settings["stopExploreMusic"], offset = _enemy_read_bool(
+        data, offset, "settings.stopExploreMusic"
+    )
+    settings["endOffset"] = offset
+    return {
+        **enemy_prefix,
+        "routeMapOffset": enemy_prefix["enemyLibraryEndOffset"],
+        "routeMapCount": route_count,
+        "routeMap": routes,
+        "settings": settings,
+        "waveMapOffset": offset,
+        "schemaStatus": "exact-prefix-through-settings-current-route-actions",
+    }
+
+
 def _read_string(data: bytes, offset: int) -> tuple[str | None, int]:
     if offset + 4 > len(data):
         raise SpawnerWaveDecodeError("truncated string length")
@@ -450,7 +708,11 @@ def _decode_group_map(
     return rows
 
 
-def decode_spawner_wave_map(data: bytes) -> dict[str, Any]:
+def decode_spawner_wave_map(
+    data: bytes,
+    *,
+    wave_map_offset: int | None = None,
+) -> dict[str, Any]:
     """Decode one uniquely delimited current-build SpawnerConfig wave map.
 
     The MemoryPack dictionary key and the serialized ``waveKey`` are separate
@@ -517,8 +779,16 @@ def decode_spawner_wave_map(data: bytes) -> dict[str, Any]:
                     return tuple(solutions)
         return tuple(solutions)
 
+    if wave_map_offset is not None and not config_id_end <= wave_map_offset <= len(data) - 4:
+        raise SpawnerWaveDecodeError("waveMap exact cursor is outside the payload")
+    candidate_offsets = (
+        (wave_map_offset,)
+        if wave_map_offset is not None
+        else range(config_id_end, max(config_id_end, len(data) - 8))
+    )
     solutions: list[tuple[int, tuple[dict[str, Any], ...]]] = []
-    for offset in range(config_id_end, max(config_id_end, len(data) - 8)):
+    for offset in candidate_offsets:
+        assert offset is not None
         wave_count = struct.unpack_from("<I", data, offset)[0]
         if not 1 <= wave_count <= MAX_WAVE_COUNT:
             continue
@@ -542,4 +812,297 @@ def decode_spawner_wave_map(data: bytes) -> dict[str, Any]:
         "waves": list(rows),
         "schemaMappingId": SPAWNER_WAVE_SCHEMA_MAPPING_ID,
         "runtimeMappingId": SPAWNER_WAVE_RUNTIME_MAPPING_ID,
+        "waveMapOffsetBoundary": "exact" if wave_map_offset is not None else "searched-unique",
+    }
+
+
+def _exact_f32(data: bytes, offset: int, field: str) -> tuple[float, int]:
+    if offset + 4 > len(data):
+        raise SpawnerWaveDecodeError(f"{field}: truncated float32")
+    value = struct.unpack_from("<f", data, offset)[0]
+    if not math.isfinite(value):
+        raise SpawnerWaveDecodeError(f"{field}: non-finite float32")
+    return value, offset + 4
+
+
+def _exact_i32(data: bytes, offset: int, field: str) -> tuple[int, int]:
+    if offset + 4 > len(data):
+        raise SpawnerWaveDecodeError(f"{field}: truncated int32")
+    return struct.unpack_from("<i", data, offset)[0], offset + 4
+
+
+def _exact_u32(data: bytes, offset: int, field: str) -> tuple[int, int]:
+    if offset + 4 > len(data):
+        raise SpawnerWaveDecodeError(f"{field}: truncated uint32")
+    return struct.unpack_from("<I", data, offset)[0], offset + 4
+
+
+def _exact_bool(data: bytes, offset: int, field: str) -> tuple[bool, int]:
+    if offset >= len(data) or data[offset] not in (0, 1):
+        raise SpawnerWaveDecodeError(f"{field}: invalid bool")
+    return bool(data[offset]), offset + 1
+
+
+def _exact_vector3(data: bytes, offset: int, field: str) -> tuple[list[float], int]:
+    values: list[float] = []
+    for axis in range(3):
+        value, offset = _exact_f32(data, offset, f"{field}[{axis}]")
+        values.append(value)
+    return values, offset
+
+
+def _decode_current_spawner_action(
+    data: bytes,
+    offset: int,
+    field: str,
+) -> tuple[dict[str, Any], int]:
+    """Decode current union tags observed in authenticated SpawnerConfig rows."""
+
+    start = offset
+    if offset >= len(data):
+        raise SpawnerWaveDecodeError(f"{field}: truncated union tag")
+    tag = data[offset]
+    offset += 1
+    if tag == 5:
+        if offset >= len(data) or data[offset] != 12:
+            raise SpawnerWaveDecodeError(f"{field}: tag 5 member count changed")
+        offset += 1
+        action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
+        timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
+        face_main, offset = _exact_bool(data, offset, f"{field}.faceMainCharacter")
+        library_key, offset = _read_string(data, offset)
+        position, offset = _exact_vector3(data, offset, f"{field}.position")
+        random_end, offset = _exact_f32(data, offset, f"{field}.randomizeEndPointRadius")
+        random_radius, offset = _exact_f32(data, offset, f"{field}.randomizeRadius")
+        rotation, offset = _exact_vector3(data, offset, f"{field}.rotation")
+        route_id, offset = _exact_i32(data, offset, f"{field}.routeId")
+        spawn_count, offset = _exact_i32(data, offset, f"{field}.spawnCount")
+        spawn_interval, offset = _exact_f32(data, offset, f"{field}.spawnInterval")
+        start_invalid, offset = _exact_bool(data, offset, f"{field}.startPointInvalid")
+        return {
+            "sourceOffset": start,
+            "endOffset": offset,
+            "unionTag": tag,
+            "memberCount": 12,
+            "concreteType": "SpawnerActions.SpawnMonsterFromTemplateV2",
+            "actionId": action_id,
+            "timestamp": timestamp,
+            "faceMainCharacter": face_main,
+            "libraryKey": library_key or "",
+            "position": position,
+            "randomizeEndPointRadius": random_end,
+            "randomizeRadius": random_radius,
+            "rotation": rotation,
+            "routeId": route_id,
+            "spawnCount": spawn_count,
+            "spawnInterval": spawn_interval,
+            "startPointInvalid": start_invalid,
+        }, offset
+    if tag == 0:
+        if offset >= len(data) or data[offset] != 3:
+            raise SpawnerWaveDecodeError(f"{field}: tag 0 member count changed")
+        offset += 1
+        action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
+        timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
+        string_value, offset = _read_string(data, offset)
+        return {
+            "sourceOffset": start,
+            "endOffset": offset,
+            "unionTag": tag,
+            "memberCount": 3,
+            "concreteType": "SpawnerActions.Pause",
+            "actionId": action_id,
+            "timestamp": timestamp,
+            "pauseKey": string_value,
+        }, offset
+    if tag == 1:
+        if offset >= len(data) or data[offset] != 3:
+            raise SpawnerWaveDecodeError(f"{field}: tag 1 member count changed")
+        offset += 1
+        action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
+        timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
+        audio_id, offset = _read_string(data, offset)
+        return {
+            "sourceOffset": start,
+            "endOffset": offset,
+            "unionTag": tag,
+            "memberCount": 3,
+            "concreteType": "SpawnerActions.PlayAudio",
+            "actionId": action_id,
+            "timestamp": timestamp,
+            "audioId": audio_id or "",
+        }, offset
+    if tag == 2:
+        if offset >= len(data) or data[offset] != 7:
+            raise SpawnerWaveDecodeError(f"{field}: tag 2 member count changed")
+        offset += 1
+        action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
+        timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
+        duration, offset = _exact_f32(data, offset, f"{field}.duration")
+        hide_full, offset = _exact_bool(data, offset, f"{field}.hideInFullPreview")
+        position, offset = _exact_vector3(data, offset, f"{field}.position")
+        route_id, offset = _exact_i32(data, offset, f"{field}.routeId")
+        start_invalid, offset = _exact_bool(data, offset, f"{field}.startPointInvalid")
+        return {
+            "sourceOffset": start,
+            "endOffset": offset,
+            "unionTag": tag,
+            "memberCount": 7,
+            "concreteType": "SpawnerActions.PreviewRoute",
+            "actionId": action_id,
+            "timestamp": timestamp,
+            "duration": duration,
+            "hideInFullPreview": hide_full,
+            "position": position,
+            "routeId": route_id,
+            "startPointInvalid": start_invalid,
+        }, offset
+    if tag == 3:
+        if offset >= len(data) or data[offset] != 3:
+            raise SpawnerWaveDecodeError(f"{field}: tag 3 member count changed")
+        offset += 1
+        action_id, offset = _exact_i32(data, offset, f"{field}.actionId")
+        timestamp, offset = _exact_f32(data, offset, f"{field}.timestamp")
+        key, offset = _read_string(data, offset)
+        return {
+            "sourceOffset": start,
+            "endOffset": offset,
+            "unionTag": tag,
+            "memberCount": 3,
+            "concreteType": "SpawnerActions.RaiseEvent",
+            "actionId": action_id,
+            "timestamp": timestamp,
+            "key": key or "",
+        }, offset
+    raise SpawnerWaveDecodeError(f"{field}: unsupported union tag {tag}")
+
+
+def decode_spawner_wave_map_sequential(
+    data: bytes,
+    *,
+    wave_map_offset: int,
+) -> dict[str, Any]:
+    """Decode wave/group/action maps sequentially from an exact owner cursor."""
+
+    offset = wave_map_offset
+    raw_wave_count, offset = _exact_u32(data, offset, "waveMap.count")
+    if raw_wave_count == NULL_COUNT:
+        wave_count = 0
+    elif raw_wave_count <= MAX_WAVE_COUNT:
+        wave_count = raw_wave_count
+    else:
+        raise SpawnerWaveDecodeError(f"waveMap: implausible count {raw_wave_count}")
+    waves: list[dict[str, Any]] = []
+    unresolved_union = False
+    for wave_index in range(wave_count):
+        wave_start = offset
+        map_key, offset = _exact_i32(data, offset, f"waveMap[{wave_index}].key")
+        if offset >= len(data) or data[offset] != SPAWNER_WAVE_MEMBER_COUNT:
+            raise SpawnerWaveDecodeError(f"waveMap[{wave_index}]: member count changed")
+        offset += 1
+        deadline, offset = _exact_f32(
+            data, offset, f"waveMap[{wave_index}].deadlineBeginDeltaTime"
+        )
+        raw_group_count, offset = _exact_u32(data, offset, f"waveMap[{wave_index}].groupMap")
+        group_count = 0 if raw_group_count == NULL_COUNT else raw_group_count
+        if group_count > MAX_GROUP_COUNT:
+            raise SpawnerWaveDecodeError(
+                f"waveMap[{wave_index}].groupMap: implausible count {group_count}"
+            )
+        groups: list[dict[str, Any]] = []
+        for group_index in range(group_count):
+            group_start = offset
+            group_map_key, offset = _exact_i32(
+                data, offset, f"waveMap[{wave_index}].groupMap[{group_index}].key"
+            )
+            if offset >= len(data) or data[offset] != SPAWNER_GROUP_MEMBER_COUNT:
+                raise SpawnerWaveDecodeError(
+                    f"waveMap[{wave_index}].groupMap[{group_index}]: member count changed"
+                )
+            offset += 1
+            raw_action_count, offset = _exact_u32(
+                data, offset, f"waveMap[{wave_index}].groupMap[{group_index}].actionMap"
+            )
+            action_count = 0 if raw_action_count == NULL_COUNT else raw_action_count
+            if action_count > MAX_GROUP_COUNT:
+                raise SpawnerWaveDecodeError("implausible actionMap count")
+            actions: list[dict[str, Any]] = []
+            for action_index in range(action_count):
+                action_map_key, offset = _exact_i32(
+                    data, offset,
+                    f"waveMap[{wave_index}].groupMap[{group_index}].actionMap[{action_index}].key",
+                )
+                action, offset = _decode_current_spawner_action(
+                    data, offset,
+                    f"waveMap[{wave_index}].groupMap[{group_index}].actionMap[{action_index}]",
+                )
+                unresolved_union |= action.get("concreteType") is None
+                actions.append({"mapKey": action_map_key, **action})
+            group_deadline, offset = _exact_f32(data, offset, "group.deadlineBeginDeltaTime")
+            backup_count, offset = _exact_i32(data, offset, "group.groupBackUpCount")
+            group_id, offset = _exact_i32(data, offset, "group.groupId")
+            group_key, offset = _read_string(data, offset)
+            max_count, offset = _exact_i32(data, offset, "group.groupMaxCount")
+            group_mode, offset = _exact_i32(data, offset, "group.groupMode")
+            kill_count, offset = _exact_i32(data, offset, "group.groupModeKillCount")
+            target_key, offset = _read_string(data, offset)
+            has_deadline, offset = _exact_bool(data, offset, "group.hasDeadlineBegin")
+            limit_max, offset = _exact_bool(data, offset, "group.limitGroupMaxCount")
+            group_timestamp, offset = _exact_f32(data, offset, "group.timestamp")
+            groups.append({
+                "sourceOffset": group_start,
+                "endOffset": offset,
+                "mapKey": group_map_key,
+                "actionMap": actions,
+                "deadlineBeginDeltaTime": group_deadline,
+                "groupBackUpCount": backup_count,
+                "groupId": group_id,
+                "groupKey": group_key or "",
+                "groupMaxCount": max_count,
+                "groupMode": group_mode,
+                "groupModeKillCount": kill_count,
+                "groupModeTargetKey": target_key or "",
+                "hasDeadlineBegin": has_deadline,
+                "limitGroupMaxCount": limit_max,
+                "timestamp": group_timestamp,
+            })
+        has_deadline, offset = _exact_bool(data, offset, "wave.hasDeadlineBegin")
+        is_hidden, offset = _exact_bool(data, offset, "wave.isHidden")
+        repeatable, offset = _exact_bool(data, offset, "wave.repeatable")
+        timestamp, offset = _exact_f32(data, offset, "wave.timestamp")
+        wave_id, offset = _exact_i32(data, offset, "wave.waveId")
+        wave_key, offset = _read_string(data, offset)
+        wave_mode, offset = _exact_i32(data, offset, "wave.waveMode")
+        kill_count, offset = _exact_i32(data, offset, "wave.waveModeKillCount")
+        target_key, offset = _read_string(data, offset)
+        waves.append({
+            "sourceOffset": wave_start,
+            "endOffset": offset,
+            "mapKey": map_key,
+            "deadlineBeginDeltaTime": deadline,
+            "groupMap": groups,
+            "hasDeadlineBegin": has_deadline,
+            "isHidden": is_hidden,
+            "repeatable": repeatable,
+            "timestamp": timestamp,
+            "waveId": wave_id,
+            "waveKey": wave_key or "",
+            "waveMode": wave_mode,
+            "waveModeKillCount": kill_count,
+            "waveModeTargetKey": target_key or "",
+        })
+    if offset != len(data):
+        raise SpawnerWaveDecodeError(
+            f"waveMap: trailing bytes after sequential decode: {len(data) - offset}"
+        )
+    return {
+        "waveMapOffset": wave_map_offset,
+        "bytesConsumed": offset,
+        "waveCount": wave_count,
+        "waves": waves,
+        "hasUnresolvedActionUnion": unresolved_union,
+        "schemaStatus": (
+            "exact-outer-frame-unresolved-tag-0"
+            if unresolved_union else "named-exact"
+        ),
     }

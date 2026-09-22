@@ -2,6 +2,21 @@
 import struct
 
 
+IF_ELSE_ACTION_TAG = 0x00C9
+IF_ELSE_ACTION_MEMBER_COUNT = 8
+IF_ELSE_ACTION_READ_KINDS = (
+    'anonymous-nonzero-byte',
+    'anonymous-scalar32',
+    'anonymous-scalar32',
+    'anonymous-scalar32',
+    'anonymous-nonzero-byte',
+    'SequenceActionData',
+    'SequenceActionData',
+    'SequenceActionData',
+)
+SEQUENCE_RECURSION_LIMIT = 64
+
+
 class FrameError(ValueError):
     def __init__(self, source, offset, expected, actual, category='malformed'):
         self.diagnostic=dict(source=source,offset=offset,expected=expected,actual=actual,category=category)
@@ -50,7 +65,9 @@ class Reader:
         self.records.append(dict(start=start,end=self.pos,kind='sequence'))
 
     def _sequence(self,depth):
-        if depth>64:raise Unsupported(self.source,self.pos,'nesting <= 64',depth,'depth-limit')
+        if depth>SEQUENCE_RECURSION_LIMIT:
+            raise Unsupported(self.source,self.pos,
+                              f'nesting <= {SEQUENCE_RECURSION_LIMIT}',depth,'depth-limit')
         if self.peek()==255:self.take(1,'null-sequence');return
         self.header(3)
         count=self.count(1,reserve=2,nullable=True)
@@ -99,7 +116,7 @@ class Reader:
         if (width==1 and tag>=251) or tag not in (201,118,236,80,287,180,86,146,87,91,60,120,178,104,129,88,2,154,162,101,361,343,110,254,150,253,124,182,128,366,123,109,310,355,105,68,271,155,197,281,10,122,136,72,90,196,325,222,189,106,36,363,126,53,234,97,63,333,115,93,66,39,149,116,365,352,137,369,306,212,96,294,28,6,322,3,81,94,315,132,372,65,169,98,316,144,187,11,12,43,277,337,319,320,152,374,147,373,252,131,314,134,99,107,119,392,64,391,313,394,309,290,92,387,47,348,367,5,58,76,336,167,414,8,288,159,27,135,82,142,293,292,335,113,112,345,22,376,193,257,199,411,296,356,207,299,44,295,171,246,380,390,185,244,307,330,349,55,298,324,347,7,395,412,138,331,358,370,40,258,398,402,206,23,173,408,407,145,148,388,223,31,183,240,85,54,32,168,35,362,111,353,192,284,140,78,364,133,344,346,377,188,334,224,13,38):raise Unsupported(self.source,self.pos,'supported current union tag',tag,'union-tag')
         self.take(width,'union-tag')
         if self.peek()==255:self.take(1,'null-wrapper');return
-        self.header({201:8,118:5,236:10,80:7,287:8,180:13,86:8,146:19,87:8,91:6,60:10,120:9,178:18,104:5,129:9,88:8,2:12,154:11,162:18,101:8,361:38,343:11,110:8,254:20,150:9,253:4,124:6,182:6,128:6,366:13,123:7,109:6,310:9,355:8,105:6,68:6,271:5,155:9,197:16,281:22,10:7,122:6,136:5,72:6,90:6,196:8,325:6,222:37,189:6,106:8,36:12,363:6,126:6,53:15,234:7,97:10,63:7,333:9,115:4,93:5,66:10,39:10,149:8,116:5,365:8,352:10,137:6,369:13,306:6,212:8,96:6,294:5,28:15,6:5,322:11,3:9,81:6,94:5,315:6,132:6,372:11,65:6,169:28,98:4,316:4,144:8,187:6,11:8,12:8,43:5,277:16,337:8,319:7,320:7,152:9,374:7,147:19,373:5,252:6,131:8,314:6,134:9,99:5,107:7,119:5,392:8,64:6,391:9,313:6,394:7,309:7,290:5,92:6,387:16,47:10,348:5,367:7,5:5,58:7,76:12,336:6,167:11,414:23,8:50,288:8,159:9,27:17,135:5,82:5,142:5,293:6,292:5,335:5,113:5,112:6,345:7,22:30,376:8,193:6,257:6,199:12,411:14,296:11,356:4,207:11,299:4,44:14,295:5,171:14,246:46,380:14,390:7,185:6,244:6,307:7,330:8,349:13,55:10,298:7,324:18,347:11,7:8,395:5,412:13,138:19,331:6,358:13,370:8,40:7,258:5,398:18,402:6,188:6,334:6,224:54,206:8,23:5,173:5,408:11,407:6,145:10,148:7,388:6,223:15,31:15,183:9,240:5,85:9,54:12,32:6,168:7,35:11,362:18,111:6,353:5,192:7,284:19,140:12,78:5,364:13,133:10,344:10,346:6,377:9,13:16,38:5}[tag])
+        self.header({IF_ELSE_ACTION_TAG:IF_ELSE_ACTION_MEMBER_COUNT,118:5,236:10,80:7,287:8,180:13,86:8,146:19,87:8,91:6,60:10,120:9,178:18,104:5,129:9,88:8,2:12,154:11,162:18,101:8,361:38,343:11,110:8,254:20,150:9,253:4,124:6,182:6,128:6,366:13,123:7,109:6,310:9,355:8,105:6,68:6,271:5,155:9,197:16,281:22,10:7,122:6,136:5,72:6,90:6,196:8,325:6,222:37,189:6,106:8,36:12,363:6,126:6,53:15,234:7,97:10,63:7,333:9,115:4,93:5,66:10,39:10,149:8,116:5,365:8,352:10,137:6,369:13,306:6,212:8,96:6,294:5,28:15,6:5,322:11,3:9,81:6,94:5,315:6,132:6,372:11,65:6,169:28,98:4,316:4,144:8,187:6,11:8,12:8,43:5,277:16,337:8,319:7,320:7,152:9,374:7,147:19,373:5,252:6,131:8,314:6,134:9,99:5,107:7,119:5,392:8,64:6,391:9,313:6,394:7,309:7,290:5,92:6,387:16,47:10,348:5,367:7,5:5,58:7,76:12,336:6,167:11,414:23,8:50,288:8,159:9,27:17,135:5,82:5,142:5,293:6,292:5,335:5,113:5,112:6,345:7,22:30,376:8,193:6,257:6,199:12,411:14,296:11,356:4,207:11,299:4,44:14,295:5,171:14,246:46,380:14,390:7,185:6,244:6,307:7,330:8,349:13,55:10,298:7,324:18,347:11,7:8,395:5,412:13,138:19,331:6,358:13,370:8,40:7,258:5,398:18,402:6,188:6,334:6,224:54,206:8,23:5,173:5,408:11,407:6,145:10,148:7,388:6,223:15,31:15,183:9,240:5,85:9,54:12,32:6,168:7,35:11,362:18,111:6,353:5,192:7,284:19,140:12,78:5,364:13,133:10,344:10,346:6,377:9,13:16,38:5}[tag])
         self.take(1,'anonymous-nonzero-byte')
         for _ in range(3):self.take(4,'anonymous-scalar32')
         if tag==38:
@@ -959,8 +976,14 @@ class Reader:
             for _ in range(max(0,self.count(1,nullable=True))):self.paired_payload()
             self.records.append(dict(start=start,end=self.pos,kind='anonymous-paired-payload-list'))
             return
-        self.take(1,'anonymous-nonzero-byte')
-        for _ in range(3):self.sequence(depth)
+        if tag != IF_ELSE_ACTION_TAG:
+            raise Unsupported(self.source,self.pos,
+                              'explicit selected action body',tag,'union-tag')
+        self.take(1,IF_ELSE_ACTION_READ_KINDS[4])
+        for kind in IF_ELSE_ACTION_READ_KINDS[5:]:
+            if kind != 'SequenceActionData':
+                raise FrameError(self.source,self.pos,'SequenceActionData',kind,'internal-range')
+            self.sequence(depth)
 
     def ability_action_map_collection_profile(self,depth):
         # AbilityActionMap puts its DWORD before the Sequence array. The
@@ -1537,16 +1560,93 @@ class Reader:
     def damage_processor_profile(self):
         # Separately pinned union routes and leaf readers; raw values do not
         # establish critical-rate arithmetic or attribute mutation semantics.
-        start=self.pos;tag=self.nested_union_tag((0,9),'damage-processor')
+        start=self.pos;tag=self.nested_union_tag((0,2,3,4,5,6,9,10),'damage-processor')
         if tag is not None:
             if self.peek()==255:self.take(1,'null-damage-processor-wrapper')
             else:
-                self.header({0:1,9:2}[tag])
-                if tag==0:self.scalar_payload()
-                else:
+                self.header({0:1,2:1,3:1,4:1,5:3,6:2,9:2,10:3}[tag])
+                if tag in (0,2,3,4):
+                    # Tags 0/2/3/4 select the critical-rate,
+                    # attacker-critical-damage, attacker-penetration and
+                    # independent-health wrappers. Each generated wrapper has
+                    # one BlackboardDouble setter and one matching source read.
+                    self.scalar_payload()
+                elif tag==5:
+                    # Current native dispatcher tag 5 selects
+                    # DamageScaleProcessorForMemoryPack. Its generated wrapper
+                    # and selected reader consume addition, side, zoneName.
+                    self.scalar_payload()
+                    self.take(4,'anonymous-damage-scale-side32')
+                    self.byte_payload()
+                elif tag==6:
+                    # Current native dispatcher tag 6 selects
+                    # DamageTextProcessorForMemoryPack: style then bool.
+                    self.take(4,'anonymous-damage-text-style32')
+                    self.take(1,'anonymous-damage-text-use-hp-change-byte')
+                elif tag==9:
                     self.modifier_element_profile()
                     self.take(4,'anonymous-scalar32')
+                else:
+                    # Current native dispatcher tag 10 selects
+                    # ModifyCalcResultForMemoryPack. Generated setter and
+                    # selected reader order is baseMultiplier, modifyType,
+                    # multiplierCnt.
+                    self.scalar_payload()
+                    self.take(4,'anonymous-modify-calc-result-type32')
+                    self.scalar_payload()
         self.records.append(dict(start=start,end=self.pos,kind='anonymous-damage-processor-profile',variant=tag))
+
+    def damage_modifier_element_profile(self):
+        """Current DamageModifier.DataForMemoryPack wrapper in setter order."""
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-damage-modifier-wrapper')
+        else:
+            self.header(3)
+            self.sequence()
+            count=self.count(1,reserve=4,nullable=True)
+            for _ in range(max(0,count)):self.damage_processor_profile()
+            self.take(4,'anonymous-enable-side32')
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-damage-modifier-profile'))
+
+    def damage_modifier_collection_profile(self):
+        start=self.pos;count=self.count(1,nullable=True)
+        for _ in range(max(0,count)):self.damage_modifier_element_profile()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-damage-modifier-collection-profile',count=count))
+        return count
+
+    def heal_processor_profile(self):
+        """Two current HealProcessor union routes observed in BuffData."""
+        start=self.pos;tag=self.nested_union_tag((0,1),'heal-processor')
+        if tag is not None:
+            if self.peek()==255:self.take(1,'null-heal-processor-wrapper')
+            else:
+                self.header({0:2,1:3}[tag])
+                if tag==0:
+                    self.modifier_element_profile()
+                    self.take(4,'anonymous-scalar32')
+                else:
+                    self.scalar_payload()
+                    self.take(4,'anonymous-scalar32')
+                    self.scalar_payload()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-heal-processor-profile',variant=tag))
+
+    def heal_modifier_element_profile(self):
+        """Current HealModifier.DataForMemoryPack wrapper in setter order."""
+        start=self.pos
+        if self.peek()==255:self.take(1,'null-heal-modifier-wrapper')
+        else:
+            self.header(3)
+            self.sequence()
+            self.take(4,'anonymous-enable-side32')
+            count=self.count(1,nullable=True)
+            for _ in range(max(0,count)):self.heal_processor_profile()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-heal-modifier-profile'))
+
+    def heal_modifier_collection_profile(self):
+        start=self.pos;count=self.count(1,nullable=True)
+        for _ in range(max(0,count)):self.heal_modifier_element_profile()
+        self.records.append(dict(start=start,end=self.pos,kind='anonymous-heal-modifier-collection-profile',count=count))
+        return count
 
     def modifier_collection_profile(self):
         start=self.pos
@@ -1691,8 +1791,10 @@ def sequence_frame(data,*,source='<sequence>'):
 
 def event_prefix(data,*,source,limit=None):
     reader=Reader(data,source,limit);status='supported-prefix';diagnostic=None
+    field_start=1
     try:
         reader.header(30)
+        field_start=reader.pos
         count=reader.count(9)
         for _ in range(count):
             start=reader.pos
@@ -1709,8 +1811,14 @@ def event_prefix(data,*,source,limit=None):
             raise FrameError(source,cursor,'contiguous bounded scalar ranges',span,'internal-range')
         cursor=span['end']
     if cursor!=reader.pos:raise FrameError(source,cursor,reader.pos,cursor,'internal-range')
+    named_fields=[]
+    if status=='supported-prefix':
+        named_fields.append(dict(index=0,name='abilityEventAction',start=field_start,end=reader.pos,
+                                 boundaryClass='exact-cursor'))
     return dict(status=status,diagnostic=diagnostic,consumedEnd=reader.pos,readLimit=reader.limit,ranges=reader.ranges,
                 completedRecords=reader.records,
+                namedFields=named_fields,
+                fieldOrderSource='current generated BuffDataForMemoryPack setter order',
                 opaqueRemainderRange=[reader.pos,len(data)],wholeSchemaExact=False,
                 evidenceLevel='structural-only',boundary='Forward prefix profile only; no whole-object ownership, field meanings or EOF claim. Opaque remainder is bounded by the authenticated physical file, not a decoded record extent.')
 
@@ -1725,12 +1833,19 @@ def root_continuation(data,*,source,start,limit=None):
     if type(start) is not int or not 1<=start<=reader.limit:
         raise FrameError(source,0,'first-collection endpoint within read limit',start,'start-bounds')
     reader.pos=start;status='supported-prefix';diagnostic=None
+    named_fields=[]
     try:
-        reader.scalar_payload()
-        reader.raw_dword_array()
-        reader.modifier_collection_profile()
-        reader.data_pair_collection_profile()
-        reader.buff_action_map_collection_profile()
+        for index,name,read_field in (
+            (1,'addingCooldown',reader.scalar_payload),
+            (2,'applyTags',reader.raw_dword_array),
+            (3,'attributeModifier',reader.modifier_collection_profile),
+            (4,'blackboard',reader.data_pair_collection_profile),
+            (5,'buffEventAction',reader.buff_action_map_collection_profile),
+        ):
+            field_start=reader.pos
+            read_field()
+            named_fields.append(dict(index=index,name=name,start=field_start,end=reader.pos,
+                                     boundaryClass='exact-cursor'))
     except Unsupported as exc:status='unsupported';diagnostic=exc.diagnostic
     except FrameError as exc:status='failed';diagnostic=exc.diagnostic
     cursor=start
@@ -1741,6 +1856,8 @@ def root_continuation(data,*,source,start,limit=None):
     if cursor!=reader.pos:raise FrameError(source,cursor,reader.pos,cursor,'internal-range')
     return dict(status=status,diagnostic=diagnostic,startOffset=start,consumedEnd=reader.pos,
                 readLimit=reader.limit,ranges=reader.ranges,completedRecords=reader.records,
+                namedFields=named_fields,
+                fieldOrderSource='current generated BuffDataForMemoryPack setter order',
                 opaqueRemainderRange=[reader.pos,len(data)],wholeSchemaExact=False,
                 evidenceLevel='structural-only',
                 boundary='Selected root members 2-6 after the independently supported first collection. '

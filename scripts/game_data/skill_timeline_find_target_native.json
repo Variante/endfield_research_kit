@@ -1,0 +1,42 @@
+{
+  "schema": "endfield.skill-timeline-find-target-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "inputSetSha256": "0F1275C5FE9FEB3C0BAA801A49D37405CB3BA0C5BCD8A0A4160C48758283C497",
+  "dependencies": [
+    {
+      "path": "buff_b2_native.json",
+      "sha256": "738B27AF41A661832BA6D30E7F86FF07EBF7E6241178DFF35B0C007FC0B8CED7",
+      "role": "tag 0x00B2 selected union route, FindTargetActionData member18 source order, and reached current selector subtype dispatches"
+    },
+    {
+      "path": "skill_timeline_play_animation_native.json",
+      "sha256": "3C9138B45A410A161DE9610E1C6402E49CC0E773FFC30E6EE0D8EF9DF2292B54",
+      "role": "ActionGroupData, TimelineActionData, SequenceActionData, and ForceSyncAnimData source order"
+    }
+  ],
+  "selectedSubtypeRoutes": {
+    "finder": {
+      "7": "HitBoxFinder",
+      "8": "InFightEnemyFinder",
+      "12": "OwnerPartsFinder",
+      "13": "OwnerSpawnedEntityFinder",
+      "19": "SmartTargetFinder"
+    },
+    "validator": {
+      "4": "DistanceValidator",
+      "5": "ExcludeOwnerValidator",
+      "9": "MainCharacterValidator",
+      "10": "SkillCastIdValidator",
+      "11": "TagValidator"
+    },
+    "postProcessor": {
+      "4": "ExcludeTarget"
+    }
+  },
+  "evidenceBoundary": "The selected current-build AbilityActionData dispatcher routes physical tag 0x00B2 to FindTargetActionData member18. The dependency contract authenticates the reached selector union routes and their wrapper source order; the timeline dependency authenticates the enclosing first TimelineActionData grammar. This narrow decoder admits only one-action first timeline records whose nested selectors use the listed exact routes. Unlisted subtype tags and additional sequence actions stop at their first unsupported byte."
+}

@@ -18,15 +18,18 @@ axis. A path appears under exactly one owner.
 | Line | Path | Responsibility |
 | --- | --- | --- |
 | **1. Game data** | `game_data/extraction/` | installed client to `export_full/`: the export and changed-file exporters, freshness guard, export benchmark, AnimeStudio object index, and `animestudio/` maintenance commands; never publishes page data |
-| | `game_data/` | exact framing readers (Streaming, Terrain, DynamicStreaming, irradiance, extend data, bundle manifest, IFix, and the LevelScript, LevelData, Ability, Interactive, Spawner, CharInteractPerform and AnimationConfig `*_binary.py` readers), `*_corpus.py` gates with `corpus_common.py`, `*_native.py` validators and their reviewed contracts, `il2cpp_protocol.py`, `il2cpp_context*.py`, `media_resolver.py` (game-media naming and asset resolution) |
-| | `game_data/codecs/` | per-record LevelScript and LevelData codecs behind the `*_binary.py` readers |
-| | `game_data/native_contracts/` | reviewed native facts about the installed binary, each a loader plus its byte-pinned JSON |
-| | `game_data/memorypack/` | MemoryPack codecs and their corpus gates |
+| | `game_data/` | exact framing readers (Streaming, Terrain, DynamicStreaming, irradiance, extend data, bundle manifest, IFix, and the JsonData `*_binary.py` readers), `jsondata_corpus.py` and the family `*_corpus.py` gates, `*_native.py` validators and reviewed contracts, `il2cpp_protocol.py`, `il2cpp_context*.py`, `il2cpp_method_resolver.py` (managed name to selected-build body), `monobehaviour_census.py`/`monoscript_catalog.py`/`monobehaviour_script_names.py`/`monobehaviour_field_semantics.py` (the exported MonoBehaviour corpus, its script class names, and what each named class's fields hold), `jsondata_schema_coverage.py` (named-byte coverage per JsonData family), `dummydll_metadata.py` (stdlib ECMA-335 reader over `tools/DummyDll`) and `levelscript_union_layouts.py` (the union layout table derived from it), `media_resolver.py` (game-media naming and asset resolution), `cabmap.py` (the CABMap container index and the `m_FileID` -> dependency-slot rule that resolves a cross-file PPtr), `monobehaviour_table_keys.py` (which MonoBehaviour string fields hold exported Table keys) |
+| | `game_data/codecs/` | per-record LevelScript and LevelData codecs behind the `*_binary.py` readers, including `send_lua_event.py` for the one nested value the derived declaration cannot describe |
+| | `game_data/` JsonData readers | one fail-closed reader per current JsonData family: MemoryPack payloads (`aether_energy_lock_binary.py`, `atmospheric_npc_binary.py`, `gameplay_compact_binary.py`, `levelconfig_binary.py`, `levelscript_template_binary.py`, `matrix_shockwave_binary.py`, `navmesh_binary.py`, `teleport_validation_binary.py`, `gpu_ui_binary.py` with its `gpu_ui_corpus.py` gate and `gpu_ui_damage_text_native.py` validator) and byte-pinned named JSON schemas (`gameplay_config_json.py`, `gameplay_config_polymorphic.py`, `jsondata_text_schema.py`, `mission_runtime_main.py`, `mission_runtime_meta.py`, `npc_catalog_json.py`, `npc_prefab_info.py`, `map_config_json.py`, `ui_level_map_load_config.py`, `level_mount_point_json.py`, `gold_coin_config_json.py`); the schema readers share one validator, `jsondata_named_schema.py`, and keep only their contract pin, path predicate, relations and result shape |
+| | `game_data/il2cpp_native_image.py`, `game_data/native_union_atlas.py` | the one opened installed build every contract validator checks against (PE image, metadata, code registration, module table, and the shared method-identity, dispatcher-route, code-window and setter-order checks), and the atlas that re-validates every union contract against it |
+| | `game_data/native_contracts/` | reviewed native facts about the installed binary, each a loader plus its byte-pinned JSON; `buff_frontiers.py` is one loader over the five BuffData residual-route contracts, and `levelscript_param_list.py`, `levelscript_task_condition.py`, `npc_animation_template.py` and `animation_material_publication.py` authenticate the LevelScript, NPC animation and animation/material consumer routes |
+| | `game_data/memorypack/` | MemoryPack codecs and their corpus gates, including the current-build BuffData additions (`buff_icon_config.py`, `buff_residual_actions.py`, `buff_named_schema.py`) and the SkillData first-timeline lane (`skill_timeline_*.py`), which share `core.LabelledReader` and gate through `il2cpp_native_image` |
 | **2. WebUI** | `webui/views.py`, `webui/package.py` | page-build orchestration, and packaging |
 | | `webui/story/` | Story and Text page data plus shared Story evidence |
 | | `webui/story_recovery/` | Story audits, OCR ordering, runtime traces, candidate generation |
 | | `webui/mission_pipeline/` | standalone Mission Pipeline recovery (not a WebUI page) |
-| | `webui/{assets,audio,characters,gameplay,map,updates}/` | one folder per page: its `build_*.py` entry point and helper modules |
+| | `webui/{assets,audio,characters,gameplay,map,recovery,updates}/` | one folder per page: its `build_*.py` entry point and helper modules |
+| | `webui/recovery/` | the Recovery-progress page: `build_recovery.py` plus its tracked `recovery_declarations.json`. It derives from generated reports and the `memory/game_data/README.md` lane index only, never from installed bytes, and fails closed on a missing report, a schema-token mismatch, or a VFS block type with no declared lane |
 | **Shared** | `common.py`, `source_paths.py`, `repo_paths.py` | helpers used by both lines; `repo_paths.REPO_ROOT` is the only repo-root anchor |
 | **Tests** | `tests/` | stdlib `unittest`, untracked, run by explicit module path |
 
@@ -65,6 +68,7 @@ point run directly as a file exits with the `python -m` command to use instead.
 | Rebuild post-Story views, assets, and CN audio | `.\export_assets.bat` |
 | Refresh assets/audio and rebuild post-Story views | `.\export_assets.bat --from-game` |
 | Compare exports for Updates | `.\build_updates.bat OLD NEW` |
+| Rebuild the Recovery progress page | `python -m scripts.webui.recovery.build_recovery` |
 | Serve or package | `python serve.py` / `python -m scripts.webui.package` |
 
 The wrappers load `endfield_paths.bat`, then apply explicit path flags. Run any
@@ -85,13 +89,24 @@ and writes `reports/animestudio/dynamic_stream_area_current_latest.{json,md}`.
 It bounds the root fields and requires the greatest vector end to equal payload
 EOF; gaps between offsets and record contents remain unassigned.
 
+`game_data/dependency_snapshot.py` is the maintained development-only input
+closure for scoped parser caches and diagnostics. Call
+`dependency_snapshot(roots)` with importable module names; it hashes the
+repo-local Python import closure, unambiguous literal JSON resources,
+transitive relative `.json`/`.py` paths declared by contract `dependencies`
+arrays, and statically resolvable Python helpers passed to
+`spec_from_file_location`. Ambiguous basenames, conflicting literal helper
+assignments, missing declared files, and paths escaping the selected root fail
+closed. Runtime-computed paths and imports that cannot be resolved statically
+remain outside this snapshot, so canonical publication continues to use the
+complete family sweep and its broad authenticated start/end drift gate.
+
 For the recovery path and evidence boundary of an individual WebUI page, use
 [`memory/webui/README.md`](../memory/webui/README.md). This file remains the
 command and module-ownership map.
 
 `setup.bat` initializes only the required `tools/AnimeStudio` submodule.
-`tools/Cpp2IL-Endfield`, `endfield_reconstruction_lab`, and
-`tools/EndfieldCapture` are optional and are not needed for the normal WebUI
+`tools/Cpp2IL-Endfield` and `tools/EndfieldCapture` are optional and are not needed for the normal WebUI
 build. The DummyDll generator initializes Cpp2IL-Endfield on demand when
 script-schema recovery needs it.
 
@@ -127,6 +142,30 @@ surface. Only the behaviour `--help` does not give you is recorded here:
   `Texture2D` only), `--default-assets` (WebUI-facing image/model/material/
   animation output plus audio callback-ownership inputs), `--debug-assets`
   (broad conversion and JSON for investigation).
+- Structured scope is a **separate axis** with three levels, each containing
+  the one below: `--structured-dump-mode focused` (default: Table, JsonData,
+  video, Lua), `default` (plus the Terrain height grids), `full` (plus Terrain
+  whole, Streaming, DynamicStreaming, IV, ExtendData, IFixPatch, bundle
+  manifest; about 6.4 GB more). No structured level carries raw bundles or
+  audio packages.
+- `--for story|map|pages|everything` sets both axes from one intent, because
+  almost nobody picks them independently. It fills only what the caller left
+  alone, so an explicit `--structured-dump-mode` or `--*-assets` still wins in
+  either order. `--show-scope` prints the resolved scopes and exits, which is
+  how to check a preset before paying for the run.
+
+  | `--for` | structured | assets |
+  | --- | --- | --- |
+  | `story` | `focused` | none |
+  | `map` | `default` | none |
+  | `pages` | `default` | `default` |
+  | `everything` | `full` | `debug` |
+
+  A page-to-input mapping could not be a single ladder: Map needs Terrain and
+  Streaming but no bundles, Assets needs bundles but no Terrain, and Story
+  needs neither. These four presets are the intents that actually occur, not a
+  derivation from a page list -- a page-to-input table would have to be kept in
+  lockstep with every builder's inputs.
 - The default asset scope includes AnimationClip conversion plus
   AnimatorController and AnimatorOverrideController JSON. Controller JSON stays
   on the broad dependency-loading path so cross-bundle PPtr targets are not
@@ -163,6 +202,7 @@ a degraded reason instead of using them as direct evidence.
 | Map01 RegionMap3D package | `build_map_region3d.py` | a self-contained package plus its provenance sidecar; separate from the WebUI map renderer and the authored 2D minimap |
 | Lua consumer index | `webui/story/lua_consumer_references.py` | fingerprinted Mission Pipeline evidence |
 | Characters | `build_character_data.py` | character indexes and versioned final-catalog snapshots |
+| Decoded Data Inspector | `data_inspector/build_data_inspector.py` | generic catalogs and lazy decoded-record shards |
 | Gameplay | `build_gameplay.py` | Gameplay datasets |
 | Assets | `build_assets.py` | asset indexes and media lookup |
 | Audio | `build_audio.py` | decoded/relinked audio data |
@@ -170,6 +210,7 @@ a degraded reason instead of using them as direct evidence.
 | Audio HIRC structural gates | `webui/audio/semantics/hirc_action_corpus.py` | Action cursors and type `0x02` source prefixes under `reports/animestudio/` |
 | DynamicStreaming stream-area gate | `game_data/dynamic_stream_area_corpus.py` | `reports/animestudio/dynamic_stream_area_current_latest.{json,md}` |
 | Updates | `build_updates.py` | `webui/data/updates/latest.json`, `webui/data/updates/characters.json` |
+| Recovery progress | `webui/recovery/build_recovery.py` | `webui/data/recovery/index.json` |
 | Packaging | `webui/package.py` | distributable static package |
 
 ### Packaging
@@ -212,6 +253,13 @@ The capture is read-only and refuses to attach unless the selected
 hashes. Runtime rows are merged only when that same native-input gate is
 validated; otherwise the static export remains unchanged. Use `--check-only`
 to verify the hook manifest without attaching.
+`build_assets.py` also writes `webui/data/assets/table_owners.json` from
+`webui/assets/table_asset_owners.py`: exact table-row ownership for indexed
+assets, always derived from the complete scan even when the published index is
+the focused Story/Wiki projection. Maintained Text Tables renderers live in
+`webui/story/reference_structured_fields.py` and are published by
+`webui/story/build.py` as each reference row's `fields`.
+
 `build_assets.py` writes only Assets-owned indexes and media lookup. The legacy
 economy, world, presentation, and broad data index helpers are diagnostic only
 and do not feed active pages.
@@ -224,6 +272,7 @@ python -m scripts.webui.story.refresh_evidence
 python -m scripts.webui.story.source_links
 python -m scripts.webui.story.build --languages CN --default-language CN
 python -m scripts.webui.characters.build_character_data --languages CN --default-language CN
+python -m scripts.webui.data_inspector.build_data_inspector
 python -m scripts.webui.mission_pipeline.build_mission_pipeline_data
 python -m scripts.webui.gameplay.build_gameplay
 python -m scripts.webui.assets.build_assets
@@ -239,11 +288,14 @@ AnimeStudio offline recovery probes:
 ```bat
 set ASCLI=tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe
 %ASCLI% vfs-audit --streaming-assets PERSISTENT --fallback-assets STREAMING_ASSETS --summary-json reports\animestudio\vfs_understanding_latest.json --ledger-jsonl-gz reports\animestudio\vfs_understanding_files_latest.jsonl.gz --report-md reports\animestudio\vfs_understanding_latest.md
+python -m scripts.game_data.memorypack.buff_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --output-json reports/animestudio/buffdata_current_latest.json --output-md reports/animestudio/buffdata_current_latest.md
+python -m scripts.game_data.memorypack.skill_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --cursor-verification reports/animestudio/skilldata_cursor_verification_latest.json --output reports/animestudio/skilldata_current_latest.json --output-md reports/animestudio/skilldata_current_latest.md
+python -m scripts.game_data.jsondata_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.game_data.gpu_ui_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.streaming_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.streaming_marker17_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.streaming_marker13_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.streaming_marker2_corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
-python -m scripts.game_data.memorypack.skill_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --output reports/animestudio/skilldata_current_latest.json --output-md reports/animestudio/skilldata_current_latest.md
 python -m scripts.game_data.memorypack.skill_cursor_receipt --preflight
 python -m scripts.game_data.memorypack.skill_timeline_cursor --stream-jsonl CURRENT_SKILLDATA_STREAM_JSONL --native-context reports/animestudio/il2cpp_context_current_latest.json
 python -m scripts.game_data.memorypack.npc_montage_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
@@ -269,6 +321,8 @@ its result under `reports/animestudio/`:
 | `game_data.streaming_marker17_corpus` | `streaming_marker17_bodies_latest.{json,md}` |
 | `game_data.streaming_marker13_corpus` | `streaming_marker13_latest.{json,md}` + inventory `.jsonl.gz` |
 | `game_data.streaming_marker2_corpus` | `streaming_marker2_latest.{json,md}` + inventory `.jsonl.gz` |
+| `game_data.jsondata_corpus` | `jsondata_current_latest.{json,md}` + per-file `.jsonl.gz` |
+| `game_data.gpu_ui_corpus` | `gpu_ui_current_latest.json`; authenticated GPUI named schemas, including native-gated DamageText |
 | `game_data.memorypack.skill_corpus` | `skilldata_current_latest.{json,md}` |
 | `game_data.memorypack.skill_timeline_cursor` | `skilldata_timeline_cursor_latest.{json,md}` |
 | `game_data.memorypack.npc_montage_corpus` | `npc_montage_current_latest.{json,md}` |
@@ -278,6 +332,7 @@ its result under `reports/animestudio/`:
 | `game_data.terrain_corpus` | `terrain_tret_latest.{json,md}` |
 | `game_data.dynamic_stream_area_corpus` | `dynamic_stream_area_current_latest.{json,md}` |
 | `game_data.il2cpp_context_audit` | `il2cpp_context_current_latest.*` (JSON on stdout) |
+| `game_data.native_union_atlas` | `jsondata_union_atlas_current.json`; one-context authenticated index of reviewed JsonData union contracts |
 
 Partial `--max-files` probes are not complete-corpus evidence and their output
 belongs in `tmp/` or `scratch/`. **What each gate proves, and what it explicitly
@@ -528,6 +583,12 @@ a fresh HIRC bank pass while decoded audio is already current; plain
 Projectile behavior and authored event hashes stay immutable in
 `webui/data/gameplay/projectiles.json`; Audio publishes playable HIRC candidates
 separately in `webui/data/lang/<LANG>/gameplay/projectile_audio.json`.
+`scripts.webui.gameplay.projectiles` reads only `data_projectile_*` objects
+whose template and component references are exact managed-reference TypeTree
+decodes; every other candidate is skipped and counted by reason
+(`counts.skipped`, `skippedFiles`), and `--require-exact` turns a non-exact
+skip into a non-zero exit. Sound fields carry the signed int32 plus the
+uint32 hex that Audio joins on.
 
 ### HIRC structural corpus gates
 
@@ -596,8 +657,12 @@ normal/positioned branch projection), `interactive_components.py` and
 (`controlCatalog.staticRtpcAlignment`, `authoredStatic` evidence only),
 `scene_backgrounds.py` (scene-background catalog and table/NPC identity
 overlays), `media_ownership.py` (coarse decoded-media ownership and the Gameplay
-sound projection), `name_recovery.py` (grammar-derived Event name recovery), and
-`event_projection.py`/`event_summary.py` (WebUI row projection).
+sound projection), `name_recovery.py` (grammar-derived Event name recovery),
+`authored_payload_event_names.py` (shipped MemoryPack length-prefixed Event-name
+literals in the `LevelScriptData`/`LevelScriptTemplateData`/`SpawnerConfig`/
+`Interactive`/`LevelData` payload roots; `gameplay_audio.py` keeps `SkillData`
+and `BuffData`), and `event_projection.py`/`event_summary.py` (WebUI row
+projection).
 
 `build_audio.py` imports shared primitives from these owners instead of treating
 the semantics entry point as a utility module, and
@@ -693,7 +758,10 @@ python -m scripts.webui.updates.build_updates --refresh-previous-export-baseline
 The default scan covers WebUI-facing exported text plus image, model, video,
 and decoded audio assets. `--text-only` omits all assets, `--no-audio` keeps
 other assets, `--exact` hashes contents, and `--full-export-scan` is for broad
-audits only.
+audits only. The published feed keeps every matching changed entry by default;
+`--sample-limit N` is an opt-in diagnostic cap, while `0` remains unlimited.
+Only an individual oversized text diff preview is bounded; that does not omit
+the update entry itself.
 
 Asset identity normally follows the exported relative path. For unmatched
 add/delete pairs, the builder also recognizes one-to-one Unity exports whose
@@ -769,6 +837,210 @@ updating that pin fails closed. The pin covers exact bytes, so
 never be converted. See the native-contract rules in `AGENTS.md` before adding
 or regenerating one, and never carry an RVA, registration index, or code-window
 hash over from a previous installed build.
+
+### Measuring JsonData schema coverage
+
+```bat
+python -m scripts.game_data.jsondata_schema_coverage ^
+  --report reports\game_data\jsondata_schema_coverage.json
+```
+
+Reports named bytes per family and bucket, ranked by unnamed bytes, for the
+binary families whose framings declare their opaque ranges. It answers "how
+much of each file is understood", which is a different question from
+`jsondata_corpus`: that gate proves identity and routing and reports a per-file
+status, and a consumer must still gate on the status. Never read
+`bytesConsumed` as coverage -- see
+[`memory/game_data/extraction_payload_boundaries.md`](../memory/game_data/extraction_payload_boundaries.md)
+for why, and for the recovery order the measurement sets.
+
+### Deriving the LevelScript union layout table
+
+```bat
+python -m scripts.game_data.levelscript_union_layouts ^
+  --report reports\game_data\levelscript_union_layouts.json
+```
+
+Derives every `ActionBase`/`GetterBase`/`ActionHeader` union layout for the
+selected build from `tools/DummyDll`, instead of recovering one row at a time
+from the native dispatcher. Tag is the case-insensitive alphabetical rank of
+the wrapper type name without its `ForMemoryPack` suffix; members are the base
+chain's setters, root first, typed by each setter's parameter.
+
+It seeds four union families -- ActionBase, GetterBase, ActionHeader and
+GameCondition -- plus the `LevelScriptData` and `LevelScriptTemplateData`
+roots, then closes the declarations and derives a family for every union base
+it discovers, repeating to a fixed point. Each struct carries `containsReferences`, which decides whether it
+is framed as an object or written raw, and a `rawLayout` giving its memory
+offsets when that is established. Each enum carries the underlying width read
+from its own `value__` field.
+
+It gates on the installed native inputs recorded in
+`tools\DummyDll\generation.json`, then recomputes all 277 rows of
+`codecs/levelscript/action_map_layouts.json`, checks the derived declarations
+against that contract's `primitiveEvidence`, and writes nothing if anything
+disagrees. `--allow-build-drift` skips only the native gate, for inspecting a
+DummyDll set that is not the selected build. Derived rows carry the `direct`
+evidence boundary, not the reviewed table's `exact`; see
+[`memory/game_data/extraction_payload_boundaries.md`](../memory/game_data/extraction_payload_boundaries.md).
+
+`action_map.decode_action_serialized_map` consumes the report through its
+optional `declarations` argument, built with
+`action_map.Declarations.from_report`. Passing nothing keeps the reviewed-only
+behaviour every production consumer publishes at; passing it admits the derived
+tier, and the caller owns recording that its result is `direct`.
+`levelscript_binary.frame_levelscript_declared_root` is the whole-file framing
+built on it -- it refuses any file whose cursor does not close at physical EOF
+-- with `frame_levelscript_declared_action_map` as the partial fallback. The
+coverage sweep measures with both:
+
+```bat
+python -m scripts.game_data.jsondata_schema_coverage ^
+  --declarations reports\game_data\levelscript_union_layouts.json ^
+  --report reports\game_data\jsondata_schema_coverage_declared.json
+```
+
+The report records which tier it was measured at as `evidenceTier`. Keep the
+reviewed-tier report beside it rather than replacing it; the pair is what makes
+the derived tier's contribution visible.
+
+`scripts/game_data/dummydll_metadata.py` is the stdlib ECMA-335 reader beneath
+it: PE to metadata root, the table row sizes, TypeDef base chains, setter
+declaration order, and signature decoding. It has no entry point of its own and
+carries no build-locked constant -- it reads whatever DummyDll set it is given,
+so a caller that makes a schema claim from it must run the native gate itself.
+
+The corpus gates run in a chain and each needs the current
+`inputSetSha256` from the VFS audit:
+
+```bat
+%ASCLI% vfs-audit ...
+python -m scripts.game_data.memorypack.buff_corpus --expected-input-set-sha256 ...
+python -m scripts.game_data.memorypack.skill_corpus --expected-input-set-sha256 ...
+python -m scripts.game_data.jsondata_corpus --expected-input-set-sha256 ...
+```
+
+That hash covers the AnimeStudio CLI binary, so rebuilding the exporter
+invalidates the audit, every gate below it, and the tracked contracts that pin
+it. Re-run the audit for a current value; do not edit a recorded one.
+
+### Naming the exported MonoBehaviour corpus
+
+MonoBehaviour is the largest exported Unity type, and the export does not carry
+its class names: `m_Script` points into a MonoScript CAB outside the export
+scope. Three commands turn that anonymous corpus into a named catalog.
+
+```bat
+python -m scripts.game_data.monobehaviour_census ^
+  --report reports\assets\monobehaviour_script_census.json
+python -m scripts.webui.assets.cabmap
+python -m scripts.game_data.monoscript_catalog ^
+  --dump-root tmp\game_data\monoscript\MonoScript ^
+  --report reports\assets\monoscript_catalog.json
+python -m scripts.game_data.monobehaviour_script_names ^
+  reports\assets\monobehaviour_script_census.json ^
+  --monoscript-dump tmp\game_data\monoscript\MonoScript ^
+  --report reports\assets\monobehaviour_script_names.json
+```
+
+The census sweeps every exported object, so give it a generous timeout. The
+MonoScript dump itself is an AnimeStudio run into `tmp/`, filtered to the CAB
+the corpus references. That CAB no longer has to be hunted for: every
+`m_Script` in the corpus resolves to `CAB-5f527d7b7706baccdad9f794cf46420c`
+through the dependency-slot rule in `scripts/game_data/cabmap.py`, and the
+CABMap independently shows it as the most depended-on container in both maps.
+Take its chunk path and offset from the CABMap at the time of use rather than
+recording them, because it sits in a block that ships a different chunk
+filename in each VFS root:
+
+```bat
+%ASCLI% "<chunk from the CABMap>" tmp\game_data\monoscript ^
+  --game ArknightsEndfield --filter_data tmp\game_data\monoscript\filter.json ^
+  --types "MonoScript:Both" --export_type Dump
+```
+
+`--filter_data` takes a JSON array of `{"Source": "<chunk>", "Offset": N}`.
+The namer runs the structural IL2CPP match as an independent check on the
+script PPtr and reports their agreement; `memory/game_data/unity_assets.md`
+owns why both routes exist and where each one stops.
+
+### What a named MonoBehaviour class owns
+
+A class name is an identity for the script, not evidence about its fields. The
+fourth command measures that, per field path rather than per class, over the
+whole corpus:
+
+```bat
+python -m scripts.game_data.monobehaviour_field_semantics ^
+  --names-report reports\assets\monobehaviour_script_names.json ^
+  --progress 100000 ^
+  --report reports\assets\monobehaviour_field_semantics.json
+```
+
+It is a second full sweep of the corpus, so give it the same generous timeout
+as the census. Each field row carries its declared TypeTree type beside what
+the corpus actually holds there. A reference row also carries the container its
+sampled targets resolve to, through the CABMap rule in
+`scripts/game_data/cabmap.py`, and the tier that resolution stands at: `exact`
+where an exported target confirmed the predicted CAB, `container_only` where
+the container is named but nothing exported sits there to check it,
+`contradicted` where the prediction and the target disagree, and `unresolved`
+where the CABMap could not answer. The export's `meta/cab_map` is read from the
+same export root; without it the reference rows stay `unresolved` rather than
+falling back to a global PathID match.
+
+A reference that lands on another MonoBehaviour also names the target's class,
+so a row reads `ControlTrack.m_Parent -> TimelineAsset` rather than
+`-> MonoBehaviour`.
+
+`--top N` reports only the N largest classes, which is how to work the corpus
+down by object count; `--limit N` is a bounded probe, not a census.
+
+A fifth command asks which of those string fields hold **exported Table keys**.
+It reads the field-semantics report rather than the corpus, so it is seconds
+rather than a sweep:
+
+```bat
+python -m scripts.game_data.monobehaviour_table_keys ^
+  --report reports\assets\monobehaviour_table_keys.json
+```
+
+It refuses purely numeric values. Only 0.5% of the 178,582 numeric table keys
+belong to a single table -- `"1"` is a key in 94 of them -- while 90.5% of the
+90,988 named keys belong to exactly one, so pooling the two would turn a
+bounded candidate list into thousands of invented references. `--min-objects N`
+works the corpus down by class size.
+
+Read the statuses as a ladder. `key_of` and `key_of_several` mean every checked
+value belongs. `mostly_key_of` means one table holds at least 75% of them, so
+the field is that key with exceptions and the exceptions are the interesting
+part; the row lists them. `partial` means no table comes close, which makes the
+field an unrelated name space that collided rather than a key field, and its
+unmatched values are not reported as unresolved ids.
+
+### Migrating a contract that pins a superseded build
+
+`scripts/game_data/il2cpp_method_resolver.py` re-resolves recorded managed
+method identities against the selected build. It pins nothing: it derives
+`Il2CppCodeRegistration` from the selected `GameAssembly.dll` against the
+complete image-name set of the selected `global-metadata.dat`, so it runs
+unchanged after a client update.
+
+```bat
+python -m scripts.game_data.il2cpp_method_resolver --type "Ns.Type" --method "Method"
+python -m scripts.game_data.il2cpp_method_resolver ^
+  --from-contract path\to\contract.json ^
+  --report reports\assets\character_recovery\<name>.json
+```
+
+`--from-contract` harvests every nested `{"type": ..., "method": ...}` object,
+so it reads a contract's shape rather than one schema's key path, and may be
+repeated. Each resolution records the route that reached it: `name`,
+`lambda` (closure ordinals renumber), `undecoratedName` (a recorded
+`Execute(int)` display form), and a `burstDirectCall` type route (Burst wrapper
+tokens renumber). `memory/game_data_recovery.md` owns why each drift class
+exists. The report is evidence that the identity still exists at a new address,
+not that the old contract's body conclusions still hold.
 
 ## Output hygiene
 

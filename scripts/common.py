@@ -388,22 +388,17 @@ GUIDE_RUNTIME_NON_MISSION_REPORT = (
     / "animestudio_story_guide_consumer_audit.json"
 )
 EXPORT_FULL_SUMMARY = EXPORT_REPORTS_DIR / "export_full_summary.json"
-GUIDE_RUNTIME_NON_MISSION_SCHEMA = "animestudioStoryGuideConsumerAudit.v1"
+GUIDE_RUNTIME_NON_MISSION_SCHEMA = "animestudioStoryGuideConsumerAudit.v2"
 SPACESHIP_STORY_NON_MISSION_REPORT = (
     STORY_RECOVERY_REPORTS_DIR / "spaceship_story_content_audit.json"
 )
-SPACESHIP_STORY_NON_MISSION_SCHEMA = "spaceshipStoryContentAudit.v2"
-SPACESHIP_STORY_NON_MISSION_MAPPING_ID = (
-    "gameassembly-2026-08-02-spaceship-story-consumers-v1"
-)
+SPACESHIP_STORY_NON_MISSION_SCHEMA = "spaceshipStoryContentAudit.v3"
 RECORDED_NATIVE_GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )
 RECORDED_NATIVE_METADATA_SHA256 = (
     "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
 )
-SPACESHIP_STORY_GAMEASSEMBLY_SHA256 = RECORDED_NATIVE_GAMEASSEMBLY_SHA256
-SPACESHIP_STORY_METADATA_SHA256 = RECORDED_NATIVE_METADATA_SHA256
 DEFAULT_INSTALLED_GAME_DATA_ROOT = Path(
     r"D:\Program Files\Endfield Game\Endfield_Data"
 )
@@ -780,11 +775,18 @@ def guide_runtime_non_mission_content_keys(
     """
     report = read_json(Path(report_path), {})
     export_summary = read_json(Path(export_summary_path), {})
+    evidence_boundary = (
+        report.get("evidenceBoundary")
+        if isinstance(report, dict)
+        and isinstance(report.get("evidenceBoundary"), dict)
+        else {}
+    )
     if (
         not isinstance(report, dict)
         or report.get("_schema") != GUIDE_RUNTIME_NON_MISSION_SCHEMA
         or not isinstance(export_summary, dict)
-        or (report.get("nativeEvidence") or {}).get("validated") is not True
+        or safe_key(evidence_boundary.get("kind"))
+        != "source_only_current_export"
     ):
         return {}
     source_sizes = export_summary.get("source_sizes")
@@ -879,8 +881,6 @@ def guide_runtime_non_mission_content_keys(
                 for value in row.get("guideLevelIds") or []
                 if safe_key(value)
             ],
-            "nativeMappingId": safe_key(row.get("nativeMappingId")),
-            "nativeMethod": row.get("nativeMethod") or {},
             "orderBoundary": safe_key(row.get("orderBoundary")),
             "evidenceReport": evidence_report,
         }
@@ -895,18 +895,17 @@ def spaceship_story_non_mission_content_keys(
     """Load source-hash-checked operator-spacecraft Story classifications."""
     report_path = Path(report_path)
     report = read_json(report_path, {})
-    native = report.get("nativeEvidence") if isinstance(report, dict) else {}
+    evidence_boundary = (
+        report.get("evidenceBoundary")
+        if isinstance(report, dict)
+        and isinstance(report.get("evidenceBoundary"), dict)
+        else {}
+    )
     if (
         not isinstance(report, dict)
         or report.get("_schema") != SPACESHIP_STORY_NON_MISSION_SCHEMA
-        or not isinstance(native, dict)
-        or native.get("validated") is not True
-        or safe_key(native.get("mappingId"))
-        != SPACESHIP_STORY_NON_MISSION_MAPPING_ID
-        or safe_key(native.get("gameAssemblySha256")).upper()
-        != SPACESHIP_STORY_GAMEASSEMBLY_SHA256
-        or safe_key(native.get("metadataSha256")).upper()
-        != SPACESHIP_STORY_METADATA_SHA256
+        or safe_key(evidence_boundary.get("kind"))
+        != "source_only_current_export"
     ):
         return {}
 
@@ -978,8 +977,6 @@ def spaceship_story_non_mission_content_keys(
                 for source_file in source_files
             )
             or not row.get("lineIds")
-            or safe_key(row.get("nativeMappingId"))
-            != SPACESHIP_STORY_NON_MISSION_MAPPING_ID
             or (
                 evidence_kind == "spaceship_dialog_tree"
                 and (

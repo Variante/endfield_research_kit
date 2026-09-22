@@ -1,0 +1,586 @@
+{
+  "schema": "endfield.gpui-damage-text-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "root": "PrefabGroupSerializeData",
+  "records": {
+    "PrefabGroupSerializeData": {
+      "typeName": "Beyond.UI.GPUI.PrefabGroupSerializeData",
+      "metadataTypeIndex": 43340,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_UI_GPUI_PrefabGroupSerializeDataForMemoryPack",
+      "wrapperMetadataTypeIndex": 23331,
+      "memberCount": 6,
+      "fields": [
+        {
+          "name": "importantChars",
+          "encoding": "string",
+          "typeName": "string",
+          "metadataFieldIndex": 223991,
+          "nativeOffset": 56,
+          "setterMethodIndex": 169310,
+          "setterRva": "0x3209a80",
+          "readCallsiteRva": "0x4476002",
+          "readTargetRva": "0x2ca8700",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "layoutType",
+          "encoding": "i",
+          "typeName": "Beyond.UI.GPUI.GPUILayoutType",
+          "metadataFieldIndex": 223986,
+          "nativeOffset": 16,
+          "setterMethodIndex": 169311,
+          "setterRva": "0x507e454",
+          "readCallsiteRva": "0x447602b",
+          "readTargetRva": "0x2ca86b0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "prefabs",
+          "encoding": "list:PrefabSerializeData",
+          "typeName": "System.Collections.Generic.List`1<Beyond.UI.GPUI.PrefabSerializeData>",
+          "metadataFieldIndex": 223989,
+          "nativeOffset": 40,
+          "setterMethodIndex": 169312,
+          "setterRva": "0x320ac10",
+          "readCallsiteRva": "0x4476053",
+          "readTargetRva": "0x381f8f0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "spriteTexturePath",
+          "encoding": "q",
+          "typeName": "Beyond.Resource.StringPathHash",
+          "metadataFieldIndex": 223987,
+          "nativeOffset": 24,
+          "setterMethodIndex": 169313,
+          "setterRva": "0x507e344",
+          "readCallsiteRva": "0x447607c",
+          "readTargetRva": "0x3ecc1e0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "textIds",
+          "encoding": "list:string",
+          "typeName": "System.Collections.Generic.List`1<string>",
+          "metadataFieldIndex": 223990,
+          "nativeOffset": 48,
+          "setterMethodIndex": 169314,
+          "setterRva": "0x320c9f0",
+          "readCallsiteRva": "0x44760a1",
+          "readTargetRva": "0x381f8f0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "vatTexturePath",
+          "encoding": "q",
+          "typeName": "Beyond.Resource.StringPathHash",
+          "metadataFieldIndex": 223988,
+          "nativeOffset": 32,
+          "setterMethodIndex": 169315,
+          "setterRva": "0x507ee78",
+          "readCallsiteRva": "0x44760c6",
+          "readTargetRva": "0x3ecc1e0",
+          "writeMode": "setter-call"
+        }
+      ]
+    },
+    "PrefabSerializeData": {
+      "typeName": "Beyond.UI.GPUI.PrefabSerializeData",
+      "metadataTypeIndex": 43338,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_UI_GPUI_PrefabSerializeDataForMemoryPack",
+      "wrapperMetadataTypeIndex": 23335,
+      "memberCount": 6,
+      "fields": [
+        {
+          "name": "animationOnly",
+          "encoding": "bool",
+          "typeName": "bool",
+          "metadataFieldIndex": 223975,
+          "nativeOffset": 28,
+          "setterMethodIndex": 169352,
+          "setterRva": "0x507f4c0",
+          "readCallsiteRva": "0x4272afb",
+          "readTargetRva": "0x2ca88c0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "animations",
+          "encoding": "list:AnimationSerializeData",
+          "typeName": "System.Collections.Generic.List`1<Beyond.UI.GPUI.AnimationSerializeData>",
+          "metadataFieldIndex": 223978,
+          "nativeOffset": 48,
+          "setterMethodIndex": 169353,
+          "setterRva": "0x320c9f0",
+          "readCallsiteRva": "0x4272b24",
+          "readTargetRva": "0x381f8f0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "nodeCount",
+          "encoding": "i",
+          "typeName": "int",
+          "metadataFieldIndex": 223974,
+          "nativeOffset": 24,
+          "setterMethodIndex": 169354,
+          "setterRva": "0x507df00",
+          "readCallsiteRva": "0x4272b46",
+          "readTargetRva": "0x2ca86b0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "nodeMetas",
+          "encoding": "list:NodeMetadata",
+          "typeName": "System.Collections.Generic.List`1<Beyond.UI.GPUI.NodeMetadata>",
+          "metadataFieldIndex": 223976,
+          "nativeOffset": 32,
+          "setterMethodIndex": 169355,
+          "setterRva": "0x3207a90",
+          "readCallsiteRva": "0x4272b6e",
+          "readTargetRva": "0x381f8f0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "prefabName",
+          "encoding": "string",
+          "typeName": "string",
+          "metadataFieldIndex": 223973,
+          "nativeOffset": 16,
+          "setterMethodIndex": 169356,
+          "setterRva": "0x3207ac0",
+          "readCallsiteRva": "0x4272b90",
+          "readTargetRva": "0x2ca8700",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "renderNodes",
+          "encoding": "list:NodeSerializeData",
+          "typeName": "System.Collections.Generic.List`1<Beyond.UI.GPUI.NodeSerializeData>",
+          "metadataFieldIndex": 223977,
+          "nativeOffset": 40,
+          "setterMethodIndex": 169357,
+          "setterRva": "0x320ac10",
+          "readCallsiteRva": "0x4272bb9",
+          "readTargetRva": "0x381f8f0",
+          "writeMode": "setter-call"
+        }
+      ]
+    },
+    "AnimationSerializeData": {
+      "typeName": "Beyond.UI.GPUI.AnimationSerializeData",
+      "metadataTypeIndex": 43336,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_UI_GPUI_AnimationSerializeDataForMemoryPack",
+      "wrapperMetadataTypeIndex": 23339,
+      "memberCount": 5,
+      "fields": [
+        {
+          "name": "animationName",
+          "encoding": "string",
+          "typeName": "string",
+          "metadataFieldIndex": 223960,
+          "nativeOffset": 16,
+          "setterMethodIndex": 169385,
+          "setterRva": "0x3207ac0",
+          "readCallsiteRva": "0x435854b",
+          "readTargetRva": "0x2ca8700",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "animationTime",
+          "encoding": "f",
+          "typeName": "float",
+          "metadataFieldIndex": 223961,
+          "nativeOffset": 24,
+          "setterMethodIndex": 169386,
+          "setterRva": "0x507e48c",
+          "readCallsiteRva": "0x435856d",
+          "readTargetRva": "0x2ca8bb0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "renderNodesOffset",
+          "encoding": "i",
+          "typeName": "int",
+          "metadataFieldIndex": 223964,
+          "nativeOffset": 36,
+          "setterMethodIndex": 169387,
+          "setterRva": "0x507e28c",
+          "readCallsiteRva": "0x435858f",
+          "readTargetRva": "0x2ca86b0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "totalFrames",
+          "encoding": "i",
+          "typeName": "int",
+          "metadataFieldIndex": 223962,
+          "nativeOffset": 28,
+          "setterMethodIndex": 169388,
+          "setterRva": "0x507dee4",
+          "readCallsiteRva": "0x43585b0",
+          "readTargetRva": "0x2ca86b0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "wrapMode",
+          "encoding": "i",
+          "typeName": "UnityEngine.WrapMode",
+          "metadataFieldIndex": 223963,
+          "nativeOffset": 32,
+          "setterMethodIndex": 169389,
+          "setterRva": "0x507e328",
+          "readCallsiteRva": "0x43585d4",
+          "readTargetRva": "0x2ca86b0",
+          "writeMode": "setter-call"
+        }
+      ]
+    },
+    "NodeMetadata": {
+      "typeName": "Beyond.UI.GPUI.NodeMetadata",
+      "metadataTypeIndex": 43334,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_UI_GPUI_NodeMetadataForMemoryPack",
+      "wrapperMetadataTypeIndex": 23341,
+      "memberCount": 12,
+      "fields": [
+        {
+          "name": "nodeName",
+          "encoding": "string",
+          "typeName": "string",
+          "metadataFieldIndex": 223946,
+          "nativeOffset": 16,
+          "setterMethodIndex": 169400,
+          "setterRva": "0x3207ac0",
+          "readCallsiteRva": "0x3f31c3b",
+          "readTargetRva": "0x2ca8700",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "nodeText",
+          "encoding": "string",
+          "typeName": "string",
+          "metadataFieldIndex": 223949,
+          "nativeOffset": 40,
+          "setterMethodIndex": 169401,
+          "setterRva": "0x320ac10",
+          "readCallsiteRva": "0x3f31c5d",
+          "readTargetRva": "0x2ca8700",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "nodeTextBold",
+          "encoding": "bool",
+          "typeName": "bool",
+          "metadataFieldIndex": 223952,
+          "nativeOffset": 56,
+          "setterMethodIndex": 169402,
+          "setterRva": "0x507e3d0",
+          "readCallsiteRva": "0x3f31c7f",
+          "readTargetRva": "0x2ca88c0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "nodeTextId",
+          "encoding": "string",
+          "typeName": "string",
+          "metadataFieldIndex": 223948,
+          "nativeOffset": 32,
+          "setterMethodIndex": 169403,
+          "setterRva": "0x3207a90",
+          "readCallsiteRva": "0x3f31ca1",
+          "readTargetRva": "0x2ca8700",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "nodeTextSize",
+          "encoding": "f",
+          "typeName": "float",
+          "metadataFieldIndex": 223951,
+          "nativeOffset": 52,
+          "setterMethodIndex": 169404,
+          "setterRva": "0x507de70",
+          "readCallsiteRva": "0x3f31cc3",
+          "readTargetRva": "0x2ca8bb0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "nodeType",
+          "encoding": "i",
+          "typeName": "Beyond.UI.GPUI.NodeType",
+          "metadataFieldIndex": 223947,
+          "nativeOffset": 24,
+          "setterMethodIndex": 169405,
+          "setterRva": "0x507df00",
+          "readCallsiteRva": "0x3f31cec",
+          "readTargetRva": "0x2ca86b0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "subrootIndex",
+          "encoding": "i",
+          "typeName": "int",
+          "metadataFieldIndex": 223957,
+          "nativeOffset": 80,
+          "setterMethodIndex": 169406,
+          "setterRva": "0x507e398",
+          "readCallsiteRva": "0x3f31d0d",
+          "readTargetRva": "0x2ca86b0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "subrootName",
+          "encoding": "string",
+          "typeName": "string",
+          "metadataFieldIndex": 223956,
+          "nativeOffset": 72,
+          "setterMethodIndex": 169407,
+          "setterRva": "0x320ba00",
+          "readCallsiteRva": "0x3f31d2e",
+          "readTargetRva": "0x2ca8700",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "textAlignment",
+          "encoding": "i",
+          "typeName": "Beyond.UI.GPUI.SimpleTextAlignment",
+          "metadataFieldIndex": 223950,
+          "nativeOffset": 48,
+          "setterMethodIndex": 169408,
+          "setterRva": "0x507e30c",
+          "readCallsiteRva": "0x3f31d57",
+          "readTargetRva": "0x2ca86b0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "textAutoSizeMaxGlyphCount",
+          "encoding": "i",
+          "typeName": "int",
+          "metadataFieldIndex": 223953,
+          "nativeOffset": 60,
+          "setterMethodIndex": 169409,
+          "setterRva": "0x507e3ec",
+          "readCallsiteRva": "0x3f31d78",
+          "readTargetRva": "0x2ca86b0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "textAutoSizeMinScale",
+          "encoding": "f",
+          "typeName": "float",
+          "metadataFieldIndex": 223955,
+          "nativeOffset": 68,
+          "setterMethodIndex": 169410,
+          "setterRva": "0x5081350",
+          "readCallsiteRva": "0x3f31d99",
+          "readTargetRva": "0x2ca8bb0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "textAutoSizeWidth",
+          "encoding": "f",
+          "typeName": "float",
+          "metadataFieldIndex": 223954,
+          "nativeOffset": 64,
+          "setterMethodIndex": 169411,
+          "setterRva": "0x5081390",
+          "readCallsiteRva": "0x3f31dbb",
+          "readTargetRva": "0x2ca8bb0",
+          "writeMode": "setter-call"
+        }
+      ]
+    },
+    "NodeSerializeData": {
+      "typeName": "Beyond.UI.GPUI.NodeSerializeData",
+      "metadataTypeIndex": 43332,
+      "wrapperTypeName": "Beyond.MemoryPack.Beyond_UI_GPUI_NodeSerializeDataForMemoryPack",
+      "wrapperMetadataTypeIndex": 23343,
+      "memberCount": 10,
+      "fields": [
+        {
+          "name": "aniColorV",
+          "encoding": "f",
+          "typeName": "float",
+          "metadataFieldIndex": 223927,
+          "nativeOffset": 80,
+          "setterMethodIndex": 169422,
+          "setterRva": "0x507fe70",
+          "readCallsiteRva": "0x39953f0",
+          "readTargetRva": "0x2ca8bb0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "aniDurationInv",
+          "encoding": "f",
+          "typeName": "float",
+          "metadataFieldIndex": 223928,
+          "nativeOffset": 84,
+          "setterMethodIndex": 169423,
+          "setterRva": "0x5081674",
+          "readCallsiteRva": "0x3995412",
+          "readTargetRva": "0x2ca8bb0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "aniPosAddMinMax",
+          "encoding": "4f",
+          "typeName": "UnityEngine.Vector4",
+          "metadataFieldIndex": 223923,
+          "nativeOffset": 48,
+          "setterMethodIndex": 169424,
+          "setterRva": "0x5081330",
+          "readCallsiteRva": "0x399544a",
+          "readTargetRva": "0x2ca89c0",
+          "writeMode": "inline-vector-store"
+        },
+        {
+          "name": "aniPosAddV",
+          "encoding": "f",
+          "typeName": "float",
+          "metadataFieldIndex": 223926,
+          "nativeOffset": 76,
+          "setterMethodIndex": 169425,
+          "setterRva": "0x5081310",
+          "readCallsiteRva": "0x399546f",
+          "readTargetRva": "0x2ca8bb0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "aniPosScaleMinMax",
+          "encoding": "4f",
+          "typeName": "UnityEngine.Vector4",
+          "metadataFieldIndex": 223922,
+          "nativeOffset": 32,
+          "setterMethodIndex": 169426,
+          "setterRva": "0x5081370",
+          "readCallsiteRva": "0x39954a7",
+          "readTargetRva": "0x2ca89c0",
+          "writeMode": "inline-vector-store"
+        },
+        {
+          "name": "aniPosScaleV",
+          "encoding": "f",
+          "typeName": "float",
+          "metadataFieldIndex": 223925,
+          "nativeOffset": 72,
+          "setterMethodIndex": 169427,
+          "setterRva": "0x507e250",
+          "readCallsiteRva": "0x39954cc",
+          "readTargetRva": "0x2ca8bb0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "aniURange",
+          "encoding": "2f",
+          "typeName": "UnityEngine.Vector2",
+          "metadataFieldIndex": 223924,
+          "nativeOffset": 64,
+          "setterMethodIndex": 169428,
+          "setterRva": "0x96a96ec",
+          "readCallsiteRva": "0x39954f5",
+          "readTargetRva": "0x3d7e030",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "materialParam1",
+          "encoding": "I",
+          "typeName": "uint",
+          "metadataFieldIndex": 223930,
+          "nativeOffset": 92,
+          "setterMethodIndex": 169429,
+          "setterRva": "0x50806f4",
+          "readCallsiteRva": "0x3995517",
+          "readTargetRva": "0x2ca86b0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "materialType",
+          "encoding": "i",
+          "typeName": "int",
+          "metadataFieldIndex": 223929,
+          "nativeOffset": 88,
+          "setterMethodIndex": 169430,
+          "setterRva": "0x507feb0",
+          "readCallsiteRva": "0x3995538",
+          "readTargetRva": "0x2ca86b0",
+          "writeMode": "setter-call"
+        },
+        {
+          "name": "uv",
+          "encoding": "4f",
+          "typeName": "UnityEngine.Vector4",
+          "metadataFieldIndex": 223921,
+          "nativeOffset": 16,
+          "setterMethodIndex": 169431,
+          "setterRva": "0x507e698",
+          "readCallsiteRva": "0x399556f",
+          "readTargetRva": "0x2ca89c0",
+          "writeMode": "inline-vector-store"
+        }
+      ]
+    }
+  },
+  "codeWindows": [
+    {
+      "name": "Beyond.MemoryPack.Beyond_UI_GPUI_PrefabGroupSerializeDataForMemoryPack.Deserialize",
+      "rva": "0x4475f50",
+      "length": 419,
+      "sha256": "F7D5FAE773B17F19647612A0BF167937C6254908A1A100FFCA6CE2AEC6087AE5",
+      "boundary": "direct: contiguous generated-reader normal path and local initialization block; outlined error/refill execution is not certified",
+      "metadataMethodIndex": 169318
+    },
+    {
+      "name": "Beyond.MemoryPack.Beyond_UI_GPUI_PrefabSerializeDataForMemoryPack.Deserialize",
+      "rva": "0x4272aa0",
+      "length": 410,
+      "sha256": "F1D5E46507B9A20EFB00574F1ADFD0A6F36C3090F977700AC5E72E2140FCB6F4",
+      "boundary": "direct: contiguous generated-reader normal path and local initialization block; outlined error/refill execution is not certified",
+      "metadataMethodIndex": 169360
+    },
+    {
+      "name": "Beyond.MemoryPack.Beyond_UI_GPUI_AnimationSerializeDataForMemoryPack.Deserialize",
+      "rva": "0x43584f0",
+      "length": 332,
+      "sha256": "99B8D73E192C4F01AEC97EC2B3C018E18C087CE9172000ABF13866D20B8E6DEB",
+      "boundary": "direct: contiguous generated-reader normal path and local initialization block; outlined error/refill execution is not certified",
+      "metadataMethodIndex": 169392
+    },
+    {
+      "name": "Beyond.MemoryPack.Beyond_UI_GPUI_NodeMetadataForMemoryPack.Deserialize",
+      "rva": "0x3f31be0",
+      "length": 592,
+      "sha256": "06A23ADDEFD5ED1A17C3EB74F383160D928405BB74E53656A2B291C18C62A300",
+      "boundary": "direct: contiguous generated-reader normal path and local initialization block; outlined error/refill execution is not certified",
+      "metadataMethodIndex": 169414
+    },
+    {
+      "name": "Beyond.MemoryPack.Beyond_UI_GPUI_NodeSerializeDataForMemoryPack.Deserialize",
+      "rva": "0x3995390",
+      "length": 600,
+      "sha256": "34039B4DC6CD6B7A2589866B837372B88A168EFFD6AFCD80D500A1EC6DB613D3",
+      "boundary": "direct: contiguous generated-reader normal path and local initialization block; outlined error/refill execution is not certified",
+      "metadataMethodIndex": 169434
+    },
+    {
+      "name": "StringPathHash raw signed-int64 read",
+      "rva": "0x3ecc1e0",
+      "length": 82,
+      "sha256": "9CA310BDC4318EE8D9D01165E9F09BBBA04A3E906A8C2644BE06FD893BCD36DA",
+      "boundary": "direct: contiguous generated-reader normal path and local initialization block; outlined error/refill execution is not certified"
+    },
+    {
+      "name": "Vector2 raw two-float read",
+      "rva": "0x3d7e030",
+      "length": 106,
+      "sha256": "A25DDED95D130813A85763445C9C66E873EF4E46E8C0206E4DB8582D62496330",
+      "boundary": "direct: contiguous generated-reader normal path and local initialization block; outlined error/refill execution is not certified"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Current native-input hashes, original field types and offsets, generated wrapper member counts, and byte-pinned selected reader windows. All five record layouts are consumed sequentially through EOF.",
+    "direct": "Native normal-path read order joins each generated setter or inline Vector4 field store. Vector2 is two contiguous float32 values; Vector4 is four; StringPathHash stores its signed int64 hash.",
+    "structuralOnly": "Stored texture hashes and enum values are preserved without resolving live resources.",
+    "unresolved": "Runtime prefab selection, shader consumption, texture identity, GPU upload/buffer addressing, animation evaluation, and outlined allocation/refill execution remain separate evidence."
+  }
+}

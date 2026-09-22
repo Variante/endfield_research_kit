@@ -11,7 +11,16 @@ from __future__ import annotations
 import struct
 from typing import Any
 
-from scripts.game_data.memorypack.schemas import SKILL_MEMBER_COUNT
+from scripts.game_data.memorypack.core import MEMORYPACK_NULL_COUNT, read_memorypack_utf8_string
+from scripts.game_data.memorypack.buff import (
+    consume_buff_sequence_action_data,
+    read_buff_find_settings_exact,
+    read_buff_gameplay_tag_query_exact,
+    read_buff_target_settings_full,
+    read_skill_bool_field,
+    read_skill_buff_input_data,
+)
+from scripts.game_data.memorypack.schemas import MEMORYPACK_FIELD_SCHEMAS, SKILL_MEMBER_COUNT
 from scripts.game_data.memorypack.skill_terminal import TerminalError, frame_skill_terminal_at
 
 
@@ -22,6 +31,377 @@ SKILL_TERMINAL_SHAPE_NOTE = (
 
 
 SKILL_COMMON_PREFIX_MAX_RECORDS = 256
+
+
+def _skill_require_room(data: bytes, offset: int, width: int, limit: int, field_name: str) -> None:
+    if offset < 0 or width < 0 or offset + width > limit or limit > len(data):
+        raise ValueError(
+            f"{field_name}:truncated offset={offset} width={width} limit={limit} length={len(data)}"
+        )
+
+
+def _skill_read_u32(data: bytes, offset: int, limit: int, field_name: str) -> tuple[int, int]:
+    _skill_require_room(data, offset, 4, limit, field_name)
+    return struct.unpack_from("<I", data, offset)[0], offset + 4
+
+
+def _skill_read_i32(data: bytes, offset: int, limit: int, field_name: str) -> tuple[int, int]:
+    _skill_require_room(data, offset, 4, limit, field_name)
+    return struct.unpack_from("<i", data, offset)[0], offset + 4
+
+
+def _skill_read_f32(data: bytes, offset: int, limit: int, field_name: str) -> tuple[float, int]:
+    _skill_require_room(data, offset, 4, limit, field_name)
+    return struct.unpack_from("<f", data, offset)[0], offset + 4
+
+
+def _skill_read_f64(data: bytes, offset: int, limit: int, field_name: str) -> tuple[float, int]:
+    _skill_require_room(data, offset, 8, limit, field_name)
+    return struct.unpack_from("<d", data, offset)[0], offset + 8
+
+
+def _skill_read_bool(data: bytes, offset: int, limit: int, field_name: str) -> tuple[bool, int]:
+    _skill_require_room(data, offset, 1, limit, field_name)
+    return read_skill_bool_field(data, offset, field_name)
+
+
+def _skill_read_string(data: bytes, offset: int, limit: int, field_name: str) -> tuple[str | None, int]:
+    _skill_require_room(data, offset, 4, limit, field_name)
+    value, end, error = read_memorypack_utf8_string(data, offset, max_length=16_384)
+    if error:
+        raise ValueError(f"{field_name}:{error}")
+    if end > limit:
+        raise ValueError(f"{field_name}:past-limit end={end} limit={limit}")
+    return value, end
+
+
+def _skill_read_count(data: bytes, offset: int, limit: int, field_name: str, *, maximum: int = 512) -> tuple[int, int]:
+    raw, end = _skill_read_u32(data, offset, limit, field_name)
+    if raw == MEMORYPACK_NULL_COUNT:
+        return -1, end
+    if raw > maximum:
+        raise ValueError(f"{field_name}:count={raw} max={maximum}")
+    return raw, end
+
+
+def _skill_read_blackboard_float(data: bytes, offset: int, limit: int, field_name: str) -> int:
+    _skill_require_room(data, offset, 1, limit, field_name)
+    if data[offset] != 3:
+        raise ValueError(f"{field_name}:member-count={data[offset]}")
+    offset += 1
+    _value, offset = _skill_read_string(data, offset, limit, f"{field_name}.blackboardKey")
+    _value, offset = _skill_read_bool(data, offset, limit, f"{field_name}.useBlackboardKey")
+    _value, offset = _skill_read_f32(data, offset, limit, f"{field_name}.value")
+    return offset
+
+
+def _skill_read_blackboard_pairs(data: bytes, offset: int, limit: int) -> int:
+    count, offset = _skill_read_count(data, offset, limit, "blackboard.count", maximum=256)
+    for index in range(max(count, 0)):
+        _skill_require_room(data, offset, 1, limit, f"blackboard[{index}]")
+        if data[offset] != 4:
+            raise ValueError(f"blackboard[{index}]:member-count={data[offset]}")
+        offset += 1
+        _value, offset = _skill_read_bool(data, offset, limit, f"blackboard[{index}].isDynamic")
+        _value, offset = _skill_read_string(data, offset, limit, f"blackboard[{index}].key")
+        _value, offset = _skill_read_f64(data, offset, limit, f"blackboard[{index}].valueDouble")
+        _value, offset = _skill_read_string(data, offset, limit, f"blackboard[{index}].valueStr")
+    return offset
+
+
+def _skill_read_buff_inputs(data: bytes, offset: int, limit: int, field_name: str) -> int:
+    count, offset = _skill_read_count(data, offset, limit, f"{field_name}.count", maximum=256)
+    for index in range(max(count, 0)):
+        _decoded, offset = read_skill_buff_input_data(data, offset, index, field_name)
+        if offset > limit:
+            raise ValueError(f"{field_name}[{index}]:past-limit end={offset} limit={limit}")
+    return offset
+
+
+def _skill_read_attribute_modifier(data: bytes, offset: int, limit: int) -> int:
+    _skill_require_room(data, offset, 1, limit, "cardAttributeModifier")
+    if data[offset] == 0xFF:
+        return offset + 1
+    if data[offset] != 2:
+        raise ValueError(f"cardAttributeModifier:member-count={data[offset]}")
+    offset += 1
+    count, offset = _skill_read_count(
+        data, offset, limit, "cardAttributeModifier.attributeModifiers.count", maximum=256
+    )
+    for index in range(max(count, 0)):
+        name = f"cardAttributeModifier.attributeModifiers[{index}]"
+        _skill_require_room(data, offset, 1, limit, name)
+        if data[offset] != 4:
+            raise ValueError(f"{name}:member-count={data[offset]}")
+        offset += 1
+        for child in ("attributeType", "formulaItem", "modifyAttributeType"):
+            _value, offset = _skill_read_i32(data, offset, limit, f"{name}.{child}")
+        offset = _skill_read_blackboard_float(data, offset, limit, f"{name}.param")
+    _value, offset = _skill_read_bool(data, offset, limit, "cardAttributeModifier.isConvertedAttribute")
+    return offset
+
+
+def _skill_read_cast_data(data: bytes, offset: int, limit: int) -> int:
+    _skill_require_room(data, offset, 1, limit, "castData")
+    if data[offset] == 0xFF:
+        return offset + 1
+    if data[offset] != 11:
+        raise ValueError(f"castData:member-count={data[offset]}")
+    offset += 1
+    _value, offset = _skill_read_f32(data, offset, limit, "castData.castAngle")
+    offset = _skill_read_blackboard_float(data, offset, limit, "castData.castDistance")
+    _value, offset = _skill_read_i32(data, offset, limit, "castData.checkCastDistanceType")
+    _value, offset = _skill_read_bool(data, offset, limit, "castData.checkHeightDiff")
+    _value, offset = _skill_read_f32(data, offset, limit, "castData.cooldownTime")
+    _skill_require_room(data, offset, 1, limit, "castData.costData")
+    if data[offset] == 0xFF:
+        offset += 1
+    else:
+        if data[offset] != 3:
+            raise ValueError(f"castData.costData:member-count={data[offset]}")
+        offset += 1
+        _value, offset = _skill_read_f32(data, offset, limit, "castData.costData.atbValueThreshold")
+        _value, offset = _skill_read_i32(data, offset, limit, "castData.costData.costType")
+        _value, offset = _skill_read_f32(data, offset, limit, "castData.costData.costValue")
+    offset = _skill_read_blackboard_float(data, offset, limit, "castData.heightDiffLimit")
+    for child in ("maxChargeTime", "rotateType", "startCdFrame"):
+        _value, offset = _skill_read_i32(data, offset, limit, f"castData.{child}")
+    _value, offset = _skill_read_bool(data, offset, limit, "castData.useCustomCastDistance")
+    return offset
+
+
+def _skill_read_sequence(data: bytes, offset: int, limit: int, field_name: str) -> int:
+    _skill_require_room(data, offset, 1, limit, field_name)
+    if data[offset] == 0xFF:
+        return offset + 1
+    _decoded, end = consume_buff_sequence_action_data(data, offset, limit, field_name, 0)
+    if end > limit:
+        raise ValueError(f"{field_name}:past-limit end={end} limit={limit}")
+    return end
+
+
+def _skill_read_gameplay_tag_list(data: bytes, offset: int, limit: int, field_name: str) -> int:
+    _skill_require_room(data, offset, 1, limit, field_name)
+    if data[offset] == 0xFF:
+        return offset + 1
+    if data[offset] != 1:
+        raise ValueError(f"{field_name}:member-count={data[offset]}")
+    offset += 1
+    count, offset = _skill_read_count(data, offset, limit, f"{field_name}.predefinedTag.count", maximum=256)
+    for index in range(max(count, 0)):
+        name = f"{field_name}.predefinedTag[{index}]"
+        _skill_require_room(data, offset, 5, limit, name)
+        if data[offset] != 1:
+            raise ValueError(f"{name}:member-count={data[offset]}")
+        offset += 5
+    return offset
+
+
+def _skill_read_buff_id_list(data: bytes, offset: int, limit: int) -> int:
+    count, offset = _skill_read_count(data, offset, limit, "smartTargetBuffIds.count", maximum=256)
+    for index in range(max(count, 0)):
+        name = f"smartTargetBuffIds[{index}]"
+        _skill_require_room(data, offset, 1, limit, name)
+        if data[offset] != 1:
+            raise ValueError(f"{name}:member-count={data[offset]}")
+        offset += 1
+        _value, offset = _skill_read_string(data, offset, limit, f"{name}.buffId")
+    return offset
+
+
+def _skill_read_switch_to_buff_config(data: bytes, offset: int, limit: int) -> int:
+    _skill_require_room(data, offset, 1, limit, "switchToBuffConfig")
+    if data[offset] == 0xFF:
+        return offset + 1
+    if data[offset] != 5:
+        raise ValueError(f"switchToBuffConfig:member-count={data[offset]}")
+    offset += 1
+    _value, offset = _skill_read_bool(data, offset, limit, "switchToBuffConfig.asSkillCast")
+    offset = _skill_read_buff_inputs(data, offset, limit, "switchToBuffConfig.buffs")
+    _decoded, offset = read_buff_target_settings_full(
+        data, offset, limit, "switchToBuffConfig.buffSource", 0
+    )
+    if offset > limit:
+        raise ValueError(f"switchToBuffConfig.buffSource:past-limit end={offset} limit={limit}")
+    offset = _skill_read_sequence(data, offset, limit, "switchToBuffConfig.condition")
+    _decoded, offset = read_buff_target_settings_full(
+        data, offset, limit, "switchToBuffConfig.targets", 0
+    )
+    if offset > limit:
+        raise ValueError(f"switchToBuffConfig.targets:past-limit end={offset} limit={limit}")
+    return offset
+
+
+def _frame_skill_after_exact_action_group_profile(
+    data: bytes,
+    limit: int,
+    *,
+    action_group_end: int,
+    action_group_kind: str,
+) -> dict[str, Any]:
+    """Advance fields 1..42 after an independently exact field-0 endpoint."""
+    names = MEMORYPACK_FIELD_SCHEMAS["SkillData"]
+    fields: list[dict[str, Any]] = []
+    if (
+        type(action_group_end) is not int
+        or action_group_end <= 1
+        or limit <= action_group_end
+        or limit > len(data)
+    ):
+        return {"status": "not-applicable", "namedFields": fields, "parserCursor": 0}
+
+    def add(index: int, start: int, end: int, kind: str) -> None:
+        if not 0 <= start < end <= limit:
+            raise ValueError(f"field-{index}:invalid-range {start}:{end} limit={limit}")
+        fields.append({
+            "fieldIndex": index,
+            "fieldName": names[index],
+            "start": start,
+            "end": end,
+            "kind": kind,
+            "evidence": "current-wrapper-type-driven-candidate",
+        })
+
+    add(0, 1, action_group_end, action_group_kind)
+    offset = action_group_end
+    current_index = 1
+    try:
+        for current_index, kind, reader in (
+            (1, "int32", lambda o: _skill_read_i32(data, o, limit, names[1])[1]),
+            (2, "enum-int32", lambda o: _skill_read_i32(data, o, limit, names[2])[1]),
+            (3, "List<Blackboard.DataPair>", lambda o: _skill_read_blackboard_pairs(data, o, limit)),
+            (4, "BuffInputBase.null-union", lambda o: o + 1 if data[o] == 0xFF else (_ for _ in ()).throw(ValueError(f"{names[4]}:non-null-union"))),
+            (5, "List<BuffInput>", lambda o: _skill_read_buff_inputs(data, o, limit, names[5])),
+        ):
+            start = offset
+            offset = reader(offset)
+            add(current_index, start, offset, kind)
+        for current_index in range(6, 10):
+            start = offset
+            _value, offset = _skill_read_bool(data, offset, limit, names[current_index])
+            add(current_index, start, offset, "bool")
+        start = offset
+        offset = _skill_read_attribute_modifier(data, offset, limit)
+        add(10, start, offset, "AttributeModifierData")
+        start = offset
+        offset = _skill_read_cast_data(data, offset, limit)
+        add(11, start, offset, "CastData")
+        scalar_kinds = {
+            12: "enum-int32", 13: "bool", 14: "string", 15: "string", 16: "bool",
+            17: "Vector3", 18: "int32", 19: "int32", 20: "float32", 21: "enum-int32",
+            22: "string", 23: "int32", 24: "bool", 25: "bool", 26: "int32",
+            27: "bool", 28: "bool", 29: "enum-int32", 30: "bool", 31: "enum-int32",
+            32: "bool",
+        }
+        for current_index in range(12, 33):
+            start = offset
+            kind = scalar_kinds[current_index]
+            if kind in ("int32", "enum-int32"):
+                _value, offset = _skill_read_i32(data, offset, limit, names[current_index])
+            elif kind == "float32":
+                _value, offset = _skill_read_f32(data, offset, limit, names[current_index])
+            elif kind == "bool":
+                _value, offset = _skill_read_bool(data, offset, limit, names[current_index])
+            elif kind == "string":
+                _value, offset = _skill_read_string(data, offset, limit, names[current_index])
+            elif kind == "Vector3":
+                _skill_require_room(data, offset, 12, limit, names[current_index])
+                offset += 12
+            add(current_index, start, offset, kind)
+        start = offset
+        offset = _skill_read_sequence(data, offset, limit, names[33])
+        add(33, start, offset, "SequenceActionData")
+        for current_index, kind in ((34, "string"), (35, "string"), (36, "enum-int32")):
+            start = offset
+            if kind == "string":
+                _value, offset = _skill_read_string(data, offset, limit, names[current_index])
+            else:
+                _value, offset = _skill_read_i32(data, offset, limit, names[current_index])
+            add(current_index, start, offset, kind)
+        start = offset
+        offset = _skill_read_gameplay_tag_list(data, offset, limit, names[37])
+        add(37, start, offset, "GameplayTagList")
+        start = offset
+        _decoded, offset = read_buff_find_settings_exact(data, offset, limit, names[38])
+        add(38, start, offset, "BuffFindSettings")
+        start = offset
+        offset = _skill_read_buff_id_list(data, offset, limit)
+        add(39, start, offset, "List<BuffId>")
+        start = offset
+        _value, offset = _skill_read_i32(data, offset, limit, names[40])
+        add(40, start, offset, "enum-int32")
+        start = offset
+        _decoded, offset = read_buff_gameplay_tag_query_exact(data, offset, limit, names[41])
+        add(41, start, offset, "GameplayTagQuery")
+        current_index = 42
+        start = offset
+        offset = _skill_read_switch_to_buff_config(data, offset, limit)
+        add(42, start, offset, "SwitchToBuffConfig")
+    except (IndexError, KeyError, UnicodeDecodeError, ValueError, struct.error) as exc:
+        return {
+            "status": "stopped-at-unsupported-top-level-field",
+            "namedFields": fields,
+            "parserCursor": offset,
+            "completeThroughFieldIndex": fields[-1]["fieldIndex"] if fields else -1,
+            "stopFieldIndex": current_index,
+            "stopFieldName": names[current_index],
+            "stopReason": str(exc),
+            "hardLimit": limit,
+            "wholeSchemaExact": False,
+        }
+    return {
+        "status": "exact-through-field-42" if offset == limit else "stopped-before-terminal-start",
+        "namedFields": fields,
+        "parserCursor": offset,
+        "completeThroughFieldIndex": 42,
+        "hardLimit": limit,
+        "wholeSchemaExact": False,
+    }
+
+
+def frame_skill_empty_action_group_profile(data: bytes, limit: int) -> dict[str, Any]:
+    """Advance after the receipt-authenticated empty field-0 representation."""
+    if limit <= 10 or limit > len(data):
+        return {"status": "not-applicable", "namedFields": [], "parserCursor": 0}
+    if data[:10] != bytes((SKILL_MEMBER_COUNT, 2)) + bytes(8):
+        return {"status": "not-applicable", "namedFields": [], "parserCursor": 0}
+    return _frame_skill_after_exact_action_group_profile(
+        data,
+        limit,
+        action_group_end=10,
+        action_group_kind="ActionGroupData.empty-two-list-object",
+    )
+
+
+def frame_skill_exact_timeline_action_group_profile(
+    data: bytes,
+    limit: int,
+    *,
+    action_group_end: int,
+) -> dict[str, Any]:
+    """Advance after an exactly closed one-record ``timelineActions`` field.
+
+    The caller owns the nested TimelineActionData proof.  This entry point
+    rechecks only the enclosing SkillData/ActionGroupData headers and the
+    empty-passive, one-timeline list counts before using that exact endpoint.
+    """
+    if (
+        limit <= action_group_end
+        or action_group_end <= 10
+        or limit > len(data)
+        or len(data) < 10
+        or data[0] != SKILL_MEMBER_COUNT
+        or data[1] != 2
+        or struct.unpack_from("<i", data, 2)[0] != 0
+        or struct.unpack_from("<i", data, 6)[0] != 1
+    ):
+        return {"status": "not-applicable", "namedFields": [], "parserCursor": 0}
+    return _frame_skill_after_exact_action_group_profile(
+        data,
+        limit,
+        action_group_end=action_group_end,
+        action_group_kind="ActionGroupData.exact-one-timeline-action-object",
+    )
 
 
 def _read_prefix_u32(data: bytes, offset: int, label: str) -> tuple[int, int]:

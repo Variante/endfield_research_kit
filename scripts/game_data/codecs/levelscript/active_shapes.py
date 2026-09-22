@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import math
+import struct
 from typing import Any
 from scripts.game_data.codecs.levelscript.primitives import u32 as _u32
 from scripts.game_data.codecs.levelscript.primitives import f32 as _f32
@@ -15,11 +16,11 @@ SHAPE_TYPE_NAMES = {
 }
 
 END_TYPE_NAMES = {
-    0: "Auto",
-    1: "ByExitStartShape",
-    2: "Manual",
-    3: "SameWithDeactive",
-    4: "Never",
+    -1: "Auto",
+    0: "ByExitStartShape",
+    1: "Manual",
+    2: "SameWithDeactive",
+    3: "Never",
 }
 
 
@@ -174,7 +175,7 @@ def find_active_shape_candidates(
         ):
             continue
         scalar_flags = list(data[cursor : cursor + 3])
-        end_type_raw = _u32(data, cursor + 3)
+        end_type_raw = struct.unpack_from("<i", data, cursor + 3)[0]
         if (
             any(value not in (0, 1) for value in scalar_flags)
             or end_type_raw not in END_TYPE_NAMES

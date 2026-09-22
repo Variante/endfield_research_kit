@@ -1,0 +1,81 @@
+{
+  "schema": "endfield.skill-timeline-create-buff-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "inputSetSha256": "0F1275C5FE9FEB3C0BAA801A49D37405CB3BA0C5BCD8A0A4160C48758283C497",
+  "dependencies": [
+    {
+      "path": "buff_92_native.json",
+      "sha256": "D3FE6B7AA5D8BF2B03F670946706F318D091CBC05D9E92982B82D8F96231D26A",
+      "role": "member19 source reads and nested BuffIconDurationSourceSetting, CreateBuffActionInput, BlackboardDouble, string-list and TargetSettings readers"
+    }
+  ],
+  "dispatcher": {
+    "unionTag": 146,
+    "encodingHex": "92",
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59824728,
+    "routeWindow": {
+      "startRva": 59824728,
+      "endRva": 59824778,
+      "sha256": "BC6096396E88D15FBFB3DA9DFF667F314D5DAE871A16C76009C5B60020D910AC"
+    },
+    "usageCellRva": 218730912,
+    "usageRawHex": "5340032000000000",
+    "registeredTypeIndex": 106537,
+    "wrapperTypeDefinition": 16047,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateBuffAction_DataForMemoryPack"
+  },
+  "wrapper": {
+    "typeDefinition": 16047,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateBuffAction_DataForMemoryPack",
+    "parentTypeDefinition": 14293,
+    "parentTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+    "serializedMemberCount": 19,
+    "setterMethods": [
+      [119693, "set___asChildBuff__", 108357, "System.Boolean"],
+      [119694, "set___autoFinishByAction__", 108357, "System.Boolean"],
+      [119695, "set___buffIconDurationSource__", 108539, "Beyond.Gameplay.Core.BuffIconDurationSourceSetting"],
+      [119696, "set___buffs__", 57410, "List<CreateBuffActionInput>"],
+      [119697, "set___buffSource__", 100302, "Beyond.Gameplay.ActionTargetType"],
+      [119698, "set___contextKey__", 143273, "System.String"],
+      [119699, "set___count__", 157499, "Beyond.Blackboard+BlackboardDouble"],
+      [119700, "set___finishWithNextSkillIfNotInherited__", 108357, "System.Boolean"],
+      [119701, "set___inheritSkillIdList__", 58896, "List<System.String>"],
+      [119702, "set___inheritSourceSkillCastId__", 108357, "System.Boolean"],
+      [119703, "set___inheritSourceSkillCastInfo__", 108357, "System.Boolean"],
+      [119704, "set___isExtra__", 108357, "System.Boolean"],
+      [119705, "set___overrideBuffIconDuration__", 108357, "System.Boolean"],
+      [119706, "set___passTargetGroupsToBuff__", 108357, "System.Boolean"],
+      [119707, "set___targetSettings__", 144125, "Beyond.Gameplay.Core.TargetSettings"]
+    ],
+    "selectedReadOrder": [
+      "asChildBuff",
+      "autoFinishByAction",
+      "buffIconDurationSource",
+      "buffs",
+      "buffSource",
+      "contextKey",
+      "count",
+      "finishWithNextSkillIfNotInherited",
+      "inheritSkillIdList",
+      "inheritSourceSkillCastId",
+      "inheritSourceSkillCastInfo",
+      "isExtra",
+      "overrideBuffIconDuration",
+      "passTargetGroupsToBuff",
+      "targetSettings"
+    ]
+  },
+  "evidenceBoundary": {
+    "exact": "The pinned current dispatcher maps physical tag 0x0092 to the named member19 CreateBuffAction wrapper; the dependency pins every selected root and nested reader byte window.",
+    "direct": "The generated setters name the fifteen members following the inherited AbilityActionData four-member prefix in the dependency's direct source-read order.",
+    "structuralOnly": "Nested lists and selector objects retain the dependency's exact structural boundary; strings remain signed-length byte payloads and no gameplay behavior is inferred."
+  }
+}

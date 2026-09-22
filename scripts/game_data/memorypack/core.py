@@ -3,7 +3,13 @@
 from __future__ import annotations
 
 import struct
+from pathlib import Path
 from typing import Any
+
+from scripts.repo_paths import REPO_ROOT
+
+# Reviewed MemoryPack contract JSON lives beside the readers' parent package.
+CONTRACTS_DIR: Path = REPO_ROOT / "scripts" / "game_data"
 
 MEMORYPACK_NULL_COUNT = 0xFFFFFFFF
 MEMORYPACK_UNION_WIDE_TAG = 0xFA
@@ -141,3 +147,64 @@ def require_memorypack_non_null_string(
     if value is None:
         raise ValueError(f"{field_name}:null-string")
     return value, offset
+
+
+class LabelledReader:
+    """Bounds-checked cursor over one MemoryPack payload window.
+
+    Every read records its byte range and fails with the owning decoder's
+    ``LABEL`` prefix, so a contract's diagnostics name the decoder that
+    stopped.  Subclass with ``LABEL`` set; the shape is shared by the
+    first-timeline SkillData decoders.
+    """
+
+    LABEL = "memorypack"
+
+    def __init__(self, data: bytes, limit: int, start: int = 0):
+        if type(limit) is not int or type(start) is not int or not 0 <= start <= limit <= len(data):
+            raise ValueError(f"{self.LABEL}.reader:invalid-bounds start={start} limit={limit}")
+        self.data = data
+        self.limit = limit
+        self.pos = start
+        self.ranges: list[dict[str, Any]] = []
+
+    def need(self, width: int, name: str) -> None:
+        if width < 0 or self.pos + width > self.limit:
+            raise ValueError(f"{self.LABEL}.{name}:truncated offset={self.pos} width={width}")
+
+    def raw(self, width: int, name: str) -> bytes:
+        self.need(width, name)
+        start = self.pos
+        self.pos += width
+        if width:
+            self.ranges.append({"name": name, "start": start, "end": self.pos})
+        return self.data[start:self.pos]
+
+    def header(self, expected: int, name: str) -> int:
+        value = self.raw(1, name)[0]
+        if value != expected:
+            raise ValueError(f"{self.LABEL}.{name}:member-count={value} expected={expected}")
+        return value
+
+    def i32(self, name: str) -> int:
+        return struct.unpack("<i", self.raw(4, name))[0]
+
+    def f32(self, name: str) -> float:
+        return struct.unpack("<f", self.raw(4, name))[0]
+
+    def boolean(self, name: str) -> bool:
+        value = self.raw(1, name)[0]
+        if value not in (0, 1):
+            raise ValueError(f"{self.LABEL}.{name}:bool={value}")
+        return bool(value)
+
+    def string(self, name: str) -> str | None:
+        length = self.i32(f"{name}.length")
+        if length == -1:
+            return None
+        if not 0 <= length <= 16_384:
+            raise ValueError(f"{self.LABEL}.{name}:length={length}")
+        try:
+            return self.raw(length, f"{name}.bytes").decode("utf-8")
+        except UnicodeDecodeError as exc:
+            raise ValueError(f"{self.LABEL}.{name}:utf8") from exc

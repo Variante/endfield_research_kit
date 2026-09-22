@@ -1,9 +1,10 @@
 """Fail-closed framing for current ``NPC/MontageJson/MontageNew`` payloads.
 
 The selected build uses a compact MemoryPack object with three top-level
-members and a 24-member montage record. Both observed variable collections are
-count-framed. Nested values remain anonymous: metadata names alone do not
-establish their serialized field order.
+members and a 24-member montage record. The current generated formatter setter
+order names both objects and their nested ``AnimClipInfo``, ``DynamicEntity``,
+``EventInfo``, extra-effect, and transition-override records. Both variable
+collections are count-framed and the complete current shape closes at EOF.
 """
 
 from __future__ import annotations
@@ -25,13 +26,69 @@ NPC_MONTAGE_MEMBER3_INNER_RECORD_MEMBER_COUNT = 4
 NPC_MONTAGE_MEMBER18_RECORD_MEMBER_COUNT = 5
 NPC_MONTAGE_RELATIVE_PREFIX = "Data/Json/NPC/MontageJson/MontageNew/"
 
+NPC_MONTAGE_ROOT_FIELDS = ("animType", "data", "tag")
+NPC_MONTAGE_DATA_FIELDS = (
+    "bIsCloseLookAt",
+    "bIsCloseSkeletalMorph",
+    "clipInfo",
+    "dynamicEntities",
+    "enableDialogLookAt",
+    "enableHitAnim",
+    "endClipAsyncInfo",
+    "endLookAt",
+    "endLookAtBodySmoothTime",
+    "endLookAtEyeSmoothTime",
+    "endLookAtPercent",
+    "frameRate",
+    "gpuMountPointDataPathHash",
+    "gpuMountPointTrackGuid",
+    "interruptPercent",
+    "loopClipAsyncInfo",
+    "maskType",
+    "montageFadeInTransition",
+    "montageOverrideTransitions",
+    "montageStartType",
+    "rootMotionDistance",
+    "startClipAsyncInfo",
+    "textureGuid",
+    "textureHashPath",
+)
+ANIM_CLIP_INFO_FIELDS = (
+    "duration",
+    "gpuAnimType",
+    "gpuMountPointDataPathHash",
+    "guid",
+    "name",
+    "normalizedFrameCount",
+    "normalizedOffset",
+)
+DYNAMIC_ENTITY_FIELDS = (
+    "effectPath",
+    "eventHide",
+    "eventShow",
+    "eventStr",
+    "extraEffects",
+    "hideAccName",
+    "isLoop",
+    "mountPoint",
+    "prefabGuid",
+    "prefabPathHash",
+    "syncAnimatorWithOwner",
+    "type",
+)
+TRANSITION_OVERRIDE_FIELDS = (
+    "from",
+    "to",
+    "transistionOffset",
+    "transitionDuration",
+    "transitionExitTime",
+)
+
 _GUID_PROXY_SIZE = 16
 _ASYNC_CLIP_INFO_SIZE = 36
 _TRANSITION_INFO_SIZE = 32
 _MEMBER3_RECORD_FIXED_PREFIX_SIZE = 10
 _MEMBER3_NESTED_OBJECT_BODY_SIZE = 9
-_MEMBER3_INNER_RECORD_FIXED_SIZE = 20
-_MEMBER3_RECORD_FIXED_SUFFIX_SIZE = 38
 _MEMBER3_MIN_RECORD_SIZE = 71
 _MEMBER3_MIN_INNER_RECORD_SIZE = 33
 _POST_MEMBER3_MIN_SUFFIX_SIZE = 231
@@ -66,6 +123,9 @@ class _Reader:
 
     def i32(self, field: str) -> int:
         return struct.unpack_from("<i", self.data, self.require(4, field))[0]
+
+    def i64(self, field: str) -> int:
+        return struct.unpack_from("<q", self.data, self.require(8, field))[0]
 
     def u32(self, field: str) -> int:
         return struct.unpack_from("<I", self.data, self.require(4, field))[0]
@@ -109,7 +169,7 @@ def _read_clip_info(reader: _Reader) -> dict[str, Any]:
             "memberCount": None,
             "startOffset": start,
             "endOffset": reader.offset,
-            "anonymousUtf8": None,
+            "name": None,
         }
     if member_count != NPC_MONTAGE_CLIP_INFO_MEMBER_COUNT:
         raise NpcMontageFramingError(
@@ -117,46 +177,51 @@ def _read_clip_info(reader: _Reader) -> dict[str, Any]:
             f"expected={NPC_MONTAGE_CLIP_INFO_MEMBER_COUNT} actual={member_count}"
         )
 
-    # The seven-member record has an exact current-corpus frame. Metadata
-    # suggests that its UTF-8 value may be a clip name, but setter order alone
-    # does not establish the serialized cursor. Keep the value anonymous while
-    # retaining the current corpus's non-empty A_* prefix as a fail-closed gate.
-    reader.f32("data.member2.member0")
-    reader.i32("data.member2.member1")
-    reader.skip(8, "data.member2.member2")
-    reader.skip(_GUID_PROXY_SIZE, "data.member2.member3")
+    duration = reader.f32("data.clipInfo.duration")
+    gpu_anim_type = reader.i32("data.clipInfo.gpuAnimType")
+    gpu_mount_point_data_path_hash = reader.i64(
+        "data.clipInfo.gpuMountPointDataPathHash"
+    )
+    guid_range = reader.skip(_GUID_PROXY_SIZE, "data.clipInfo.guid")
     string_offset = reader.offset
-    length = reader.u32("data.member2.anonymousUtf8.length")
-    anonymous_utf8: str | None
+    length = reader.u32("data.clipInfo.name.length")
+    name: str | None
     if length == MEMORYPACK_NULL_COUNT:
-        anonymous_utf8 = None
+        name = None
     else:
         if length > _MAX_ANONYMOUS_UTF8_BYTES:
             raise NpcMontageFramingError(
-                f"data.member2.anonymousUtf8:invalid-length={length}"
+                f"data.clipInfo.name:invalid-length={length}"
             )
-        raw_offset = reader.require(length, "data.member2.anonymousUtf8.bytes")
+        raw_offset = reader.require(length, "data.clipInfo.name.bytes")
         try:
-            anonymous_utf8 = reader.data[raw_offset:reader.offset].decode("utf-8")
+            name = reader.data[raw_offset:reader.offset].decode("utf-8")
         except UnicodeDecodeError as exc:
             raise NpcMontageFramingError(
-                "data.member2.anonymousUtf8:invalid-utf8 "
+                "data.clipInfo.name:invalid-utf8 "
                 f"offset={format_offset(raw_offset)}"
             ) from exc
-        if anonymous_utf8 and not anonymous_utf8.startswith("A_"):
+        if name and not name.startswith("A_"):
             raise NpcMontageFramingError(
-                "data.member2.anonymousUtf8:unexpected-current-prefix="
-                f"{anonymous_utf8[:32]!r}"
+                "data.clipInfo.name:unexpected-current-prefix="
+                f"{name[:32]!r}"
             )
-    reader.f32("data.member2.member5")
-    reader.f32("data.member2.member6")
+    normalized_frame_count = reader.f32("data.clipInfo.normalizedFrameCount")
+    normalized_offset = reader.f32("data.clipInfo.normalizedOffset")
     return {
         "isNull": False,
         "memberCount": member_count,
         "startOffset": start,
         "endOffset": reader.offset,
-        "anonymousUtf8Offset": string_offset,
-        "anonymousUtf8": anonymous_utf8,
+        "fieldOrder": list(ANIM_CLIP_INFO_FIELDS),
+        "duration": duration,
+        "gpuAnimType": gpu_anim_type,
+        "gpuMountPointDataPathHash": gpu_mount_point_data_path_hash,
+        "guidRange": guid_range,
+        "nameOffset": string_offset,
+        "name": name,
+        "normalizedFrameCount": normalized_frame_count,
+        "normalizedOffset": normalized_offset,
     }
 
 
@@ -178,16 +243,28 @@ def _read_member18_records(reader: _Reader, count: int) -> list[dict[str, Any]]:
                 f"expected={NPC_MONTAGE_MEMBER18_RECORD_MEMBER_COUNT} "
                 f"actual={member_count}"
             )
-        body_range = reader.skip(
-            _MEMBER18_RECORD_BODY_SIZE,
-            f"data.member18[{index}].anonymousBody",
+        from_state = reader.i32(f"data.montageOverrideTransitions[{index}].from")
+        to_state = reader.i32(f"data.montageOverrideTransitions[{index}].to")
+        transition_offset = reader.f32(
+            f"data.montageOverrideTransitions[{index}].transistionOffset"
+        )
+        transition_duration = reader.f32(
+            f"data.montageOverrideTransitions[{index}].transitionDuration"
+        )
+        transition_exit_time = reader.f32(
+            f"data.montageOverrideTransitions[{index}].transitionExitTime"
         )
         records.append(
             {
                 "memberCount": member_count,
                 "startOffset": start,
                 "endOffset": reader.offset,
-                "anonymousBodyRange": body_range,
+                "fieldOrder": list(TRANSITION_OVERRIDE_FIELDS),
+                "from": from_state,
+                "to": to_state,
+                "transistionOffset": transition_offset,
+                "transitionDuration": transition_duration,
+                "transitionExitTime": transition_exit_time,
             }
         )
     return records
@@ -207,7 +284,7 @@ def _read_anonymous_utf8(reader: _Reader, field: str) -> dict[str, Any]:
         raise NpcMontageFramingError(f"{field}:invalid-length={length}")
     raw_offset = reader.require(length, f"{field}.bytes")
     try:
-        reader.data[raw_offset:reader.offset].decode("utf-8")
+        value = reader.data[raw_offset:reader.offset].decode("utf-8")
     except UnicodeDecodeError as exc:
         raise NpcMontageFramingError(
             f"{field}:invalid-utf8 offset={format_offset(raw_offset)}"
@@ -217,6 +294,93 @@ def _read_anonymous_utf8(reader: _Reader, field: str) -> dict[str, Any]:
         "endOffset": reader.offset,
         "byteLength": length,
         "isNull": False,
+        "value": value,
+    }
+
+
+def _read_event_info(reader: _Reader, field: str) -> dict[str, Any]:
+    start = reader.offset
+    member_count = reader.u8(f"{field}.memberCount")
+    if member_count != NPC_MONTAGE_MEMBER3_NESTED_OBJECT_MEMBER_COUNT:
+        raise NpcMontageFramingError(
+            f"{field}.memberCount:"
+            f"expected={NPC_MONTAGE_MEMBER3_NESTED_OBJECT_MEMBER_COUNT} "
+            f"actual={member_count}"
+        )
+    state_type = reader.i32(f"{field}.stateType")
+    time = reader.f32(f"{field}.time")
+    trigger = reader.boolean(f"{field}.trigger")
+    return {
+        "memberCount": member_count,
+        "startOffset": start,
+        "endOffset": reader.offset,
+        "fieldOrder": ["stateType", "time", "trigger"],
+        "stateType": state_type,
+        "time": time,
+        "trigger": trigger,
+    }
+
+
+def _read_vector3(reader: _Reader, field: str) -> dict[str, Any]:
+    start = reader.offset
+    values = (
+        reader.f32(f"{field}.x"),
+        reader.f32(f"{field}.y"),
+        reader.f32(f"{field}.z"),
+    )
+    return {
+        "startOffset": start,
+        "endOffset": reader.offset,
+        "x": values[0],
+        "y": values[1],
+        "z": values[2],
+    }
+
+
+def _read_animation_clip_async_info(reader: _Reader, field: str) -> dict[str, Any]:
+    """Decode the fixed 36-byte current ``AnimationClipAsyncInfo`` value."""
+    start = reader.require(_ASYNC_CLIP_INFO_SIZE, field)
+    raw = reader.data[start:reader.offset]
+    floats = struct.unpack_from("<fffff", raw, 8)
+    if not all(math.isfinite(value) for value in floats):
+        raise NpcMontageFramingError(f"{field}:non-finite")
+    if raw[32] not in (0, 1) or raw[33] not in (0, 1):
+        raise NpcMontageFramingError(f"{field}:invalid-bool")
+    return {
+        "startOffset": start,
+        "endOffset": reader.offset,
+        "montagePathHash": struct.unpack_from("<q", raw, 0)[0],
+        "length": floats[0],
+        "framerate": floats[1],
+        "averageSpeed": {"x": floats[2], "y": floats[3], "z": floats[4]},
+        "averageAngularSpeed": struct.unpack_from("<f", raw, 28)[0],
+        "isHumanoid": bool(raw[32]),
+        "isLooping": bool(raw[33]),
+        "paddingHex": raw[34:36].hex(),
+    }
+
+
+def _read_transition_info(reader: _Reader, field: str) -> dict[str, Any]:
+    """Decode the fixed 32-byte current ``FMontageTransitionInfo`` value."""
+    start = reader.require(_TRANSITION_INFO_SIZE, field)
+    raw = reader.data[start:reader.offset]
+    if raw[0] not in (0, 1):
+        raise NpcMontageFramingError(f"{field}:invalid-bool={raw[0]}")
+    values = struct.unpack_from("<fffffff", raw, 4)
+    if not all(math.isfinite(value) for value in values):
+        raise NpcMontageFramingError(f"{field}:non-finite")
+    return {
+        "startOffset": start,
+        "endOffset": reader.offset,
+        "bIsFixedTransitionTime": bool(raw[0]),
+        "paddingHex": raw[1:4].hex(),
+        "transistionOffset": values[0],
+        "transitionDuration": values[1],
+        "transitionTime": values[2],
+        "fixedTime": values[3],
+        "fixedTransitionDuration": values[4],
+        "normalizedTransitionTime": values[5],
+        "exitTime": values[6],
     }
 
 
@@ -239,93 +403,108 @@ def _read_member3_records(reader: _Reader, count: int) -> list[dict[str, Any]]:
                 f"expected={NPC_MONTAGE_MEMBER3_RECORD_MEMBER_COUNT} "
                 f"actual={member_count}"
             )
-        anonymous_utf8_a = _read_anonymous_utf8(
-            reader, f"data.member3[{index}].anonymousUtf8A"
+        effect_path = _read_anonymous_utf8(
+            reader, f"data.dynamicEntities[{index}].effectPath"
         )
-        fixed_prefix = reader.skip(
-            _MEMBER3_RECORD_FIXED_PREFIX_SIZE,
-            f"data.member3[{index}].anonymousFixedPrefix",
+        event_hide = _read_event_info(
+            reader, f"data.dynamicEntities[{index}].eventHide"
         )
-        nested_member_count = reader.u8(
-            f"data.member3[{index}].nestedObject.memberCount"
+        event_show = _read_event_info(
+            reader, f"data.dynamicEntities[{index}].eventShow"
         )
-        if nested_member_count != NPC_MONTAGE_MEMBER3_NESTED_OBJECT_MEMBER_COUNT:
-            raise NpcMontageFramingError(
-                f"data.member3[{index}].nestedObject.memberCount:"
-                f"expected={NPC_MONTAGE_MEMBER3_NESTED_OBJECT_MEMBER_COUNT} "
-                f"actual={nested_member_count}"
-            )
-        nested_body = reader.skip(
-            _MEMBER3_NESTED_OBJECT_BODY_SIZE,
-            f"data.member3[{index}].nestedObject.anonymousBody",
-        )
-        anonymous_utf8_b = _read_anonymous_utf8(
-            reader, f"data.member3[{index}].anonymousUtf8B"
+        event_string = _read_anonymous_utf8(
+            reader, f"data.dynamicEntities[{index}].eventStr"
         )
         inner_count_offset = reader.offset
-        inner_count = reader.u32(f"data.member3[{index}].inner.count")
+        inner_count = reader.u32(f"data.dynamicEntities[{index}].extraEffects.count")
         if inner_count > (
             len(reader.data) - reader.offset
         ) // _MEMBER3_MIN_INNER_RECORD_SIZE:
             raise NpcMontageFramingError(
-                f"data.member3[{index}].inner:count-overrun "
+                f"data.dynamicEntities[{index}].extraEffects:count-overrun "
                 f"count={inner_count} remaining={len(reader.data) - reader.offset}"
             )
         inner_records: list[dict[str, Any]] = []
         for inner_index in range(inner_count):
             inner_start = reader.offset
             inner_member_count = reader.u8(
-                f"data.member3[{index}].inner[{inner_index}].memberCount"
+                f"data.dynamicEntities[{index}].extraEffects[{inner_index}].memberCount"
             )
             if inner_member_count != NPC_MONTAGE_MEMBER3_INNER_RECORD_MEMBER_COUNT:
                 raise NpcMontageFramingError(
-                    f"data.member3[{index}].inner[{inner_index}].memberCount:"
+                    f"data.dynamicEntities[{index}].extraEffects[{inner_index}].memberCount:"
                     f"expected={NPC_MONTAGE_MEMBER3_INNER_RECORD_MEMBER_COUNT} "
                     f"actual={inner_member_count}"
                 )
-            inner_utf8_a = _read_anonymous_utf8(
+            inner_effect_path = _read_anonymous_utf8(
                 reader,
-                f"data.member3[{index}].inner[{inner_index}].anonymousUtf8A",
+                f"data.dynamicEntities[{index}].extraEffects[{inner_index}].effectPath",
             )
-            inner_fixed = reader.skip(
-                _MEMBER3_INNER_RECORD_FIXED_SIZE,
-                f"data.member3[{index}].inner[{inner_index}].anonymousFixed",
-            )
-            inner_utf8_b = _read_anonymous_utf8(
+            local_euler_angles = _read_vector3(
                 reader,
-                f"data.member3[{index}].inner[{inner_index}].anonymousUtf8B",
+                f"data.dynamicEntities[{index}].extraEffects[{inner_index}]."
+                "localEulerAngles",
             )
-            inner_utf8_c = _read_anonymous_utf8(
+            local_position = _read_vector3(
                 reader,
-                f"data.member3[{index}].inner[{inner_index}].anonymousUtf8C",
+                f"data.dynamicEntities[{index}].extraEffects[{inner_index}]."
+                "localPosition",
+            )
+            mount_node_path = _read_anonymous_utf8(
+                reader,
+                f"data.dynamicEntities[{index}].extraEffects[{inner_index}].mountNodePath",
             )
             inner_records.append(
                 {
                     "memberCount": inner_member_count,
                     "startOffset": inner_start,
                     "endOffset": reader.offset,
-                    "anonymousUtf8Ranges": [
-                        inner_utf8_a,
-                        inner_utf8_b,
-                        inner_utf8_c,
+                    "fieldOrder": [
+                        "effectPath",
+                        "localEulerAngles",
+                        "localPosition",
+                        "mountNodePath",
                     ],
-                    "anonymousFixedRange": inner_fixed,
+                    "effectPath": inner_effect_path,
+                    "localEulerAngles": local_euler_angles,
+                    "localPosition": local_position,
+                    "mountNodePath": mount_node_path,
                 }
             )
-        fixed_suffix = reader.skip(
-            _MEMBER3_RECORD_FIXED_SUFFIX_SIZE,
-            f"data.member3[{index}].anonymousFixedSuffix",
+        hide_acc_name = _read_anonymous_utf8(
+            reader, f"data.dynamicEntities[{index}].hideAccName"
         )
+        is_loop = reader.boolean(f"data.dynamicEntities[{index}].isLoop")
+        mount_point = reader.i32(f"data.dynamicEntities[{index}].mountPoint")
+        prefab_guid = reader.skip(
+            _GUID_PROXY_SIZE, f"data.dynamicEntities[{index}].prefabGuid"
+        )
+        prefab_path_hash = reader.i64(
+            f"data.dynamicEntities[{index}].prefabPathHash"
+        )
+        sync_animator_with_owner = reader.boolean(
+            f"data.dynamicEntities[{index}].syncAnimatorWithOwner"
+        )
+        entity_type = reader.i32(f"data.dynamicEntities[{index}].type")
         records.append(
             {
                 "memberCount": member_count,
                 "startOffset": start,
                 "endOffset": reader.offset,
-                "nestedObjectMemberCount": nested_member_count,
-                "anonymousUtf8Ranges": [anonymous_utf8_a, anonymous_utf8_b],
-                "anonymousFixedRanges": [fixed_prefix, nested_body, fixed_suffix],
-                "innerCountOffset": inner_count_offset,
-                "innerRecords": inner_records,
+                "fieldOrder": list(DYNAMIC_ENTITY_FIELDS),
+                "effectPath": effect_path,
+                "eventHide": event_hide,
+                "eventShow": event_show,
+                "eventStr": event_string,
+                "extraEffectsCountOffset": inner_count_offset,
+                "extraEffects": inner_records,
+                "hideAccName": hide_acc_name,
+                "isLoop": is_loop,
+                "mountPoint": mount_point,
+                "prefabGuidRange": prefab_guid,
+                "prefabPathHash": prefab_path_hash,
+                "syncAnimatorWithOwner": sync_animator_with_owner,
+                "type": entity_type,
             }
         )
     return records
@@ -345,7 +524,7 @@ def frame_npc_montage(data: bytes) -> dict[str, Any]:
             f"root.memberCount:expected={NPC_MONTAGE_ROOT_MEMBER_COUNT} actual={root_count}"
         )
 
-    root_member0 = reader.i32("root.member0")
+    anim_type = reader.i32("root.animType")
     data_count = reader.u8("root.member1.memberCount")
     if data_count != NPC_MONTAGE_DATA_MEMBER_COUNT:
         raise NpcMontageFramingError(
@@ -353,51 +532,49 @@ def frame_npc_montage(data: bytes) -> dict[str, Any]:
             f"actual={data_count}"
         )
 
-    reader.boolean("data.member0")
-    reader.boolean("data.member1")
+    b_is_close_look_at = reader.boolean("data.bIsCloseLookAt")
+    b_is_close_skeletal_morph = reader.boolean("data.bIsCloseSkeletalMorph")
     clip_info = _read_clip_info(reader)
 
     dynamic_count_offset = reader.offset
     dynamic_count = reader.u32("data.member3.count")
     member3_records = _read_member3_records(reader, dynamic_count)
-    reader.boolean("data.member4")
-    reader.boolean("data.member5")
-    anonymous_ranges = [
-        reader.skip(_ASYNC_CLIP_INFO_SIZE, "data.member6"),
-    ]
-    reader.boolean("data.member7")
-    reader.f32("data.member8")
-    reader.f32("data.member9")
-    reader.i32("data.member10")
-    reader.i32("data.member11")
-    anonymous_ranges.extend([
-        reader.skip(8, "data.member12"),
-        reader.skip(_GUID_PROXY_SIZE, "data.member13"),
-    ])
-    reader.f32("data.member14")
-    anonymous_ranges.append(
-        reader.skip(_ASYNC_CLIP_INFO_SIZE, "data.member15")
+    enable_dialog_look_at = reader.boolean("data.enableDialogLookAt")
+    enable_hit_anim = reader.boolean("data.enableHitAnim")
+    end_clip_async_info = _read_animation_clip_async_info(
+        reader, "data.endClipAsyncInfo"
     )
-    reader.i32("data.member16")
-    anonymous_ranges.append(
-        reader.skip(_TRANSITION_INFO_SIZE, "data.member17")
+    end_look_at = reader.boolean("data.endLookAt")
+    end_look_at_body_smooth_time = reader.f32("data.endLookAtBodySmoothTime")
+    end_look_at_eye_smooth_time = reader.f32("data.endLookAtEyeSmoothTime")
+    end_look_at_percent = reader.i32("data.endLookAtPercent")
+    frame_rate = reader.i32("data.frameRate")
+    gpu_mount_point_data_path_hash = reader.i64("data.gpuMountPointDataPathHash")
+    gpu_mount_point_track_guid = reader.skip(
+        _GUID_PROXY_SIZE, "data.gpuMountPointTrackGuid"
+    )
+    interrupt_percent = reader.f32("data.interruptPercent")
+    loop_clip_async_info = _read_animation_clip_async_info(
+        reader, "data.loopClipAsyncInfo"
+    )
+    mask_type = reader.i32("data.maskType")
+    montage_fade_in_transition = _read_transition_info(
+        reader, "data.montageFadeInTransition"
     )
 
     override_count_offset = reader.offset
     override_count = reader.u32("data.member18.count")
     member18_records = _read_member18_records(reader, override_count)
-    reader.i32("data.member19")
-    reader.f32("data.member20")
-    anonymous_ranges.append(
-        reader.skip(_ASYNC_CLIP_INFO_SIZE, "data.member21")
+    montage_start_type = reader.i32("data.montageStartType")
+    root_motion_distance = reader.f32("data.rootMotionDistance")
+    start_clip_async_info = _read_animation_clip_async_info(
+        reader, "data.startClipAsyncInfo"
     )
-    anonymous_ranges.extend([
-        reader.skip(_GUID_PROXY_SIZE, "data.member22"),
-        reader.skip(8, "data.member23"),
-    ])
+    texture_guid = reader.skip(_GUID_PROXY_SIZE, "data.textureGuid")
+    texture_hash_path = reader.i64("data.textureHashPath")
 
     root_member2_offset = reader.offset
-    root_member2 = reader.i32("root.member2")
+    tag = reader.i32("root.tag")
     if reader.offset != len(data):
         raise NpcMontageFramingError(
             f"trailing-bytes offset={format_offset(reader.offset)} "
@@ -414,10 +591,39 @@ def frame_npc_montage(data: bytes) -> dict[str, Any]:
                 else "exact_current_npc_montage_member18_counted_frame"
             )
         ),
-        "schemaStatus": "anonymous_exact_frame",
+        "schemaStatus": "named_exact",
         "serializedMemberCount": root_count,
         "nestedDataMemberCount": data_count,
+        "rootFieldOrder": list(NPC_MONTAGE_ROOT_FIELDS),
+        "dataFieldOrder": list(NPC_MONTAGE_DATA_FIELDS),
         "bytesConsumed": reader.offset,
+        "root": {"animType": anim_type, "tag": tag},
+        "data": {
+            "bIsCloseLookAt": b_is_close_look_at,
+            "bIsCloseSkeletalMorph": b_is_close_skeletal_morph,
+            "clipInfo": clip_info,
+            "dynamicEntities": member3_records,
+            "enableDialogLookAt": enable_dialog_look_at,
+            "enableHitAnim": enable_hit_anim,
+            "endClipAsyncInfo": end_clip_async_info,
+            "endLookAt": end_look_at,
+            "endLookAtBodySmoothTime": end_look_at_body_smooth_time,
+            "endLookAtEyeSmoothTime": end_look_at_eye_smooth_time,
+            "endLookAtPercent": end_look_at_percent,
+            "frameRate": frame_rate,
+            "gpuMountPointDataPathHash": gpu_mount_point_data_path_hash,
+            "gpuMountPointTrackGuidRange": gpu_mount_point_track_guid,
+            "interruptPercent": interrupt_percent,
+            "loopClipAsyncInfo": loop_clip_async_info,
+            "maskType": mask_type,
+            "montageFadeInTransition": montage_fade_in_transition,
+            "montageOverrideTransitions": member18_records,
+            "montageStartType": montage_start_type,
+            "rootMotionDistance": root_motion_distance,
+            "startClipAsyncInfo": start_clip_async_info,
+            "textureGuidRange": texture_guid,
+            "textureHashPath": texture_hash_path,
+        },
         "clipInfo": clip_info,
         "collectionCountOffsets": [dynamic_count_offset, override_count_offset],
         "emptyCollectionOffsets": [
@@ -426,18 +632,19 @@ def frame_npc_montage(data: bytes) -> dict[str, Any]:
         ],
         "member3Records": member3_records,
         "member18Records": member18_records,
-        "rootRawMembers": [
-            {"index": 0, "offset": 1, "value": root_member0},
-            {"index": 2, "offset": root_member2_offset, "value": root_member2},
+        "rootNamedMembers": [
+            {"index": 0, "field": "animType", "offset": 1, "value": anim_type},
+            {"index": 2, "field": "tag", "offset": root_member2_offset, "value": tag},
         ],
-        "anonymousFixedRanges": anonymous_ranges,
         "evidenceBoundary": (
             "The complete supported shape is consumed through physical EOF. "
-            "The nested UTF-8 value and all scalar/fixed-size records stay "
-            "anonymous; non-empty strings are gated to the observed A_* shape. "
-            "Member3 and member18 records are bounded by explicit collection "
-            "counts and nested member-count markers; their values remain "
-            "anonymous."
+            "The current generated formatter setter order names the three root "
+            "members, all 24 NPCMontageAnim members, AnimClipInfo, DynamicEntity, "
+            "EventInfo, extra-effect vectors, and transition overrides. Non-empty "
+            "clip names are gated to the observed A_* shape. DynamicEntity's "
+            "remaining strings, booleans, GUID span, path hash, and type advance "
+            "their generated field order exactly; no filename or runtime-use "
+            "inference is used."
         ),
     }
 
@@ -455,20 +662,20 @@ def decode_npc_montage_memorypack(
             f"outer-size-mismatch declared={size} actual={len(data)}"
         )
     framed = frame_npc_montage(data)
-    anonymous_utf8 = framed["clipInfo"].get("anonymousUtf8")
+    clip_name = framed["clipInfo"].get("name")
     return {
         "kind": "memorypack-json",
         "subtype": "NPCMontageJson",
         "summary": (
             "MemoryPack NPCMontageJson; 3-member root; 24-member montage; "
-            "count-framed anonymous records; exact length"
+            "named counted records; complete exact schema"
         ),
         "rows": 1,
-        "keys": ["anonymousUtf8"],
+        "keys": ["clipName", "animType", "tag"],
         "sample": (
-            f"anonymousUtf8={anonymous_utf8}"
-            if anonymous_utf8
-            else "anonymousUtf8=<null-or-empty>"
+            f"clipName={clip_name}"
+            if clip_name
+            else "clipName=<null-or-empty>"
         ),
         "decoded": framed,
     }

@@ -8,8 +8,10 @@ from pathlib import Path
 from typing import Any
 
 from scripts.game_data.codecs.levelscript import active_shapes as levelscript_active_shapes
+from scripts.game_data.codecs.levelscript import action_map as levelscript_action_map
 from scripts.game_data.codecs.levelscript import boolean_getters as levelscript_boolean_getters
 from scripts.game_data.codecs.levelscript import call_server as levelscript_call_server
+from scripts.game_data.codecs.levelscript import camera_look_at as levelscript_camera_look_at
 from scripts.game_data.codecs.levelscript import compact_property_gate as levelscript_property_gate
 from scripts.game_data.codecs.levelscript import control_flow_actions as levelscript_control_flow
 from scripts.game_data.codecs.levelscript import entity_hp_changed as levelscript_entity_hp_changed
@@ -33,11 +35,16 @@ from scripts.game_data.codecs.levelscript import raise_custom_script_event as le
 from scripts.game_data.codecs.levelscript import scalar_value_getters as levelscript_scalar_getters
 from scripts.game_data.codecs.levelscript import script_event_scope as levelscript_script_event_scope
 from scripts.game_data.codecs.levelscript import script_stage_changed as levelscript_script_stage_changed
+from scripts.game_data.codecs.levelscript import set_enable_player as levelscript_set_enable_player
 from scripts.game_data.codecs.levelscript import spawner_events as levelscript_spawner_events
 from scripts.game_data.codecs.levelscript import switch_actions as levelscript_switch_actions
 from scripts.game_data.codecs.levelscript import top_level_tail as levelscript_top_level_tail
+from scripts.game_data.codecs.levelscript import top_level_prefix as levelscript_top_level_prefix
 from scripts.game_data.codecs.levelscript import trigger_volumes as levelscript_trigger_volumes
 from scripts.game_data.native_contracts.spawnerptr_getter import decode_spawnerptr_getter_member
+from scripts.game_data.native_contracts.levelscript_task_condition import (
+    load_levelscript_task_condition_rows,
+)
 
 from scripts.common import (
     RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
@@ -83,6 +90,7 @@ LEVELSCRIPT_NATIVE_HEADER_TAG_NAMES: dict[tuple[int, int], str] = {
     (0x006A, 0x12): "LevelEvent_OnEntityHpChanged",
     (0x0055, 0x13): "LevelEvent_OnDialogExit",
     (0x0085, 0x13): "LevelEvent_OnQuestStateChanged",
+    (0x0085, 0x15): "LevelEvent_OnProxyPatrolCheckpointReach",
     (0x001E, 0x14): "EntityEvent_OnInteractiveStateChanged",
 }
 
@@ -497,11 +505,11 @@ LEVELSCRIPT_RECORD_HINTS = {
         "note": "current installed ActionBase formatter tag maps this code to WaitForOneFrame",
         "actionBaseAction": "WaitForOneFrame",
     },
-    (0x04F5, 0x09): {
-        "label": "actionbase-wait-for-npc-proxy-ready",
+    (0x04F5, 0x0A): {
+        "label": "actionbase-treasure-hunt-config",
         "confidence": "high",
-        "note": "current installed ActionBase formatter tag maps this code to WaitForNpcProxyReady",
-        "actionBaseAction": "WaitForNpcProxyReady",
+        "note": "current installed ActionBase formatter tag maps this code to TreasureHuntConfigAction",
+        "actionBaseAction": "TreasureHuntConfigAction",
     },
     (0x04F9, 0x0E): {
         "label": "actionbase-wait-seconds-trigger-volume",
@@ -554,13 +562,37 @@ LEVELSCRIPT_RECORD_HINTS = {
         "actionBaseAction": "RaiseCustomScriptEvent",
     },
     (0x0304, 0x09): {
-        "label": "actionbase-manually-start-guide-group",
+        "label": "actionbase-load-level-sequence",
         "confidence": "high",
         "note": (
             "current installed ActionBase formatter tag maps this code to "
-            "ManuallyStartGuideGroup"
+            "LoadLevelSequenceAction"
         ),
+        "actionBaseAction": "LoadLevelSequenceAction",
+    },
+    (0x030E, 0x09): {
+        "label": "actionbase-manually-start-guide-group",
+        "confidence": "high",
+        "note": "current installed ActionBase formatter tag maps this code to ManuallyStartGuideGroup",
         "actionBaseAction": "ManuallyStartGuideGroup",
+    },
+    (0x03A9, 0x09): {
+        "label": "actionbase-restore-player-gait",
+        "confidence": "high",
+        "note": "current installed ActionBase formatter tag maps this code to RestorePlayerGait",
+        "actionBaseAction": "RestorePlayerGait",
+    },
+    (0x0402, 0x09): {
+        "label": "actionbase-set-enable-player-move-camera",
+        "confidence": "high",
+        "note": "current installed ActionBase formatter tag maps this code to SetEnablePlayerMoveCamera",
+        "actionBaseAction": "SetEnablePlayerMoveCamera",
+    },
+    (0x050C, 0x09): {
+        "label": "actionbase-wait-for-entity-start",
+        "confidence": "high",
+        "note": "current installed ActionBase formatter tag maps this code to WaitForEntityStart",
+        "actionBaseAction": "WaitForEntityStart",
     },
     (0x0455, 0x0A): {
         "label": "actionbase-set-override-interact-dialog",
@@ -982,6 +1014,342 @@ def decode_levelscript_action_map_header(data: bytes) -> dict[str, Any]:
     return _drop_empty(out)
 
 
+def frame_levelscript_empty_action_map_prefix(data: bytes) -> dict[str, Any]:
+    """Prove the current root plus an empty serialized-map prefix.
+
+    This reader intentionally stops after the first named member. It is the
+    fallback for files whose later top-level members do not match either of the
+    stronger EOF-closing readers.
+    """
+    if not data or data[0] != 27:
+        actual = data[0] if data else None
+        raise LevelScriptTopLevelFramingError(
+            f"LevelScriptData member count mismatch: expected=27 actual={actual}"
+        )
+    if len(data) < 15 or data[1:15] != (
+        b"\x02\x03" + b"\x00\x00\x00\x00" * 3
+    ):
+        raise LevelScriptTopLevelFramingError(
+            "LevelScriptData does not have the exact empty ActionSerializedMap prefix"
+        )
+    complete_asset = (
+        len(data) >= 20
+        and data[15] == 1
+        and _u32(data, 16) == 0
+    )
+    boundary_end = 20 if complete_asset else 15
+    return {
+        "status": (
+            "exact_empty_action_map_asset_prefix_with_opaque_remainder"
+            if complete_asset
+            else "exact_empty_serialized_map_prefix_with_opaque_remainder"
+        ),
+        "schemaStatus": "partial",
+        "serializedMemberCount": 27,
+        "bytesConsumed": boundary_end,
+        "actionMap": {
+            "startOffset": 1,
+            "endOffset": boundary_end,
+            "serializedMemberCount": 2,
+            "dataMap": {
+                "startOffset": 2,
+                "endOffset": 15,
+                "serializedMemberCount": 3,
+                "actionListCount": 0,
+                "getterListCount": 0,
+                "headerListCount": 0,
+            },
+            "paramBlackboard": (
+                {
+                    "startOffset": 15,
+                    "endOffset": 20,
+                    "serializedMemberCount": 1,
+                    "valueCount": 0,
+                }
+                if complete_asset else None
+            ),
+            "completeAsset": complete_asset,
+        },
+        "opaqueRemainder": {
+            "startOffset": boundary_end,
+            "endOffset": len(data),
+            "length": len(data) - boundary_end,
+        },
+        "evidenceBoundary": (
+            "The 27-member root and empty three-list ActionSerializedMap are exact. "
+            + (
+                "The empty ParamListForGraph also closes the complete ActionMapAssetRaw; "
+                if complete_asset else "The following ParamListForGraph remains opaque; "
+            )
+            + "all later top-level members remain one opaque remainder."
+        ),
+    }
+
+
+def frame_levelscript_empty_action_map_sequential(data: bytes) -> dict[str, Any]:
+    """Advance the current owner from an exact empty action map.
+
+    The generated 27-member wrapper supplies the names and order.  Complex
+    positive collections stop at their count word; null/empty collections and
+    primitive fields advance a real cursor.  If that cursor reaches
+    ``scriptId``, the terminal members are decoded positionally rather than by
+    scanning for an identifier-shaped byte sequence.
+    """
+    action_map = frame_levelscript_empty_action_map_prefix(data)
+    if not (action_map.get("actionMap") or {}).get("completeAsset"):
+        raise LevelScriptTopLevelFramingError(
+            "sequential owner prefix requires a complete empty ActionMapAssetRaw"
+        )
+    return _frame_levelscript_sequential_owner(
+        data,
+        action_map=action_map["actionMap"],
+        owner_offset=int(action_map["bytesConsumed"]),
+        action_map_boundary="complete empty action map",
+        partial_status="exact_named_empty_action_map_owner_prefix",
+    )
+
+
+def frame_levelscript_null_action_map_sequential(data: bytes) -> dict[str, Any]:
+    """Advance the current owner from an exact null ``actionMap`` union.
+
+    The generated 27-member wrapper permits a null reference for its first
+    member.  MemoryPack encodes that boundary as one ``0xff`` byte, so the
+    following owner member begins physically at offset 2.  This lane shares
+    the same generated-order owner and terminal codecs as the empty-map lane;
+    it does not search for a suffix or reinterpret later bytes.
+    """
+    if not data or data[0] != 27:
+        actual = data[0] if data else None
+        raise LevelScriptTopLevelFramingError(
+            f"LevelScriptData member count mismatch: expected=27 actual={actual}"
+        )
+    if len(data) < 2 or data[1] != 0xFF:
+        raise LevelScriptTopLevelFramingError(
+            "LevelScriptData does not have an exact null actionMap union"
+        )
+    return _frame_levelscript_sequential_owner(
+        data,
+        action_map={
+            "startOffset": 1,
+            "endOffset": 2,
+            "value": None,
+            "rawUnionTag": 0xFF,
+            "unionTagEncoding": "memorypack-null-u8",
+            "completeAsset": True,
+        },
+        owner_offset=2,
+        action_map_boundary="null action map",
+        partial_status="exact_named_null_action_map_owner_prefix",
+    )
+
+
+def _frame_levelscript_sequential_owner(
+    data: bytes,
+    *,
+    action_map: dict[str, Any],
+    owner_offset: int,
+    action_map_boundary: str,
+    partial_status: str,
+) -> dict[str, Any]:
+    """Advance members 2..27 after an independently exact action-map boundary."""
+    try:
+        owner = levelscript_top_level_prefix.decode_empty_action_map_owner_prefix(
+            data, owner_offset
+        )
+    except levelscript_top_level_prefix.LevelScriptPrefixCodecError as error:
+        raise LevelScriptTopLevelFramingError(str(error)) from error
+
+    cursor = int(owner["endOffset"])
+    ranges: dict[str, Any] = {
+        "memberCount": {"startOffset": 0, "endOffset": 1},
+        "actionMap": action_map,
+        "ownerPrefix": owner,
+    }
+    fields = dict(owner.get("fields") or {})
+    stop_field = owner.get("stopField")
+    if stop_field:
+        return {
+            "status": partial_status,
+            "schemaStatus": "partial",
+            "serializedMemberCount": 27,
+            "bytesConsumed": cursor,
+            "fields": fields,
+            "ranges": ranges,
+            "stopField": stop_field,
+            "stopDetail": owner.get("stopDetail") or {},
+            "opaqueRemainder": {
+                "startOffset": cursor,
+                "endOffset": len(data),
+                "length": len(data) - cursor,
+            },
+            "evidenceBoundary": (
+                "Generated current-wrapper order advances a sequential named cursor "
+                f"from the exact {action_map_boundary} to the first unsupported positive "
+                f"collection, {stop_field}. No later byte is scanned or assigned."
+            ),
+        }
+
+    if cursor + 8 > len(data):
+        raise LevelScriptTopLevelFramingError(
+            f"truncated scriptId after exact owner prefix: offset={cursor}"
+        )
+    script_id = struct.unpack_from("<Q", data, cursor)[0]
+    if not _is_plausible_levelscript_id(script_id):
+        raise LevelScriptTopLevelFramingError(
+            f"invalid positional scriptId: offset={cursor} value={script_id}"
+        )
+    tail = levelscript_top_level_tail.decode_tail_candidate(data, cursor)
+    start_shapes = tail.get("startShapeList") or {}
+    start_shape_rows = start_shapes.get("shapes") or []
+    if (
+        tail.get("startShapeListStatus") not in {"null", "present"}
+        or not tail.get("startTypeName")
+        or (
+            int(tail.get("startShapeListCount") or 0) > 0
+            and (
+                start_shapes.get("parseStatus") != "decoded"
+                or not all(
+                    levelscript_active_shapes._valid_active_shape(row)
+                    for row in start_shape_rows
+                )
+            )
+        )
+        or tail.get("taskMapStatus") not in {"null", "present"}
+    ):
+        raise LevelScriptTopLevelFramingError(
+            f"invalid positional LevelScriptData terminal prefix at offset={cursor}"
+        )
+
+    task_map_offset = int(tail["taskMapOffset"])
+    task_map_count = tail.get("taskMapCount")
+    task_map_end = task_map_offset + 4
+    fields.update({
+        "scriptId": script_id,
+        "startShapeList": start_shapes,
+        "startType": {
+            "raw": tail.get("startTypeRaw"),
+            "name": tail.get("startTypeName"),
+        },
+        "taskMap": {
+            "status": tail.get("taskMapStatus"),
+            "count": task_map_count,
+        },
+    })
+    ranges["terminalPrefix"] = {
+        "startOffset": cursor,
+        "endOffset": task_map_end,
+        "scriptIdOffset": cursor,
+        "startShapeListOffset": tail.get("startShapeListOffset"),
+        "startTypeOffset": tail.get("startTypeOffset"),
+        "taskMapOffset": task_map_offset,
+    }
+
+    if task_map_count not in {None, 0}:
+        task_cursor = task_map_end
+        tasks: list[dict[str, Any]] = []
+        task_diagnostics: list[dict[str, Any]] = []
+        for _ in range(int(task_map_count)):
+            decoded_task = _decode_levelscript_task_entry(
+                data,
+                task_cursor,
+                len(data),
+                task_diagnostics,
+            )
+            if decoded_task is None:
+                break
+            task, task_cursor = decoded_task
+            tasks.append(task)
+        if len(tasks) == int(task_map_count):
+            trigger_volumes, trigger_end = (
+                levelscript_trigger_volumes.decode_trigger_volume_map(
+                    data,
+                    task_cursor,
+                )
+            )
+            if (
+                trigger_end == len(data)
+                and trigger_volumes.get("status") in {"null", "present"}
+                and trigger_volumes.get("parseStatus") != "truncated"
+            ):
+                fields["taskMap"] = {
+                    "status": "present",
+                    "count": int(task_map_count),
+                    "entries": tasks,
+                }
+                fields["triggerVolumes"] = trigger_volumes
+                ranges["taskMap"] = {
+                    "startOffset": task_map_offset,
+                    "endOffset": task_cursor,
+                }
+                ranges["triggerVolumes"] = {
+                    "startOffset": task_cursor,
+                    "endOffset": trigger_end,
+                }
+                return {
+                    "status": "exact_named_levelscript_data",
+                    "schemaStatus": "named_exact",
+                    "serializedMemberCount": 27,
+                    "bytesConsumed": len(data),
+                    "fields": fields,
+                    "ranges": ranges,
+                    "evidenceBoundary": (
+                        "The current generated 27-member wrapper advances one "
+                        f"sequential cursor from the exact {action_map_boundary} "
+                        "through every "
+                        "declared task entry and the final triggerVolumes map at "
+                        "physical EOF. Task conditions use their exact supported "
+                        "union codecs; unsupported condition bodies fail closed."
+                    ),
+                }
+        return {
+            "status": "exact_named_action_map_owner_through_task_map_header",
+            "schemaStatus": "partial",
+            "serializedMemberCount": 27,
+            "bytesConsumed": task_map_end,
+            "fields": fields,
+            "ranges": ranges,
+            "stopField": "taskMap.entries",
+            "opaqueRemainder": {
+                "startOffset": task_map_end,
+                "endOffset": len(data),
+                "length": len(data) - task_map_end,
+            },
+            "evidenceBoundary": (
+                "All owner members from actionMap through the taskMap count advance "
+                "one generated-order cursor. Positive task entries and triggerVolumes "
+                "remain opaque; no suffix scan contributes to the boundary."
+            ),
+        }
+
+    trigger_volumes = tail.get("triggerVolumes") or {}
+    if (
+        trigger_volumes.get("status") not in {"null", "present"}
+        or trigger_volumes.get("parseStatus") == "truncated"
+        or trigger_volumes.get("endOffset") != f"0x{len(data):x}"
+    ):
+        raise LevelScriptTopLevelFramingError(
+            "positional empty taskMap does not lead to an exact triggerVolumes EOF"
+        )
+    fields["triggerVolumes"] = trigger_volumes
+    ranges["triggerVolumes"] = {
+        "startOffset": task_map_end,
+        "endOffset": len(data),
+    }
+    return {
+        "status": "exact_named_levelscript_data",
+        "schemaStatus": "named_exact",
+        "serializedMemberCount": 27,
+        "bytesConsumed": len(data),
+        "fields": fields,
+        "ranges": ranges,
+        "evidenceBoundary": (
+            "The current generated 27-member wrapper advances one sequential cursor "
+            f"from the exact {action_map_boundary} through physical EOF. Complex owner collections are "
+            "null or empty; triggerVolumes uses its exact current entry codec."
+        ),
+    }
+
+
 def _record_start(record: dict[str, Any]) -> int:
     try:
         return int(record.get("start") or 0)
@@ -1173,7 +1541,21 @@ def decode_levelscript_action_map_lists(
             source="consecutiveEmptyListCount",
         )
         out["exactEmptyActionMap"] = True
-        out["emptyMapBoundaryEndOffset"] = _offset_hex(15)
+        complete_asset = (
+            len(data) >= 20
+            and data[15] == 1
+            and _u32(data, 16) == 0
+        )
+        out["completeEmptyActionMapAsset"] = complete_asset
+        out["emptyMapBoundaryEndOffset"] = _offset_hex(20 if complete_asset else 15)
+        if complete_asset:
+            out["paramBlackboard"] = {
+                "status": "present",
+                "memberCount": 1,
+                "valueCount": 0,
+                "startOffset": "0xf",
+                "endOffset": "0x14",
+            }
         if record_count:
             lists.append({
                 "name": "outsideSerializedActionMap",
@@ -1317,7 +1699,7 @@ def frame_levelscript_empty_action_map_top_level(
         raise LevelScriptTopLevelFramingError(
             "unsupported non-empty or incomplete ActionSerializedMap"
         )
-    action_map_end = 15
+    action_map_end = 20 if action_map.get("completeEmptyActionMapAsset") else 15
 
     candidates: list[dict[str, Any]] = []
     for script_id_offset in range(
@@ -1372,12 +1754,21 @@ def frame_levelscript_empty_action_map_top_level(
             "memberCount": {"startOffset": 0, "endOffset": 1},
             "actionSerializedMap": {
                 "startOffset": 1,
-                "endOffset": action_map_end,
+                "endOffset": 15,
                 "serializedMemberCount": 3,
                 "rawListCounts": [0, 0, 0],
                 "serializedFieldOrderStatus":
                     "unproven_for_current_native_build",
             },
+            "paramBlackboard": (
+                {
+                    "startOffset": 15,
+                    "endOffset": 20,
+                    "serializedMemberCount": 1,
+                    "valueCount": 0,
+                }
+                if action_map_end == 20 else None
+            ),
             "opaqueTopLevelMembers": opaque_ranges,
             "suffixEnvelope": {
                 "startOffset": tail_start,
@@ -1408,23 +1799,262 @@ def frame_levelscript_empty_action_map_top_level(
     }
 
 
-def frame_levelscript_action_map_anonymous_prefix(
-    data: bytes,
-) -> dict[str, Any]:
-    """Frame only the independently provable prefix of a current action map.
+def frame_levelscript_terminal_suffix(data: bytes) -> dict[str, Any]:
+    """Decode a unique named terminal suffix of ``LevelScriptData``.
 
-    This reader intentionally does not assign the three serialized map members
-    names or use generated-setter order.  A raw ``0xff`` tag proves a complete
-    null map boundary.  A non-empty ``02 03 <u32>`` object proves the anonymous
-    first-list count and the fixed envelope of its first polymorphic record.
+    The current 27-member wrapper ends with ``scriptId``, ``startShapeList``,
+    ``startType``, ``taskMap``, and ``triggerVolumes`` in that order.  This
+    reader finds that sequence from its byte grammar; it never uses the source
+    filename as an identifier.  Only null or empty task maps are accepted so
+    every boundary advances a real cursor before the final trigger-volume map
+    closes at physical EOF.
+    """
+    if not data or data[0] != 27:
+        actual = data[0] if data else None
+        raise LevelScriptTopLevelFramingError(
+            f"LevelScriptData member count mismatch: expected=27 actual={actual}"
+        )
+    if len(data) < 25:
+        raise LevelScriptTopLevelFramingError("truncated LevelScriptData terminal suffix")
+
+    search_start = 2 if len(data) > 1 and data[1] == 0xFF else 7
+    candidates: list[dict[str, Any]] = []
+    for script_id_offset in range(search_start, len(data) - 19):
+        script_id = int.from_bytes(
+            data[script_id_offset : script_id_offset + 8], "little", signed=False
+        )
+        if not _is_plausible_levelscript_id(script_id):
+            continue
+        start_shape_offset = script_id_offset + 8
+        start_shapes, cursor = levelscript_active_shapes.decode_shape_list(
+            data, start_shape_offset
+        )
+        if cursor is None or start_shapes.get("status") not in {"null", "present"}:
+            continue
+        shapes = start_shapes.get("shapes") or []
+        shape_count = start_shapes.get("count")
+        if start_shapes.get("status") == "present" and (
+            not isinstance(shape_count, int)
+            or len(shapes) != shape_count
+            or not all(levelscript_active_shapes._valid_active_shape(row) for row in shapes)
+        ):
+            continue
+        start_type_offset = cursor
+        start_type = _u32(data, start_type_offset)
+        if start_type not in levelscript_top_level_tail.START_TYPE_NAMES:
+            continue
+        task_map_offset = start_type_offset + 4
+        task_map_count = _u32(data, task_map_offset)
+        if task_map_count not in {0, 0xFFFFFFFF}:
+            continue
+        trigger_offset = task_map_offset + 4
+        trigger_volumes, end_offset = levelscript_trigger_volumes.decode_trigger_volume_map(
+            data, trigger_offset
+        )
+        if (
+            end_offset != len(data)
+            or trigger_volumes.get("status") not in {"null", "present"}
+            or trigger_volumes.get("parseStatus") == "truncated"
+        ):
+            continue
+        candidates.append({
+            "startOffset": script_id_offset,
+            "scriptId": script_id,
+            "scriptIdOffset": script_id_offset,
+            "startShapeListOffset": start_shape_offset,
+            "startShapeListEndOffset": cursor,
+            "startShapeList": start_shapes,
+            "startTypeOffset": start_type_offset,
+            "startTypeRaw": start_type,
+            "startType": levelscript_top_level_tail.START_TYPE_NAMES[start_type],
+            "taskMapOffset": task_map_offset,
+            "taskMapStatus": "null" if task_map_count == 0xFFFFFFFF else "empty",
+            "taskMapCount": None if task_map_count == 0xFFFFFFFF else 0,
+            "triggerVolumesOffset": trigger_offset,
+            "triggerVolumes": trigger_volumes,
+            "endOffset": end_offset,
+        })
+
+    if len(candidates) != 1:
+        raise LevelScriptTopLevelFramingError(
+            "LevelScriptData named terminal suffix is not unique and exact: "
+            f"candidates={len(candidates)} length={len(data)}"
+        )
+    suffix = candidates[0]
+    return {
+        "status": "exact_named_terminal_suffix_with_opaque_prefix",
+        "schemaStatus": "partial",
+        "serializedMemberCount": 27,
+        "bytesConsumed": len(data),
+        "fieldOrder": [
+            "scriptId", "startShapeList", "startType", "taskMap", "triggerVolumes"
+        ],
+        "ranges": {
+            "memberCount": {"startOffset": 0, "endOffset": 1},
+            "opaqueTopLevelPrefix": {
+                "startOffset": 1,
+                "endOffset": suffix["startOffset"],
+                "length": suffix["startOffset"] - 1,
+                "status": "opaque_unassigned_top_level_members",
+            },
+            "terminalSuffix": suffix,
+        },
+        "evidenceBoundary": (
+            "The final five named LevelScriptData members advance an exact cursor "
+            "through physical EOF without filename identity. Earlier top-level "
+            "members remain one opaque range."
+        ),
+    }
+
+
+def frame_levelscript_declared_root(
+    data: bytes,
+    declarations: Any,
+    *,
+    root: str = "LevelScriptData",
+) -> dict[str, Any]:
+    """Frame a whole LevelScriptData file from its derived root declaration.
+
+    Unlike every framing above it, this one names the file rather than a part
+    of it: the twenty-seven declared members are decoded in order and the
+    cursor must land on physical EOF. A file that does not close is refused,
+    so a partial read never reports as whole.
+
+    This is the `direct` tier -- the declarations come from the build's
+    managed image, not the native dispatcher -- but the closure is exact: no
+    range is left opaque.
+    """
+
+    try:
+        value, end = levelscript_action_map.decode_declared_root(
+            data, 0, root, declarations
+        )
+    except levelscript_action_map.ActionMapCodecError as error:
+        raise LevelScriptTopLevelFramingError(
+            f"declared root did not decode: {error}"
+        ) from error
+    if end != len(data):
+        raise LevelScriptTopLevelFramingError(
+            f"declared root did not close at EOF: consumed={end} size={len(data)}"
+        )
+    return {
+        "status": "exact_named_declared_root",
+        "schemaStatus": "complete",
+        "serializedMemberCount": value["memberCount"],
+        "bytesConsumed": end,
+        "ranges": {
+            "memberCount": {"startOffset": 0, "endOffset": 1},
+            "declaredRoot": {"startOffset": 1, "endOffset": end, "value": value},
+        },
+        "evidenceBoundary": (
+            "Every byte is assigned to a declared member of the serialized "
+            "root, with the cursor closing at physical EOF. Member identity is "
+            "`direct`: read from the build's managed image, corroborated by "
+            "the reviewed prefix and terminal framings agreeing with the head "
+            "and tail of the declared member order."
+        ),
+    }
+
+
+def frame_levelscript_declared_action_map(
+    data: bytes,
+    declarations: Any,
+    *,
+    expected_member_count: int = 27,
+) -> dict[str, Any]:
+    """Frame LevelScriptData through its complete action map.
+
+    The prefix framing below names only the first record's envelope, because
+    the reviewed layout contract covers a fraction of the unions the corpus
+    uses. Given the derived declarations from
+    `scripts.game_data.levelscript_union_layouts`, the whole
+    ``ActionSerializedMap`` decodes instead, and the file's named region runs
+    from its member count to the end of that map.
+
+    This is the `direct` tier: the declarations are read from the build's
+    managed image, not from the native dispatcher. Callers that publish an
+    `exact` boundary must keep using the prefix framing.
+    """
+
+    if not data:
+        raise LevelScriptTopLevelFramingError("truncated LevelScriptData: empty payload")
+    if data[0] != expected_member_count:
+        raise LevelScriptTopLevelFramingError(
+            "root member count mismatch: "
+            f"expected={expected_member_count} actual={data[0]}"
+        )
+    if len(data) < 2:
+        raise LevelScriptTopLevelFramingError(
+            "truncated ActionSerializedMap: missing raw object tag"
+        )
+    if data[1] == 0xFF:
+        action_map, end = None, 2
+    else:
+        if data[1] != 0x02:
+            raise LevelScriptTopLevelFramingError(
+                f"unsupported ActionSerializedMap wrapper marker: {data[1]:#04x}"
+            )
+        try:
+            action_map, end = levelscript_action_map.decode_action_serialized_map(
+                data, 2, declarations=declarations
+            )
+        except levelscript_action_map.ActionMapCodecError as error:
+            raise LevelScriptTopLevelFramingError(
+                f"declared action map did not close: {error}"
+            ) from error
+
+    opaque = []
+    if end < len(data):
+        opaque.append({
+            "startOffset": end,
+            "endOffset": len(data),
+            "length": len(data) - end,
+            "status": "opaque_unassigned_top_level_members",
+        })
+    return {
+        "status": "exact_named_declared_action_map",
+        "schemaStatus": "partial",
+        "serializedMemberCount": expected_member_count,
+        "bytesConsumed": end,
+        "ranges": {
+            "memberCount": {"startOffset": 0, "endOffset": 1},
+            "actionMap": {
+                "startOffset": 1,
+                "endOffset": end,
+                "value": action_map,
+            },
+            "opaqueTopLevelMembers": opaque,
+        },
+        "evidenceBoundary": (
+            "Every action, getter, header and condition in the map advances a "
+            "real cursor through derived declarations; the later top-level "
+            "members remain one opaque range. Union identity is `direct`, not "
+            "read from the native dispatcher."
+        ),
+    }
+
+
+def frame_levelscript_action_map_named_prefix(
+    data: bytes,
+    *,
+    expected_member_count: int = 27,
+) -> dict[str, Any]:
+    """Frame the named outer prefix of a current action map.
+
+    Generated setter order assigns the outer root member to ``actionMap``, its
+    first member to ``dataMap``, and the first serialized-map member to
+    ``actionList``. A raw ``0xff`` tag proves a complete null action-map
+    boundary. A non-empty ``02 03 <u32>`` object proves the named action-list
+    count and the fixed envelope of its first polymorphic record.
     The record payload and every later top-level byte remain one opaque range;
     finding UID-like bytes later in the file is not accepted as cursor proof.
     """
     if not data:
         raise LevelScriptTopLevelFramingError("truncated LevelScriptData: empty payload")
-    if data[0] != 27:
+    if data[0] != expected_member_count:
         raise LevelScriptTopLevelFramingError(
-            f"LevelScriptData member count mismatch: expected=27 actual={data[0]}"
+            "root member count mismatch: "
+            f"expected={expected_member_count} actual={data[0]}"
         )
     if len(data) < 2:
         raise LevelScriptTopLevelFramingError(
@@ -1441,23 +2071,23 @@ def frame_levelscript_action_map_anonymous_prefix(
                 "status": "opaque_unassigned_top_level_members",
             })
         return {
-            "status": "exact_anonymous_null_action_map_boundary",
+            "status": "exact_named_null_action_map_boundary",
             "schemaStatus": "partial",
-            "serializedMemberCount": 27,
+            "serializedMemberCount": expected_member_count,
             "bytesConsumed": 2,
             "ranges": {
                 "memberCount": {"startOffset": 0, "endOffset": 1},
-                "actionSerializedMap": {
+                "actionMap": {
                     "startOffset": 1,
                     "endOffset": 2,
+                    "value": None,
                     "rawUnionTag": 0xFF,
                     "unionTagEncoding": "memorypack-null-u8",
-                    "serializedFieldOrderStatus": "not_interpreted",
                 },
                 "opaqueTopLevelMembers": opaque_ranges,
             },
             "evidenceBoundary": (
-                "The one-byte null tag closes the map at offset 2. Bytes from "
+                "The one-byte null tag closes the named actionMap at offset 2. Bytes from "
                 "offset 2 onward are not attributed to named top-level fields."
             ),
         }
@@ -1534,18 +2164,19 @@ def frame_levelscript_action_map_anonymous_prefix(
             "status": "opaque_first_record_payload_and_remaining_members",
         })
     return {
-        "status": "exact_anonymous_nonempty_action_map_first_record_prefix",
+        "status": "exact_named_nonempty_action_map_first_record_prefix",
         "schemaStatus": "partial",
-        "serializedMemberCount": 27,
+        "serializedMemberCount": expected_member_count,
         "bytesConsumed": payload_start,
         "ranges": {
             "memberCount": {"startOffset": 0, "endOffset": 1},
-            "actionSerializedMapPrefix": {
+            "actionMapPrefix": {
                 "startOffset": 1,
                 "endOffset": payload_start,
                 "rawObjectMarkerHex": data[1:3].hex(" "),
-                "anonymousFirstListCount": first_count,
-                "serializedFieldOrderStatus": "not_interpreted",
+                "memberCount": 2,
+                "dataMapMemberCount": 3,
+                "actionListCount": first_count,
             },
             "firstRecordEnvelope": {
                 "startOffset": 7,
@@ -1559,8 +2190,8 @@ def frame_levelscript_action_map_anonymous_prefix(
             "opaqueRemainder": opaque_ranges,
         },
         "evidenceBoundary": (
-            "Only the first anonymous list count and first fixed polymorphic "
-            "record envelope advance a real cursor. The record payload, later "
+            "Generated setter order names actionMap.dataMap.actionList; its count "
+            "and first fixed polymorphic record envelope advance a real cursor. The record payload, later "
             "list counts, and remaining top-level members are opaque."
         ),
     }
@@ -1664,9 +2295,9 @@ def frame_levelscript_first_record_35_0e_00_anonymous_body(
     segments; no type name, field name, setter order, later-record scan, or
     later-list boundary participates in the result.
     """
-    prefix = frame_levelscript_action_map_anonymous_prefix(data)
+    prefix = frame_levelscript_action_map_named_prefix(data)
     if prefix.get("status") != (
-        "exact_anonymous_nonempty_action_map_first_record_prefix"
+        "exact_named_nonempty_action_map_first_record_prefix"
     ):
         raise LevelScriptTopLevelFramingError(
             "selected first-record body requires a non-empty action map"
@@ -1785,6 +2416,1334 @@ def frame_levelscript_first_record_35_0e_00_anonymous_body(
             "opaque and are not scanned for records or list boundaries."
         ),
     }
+
+
+def _read_nullable_levelscript_param(
+    data: bytes,
+    cursor: int,
+    decoder: Any,
+    label: str,
+) -> tuple[dict[str, Any], int]:
+    """Read a nullable generated ``Param`` member without guessing its end."""
+    if cursor >= len(data):
+        raise LevelScriptTopLevelFramingError(
+            f"truncated {label} at offset={cursor}"
+        )
+    if data[cursor] == 0xFF:
+        return {"value": None, "startOffset": cursor, "endOffset": cursor + 1}, cursor + 1
+    decoded = decoder(data, cursor)
+    if decoded is None:
+        raise LevelScriptTopLevelFramingError(
+            f"unsupported {label} encoding at offset={cursor}"
+        )
+    value, end = decoded
+    return {
+        "value": value,
+        "startOffset": cursor,
+        "endOffset": end,
+    }, end
+
+
+def _read_levelscript_node_envelope(
+    data: bytes,
+    cursor: int,
+    *,
+    union_tag: int,
+    member_count: int,
+) -> tuple[dict[str, Any], int]:
+    """Read the seven generated ``NodeBase`` fields of a plain-tag record."""
+    start = cursor
+    if cursor + 26 > len(data):
+        raise LevelScriptTopLevelFramingError(
+            f"truncated NodeBase envelope at offset={cursor}"
+        )
+    if data[cursor] != union_tag or data[cursor + 1] != member_count:
+        raise LevelScriptTopLevelFramingError(
+            "polymorphic record mismatch: "
+            f"expected={union_tag:02x} {member_count:02x} "
+            f"actual={data[cursor:cursor + 2].hex(' ')}"
+        )
+    dont_log = data[cursor + 2]
+    release = data[cursor + 7]
+    use_current = data[cursor + 24]
+    use_graph = data[cursor + 25]
+    if any(value not in (0, 1) for value in (dont_log, release, use_current, use_graph)):
+        raise LevelScriptTopLevelFramingError(
+            f"invalid NodeBase boolean at offset={cursor}"
+        )
+    uid_size = _u32(data, cursor + 8)
+    if uid_size != 8:
+        raise LevelScriptTopLevelFramingError(
+            f"NodeBase uid length mismatch at offset={cursor + 8}: actual={uid_size}"
+        )
+    raw_uid = data[cursor + 12 : cursor + 20]
+    if not all(
+        ord("0") <= value <= ord("9") or ord("a") <= value <= ord("f")
+        for value in raw_uid
+    ):
+        raise LevelScriptTopLevelFramingError(
+            f"invalid NodeBase uid at offset={cursor + 12}"
+        )
+    end = cursor + 26
+    return {
+        "startOffset": start,
+        "endOffset": end,
+        "unionTag": union_tag,
+        "serializedMemberCount": member_count,
+        "dontLogWarning": bool(dont_log),
+        "id": _u32(data, cursor + 3),
+        "releaseWhenExecutionFinished": bool(release),
+        "uid": raw_uid.decode("ascii"),
+        "scopeMask": _i32(data, cursor + 20),
+        "useCurrentScope": bool(use_current),
+        "useGraphScope": bool(use_graph),
+    }, end
+
+
+def frame_levelscript_single_call_server_leader_enter(
+    data: bytes,
+) -> dict[str, Any]:
+    """Close the dominant one-action current-build serialized-map lane.
+
+    The selected ActionBase tag is current-build ``CallServer`` and the header
+    tag is ``ScriptEvent_OnLeaderEnterTriggerVolume``.  Both records advance a
+    sequential cursor through their generated wrapper fields.  The reader
+    accepts only an empty getter list and empty ``ParamListForGraph`` before
+    handing the exact action-map boundary to the generated-order owner reader.
+    """
+    prefix = frame_levelscript_action_map_named_prefix(data)
+    action_prefix = (prefix.get("ranges") or {}).get("actionMapPrefix") or {}
+    envelope = (prefix.get("ranges") or {}).get("firstRecordEnvelope") or {}
+    if action_prefix.get("actionListCount") != 1:
+        raise LevelScriptTopLevelFramingError("selected action lane requires actionList count=1")
+    if (
+        envelope.get("layout") != "plain"
+        or envelope.get("rawUnionTag") != 0x35
+        or envelope.get("rawSerializedMemberCount") != 0x0E
+    ):
+        raise LevelScriptTopLevelFramingError(
+            "selected action lane requires current CallServer tag/member-count 35 0e"
+        )
+
+    action_body_start = int(prefix["bytesConsumed"])
+    action = levelscript_call_server.decode_call_server_action(data[action_body_start:])
+    consumed = action.get("consumedBytes") if isinstance(action, dict) else None
+    if not isinstance(consumed, int) or consumed <= 0:
+        raise LevelScriptTopLevelFramingError("CallServer generated fields did not decode")
+    cursor = action_body_start + consumed
+    if cursor + 8 > len(data):
+        raise LevelScriptTopLevelFramingError("truncated getter/header list counts")
+    getter_count = _i32(data, cursor)
+    header_count = _i32(data, cursor + 4)
+    if (getter_count, header_count) != (0, 1):
+        raise LevelScriptTopLevelFramingError(
+            "selected action lane requires getterList/headerList counts 0/1: "
+            f"actual={getter_count}/{header_count}"
+        )
+    cursor += 8
+
+    header_envelope, cursor = _read_levelscript_node_envelope(
+        data, cursor, union_tag=0xBF, member_count=0x12
+    )
+    header_fields_start = cursor
+    if cursor + 21 > len(data):
+        raise LevelScriptTopLevelFramingError("truncated ActionHeader generated fields")
+    filter_level = _i32(data, cursor)
+    filter_mask = _i32(data, cursor + 4)
+    filter_mode = data[cursor + 8]
+    next_id = _i32(data, cursor + 9)
+    priority = _i32(data, cursor + 13)
+    trigger_active_during = _i32(data, cursor + 17)
+    if filter_mode not in (0, 1):
+        raise LevelScriptTopLevelFramingError(
+            f"invalid ActionHeader filterMode at offset={cursor + 8}"
+        )
+    cursor += 21
+    validate, cursor = _read_nullable_levelscript_param(
+        data, cursor, _decode_bool_param, "ActionHeader.validate"
+    )
+    # This exact lane intentionally admits only the null targetScript form.
+    if cursor >= len(data) or data[cursor] != 0xFF:
+        raise LevelScriptTopLevelFramingError(
+            f"unsupported non-null ScriptEvent.targetScript at offset={cursor}"
+        )
+    target_script = {"value": None, "startOffset": cursor, "endOffset": cursor + 1}
+    cursor += 1
+    if cursor + 4 > len(data):
+        raise LevelScriptTopLevelFramingError("truncated ScriptEvent.triggerTarget")
+    trigger_target = _i32(data, cursor)
+    cursor += 4
+    slot_filter, cursor = _read_nullable_levelscript_param(
+        data, cursor, _decode_i32_param, "triggerSlotIdFilter"
+    )
+    slot_output, cursor = _read_nullable_levelscript_param(
+        data, cursor, levelscript_params.decode_param_output, "triggerSlotIdOutput"
+    )
+    header_end = cursor
+
+    if cursor + 5 > len(data) or data[cursor] != 1:
+        actual = data[cursor:cursor + 5].hex(" ")
+        raise LevelScriptTopLevelFramingError(
+            "ParamListForGraph header mismatch: expected memberCount=1 "
+            f"actual={actual}"
+        )
+    param_count = _i32(data, cursor + 1)
+    if param_count != 0:
+        raise LevelScriptTopLevelFramingError(
+            f"selected action lane requires empty ParamListForGraph: actual={param_count}"
+        )
+    action_map_end = cursor + 5
+    action_map = {
+        "startOffset": 1,
+        "endOffset": action_map_end,
+        "serializedMemberCount": 2,
+        "completeAsset": True,
+        "dataMap": {
+            "startOffset": 2,
+            "endOffset": header_end,
+            "serializedMemberCount": 3,
+            "actionListCount": 1,
+            "getterListCount": 0,
+            "headerListCount": 1,
+            "actionList": [{
+                "envelope": envelope,
+                "action": "CallServer",
+                "fields": action,
+                "endOffset": action_body_start + consumed,
+            }],
+            "headerList": [{
+                "envelope": header_envelope,
+                "header": "ScriptEvent_OnLeaderEnterTriggerVolume",
+                "startOffset": header_envelope["startOffset"],
+                "endOffset": header_end,
+                "fields": {
+                    "filterLevel": filter_level,
+                    "filterMask": filter_mask,
+                    "filterMode": bool(filter_mode),
+                    "nextID": next_id,
+                    "priority": priority,
+                    "triggerActiveDuring": trigger_active_during,
+                    "validate": validate,
+                    "targetScript": target_script,
+                    "triggerTarget": trigger_target,
+                    "triggerSlotIdFilter": slot_filter,
+                    "triggerSlotIdOutput": slot_output,
+                },
+                "fieldsStartOffset": header_fields_start,
+            }],
+        },
+        "paramBlackboard": {
+            "startOffset": cursor,
+            "endOffset": action_map_end,
+            "serializedMemberCount": 1,
+            "valueCount": 0,
+        },
+    }
+    return _frame_levelscript_sequential_owner(
+        data,
+        action_map=action_map,
+        owner_offset=action_map_end,
+        action_map_boundary="single CallServer/leader-enter action map",
+        partial_status="exact_named_single_call_server_leader_enter_owner_prefix",
+    )
+
+
+_CURRENT_SEQUENTIAL_ACTION_MEMBERS = {
+    0x001F: (0x11, "BlackScreenFadeIn"),
+    0x0015: (0x0A, "AirWallEnable"),
+    0x0021: (0x0B, "BlackScreenFadeOut"),
+    0x0027: (0x18, "BlendToCameraTransformWithoutBack"),
+    0x0026: (0x17, "BlendToCameraTransform"),
+    0x0035: (0x0E, "CallServer"),
+    0x0053: (0x09, "CheckBoolIfTrue"),
+    0x0052: (0x09, "CheckBoolIfFalse"),
+    0x0109: (0x0B, "IfElseAction"),
+    0x011F: (0x27, "LevelCameraLookAt"),
+    0x0312: (0x0A, "ManualStartLevelScript"),
+    0x0331: (0x0D, "NpcProxyPatrolStart"),
+    0x0358: (0x0B, "PlayAudio"),
+    0x036E: (0x0D, "PlayRadio"),
+    0x036F: (0x0D, "PlayRadioAndWait"),
+    0x0370: (0x11, "PlayRemoteComm"),
+    0x0381: (0x0C, "PreloadCutsceneAction"),
+    0x038A: (0x0A, "RaiseCustomLevelEvent"),
+    0x0392: (0x0E, "RemoveCameraControlState"),
+    0x03FF: (0x0B, "SetEnablePlayerAction"),
+    0x0496: (0x0A, "ShowSceneDecorationNew"),
+    0x049F: (0x0A, "ShowUIToast_DevOnly"),
+    0x04A7: (0x09, "Split"),
+    0x04B0: (0x0F, "StartDialogAction"),
+    0x04B1: (0x10, "StartDialogAndTeleportAction"),
+    0x04B5: (0x0A, "StartLevelCustomPerformance"),
+    0x04CF: (0x0C, "SwitchInt"),
+    0x050F: (0x09, "WaitForNpcProxyReady"),
+    0x0511: (0x09, "WaitForSeconds"),
+}
+
+
+def _read_current_action_envelope(
+    data: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int]:
+    """Read one current selected ActionBase envelope at an exact cursor."""
+    if cursor + 2 > len(data):
+        raise LevelScriptTopLevelFramingError(
+            f"truncated ActionBase union at offset={cursor}"
+        )
+    if data[cursor] == 0xFA:
+        if cursor + 4 > len(data):
+            raise LevelScriptTopLevelFramingError(
+                f"truncated extended ActionBase union at offset={cursor}"
+            )
+        tag = struct.unpack_from("<H", data, cursor + 1)[0]
+        member_count = data[cursor + 3]
+        uid_offset = cursor + 14
+    else:
+        tag = data[cursor]
+        member_count = data[cursor + 1]
+        uid_offset = cursor + 12
+    expected = _CURRENT_SEQUENTIAL_ACTION_MEMBERS.get(tag)
+    if expected is None or member_count != expected[0]:
+        raise LevelScriptTopLevelFramingError(
+            "unsupported current ActionBase tag/member count: "
+            f"tag=0x{tag:04x} memberCount={member_count}"
+        )
+    if uid_offset + 8 > len(data):
+        raise LevelScriptTopLevelFramingError(
+            f"truncated ActionBase uid at offset={uid_offset}"
+        )
+    raw_uid = data[uid_offset:uid_offset + 8]
+    try:
+        uid = raw_uid.decode("ascii")
+    except UnicodeDecodeError as error:
+        raise LevelScriptTopLevelFramingError(
+            f"invalid ActionBase uid at offset={uid_offset}"
+        ) from error
+    record = _decode_levelscript_uid_record(data, uid_offset, uid)
+    if record is None or _record_start(record) != cursor:
+        raise LevelScriptTopLevelFramingError(
+            f"invalid ActionBase envelope at offset={cursor}"
+        )
+    return {
+        **record,
+        "action": expected[1],
+    }, int(record["payloadStart"])
+
+
+def _read_current_bool_param(
+    data: bytes,
+    cursor: int,
+    label: str,
+) -> tuple[dict[str, Any], int]:
+    decoded = _decode_bool_param(data, cursor)
+    if decoded is not None:
+        return decoded
+    if (
+        cursor + 14 <= len(data)
+        and data[cursor] == 0x04
+        and data[cursor + 1] in (0, 1)
+        and data[cursor + 10:cursor + 14] == b"\xff" * 4
+    ):
+        getter_id, source = struct.unpack_from("<ii", data, cursor + 2)
+        if 0 <= getter_id <= 0x10000 and source == -1:
+            return {
+                "value": bool(data[cursor + 1]),
+                "idRef": getter_id,
+                "paramSource": source,
+                "path": None,
+            }, cursor + 14
+    raise LevelScriptTopLevelFramingError(
+        f"unsupported {label} encoding at offset={cursor}"
+    )
+
+
+def _read_current_i32_param(
+    data: bytes,
+    cursor: int,
+    label: str,
+) -> tuple[dict[str, Any], int]:
+    """Read a current integer Param, including a local-getter reference."""
+    decoded = _decode_i32_param(data, cursor)
+    if decoded is not None:
+        return decoded
+    if cursor + 17 > len(data) or data[cursor] != 0x04:
+        raise LevelScriptTopLevelFramingError(
+            f"unsupported {label} encoding at offset={cursor}"
+        )
+    value, id_ref, source, path_size = struct.unpack_from("<iiii", data, cursor + 1)
+    end = cursor + 17
+    if not (0 <= id_ref <= 0x10000 and source == -1):
+        raise LevelScriptTopLevelFramingError(
+            f"unsupported {label} reference at offset={cursor}"
+        )
+    if path_size != -1:
+        raise LevelScriptTopLevelFramingError(
+            f"unsupported {label} path at offset={cursor + 13}"
+        )
+    return {
+        "value": value,
+        "idRef": id_ref,
+        "paramSource": source,
+        "path": None,
+    }, end
+
+
+def _read_current_u8_param(
+    data: bytes,
+    cursor: int,
+    label: str,
+) -> tuple[dict[str, Any], int]:
+    if cursor + 2 > len(data) or data[cursor] != 0x04:
+        raise LevelScriptTopLevelFramingError(
+            f"unsupported {label} encoding at offset={cursor}"
+        )
+    tail = _decode_param_tail(data, cursor + 2)
+    if tail is None:
+        raise LevelScriptTopLevelFramingError(
+            f"unsupported {label} tail at offset={cursor + 2}"
+        )
+    detail, end = tail
+    return {"value": data[cursor + 1], **detail}, end
+
+
+def _decode_current_common_mask_blend_param(
+    data: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode the exact current ``Param<CommonMaskBlendData>`` shapes."""
+    start = cursor
+    if cursor >= len(data):
+        return None
+    if data[cursor] == 0xFF:
+        return {"value": None, "startOffset": start, "endOffset": cursor + 1}, cursor + 1
+    if data[cursor] != 0x04 or cursor + 2 > len(data):
+        return None
+    cursor += 1
+    if data[cursor] == 0xFF:
+        value: dict[str, Any] | None = None
+        cursor += 1
+    else:
+        if data[cursor] != 0x06 or cursor + 17 > len(data):
+            return None
+        cursor += 1
+        audio = data[cursor:cursor + 16]
+        preset, retain_flags = audio[0], audio[1]
+        fade_in_override, fade_out_override = audio[2], audio[8]
+        override_in = struct.unpack_from("<f", audio, 4)[0]
+        override_out = struct.unpack_from("<f", audio, 12)[0]
+        if (
+            preset not in (0, 1, 2, 64, 65, 128)
+            or retain_flags > 0x1F
+            or fade_in_override not in (0, 1)
+            or fade_out_override not in (0, 1)
+            or audio[3] != 0
+            or audio[9:12] != b"\x00\x00\x00"
+            or not math.isfinite(override_in)
+            or not math.isfinite(override_out)
+        ):
+            return None
+        cursor += 16
+        if cursor >= len(data):
+            return None
+        if data[cursor] == 0xFF:
+            curve: dict[str, Any] | None = None
+            cursor += 1
+        elif data[cursor] == 0x03 and cursor + 13 <= len(data):
+            post_wrap, pre_wrap, key_count = struct.unpack_from("<iii", data, cursor + 1)
+            if key_count != 0:
+                return None
+            curve = {
+                "postWrapMode": post_wrap,
+                "preWrapMode": pre_wrap,
+                "keys": [],
+            }
+            cursor += 13
+        else:
+            return None
+        if cursor + 13 > len(data):
+            return None
+        fade_in, fade_out, mask_type = struct.unpack_from("<ffi", data, cursor)
+        use_curve = data[cursor + 12]
+        if (
+            not math.isfinite(fade_in)
+            or not math.isfinite(fade_out)
+            or mask_type not in (0, 1, 2, 3)
+            or use_curve not in (0, 1)
+        ):
+            return None
+        cursor += 13
+        value = {
+            "audioBlackScreenBehaviour": {
+                "presetBehaviour": preset,
+                "customRetainFlags": retain_flags,
+                "isOverrideFadeInTime": bool(fade_in_override),
+                "overrideFadeInTimeSeconds": _round_float(override_in),
+                "isOverrideFadeOutTime": bool(fade_out_override),
+                "overrideFadeOutTimeSeconds": _round_float(override_out),
+            },
+            "curve": curve,
+            "fadeInDuration": _round_float(fade_in),
+            "fadeOutDuration": _round_float(fade_out),
+            "maskType": mask_type,
+            "useCurve": bool(use_curve),
+        }
+    tail = _decode_param_tail(data, cursor)
+    if tail is None:
+        return None
+    binding, cursor = tail
+    return {
+        "value": value,
+        **binding,
+        "startOffset": start,
+        "endOffset": cursor,
+    }, cursor
+
+
+def _read_current_camera_transform_fields(
+    data: bytes,
+    cursor: int,
+    *,
+    without_back: bool,
+) -> tuple[dict[str, Any], int]:
+    """Read the two current camera-transform action layouts in generated order."""
+    start = cursor
+    fields: dict[str, Any] = {}
+    if cursor + 5 > len(data) or data[cursor] != 0x04:
+        raise LevelScriptTopLevelFramingError(
+            f"unsupported camera alternativeCameraPoses at offset={cursor}"
+        )
+    pose_count = _i32(data, cursor + 1)
+    if pose_count not in (-1, 0):
+        raise LevelScriptTopLevelFramingError(
+            f"unsupported camera alternativeCameraPoses count={pose_count}"
+        )
+    tail = _decode_param_tail(data, cursor + 5)
+    if tail is None:
+        raise LevelScriptTopLevelFramingError(
+            f"unsupported camera alternativeCameraPoses tail at offset={cursor + 5}"
+        )
+    binding, cursor = tail
+    fields["alternativeCameraPoses"] = {
+        "value": None if pose_count == -1 else [],
+        **binding,
+    }
+
+    prefix = (
+        (("useAngleMin", _decode_bool_param), ("advancedMode", _decode_bool_param))
+        if without_back else
+        (
+            ("needInterruptMainHudAction", _decode_bool_param),
+            ("resetType", _decode_i32_param),
+            ("useAngleMin", _decode_bool_param),
+        )
+    )
+    for label, decoder in prefix:
+        decoded = decoder(data, cursor)
+        if decoded is None:
+            raise LevelScriptTopLevelFramingError(
+                f"unsupported camera {label} at offset={cursor}"
+            )
+        fields[label], cursor = decoded
+    fields["blendCurveKey"], cursor = _read_nullable_levelscript_param(
+        data, cursor, _decode_i32_param, "camera blendCurveKey"
+    )
+    suffix: tuple[tuple[str, Any], ...] = (
+        ("blendStyle", _decode_i32_param),
+        ("duration", levelscript_params.decode_float_param),
+        ("fov", levelscript_params.decode_float_param),
+    )
+    if without_back:
+        suffix += (("ignoreProtect", _decode_bool_param),)
+    suffix += (
+        (("needInterruptMainHudAction", _decode_bool_param),)
+        if without_back else ()
+    ) + (
+        ("overrideBlend", _decode_bool_param),
+        ("pos", _decode_vector3_param),
+        ("rot", _decode_vector3_param),
+        ("sceneViewOverrideFov", _decode_bool_param),
+        ("tweenTime", levelscript_params.decode_float_param),
+        ("useBlackScreen", _decode_bool_param),
+        ("useYawCheck", _decode_bool_param),
+    )
+    for label, decoder in suffix:
+        decoded = decoder(data, cursor)
+        if decoded is None:
+            raise LevelScriptTopLevelFramingError(
+                f"unsupported camera {label} at offset={cursor}"
+            )
+        fields[label], cursor = decoded
+    fields["consumedBytes"] = cursor - start
+    return fields, cursor
+
+
+def _decode_current_air_wall_ptr_param(
+    data: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode the aligned 24-byte ``AirWallPtr`` constant and Param tail."""
+    if cursor + 37 > len(data) or data[cursor] != 0x04:
+        return None
+    raw = data[cursor + 1:cursor + 25]
+    if raw[0] not in (0, 1) or raw[1:8] != b"\x00" * 7 or raw[20:24] != b"\x00" * 4:
+        return None
+    tail = _decode_param_tail(data, cursor + 25)
+    if tail is None:
+        return None
+    binding, end = tail
+    return {
+        "logicId": str(struct.unpack_from("<Q", raw, 8)[0]),
+        "slotId": struct.unpack_from("<I", raw, 16)[0],
+        "useSlotId": bool(raw[0]),
+        **binding,
+    }, end
+
+
+def _decode_current_event_args_ptr_param(
+    data: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode ``Param<EventArgsPtr>`` with its one-member pointer value."""
+    if cursor + 6 > len(data) or data[cursor:cursor + 2] != b"\x04\x01":
+        return None
+    size = _i32(data, cursor + 2)
+    cursor += 6
+    if size == -1:
+        key = None
+    elif size is not None and 0 <= size <= 256 and cursor + size <= len(data):
+        try:
+            key = data[cursor:cursor + size].decode("utf-8")
+        except UnicodeDecodeError:
+            return None
+        cursor += size
+    else:
+        return None
+    tail = _decode_param_tail(data, cursor)
+    if tail is None:
+        return None
+    binding, end = tail
+    return {"key": key, **binding}, end
+
+
+def _read_current_action_fields(
+    data: bytes,
+    cursor: int,
+    action: str,
+) -> tuple[dict[str, Any], int]:
+    """Advance the selected current generated fields for one action."""
+    start = cursor
+    if action == "CallServer":
+        decoded = levelscript_call_server.decode_call_server_action(data[cursor:])
+        consumed = decoded.get("consumedBytes") if isinstance(decoded, dict) else None
+        if not isinstance(consumed, int) or consumed <= 0:
+            raise LevelScriptTopLevelFramingError("CallServer fields did not decode")
+        return decoded, cursor + consumed
+    if action == "LevelCameraLookAt":
+        try:
+            return levelscript_camera_look_at.decode_fields(data, cursor)
+        except levelscript_camera_look_at.CameraLookAtDecodeError as error:
+            raise LevelScriptTopLevelFramingError(str(error)) from error
+    if action == "BlackScreenFadeIn":
+        fields: dict[str, Any] = {}
+        for label, decoder in (
+            ("black", _decode_bool_param),
+            ("blockInput", _decode_bool_param),
+            ("customAudioFlags", None),
+            ("duration", levelscript_params.decode_float_param),
+            ("presetAudioBehaviour", None),
+            ("isOverrideFadeInTime", _decode_bool_param),
+            ("isOverrideFadeOutTime", _decode_bool_param),
+        ):
+            decoded = (
+                _read_current_u8_param(data, cursor, f"BlackScreenFadeIn.{label}")
+                if decoder is None
+                else decoder(data, cursor)
+            )
+            if decoded is None:
+                raise LevelScriptTopLevelFramingError(
+                    f"unsupported BlackScreenFadeIn.{label} encoding at offset={cursor}"
+                )
+            fields[label], cursor = decoded
+        for label in ("overrideFadeInTimeSeconds", "overrideFadeOutTimeSeconds"):
+            fields[label], cursor = _read_nullable_levelscript_param(
+                data, cursor, levelscript_params.decode_float_param,
+                f"BlackScreenFadeIn.{label}",
+            )
+        fields["consumedBytes"] = cursor - start
+        return fields, cursor
+    if action == "BlackScreenFadeOut":
+        fields: dict[str, Any] = {}
+        for label, decoder in (
+            ("black", _decode_bool_param),
+            ("blockInput", _decode_bool_param),
+            ("duration", levelscript_params.decode_float_param),
+        ):
+            decoded = decoder(data, cursor)
+            if decoded is None:
+                raise LevelScriptTopLevelFramingError(
+                    f"unsupported BlackScreenFadeOut.{label} encoding at offset={cursor}"
+                )
+            fields[label], cursor = decoded
+        fields["consumedBytes"] = cursor - start
+        return fields, cursor
+    if action in ("BlendToCameraTransform", "BlendToCameraTransformWithoutBack"):
+        return _read_current_camera_transform_fields(
+            data,
+            cursor,
+            without_back=action == "BlendToCameraTransformWithoutBack",
+        )
+    if action == "AirWallEnable":
+        air_wall = _decode_current_air_wall_ptr_param(data, cursor)
+        if air_wall is None:
+            raise LevelScriptTopLevelFramingError(
+                f"AirWallEnable.airWallPtr did not decode at offset={cursor}"
+            )
+        air_wall_detail, cursor = air_wall
+        enable, cursor = _read_current_bool_param(
+            data, cursor, "AirWallEnable.enable"
+        )
+        return {
+            "airWallPtr": air_wall_detail,
+            "enable": enable,
+            "consumedBytes": cursor - start,
+        }, cursor
+    if action in ("CheckBoolIfFalse", "CheckBoolIfTrue"):
+        value, cursor = _read_current_bool_param(data, cursor, f"{action}.value")
+        return {"value": value, "consumedBytes": cursor - start}, cursor
+    if action == "IfElseAction":
+        condition, cursor = _read_current_bool_param(data, cursor, "IfElseAction.condition")
+        if cursor + 8 > len(data):
+            raise LevelScriptTopLevelFramingError("truncated IfElseAction branch ids")
+        false_id, true_id = struct.unpack_from("<ii", data, cursor)
+        if any(value < -1 or value > 0x10000 for value in (false_id, true_id)):
+            raise LevelScriptTopLevelFramingError("invalid IfElseAction branch id")
+        cursor += 8
+        return {
+            "condition": condition,
+            "onFalseID": false_id,
+            "onTrueID": true_id,
+            "consumedBytes": cursor - start,
+        }, cursor
+    if action == "ManualStartLevelScript":
+        level_id = _decode_string_param(data, cursor)
+        if level_id is None:
+            raise LevelScriptTopLevelFramingError(
+                f"ManualStartLevelScript.levelId did not decode at offset={cursor}"
+            )
+        level_id_detail, cursor = level_id
+        script_id = _decode_levelscript_ptr_param(data, cursor)
+        if script_id is None:
+            raise LevelScriptTopLevelFramingError(
+                f"ManualStartLevelScript.scriptId did not decode at offset={cursor}"
+            )
+        script_id_detail, cursor = script_id
+        return {
+            "levelId": level_id_detail,
+            "scriptId": script_id_detail,
+            "consumedBytes": cursor - start,
+        }, cursor
+    if action == "Split":
+        if cursor + 4 > len(data):
+            raise LevelScriptTopLevelFramingError("truncated Split idList count")
+        count = _i32(data, cursor)
+        cursor += 4
+        if count is None or count < 0 or count > 64 or cursor + count * 4 > len(data):
+            raise LevelScriptTopLevelFramingError(f"invalid Split idList count={count}")
+        values = list(struct.unpack_from(f"<{count}i", data, cursor)) if count else []
+        if any(value < -1 or value > 0x10000 for value in values):
+            raise LevelScriptTopLevelFramingError("invalid Split action id")
+        cursor += count * 4
+        return {"idList": values, "consumedBytes": cursor - start}, cursor
+    if action == "SwitchInt":
+        lists: list[list[int]] = []
+        for label in ("caseIDList", "caseValueList"):
+            if cursor + 4 > len(data):
+                raise LevelScriptTopLevelFramingError(f"truncated SwitchInt {label}")
+            count = _i32(data, cursor)
+            cursor += 4
+            if count is None or count < 0 or count > 64 or cursor + count * 4 > len(data):
+                raise LevelScriptTopLevelFramingError(
+                    f"invalid SwitchInt {label} count={count}"
+                )
+            values = list(struct.unpack_from(f"<{count}i", data, cursor)) if count else []
+            cursor += count * 4
+            lists.append(values)
+        if len(lists[0]) != len(lists[1]) or cursor + 4 > len(data):
+            raise LevelScriptTopLevelFramingError("SwitchInt case lists do not align")
+        default_id = _i32(data, cursor)
+        cursor += 4
+        value_detail, cursor = _read_current_i32_param(
+            data, cursor, "SwitchInt.value"
+        )
+        return {
+            "caseIDList": lists[0],
+            "caseValueList": lists[1],
+            "defaultID": default_id,
+            "value": value_detail,
+            "consumedBytes": cursor - start,
+        }, cursor
+    if action == "NpcProxyPatrolStart":
+        fields: dict[str, Any] = {}
+        for label, decoder in (
+            ("forceIdle", _decode_bool_param),
+            ("levelId", _decode_string_param),
+            ("patrolId", _decode_i32_param),
+            ("startFromBeginning", _decode_bool_param),
+            ("targetProxy", _decode_string_param),
+        ):
+            decoded = decoder(data, cursor)
+            if decoded is None:
+                raise LevelScriptTopLevelFramingError(
+                    f"unsupported NpcProxyPatrolStart.{label} at offset={cursor}"
+                )
+            fields[label], cursor = decoded
+        fields["consumedBytes"] = cursor - start
+        return fields, cursor
+    if action == "PlayAudio":
+        output = levelscript_params.decode_param_output(data, cursor)
+        if output is None:
+            raise LevelScriptTopLevelFramingError(
+                f"PlayAudio.audioPlayingId did not decode at offset={cursor}"
+            )
+        output_detail, cursor = output
+        key = _decode_string_param(data, cursor)
+        if key is None:
+            raise LevelScriptTopLevelFramingError(
+                f"PlayAudio.key did not decode at offset={cursor}"
+            )
+        key_detail, cursor = key
+        stop_on_release, cursor = _read_current_bool_param(
+            data, cursor, "PlayAudio.stopOnRelease"
+        )
+        return {
+            "audioPlayingId": output_detail,
+            "key": key_detail,
+            "stopOnRelease": stop_on_release,
+            "consumedBytes": cursor - start,
+        }, cursor
+    if action == "PreloadCutsceneAction":
+        fields: dict[str, Any] = {}
+        decoded = _decode_string_param(data, cursor)
+        if decoded is None:
+            raise LevelScriptTopLevelFramingError(
+                f"PreloadCutsceneAction.cutsceneId did not decode at offset={cursor}"
+            )
+        fields["cutsceneId"], cursor = decoded
+        fields["isMultiplePreload"], cursor = _read_current_bool_param(
+            data, cursor, "PreloadCutsceneAction.isMultiplePreload"
+        )
+        fields["multiCutsceneId"], cursor = _read_nullable_levelscript_param(
+            data, cursor, _decode_string_collection_param,
+            "PreloadCutsceneAction.multiCutsceneId",
+        )
+        fields["showAfterPreloadFinish"], cursor = _read_current_bool_param(
+            data, cursor, "PreloadCutsceneAction.showAfterPreloadFinish"
+        )
+        fields["consumedBytes"] = cursor - start
+        return fields, cursor
+    if action == "RaiseCustomLevelEvent":
+        event_args = _decode_current_event_args_ptr_param(data, cursor)
+        if event_args is None:
+            raise LevelScriptTopLevelFramingError(
+                f"RaiseCustomLevelEvent.eventArgsPtr did not decode at offset={cursor}"
+            )
+        event_args_detail, cursor = event_args
+        event_key = _decode_string_param(data, cursor)
+        if event_key is None:
+            raise LevelScriptTopLevelFramingError(
+                f"RaiseCustomLevelEvent.eventKey did not decode at offset={cursor}"
+            )
+        event_key_detail, cursor = event_key
+        return {
+            "eventArgsPtr": event_args_detail,
+            "eventKey": event_key_detail,
+            "consumedBytes": cursor - start,
+        }, cursor
+    if action == "RemoveCameraControlState":
+        fields: dict[str, Any] = {}
+        fields["blendCurveKey"], cursor = _read_nullable_levelscript_param(
+            data, cursor, _decode_i32_param,
+            "RemoveCameraControlState.blendCurveKey",
+        )
+        for label, decoder in (
+            ("blendStyle", _decode_i32_param),
+            ("blendTime", levelscript_params.decode_float_param),
+        ):
+            decoded = decoder(data, cursor)
+            if decoded is None:
+                raise LevelScriptTopLevelFramingError(
+                    f"RemoveCameraControlState.{label} did not decode at offset={cursor}"
+                )
+            fields[label], cursor = decoded
+        if cursor + 2 > len(data) or data[cursor:cursor + 2] != b"\x04\xff":
+            raise LevelScriptTopLevelFramingError(
+                f"unsupported RemoveCameraControlState.controlState at offset={cursor}"
+            )
+        tail = _decode_param_tail(data, cursor + 2)
+        if tail is None and data[cursor + 2:cursor + 14] == b"\xff" * 12:
+            tail = ({"idRef": -1, "paramSource": -1, "path": None}, cursor + 14)
+        if tail is None:
+            raise LevelScriptTopLevelFramingError(
+                f"invalid RemoveCameraControlState.controlState tail at offset={cursor + 2}"
+            )
+        binding, cursor = tail
+        fields["controlState"] = {"value": None, **binding}
+        decoded = _decode_i32_param(data, cursor)
+        if decoded is None:
+            raise LevelScriptTopLevelFramingError(
+                f"RemoveCameraControlState.controlStateId did not decode at offset={cursor}"
+            )
+        fields["controlStateId"], cursor = decoded
+        fields["overrideBlend"], cursor = _read_current_bool_param(
+            data, cursor, "RemoveCameraControlState.overrideBlend"
+        )
+        fields["consumedBytes"] = cursor - start
+        return fields, cursor
+    if action in ("PlayRadio", "PlayRadioAndWait"):
+        fields: dict[str, Any] = {}
+        for label, decoder in (
+            ("fromBegin", _decode_bool_param),
+            ("index", _decode_i32_param),
+            ("noFlushAfterLoading", _decode_bool_param),
+            ("onlyOnce", _decode_bool_param),
+            ("radioId", _decode_string_param),
+        ):
+            decoded = decoder(data, cursor)
+            if decoded is None:
+                raise LevelScriptTopLevelFramingError(
+                    f"unsupported PlayRadio.{label} encoding at offset={cursor}"
+                )
+            fields[label], cursor = decoded
+        fields["consumedBytes"] = cursor - start
+        return fields, cursor
+    if action == "PlayRemoteComm":
+        fields: dict[str, Any] = {}
+        for label, decoder in (
+            ("fadeInTimeAfter", levelscript_params.decode_float_param),
+            ("fadeInTimeBefore", levelscript_params.decode_float_param),
+            ("fadeOutTimeAfter", levelscript_params.decode_float_param),
+            ("fadeOutTimeBefore", levelscript_params.decode_float_param),
+            ("remoteCommId", _decode_string_param),
+            ("useBlackScreenAfter", _decode_bool_param),
+            ("useBlackScreenBefore", _decode_bool_param),
+            ("maskTypeAfter", _decode_i32_param),
+            ("maskTypeBefore", _decode_i32_param),
+        ):
+            decoded = decoder(data, cursor)
+            if decoded is None:
+                raise LevelScriptTopLevelFramingError(
+                    f"unsupported PlayRemoteComm.{label} encoding at offset={cursor}"
+                )
+            fields[label], cursor = decoded
+        fields["consumedBytes"] = cursor - start
+        return fields, cursor
+    if action == "ShowSceneDecorationNew":
+        target = _decode_u64_param(data, cursor)
+        if target is None:
+            raise LevelScriptTopLevelFramingError(
+                "ShowSceneDecorationNew.targetDynamicEntity did not decode"
+            )
+        target_detail, cursor = target
+        visible, cursor = _read_current_bool_param(
+            data, cursor, "ShowSceneDecorationNew.visible"
+        )
+        return {
+            "targetDynamicEntity": target_detail,
+            "visible": visible,
+            "consumedBytes": cursor - start,
+        }, cursor
+    if action == "ShowUIToast_DevOnly":
+        duration = levelscript_params.decode_float_param(data, cursor)
+        if duration is None:
+            raise LevelScriptTopLevelFramingError(
+                f"ShowUIToast_DevOnly.duration did not decode at offset={cursor}"
+            )
+        duration_detail, cursor = duration
+        info = _decode_string_param(data, cursor)
+        if info is None:
+            raise LevelScriptTopLevelFramingError(
+                f"ShowUIToast_DevOnly.info did not decode at offset={cursor}"
+            )
+        info_detail, cursor = info
+        return {
+            "duration": duration_detail,
+            "info": info_detail,
+            "consumedBytes": cursor - start,
+        }, cursor
+    if action == "SetEnablePlayerAction":
+        try:
+            return levelscript_set_enable_player.decode_fields(data, cursor)
+        except levelscript_set_enable_player.SetEnablePlayerActionDecodeError as error:
+            raise LevelScriptTopLevelFramingError(str(error)) from error
+    if action == "StartDialogAction":
+        fields: dict[str, Any] = {}
+        decoded = _decode_string_param(data, cursor)
+        if decoded is None:
+            raise LevelScriptTopLevelFramingError("StartDialogAction.dialogId did not decode")
+        fields["dialogId"], cursor = decoded
+        if cursor < len(data) and data[cursor] == 0xFF:
+            fields["existingEnemy"] = None
+            cursor += 1
+        else:
+            decoded = _decode_entity_ptr_list_param(data, cursor)
+            if decoded is None:
+                raise LevelScriptTopLevelFramingError(
+                    "StartDialogAction.existingEnemy did not decode"
+                )
+            fields["existingEnemy"], cursor = decoded
+        fields["shouldWaitForFinish"], cursor = _read_current_bool_param(
+            data, cursor, "StartDialogAction.shouldWaitForFinish"
+        )
+        for label in ("afterMask", "beforeMask"):
+            decoded = _decode_current_common_mask_blend_param(data, cursor)
+            if decoded is None:
+                raise LevelScriptTopLevelFramingError(
+                    f"StartDialogAction.{label} did not decode at offset={cursor}"
+                )
+            fields[label], cursor = decoded
+        for label in ("overrideAfterMaskConfig", "overrideBeforeMaskConfig"):
+            if cursor >= len(data):
+                raise LevelScriptTopLevelFramingError(
+                    f"truncated StartDialogAction.{label} at offset={cursor}"
+                )
+            if data[cursor] == 0xFF:
+                fields[label] = {
+                    "value": None,
+                    "startOffset": cursor,
+                    "endOffset": cursor + 1,
+                }
+                cursor += 1
+            else:
+                fields[label], cursor = _read_current_bool_param(
+                    data, cursor, f"StartDialogAction.{label}"
+                )
+        fields["consumedBytes"] = cursor - start
+        return fields, cursor
+    if action == "StartDialogAndTeleportAction":
+        fields: dict[str, Any] = {}
+        for label in ("afterMask", "beforeMask"):
+            decoded = _decode_current_common_mask_blend_param(data, cursor)
+            if decoded is None:
+                raise LevelScriptTopLevelFramingError(
+                    f"StartDialogAndTeleportAction.{label} did not decode at offset={cursor}"
+                )
+            fields[label], cursor = decoded
+        for label, decoder in (
+            ("levelIdStr", _decode_string_param),
+            ("position", _decode_vector3_param),
+            ("rotationEuler", _decode_vector3_param),
+            ("teleportId", _decode_string_param),
+        ):
+            decoded = decoder(data, cursor)
+            if decoded is None:
+                raise LevelScriptTopLevelFramingError(
+                    f"StartDialogAndTeleportAction.{label} did not decode at offset={cursor}"
+                )
+            fields[label], cursor = decoded
+        fields["teleportUIType"], cursor = _read_nullable_levelscript_param(
+            data, cursor, _decode_i32_param,
+            "StartDialogAndTeleportAction.teleportUIType",
+        )
+        decoded = _decode_string_param(data, cursor)
+        if decoded is None:
+            raise LevelScriptTopLevelFramingError(
+                f"StartDialogAndTeleportAction.dialogId did not decode at offset={cursor}"
+            )
+        fields["dialogId"], cursor = decoded
+        fields["consumedBytes"] = cursor - start
+        return fields, cursor
+    if action == "StartLevelCustomPerformance":
+        allow_unstuck, cursor = _read_nullable_levelscript_param(
+            data, cursor, _decode_bool_param,
+            "StartLevelCustomPerformance.allowUnstuck",
+        )
+        handle = levelscript_params.decode_param_output(data, cursor)
+        if handle is None:
+            raise LevelScriptTopLevelFramingError(
+                f"StartLevelCustomPerformance.handle did not decode at offset={cursor}"
+            )
+        handle_detail, cursor = handle
+        return {
+            "allowUnstuck": allow_unstuck,
+            "handle": handle_detail,
+            "consumedBytes": cursor - start,
+        }, cursor
+    if action == "WaitForSeconds":
+        seconds = levelscript_params.decode_float_param(data, cursor)
+        if seconds is None:
+            raise LevelScriptTopLevelFramingError(
+                f"WaitForSeconds.seconds did not decode at offset={cursor}"
+            )
+        seconds_detail, cursor = seconds
+        return {
+            "seconds": seconds_detail,
+            "consumedBytes": cursor - start,
+        }, cursor
+    if action == "WaitForNpcProxyReady":
+        decoded = _decode_string_param(data, cursor)
+        if decoded is None:
+            raise LevelScriptTopLevelFramingError(
+                f"WaitForNpcProxyReady.npcProxyId did not decode at offset={cursor}"
+            )
+        npc_proxy_id, cursor = decoded
+        return {
+            "npcProxyId": npc_proxy_id,
+            "consumedBytes": cursor - start,
+        }, cursor
+    raise LevelScriptTopLevelFramingError(f"unsupported sequential action={action}")
+
+
+_CURRENT_SEQUENTIAL_GETTER_MEMBERS = {
+    0x0101: (0x09, "GetLevelScriptPropertyGenericBool"),
+    0x0130: (0x08, "GetLevelScriptStage"),
+}
+
+
+def _read_current_getter(
+    data: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int]:
+    """Read one selected PureGetter envelope and its exact generated fields."""
+    start = cursor
+    if cursor + 4 > len(data):
+        raise LevelScriptTopLevelFramingError(f"truncated PureGetter at offset={cursor}")
+    if data[cursor] == 0xFA:
+        tag = struct.unpack_from("<H", data, cursor + 1)[0]
+        member_count = data[cursor + 3]
+        prefix = 4
+    else:
+        tag = data[cursor]
+        member_count = data[cursor + 1]
+        prefix = 2
+    expected = _CURRENT_SEQUENTIAL_GETTER_MEMBERS.get(tag)
+    if expected is None or member_count != expected[0]:
+        raise LevelScriptTopLevelFramingError(
+            "unsupported current PureGetter tag/member count: "
+            f"tag=0x{tag:04x} memberCount={member_count}"
+        )
+    base = cursor + prefix
+    if base + 24 > len(data):
+        raise LevelScriptTopLevelFramingError("truncated PureGetter NodeBase fields")
+    booleans = (data[base], data[base + 5], data[base + 22], data[base + 23])
+    if any(value not in (0, 1) for value in booleans):
+        raise LevelScriptTopLevelFramingError("invalid PureGetter NodeBase boolean")
+    if _u32(data, base + 6) != 8:
+        raise LevelScriptTopLevelFramingError("PureGetter uid length mismatch")
+    raw_uid = data[base + 10:base + 18]
+    if not all(
+        ord("0") <= value <= ord("9") or ord("a") <= value <= ord("f")
+        for value in raw_uid
+    ):
+        raise LevelScriptTopLevelFramingError("invalid PureGetter uid")
+    cursor = base + 24
+    getter = expected[1]
+    if getter == "GetLevelScriptStage":
+        decoded = _decode_levelscript_ptr_param(data, cursor)
+        if decoded is None:
+            raise LevelScriptTopLevelFramingError(
+                "GetLevelScriptStage.scriptPtr did not decode"
+            )
+        fields, cursor = decoded
+        fields = {"scriptPtr": fields}
+    elif getter == "GetLevelScriptPropertyGenericBool":
+        path = _decode_string_param(data, cursor)
+        if path is None:
+            raise LevelScriptTopLevelFramingError(
+                "GetLevelScriptPropertyGenericBool.path did not decode"
+            )
+        path_detail, cursor = path
+        target = _decode_levelscript_ptr_param(data, cursor)
+        if target is None:
+            raise LevelScriptTopLevelFramingError(
+                "GetLevelScriptPropertyGenericBool.target did not decode"
+            )
+        target_detail, cursor = target
+        fields = {"path": path_detail, "target": target_detail}
+    else:
+        raise LevelScriptTopLevelFramingError(f"unsupported sequential getter={getter}")
+    return {
+        "startOffset": start,
+        "endOffset": cursor,
+        "unionTag": tag,
+        "serializedMemberCount": member_count,
+        "getter": getter,
+        "uid": raw_uid.decode("ascii"),
+        "fields": fields,
+    }, cursor
+
+
+def _read_current_leader_enter_header(
+    data: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int]:
+    envelope, cursor = _read_levelscript_node_envelope(
+        data, cursor, union_tag=0xBF, member_count=0x12
+    )
+    fields_start = cursor
+    if cursor + 21 > len(data):
+        raise LevelScriptTopLevelFramingError("truncated ActionHeader generated fields")
+    filter_level = _i32(data, cursor)
+    filter_mask = _i32(data, cursor + 4)
+    filter_mode = data[cursor + 8]
+    next_id = _i32(data, cursor + 9)
+    priority = _i32(data, cursor + 13)
+    trigger_active_during = _i32(data, cursor + 17)
+    if filter_mode not in (0, 1):
+        raise LevelScriptTopLevelFramingError("invalid ActionHeader filterMode")
+    cursor += 21
+    validate, cursor = _read_nullable_levelscript_param(
+        data, cursor, _decode_bool_param, "ActionHeader.validate"
+    )
+    if cursor >= len(data) or data[cursor] != 0xFF:
+        raise LevelScriptTopLevelFramingError("unsupported non-null ScriptEvent.targetScript")
+    cursor += 1
+    if cursor + 4 > len(data):
+        raise LevelScriptTopLevelFramingError("truncated ScriptEvent.triggerTarget")
+    trigger_target = _i32(data, cursor)
+    cursor += 4
+    slot_filter, cursor = _read_nullable_levelscript_param(
+        data, cursor, _decode_i32_param, "triggerSlotIdFilter"
+    )
+    slot_output, cursor = _read_nullable_levelscript_param(
+        data, cursor, levelscript_params.decode_param_output, "triggerSlotIdOutput"
+    )
+    return {
+        "envelope": envelope,
+        "header": "ScriptEvent_OnLeaderEnterTriggerVolume",
+        "startOffset": envelope["startOffset"],
+        "endOffset": cursor,
+        "fieldsStartOffset": fields_start,
+        "fields": {
+            "filterLevel": filter_level,
+            "filterMask": filter_mask,
+            "filterMode": bool(filter_mode),
+            "nextID": next_id,
+            "priority": priority,
+            "triggerActiveDuring": trigger_active_during,
+            "validate": validate,
+            "targetScript": None,
+            "triggerTarget": trigger_target,
+            "triggerSlotIdFilter": slot_filter,
+            "triggerSlotIdOutput": slot_output,
+        },
+    }, cursor
+
+
+def _read_reviewed_map_node(
+    data: bytes, cursor: int, family: str, original_error: ValueError,
+) -> tuple[dict[str, Any], int]:
+    try:
+        return levelscript_action_map.decode_reviewed_node(data, cursor, family)
+    except levelscript_action_map.ActionMapCodecError as error:
+        raise LevelScriptTopLevelFramingError(
+            f"{original_error}; reviewed {family} at offset={cursor}: {error}"
+        ) from error
+
+
+def frame_levelscript_current_action_sequence_leader_enter(
+    data: bytes,
+) -> dict[str, Any]:
+    """Close selected current sequences, including reviewed shared union layouts."""
+    if len(data) < 7 or data[:3] != b"\x1b\x02\x03":
+        raise LevelScriptTopLevelFramingError("selected action map root/member mismatch")
+    action_count = _i32(data, 3)
+    if action_count is None or not 0 <= action_count <= 4096:
+        raise LevelScriptTopLevelFramingError("invalid selected actionList count")
+    cursor = 7
+    actions = []
+    for _index in range(action_count):
+        try:
+            envelope, fields_start = _read_current_action_envelope(data, cursor)
+            fields, end = _read_current_action_fields(
+                data, fields_start, str(envelope["action"])
+            )
+        except LevelScriptTopLevelFramingError as error:
+            action, cursor = _read_reviewed_map_node(
+                data, cursor, "ActionBase", error
+            )
+            actions.append(action)
+            continue
+        cursor = end
+        actions.append({
+            "envelope": envelope,
+            "action": envelope["action"],
+            "fields": fields,
+            "startOffset": envelope["start"],
+            "endOffset": cursor,
+        })
+    if cursor + 4 > len(data):
+        raise LevelScriptTopLevelFramingError("truncated getterList count")
+    getter_count = _i32(data, cursor)
+    if getter_count is None or getter_count < 0 or getter_count > 4096:
+        raise LevelScriptTopLevelFramingError(
+            f"invalid selected getterList count={getter_count}"
+        )
+    cursor += 4
+    getters = []
+    for _index in range(getter_count):
+        try:
+            getter, cursor = _read_current_getter(data, cursor)
+        except LevelScriptTopLevelFramingError as error:
+            getter, cursor = _read_reviewed_map_node(
+                data, cursor, "GetterBase", error
+            )
+        getters.append(getter)
+    if cursor + 4 > len(data):
+        raise LevelScriptTopLevelFramingError("truncated headerList count")
+    header_count = _i32(data, cursor)
+    if header_count is None or not 0 <= header_count <= 4096:
+        raise LevelScriptTopLevelFramingError(
+            "invalid selected headerList count: "
+            f"actual={header_count}"
+        )
+    cursor += 4
+    headers = []
+    for _index in range(header_count):
+        try:
+            header, cursor = _read_current_leader_enter_header(data, cursor)
+        except LevelScriptTopLevelFramingError as error:
+            header, cursor = _read_reviewed_map_node(
+                data, cursor, "ActionHeader", error
+            )
+        headers.append(header)
+    if cursor + 5 > len(data) or data[cursor] != 1:
+        raise LevelScriptTopLevelFramingError("ParamListForGraph member count mismatch")
+    param_count = _i32(data, cursor + 1)
+    if param_count != 0:
+        raise LevelScriptTopLevelFramingError(
+            f"selected action sequence requires empty ParamListForGraph: actual={param_count}"
+        )
+    action_map_end = cursor + 5
+    action_map = {
+        "startOffset": 1,
+        "endOffset": action_map_end,
+        "serializedMemberCount": 2,
+        "completeAsset": True,
+        "dataMap": {
+            "startOffset": 2,
+            "endOffset": cursor,
+            "serializedMemberCount": 3,
+            "actionListCount": action_count,
+            "getterListCount": getter_count,
+            "headerListCount": header_count,
+            "actionList": actions,
+            "getterList": getters,
+            "headerList": headers,
+        },
+        "paramBlackboard": {
+            "startOffset": cursor,
+            "endOffset": action_map_end,
+            "serializedMemberCount": 1,
+            "valueCount": 0,
+        },
+    }
+    return _frame_levelscript_sequential_owner(
+        data,
+        action_map=action_map,
+        owner_offset=action_map_end,
+        action_map_boundary="selected current action/getter/header sequence",
+        partial_status="exact_named_current_action_sequence_owner_prefix",
+    )
 
 
 def levelscript_action_map_membership(
@@ -2789,31 +4748,8 @@ def _decode_levelscript_ptr_param(
     payload: bytes,
     cursor: int,
 ) -> tuple[dict[str, Any], int] | None:
-    """Decode the 16-byte LevelScriptPtr value plus shared Param tail."""
-    if cursor + 29 > len(payload) or payload[cursor] != 0x04:
-        return None
-    script_id = struct.unpack_from("<Q", payload, cursor + 1)[0]
-    reserved = struct.unpack_from("<Q", payload, cursor + 9)[0]
-    if reserved != 0:
-        return None
-    tail = _decode_param_tail(payload, cursor + 17)
-    if tail is None:
-        return None
-    tail_detail, end = tail
-    if script_id and not _is_plausible_levelscript_id(script_id):
-        return None
-    mode = "explicit_script" if script_id else "dynamic_or_unresolved"
-    if not script_id and tail_detail == {
-        "idRef": -1,
-        "paramSource": 1002,
-        "path": None,
-    }:
-        mode = "current_script"
-    return {
-        "mode": mode,
-        "scriptId": str(script_id) if script_id else "",
-        **tail_detail,
-    }, end
+    """Decode the shared exact ``Param<LevelScriptPtr>`` representation."""
+    return levelscript_params.decode_levelscript_ptr_param(payload, cursor)
 
 
 def _decode_levelscript_task_ptr_param(
@@ -5516,7 +7452,10 @@ def decode_levelscript_record_payload(
     )
     if play3d_radio:
         out["play3DRadio"] = play3d_radio
-    if semantic_key in {(0x035E, 0x0E), (0x04A1, 0x10)}:
+    if semantic_key in {
+        *levelscript_fmv.PLAY_FMV_ACTION_SEMANTIC_KEYS,
+        (0x04A1, 0x10),
+    }:
         fmv_action = levelscript_fmv.decode_fmv_action(
             payload,
             payload_start,
@@ -5766,7 +7705,7 @@ def decode_levelscript_record_payload(
                 struct.unpack_from("<I", payload, 4 + index * 4)[0]
                 for index in range(count)
             ]
-    elif semantic_key in {(0x02EE, 0x09), (0x0304, 0x09)}:
+    elif semantic_key in {(0x02EE, 0x09), (0x030E, 0x09)}:
         for text in texts:
             if text.startswith("guide_") and not text.startswith("$"):
                 out["guideId"] = text
@@ -5786,7 +7725,7 @@ LEVELSCRIPT_TASK_MISSION_STATE_MAPPING_ID = (
     "gameassembly-2026-07-22-levelscript-task-check-mission-state-0x67"
 )
 LEVELSCRIPT_TASK_CONDITION_MAPPING_ID = (
-    "gameassembly-2026-08-09-levelscript-task-root-gamecondition-tags-v2"
+    "gameassembly-2026-09-20-levelscript-task-root-gamecondition-tags-v4"
 )
 LEVELSCRIPT_TASK_CONDITION_TAGS = {
     0x0017: ("CheckBuildingConnected", 8),
@@ -5798,6 +7737,7 @@ LEVELSCRIPT_TASK_CONDITION_TAGS = {
     0x0029: ("CheckCutsceneFinish", 5),
     0x002E: ("CheckDomainShopChannelLevel", 7),
     0x0035: ("CheckFacBuildingState", 8),
+    0x0037: ("CheckFactoryBlackBoxState", 7),
     0x0038: ("CheckFluidVolume", 9),
     0x0039: ("CheckFMVFinish", 5),
     0x003D: ("CheckGuideGroupComplete", 6),
@@ -5806,24 +7746,30 @@ LEVELSCRIPT_TASK_CONDITION_TAGS = {
     0x0050: ("CheckLevelScriptPropertyBool", 9),
     0x0051: ("CheckLevelScriptPropertyInt", 9),
     0x0053: ("CheckLevelScriptStage", 8),
+    0x0054: ("CheckLevelScriptStageReachMax", 6),
     0x005C: ("CheckLsmEncounterCompleted", 7),
     0x0067: ("CheckMissionState", 7),
     0x006A: ("CheckMonsterKilled", 9),
     0x006B: ("CheckMonsterSpawnerComplete", 6),
     0x0070: ("CheckPerfectlyPassDungeonId", 5),
     0x0074: ("CheckPlayerInMap", 5),
-    0x007D: ("CheckPRTSUnlocked", 5),
-    0x007E: ("CheckQuestState", 7),
+    0x007F: ("CheckPRTSUnlocked", 5),
+    0x0080: ("CheckQuestState", 7),
     0x0084: ("CheckRepairBuilding", 6),
-    0x0085: ("CheckRepeatableTalkFinish", 6),
+    0x0087: ("CheckRepeatableTalkFinish", 6),
     0x0086: ("CheckRichContentReadingDone", 5),
     0x0089: ("CheckScanInteractive", 6),
+    0x008B: ("CheckScanInteractive", 6),
     0x008D: ("CheckScriptTaskStateEqual", 9),
+    0x008E: ("CheckScriptMonsterKilled", 10),
     0x008F: ("CheckServerGlobalVar", 7),
     0x0091: ("CheckSewageTreatPlantLevel", 7),
-    0x009F: ("CheckTalkOptionFinish", 6),
-    0x00B2: ("CombineCondition", 6),
-    0x00D0: ("OnBuildingPanelOpen", 6),
+    0x009C: ("CheckSpaceshipRoomBuilt", 7),
+    0x00A3: ("CheckTalkOptionFinish", 6),
+    0x00A7: ("CheckTerminalReadingDone", 5),
+    0x00B7: ("CombineCondition", 6),
+    0x00BC: ("Conditions.CheckCurrentDungeonBoth", 5),
+    0x00D6: ("OnBuildingPanelOpen", 6),
     0x0108: ("DepotHasItem", 7),
     0x010B: ("FacBattleBuildingCurEnergy", 8),
     0x010D: ("FacBuildingCountInScene", 8),
@@ -5835,14 +7781,22 @@ LEVELSCRIPT_TASK_CONDITION_TAGS = {
     0x0115: ("FacStatisticItemGenRate", 8),
     0x0127: ("HasItemCount", 7),
     0x0129: ("InteractiveCheckBool", 8),
-    0x012A: ("InteractiveCheckInt", 9),
+    0x0130: ("InteractiveCheckInt", 9),
     0x012D: ("PlayerHasItem", 8),
     0x012E: ("PlayerHasItemInItemBag", 8),
     0x0132: ("TaskReachDestination", 6),
+    0x0137: ("SystemPoiLevel", 8),
 }
 _MISSION_STATE_NAMES = {
     0: "None",
     1: "Available",
+    2: "Processing",
+    3: "Completed",
+    4: "Failed",
+    5: "Disabled",
+}
+_QUEST_STATE_NAMES = {
+    0: "None",
     2: "Processing",
     3: "Completed",
     4: "Failed",
@@ -5859,6 +7813,35 @@ _NUMBER_COMPARER_NAMES = {
     3: "GreaterEqual",
     4: "LessThan",
     5: "LessEqual",
+}
+_FACTORY_BLACK_BOX_STATE_NAMES = {
+    0: "Inactive",
+    1: "Active",
+    2: "PassMainTask",
+    3: "PassAllTask",
+}
+_SPACESHIP_ROOM_TYPE_NAMES = {
+    0: "ControlCenter",
+    1: "ManufacturingStation",
+    2: "GrowCabin",
+    3: "GuestRoom",
+    4: "CommandCenter",
+    5: "GuestRoomClueExtension",
+    999996: "Any",
+    999997: "FlexibleTypeB",
+    999998: "FlexibleTypeA",
+    999999: "Invalid",
+}
+_DOMAIN_POI_TYPE_NAMES = {
+    0: "None",
+    1: "Settlement",
+    2: "DomainShop",
+    3: "DomainDepot",
+    4: "KiteStation",
+    5: "RecycleBin",
+    120: "SewageTreatPlant",
+    130: "SimulationTraining",
+    150: "TyphoeaArchery",
 }
 
 
@@ -5987,6 +7970,29 @@ def _decode_string_collection_param(
     return {"values": values, **detail}, end
 
 
+def _decode_u32_collection_param(
+    payload: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode the generated constant ``Param<List<uint>>`` wire shape."""
+    if cursor + 5 > len(payload) or payload[cursor] != 0x04:
+        return None
+    count = struct.unpack_from("<i", payload, cursor + 1)[0]
+    cursor += 5
+    if count == -1:
+        values = None
+    elif 0 <= count <= 1024 and cursor + count * 4 <= len(payload):
+        values = list(struct.unpack_from(f"<{count}I", payload, cursor))
+        cursor += count * 4
+    else:
+        return None
+    tail = _decode_param_tail(payload, cursor)
+    if tail is None:
+        return None
+    detail, end = tail
+    return {"values": values, **detail}, end
+
+
 def _decode_task_condition_union_header(
     data: bytes,
     offset: int,
@@ -6044,6 +8050,17 @@ def _condition_param(
     if decoded is None or decoded[1] > limit:
         return None
     return decoded
+
+
+def _decode_nullable_param(
+    decoder: Any,
+    data: bytes,
+    cursor: int,
+) -> tuple[dict[str, Any], int] | None:
+    """Decode a nullable generated ``Param<T>`` wrapper exactly."""
+    if cursor < len(data) and data[cursor] == 0xFF:
+        return {"status": "null", "value": None}, cursor + 1
+    return decoder(data, cursor)
 
 
 def _decode_generic_task_condition_fields(
@@ -6190,6 +8207,16 @@ def _decode_levelscript_task_condition(
         return None
     union_tag, member_count, tag_encoding, cursor = header
     identity = LEVELSCRIPT_TASK_CONDITION_TAGS.get(union_tag)
+    native_mapping_id = LEVELSCRIPT_TASK_CONDITION_MAPPING_ID
+    if identity is None:
+        supplemental_rows, supplemental_audit = load_levelscript_task_condition_rows()
+        supplemental = supplemental_rows.get((union_tag, member_count))
+        if supplemental is not None:
+            identity = (supplemental["conditionType"], supplemental["memberCount"])
+            native_mapping_id = (
+                "endfield.levelscript-task-condition-native.v1:"
+                + supplemental_audit["contractSha256"]
+            )
     if identity is None or identity[1] != member_count:
         return None
     condition_type = identity[0]
@@ -6202,6 +8229,23 @@ def _decode_levelscript_task_condition(
     def read_param(name: str, decoder: Any) -> bool:
         nonlocal cursor
         decoded = _condition_param(decoder, data, cursor, limit)
+        if decoded is None:
+            return False
+        fields[name], cursor = decoded
+        return True
+
+    def read_nullable_param(name: str, decoder: Any) -> bool:
+        nonlocal cursor
+        decoded = _condition_param(
+            lambda payload, start: _decode_nullable_param(
+                decoder,
+                payload,
+                start,
+            ),
+            data,
+            cursor,
+            limit,
+        )
         if decoded is None:
             return False
         fields[name], cursor = decoded
@@ -6223,6 +8267,22 @@ def _decode_levelscript_task_condition(
             return None
         fields["comparerName"] = _MISSION_STATE_COMPARER_NAMES[comparer_raw]
         fields["targetMissionStateName"] = _MISSION_STATE_NAMES[target_raw]
+    elif condition_type == "CheckQuestState":
+        if not (
+            read_param("comparer", _decode_i32_param)
+            and read_param("questId", _decode_string_param)
+            and read_param("targetQuestState", _decode_i32_param)
+        ):
+            return None
+        comparer_raw = fields["comparer"]["value"]
+        target_raw = fields["targetQuestState"]["value"]
+        if (
+            comparer_raw not in _MISSION_STATE_COMPARER_NAMES
+            or target_raw not in _QUEST_STATE_NAMES
+        ):
+            return None
+        fields["comparerName"] = _MISSION_STATE_COMPARER_NAMES[comparer_raw]
+        fields["targetQuestStateName"] = _QUEST_STATE_NAMES[target_raw]
     elif condition_type == "CheckFMVFinish":
         if not read_param("fmvId", _decode_string_param):
             return None
@@ -6300,6 +8360,22 @@ def _decode_levelscript_task_condition(
             and read_param("sceneName", _decode_string_param)
         ):
             return None
+    elif condition_type == "CheckFactoryBlackBoxState":
+        if not (
+            read_param("comparer", _decode_i32_param)
+            and read_param("dungeonId", _decode_string_param)
+            and read_param("state", _decode_i32_param)
+        ):
+            return None
+        comparer_raw = fields["comparer"]["value"]
+        state_raw = fields["state"]["value"]
+        if (
+            comparer_raw not in _NUMBER_COMPARER_NAMES
+            or state_raw not in _FACTORY_BLACK_BOX_STATE_NAMES
+        ):
+            return None
+        fields["comparerName"] = _NUMBER_COMPARER_NAMES[comparer_raw]
+        fields["stateName"] = _FACTORY_BLACK_BOX_STATE_NAMES[state_raw]
     elif condition_type == "CheckRepairBuilding":
         if not (
             read_param("repairId", _decode_string_param)
@@ -6456,6 +8532,27 @@ def _decode_levelscript_task_condition(
             fields["compareOperator"]["value"],
             "",
         )
+    elif condition_type == "CheckLevelScriptStageReachMax":
+        if not (
+            read_param("levelId", _decode_string_param)
+            and read_param("scriptId", _decode_levelscript_ptr_param)
+        ):
+            return None
+    elif condition_type == "CheckScanInteractive":
+        if not (
+            read_param(
+                "entity",
+                levelscript_params.decode_constant_entity_ptr_param,
+            )
+            and read_param("levelId", _decode_string_param)
+        ):
+            return None
+    elif condition_type == "CheckTerminalReadingDone":
+        if not read_param("terminalUniqId", _decode_string_param):
+            return None
+    elif condition_type == "Conditions.CheckCurrentDungeonBoth":
+        if not read_param("dungeonId", _decode_string_param):
+            return None
     elif condition_type == "CheckMonsterKilled":
         if not (
             read_param("comparer", _decode_i32_param)
@@ -6478,12 +8575,74 @@ def _decode_levelscript_task_condition(
             and read_param("spawnerId", _decode_u64_param)
         ):
             return None
-    elif condition_type == "CheckTalkOptionFinish":
+    elif condition_type in (
+        "CheckRepeatableTalkFinish",
+        "CheckTalkOptionFinish",
+    ):
         if not (
             read_param("dialogId", _decode_string_param)
             and read_param("finishId", _decode_i32_param)
         ):
             return None
+    elif condition_type == "CheckScriptMonsterKilled":
+        if not (
+            read_nullable_param("compareOperator", _decode_i32_param)
+            and read_nullable_param("progressToCompare", _decode_i32_param)
+            and read_param("sceneId", _decode_string_param)
+            and read_param("scriptId", _decode_levelscript_ptr_param)
+            and read_param("slotIds", _decode_u32_collection_param)
+            and cursor < limit
+            and data[cursor] in (0, 1)
+        ):
+            return None
+        comparer_raw = fields["compareOperator"]["value"]
+        if (
+            comparer_raw is not None
+            and comparer_raw not in _NUMBER_COMPARER_NAMES
+        ):
+            return None
+        fields["compareOperatorName"] = (
+            _NUMBER_COMPARER_NAMES[comparer_raw]
+            if comparer_raw is not None else None
+        )
+        fields["needAllKill"] = bool(data[cursor])
+        cursor += 1
+    elif condition_type == "CheckSpaceshipRoomBuilt":
+        if not (
+            read_param("comparer", _decode_i32_param)
+            and read_param("progressToCompare", _decode_i32_param)
+            and read_param("roomType", _decode_i32_param)
+        ):
+            return None
+        comparer_raw = fields["comparer"]["value"]
+        room_type_raw = fields["roomType"]["value"]
+        if (
+            comparer_raw not in _NUMBER_COMPARER_NAMES
+            or room_type_raw not in _SPACESHIP_ROOM_TYPE_NAMES
+        ):
+            return None
+        fields["comparerName"] = _NUMBER_COMPARER_NAMES[comparer_raw]
+        fields["roomTypeName"] = _SPACESHIP_ROOM_TYPE_NAMES[room_type_raw]
+    elif condition_type == "CheckPRTSUnlocked":
+        if not read_param("prtsIds", _decode_string_collection_param):
+            return None
+    elif condition_type == "SystemPoiLevel":
+        if not (
+            read_param("compareLevel", _decode_i32_param)
+            and read_param("comparer", _decode_i32_param)
+            and read_param("instId", _decode_string_param)
+            and read_param("poiType", _decode_i32_param)
+        ):
+            return None
+        comparer_raw = fields["comparer"]["value"]
+        poi_type_raw = fields["poiType"]["value"]
+        if (
+            comparer_raw not in _NUMBER_COMPARER_NAMES
+            or poi_type_raw not in _DOMAIN_POI_TYPE_NAMES
+        ):
+            return None
+        fields["comparerName"] = _NUMBER_COMPARER_NAMES[comparer_raw]
+        fields["poiTypeName"] = _DOMAIN_POI_TYPE_NAMES[poi_type_raw]
     elif condition_type == "InteractiveCheckBool":
         if not (
             read_param("compareValue", _decode_bool_param)
@@ -6567,7 +8726,7 @@ def _decode_levelscript_task_condition(
         "conditionEndOffsetHex": _offset_hex(cursor),
         **common,
         **fields,
-        "nativeMappingId": LEVELSCRIPT_TASK_CONDITION_MAPPING_ID,
+        "nativeMappingId": native_mapping_id,
     }, cursor
 
 
@@ -6900,6 +9059,44 @@ def _decode_levelscript_task_entry(
         "needManualCheck": need_manual_check,
         "taskType": task_type,
     }, cursor
+
+
+def decode_levelscript_task_map_exact(
+    data: bytes,
+    offset: int,
+    count: int,
+    limit: int,
+) -> tuple[list[dict[str, Any]], int]:
+    """Decode a counted task-map body that must end at an exact owner boundary."""
+
+    if count < 0 or count > 128 or offset < 0 or limit < offset or limit > len(data):
+        raise LevelScriptTopLevelFramingError(
+            f"invalid task-map bounds: offset={offset} count={count} limit={limit} length={len(data)}"
+        )
+    rows: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    cursor = offset
+    for index in range(count):
+        diagnostics: list[dict[str, Any]] = []
+        decoded = _decode_levelscript_task_entry(data, cursor, limit, diagnostics)
+        if decoded is None:
+            diagnostic = diagnostics[0] if diagnostics else {"gate": "taskEntry"}
+            raise LevelScriptTopLevelFramingError(
+                f"taskMap[{index}] failed at offset={cursor}: {diagnostic}"
+            )
+        row, cursor = decoded
+        task_key = str(row["taskKey"])
+        if task_key in seen:
+            raise LevelScriptTopLevelFramingError(
+                f"taskMap[{index}] duplicate key {task_key!r}"
+            )
+        seen.add(task_key)
+        rows.append(row)
+    if cursor != limit:
+        raise LevelScriptTopLevelFramingError(
+            f"taskMap did not reach owner boundary: cursor={cursor} limit={limit}"
+        )
+    return rows, cursor
 
 
 def decode_levelscript_task_conditions(
