@@ -385,11 +385,31 @@ were left inert rather than guessed. The same applies to contracts: record
 tags as regenerated data keyed by type name, never as a key the next build
 reuses for another type.
 
-The EntityPtr output-alias, property-initialization and script-slot contracts
-remain on the recorded build. Their readings come from method bodies that the
-current build restructured (a single recorded 2,080-byte base `Process` is now
-a chain of smaller methods), so they need a fresh trace through the new call
-graph; equal body sizes elsewhere are not a substitute for that review.
+The semantic EntityPtr contracts (script slot, property initialization,
+output alias) are re-proved rather than re-pinned: each reading is authored as
+names -- ordered callees, the argument keys a body loads, the fields a call
+reads -- and `--regenerate` checks every claim on the installed build through
+`il2cpp.call_graph` (direct calls named via each image's method pointers and
+the generic method table, literal usage cells, runtime field offsets). A
+claim that fails refuses the write, and equal body sizes are never accepted in
+place of that check: one recorded 2,080-byte base `Process` is now a chain of
+smaller methods.
+
+**The re-test overturned one inherited reading.** `OnEntityEnterTrigger` was
+recorded as aliasing its SPECIFY_ENTITY filter. On the current build the
+listener is registered on the target's source key, the trigger's own
+`TriggerObserverAllEntityComponent` raises the event with itself as sender,
+and `Process` writes `trigger_cast_entity` -- the entity that *entered* -- to
+the output. The output is therefore not the filter, and the contract now says
+`validated_non_alias`. `OnSpecificEntityDie` does alias, more strongly than
+recorded: `Process` returns unless `@event_receiver` equals `_filterEntity`.
+*A recorded alias is a claim about who raises the event, and that has to be
+traced to the raiser, not read off the header.*
+
+BuffData's frozen reader (`memorypack/buff.py`) carried the same stale-tag
+problem for AbilityActionData (48 of 51 constants named other actions); it is
+rekeyed through its own tag-name table via the AbilityActionData family in
+`levelscript_union_tags`.
 
 The derivation also closes the types those layouts refer to: 42 structs and 94
 enums, reached by running the reference set to a fixed point. Both are checked

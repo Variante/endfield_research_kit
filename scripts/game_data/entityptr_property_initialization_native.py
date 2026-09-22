@@ -1,6 +1,25 @@
-"""Validate pinned, diagnostic-only EntityPtr brief-property initialization facts."""
+"""Validate the reviewed LevelScript EntityPtr property initialization, per build.
+
+The reviewed reading: ``LevelScriptRuntime.Init`` builds an empty
+``ParamBlackboard``, installs it as the runtime's properties and loads the
+authored ``LevelScriptBriefData`` values into it; ``Setup`` resets and reloads
+that blackboard before it binds the action context. An EntityPtr property is
+stored as ``ParamRealType.EntityPtr`` under ParamSource 200. So a brief
+property is the value an action graph *starts* with -- runtime setters, server
+sync and graph resets can replace it later, which is why the classification
+stays non-final and never promotes a target.
+
+That reading is authored as names: ordered callees per method, the enum
+member's value, and the brief-data fields it reads. ``--regenerate`` re-proves
+each claim on the installed build through ``il2cpp.method_resolver``,
+``il2cpp.call_graph`` and the metadata, and records the method bodies as data;
+a claim that no longer holds refuses the write.
+
+Run as: python -m scripts.game_data.entityptr_property_initialization_native --regenerate [--write]
+"""
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 from functools import lru_cache
@@ -10,23 +29,11 @@ from typing import Any
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
 
-SCHEMA = "entityPtrPropertyInitializationNativeContract.v1"
+SCHEMA = "entityPtrPropertyInitializationNativeContract.v2"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "entityptr_property_initialization.json"
-GAMEASSEMBLY_SHA256 = "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-METADATA_SHA256 = "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-NATIVE_MAPPING_ID = "gameassembly-2026-08-22-entityptr-property-initialization"
-CONTRACT_SHA256 = "E7709921BA38DD73D1D50E5AE8063D723224362E4FA932CB720CCD94E99D2D0F"
-
-_EXPECTED_METHODS = {
-    "level_script_runtime_init": ("0x0601218d", "0x183179e50"),
-    "level_script_runtime_setup": ("0x0601218e", "0x182fdc3a0"),
-    "reset_action_graph_param_blackboard": ("0x06012197", "0x184254c10"),
-    "param_blackboard_load_value": ("0x06003523", "0x182fd3850"),
-}
-
-
-def _parse_va(value: Any) -> int:
-    return int(str(value), 16)
+#: Stable identifier cited in Story evidence; the build lives in the contract.
+NATIVE_MAPPING_ID = "entityptr-property-initialization.v2"
+CLASSIFICATION = "validated_initial_entityptr_value_nonfinal"
 
 
 @lru_cache(maxsize=1)
@@ -40,123 +47,128 @@ def load_entityptr_property_initialization_contract(
                          "gate": gate, "expected": expected, "actual": actual})
 
     try:
-        raw = Path(contract_path).read_bytes()
-        contract = json.loads(raw.decode("utf-8-sig"))
+        contract = json.loads(Path(contract_path).read_bytes().decode("utf-8-sig"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         reject("read_valid_json", True, str(error)[:400])
-        return {}, {"status": "validation_failed", "validationFailures": failures}
-    actual_contract_hash = hashlib.sha256(raw).hexdigest().upper()
-    if actual_contract_hash != CONTRACT_SHA256:
-        reject("contract_sha256", CONTRACT_SHA256, actual_contract_hash)
-    metadata = contract.get("metadata") or {}
-    expected_scalars = (
-        ("schema", SCHEMA, contract.get("schema")),
-        ("status", "validated_initial_entityptr_value_nonfinal", contract.get("status")),
-        ("native_mapping_id", NATIVE_MAPPING_ID, contract.get("nativeMappingId")),
-        ("gameassembly_sha256", GAMEASSEMBLY_SHA256, metadata.get("gameAssemblySha256")),
-        ("metadata_sha256", METADATA_SHA256, metadata.get("metadataSha256")),
-    )
-    for gate, expected, actual in expected_scalars:
+        contract = {}
+    for gate, expected, actual in (("schema", SCHEMA, contract.get("schema")),
+                                   ("status", CLASSIFICATION, contract.get("status"))):
         if actual != expected:
             reject(gate, expected, actual)
-    expected_enum = {"declaringType": "Beyond.GEnums.ParamRealType",
-                     "declaringTypeToken": "0x020009d3", "fieldName": "EntityPtr",
-                     "fieldToken": "0x0400249b", "value": 13}
-    if contract.get("paramRealType") != expected_enum:
-        reject("param_real_type_entityptr_identity", expected_enum, contract.get("paramRealType"))
-    expected_brief = {"declaringType": "Beyond.Gameplay.LevelScriptBriefData",
-                      "declaringTypeToken": "0x020003d0",
-                      "propertiesFieldToken": "0x04001914",
-                      "refWorldEntityIdListFieldToken": "0x04001913", "paramSource": 200}
-    if contract.get("briefProperties") != expected_brief:
-        reject("source200_brief_property_identity", expected_brief, contract.get("briefProperties"))
     boundary = contract.get("lifecycleBoundary") or {}
-    expected_boundary = {"classification": "validated_initial_entityptr_value_nonfinal",
-                         "mutableAfterBind": True, "diagnosticOnly": True,
-                         "allowTargetPromotion": False}
-    for key, expected in expected_boundary.items():
+    for key, expected in (("classification", CLASSIFICATION), ("mutableAfterBind", True),
+                          ("diagnosticOnly", True), ("allowTargetPromotion", False)):
         if boundary.get(key) != expected:
             reject(f"lifecycle_boundary_{key}", expected, boundary.get(key))
-
-    native = check_installed_native_inputs(GAMEASSEMBLY_SHA256, METADATA_SHA256)
+    inputs = contract.get("nativeInputs") or {}
+    native = check_installed_native_inputs(
+        str(inputs.get("gameAssemblySha256") or ""), str(inputs.get("metadataSha256") or ""))
     if native.status != NATIVE_EVIDENCE_VALIDATED:
         reject("installed_native_inputs", NATIVE_EVIDENCE_VALIDATED,
                {"status": native.status, "detail": native.detail})
-    gameassembly = getattr(native, "gameassembly", None) or getattr(native, "gameAssembly", None)
-    try:
-        image = Path(gameassembly).read_bytes() if gameassembly else b""
-    except OSError as error:
-        image = b""
-        reject("read_gameassembly", True, str(error)[:400])
-
-    methods: dict[str, dict[str, Any]] = {}
-    for method in contract.get("methods") or []:
-        method_id = method.get("id")
-        if method_id not in _EXPECTED_METHODS or method_id in methods:
-            reject("unique_known_method", sorted(_EXPECTED_METHODS), method_id)
-            continue
-        expected_identity = _EXPECTED_METHODS[method_id]
-        actual_identity = (method.get("token"), method.get("virtualAddress"))
-        if actual_identity != expected_identity:
-            reject("method_identity", {"id": method_id, "identity": expected_identity}, actual_identity)
-        offset, size = method.get("fileOffset"), method.get("bodySize")
-        if not isinstance(offset, int) or not isinstance(size, int) or size <= 0:
-            reject("method_byte_range", {"offset": "int", "size": ">0"}, method)
-            continue
-        body = image[offset:offset + size]
-        actual_hash = hashlib.sha256(body).hexdigest().upper()
-        expected_hash = str(method.get("bodySha256") or "").upper()
-        if len(body) != size or actual_hash != expected_hash:
-            reject("method_body_sha256", {"id": method_id, "sha256": expected_hash},
-                   {"size": len(body), "sha256": actual_hash})
-        methods[method_id] = method
-    if set(methods) != set(_EXPECTED_METHODS):
-        reject("complete_method_set", sorted(_EXPECTED_METHODS), sorted(methods))
-
-    seen_calls: set[tuple[str, int]] = set()
-    for call in contract.get("criticalCalls") or []:
-        caller, call_offset = call.get("caller"), call.get("callOffset")
-        key = (caller, call_offset)
-        if caller not in methods or not isinstance(call_offset, int) or key in seen_calls:
-            reject("unique_valid_critical_call", True, key)
-            continue
-        seen_calls.add(key)
-        method = methods[caller]
-        pos = method["fileOffset"] + call_offset
-        actual_bytes = image[pos:pos + 5]
-        expected_bytes = bytes.fromhex(str(call.get("callBytes") or ""))
-        if len(actual_bytes) != 5 or actual_bytes[:1] != b"\xe8" or actual_bytes != expected_bytes:
-            reject("direct_call_bytes", {"caller": caller, "offset": call_offset,
-                   "bytes": expected_bytes.hex().upper()}, actual_bytes.hex().upper())
-            continue
-        relative = int.from_bytes(actual_bytes[1:5], "little", signed=True)
-        actual_target = _parse_va(method["virtualAddress"]) + call_offset + 5 + relative
-        expected_target = _parse_va(call.get("targetVa"))
-        if actual_target != expected_target:
-            reject("direct_call_target", {"caller": caller, "offset": call_offset,
-                   "target": hex(expected_target)}, hex(actual_target))
-    expected_calls = {("level_script_runtime_init", offset) for offset in (157, 171, 181, 206)}
-    expected_calls |= {("level_script_runtime_setup", 757),
-                       ("level_script_runtime_setup", 789),
-                       ("reset_action_graph_param_blackboard", 135)}
-    if seen_calls != expected_calls:
-        reject("complete_critical_call_set", sorted(expected_calls), sorted(seen_calls))
-    ordering = contract.get("ordering") or {}
-    if not (ordering.get("setupResetCallOffset") == 757
-            and ordering.get("setupActionContextBindCallOffset") == 789
-            and 757 < 789
-            and ordering.get("requiredRelation") == "reset_and_load_before_action_context_bind"):
-        reject("reset_load_before_bind_order", "757 < 789", ordering)
-
+    if not failures:
+        try:
+            image = Path(native.gameassembly).read_bytes()
+        except OSError as error:
+            image = b""
+            reject("read_gameassembly", True, str(error)[:400])
+        for method in contract.get("methods") or []:
+            offset, size = method.get("fileOffset"), method.get("bodySize")
+            if not isinstance(offset, int) or not isinstance(size, int) or size <= 0:
+                reject("method_byte_range", {"offset": "int", "size": ">0"}, method)
+                continue
+            digest = hashlib.sha256(image[offset:offset + size]).hexdigest().upper()
+            if digest != str(method.get("bodySha256") or "").upper():
+                reject("method_body_sha256", {"methodId": method.get("id"), "sha256": method.get("bodySha256")},
+                       {"sha256": digest})
+    if not contract.get("callClaims"):
+        reject("reviewed_claims", "nonempty callClaims", None)
     if failures:
         contract = {}
     return contract, {
         "status": NATIVE_EVIDENCE_VALIDATED if not failures else "validation_failed",
-        "classification": "validated_initial_entityptr_value_nonfinal",
+        "classification": CLASSIFICATION,
         "nativeMappingId": NATIVE_MAPPING_ID,
         "allowTargetPromotion": False,
         "validationFailures": failures,
     }
 
 
-__all__ = ["load_entityptr_property_initialization_contract", "NATIVE_MAPPING_ID"]
+def regenerate(contract: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+    """Re-prove every authored claim and re-record the bodies they live in."""
+    from scripts.game_data.il2cpp import protocol
+    from scripts.game_data.il2cpp.call_graph import CallGraph, first_missing_in_order
+    from scripts.game_data.il2cpp.method_resolver import MethodSpec, open_resolver
+    from scripts.game_data.il2cpp.native_image import NativeImage
+
+    native = check_installed_native_inputs()
+    if native.status != NATIVE_EVIDENCE_VALIDATED:
+        raise SystemExit(f"installed native inputs: {native.status}: {native.detail}")
+    image = NativeImage(native.gameassembly, native.metadata, label="entityptrPropertyInitialization")
+    graph = CallGraph(image)
+    resolver, _receipt = open_resolver()
+    metadata = image.metadata
+    refused: list[str] = []
+    methods, calls_by_id = [], {}
+    for method in contract.get("methods") or []:
+        resolved = resolver.resolve(MethodSpec(type_name=method["declaringType"], method_name=method["name"]))
+        matches = resolved.get("matches") or []
+        if resolved.get("status") != "exact" or len(matches) != 1:
+            refused.append(f"{method['declaringType']}.{method['name']}: {resolved.get('status')}")
+            continue
+        match = matches[0]
+        va, size = int(match["methodPointerVa"], 16), match["bodyExtent"]
+        calls_by_id[method["id"]] = graph.direct_calls(va, size)
+        methods.append({"id": method["id"], "declaringType": method["declaringType"], "name": method["name"],
+                        "va": match["methodPointerVa"], "fileOffset": int(match["fileOffset"], 16),
+                        "bodySize": size, "bodySha256": match["bodySha256"].upper()})
+    for claim in contract.get("callClaims") or []:
+        missing = first_missing_in_order(calls_by_id.get(claim["methodId"], []), claim["calls"])
+        if missing:
+            refused.append(f"{claim['methodId']}: no ordered call to {missing}")
+    enum = contract.get("paramRealType") or {}
+    members = {row["name"]: row["id"] for row in protocol.enum_members(
+        metadata, protocol.field_defaults(metadata), enum.get("declaringType", ""))}
+    if members.get(enum.get("fieldName")) != enum.get("value"):
+        refused.append(f"{enum.get('declaringType')}.{enum.get('fieldName')} is "
+                       f"{members.get(enum.get('fieldName'))}, not {enum.get('value')}")
+    brief = contract.get("briefProperties") or {}
+    brief_type = next((t for t in metadata.types if metadata.type_full_name(t) == brief.get("declaringType")), None)
+    fields = {metadata.string(f.name_index) for f in metadata.fields_for(brief_type)} if brief_type else set()
+    for name in brief.get("fields") or []:
+        if name not in fields:
+            refused.append(f"{brief.get('declaringType')}.{name}: no such field now")
+    regenerated = {
+        **{key: value for key, value in contract.items() if key not in ("methods", "nativeInputs", "metadata")},
+        "schema": SCHEMA, "status": CLASSIFICATION, "nativeMappingId": NATIVE_MAPPING_ID,
+        "nativeInputs": {"gameAssemblySha256": native.gameassembly_sha256.upper(),
+                         "metadataSha256": native.metadata_sha256.upper()},
+        "methods": methods,
+    }
+    return regenerated, refused
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--contract", type=Path, default=DEFAULT_CONTRACT)
+    parser.add_argument("--regenerate", action="store_true")
+    parser.add_argument("--write", action="store_true")
+    args = parser.parse_args(argv)
+    if not args.regenerate:
+        _contract, audit = load_entityptr_property_initialization_contract(args.contract)
+        print(json.dumps(audit, indent=1))
+        return 0 if audit["status"] == NATIVE_EVIDENCE_VALIDATED else 1
+    regenerated, refused = regenerate(json.loads(args.contract.read_bytes().decode("utf-8-sig")))
+    print(json.dumps({"refused": refused, "methods": len(regenerated["methods"])}, indent=1))
+    if refused:
+        return 1
+    if args.write:
+        args.contract.write_bytes((json.dumps(regenerated, indent=1, ensure_ascii=False) + "\n").encode("utf-8"))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+
+__all__ = ["load_entityptr_property_initialization_contract", "regenerate", "NATIVE_MAPPING_ID"]

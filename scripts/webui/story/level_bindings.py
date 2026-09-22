@@ -4870,9 +4870,9 @@ def _build_levelscript_entityptr_output_aliases(
         constant_start, pointer, constant_end = constants[0]
         alias_status = contract.get("aliasStatus")
         serialized_gate = False
-        if key == (160, 16):
+        if key == union_tags.header("LevelEvent_OnSpecificEntityDie"):
             serialized_gate = output_end == constant_start
-        elif key == (18, 19):
+        elif key == union_tags.header("EntityEvent_OnEntityEnterTrigger"):
             try:
                 bridge = bytes.fromhex(
                     str((contract.get("guard") or {}).get(
@@ -4916,7 +4916,7 @@ def _build_levelscript_entityptr_output_aliases(
 
 
 _LEVELSCRIPT_RUNTIME_SPAWNED_ENTITY_OUTPUT_PAIRS = {
-    (0x0094, 21),
+    union_tags.header("LevelEvent_OnSpawnerEntitySpawn"),
 }
 
 

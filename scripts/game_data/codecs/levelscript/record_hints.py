@@ -353,7 +353,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         "confidence": "medium",
         "note": "payload carries guide_* ids and usually precedes tutorial radio/dialog flow",
     },
-    (0x0E34, 0x00): {
+    union_tags.action_code("CallServer"): {
         "label": "actionbase-call-server",
         "confidence": "high",
         "note": (
@@ -562,7 +562,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         "confidence": "low",
         "note": "single scalar/flag-shaped payload; exact condition class is not named",
     },
-    (0x0B20, 0x00): {
+    union_tags.action_code("BlackScreenFadeOut"): {
         "label": "actionbase-black-screen-fade-out",
         "confidence": "high",
         "note": (
@@ -571,7 +571,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         ),
         "actionBaseAction": "BlackScreenFadeOut",
     },
-    (0x0952, 0x00): {
+    union_tags.action_code("CheckBoolIfTrue"): {
         "label": "actionbase-check-bool-if-true",
         "confidence": "high",
         "note": (
@@ -580,7 +580,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         ),
         "actionBaseAction": "CheckBoolIfTrue",
     },
-    (0x09B9, 0x00): {
+    union_tags.action_code("ExitLevelCustomPerformance"): {
         "label": "actionbase-exit-level-custom-performance",
         "confidence": "high",
         "note": (
@@ -605,10 +605,10 @@ LEVELSCRIPT_RECORD_HINTS = {
 
 
 LEVELSCRIPT_RECORD_TAG_HINTS = {
-    (0x0020, 0x0B): LEVELSCRIPT_RECORD_HINTS[(0x0B20, 0x00)],
-    (0x0052, 0x09): LEVELSCRIPT_RECORD_HINTS[(0x0952, 0x00)],
-    (0x00B9, 0x09): LEVELSCRIPT_RECORD_HINTS[(0x09B9, 0x00)],
-    (0x0034, 0x0E): LEVELSCRIPT_RECORD_HINTS[(0x0E34, 0x00)],
+    union_tags.action("BlackScreenFadeOut"): LEVELSCRIPT_RECORD_HINTS[union_tags.action_code("BlackScreenFadeOut")],
+    union_tags.action("CheckBoolIfTrue"): LEVELSCRIPT_RECORD_HINTS[union_tags.action_code("CheckBoolIfTrue")],
+    union_tags.action("ExitLevelCustomPerformance"): LEVELSCRIPT_RECORD_HINTS[union_tags.action_code("ExitLevelCustomPerformance")],
+    union_tags.action("CallServer"): LEVELSCRIPT_RECORD_HINTS[union_tags.action_code("CallServer")],
     (0x0003, 0x0A): LEVELSCRIPT_RECORD_HINTS[(0x0A03, 0x00)],
     (0x00ED, 0x0B): LEVELSCRIPT_RECORD_HINTS[(0x0BED, 0x00)],
 }

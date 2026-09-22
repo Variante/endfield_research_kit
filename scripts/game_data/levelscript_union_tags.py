@@ -34,6 +34,9 @@ FAMILY_BASES = {
     "ActionBase": "Beyond_Gameplay_Actions_ActionBaseForMemoryPack",
     "PureGetter": "Beyond_Gameplay_Actions_PureGetterForMemoryPack",
     "ActionHeader": "Beyond_Gameplay_Actions_ActionHeaderForMemoryPack",
+    # Not a LevelScript family, but BuffData and SkillData readers key their
+    # ability actions the same way and go stale the same way.
+    "AbilityActionData": "Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
 }
 _WRAPPER_PREFIXES = ("Beyond.MemoryPack.Beyond_Gameplay_Actions_", "Beyond.MemoryPack.Beyond_Gameplay_")
 _WRAPPER_SUFFIX = "ForMemoryPack"
@@ -108,12 +111,20 @@ def header(name: str) -> tuple[Any, ...]:
     return pair("ActionHeader", name)
 
 
-def header_code(name: str) -> tuple[Any, ...]:
-    """The compact parser's combined ``(tag | members << 8, 0)`` form of a header."""
-    found = header(name)
+def combined_code(family: str, name: str) -> tuple[Any, ...]:
+    """The compact parser's combined ``(tag | members << 8, 0)`` form of a type."""
+    found = pair(family, name)
     if isinstance(found[0], int):
         return (found[0] | (found[1] << 8), 0)
     return found
+
+
+def header_code(name: str) -> tuple[Any, ...]:
+    return combined_code("ActionHeader", name)
+
+
+def action_code(name: str) -> tuple[Any, ...]:
+    return combined_code("ActionBase", name)
 
 
 def name_of(family: str, key: tuple[Any, ...]) -> str:

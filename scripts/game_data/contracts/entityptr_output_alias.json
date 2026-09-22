@@ -1,81 +1,247 @@
 {
-  "schema": "entityPtrOutputAliasNativeContract.v1",
-  "status": "validated",
-  "nativeMappingId": "gameassembly-2026-07-11-entityptr-producer-output-alias",
-  "metadata": {
-    "gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
-    "metadataSha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E",
-    "codeRegistrationVa": "0x18b9217d0",
-    "metadataRegistrationVa": "0x18b921c30"
-  },
-  "producers": [
+ "schema": "entityPtrOutputAliasNativeContract.v2",
+ "status": "validated",
+ "nativeMappingId": "entityptr-producer-output-alias.v2",
+ "evidenceBoundary": {
+  "exact": "union tags, member ordinals and field offsets from the build; method bodies by managed name and hash; callee order and loaded argument keys from the bodies",
+  "direct": "which entity each producer writes to its output, and whether that is its filter",
+  "conditional": "an installed IFix patch replaces any of these bodies; the reading holds only without one"
+ },
+ "nativeInputs": {
+  "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+  "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+ },
+ "producers": [
+  {
+   "producerType": "Beyond.Gameplay.Actions.EntityEvent.OnEntityEnterTrigger",
+   "family": "ActionHeader",
+   "unionName": "EntityEvent_OnEntityEnterTrigger",
+   "headerName": "Beyond.Gameplay.Actions.EntityEvent.OnEntityEnterTrigger",
+   "aliasStatus": "validated_non_alias",
+   "negativeReason": "the SPECIFY_ENTITY listener is keyed by the target, which the trigger component raises as sender; the output is the trigger_cast_entity argument, the entity that entered",
+   "fieldOwners": [
+    "Beyond.Gameplay.Actions.EntityEvent.OnEntityEnterTrigger",
+    "Beyond.Gameplay.Actions.EntityEventHeader"
+   ],
+   "outputField": {
+    "fieldName": "entityPtr",
+    "fieldType": "Beyond.Gameplay.Actions.ParamOutput<Beyond.Gameplay.Core.EntityPtr>",
+    "memberOrdinalZeroBased": 18,
+    "fieldOffset": "0xa0"
+   },
+   "filterField": {
+    "fieldName": "_targetEntity",
+    "declaringType": "Beyond.Gameplay.Actions.EntityEventHeader",
+    "fieldType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+    "memberOrdinalZeroBased": 14,
+    "fieldOffset": "0x88"
+   },
+   "guard": {
+    "fieldName": "_triggerTarget",
+    "requiredName": "SPECIFY_ENTITY",
+    "requiredValue": 1,
+    "serializedBytesBetweenFilterAndOutput": "04FFFFFFFFFFFFFFFF00000000FFFFFFFFFF01000000"
+   },
+   "unionTag": 18,
+   "serializedMemberCount": 19,
+   "methods": [
     {
-      "unionTag": 18,
-      "serializedMemberCount": 19,
-      "headerName": "Beyond.Gameplay.Actions.EntityEvent.OnEntityEnterTrigger",
-      "headerTypeToken": "0x020019e1",
-      "aliasStatus": "aliases_filter_when_guard_matches",
-      "outputField": {"fieldName": "entityPtr", "memberOrdinalZeroBased": 18, "fieldType": "Beyond.Gameplay.Actions.ParamOutput<Beyond.Gameplay.Core.EntityPtr>", "fieldTypeIndex": 84695, "fieldOffset": "0xa0"},
-      "filterField": {"fieldName": "_targetEntity", "declaringType": "Beyond.Gameplay.Actions.EntityEventHeader", "memberOrdinalZeroBased": 14, "fieldType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "fieldTypeIndex": 85046, "fieldOffset": "0x88"},
-      "guard": {"fieldName": "_triggerTarget", "memberOrdinalZeroBased": 17, "fieldOffset": "0x80", "enumTypeToken": "0x02001923", "requiredName": "SPECIFY_ENTITY", "requiredValue": 1, "serializedBytesBetweenFilterAndOutput": "04FFFFFFFFFFFFFFFF00000000FFFFFFFFFF01000000"},
-      "methods": [
-        {"id": "deserialize", "token": "0x0601125c", "methodPointerVa": "0x18a6f7740", "fileOffset": 175070528, "bodySize": 1912, "bodySha256": "5005852ADD4BE8D5ED5C59F605463356F748E97D200F860E1EEE02CD78773CB0"},
-        {"id": "output_setter", "token": "0x06011256", "methodPointerVa": "0x18a6f83ec", "fileOffset": 175073772, "bodySize": 52, "bodySha256": "601F066AAD58317511EB402621E47D77A03251970E8363363CFA5B97060E09A4"},
-        {"id": "filter_setter", "token": "0x060114f4", "methodPointerVa": "0x183d971d0", "fileOffset": 64575440, "bodySize": 64, "bodySha256": "0D27BCFF5CD820CCB0B03982E196771DCCFBA4C54C9767FEA177C8BB5049821C"},
-        {"id": "guard_setter", "token": "0x060114f7", "methodPointerVa": "0x183d97120", "fileOffset": 64575264, "bodySize": 48, "bodySha256": "73B7C4FED81D73757B80609517BC35477C0C27A3F0147510B5FED4AC71AF8E18"},
-        {"id": "process", "token": "0x0600967b", "methodPointerVa": "0x186ac77c4", "fileOffset": 111959492, "bodySize": 292, "bodySha256": "22A4601993A87232A01A7145300766AA94915E37CC4382ABAB9082F8A7615D65"},
-        {"id": "base_process", "token": "0x06009178", "methodPointerVa": "0x183d3c190", "fileOffset": 64202640, "bodySize": 2080, "bodySha256": "BB79F9EBF2A3602A2CEAC6E78A4C1D4C7F4C084ADB94FAE86D3D93CAB51A84D9"}
-      ]
+     "type": "Beyond.Gameplay.Actions.EntityEvent.OnEntityEnterTrigger",
+     "name": "Process",
+     "va": "0x185dbc758",
+     "fileOffset": 98283864,
+     "bodySize": 292,
+     "bodySha256": "FA87384B8081EED1014AFD368B7F635319BE2BC4DA7F397FE85C38E1F916B87E"
     },
     {
-      "unionTag": 160,
-      "serializedMemberCount": 16,
-      "headerName": "Beyond.Gameplay.Actions.LevelEvent.OnSpecificEntityDie",
-      "headerTypeToken": "0x020019bb",
-      "aliasStatus": "aliases_filter_when_guard_matches",
-      "outputField": {"fieldName": "_entity", "memberOrdinalZeroBased": 14, "fieldType": "Beyond.Gameplay.Actions.ParamOutput<Beyond.Gameplay.Core.EntityPtr>", "fieldTypeIndex": 84695, "fieldOffset": "0x88"},
-      "filterField": {"fieldName": "_filterEntity", "memberOrdinalZeroBased": 15, "fieldType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "fieldTypeIndex": 85046, "fieldOffset": "0x80"},
-      "methods": [
-        {"id": "deserialize", "token": "0x06011ce4", "methodPointerVa": "0x189fd0518", "fileOffset": 167570200, "bodySize": 1624, "bodySha256": "00DC3FE5ED33AA2D3C8DB9EDC6F06A43661AA076DE4CC24EAB3418FC43207A09"},
-        {"id": "output_setter", "token": "0x06011cdd", "methodPointerVa": "0x189fd0ff0", "fileOffset": 167572976, "bodySize": 52, "bodySha256": "FD5EC47C17648259210945F6C09A405F63B8BCE836C883CC6F8F687F4BCC378E"},
-        {"id": "filter_setter", "token": "0x06011cde", "methodPointerVa": "0x189fd1024", "fileOffset": 167573028, "bodySize": 52, "bodySha256": "7B5C4FC63F3235B43B533CE822CCB0D2A56F433405ECBA1558585C1F01992B45"},
-        {"id": "process", "token": "0x060095ab", "methodPointerVa": "0x186abbdc8", "fileOffset": 111911880, "bodySize": 440, "bodySha256": "E0695FEBA591A65BF72D78993B44734A67CFE1F06E6135C4272D91141698CA1F"}
-      ]
+     "type": "Beyond.Gameplay.Core.LevelEventManager",
+     "name": "_RegisterEntityEventHeaderFromLevelScript",
+     "va": "0x18319eae0",
+     "fileOffset": 52024544,
+     "bodySize": 1296,
+     "bodySha256": "06488EBE82B5CCB9864875042AA8FE2AED74BA449712B117F065CD6F404D9A7C"
     },
     {
-      "unionTag": 189,
-      "serializedMemberCount": 20,
-      "headerName": "Beyond.Gameplay.Actions.ScriptEvent.OnKickableInteractiveLeaveTriggerVolume",
-      "headerTypeToken": "0x0200193c",
-      "aliasStatus": "validated_non_alias",
-      "outputField": {"fieldName": "_entityOutput", "memberOrdinalZeroBased": 16, "fieldType": "Beyond.Gameplay.Actions.ParamOutput<Beyond.Gameplay.Core.EntityPtr>", "fieldTypeIndex": 84695, "fieldOffset": "0xa8"},
-      "filterField": {"fieldName": "_spawnerEntity", "memberOrdinalZeroBased": 17, "fieldType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>", "fieldTypeIndex": 85046, "fieldOffset": "0xa0"},
-      "negativeReason": "the filter is the derived spawner entity while the output is the original kickable interactive entity",
-      "methods": [
-        {"id": "deserialize", "token": "0x06011f1d", "methodPointerVa": "0x189feaa60", "fileOffset": 167678048, "bodySize": 2020, "bodySha256": "690AE603DEDC9385CA64BE5282C0B8839CAAC710639267CCFCDECC207C96B6D0"},
-        {"id": "output_setter", "token": "0x06011f14", "methodPointerVa": "0x189feb720", "fileOffset": 167681312, "bodySize": 52, "bodySha256": "8E1B531A7F9AC99E7B2439D63A724D37F90457B0ED21E6FEF9EB274CADEC506F"},
-        {"id": "filter_setter", "token": "0x06011f15", "methodPointerVa": "0x189feb754", "fileOffset": 167681364, "bodySize": 52, "bodySha256": "0DA9B446729F6A654D93A64891521561E7142A7ECD7602660A09AEABD86E1535"},
-        {"id": "specify_spawner_setter", "token": "0x06011f16", "methodPointerVa": "0x189feb788", "fileOffset": 167681416, "bodySize": 52, "bodySha256": "EDF4A23A207ED948FCC6A2C5960771EC89E3021BAFB7FFCB0E21BEA91EBFC6CC"},
-        {"id": "trigger_slot_setter", "token": "0x06011f17", "methodPointerVa": "0x189feb7bc", "fileOffset": 167681468, "bodySize": 52, "bodySha256": "90AB94988A9C6DFC35DBF283DA48043B61CC52FBEC90377FBDFBB16A40F63A65"},
-        {"id": "process", "token": "0x06009234", "methodPointerVa": "0x186aa8be4", "fileOffset": 111833572, "bodySize": 764, "bodySha256": "023A3EB016C10241FCEA7675C254D23F5E725C4BA8F454A628D1486BD3CA35E0"}
-      ]
-    },
-    {
-      "unionTag": 913,
-      "serializedMemberCount": 12,
-      "producerRole": "action",
-      "actionName": "Beyond.Gameplay.Actions.RepeatEntityPtrListAction",
-      "actionTypeToken": "0x0200174a",
-      "aliasStatus": "validated_non_alias",
-      "outputField": {"fieldName": "_entity", "memberOrdinalZeroBased": 9, "fieldType": "Beyond.Gameplay.Actions.ParamOutput<Beyond.Gameplay.Core.EntityPtr>", "fieldTypeIndex": 84695, "fieldOffset": "0xd8"},
-      "runtimeInputField": {"fieldName": "_entityList", "fieldTypeIndex": 84876, "fieldToken": "0x0400673a"},
-      "negativeReason": "Execute selects a valid runtime element from _entityList through _TryGetValidEntity and writes that element to _entity; there is no constant Param<EntityPtr> input alias",
-      "methods": [
-        {"id": "deserialize", "token": "0x0600b211", "methodPointerVa": "0x18416b920", "fileOffset": 68591392, "bodySize": 800, "bodySha256": "A2C7E38C3EF710FED680E383BB5B3742FAA61D886265CD0C10E6EE1A6FBFF791"},
-        {"id": "output_setter", "token": "0x0600b209", "methodPointerVa": "0x18416bc70", "fileOffset": 68592240, "bodySize": 64, "bodySha256": "A34C643028C06F305C8682BAA475F9623F09735026434B0D929AA46551D9C05E"},
-        {"id": "execute", "token": "0x06008ad4", "methodPointerVa": "0x187658260", "fileOffset": 124086368, "bodySize": 444, "bodySha256": "B67939FB19BABC72483731DBB6A16588E777A2FAB65D890DA554D78F3D10277C"},
-        {"id": "try_get_valid_entity", "token": "0x06008ad5", "methodPointerVa": "0x18765852c", "fileOffset": 124087084, "bodySize": 360, "bodySha256": "0443B9D9E2701C82132AC5C0310825DCE64A2905395497AC86DB553F4B4F391F"}
-      ]
+     "type": "Beyond.Gameplay.Core.TriggerObserverAllEntityComponent",
+     "name": "OnOverlapEnter",
+     "va": "0x1862452a4",
+     "fileOffset": 103038116,
+     "bodySize": 1000,
+     "bodySha256": "3511F0D6F66D85E55423458788A60E830CA4715416AF19707A34B77A0CA2AC4D"
     }
-  ]
+   ],
+   "review": {
+    "finding": "Process copies trigger_cast_entity into entityPtr; OnOverlapEnter raises with the trigger owner as sender and the entering entity as trigger_cast_entity; the SPECIFY_ENTITY branch registers the listener on the target's source key.",
+    "methods": [
+     {
+      "type": "Beyond.Gameplay.Actions.EntityEvent.OnEntityEnterTrigger",
+      "name": "Process",
+      "calls": [
+       "EntityEventHeader.Process"
+      ],
+      "literals": [
+       "trigger_cast_entity"
+      ]
+     },
+     {
+      "type": "Beyond.Gameplay.Core.LevelEventManager",
+      "name": "_RegisterEntityEventHeaderFromLevelScript",
+      "calls": [
+       "EntityEventHeader.get_triggerTarget",
+       "EntityEventHeader.get_target"
+      ]
+     },
+     {
+      "type": "Beyond.Gameplay.Core.TriggerObserverAllEntityComponent",
+      "name": "OnOverlapEnter",
+      "calls": [
+       "EventParams.SetSender",
+       "EventParams.SetReceiver",
+       "LevelEventManager.RaiseEntityEvent"
+      ],
+      "literals": [
+       "trigger_cast_entity"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "producerType": "Beyond.Gameplay.Actions.LevelEvent.OnSpecificEntityDie",
+   "family": "ActionHeader",
+   "unionName": "LevelEvent_OnSpecificEntityDie",
+   "headerName": "Beyond.Gameplay.Actions.LevelEvent.OnSpecificEntityDie",
+   "aliasStatus": "aliases_filter_when_guard_matches",
+   "aliasCondition": "Process returns unless the @event_receiver argument equals _filterEntity, so the header only fires when they are equal",
+   "outputField": {
+    "fieldName": "_entity",
+    "fieldType": "Beyond.Gameplay.Actions.ParamOutput<Beyond.Gameplay.Core.EntityPtr>",
+    "memberOrdinalZeroBased": 14,
+    "fieldOffset": "0x88"
+   },
+   "filterField": {
+    "fieldName": "_filterEntity",
+    "fieldType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+    "memberOrdinalZeroBased": 15,
+    "fieldOffset": "0x80"
+   },
+   "unionTag": 161,
+   "serializedMemberCount": 16,
+   "methods": [
+    {
+     "type": "Beyond.Gameplay.Actions.LevelEvent.OnSpecificEntityDie",
+     "name": "Process",
+     "va": "0x185dc2954",
+     "fileOffset": 98308948,
+     "bodySize": 440,
+     "bodySha256": "2FE7DC985701908E24B13D31DE8ED54400A70087F95DF944ED113939554D0C62"
+    }
+   ],
+   "review": {
+    "finding": "Process reads @event_receiver, compares it with GetValue(_filterEntity) through EntityPtr.op_Inequality, and writes it to _entity only when equal.",
+    "methods": [
+     {
+      "type": "Beyond.Gameplay.Actions.LevelEvent.OnSpecificEntityDie",
+      "name": "Process",
+      "calls": [
+       "EntityPtr.op_Inequality",
+       "ActionHeader.Process"
+      ],
+      "literals": [
+       "@event_receiver"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "producerType": "Beyond.Gameplay.Actions.ScriptEvent.OnKickableInteractiveLeaveTriggerVolume",
+   "family": "ActionHeader",
+   "unionName": "ScriptEvent_OnKickableInteractiveLeaveTriggerVolume",
+   "headerName": "Beyond.Gameplay.Actions.ScriptEvent.OnKickableInteractiveLeaveTriggerVolume",
+   "aliasStatus": "validated_non_alias",
+   "negativeReason": "the filter is the derived spawner entity while the output is the original kickable interactive entity",
+   "outputField": {
+    "fieldName": "_entityOutput",
+    "memberOrdinalZeroBased": 16,
+    "fieldOffset": "0xa8"
+   },
+   "filterField": {
+    "fieldName": "_spawnerEntity",
+    "memberOrdinalZeroBased": 17,
+    "fieldOffset": "0xa0"
+   },
+   "unionTag": 190,
+   "serializedMemberCount": 20,
+   "methods": [
+    {
+     "type": "Beyond.Gameplay.Actions.ScriptEvent.OnKickableInteractiveLeaveTriggerVolume",
+     "name": "Process",
+     "va": "0x185d9ed94",
+     "fileOffset": 98162580,
+     "bodySize": 764,
+     "bodySha256": "2A8085BC046A450C6C9FAE2E5ECB98AA15325F9760B7F2578916CAC75538F8B9"
+    }
+   ],
+   "review": {
+    "finding": "Process derives the kickable's spawner through InteractiveKickableBrain.GetSpawnerEntity, compares that with _spawnerEntity, and writes the kickable itself to _entityOutput.",
+    "methods": [
+     {
+      "type": "Beyond.Gameplay.Actions.ScriptEvent.OnKickableInteractiveLeaveTriggerVolume",
+      "name": "Process",
+      "calls": [
+       "EntityPtr.TryGetEntityIfStarted",
+       "InteractiveKickableBrain.GetSpawnerEntity",
+       "EntityPtr.op_Inequality",
+       "ActionHeader.Process"
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "producerType": "Beyond.Gameplay.Actions.RepeatEntityPtrListAction",
+   "family": "ActionBase",
+   "unionName": "RepeatEntityPtrListAction",
+   "actionName": "Beyond.Gameplay.Actions.RepeatEntityPtrListAction",
+   "producerRole": "action",
+   "aliasStatus": "validated_non_alias",
+   "negativeReason": "Execute selects a valid runtime element from _entityList through _TryGetValidEntity and writes that element to _entity; there is no constant Param<EntityPtr> input alias",
+   "outputField": {
+    "fieldName": "_entity",
+    "memberOrdinalZeroBased": 9,
+    "fieldOffset": "0xd8"
+   },
+   "runtimeInputField": {
+    "fieldName": "_entityList",
+    "memberOrdinalZeroBased": 10,
+    "fieldOffset": "0xe0"
+   },
+   "unionTag": 925,
+   "serializedMemberCount": 12,
+   "methods": [
+    {
+     "type": "Beyond.Gameplay.Actions.RepeatEntityPtrListAction",
+     "name": "Execute",
+     "va": "0x185d5ecb8",
+     "fileOffset": 97900216,
+     "bodySize": 444,
+     "bodySha256": "E0AE2F461EB2835043C1A4EF619B59FFAAFB14E3331F46F8A49C9F0545D66EF4"
+    }
+   ],
+   "review": {
+    "finding": "Execute writes the element _TryGetValidEntity selects from _entityList.",
+    "methods": [
+     {
+      "type": "Beyond.Gameplay.Actions.RepeatEntityPtrListAction",
+      "name": "Execute",
+      "calls": [
+       "RepeatEntityPtrListAction._TryGetValidEntity",
+       "ActionBase.SetResultNextID"
+      ]
+     }
+    ]
+   }
+  }
+ ]
 }

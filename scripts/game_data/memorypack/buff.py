@@ -380,73 +380,73 @@ BUFF_ABILITY_ACTION_TAG_NAMES = {
     0x000b: "Core_AddTagAction_Data",
     0x0016: "Core_AuraAction_Data",
     0x001c: "Core_BlowOffCharacterAction_Data",
-    0x0023: "Core_CameraImpulseAction_CameraImpulseActionData",
-    0x0026: "Core_CastSkill_Data",
-    0x002e: "Core_ChannelingAction_Data",
-    0x0034: "Core_CharHurtAnimAction_Data",
-    0x003b: "Core_CheckBuffStackNumAdvanced_Data",
-    0x003d: "Core_CheckConsumeBuffLayer_Data",
-    0x003f: "Core_CheckDistanceCondition_Data",
-    0x0041: "Core_CheckGlobalCDTimerAction_Data",
-    0x004d: "Core_CompareFloat_Data",
-    0x0053: "Core_Conditions_CheckBuffIdInContext_Data",
-    0x0054: "Core_Conditions_CheckBuffIdInContextAdvanced_Data",
-    0x0055: "Core_Conditions_CheckBuffStackNum_Data",
-    0x0058: "Core_Conditions_CheckDamageDecorateMask_Data",
-    0x005a: "Core_Conditions_CheckDamageType_Data",
-    0x0060: "Core_Conditions_CheckHp_Data",
-    0x0063: "Core_Conditions_CheckMainCharacterCondition_Data",
-    0x0064: "Core_Conditions_CheckObjectTypeMatch_Data",
-    0x0065: "Core_Conditions_CheckObtainAtbType_Data",
-    0x0069: "Core_Conditions_CheckPoiseValue_Data",
-    0x0071: "Core_Conditions_CheckSkillId_Data",
-    0x0075: "Core_Conditions_CheckSuperArmor_Data",
-    0x0076: "Core_Conditions_CheckTagMatch_Data",
-    0x007a: "Core_Conditions_CheckTargetsEqual_Data",
-    0x007b: "Core_Conditions_CheckTimedMarkerCondition_Data",
-    0x0082: "Core_Conditions_Probablity_Data",
-    0x0084: "Core_ContinuousFindTargetAction_Data",
-    0x0086: "Core_ConvertToTargetContext_Data",
-    0x008a: "Core_CreateBuffAction_Data",
-    0x008e: "Core_CreateTimedMarker_Data",
-    0x0091: "Core_CustomRootMotionAction_Data",
-    0x0092: "Core_DamageAction_DamageActionData",
-    0x0093: "Core_DebugPrintAction_Data",
-    0x009a: "Core_EffectAction_EffectActionData",
-    0x00a9: "Core_FindTargetAction_FindTargetActionData",
-    0x00ab: "Core_FinishBuffAdvanced_Data",
-    0x00ad: "Core_FinishOwnerAction_Data",
-    0x00b8: "Core_GetAITransDataAction_Data",
-    0x00be: "Core_HitStopAction_Data",
-    0x00c0: "Core_IfElseAction_IfElseActionData",
-    0x00cb: "Core_InterruptAction_Data",
-    0x00d5: "Core_LaunchProjectile_Data",
-    0x00d7: "Core_LockCameraAimAction_LockCameraAimActionData",
-    0x00e1: "Core_ModifyDynamicBlackboard_Data",
-    0x00eb: "Core_MoveToAction_Data",
-    0x00f2: "Core_NotNextCheckAction_Data",
-    0x00f3: "Core_ObtainCostAction_Data",
-    0x00f9: "Core_OverrideCameraFollowAction_OverrideCameraFollowActionData",
-    0x0100: "Core_PatrolTeleport_Data",
-    0x0109: "Core_PlayAnimationAction_PlayAnimationActionData",
-    0x010d: "Core_PlaySoundAction_PlaySoundActionData",
-    0x0110: "Core_PullAction_Data",
-    0x011a: "Core_RecoverFromPoiseBreak_Data",
-    0x011c: "Core_RecoverPoiseAction_Data",
-    0x0131: "Core_SaveValueFromAIBlackboard_Data",
-    0x0133: "Core_SelfRotateAction_Data",
-    0x0134: "Core_SendBattleSignalToLevel_Data",
-    0x0144: "Core_SetSkillCdAtOnce_Data",
-    0x014a: "Core_ShowComboRingQte_Data",
-    0x014c: "Core_ShowHideActorAction_ShowHideActorData",
-    0x014e: "Core_SimpleCalcBBAction_Data",
-    0x0154: "Core_SpawnAbilityEntity_Data",
-    0x0155: "Core_SpawnEnemyAction_Data",
-    0x0156: "Core_SpawnInteractiveGoldCoin_Data",
-    0x0158: "Core_SpellInfliction_Data",
-    0x0167: "Core_TeleportAction_Data",
-    0x016c: "Core_TickIntervalAction_Data",
-    0x016e: "Core_TimeDilationAction_Data",
+    0x0024: "Core_CameraImpulseAction_CameraImpulseActionData",
+    0x0027: "Core_CastSkill_Data",
+    0x002f: "Core_ChannelingAction_Data",
+    0x0035: "Core_CharHurtAnimAction_Data",
+    0x003c: "Core_CheckBuffStackNumAdvanced_Data",
+    0x003f: "Core_CheckConsumeBuffLayer_Data",
+    0x0042: "Core_CheckDistanceCondition_Data",
+    0x0044: "Core_CheckGlobalCDTimerAction_Data",
+    0x0050: "Core_CompareFloat_Data",
+    0x0056: "Core_Conditions_CheckBuffIdInContext_Data",
+    0x0057: "Core_Conditions_CheckBuffIdInContextAdvanced_Data",
+    0x0058: "Core_Conditions_CheckBuffStackNum_Data",
+    0x005b: "Core_Conditions_CheckDamageDecorateMask_Data",
+    0x005d: "Core_Conditions_CheckDamageType_Data",
+    0x0065: "Core_Conditions_CheckHp_Data",
+    0x0068: "Core_Conditions_CheckMainCharacterCondition_Data",
+    0x0069: "Core_Conditions_CheckObjectTypeMatch_Data",
+    0x006a: "Core_Conditions_CheckObtainAtbType_Data",
+    0x006e: "Core_Conditions_CheckPoiseValue_Data",
+    0x0076: "Core_Conditions_CheckSkillId_Data",
+    0x007b: "Core_Conditions_CheckSuperArmor_Data",
+    0x007c: "Core_Conditions_CheckTagMatch_Data",
+    0x0080: "Core_Conditions_CheckTargetsEqual_Data",
+    0x0081: "Core_Conditions_CheckTimedMarkerCondition_Data",
+    0x0088: "Core_Conditions_Probablity_Data",
+    0x008a: "Core_ContinuousFindTargetAction_Data",
+    0x008c: "Core_ConvertToTargetContext_Data",
+    0x0092: "Core_CreateBuffAction_Data",
+    0x0096: "Core_CreateTimedMarker_Data",
+    0x0099: "Core_CustomRootMotionAction_Data",
+    0x009a: "Core_DamageAction_DamageActionData",
+    0x009b: "Core_DebugPrintAction_Data",
+    0x00a2: "Core_EffectAction_EffectActionData",
+    0x00b2: "Core_FindTargetAction_FindTargetActionData",
+    0x00b4: "Core_FinishBuffAdvanced_Data",
+    0x00b6: "Core_FinishOwnerAction_Data",
+    0x00c1: "Core_GetAITransDataAction_Data",
+    0x00c7: "Core_HitStopAction_Data",
+    0x00c9: "Core_IfElseAction_IfElseActionData",
+    0x00d4: "Core_InterruptAction_Data",
+    0x00de: "Core_LaunchProjectile_Data",
+    0x00e0: "Core_LockCameraAimAction_LockCameraAimActionData",
+    0x00ec: "Core_ModifyDynamicBlackboard_Data",
+    0x00f6: "Core_MoveToAction_Data",
+    0x00fd: "Core_NotNextCheckAction_Data",
+    0x00fe: "Core_ObtainCostAction_Data",
+    0x0104: "Core_OverrideCameraFollowAction_OverrideCameraFollowActionData",
+    0x010c: "Core_PatrolTeleport_Data",
+    0x0115: "Core_PlayAnimationAction_PlayAnimationActionData",
+    0x0119: "Core_PlaySoundAction_PlaySoundActionData",
+    0x011c: "Core_PullAction_Data",
+    0x0126: "Core_RecoverFromPoiseBreak_Data",
+    0x0128: "Core_RecoverPoiseAction_Data",
+    0x0142: "Core_SaveValueFromAIBlackboard_Data",
+    0x0144: "Core_SelfRotateAction_Data",
+    0x0145: "Core_SendBattleSignalToLevel_Data",
+    0x0157: "Core_SetSkillCdAtOnce_Data",
+    0x015e: "Core_ShowComboRingQte_Data",
+    0x0160: "Core_ShowHideActorAction_ShowHideActorData",
+    0x0163: "Core_SimpleCalcBBAction_Data",
+    0x0169: "Core_SpawnAbilityEntity_Data",
+    0x016a: "Core_SpawnEnemyAction_Data",
+    0x016b: "Core_SpawnInteractiveGoldCoin_Data",
+    0x016d: "Core_SpellInfliction_Data",
+    0x017c: "Core_TeleportAction_Data",
+    0x0181: "Core_TickIntervalAction_Data",
+    0x0183: "Core_TimeDilationAction_Data",
 }
 
 
@@ -585,106 +585,106 @@ def read_buff_timeline_first_union_tag(
     return data[offset], 1, data[offset:offset + 1].hex(" ")
 
 
-BUFF_CONVERT_TO_TARGET_CONTEXT_ACTION_TAG = 0x0086
+BUFF_CONVERT_TO_TARGET_CONTEXT_ACTION_TAG = 0x008c
 
 
-BUFF_CREATE_BUFF_ACTION_TAG = 0x008a
+BUFF_CREATE_BUFF_ACTION_TAG = 0x0092
 
 
-BUFF_MODIFY_DYNAMIC_BLACKBOARD_ACTION_TAG = 0x00e1
+BUFF_MODIFY_DYNAMIC_BLACKBOARD_ACTION_TAG = 0x00ec
 
 
-BUFF_DEBUG_PRINT_ACTION_TAG = 0x0093
+BUFF_DEBUG_PRINT_ACTION_TAG = 0x009b
 
 
-BUFF_CAMERA_IMPULSE_ACTION_TAG = 0x0023
+BUFF_CAMERA_IMPULSE_ACTION_TAG = 0x0024
 
 
-BUFF_EFFECT_ACTION_TAG = 0x009a
+BUFF_EFFECT_ACTION_TAG = 0x00a2
 
 
-BUFF_CHECK_SUPER_ARMOR_ACTION_TAG = 0x0075
+BUFF_CHECK_SUPER_ARMOR_ACTION_TAG = 0x007b
 
 
-BUFF_CHECK_MAIN_CHARACTER_ACTION_TAG = 0x0063
+BUFF_CHECK_MAIN_CHARACTER_ACTION_TAG = 0x0068
 
 
 BUFF_FINISH_BUFF_ACTION_TAG = 0x0002
 
 
-BUFF_CREATE_TIMED_MARKER_ACTION_TAG = 0x008e
+BUFF_CREATE_TIMED_MARKER_ACTION_TAG = 0x0096
 
 
-BUFF_NOT_NEXT_CHECK_ACTION_TAG = 0x00f2
+BUFF_NOT_NEXT_CHECK_ACTION_TAG = 0x00fd
 
 
-BUFF_CHECK_DAMAGE_DECORATE_MASK_ACTION_TAG = 0x0058
+BUFF_CHECK_DAMAGE_DECORATE_MASK_ACTION_TAG = 0x005b
 
 
-BUFF_CHECK_BUFF_ID_CONTEXT_ACTION_TAG = 0x0053
-BUFF_CHECK_BUFF_ID_CONTEXT_ADVANCED_ACTION_TAG = 0x0054
-BUFF_CHECK_HP_ACTION_TAG = 0x0060
-BUFF_CHECK_DAMAGE_TYPE_ACTION_TAG = 0x005a
-BUFF_CHECK_TAG_MATCH_ACTION_TAG = 0x0076
-BUFF_CHECK_TIMED_MARKER_ACTION_TAG = 0x007b
-BUFF_CHECK_OBJECT_TYPE_ACTION_TAG = 0x0064
-BUFF_CHECK_OBTAIN_ATB_TYPE_ACTION_TAG = 0x0065
-BUFF_PROBABILITY_ACTION_TAG = 0x0082
-BUFF_FINISH_OWNER_ACTION_TAG = 0x00ad
-BUFF_CHECK_BUFF_STACK_NUM_ADVANCED_ACTION_TAG = 0x003b
-BUFF_CHECK_BUFF_STACK_NUM_ACTION_TAG = 0x0055
-BUFF_FINISH_BUFF_ADVANCED_ACTION_TAG = 0x00ab
-BUFF_SPAWN_INTERACTIVE_GOLD_COIN_ACTION_TAG = 0x0156
-BUFF_SAVE_VALUE_FROM_AI_BLACKBOARD_ACTION_TAG = 0x0131
-BUFF_OBTAIN_COST_ACTION_TAG = 0x00f3
+BUFF_CHECK_BUFF_ID_CONTEXT_ACTION_TAG = 0x0056
+BUFF_CHECK_BUFF_ID_CONTEXT_ADVANCED_ACTION_TAG = 0x0057
+BUFF_CHECK_HP_ACTION_TAG = 0x0065
+BUFF_CHECK_DAMAGE_TYPE_ACTION_TAG = 0x005d
+BUFF_CHECK_TAG_MATCH_ACTION_TAG = 0x007c
+BUFF_CHECK_TIMED_MARKER_ACTION_TAG = 0x0081
+BUFF_CHECK_OBJECT_TYPE_ACTION_TAG = 0x0069
+BUFF_CHECK_OBTAIN_ATB_TYPE_ACTION_TAG = 0x006a
+BUFF_PROBABILITY_ACTION_TAG = 0x0088
+BUFF_FINISH_OWNER_ACTION_TAG = 0x00b6
+BUFF_CHECK_BUFF_STACK_NUM_ADVANCED_ACTION_TAG = 0x003c
+BUFF_CHECK_BUFF_STACK_NUM_ACTION_TAG = 0x0058
+BUFF_FINISH_BUFF_ADVANCED_ACTION_TAG = 0x00b4
+BUFF_SPAWN_INTERACTIVE_GOLD_COIN_ACTION_TAG = 0x016b
+BUFF_SAVE_VALUE_FROM_AI_BLACKBOARD_ACTION_TAG = 0x0142
+BUFF_OBTAIN_COST_ACTION_TAG = 0x00fe
 BUFF_ACHIEVE_SPECIAL_GAME_EVENT_ACTION_TAG = 0x0006
 BUFF_ADD_GLOBAL_CD_TIMER_ACTION_TAG = 0x000a
-BUFF_CAST_SKILL_ACTION_TAG = 0x0026
-BUFF_CHECK_CONSUME_BUFF_LAYER_ACTION_TAG = 0x003d
-BUFF_CHECK_DISTANCE_ACTION_TAG = 0x003f
-BUFF_CHECK_GLOBAL_CD_TIMER_ACTION_TAG = 0x0041
-BUFF_CHECK_POISE_VALUE_ACTION_TAG = 0x0069
-BUFF_CHECK_TARGETS_EQUAL_ACTION_TAG = 0x007a
-BUFF_SIMPLE_CALC_BLACKBOARD_ACTION_TAG = 0x014e
+BUFF_CAST_SKILL_ACTION_TAG = 0x0027
+BUFF_CHECK_CONSUME_BUFF_LAYER_ACTION_TAG = 0x003f
+BUFF_CHECK_DISTANCE_ACTION_TAG = 0x0042
+BUFF_CHECK_GLOBAL_CD_TIMER_ACTION_TAG = 0x0044
+BUFF_CHECK_POISE_VALUE_ACTION_TAG = 0x006e
+BUFF_CHECK_TARGETS_EQUAL_ACTION_TAG = 0x0080
+BUFF_SIMPLE_CALC_BLACKBOARD_ACTION_TAG = 0x0163
 
 
-BUFF_FIND_TARGET_ACTION_TAG = 0x00a9
+BUFF_FIND_TARGET_ACTION_TAG = 0x00b2
 
 
-BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG = 0x0134
+BUFF_SEND_BATTLE_SIGNAL_TO_LEVEL_TAG = 0x0145
 
 
-BUFF_PLAY_SOUND_ACTION_TAG = 0x010d
+BUFF_PLAY_SOUND_ACTION_TAG = 0x0119
 
 
-BUFF_PATROL_TELEPORT_ACTION_TAG = 0x0100
+BUFF_PATROL_TELEPORT_ACTION_TAG = 0x010c
 
 
-BUFF_PLAY_ANIMATION_ACTION_TAG = 0x0109
+BUFF_PLAY_ANIMATION_ACTION_TAG = 0x0115
 
 
-BUFF_COMPARE_FLOAT_ACTION_TAG = 0x004d
+BUFF_COMPARE_FLOAT_ACTION_TAG = 0x0050
 
 
-BUFF_GET_AI_TRANS_DATA_ACTION_TAG = 0x00b8
+BUFF_GET_AI_TRANS_DATA_ACTION_TAG = 0x00c1
 
 
-BUFF_CHECK_SKILL_ID_ACTION_TAG = 0x0071
+BUFF_CHECK_SKILL_ID_ACTION_TAG = 0x0076
 
 
-BUFF_IF_ELSE_ACTION_TAG = 0x00c0
+BUFF_IF_ELSE_ACTION_TAG = 0x00c9
 
 
-BUFF_INTERRUPT_ACTION_TAG = 0x00cb
+BUFF_INTERRUPT_ACTION_TAG = 0x00d4
 
 
-BUFF_SPELL_INFLICTION_ACTION_TAG = 0x0158
+BUFF_SPELL_INFLICTION_ACTION_TAG = 0x016d
 
 
-BUFF_SET_SKILL_CD_AT_ONCE_ACTION_TAG = 0x0144
+BUFF_SET_SKILL_CD_AT_ONCE_ACTION_TAG = 0x0157
 
 
-BUFF_DAMAGE_ACTION_TAG = 0x0092
+BUFF_DAMAGE_ACTION_TAG = 0x009a
 
 
 BUFF_DAMAGE_UNIT_MEMBER_COUNT = 32
@@ -4223,7 +4223,7 @@ def read_buff_selector_member(
     raise ValueError(f"{field_name}:unknown-member-kind={kind}")
 
 
-BUFF_CONTINUOUS_FIND_TARGET_ACTION_TAG = 0x0084
+BUFF_CONTINUOUS_FIND_TARGET_ACTION_TAG = 0x008a
 
 
 BUFF_FIND_TARGET_ACTION_VARIANTS = {
