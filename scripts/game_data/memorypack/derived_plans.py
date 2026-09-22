@@ -71,14 +71,28 @@ from scripts.source_paths import ExportLayout
 DEFAULT_OUTPUT = REPO / "reports/game_data/memorypack_derived_plans.json"
 NULL_MARKER = 0xFF
 WIDE_TAG_LEAD = 0xFA
-# A plan may legitimately recurse; this is what makes executing one terminate.
-# It bounds nesting, not record size, and a body deeper than this is reported
-# unsupported rather than read on a guess.
-PLAN_DEPTH_LIMIT = 24
+# A plan may legitimately recurse, and this bounds how deep an execution goes.
+#
+# It counts plan *steps*, not nesting levels: reading a nested body costs two,
+# one for the member and one for the object it holds. Termination does not rest
+# on it -- every step consumes at least one byte, a null marker or a member
+# header, so a run is bounded by the record anyway -- which makes this a guard
+# against pathological nesting rather than the thing that stops recursion.
+#
+# The value has to be set from the data. SkillData's real maximum is 55 steps,
+# with a 99th percentile of 39, so the original 24 was not a bound on anything
+# pathological: it refused 818 ordinary files. This leaves several times the
+# observed headroom while staying far below the interpreter's own stack limit.
+PLAN_DEPTH_LIMIT = 256
 # The exported family the frozen reader is built for, and the only one whose
 # root framing is reachable without a corpus gate. Its first byte is the root
 # wrapper's member count.
 BUFFDATA_DIRECTORY = "BuffData"
+# The other exported family, read whole rather than to an anchor: SkillData's
+# own wrapper is a plan like any other, so a file either consumes exactly or
+# refuses.
+SKILLDATA_DIRECTORY = "SkillData"
+SKILLDATA_TYPE = "Beyond.Gameplay.Core.SkillData"
 BUFFDATA_ROOT_MEMBER_COUNT = 30
 # A file with more id anchors than this is not selected between; the census
 # refuses it rather than picking one.
@@ -102,20 +116,38 @@ class PlanRegistry:
         self.plans = plans
         self.union_tag_maps = union_tag_maps
         self.roots = roots
+        self.named_roots = {}
+
+    #: Plans for types reached by name rather than by a dispatcher tag.
+    named_roots: dict[str, int]
 
     @classmethod
     def from_resolver(
-        cls, resolver: Resolver, resolved: dict[int, dict[str, Any]]
+        cls, resolver: Resolver, resolved: dict[int, dict[str, Any]],
+        named: tuple[str, ...] = (),
     ) -> "PlanRegistry":
         roots = {
             tag: row["wrapperTypeDefinition"]
             for tag, row in resolved.items()
             if row.get("status") == "determined" and "wrapperTypeDefinition" in row
         }
-        return cls(dict(resolver.plans), dict(resolver.union_tag_maps), roots)
+        # A named type is not a union member, so it has no tag; it is planned
+        # here so a whole record of that type can be executed directly.
+        named_roots: dict[str, int] = {}
+        for name in named:
+            definition = resolver.by_type.get(name)
+            if definition is not None and resolver.plan(definition):
+                named_roots[name] = definition
+        registry = cls(dict(resolver.plans), dict(resolver.union_tag_maps), roots)
+        registry.named_roots = named_roots
+        return registry
 
     def __len__(self) -> int:
         return len(self.roots)
+
+    # __len__ makes a registry with no dispatcher roots falsy, so every reader
+    # below tests ``is not None`` rather than truthiness. A named-root run has
+    # exactly that shape and would otherwise behave as if unregistered.
 
 
 def load_registry(
@@ -126,7 +158,7 @@ def load_registry(
         gameassembly=gameassembly, metadata=metadata)
     if resolver is None:
         return PlanRegistry({}, {}, {}), audit
-    registry = PlanRegistry.from_resolver(resolver, resolved)
+    registry = PlanRegistry.from_resolver(resolver, resolved, named=(SKILLDATA_TYPE,))
     return registry, dict(audit, determinedRoutes=len(registry))
 
 
@@ -157,7 +189,7 @@ class DerivedPlanMixin:
 
     def _action(self, depth: int, tag: int, width: int) -> None:
         registry = self.plan_registry
-        definition = registry.roots.get(tag) if registry else None
+        definition = registry.roots.get(tag) if registry is not None else None
         if definition is None:
             super()._action(depth, tag, width)
             return
@@ -189,7 +221,7 @@ class DerivedPlanMixin:
         """A wrapper body: a null marker, or a member header and the members."""
         self._plan_depth_guard(depth)
         registry = self.plan_registry
-        members = registry.plans.get(definition) if registry else None
+        members = registry.plans.get(definition) if registry is not None else None
         if members is None:
             raise Unsupported(
                 self.source, self.pos, "a planned wrapper", definition, "unplanned")
@@ -255,7 +287,7 @@ class DerivedPlanMixin:
         """A null marker, or a tag and the concrete subtype's body."""
         self._plan_depth_guard(depth)
         registry = self.plan_registry
-        tags = registry.union_tag_maps.get(base) if registry else None
+        tags = registry.union_tag_maps.get(base) if registry is not None else None
         if tags is None:
             raise Unsupported(
                 self.source, self.pos, "a planned union", base, "unplanned")
@@ -461,6 +493,56 @@ def _sweep(files: list[Path]) -> dict[str, tuple[int, int]]:
     return closed
 
 
+def _skilldata_sweep(files: list[Path], registry: PlanRegistry) -> dict[str, Any]:
+    """Execute the whole ``SkillData`` plan over every exported file.
+
+    This is a different measurement from the BuffData one and a stronger one.
+    There is no reader-versus-reader comparison here because no reviewed reader
+    frames a SkillData file whole -- they decode its first timeline record and
+    leave the rest an explicit opaque remainder. What is being asked is simply
+    whether the derived plan consumes each file exactly.
+
+    The shape of the answer is what carries the evidence. A wrong member layout
+    drifts, and a drifted cursor lands at an arbitrary offset; landing on the
+    last byte, repeatedly, across files spanning orders of magnitude in size,
+    is not something a wrong layout produces. So ``shortOfEof`` is reported
+    beside ``exactEof``: it is the number that would expose a drifting model,
+    and reporting the two together is what makes the claim checkable.
+    """
+    definition = registry.named_roots.get(SKILLDATA_TYPE)
+    if definition is None:
+        return {"status": "unplanned", "type": SKILLDATA_TYPE}
+
+    class _Driver(DerivedPlanMixin, _FrozenReader):
+        pass
+
+    exact = short = refused = 0
+    refusals: dict[str, int] = {}
+    for path in files:
+        data = path.read_bytes()
+        reader = _Driver(data, path.name, registry=registry)
+        try:
+            reader._plan_object(definition, 0)
+        except (Unsupported, ValueError, IndexError, struct.error) as error:
+            refused += 1
+            category = getattr(error, "diagnostic", None) or {}
+            key = str(category.get("category") or type(error).__name__)
+            refusals[key] = refusals.get(key, 0) + 1
+            continue
+        if reader.pos == len(data):
+            exact += 1
+        else:
+            short += 1
+    return {
+        "status": "validated" if not short else "drifting",
+        "files": len(files),
+        "exactEof": exact,
+        "shortOfEof": short,
+        "refused": refused,
+        "refusalKinds": dict(sorted(refusals.items(), key=lambda kv: -kv[1])),
+    }
+
+
 def corpus_run(export_root: Path | None = None) -> dict[str, Any]:
     """Compare the frozen reader against the plan reader over exported BuffData.
 
@@ -493,9 +575,15 @@ def corpus_run(export_root: Path | None = None) -> dict[str, Any]:
     shared = sorted(set(before) & set(after))
     unchanged = sum(1 for name in shared if before[name] == after[name])
     moved = [name for name in shared if before[name] != after[name]]
+    skill_directory = layout.json_dir / SKILLDATA_DIRECTORY
+    skilldata = (
+        _skilldata_sweep(sorted(skill_directory.glob("*.json")), registry)
+        if skill_directory.is_dir() else {"status": "missing-export"}
+    )
     return {
         "status": "validated" if not moved and not (set(before) - set(after)) else "regressed",
         "audit": audit,
+        "skillData": skilldata,
         "files": len(files),
         "frozenClosed": len(before),
         "planClosed": len(after),

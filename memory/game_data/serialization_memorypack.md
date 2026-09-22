@@ -1954,8 +1954,47 @@ point. What remains is structural rather than coverage: 294 files refused at the
 envelope's `actionGroup` shape, 29 by the deliberate
 `createBuff:requires-multiple-actions` rule, and 5 framing stops.
 
-That closure is also fields 2-14 reaching the accepted id anchor, not a
-whole-file EOF claim: the named suffix beyond the anchor and the opaque nested
+**SkillData reads whole, which no reviewed reader had claimed.** `SkillData`
+is itself a planned wrapper, so a file can be executed from its first byte
+rather than decoded to an anchor -- and **2,483 of the 2,621 exported files
+consume exactly to EOF, with not one landing short**. That shape is the
+evidence: a wrong member layout drifts, and a drifted cursor stops at an
+arbitrary offset, so landing on the last byte repeatedly across files spanning
+orders of magnitude in size is not something a wrong layout produces. The
+remaining 138 refuse on a member-count or count-bounds check, which is the
+fail-closed path working rather than a silent misread. The sweep reports
+`shortOfEof` beside `exactEof` precisely because it is the number that would
+expose a drifting model.
+
+This also closes the family the decoder never reached. 88 files carry a
+non-empty `passiveEventActions` list, whose records no reviewed reader frames;
+**87 of them now consume exactly to EOF**. The other 206 files the timeline
+decoder refuses at the envelope are correctly refused -- both action-group
+lists are empty, so there is no first timeline record to decode, which is an
+absence rather than a gap.
+
+*Two corrections came out of getting there, and both were mine rather than the
+data's.* The depth limit was set at 24 plan steps, roughly twelve nesting
+levels, and refused 818 ordinary files; SkillData's real maximum is 55 with a
+99th percentile of 39. Termination never rested on that limit -- every plan
+step consumes at least one byte -- so it was a guard masquerading as a
+correctness bound. And `PlanRegistry` defines `__len__`, which makes a registry
+holding no dispatcher roots *falsy*; three reader paths tested it for
+truthiness and so behaved as if unregistered, which is exactly the shape a
+named-root run has.
+
+***A hypothesis tested and refused, recorded so it is not retried.*** The
+dominant refusal is `TimelineAction+ForceSyncAnimData`, where the plan expects
+four members and the payload's header byte says zero -- the same type, the same
+value, 85 times, which reads like MemoryPack writing fewer members than the
+type declares. Accepting a short header and reading only the members written
+gains **nothing**: still 2,483 exact, with 60 refusals merely changing
+category. Were those headers legitimately short, reading them short would land
+on EOF. It does not, so the cursor is wrong there rather than the header, and
+version tolerance is not the explanation.
+
+That BuffData closure is also fields 2-14 reaching the accepted id anchor, not
+a whole-file EOF claim: the named suffix beyond the anchor and the opaque nested
 bodies inside those fields are unchanged. BuffData is one family -- the
 SkillData timeline readers sit behind their own `inputSetSha256` gates and this
 run does not cover them. And what the plans describe is still a generated
