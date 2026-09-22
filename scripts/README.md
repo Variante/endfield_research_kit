@@ -260,7 +260,7 @@ the focused Story/Wiki projection. Maintained Text Tables renderers live in
 `webui/story/reference_structured_fields.py` and are published by
 `webui/story/build.py` as each reference row's `fields`.
 
-`build_assets.py` writes only Assets-owned indexes and media lookup. The legacy
+`build_assets.py` writes only Assets-owned indexes and media lookup. Its `--mode` defaults to `focused`, the Story/Wiki media projection; the served Assets page is built with `--mode default`, and the wrapper passes it. A direct run without `--mode default` replaces the full index with the focused projection. The legacy
 economy, world, presentation, and broad data index helpers are diagnostic only
 and do not feed active pages.
 
@@ -275,7 +275,7 @@ python -m scripts.webui.characters.build_character_data --languages CN --default
 python -m scripts.webui.data_inspector.build_data_inspector
 python -m scripts.webui.mission_pipeline.build_mission_pipeline_data
 python -m scripts.webui.gameplay.build_gameplay
-python -m scripts.webui.assets.build_assets
+python -m scripts.webui.assets.build_assets --mode default
 python -m scripts.webui.audio.build_audio
 python -m scripts.webui.audio.build_audio --skip-decode --refresh-hirc
 python -m scripts.webui.package
