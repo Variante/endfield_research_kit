@@ -234,6 +234,14 @@ def observed(records: list[dict[str, Any]], inventory: dict[int, dict[str, Any]]
         paired = results.get(row["captureId"])
         if paired is not None and paired["returnValue"]:
             playing_ids.add(paired["returnValue"])
+    # An external-source post carries both the source key and the media path it
+    # names, in one paired record. That pair is a join the post itself makes --
+    # not two facts placed side by side -- so it is reported as one.
+    external: dict[int, set] = {}
+    for row in calls:
+        if row["hookName"] != POST_EXTERNAL_HOOK or not row["keyOrPath"]:
+            continue
+        external.setdefault(row["pointerFact0"] & 0xFFFFFFFF, set()).add(row["keyOrPath"])
     opened = {row["keyOrPath"] for row in records
               if row["hookName"] == IO_OPEN_HOOK and row["keyOrPath"]}
     prepared = {row["pointerFact0"] & 0xFFFFFFFF for row in records
@@ -256,6 +264,18 @@ def observed(records: list[dict[str, Any]], inventory: dict[int, dict[str, Any]]
                 "An Event id reached the post hook and the paired result returned a "
                 "playing id. That is a call that was accepted, not a proof that it "
                 "was audible, and the id is a hash: no name is recovered here."
+            ),
+        },
+        "externalSourcePosts": {
+            "distinctKeys": len(external),
+            "distinctPaths": len({path for paths in external.values() for path in paths}),
+            "keysNamingMoreThanOnePath": sum(1 for paths in external.values() if len(paths) > 1),
+            "sample": [{"sourceKey": f"0x{key:08X}", "path": sorted(paths)[0]}
+                       for key, paths in sorted(external.items())[:20]],
+            "boundary": (
+                "The key and the path come from one call's own arguments, so this pair "
+                "is a join the game made, not two facts observed nearby. It still says "
+                "nothing about whether the media was read, decoded, or heard."
             ),
         },
         "openedPaths": sorted(opened)[:40],
@@ -343,6 +363,7 @@ def build(output: Path, session: Path | None, root: Path = DEFAULT_SESSION_ROOT)
                     "distinctEvents": body["observed"]["postedEvents"]["distinct"],
                     "withoutRecoveredName": body["observed"]["postedEvents"]["withoutRecoveredName"],
                     "openedPaths": body["observed"]["openedPathCount"],
+                    "externalSourceKeys": body["observed"]["externalSourcePosts"]["distinctKeys"],
                     "elapsedSeconds": round(time.perf_counter() - started, 3),
                 },
             }
