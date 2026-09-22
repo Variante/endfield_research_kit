@@ -30,10 +30,19 @@ Two properties keep that safe:
 Admitting a formerly unknown route can still change a previously bounded row
 elsewhere in a record, so this module is opt-in and is not wired into the
 corpus gates.  Validate a whole-corpus run before adopting it anywhere.
+
+``derived_plans`` is the superset and is the one to reach for.  It executes the
+recursive ``derived_schema`` plans, so it admits every tag this module does and
+310 more, including the nested records, lists, counted maps and unions a flat
+body cannot express, and it has been measured against the exported BuffData
+family.  This module remains as the narrow, flat-body case: it needs no plan
+registry, which keeps it the simpler thing to reason about when only a
+fixed-width body is in question.
 """
 from __future__ import annotations
 
 import argparse
+import contextlib
 import json
 import struct
 import sys
@@ -54,77 +63,114 @@ NULL_WRAPPER = 0xFF
 WIDE_TAG_LEAD = 0xFA
 
 
+# A member this reader can consume: either a type-fixed width, or the
+# length-prefixed byte payload the frozen reader already proves for a string.
+FIXED = "fixed"
+STRING = "string"
+
+
 @dataclass(frozen=True)
-class FixedWidthRoute:
-    """One tag whose whole body is a fixed-width field sequence."""
+class DerivedMember:
+    name: str
+    kind: str
+    width: int | None = None
+
+    def row(self) -> dict[str, Any]:
+        row: dict[str, Any] = {"name": self.name, "kind": self.kind}
+        if self.width is not None:
+            row["width"] = self.width
+        return row
+
+
+@dataclass(frozen=True)
+class DerivedRoute:
+    """One tag whose whole body this reader can consume."""
 
     tag: int
     wrapper_name: str
     member_count: int
-    members: tuple[tuple[str, int], ...]
+    members: tuple[DerivedMember, ...]
 
     @property
-    def body_width(self) -> int:
-        return sum(width for _name, width in self.members)
+    def fixed_body_width(self) -> int | None:
+        """The body's byte width, when no member is variable-length."""
+        if any(member.kind != FIXED for member in self.members):
+            return None
+        return sum(member.width or 0 for member in self.members)
+
+    @property
+    def has_variable_member(self) -> bool:
+        return any(member.kind != FIXED for member in self.members)
 
     def row(self) -> dict[str, Any]:
         return {
             "unionTag": self.tag,
             "wrapperName": self.wrapper_name,
             "serializedMemberCount": self.member_count,
-            "memberWidthSum": self.body_width,
-            "members": [{"name": name, "width": width} for name, width in self.members],
+            "memberWidthSum": self.fixed_body_width,
+            "hasVariableMember": self.has_variable_member,
+            "members": [member.row() for member in self.members],
         }
 
 
 def derived_fixed_width_routes(
-    *, gameassembly: Path | None = None, metadata: Path | None = None
-) -> tuple[dict[int, FixedWidthRoute], dict[str, Any]]:
-    """Every dispatcher tag whose members are all fixed-width, or nothing."""
+    *, gameassembly: Path | None = None, metadata: Path | None = None,
+    include_strings: bool = True,
+) -> tuple[dict[int, DerivedRoute], dict[str, Any]]:
+    """Every dispatcher tag this reader can consume end to end, or nothing.
+
+    A member qualifies when its width is fixed by its type, or when it is a
+    string, whose length-prefixed framing the frozen reader already proves. A
+    tag with any other member kind is left to the frozen reader.
+    """
     routes, audit = load_action_routes(gameassembly=gameassembly, metadata=metadata)
     if audit["status"] != "validated":
         return {}, audit
-    selected: dict[int, FixedWidthRoute] = {}
+    selected: dict[int, DerivedRoute] = {}
     for tag, route in routes.items():
-        if route.status != "resolved" or route.member_width_sum is None:
+        if route.status != "resolved" or not route.member_order:
             continue
-        members = tuple(
-            (name, width)
-            for name, width in zip(route.member_order, route.member_widths)
-            if width is not None
-        )
+        members: list[DerivedMember] = []
+        for name, kind, width in zip(
+            route.member_order, route.member_kinds, route.member_widths
+        ):
+            if width is not None:
+                members.append(DerivedMember(name, FIXED, width))
+            elif kind == "string" and include_strings:
+                members.append(DerivedMember(name, STRING))
+            else:
+                break
         if len(members) != len(route.member_order):
-            # A width the derivation could not fix means the body is not a
-            # known length; such a tag is left to the frozen reader.
             continue
-        selected[tag] = FixedWidthRoute(
+        selected[tag] = DerivedRoute(
             tag=tag,
             wrapper_name=route.wrapper_name or "",
             member_count=len(route.member_order),
-            members=members,
+            members=tuple(members),
         )
-    audit = dict(audit, fixedWidthRoutes=len(selected))
+    audit = dict(
+        audit,
+        derivedRoutes=len(selected),
+        fixedWidthRoutes=sum(
+            1 for route in selected.values() if not route.has_variable_member
+        ),
+    )
     return selected, audit
 
 
-class DerivedActionReader(_FrozenReader):
-    """The frozen reader plus the derived fixed-width routes.
+class DerivedFixedWidthMixin:
+    """Adds the derived fixed-width routes to whatever reader it is mixed into.
 
-    ``routes`` is supplied by the caller rather than loaded here, so a decode
-    never reaches for the installed build on its own and a test can drive the
-    reader with an explicit table.
+    Kept separate from a concrete base so the same behaviour can be layered onto
+    the frozen reader for a direct decode and onto the residual reader the
+    corpus census drives, without either being edited.
     """
 
-    def __init__(
-        self,
-        data: bytes,
-        source: str,
-        limit: int | None = None,
-        *,
-        routes: dict[int, FixedWidthRoute] | None = None,
-    ) -> None:
-        super().__init__(data, source, limit)
-        self.derived_routes = routes or {}
+    derived_routes: dict[int, DerivedRoute] = {}
+
+    def __init__(self, *args: Any, routes: dict[int, DerivedRoute] | None = None, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.derived_routes = routes if routes is not None else type(self).derived_routes
         self.derived_tags_read: list[int] = []
 
     def _action(self, depth: int, tag: int, width: int) -> None:
@@ -144,18 +190,62 @@ class DerivedActionReader(_FrozenReader):
                 raise
         self._read_fixed_width(route, width)
 
-    def _read_fixed_width(self, route: FixedWidthRoute, width: int) -> None:
+    def _read_fixed_width(self, route: DerivedRoute, width: int) -> None:
         self.take(width, "union-tag")
         if self.peek() == NULL_WRAPPER:
             self.take(1, "null-wrapper")
             return
         self.header(route.member_count)
-        for name, member_width in route.members:
-            self.take(member_width, f"derived:{name}")
+        for member in route.members:
+            if member.kind == FIXED:
+                self.take(member.width or 0, f"derived:{member.name}")
+            else:
+                # The frozen reader's proven length-prefixed payload framing.
+                self.byte_payload()
         self.derived_tags_read.append(route.tag)
 
 
-def synthesize(route: FixedWidthRoute) -> bytes:
+class DerivedActionReader(DerivedFixedWidthMixin, _FrozenReader):
+    """The frozen reader plus the derived fixed-width routes."""
+
+
+def reader_subclass(base: type, routes: dict[int, DerivedRoute]) -> type:
+    """A subclass of ``base`` that also admits ``routes``.
+
+    Used to substitute a reader the census constructs by name, so the census
+    runs unchanged against the derived routes.
+    """
+    return type(
+        f"Derived{base.__name__}", (DerivedFixedWidthMixin, base),
+        {"derived_routes": routes},
+    )
+
+
+@contextlib.contextmanager
+def derived_reader_patches(routes: dict[int, DerivedRoute]) -> Iterable[None]:
+    """Substitute the readers the BuffData census constructs, for one run.
+
+    This is how the derived routes are exercised by the authenticated census
+    without editing it: both reader names it builds through are replaced by
+    subclasses that add the routes and delegate everything else.
+    """
+    from scripts.game_data.memorypack import buff_actions, buff_residual_actions
+
+    targets = (
+        (buff_actions, "Reader"),
+        (buff_residual_actions, "_ResidualReader"),
+    )
+    originals = [(module, name, getattr(module, name)) for module, name in targets]
+    try:
+        for module, name, original in originals:
+            setattr(module, name, reader_subclass(original, routes))
+        yield
+    finally:
+        for module, name, original in originals:
+            setattr(module, name, original)
+
+
+def synthesize(route: DerivedRoute) -> bytes:
     """One record in the derived framing: tag, header, then each member.
 
     Member bytes are filler except the leading boolean, which the frozen
@@ -163,8 +253,13 @@ def synthesize(route: FixedWidthRoute) -> bytes:
     record's framing is under test.
     """
     body = bytearray()
-    for index, (_name, width) in enumerate(route.members):
-        body += bytes([1]) if index == 0 and width == 1 else bytes(width)
+    for index, member in enumerate(route.members):
+        if member.kind != FIXED:
+            body += struct.pack("<i", 0)      # an empty length-prefixed payload
+        elif index == 0 and member.width == 1:
+            body += bytes([1])
+        else:
+            body += bytes(member.width or 0)
     tag = (bytes([route.tag]) if route.tag < WIDE_TAG_LEAD
            else bytes([WIDE_TAG_LEAD]) + struct.pack("<H", route.tag))
     return bytes(tag) + bytes([route.member_count]) + bytes(body)
@@ -181,7 +276,7 @@ def _consume(reader: _FrozenReader) -> tuple[str, int]:
     return "read", reader.pos
 
 
-def cross_check(routes: dict[int, FixedWidthRoute]) -> dict[str, Any]:
+def cross_check(routes: dict[int, DerivedRoute]) -> dict[str, Any]:
     """Check the derived framing against the frozen reader, tag by tag.
 
     A tag the frozen reader already admits is the real test: the frozen
