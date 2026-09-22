@@ -49,8 +49,12 @@ DEFAULT_ROOT_SIXTH_CONTRACT = CONTRACTS_DIR / "buff_root_sixth_native.json"
 DEFAULT_OUTPUT_JSON = REPO_ROOT / "reports/animestudio/buff_1b_current_latest.json"
 DEFAULT_OUTPUT_MD = REPO_ROOT / "reports/animestudio/buff_1b_current_latest.md"
 NATIVE_SOURCE_PATHS = (
-    GAME_DATA_ROOT / "il2cpp_context_audit.py",
-    GAME_DATA_ROOT / "il2cpp_context.py",
+    GAME_DATA_ROOT / "il2cpp/context_audit.py",
+    GAME_DATA_ROOT / "il2cpp/context_audit_common.py",
+    GAME_DATA_ROOT / "il2cpp/context_audit_memorypack.py",
+    GAME_DATA_ROOT / "il2cpp/context_audit_skilldata.py",
+    GAME_DATA_ROOT / "il2cpp/context_audit_vfs.py",
+    GAME_DATA_ROOT / "il2cpp/context.py",
     REPO_ROOT / "scripts/common.py",
     GAME_DATA_ROOT / "memorypack/buff_actions.py",
     CONTRACTS_DIR / "buff_1b_native.json",

@@ -1,0 +1,15 @@
+{
+  "schema": "endfield.il2cpp-context-audit-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "evidenceBoundary": "exact",
+  "notes": [
+    "The build selection for scripts.game_data.il2cpp.context_audit. These three digests were previously the module-level GA_SHA/MD_SHA/UNITY_SHA constants; they are declarations, not algorithm, so they live here and the module reads them.",
+    "GameAssembly.dll and global-metadata.dat gate the audit through scripts.common.check_installed_native_inputs. UnityPlayer.dll is reported and re-hashed by the audit's UnityPlayer consumer checks.",
+    "These values match the nativeInputs already recorded by 21 reviewed contracts in this directory for the same installed build."
+  ]
+}
