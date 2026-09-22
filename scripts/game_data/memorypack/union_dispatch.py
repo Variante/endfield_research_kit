@@ -143,7 +143,7 @@ def _guard_count(blob: bytes, before: int) -> int | None:
     for ja in range(before - 1, max(before - 64, 0), -1):
         if blob[ja] != 0x0F or blob[ja + 1] != 0x87:
             continue
-        for back in range(4, 12):
+        for back in range(3, 12):
             cmp = ja - back
             if cmp < 0:
                 return None
