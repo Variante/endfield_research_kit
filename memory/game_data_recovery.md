@@ -27,6 +27,19 @@ python tools\endfield_source_graph.py build --relevant-asset-maps --skip-referen
 - Native claims require the selected `GameAssembly.dll` plus
   `global-metadata.dat` gate. Missing or mismatched inputs skip that evidence
   and leave the last validated report untouched.
+- A source-only classifier must not inherit that gate merely because native
+  evidence once motivated its interpretation. The maintained direct gate
+  callers are limited to current runtime-capture identity, metadata enum reads,
+  and consumers of pinned methods, code windows, field offsets, registrations,
+  or native contracts; current-export Story classifiers validate their own
+  tables, object-index stage signatures, and source fingerprints instead.
+- **Rebuilding AnimeStudio invalidates every `inputSetSha256` pin.** That hash
+  covers the exporter binary, so changing the exporter breaks the corpus-gate
+  chain -- VFS audit, the Buff and Skill gates, then `jsondata_corpus` -- and
+  the tracked contracts recording it. Correct fail-closed behaviour, neither a
+  client update nor a regression, but a real cost: plan an exporter change and
+  a contract regeneration together, and re-run the audit rather than editing a
+  recorded value.
 - A field name, code address, registration order, hash collision, filename,
   proximity, or available asset is not ownership or runtime execution.
 - Preserve source root, logical path, file hash, record offset, parser/schema
@@ -35,6 +48,39 @@ python tools\endfield_source_graph.py build --relevant-asset-maps --skip-referen
   negatives, exact consumption, and a current-corpus sweep.
 - Build-specific counts, hashes, tokens, addresses, and full inventories belong
   in reports or versioned code contracts.
+
+## Re-resolving a native identity after a client update
+
+A contract that pins a superseded build is not evidence that its subject is
+gone. Only the *managed name* survives an update, so a stale contract is
+migrated by resolving its names against the selected build, never by carrying
+an address forward. `scripts/game_data/il2cpp_method_resolver.py` owns that
+direction. It pins nothing: it derives `Il2CppCodeRegistration` from the
+selected `GameAssembly.dll` against the complete image-name set of the selected
+`global-metadata.dat`, so it runs unchanged on a future build, while every
+consumer holding a recorded registration address fails closed on the next one.
+
+Three name classes drift without any source change, and each needs its own
+route rather than being read as a deletion:
+
+- **Compiler-generated closures.** `<Owner>b__<ordinal>_<index>` carries the
+  declaring method's slot in `ordinal`. Adding any method above the owner
+  renumbers it. Resolve by owner plus lambda index; the index is stable.
+- **Burst direct-call wrappers.** `<Kernel>_<token>$BurstDirectCall` is named
+  after the wrapped job's metadata token, which renumbers on every update.
+  Resolve with the token wildcarded, accepting only a unique hit. The drift is
+  an insertion, not a reshuffle, which is the cheap cross-check on a wildcard
+  match: across the nine wrappers the lab records, every token moved by one
+  identical offset, each resolved independently by name.
+- **Recorded display forms.** `Execute(int)` and `SetCustomPerDrawData<T>` are
+  not metadata names. Strip the decoration, and use the recorded parameter
+  types only to separate overloads -- a partial or unrecognised spelling leaves
+  the ambiguity visible instead of selecting one.
+
+A resolved body extent is the gap to the next method pointer: an exact bound on
+the region, an upper bound on the instructions, not a proven function length.
+Re-resolution restores identity and address only; the bytes usually changed, so
+the old contract's conclusions about them stay unvalidated until re-derived.
 
 ## Installed-data model
 

@@ -163,15 +163,25 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   `AnimeStudio stream --verify-md5` bytes and requires the 15-member reader to
   consume each file through EOF; changing coverage totals stay in its generated
   report.
-- NPC MontageNew JsonData has a bounded three-member root and 24-member body;
-  member 3 and member 18 collections use explicit counts and nested member
-  markers. Strings, scalar values and fixed record bodies stay anonymous. The
+- NPC MontageNew JsonData has an exactly named three-member root and 24-member
+  body from current generated formatter setter order. Dynamic-entity and
+  transition-override collections use explicit counts and nested member
+  markers; clip info, event info, fixed async-clip values, and transition values
+  have named fields. Extra effects consume two exact `Vector3` values and one
+  mount path; the parent consumes its remaining strings, enum, GUID, hash and
+  booleans in generated order, so every current binary reaches EOF with a
+  complete named schema. The
   `memorypack.npc_montage_corpus` gate joins current ledger identities to
   `AnimeStudio stream --verify-md5` bytes by path, length and logical MD5, then
   requires the maintained frame reader to consume supported records through
   EOF. Coverage totals belong in
-  `reports/animestudio/npc_montage_current_latest.{json,md}`; exact framing does
-  not establish field meaning or runtime use.
+  `reports/animestudio/npc_montage_current_latest.{json,md}`; named exact framing
+  does not establish runtime selection or playback.
+- NPC PrefabInfo textual JSON has its own exact schema reader. It validates the
+  complete current `NPCPrefabInfo` field set and every populated nested object,
+  list and scalar type; two older rows may omit `correspondingCharId`. Empty
+  SkillBBData remains an explicit current boundary, while unrelated manifest
+  and hash-map documents remain generic JSON.
 - SkillData's MemoryPack framing remains a structural prefix: the current
   corpus report preserves all valid EOF-anchored terminal candidates. Exact-
   build native evidence resolves the resource type as `Core.SkillData` and

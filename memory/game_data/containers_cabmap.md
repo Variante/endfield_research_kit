@@ -84,7 +84,67 @@ has no source root, and a source root is half of Unity object identity.
   time in this domain that the two-root layout turned a correct measurement into a
   wrong conclusion; the other two were chunk-vs-block coverage and the CABMap
   offset join.
-- Read by `scripts/webui/assets/cabmap.py`; report at
+
+## The dependency list is ordered, and that order resolves a cross-file PPtr
+
+The dependency names are not a set. They are the serialized file's **externals
+array**, in order, and a Unity `PPtr` refers into it by 1-based position with
+`m_FileID == 0` meaning the file itself. The exported objects do not carry that
+array, so every cross-file reference used to stop at "some other container".
+It resolves exactly:
+
+```text
+m_FileID == k  ->  dependencies(referring CAB)[k - 1]
+```
+
+**This was measurable rather than assumed, because a PathID already resolves to
+exactly one exported object whose own `sourceFile` is the answer the rule
+predicts.** Over a 40,000-object MonoBehaviour sample the rule agreed on **859
+of 859** checkable references with no miss, across 82 distinct `m_FileID`
+values and both VFS roots. The control matters as much as the result: asking
+the same question against a *foreign* dependency list of equal length agreed on
+2 of 100, so the rule carries the information rather than being easy to
+satisfy.
+
+Two conditions, and the first is the two-root trap this file already records
+three times:
+
+- **Select the map by the referrer's own VFS root.** 694 CAB names appear in
+  both maps with *different* dependency lists. Resolving against the wrong one
+  is wrong silently, and the export's `sourceOriginalPath` is what names the
+  root. The first consumer of this rule got that wrong in a way worth
+  recording: it derived the root name once, carried it, then ran the *name*
+  back through the path test, which answers `StreamingAssets` for the bare
+  string `"Persistent"`. Every persistent referrer then resolved against the
+  wrong map. Across 4,998 checks it produced **one** contradicted field, so the
+  error was very nearly invisible -- the fourth time the two-root layout has
+  turned a correct measurement into a wrong conclusion in this domain. The root
+  is now passed as a name and an unrecognised one is refused rather than
+  defaulted.
+
+  **Do not read that single contradiction as the size of the error.** Of the
+  1,946 persistent CABs, 1,939 are also named in the streaming map, and 694 of
+  those carry a different dependency list there. Across the slots of those 694,
+  **36,462 name a different container in the two maps** and 18,612 agree by
+  coincidence, with 2,743 slots the wrong map could not have answered at all.
+  So roughly two thirds of the reachable slots on a shared CAB would have
+  resolved silently wrong; what made it show up only once is that verification
+  needs the target to be exported, and almost none of them are. A check that
+  covers 0.1% of the claims is not a check that the other 99.9% are right.
+- **Resolving the container is not resolving the object.** The rule yields the
+  target's exact `(source CAB, PathID)` -- the second rung of the binding
+  evidence order in [`unity_assets.md`](unity_assets.md). Most MonoBehaviour
+  references point at GameObjects, Transforms and MonoScripts the WebUI export
+  scope never writes, so the container is frequently as far as the export goes.
+  That is a different fact from an unresolved reference and must be reported as
+  one.
+
+The rule and the framing live in `scripts/game_data/cabmap.py`, which is where
+an installed-format reader belongs; `scripts/webui/assets/cabmap.py` imports it
+and remains the audit.
+
+- Framing read by `scripts/game_data/cabmap.py`, audited by
+  `scripts/webui/assets/cabmap.py`; report at
   [`reports/assets/cabmap_current_latest.json`](../../reports/assets/cabmap_current_latest.json).
   This is a container index only -- it says nothing about the objects inside a CAB,
   their types, names or path ids, and an offset is not a readable object without

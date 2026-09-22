@@ -31,7 +31,7 @@ selected native enum contracts, Assets, Audio, and the curated graph.
 
 The root is framed forward from byte zero; the per-action bodies hang off it.
 
-- `memorypack.buff_actions` frames the anonymous first collection forward from
+- `memorypack.buff_actions` frames `abilityEventAction` forward from
   byte zero under each retained filename-anchor candidate's hard limit. It
   supports the current IfElse/Sequence grammar, the selected member-five child
   profile, nulls and bounded counts, records completed nested spans, and stops
@@ -52,6 +52,23 @@ The root is framed forward from byte zero; the per-action bodies hang off it.
   member two, a nullable Sequence array, then a required inline DWORD. This
   **reverses** the first collection's scalar/array order, so equal member counts
   do not make the maps interchangeable.
+- Generated current wrapper order assigns those six cursor ranges to
+  `abilityEventAction`, `addingCooldown`, `applyTags`, `attributeModifier`,
+  `blackboard`, and `buffEventAction`. This names storage order; it does not
+  assign action behavior.
+- `frame_buff_named_middle` reads positive damage and heal modifier lists in
+  current generated wrapper order. Damage items read condition, processor list,
+  then enable-side storage; heal items read condition, enable-side storage,
+  then processor list. Damage processor routes 0 and 9 and both heal routes
+  present in the current corpus have exact bounded profiles. Other damage
+  processor tags and unsupported condition actions stop at their first tag.
+  The reader consumes the exact raw-eight `dispelConfig` representation and
+  leaves the 19-member `iconConfig` body as one named opaque range at the
+  accepted `id` marker.
+- When that middle cursor reaches the unique accepted marker, the existing
+  sequential suffix reader names `id` through `waitFirstTriggerInterval` and
+  closes at EOF. Nested icon, modifier, and action bodies retain their own
+  weaker evidence even though the outer 30-field frame is closed.
 - **Extended unions consume `FA` followed by a little-endian unsigned tag**, and
   reports retain the decoded tag rather than the escape byte. Supporting a
   decoded tag does not admit its reserved single-byte physical encoding: those
@@ -126,13 +143,14 @@ them:
   evidence, not proof that the formatter executes; selected IfElse paths
   overwrite the callsite companion in native thunks, and reuse reaches
   state-dependent provider dispatch with the same reader and output;
-- **whole-`BuffData` EOF and suffix ownership** -- a closed forward record is
-  not file closure, and the physical remainder stays opaque;
+- **whole-`BuffData` EOF and suffix ownership for partial rows** -- an
+  unsupported action or damage-processor route still leaves a physical gap;
+  only the contiguous named middle plus accepted suffix closes the outer frame;
 - **field meaning, payload encoding, and gameplay semantics** for every
   anonymous scalar, byte span and enum.
 
 `buff_corpus` publishes a separate prefix success/failure/unsupported/ambiguity
-denominator and fails its gate on malformed prefixes even when the legacy suffix
+denominator and fails its gate on malformed prefixes even when the suffix
 reader succeeds. `memorypack.buff_1b_corpus` joins exact-closed root-continuation
 tag `0x1B` records to re-streamed current logical bytes and the selected
 `BlowOffAction_Data` reader contract; the continuation profile does not
@@ -140,10 +158,11 @@ authenticate root-field ownership. Changing coverage belongs in
 `reports/animestudio/buff_1b_current_latest.{json,md}` and the matching
 `buff_corpus` report, not here.
 
-**Recovery queue.** Close the most frequent unsupported child consumers before
-extending this grammar, including the unsupported actions reached inside the
-sixth root collection -- until those close, not all sixth-member endpoints are
-known.
+**Recovery queue.** Resolve the remaining damage-processor routes from their
+current native union contexts, then close the unsupported condition actions and
+the actions reached inside `buffEventAction`; until those close, the remaining
+outer frames cannot join the named middle. Decode `iconConfig`'s 19-member body
+after those higher-coverage gaps without weakening its current opaque boundary.
 
 ## What the published Gameplay datasets establish
 

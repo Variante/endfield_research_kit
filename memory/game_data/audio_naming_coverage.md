@@ -4,421 +4,260 @@ Part of [`../game_data_recovery.md`](../game_data_recovery.md). See
 [`README.md`](README.md) for the level and lane map.
 
 **Level 4, audio lane.** The payoff of the lane: which media are named by which
-source records, the music subgraph that no named event reaches, and how much of the
-corpus is actually accounted for. Also the cross-package join trap, three times.
+source records, the music subgraph that no named event reaches, how much of the
+corpus is actually accounted for, and the promotion rules by which an Event
+acquires a name and an owner outside the banks. Changing counts live in the
+generated Audio evidence and `reports/story/recovery/audio/`; the figures kept
+here are the ones a later session must not re-derive.
 
 ## Types `0x02` and `0x0B` share one source record, and it accounts for the media
 
-This is the first result in this lane that is about the corpus rather than about a
-body layout, so its evidence is stated in full.
+**The record.** Numeric type `0x02` carries exactly one 14-byte source record at
+body offset 0; `0x0B` carries a counted array of the same record after its leading
+flag and count. They are the same record: the word at `+0` is a plugin id from a
+closed set (`0x0B` uses two values, and 140,121 of `0x02`'s 142,815 bodies open with
+one of exactly those two; `0x02` adds five more, so it is a superset), and the word
+at `+5` names a declared media id in 4,447 of `0x0B`'s 4,447 records and in none of
+them at any other offset. That contrast, not a bare hit rate, is what makes `+5`
+the id field.
 
-**The record.** Numeric type `0x02` carries exactly one 14-byte source record at body
-offset 0. Numeric type `0x0B` carries a counted array of the same record after its
-leading flag and count. That they are the same record is shown twice:
+**The attribution.** Pooled over every package, **61,325 of the 61,333 declared
+media ids are named by some source record** -- 60,049 by `0x02`, 1,279 by `0x0B`,
+3 by both, 8 by none. The words one byte either side of the id field name 0 and 2.
+Before `0x0B` contributed, 1,284 media had no owner; it closed 1,276 of them, which
+is exactly the 1,284 - 8 that the two figures otherwise appear to disagree on.
 
-- **The word at `+0` is a plugin id from a closed set.** `0x0B` uses two values --
-  `0x00040001` (3,506 records) and `0x00140001` (941) -- and **140,121 of `0x02`'s
-  142,815** bodies open with one of exactly those two. `0x02` uses five more
-  (`0x00080001`, `0x00650002`, `0x00640002`, `0x00940002`, `0x01990002`), so it is a
-  superset rather than a different field.
-- **The word at `+5` names a declared media id in 4,447 of `0x0B`'s 4,447 records,
-  and in 0 of them at any other offset in the record.** That contrast is what makes
-  `+5` the id field. A bare hit rate would not.
+**The 8 media nothing names.** Seven are the Init bank's embedded `DIDX` media in
+`default_banks.pck` (`sounds=0`, `externals=0`, exactly 7 entries); six of those
+also stream from `default_stream_0.pck` and one (`624424588`) from
+`default_stream_2.pck`. The eighth, `1041213772`, is in `default_stream_0.pck`
+only and has no bank entry at all, so it is the one media that is genuinely not
+Init-bank embedded. None of the 8 is a bank id (the pooled intersection of 20,863
+bank ids with the media ids is 0). Externals exist in the corpus but not in the
+packages the 8 live in.
 
-**The attribution.** Pooled over every package, **61,325 of the 61,333 declared media
-ids are named by some source record** -- 60,049 by `0x02`, 1,279 by `0x0B`, 3 by both,
-and **8 by no record at all**. The words one byte either side of the id field name
-**0 and 2**. Before `0x0B` was allowed to contribute, 1,284 media had no owner; it
-closed 1,276 of them.
+## The cross-package join trap
 
-**The join has to cross a file boundary, and that is a trap worth recording.** A
-source record names media that a *different* package declares. The first version of
-this census joined inside one package and scored **12 of 147,262** -- not a weak
-result, a meaningless one. `media_ids_from_audit` already carried the warning in its
-own docstring: *"joining inside one package answers a question nobody asked."* The
-census is published from C# as distinct value sets and joined in Python, where the
-packages are already pooled.
+A source record names media that a *different* `.pck` declares, so a join written
+inside one package scores near zero and looks like a negative result. It bit three
+fields the same way: media ids named by source records (12 of 147,262 package-local
+against 61,325 of 61,333 pooled), source ids reached from named events, and plugin
+ids named by `INIT` (1 against 973 of 147,262). **When a table and its users are in
+separate files, the join belongs in the pass that already unions the files**: the
+C# reader collects distinct value sets, the Python audit joins them.
 
-## THE CROSS-PACKAGE JOIN TRAP, THREE TIMES
+## Nothing reaches the music family from outside it
 
-This has now bitten three separate fields, and the pattern is always the same: a table
-and its users live in **different `.pck` files**, so a join written inside the reader
-scores near zero and looks like a negative result.
+Two walks are easy to confuse, so their scopes come first. "Named" below means
+the `hirc_named_reach` corpus gate's sense: the `0x04` objects named by a shipped
+`global-metadata.dat` literal (199 objects from 221 audio-shaped literals).
+`build_audio`'s own traversal starts from a much larger pool (tables, gameplay
+references, authored payload literals, aliases, grammar preimages) and **does**
+reach music-family media through `musicTrack`/`musicTrackSource` from `au_music_*`
+Events. That is a different starting set, not a contradiction; do not quote one
+walk's reach for the other.
 
-| field | package-local score | pooled score |
-| --- | --- | --- |
-| media ids named by source records | 12 of 147,262 | **61,325 of 61,333** |
-| source ids reached from named events | (pooled from the start) | 163 |
-| plugin ids named by `INIT` | **1** of 147,262 | **973** of 147,262 |
-
-`media_ids_from_audit` has carried the warning in its own docstring the whole time:
-*"joining inside one package answers a question nobody asked."* I wrote the C# join
-twice more anyway. **When a table and its users are in separate files, the join belongs
-in the pass that already unions the files** -- the reader collects, the audit joins.
-
-## The 8 media nothing names, explained
-
-- **7 of the 8** are declared by `default_banks.pck`, which has `sounds=0`,
-  `externals=0` and **exactly 7 media entries** -- so all 7 come from its `DIDX`
-  section (84 bytes = 7 x 12). They are the Init bank's **embedded** media, and the
-  same 7 ids are also declared as streamed copies in `default_stream_0.pck`. The 8th is
-  in `default_stream_2.pck` only.
-- **None of the 8 is a bank id**: pooled over 20,863 bank ids, the intersection with
-  the 61,333 media ids is **0**, so they are genuine audio that no HIRC source record
-  names rather than banks miscounted as media.
-- Externals exist in this corpus -- 28,277 in `default_chinese_stream.pck` and 1 in
-  `hotfix_japanese_bD0.pck` -- but not in the packages the 8 live in.
-
-## NOTHING outside HIRC references a music object either
-
-Sliding a 32-bit window over all four unparsed sections -- 10,677 words -- **63 name a
-HIRC object against 0.59 expected by chance**, so the references are real. Every one
-is a **bus**: numeric type `0x12` 62 times and `0x08` once, all inside `STMG`. `INIT`,
-`ENVS` and `PLAT` name nothing at all.
-
-- Unaligned offsets were included deliberately. The source id inside the 14-byte
-  source record sits at `+5`, which is not four-byte aligned, and testing only aligned
-  words is exactly how that field stayed unidentified for so long.
-- **Together with the object graph this closes the question.** Across every byte of
-  the bank format -- the reference graph, the parent field, the `0x08`/`0x12` forest,
-  every music relation, the action target word, and all four unparsed sections --
-  **nothing references a music object from outside the music family.**
-- Gated with its expiry in mind: a music type appearing here fails the audit. **That
-  failure is the good news.**
-
-## NOTHING in the HIRC object graph reaches the music family's media
-
-The previous batch asked what addresses the music subgraph. The answer, over every
-relation this reader has resolved, is **nothing** -- and the evidence is now complete
-rather than suggestive, because the relations can be enumerated.
+Within the bank format the result is complete, because the relations can be
+enumerated:
 
 | relation | edges | any music type at either end? |
 | --- | --- | --- |
-| main reference graph | 230,247 | **no** -- sources `04/05/06/07`, targets `02/05/06/07/09` |
-| parent field (its inverse) | 199,445 | **no** -- 13 type pairs, all in `02/05/06/07/09` |
+| main reference graph | 230,247 | no -- sources `04/05/06/07`, targets `02/05/06/07/09` |
+| parent field (its inverse) | 199,445 | no -- 13 type pairs, all in `02/05/06/07/09` |
 | `0x08`/`0x12` forest | 412 | no |
-| music hierarchy at `+9` | 7,084 | internal only: `0A->0C`, `0A->0D`, `0C->0C`, `0D->0C` |
-| `0x0C`'s counted array | 2,980 | internal only: `->0A`, `->0C`, `->0D` |
-| `0x0A`'s counted array | 3,903 | internal only: `->0B` |
-| **action target word** | 23,455 resolvable | **8 land on `0x0C`; none on `0A`, `0B` or `0D`** |
+| music hierarchy at `+9`, `0x0C` and `0x0A` counted arrays | 7,084 + 2,980 + 3,903 | internal only (`0A/0C/0D`, `0A->0B`) |
+| action target word | 23,455 resolvable | 8 land on `0x0C`; none on `0A`, `0B` or `0D` |
+| the four unparsed sections, 32-bit sliding window | 63 hits against 0.59 expected | every one a bus (`0x12` x62, `0x08` x1) inside `STMG` |
 
-- **The family is large and well connected internally**: 11,656 objects, 7,305
-  downward edges from 4,607 sources, 4,351 objects with no incoming edge (3,764
-  `0x0A`, 489 `0x0D`, 98 `0x0C`). **Every `0x0B` has an incoming edge** -- none is a
-  root -- so the tracks are owned.
-- **Entering it from outside there are 5 edges in the whole corpus**, all
-  `action_03 -> type0C`, resolved within the same bank. All 5 land on objects that are
-  **roots**, **none of the 5 has an outgoing edge**, and together they reach **0**
-  source ids.
-- So the family's **1,279 media are reached by nothing**. Extending the named walk to
-  read `0x0B`'s source records changed the reach numbers by exactly nothing --
-  120 identifiers, 218 source ids, before and after.
-- *This is written as a gate, not a note.* If a later reading reaches even one source
-  id through the music family, `reachedSourceIdCount` becomes positive and the audit
-  fails. **That failure is the good news.** The same pattern retired the `0x0B`
-  element-count caveat two batches ago.
-- The gate also refuses when the walk has **no edges**, because an empty edge set
-  reaches nothing and looks exactly like isolation. *A negative result needs proof
-  that the instrument was working.*
-- What this does **not** say: that music is unreachable at runtime. It says no
-  relation resolved here reaches it, so whatever drives music is **outside the HIRC
-  object graph**. That bounds the search rather than ending it.
-
-## The music subgraph is not reachable from any named event
-
-- **Actions almost never address music.** Of the 23,455 action target words that
-  resolve to an object in the package, the types are `0x05` 7,709, `0x02` 7,466,
-  `0x09` 3,869, `0x06` 3,826, `0x04` 393, `0x07` 126, `0x08` 46, `0x15` 12 -- and
-  **`0x0C` 8**. None at all reach `0x0A`, `0x0B` or `0x0D`.
-- **The named walk confirms it from the other side.** Starting at the 199 named
-  `0x04` objects and following gated reference vectors, the walk arrives at types
-  `0x03` (310), `0x02` (225), `0x09` (127), `0x05` (91), `0x06` (18), `0x07` (4) and
-  `0x04` (1). **It never arrives at a music type.**
-- So the **1,279 media owned by `0x0B` are reached by no named event**, and the 163
-  media a named event does reach are all owned by `0x02`. Extending the walk to read
-  `0x0B`'s source records changed the reach numbers by **nothing** -- 120 identifiers
-  reaching 218 source ids, before and after -- which is itself the measurement.
-- What this does **not** say: that music is unreachable at runtime. It says the
-  music types are not addressed through the action target word or through any gated
-  reference vector, so whatever addresses them is not in this graph.
+- The family is large and internally connected (11,656 objects, 7,305 downward
+  edges); every `0x0B` has an incoming edge, so the tracks are owned. Entering it
+  from outside there are 5 edges in the corpus, all `action_03 -> type0C` within one
+  bank, all landing on roots with no outgoing edge, reaching 0 source ids. So the
+  family's **1,279 media are reached by nothing** in the graph, and the 163 media
+  the named walk reaches (arriving at `0x03/02/09/05/06/07/04`, never a music type)
+  are all owned by `0x02`. Reading `0x0B`'s source records changed the reach by
+  exactly nothing: 120 identifiers, 218 source ids, before and after.
+- The unaligned window was deliberate: the source id sits at `+5`, and testing only
+  aligned words is how that field stayed unidentified for so long.
+- *Both results are written as gates, not notes.* A music type appearing in the
+  unparsed sections, or `reachedSourceIdCount` becoming positive, fails the audit;
+  the gate also refuses an empty edge set, because reaching nothing through no edges
+  looks exactly like isolation. **That failure would be the good news.**
+- What this does **not** say: that music is unreachable at runtime. Whatever drives
+  music is outside the HIRC object graph, which bounds the search rather than ending
+  it.
 
 ## How much of the audio corpus is actually named
 
 | | count | share of declared media |
 | --- | --- | --- |
 | media ids declared by the packages | 61,333 | 100% |
-| named by some source record | 61,325 | **99.99%** |
-| reachable from a named `0x04` event | 163 | **0.27%** |
+| named by some source record | 61,325 | 99.99% |
+| reachable from a named `0x04` event | 163 | 0.27% |
 
-The gap is not a defect in the walk. Only **221** audio-shaped literals survive in
-`global-metadata.dat`, matching 199 objects; the event names for the rest are not
-shipped as managed literals. *Coverage of the structure and coverage of the names are
-different numbers, and quoting one for the other would overstate both.*
+Coverage of the structure and coverage of the names are different numbers, and
+quoting one for the other overstates both. The Event names for the rest are not
+shipped as *managed* literals, but they are not all unshipped either: the authored
+serialized payloads are a second literal source.
 
-## Beyond the shipped literals: how an Event acquires a name and an owner
+## How an Event acquires a name and an owner outside the banks
 
-Everything above measures what the *bank corpus* names. The rest of the lane's
-naming comes from outside the banks -- managed literals, authored tables,
-serialized components and native callsites -- and each route has its own
-promotion rule. The rules are the durable part; the row counts they produce
-belong to the generated Audio evidence and to
-`reports/story/recovery/audio/`. None of these routes upgrades an authored
-request to a selected branch, a playback event, or audibility.
+Each route below has its own promotion rule. The rules are the durable part;
+the row counts they produce belong to the generated Audio evidence. None of these
+routes upgrades an authored request to a selected branch, a playback event, or
+audibility.
 
-### Managed `AU_*` fields: symbol-to-ID and nothing further
-
-A scan of current IL2CPP string fields finds 25 unique `AU_*` symbols whose
-`AudioHashGenerator` hashes match current Wwise Event IDs. Each is published
-with its declaring type, field token, metadata hash and exact symbol-to-ID
-evidence, and the existing name-prefix taxonomy is then used **only** for a
-conservative broad category. **This static field identity does not recover the
-runtime setter, caller, trigger, selected branch, execution, or audibility.**
-
-### Grammar name recovery, for the Events no shipped string reaches
-
-`scripts/webui/audio/semantics/name_recovery.py` names Events that no shipped string
-reaches. Sweeping the whole IL2CPP literal blob and every metadata type/field
-name resolves only a handful of hash-only Events, so the module instead mines
-head/tail name templates per naming family **from the names already proven by
-exact evidence**, regenerates sibling names, and keeps candidates whose
-`AudioHashGenerator` hash equals a current hash-only Event id.
-
-- **Because a generated preimage is weaker than a shipped string**, a hash with
-  two distinct spellings is dropped, and a name is promoted only when its head
-  and tail each recur across other recovered Events at one shared split
-  boundary. Uncorroborated hits stay in
-  `grammarEventNameRecovery.isolatedEntries` and **never become an Event name**.
-- `index.json` publishes the promoted rows as `grammarRecoveredWwiseEventNames`
-  plus the candidate, isolated and ambiguous counts and the
-  coincidental-preimage expectation.
-- Promoted rows set `eventIdentityStatus=grammarHashPreimageNameRecovered` and
-  recover **only the owner and category the spelling encodes, never a caller or
-  audibility**.
-- Grammar-derived `au_` names are projected to an enemy only when the full
-  current EnemyTable id prefix plus delimiter matches exactly. That
-  `enemyNamespaceAudio` projection is **identity-only and is not a trigger or
-  runtime-consumer claim.**
-
-### Broad categories recovered without upgrading status
-
-- Complete final-media leaf-set equivalence recovers a **uniform broad output
-  category** for 85 hash-only Events (56 SFX, 21 UI, 6 voice, 2 control),
-  **without upgrading their caller, trigger, branch or runtime-purpose status**.
-- Weak category-name evidence is retained for 954 named Events from the enemy,
-  actor/UI, LevelSequence and Gameplay-SFX families; **exact voice contexts
-  override the weak enemy-name category** where the two disagree.
-- Media paths that remain under `wwise/unknown` receive a separate semantic
-  category from exact evidence: uniform related-Event joins, four
-  trigger-context Event categories, and MonoBehaviour audio-field roles. **The
-  raw physical category is preserved**, and mixed known-category joins remain
-  unclassified rather than resolved by majority.
-
-### Native trigger contexts, and the one that is deliberately not an Event
-
-- 18 exact native `SwitchAudioCustomState` contexts are admitted across
-  rotate-platform, crane, electric-fence, ForgeIron, LifterButton and
-  MovingPlatform Event rows. The trigger catalog exposes the decoded
-  custom-state name, current-build method/callsite evidence and metadata usage
-  word **only after an authored `InteractiveData` custom-state join**.
-  RotateNormalStart and RotateOverStart remain **separate branch-specific states
-  at one native callsite**; branch execution, object ownership and audible
-  output remain unobserved.
-- The same fingerprint-locked catalog places the pause/resume control Events
-  `au_gameplay_pause_spidle` and `au_gameplay_resume_spidle` at their exact
-  `SnapshotSystem` `PostEvent` callsites; **the selected action entity and the
-  runtime execution branch remain unobserved.**
-- The validated native-literal catalog also covers exact anchor-wave hit-state
-  routes and 3D-radio narrative selector values. **These are authored callsite
-  contexts, not runtime execution or audible-playback evidence.**
-- LevelScript `PlayVoice`/`PlayVoiceNarrative` rows are kept as a **separate
-  direct path-stem contract**: their constant `_voId` selects an `AudioDialog`
-  path and deliberately carries `wwiseEventStatus=notApplicable`. **They are not
-  rewritten into Wwise Event identities.**
-
-### LevelScript audio lifecycle, and the dynamic-property boundary
-
-Producer/consumer links are admitted only for an **exact same-LevelScript
-source-root and source-path identity**, with one active final serialized slot
-and one unique output path. `scripts.webui.story.level_bindings` resolves
-`ParamSource=200` dynamic string properties **only** through the strict
-`LevelScriptBriefData` property formatter; `ParamSource=100` and
-unknown/runtime sources remain runtime-unresolved and **cannot become handles**.
-This is authored serialized topology, **not runtime handle state, action
-execution, branch selection, or audibility**.
-
-RemoteCommon lifecycle fields use an exact Persistent-over-Streaming row
-overlay: non-empty `startAudioEvent`/`endAudioEvent` values become separate
-authored trigger contexts, while `voiceId` remains a dialogue identity and
-runtime execution remains unobserved.
-
-### The AudioCue expression tree is an operand projection
-
-The projection retains the complete validated tree with cue/handler scope,
-expression side, source path, parent/depth, `exprType`, four serialized scalar
-fields, child paths, node class and bounded diagnostics, **without evaluating
-serialized expressions**.
-
-- Non-empty behavior `exprType=3` leaves are **authored Event requests**;
-  non-empty `exprType=8` leaves are `runtimeCueVariable` evidence; non-empty
-  child lists are `compositeOpaque`; **all other nodes remain opaque**.
-- `childrenLimit` rejects the parent before child projection.
-- Enum and operator names are published only for a validated exact native
-  contract; missing or mismatched native inputs keep those names absent.
-- **The AST is a static request/operand projection, never condition truth,
-  variable value, branch execution, or playback evidence.**
-
-### Serialized components: the path is the evidence
-
-- For MonoBehaviour `monoBehaviourAudioIdField` contexts the **serialized path
-  remains the evidence**. The narrow `component*` role is an authored static
-  field label, while `componentLayout`, raw field/path values and exact
-  GameObject placement stay separately searchable. **Component or callback
-  execution, Event posting, Wwise selection and audibility remain unobserved.**
-- Complete serialized `AudioMapData` schemas admit their exact trigger
-  enter/exit, level lifecycle and outdoor-room-tone `uint32` Event fields. **The
-  schema gate rejects incomplete lookalikes before a numeric Wwise match becomes
-  a context.**
-
-### Scene ownership: what promotes it, and the prefab-identity gap that blocks it
-
-The scene-background catalog consumes each validated AnimeStudio AssetMap object
-root in one bounded streaming pass, using exact AssetMap `Source` + `PathID`
-identities.
-
-- **Prefab-local and scene-asset containment candidates remain separate**, and
-  only an authoritative scene ID with unique scene containment promotes scene
-  ownership.
-- Missing, malformed or unreadable sources are excluded with explicit
-  diagnostics while independently validated sources remain publishable; **no
-  cross-source edge is inferred.**
-- It resolves `AudioMapData` and scene emitters by script type, and joins exact
-  `AudioLevel` rows plus `MissionRuntimeAsset.acceptMode.levelId`.
-- **Scene activation, State/RTPC values, selector branches, listener state,
-  playback and audibility remain runtime evidence; source prefab definitions do
-  not prove level-instance placement.**
-- Scene-emitter Event rows publish compact containment and prefab-identity
-  status sets. **The current valid negative contract is a
-  prefab-local/static-authored emitter with unresolved scene and unavailable
-  prefab identity**; only exact SceneAsset/Level containment, or an exact prefab
-  `Source`+`PathID` evidence row joined to one level, may publish
-  `sceneEmitterSceneIds`. Candidate paths, sidecar `levelId`, names, positions
-  and mixed exact attributions **fail closed**.
-- Scene-global Event rows receive a compact attribution **only after** the
-  merged scene-background catalog validates every direct context: the complete
-  scene-id and original semantic-role sets are retained, while malformed,
-  partial, non-direct, truncated or out-of-catalog contexts remain unavailable
-  with bounded diagnostics. This is authored definition evidence; `foundInWwise`,
-  category, runtime activation, branch choice, playback and audibility are
-  unchanged.
-
-**The blocking gap is exporter-side.** `recover_map_streaming_instances.py`
-publishes the validated `InitChunkData` entity/name/transform and the raw ECS
-columns under a versioned prefab identity contract, and **the current validated
-columns expose no known prefab `Source`+`PathID`/hash field in the observed
-schema**. So no instance is promoted by basename, entity name, position, Mesh,
-or similarity. If a future sidecar carries an exact numeric identity, it may
-resolve through one unique full AssetMap container path (or an explicit
-component identity) before the Audio page attaches a level; ambiguous and
-missing relations stay unresolved. If the explicit component-identity and exact
-prefab-path identity routes disagree, reconciliation fails closed with
-`conflictingPrefabInstanceIdentityJoins`. **The remaining gap is
-exporter/sidecar production of exact prefab identity**, not analysis of the
-current columns.
-
-### Coarse media ownership, and what it may fill in
-
-Scene roles plus exact Event-context and external-path evidence are projected
-into coarse decoded-media ownership such as scene environment, animation,
-authored component, interaction, or mission narration. It **may** fill an
-otherwise unknown semantic category only for unambiguous roles such as outdoor
-room tone or an authored ambient emitter; **ownership never upgrades runtime
-playback or audibility status.**
-
-### Character, enemy and NPC ownership rules
-
-These are the promotion rules, each stated with what it refuses:
-
-- **Character namespaces.** Current `CharacterTable` keys assign authored
-  `chr_*`/`au_chr_*` Event namespaces, leading `au_actor_<token>_*` Events, and
-  Event-leading internal character tokens such as `lastrite_*` to a character
-  **only** through a delimited full key, a unique four-digit character-id
-  prefix, or a uniquely owned exact token. That owner set propagates to possible
-  media, **retaining every owner when a Wwise leaf is shared**. Generic
-  character templates, display-name similarity, actions, runtime requests,
-  selected leaves and playback positions are **not** inferred. Endministrator
-  gender variants continue to use the existing synthetic-item alias rather than
-  inventing a new WebUI owner.
-- **Enemy namespaces.** A leading `au_monster_<token>_*` Event is accepted only
-  when that token maps to **one** exact current `EnemyTable` id; it remains
-  separate from full `au_eny_<id>_*` matches and is **identity-only**. Explicit
-  enemy response candidates from ResponsiveDialog, skill and animation contexts
-  are published separately when their owner field **exactly equals** a current
-  EnemyTable id, and native-covered Events stay in the stronger native group.
-  Native voice-response callsites are published separately when their exact
-  AudioDialog Event has one longest delimited current EnemyTable prefix; they
-  retain response role and media candidates **without claiming live selection or
-  playback**.
-- **NPC owners.** An NPC owner is admitted only when one valid `NpcInfoTable`
-  row has matching non-empty `voActor`/`wwiseId` fields **and** its
-  `NpcTemplateGroupTable` `npcNameId`/`templateId` row agrees. Exact actor tokens
-  must also have one exact current `AudioDialogChannel` key whose typed
-  narrating and radio Event suffixes agree with that token; only then do they
-  publish `ownerKind=npc`, the `npcId`, the template id and the actor token.
-  Rows with duplicate tokens, overlay conflicts, malformed layers or template
-  mismatches remain unresolved, and **generic archetypes are never promoted by
-  name**.
-- **Table overlays are authoritative or suppressed, never stale.** In the
-  CharacterTable/EnemyTable/EnemyTemplateTable animation identity overlay,
-  Persistent rows are authoritative, and **a malformed Persistent layer
-  suppresses that table's identity surface instead of silently falling back to a
-  stale base**.
-- **Resolved is separate from candidate.** Each supported serialized
-  AnimationClip callback keeps per-Clip resolved entity IDs separate from
-  candidate IDs: exact Character, Enemy or EnemyTemplate matches may resolve,
-  while unique-token and multi-match possibilities remain candidate/ambiguous.
-  Shared callback owners remain shared; missing, malformed or unsupported
-  evidence stays unresolved/fail-closed; **candidate IDs never become resolved
-  ownership.** Mixed Events retain an identity only on their callback
-  occurrence/Clip rows, **not as a single Event owner**, and none of this proves
+- **Managed `AU_*` fields: symbol-to-ID and nothing further.** IL2CPP string fields
+  whose `AudioHashGenerator` hash matches a current Wwise Event id are published with
+  declaring type, field token, metadata hash and exact symbol-to-ID evidence; the
+  name-prefix taxonomy supplies only a conservative broad category. The static field
+  identity recovers no setter, caller, trigger, selected branch, execution or
+  audibility.
+- **Authored serialized payloads are the second shipped-literal source.** The roots
+  `LevelScriptData`, `LevelScriptTemplateData`, `SpawnerConfig`, `Interactive` and
+  `LevelData` carry MemoryPack length-prefixed `au_*` literals exactly as `SkillData`
+  and `BuffData` do, and treating the metadata blob as the last observed-string
+  source is what kept a large block of Events hash-only while their names were in
+  the client. `scripts/webui/audio/semantics/authored_payload_event_names.py`
+  collects them under two exact constraints, the shipped `au_`/`bark_`/`radio_`
+  grammar and the four-byte length prefix that separates a serialized string from
+  an incidental ASCII run, and feeds them *before* the HIRC pass, because a name
+  added afterwards can only relabel an inventory row, not give the Event-to-media
+  links a spelling. Promotion is `exact`: a candidate names an Event exactly when
+  its FNV-1 hash equals a current HIRC Event object id. Because the equality is on a
+  shipped string, this is the same tier as a managed `AU_*` literal and strictly
+  stronger than a grammar preimage; the coincidence expectation is published beside
+  the count. The payload root is provenance for the spelling only: the field that
+  holds the literal is not identified, so the payload-to-Event relation stays
+  `structuralOnly` and is not a consumer, caller, trigger, branch, execution or
+  audibility claim. Events spelled `Play_au_*` fall outside the harvested grammar
+  and remain a separate, measurable widening.
+- **Grammar name recovery, for the Events no shipped string reaches.**
+  `scripts/webui/audio/semantics/name_recovery.py` mines head/tail templates per
+  naming family from names already proven by exact evidence, regenerates sibling
+  names, and keeps candidates whose hash equals a current hash-only Event id.
+  Because a generated preimage is weaker than a shipped string, a hash with two
+  distinct spellings is dropped and a name is promoted only when its head and tail
+  each recur across other recovered Events at one shared split boundary;
+  uncorroborated hits stay in `grammarEventNameRecovery.isolatedEntries` and never
+  become a name. Promoted rows carry
+  `eventIdentityStatus=grammarHashPreimageNameRecovered` and recover only the owner
+  and category the spelling encodes. Grammar-derived `au_` names project to an enemy
+  only on an exact full current EnemyTable id prefix plus delimiter, as an
+  identity-only `enemyNamespaceAudio` claim.
+- **Broad categories never upgrade status.** Complete final-media leaf-set
+  equivalence recovers a uniform broad output category for hash-only Events without
+  touching their caller, trigger, branch or runtime-purpose status; weak
+  category-name evidence is retained for named enemy, actor/UI, LevelSequence and
+  Gameplay-SFX Events, with exact voice contexts overriding the weak enemy-name
+  category. Media paths under `wwise/unknown` keep that **raw physical category**;
+  a semantic category comes only from exact evidence (uniform related-Event joins,
+  trigger-context Event categories, MonoBehaviour audio-field roles), and mixed
+  joins stay unclassified rather than resolved by majority. The `unknown` folder is
+  therefore not an "unnamed" flag: most of its media carry a named Event and sit
+  there because only six naming prefixes map to a physical folder.
+- **Native trigger contexts.** Exact `SwitchAudioCustomState` contexts (rotate
+  platform, crane, electric fence, ForgeIron, LifterButton, MovingPlatform) expose
+  the decoded custom-state name, current-build method/callsite and metadata usage
+  word only after an authored `InteractiveData` custom-state join; branch-specific
+  states at one callsite stay separate. The pause/resume control Events sit at their
+  exact `SnapshotSystem` `PostEvent` callsites, and the validated native-literal
+  catalog covers anchor-wave hit-state routes and 3D-radio narrative selectors.
+  These are authored callsite contexts, not execution or audible playback.
+  LevelScript `PlayVoice`/`PlayVoiceNarrative` rows are a separate direct path-stem
+  contract: their constant `_voId` selects an `AudioDialog` path and carries
+  `wwiseEventStatus=notApplicable`; they are never rewritten into Wwise identities.
+- **LevelScript audio lifecycle.** Producer/consumer links are admitted only for an
+  exact same-LevelScript source-root and source-path identity with one active final
+  serialized slot and one unique output path. `scripts.webui.story.level_bindings`
+  resolves `ParamSource=200` dynamic string properties only through the strict
+  `LevelScriptBriefData` property formatter; `ParamSource=100` and unknown sources
+  stay runtime-unresolved and cannot become handles. RemoteCommon lifecycle fields
+  use an exact Persistent-over-Streaming row overlay; non-empty
+  `startAudioEvent`/`endAudioEvent` become separate authored trigger contexts while
+  `voiceId` stays a dialogue identity. All of it is authored topology, not runtime
+  handle state, branch selection or audibility.
+- **The AudioCue expression tree is an operand projection.** The complete validated
+  tree is retained (scope, side, source path, parent/depth, `exprType`, scalar
+  fields, child paths, node class, bounded diagnostics) without evaluation: behavior
+  `exprType=3` leaves are authored Event requests, `exprType=8` leaves are
+  `runtimeCueVariable` evidence, non-empty child lists are `compositeOpaque`, all
+  else opaque; `childrenLimit` rejects the parent first; enum and operator names
+  appear only under a validated native contract. Never condition truth, variable
+  value, branch execution or playback.
+- **Serialized components: the path is the evidence.** For MonoBehaviour
+  `monoBehaviourAudioIdField` contexts the serialized path is the evidence; the
+  `component*` role is a static field label, with layout, raw values and exact
+  GameObject placement searchable separately. Complete `AudioMapData` schemas admit
+  their exact trigger enter/exit, level lifecycle and outdoor-room-tone `uint32`
+  Event fields, and the schema gate rejects incomplete lookalikes before a numeric
+  match becomes a context.
+- **Scene ownership, and the prefab-identity gap that blocks it.** The
+  scene-background catalog consumes each validated AssetMap object root in one
+  bounded pass by exact `Source` + `PathID`. Prefab-local and scene-asset containment
+  candidates stay separate; only an authoritative scene id with unique containment
+  promotes scene ownership; no cross-source edge is inferred. Scene-emitter rows
+  publish `sceneEmitterSceneIds` only from exact SceneAsset/Level containment or an
+  exact prefab `Source`+`PathID` row joined to one level; candidate paths, sidecar
+  `levelId`, names, positions and mixed attributions fail closed. Scene-global rows
+  are attributed only after the merged catalog validates every direct context.
+  **The blocking gap is exporter-side:** the validated `InitChunkData` columns from
+  `recover_map_streaming_instances.py` expose no prefab `Source`+`PathID`/hash field,
+  so no instance is promoted by basename, entity name, position, Mesh or
+  similarity. A future sidecar with an exact numeric identity may resolve through
+  one unique full AssetMap container path or an explicit component identity;
+  disagreement between those routes fails closed with
+  `conflictingPrefabInstanceIdentityJoins`.
+- **Coarse media ownership** (scene environment, animation, authored component,
+  interaction, mission narration) may fill an otherwise unknown semantic category
+  only for unambiguous roles such as outdoor room tone or an authored ambient
+  emitter; it never upgrades playback or audibility status.
+- **Character, enemy and NPC owners.** A character owns `chr_*`/`au_chr_*`
+  namespaces, leading `au_actor_<token>_*` Events and Event-leading internal tokens
+  only through a delimited full `CharacterTable` key, a unique four-digit id prefix,
+  or a uniquely owned exact token; the owner set propagates to possible media and
+  retains every owner when a Wwise leaf is shared; Endministrator gender variants
+  keep the existing synthetic alias. A leading `au_monster_<token>_*` Event is
+  accepted only when the token maps to one exact `EnemyTable` id, separately from
+  full `au_eny_<id>_*` matches and identity-only; explicit enemy response candidates
+  publish only on an exact owner-field equality, native-covered Events staying in
+  the native group, and native voice-response callsites need one longest delimited
+  EnemyTable prefix. An NPC owner needs one valid `NpcInfoTable` row with non-empty
+  `voActor`/`wwiseId`, an agreeing `NpcTemplateGroupTable` row, and for exact actor
+  tokens one `AudioDialogChannel` key whose narrating and radio suffixes agree;
+  generic archetypes are never promoted by name. Table overlays are authoritative or
+  suppressed, never stale: a malformed Persistent layer suppresses that table's
+  identity surface instead of falling back to the base. Resolved is separate from
+  candidate: per-Clip resolved entity ids never absorb unique-token or multi-match
+  candidates, shared callback owners stay shared, and none of it proves
   CharacterTable identity, Animator execution, playback or audibility.
+- **Animation callbacks: the callback is the edge, not the name.** Every supported
+  serialized AnimationClip `PostAudioEvent` context is an explicit Event/media
+  callback link with clip, owner, function, reachability and AnimatorController
+  names; it does not require the names to match and promotes no category. An
+  AnimationClip action name and a Wwise Event are the same thing only when their
+  normalized names match exactly *inside* such a callback, which promotes the Event
+  and its media to action SFX while keeping the runtime-selection boundary. Name
+  similarity without the callback creates nothing.
+- **External Source identity: three alias families, kept apart.**
+  `externalSourceEventIdentityAudit` compares External Source Event ids separately
+  against typed voice-table routing aliases and the narrower AudioDialog path-hash
+  aliases, preserving the Event-route versus per-request `externalSourceKey`
+  boundary; the `overrideWwiseEvent -> AudioDialog.path` and `AudioDialogChannel`
+  candidate joins are bounded candidate sets, the latter explicitly
+  lower-confidence, never selected runtime rows. One media, `17778495865568962267`,
+  is reached by no Event at all; its uint64 shape says External Source, so it is an
+  External-Source-route question rather than an HIRC one.
+- **Playable-media projection into other pages.** The compact Gameplay projection of
+  exact namespace Events and playable candidates lands in the language-specific
+  `gameplay/sound_effects.json` sidecar, separate from trigger-backed skill and
+  animation audio; playable `AudioDialogCustomEventTable` rows are projected onto
+  matching `conv/<dialogId>.json` records, and missing conversation ids stay
+  Audio-only with no lifecycle dispatch inferred.
 
-### Animation callbacks: the callback is the edge, not the name
+## What still needs new evidence
 
-- Every supported serialized AnimationClip `PostAudioEvent` context is projected
-  as an explicit Event/media callback link with its clip, owner, function,
-  reachability and AnimatorController names when available. **This callback link
-  does not require the Event and clip names to match and does not promote an
-  unknown category.**
-- An AnimationClip action name and a Wwise Event id are recognized as the same
-  thing **only** when their normalized names match exactly *inside an existing
-  `PostAudioEvent` callback context*. That promotes the Event and its possible
-  media to action SFX while retaining the clip, actor, callback and
-  runtime-selection boundary. **Name similarity without the callback never
-  creates a trigger or ownership edge.**
-
-### External Source identity: three alias families, kept apart
-
-`externalSourceEventIdentityAudit` compares External Source Event ids separately
-against typed voice-table routing aliases and the narrower AudioDialog
-path-hash aliases, **preserving the Event-route versus per-request
-`externalSourceKey` boundary**.
-
-- When the structured AudioDialog tables are available, the audit adds a typed
-  `overrideWwiseEvent -> AudioDialog.path` candidate join producing bounded
-  route/path candidate sets. **Shared route Events remain candidate sets, not
-  selected runtime rows.**
-- Typed `AudioDialogChannel` narrating/radio fields add a broader candidate join
-  for channel-selection candidates. **This is explicitly lower-confidence
-  evidence** and is reported separately from the path-hash audit.
-- The changing candidate counts for both live in their own reports under
-  `reports/story/recovery/audio/`.
-
-### Playable-media projection into other pages
-
-- The compact Gameplay projection of exact namespace Events and playable
-  candidates is published into the language-specific `gameplay/sound_effects.json`
-  sidecar and **remains separate from trigger-backed skill and animation
-  audio**.
-- Playable `AudioDialogCustomEventTable` preload/post-enter rows are projected
-  onto matching `conv/<dialogId>.json` records. **Missing conversation IDs
-  remain Audio-only and lifecycle dispatch is not inferred.**
+Every observed-string source is exhausted: the IL2CPP literal blob, the authored
+tables, and the serialized payloads. The Events that remain hash-only, and the
+media reached only by them, need a captured `PostEvent` argument or a native
+callsite that carries the string, not another static sweep.
