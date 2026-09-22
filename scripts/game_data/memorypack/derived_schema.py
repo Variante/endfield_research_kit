@@ -116,8 +116,8 @@ ENUM_SCALARS = {1: "scalar8", 2: "scalar16", 4: "scalar32", 8: "scalar64"}
 # A blittable struct's bytes are a struct, not one number; a value reader keeps
 # them rather than pretending to a numeric reading the layout does not give.
 RAW_SCALAR = "raw"
-FIXED, STRING, OBJECT, LIST, UNION, PROFILE, MAP = (
-    "fixed", "string", "object", "list", "union", "profile", "map")
+FIXED, STRING, OBJECT, LIST, UNION, PROFILE, MAP, NULL_ONLY = (
+    "fixed", "string", "object", "list", "union", "profile", "map", "nullOnly")
 DIRECT, STRUCTURAL_ONLY = "direct", "structuralOnly"
 
 
@@ -257,6 +257,22 @@ class Resolver:
         simple = declared.split("`")[0].replace("+", ".").rsplit(".", 1)[-1]
         return simple in REFUSED_FORMATTER_TYPES
 
+    def _plan_null_only(self, name: str, declared: str) -> MemberPlan:
+        """A refused body at a position a payload may still leave null.
+
+        A formatter-backed type's member list does not describe its wire, so
+        its body stays unread. That does not make the *position* unreadable:
+        a null marker is one byte whatever follows it would have been. This
+        plan accepts exactly that byte and refuses anything else, so a payload
+        that actually carries such a body stops the read with a named reason
+        instead of being guessed at.
+
+        It is therefore a claim about the corpus, not about the type: it says
+        these positions are null in the data read, and the sweep reports how
+        many were exercised so the claim can be checked rather than assumed.
+        """
+        return MemberPlan(name, NULL_ONLY, profile=declared)
+
     def _plan_counted_map(self, name: str, declared: str) -> MemberPlan | None:
         """A ``Dictionary`` or ``SerializeFieldDictionary`` member, or None.
 
@@ -265,8 +281,11 @@ class Resolver:
         layout padding: the value is aligned to its own width and the struct is
         padded to the wider of the two.  That is the rule ``action_map`` proves,
         and it is self-checking at read time because the padding must be zero.
-        A managed side is refused -- its element framing is not established for
-        this family, and guessing it would desynchronise the stream.
+        Where either side is managed the pair is not raw memory: there is no
+        padding to skip, and each side is written by its own formatter one
+        after the other. The same reviewed reader frames that case, computing
+        a pair size only when both sides are unmanaged and otherwise reading
+        the key and then the value with nothing between them.
         """
         head, separator, rest = declared.partition("`2<")
         if not separator or not rest.endswith(">") or head not in COUNTED_MAP_HEADS:
@@ -274,19 +293,18 @@ class Resolver:
         arguments = _split_generic_arguments(rest[:-1])
         if len(arguments) != 2:
             return None
-        key = self._plan_for_type("key", arguments[0])
-        value = self._plan_for_type("value", arguments[1])
+        key = self._plan_for_type("key", arguments[0], as_element=True)
+        value = self._plan_for_type("value", arguments[1], as_element=True)
         if key is None or value is None:
             return None
-        if key.kind != FIXED or value.kind != FIXED or not key.width or not value.width:
-            return None
-        value_offset = _align_up(key.width, value.width)
-        pair_size = _align_up(value_offset + value.width, max(key.width, value.width))
-        return MemberPlan(
-            name, MAP, key=key, value=value,
-            value_offset=value_offset, pair_size=pair_size,
-            header=COUNTED_MAP_HEADS[head],
-        )
+        header = COUNTED_MAP_HEADS[head]
+        if key.kind == FIXED and value.kind == FIXED and key.width and value.width:
+            value_offset = _align_up(key.width, value.width)
+            pair_size = _align_up(value_offset + value.width, max(key.width, value.width))
+            return MemberPlan(
+                name, MAP, key=key, value=value,
+                value_offset=value_offset, pair_size=pair_size, header=header)
+        return MemberPlan(name, MAP, key=key, value=value, header=header)
 
     def _plan_for_type(
         self, name: str, declared: str | None, *, as_element: bool = False
@@ -307,8 +325,10 @@ class Resolver:
         Unity value type has none, so nothing can write a header for it and it
         stays raw in either position.
         """
-        if declared is None or self._refused(declared):
+        if declared is None:
             return None
+        if self._refused(declared):
+            return self._plan_null_only(name, declared)
         if as_element and declared in self.value_sizes:
             # Only the raw-struct case is redirected. Everything else keeps its
             # normal route, or this would preempt the primitives and the
@@ -369,9 +389,22 @@ class Resolver:
             # A cycle is legitimate recursion; the registry reference closes it.
             return True
         wrapper = self.wrappers.get(definition)
-        if wrapper is None or not wrapper.members:
+        if wrapper is None:
             self.blockers[definition] = "no-members"
             return False
+        if not wrapper.members:
+            # A generated wrapper with no serialized members is not a gap in
+            # the derivation: the type has fields, and MemoryPack serializes
+            # none of them, so the formatter writes the object framing and
+            # nothing else -- a null marker, or a member count of zero. The
+            # reviewed ``selector_finder_profile`` reads exactly that shape for
+            # the seven of its fifteen tags whose subtypes add no members.
+            # ``FacOcclusionHandle`` is the case that matters here: refusing it
+            # blocked MissionRuntimeAsset, LevelScriptTemplateData,
+            # LevelScriptData and the whole 1,026-subtype ActionBase union.
+            self.plans[definition] = ()
+            self.tiers[definition] = DIRECT
+            return True
         members: list[MemberPlan] = []
         tier = DIRECT
         for member in wrapper.members:
@@ -388,7 +421,10 @@ class Resolver:
         self.plans[definition] = tuple(members)
         nested = stack | {definition}
         for built in members:
-            for reference in (built, built.element):
+            # A map's key and value carry refs of their own; walking only
+            # the member and its element leaves those unplanned, which
+            # surfaces much later as an ``unplanned`` refusal at read time.
+            for reference in (built, built.element, built.key, built.value):
                 if reference is None or reference.ref is None:
                     continue
                 if reference.kind == UNION:

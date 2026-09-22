@@ -1954,7 +1954,53 @@ point. What remains is structural rather than coverage: 294 files refused at the
 envelope's `actionGroup` shape, 29 by the deliberate
 `createBuff:requires-multiple-actions` rule, and 5 framing stops.
 
-**Both families read whole, which no reviewed reader had claimed.** A family's
+### Four families, and what each refusal turned out to be
+
+Testing every exported payload directory against a root wrapper of the same
+name found two more families that read whole for nothing but the asking --
+**LevelConfig 216 of 216 and LevelScriptTemplateData 46 of 46**, both exactly
+to EOF -- and turned the remaining refusals into four distinct, named causes
+rather than one backlog.
+
+- **`MissionRuntimeAsset` is not MemoryPack at all.** Its 1,046 exported files
+  begin `7b 0d 0a`, which is `{
+`: ordinary JSON text. The reader refusing
+  them is correct behaviour, not a gap, and the family is excluded by name.
+- **`LevelData` and `LevelScriptData` hold a `Dictionary<string, object>`.**
+  `System.Object` names no layout, so the refusal stands and needs no further
+  work.
+- **A counted map with a managed side was refused, and should not have been.**
+  The rule had been to model only an unmanaged key *and* value, because that is
+  the shape the padded-pair layout is proven for. But `declared_dictionary`
+  frames the other case too: it computes a pair size only when both sides are
+  unmanaged, and otherwise reads the key and then the value with nothing
+  between them. Modelling that unblocked every family that carries one.
+- **A memberless wrapper is not a derivation gap.** `FacOcclusionHandle` has
+  nine instance fields and its generated wrapper has no serialized members,
+  because MemoryPack serializes none of them; the formatter writes the object
+  framing and nothing else. Refusing it had blocked MissionRuntimeAsset,
+  LevelScriptTemplateData, LevelScriptData and the whole 1,026-subtype
+  `ActionBase` union from one type.
+
+*Two of my own defects surfaced in the same pass.* `plan()` walked a member and
+its list element but not a map's key and value, so refs in those positions were
+never planned and surfaced much later as an `unplanned` refusal at read time --
+which is what the last 22 LevelScriptTemplateData files were. And a
+formatter-backed type appearing anywhere in a tree failed the whole plan, even
+where no payload ever reaches it.
+
+***A refused body, and a position that is not the same thing.*** A
+formatter-backed type's member list does not describe its wire, so its body
+stays unread -- but a null marker is one byte whatever would have followed it.
+The `nullOnly` plan kind accepts exactly that byte and refuses anything else,
+so a payload that really carries such a body stops with a named reason instead
+of being guessed at. It is a claim about the corpus rather than the type, so
+the sweep counts how often the position was reached: **zero, across all four
+families**. The kind earns its place by letting a plan *build* where such a
+type sits in the tree, and the counter is what shows nothing was assumed at
+read time.
+
+**Both original families read whole, which no reviewed reader had claimed.** A family's
 root type is itself a planned wrapper, so a file can be executed from its first
 byte rather than decoded to an anchor -- and **all 2,873 BuffData and all 2,621
 SkillData files consume exactly to EOF, with nothing refused and not one
@@ -2012,8 +2058,8 @@ happens to land on a plausible-looking byte.
 Framing says where a member begins and ends. `derived_values` takes the same
 plan and the same cursor and keeps what each member holds, under the name its
 generated wrapper gives it, so the gameplay config reads as named data rather
-than as proven byte ranges. **All 5,494 records of both families decode** --
-2,873 BuffData and 2,621 SkillData.
+than as proven byte ranges. **All 5,756 records of four families decode** --
+2,873 BuffData, 2,621 SkillData, 216 LevelConfig and 46 LevelScriptTemplateData.
 
 The interpretation is deliberately narrow, because a width is not a meaning. A
 primitive decodes as its declared type. An enum keeps the integer actually
@@ -2028,8 +2074,11 @@ reading it does not make.
 carries its own identifier and the exported file is named after it, from the
 exporter's logical path -- two sources that only agree if the framing, the
 member order *and* the string decoding are simultaneously right. A wrong member
-order still decodes a string; it decodes the wrong one. **All 5,494 decoded
-identifiers equal their filenames**, with none refused and none missing.
+order still decodes a string; it decodes the wrong one. **All 5,756 decoded
+identifiers equal their filenames**, with none refused. Each family names that
+member differently -- `skillId`, `id`, `m_id`, `templateId` -- and a family
+carrying none at all is reported as such rather than counted as a
+disagreement.
 
 ***A second check, semantic rather than structural.*** The decode surfaces a
 reference graph -- 3,554 distinct audio event names, 5,664 effect names, 1,675

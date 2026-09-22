@@ -54,6 +54,7 @@ from scripts.game_data.memorypack import buff_actions
 from scripts.game_data.memorypack.buff_actions import Reader as _FrozenReader, Unsupported
 from scripts.game_data.memorypack.derived_schema import (
     FIXED,
+    NULL_ONLY,
     LIST,
     MAP,
     OBJECT,
@@ -95,9 +96,18 @@ SKILLDATA_DIRECTORY = "SkillData"
 SKILLDATA_TYPE = "Beyond.Gameplay.Core.SkillData"
 BUFFDATA_TYPE = "Beyond.Gameplay.Core.BuffData"
 #: Each exported family read whole, as ``directory -> record type``.
+#:
+#: A family qualifies when its exported files are MemoryPack payloads and its
+#: root type plans. ``MissionRuntimeAsset`` is deliberately absent: those files
+#: are ordinary JSON text, which the reader correctly refuses rather than
+#: framing. ``LevelData`` and ``LevelScriptData`` are absent because their
+#: ``aiBlackboard`` is a ``Dictionary<string, object>``, and ``System.Object``
+#: names no layout to read.
 WHOLE_RECORD_FAMILIES = {
     SKILLDATA_DIRECTORY: SKILLDATA_TYPE,
     BUFFDATA_DIRECTORY: BUFFDATA_TYPE,
+    "LevelConfig": "Beyond.Gameplay.LevelConfig",
+    "LevelScriptTemplateData": "Beyond.Gameplay.LevelScriptTemplateData",
 }
 BUFFDATA_ROOT_MEMBER_COUNT = 30
 # A file with more id anchors than this is not selected between; the census
@@ -249,7 +259,13 @@ class DerivedPlanMixin:
 
     def _plan_member(self, member: MemberPlan, depth: int) -> None:
         self._plan_depth_guard(depth)
-        if member.kind == FIXED:
+        if member.kind == NULL_ONLY:
+            # A refused body: the null marker is readable, anything else is not.
+            if self.peek() != NULL_MARKER:
+                raise Unsupported(self.source, self.pos, "a null marker",
+                                  self.peek(), "refused-body")
+            self.take(1, f"null:{member.name}")
+        elif member.kind == FIXED:
             self.take(member.width or 0, f"derived:{member.name}")
         elif member.kind == STRING:
             self.byte_payload()
@@ -260,7 +276,7 @@ class DerivedPlanMixin:
         elif member.kind == LIST:
             self._plan_list(member, depth)
         elif member.kind == MAP:
-            self._plan_map(member)
+            self._plan_map(member, depth)
         elif member.kind == UNION:
             self._plan_union(member.ref if member.ref is not None else -1, depth)
         else:
@@ -280,23 +296,32 @@ class DerivedPlanMixin:
         for _ in range(max(0, self.count(minimum, nullable=True))):
             self._plan_member(element, depth + 1)
 
-    def _plan_map(self, member: MemberPlan) -> None:
+    def _plan_map(self, member: MemberPlan, depth: int) -> None:
         """The counted map, with the object header the plan says it carries.
 
-        The pair is raw memory, so the whole struct including its padding is
-        taken at once; the plan already carries the padded size.
+        With both sides unmanaged the pair is raw memory, so the whole struct
+        including its padding is taken at once and the plan carries the padded
+        size. With a managed side there is no padding: the key and then the
+        value are read by their own plans, back to back.
         """
-        pair_size = member.pair_size or 0
-        if not pair_size:
-            raise Unsupported(
-                self.source, self.pos, "a sized map pair", pair_size, "plan-kind")
         if member.header:
             if self.peek() == NULL_MARKER:
                 self.take(1, "null-map")
                 return
             self.header(1)
-        for _ in range(max(0, self.count(pair_size, nullable=True))):
-            self.take(pair_size, f"derived:{member.name}.pair")
+        pair_size = member.pair_size or 0
+        if pair_size:
+            for _ in range(max(0, self.count(pair_size, nullable=True))):
+                self.take(pair_size, f"derived:{member.name}.pair")
+            return
+        key, value = member.key, member.value
+        if key is None or value is None:
+            raise Unsupported(
+                self.source, self.pos, "a planned map pair", None, "plan-kind")
+        minimum = (key.width or 1) if key.kind == FIXED else 1
+        for _ in range(max(0, self.count(minimum, nullable=True))):
+            self._plan_member(key, depth + 1)
+            self._plan_member(value, depth + 1)
 
     def _plan_union(self, base: int, depth: int) -> None:
         """A null marker, or a tag and the concrete subtype's body."""
@@ -534,6 +559,7 @@ def _whole_record_sweep(
         pass
 
     exact = short = refused = 0
+    null_only = 0
     refusals: dict[str, int] = {}
     for path in files:
         data = path.read_bytes()
@@ -550,6 +576,8 @@ def _whole_record_sweep(
             exact += 1
         else:
             short += 1
+        null_only += sum(1 for span in reader.ranges
+                         if str(span.get("kind", "")).startswith("null:"))
     return {
         "status": "validated" if not short else "drifting",
         "type": type_name,
@@ -558,6 +586,10 @@ def _whole_record_sweep(
         "shortOfEof": short,
         "refused": refused,
         "refusalKinds": dict(sorted(refusals.items(), key=lambda kv: -kv[1])),
+        # How often a refused body's position was actually reached and found
+        # null. It is the number that makes that plan kind's claim checkable:
+        # zero would mean the claim was never tested by this family.
+        "nullOnlyPositionsRead": null_only,
     }
 
 

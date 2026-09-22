@@ -57,6 +57,7 @@ from scripts.game_data.memorypack.derived_plans import (
 )
 from scripts.game_data.memorypack.derived_schema import (
     FIXED,
+    NULL_ONLY,
     LIST,
     MAP,
     OBJECT,
@@ -77,7 +78,10 @@ SCALAR_FORMATS = {
     "scalar64": "q", "float32": "f", "float64": "d",
 }
 # The member names a record uses for its own identifier, in preference order.
-IDENTIFIER_MEMBERS = ("skillId", "id", "buffId")
+# Each family names it differently, and the oracle only works where a record
+# carries one at all -- which is why a family with none is reported as such
+# rather than counted as a disagreement.
+IDENTIFIER_MEMBERS = ("skillId", "id", "buffId", "m_id", "templateId")
 # A decoded string longer than this is truncated in the report rather than
 # inlined; the value reader itself keeps it whole.
 REPORT_STRING_LIMIT = 120
@@ -125,6 +129,12 @@ class ValueReader(DerivedPlanMixin, _FrozenReader):
 
     def _value_member(self, member: MemberPlan, depth: int) -> Any:
         self._plan_depth_guard(depth)
+        if member.kind == NULL_ONLY:
+            if self.peek() != NULL_MARKER:
+                raise Unsupported(self.source, self.pos, "a null marker",
+                                  self.peek(), "refused-body")
+            self.take(1, f"null:{member.name}")
+            return None
         if member.kind == FIXED:
             return self._value_fixed(member)
         if member.kind == STRING:
@@ -140,7 +150,7 @@ class ValueReader(DerivedPlanMixin, _FrozenReader):
         if member.kind == LIST:
             return self._value_list(member, depth)
         if member.kind == MAP:
-            return self._value_map(member)
+            return self._value_map(member, depth)
         if member.kind == UNION:
             return self._value_union(member.ref if member.ref is not None else -1, depth)
         raise Unsupported(
@@ -179,26 +189,34 @@ class ValueReader(DerivedPlanMixin, _FrozenReader):
             return None
         return [self._value_member(element, depth + 1) for _ in range(count)]
 
-    def _value_map(self, member: MemberPlan) -> Any:
-        pair_size = member.pair_size or 0
-        if not pair_size:
-            raise Unsupported(
-                self.source, self.pos, "a sized map pair", pair_size, "plan-kind")
+    def _value_map(self, member: MemberPlan, depth: int) -> Any:
         if member.header:
             if self.peek() == NULL_MARKER:
                 self.take(1, "null-map")
                 return None
             self.header(1)
-        count = self.count(pair_size, nullable=True)
+        pair_size = member.pair_size or 0
+        if pair_size:
+            count = self.count(pair_size, nullable=True)
+            if count < 0:
+                return None
+            entries = []
+            for _ in range(count):
+                pair = self.take(pair_size, f"derived:{member.name}.pair")
+                offset = member.value_offset or 0
+                entries.append({"key": pair[:offset].hex(), "value": pair[offset:].hex()})
+            return entries
+        key, value = member.key, member.value
+        if key is None or value is None:
+            raise Unsupported(
+                self.source, self.pos, "a planned map pair", None, "plan-kind")
+        minimum = (key.width or 1) if key.kind == FIXED else 1
+        count = self.count(minimum, nullable=True)
         if count < 0:
             return None
-        entries = []
-        for _ in range(count):
-            pair = self.take(pair_size, f"derived:{member.name}.pair")
-            key = pair[:member.value_offset or 0]
-            value = pair[member.value_offset or 0:]
-            entries.append({"key": key.hex(), "value": value.hex()})
-        return entries
+        return [{"key": self._value_member(key, depth + 1),
+                 "value": self._value_member(value, depth + 1)}
+                for _ in range(count)]
 
     def _value_union(self, base: int, depth: int) -> Any:
         self._plan_depth_guard(depth)
@@ -281,7 +299,8 @@ def verify_identifier(directory: Path, definition: int, registry: PlanRegistry) 
         elif len(disagreed) < 20:
             disagreed.append({"file": path.stem, "identifier": identifier})
     return {
-        "status": "validated" if checked and agreed == checked else "disagreed",
+        "status": ("validated" if agreed == checked else "disagreed")
+        if checked else "no-identifier-member",
         "decoded": decoded,
         "refused": refused,
         "identifierChecked": checked,
@@ -422,7 +441,7 @@ def build(output: Path, export_root: Path | None = None) -> dict[str, Any]:
         {name: registry.named_roots.get(type_name)
          for name, type_name in WHOLE_RECORD_FAMILIES.items()},
     )
-    statuses = {row.get("status") for row in families.values()}
+    statuses = {row.get("status") for row in families.values()} - {"no-identifier-member"}
     report = {
         "schema": "endfield.memorypack-derived-values.v2",
         "audit": audit,
