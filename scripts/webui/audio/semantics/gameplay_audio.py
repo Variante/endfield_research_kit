@@ -33,7 +33,16 @@ GAMEPLAY_SFX_ANIMATION_EVIDENCE_NAME = "sound_effects_animation_evidence.json"
 
 GAMEPLAY_SFX_ANIMATION_EVIDENCE_SCHEMA_VERSION = 2
 
-GAMEPLAY_AUDIO_EVENT_BYTES_RE = re.compile(rb"\b(?:au|bark|radio)_[A-Za-z0-9_]{2,160}\b")
+# Anchored by ``length_prefixed_matches`` to the whole length-prefixed slice,
+# so the pattern no longer needs word boundaries to find the string's edges.
+# It is case-insensitive because the payloads ship both spellings; on its own
+# that changes nothing, and it adds 18 further Event names once anchored.
+GAMEPLAY_AUDIO_EVENT_BYTES_RE = re.compile(
+    rb"(?:au|bark|radio)_[A-Za-z0-9_]{2,160}", re.IGNORECASE
+)
+# The byte length a payload string must have to be a candidate at all.
+MIN_PAYLOAD_STRING = 3
+MAX_PAYLOAD_STRING = 163
 
 GAMEPLAY_BUFF_BYTES_RE = re.compile(rb"\bbuff_[A-Za-z0-9_]{2,160}\b")
 
@@ -82,15 +91,36 @@ def length_prefixed_matches(data: bytes, pattern: re.Pattern[bytes]) -> set[str]
     Gameplay config strings are encoded as a four-byte byte length followed by
     UTF-8.  Requiring that boundary prevents incidental ASCII fragments from
     being promoted to authored references.
+
+    The scan is driven from the length prefix, and the pattern must match the
+    slice that prefix names *entirely*.  Letting the pattern find its own
+    boundaries and checking the length afterwards silently loses every string
+    whose following byte happens to be a word character: the greedy character
+    class runs one past the end and the length no longer agrees.
+    ``Au_Chr_0035_Liino_Skill_Pop`` is a real case -- 27 bytes, followed by a
+    ``d`` -- and that failure mode cost 1,354 Event names a current Event
+    object claims by hash, 533 of them Events with no recovered name at all.
     """
 
     values: set[str] = set()
+    limit = len(data)
+    # The pattern still locates candidate starts, which is cheap; only its idea
+    # of where the string *ends* is discarded in favour of the length prefix.
     for match in pattern.finditer(data):
         start = match.start()
-        if start < 4 or unpack_from("<I", data, start - 4)[0] != len(match.group(0)):
+        if start < 4:
+            continue
+        length = unpack_from("<I", data, start - 4)[0]
+        if not MIN_PAYLOAD_STRING <= length <= MAX_PAYLOAD_STRING:
+            continue
+        end = start + length
+        if end > limit:
+            continue
+        span = data[start:end]
+        if not pattern.fullmatch(span):
             continue
         try:
-            values.add(match.group(0).decode("ascii"))
+            values.add(span.decode("ascii"))
         except UnicodeDecodeError:
             continue
     return values

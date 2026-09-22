@@ -255,9 +255,36 @@ audibility.
   matching `conv/<dialogId>.json` records, and missing conversation ids stay
   Audio-only with no lifecycle dispatch inferred.
 
+## The serialized payloads were not exhausted, and the reason was a regex
+
+The claim below that every observed-string source was exhausted held for the
+sources, not for the *reading* of one of them. `length_prefixed_matches` found
+candidates by letting the `au_`/`bark_`/`radio_` pattern locate its own
+boundaries and then checking the four-byte length afterwards. A greedy
+`[A-Za-z0-9_]` class runs past the string's end whenever the following byte is
+a word character, and the length then disagrees, so the candidate is dropped.
+`Au_Chr_0035_Liino_Skill_Pop` is a shipped instance: 27 bytes, followed by a
+`d`.
+
+Driving the scan from the length prefix instead -- the pattern still locates a
+start, but the *slice the prefix names* must match entirely -- is a stricter
+per-candidate test, not a wider one, and the FNV-1 promotion gate is unchanged.
+Over SkillData and BuffData it raises candidates from 2,537 to 3,925 and adds
+**1,372 Event names that a current Event object claims by hash, 533 of them
+Events with no recovered name at all**. Accepting both spellings adds a further
+18, and on its own would have added nothing.
+
+*The general point is worth keeping.* "Every source is exhausted" was a claim
+about where names live, and what actually bounded recovery was how one scanner
+read them. The check that exposed it came from outside the lane: decoding
+SkillData and BuffData whole gave 4,091 strings sitting in members literally
+named `_soundEvent`, of which 4,072 hash to a current Event -- so the schema
+position said "Event" where the spelling grammar had to guess.
+
 ## What still needs new evidence
 
-Every observed-string source is exhausted: the IL2CPP literal blob, the authored
-tables, and the serialized payloads. The Events that remain hash-only, and the
-media reached only by them, need a captured `PostEvent` argument or a native
-callsite that carries the string, not another static sweep.
+The remaining hash-only Events, and the media reached only by them, still need
+a captured `PostEvent` argument or a native callsite that carries the string.
+That is now a statement about the Events left after the fix above, and the
+lesson from it is that a source counts as exhausted only once its reader is
+known to consume it exactly.

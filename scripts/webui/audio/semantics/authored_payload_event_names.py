@@ -42,8 +42,13 @@ AUTHORED_PAYLOAD_EVENT_NAME_ROOTS: tuple[str, ...] = (
 
 # The same shipped naming grammar ``gameplay_audio`` accepts.  Widening it is a
 # schema claim about a family this module has not proven, not a free win.
+# Dropping the word boundaries is not a widening: ``length_prefixed_matches``
+# now anchors the match to the whole length-prefixed slice, which is a
+# stricter test than a boundary-delimited substring, and the FNV-1 promotion
+# gate is unchanged -- a candidate matching no current Event still names
+# nothing.
 AUTHORED_PAYLOAD_EVENT_BYTES_RE = re.compile(
-    rb"\b(?:au|bark|radio)_[A-Za-z0-9_]{2,160}\b"
+    rb"(?:au|bark|radio)_[A-Za-z0-9_]{2,160}", re.IGNORECASE
 )
 
 EVIDENCE_BOUNDARY = (
