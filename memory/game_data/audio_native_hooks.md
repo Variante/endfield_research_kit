@@ -424,6 +424,41 @@ match**, and no verified capture has produced the decoder continuity rows yet.
   the external descriptor and opened path with the selected stream callback and
   the resulting decoded data flow.
 
+## The catalog is not an activation manifest, and converting it is gated
+
+`audio_runtime_trace_hooks.json` is an evidence catalog: 64 rows pinned to the
+build they were recorded on, of which the shipped provider implements **five**,
+and only one row carries the `abiId` that provider requires. `StartCapture.bat`
+pointed `BUILD_MANIFEST` straight at it, which cannot work for two independent
+reasons -- wrong shape, and wrong build.
+
+`scripts/webui/story_recovery/build_audio_activation_manifest.py` performs the
+conversion that INTEGRATION.md says to make only after verifying the selected
+build, and verifies the two halves differently because they are different
+claims.
+
+**The managed halves are re-resolved and they moved.** `AudioAdapter._PostEvent`
+and `_PostEventWithExternalSource` live in `GameAssembly.dll`, so their
+addresses come from `il2cpp.method_resolver` by name against the selected
+build. They moved -- `0x328a690` to `0x337f270`, and `0x3abea70` to
+`0x3fa4a80` -- so carrying the recorded values forward would have attached two
+hooks to the wrong code.
+
+***The native halves did not move, and that is checkable rather than assumed.***
+`AkSoundEngine.dll` was rebuilt: same 3,586,536 bytes, different SHA-256. Its
+RVAs are nonetheless still valid, and the evidence is the binary's own `.pdata`
+exception directory, where a `BeginAddress` *is* a function start by
+definition. **29 of the catalog's 32 native rows land exactly on one**, at a
+density of one function per 212 bytes of `.text`; the three that do not are
+sixteen-byte leaf getters, which MSVC omits from `.pdata` by design. The
+generator re-checks each activated native RVA against that table and refuses
+the whole manifest if one is not a function start, so a future rebuild that
+*does* move code fails closed instead of attaching a hook to whatever now sits
+there.
+
+That asymmetry is the useful part: a rebuilt native DLL is not automatically a
+re-derivation job, and a rebuilt `GameAssembly.dll` always is.
+
 ## A capture cannot name an Event, and what it can do instead
 
 Worth stating exactly, because the opposite is easy to assume. The audio

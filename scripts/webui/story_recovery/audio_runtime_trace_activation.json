@@ -1,0 +1,71 @@
+{
+ "schema": "audioRuntimeTrace.activation.v1",
+ "gameBuild": "endfield-gameassembly-c24495e5",
+ "processName": "Endfield.exe",
+ "moduleName": "GameAssembly.dll",
+ "nativeModuleName": "AkSoundEngine.dll",
+ "files": [
+  {
+   "relativePath": "GameAssembly.dll",
+   "bytes": 256677352,
+   "sha256": "c24495e51b406f03b03890c4788ee618ae022c991405be5d5b8b787cb775ae89"
+  },
+  {
+   "relativePath": "Endfield_Data/Plugins/x86_64/AkSoundEngine.dll",
+   "bytes": 3586536,
+   "sha256": "fd75d48813dc5b6497f0fd18b1aee1912b8383ffa0ac229ad45a147a7ed052c6"
+  },
+  {
+   "relativePath": "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat",
+   "bytes": 57021288,
+   "sha256": "0076743397acadf03d3b0064343a963c7c88863b8160526d397e4b3efb96f02e"
+  }
+ ],
+ "hooks": [
+  {
+   "name": "AkSoundEngine.DefaultIoOpenDispatch",
+   "module": "AkSoundEngine.dll",
+   "abiId": "win64.default_io_open_dispatch.v1",
+   "rva": "0x5030",
+   "required": true,
+   "evidence": "recorded rva, verified as a .pdata function start"
+  },
+  {
+   "name": "AkSoundEngine.SourceMediaLookup",
+   "module": "AkSoundEngine.dll",
+   "abiId": "win64.source_media_lookup.v2",
+   "rva": "0x10df60",
+   "required": true,
+   "evidence": "recorded rva, verified as a .pdata function start"
+  },
+  {
+   "name": "AkSoundEngine.SourceProviderPreparation",
+   "module": "AkSoundEngine.dll",
+   "abiId": "win64.source_provider_preparation.v2",
+   "rva": "0x1af7a0",
+   "required": true,
+   "evidence": "recorded rva, verified as a .pdata function start"
+  },
+  {
+   "name": "AudioAdapter._PostEvent",
+   "module": "GameAssembly.dll",
+   "abiId": "win64.il2cpp_post_event.v2",
+   "rva": "0x337f270",
+   "required": true,
+   "evidence": "re-resolved by name against the selected build"
+  },
+  {
+   "name": "AudioAdapter._PostEventWithExternalSource",
+   "module": "GameAssembly.dll",
+   "abiId": "win64.il2cpp_post_event_external_source.v2",
+   "rva": "0x3fa4a80",
+   "required": true,
+   "evidence": "re-resolved by name against the selected build"
+  }
+ ],
+ "evidenceBoundary": "Activating a hook proves the method executed in the attached process. Managed addresses are re-resolved by name against this build; native addresses are the catalog's, kept only because each is still a function start in the installed AkSoundEngine.dll. Neither establishes what the call did, whether it was audible, or any join between hooks.",
+ "sourceCatalog": {
+  "path": "scripts/webui/story_recovery/audio_runtime_trace_hooks.json",
+  "sha256": "DC560BB53150FF725ABBF898B2BEDB9809A9BF31EFA6310025001A88DD4ABA62"
+ }
+}
