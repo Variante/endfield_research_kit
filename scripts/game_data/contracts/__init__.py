@@ -7,8 +7,7 @@ against the selected ``GameAssembly.dll`` and ``global-metadata.dat``. The
 reader that owns a file pins its digest and fails closed on a mismatch, so
 editing a file here is a code change: re-pin the digest in the owning module
 and never let a tool rewrite the line endings (``.gitattributes`` keeps git
-from doing so). Contracts whose loader lives beside them stay in
-``native_contracts/``; per-record codec layouts stay in ``codecs/``.
+from doing so). Per-record codec layouts stay in ``codecs/``.
 """
 from pathlib import Path
 

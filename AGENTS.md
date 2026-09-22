@@ -100,8 +100,7 @@ reviewed contracts under `scripts/` and the correction layer in
   ignored root -- a builder that starts writing JSON into `scripts/` or the
   repo root is the bug, not the `.gitignore`.
 - A new manual correction layer belongs in `webui/overrides/`; a new reviewed
-  contract belongs in `scripts/game_data/contracts/`, or beside its loader in
-  `scripts/game_data/native_contracts/` when the loader exists only for it.
+  contract belongs in `scripts/game_data/contracts/`.
   Anything a tool writes belongs in `reports/`.
 - **Contract JSON is byte-pinned, so it must never be EOL-converted.** Readers
   hash the file's exact bytes and fail closed on a mismatch. 217 of these files
@@ -173,9 +172,9 @@ file under `memory/game_data_recovery.md`; its commands belong to
   `char_interact_perform_binary.py` and `animation_config_binary.py`, with
   their per-record codecs under `codecs/`. Put a new reader in the package,
   never beside the page builder that first needs it;
-- `native_contracts/`, reviewed native facts about the installed binary that
-  Story, Mission Pipeline, Map and the recovery tools consume: one loader per
-  contract plus its byte-pinned JSON;
+- `*_native.py` loaders for the reviewed native facts that Story, Mission
+  Pipeline, Map and the recovery tools consume, one per contract, each
+  reaching its byte-pinned JSON in `contracts/`;
 - `media_resolver.py`, game-media naming (inline image tags, env-emoji prefab
   layers, SNS and video naming) and asset-candidate resolution;
 - `*_corpus.py` current-corpus gates, which sweep the installed set and fail
@@ -202,8 +201,8 @@ existing reader to a second framing, and do not let a corpus gate infer a
 schema the reader has not proven.
 
 The gate, validator, and audit scripts here are tracked because the sweep is
-reusable, and so are the contracts under `contracts/` and `native_contracts/`,
-because those record a data structure. What a run emits is not: reports go to `reports/`. A script in
+reusable, and so are the contracts under `contracts/`, because those record a
+data structure. What a run emits is not: reports go to `reports/`. A script in
 this package that cannot run against a future build without being rewritten
 belongs in `scratch/`, not here.
 
@@ -225,10 +224,10 @@ different shapes:
   `[metadata index, type name, method, RVA]`, and `codeWindows` with a
   per-window `sha256` and `boundary`. `memorypack/` and the audit read them.
 
-`scripts/game_data/native_contracts/` holds the loaders for a third set, the
-native facts the Story, Mission Pipeline and Map builders consume; their JSON
-lives in `scripts/game_data/contracts/` with everything else. Every loader
-except `mission_task_paths` gates on the installed native inputs itself. That contract is validated by its
+A third set, the native facts the Story, Mission Pipeline and Map builders
+consume, is loaded by the `*_native.py` modules beside the readers, each from
+its JSON in `scripts/game_data/contracts/`. Every loader except
+`mission_task_paths_native` gates on the installed native inputs itself. That contract is validated by its
 consumers, the protocol registry and the mission trace hook manifest. Where a
 loader declares a `CONTRACT_SHA256`, the same edit-requires-pin rule below
 applies.
@@ -905,10 +904,10 @@ from that layout:
   fingerprinted Lua consumer index that Mission Pipeline reads directly.
   Refreshing it requires an explicit complete plaintext-Lua extraction, because
   standard extraction omits Lua.
-- `scripts/game_data/contracts/` holds every reviewed contract JSON, and
-  `scripts/game_data/native_contracts/` the loaders for the current-build
-  native facts builders consume. Recovery hooks must reference or validate
-  those contracts rather than duplicate them.
+- `scripts/game_data/contracts/` holds every reviewed contract JSON, and the
+  `scripts/game_data/*_native.py` loaders gate the current-build native facts
+  builders consume. Recovery hooks must reference or validate those contracts
+  rather than duplicate them.
 - A production builder must not import or execute a `scripts/webui/story_recovery/`
   module. Recovery tools may import stable builder primitives, not the reverse.
 - Native carrier audits go through the single

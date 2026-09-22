@@ -14,7 +14,7 @@ from scripts.common import (
     check_installed_native_inputs,
 )
 
-from scripts.game_data.native_contracts.ifix_patch import (
+from scripts.game_data.ifix_patch_native import (
     DEFAULT_CONTRACT as DEFAULT_IFIX_CONTRACT,
     PATCH_SHA256 as IFIX_PATCH_SHA256,
     load_ifix_patch_contract,

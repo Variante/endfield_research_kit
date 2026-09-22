@@ -9,8 +9,8 @@ from scripts.common import sha256_file as _sha256_path
 from scripts.webui.story.lua_consumer_references import (
     read_index as read_lua_consumer_reference_index,
 )
-from scripts.game_data.native_contracts import cinematic_queue
-from scripts.game_data.native_contracts.cutscene_case_resolution import (
+from scripts.game_data import cinematic_queue_native as cinematic_queue
+from scripts.game_data.cutscene_case_resolution_native import (
     load_cutscene_case_resolution_contract,
     matches_reviewed_lua_playback,
 )

@@ -29,7 +29,7 @@ from scripts.game_data.memorypack.buff_residual_actions import (
     frame_buff_named_middle,
     root_continuation,
 )
-from scripts.game_data.native_contracts import buff_frontiers
+from scripts.game_data import buff_frontiers_native as buff_frontiers
 from scripts.common import canonical_json_sha256
 
 PREFIX='Data/Json/BuffData/'

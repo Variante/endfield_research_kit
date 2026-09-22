@@ -243,7 +243,7 @@ unique binding.
   leaving generated data correct, so a contradiction between the two is
   invisible in the exported JSON.
 - NPC CPU-animation templates have a native-gated path rule in
-  `native_contracts/npc_animation_template`. The reconstruction audit joins the
+  `npc_animation_template_native`. The reconstruction audit joins the
   resulting asset path to effective source/CAB/PathID identity and declared base
   and blend-tree clips. A validMontages tag describes authored hierarchy, not
   runtime montage selection or Character Info ownership.

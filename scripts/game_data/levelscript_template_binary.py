@@ -18,7 +18,7 @@ from scripts.game_data.levelscript_binary import (
     decode_levelscript_task_map_exact,
     frame_levelscript_action_map_named_prefix,
 )
-from scripts.game_data.native_contracts.levelscript_param_list import (
+from scripts.game_data.levelscript_param_list_native import (
     load_param_list_for_graph_contract,
 )
 

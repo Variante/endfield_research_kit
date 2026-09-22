@@ -53,7 +53,7 @@ from scripts.webui.story.level_bindings import (
     decode_leveldata_npc_patrol_list,
 )
 from scripts.game_data.levelscript_binary import decode_levelscript_binary_summary
-from scripts.game_data.native_contracts.cutscene_case_resolution import (
+from scripts.game_data.cutscene_case_resolution_native import (
     load_cutscene_case_resolution_contract,
 )
 from scripts.webui.map.map_recovery_sources import authored_streaming_scene, isolated_art_source

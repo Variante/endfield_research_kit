@@ -23,7 +23,7 @@ axis. A path appears under exactly one owner.
 | | `game_data/` JsonData readers | one fail-closed reader per current JsonData family: MemoryPack payloads (`aether_energy_lock_binary.py`, `atmospheric_npc_binary.py`, `gameplay_compact_binary.py`, `levelconfig_binary.py`, `levelscript_template_binary.py`, `matrix_shockwave_binary.py`, `navmesh_binary.py`, `teleport_validation_binary.py`, `gpu_ui_binary.py` with its `gpu_ui_corpus.py` gate and `gpu_ui_damage_text_native.py` validator) and byte-pinned named JSON schemas (`gameplay_config_json.py`, `gameplay_config_polymorphic.py`, `jsondata_text_schema.py`, `mission_runtime_main.py`, `mission_runtime_meta.py`, `npc_catalog_json.py`, `npc_prefab_info.py`, `map_config_json.py`, `ui_level_map_load_config.py`, `level_mount_point_json.py`, `gold_coin_config_json.py`); the schema readers share one validator, `jsondata_named_schema.py`, and keep only their contract pin, path predicate, relations and result shape |
 | | `game_data/il2cpp_native_image.py`, `game_data/native_union_atlas.py` | the one opened installed build every contract validator checks against (PE image, metadata, code registration, module table, and the shared method-identity, dispatcher-route, code-window and setter-order checks), and the atlas that re-validates every union contract against it |
 | | `game_data/contracts/` | the reviewed, byte-pinned contract JSON that the readers above load: the per-tag BuffData formatter windows (`buff_*`, `finder_*`, `validator_*`, `postprocessor_*`), the SkillData timeline and current-build BuffData contracts, the streaming field layouts, and the named JSON schema contracts; `CONTRACTS_DIR` from the package is the only path anchor, and each owning reader pins its file's digest |
-| | `game_data/native_contracts/` | the loaders for the reviewed native facts the Story, Mission Pipeline and Map builders consume (their JSON is under `contracts/`); `buff_frontiers.py` is one loader over the five BuffData residual-route contracts, and `levelscript_param_list.py`, `levelscript_task_condition.py`, `npc_animation_template.py` and `animation_material_publication.py` authenticate the LevelScript, NPC animation and animation/material consumer routes |
+| | `game_data/*_native.py` | the loaders and validators for the reviewed native facts the Story, Mission Pipeline, Map and recovery tools consume (their JSON is under `contracts/`); `buff_frontiers.py` is one loader over the five BuffData residual-route contracts, and `levelscript_param_list.py`, `levelscript_task_condition.py`, `npc_animation_template.py` and `animation_material_publication.py` authenticate the LevelScript, NPC animation and animation/material consumer routes |
 | | `game_data/memorypack/` | MemoryPack codecs and their corpus gates, including the current-build BuffData additions (`buff_icon_config.py`, `buff_residual_actions.py`, `buff_named_schema.py`) and the SkillData first-timeline lane (`skill_timeline_*.py`), which share `core.LabelledReader` and gate through `il2cpp_native_image` |
 | **2. WebUI** | `webui/views.py`, `webui/package.py` | page-build orchestration, and packaging |
 | | `webui/story/` | Story and Text page data plus shared Story evidence |
@@ -729,7 +729,7 @@ reporting the session armed. A denial, incomplete module gate, hook attachment
 failure, or unsupported profile stops without retry or fallback.
 
 The Frida audio hook manifest verifies `AkSoundEngine.dll` and reads the
-contracts in `game_data/native_contracts/` rather than pinning its own copy of a task RVA,
+contracts through the `game_data/*_native.py` loaders rather than pinning its own copy of a task RVA,
 message ID, or field offset; `runtime_trace_audio_import.py` publishes the
 observed relations, and what a capture does and does not prove is recorded in
 [`memory/game_data/audio_native_hooks.md`](../memory/game_data/audio_native_hooks.md).
@@ -828,8 +828,8 @@ python tools\endfield_source_graph.py issues --limit 20
 
 Reviewed per-build native facts are stored as data, not prose:
 `scripts/game_data/contracts/*_native.json` for raw-format consumers and MemoryPack
-formatter windows, and `scripts/game_data/native_contracts/` for the native
-facts Story, Mission Pipeline, Map and the recovery tools consume. These JSON files **are tracked**: what they record is a data
+formatter windows, and the native facts Story, Mission Pipeline, Map and the
+recovery tools consume through the `scripts/game_data/*_native.py` loaders. These JSON files **are tracked**: what they record is a data
 structure, and the per-build anchors beside each field are its provenance. The
 digest of a named consumer contract is pinned as `CONTRACT_SHA256` in its
 `*_native.py` module and re-checked at load, so editing the JSON without

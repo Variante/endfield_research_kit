@@ -45,7 +45,7 @@ from scripts.game_data.levelscript_binary import (
     levelscript_native_header_contract,
     summarize_levelscript_native_header_records,
 )
-from scripts.game_data.native_contracts.mission_task_paths import (
+from scripts.game_data.mission_task_paths_native import (
     DEFAULT_CONTRACT as MISSION_TASK_PATH_CONTRACT,
     load_mission_task_paths,
 )

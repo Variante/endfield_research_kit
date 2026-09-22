@@ -17,7 +17,7 @@ from scripts.game_data.memorypack.buff_actions import (
     Unsupported,
     root_continuation as _base_root_continuation,
 )
-from scripts.game_data.native_contracts import buff_frontiers
+from scripts.game_data import buff_frontiers_native as buff_frontiers
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "buff_residual_actions_native.json"

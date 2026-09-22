@@ -153,7 +153,7 @@ animation. Neither is spatial, so neither belongs in the world lane.
 - *Is this family's reader proven that far?* -> [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md), not the lane file.
 - *What is the layout of Buff action tag `0xNN`?* -> its `scripts/game_data/contracts/buff_NN_native.json` contract, not the gameplay file.
 - *Does this LevelScript action or trigger volume prove a Story link?* -> [`story_carriers.md`](story_carriers.md).
-- *Which native fact does a Story or Mission Pipeline builder rely on?* -> its `scripts/game_data/native_contracts/<name>.json`, then that contract's `nativeInputs` against the selected build.
+- *Which native fact does a Story or Mission Pipeline builder rely on?* -> its `scripts/game_data/contracts/<name>.json` and `<name>_native.py` loader, then that contract's `nativeInputs` against the selected build.
 - *Is this conclusion still current?* -> [`settled_and_open.md`](settled_and_open.md), then the contract's own `nativeInputs`.
 - *What is worth attempting next?* -> the remaining gaps in [`../game_data_recovery.md`](../game_data_recovery.md), and the eliminations in `world_chunk_unread_region.md`, `world_irradiance.md` and `audio_hirc_curves.md` so an excluded route is not retried.
 

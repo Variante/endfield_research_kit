@@ -41,8 +41,8 @@ from scripts.game_data.codecs.levelscript import switch_actions as levelscript_s
 from scripts.game_data.codecs.levelscript import top_level_tail as levelscript_top_level_tail
 from scripts.game_data.codecs.levelscript import top_level_prefix as levelscript_top_level_prefix
 from scripts.game_data.codecs.levelscript import trigger_volumes as levelscript_trigger_volumes
-from scripts.game_data.native_contracts.spawnerptr_getter import decode_spawnerptr_getter_member
-from scripts.game_data.native_contracts.levelscript_task_condition import (
+from scripts.game_data.spawnerptr_getter_native import decode_spawnerptr_getter_member
+from scripts.game_data.levelscript_task_condition_native import (
     load_levelscript_task_condition_rows,
 )
 

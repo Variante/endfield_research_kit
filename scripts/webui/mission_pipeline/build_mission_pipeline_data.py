@@ -61,17 +61,17 @@ from scripts.webui.story.lua_consumer_references import (
     DEFAULT_INDEX as DEFAULT_LUA_CONSUMER_REFERENCE_INDEX,
     SCHEMA_VERSION as LUA_CONSUMER_REFERENCE_SCHEMA,
 )
-from scripts.game_data.native_contracts.identity_carrier_boundaries import (
+from scripts.game_data.identity_carrier_boundaries_native import (
     load_identity_carrier_boundaries_contract,
 )
-from scripts.game_data.native_contracts.ifix_patch import (
+from scripts.game_data.ifix_patch_native import (
     fixed_method_prefix_matches,
     load_ifix_patch_contract,
 )
-from scripts.game_data.native_contracts.cross_system_consumers import (
+from scripts.game_data.cross_system_consumers_native import (
     load_cross_system_consumers_contract,
 )
-from scripts.game_data.native_contracts.teleport_param import (
+from scripts.game_data.teleport_param_native import (
     load_teleport_param_contract,
 )
 from scripts.webui.story.dynamic_scene import load_dynamic_scene_context

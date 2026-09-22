@@ -68,29 +68,29 @@ from scripts.game_data.levelscript_binary import (
     _extract_levelscript_plain_ascii_strings,
     _extract_levelscript_tagged_ascii_strings,
 )
-from scripts.game_data.native_contracts.callserver_callback import (
+from scripts.game_data.callserver_callback_native import (
     load_callserver_callback_contract,
 )
-from scripts.game_data.native_contracts.actionbase_formatter import (
+from scripts.game_data.actionbase_formatter_native import (
     load_actionbase_formatter_names as _load_actionbase_formatter_names,
 )
-from scripts.game_data.native_contracts.action_entity_fields import (
+from scripts.game_data.action_entity_fields_native import (
     NATIVE_MAPPING_ID as ACTION_ENTITY_FIELD_NATIVE_MAPPING_ID,
     load_action_entity_field_contract,
 )
-from scripts.game_data.native_contracts.entityptr_script_slot import (
+from scripts.game_data.entityptr_script_slot_native import (
     NATIVE_MAPPING_ID as ENTITYPTR_SCRIPT_SLOT_NATIVE_MAPPING_ID,
     load_entityptr_script_slot_contract,
 )
-from scripts.game_data.native_contracts.entityptr_output_alias import (
+from scripts.game_data.entityptr_output_alias_native import (
     NATIVE_MAPPING_ID as ENTITYPTR_OUTPUT_ALIAS_NATIVE_MAPPING_ID,
     load_entityptr_output_alias_contract,
 )
-from scripts.game_data.native_contracts.entityptr_property_initialization import (
+from scripts.game_data.entityptr_property_initialization_native import (
     NATIVE_MAPPING_ID as ENTITYPTR_PROPERTY_INITIALIZATION_NATIVE_MAPPING_ID,
     load_entityptr_property_initialization_contract,
 )
-from scripts.game_data.native_contracts.entityptr_getter import (
+from scripts.game_data.entityptr_getter_native import (
     NATIVE_MAPPING_ID as ENTITYPTR_GETTER_NATIVE_MAPPING_ID,
     load_entityptr_getter_contract,
 )
