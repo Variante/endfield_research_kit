@@ -814,7 +814,9 @@
    ],
    "resolvedSymbol": "?NotifySpeakerVolumeMatrix@CAkPlayingMgr@@QEAAXIPEAUAkSpeakerVolumeMatrixCallbackInfo@@@Z",
    "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
-   "resolvedEvidence": "identical 171-byte extent, 94.2% byte agreement; differences are relocated operands"
+   "resolvedEvidence": "identical 171-byte extent, 94.2% byte agreement; differences are relocated operands",
+   "resolvedName": "CAkPlayingMgr::NotifySpeakerVolumeMatrix(unsigned int, AkSpeakerVolumeMatrixCallbackInfo*)",
+   "note": "MISIDENTIFIED BY THIS ROW'S NAME. It notifies a speaker-volume matrix for a playing id and has nothing to do with an external source manager, so its recorded argument and memory shape describe something it does not do. It also fires per mix connection, so enabling it would be costly as well as meaningless."
   },
   {
    "name": "AkSoundEngine.ExternalSourceManagerSiblingLookup",
@@ -836,7 +838,9 @@
    },
    "resolvedSymbol": "?NotifyStarvation@CAkPlayingMgr@@QEAAXII@Z",
    "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
-   "resolvedEvidence": "identical 244-byte extent, 90.2% byte agreement; differences are relocated operands"
+   "resolvedEvidence": "identical 244-byte extent, 90.2% byte agreement; differences are relocated operands",
+   "resolvedName": "CAkPlayingMgr::NotifyStarvation(unsigned int, unsigned int)",
+   "note": "MISIDENTIFIED BY THIS ROW'S NAME. It reports source starvation for a playing id; there is no sibling lookup and no external source manager here."
   },
   {
    "name": "AkSoundEngine.ExternalSourceStateCallback",
@@ -933,7 +937,9 @@
    "returnKind": "u32",
    "resolvedSymbol": "?UpdateBufferingInfo@CAkPositionRepository@@QEAAXIPEAVCAkVPLSrcNode@@AEAUAkBufferingInformation@@@Z",
    "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
-   "resolvedEvidence": "identical 301-byte extent, 96.7% byte agreement; differences are relocated operands"
+   "resolvedEvidence": "identical 301-byte extent, 96.7% byte agreement; differences are relocated operands",
+   "resolvedName": "CAkPositionRepository::UpdateBufferingInfo(unsigned int, CAkVPLSrcNode*, AkBufferingInformation&)",
+   "note": "MISIDENTIFIED BY THIS ROW'S NAME. It updates buffering information in the position repository. It is not a registry and decodes no source key."
   },
   {
    "name": "AkSoundEngine.SourceInfoSelectionConsumer",
@@ -1226,7 +1232,9 @@
    ],
    "resolvedSymbol": "?DoCallbackUnlocked@CAkPlayingMgr@@IEAAXP6AXW4AkCallbackType@@PEAUAkCallbackInfo@@@Z01@Z",
    "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
-   "resolvedEvidence": "identical 140-byte extent, 87.1% byte agreement; differences are relocated operands"
+   "resolvedEvidence": "identical 140-byte extent, 87.1% byte agreement; differences are relocated operands",
+   "resolvedName": "CAkPlayingMgr::DoCallbackUnlocked(void (*)(AkCallbackType, AkCallbackInfo*), AkCallbackType, AkCallbackInfo*)",
+   "note": "MISIDENTIFIED BY THIS ROW'S NAME. It is the generic unlocked callback dispatcher for every callback type, so it resolves no external source and observing it would say nothing specific about one."
   },
   {
    "name": "AkSoundEngine.NativeCallbackBridge",
@@ -1770,7 +1778,8 @@
    ],
    "resolvedSymbol": "op_get_next_page",
    "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
-   "resolvedEvidence": "identical 279-byte extent, 95.7% byte agreement; differences are relocated operands"
+   "resolvedEvidence": "identical 279-byte extent, 95.7% byte agreement; differences are relocated operands",
+   "resolvedName": "op_get_next_page"
   },
   {
    "name": "AkSoundEngine.CodecMemorySourceCopy",
@@ -1819,7 +1828,9 @@
    ],
    "resolvedSymbol": "?read_opus@CAkSrcFileOpus@@KAHPEAXPEAEH@Z",
    "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
-   "resolvedEvidence": "identical 171-byte extent, 95.9% byte agreement; differences are relocated operands"
+   "resolvedEvidence": "identical 171-byte extent, 95.9% byte agreement; differences are relocated operands",
+   "resolvedName": "CAkSrcFileOpus::read_opus(void*, unsigned char*, int)",
+   "note": "MISIDENTIFIED BY THIS ROW'S NAME. It is libopusfile's read callback for a file-backed Opus source, not a copy out of a memory source."
   },
   {
    "name": "AkSoundEngine.CodecDecoderDecode",
@@ -1893,7 +1904,8 @@
    "returnKind": "i32",
    "resolvedSymbol": "AK_op_read_float_no_copy",
    "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
-   "resolvedEvidence": "identical 659-byte extent, 98.5% byte agreement; differences are relocated operands"
+   "resolvedEvidence": "identical 659-byte extent, 98.5% byte agreement; differences are relocated operands",
+   "resolvedName": "AK_op_read_float_no_copy"
   }
  ],
  "evidenceBoundary": {
