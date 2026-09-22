@@ -59,12 +59,36 @@ ANIMESTUDIO_SCOPES = ("story", "assets", "all")
 ANIMESTUDIO_ASSET_MODES = ("focused", "default", "debug")
 # Only final files are dumped. Raw VFS containers (bundles, audio PCKs, world
 # streaming chunks) are read in place by AnimeStudio and are never dumped.
-STRUCTURED_DUMP_MODES = ("focused", "default")
+STRUCTURED_DUMP_MODES = ("focused", "default", "full")
 FOCUSED_STRUCTURED_BLOCK_TYPES = (
     "table",
     "json-data",
     "video",
     "audit-video",
+    # Lua is 1,339 files and about 16 MB decoded, which is noise beside the
+    # video in this same level, and it has a maintained consumer: the Mission
+    # Pipeline reads the index `scripts/webui/story/lua_consumer_references.py`
+    # builds from plaintext Lua. Leaving it out is what forced that refresh to
+    # be a separate hand-run extraction. The exporter already decodes the
+    # base64+XXTEA wrapper and writes `Lua/<name>.lua`.
+    "lua",
+)
+
+#: Everything else the structured dump can reach. These are recovery inputs
+#: rather than page inputs, and together they cost roughly 6.4 GB, so they sit
+#: behind their own level instead of being carried by every refresh. Before
+#: this level existed none of them was reachable through the wrapper at all --
+#: they needed a hand-run bounded CLI dump, which is a poor place to keep a
+#: reproducible input.
+FULL_STRUCTURED_BLOCK_TYPES = (
+    "terrain",
+    "streaming",
+    "dynamic-streaming",
+    "iv",
+    "extend-data",
+    "initial-extend-data",
+    "i-fix-patch",
+    "bundle-manifest",
 )
 TERRAIN_HEIGHT_FILE_REGEX = r"^Data/Terrain/PC/[^/]+/Terrain_[0-9]+_[0-9]+_[0-9]+_H\.bytes$"
 ANIMESTUDIO_STAGE_MERGE_MODES = ("auto", "never", "aggressive")
@@ -2284,8 +2308,12 @@ def parse_args() -> argparse.Namespace:
         choices=STRUCTURED_DUMP_MODES,
         default="focused",
         help=(
-            "`focused` dumps the compact Story/Table/video VFS set; `default` also dumps Terrain `_H` height grids. "
-            "Neither dumps raw containers (bundles, audio PCKs, world streaming); those are read in place."
+            "Each level contains the one below. `focused` dumps what the WebUI pages consume: "
+            "Table, JsonData, video and Lua. `default` adds the Terrain `_H` height grids map recovery "
+            "reads. `full` adds Terrain whole, Streaming, DynamicStreaming, IV, ExtendData, IFixPatch "
+            "and the bundle manifest, about 6.4 GB more. Raw asset bundles and audio packages are a "
+            "separate axis (--asset-mode); no structured level carries them, and raw containers are "
+            "never dumped."
         ),
     )
     parser.add_argument(
@@ -2673,6 +2701,17 @@ def structured_dump_steps(mode: str) -> list[dict[str, Any]]:
                 "name": "terrain_height",
                 "block_types": ("terrain",),
                 "file_regexes": (TERRAIN_HEIGHT_FILE_REGEX,),
+            }
+        )
+    if mode == "full":
+        # `full` takes Terrain whole rather than stacking the height-only step,
+        # because a regex-filtered step and an unfiltered one over the same
+        # block would dump the height grids twice.
+        steps.append(
+            {
+                "name": "recovery",
+                "block_types": FULL_STRUCTURED_BLOCK_TYPES,
+                "file_regexes": (),
             }
         )
     return steps

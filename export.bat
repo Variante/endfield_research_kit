@@ -22,6 +22,12 @@ set "CHANGED_PREPARED=0"
 set "WITH_ASSETS=0"
 set "ASSET_MODE=default"
 set "STRUCTURED_DUMP_MODE=focused"
+rem A preset only fills an axis the caller left alone, so an explicit
+rem --structured-dump-mode or --*-assets after --for still wins.
+set "STRUCTURED_EXPLICIT=0"
+set "ASSET_EXPLICIT=0"
+set "EXPORT_PRESET="
+set "SHOW_SCOPE=0"
 set "FULL_SOURCE_GRAPH=0"
 set "SKIP_FRESHNESS=0"
 set "BUILD_SCOPE=full"
@@ -67,6 +73,8 @@ if /I "%~1"=="--from-game" goto :opt_from_game
 if /I "%~1"=="--changed-only" goto :opt_changed_only
 if /I "%~1"=="--game-root" goto :opt_game_root
 if /I "%~1"=="--structured-dump-mode" goto :opt_structured_dump_mode
+if /I "%~1"=="--for" goto :opt_for
+if /I "%~1"=="--show-scope" goto :opt_show_scope
 
 rem Assets and audio.
 if /I "%~1"=="--with-assets" goto :opt_with_assets
@@ -111,10 +119,24 @@ shift
 shift
 goto :parse_args
 
+:opt_show_scope
+set "SHOW_SCOPE=1"
+shift
+goto :parse_args
+
+:opt_for
+if "%~2"=="" goto :missing_for
+if defined EXPORT_PRESET goto :duplicate_for
+set "EXPORT_PRESET=%~2"
+shift
+shift
+goto :parse_args
+
 :opt_structured_dump_mode
 if "%~2"=="" goto :missing_structured_dump_mode
 set "STRUCTURED_DUMP_MODE=%~2"
 set "EXPORT_ARGS=%EXPORT_ARGS% --structured-dump-mode "%~2""
+set "STRUCTURED_EXPLICIT=1"
 if not defined FIRST_PASSTHROUGH set "FIRST_PASSTHROUGH=--structured-dump-mode"
 shift
 shift
@@ -128,18 +150,21 @@ goto :parse_args
 :assets_focused
 set "WITH_ASSETS=1"
 set "ASSET_MODE=focused"
+set "ASSET_EXPLICIT=1"
 shift
 goto :parse_args
 
 :assets_default
 set "WITH_ASSETS=1"
 set "ASSET_MODE=default"
+set "ASSET_EXPLICIT=1"
 shift
 goto :parse_args
 
 :assets_debug
 set "WITH_ASSETS=1"
 set "ASSET_MODE=debug"
+set "ASSET_EXPLICIT=1"
 shift
 goto :parse_args
 
@@ -189,6 +214,14 @@ shift
 goto :parse_args
 
 :parsed_args
+rem The errorlevel check must sit inside the block. Left outside it runs
+rem even when no preset was given and inherits a stale errorlevel, which
+rem failed the run with no message at all.
+if defined EXPORT_PRESET (
+  call :apply_preset "%EXPORT_PRESET%"
+  if errorlevel 1 exit /b 2
+)
+if "%SHOW_SCOPE%"=="1" goto :print_resolved_scope
 rem Two derived facts drive the rest of the script, so scope-specific stage
 rem checks stay out of the pipeline below.
 set "STORY_BUILD=1"
@@ -378,7 +411,7 @@ echo Missing value for --asset-jobs. Expected a worker count, for example 8.
 exit /b 2
 
 :missing_structured_dump_mode
-echo Missing value for --structured-dump-mode. Expected focused or default.
+echo Missing value for --structured-dump-mode. Expected focused, default, or full.
 exit /b 2
 
 :validate_asset_mode
@@ -389,12 +422,74 @@ echo Invalid asset mode: "%~1"
 echo Expected focused, default, or debug.
 exit /b 2
 
+:print_resolved_scope
+rem A cheap way to see what a preset resolves to without running an
+rem export, so the choice can be checked before paying for it.
+echo structured-dump-mode=%STRUCTURED_DUMP_MODE%
+echo with-assets=%WITH_ASSETS%
+echo asset-mode=%ASSET_MODE%
+echo build-scope=%BUILD_SCOPE%
+exit /b 0
+
+:apply_preset
+rem A preset names an intent and fills only the axes the caller left
+rem alone, so an explicit --structured-dump-mode or --*-assets still wins
+rem whichever order they were given in.
+if /I "%~1"=="story" (
+  if "%STRUCTURED_EXPLICIT%"=="0" set "STRUCTURED_DUMP_MODE=focused"
+  exit /b 0
+)
+if /I "%~1"=="map" (
+  if "%STRUCTURED_EXPLICIT%"=="0" set "STRUCTURED_DUMP_MODE=default"
+  exit /b 0
+)
+if /I "%~1"=="pages" (
+  if "%STRUCTURED_EXPLICIT%"=="0" set "STRUCTURED_DUMP_MODE=default"
+  if "%ASSET_EXPLICIT%"=="0" (
+    set "WITH_ASSETS=1"
+    set "ASSET_MODE=default"
+  )
+  exit /b 0
+)
+if /I "%~1"=="everything" (
+  if "%STRUCTURED_EXPLICIT%"=="0" set "STRUCTURED_DUMP_MODE=full"
+  if "%ASSET_EXPLICIT%"=="0" (
+    set "WITH_ASSETS=1"
+    set "ASSET_MODE=debug"
+  )
+  exit /b 0
+)
+echo Invalid --for target: "%~1"
+echo Expected story, map, pages, or everything.
+echo   story       Story, Text, Gameplay. Table/JsonData/video/Lua, no bundles.
+echo   map         story plus the Terrain height grids map recovery reads.
+echo   pages       Everything the WebUI shows, including Assets and Characters.
+echo   everything  Every structured block and every decoded Unity class.
+echo A preset only fills what you did not set; --structured-dump-mode and
+echo the --*-assets flags still override it.
+exit /b 1
+
+:missing_for
+echo Missing value for --for. Expected story, map, pages, or everything.
+exit /b 2
+
+:duplicate_for
+echo Give --for at most once.
+exit /b 2
+
 :validate_structured_dump_mode
 if /I "%~1"=="focused" exit /b 0
 if /I "%~1"=="default" exit /b 0
+if /I "%~1"=="full" exit /b 0
 echo Invalid structured dump mode: "%~1"
-echo Expected focused or default. Raw VFS containers are read in place, never dumped;
-echo for a bounded probe run AnimeStudio.CLI dump --block-type ... into tmp\.
+echo Expected focused, default, or full.
+echo   focused  Table, JsonData, Video and Lua - what the WebUI pages consume.
+echo   default  focused plus the Terrain height grids map recovery reads.
+echo   full     default plus Terrain whole, Streaming, DynamicStreaming, IV,
+echo            ExtendData, IFixPatch and the bundle manifest (about 6.4 GB more).
+echo Raw asset bundles and audio packages are a separate axis: use --with-assets
+echo or export_assets.bat. Raw VFS containers are still never dumped; for a bounded
+echo probe run AnimeStudio.CLI dump --block-type ... into tmp\.
 exit /b 2
 
 :stage
@@ -419,6 +514,15 @@ echo source graph, then Combat. It first checks that export_full still matches
 echo the installed game. It does not read installed game data unless asked.
 echo.
 echo Common options:
+echo   --for TARGET       Pick an intent and let the wrapper set the scopes:
+echo                        story       Story, Text, Gameplay. No bundles.
+echo                        map         story plus Terrain height grids.
+echo                        pages       Everything the WebUI shows.
+echo                        everything  Every structured block, every class.
+echo                      It only fills what you did not set, so
+echo                      --structured-dump-mode and --*-assets still win.
+echo   --show-scope       Print the resolved scopes and exit, without
+echo                      exporting anything.
 echo   --from-game        Re-extract export_full from the installed game first.
 echo                      Slow; needed after the game updates itself.
 echo   --changed-only     Compare logical-file MD5/length metadata with the last
@@ -433,6 +537,17 @@ echo                      two separate passes.
 echo   --focused-assets   Asset scope, narrowest to broadest. Each one implies
 echo   --default-assets   --with-assets. The default scope is --default-assets.
 echo   --debug-assets     --debug-assets exports every Unity class decoded exactly.
+echo   --structured-dump-mode MODE
+echo                      Structured data scope, narrowest to broadest. This is a
+echo                      separate axis from the asset scope above.
+echo                        focused  Table, JsonData, Video, Lua. What the WebUI
+echo                                 pages consume. The default.
+echo                        default  focused plus the Terrain height grids that
+echo                                 map recovery reads.
+echo                        full     default plus Terrain whole, Streaming,
+echo                                 DynamicStreaming, IV, ExtendData, IFixPatch
+echo                                 and the bundle manifest. About 6.4 GB more,
+echo                                 and only recovery work reads it.
 echo   --game-root PATH   Installed Endfield_Data folder. Defaults to the one
 echo                      in endfield_paths.bat.
 echo   --skip-freshness   Skip the export_full freshness guard for this run.

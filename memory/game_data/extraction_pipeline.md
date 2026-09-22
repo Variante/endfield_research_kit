@@ -35,10 +35,23 @@ evidence needs a domain join or presentation contract.
 | Apply a local client delta without publishing Updates | `.\export.bat --changed-only` | changed focused VFS files, reuse bundle-derived outputs, all WebUI builders |
 | Refresh assets and CN audio only | `.\export_assets.bat --from-game` | skip structured Story, asset maps/conversion/JSON, VFS index, audio |
 
-The focused structured dump includes Table, JsonData, and video. It excludes raw
-bundles, audio packages, world streaming, irradiance, ExtendData, patch data,
-and Lua. `--structured-dump-mode default` additionally includes the maintained
-Terrain height subset; `debug` is for broad diagnosis.
+`--structured-dump-mode` has three levels, each containing the one below.
+`focused` (the default) dumps what the WebUI pages consume: Table, JsonData,
+video and **Lua**. `default` adds the maintained Terrain height subset, about
+64 MiB of Terrain's 1.19 GB. `full` adds Terrain whole, Streaming,
+DynamicStreaming, IV, ExtendData, IFixPatch and the bundle manifest -- about
+6.4 GB more, read only by recovery work. Before `full` existed none of those
+blocks was reachable through the wrapper at all, which left a reproducible
+input depending on a hand-run bounded dump.
+
+Lua sits in the narrowest level on purpose: 1,339 files, ~16 MB decoded, and
+the Mission Pipeline already consumes the index built from plaintext Lua, so
+excluding it bought nothing and forced a separate extraction. The exporter
+decodes the base64+XXTEA wrapper itself and writes `game/Lua/<name>.lua`.
+
+Raw asset bundles and audio packages are a **separate axis** -- the
+`--*-assets` scopes -- and no structured level carries them. (There is no
+`debug` structured mode; `debug` is an asset scope.)
 
 Changed-only export keeps a private, export-root-local logical-file snapshot
 and compares decoded FileDataMd5 plus length/type/path/encryption identity. It
@@ -122,6 +135,27 @@ per-layer `meta/<Layer>/{vfs_index,asset_map,object_index,asset_status,export_ma
   partial, metadata-only and TypeTree-less objects are not written, and the
   export manifest records every written path (CAB, chunk, offset) and every
   exclusion with its reason. Unnamed objects are named by script class.
+- A `SerializeReference` payload the hand-written decoders can only partly
+  recover is re-decoded from the file's own `m_RefTypes` TypeTree, which is
+  exact and names every field. The upgrade is additive: an already exact
+  decoder result is never replaced, so existing consumers keep reading the same
+  keys, and the TypeTree route stays fail-closed on a unique RefTypes match
+  plus exact payload consumption. When it cannot run, the reason is recorded on
+  the node as `exactTypeTreeUpgradeFailure` instead of vanishing with the stub.
+  Two rules this depends on: the trigger must be `ExactOnlyGate`'s own marker
+  set, because a separate list that omits `$inferred` leaves marked content to
+  be deleted by the gate and never upgraded; and the remaining zero-length
+  stubs are Unity's `rid: -2` null sentinel, which has no bytes to decode and
+  is not a gap. The upgrade is what keeps whole gameplay families in the
+  export: the hand-written `EffectActionCfg` reader marks every entry
+  `$partial` for unnamed enum semantics even though its layout is TypeTree
+  exact, and the registry status treats any nested `$partial` as a partial
+  object, so without the upgrade every `data_projectile_*` object and each
+  AbilityEntity or character template with a populated `deadEffect` is
+  excluded (the manifest's `excluded` rows with a `partial:` reason are the
+  audit). A JSON export made with a CLI older than the upgrade therefore
+  has no projectile objects; re-run the MonoBehaviour `json_by_type` stage
+  with the rebuilt CLI rather than adapting a consumer to the missing files.
 - Asset sources nest: `Game` is `game/`, which contains the `Unity` and `Audio`
   sources, so a Game walk prunes them (`prune_nested_source_dirs`). Logical
   VFS paths (`Data/Json/...`, as tables record them) reach disk only through
@@ -148,6 +182,62 @@ source/CAB plus PathID; a PathID or normalized name alone is not globally
 unique. Persistent overlays StreamingAssets while retaining fallback chunk
 resolution. Missing dependencies, ambiguous external targets, malformed
 objects, and unsupported schemas must remain explicit.
+
+### Three exported types carry no provenance, and it costs their references
+
+The rule above is a rule about the export's *output*, and the output does not
+keep it everywhere. Of the JSON-bearing exported types:
+
+| provenance | types |
+| --- | --- |
+| an `$animestudio` block with `sourceFile` | MonoBehaviour, PlayableDirector, AnimatorController |
+| the same fields at top level instead | Animator |
+| **none at all** | **Material, TextAsset, AnimatorOverrideController** |
+
+The last row has a consequence rather than being a tidiness complaint.
+Resolving a cross-file `PPtr` needs the *referrer's* container, because
+`m_FileID` indexes that container's dependency list (see
+[`containers_cabmap.md`](containers_cabmap.md)). A Material does not record
+which container it came from, so the rule cannot be applied to it at all.
+`Material.m_SavedProperties.m_TexEnvs[*].m_Texture` holds 243,124 non-null
+references across the 66,906 materials and **97.7% of them are cross-file**,
+so the published material-to-texture links rest on matching a PathID globally
+with no way to notice being wrong. They are probably right -- PathIDs are
+measured unique across this export -- but "probably right and uncheckable" is
+the state this lane exists to avoid, and it is the state the evidence rule
+above forbids.
+
+Two things follow. The fix belongs in the exporter, not in a builder: emit for
+these three what the other four already carry. And the name half of the
+existing link is not a second opinion -- `m_Texture.Name` is empty in every
+material in the export, so the name-first branch in
+`scripts/webui/assets/index.py` never fires and the PathID is doing all the
+work alone.
+
+**The fork now emits it, and the export has not been rebuilt.** `ExportJSONFile`
+handled `MonoScript` and the generic `Object` case and fell through for every
+*typed* asset class, which serialized straight to Newtonsoft with no wrapper.
+The typed branch now converts through `JObject` and inserts `$animestudio`
+first, so the asset's own serialized shape and member order are unchanged.
+Validated on a bounded single-chunk dump of 7,488 materials: 7,482 are
+byte-identical to the current export once the new block is removed, and the
+other six differ **only** in `m_FileID` values, never in a PathID or any other
+leaf.
+
+Those six are the confirmation, not the exception. They are the same objects
+read from a *different* container, and a container orders its own externals
+list, so the identical target PathID sits at a different slot -- `m_Shader`
+at 39 here and 42 there. That is the whole reason the provenance matters: a
+`m_FileID` is meaningless without knowing which container is doing the
+referring.
+
+Two cautions before this reaches a build. The shipped
+`bin/Release/net9.0-windows` CLI is deliberately **not** rebuilt here: the
+corpus gates' `inputSetSha256` covers the CLI binary, so rebuilding it
+invalidates that audit, every gate below it and the contracts pinning it, and
+that should be a deliberate act rather than a side effect. And the export must
+be re-run before any consumer sees the new field, so a builder reading it must
+tolerate its absence.
 
 The optional object index publishes compressed object/schema streams plus a
 last-written terminal `summary.json`. Consumers fail closed on missing or
@@ -258,7 +348,16 @@ pass license and target-framework review for AnimeStudio's .NET targets.
 ## Remaining gaps
 
 - Improve per-object clean/partial/error certification and dependency diagnostics.
-- Recover more exact MonoBehaviour and managed-reference schemas.
+- Rebuild the CLI and re-export so the new Material/TextAsset/
+  AnimatorOverrideController provenance actually reaches consumers, then
+  re-run the corpus gates, whose `inputSetSha256` the rebuild invalidates. The
+  fork change is written and validated on a bounded dump; nothing downstream
+  sees it yet.
+- Recover more exact MonoBehaviour and managed-reference schemas. The
+  `m_RefTypes` upgrade above closed every non-empty undecoded managed-
+  reference payload in the slice it was measured on; what remains is the
+  hand-written decoders it did not need to replace, and any type whose
+  RefTypes entry is absent or not unique.
 - Expand shader-container coverage and complete semantic shader fixtures.
 - Add converter regressions for more Unity layouts.
 - Reduce peak memory for broad Story JSON/object-index work without unsafe
