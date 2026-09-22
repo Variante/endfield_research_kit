@@ -1,6 +1,19 @@
-"""Validate and decode the pinned ``SpawnerPtrGetter`` formatter shape."""
+"""Validate and decode the reviewed ``SpawnerPtrGetter`` for the selected build.
+
+The getter's meaning is authored and reviewed: ``GetResult`` returns
+``ParamExtensions.GetValue<SpawnerPtr>(this._value)``, so a constant ``_value``
+is the getter's value. Everything a client update moves is data in the
+contract -- the union tag and member count from the PureGetter formatter
+switch, the member ordinal, and the ``GetResult`` body location and hash --
+re-derived by ``--regenerate``, which also re-checks that ``Param<SpawnerPtr>``
+still serializes as the four members the decoder reads. A body that changed
+since its review refuses to regenerate.
+
+Run as: python -m scripts.game_data.spawnerptr_getter_native --regenerate [--write]
+"""
 from __future__ import annotations
 
+import argparse
 import hashlib
 import json
 import struct
@@ -11,12 +24,17 @@ from typing import Any
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
 
-SCHEMA = "spawnerPtrGetterNativeContract.v1"
+SCHEMA = "spawnerPtrGetterNativeContract.v2"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "spawnerptr_getter.json"
-GAMEASSEMBLY_SHA256 = "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-METADATA_SHA256 = "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-NATIVE_MAPPING_ID = "gameassembly-2026-08-23-spawnerptr-getter"
-CONTRACT_SHA256 = "C81EDDFDBEFE92FB192546EE7A058F677780E83B313872DA2F2FBE671E5B0DA0"
+#: Stable identifier cited in evidence; the build lives in the contract.
+NATIVE_MAPPING_ID = "spawnerptr-getter.v2"
+CONTRACT_SHA256 = "6F5997699F047C28E5F70B4A9BC024AA3004263C3628CA10FEB03EBEAA7A3698"
+GETTER_NAME = "Beyond.Gameplay.Actions.SpawnerPtrGetter"
+PARAM_WRAPPER_TYPE = "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.SpawnerPtr>"
+#: The four members ``decode_spawnerptr_getter_member`` reads, in wire order.
+PARAM_LAYOUT = [("constValue", "object"), ("idRef", "scalar32"), ("paramSource", "scalar32"), ("path", "string")]
+#: Codec facts of the shared record scanner, not of the build.
+RECORD_BOUNDARY = {"payloadStartAdjustment": -4, "paramMarker": 4, "constantByteLength": 8, "tailByteLength": 12}
 
 
 @lru_cache(maxsize=1)
@@ -38,49 +56,45 @@ def load_spawnerptr_getter_contract(
     actual_contract_hash = hashlib.sha256(raw).hexdigest().upper()
     if actual_contract_hash != CONTRACT_SHA256:
         reject("contract_sha256", CONTRACT_SHA256, actual_contract_hash)
-    metadata = contract.get("metadata") or {}
-    for gate, expected, actual in (
-        ("schema", SCHEMA, contract.get("schema")),
-        ("status", "validated", contract.get("status")),
-        ("native_mapping_id", NATIVE_MAPPING_ID, contract.get("nativeMappingId")),
-        ("gameassembly_sha256", GAMEASSEMBLY_SHA256, metadata.get("gameAssemblySha256")),
-        ("metadata_sha256", METADATA_SHA256, metadata.get("metadataSha256")),
-    ):
+    for gate, expected, actual in (("schema", SCHEMA, contract.get("schema")),
+                                   ("status", "validated", contract.get("status"))):
         if actual != expected:
             reject(gate, expected, actual)
     getter = contract.get("getter") or {}
-    boundary = getter.get("recordBoundary") or {}
-    expected_shape = (420, 8, "_value", 7, -4, 4, 8, 12)
-    actual_shape = (
-        getter.get("unionTag"), getter.get("serializedMemberCount"),
-        getter.get("fieldName"), getter.get("fieldOrdinal"),
-        boundary.get("payloadStartAdjustment"), boundary.get("paramMarker"),
-        boundary.get("constantByteLength"), boundary.get("tailByteLength"),
-    )
-    if actual_shape != expected_shape:
-        reject("formatter_and_boundary_shape", expected_shape, actual_shape)
-    native = check_installed_native_inputs(GAMEASSEMBLY_SHA256, METADATA_SHA256)
+    fields = [(field.get("name"), field.get("ordinal")) for field in getter.get("fields") or []]
+    shape = (getter.get("getterName"), getter.get("resolutionKind"), fields, getter.get("recordBoundary"))
+    expected_shape = (GETTER_NAME, "constant_param_alias", [("_value", 7)], RECORD_BOUNDARY)
+    if shape != expected_shape:
+        reject("getter_shape", expected_shape, shape)
+    if not all(isinstance(getter.get(key), int) for key in ("unionTag", "serializedMemberCount")):
+        reject("union_shape", "integer unionTag and serializedMemberCount",
+               [getter.get("unionTag"), getter.get("serializedMemberCount")])
+    inputs = contract.get("nativeInputs") or {}
+    native = check_installed_native_inputs(
+        str(inputs.get("gameAssemblySha256") or ""), str(inputs.get("metadataSha256") or ""))
     if native.status != NATIVE_EVIDENCE_VALIDATED:
         reject("installed_native_inputs", NATIVE_EVIDENCE_VALIDATED,
                {"status": native.status, "detail": native.detail})
-    gameassembly = getattr(native, "gameassembly", None) or getattr(native, "gameAssembly", None)
-    try:
-        image = Path(gameassembly).read_bytes() if gameassembly else b""
-    except OSError as error:
-        image = b""
-        reject("read_gameassembly", True, str(error)[:400])
-    for name in ("setter", "deserialize", "getResult"):
-        method = getter.get(name) or {}
-        offset, size = method.get("fileOffset"), method.get("bodySize")
-        expected_hash = str(method.get("bodySha256") or "").upper()
+    body = getter.get("getResult") or {}
+    review = getter.get("review") or {}
+    if not body or str(review.get("bodySha256", "")).upper() != str(body.get("bodySha256", "")).upper():
+        reject("reviewed_body", "review matches getResult",
+               {"review": review.get("bodySha256"), "getResult": body.get("bodySha256")})
+    gameassembly = getattr(native, "gameassembly", None)
+    if gameassembly and not failures:
+        try:
+            image = Path(gameassembly).read_bytes()
+        except OSError as error:
+            image = b""
+            reject("read_gameassembly", True, str(error)[:400])
+        offset, size = body.get("fileOffset"), body.get("bodySize")
         if not isinstance(offset, int) or not isinstance(size, int) or size <= 0:
-            reject(f"{name}_byte_range", {"offset": "int", "size": ">0"}, method)
-            continue
-        body = image[offset:offset + size]
-        actual_hash = hashlib.sha256(body).hexdigest().upper()
-        if len(body) != size or actual_hash != expected_hash:
-            reject(f"{name}_body_sha256", expected_hash,
-                   {"size": len(body), "sha256": actual_hash})
+            reject("getResult_byte_range", {"offset": "int", "size": ">0"}, body)
+        elif image:
+            region = image[offset:offset + size]
+            digest = hashlib.sha256(region).hexdigest().upper()
+            if len(region) != size or digest != str(body.get("bodySha256") or "").upper():
+                reject("getResult_body_sha256", body.get("bodySha256"), {"size": len(region), "sha256": digest})
     if failures:
         getter = {}
     return getter, {
@@ -88,6 +102,46 @@ def load_spawnerptr_getter_contract(
         "nativeMappingId": NATIVE_MAPPING_ID,
         "validationFailures": failures,
     }
+
+
+def spawnerptr_getter_shape() -> tuple[int, int] | None:
+    """The validated ``(unionTag, serializedMemberCount)``, or None."""
+    getter, audit = load_spawnerptr_getter_contract()
+    if audit.get("status") != NATIVE_EVIDENCE_VALIDATED or not getter:
+        return None
+    return getter["unionTag"], getter["serializedMemberCount"]
+
+
+def regenerate(contract: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+    """Re-derive the per-build fields and the Param<SpawnerPtr> wire layout."""
+    from scripts.game_data.il2cpp.native_image import NativeImage
+    from scripts.game_data.memorypack.wrapper_members import derive_from_image
+    from scripts.game_data.pure_getter_rows import derive_getter_rows
+
+    authored = contract.get("getter") or {}
+    derived = derive_getter_rows([GETTER_NAME], with_get_result=[GETTER_NAME])
+    refused = list(derived["refused"])
+    native = check_installed_native_inputs()
+    wrappers = derive_from_image(NativeImage(native.gameassembly, native.metadata, label="spawnerPtrGetter"))
+    param = next((w for w in wrappers.values() if w.wrapped_type == PARAM_WRAPPER_TYPE), None)
+    layout = [(member.name, member.kind) for member in param.members] if param else None
+    if layout != PARAM_LAYOUT:
+        refused.append(f"{PARAM_WRAPPER_TYPE}: wire layout {layout} differs from the decoder's {PARAM_LAYOUT}")
+    fresh = derived["rows"].get(GETTER_NAME)
+    if fresh is None:
+        return contract, refused
+    getter = {"getterName": GETTER_NAME, "resolutionKind": "constant_param_alias", **fresh,
+              "recordBoundary": RECORD_BOUNDARY, "paramLayout": [list(item) for item in PARAM_LAYOUT]}
+    if authored.get("review"):
+        getter["review"] = authored["review"]
+    if getter.get("getResult", {}).get("bodySha256") != str(getter.get("review", {}).get("bodySha256", "")).upper():
+        refused.append(f"{GETTER_NAME}: GetResult body changed since review; re-review before writing")
+    regenerated = {
+        **{key: value for key, value in contract.items() if key not in ("getter", "nativeInputs", "union", "metadata")},
+        "schema": SCHEMA, "status": "validated", "nativeMappingId": NATIVE_MAPPING_ID,
+        "nativeInputs": derived["nativeInputs"], "union": derived["union"], "getter": getter,
+    }
+    return regenerated, refused
 
 
 def decode_spawnerptr_getter_member(
@@ -142,4 +196,30 @@ def decode_spawnerptr_getter_member(
     }
 
 
-__all__ = ["decode_spawnerptr_getter_member", "load_spawnerptr_getter_contract", "NATIVE_MAPPING_ID"]
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--contract", type=Path, default=DEFAULT_CONTRACT)
+    parser.add_argument("--regenerate", action="store_true")
+    parser.add_argument("--write", action="store_true", help="write the regenerated contract")
+    args = parser.parse_args(argv)
+    if not args.regenerate:
+        _getter, audit = load_spawnerptr_getter_contract(args.contract)
+        print(json.dumps(audit, indent=1))
+        return 0 if audit["status"] == NATIVE_EVIDENCE_VALIDATED else 1
+    contract = json.loads(args.contract.read_bytes().decode("utf-8-sig"))
+    regenerated, refused = regenerate(contract)
+    encoded = (json.dumps(regenerated, indent=1, ensure_ascii=False) + "\n").encode("utf-8")
+    print(json.dumps({"refused": refused, "sha256": hashlib.sha256(encoded).hexdigest().upper()}, indent=1))
+    if refused:
+        return 1
+    if args.write:
+        args.contract.write_bytes(encoded)
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+
+__all__ = ["decode_spawnerptr_getter_member", "load_spawnerptr_getter_contract",
+           "spawnerptr_getter_shape", "regenerate", "NATIVE_MAPPING_ID"]

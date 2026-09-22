@@ -1,14 +1,221 @@
 {
-  "schema": "entityPtrGetterNativeContract.v1",
-  "status": "validated",
-  "nativeMappingId": "gameassembly-2026-07-11-entityptr-getter-semantics",
-  "metadata": {"gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE", "metadataSha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"},
-  "getters": [
-    {"unionTag": 49, "serializedMemberCount": 9, "getterName": "Beyond.Gameplay.Actions.EventArgsGetEntityPtr", "resolutionKind": "runtime_event_args_key", "fields": [{"name": "_eventArgsPtr", "ordinal": 7}, {"name": "_key", "ordinal": 8}], "getResult": {"token": "0x060089db", "va": "0x187641b34", "fileOffset": 123994420, "bodySize": 392, "bodySha256": "A79403AB0DFF11A16B413A7FFEAE2114C96B333884FECA0DD443905425E3CE21"}},
-    {"unionTag": 309, "serializedMemberCount": 7, "getterName": null, "candidateTypes": ["Beyond.Gameplay.Actions.GetMainCharacter", "Beyond.Gameplay.Actions.GetGodEntity"], "resolutionKind": "runtime_zero_field_entity_unresolved", "fields": []},
-    {"unionTag": 383, "serializedMemberCount": 8, "getterName": "Beyond.Gameplay.Actions.EntityGetter", "resolutionKind": "constant_param_alias", "fields": [{"name": "_value", "ordinal": 7, "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>"}], "formatter": {"deserializeToken": "0x0600cd43", "deserializeVa": "0x18a4d5c48", "deserializeFileOffset": 172835400, "deserializeBodySize": 960, "deserializeBodySha256": "50CF9F95636C670AA00E2B84339DCDED69AF50170DDC0BF415A1AC569A3080AE", "setterToken": "0x0600cd3d", "setterVa": "0x18a4d6378", "setterFileOffset": 172837240, "setterBodySize": 48, "setterBodySha256": "CC0B3033FC07E6AF68DAC598D0AD894F0C80DF0A0BBFC3246213052B5866828A"}, "getResult": {"token": "0x0600819c", "va": "0x1875fd0c8", "fileOffset": 123713224, "bodySize": 220, "bodySha256": "B8DE5035DC1284CEABD894AB085FD5E70B2E625314C380111125C86184A4DFCC"}},
-    {"unionTag": 729, "serializedMemberCount": 8, "getterName": "Beyond.Gameplay.Actions.GetLevelScriptPropertyGeneric<Beyond.Gameplay.Core.EntityPtr>", "resolutionKind": "runtime_levelscript_property", "fields": [{"name": "_target", "ordinal": 7}]},
-    {"unionTag": 825, "serializedMemberCount": 9, "getterName": null, "candidateTypes": ["Beyond.Gameplay.Actions.EntityPtrListGetValue", "Beyond.Gameplay.Actions.EntityListGetValue"], "resolutionKind": "runtime_list_index_duplicate_unresolved", "fields": [{"name": "_index", "ordinal": 7}, {"name": "_list", "ordinal": 8}]},
-    {"unionTag": 995, "serializedMemberCount": 8, "getterName": "Beyond.Gameplay.Actions.NpcProxyGetter", "resolutionKind": "constant_proxy_id_lookup", "fields": [{"name": "_targetProxy", "ordinal": 7, "managedType": "Beyond.Gameplay.Actions.Param<string>"}], "formatter": {"deserializeToken": "0x0600cdd2", "deserializeVa": "0x18a4de360", "deserializeFileOffset": 172869984, "deserializeBodySize": 960, "deserializeBodySha256": "C03D9FF1E072A631EEDB352169F0C138E08C567C89E469487FFA62B76B00AC19", "setterToken": "0x0600cdcc", "setterVa": "0x18a4dea90", "setterFileOffset": 172871824, "setterBodySize": 48, "setterBodySha256": "6B67B9F6F80DEF5CE2F09769997A82B5A9F12C0E6BA2BA0B02EFB59D021667C7"}, "getResult": {"token": "0x060081ad", "va": "0x18760a8e4", "fileOffset": 123768548, "bodySize": 340, "bodySha256": "A81147097218533ACF5336FFD5B27B75561A4047C2C6D07EC3A33EC8C99142FC"}}
-  ]
+ "schema": "entityPtrGetterNativeContract.v2",
+ "status": "validated",
+ "nativeMappingId": "entityptr-getter-semantics.v2",
+ "evidenceBoundary": {
+  "exact": "union tags from the PureGetter formatter switch; member order from generated wrapper setters; GetResult bodies by managed name and hash",
+  "direct": "the two resolving kinds' readings of their reviewed GetResult bodies",
+  "conditional": "an installed IFix patch replaces either body; the reading holds only when no patch is present",
+  "unresolved": "runtime kinds label values the runtime supplies and resolve nothing statically"
+ },
+ "nativeInputs": {
+  "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+  "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+ },
+ "union": {
+  "base": "Beyond.MemoryPack.Beyond_Gameplay_Actions_PureGetterForMemoryPack",
+  "dispatcherVa": "0x182995610",
+  "tableVa": "0x1829ecab0",
+  "entryCount": 1106
+ },
+ "getters": [
+  {
+   "getterName": "Beyond.Gameplay.Actions.EntityGetter",
+   "resolutionKind": "constant_param_alias",
+   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EntityGetterForMemoryPack",
+   "unionTag": 42,
+   "serializedMemberCount": 8,
+   "fields": [
+    {
+     "name": "_value",
+     "ordinal": 7,
+     "managedType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>"
+    }
+   ],
+   "switchEntry": {
+    "targetVa": "0x18299f4ca",
+    "bodyVa": "0x1829a4a0e",
+    "usageCellVa": "0x18d078a58",
+    "registeredTypeIndex": 103351,
+    "typeDefinition": 19721
+   },
+   "getResult": {
+    "token": "0x060087b3",
+    "va": "0x18690f0d4",
+    "fileOffset": 110156500,
+    "bodySize": 220,
+    "bodySha256": "4278D9BD8731BAC55B4166318EEA5F93F61506A8E050C18E6F3F8911062FF454"
+   },
+   "review": {
+    "bodySha256": "4278D9BD8731BAC55B4166318EEA5F93F61506A8E050C18E6F3F8911062FF454",
+    "finding": "Unless IFix WrappersManagerImpl.IsPatched(0x8658) diverts to the patch, returns ParamExtensions.GetValue<EntityPtr>(this._value) (_value at +0x60) copied into the 40-byte result. A constant _value is therefore the getter's value."
+   }
+  },
+  {
+   "getterName": "Beyond.Gameplay.Actions.EntityListGetValue",
+   "resolutionKind": "runtime_list_index",
+   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EntityListGetValueForMemoryPack",
+   "unionTag": 45,
+   "serializedMemberCount": 9,
+   "fields": [
+    {
+     "name": "_index",
+     "ordinal": 7,
+     "managedType": "Beyond.Gameplay.Actions.Param`1<int>"
+    },
+    {
+     "name": "_list",
+     "ordinal": 8,
+     "managedType": "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.Gameplay.Core.EntityPtr>>"
+    }
+   ],
+   "switchEntry": {
+    "targetVa": "0x18299f4e8",
+    "bodyVa": "0x1829a4d2f",
+    "usageCellVa": "0x18d078a50",
+    "registeredTypeIndex": 103357,
+    "typeDefinition": 19727
+   }
+  },
+  {
+   "getterName": "Beyond.Gameplay.Actions.EntityPtrListGetValue",
+   "resolutionKind": "runtime_list_index",
+   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EntityPtrListGetValueForMemoryPack",
+   "unionTag": 47,
+   "serializedMemberCount": 9,
+   "fields": [
+    {
+     "name": "_index",
+     "ordinal": 7,
+     "managedType": "Beyond.Gameplay.Actions.Param`1<int>"
+    },
+    {
+     "name": "_list",
+     "ordinal": 8,
+     "managedType": "Beyond.Gameplay.Actions.Param`1<System.Collections.Generic.List`1<Beyond.Gameplay.Core.EntityPtr>>"
+    }
+   ],
+   "switchEntry": {
+    "targetVa": "0x18299f4fc",
+    "bodyVa": "0x1829a4f45",
+    "usageCellVa": "0x18d078a80",
+    "registeredTypeIndex": 103365,
+    "typeDefinition": 21515
+   }
+  },
+  {
+   "getterName": "Beyond.Gameplay.Actions.EventArgsGetEntityPtr",
+   "resolutionKind": "runtime_event_args_key",
+   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_EventArgsGetEntityPtrForMemoryPack",
+   "unionTag": 50,
+   "serializedMemberCount": 9,
+   "fields": [
+    {
+     "name": "_eventArgsPtr",
+     "ordinal": 7,
+     "managedType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EventArgsPtr>"
+    },
+    {
+     "name": "_key",
+     "ordinal": 8,
+     "managedType": "Beyond.Gameplay.Actions.Param`1<string>"
+    }
+   ],
+   "switchEntry": {
+    "targetVa": "0x18299f51a",
+    "bodyVa": "0x1829a5266",
+    "usageCellVa": "0x18d078a98",
+    "registeredTypeIndex": 103386,
+    "typeDefinition": 21713
+   }
+  },
+  {
+   "getterName": "Beyond.Gameplay.Actions.GetGodEntity",
+   "resolutionKind": "runtime_zero_field_entity",
+   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetGodEntityForMemoryPack",
+   "unionTag": 97,
+   "serializedMemberCount": 7,
+   "fields": [],
+   "switchEntry": {
+    "targetVa": "0x18299f6f0",
+    "bodyVa": "0x1829a836b",
+    "usageCellVa": "0x18d078b08",
+    "registeredTypeIndex": 103508,
+    "typeDefinition": 21691
+   }
+  },
+  {
+   "getterName": "Beyond.Gameplay.Actions.GetLevelScriptPropertyGeneric`1<Beyond.Gameplay.Core.EntityPtr>",
+   "resolutionKind": "runtime_levelscript_property",
+   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetLevelScriptPropertyGeneric_Beyond_Gameplay_Core_EntityPtr_ForMemoryPack",
+   "unionTag": 211,
+   "serializedMemberCount": 9,
+   "fields": [
+    {
+     "name": "_path",
+     "ordinal": 7,
+     "managedType": "Beyond.Gameplay.Actions.Param`1<string>"
+    },
+    {
+     "name": "_target",
+     "ordinal": 8,
+     "managedType": "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.LevelScriptPtr>"
+    }
+   ],
+   "switchEntry": {
+    "targetVa": "0x18299fb64",
+    "bodyVa": "0x1829afa51",
+    "usageCellVa": "0x18d077bf0",
+    "registeredTypeIndex": 103670,
+    "typeDefinition": 20215
+   }
+  },
+  {
+   "getterName": "Beyond.Gameplay.Actions.GetMainCharacter",
+   "resolutionKind": "runtime_zero_field_entity",
+   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_GetMainCharacterForMemoryPack",
+   "unionTag": 312,
+   "serializedMemberCount": 7,
+   "fields": [],
+   "switchEntry": {
+    "targetVa": "0x18299ff56",
+    "bodyVa": "0x1829b63a8",
+    "usageCellVa": "0x18d077e68",
+    "registeredTypeIndex": 103723,
+    "typeDefinition": 21693
+   }
+  },
+  {
+   "getterName": "Beyond.Gameplay.Actions.NpcProxyGetter",
+   "resolutionKind": "constant_proxy_id_lookup",
+   "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Actions_NpcProxyGetterForMemoryPack",
+   "unionTag": 998,
+   "serializedMemberCount": 8,
+   "fields": [
+    {
+     "name": "_targetProxy",
+     "ordinal": 7,
+     "managedType": "Beyond.Gameplay.Actions.Param`1<string>"
+    }
+   ],
+   "switchEntry": {
+    "targetVa": "0x1829a1a22",
+    "bodyVa": "0x1829e2f22",
+    "usageCellVa": "0x18d074950",
+    "registeredTypeIndex": 105089,
+    "typeDefinition": 19739
+   },
+   "getResult": {
+    "token": "0x060087c4",
+    "va": "0x18691df4c",
+    "fileOffset": 110217548,
+    "bodySize": 340,
+    "bodySha256": "3B7F50A5559961BDCFA01B04E3451546B7436CA67D41D9E59D997A0DBFD98166"
+   },
+   "review": {
+    "bodySha256": "3B7F50A5559961BDCFA01B04E3451546B7436CA67D41D9E59D997A0DBFD98166",
+    "finding": "Unless IFix IsPatched(0x8664) diverts, reads ParamExtensions.GetValue<string>(this._targetProxy) (+0x60); if non-empty, returns EntityPtr.op_Implicit(NpcProxyMgr.GetNpcProxyByProxyId(id).GetEntity()); otherwise logs (category 0x1D) and returns an empty EntityPtr."
+   }
+  }
+ ]
 }

@@ -24,7 +24,10 @@ from scripts.game_data.codecs.levelscript import scalar_value_getters as levelsc
 from scripts.game_data.codecs.levelscript import switch_actions as levelscript_switch_actions
 from scripts.game_data.codecs.levelscript import top_level_tail as levelscript_top_level_tail
 from scripts.game_data.codecs.levelscript import trigger_volumes as levelscript_trigger_volumes
-from scripts.game_data.spawnerptr_getter_native import decode_spawnerptr_getter_member
+from scripts.game_data.spawnerptr_getter_native import (
+    decode_spawnerptr_getter_member,
+    spawnerptr_getter_shape,
+)
 
 from scripts.common import read_bytes_cached
 from scripts.game_data.codecs.levelscript.primitives import u32 as _u32
@@ -1623,8 +1626,8 @@ def decode_levelscript_record_payload(
         hint.setdefault("nativeHeaderMappingId", LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID)
     if (
         getter_role
-        and record.get("unionTag") == 420
-        and record.get("serializedMemberCount") == 8
+        and (record.get("unionTag"), record.get("serializedMemberCount"))
+        == spawnerptr_getter_shape()
     ):
         spawner_getter = decode_spawnerptr_getter_member(
             data,
