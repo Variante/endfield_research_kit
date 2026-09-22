@@ -32,6 +32,18 @@
    "dispatcherVa": "0x18390d950",
    "tableVa": "0x183915318",
    "entryCount": 416
+  },
+  "GameCondition": {
+   "base": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionForMemoryPack",
+   "dispatcherVa": "0x1841825d0",
+   "tableVa": "0x1841854e8",
+   "entryCount": 314
+  },
+  "BaseComponentData": {
+   "base": "Beyond.MemoryPack.Beyond_Gameplay_BaseComponentDataForMemoryPack",
+   "dispatcherVa": "0x183cb7030",
+   "tableVa": "0x183cbc444",
+   "entryCount": 309
   }
  },
  "families": {
@@ -21734,6 +21746,4371 @@
     "tag": 415,
     "memberCount": 4,
     "wrappedType": "Beyond.Gameplay.WaterDroneHitAction+Data"
+   }
+  ],
+  "GameCondition": [
+   {
+    "name": "CharCurStamina",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CharCurStaminaForMemoryPack",
+    "tag": 0,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CharCurStamina"
+   },
+   {
+    "name": "CharDailyGiftFriendshipIncreaseMax",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CharDailyGiftFriendshipIncreaseMaxForMemoryPack",
+    "tag": 1,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CharDailyGiftFriendshipIncreaseMax"
+   },
+   {
+    "name": "CharFriendship",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CharFriendshipForMemoryPack",
+    "tag": 2,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CharFriendship"
+   },
+   {
+    "name": "CharFriendshipLevel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CharFriendshipLevelForMemoryPack",
+    "tag": 3,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CharFriendshipLevel"
+   },
+   {
+    "name": "CharFriendshipMax",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CharFriendshipMaxForMemoryPack",
+    "tag": 4,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CharFriendshipMax"
+   },
+   {
+    "name": "CharHasGiftToPlayer",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CharHasGiftToPlayerForMemoryPack",
+    "tag": 5,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CharHasGiftToPlayer"
+   },
+   {
+    "name": "CharIsInStationInSpaceship",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CharIsInStationInSpaceshipForMemoryPack",
+    "tag": 6,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CharIsInStationInSpaceship"
+   },
+   {
+    "name": "CharIsRestingInSpaceship",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CharIsRestingInSpaceshipForMemoryPack",
+    "tag": 7,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CharIsRestingInSpaceship"
+   },
+   {
+    "name": "CharIsWorkingInSpaceship",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CharIsWorkingInSpaceshipForMemoryPack",
+    "tag": 8,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CharIsWorkingInSpaceship"
+   },
+   {
+    "name": "CharMaxLevel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CharMaxLevelForMemoryPack",
+    "tag": 9,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CharMaxLevel"
+   },
+   {
+    "name": "CharSendGiftToCharCnt",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CharSendGiftToCharCntForMemoryPack",
+    "tag": 10,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CharSendGiftToCharCnt"
+   },
+   {
+    "name": "CheckAchievementBarAddItem",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckAchievementBarAddItemForMemoryPack",
+    "tag": 11,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.CheckAchievementBarAddItem"
+   },
+   {
+    "name": "CheckActivityCompletedOrNull",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckActivityCompletedOrNullForMemoryPack",
+    "tag": 12,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckActivityCompletedOrNull"
+   },
+   {
+    "name": "CheckActivityConditionalStageStatus",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckActivityConditionalStageStatusForMemoryPack",
+    "tag": 13,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckActivityConditionalStageStatus"
+   },
+   {
+    "name": "CheckActivityStageInTimeOffset",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckActivityStageInTimeOffsetForMemoryPack",
+    "tag": 14,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckActivityStageInTimeOffset"
+   },
+   {
+    "name": "CheckActivityStageUnlocked",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckActivityStageUnlockedForMemoryPack",
+    "tag": 15,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckActivityStageUnlocked"
+   },
+   {
+    "name": "CheckActivityValid",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckActivityValidForMemoryPack",
+    "tag": 16,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckActivityValid"
+   },
+   {
+    "name": "CheckAdventureBookStage",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckAdventureBookStageForMemoryPack",
+    "tag": 17,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckAdventureBookStage"
+   },
+   {
+    "name": "CheckAdventureLevel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckAdventureLevelForMemoryPack",
+    "tag": 18,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckAdventureLevel"
+   },
+   {
+    "name": "CheckAliveCharNumInCurTeam",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckAliveCharNumInCurTeamForMemoryPack",
+    "tag": 19,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckAliveCharNumInCurTeam"
+   },
+   {
+    "name": "CheckAllImportantCheckinTakenReward",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckAllImportantCheckinTakenRewardForMemoryPack",
+    "tag": 20,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.CheckAllImportantCheckinTakenReward"
+   },
+   {
+    "name": "CheckAnyOfGameMechanicsGroupPass",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckAnyOfGameMechanicsGroupPassForMemoryPack",
+    "tag": 21,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckAnyOfGameMechanicsGroupPass"
+   },
+   {
+    "name": "CheckBlackboxComplete",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckBlackboxCompleteForMemoryPack",
+    "tag": 22,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckBlackboxComplete"
+   },
+   {
+    "name": "CheckBuildingConnected",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckBuildingConnectedForMemoryPack",
+    "tag": 23,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckBuildingConnected"
+   },
+   {
+    "name": "CheckBuildingConnectedAsMA2SB",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckBuildingConnectedAsMA2SBForMemoryPack",
+    "tag": 24,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckBuildingConnectedAsMA2SB"
+   },
+   {
+    "name": "CheckBuildingConnectedExist",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckBuildingConnectedExistForMemoryPack",
+    "tag": 25,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckBuildingConnectedExist"
+   },
+   {
+    "name": "CheckBuildingConnectedSpecify",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckBuildingConnectedSpecifyForMemoryPack",
+    "tag": 26,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.CheckBuildingConnectedSpecify"
+   },
+   {
+    "name": "CheckBuildingStateInArea",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckBuildingStateInAreaForMemoryPack",
+    "tag": 27,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.CheckBuildingStateInArea"
+   },
+   {
+    "name": "CheckBuildingStateInAreaByFacBuildingType",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckBuildingStateInAreaByFacBuildingTypeForMemoryPack",
+    "tag": 28,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckBuildingStateInAreaByFacBuildingType"
+   },
+   {
+    "name": "CheckChallengeGameMechanicsId",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckChallengeGameMechanicsIdForMemoryPack",
+    "tag": 29,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckChallengeGameMechanicsId"
+   },
+   {
+    "name": "CheckCharacterGachaPoolOpen",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckCharacterGachaPoolOpenForMemoryPack",
+    "tag": 30,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckCharacterGachaPoolOpen"
+   },
+   {
+    "name": "CheckCharAliveInCurTeam",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckCharAliveInCurTeamForMemoryPack",
+    "tag": 31,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckCharAliveInCurTeam"
+   },
+   {
+    "name": "CheckCharFavorability",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckCharFavorabilityForMemoryPack",
+    "tag": 32,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckCharFavorability"
+   },
+   {
+    "name": "CheckCharInMainTeam",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckCharInMainTeamForMemoryPack",
+    "tag": 33,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckCharInMainTeam"
+   },
+   {
+    "name": "CheckCharUnlock",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckCharUnlockForMemoryPack",
+    "tag": 34,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckCharUnlock"
+   },
+   {
+    "name": "CheckClientGlobalVar",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckClientGlobalVarForMemoryPack",
+    "tag": 35,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckClientGlobalVar"
+   },
+   {
+    "name": "CheckCompletedBlocMissionNum",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckCompletedBlocMissionNumForMemoryPack",
+    "tag": 36,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckCompletedBlocMissionNum"
+   },
+   {
+    "name": "CheckCostStamina",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckCostStaminaForMemoryPack",
+    "tag": 37,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckCostStamina"
+   },
+   {
+    "name": "CheckCurCutsceneName",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckCurCutsceneNameForMemoryPack",
+    "tag": 38,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckCurCutsceneName"
+   },
+   {
+    "name": "CheckCurGachaDropBinCount",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckCurGachaDropBinCountForMemoryPack",
+    "tag": 39,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckCurGachaDropBinCount"
+   },
+   {
+    "name": "CheckCurGachaMaxRarity",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckCurGachaMaxRarityForMemoryPack",
+    "tag": 40,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckCurGachaMaxRarity"
+   },
+   {
+    "name": "CheckCutsceneFinish",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckCutsceneFinishForMemoryPack",
+    "tag": 41,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckCutsceneFinish"
+   },
+   {
+    "name": "CheckDomainDepotDeliverRecvPackage",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckDomainDepotDeliverRecvPackageForMemoryPack",
+    "tag": 42,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.CheckDomainDepotDeliverRecvPackage"
+   },
+   {
+    "name": "CheckDomainDepotDeliverSendPackage",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckDomainDepotDeliverSendPackageForMemoryPack",
+    "tag": 43,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.CheckDomainDepotDeliverSendPackage"
+   },
+   {
+    "name": "CheckDomainDepotLvProgress",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckDomainDepotLvProgressForMemoryPack",
+    "tag": 44,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckDomainDepotLvProgress"
+   },
+   {
+    "name": "CheckDomainDevelopmentLevel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckDomainDevelopmentLevelForMemoryPack",
+    "tag": 45,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckDomainDevelopmentLevel"
+   },
+   {
+    "name": "CheckDomainShopChannelLevel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckDomainShopChannelLevelForMemoryPack",
+    "tag": 46,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckDomainShopChannelLevel"
+   },
+   {
+    "name": "CheckDoodadIsBreakable",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckDoodadIsBreakableForMemoryPack",
+    "tag": 47,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckDoodadIsBreakable"
+   },
+   {
+    "name": "CheckDoodadIsPickable",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckDoodadIsPickableForMemoryPack",
+    "tag": 48,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckDoodadIsPickable"
+   },
+   {
+    "name": "CheckDramaticPerformanceBagFinish",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckDramaticPerformanceBagFinishForMemoryPack",
+    "tag": 49,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.CheckDramaticPerformanceBagFinish"
+   },
+   {
+    "name": "CheckEntityExist",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckEntityExistForMemoryPack",
+    "tag": 50,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckEntityExist"
+   },
+   {
+    "name": "CheckEquipHighLevelTab",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckEquipHighLevelTabForMemoryPack",
+    "tag": 51,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckEquipHighLevelTab"
+   },
+   {
+    "name": "CheckEquipLastEnhanceStatus",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckEquipLastEnhanceStatusForMemoryPack",
+    "tag": 52,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.CheckEquipLastEnhanceStatus"
+   },
+   {
+    "name": "CheckFacBuildingState",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckFacBuildingStateForMemoryPack",
+    "tag": 53,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckFacBuildingState"
+   },
+   {
+    "name": "CheckFacSoilPlacedInPanel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckFacSoilPlacedInPanelForMemoryPack",
+    "tag": 54,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.CheckFacSoilPlacedInPanel"
+   },
+   {
+    "name": "CheckFactoryBlackBoxState",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckFactoryBlackBoxStateForMemoryPack",
+    "tag": 55,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckFactoryBlackBoxState"
+   },
+   {
+    "name": "CheckFluidVolume",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckFluidVolumeForMemoryPack",
+    "tag": 56,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.CheckFluidVolume"
+   },
+   {
+    "name": "CheckFMVFinish",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckFMVFinishForMemoryPack",
+    "tag": 57,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckFMVFinish"
+   },
+   {
+    "name": "CheckGachaWeaponTopCount",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckGachaWeaponTopCountForMemoryPack",
+    "tag": 58,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckGachaWeaponTopCount"
+   },
+   {
+    "name": "CheckGameInstCompletionStatus",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckGameInstCompletionStatusForMemoryPack",
+    "tag": 59,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckGameInstCompletionStatus"
+   },
+   {
+    "name": "CheckGameInstStartDuration",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckGameInstStartDurationForMemoryPack",
+    "tag": 60,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.CheckGameInstStartDuration"
+   },
+   {
+    "name": "CheckGuideGroupComplete",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckGuideGroupCompleteForMemoryPack",
+    "tag": 61,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckGuideGroupComplete"
+   },
+   {
+    "name": "CheckHasInteractOption",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckHasInteractOptionForMemoryPack",
+    "tag": 62,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckHasInteractOption"
+   },
+   {
+    "name": "CheckHasManualCollectItem",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckHasManualCollectItemForMemoryPack",
+    "tag": 63,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckHasManualCollectItem"
+   },
+   {
+    "name": "CheckInAuditMode",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckInAuditModeForMemoryPack",
+    "tag": 64,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.CheckInAuditMode"
+   },
+   {
+    "name": "CheckInCharInfoUpgradePanel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckInCharInfoUpgradePanelForMemoryPack",
+    "tag": 65,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.CheckInCharInfoUpgradePanel"
+   },
+   {
+    "name": "CheckInPowerMinerCount",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckInPowerMinerCountForMemoryPack",
+    "tag": 66,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckInPowerMinerCount"
+   },
+   {
+    "name": "CheckInRange",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckInRangeForMemoryPack",
+    "tag": 67,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckInRange"
+   },
+   {
+    "name": "CheckInteractiveAllMiniGameComplete",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckInteractiveAllMiniGameCompleteForMemoryPack",
+    "tag": 68,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckInteractiveAllMiniGameComplete"
+   },
+   {
+    "name": "CheckInteractiveDestroyed",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckInteractiveDestroyedForMemoryPack",
+    "tag": 69,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckInteractiveDestroyed"
+   },
+   {
+    "name": "CheckInteractiveIsActivable",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckInteractiveIsActivableForMemoryPack",
+    "tag": 70,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckInteractiveIsActivable"
+   },
+   {
+    "name": "CheckInteractiveIsActivated",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckInteractiveIsActivatedForMemoryPack",
+    "tag": 71,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckInteractiveIsActivated"
+   },
+   {
+    "name": "CheckInteractiveLock",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckInteractiveLockForMemoryPack",
+    "tag": 72,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckInteractiveLock"
+   },
+   {
+    "name": "CheckInteractiveSubmitSuccess",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckInteractiveSubmitSuccessForMemoryPack",
+    "tag": 73,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckInteractiveSubmitSuccess"
+   },
+   {
+    "name": "CheckInTimeTableTimeRange",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckInTimeTableTimeRangeForMemoryPack",
+    "tag": 74,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckInTimeTableTimeRange"
+   },
+   {
+    "name": "CheckInWeaponUpgradePanel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckInWeaponUpgradePanelForMemoryPack",
+    "tag": 75,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.CheckInWeaponUpgradePanel"
+   },
+   {
+    "name": "CheckIsPortableDeviceActive",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckIsPortableDeviceActiveForMemoryPack",
+    "tag": 76,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckIsPortableDeviceActive"
+   },
+   {
+    "name": "CheckIsSquadInFight",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckIsSquadInFightForMemoryPack",
+    "tag": 77,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckIsSquadInFight"
+   },
+   {
+    "name": "CheckItemBagCanPutInServer",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckItemBagCanPutInServerForMemoryPack",
+    "tag": 78,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckItemBagCanPutInServer"
+   },
+   {
+    "name": "CheckKillEnemySinceStartById",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckKillEnemySinceStartByIdForMemoryPack",
+    "tag": 79,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckKillEnemySinceStartById"
+   },
+   {
+    "name": "CheckLevelScriptPropertyBool",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLevelScriptPropertyBoolForMemoryPack",
+    "tag": 80,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.CheckLevelScriptPropertyBool"
+   },
+   {
+    "name": "CheckLevelScriptPropertyInt",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLevelScriptPropertyIntForMemoryPack",
+    "tag": 81,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.CheckLevelScriptPropertyInt"
+   },
+   {
+    "name": "CheckLevelScriptPropertyString",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLevelScriptPropertyStringForMemoryPack",
+    "tag": 82,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.CheckLevelScriptPropertyString"
+   },
+   {
+    "name": "CheckLevelScriptStage",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLevelScriptStageForMemoryPack",
+    "tag": 83,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckLevelScriptStage"
+   },
+   {
+    "name": "CheckLevelScriptStageReachMax",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLevelScriptStageReachMaxForMemoryPack",
+    "tag": 84,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckLevelScriptStageReachMax"
+   },
+   {
+    "name": "CheckLevelScriptTaskFinished",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLevelScriptTaskFinishedForMemoryPack",
+    "tag": 85,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckLevelScriptTaskFinished"
+   },
+   {
+    "name": "CheckLevelUnlocked",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLevelUnlockedForMemoryPack",
+    "tag": 86,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckLevelUnlocked"
+   },
+   {
+    "name": "CheckLiquidInBag",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLiquidInBagForMemoryPack",
+    "tag": 87,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckLiquidInBag"
+   },
+   {
+    "name": "CheckLsmBoolEqual",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLsmBoolEqualForMemoryPack",
+    "tag": 88,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.CheckLsmBoolEqual"
+   },
+   {
+    "name": "CheckLsmBoolEqualBase",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLsmBoolEqualBaseForMemoryPack",
+    "tag": 89,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckLsmBoolEqualBase"
+   },
+   {
+    "name": "CheckLsmCompleted",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLsmCompletedForMemoryPack",
+    "tag": 90,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckLsmCompleted"
+   },
+   {
+    "name": "CheckLsmEncounterBattleCompleted",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLsmEncounterBattleCompletedForMemoryPack",
+    "tag": 91,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckLsmEncounterBattleCompleted"
+   },
+   {
+    "name": "CheckLsmEncounterCompleted",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLsmEncounterCompletedForMemoryPack",
+    "tag": 92,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckLsmEncounterCompleted"
+   },
+   {
+    "name": "CheckLsmEncounterSurvivalCompleted",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLsmEncounterSurvivalCompletedForMemoryPack",
+    "tag": 93,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckLsmEncounterSurvivalCompleted"
+   },
+   {
+    "name": "CheckLsmEncounterSurvivalFailed",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckLsmEncounterSurvivalFailedForMemoryPack",
+    "tag": 94,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckLsmEncounterSurvivalFailed"
+   },
+   {
+    "name": "CheckManualCraftTabChanged",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckManualCraftTabChangedForMemoryPack",
+    "tag": 95,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckManualCraftTabChanged"
+   },
+   {
+    "name": "CheckMapCollectionNum",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckMapCollectionNumForMemoryPack",
+    "tag": 96,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckMapCollectionNum"
+   },
+   {
+    "name": "CheckMapVar",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckMapVarForMemoryPack",
+    "tag": 97,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckMapVar"
+   },
+   {
+    "name": "CheckMiniGameCompletedCount",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckMiniGameCompletedCountForMemoryPack",
+    "tag": 98,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckMiniGameCompletedCount"
+   },
+   {
+    "name": "CheckMissionBoolProperty",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckMissionBoolPropertyForMemoryPack",
+    "tag": 99,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckMissionBoolProperty"
+   },
+   {
+    "name": "CheckMissionChapterEarlyAccept",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckMissionChapterEarlyAcceptForMemoryPack",
+    "tag": 100,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckMissionChapterEarlyAccept"
+   },
+   {
+    "name": "CheckMissionDaysNumAfterComplete",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckMissionDaysNumAfterCompleteForMemoryPack",
+    "tag": 101,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckMissionDaysNumAfterComplete"
+   },
+   {
+    "name": "CheckMissionIntProperty",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckMissionIntPropertyForMemoryPack",
+    "tag": 102,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckMissionIntProperty"
+   },
+   {
+    "name": "CheckMissionState",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckMissionStateForMemoryPack",
+    "tag": 103,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckMissionState"
+   },
+   {
+    "name": "CheckMissionSucceedId",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckMissionSucceedIdForMemoryPack",
+    "tag": 104,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckMissionSucceedId"
+   },
+   {
+    "name": "CheckMoney",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckMoneyForMemoryPack",
+    "tag": 105,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckMoney"
+   },
+   {
+    "name": "CheckMonsterKilled",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckMonsterKilledForMemoryPack",
+    "tag": 106,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.CheckMonsterKilled"
+   },
+   {
+    "name": "CheckMonsterSpawnerComplete",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckMonsterSpawnerCompleteForMemoryPack",
+    "tag": 107,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckMonsterSpawnerComplete"
+   },
+   {
+    "name": "CheckMonsterSpawnerCompleteState",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckMonsterSpawnerCompleteStateForMemoryPack",
+    "tag": 108,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckMonsterSpawnerCompleteState"
+   },
+   {
+    "name": "CheckNarrativeGender",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckNarrativeGenderForMemoryPack",
+    "tag": 109,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckNarrativeGender"
+   },
+   {
+    "name": "CheckOptionSelectedInCurDialog",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckOptionSelectedInCurDialogForMemoryPack",
+    "tag": 110,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckOptionSelectedInCurDialog"
+   },
+   {
+    "name": "CheckPassCCDungeonWithScore",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPassCCDungeonWithScoreForMemoryPack",
+    "tag": 111,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckPassCCDungeonWithScore"
+   },
+   {
+    "name": "CheckPassedSpecifiedShootingRangeSimulationLevelIds",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPassedSpecifiedShootingRangeSimulationLevelIdsForMemoryPack",
+    "tag": 112,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckPassedSpecifiedShootingRangeSimulationLevelIds"
+   },
+   {
+    "name": "CheckPassGameMechanicsId",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPassGameMechanicsIdForMemoryPack",
+    "tag": 113,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckPassGameMechanicsId"
+   },
+   {
+    "name": "CheckPerfectlyPassDungeonId",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPerfectlyPassDungeonIdForMemoryPack",
+    "tag": 114,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckPerfectlyPassDungeonId"
+   },
+   {
+    "name": "CheckPlayerGender",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPlayerGenderForMemoryPack",
+    "tag": 115,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.CheckPlayerGender"
+   },
+   {
+    "name": "CheckPlayerHasSNSDialog",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPlayerHasSNSDialogForMemoryPack",
+    "tag": 116,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckPlayerHasSNSDialog"
+   },
+   {
+    "name": "CheckPlayerInAnyDungeon",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPlayerInAnyDungeonForMemoryPack",
+    "tag": 117,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.CheckPlayerInAnyDungeon"
+   },
+   {
+    "name": "CheckPlayerInMap",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPlayerInMapForMemoryPack",
+    "tag": 118,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckPlayerInMap"
+   },
+   {
+    "name": "CheckPlayerOnGround",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPlayerOnGroundForMemoryPack",
+    "tag": 119,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.CheckPlayerOnGround"
+   },
+   {
+    "name": "CheckPlayerPin",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPlayerPinForMemoryPack",
+    "tag": 120,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckPlayerPin"
+   },
+   {
+    "name": "CheckPrtsInvestigateCategoryUnlocked",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPrtsInvestigateCategoryUnlockedForMemoryPack",
+    "tag": 121,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckPrtsInvestigateCategoryUnlocked"
+   },
+   {
+    "name": "CheckPrtsInvestigateFinish",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPrtsInvestigateFinishForMemoryPack",
+    "tag": 122,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckPrtsInvestigateFinish"
+   },
+   {
+    "name": "CheckPrtsInvestigateFinishedCount",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPrtsInvestigateFinishedCountForMemoryPack",
+    "tag": 123,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckPrtsInvestigateFinishedCount"
+   },
+   {
+    "name": "CheckPrtsInvestigateNoteReadingDone",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPrtsInvestigateNoteReadingDoneForMemoryPack",
+    "tag": 124,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckPrtsInvestigateNoteReadingDone"
+   },
+   {
+    "name": "CheckPrtsInvestigateNoteUnlocked",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPrtsInvestigateNoteUnlockedForMemoryPack",
+    "tag": 125,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckPrtsInvestigateNoteUnlocked"
+   },
+   {
+    "name": "CheckPrtsReadingDone",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPrtsReadingDoneForMemoryPack",
+    "tag": 126,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckPrtsReadingDone"
+   },
+   {
+    "name": "CheckPRTSUnlocked",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckPRTSUnlockedForMemoryPack",
+    "tag": 127,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckPRTSUnlocked"
+   },
+   {
+    "name": "CheckQuestState",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckQuestStateForMemoryPack",
+    "tag": 128,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckQuestState"
+   },
+   {
+    "name": "CheckQuestSubmitItem",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckQuestSubmitItemForMemoryPack",
+    "tag": 129,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckQuestSubmitItem"
+   },
+   {
+    "name": "CheckQuestSubmitItemWithSubGame",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckQuestSubmitItemWithSubGameForMemoryPack",
+    "tag": 130,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckQuestSubmitItemWithSubGame"
+   },
+   {
+    "name": "CheckRandomNumber",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckRandomNumberForMemoryPack",
+    "tag": 131,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckRandomNumber"
+   },
+   {
+    "name": "CheckRecycleBinRemoteCollectUnlocked",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckRecycleBinRemoteCollectUnlockedForMemoryPack",
+    "tag": 132,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckRecycleBinRemoteCollectUnlocked"
+   },
+   {
+    "name": "CheckRemoteCommFinish",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckRemoteCommFinishForMemoryPack",
+    "tag": 133,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckRemoteCommFinish"
+   },
+   {
+    "name": "CheckRepairBuilding",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckRepairBuildingForMemoryPack",
+    "tag": 134,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckRepairBuilding"
+   },
+   {
+    "name": "CheckRepeatableTalkFinish",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckRepeatableTalkFinishForMemoryPack",
+    "tag": 135,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckRepeatableTalkFinish"
+   },
+   {
+    "name": "CheckRichContentReadingDone",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckRichContentReadingDoneForMemoryPack",
+    "tag": 136,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckRichContentReadingDone"
+   },
+   {
+    "name": "CheckRiftIsFullFilling",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckRiftIsFullFillingForMemoryPack",
+    "tag": 137,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckRiftIsFullFilling"
+   },
+   {
+    "name": "CheckRiftIsStatusFilled",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckRiftIsStatusFilledForMemoryPack",
+    "tag": 138,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckRiftIsStatusFilled"
+   },
+   {
+    "name": "CheckScanInteractive",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckScanInteractiveForMemoryPack",
+    "tag": 139,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckScanInteractive"
+   },
+   {
+    "name": "CheckSceneAreaUnlocked",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSceneAreaUnlockedForMemoryPack",
+    "tag": 140,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckSceneAreaUnlocked"
+   },
+   {
+    "name": "CheckSceneCollectionNum",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSceneCollectionNumForMemoryPack",
+    "tag": 141,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckSceneCollectionNum"
+   },
+   {
+    "name": "CheckScriptMonsterKilled",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckScriptMonsterKilledForMemoryPack",
+    "tag": 142,
+    "memberCount": 10,
+    "wrappedType": "Beyond.Gameplay.CheckScriptMonsterKilled"
+   },
+   {
+    "name": "CheckScriptTaskStateEqual",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckScriptTaskStateEqualForMemoryPack",
+    "tag": 143,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.CheckScriptTaskStateEqual"
+   },
+   {
+    "name": "CheckSeasonTowerLevelAchieveCount",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSeasonTowerLevelAchieveCountForMemoryPack",
+    "tag": 144,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.CheckSeasonTowerLevelAchieveCount"
+   },
+   {
+    "name": "CheckServerGlobalVar",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckServerGlobalVarForMemoryPack",
+    "tag": 145,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckServerGlobalVar"
+   },
+   {
+    "name": "CheckSettlementLevel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSettlementLevelForMemoryPack",
+    "tag": 146,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckSettlementLevel"
+   },
+   {
+    "name": "CheckSewageTreatPlantLevel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSewageTreatPlantLevelForMemoryPack",
+    "tag": 147,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckSewageTreatPlantLevel"
+   },
+   {
+    "name": "CheckShootingRangeDailyLevelPass",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckShootingRangeDailyLevelPassForMemoryPack",
+    "tag": 148,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckShootingRangeDailyLevelPass"
+   },
+   {
+    "name": "CheckShootingRangeLv",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckShootingRangeLvForMemoryPack",
+    "tag": 149,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckShootingRangeLv"
+   },
+   {
+    "name": "CheckSimulationTrainingHandCardCount",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSimulationTrainingHandCardCountForMemoryPack",
+    "tag": 150,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckSimulationTrainingHandCardCount"
+   },
+   {
+    "name": "CheckSnapshotIdentifySuccess",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSnapshotIdentifySuccessForMemoryPack",
+    "tag": 151,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckSnapshotIdentifySuccess"
+   },
+   {
+    "name": "CheckSNSDialogComplete",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSNSDialogCompleteForMemoryPack",
+    "tag": 152,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckSNSDialogComplete"
+   },
+   {
+    "name": "CheckSNSDialogContent",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSNSDialogContentForMemoryPack",
+    "tag": 153,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckSNSDialogContent"
+   },
+   {
+    "name": "CheckSpaceshipGrowCabinHarvest",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSpaceshipGrowCabinHarvestForMemoryPack",
+    "tag": 154,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckSpaceshipGrowCabinHarvest"
+   },
+   {
+    "name": "CheckSpaceshipGrowCabinSow",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSpaceshipGrowCabinSowForMemoryPack",
+    "tag": 155,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckSpaceshipGrowCabinSow"
+   },
+   {
+    "name": "CheckSpaceshipRoomBuilt",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSpaceshipRoomBuiltForMemoryPack",
+    "tag": 156,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckSpaceshipRoomBuilt"
+   },
+   {
+    "name": "CheckSpaceshipRoomBuiltById",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSpaceshipRoomBuiltByIdForMemoryPack",
+    "tag": 157,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckSpaceshipRoomBuiltById"
+   },
+   {
+    "name": "CheckSpaceshipRoomLevel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSpaceshipRoomLevelForMemoryPack",
+    "tag": 158,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckSpaceshipRoomLevel"
+   },
+   {
+    "name": "CheckSpaceshipRoomStationCount",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSpaceshipRoomStationCountForMemoryPack",
+    "tag": 159,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckSpaceshipRoomStationCount"
+   },
+   {
+    "name": "CheckSpaceshipRoomUnlock",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckSpaceshipRoomUnlockForMemoryPack",
+    "tag": 160,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckSpaceshipRoomUnlock"
+   },
+   {
+    "name": "CheckStatisticValByEnum",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckStatisticValByEnumForMemoryPack",
+    "tag": 161,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.CheckStatisticValByEnum"
+   },
+   {
+    "name": "CheckStorageBoxHasEnoughItem",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckStorageBoxHasEnoughItemForMemoryPack",
+    "tag": 162,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckStorageBoxHasEnoughItem"
+   },
+   {
+    "name": "CheckTalkOptionFinish",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckTalkOptionFinishForMemoryPack",
+    "tag": 163,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckTalkOptionFinish"
+   },
+   {
+    "name": "CheckTDSettlement",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckTDSettlementForMemoryPack",
+    "tag": 164,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckTDSettlement"
+   },
+   {
+    "name": "CheckTDStart",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckTDStartForMemoryPack",
+    "tag": 165,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckTDStart"
+   },
+   {
+    "name": "CheckTeamMemberCountOddEven",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckTeamMemberCountOddEvenForMemoryPack",
+    "tag": 166,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckTeamMemberCountOddEven"
+   },
+   {
+    "name": "CheckTerminalReadingDone",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckTerminalReadingDoneForMemoryPack",
+    "tag": 167,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckTerminalReadingDone"
+   },
+   {
+    "name": "CheckTimestamp",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckTimestampForMemoryPack",
+    "tag": 168,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckTimestamp"
+   },
+   {
+    "name": "CheckTmpShopAlreadyBuyCount",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckTmpShopAlreadyBuyCountForMemoryPack",
+    "tag": 169,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckTmpShopAlreadyBuyCount"
+   },
+   {
+    "name": "CheckTrunkFinishInCurDialog",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckTrunkFinishInCurDialogForMemoryPack",
+    "tag": 170,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckTrunkFinishInCurDialog"
+   },
+   {
+    "name": "CheckTyphoeaArcheryUnitsComplete",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckTyphoeaArcheryUnitsCompleteForMemoryPack",
+    "tag": 171,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckTyphoeaArcheryUnitsComplete"
+   },
+   {
+    "name": "CheckUnlockMultipleTech",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckUnlockMultipleTechForMemoryPack",
+    "tag": 172,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckUnlockMultipleTech"
+   },
+   {
+    "name": "CheckUnlockTech",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckUnlockTechForMemoryPack",
+    "tag": 173,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckUnlockTech"
+   },
+   {
+    "name": "CheckUnlockTechLayer",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckUnlockTechLayerForMemoryPack",
+    "tag": 174,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckUnlockTechLayer"
+   },
+   {
+    "name": "CheckUnlockWorldLevel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckUnlockWorldLevelForMemoryPack",
+    "tag": 175,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckUnlockWorldLevel"
+   },
+   {
+    "name": "CheckUnrepeatableRewardIdGot",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckUnrepeatableRewardIdGotForMemoryPack",
+    "tag": 176,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckUnrepeatableRewardIdGot"
+   },
+   {
+    "name": "CheckVersion",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckVersionForMemoryPack",
+    "tag": 177,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CheckVersion"
+   },
+   {
+    "name": "CheckWeaponGachaPoolOpen",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckWeaponGachaPoolOpenForMemoryPack",
+    "tag": 178,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckWeaponGachaPoolOpen"
+   },
+   {
+    "name": "CheckWeeklyRaidStat",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckWeeklyRaidStatForMemoryPack",
+    "tag": 179,
+    "memberCount": 12,
+    "wrappedType": "Beyond.Gameplay.CheckWeeklyRaidStat"
+   },
+   {
+    "name": "CheckWikiEntryUnlocked",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckWikiEntryUnlockedForMemoryPack",
+    "tag": 180,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckWikiEntryUnlocked"
+   },
+   {
+    "name": "CheckWikiUnlocked",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckWikiUnlockedForMemoryPack",
+    "tag": 181,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.CheckWikiUnlocked"
+   },
+   {
+    "name": "CheckWorldLevel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CheckWorldLevelForMemoryPack",
+    "tag": 182,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CheckWorldLevel"
+   },
+   {
+    "name": "CombineCondition",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CombineConditionForMemoryPack",
+    "tag": 183,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.CombineCondition"
+   },
+   {
+    "name": "CompareInteractivePropertyBool",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CompareInteractivePropertyBoolForMemoryPack",
+    "tag": 184,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CompareInteractivePropertyBool"
+   },
+   {
+    "name": "CompareInteractivePropertyInt",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CompareInteractivePropertyIntForMemoryPack",
+    "tag": 185,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CompareInteractivePropertyInt"
+   },
+   {
+    "name": "CompareInteractivePropertyString",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CompareInteractivePropertyStringForMemoryPack",
+    "tag": 186,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.CompareInteractivePropertyString"
+   },
+   {
+    "name": "Conditions_CheckCurrentDungeon",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckCurrentDungeonForMemoryPack",
+    "tag": 187,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckCurrentDungeon"
+   },
+   {
+    "name": "Conditions_CheckCurrentDungeonBoth",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckCurrentDungeonBothForMemoryPack",
+    "tag": 188,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckCurrentDungeonBoth"
+   },
+   {
+    "name": "Conditions_CheckCurrentLevel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckCurrentLevelForMemoryPack",
+    "tag": 189,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckCurrentLevel"
+   },
+   {
+    "name": "Conditions_CheckCurrentMap",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckCurrentMapForMemoryPack",
+    "tag": 190,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckCurrentMap"
+   },
+   {
+    "name": "Conditions_CheckDomainShopPanelHasSoldOutGroup",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckDomainShopPanelHasSoldOutGroupForMemoryPack",
+    "tag": 191,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckDomainShopPanelHasSoldOutGroup"
+   },
+   {
+    "name": "Conditions_CheckIsEquipFormulaChainModified",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsEquipFormulaChainModifiedForMemoryPack",
+    "tag": 192,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsEquipFormulaChainModified"
+   },
+   {
+    "name": "Conditions_CheckIsInFacLinkingMode",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsInFacLinkingModeForMemoryPack",
+    "tag": 193,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsInFacLinkingMode"
+   },
+   {
+    "name": "Conditions_CheckIsInFacMainRegion",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsInFacMainRegionForMemoryPack",
+    "tag": 194,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsInFacMainRegion"
+   },
+   {
+    "name": "Conditions_CheckIsInFacTopView",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsInFacTopViewForMemoryPack",
+    "tag": 195,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsInFacTopView"
+   },
+   {
+    "name": "Conditions_CheckIsInFactoryMode",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsInFactoryModeForMemoryPack",
+    "tag": 196,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsInFactoryMode"
+   },
+   {
+    "name": "Conditions_CheckIsInGeneralAbilitySelectMode",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsInGeneralAbilitySelectModeForMemoryPack",
+    "tag": 197,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsInGeneralAbilitySelectMode"
+   },
+   {
+    "name": "Conditions_CheckIsItemInQuickBar",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsItemInQuickBarForMemoryPack",
+    "tag": 198,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsItemInQuickBar"
+   },
+   {
+    "name": "Conditions_CheckIsLimitedGuideShowing",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsLimitedGuideShowingForMemoryPack",
+    "tag": 199,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsLimitedGuideShowing"
+   },
+   {
+    "name": "Conditions_CheckIsOpenDomainMain",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsOpenDomainMainForMemoryPack",
+    "tag": 200,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsOpenDomainMain"
+   },
+   {
+    "name": "Conditions_CheckIsOpenDomainShop",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsOpenDomainShopForMemoryPack",
+    "tag": 201,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsOpenDomainShop"
+   },
+   {
+    "name": "Conditions_CheckIsOpenSnapShot",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsOpenSnapShotForMemoryPack",
+    "tag": 202,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsOpenSnapShot"
+   },
+   {
+    "name": "Conditions_CheckIsPhaseCharInfoDefaultChar",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsPhaseCharInfoDefaultCharForMemoryPack",
+    "tag": 203,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsPhaseCharInfoDefaultChar"
+   },
+   {
+    "name": "Conditions_CheckIsPhaseForbidden",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsPhaseForbiddenForMemoryPack",
+    "tag": 204,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsPhaseForbidden"
+   },
+   {
+    "name": "Conditions_CheckIsWeaponEquipped",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckIsWeaponEquippedForMemoryPack",
+    "tag": 205,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckIsWeaponEquipped"
+   },
+   {
+    "name": "Conditions_CheckMapMissionTrackingState",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckMapMissionTrackingStateForMemoryPack",
+    "tag": 206,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckMapMissionTrackingState"
+   },
+   {
+    "name": "Conditions_CheckSelectGeneralAbility",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckSelectGeneralAbilityForMemoryPack",
+    "tag": 207,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckSelectGeneralAbility"
+   },
+   {
+    "name": "Conditions_CheckShouldOpenHubNofityPanel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckShouldOpenHubNofityPanelForMemoryPack",
+    "tag": 208,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckShouldOpenHubNofityPanel"
+   },
+   {
+    "name": "Conditions_CheckSnapShotTrace",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckSnapShotTraceForMemoryPack",
+    "tag": 209,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckSnapShotTrace"
+   },
+   {
+    "name": "Conditions_CheckWireLinkAvailable",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_CheckWireLinkAvailableForMemoryPack",
+    "tag": 210,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.CheckWireLinkAvailable"
+   },
+   {
+    "name": "Conditions_OnBagFull",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnBagFullForMemoryPack",
+    "tag": 211,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnBagFull"
+   },
+   {
+    "name": "Conditions_OnBattleBuffAdded",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnBattleBuffAddedForMemoryPack",
+    "tag": 212,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnBattleBuffAdded"
+   },
+   {
+    "name": "Conditions_OnBlackboxSettlementRewardsHasBlueprint",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnBlackboxSettlementRewardsHasBlueprintForMemoryPack",
+    "tag": 213,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnBlackboxSettlementRewardsHasBlueprint"
+   },
+   {
+    "name": "Conditions_OnBuildingPanelOpen",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnBuildingPanelOpenForMemoryPack",
+    "tag": 214,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnBuildingPanelOpen"
+   },
+   {
+    "name": "Conditions_OnCastComboSkill",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnCastComboSkillForMemoryPack",
+    "tag": 215,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnCastComboSkill"
+   },
+   {
+    "name": "Conditions_OnCastNormalSkill",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnCastNormalSkillForMemoryPack",
+    "tag": 216,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnCastNormalSkill"
+   },
+   {
+    "name": "Conditions_OnCastUltimateSkill",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnCastUltimateSkillForMemoryPack",
+    "tag": 217,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnCastUltimateSkill"
+   },
+   {
+    "name": "Conditions_OnCharBreakPanelOpen",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnCharBreakPanelOpenForMemoryPack",
+    "tag": 218,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnCharBreakPanelOpen"
+   },
+   {
+    "name": "Conditions_OnCharInfoModelInitFinish",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnCharInfoModelInitFinishForMemoryPack",
+    "tag": 219,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnCharInfoModelInitFinish"
+   },
+   {
+    "name": "Conditions_OnComboSkillReady",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnComboSkillReadyForMemoryPack",
+    "tag": 220,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnComboSkillReady"
+   },
+   {
+    "name": "Conditions_OnDomainDepotMainPanelOpen",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnDomainDepotMainPanelOpenForMemoryPack",
+    "tag": 221,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnDomainDepotMainPanelOpen"
+   },
+   {
+    "name": "Conditions_OnDungeonCommonEntryPanelOpen",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnDungeonCommonEntryPanelOpenForMemoryPack",
+    "tag": 222,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnDungeonCommonEntryPanelOpen"
+   },
+   {
+    "name": "Conditions_OnEnterMainHud",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnEnterMainHudForMemoryPack",
+    "tag": 223,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnEnterMainHud"
+   },
+   {
+    "name": "Conditions_OnFacBlueprintTabOpen",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacBlueprintTabOpenForMemoryPack",
+    "tag": 224,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacBlueprintTabOpen"
+   },
+   {
+    "name": "Conditions_OnFacChooseItemInUnloader",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacChooseItemInUnloaderForMemoryPack",
+    "tag": 225,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacChooseItemInUnloader"
+   },
+   {
+    "name": "Conditions_OnFacConveyorOperated",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacConveyorOperatedForMemoryPack",
+    "tag": 226,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacConveyorOperated"
+   },
+   {
+    "name": "Conditions_OnFacCurMachineCacheAddItem",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacCurMachineCacheAddItemForMemoryPack",
+    "tag": 227,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacCurMachineCacheAddItem"
+   },
+   {
+    "name": "Conditions_OnFacEnterBuildingModeSwitch",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacEnterBuildingModeSwitchForMemoryPack",
+    "tag": 228,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacEnterBuildingModeSwitch"
+   },
+   {
+    "name": "Conditions_OnFacMainPinHintShow",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacMainPinHintShowForMemoryPack",
+    "tag": 229,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacMainPinHintShow"
+   },
+   {
+    "name": "Conditions_OnFacNotEnoughPower",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacNotEnoughPowerForMemoryPack",
+    "tag": 230,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacNotEnoughPower"
+   },
+   {
+    "name": "Conditions_OnFacOpenBackupPowerPopup",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacOpenBackupPowerPopupForMemoryPack",
+    "tag": 231,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacOpenBackupPowerPopup"
+   },
+   {
+    "name": "Conditions_OnFacPendingSlotChanged",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacPendingSlotChangedForMemoryPack",
+    "tag": 232,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacPendingSlotChanged"
+   },
+   {
+    "name": "Conditions_OnFacPlaceBuilding",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacPlaceBuildingForMemoryPack",
+    "tag": 233,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacPlaceBuilding"
+   },
+   {
+    "name": "Conditions_OnFacPrepareBuildingEnterArea",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacPrepareBuildingEnterAreaForMemoryPack",
+    "tag": 234,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacPrepareBuildingEnterArea"
+   },
+   {
+    "name": "Conditions_OnFacQuickBarAddItem",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacQuickBarAddItemForMemoryPack",
+    "tag": 235,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacQuickBarAddItem"
+   },
+   {
+    "name": "Conditions_OnFacReachFastTravel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacReachFastTravelForMemoryPack",
+    "tag": 236,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacReachFastTravel"
+   },
+   {
+    "name": "Conditions_OnFacShowBackupPower",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacShowBackupPowerForMemoryPack",
+    "tag": 237,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacShowBackupPower"
+   },
+   {
+    "name": "Conditions_OnFacStartBackupPower",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacStartBackupPowerForMemoryPack",
+    "tag": 238,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacStartBackupPower"
+   },
+   {
+    "name": "Conditions_OnFacStartFastTravelQte",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacStartFastTravelQteForMemoryPack",
+    "tag": 239,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacStartFastTravelQte"
+   },
+   {
+    "name": "Conditions_OnFacTriggerFastTravelQte",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacTriggerFastTravelQteForMemoryPack",
+    "tag": 240,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacTriggerFastTravelQte"
+   },
+   {
+    "name": "Conditions_OnFacZeroPower",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFacZeroPowerForMemoryPack",
+    "tag": 241,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFacZeroPower"
+   },
+   {
+    "name": "Conditions_OnFormulaPanelOpen",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnFormulaPanelOpenForMemoryPack",
+    "tag": 242,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnFormulaPanelOpen"
+   },
+   {
+    "name": "Conditions_OnGeneralAbilityHover",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnGeneralAbilityHoverForMemoryPack",
+    "tag": 243,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnGeneralAbilityHover"
+   },
+   {
+    "name": "Conditions_OnGeneralAbilityUse",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnGeneralAbilityUseForMemoryPack",
+    "tag": 244,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnGeneralAbilityUse"
+   },
+   {
+    "name": "Conditions_OnGetItem",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnGetItemForMemoryPack",
+    "tag": 245,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnGetItem"
+   },
+   {
+    "name": "Conditions_OnGetItemOfType",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnGetItemOfTypeForMemoryPack",
+    "tag": 246,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnGetItemOfType"
+   },
+   {
+    "name": "Conditions_OnInteractOptionShow",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnInteractOptionShowForMemoryPack",
+    "tag": 247,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnInteractOptionShow"
+   },
+   {
+    "name": "Conditions_OnItemUseBarAddItem",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnItemUseBarAddItemForMemoryPack",
+    "tag": 248,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnItemUseBarAddItem"
+   },
+   {
+    "name": "Conditions_OnLiquidInteractInDumpMode",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnLiquidInteractInDumpModeForMemoryPack",
+    "tag": 249,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnLiquidInteractInDumpMode"
+   },
+   {
+    "name": "Conditions_OnMailHasLostItem",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnMailHasLostItemForMemoryPack",
+    "tag": 250,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnMailHasLostItem"
+   },
+   {
+    "name": "Conditions_OnMainHudActionFinished",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnMainHudActionFinishedForMemoryPack",
+    "tag": 251,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnMainHudActionFinished"
+   },
+   {
+    "name": "Conditions_OnMixPoolSelectFinish",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnMixPoolSelectFinishForMemoryPack",
+    "tag": 252,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnMixPoolSelectFinish"
+   },
+   {
+    "name": "Conditions_OnNormalFriendPanelOpen",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnNormalFriendPanelOpenForMemoryPack",
+    "tag": 253,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnNormalFriendPanelOpen"
+   },
+   {
+    "name": "Conditions_OnOpenFacHubDataProductPage",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnOpenFacHubDataProductPageForMemoryPack",
+    "tag": 254,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnOpenFacHubDataProductPage"
+   },
+   {
+    "name": "Conditions_OnOpenFacHubPanelWithoutNotify",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnOpenFacHubPanelWithoutNotifyForMemoryPack",
+    "tag": 255,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnOpenFacHubPanelWithoutNotify"
+   },
+   {
+    "name": "Conditions_OnOpenFacUnloaderPanel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnOpenFacUnloaderPanelForMemoryPack",
+    "tag": 256,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnOpenFacUnloaderPanel"
+   },
+   {
+    "name": "Conditions_OnOtherPlayerSocialBuildingPanelOpen",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnOtherPlayerSocialBuildingPanelOpenForMemoryPack",
+    "tag": 257,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnOtherPlayerSocialBuildingPanelOpen"
+   },
+   {
+    "name": "Conditions_OnPlayerActionTriggerOnly",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnPlayerActionTriggerOnlyForMemoryPack",
+    "tag": 258,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnPlayerActionTriggerOnly"
+   },
+   {
+    "name": "Conditions_OnQuickMenuSystemHover",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnQuickMenuSystemHoverForMemoryPack",
+    "tag": 259,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnQuickMenuSystemHover"
+   },
+   {
+    "name": "Conditions_OnRecycleBinCollect",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnRecycleBinCollectForMemoryPack",
+    "tag": 260,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnRecycleBinCollect"
+   },
+   {
+    "name": "Conditions_OnSettlementOrderSubmitFinished",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnSettlementOrderSubmitFinishedForMemoryPack",
+    "tag": 261,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnSettlementOrderSubmitFinished"
+   },
+   {
+    "name": "Conditions_OnSquadRevive",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnSquadReviveForMemoryPack",
+    "tag": 262,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnSquadRevive"
+   },
+   {
+    "name": "Conditions_OnSTTAllOpenProgressFinished",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnSTTAllOpenProgressFinishedForMemoryPack",
+    "tag": 263,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnSTTAllOpenProgressFinished"
+   },
+   {
+    "name": "Conditions_OnTechTreeNodeUnlock",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnTechTreeNodeUnlockForMemoryPack",
+    "tag": 264,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnTechTreeNodeUnlock"
+   },
+   {
+    "name": "Conditions_OnUILevelMapEnterLevel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnUILevelMapEnterLevelForMemoryPack",
+    "tag": 265,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnUILevelMapEnterLevel"
+   },
+   {
+    "name": "Conditions_OnUIPanelClose",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnUIPanelCloseForMemoryPack",
+    "tag": 266,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnUIPanelClose"
+   },
+   {
+    "name": "Conditions_OnUIPanelOpen",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnUIPanelOpenForMemoryPack",
+    "tag": 267,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnUIPanelOpen"
+   },
+   {
+    "name": "Conditions_OnUIScrollListGraduallyShowFinished",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnUIScrollListGraduallyShowFinishedForMemoryPack",
+    "tag": 268,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnUIScrollListGraduallyShowFinished"
+   },
+   {
+    "name": "Conditions_OnWeekRaidIntroCharFormationOpen",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Conditions_OnWeekRaidIntroCharFormationOpenForMemoryPack",
+    "tag": 269,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Conditions.OnWeekRaidIntroCharFormationOpen"
+   },
+   {
+    "name": "DepotHasItem",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_DepotHasItemForMemoryPack",
+    "tag": 270,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.DepotHasItem"
+   },
+   {
+    "name": "DoFacTradeCashAnyOrder",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_DoFacTradeCashAnyOrderForMemoryPack",
+    "tag": 271,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.DoFacTradeCashAnyOrder"
+   },
+   {
+    "name": "DungeonKeptTime",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_DungeonKeptTimeForMemoryPack",
+    "tag": 272,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.DungeonKeptTime"
+   },
+   {
+    "name": "FacBattleBuildingCurEnergy",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_FacBattleBuildingCurEnergyForMemoryPack",
+    "tag": 273,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.FacBattleBuildingCurEnergy"
+   },
+   {
+    "name": "FacBoxConveyorLengthSum",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_FacBoxConveyorLengthSumForMemoryPack",
+    "tag": 274,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.FacBoxConveyorLengthSum"
+   },
+   {
+    "name": "FacBuildingCountInScene",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_FacBuildingCountInSceneForMemoryPack",
+    "tag": 275,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.FacBuildingCountInScene"
+   },
+   {
+    "name": "FacBuildingFluidContainerHasItem",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_FacBuildingFluidContainerHasItemForMemoryPack",
+    "tag": 276,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.FacBuildingFluidContainerHasItem"
+   },
+   {
+    "name": "FacBuildingProducingCountInScene",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_FacBuildingProducingCountInSceneForMemoryPack",
+    "tag": 277,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.FacBuildingProducingCountInScene"
+   },
+   {
+    "name": "FacBuildingWorking",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_FacBuildingWorkingForMemoryPack",
+    "tag": 278,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.FacBuildingWorking"
+   },
+   {
+    "name": "FacPowerCostSum",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_FacPowerCostSumForMemoryPack",
+    "tag": 279,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.FacPowerCostSum"
+   },
+   {
+    "name": "FacProducePowerReach",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_FacProducePowerReachForMemoryPack",
+    "tag": 280,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.FacProducePowerReach"
+   },
+   {
+    "name": "FacProducingFormulaCountInScene",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_FacProducingFormulaCountInSceneForMemoryPack",
+    "tag": 281,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.FacProducingFormulaCountInScene"
+   },
+   {
+    "name": "FacStatisticItemGen",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_FacStatisticItemGenForMemoryPack",
+    "tag": 282,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.FacStatisticItemGen"
+   },
+   {
+    "name": "FacStatisticItemGenRate",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_FacStatisticItemGenRateForMemoryPack",
+    "tag": 283,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.FacStatisticItemGenRate"
+   },
+   {
+    "name": "FacStorageBoxHasItems",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_FacStorageBoxHasItemsForMemoryPack",
+    "tag": 284,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.FacStorageBoxHasItems"
+   },
+   {
+    "name": "GameConditionBoth",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionBothForMemoryPack",
+    "tag": 285,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionBoth"
+   },
+   {
+    "name": "GameConditionBothCareScope",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionBothCareScopeForMemoryPack",
+    "tag": 286,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionBothCareScope"
+   },
+   {
+    "name": "GameConditionClient",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionClientForMemoryPack",
+    "tag": 287,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionClient"
+   },
+   {
+    "name": "GameConditionClientOnce",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionClientOnceForMemoryPack",
+    "tag": 288,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionClientOnce"
+   },
+   {
+    "name": "GameConditionClientOnce_bool_UnityEngine_Vector2Int_",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionClientOnce_bool_UnityEngine_Vector2Int_ForMemoryPack",
+    "tag": 289,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionClientOnce`2<bool,UnityEngine.Vector2Int>"
+   },
+   {
+    "name": "GameConditionClientOnce_bool_",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionClientOnce_bool_ForMemoryPack",
+    "tag": 290,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionClientOnce`1<bool>"
+   },
+   {
+    "name": "GameConditionClientOnce_int_",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionClientOnce_int_ForMemoryPack",
+    "tag": 291,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionClientOnce`1<int>"
+   },
+   {
+    "name": "GameConditionClientOnce_string_bool_string_",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionClientOnce_string_bool_string_ForMemoryPack",
+    "tag": 292,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionClientOnce`3<string,bool,string>"
+   },
+   {
+    "name": "GameConditionClientOnce_string_bool_",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionClientOnce_string_bool_ForMemoryPack",
+    "tag": 293,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionClientOnce`2<string,bool>"
+   },
+   {
+    "name": "GameConditionClientOnce_string_int_bool_",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionClientOnce_string_int_bool_ForMemoryPack",
+    "tag": 294,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionClientOnce`3<string,int,bool>"
+   },
+   {
+    "name": "GameConditionClientOnce_string_UnityEngine_Vector3_float_float_",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionClientOnce_string_UnityEngine_Vector3_float_float_ForMemoryPack",
+    "tag": 295,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionClientOnce`4<string,UnityEngine.Vector3,float,float>"
+   },
+   {
+    "name": "GameConditionClientOnce_string_",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionClientOnce_string_ForMemoryPack",
+    "tag": 296,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionClientOnce`1<string>"
+   },
+   {
+    "name": "GameConditionServer",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionServerForMemoryPack",
+    "tag": 297,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionServer"
+   },
+   {
+    "name": "GameConditionServerCareScope",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionServerCareScopeForMemoryPack",
+    "tag": 298,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.GameConditionServerCareScope"
+   },
+   {
+    "name": "GameConditionServerCareScopeWithCompareOperator",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionServerCareScopeWithCompareOperatorForMemoryPack",
+    "tag": 299,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.GameConditionServerCareScopeWithCompareOperator"
+   },
+   {
+    "name": "GameConditionServerPlaceHolder",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameConditionServerPlaceHolderForMemoryPack",
+    "tag": 300,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.GameConditionServerPlaceHolder"
+   },
+   {
+    "name": "HasItemCount",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_HasItemCountForMemoryPack",
+    "tag": 301,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.HasItemCount"
+   },
+   {
+    "name": "InMainHud",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InMainHudForMemoryPack",
+    "tag": 302,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.InMainHud"
+   },
+   {
+    "name": "InteractiveCheckBool",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveCheckBoolForMemoryPack",
+    "tag": 303,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.InteractiveCheckBool"
+   },
+   {
+    "name": "InteractiveCheckInt",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveCheckIntForMemoryPack",
+    "tag": 304,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.InteractiveCheckInt"
+   },
+   {
+    "name": "KillSpecificEnemy",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_KillSpecificEnemyForMemoryPack",
+    "tag": 305,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.KillSpecificEnemy"
+   },
+   {
+    "name": "PlayerHasCharInMainScope",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_PlayerHasCharInMainScopeForMemoryPack",
+    "tag": 306,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.PlayerHasCharInMainScope"
+   },
+   {
+    "name": "PlayerHasItem",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_PlayerHasItemForMemoryPack",
+    "tag": 307,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.PlayerHasItem"
+   },
+   {
+    "name": "PlayerHasItemInItemBag",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_PlayerHasItemInItemBagForMemoryPack",
+    "tag": 308,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.PlayerHasItemInItemBag"
+   },
+   {
+    "name": "ReachDestination",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_ReachDestinationForMemoryPack",
+    "tag": 309,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.ReachDestination"
+   },
+   {
+    "name": "SettlementCheckExpEnoughToLevelup",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_SettlementCheckExpEnoughToLevelupForMemoryPack",
+    "tag": 310,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.SettlementCheckExpEnoughToLevelup"
+   },
+   {
+    "name": "SystemPoiLevel",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_SystemPoiLevelForMemoryPack",
+    "tag": 311,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.SystemPoiLevel"
+   },
+   {
+    "name": "TaskReachDestination",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_TaskReachDestinationForMemoryPack",
+    "tag": 312,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.TaskReachDestination"
+   },
+   {
+    "name": "WeekRaidPlayerHasItem",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_WeekRaidPlayerHasItemForMemoryPack",
+    "tag": 313,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.WeekRaidPlayerHasItem"
+   }
+  ],
+  "BaseComponentData": [
+   {
+    "name": "AdditionalBattleShapeComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_AdditionalBattleShapeComponentDataForMemoryPack",
+    "tag": 0,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.AdditionalBattleShapeComponentData"
+   },
+   {
+    "name": "AetherEnergyLockComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_AetherEnergyLockComponentDataForMemoryPack",
+    "tag": 1,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.AetherEnergyLockComponentData"
+   },
+   {
+    "name": "AetherEnergyLockedIntComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_AetherEnergyLockedIntComponentDataForMemoryPack",
+    "tag": 2,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.AetherEnergyLockedIntComponentData"
+   },
+   {
+    "name": "AI_CharacterAIComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_AI_CharacterAIComponentDataForMemoryPack",
+    "tag": 3,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.AI.CharacterAIComponentData"
+   },
+   {
+    "name": "AI_EnemyAIComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_AI_EnemyAIComponentDataForMemoryPack",
+    "tag": 4,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.AI.EnemyAIComponentData"
+   },
+   {
+    "name": "AI_NpcAIComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_AI_NpcAIComponentDataForMemoryPack",
+    "tag": 5,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.AI.NpcAIComponentData"
+   },
+   {
+    "name": "BombSpawnerComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_BombSpawnerComponentDataForMemoryPack",
+    "tag": 6,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.BombSpawnerComponentData"
+   },
+   {
+    "name": "ControlledStateComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_ControlledStateComponentDataForMemoryPack",
+    "tag": 7,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.ControlledStateComponentData"
+   },
+   {
+    "name": "Core_AbandonPackBehaviourComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbandonPackBehaviourComponentDataForMemoryPack",
+    "tag": 8,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.AbandonPackBehaviourComponentData"
+   },
+   {
+    "name": "Core_AbilityEntityControllerData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityEntityControllerDataForMemoryPack",
+    "tag": 9,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.AbilityEntityControllerData"
+   },
+   {
+    "name": "Core_AbilityEntityRootComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityEntityRootComponentDataForMemoryPack",
+    "tag": 10,
+    "memberCount": 16,
+    "wrappedType": "Beyond.Gameplay.Core.AbilityEntityRootComponentData"
+   },
+   {
+    "name": "Core_AbilitySystemData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilitySystemDataForMemoryPack",
+    "tag": 11,
+    "memberCount": 34,
+    "wrappedType": "Beyond.Gameplay.Core.AbilitySystemData"
+   },
+   {
+    "name": "Core_AbilitySystemForEnemyPartData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilitySystemForEnemyPartDataForMemoryPack",
+    "tag": 12,
+    "memberCount": 55,
+    "wrappedType": "Beyond.Gameplay.Core.AbilitySystemForEnemyPartData"
+   },
+   {
+    "name": "Core_AbilitySystemForGodData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilitySystemForGodDataForMemoryPack",
+    "tag": 13,
+    "memberCount": 34,
+    "wrappedType": "Beyond.Gameplay.Core.AbilitySystemForGodData"
+   },
+   {
+    "name": "Core_AbilitySystemForIntData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilitySystemForIntDataForMemoryPack",
+    "tag": 14,
+    "memberCount": 38,
+    "wrappedType": "Beyond.Gameplay.Core.AbilitySystemForIntData"
+   },
+   {
+    "name": "Core_AbilitySystemForIntResourceData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilitySystemForIntResourceDataForMemoryPack",
+    "tag": 15,
+    "memberCount": 38,
+    "wrappedType": "Beyond.Gameplay.Core.AbilitySystemForIntResourceData"
+   },
+   {
+    "name": "Core_AbilitySystemForNpcData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilitySystemForNpcDataForMemoryPack",
+    "tag": 16,
+    "memberCount": 35,
+    "wrappedType": "Beyond.Gameplay.Core.AbilitySystemForNpcData"
+   },
+   {
+    "name": "Core_ActivitySnapshotComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ActivitySnapshotComponentDataForMemoryPack",
+    "tag": 17,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.ActivitySnapshotComponentData"
+   },
+   {
+    "name": "Core_AddExtraBornTagComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AddExtraBornTagComponentDataForMemoryPack",
+    "tag": 18,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.AddExtraBornTagComponentData"
+   },
+   {
+    "name": "Core_AetherEnergyLockedCollectionComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AetherEnergyLockedCollectionComponentDataForMemoryPack",
+    "tag": 19,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.AetherEnergyLockedCollectionComponentData"
+   },
+   {
+    "name": "Core_AetherEnergyLockedNarrativeComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AetherEnergyLockedNarrativeComponentDataForMemoryPack",
+    "tag": 20,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.AetherEnergyLockedNarrativeComponentData"
+   },
+   {
+    "name": "Core_AetherEnergyLockedSpawnerComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AetherEnergyLockedSpawnerComponentDataForMemoryPack",
+    "tag": 21,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.AetherEnergyLockedSpawnerComponentData"
+   },
+   {
+    "name": "Core_AllowTeammateAssistComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AllowTeammateAssistComponentDataForMemoryPack",
+    "tag": 22,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.AllowTeammateAssistComponentData"
+   },
+   {
+    "name": "Core_ArtRefModelComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ArtRefModelComponentDataForMemoryPack",
+    "tag": 23,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.ArtRefModelComponentData"
+   },
+   {
+    "name": "Core_AttackTriggerComponentForIntData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AttackTriggerComponentForIntDataForMemoryPack",
+    "tag": 24,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.Core.AttackTriggerComponentForIntData"
+   },
+   {
+    "name": "Core_AudioComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AudioComponentDataForMemoryPack",
+    "tag": 25,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.AudioComponentData"
+   },
+   {
+    "name": "Core_BalloonComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BalloonComponentDataForMemoryPack",
+    "tag": 26,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.BalloonComponentData"
+   },
+   {
+    "name": "Core_BalloonManCoreComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BalloonManCoreComponentDataForMemoryPack",
+    "tag": 27,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.BalloonManCoreComponentData"
+   },
+   {
+    "name": "Core_BaseControllerData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BaseControllerDataForMemoryPack",
+    "tag": 28,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.BaseControllerData"
+   },
+   {
+    "name": "Core_BaseRootComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BaseRootComponentDataForMemoryPack",
+    "tag": 29,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.BaseRootComponentData"
+   },
+   {
+    "name": "Core_BaseTriggerComponentForIntData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BaseTriggerComponentForIntDataForMemoryPack",
+    "tag": 30,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.Core.BaseTriggerComponentForIntData"
+   },
+   {
+    "name": "Core_BelongToWaterVolumeComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BelongToWaterVolumeComponentDataForMemoryPack",
+    "tag": 31,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.BelongToWaterVolumeComponentData"
+   },
+   {
+    "name": "Core_BlightMiasmaSafeZoneData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BlightMiasmaSafeZoneDataForMemoryPack",
+    "tag": 32,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.BlightMiasmaSafeZoneData"
+   },
+   {
+    "name": "Core_BreakableFloorData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BreakableFloorDataForMemoryPack",
+    "tag": 33,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.BreakableFloorData"
+   },
+   {
+    "name": "Core_CanBeBombedComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CanBeBombedComponentDataForMemoryPack",
+    "tag": 34,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.CanBeBombedComponentData"
+   },
+   {
+    "name": "Core_CanSetVisibleComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CanSetVisibleComponentDataForMemoryPack",
+    "tag": 35,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.CanSetVisibleComponentData"
+   },
+   {
+    "name": "Core_CharacterAudioComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CharacterAudioComponentDataForMemoryPack",
+    "tag": 36,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.CharacterAudioComponentData"
+   },
+   {
+    "name": "Core_CharacterBlowOffComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CharacterBlowOffComponentDataForMemoryPack",
+    "tag": 37,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.CharacterBlowOffComponentData"
+   },
+   {
+    "name": "Core_CharacterControllerData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CharacterControllerDataForMemoryPack",
+    "tag": 38,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.CharacterControllerData"
+   },
+   {
+    "name": "Core_CharacterMovementComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CharacterMovementComponentDataForMemoryPack",
+    "tag": 39,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Core.CharacterMovementComponentData"
+   },
+   {
+    "name": "Core_CharacterRootComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CharacterRootComponentDataForMemoryPack",
+    "tag": 40,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Core.CharacterRootComponentData"
+   },
+   {
+    "name": "Core_CharHurtAnimComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CharHurtAnimComponentDataForMemoryPack",
+    "tag": 41,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.CharHurtAnimComponentData"
+   },
+   {
+    "name": "Core_CheckPointComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckPointComponentDataForMemoryPack",
+    "tag": 42,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.CheckPointComponentData"
+   },
+   {
+    "name": "Core_CinematicEntityRootComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CinematicEntityRootComponentDataForMemoryPack",
+    "tag": 43,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.Core.CinematicEntityRootComponentData"
+   },
+   {
+    "name": "Core_ClickTriggerComponentForIntData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ClickTriggerComponentForIntDataForMemoryPack",
+    "tag": 44,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.Core.ClickTriggerComponentForIntData"
+   },
+   {
+    "name": "Core_CoinPuzzleComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CoinPuzzleComponentDataForMemoryPack",
+    "tag": 45,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.CoinPuzzleComponentData"
+   },
+   {
+    "name": "Core_CommonCollectionComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CommonCollectionComponentDataForMemoryPack",
+    "tag": 46,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.CommonCollectionComponentData"
+   },
+   {
+    "name": "Core_CommonFixablePropsComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CommonFixablePropsComponentDataForMemoryPack",
+    "tag": 47,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.CommonFixablePropsComponentData"
+   },
+   {
+    "name": "Core_CommonLuaUICallComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CommonLuaUICallComponentDataForMemoryPack",
+    "tag": 48,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.CommonLuaUICallComponentData"
+   },
+   {
+    "name": "Core_CommonSwitchComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CommonSwitchComponentDataForMemoryPack",
+    "tag": 49,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.CommonSwitchComponentData"
+   },
+   {
+    "name": "Core_ContinuousInteractComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ContinuousInteractComponentDataForMemoryPack",
+    "tag": 50,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.ContinuousInteractComponentData"
+   },
+   {
+    "name": "Core_CurveMoveComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CurveMoveComponentDataForMemoryPack",
+    "tag": 51,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.CurveMoveComponentData"
+   },
+   {
+    "name": "Core_CurveMovePlatformComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CurveMovePlatformComponentDataForMemoryPack",
+    "tag": 52,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.CurveMovePlatformComponentData"
+   },
+   {
+    "name": "Core_CustomCurveMoveComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CustomCurveMoveComponentDataForMemoryPack",
+    "tag": 53,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.CustomCurveMoveComponentData"
+   },
+   {
+    "name": "Core_DomainDepotSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DomainDepotSystemComponentDataForMemoryPack",
+    "tag": 54,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.DomainDepotSystemComponentData"
+   },
+   {
+    "name": "Core_DomainShopSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DomainShopSystemComponentDataForMemoryPack",
+    "tag": 55,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.DomainShopSystemComponentData"
+   },
+   {
+    "name": "Core_DropItemBehaviourComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DropItemBehaviourComponentDataForMemoryPack",
+    "tag": 56,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.DropItemBehaviourComponentData"
+   },
+   {
+    "name": "Core_DungeonEntryPresetTeamSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DungeonEntryPresetTeamSystemComponentDataForMemoryPack",
+    "tag": 57,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.DungeonEntryPresetTeamSystemComponentData"
+   },
+   {
+    "name": "Core_DungeonEntrySystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DungeonEntrySystemComponentDataForMemoryPack",
+    "tag": 58,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.DungeonEntrySystemComponentData"
+   },
+   {
+    "name": "Core_DynamicModelComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DynamicModelComponentDataForMemoryPack",
+    "tag": 59,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.DynamicModelComponentData"
+   },
+   {
+    "name": "Core_DynamicPropertyComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_DynamicPropertyComponentDataForMemoryPack",
+    "tag": 60,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.DynamicPropertyComponentData"
+   },
+   {
+    "name": "Core_ElectricNodeComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ElectricNodeComponentDataForMemoryPack",
+    "tag": 61,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.ElectricNodeComponentData"
+   },
+   {
+    "name": "Core_EmptyLogicInteractiveComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_EmptyLogicInteractiveComponentDataForMemoryPack",
+    "tag": 62,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.EmptyLogicInteractiveComponentData"
+   },
+   {
+    "name": "Core_EnemyAudioComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_EnemyAudioComponentDataForMemoryPack",
+    "tag": 63,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.EnemyAudioComponentData"
+   },
+   {
+    "name": "Core_EnemyControllerData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_EnemyControllerDataForMemoryPack",
+    "tag": 64,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.EnemyControllerData"
+   },
+   {
+    "name": "Core_EnemyHurtAnimComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_EnemyHurtAnimComponentDataForMemoryPack",
+    "tag": 65,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.EnemyHurtAnimComponentData"
+   },
+   {
+    "name": "Core_EnemyPartsControllerComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_EnemyPartsControllerComponentDataForMemoryPack",
+    "tag": 66,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.EnemyPartsControllerComponentData"
+   },
+   {
+    "name": "Core_EnemyPartsRootComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_EnemyPartsRootComponentDataForMemoryPack",
+    "tag": 67,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.Core.EnemyPartsRootComponentData"
+   },
+   {
+    "name": "Core_EnemyRootComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_EnemyRootComponentDataForMemoryPack",
+    "tag": 68,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Core.EnemyRootComponentData"
+   },
+   {
+    "name": "Core_ErosionCoreComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ErosionCoreComponentDataForMemoryPack",
+    "tag": 69,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.ErosionCoreComponentData"
+   },
+   {
+    "name": "Core_ErosionSludgeCoreComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ErosionSludgeCoreComponentDataForMemoryPack",
+    "tag": 70,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.ErosionSludgeCoreComponentData"
+   },
+   {
+    "name": "Core_FacBattleBaseCoreComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_FacBattleBaseCoreComponentDataForMemoryPack",
+    "tag": 71,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.FacBattleBaseCoreComponentData"
+   },
+   {
+    "name": "Core_FacBattleBuildingComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_FacBattleBuildingComponentDataForMemoryPack",
+    "tag": 72,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.FacBattleBuildingComponentData"
+   },
+   {
+    "name": "Core_FacRegionUpgradeSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_FacRegionUpgradeSystemComponentDataForMemoryPack",
+    "tag": 73,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.FacRegionUpgradeSystemComponentData"
+   },
+   {
+    "name": "Core_FactoryBuildingBaseComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_FactoryBuildingBaseComponentDataForMemoryPack",
+    "tag": 74,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.FactoryBuildingBaseComponentData"
+   },
+   {
+    "name": "Core_FactoryBuildingWrapperComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_FactoryBuildingWrapperComponentDataForMemoryPack",
+    "tag": 75,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.FactoryBuildingWrapperComponentData"
+   },
+   {
+    "name": "Core_FactoryGasComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_FactoryGasComponentDataForMemoryPack",
+    "tag": 76,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.FactoryGasComponentData"
+   },
+   {
+    "name": "Core_FactoryGasCoreComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_FactoryGasCoreComponentDataForMemoryPack",
+    "tag": 77,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.FactoryGasCoreComponentData"
+   },
+   {
+    "name": "Core_FactoryRegionComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_FactoryRegionComponentDataForMemoryPack",
+    "tag": 78,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Core.FactoryRegionComponentData"
+   },
+   {
+    "name": "Core_FixableRobotComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_FixableRobotComponentDataForMemoryPack",
+    "tag": 79,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.FixableRobotComponentData"
+   },
+   {
+    "name": "Core_GameplayElectricityNodeComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_GameplayElectricityNodeComponentDataForMemoryPack",
+    "tag": 80,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.GameplayElectricityNodeComponentData"
+   },
+   {
+    "name": "Core_GenderChangeSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_GenderChangeSystemComponentDataForMemoryPack",
+    "tag": 81,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.GenderChangeSystemComponentData"
+   },
+   {
+    "name": "Core_GodControllerData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_GodControllerDataForMemoryPack",
+    "tag": 82,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.GodControllerData"
+   },
+   {
+    "name": "Core_GodRootComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_GodRootComponentDataForMemoryPack",
+    "tag": 83,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Core.GodRootComponentData"
+   },
+   {
+    "name": "Core_GoldCoinComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_GoldCoinComponentDataForMemoryPack",
+    "tag": 84,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.GoldCoinComponentData"
+   },
+   {
+    "name": "Core_GoldCoinPlungingAttackBoardData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_GoldCoinPlungingAttackBoardDataForMemoryPack",
+    "tag": 85,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.GoldCoinPlungingAttackBoardData"
+   },
+   {
+    "name": "Core_HeightZeroMarkerComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_HeightZeroMarkerComponentDataForMemoryPack",
+    "tag": 86,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.HeightZeroMarkerComponentData"
+   },
+   {
+    "name": "Core_HittableComponentForIntData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_HittableComponentForIntDataForMemoryPack",
+    "tag": 87,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.Core.HittableComponentForIntData"
+   },
+   {
+    "name": "Core_IntCoreOnewaySwitchElectricComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_IntCoreOnewaySwitchElectricComponentDataForMemoryPack",
+    "tag": 88,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.IntCoreOnewaySwitchElectricComponentData"
+   },
+   {
+    "name": "Core_IntCoreSwitchCommonElectricComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_IntCoreSwitchCommonElectricComponentDataForMemoryPack",
+    "tag": 89,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.IntCoreSwitchCommonElectricComponentData"
+   },
+   {
+    "name": "Core_IntCoreTwoStateElectricAutoComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_IntCoreTwoStateElectricAutoComponentDataForMemoryPack",
+    "tag": 90,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.IntCoreTwoStateElectricAutoComponentData"
+   },
+   {
+    "name": "Core_IntCoreTwoStateElectricManualComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_IntCoreTwoStateElectricManualComponentDataForMemoryPack",
+    "tag": 91,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.IntCoreTwoStateElectricManualComponentData"
+   },
+   {
+    "name": "Core_InteractCommonTwoStateComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractCommonTwoStateComponentDataForMemoryPack",
+    "tag": 92,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractCommonTwoStateComponentData"
+   },
+   {
+    "name": "Core_InteractHighlightComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractHighlightComponentDataForMemoryPack",
+    "tag": 93,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractHighlightComponentData"
+   },
+   {
+    "name": "Core_Interactive3DUIComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Interactive3DUIComponentDataForMemoryPack",
+    "tag": 94,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.Interactive3DUIComponentData"
+   },
+   {
+    "name": "Core_InteractiveAltarFireSeedComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveAltarFireSeedComponentDataForMemoryPack",
+    "tag": 95,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveAltarFireSeedComponentData"
+   },
+   {
+    "name": "Core_InteractiveAssistedAimingComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveAssistedAimingComponentDataForMemoryPack",
+    "tag": 96,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveAssistedAimingComponentData"
+   },
+   {
+    "name": "Core_InteractiveAudioData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveAudioDataForMemoryPack",
+    "tag": 97,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveAudioData"
+   },
+   {
+    "name": "Core_InteractiveAutoMovePlatformComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveAutoMovePlatformComponentDataForMemoryPack",
+    "tag": 98,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveAutoMovePlatformComponentData"
+   },
+   {
+    "name": "Core_InteractiveBambooRaftComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveBambooRaftComponentDataForMemoryPack",
+    "tag": 99,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveBambooRaftComponentData"
+   },
+   {
+    "name": "Core_InteractiveBambooRaftDockComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveBambooRaftDockComponentDataForMemoryPack",
+    "tag": 100,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveBambooRaftDockComponentData"
+   },
+   {
+    "name": "Core_InteractiveBeaconPoleFireSeedComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveBeaconPoleFireSeedComponentDataForMemoryPack",
+    "tag": 101,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveBeaconPoleFireSeedComponentData"
+   },
+   {
+    "name": "Core_InteractiveBehitPerformComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveBehitPerformComponentDataForMemoryPack",
+    "tag": 102,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveBehitPerformComponentData"
+   },
+   {
+    "name": "Core_InteractiveCampfireComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveCampfireComponentDataForMemoryPack",
+    "tag": 103,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveCampfireComponentData"
+   },
+   {
+    "name": "Core_InteractiveCollectionCoinComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveCollectionCoinComponentDataForMemoryPack",
+    "tag": 104,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveCollectionCoinComponentData"
+   },
+   {
+    "name": "Core_InteractiveCollectionPieceComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveCollectionPieceComponentDataForMemoryPack",
+    "tag": 105,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveCollectionPieceComponentData"
+   },
+   {
+    "name": "Core_InteractiveCommonMultiStateComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveCommonMultiStateComponentDataForMemoryPack",
+    "tag": 106,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveCommonMultiStateComponentData"
+   },
+   {
+    "name": "Core_InteractiveCommonPerformComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveCommonPerformComponentDataForMemoryPack",
+    "tag": 107,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveCommonPerformComponentData"
+   },
+   {
+    "name": "Core_InteractiveCoolerUnitComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveCoolerUnitComponentDataForMemoryPack",
+    "tag": 108,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveCoolerUnitComponentData"
+   },
+   {
+    "name": "Core_InteractiveCoreComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveCoreComponentDataForMemoryPack",
+    "tag": 109,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveCoreComponentData"
+   },
+   {
+    "name": "Core_InteractiveDestructibleComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveDestructibleComponentDataForMemoryPack",
+    "tag": 110,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveDestructibleComponentData"
+   },
+   {
+    "name": "Core_InteractiveDoodadCommonComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveDoodadCommonComponentDataForMemoryPack",
+    "tag": 111,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveDoodadCommonComponentData"
+   },
+   {
+    "name": "Core_InteractiveDoodadGradeComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveDoodadGradeComponentDataForMemoryPack",
+    "tag": 112,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveDoodadGradeComponentData"
+   },
+   {
+    "name": "Core_InteractiveDoodadInteractComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveDoodadInteractComponentDataForMemoryPack",
+    "tag": 113,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveDoodadInteractComponentData"
+   },
+   {
+    "name": "Core_InteractiveDoorCommonComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveDoorCommonComponentDataForMemoryPack",
+    "tag": 114,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveDoorCommonComponentData"
+   },
+   {
+    "name": "Core_InteractiveDynamicAINavComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveDynamicAINavComponentDataForMemoryPack",
+    "tag": 115,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveDynamicAINavComponentData"
+   },
+   {
+    "name": "Core_InteractiveExitPerformanceComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveExitPerformanceComponentDataForMemoryPack",
+    "tag": 116,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveExitPerformanceComponentData"
+   },
+   {
+    "name": "Core_InteractiveFacHintPerformComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveFacHintPerformComponentDataForMemoryPack",
+    "tag": 117,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveFacHintPerformComponentData"
+   },
+   {
+    "name": "Core_InteractiveFlammableBombComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveFlammableBombComponentDataForMemoryPack",
+    "tag": 118,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveFlammableBombComponentData"
+   },
+   {
+    "name": "Core_InteractiveHintPerformComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveHintPerformComponentDataForMemoryPack",
+    "tag": 119,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveHintPerformComponentData"
+   },
+   {
+    "name": "Core_InteractiveKickableComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveKickableComponentDataForMemoryPack",
+    "tag": 120,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveKickableComponentData"
+   },
+   {
+    "name": "Core_InteractiveKickableReceiverComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveKickableReceiverComponentDataForMemoryPack",
+    "tag": 121,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveKickableReceiverComponentData"
+   },
+   {
+    "name": "Core_InteractiveLifterButtonComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveLifterButtonComponentDataForMemoryPack",
+    "tag": 122,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveLifterButtonComponentData"
+   },
+   {
+    "name": "Core_InteractiveLogicBaseComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveLogicBaseComponentDataForMemoryPack",
+    "tag": 123,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveLogicBaseComponentData"
+   },
+   {
+    "name": "Core_InteractiveLogicControllerComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveLogicControllerComponentDataForMemoryPack",
+    "tag": 124,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveLogicControllerComponentData"
+   },
+   {
+    "name": "Core_InteractiveLogicHaveElectricBaseComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveLogicHaveElectricBaseComponentDataForMemoryPack",
+    "tag": 125,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveLogicHaveElectricBaseComponentData"
+   },
+   {
+    "name": "Core_InteractiveManualMovePlatformComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveManualMovePlatformComponentDataForMemoryPack",
+    "tag": 126,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveManualMovePlatformComponentData"
+   },
+   {
+    "name": "Core_InteractiveModelLevelUpComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveModelLevelUpComponentDataForMemoryPack",
+    "tag": 127,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveModelLevelUpComponentData"
+   },
+   {
+    "name": "Core_InteractiveMovingPlatformComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveMovingPlatformComponentDataForMemoryPack",
+    "tag": 128,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveMovingPlatformComponentData"
+   },
+   {
+    "name": "Core_InteractiveNarrativeDoodadComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveNarrativeDoodadComponentDataForMemoryPack",
+    "tag": 129,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveNarrativeDoodadComponentData"
+   },
+   {
+    "name": "Core_InteractiveOutFallComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveOutFallComponentDataForMemoryPack",
+    "tag": 130,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveOutFallComponentData"
+   },
+   {
+    "name": "Core_InteractivePhysicsComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractivePhysicsComponentDataForMemoryPack",
+    "tag": 131,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractivePhysicsComponentData"
+   },
+   {
+    "name": "Core_InteractivePhysicsDestructibleComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractivePhysicsDestructibleComponentDataForMemoryPack",
+    "tag": 132,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractivePhysicsDestructibleComponentData"
+   },
+   {
+    "name": "Core_InteractivePorpToGlobalVarSyncComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractivePorpToGlobalVarSyncComponentDataForMemoryPack",
+    "tag": 133,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.Core.InteractivePorpToGlobalVarSyncComponentData"
+   },
+   {
+    "name": "Core_InteractiveRollingStoneComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveRollingStoneComponentDataForMemoryPack",
+    "tag": 134,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveRollingStoneComponentData"
+   },
+   {
+    "name": "Core_InteractiveRootComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveRootComponentDataForMemoryPack",
+    "tag": 135,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveRootComponentData"
+   },
+   {
+    "name": "Core_InteractiveRuneColumnComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveRuneColumnComponentDataForMemoryPack",
+    "tag": 136,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveRuneColumnComponentData"
+   },
+   {
+    "name": "Core_InteractiveRunePointComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveRunePointComponentDataForMemoryPack",
+    "tag": 137,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveRunePointComponentData"
+   },
+   {
+    "name": "Core_InteractiveSpecialSightComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveSpecialSightComponentDataForMemoryPack",
+    "tag": 138,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveSpecialSightComponentData"
+   },
+   {
+    "name": "Core_InteractiveSteamBlockerComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveSteamBlockerComponentDataForMemoryPack",
+    "tag": 139,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveSteamBlockerComponentData"
+   },
+   {
+    "name": "Core_InteractiveSuperPressureBoardComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveSuperPressureBoardComponentDataForMemoryPack",
+    "tag": 140,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveSuperPressureBoardComponentData"
+   },
+   {
+    "name": "Core_InteractiveSwitchAttackComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveSwitchAttackComponentDataForMemoryPack",
+    "tag": 141,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveSwitchAttackComponentData"
+   },
+   {
+    "name": "Core_InteractiveSwitchAttackElectricComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveSwitchAttackElectricComponentDataForMemoryPack",
+    "tag": 142,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveSwitchAttackElectricComponentData"
+   },
+   {
+    "name": "Core_InteractiveSwitchCommonNoElectricComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveSwitchCommonNoElectricComponentDataForMemoryPack",
+    "tag": 143,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveSwitchCommonNoElectricComponentData"
+   },
+   {
+    "name": "Core_InteractiveSwitchLockComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveSwitchLockComponentDataForMemoryPack",
+    "tag": 144,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveSwitchLockComponentData"
+   },
+   {
+    "name": "Core_InteractiveSwitchMultiStateComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveSwitchMultiStateComponentDataForMemoryPack",
+    "tag": 145,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveSwitchMultiStateComponentData"
+   },
+   {
+    "name": "Core_InteractiveTerminalReadingComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveTerminalReadingComponentDataForMemoryPack",
+    "tag": 146,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveTerminalReadingComponentData"
+   },
+   {
+    "name": "Core_InteractiveTwoPointMovementComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveTwoPointMovementComponentDataForMemoryPack",
+    "tag": 147,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveTwoPointMovementComponentData"
+   },
+   {
+    "name": "Core_InteractiveTwoStateRecordComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveTwoStateRecordComponentDataForMemoryPack",
+    "tag": 148,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveTwoStateRecordComponentData"
+   },
+   {
+    "name": "Core_InteractiveUnstablePlatformComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveUnstablePlatformComponentDataForMemoryPack",
+    "tag": 149,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveUnstablePlatformComponentData"
+   },
+   {
+    "name": "Core_InteractiveVerticalRopeComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveVerticalRopeComponentDataForMemoryPack",
+    "tag": 150,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveVerticalRopeComponentData"
+   },
+   {
+    "name": "Core_InteractiveWaterFallComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveWaterFallComponentDataForMemoryPack",
+    "tag": 151,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveWaterFallComponentData"
+   },
+   {
+    "name": "Core_InteractiveWaterFloaterComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveWaterFloaterComponentDataForMemoryPack",
+    "tag": 152,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveWaterFloaterComponentData"
+   },
+   {
+    "name": "Core_InteractiveWaterGunDriveBallComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveWaterGunDriveBallComponentDataForMemoryPack",
+    "tag": 153,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveWaterGunDriveBallComponentData"
+   },
+   {
+    "name": "Core_InteractiveWaterPipeComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveWaterPipeComponentDataForMemoryPack",
+    "tag": 154,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveWaterPipeComponentData"
+   },
+   {
+    "name": "Core_InteractiveWaterSwitchComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveWaterSwitchComponentDataForMemoryPack",
+    "tag": 155,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveWaterSwitchComponentData"
+   },
+   {
+    "name": "Core_InteractiveWaterVolumeSwitchComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveWaterVolumeSwitchComponentDataForMemoryPack",
+    "tag": 156,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveWaterVolumeSwitchComponentData"
+   },
+   {
+    "name": "Core_InteractiveWaterVolumeTransfererComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveWaterVolumeTransfererComponentDataForMemoryPack",
+    "tag": 157,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveWaterVolumeTransfererComponentData"
+   },
+   {
+    "name": "Core_InteractiveWeekRaidMineComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveWeekRaidMineComponentDataForMemoryPack",
+    "tag": 158,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveWeekRaidMineComponentData"
+   },
+   {
+    "name": "Core_InteractiveWeekRaidMineCoreComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractiveWeekRaidMineCoreComponentDataForMemoryPack",
+    "tag": 159,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractiveWeekRaidMineCoreComponentData"
+   },
+   {
+    "name": "Core_InteractMultiStateCycleComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractMultiStateCycleComponentDataForMemoryPack",
+    "tag": 160,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractMultiStateCycleComponentData"
+   },
+   {
+    "name": "Core_InteractSimpleTwoStateComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InteractSimpleTwoStateComponentDataForMemoryPack",
+    "tag": 161,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.InteractSimpleTwoStateComponentData"
+   },
+   {
+    "name": "Core_IntFacSoilComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_IntFacSoilComponentDataForMemoryPack",
+    "tag": 162,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.IntFacSoilComponentData"
+   },
+   {
+    "name": "Core_JumpMachineComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_JumpMachineComponentDataForMemoryPack",
+    "tag": 163,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.JumpMachineComponentData"
+   },
+   {
+    "name": "Core_JumpMachineElectricComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_JumpMachineElectricComponentDataForMemoryPack",
+    "tag": 164,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.JumpMachineElectricComponentData"
+   },
+   {
+    "name": "Core_JumpMachineVerticalComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_JumpMachineVerticalComponentDataForMemoryPack",
+    "tag": 165,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.JumpMachineVerticalComponentData"
+   },
+   {
+    "name": "Core_KeepRelativeOffsetComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_KeepRelativeOffsetComponentDataForMemoryPack",
+    "tag": 166,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.KeepRelativeOffsetComponentData"
+   },
+   {
+    "name": "Core_KickablePipelineComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_KickablePipelineComponentDataForMemoryPack",
+    "tag": 167,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.KickablePipelineComponentData"
+   },
+   {
+    "name": "Core_KickableSpawnerComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_KickableSpawnerComponentDataForMemoryPack",
+    "tag": 168,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.KickableSpawnerComponentData"
+   },
+   {
+    "name": "Core_KickableTriggerComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_KickableTriggerComponentDataForMemoryPack",
+    "tag": 169,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.KickableTriggerComponentData"
+   },
+   {
+    "name": "Core_KiteStationSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_KiteStationSystemComponentDataForMemoryPack",
+    "tag": 170,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.KiteStationSystemComponentData"
+   },
+   {
+    "name": "Core_LifterCoreComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_LifterCoreComponentDataForMemoryPack",
+    "tag": 171,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.LifterCoreComponentData"
+   },
+   {
+    "name": "Core_LifterForBoxGameCoreComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_LifterForBoxGameCoreComponentDataForMemoryPack",
+    "tag": 172,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.LifterForBoxGameCoreComponentData"
+   },
+   {
+    "name": "Core_LinkEffectModelComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_LinkEffectModelComponentDataForMemoryPack",
+    "tag": 173,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.LinkEffectModelComponentData"
+   },
+   {
+    "name": "Core_MagnetComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MagnetComponentDataForMemoryPack",
+    "tag": 174,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.MagnetComponentData"
+   },
+   {
+    "name": "Core_MainCharacterInterestComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MainCharacterInterestComponentDataForMemoryPack",
+    "tag": 175,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.MainCharacterInterestComponentData"
+   },
+   {
+    "name": "Core_MatrixElementComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MatrixElementComponentDataForMemoryPack",
+    "tag": 176,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.MatrixElementComponentData"
+   },
+   {
+    "name": "Core_MeshAdjustComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MeshAdjustComponentDataForMemoryPack",
+    "tag": 177,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.MeshAdjustComponentData"
+   },
+   {
+    "name": "Core_MinigameBalloonSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MinigameBalloonSystemComponentDataForMemoryPack",
+    "tag": 178,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.MinigameBalloonSystemComponentData"
+   },
+   {
+    "name": "Core_MissionBeaconComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MissionBeaconComponentDataForMemoryPack",
+    "tag": 179,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.MissionBeaconComponentData"
+   },
+   {
+    "name": "Core_ModelScalerComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ModelScalerComponentDataForMemoryPack",
+    "tag": 180,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.ModelScalerComponentData"
+   },
+   {
+    "name": "Core_MoveControlLogicComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MoveControlLogicComponentDataForMemoryPack",
+    "tag": 181,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.MoveControlLogicComponentData"
+   },
+   {
+    "name": "Core_MultiTriggerObserverComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_MultiTriggerObserverComponentDataForMemoryPack",
+    "tag": 182,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.MultiTriggerObserverComponentData"
+   },
+   {
+    "name": "Core_NarrativeComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_NarrativeComponentDataForMemoryPack",
+    "tag": 183,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.NarrativeComponentData"
+   },
+   {
+    "name": "Core_NavigationComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_NavigationComponentDataForMemoryPack",
+    "tag": 184,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.NavigationComponentData"
+   },
+   {
+    "name": "Core_NavmeshDynamicBakeAreaComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_NavmeshDynamicBakeAreaComponentDataForMemoryPack",
+    "tag": 185,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.NavmeshDynamicBakeAreaComponentData"
+   },
+   {
+    "name": "Core_NavMeshObstacleComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_NavMeshObstacleComponentDataForMemoryPack",
+    "tag": 186,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.NavMeshObstacleComponentData"
+   },
+   {
+    "name": "Core_NpcAudioComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_NpcAudioComponentDataForMemoryPack",
+    "tag": 187,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.NpcAudioComponentData"
+   },
+   {
+    "name": "Core_NPCDirtyBlockComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_NPCDirtyBlockComponentDataForMemoryPack",
+    "tag": 188,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.NPCDirtyBlockComponentData"
+   },
+   {
+    "name": "Core_NpcEntityEffectComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_NpcEntityEffectComponentDataForMemoryPack",
+    "tag": 189,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.NpcEntityEffectComponentData"
+   },
+   {
+    "name": "Core_NpcInteractComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_NpcInteractComponentDataForMemoryPack",
+    "tag": 190,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.NpcInteractComponentData"
+   },
+   {
+    "name": "Core_NpcRootComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_NpcRootComponentDataForMemoryPack",
+    "tag": 191,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Core.NpcRootComponentData"
+   },
+   {
+    "name": "Core_ObservedComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ObservedComponentDataForMemoryPack",
+    "tag": 192,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Core.ObservedComponentData"
+   },
+   {
+    "name": "Core_ObserverComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ObserverComponentDataForMemoryPack",
+    "tag": 193,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Core.ObserverComponentData"
+   },
+   {
+    "name": "Core_PhysicsAudioComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PhysicsAudioComponentDataForMemoryPack",
+    "tag": 194,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.PhysicsAudioComponentData"
+   },
+   {
+    "name": "Core_PhysicsComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PhysicsComponentDataForMemoryPack",
+    "tag": 195,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.PhysicsComponentData"
+   },
+   {
+    "name": "Core_PlayerCinematicInteractPerformComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayerCinematicInteractPerformComponentDataForMemoryPack",
+    "tag": 196,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.PlayerCinematicInteractPerformComponentData"
+   },
+   {
+    "name": "Core_PlayerInteractPerformComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PlayerInteractPerformComponentDataForMemoryPack",
+    "tag": 197,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.PlayerInteractPerformComponentData"
+   },
+   {
+    "name": "Core_ProjectileComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ProjectileComponentDataForMemoryPack",
+    "tag": 198,
+    "memberCount": 49,
+    "wrappedType": "Beyond.Gameplay.Core.ProjectileComponentData"
+   },
+   {
+    "name": "Core_ProjectileRootComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ProjectileRootComponentDataForMemoryPack",
+    "tag": 199,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Core.ProjectileRootComponentData"
+   },
+   {
+    "name": "Core_PullComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PullComponentDataForMemoryPack",
+    "tag": 200,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.PullComponentData"
+   },
+   {
+    "name": "Core_PurificationDeviceComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PurificationDeviceComponentDataForMemoryPack",
+    "tag": 201,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.PurificationDeviceComponentData"
+   },
+   {
+    "name": "Core_PushableComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PushableComponentDataForMemoryPack",
+    "tag": 202,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.Core.PushableComponentData"
+   },
+   {
+    "name": "Core_PushBackComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PushBackComponentDataForMemoryPack",
+    "tag": 203,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.PushBackComponentData"
+   },
+   {
+    "name": "Core_RacingDungeonBattleEndSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RacingDungeonBattleEndSystemComponentDataForMemoryPack",
+    "tag": 204,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.RacingDungeonBattleEndSystemComponentData"
+   },
+   {
+    "name": "Core_RacingDungeonBattleEntrySystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RacingDungeonBattleEntrySystemComponentDataForMemoryPack",
+    "tag": 205,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.RacingDungeonBattleEntrySystemComponentData"
+   },
+   {
+    "name": "Core_RecycleBinSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RecycleBinSystemComponentDataForMemoryPack",
+    "tag": 206,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.RecycleBinSystemComponentData"
+   },
+   {
+    "name": "Core_RemoteFactoryMineComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RemoteFactoryMineComponentDataForMemoryPack",
+    "tag": 207,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.RemoteFactoryMineComponentData"
+   },
+   {
+    "name": "Core_RemoteFactoryRootComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RemoteFactoryRootComponentDataForMemoryPack",
+    "tag": 208,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Core.RemoteFactoryRootComponentData"
+   },
+   {
+    "name": "Core_RootComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RootComponentDataForMemoryPack",
+    "tag": 209,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Core.RootComponentData"
+   },
+   {
+    "name": "Core_RotatorComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RotatorComponentDataForMemoryPack",
+    "tag": 210,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.RotatorComponentData"
+   },
+   {
+    "name": "Core_RVOComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RVOComponentDataForMemoryPack",
+    "tag": 211,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.RVOComponentData"
+   },
+   {
+    "name": "Core_ScanableComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ScanableComponentDataForMemoryPack",
+    "tag": 212,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.ScanableComponentData"
+   },
+   {
+    "name": "Core_ScanTriggerComponentForIntData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ScanTriggerComponentForIntDataForMemoryPack",
+    "tag": 213,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.Core.ScanTriggerComponentForIntData"
+   },
+   {
+    "name": "Core_ShowGuideComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ShowGuideComponentDataForMemoryPack",
+    "tag": 214,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Core.ShowGuideComponentData"
+   },
+   {
+    "name": "Core_ShowGuideWithConditionComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ShowGuideWithConditionComponentDataForMemoryPack",
+    "tag": 215,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Core.ShowGuideWithConditionComponentData"
+   },
+   {
+    "name": "Core_SignalTowerComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SignalTowerComponentDataForMemoryPack",
+    "tag": 216,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SignalTowerComponentData"
+   },
+   {
+    "name": "Core_SimpleAnimatorComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SimpleAnimatorComponentDataForMemoryPack",
+    "tag": 217,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.SimpleAnimatorComponentData"
+   },
+   {
+    "name": "Core_SimulationTrainingSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SimulationTrainingSystemComponentDataForMemoryPack",
+    "tag": 218,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SimulationTrainingSystemComponentData"
+   },
+   {
+    "name": "Core_SnapshotSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SnapshotSystemComponentDataForMemoryPack",
+    "tag": 219,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SnapshotSystemComponentData"
+   },
+   {
+    "name": "Core_SpaceshipCabinTerminalComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipCabinTerminalComponentDataForMemoryPack",
+    "tag": 220,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipCabinTerminalComponentData"
+   },
+   {
+    "name": "Core_SpaceshipCharacterWallData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipCharacterWallDataForMemoryPack",
+    "tag": 221,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipCharacterWallData"
+   },
+   {
+    "name": "Core_SpaceshipClueCollectionSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipClueCollectionSystemComponentDataForMemoryPack",
+    "tag": 222,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipClueCollectionSystemComponentData"
+   },
+   {
+    "name": "Core_SpaceshipCreditShopSystemData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipCreditShopSystemDataForMemoryPack",
+    "tag": 223,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipCreditShopSystemData"
+   },
+   {
+    "name": "Core_SpaceshipGuestTerminalSystemData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipGuestTerminalSystemDataForMemoryPack",
+    "tag": 224,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipGuestTerminalSystemData"
+   },
+   {
+    "name": "Core_SpaceshipMedalWallSystemData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipMedalWallSystemDataForMemoryPack",
+    "tag": 225,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipMedalWallSystemData"
+   },
+   {
+    "name": "Core_SpaceshipMusicPlayerSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipMusicPlayerSystemComponentDataForMemoryPack",
+    "tag": 226,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipMusicPlayerSystemComponentData"
+   },
+   {
+    "name": "Core_SpaceshipRegionWallData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipRegionWallDataForMemoryPack",
+    "tag": 227,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipRegionWallData"
+   },
+   {
+    "name": "Core_SpaceshipRoomDoorSystemData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipRoomDoorSystemDataForMemoryPack",
+    "tag": 228,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipRoomDoorSystemData"
+   },
+   {
+    "name": "Core_SpaceshipScreenData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipScreenDataForMemoryPack",
+    "tag": 229,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipScreenData"
+   },
+   {
+    "name": "Core_SpaceshipShowcaseSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipShowcaseSystemComponentDataForMemoryPack",
+    "tag": 230,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipShowcaseSystemComponentData"
+   },
+   {
+    "name": "Core_SpaceshipSummonData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipSummonDataForMemoryPack",
+    "tag": 231,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipSummonData"
+   },
+   {
+    "name": "Core_SpaceshipVisitPortalSystemData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipVisitPortalSystemDataForMemoryPack",
+    "tag": 232,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipVisitPortalSystemData"
+   },
+   {
+    "name": "Core_SpaceshipWeaponWallData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SpaceshipWeaponWallDataForMemoryPack",
+    "tag": 233,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SpaceshipWeaponWallData"
+   },
+   {
+    "name": "Core_StateTransitionComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_StateTransitionComponentDataForMemoryPack",
+    "tag": 234,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.StateTransitionComponentData"
+   },
+   {
+    "name": "Core_StepOnTriggerComponentForIntData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_StepOnTriggerComponentForIntDataForMemoryPack",
+    "tag": 235,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.Core.StepOnTriggerComponentForIntData"
+   },
+   {
+    "name": "Core_StopRecordingLocationAreaComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_StopRecordingLocationAreaComponentDataForMemoryPack",
+    "tag": 236,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.StopRecordingLocationAreaComponentData"
+   },
+   {
+    "name": "Core_SummonTeamComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SummonTeamComponentDataForMemoryPack",
+    "tag": 237,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SummonTeamComponentData"
+   },
+   {
+    "name": "Core_SwitchElectricComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SwitchElectricComponentDataForMemoryPack",
+    "tag": 238,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SwitchElectricComponentData"
+   },
+   {
+    "name": "Core_SystemLayerInteractiveComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SystemLayerInteractiveComponentDataForMemoryPack",
+    "tag": 239,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.SystemLayerInteractiveComponentData"
+   },
+   {
+    "name": "Core_TeammateChangeAIModeComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TeammateChangeAIModeComponentDataForMemoryPack",
+    "tag": 240,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.TeammateChangeAIModeComponentData"
+   },
+   {
+    "name": "Core_TianShiZhuangComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TianShiZhuangComponentDataForMemoryPack",
+    "tag": 241,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.TianShiZhuangComponentData"
+   },
+   {
+    "name": "Core_TravelLinkEffectModelComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TravelLinkEffectModelComponentDataForMemoryPack",
+    "tag": 242,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.TravelLinkEffectModelComponentData"
+   },
+   {
+    "name": "Core_TrchestBubbleComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TrchestBubbleComponentDataForMemoryPack",
+    "tag": 243,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.TrchestBubbleComponentData"
+   },
+   {
+    "name": "Core_TreasureComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TreasureComponentDataForMemoryPack",
+    "tag": 244,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.TreasureComponentData"
+   },
+   {
+    "name": "Core_TreasureStarData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TreasureStarDataForMemoryPack",
+    "tag": 245,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.TreasureStarData"
+   },
+   {
+    "name": "Core_TriggerObserverAllEntityComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerObserverAllEntityComponentDataForMemoryPack",
+    "tag": 246,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.TriggerObserverAllEntityComponentData"
+   },
+   {
+    "name": "Core_TriggerObserverComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerObserverComponentDataForMemoryPack",
+    "tag": 247,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.Core.TriggerObserverComponentData"
+   },
+   {
+    "name": "Core_TriggerRootComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerRootComponentDataForMemoryPack",
+    "tag": 248,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Core.TriggerRootComponentData"
+   },
+   {
+    "name": "Core_TriggerZoneComponentForIntData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TriggerZoneComponentForIntDataForMemoryPack",
+    "tag": 249,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.Core.TriggerZoneComponentForIntData"
+   },
+   {
+    "name": "Core_TyphoeaArcherySystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaArcherySystemComponentDataForMemoryPack",
+    "tag": 250,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.TyphoeaArcherySystemComponentData"
+   },
+   {
+    "name": "Core_VendingMachineComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_VendingMachineComponentDataForMemoryPack",
+    "tag": 251,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.VendingMachineComponentData"
+   },
+   {
+    "name": "Core_WaterAbsorbedImpactComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_WaterAbsorbedImpactComponentDataForMemoryPack",
+    "tag": 252,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.WaterAbsorbedImpactComponentData"
+   },
+   {
+    "name": "Core_WaterProgressComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_WaterProgressComponentDataForMemoryPack",
+    "tag": 253,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.WaterProgressComponentData"
+   },
+   {
+    "name": "Core_WaterProgressDriveCurveMovementComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_WaterProgressDriveCurveMovementComponentDataForMemoryPack",
+    "tag": 254,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.WaterProgressDriveCurveMovementComponentData"
+   },
+   {
+    "name": "Core_WaterVolHeightMarkerComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_WaterVolHeightMarkerComponentDataForMemoryPack",
+    "tag": 255,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.WaterVolHeightMarkerComponentData"
+   },
+   {
+    "name": "Core_WeekRaidEntrySystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_WeekRaidEntrySystemComponentDataForMemoryPack",
+    "tag": 256,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.WeekRaidEntrySystemComponentData"
+   },
+   {
+    "name": "Core_WeekRaidRuneComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_WeekRaidRuneComponentDataForMemoryPack",
+    "tag": 257,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.WeekRaidRuneComponentData"
+   },
+   {
+    "name": "Core_WeekRaidTreasureComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_WeekRaidTreasureComponentDataForMemoryPack",
+    "tag": 258,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.WeekRaidTreasureComponentData"
+   },
+   {
+    "name": "Core_WireModelComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_WireModelComponentDataForMemoryPack",
+    "tag": 259,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.WireModelComponentData"
+   },
+   {
+    "name": "Core_WorldEnergyPointSystemComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_WorldEnergyPointSystemComponentDataForMemoryPack",
+    "tag": 260,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.WorldEnergyPointSystemComponentData"
+   },
+   {
+    "name": "CraneContainerComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CraneContainerComponentDataForMemoryPack",
+    "tag": 261,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.CraneContainerComponentData"
+   },
+   {
+    "name": "CraneTowerComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CraneTowerComponentDataForMemoryPack",
+    "tag": 262,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.CraneTowerComponentData"
+   },
+   {
+    "name": "CustomAbilityComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_CustomAbilityComponentDataForMemoryPack",
+    "tag": 263,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.CustomAbilityComponentData"
+   },
+   {
+    "name": "DestructibleGoldCoinComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_DestructibleGoldCoinComponentDataForMemoryPack",
+    "tag": 264,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.DestructibleGoldCoinComponentData"
+   },
+   {
+    "name": "DungeonExitComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_DungeonExitComponentDataForMemoryPack",
+    "tag": 265,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.DungeonExitComponentData"
+   },
+   {
+    "name": "DynamicBattleShapeComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_DynamicBattleShapeComponentDataForMemoryPack",
+    "tag": 266,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.DynamicBattleShapeComponentData"
+   },
+   {
+    "name": "ElectricFenceComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_ElectricFenceComponentDataForMemoryPack",
+    "tag": 267,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.ElectricFenceComponentData"
+   },
+   {
+    "name": "GameplayLockedRewardComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GameplayLockedRewardComponentDataForMemoryPack",
+    "tag": 268,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.GameplayLockedRewardComponentData"
+   },
+   {
+    "name": "HiddenMarkComponentComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_HiddenMarkComponentComponentDataForMemoryPack",
+    "tag": 269,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.HiddenMarkComponentComponentData"
+   },
+   {
+    "name": "InfraredGroupComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InfraredGroupComponentDataForMemoryPack",
+    "tag": 270,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.InfraredGroupComponentData"
+   },
+   {
+    "name": "InteractiveEvent_InteractiveEventComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveEvent_InteractiveEventComponentDataForMemoryPack",
+    "tag": 271,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.InteractiveEvent.InteractiveEventComponentData"
+   },
+   {
+    "name": "InteractiveEvent_InteractiveInstigatorControlComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveEvent_InteractiveInstigatorControlComponentDataForMemoryPack",
+    "tag": 272,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.InteractiveEvent.InteractiveInstigatorControlComponentData"
+   },
+   {
+    "name": "InteractiveHydrantComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveHydrantComponentDataForMemoryPack",
+    "tag": 273,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.InteractiveHydrantComponentData"
+   },
+   {
+    "name": "InteractiveLeaderButterflyComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveLeaderButterflyComponentDataForMemoryPack",
+    "tag": 274,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.InteractiveLeaderButterflyComponentData"
+   },
+   {
+    "name": "InteractiveLsmControlledSwitchComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveLsmControlledSwitchComponentDataForMemoryPack",
+    "tag": 275,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.InteractiveLsmControlledSwitchComponentData"
+   },
+   {
+    "name": "InteractiveMatrixCenterComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveMatrixCenterComponentDataForMemoryPack",
+    "tag": 276,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.InteractiveMatrixCenterComponentData"
+   },
+   {
+    "name": "InteractiveMovingPlatClientOnlyComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveMovingPlatClientOnlyComponentDataForMemoryPack",
+    "tag": 277,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.InteractiveMovingPlatClientOnlyComponentData"
+   },
+   {
+    "name": "InteractivePressureSwitchComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractivePressureSwitchComponentDataForMemoryPack",
+    "tag": 278,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.InteractivePressureSwitchComponentData"
+   },
+   {
+    "name": "InteractiveRiftComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveRiftComponentDataForMemoryPack",
+    "tag": 279,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.InteractiveRiftComponentData"
+   },
+   {
+    "name": "InteractiveSmallButterflyComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveSmallButterflyComponentDataForMemoryPack",
+    "tag": 280,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.InteractiveSmallButterflyComponentData"
+   },
+   {
+    "name": "InteractiveStainComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveStainComponentDataForMemoryPack",
+    "tag": 281,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.InteractiveStainComponentData"
+   },
+   {
+    "name": "InteractiveStartAreaComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_InteractiveStartAreaComponentDataForMemoryPack",
+    "tag": 282,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.InteractiveStartAreaComponentData"
+   },
+   {
+    "name": "LoadingPortalComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_LoadingPortalComponentDataForMemoryPack",
+    "tag": 283,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.LoadingPortalComponentData"
+   },
+   {
+    "name": "LockableTreasureComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_LockableTreasureComponentDataForMemoryPack",
+    "tag": 284,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.LockableTreasureComponentData"
+   },
+   {
+    "name": "MicroSpotDiffMainStakeComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_MicroSpotDiffMainStakeComponentDataForMemoryPack",
+    "tag": 285,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.MicroSpotDiffMainStakeComponentData"
+   },
+   {
+    "name": "MicroSpotDiffSubStakeComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_MicroSpotDiffSubStakeComponentDataForMemoryPack",
+    "tag": 286,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.MicroSpotDiffSubStakeComponentData"
+   },
+   {
+    "name": "ScannableTraceComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_ScannableTraceComponentDataForMemoryPack",
+    "tag": 287,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.ScannableTraceComponentData"
+   },
+   {
+    "name": "SeamlessPortalComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_SeamlessPortalComponentDataForMemoryPack",
+    "tag": 288,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.SeamlessPortalComponentData"
+   },
+   {
+    "name": "TyphoeaArcheryLockingComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_TyphoeaArcheryLockingComponentDataForMemoryPack",
+    "tag": 289,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.TyphoeaArcheryLockingComponentData"
+   },
+   {
+    "name": "View_AbilityEntityAnimationComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_AbilityEntityAnimationComponentDataForMemoryPack",
+    "tag": 290,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.View.AbilityEntityAnimationComponentData"
+   },
+   {
+    "name": "View_Animation_CharacterPivotComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_Animation_CharacterPivotComponentDataForMemoryPack",
+    "tag": 291,
+    "memberCount": 12,
+    "wrappedType": "Beyond.Gameplay.View.Animation.CharacterPivotComponentData"
+   },
+   {
+    "name": "View_BaseAnimationComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_BaseAnimationComponentDataForMemoryPack",
+    "tag": 292,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.View.BaseAnimationComponentData"
+   },
+   {
+    "name": "View_CharacterAnimationComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_CharacterAnimationComponentDataForMemoryPack",
+    "tag": 293,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.View.CharacterAnimationComponentData"
+   },
+   {
+    "name": "View_CinematicAnimationComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_CinematicAnimationComponentDataForMemoryPack",
+    "tag": 294,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.View.CinematicAnimationComponentData"
+   },
+   {
+    "name": "View_ComplexAnimatorComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_ComplexAnimatorComponentDataForMemoryPack",
+    "tag": 295,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.View.ComplexAnimatorComponentData"
+   },
+   {
+    "name": "View_EnemyAnimationComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_EnemyAnimationComponentDataForMemoryPack",
+    "tag": 296,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.View.EnemyAnimationComponentData"
+   },
+   {
+    "name": "View_EnemyPartAnimatorComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_EnemyPartAnimatorComponentDataForMemoryPack",
+    "tag": 297,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.View.EnemyPartAnimatorComponentData"
+   },
+   {
+    "name": "View_EnemyPivotComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_EnemyPivotComponentDataForMemoryPack",
+    "tag": 298,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.View.EnemyPivotComponentData"
+   },
+   {
+    "name": "View_FootRippleComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_FootRippleComponentDataForMemoryPack",
+    "tag": 299,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.View.FootRippleComponentData"
+   },
+   {
+    "name": "View_InteractiveModelComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_InteractiveModelComponentDataForMemoryPack",
+    "tag": 300,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.View.InteractiveModelComponentData"
+   },
+   {
+    "name": "View_LookAtComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_LookAtComponentDataForMemoryPack",
+    "tag": 301,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.View.LookAtComponentData"
+   },
+   {
+    "name": "View_ModelComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_ModelComponentDataForMemoryPack",
+    "tag": 302,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.View.ModelComponentData"
+   },
+   {
+    "name": "View_SkeletalMorphComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_SkeletalMorphComponentDataForMemoryPack",
+    "tag": 303,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.View.SkeletalMorphComponentData"
+   },
+   {
+    "name": "View_WeaponComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_View_WeaponComponentDataForMemoryPack",
+    "tag": 304,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.View.WeaponComponentData"
+   },
+   {
+    "name": "Water_NpcWaterSensorComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Water_NpcWaterSensorComponentDataForMemoryPack",
+    "tag": 305,
+    "memberCount": 15,
+    "wrappedType": "Beyond.Gameplay.Water.NpcWaterSensorComponentData"
+   },
+   {
+    "name": "Water_WaterSensorComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Water_WaterSensorComponentDataForMemoryPack",
+    "tag": 306,
+    "memberCount": 15,
+    "wrappedType": "Beyond.Gameplay.Water.WaterSensorComponentData"
+   },
+   {
+    "name": "XiraniteNexusLogicComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_XiraniteNexusLogicComponentDataForMemoryPack",
+    "tag": 307,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.XiraniteNexusLogicComponentData"
+   },
+   {
+    "name": "Beyond.MemoryPack.Beyond_NPC_NPCCrowdEntityComponentData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_NPC_NPCCrowdEntityComponentDataForMemoryPack",
+    "tag": 308,
+    "memberCount": 8,
+    "wrappedType": "Beyond.NPC.NPCCrowdEntityComponentData"
    }
   ]
  }

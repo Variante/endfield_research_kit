@@ -678,13 +678,21 @@ def verify_skilldata_cursor_capture(
         ),
     }
     all_rows_closed = bool(rows) and counts["exactClosed"] == len(rows)
-    status = (
-        "complete"
-        if all_rows_closed
-        and not missing_required
-        and verified_source_lengths == list(REQUIRED_SOURCE_LENGTHS)
-        else "failed"
-    )
+    # Every required source length must be verified; a closed supplemental
+    # observation (another length the observer also copies) does not fail the
+    # receipt, and is reported separately.
+    missing_lengths = [length for length in REQUIRED_SOURCE_LENGTHS if length not in verified_source_lengths]
+    supplemental_lengths = [length for length in verified_source_lengths if length not in REQUIRED_SOURCE_LENGTHS]
+    failure_reasons = []
+    if not all_rows_closed:
+        failure_reasons.append({"gate": "all_rows_exact_closed", "expected": len(rows),
+                                "actual": counts["exactClosed"]})
+    if missing_required:
+        failure_reasons.append({"gate": "required_logical_paths", "missing": missing_required})
+    if missing_lengths:
+        failure_reasons.append({"gate": "required_source_lengths", "missing": missing_lengths,
+                                "verified": verified_source_lengths})
+    status = "complete" if not failure_reasons else "failed"
     receipt_provenance = None
     if receipt_path is not None and receipt_sha256 is not None:
         receipt_provenance = _file_provenance(receipt_path, receipt_sha256)
@@ -727,6 +735,8 @@ def verify_skilldata_cursor_capture(
             "verifiedRequiredLogicalPaths": [path for path in required if path in exact_paths],
             "missingRequiredLogicalPaths": missing_required,
             "verifiedSourceLengths": verified_source_lengths,
+            "supplementalSourceLengths": supplemental_lengths,
+            "failureReasons": failure_reasons,
             "wholeSchemaExact": False,
             "boundary": (
             "exactClosed counts only runtime-selected terminal candidates that the maintained "

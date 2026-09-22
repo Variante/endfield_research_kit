@@ -14,10 +14,14 @@ import math
 import struct
 from typing import Any
 
+from scripts.game_data import levelscript_union_tags as union_tags
+
 
 NULL_COUNT = 0xFFFFFFFF
 INTERACTIVE_TABLE_MEMBER_COUNT = 2
-PHYSICS_AUDIO_COMPONENT_TAG = 0x00BE
+_PHYSICS_AUDIO = union_tags.pair("BaseComponentData", "Core_PhysicsAudioComponentData")
+# -1 never equals a byte, so an unvalidated build matches nothing.
+PHYSICS_AUDIO_COMPONENT_TAG = _PHYSICS_AUDIO[0] if isinstance(_PHYSICS_AUDIO[0], int) else -1
 PHYSICS_AUDIO_COMPONENT_MEMBER_COUNT = 1
 PHYSICS_AUDIO_PROPERTY_VALUE_MEMBER_COUNT = 2
 PHYSICS_AUDIO_PROPERTY_ITEM_MEMBER_COUNT = 2

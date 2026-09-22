@@ -682,9 +682,23 @@ def _apply_verified_terminal_selection(
         or contract.get("wholeSchemaExact") is not False
     ):
         _fail("cursor-terminal-contract-mismatch", source=str(verification_path), expected="field43..47 one-member-wrapper", actual=contract)
-    sample_rows = verification.get("rows")
-    if not isinstance(sample_rows, list) or len(sample_rows) != 2:
-        _fail("cursor-sample-set-invalid", source=str(verification_path), expected="two required samples", actual=type(sample_rows).__name__)
+    all_rows = verification.get("rows")
+    if not isinstance(all_rows, list):
+        _fail("cursor-sample-set-invalid", source=str(verification_path), expected="row list", actual=type(all_rows).__name__)
+    # Only the required samples are applied. A receipt may also carry
+    # supplemental observations (the 568-byte nonempty-ActionGroup lane); they
+    # are verified by the receipt checker but stay unpromoted here until their
+    # own profile is reviewed. A verification with no named requirement keeps
+    # the original rule of exactly two samples.
+    if required_paths:
+        sample_rows = [row for row in all_rows if row.get("logicalPath") in set(required_paths)]
+        if sorted(row.get("logicalPath") for row in sample_rows) != sorted(required_paths):
+            _fail("cursor-sample-set-invalid", source=str(verification_path), expected=sorted(required_paths),
+                  actual=sorted(str(row.get("logicalPath")) for row in sample_rows))
+    else:
+        sample_rows = all_rows
+        if len(sample_rows) != 2:
+            _fail("cursor-sample-set-invalid", source=str(verification_path), expected="two required samples", actual=len(sample_rows))
     for sample in sample_rows:
         alternatives = sample.get("candidateAlternatives", [])
         fields = sample.get("runtimeFieldRanges", [])

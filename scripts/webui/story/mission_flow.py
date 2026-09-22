@@ -245,7 +245,10 @@ _LEVELSCRIPT_QUEST_STATE_CHANGED_TAG = union_tags.header("LevelEvent_OnQuestStat
 _LEVELSCRIPT_QUEST_STATE_CHANGED_CONNECTIONS_CACHE: dict[str, list[dict]] | None = None
 _LEVELSCRIPT_LEADER_ENTER_TRIGGER_TAG = union_tags.header("ScriptEvent_OnLeaderEnterTriggerVolume")
 _LEVELSCRIPT_WAIT_FOR_CONDITION_OPCODE = union_tags.action("WaitForCondition")
-_LEVELSCRIPT_CHECK_QUEST_STATE_TAG = 0x7E
+# The GameCondition union tag WaitForCondition's first payload byte carries;
+# -1 never equals a byte, so an unvalidated build matches nothing.
+_CHECK_QUEST_STATE = union_tags.pair("GameCondition", "CheckQuestState")
+_LEVELSCRIPT_CHECK_QUEST_STATE_TAG = _CHECK_QUEST_STATE[0] if isinstance(_CHECK_QUEST_STATE[0], int) else -1
 _LEVELSCRIPT_QUEST_STATE_GATE_CONNECTIONS_CACHE: dict[str, list[dict]] | None = None
 _LEVELSCRIPT_STORY_PAYLOAD_PREFIXES = (
     "dlg_",

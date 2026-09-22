@@ -14,12 +14,20 @@ from functools import lru_cache
 from pathlib import Path
 
 from scripts.common import DATA_JSON_DIR, ROOT, read_bytes_cached, rel_path as repo_rel
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.levelscript_binary import LEVELSCRIPT_NATIVE_HEADER_MAPPING_ID
 
 
-BATTLE_SIGNAL_ACTION_TAG = 0x0134
+_BATTLE_SIGNAL = union_tags.pair("AbilityActionData", "Core_SendBattleSignalToLevel_Data")
+BATTLE_SIGNAL_ACTION_TAG = _BATTLE_SIGNAL[0] if isinstance(_BATTLE_SIGNAL[0], int) else -1
 BATTLE_SIGNAL_ACTION_MEMBER_COUNT = 6
-BATTLE_SIGNAL_ACTION_PREFIX = b"\xfa\x34\x01\x06"
+# Wide union marker 0xFA, the u16 tag, then the member count. With no validated
+# build (or a reshaped action) the prefix is None and nothing is decoded.
+BATTLE_SIGNAL_ACTION_PREFIX = (
+    bytes([0xFA]) + BATTLE_SIGNAL_ACTION_TAG.to_bytes(2, "little") + bytes([BATTLE_SIGNAL_ACTION_MEMBER_COUNT])
+    if BATTLE_SIGNAL_ACTION_TAG >= 0 and _BATTLE_SIGNAL[1] == BATTLE_SIGNAL_ACTION_MEMBER_COUNT
+    else None
+)
 BATTLE_SIGNAL_PRODUCER_MAPPING_ID = (
     "gameassembly-2026-07-22-ability-actiondata-0x0134"
 )
@@ -133,8 +141,8 @@ def _read_blackboard_string(
 
 
 def decode_battle_signal_action(data: bytes, action_offset: int) -> dict:
-    """Decode one exact 0x0134/six-member AbilityActionData union item."""
-    if data[action_offset:action_offset + 4] != BATTLE_SIGNAL_ACTION_PREFIX:
+    """Decode one exact six-member SendBattleSignalToLevel AbilityActionData item."""
+    if BATTLE_SIGNAL_ACTION_PREFIX is None or data[action_offset:action_offset + 4] != BATTLE_SIGNAL_ACTION_PREFIX:
         raise ValueError("sendBattleSignal: tag/member-count mismatch")
     offset = action_offset + 4
     is_enable, offset = _read_bool(data, offset, "prefix.isEnable")
@@ -192,7 +200,7 @@ def build_battle_signal_producer_index(
             except OSError:
                 continue
             offset = 0
-            while True:
+            while BATTLE_SIGNAL_ACTION_PREFIX is not None:
                 action_offset = data.find(BATTLE_SIGNAL_ACTION_PREFIX, offset)
                 if action_offset < 0:
                     break

@@ -37,6 +37,8 @@ FAMILY_BASES = {
     # Not a LevelScript family, but BuffData and SkillData readers key their
     # ability actions the same way and go stale the same way.
     "AbilityActionData": "Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+    "GameCondition": "Beyond_Gameplay_GameConditionForMemoryPack",
+    "BaseComponentData": "Beyond_Gameplay_BaseComponentDataForMemoryPack",
 }
 _WRAPPER_PREFIXES = ("Beyond.MemoryPack.Beyond_Gameplay_Actions_", "Beyond.MemoryPack.Beyond_Gameplay_")
 _WRAPPER_SUFFIX = "ForMemoryPack"
