@@ -30,6 +30,7 @@ axis. A path appears under exactly one owner.
 | | `game_data/memorypack/union_subtypes.py` | tag assignment for the nested unions the dispatcher walk cannot reach, inferred from the wrapper hierarchy and gated on the walked union reproducing exactly |
 | | `game_data/memorypack/derived_actions.py` | the narrow flat-body case of the same idea: adds only the routes whose members are all fixed-width or strings, with no plan registry. `derived_plans` is the superset |
 | | `game_data/contracts_repin.py` | re-pins the exporter fingerprint an AnimeStudio rebuild invalidates, then settles the dependency rows and loader digests that follow from it; refuses unless the installed build matches both the audit and the contracts |
+| | `game_data/memorypack/derived_values.py` | decodes a plan into named values rather than only framing it, and checks each decoded record's own identifier against its filename |
 | | `game_data/memorypack/derived_plans.py` | opt-in reader that executes a `derived_schema` read plan with the frozen reader's own primitives, so a nested record, list, counted map or union is consumed rather than only described; `--corpus` is its adoption gate against exported BuffData |
 | | `game_data/memorypack/action_dispatcher.py` | the whole AbilityActionData union dispatcher of the selected build, walked generically from the switch table the reviewed contracts pin; names the wrapper behind every tag, including the ones no contract covers |
 | | `game_data/memorypack/wrapper_members.py` | the selected build's generated wrapper member order and member types for every `*ForMemoryPack` type, derived in one metadata pass; the bulk source the per-tag contracts record one wrapper at a time |
@@ -323,6 +324,7 @@ python -m scripts.game_data.memorypack.union_subtypes --union Selector_Finder_Da
 python -m scripts.game_data.memorypack.derived_schema
 python -m scripts.game_data.memorypack.derived_plans
 python -m scripts.game_data.memorypack.derived_plans --corpus
+python -m scripts.game_data.memorypack.derived_values
 
 Re-pin after rebuilding the exporter (dry-run first; `--write` applies):
 
@@ -362,6 +364,7 @@ its result under `reports/animestudio/`:
 | `game_data.memorypack.derived_schema` | `reports/game_data/memorypack_derived_schema.json`; a recursive read plan per action tag over nested records, lists, arrays and nested unions, with each route's evidence tier and the named type blocking the rest |
 | `game_data.memorypack.union_subtypes` | `reports/game_data/memorypack_union_subtypes.json`; every union base's subtypes and predicted tag assignment, gated on reproducing the walked root union and corroborated against the reviewed nested rows plus the frozen reader's own per-tag member counts for six nested unions it never walks |
 | `game_data.memorypack.derived_actions` | `reports/game_data/memorypack_derived_actions.json`; the union tags whose whole body this reader can consume, and the cross-check of that framing against the frozen reader |
+| `game_data.memorypack.derived_values` | `reports/game_data/memorypack_derived_values.json`; how many SkillData records decode into named values, how many carry an identifier matching their filename, and one decoded sample |
 | `game_data.memorypack.derived_plans` | `reports/game_data/memorypack_derived_plans.json`; each plan's framing cross-checked against the frozen reader tag by tag. `--corpus` prints instead: how many exported BuffData files each reader closes, whether every file the frozen reader already closed still ends at the same cursor, how many routes and nested-union placements the run actually walked, and how many SkillData files the whole `SkillData` plan consumes exactly to EOF against how many land short |
 | `game_data.memorypack.action_dispatcher` | `reports/game_data/memorypack_action_dispatcher.json`; every AbilityActionData union tag's route, registered type, generated wrapper, named member order and member widths, with each reviewed tag re-derived and compared |
 | `game_data.memorypack.wrapper_members` | `reports/game_data/memorypack_wrapper_members.json`; every generated `*ForMemoryPack` wrapper's serialized member order, member types, fixed member widths (including each enum's real underlying width), and the wrapped type each wrapper frames, derived from the selected build, plus its agreement with the reviewed contracts |
@@ -690,7 +693,9 @@ python -m scripts.webui.audio.build_audio_semantics --language CN
 ```
 
 Maintained domain code lives under `webui/audio/semantics/`: `native_evidence.py`
-(installed-build gate), `identifiers.py` (Wwise hashes and managed string
+(installed-build gate), `wwise_enums.py` (the one loader for the pinned
+`wwise_sdk_enums` contract; label tables read it instead of copying it, and a
+digest or schema mismatch fails closed), `identifiers.py` (Wwise hashes and managed string
 identities), `managed_literals.py` (managed literal and MonoBehaviour
 audio-field contexts), `responsive_voice.py` and `voice_requests.py` (their
 respective consumer evidence), `external_source.py` (static External Source

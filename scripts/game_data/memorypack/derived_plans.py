@@ -117,6 +117,9 @@ class PlanRegistry:
         self.union_tag_maps = union_tag_maps
         self.roots = roots
         self.named_roots = {}
+        #: The type each planned wrapper wraps, so a decoded union can name the
+        #: subtype its tag selected instead of reporting a bare number.
+        self.wrapped_names: dict[int, str] = {}
 
     #: Plans for types reached by name rather than by a dispatcher tag.
     named_roots: dict[str, int]
@@ -140,6 +143,11 @@ class PlanRegistry:
                 named_roots[name] = definition
         registry = cls(dict(resolver.plans), dict(resolver.union_tag_maps), roots)
         registry.named_roots = named_roots
+        registry.wrapped_names = {
+            definition: wrapper.wrapped_type
+            for definition, wrapper in resolver.wrappers.items()
+            if wrapper.wrapped_type
+        }
         return registry
 
     def __len__(self) -> int:

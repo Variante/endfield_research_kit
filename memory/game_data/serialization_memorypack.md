@@ -1994,6 +1994,33 @@ and the refutation is worth keeping: the zero was a symptom several members
 downstream of the real error, which is what a drifted cursor looks like when it
 happens to land on a plausible-looking byte.
 
+### From framing to values, and an oracle that checks the whole chain
+
+Framing says where a member begins and ends. `derived_values` takes the same
+plan and the same cursor and keeps what each member holds, under the name its
+generated wrapper gives it, so the gameplay config reads as named data rather
+than as proven byte ranges. **All 2,621 SkillData records decode.**
+
+The interpretation is deliberately narrow, because a width is not a meaning. A
+primitive decodes as its declared type. An enum keeps the integer actually
+stored rather than a member name, which would be a second inference on top of
+the first. A blittable struct keeps its bytes: the build's size table proves
+its extent but not its internal field offsets, so rendering a twelve-byte
+struct as three floats would be knowledge of the library rather than evidence
+from it. A profile reports the span the frozen reader consumed rather than a
+reading it does not make.
+
+***The check worth having is one the decoder does not control.*** A record
+carries its own identifier and the exported file is named after it, from the
+exporter's logical path -- two sources that only agree if the framing, the
+member order *and* the string decoding are simultaneously right. A wrong member
+order still decodes a string; it decodes the wrong one. **All 2,621 decoded
+`skillId` values equal their filenames.**
+
+What this does not establish is what any member means. The names come from the
+same metadata the framing does and carry the same tier, a stored value is not a
+runtime value, and nothing here observes a field being overwritten after load.
+
 ### A list and an array do not frame their elements the same way
 
 **`List<T>` writes each element through `T`'s own formatter; `T[]` of an

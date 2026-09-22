@@ -111,6 +111,11 @@ REFUSED_FORMATTER_TYPES = frozenset(FORMATTER_BACKED_TYPES) - MODELLED_FORMATTER
 # The plan names the profile; the reader calls that reader's own method, so no
 # framing is restated here.
 PROFILE_TYPES = {"UnityEngine.AnimationCurve": "curve_profile"}
+# An enum is written as its underlying integer, so its width names the shape.
+ENUM_SCALARS = {1: "scalar8", 2: "scalar16", 4: "scalar32", 8: "scalar64"}
+# A blittable struct's bytes are a struct, not one number; a value reader keeps
+# them rather than pretending to a numeric reading the layout does not give.
+RAW_SCALAR = "raw"
 FIXED, STRING, OBJECT, LIST, UNION, PROFILE, MAP = (
     "fixed", "string", "object", "list", "union", "profile", "map")
 DIRECT, STRUCTURAL_ONLY = "direct", "structuralOnly"
@@ -156,6 +161,10 @@ class MemberPlan:
     ref: int | None = None
     element: "MemberPlan | None" = None
     profile: str | None = None
+    #: For a fixed-width member, the scalar shape its bytes carry. Width alone
+    #: says how far to advance; this says what the bytes mean, which is what a
+    #: value reader needs and a framing reader does not.
+    scalar: str | None = None
     key: "MemberPlan | None" = None
     value: "MemberPlan | None" = None
     # A counted map's pair geometry: where the value sits inside the
@@ -170,6 +179,8 @@ class MemberPlan:
         row: dict[str, Any] = {"name": self.name, "kind": self.kind}
         if self.width is not None:
             row["width"] = self.width
+        if self.scalar is not None:
+            row["scalar"] = self.scalar
         if self.ref is not None:
             row["ref"] = self.ref
         if self.element is not None:
@@ -310,13 +321,16 @@ class Resolver:
         if primitive == "string":
             return MemberPlan(name, STRING)
         if primitive is not None:
-            return MemberPlan(name, FIXED, width=KIND_WIDTHS.get(primitive))
+            return MemberPlan(
+                name, FIXED, width=KIND_WIDTHS.get(primitive), scalar=primitive)
         if declared in self.enum_widths:
-            return MemberPlan(name, FIXED, width=self.enum_widths[declared])
+            return MemberPlan(name, FIXED, width=self.enum_widths[declared],
+                              scalar=ENUM_SCALARS.get(self.enum_widths[declared]))
         if declared in self.value_sizes:
             # A blittable struct is raw memory: no null marker, no member
             # header, and its aligned size rather than its members' sum.
-            return MemberPlan(name, FIXED, width=self.value_sizes[declared])
+            return MemberPlan(name, FIXED, width=self.value_sizes[declared],
+                              scalar=RAW_SCALAR)
         if declared in PROFILE_TYPES:
             return MemberPlan(name, PROFILE, profile=PROFILE_TYPES[declared])
         counted_map = self._plan_counted_map(name, declared)
@@ -362,7 +376,9 @@ class Resolver:
         tier = DIRECT
         for member in wrapper.members:
             if member.width is not None:
-                members.append(MemberPlan(member.name, FIXED, width=member.width))
+                members.append(MemberPlan(
+                    member.name, FIXED, width=member.width,
+                    scalar=member.underlying_kind or member.kind))
                 continue
             built = self._plan_for_type(member.name, member.declared_type)
             if built is None:

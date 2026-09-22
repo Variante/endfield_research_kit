@@ -139,7 +139,7 @@ animation. Neither is spatial, so neither belongs in the world lane.
 
 | File | Level | Lines |
 | --- | --- | --- |
-| [`serialization_memorypack.md`](serialization_memorypack.md) -- MemoryPack framing status, and the IL2CPP chain that resolves a formatter | 2 | 2192 |
+| [`serialization_memorypack.md`](serialization_memorypack.md) -- MemoryPack framing status, and the IL2CPP chain that resolves a formatter | 2 | 2219 |
 | [`native_read_path.md`](native_read_path.md) -- from `ResourceManager` down to `ReadFile`, and why it yields no authenticated receipt | 2 | 164 |
 | [`settled_and_open.md`](settled_and_open.md) -- the settled tables, and what is open, stated accurately | 4 | 171 |
 
