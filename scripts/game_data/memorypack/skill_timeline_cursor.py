@@ -20,7 +20,7 @@ from collections import Counter
 from pathlib import Path
 from typing import Any, Mapping
 
-from scripts.game_data.il2cpp_context_audit import (
+from scripts.game_data.il2cpp.context_audit import (
     GA_SHA,
     MD_SHA,
     _skilldata_continue_following_play_animation_candidate,
@@ -829,7 +829,7 @@ def build_timeline_cursor_report(*, corpus_path: Path, native_path: Path,
             buff_reference.get('sha256', '')).upper():
         raise TimelineCursorError('native context BuffData corpus reference is stale')
     _context_source_hash(native,
-                         ROOT / 'scripts/game_data/il2cpp_context_audit.py',
+                         ROOT / 'scripts/game_data/il2cpp/context_audit.py',
                          label='IL2CPP context audit builder')
 
     skilldata_reader = native.get('selectedSkillDataReaderOrder')

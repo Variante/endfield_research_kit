@@ -7,7 +7,7 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from scripts.game_data.contracts import CONTRACTS_DIR
-from scripts.game_data.jsondata_named_schema import (
+from scripts.game_data.schemas.named_schema import (
     load_schema_contract,
     make_fail,
     parse_utf8_json,

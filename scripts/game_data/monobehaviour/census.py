@@ -338,5 +338,5 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":  # pragma: no cover - documented entry point
     if not __package__:
-        raise SystemExit("run as: python -m scripts.game_data.monobehaviour_census")
+        raise SystemExit("run as: python -m scripts.game_data.monobehaviour.census")
     raise SystemExit(main())

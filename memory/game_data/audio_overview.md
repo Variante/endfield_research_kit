@@ -397,6 +397,24 @@ Stable conclusions:
   compiled into an unpacked 2.66 MB `.text` that ships with the game, with the
   parser's entry region located. **"Blocked on a licence" and "blocked on
   disassembly effort" are different states**, and only the second is true here.
+- **The licence route is now taken: the SDK is installed, at 2023.1.19.8928.** The
+  owner installed `Wwise_2023.1.19.8928` with its SDK component, so the cheap route
+  is open and the "not in this repo" blocker is retired. Two caveats attach to it.
+  **The version is not exact** -- the engine is 2023.1.**17** by its own DLL
+  strings, the SDK is 2023.1.**19** -- so a struct read from these headers is a
+  strong prior for this build, not the byte-for-byte witness the paragraph above
+  describes; serialization is stable across a patch line in practice, and that is a
+  prior, not a proof. And the vendored `E:\Engine\RM42.Beyond\Audio\Wwise` tree
+  means in-house modification is possible regardless of version, so a stock-SDK
+  struct still needs to meet the bytes.
+- **What it settled immediately, and what it cannot.** It named the source-record
+  fields and the codec ids -- see
+  [`audio_hirc_graph.md`](audio_hirc_graph.md) -- and it confirmed the fade-curve
+  table already in `hirc_v150.py` matches `AkCurveInterpolation` on all ten values.
+  It gives nothing for `0x0A`-`0x0D`, because the bank *format* is not a public API
+  and no header carries a layout; those need wwiser, which is a separate anchor.
+  Headers are Audiokinetic's under their EULA: record derived facts, never vendor
+  the headers into this repo.
 
   *A process note, since it cost a batch.* This DLL was already identified in these
   notes, with its SHA-256 and version string, **and with an explicit warning not to

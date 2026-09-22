@@ -24,8 +24,8 @@ from typing import Any
 
 from scripts.common import check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
-from scripts.game_data.il2cpp_context import generic_type_carrier, method_spec_usage_index
-from scripts.game_data.il2cpp_native_image import NativeImage, read_pinned_contract
+from scripts.game_data.il2cpp.context import generic_type_carrier, method_spec_usage_index
+from scripts.game_data.il2cpp.native_image import NativeImage, read_pinned_contract
 
 
 CONTRACT_STATUS = "exact-current-build"

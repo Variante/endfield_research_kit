@@ -18,13 +18,16 @@ axis. A path appears under exactly one owner.
 | Line | Path | Responsibility |
 | --- | --- | --- |
 | **1. Game data** | `game_data/extraction/` | installed client to `export_full/`: the export and changed-file exporters, freshness guard, export benchmark, AnimeStudio object index, and `animestudio/` maintenance commands; never publishes page data |
-| | `game_data/` | exact framing readers (Streaming, Terrain, DynamicStreaming, irradiance, extend data, bundle manifest, IFix, and the JsonData `*_binary.py` readers), `jsondata_corpus.py` and the family `*_corpus.py` gates, `*_native.py` validators and reviewed contracts, `il2cpp_protocol.py`, `il2cpp_context*.py`, `il2cpp_method_resolver.py` (managed name to selected-build body), `monobehaviour_census.py`/`monoscript_catalog.py`/`monobehaviour_script_names.py`/`monobehaviour_field_semantics.py` (the exported MonoBehaviour corpus, its script class names, and what each named class's fields hold), `jsondata_schema_coverage.py` (named-byte coverage per JsonData family), `dummydll_metadata.py` (stdlib ECMA-335 reader over `tools/DummyDll`) and `levelscript_union_layouts.py` (the union layout table derived from it), `media_resolver.py` (game-media naming and asset resolution), `cabmap.py` (the CABMap container index and the `m_FileID` -> dependency-slot rule that resolves a cross-file PPtr), `monobehaviour_table_keys.py` (which MonoBehaviour string fields hold exported Table keys) |
+| | `game_data/` | the exact framing readers, one per payload family (`irradiance_volume.py`, `extend_data_binary.py`, `bundle_manifest.py`, `ifix_patch.py`, `inverted_lz4.py`, `dynamic_streaming.py`, the serialized-gameplay `*_binary.py` readers, and the MemoryPack JsonData readers such as `levelconfig_binary.py`, `navmesh_binary.py`, `gpu_ui_binary.py`); the `*_corpus.py` current-corpus gates (`jsondata_corpus.py`, `gpu_ui_corpus.py`, `dynamic_stream_area_corpus.py`) and `jsondata_schema_coverage.py`; the `*_native.py` loaders and validators for the reviewed native facts the Story, Mission Pipeline, Map and recovery tools consume; `native_union_atlas.py`, which re-validates every union contract; `dummydll_metadata.py`, `levelscript_union_layouts.py` and `dependency_snapshot.py`; `media_resolver.py` (game-media naming) and `cabmap.py` (the CABMap container index and the `m_FileID` -> dependency-slot rule) |
 | | `game_data/codecs/` | per-record LevelScript and LevelData codecs behind the `*_binary.py` readers, including `send_lua_event.py` for the one nested value the derived declaration cannot describe |
-| | `game_data/` JsonData readers | one fail-closed reader per current JsonData family: MemoryPack payloads (`aether_energy_lock_binary.py`, `atmospheric_npc_binary.py`, `gameplay_compact_binary.py`, `levelconfig_binary.py`, `levelscript_template_binary.py`, `matrix_shockwave_binary.py`, `navmesh_binary.py`, `teleport_validation_binary.py`, `gpu_ui_binary.py` with its `gpu_ui_corpus.py` gate and `gpu_ui_damage_text_native.py` validator) and byte-pinned named JSON schemas (`gameplay_config_json.py`, `gameplay_config_polymorphic.py`, `jsondata_text_schema.py`, `mission_runtime_main.py`, `mission_runtime_meta.py`, `npc_catalog_json.py`, `npc_prefab_info.py`, `map_config_json.py`, `ui_level_map_load_config.py`, `level_mount_point_json.py`, `gold_coin_config_json.py`); the schema readers share one validator, `jsondata_named_schema.py`, and keep only their contract pin, path predicate, relations and result shape |
-| | `game_data/il2cpp_native_image.py`, `game_data/native_union_atlas.py` | the one opened installed build every contract validator checks against (PE image, metadata, code registration, module table, and the shared method-identity, dispatcher-route, code-window and setter-order checks), and the atlas that re-validates every union contract against it |
-| | `game_data/contracts/` | the reviewed, byte-pinned contract JSON that the readers above load: the per-tag BuffData formatter windows (`buff_*`, `finder_*`, `validator_*`, `postprocessor_*`), the SkillData timeline and current-build BuffData contracts, the streaming field layouts, and the named JSON schema contracts; `CONTRACTS_DIR` from the package is the only path anchor, and each owning reader pins its file's digest |
-| | `game_data/*_native.py` | the loaders and validators for the reviewed native facts the Story, Mission Pipeline, Map and recovery tools consume (their JSON is under `contracts/`); `buff_frontiers.py` is one loader over the five BuffData residual-route contracts, and `levelscript_param_list.py`, `levelscript_task_condition.py`, `npc_animation_template.py` and `animation_material_publication.py` authenticate the LevelScript, NPC animation and animation/material consumer routes |
-| | `game_data/memorypack/` | MemoryPack codecs and their corpus gates, including the current-build BuffData additions (`buff_icon_config.py`, `buff_residual_actions.py`, `buff_named_schema.py`) and the SkillData first-timeline lane (`skill_timeline_*.py`), which share `core.LabelledReader` and gate through `il2cpp_native_image` |
+| | `game_data/contracts/` | the reviewed, byte-pinned contract JSON that every reader, loader and validator loads; `CONTRACTS_DIR` from the package is the only path anchor, and each owner pins its file's digest |
+| | `game_data/streaming/` | the block-15 Streaming lane: `framing.py`, `pairs.py`, the marker parsers, their `*_native.py` validators and `*_corpus.py` gates |
+| | `game_data/terrain/` | the TRET container reader (`tret.py`), the height grids map recovery reads (`height.py`), the native consumer validator and the corpus gate |
+| | `game_data/il2cpp/` | `protocol.py` (metadata and PE primitives), `native_image.py` (the one opened installed build every contract validator checks against, with the shared method-identity, dispatcher-route, code-window and setter-order checks), `context.py` and `context_audit.py` (generic-instantiation pointer tables and their audit), `method_resolver.py` (managed name to selected-build body) |
+| | `game_data/monobehaviour/` | the exported MonoBehaviour corpus: `census.py`, `monoscript_catalog.py`, `script_names.py`, `field_semantics.py` (what each named class's fields hold) and `table_keys.py` (which string fields carry exported Table keys) |
+| | `game_data/schemas/` | the byte-pinned named JSON schema readers for the textual JsonData families (`gameplay_config.py`, `gameplay_config_polymorphic.py`, `text_schema.py`, `mission_runtime_main.py`, `mission_runtime_meta.py`, `npc_catalog.py`, `npc_prefab_info.py`, `map_config.py`, `ui_level_map_load_config.py`, `level_mount_point.py`, `gold_coin_config.py`), all validated by `named_schema.py` and keeping only their contract pin, path predicate, relations and result shape |
+| | `game_data/memorypack/wrapper_members.py` | the selected build's generated wrapper member order and member types for every `*ForMemoryPack` type, derived in one metadata pass; the bulk source the per-tag contracts record one wrapper at a time |
+| | `game_data/memorypack/` | MemoryPack codecs and their corpus gates, including the current-build BuffData additions (`buff_icon_config.py`, `buff_residual_actions.py`, `buff_named_schema.py`) and the SkillData first-timeline lane (`skill_timeline_*.py`), which share `core.LabelledReader` and gate through `il2cpp.native_image` |
 | **2. WebUI** | `webui/views.py`, `webui/package.py` | page-build orchestration, and packaging |
 | | `webui/story/` | Story and Text page data plus shared Story evidence |
 | | `webui/story_recovery/` | Story audits, OCR ordering, runtime traces, candidate generation |
@@ -76,7 +79,7 @@ The wrappers load `endfield_paths.bat`, then apply explicit path flags. Run any
 wrapper with `--help` for its supported options.
 
 The maintained Terrain structure gate is
-`python -m scripts.game_data.terrain_corpus`; it consumes a completed VFS audit
+`python -m scripts.game_data.terrain.corpus`; it consumes a completed VFS audit
 summary/ledger plus that audit's exact `inputSetSha256`, revalidates the pinned
 current native consumer contract, and writes
 `reports/animestudio/terrain_tret_latest.{json,md}`. It is a focused recovery
@@ -302,6 +305,8 @@ python -m scripts.game_data.memorypack.skill_timeline_cursor --stream-jsonl CURR
 python -m scripts.game_data.memorypack.npc_montage_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.memorypack.buff_1b_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.memorypack.lipsync_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.game_data.memorypack.wrapper_members
+python -m scripts.game_data.memorypack.wrapper_members --wrapper Beyond_Gameplay_Core_CreateBuffAction_DataForMemoryPack
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
 %ASCLI% audit-refs --index OBJECT_INDEX.jsonl
@@ -330,10 +335,11 @@ its result under `reports/animestudio/`:
 | `game_data.memorypack.buff_corpus` | `buffdata_current_latest.{json,md}` |
 | `game_data.memorypack.buff_1b_corpus` | `buff_1b_current_latest.{json,md}` |
 | `game_data.memorypack.lipsync_corpus` | `lipsync_current_latest.{json,md}` |
-| `game_data.terrain_corpus` | `terrain_tret_latest.{json,md}` |
+| `game_data.memorypack.wrapper_members` | `reports/game_data/memorypack_wrapper_members.json`; every generated `*ForMemoryPack` wrapper's serialized member order and member types, derived from the selected build, plus its agreement with the reviewed contracts |
+| `game_data.terrain.corpus` | `terrain_tret_latest.{json,md}` |
 | `game_data.dynamic_stream_area_corpus` | `dynamic_stream_area_current_latest.{json,md}` |
-| `game_data.il2cpp_context_audit` | `il2cpp_context_current_latest.*` (JSON on stdout) |
-| `game_data.native_union_atlas` | `jsondata_union_atlas_current.json`; one-context authenticated index of reviewed JsonData union contracts |
+| `game_data.il2cpp.context_audit` | `il2cpp_context_current_latest.*` (JSON on stdout) |
+| `game_data.native_union_atlas` | `jsondata_union_atlas_current.json`; one-context authenticated index of reviewed JsonData union contracts, with each row's generated member order named from `memorypack.wrapper_members` |
 
 Partial `--max-files` probes are not complete-corpus evidence and their output
 belongs in `tmp/` or `scratch/`. **What each gate proves, and what it explicitly
@@ -932,13 +938,13 @@ its class names: `m_Script` points into a MonoScript CAB outside the export
 scope. Three commands turn that anonymous corpus into a named catalog.
 
 ```bat
-python -m scripts.game_data.monobehaviour_census ^
+python -m scripts.game_data.monobehaviour.census ^
   --report reports\assets\monobehaviour_script_census.json
 python -m scripts.webui.assets.cabmap
-python -m scripts.game_data.monoscript_catalog ^
+python -m scripts.game_data.monobehaviour.monoscript_catalog ^
   --dump-root tmp\game_data\monoscript\MonoScript ^
   --report reports\assets\monoscript_catalog.json
-python -m scripts.game_data.monobehaviour_script_names ^
+python -m scripts.game_data.monobehaviour.script_names ^
   reports\assets\monobehaviour_script_census.json ^
   --monoscript-dump tmp\game_data\monoscript\MonoScript ^
   --report reports\assets\monobehaviour_script_names.json
@@ -972,7 +978,7 @@ fourth command measures that, per field path rather than per class, over the
 whole corpus:
 
 ```bat
-python -m scripts.game_data.monobehaviour_field_semantics ^
+python -m scripts.game_data.monobehaviour.field_semantics ^
   --names-report reports\assets\monobehaviour_script_names.json ^
   --progress 100000 ^
   --report reports\assets\monobehaviour_field_semantics.json
@@ -1002,7 +1008,7 @@ It reads the field-semantics report rather than the corpus, so it is seconds
 rather than a sweep:
 
 ```bat
-python -m scripts.game_data.monobehaviour_table_keys ^
+python -m scripts.game_data.monobehaviour.table_keys ^
   --report reports\assets\monobehaviour_table_keys.json
 ```
 
@@ -1021,15 +1027,15 @@ unmatched values are not reported as unresolved ids.
 
 ### Migrating a contract that pins a superseded build
 
-`scripts/game_data/il2cpp_method_resolver.py` re-resolves recorded managed
+`scripts/game_data/il2cpp/method_resolver.py` re-resolves recorded managed
 method identities against the selected build. It pins nothing: it derives
 `Il2CppCodeRegistration` from the selected `GameAssembly.dll` against the
 complete image-name set of the selected `global-metadata.dat`, so it runs
 unchanged after a client update.
 
 ```bat
-python -m scripts.game_data.il2cpp_method_resolver --type "Ns.Type" --method "Method"
-python -m scripts.game_data.il2cpp_method_resolver ^
+python -m scripts.game_data.il2cpp.method_resolver --type "Ns.Type" --method "Method"
+python -m scripts.game_data.il2cpp.method_resolver ^
   --from-contract path\to\contract.json ^
   --report reports\assets\character_recovery\<name>.json
 ```

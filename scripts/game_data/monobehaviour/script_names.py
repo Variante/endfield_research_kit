@@ -44,8 +44,8 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
-from scripts.game_data.il2cpp_method_resolver import ResolverError, open_resolver
-from scripts.game_data.monoscript_catalog import CatalogError, load_catalog
+from scripts.game_data.il2cpp.method_resolver import ResolverError, open_resolver
+from scripts.game_data.monobehaviour.monoscript_catalog import CatalogError, load_catalog
 
 
 SCHEMA = "endfield.monobehaviour-script-names.v1"
@@ -436,5 +436,5 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":  # pragma: no cover - documented entry point
     if not __package__:
-        raise SystemExit("run as: python -m scripts.game_data.monobehaviour_script_names")
+        raise SystemExit("run as: python -m scripts.game_data.monobehaviour.script_names")
     raise SystemExit(main())

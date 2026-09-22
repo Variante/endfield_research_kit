@@ -10,7 +10,7 @@ from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
-from scripts.game_data.il2cpp_protocol import (
+from scripts.game_data.il2cpp.protocol import (
     enum_members,
     field_defaults,
     load_metadata_helper,

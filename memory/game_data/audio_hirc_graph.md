@@ -1138,6 +1138,21 @@ preceding content leaves it.
   source id (`u32`), and five further bytes. All 4,447 records across 4,325 bodies
   carry a plug-in id type `0x02` also uses -- only `0x00040001` (3,506) and
   `0x00140001` (941), both from type `0x02`'s seven-value set.
+- **Every field of that record is now named, from outside the bytes.** The leading
+  byte is `uFlags`, the count is `numSources`, and the record is Wwise's
+  `AkBankSourceData`: the five trailing bytes are `uInMemoryMediaSize` (`u32`) plus
+  `uSourceBits` (`u8`). Two independent sources agree with the byte-derived framing
+  rather than merely permitting it -- wwiser's v150 definitions give the field
+  sequence, and the Wwise 2023.1.19 SDK decodes the plug-in ids. Verified against
+  13 MusicTrack bodies in `init_banks.pck`, every one ending its source run at
+  offset 19, which is exactly the 14-byte stride this note derived.
+- **The plug-in ids are codec ids, and they name the audio the banks ship.** The
+  packing is `(codecID << 16) | (companyID << 4) | pluginType`, so `0x00040001` is
+  `AKCODECID_VORBIS` and `0x00140001` is `AKCODECID_AKOPUS_WEM` -- Vorbis and
+  Opus-in-WEM. `companyID 0` is Audiokinetic throughout and `pluginType 1` is
+  `AkPluginTypeCodec`, so every source in this corpus is a **built-in codec**: no
+  third-party or premium plug-in is referenced anywhere, which is why the base SDK
+  is sufficient and no plug-in bundle is needed.
 - Why that is evidence for the 14-byte stride rather than a coincidence: plug-in
   ids are sparse 32-bit values, not small integers, so a wrong stride would put
   arbitrary bytes in that field and they would leave the set immediately. The

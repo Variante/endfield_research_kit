@@ -42,7 +42,7 @@ from scripts.game_data.gameplay_compact_binary import (
     frame_subgame_table,
     frame_world_entity_registry,
 )
-from scripts.game_data.gold_coin_config_json import (
+from scripts.game_data.schemas.gold_coin_config import (
     GoldCoinConfigDecodeError,
     decode_gold_coin_config,
 )
@@ -50,7 +50,7 @@ from scripts.game_data.interactive_binary import (
     InteractiveBinaryDecodeError,
     decode_interactive_table,
 )
-from scripts.game_data.level_mount_point_json import (
+from scripts.game_data.schemas.level_mount_point import (
     LevelMountPointJsonDecodeError,
     decode_level_mount_points,
 )

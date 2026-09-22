@@ -413,7 +413,7 @@ def sweep(
 ) -> tuple[dict[tuple[int | None, str], ClassStats], dict[str, Any]]:
     """Walk every exported MonoBehaviour and collect per-field evidence."""
 
-    from scripts.game_data.monobehaviour_census import layout_signature
+    from scripts.game_data.monobehaviour.census import layout_signature
 
     root = Path(export_root) / MONOBEHAVIOUR_SUBPATH
     classes: dict[tuple[int | None, str], ClassStats] = {}
@@ -842,5 +842,5 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":  # pragma: no cover - documented entry point
     if not __package__:
-        raise SystemExit("run as: python -m scripts.game_data.monobehaviour_field_semantics")
+        raise SystemExit("run as: python -m scripts.game_data.monobehaviour.field_semantics")
     raise SystemExit(main())

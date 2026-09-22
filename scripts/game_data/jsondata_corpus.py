@@ -76,27 +76,27 @@ from scripts.game_data.gameplay_compact_binary import (
     frame_subgame_table,
     frame_world_entity_registry,
 )
-from scripts.game_data.gold_coin_config_json import (
+from scripts.game_data.schemas.gold_coin_config import (
     GoldCoinConfigDecodeError,
     decode_gold_coin_config,
     is_gold_coin_config_path,
 )
-from scripts.game_data.gameplay_config_json import (
+from scripts.game_data.schemas.gameplay_config import (
     GameplayConfigJsonDecodeError,
     decode_compact_gameplay_config_json,
     is_compact_gameplay_config_json_path,
 )
-from scripts.game_data.gameplay_config_polymorphic import (
+from scripts.game_data.schemas.gameplay_config_polymorphic import (
     GameplayConfigPolymorphicDecodeError,
     decode_polymorphic_gameplay_config,
     is_polymorphic_gameplay_config_path,
 )
-from scripts.game_data.jsondata_text_schema import (
+from scripts.game_data.schemas.text_schema import (
     JsonDataTextSchemaDecodeError,
     decode_named_jsondata_text,
     is_named_jsondata_text_path,
 )
-from scripts.game_data.level_mount_point_json import (
+from scripts.game_data.schemas.level_mount_point import (
     LevelMountPointJsonDecodeError,
     decode_level_mount_points,
     is_level_mount_point_path,
@@ -105,17 +105,17 @@ from scripts.game_data.matrix_shockwave_binary import (
     MatrixShockWaveDecodeError,
     decode_matrix_shockwave_table,
 )
-from scripts.game_data.map_config_json import (
+from scripts.game_data.schemas.map_config import (
     MapConfigDecodeError,
     decode_map_config,
     is_map_config_path,
 )
-from scripts.game_data.mission_runtime_meta import (
+from scripts.game_data.schemas.mission_runtime_meta import (
     MissionRuntimeMetaDecodeError,
     decode_mission_runtime_meta,
     is_mission_runtime_meta_path,
 )
-from scripts.game_data.mission_runtime_main import (
+from scripts.game_data.schemas.mission_runtime_main import (
     MissionRuntimeMainDecodeError,
     decode_mission_runtime_main,
     is_mission_runtime_main_path,
@@ -146,17 +146,17 @@ from scripts.game_data.navmesh_binary import (
     decode_luna_area,
     decode_navmesh_state_container,
 )
-from scripts.game_data.npc_prefab_info import (
+from scripts.game_data.schemas.npc_prefab_info import (
     NpcPrefabInfoDecodeError,
     decode_npc_prefab_info,
     is_npc_prefab_info_path,
 )
-from scripts.game_data.npc_catalog_json import (
+from scripts.game_data.schemas.npc_catalog import (
     NpcCatalogDecodeError,
     decode_npc_catalog,
     is_npc_catalog_path,
 )
-from scripts.game_data.ui_level_map_load_config import (
+from scripts.game_data.schemas.ui_level_map_load_config import (
     UiLevelMapLoadConfigDecodeError,
     decode_ui_level_map_load_config,
     is_ui_level_map_load_config_path,
@@ -1352,7 +1352,7 @@ def build_report(
             )
             classification = {
                 "status": "schema_decoded" if ok else "unsupported",
-                "reader": "scripts.game_data.npc_prefab_info" if ok else None,
+                "reader": "scripts.game_data.schemas.npc_prefab_info" if ok else None,
                 "detail": detail,
                 "diagnostic": diagnostic,
             }
@@ -1364,7 +1364,7 @@ def build_report(
             )
             classification = {
                 "status": "schema_decoded" if ok else "unsupported",
-                "reader": "scripts.game_data.npc_catalog_json" if ok else None,
+                "reader": "scripts.game_data.schemas.npc_catalog" if ok else None,
                 "detail": detail,
                 "diagnostic": diagnostic,
             }
@@ -1376,7 +1376,7 @@ def build_report(
             )
             classification = {
                 "status": "schema_decoded" if ok else "unsupported",
-                "reader": "scripts.game_data.mission_runtime_main" if ok else None,
+                "reader": "scripts.game_data.schemas.mission_runtime_main" if ok else None,
                 "detail": detail,
                 "diagnostic": diagnostic,
             }
@@ -1388,7 +1388,7 @@ def build_report(
             )
             classification = {
                 "status": "schema_decoded" if ok else "unsupported",
-                "reader": "scripts.game_data.mission_runtime_meta" if ok else None,
+                "reader": "scripts.game_data.schemas.mission_runtime_meta" if ok else None,
                 "detail": detail,
                 "diagnostic": diagnostic,
             }
@@ -1400,7 +1400,7 @@ def build_report(
             )
             classification = {
                 "status": "schema_decoded" if ok else "unsupported",
-                "reader": "scripts.game_data.map_config_json" if ok else None,
+                "reader": "scripts.game_data.schemas.map_config" if ok else None,
                 "detail": detail,
                 "diagnostic": diagnostic,
             }
@@ -1412,7 +1412,7 @@ def build_report(
             )
             classification = {
                 "status": "schema_decoded" if ok else "unsupported",
-                "reader": "scripts.game_data.ui_level_map_load_config" if ok else None,
+                "reader": "scripts.game_data.schemas.ui_level_map_load_config" if ok else None,
                 "detail": detail,
                 "diagnostic": diagnostic,
             }
@@ -1424,7 +1424,7 @@ def build_report(
             )
             classification = {
                 "status": "schema_decoded" if ok else "unsupported",
-                "reader": "scripts.game_data.gold_coin_config_json" if ok else None,
+                "reader": "scripts.game_data.schemas.gold_coin_config" if ok else None,
                 "detail": detail,
                 "diagnostic": diagnostic,
             }
@@ -1438,7 +1438,7 @@ def build_report(
             )
             classification = {
                 "status": "schema_decoded" if ok else "unsupported",
-                "reader": "scripts.game_data.jsondata_text_schema" if ok else None,
+                "reader": "scripts.game_data.schemas.text_schema" if ok else None,
                 "detail": detail,
                 "diagnostic": diagnostic,
             }
@@ -1452,7 +1452,7 @@ def build_report(
             )
             classification = {
                 "status": "schema_decoded" if ok else "unsupported",
-                "reader": "scripts.game_data.level_mount_point_json" if ok else None,
+                "reader": "scripts.game_data.schemas.level_mount_point" if ok else None,
                 "detail": detail,
                 "diagnostic": diagnostic,
             }
@@ -1466,7 +1466,7 @@ def build_report(
             )
             classification = {
                 "status": "schema_decoded" if ok else "unsupported",
-                "reader": "scripts.game_data.gameplay_config_json" if ok else None,
+                "reader": "scripts.game_data.schemas.gameplay_config" if ok else None,
                 "detail": detail,
                 "diagnostic": diagnostic,
             }
@@ -1480,7 +1480,7 @@ def build_report(
             )
             classification = {
                 "status": "schema_decoded" if ok else "unsupported",
-                "reader": "scripts.game_data.gameplay_config_polymorphic" if ok else None,
+                "reader": "scripts.game_data.schemas.gameplay_config_polymorphic" if ok else None,
                 "detail": detail,
                 "diagnostic": diagnostic,
             }

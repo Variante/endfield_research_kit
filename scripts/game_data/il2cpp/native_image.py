@@ -24,14 +24,14 @@ from functools import cached_property, lru_cache
 from pathlib import Path
 from typing import Any, Sequence
 
-from scripts.game_data.il2cpp_context import (
+from scripts.game_data.il2cpp.context import (
     GenericInstantiationTable,
     match_image_modules,
     method_token_pointer,
     type_image_owners,
     unresolved_usage_index,
 )
-from scripts.game_data.il2cpp_protocol import load_metadata_helper, load_native_mapper
+from scripts.game_data.il2cpp.protocol import load_metadata_helper, load_native_mapper
 from scripts.repo_paths import REPO_ROOT
 
 

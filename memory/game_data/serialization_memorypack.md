@@ -1563,7 +1563,7 @@ review.
 
 Generic-instantiation registration is a pointer array, not inline records;
 preserve the record's padding separately from its u32 argument count. The
-maintained `scripts.game_data.il2cpp_context_audit` validates current native
+maintained `scripts.game_data.il2cpp.context_audit` validates current native
 inputs, every registered instance, and reciprocal open-parameter ownership.
 Its inventory is `reports/animestudio/il2cpp_context_current_latest.json`.
 The selected `GetFormatter<T>` parameter belongs to `ReadValue<T>`; a prior
@@ -1620,6 +1620,41 @@ context; actual cache contents and invocation still need independent evidence.
 Nested class slots independently link MethodSpecs for the non-null adapter,
 formatter lookup and instance creation to reciprocal parameters of that same
 adapter type. Keep these static links separate from serialized read order.
+
+## Setter order is the wire order, and it is derivable in bulk
+
+A generated `*ForMemoryPack` wrapper carries one `set___<member>__` property
+setter per serialized member, and the selected build's readers consume those
+members in setter order, every inherited wrapper's members first. The runtime
+type's own field declaration order is a *different* order and does not describe
+the wire. The two disagree often enough to matter: where a reviewed contract
+records both its `generatedOwnFields` declaration list and a natively proved
+positional read order, the setter order reproduces the proved order and the
+declaration order contradicts it, with no counterexample in either direction.
+`OverrideJumpAction` is the compact case -- declared `overrideJumpType,
+buffInput`, read `buff-input, enum32`. Never order a new reader by
+`fields_for`; order it by the wrapper's setters.
+
+That rule needs only metadata plus the runtime type table, so it does not have
+to be recovered one wrapper at a time from a disassembled `Deserialize` body.
+`scripts.game_data.memorypack.wrapper_members` derives the member order and
+each member's declared type for every wrapper in the selected build in one
+pass, and re-derives every reviewed contract to report agreement. Reviewed
+member counts, reviewed setter lists, and the LevelScript layouts' named read
+orders all currently agree with the derivation with zero disagreements; the
+counts belong to `reports/game_data/memorypack_wrapper_members.json` and the
+atlas's `generatedMemberEnrichment` block. Contracts differ on whether they
+keep a member's backing-field underscore, which is a spelling difference and
+not an ordering one.
+
+The derivation's tier is `direct`, never `exact`: it names what a reader walks
+and proves nothing about a cursor, a serialized width, a nested extent, or an
+enum's values. Use it to name the members a reviewed reader already consumes,
+and to propose the shape of an unreviewed wrapper that a native route must
+still authenticate. `native_union_atlas` consumes it through the image it
+already opened, joins a row only by explicit wrapper type definition or a
+unique assembly-qualified wrapper name, and reports a member-count conflict
+rather than overwriting the reviewed row.
 
 ## The generated wrapper reader, and `ListFormatter`
 

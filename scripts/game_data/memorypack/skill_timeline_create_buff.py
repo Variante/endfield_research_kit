@@ -13,7 +13,7 @@ from functools import lru_cache
 from typing import Any, Callable
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-from scripts.game_data.il2cpp_native_image import check_dependency_contracts, open_native_image, read_pinned_contract
+from scripts.game_data.il2cpp.native_image import check_dependency_contracts, open_native_image, read_pinned_contract
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 from scripts.game_data.memorypack.buff_actions import Reader
 

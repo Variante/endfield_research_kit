@@ -15,7 +15,7 @@ import sys
 from pathlib import Path
 
 from scripts.common import check_installed_native_inputs
-from scripts.game_data.il2cpp_context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range, unresolved_usage_index, rip_qword_load_target
+from scripts.game_data.il2cpp.context import ContextError, GenericInstantiationTable, method_parameter_owner, type_image_owners, match_image_modules, method_spec_usage_index, generic_type_carrier, select_rgctx_range, unresolved_usage_index, rip_qword_load_target
 from scripts.game_data.memorypack.skill_corpus import verify_current_report_inputs
 from scripts.game_data.memorypack.corpus_gate import verify_current_report_inputs as verify_family_report_inputs
 from scripts.game_data.memorypack.skill_terminal import TerminalError as SkillTerminalError
@@ -24,13 +24,13 @@ from scripts.game_data.memorypack.schemas import MEMORYPACK_FIELD_SCHEMAS
 from scripts.game_data.memorypack.buff import read_skill_gameplay_tag_list_field
 from scripts.game_data.memorypack.buff import read_skill_toggle_buff_data
 from scripts.game_data.memorypack.buff import read_skill_ui_range_hint_data
-from scripts.game_data.il2cpp_context import class_sharing_branch
-from scripts.game_data.il2cpp_context import named_top_level_type
-from scripts.game_data.il2cpp_context import object_type_comparison_key
-from scripts.game_data.il2cpp_context import method_pointer_indices, generic_method_candidates
-from scripts.game_data.il2cpp_context import type_parameter_owner, rgctx_range_entries
-from scripts.game_data.il2cpp_context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
-from scripts.game_data.il2cpp_context import literal_record
+from scripts.game_data.il2cpp.context import class_sharing_branch
+from scripts.game_data.il2cpp.context import named_top_level_type
+from scripts.game_data.il2cpp.context import object_type_comparison_key
+from scripts.game_data.il2cpp.context import method_pointer_indices, generic_method_candidates
+from scripts.game_data.il2cpp.context import type_parameter_owner, rgctx_range_entries
+from scripts.game_data.il2cpp.context import method_spec_record, usage_method_spec, relative_branch_target, method_token_pointer
+from scripts.game_data.il2cpp.context import literal_record
 
 from scripts.repo_paths import REPO_ROOT
 from scripts.game_data.contracts import CONTRACTS_DIR
@@ -8590,10 +8590,10 @@ def audit():
         EXPORT_LAYOUT.game_file(logical_path)
         for logical_path in actiongroup_branch_sample_identities
     ]
-    skill_terminal_path = Path(__file__).with_name('memorypack') / 'skill_terminal.py'
-    skill_buff_path = Path(__file__).with_name('memorypack') / 'buff.py'
-    skill_core_path = Path(__file__).with_name('memorypack') / 'core.py'
-    buff_actions_path = Path(__file__).with_name('memorypack') / 'buff_actions.py'
+    skill_terminal_path = ROOT / 'scripts/game_data/memorypack' / 'skill_terminal.py'
+    skill_buff_path = ROOT / 'scripts/game_data/memorypack' / 'buff.py'
+    skill_core_path = ROOT / 'scripts/game_data/memorypack' / 'core.py'
+    buff_actions_path = ROOT / 'scripts/game_data/memorypack' / 'buff_actions.py'
     buff_path=ROOT/'reports/animestudio/buffdata_current_latest.json'
     buff_sha=sha(buff_path);buff_corpus=json.loads(buff_path.read_text(encoding='utf-8'))
     verify_family_report_inputs(buff_corpus,expected_format='animestudio-buffdata-current-vfs-corpus',label='BuffData')
@@ -8601,7 +8601,7 @@ def audit():
     require(buff_corpus['status'],'complete',buff_path)
     mapper_path = ROOT / 'tools/endfield-il2cpp/map_body_targets_to_gameassembly.py'
     catalog_path = ROOT / 'tools/endfield-il2cpp/catalog_option_flow_metadata.py'
-    sources = [Path(__file__), Path(__file__).with_name('il2cpp_context.py'),
+    sources = [Path(__file__), Path(__file__).with_name('context.py'),
                mapper_path, catalog_path, ROOT / 'scripts/common.py',
                skill_terminal_path, skill_buff_path, skill_core_path, buff_actions_path,
                skill_sample_path, *terminal_branch_sample_paths,

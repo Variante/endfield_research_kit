@@ -64,12 +64,12 @@ Two facts make that tractable, and both are measured rather than assumed:
 - **A script PPtr is a class key, and the corpus collapses onto it.** Objects
   sharing a `scriptPathId` share one serialized layout, so the file count
   reduces to a few hundred distinct classes.
-  `scripts/game_data/monobehaviour_census.py` measures the collapse and records
+  `scripts/game_data/monobehaviour/census.py` measures the collapse and records
   each class's layout, object count and source containers.
 - **One MonoScript container names all of them**, and it is
   `CAB-5f527d7b7706baccdad9f794cf46420c`, holding the ~1,000 MonoScripts that
   carry `m_ClassName`, `m_Namespace` and `m_AssemblyName` outright.
-  `scripts/game_data/monoscript_catalog.py` parses the dump into the
+  `scripts/game_data/monobehaviour/monoscript_catalog.py` parses the dump into the
   `scriptPathId -> class` table. Two independent routes name that CAB rather
   than one: every resolved `m_Script` in the corpus points at it across both
   VFS roots, and it is separately the most depended-on container in both
@@ -83,7 +83,7 @@ A second, independent route exists and is worth keeping as a check rather than
 a fallback. Unity serializes a subset of a class's IL2CPP field declaration
 chain and never reorders it, so a layout must be an ordered subsequence of that
 chain, and the class that declares the layout's last field is the most-derived
-one. `scripts/game_data/monobehaviour_script_names.py` runs both and reports
+one. `scripts/game_data/monobehaviour/script_names.py` runs both and reports
 their agreement. Two limits are structural, not defects: a class that
 serializes nothing is invisible to the layout route, and a subclass adding no
 serialized field writes a byte-identical layout, so layout evidence names the
@@ -96,7 +96,7 @@ still the binding-evidence order below.
 
 ## What a named class owns is measured per field, not inferred from its name
 
-`scripts/game_data/monobehaviour_field_semantics.py` sweeps the whole corpus a
+`scripts/game_data/monobehaviour/field_semantics.py` sweeps the whole corpus a
 second time and records, for each of the 44,844 flattened field paths across
 the 1,045 classes, the declared TypeTree type beside what the 1.35M objects
 actually hold there. Declaration and observation are kept apart because they
@@ -166,7 +166,7 @@ reached at runtime.
 
 ## Which string fields are table keys, and why numeric ones cannot be
 
-`scripts/game_data/monobehaviour_table_keys.py` joins the recorded field values
+`scripts/game_data/monobehaviour/table_keys.py` joins the recorded field values
 against the 724 exported tables' key sets. The join's whole shape comes from
 one measurement: of 269,570 distinct keys, the 178,582 numeric ones are unique
 to a single table **0.5%** of the time -- `"1"` is a key in 94 tables -- while

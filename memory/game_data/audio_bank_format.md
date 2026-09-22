@@ -7,6 +7,31 @@ Part of [`../game_data_recovery.md`](../game_data_recovery.md). See
 that are not the object graph. `STMG`, `ENVS` and `INIT` are framed byte-exact, and
 `ENVS` reuses the same point record the curve type does.
 
+## The bank version is 150, measured, and two external anchors are available
+
+- `BKHD`'s first `u32` is the bank version and it reads **150** in every bank of
+  `init_banks.pck` (40 of 40). The typed reader's `v150` name was previously carried
+  as an assertion; it is now a measurement. This matters because both external
+  anchors gate on it: wwiser's definitions branch at `<= 150` and `<= 152`, and one
+  version either side changes which fields exist.
+- **The Wwise SDK is installed locally** at `Wwise_2023.1.19.8928` with its SDK
+  component. Note the delta: the engine is 2023.1.**17** by its own DLL strings
+  (see [`audio_overview.md`](audio_overview.md)), so these headers are a strong
+  prior for this build rather than its exact witness. It
+  gives enum and codec tables and built-in plug-in parameter layouts. It does **not**
+  contain the bank layout -- the format is not a public API -- so it can name a field
+  and never frame one. Headers are Audiokinetic's under their EULA: record derived
+  facts, never vendor the headers.
+- **wwiser is checked out** under `tmp/audio/aux_sends/wwiser`. Its per-version
+  definitions are the only anchor for the music hierarchy, because the engine skips
+  those types and can supply no evidence. `tmp/` is disposable, so a conclusion drawn
+  from it must be re-derived against bytes before it is recorded here -- cite the
+  bytes, not the path.
+- A bounded probe that reproduces all of the above:
+  `AnimeStudio.CLI dump --streaming-assets <SA> --output tmp/audio/<task> --block-type initial-audio`,
+  then read `BKHD` and walk `parse_hirc_objects` over each bank payload. InitAudio is
+  two files and about 11 MB, so this costs nothing and needs no full audio export.
+
 ## The bank has four sections nothing parsed, and STMG is one of them
 
 Censusing the section tags was overdue. Across 20,873 bank payloads there are exactly

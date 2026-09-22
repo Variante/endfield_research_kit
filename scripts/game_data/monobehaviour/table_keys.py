@@ -312,5 +312,5 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":  # pragma: no cover - documented entry point
     if not __package__:
-        raise SystemExit("run as: python -m scripts.game_data.monobehaviour_table_keys")
+        raise SystemExit("run as: python -m scripts.game_data.monobehaviour.table_keys")
     raise SystemExit(main())

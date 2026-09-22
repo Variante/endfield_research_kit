@@ -21,9 +21,10 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from scripts.common import check_installed_native_inputs
-from scripts.game_data.il2cpp_native_image import NativeImage
+from scripts.game_data.il2cpp.native_image import NativeImage
+from scripts.game_data.memorypack.wrapper_members import derive_from_image
 from scripts.repo_paths import REPO_ROOT as REPO
-from scripts.game_data.il2cpp_context import (
+from scripts.game_data.il2cpp.context import (
     GenericInstantiationTable,
     match_image_modules,
     method_spec_record,
@@ -550,6 +551,89 @@ def _atlas_rows(contract_path: Path, value: dict[str, Any], digest: str) -> list
     return rows
 
 
+def _enrich_generated_members(image: NativeImage, rows: list[dict[str, Any]]) -> dict[str, Any]:
+    """Name each row's serialized members from the selected build's wrappers.
+
+    A reviewed row records whichever order its own recovery proved, and several
+    record a positional read order with no member names at all.  The generated
+    wrapper for the same type definition names every member, so this fills in
+    ``generatedMemberOrder`` beside the reviewed facts without changing them.
+
+    Rows are matched by explicit ``wrapperTypeDefinition``, or by an
+    assembly-qualified wrapper name that names exactly one type in the build.
+    A bare name such as ``HitBoxFinder`` is left unmatched rather than joined on
+    a suffix, and a derived count that contradicts the reviewed one is reported
+    instead of overwriting it.  Where a row already names its members, the
+    derived order is compared against them rather than replacing them.
+    """
+    derived = derive_from_image(image)
+    by_name: dict[str, Any] = {}
+    for wrapper in derived.values():
+        by_name[wrapper.name] = None if wrapper.name in by_name else wrapper
+    enriched = conflicts = unmatched = 0
+    order_checked = order_agreed = 0
+    conflict_rows: list[dict[str, Any]] = []
+    for row in rows:
+        definition = row.get("wrapperTypeDefinition")
+        wrapper = derived.get(definition) if isinstance(definition, int) else None
+        if wrapper is None:
+            name = row.get("wrapperName")
+            # Only a complete, unambiguous type name is an identity; a bare
+            # action name shared by several wrappers is not.
+            if isinstance(name, str) and "." in name:
+                wrapper = by_name.get(name)
+        if wrapper is None:
+            unmatched += 1
+            continue
+        recorded_order = [
+            entry[0] for entry in row.get("readOrder") or []
+            if isinstance(entry, (list, tuple)) and entry and isinstance(entry[0], str)
+        ]
+        if recorded_order:
+            order_checked += 1
+            # Contracts differ on whether they keep a member's backing-field
+            # underscore (``_endFrame`` versus ``endFrame``); that spelling is
+            # not an ordering disagreement, so compare without it.
+            derived_order = [member.name for member in wrapper.members]
+            if [name.lstrip("_") for name in recorded_order] == [
+                name.lstrip("_") for name in derived_order
+            ]:
+                order_agreed += 1
+            else:
+                conflict_rows.append({
+                    "wrapperName": wrapper.name, "physicalTag": row.get("physicalTag"),
+                    "check": "memberOrder", "recorded": recorded_order,
+                    "derived": derived_order,
+                })
+        recorded = row.get("serializedMemberCount")
+        if isinstance(recorded, int) and recorded != wrapper.serialized_member_count:
+            conflicts += 1
+            conflict_rows.append({
+                "wrapperName": wrapper.name, "physicalTag": row.get("physicalTag"),
+                "check": "serializedMemberCount", "recorded": recorded,
+                "derived": wrapper.serialized_member_count,
+            })
+            continue
+        row["generatedMemberOrder"] = [member.name for member in wrapper.members]
+        row["generatedMemberKinds"] = [member.kind for member in wrapper.members]
+        row["generatedInheritedMemberCount"] = len(wrapper.inherited_members)
+        enriched += 1
+    return {
+        "enrichedRows": enriched,
+        "unmatchedRows": unmatched,
+        "memberCountConflicts": conflicts,
+        "memberOrderChecked": order_checked,
+        "memberOrderAgreed": order_agreed,
+        "conflicts": conflict_rows,
+        "evidenceTier": "direct",
+        "boundary": (
+            "Generated member names and order come from the selected build's "
+            "ForMemoryPack setters. They name what a reviewed reader walks; they do "
+            "not establish a cursor, a serialized width, or a nested extent."
+        ),
+    }
+
+
 def _normalize_atlas_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
     grouped: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
     for row in rows:
@@ -605,10 +689,23 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
             )
         pin = _pin_for_contract(path, digest)
         native = _native_inputs(value["nativeInputs"])
+        # Contracts pin different subsets of the same build: every one pins
+        # GameAssembly and the metadata, only some also pin UnityPlayer.  Compare
+        # the keys the two actually share and accumulate the rest, so a contract
+        # that pins more inputs than its predecessor is not read as a conflict
+        # against a key the baseline never carried.
         if expected_inputs is None:
-            expected_inputs = native
-        elif any(expected_inputs.get(key) != actual for key, actual in native.items()):
-            raise ValueError(f"native-input-disagreement={path.relative_to(REPO)}")
+            expected_inputs = dict(native)
+        else:
+            conflicting = sorted(
+                key for key, actual in native.items()
+                if key in expected_inputs and expected_inputs[key] != actual
+            )
+            if conflicting:
+                raise ValueError(
+                    f"native-input-disagreement={path.relative_to(REPO)}:{','.join(conflicting)}"
+                )
+            expected_inputs.update(native)
         row_input_set = value.get("inputSetSha256")
         if row_input_set:
             if input_set is None:
@@ -658,6 +755,7 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
             "validatedNativeFacts": counts, "atlasRows": len(rows),
         })
     atlas = _normalize_atlas_rows(source_rows)
+    enrichment = _enrich_generated_members(ctx.image, atlas)
     report = {
         "schema": "endfield.jsondata-native-union-atlas.v1",
         "status": "validated",
@@ -674,6 +772,7 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
             "atlasRows": len(atlas),
             "dispatcherFamilies": len({row["dispatcherFamily"] for row in atlas}),
             "nativeFactsValidated": totals,
+            "generatedMemberEnrichment": enrichment,
             "elapsedSeconds": round(time.perf_counter() - started, 6),
         },
         "contracts": contract_rows,

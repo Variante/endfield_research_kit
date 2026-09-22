@@ -165,7 +165,7 @@ file under `memory/game_data_recovery.md`; its commands belong to
   `animestudio/` maintenance commands;
 - exact framing readers, one per payload family: `streaming/framing.py`,
   `irradiance_volume.py`, `extend_data_binary.py`, `bundle_manifest.py`,
-  `ifix_patch.py`, `inverted_lz4.py`, `terrain_tret.py`, `terrain_height.py`,
+  `ifix_patch.py`, `inverted_lz4.py`, `terrain/tret.py`, `terrain/height.py`,
   `dynamic_streaming.py`, and the serialized-gameplay readers
   `levelscript_binary.py`, `leveldata_binary.py`, `ability_binary.py`,
   `interactive_binary.py`, `spawner_binary.py`,
@@ -192,9 +192,17 @@ file under `memory/game_data_recovery.md`; its commands belong to
   against the selected build;
 - `memorypack/` for serialized gameplay payloads, with `core.py`/`schemas.py`
   shared and one module per domain;
-- `il2cpp_context.py` and `il2cpp_context_audit.py` for generic-instantiation
-  pointer tables, and `il2cpp_protocol.py` for the shared IL2CPP and protobuf
-  primitives that validators and page builders both read.
+- one lane folder per family that outgrew a single module, each the same
+  shape as `memorypack/`: `streaming/` (block-15 framing, marker parsers,
+  validators and gates), `terrain/`, `il2cpp/` (`protocol.py` primitives,
+  `native_image.py` as the one opened build every validator checks against,
+  `context.py` and `context_audit.py` for generic-instantiation pointer
+  tables, `method_resolver.py`), `monobehaviour/` (the exported MonoBehaviour
+  corpus sweeps) and `schemas/` (the named JSON schema readers behind one
+  validator). A lane holds only what nothing outside the family imports
+  through another path;
+- `contracts/` for every reviewed contract JSON, reached only through
+  `CONTRACTS_DIR`.
 
 Keep a new family in its own reader plus its own corpus gate. Do not widen an
 existing reader to a second framing, and do not let a corpus gate infer a

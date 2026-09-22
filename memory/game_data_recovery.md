@@ -54,7 +54,7 @@ python tools\endfield_source_graph.py build --relevant-asset-maps --skip-referen
 A contract that pins a superseded build is not evidence that its subject is
 gone. Only the *managed name* survives an update, so a stale contract is
 migrated by resolving its names against the selected build, never by carrying
-an address forward. `scripts/game_data/il2cpp_method_resolver.py` owns that
+an address forward. `scripts/game_data/il2cpp/method_resolver.py` owns that
 direction. It pins nothing: it derives `Il2CppCodeRegistration` from the
 selected `GameAssembly.dll` against the complete image-name set of the selected
 `global-metadata.dat`, so it runs unchanged on a future build, while every

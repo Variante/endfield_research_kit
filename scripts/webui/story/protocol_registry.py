@@ -38,7 +38,7 @@ from scripts.common import (
     write_report_json,
     write_text_if_changed,
 )
-from scripts.game_data import il2cpp_protocol as il2cpp
+from scripts.game_data.il2cpp import protocol as il2cpp
 from scripts.game_data.levelscript_binary import (
     extract_levelscript_uid_records,
     levelscript_action_map_membership,

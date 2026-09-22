@@ -322,9 +322,18 @@ a multi-element entry would settle it.
 
 - Where both are nonzero they are **equal in 998 of 1,158 (86.2%)**. They share a top
   value and a distribution: minimum 1, median about 2.18e9, maximum `0xFFFFFFFF`.
-- **Still unidentified.** The same nine populations failed on them. This is a
-  structural observation, gated so it cannot quietly stop being true while the note
-  claims it.
+- **Still unidentified, but the shape is now named.** That distribution -- uniform
+  over the 32-bit range, median near 2^31 -- is the signature of a **32-bit FNV
+  hash**, which is what every Wwise object and source id is. So these are two id
+  fields that usually coincide, not two counts or two flags.
+- **The obvious candidate does not fit, and the arithmetic is why.** wwiser's v150
+  `AkTrackSrcInfo` holds exactly two such ids that would coincide on a track with no
+  authored event -- `sourceID` and `eventID` -- but it lays them out
+  `trackID(+0) sourceID(+4) eventID(+8) fPlayAt(+12)`, **four** bytes apart, where
+  these two are **eight**. Either these offsets are in a different frame of reference
+  than the playlist item, or they are different fields. Reconciling the two offset
+  conventions is the next step; adopting the names on the strength of the
+  distribution alone would be the name-shape reasoning this lane refuses.
 
 ### CORPUS PROVENANCE: 10 banks ship twice, and one of them is the music bank
 

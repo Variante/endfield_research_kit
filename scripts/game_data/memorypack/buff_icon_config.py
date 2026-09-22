@@ -5,7 +5,7 @@ import struct
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-from scripts.game_data.il2cpp_native_image import open_native_image, read_pinned_contract
+from scripts.game_data.il2cpp.native_image import open_native_image, read_pinned_contract
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 
 

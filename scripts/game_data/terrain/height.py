@@ -11,7 +11,7 @@ import zlib
 from dataclasses import dataclass
 from pathlib import Path
 
-from scripts.game_data.terrain_tret import parse_tret_record
+from scripts.game_data.terrain.tret import parse_tret_record
 
 
 HEIGHT_NAME_RE = re.compile(r"^Terrain_(?P<lod>\d+)_(?P<i>\d+)_(?P<j>\d+)_H\.bytes$")

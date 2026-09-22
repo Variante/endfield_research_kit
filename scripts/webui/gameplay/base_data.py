@@ -19,7 +19,7 @@ from typing import Any
 
 from scripts.common import EXPORT_ROOT, LANG_DIR, check_installed_native_inputs, rel_path, write_json
 from scripts.game_data.memorypack.buff import buff_gameplay_semantics
-from scripts.game_data import il2cpp_protocol as il2cpp
+from scripts.game_data.il2cpp import protocol as il2cpp
 from scripts.game_data.extraction.animestudio_index_io import is_effective_row
 from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 from scripts.source_paths import INSTALLED_LAYERS, ExportLayout

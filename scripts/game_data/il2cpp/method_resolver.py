@@ -47,7 +47,7 @@ from pathlib import Path
 from typing import Any, Iterable, Iterator
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-from scripts.game_data.il2cpp_protocol import load_metadata_helper, load_native_mapper
+from scripts.game_data.il2cpp.protocol import load_metadata_helper, load_native_mapper
 from scripts.repo_paths import REPO_ROOT
 
 
@@ -648,6 +648,6 @@ def main(argv: list[str] | None = None) -> int:
 if __name__ == "__main__":  # pragma: no cover - documented entry point
     if not __package__:
         raise SystemExit(
-            "run as: python -m scripts.game_data.il2cpp_method_resolver"
+            "run as: python -m scripts.game_data.il2cpp.method_resolver"
         )
     raise SystemExit(main())
