@@ -2510,7 +2510,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--skip-vfs-index",
         action="store_true",
-        help="Skip the lightweight VFS metadata index used by asset exports",
+        help="Skip regenerating VFS metadata indexes; Unity overlay processing still requires existing valid indexes",
     )
     parser.add_argument(
         "--skip-animestudio",
@@ -5790,7 +5790,9 @@ def main() -> int:
     if animestudio_asset_type_filter and args.animestudio_scope == "story":
         raise SystemExit("--animestudio-asset-types applies only to asset or all AnimeStudio scopes")
     apply_animestudio_asset_type_filter(animestudio_stage_options, animestudio_asset_type_filter)
-    vfs_index_enabled = not args.skip_vfs_index and not args.skip_animestudio and args.animestudio_scope != "story"
+    # Story 的 maps／MonoBehaviour 也會經過雙層 Unity overlay，首次匯出不能略過其索引。
+    # 只新增輕量索引階段，不啟用圖片／音訊解碼；明確 skip 仍沿用既有驗證規則。
+    vfs_index_enabled = not args.skip_vfs_index and not args.skip_animestudio
     webui_texture_name_filter: Path | None = None
     webui_texture_name_filter_signature: dict[str, Any] | None = None
     if not args.skip_animestudio and args.animestudio_scope != "story" and args.animestudio_asset_mode == "focused":
