@@ -527,47 +527,63 @@ opens -- `368289710.bnk`, then `1214305672.bnk` and `1645682467.bnk` -- each
 probed across `Persistent` and `StreamingAssets` with and without `Chinese`.
 Voice media is read by some path these hooks do not see.
 
-## The two source hooks, named from the SDK, and why one is silent
+## The native rows are named from the SDK, and every name was wrong
 
 `SourceProviderPreparation` recorded **nothing in either session**, including
-110 seconds of heavy voice. That is not a capture problem, and no further
-session would have fixed it. The installed Wwise SDK answers it: the shipped
-`AkSoundEngine.dll` is built from `AkSoundEngine.lib`, whose objects carry
-named COMDAT sections, so a function's prologue locates it and the object's own
-symbol table names it.
+110 seconds of heavy voice. That is not a capture problem and no longer session
+would have fixed it. The shipped `AkSoundEngine.dll` is built from
+`AkSoundEngine.lib`, whose objects carry named COMDAT sections, so a function
+body can be matched back to its symbol. `scripts/game_data/wwise_sdk_symbols.py`
+does that for the whole image and names 1,021 of its 12,512 functions; the
+catalog refresh re-runs it on every re-pin and writes the symbol beside each row
+it can name, so the annotations cannot outlive the build they were derived from.
 
-| catalog row | actually | evidence |
-| --- | --- | --- |
-| `SourceProviderPreparation` `0x1af7a0` | `CAkSrcFileBase::CreateStream(AkAutoStmBufSettings&, unsigned char)` | identical 437-byte extent, 97.9% byte agreement |
-| `SourceMediaLookup` `0x10df60` | `SpeakerVolumeMatrixCallback::operator()(AkMixConnection&)` | identical 325-byte extent, 92.6% byte agreement |
+An identification requires an *exactly* equal extent and at least 80% byte
+agreement, with the runner-up 5% behind. A shared prologue proves nothing --
+MSVC emits the same one everywhere -- but a function of identical length
+agreeing on 87-98% of its bytes, with the disagreements at relocated call
+targets and rip-relative displacements, is the same code. Below either bar the
+function is left unnamed rather than assigned to the best of several.
 
-Matching on length *and* body is what makes these identifications rather than
-guesses: a shared prologue proves nothing, but a function of exactly the same
-length agreeing on 93-98% of its bytes -- with the disagreements at relocated
-call targets and rip-relative displacements -- is the same code.
+***Six of the 32 native rows can be named, and all six are misnamed.*** Four are
+`CAkPlayingMgr` or `CAkPositionRepository` members -- playing-id bookkeeping,
+starvation and buffering notifications, a speaker-volume mixing callback -- and
+the fifth is file-source stream creation. **Not one is an external-source
+function**, though four are named `ExternalSource*` or `SourceKey*`. The
+`AkSoundEngine.*` row names record the role someone expected; the symbol records
+what the code is. Where they disagree the symbol wins, and a row's recorded
+argument shape and memory reads are then describing a function that does not do
+that -- so such a row is not evidence, whatever a session containing it seemed
+to show. The per-row symbols and their measured agreement live in
+`scripts/webui/story_recovery/audio_runtime_trace_hooks.json`, not here.
 
-***The silence is explained.*** `CAkSrcFileBase::CreateStream` is a **file**
-source creating its stream. External-source voice never takes it, which the
-sessions corroborate independently: not one `.wem` is opened in either capture,
-only banks. Voice media reaches the engine from the `.pck` packages by a route
-that is not a file-source stream, so hooking file-source stream creation
-observes it exactly never.
+Only five rows are enabled, so the four newly-named ones cost no past evidence.
+They are latent traps rather than active errors, and hooking one of them --
+`NotifySpeakerVolumeMatrix` fires per mix connection -- would be expensive and
+meaningless. Their symbols are now recorded so that does not happen.
 
-***And one catalog row is simply wrong.*** `SourceMediaLookup` is a
-speaker-volume mixing callback. Its recorded argument shape and `sourceKey`
-memory read describe something that function does not do, so that row is not
-evidence about media lookup at all, whatever a session containing it might have
-seemed to show. Both rows now carry their resolved symbol.
+## Voice is not file-streamed, and `CAkSrcMedia` is the candidate
 
-**What this costs the continuity question.** The key-to-file-to-decoder join is
-not reachable through either source hook: one is on a path this content does
-not take, and the other was never a source hook. Closing it needs a hook on
-whatever *does* deliver external-source media from a `.pck`, which is a new
-identification in `AkSoundEngine.dll` rather than a longer session.
+The map shows two complete source families at disjoint address ranges:
+`CAkSrcFileBase`, which streams from a file, and `CAkSrcMedia` with its
+`CAkSrcMediaCodec*` codecs, which plays media already in memory.
 
-**What is still not joined.** Posts, prepared source keys and opened paths are
-counted separately, and a key seen at two hooks in one session is a coincidence
-of numbers until ordering and identity are checked.
+`SourceProviderPreparation` is `CAkSrcFileBase::CreateStream`, the point where
+*any* streamed source -- in a package or not -- creates its stream. It never
+fired while external-source voice was posting, and no `.wem` was opened in
+either session, only banks. So within the observed windows voice took no file
+stream at all, which leaves in-memory media, and `CAkSrcMedia` is the class that
+plays it. Its constructor takes `(CAkPBI*, IAkSrcMediaCodec*(*)(const
+SrcMedia::Header*))` -- the voice's PBI and the codec chosen for it -- which is
+exactly the decoder end of the key-to-file-to-decoder join.
+
+**This is a deduction from a negative, and inherits that limit.** Capture
+windows are bounded, so a stream created before a window opened would not have
+been seen; the evidence is that voice is not file-streamed *in-window*, not that
+it never is. `CAkSrcMedia` is therefore the leading candidate and not a
+conclusion, and the way to settle it is a hook on its constructor rather than
+more reading. That hook does not exist yet: it needs a new ABI in the capture
+provider, which is a tooling change followed by a session.
 
 ## What remains unresolved
 

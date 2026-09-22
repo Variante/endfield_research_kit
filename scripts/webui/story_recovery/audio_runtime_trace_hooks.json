@@ -811,7 +811,10 @@
      "offset": 20,
      "kind": "u32"
     }
-   ]
+   ],
+   "resolvedSymbol": "?NotifySpeakerVolumeMatrix@CAkPlayingMgr@@QEAAXIPEAUAkSpeakerVolumeMatrixCallbackInfo@@@Z",
+   "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
+   "resolvedEvidence": "identical 171-byte extent, 94.2% byte agreement; differences are relocated operands"
   },
   {
    "name": "AkSoundEngine.ExternalSourceManagerSiblingLookup",
@@ -830,7 +833,10 @@
      "index": 2,
      "kind": "pointer"
     }
-   }
+   },
+   "resolvedSymbol": "?NotifyStarvation@CAkPlayingMgr@@QEAAXII@Z",
+   "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
+   "resolvedEvidence": "identical 244-byte extent, 90.2% byte agreement; differences are relocated operands"
   },
   {
    "name": "AkSoundEngine.ExternalSourceStateCallback",
@@ -924,7 +930,10 @@
      "kind": "pointer"
     }
    },
-   "returnKind": "u32"
+   "returnKind": "u32",
+   "resolvedSymbol": "?UpdateBufferingInfo@CAkPositionRepository@@QEAAXIPEAVCAkVPLSrcNode@@AEAUAkBufferingInformation@@@Z",
+   "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
+   "resolvedEvidence": "identical 301-byte extent, 96.7% byte agreement; differences are relocated operands"
   },
   {
    "name": "AkSoundEngine.SourceInfoSelectionConsumer",
@@ -1214,7 +1223,10 @@
      "offset": 20,
      "kind": "u32"
     }
-   ]
+   ],
+   "resolvedSymbol": "?DoCallbackUnlocked@CAkPlayingMgr@@IEAAXP6AXW4AkCallbackType@@PEAUAkCallbackInfo@@@Z01@Z",
+   "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
+   "resolvedEvidence": "identical 140-byte extent, 87.1% byte agreement; differences are relocated operands"
   },
   {
    "name": "AkSoundEngine.NativeCallbackBridge",
@@ -1887,17 +1899,17 @@
    {
     "name": "AudioAdapter._PostEvent",
     "module": "GameAssembly.dll",
-    "was": "0x328a690",
+    "was": "0x337f270",
     "now": "0x337f270",
-    "moved": true,
+    "moved": false,
     "how": "re-resolved by name against the selected build"
    },
    {
     "name": "AudioAdapter._PostEventWithExternalSource",
     "module": "GameAssembly.dll",
-    "was": "0x3abea70",
+    "was": "0x3fa4a80",
     "now": "0x3fa4a80",
-    "moved": true,
+    "moved": false,
     "how": "re-resolved by name against the selected build"
    },
    {
@@ -1925,5 +1937,11 @@
     "how": "recorded rva, verified as a .pdata function start"
    }
   ]
+ },
+ "symbolNaming": {
+  "note": "Symbols come from matching each recorded address against the Wwise SDK library. A symbol identifies the code and so the class and method; it does not establish when the function runs or what calls it. Where a row's name and its symbol disagree, the symbol is the fact.",
+  "status": "named",
+  "named": 6,
+  "rows": 32
  }
 }

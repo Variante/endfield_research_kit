@@ -50,6 +50,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs
+from scripts.game_data.wwise_sdk_symbols import SymbolError, name_addresses
 from scripts.repo_paths import REPO_ROOT as REPO
 
 
@@ -80,6 +81,9 @@ PROCESS_NAME = "Endfield.exe"
 
 class ManifestError(ValueError):
     """A gate refused the conversion; the detail names the hook that stopped it."""
+
+
+SDK_DESCRIPTION = "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib"
 
 
 def _sha256(path: Path) -> str:
@@ -152,6 +156,47 @@ def resolve_managed(names: list[str], gameassembly: Path, metadata: Path) -> dic
     return resolved
 
 
+def name_native_rows(rows: list[dict[str, Any]], audio_dll: Path) -> dict[str, Any]:
+    """Annotate each native row the Wwise SDK can name, and say what that proves.
+
+    A catalog row's ``name`` is the role someone expected the function to play;
+    the symbol is what the code actually is. Six rows turned out to disagree,
+    which is why this runs on every re-pin instead of being recorded once by
+    hand: an annotation derived from a previous build is exactly the stale
+    evidence the rest of this tool refuses.
+
+    Optional by design. The SDK is a local install, so its absence leaves rows
+    unnamed and is reported, never fatal -- refusing here would make re-pinning
+    impossible on a machine that merely lacks Wwise.
+    """
+    wanted = []
+    for row in rows:
+        try:
+            wanted.append(int(str(row.get("rva")), 16))
+        except (TypeError, ValueError):
+            continue
+    try:
+        named = name_addresses(wanted, dll=audio_dll)
+    except SymbolError as error:
+        return {"status": "unavailable", "detail": str(error), "named": 0}
+    hits = 0
+    for row in rows:
+        try:
+            found = named.get(int(str(row.get("rva")), 16))
+        except (TypeError, ValueError):
+            continue
+        if not found:
+            # Leave a superseded annotation behind and it would look current.
+            for key in ("resolvedSymbol", "resolvedFrom", "resolvedEvidence"):
+                row.pop(key, None)
+            continue
+        hits += 1
+        row["resolvedSymbol"] = found["symbol"]
+        row["resolvedFrom"] = SDK_DESCRIPTION
+        row["resolvedEvidence"] = found["evidence"]
+    return {"status": "named", "named": hits, "rows": len(rows)}
+
+
 def refresh_catalog(catalog: Path = CATALOG) -> tuple[dict[str, Any], dict[str, Any]]:
     """The catalog re-pinned to the installed build, and a per-hook receipt.
 
@@ -172,6 +217,7 @@ def refresh_catalog(catalog: Path = CATALOG) -> tuple[dict[str, Any], dict[str, 
     if not audio_dll.is_file():
         raise ManifestError(f"no AkSoundEngine.dll at {audio_dll}")
     starts = pdata_function_starts(audio_dll)
+    symbols = name_native_rows(value.get("nativeHooks", []), audio_dll)
     managed_names = [name for name, (module, _) in IMPLEMENTED_HOOKS.items()
                      if module == GAME_MODULE]
     managed = resolve_managed(managed_names, Path(gate.gameassembly), Path(gate.metadata))
@@ -226,7 +272,17 @@ def refresh_catalog(catalog: Path = CATALOG) -> tuple[dict[str, Any], dict[str, 
         ),
         "hooks": receipt,
     }
+    value["symbolNaming"] = {
+        "note": (
+            "Symbols come from matching each recorded address against the Wwise SDK "
+            "library. A symbol identifies the code and so the class and method; it "
+            "does not establish when the function runs or what calls it. Where a row's "
+            "name and its symbol disagree, the symbol is the fact."
+        ),
+        **symbols,
+    }
     return value, {"gameBuild": value["gameBuild"], "hooks": receipt,
+                   "symbols": symbols,
                    "files": {k: v["sha256"][:16] for k, v in files.items()}}
 
 
@@ -245,9 +301,11 @@ def main() -> int:
         return 2
     if not args.check:
         args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(
-            json.dumps(catalog, ensure_ascii=False, indent=1) + chr(10),
-            encoding="utf-8")
+        # newline="" keeps the line feeds below literal. Without it Windows
+        # expands every one to CRLF, which rewrites all 1,900 lines and buries
+        # the few that actually changed in a whole-file diff.
+        with args.output.open("w", encoding="utf-8", newline="") as handle:
+            handle.write(json.dumps(catalog, ensure_ascii=False, indent=1) + chr(10))
     print(json.dumps({
         "status": "validated",
         **receipt,
