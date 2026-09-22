@@ -29,20 +29,29 @@ placements.
 
 ## Audio -- the HIRC types the notes called SDK-only
 
+**Settled by the installed Wwise 2023.1.17 SDK** (its static libraries carry the
+deserializers as named object code; see [`audio_hirc_parser.md`](audio_hirc_parser.md)):
+every type the corpus ships frames byte-exact from the engine's own grammar,
+`0x02`-`0x07`, `0x09`-`0x0E`, `0x10`, `0x11` and `0x13`-`0x16` as lanes and `0x08`,
+`0x12`, `0x03` named. The table below is what the game DLL alone gave; the music
+types the shipped DLL skips are read by `AkMusicBank::LoadBankItem` in the music
+engine, whose layouts are now framed.
+
 | type | how reached | state |
 | --- | --- | --- |
-| `0x02`, `0x05`, `0x09` | one shared class; `[+0x1f0]`/`[+0x1f8]`/`[+0x200]` | **field sequence read** |
-| `0x0A`-`0x0D` | one shared arm | **not parsed at all** -- skipped as opaque payload |
-| `0x10`, `0x11` | `vtable[+0x28]` -> `0x18014c250` | 12-byte prefix, then a plug-in tail |
-| `0x12` | `vtable[+0x278]` -> `0x180109030` | **complete**: ref, word, `N`/bytes/dwords, ms duration |
+| `0x02`, `0x05`, `0x09` | one shared class; `[+0x1f0]`/`[+0x1f8]`/`[+0x200]` | **named**: `CAkParameterNodeBase::SetNodeBaseParams` |
+| `0x0A`-`0x0D` | one shared arm | skipped by the shipped DLL; **framed** from `AkMusicEngine.lib` |
+| `0x10`, `0x11` | `vtable[+0x28]` -> `0x18014c250` | **named**: `CAkFxBase::SetInitialValues` |
+| `0x12` | `vtable[+0x278]` -> `0x180109030` | **complete**, and the same `CAkBus` class as `0x08` |
 
 ## Still open, accurately
 
 - **`LAYER_C`'s consumer.** The recorded answer is *disconfirmed* (`m_colorVariationTex`
   is a `Texture2D`, one per terrain, so the argument that eliminated the control map
   eliminates it too) and the mask-map rival is excluded by the binding list.
-- **`0x0B`'s `+12`/`+20` words.** Needs an external anchor of the kind that resolved the
-  source records; no engine evidence can exist, since the engine never parses `0x0B`.
+- ~~**`0x0B`'s `+12`/`+20` words.**~~ **CLOSED** by the SDK: they are the `sourceID`
+  and `eventID` of the 44-byte playlist item `CAkMusicTrack::SetInitialValues` reads,
+  and the whole type frames exactly.
 - ~~**The 1 of 8 unowned media** that is not Init-bank embedded.~~ **IDENTIFIED** -- see
   below.
 

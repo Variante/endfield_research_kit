@@ -52,24 +52,22 @@ Stable conclusions:
 - Numeric HIRC type `0x02` bodies are now consumed **whole** by a fourth
   current-corpus gate, which supersedes the prefix lane's opaque-tail
   statement without retracting it. After the bounded source prefix the
-  maintained reader frames nine anonymous groups: two flag/count slot
+  maintained reader frames nine node groups (since named from the SDK
+  deserializer, see [`audio_hirc_parser.md`](audio_hirc_parser.md); the
+  letters are the report keys): two flag/count slot
   vectors, two parallel one-byte-key/value bundles (4- and 8-byte values), a
   selector-directed vector pair, a selector-directed fixed block, a fixed
   six-byte block, a nested property/group/state directory, and a counted
   entry list with counted 12-byte points. Every current body reaches its
   declared end with no trailing bytes. A one-dimension-at-a-time candidate
-  sweep pins twelve of fourteen widths uniquely against whole-corpus exact
-  closure; two stay unresolved and fail closed instead of guessing: group
-  B's element width (no current body carries a nonempty vector) and group
-  E's selector predicate (its two low bits never disagree, so bit0-only,
-  bit1-only, and both-bits cannot be separated). The group A split between
-  a shared mask byte plus 6-byte slots and no mask byte plus 7-byte slots
-  rests on one counterexample object plus non-boolean trailing bytes under
-  the rejected reading; treat it as the weakest link in the frame. Group
-  letters, selector bits, keys, and values stay anonymous: exact
-  consumption is not field ownership, source/effect/bus/parent identity,
-  cross-object relationships, runtime execution, event selection, or
-  audibility. Two things about this gate must not be over-read. The
+  sweep pinned twelve of fourteen widths uniquely against whole-corpus exact
+  closure; the SDK deserializer has since settled the other two and the group
+  A split (group B slots are six bytes; the group E extension needs both low
+  bits, the automation block needs e3DPositionType 1 or 2; group A is a bypass
+  byte plus six-byte slots). Field names are now in
+  [`audio_hirc_parser.md`](audio_hirc_parser.md); exact consumption is still
+  not object identity, cross-object relationships, runtime execution, event
+  selection, or audibility. Two things about this gate must not be over-read. The
   constraining checks are that framed body bytes equal the declared object
   bytes minus object ids and that every exact body ends at its declared
   end; the `exactCursorBytes + nonExactBodyBytes = bodyBytes` identity is an
@@ -94,16 +92,17 @@ Stable conclusions:
   that contain a wider key. And group E selector `0x01` appears with no
   extension, which disproves a bit-0 branch predicate — though that rests on
   4 objects out of 48,740, so treat it as thin. Selector `0x02` is still
-  unobserved everywhere, so bit-1-only and both-bits-set remain tied and fail
-  closed. Say the refactor result precisely: the type `0x02` **counts** are
+  unobserved everywhere; the engine reads nothing further for it, and the
+  reader now follows the engine. Say the refactor result precisely: the type `0x02` **counts** are
   unchanged and its report diffs clean, but two **behaviours** changed on paths
   that corpus never exercises, so a fixture now pins a continued key on the
   type `0x02` path too. The key's five-byte cap and 32-bit range are inherited
   from the type `0x03` Action reader, not proven here; both lanes publish a
   `groupIKeyWidth_*` histogram so the widths actually witnessed stay auditable
   (today: only 1 and 2). Group B is still empty in every framed body of both
-  types, so its element width stays unresolved, and both lanes now publish the
-  same shared-framer residual list rather than each carrying a shorter one.
+  types; its six-byte element comes from the SDK reader and a fixture, not a
+  shipped bank, and both lanes publish the same shared-framer residual list
+  rather than each carrying a shorter one.
   Reference targets, container membership, ordering and selection are not
   claimed. See
   [`reports/animestudio/hirc_type07_body_current_latest.md`](../../reports/animestudio/hirc_type07_body_current_latest.md).
@@ -134,11 +133,11 @@ Stable conclusions:
   two-element sample declare 65,538 elements, and widths 3, 4 or 12 contradict
   the count the one-element sample carries. That uniqueness is only inside that
   family -- a fixed twelve-byte state followed by a separately gated six-byte
-  structure is **not** excluded, which is precisely the failure mode being
-  corrected, so the census carries it as a residual. Note also that the shipped
-  reports alone cannot settle this: every state they publish is one element wide,
-  and the only non-degenerate witness is type `0x09`, which is not a shipped
-  lane. Take the pattern seriously: a width that a
+  structure is **not** excluded by the corpus alone; the SDK's
+  `CAkStateAware::ReadStateChunk` settles it (a state is `u32 id, u16 count`,
+  then `count` x `u16 AkPropID` and `count` x `u32 value`), and type `0x09` is
+  now a shipped lane that witnesses two-element states. Take the pattern
+  seriously: a width that a
   one-dimension sweep reports as
   *uniquely determined* can still be a degenerate case, because uniqueness is
   only ever over the shapes the corpus happens to contain. Both lanes now publish
@@ -146,38 +145,27 @@ Stable conclusions:
   is visible rather than inferred, and the gate requires each histogram to match
   both its count and its byte total. Type `0x02`, `0x05` and `0x07` still close
   exactly after the correction, so no published count changed.
-- Numeric HIRC type `0x09` is **not** a closed lane and is deliberately not
-  shipped as one. Its bodies are the shared node frame, a counted four-byte
-  reference vector, a counted layer vector and one trailing byte, where a layer
-  is a fifteen-byte header plus a counted list of per-reference twelve-byte graph
-  points. That frames 5,154 of 5,158 current objects. The other 4 carry a
-  nonempty `u16`-counted sub-list inside the layer header that the rest never
-  exercise, and its element width cannot be separated from the surrounding
-  fields without guessing, so the grammar stays unresolved rather than being
-  fitted to four samples. Do not publish a type `0x09` lane until those four
-  parse; the gate would refuse it anyway.
-- **That 5,154 grammar is documented here but not implemented anywhere, and this
-  prose is not enough to rebuild it.** A later attempt re-derived type `0x09` from
-  scratch with a validated node-frame mirror and reached only 4,982 bodies at
-  best, after sweeping 48 layer-grammar variants (header widths 8..23 against
-  fixed, single-counted and per-reference point lists). None reproduced 5,154. If
-  the layer grammar is revisited, **write it down as field widths and offsets or
-  as code**, not as a sentence -- a number in a note that nobody can reproduce is
-  worse than no number.
-- What that attempt did confirm independently: the shared node frame opens **all
-  5,158** type `0x09` bodies, and after it come a counted run of four-byte
-  entries and a second count. Where the second count is zero, one further byte
-  closes the body exactly -- 4,973 bodies, 308,489 of 344,190 bytes, now gated and
-  tested in the reader. The other 185 are fenced. **This shipped census is
-  deliberately weaker than the 5,154 recorded above**; it is what is verified in
-  code, not the best reading anyone has had.
+- Numeric HIRC type `0x09` (`CAkLayerCntr`) **is closed**: all 5,158 current
+  objects / 344,190 body bytes consume exactly, as a fifth lane on the shared
+  framer. The grammar came from the SDK deserializer, not from a sweep: the
+  node frame, `u32` children, `u32` layers each holding its id, its own RTPC
+  curve list (the same structure as group I), an RTPC id and type, and counted
+  child associations with counted twelve-byte points, then one trailing byte.
+  The four bodies every earlier attempt fenced carried a nonempty layer curve
+  list. Read it as a lesson in method: three corpus-only attempts reached 5,154,
+  4,982 and 4,973 bodies with three different grammars, and none could be told
+  right from wrong without the reader that wrote the bytes. Its child vector
+  joins the reference graph as the same parent-to-child relation type `0x07`
+  carries: every child resolves in its own bank with a single referrer, and the
+  longest chain grows from 7 to 8 references. See
+  [`reports/animestudio/hirc_type09_body_current_latest.md`](../../reports/animestudio/hirc_type09_body_current_latest.md).
 - **Layer 4 opens for audio.** The anonymous four-byte values inside the exactly
-  framed terminal vectors of numeric types `0x04`, `0x05`, `0x06` and `0x07` are object
-  identities. All 230,247 of them resolve, every one to exactly one HIRC object
+  framed terminal vectors of numeric types `0x04`, `0x05`, `0x06`, `0x07` and `0x09` are object
+  identities. All 240,898 of them resolve, every one to exactly one HIRC object
   declared by the **same bank**: zero unresolved, zero crossing a bank or package
   boundary, zero self references, zero targets carrying more than one referrer,
   zero framed entries that never reached the census, and zero nodes on or feeding
-  a cycle, at a longest traversed chain of 7 references (8 objects). Every one of
+  a cycle, at a longest traversed chain of 8 references (9 objects). Every one of
   those numbers is computed and published by the maintained reader; none is prose.
   Numeric edge counts and a per-type referenced-versus-population table are in
   [`reports/animestudio/hirc_reference_graph_current_latest.md`](../../reports/animestudio/hirc_reference_graph_current_latest.md).
@@ -200,6 +188,17 @@ Stable conclusions:
   framed word held out. The gate caught this: the first attempt claimed all three
   vectors as references and failed with 1,005 unresolved. Believe the counter and
   narrow the claim, never the reverse.
+
+- **Where the structural lane stands.** Every HIRC type the corpus ships now has a
+  byte-exact lane whose grammar is the SDK deserializer's, not a fit: `0x02`-`0x07`,
+  `0x09`-`0x0E`, `0x10`, `0x11`, `0x13`-`0x16`, with `0x08`/`0x12` (bus) and `0x03`
+  (action) exact from before and now named, and `0x0F` framed but unshipped. The
+  layouts, the three corrections the read forced, and the enum contract are in
+  [`audio_hirc_parser.md`](audio_hirc_parser.md). What structural work remains is
+  inside blobs the engine itself hands to a plug-in or a tree: effect plug-in
+  parameter blocks (owned by the typed v150 effect parse) and decision-tree node
+  meaning. Everything past that is layers 5 and 6, which need a host process, not
+  another reader.
 
 ## Naming: what the shipped literals actually reach
 
@@ -292,7 +291,7 @@ Stable conclusions:
   the 231,693 declared object ids about **1.53 times** across all 28,379 targets,
   against 2,238 observed crossings -- roughly 1,463x chance.
 - **What was wrong was the generalisation, not the measurement.** The gated
-  reference vectors of types `0x04`/`0x05`/`0x06`/`0x07` really are all same-bank,
+  reference vectors of types `0x04`/`0x05`/`0x06`/`0x07`/`0x09` really are all same-bank,
   and that is still true. Recording it as "this corpus has no cross-bank evidence"
   extended a fact about those vectors to the whole corpus, and several notes in
   this file repeated it. Actions are a different relation and behave differently.
@@ -307,11 +306,18 @@ Stable conclusions:
 
 ## The named-reach walk, and reaching shipped media
 
-- **The chain is closed end to end: shipped identifier -> media file.** 97 of the
+- **The chain is closed end to end: shipped identifier -> media file.** 157 of the
   194 named identifiers reach at least one media file this corpus ships, reaching
-  163 distinct files between them. The report lists them per identifier,
+  599 distinct files between them. The report lists them per identifier,
   so `au_int_erosion_sludge_recover_loop` resolves to 6 files, `au_int_box_touch`
   to 5, and so on.
+- **Joining the `0x09` child vectors was worth 60 identifiers.** Layer containers
+  sit between many named events and their sounds, so before their children were in
+  the graph the walk stopped at every blend container: identifiers reaching a source
+  went from 120 to 177, reached source ids from 218 to 827, identifiers reaching
+  media from 97 to 157 and distinct media from 163 to 599, with the same 47 edges
+  still leaving the package. The music containers are not in this walk; their edges
+  live in the music censuses.
 - **The named-reach walk crosses banks now, and that was worth 14 identifiers.**
   It used to run once per bank, so any edge pointing at a sibling bank was counted
   as leaving and abandoned -- the same over-generalisation the type `0x03`
@@ -397,24 +403,35 @@ Stable conclusions:
   compiled into an unpacked 2.66 MB `.text` that ships with the game, with the
   parser's entry region located. **"Blocked on a licence" and "blocked on
   disassembly effort" are different states**, and only the second is true here.
-- **The licence route is now taken: the SDK is installed, at 2023.1.19.8928.** The
-  owner installed `Wwise_2023.1.19.8928` with its SDK component, so the cheap route
-  is open and the "not in this repo" blocker is retired. Two caveats attach to it.
-  **The version is not exact** -- the engine is 2023.1.**17** by its own DLL
-  strings, the SDK is 2023.1.**19** -- so a struct read from these headers is a
-  strong prior for this build, not the byte-for-byte witness the paragraph above
-  describes; serialization is stable across a patch line in practice, and that is a
-  prior, not a proof. And the vendored `E:\Engine\RM42.Beyond\Audio\Wwise` tree
-  means in-house modification is possible regardless of version, so a stock-SDK
-  struct still needs to meet the bytes.
-- **What it settled immediately, and what it cannot.** It named the source-record
-  fields and the codec ids -- see
-  [`audio_hirc_graph.md`](audio_hirc_graph.md) -- and it confirmed the fade-curve
-  table already in `hirc_v150.py` matches `AkCurveInterpolation` on all ten values.
-  It gives nothing for `0x0A`-`0x0D`, because the bank *format* is not a public API
-  and no header carries a layout; those need wwiser, which is a separate anchor.
-  Headers are Audiokinetic's under their EULA: record derived facts, never vendor
-  the headers into this repo.
+- **The SDK is installed, and it is the exact engine version:**
+  `D:\Program Files\Wwise_2023.1.17.8841`, SDK plus Authoring. The version matches
+  the shipped DLL's own `wwise_v2023.1.17` string, so nothing read from it is a
+  patch-line prior. The vendored `E:\Engine\RM42.Beyond\Audio\Wwise` tree still
+  means in-house modification is possible, so every stock-SDK layout must meet the
+  bank bytes; the corpus gates are that check, and so far every layout has.
+- **The witness is the static library, not the headers.** The bank *format* is not
+  a public API and no header carries a layout. But `SDK/x64_vc170/Profile/lib/`
+  ships `AkSoundEngine.lib` and `AkMusicEngine.lib` with their PDBs: the version-150
+  bank deserializers as named, symbolized x64 object code. `dumpbin` from the
+  installed MSVC build tools disassembles them with symbols, and the vtable slots
+  the readers call through resolve from each object's relocation table. That is
+  what named the node frame, every container tail, the music types, the effect,
+  modulator, device and dialogue classes, and the action parameters -- see
+  [`audio_hirc_parser.md`](audio_hirc_parser.md); the PDB's type records also
+  gave the enums, now a reviewed contract. The helper
+  scripts and the annotated function dumps live under
+  `scratch/reverse_engineering/wwise_sdk/`; the full disassembly is regenerable and
+  is not kept. Headers and libraries are Audiokinetic's under their EULA: record
+  derived facts, never vendor them.
+- **The shipped game DLL cannot be profiled.** It exports no communication layer
+  and carries no profiler strings, so the Wwise Profiler cannot attach to the
+  running game. A host process linking the SDK's Profile libraries and loading the
+  game's packages through the sample file-package I/O can be profiled and queried
+  instead; that is the route to layer-5/6 evidence and has not been built.
+- Plug-in ids, from the Authoring plug-in XML: `100` Wwise Sine, `101` Wwise
+  Silence, `148` Synth One, `200` Audio Input. `409` (the `0x01990002` source
+  plug-in) is not in the stock XML; the game DLL compiles in Motion Source, which
+  is the likely owner but is not proven.
 
   *A process note, since it cost a batch.* This DLL was already identified in these
   notes, with its SHA-256 and version string, **and with an explicit warning not to

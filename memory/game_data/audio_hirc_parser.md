@@ -8,6 +8,120 @@ read from the engine rather than guessed from bytes. That also settles, in the
 negative, which types the engine never parses at all -- which is why the files
 after this one rely on byte framing for those.
 
+## THE NODE FRAME AND ITS CONTAINER TAILS, NAMED FROM THE SDK DESERIALIZER
+
+The installed Wwise 2023.1.17 SDK ships `AkSoundEngine.lib` and `AkMusicEngine.lib`
+with PDBs, so the version-150 readers can be disassembled with their own symbol
+names and their virtual calls resolved through each class's vtable relocations
+(recipe and annotated dumps: `scratch/reverse_engineering/wwise_sdk/`). This
+supersedes every "anonymous group" statement below and in the reports: the group
+letters remain the report keys, and the extents the corpus gates proved did not
+move by a byte. What the read settled, in `CAkParameterNodeBase::SetNodeBaseParams`
+call order:
+
+| group | SDK reader | layout |
+| --- | --- | --- |
+| A | `CAkParameterNode::SetInitialFxParams` | `u8 bIsOverrideParentFX`, `u8 uNumFx`; if nonzero `u8 bitsFXBypass`, then `uNumFx` x `{u8 uFXIndex, u32 fxID, u8 flags}` (bit0 bypass, bit1 bIsShareSet, bit2 bIsRendered) -- the "mask byte plus six-byte slots" reading, confirmed |
+| B | `SetInitialMetadataParams` | `u8 bOverrideParentMetadata`, `u8 uNumFx`, then `uNumFx` x `{u8 uFXIndex, u32 fxID, u8 bIsShareSet}` -- the unresolved width is **6** |
+| -- | `SetNodeBaseParams` itself | `u32 OverrideBusId` (0 = none, resolved in the bus index), `u32 DirectParentID` (0 = none, `AddChildInternal`), `u8 byBitVector` (bit0 bPriorityOverrideParent, bit1 bPriorityApplyDistFactor, bits 2-5 MIDI overrides) -- the "nine anonymous scalars" |
+| C, D | `CAkParameterNode::SetInitialParams` | `u8 cProps`, `cProps` x `u8 AkPropID`, `cProps` x `u32 value`; then the ranged bundle: `u8 cProps`, keys, `cProps` x `{f32 min, f32 max}` -- two parallel runs each, not interleaved pairs |
+| E | `CAkParameterNodeBase::SetPositioningParams` | `u8 uBitsPositioning`: bit0 override, bit1 bHasListenerRelativeRouting, bits 2-3 panner type, bits 5-6 e3DPositionType. **Returns when bit0 is clear, then when bit1 is clear**, so the extension needs both: `u8 uBits3D`; then only for e3DPositionType 1 or 2: `u8 ePathMode`, `s32 TransitionTime`, `u32 n` x 16-byte `AkPathVertex`, `u32 m` x 8-byte playlist item, then `m` x 12-byte `{xRange,yRange,zRange}` |
+| F | `CAkParameterNodeBase::SetAuxParams` | `u8 byBitVector` (bit0 bOverrideGameAuxSends, bit1 bUseGameAuxSends, bit2 bOverrideUserAuxSends, bit3 bHasAux, bit4 bOverrideReflectionsAuxBus); bit3 gates 4 x `u32 auxID`; then always `u32 reflectionsAuxBus` |
+| G | `CAkParameterNode::SetAdvSettingsParams` | `u8 byBitVector` (bit0 bKillNewest, bit1 bUseVirtualBehavior, bit2 bIgnoreParentMaxNumInst, bit3 bIsGlobalLimit, bit4 bVVoicesOptOverrideParent), `u8 eVirtualQueueBehavior`, `u16 u16MaxNumInstance`, `u8 eBelowThresholdBehavior`, `u8 byBitVector2` |
+| H | `CAkStateAware::ReadStateChunk` (through `CAkParamNodeStateAware`) | varint `ulNumStateProps` x `{varint AkPropID, u8 accumType, u8 inDb}`; varint `ulNumStateGroups` x `{u32 ulStateGroupID, u8 eStateSyncType, varint ulNumStates x {u32 ulStateID, u16 count, count x u16 AkPropID, count x u32 value}}` -- the "six-byte element" is one property as two parallel runs; the engine rejects a state whose ids are not strictly increasing |
+| I | `AK::RTPC::ReadRtpcCurves<T>` | `u16 uNumCurves` x `{u32 RTPCID, u8 rtpcType, u8 rtpcAccum, varint ParamID, u32 rtpcCurveID, u8 eScaling, u16 ulSize x {f32 from, f32 to, u32 interp}}` |
+
+Two reader corrections fell out. Every count in group H is a seven-bit continuation
+value, and the corpus only ever spends one byte on each, so the byte widths were
+degenerate cases again; the reader now reads varints there, pinned by fixture. And
+the engine accumulates every varint **most-significant group first**
+(`v = (v << 7) | (b & 0x7F)`), with no width cap, while the repo reader decodes
+little-endian with a five-byte cap: extents agree, decoded multi-byte values do not,
+and no value is published yet.
+
+The five types that share the frame, and what each reads after it:
+
+| type | class | after the node frame |
+| --- | --- | --- |
+| `0x02` | `CAkSound` | *before* the frame: `CAkBankMgr::LoadSource` -- `u32 ulPluginID`, `u8 StreamType` (0 in-bank, 1-2 streamed, else error), `u32 sourceID`, `u32 uInMemoryMediaSize`, `u8 uSourceBits` (bit0 bIsLanguageSpecific); if the plug-in type nibble is 2, `u32 uSize` + params. Then the frame, nothing after |
+| `0x05` | `CAkRanSeqCntr` | `u16 sLoopCount, u16 sLoopModMin, u16 sLoopModMax, f32 fTransitionTime, f32 min, f32 max, u16 wAvoidRepeatCount, u8 eTransitionMode, u8 eRandomMode, u8 eMode` (1 = sequence), `u8 byBitVector` (bit1 bIsUsingWeight, bit2 bResetPlayListAtEachPlay, bit3 bIsRestartBackward, bit4 bIsContinuous) -- the 24-byte block; `u32 ulNumChilds` x `u32`; `u16 ulPlayListItem` x `{u32 ulPlayID, u32 weight}` (weight 50000 is the default) |
+| `0x06` | `CAkSwitchCntr` | `u8 eGroupType` (1 = state), `u32 ulGroupID`, `u32 ulDefaultSwitch`, `u8 bIsContinuousValidation` -- the ten-byte head; `u32 ulNumChilds` x `u32`; `u32 ulNumSwitchGroups` x `{u32 ulSwitchID, u32 n x u32 nodeID}`; `u32 ulNumSwitchParams` x `{u32 ulNodeID, u8 bits (bIsFirstOnly, bContinuePlayback), u8 eOnSwitchMode, s32 FadeOutTime, s32 FadeInTime}`. The group items and param node ids are stored without an index lookup, which is why some never match a bank object |
+| `0x07` | `CAkActorMixer` | `u32 ulNumChilds` x `u32` |
+| `0x09` | `CAkLayerCntr` + `CAkLayer::SetInitialValues` | `u32 ulNumChilds` x `u32`; `u32 ulNumLayers` x `{u32 ulLayerID, InitialRTPC (group I, same template), u32 rtpcID, u8 rtpcType, u32 ulNumAssoc x {u32 ulAssociatedChildID, u32 ulCurveSize x 12-byte points}}`; `u8 bIsContinuousValidation`. The "sub-list inside the layer header" that fenced four bodies was the layer's own curve list |
+
+`0x09` is now a shipped body lane (`hirc_type09_body_current_latest`), framed by the
+same census as the other four; its child ids are not yet offered to the reference
+graph, which is a deliberate separate step because it changes the published edge
+counts. The game DLL addresses recorded further down map onto these symbols:
+`0x1800dcfd0` is `SetNodeBaseParams`, `0x180160450` is
+`CAkLayerCntr::SetInitialValues`, and the vtable slots differ from the stock SDK
+(`+0x1f0/+0x1f8/+0x200` there against `+0x218/+0x220/+0x228` here), which is the
+in-house modification showing through without changing the byte layout.
+
+**The music types are framed from the same witness, and all four close.**
+`AkMusicEngine.lib` reads them through `AkMusicBank::LoadBankItem`, the hook the
+sound engine's dispatch consults before skipping a music payload (see the section
+on `0x0A`-`0x0D` below: the shipped game DLL carries no music-engine strings, so
+the earlier reading that it skips them stands, and the layouts are the SDK's).
+`CAkMusicNode::SetMusicNodeParams` is `u8 uFlags`, then the node frame -- the
+music types **do** open with it, one byte in, which is why every offset-0 attempt
+failed -- then `u32` children, the 23-byte `AkMeterInfo` (`f64 fGridPeriod, f64
+fGridOffset, f32 fTempo, u8 beats/bar, u8 beat value, u8 flag`) and `u32` stingers
+of 24 bytes (`u32 TriggerID, u32 SegmentID, u32 SyncPlayAt, u32 uCueFilterHash, s32
+DontRepeatTime, u32 numSegmentLookAhead`). `CAkMusicTransAware::SetMusicTransNodeParams`
+adds `u32` rules of `{u32 n x u32 srcID, u32 m x u32 dstID, 21-byte source rule,
+26-byte destination rule, u8 bAllocTransObjectFlag [+ 30-byte transition object]}`.
+
+| type | class | after that |
+| --- | --- | --- |
+| `0x0A` | `CAkMusicSegment` | `f64 fDuration`; `u32` markers of `{u32 id, f64 fPosition, NUL-terminated name}` -- the variable-length name is why no stride ever fit, and the "names at fixed distances from the end" were these |
+| `0x0B` | `CAkMusicTrack` | **the node frame comes last here**: `u8 uFlags`; `u32` sources x the type `0x02` source record (`CAkBankMgr::LoadSource`, plug-in params included); `u32` playlist items of 44 bytes (`u32 trackID, u32 sourceID, u32 eventID, f64 fPlayAt, f64 fBeginTrimOffset, f64 fEndTrimOffset, f64 fSrcDuration`); `u32 numSubTrack` **only when the playlist is nonempty** (two shipped bodies have none); `u32` clip automations of `{u32 uClipIndex, u32 eAutoType, u32 n x 12-byte points}`; the node frame; `u8 eTrackType`, and for type 3 `u8 eGroupType, u32 uGroupID, u32 uDefaultSwitch, u32 n x u32 assoc` plus a 32-byte transition block; `s32 iLookAheadTime` -- the "terminator, always 100" was this |
+| `0x0C` | `CAkMusicSwitchCntr` | transition rules; `u8 bIsContinuePlayback`; `u32 uTreeDepth`, that many `u32` group ids then that many `u8` group types; `u32 uTreeDataSize`, `u8 uMode`, the tree bytes handed whole to `AkDecisionTree::SetTree` (12-byte nodes, not framed here) |
+| `0x0D` | `CAkMusicRanSeqCntr` | transition rules; `u32` playlist items of 30 bytes (`u32 SegmentID, u32 playlistItemID, u32 NumChildren, u32 eRSType, s16 Loop, s16 LoopMin, s16 LoopMax, u32 Weight, u16 wAvoidRepeatCount, u8 bIsUsingWeight, u8 bIsShuffle`), nested by `NumChildren` in the engine and read flat |
+
+All four are shipped lanes (`hirc_type0a/0b/0c/0d_body_current_latest`): 4,158,
+4,325, 742 and 2,431 bodies, every one exact. The earlier fitted `0x0B` census
+(`type11*` in the reader and the former `audio_hirc_curves.md`) is removed: every
+"entry header", "element", "trailer" and "step-back" in that reading was a
+playlist item, a clip automation, the node frame or the switch block seen through
+a wrong stride, and the lesson it leaves is the one recorded for `0x09` -- a
+corpus-only fit cannot tell right from wrong without the reader that wrote the
+bytes.
+
+**The rest of the object types, from the same witness.** Every remaining class
+reads as follows; the fenced `0x10`/`0x11` census and the small-type census are
+retired in favour of lanes, and the lanes close exactly on the current input set: `0x10` 453, `0x11` 2,645, `0x13` 4, `0x14` 9, `0x15` 5 and `0x16` 778 bodies. No `0x0F` object ships, so that framer waits for a corpus that carries one.
+
+| type | class | layout |
+| --- | --- | --- |
+| `0x03` | `CAkAction::SetInitialValues` | `u16 actionType` (the `AkActionType` enum: high byte operation, low byte scope), `u32 idExt`, `u8 idExt_4` (bit0 bIsBus), the property bundle and the ranged bundle (`AkPropID_DelayTime` and `_TransitionTime` are converted from ms), then the per-class params: Play `u8 eFadeCurve, u32 bankID, u32 bankType`; SetState `u32 group, u32 state`; SetSwitch `u32 group, u32 switch`; the Active/SetValue family `u8 eFadeCurve`, class params, then exceptions `varint n x {u32 id, u8 bIsBus}` -- SetAkProp `u8 eValueMeaning, f32 base, f32 min, f32 max`; SetGameParameter `u8 bBypassTransition` then the same four; Stop/Pause/Resume one bit byte (bit1 bApplyToStateTransitions, bit2 bApplyToDynamicSequence); Seek `u8 bIsSeekRelativeToDuration, f32 value, f32 min, f32 max, u8 bSnapToNearestMarker`; SetFX `u8 bIsAudioDeviceElement, u8 uSlot, u32 fxID, u8 bIsShared`; BypassFX `u8 bIsBypass, u8 uTargetMask`; Release, PlayEvent, ResetPlaylist, Break, Trigger, Mute, UseState nothing beyond the family |
+| `0x04` | `CAkEvent` | varint `ulActionListSize` x `u32 actionID` -- a varint, so the one-byte count the type `0x04` lane reads is the short form |
+| `0x08`, `0x12` | `CAkBus` (aux bus is the same class) | `u32 OverrideBusId`, and `u32 idDeviceShareset` only when that is 0; `CAkBus::SetInitialParams`: the property bundle (no ranged bundle), PositioningParams (group E), AuxParams (group F), `u8 byBitVector` (bit0 bKillNewest, bit1 bUseVirtualBehavior, bit2 bIgnoreParentMaxNumInst, bit3 bIsGlobalLimit), `u16 u16MaxNumInstance`, `u32 uChannelConfig`, `u8 byBitVector` (HDR bits, bit3 bBackgroundMusic); then `s32 recoveryTime` (ms), `f32 fMaxDuckVolume`, `u32 ulDucks` x 18 bytes (`u32 id, f32 fDuckVolume, s32 fadeOut, s32 fadeIn, u8 eFadeCurve, u8 eTargetProp`), group A, group B, group I, then the StateChunk (group H) **after** group I |
+| `0x0E` | `CAkAttenuation` | `u8 bIsHeightSpreadEnabled`, `u8 bIsConeEnabled`, with the cone `f32 InsideDegrees, f32 OutsideDegrees, f32 OutsideVolume, f32 LoPass, f32 HiPass`; `u8 curveToUse[19]` (one per `AkAttenuationCurveType`); `u8 numCurves` x `{u8 eScaling, u16 n x 12-byte points}`; group I. The "21-byte head" was the two flags and the nineteen curve indices |
+| `0x0F` | `CAkDialogueEvent` | `u8 uProbability`, `u32 uTreeDepth`, that many `u32` argument ids then `u8` types, `u32 uTreeDataSize`, `u8 uMode`, the tree, then the two bundles |
+| `0x10`, `0x11` | `CAkFxBase` | `u32 fxID`, `u32 uSize` + params, `u8 numBankData x {u8 index, u32 sourceID}`, group I, group H, `u16 numValues x {varint AkPropID, u8 rtpcAccum, f32 value}`. The "terminator" and "tied optional block" were group I, the state chunk and the value list |
+| `0x13`, `0x14`, `0x16` | `CAkModulator` | the property bundle (`AkModulatorPropID` keys), the ranged bundle, group I. The "one anonymous byte" in the old `0x16` frame was the ranged bundle's count |
+| `0x15` | `CAkAudioDevice` | `CAkFxBase` then `AkOwnedEffectSlots::SetInitialValues`: `u8 uNumFx`, `u8 bitsFXBypass` when nonzero, `uNumFx x {u8 index, u32 fxID, u8 flags}` |
+| decision tree | `AkDecisionTree::SetTree` / `ResolvePath` | the blob is copied whole; a node is 12 bytes: `u32 key`, `u32 audioNodeId` or `{u16 childrenIdx, u16 childrenCount}`, `u16 weight`, `u16 probability` (0..100) |
+
+**Three corrections the PDB forced.** The enum type records name every property
+and operation; the values now live in `scripts/game_data/contracts/wwise_sdk_enums.json`
+(32 enums, with the PDB hashes as provenance). (1) The RTPC and state `ParamID`
+**is the `AkPropID`** -- the PDB carries no separate RTPC id enum -- so the repo's
+older RTPC label table (wwiser's pre-2019 numbering, where 6 meant InitialDelay
+and 12 MidiVelocityOffset) was wrong for v150 and now aliases the initial-property
+table; the one-byte keys in the main bank are `MakeUpGain`, `Volume`,
+`GameAuxSendVolume`, `LPF`, `Positioning_Pan_X_2D`, `MaxNumInstances`, `BypassFX`
+and so on. (2) Every varint is accumulated most-significant group first; both
+readers now do that. The shipped two-byte keys prove it: `82 30` and `84 30`
+decode to `0x130` and `0x230`, that is effect slot 1 and 2 of `AkPropID_BypassFX`
+(`0x30`) with the slot in the high byte, whereas the little-endian reading gave
+6146 and 6148, which name nothing. (3) The music track's `numSubTrack` is read
+only when its playlist is nonempty. The repo's other label tables (curve
+interpolation, RTPC accumulation, curve scaling, sync type, bank type, plug-in
+type, source type, value meaning, initial properties) agree with the PDB up to
+spelling.
+
 ## THE HIRC TYPE DISPATCH, READ OUT OF THE SHIPPED PARSER
 
 The warning was about *strings*. The **code** is a different matter, and it is readable
@@ -430,6 +544,10 @@ millisecond duration* -- recovered from the reader, not inferred from the corpus
 
 ## `0x09`: CALLED DIRECTLY, NOT THROUGH A VTABLE
 
+*Superseded in part by the SDK read above: `0x180160450` is
+`CAkLayerCntr::SetInitialValues` and `0x1800dcfd0` is
+`CAkParameterNodeBase::SetNodeBaseParams`; the layer grammar is now framed in code.*
+
 The slot search found nothing for `0x09` because **there is no slot** -- its loader calls
 the parser as a direct `call 0x180160450`. *A search for an indirect call cannot find a
 direct one, and the empty result reads exactly like "this type has no parser".*
@@ -456,7 +574,7 @@ caller and skipped by the deserializer; a `[vt+0x78]` tag check gates entry with
 | `0x10` | `vtable[+0x28]` -> `0x18014c250` | 12-byte prefix, then a plug-in tail |
 | `0x11` | `vtable[+0x28]` -> `0x18014c250` | same deserializer as `0x10` |
 | `0x12` | `vtable[+0x278]` -> `0x180109030` | ref id, stored word, nested block, ms duration |
-| `0x09` | **direct call** -> `0x180160450` | tag must be 5, delegates to `0x1800dcfd0` |
+| `0x09` | **direct call** -> `0x180160450` | tag must be 5, delegates to `0x1800dcfd0`; **closed** from the SDK read above |
 
 plus `0x0A`-`0x0D`, which are not parsed at all. **The obstacle recorded for these was a
 licence; it was never the licence.**

@@ -39,7 +39,7 @@ well-defined as the scope its endpoints are resolved in.*
 
 | relation | edges | a target is named by | reverse edge present | reading |
 |---|---:|---|---:|---|
-| main reference graph | 230,247 | exactly one referrer | -- | owner -> owned |
+| main reference graph | 240,898 | exactly one referrer | -- | owner -> owned |
 | `0x08`/`0x12` leading word | 275 | many children | -- | child -> parent |
 | music types (`0A`,`0C`,`0D`) | 24,430 | many | **73.9%** | **mutual, neither** |
 
@@ -71,10 +71,11 @@ Both are forests, so shape alone does not tell them apart. **In-degree does.**
 
 | | edges | a target is named by |
 |---|---:|---|
-| main reference graph (`05`->`02`, `07`->`07`, `04`->`03`, ...) | 230,247 | **exactly one** referrer, always |
+| main reference graph (`05`->`02`, `07`->`07`, `09`->`05`, `04`->`03`, ...) | 240,898 | **exactly one** referrer, always |
 | `0x08`/`0x12` leading word | 275 | **many** children -- 50 of 70 parents have two or more, and one has 16 |
 
-- The main graph's `targetsWithMultipleReferrers` is **0 over 230,247 edges**. Every
+- The main graph's `targetsWithMultipleReferrers` is **0 over 240,898 edges**, the
+  `0x09` child vectors included. Every
   object there is named exactly once, which is what an **owner -> owned** edge looks
   like: a `0x05` object owns its `0x02` objects and no other object owns them.
 - The `0x08` relation is the reverse: many children name one parent, which is what a
@@ -465,12 +466,21 @@ from there the counts fall out. Widening a range would never have found either.
   frame. `0x08` and `0x12` begin *with* a same-bank reference at offset 0 (157/161
   and 132/251), which is a different head from every type seen so far and is the
   obvious next thread.
-- **The music types `0x0A`-`0x0D` are attempted and NOT framed. Read this before
-  trying again.** They do not open with the shared node frame, and the ways they
-  fail are per-type: at offset 0 the frame dies on `range_groupHStateElements` for
-  `0x0A` (2,505/4,158) and `0x0D` (912/2,431), on `unsupported_groupB_nonempty`
-  for `0x0B` (4,217/4,325), while `0x0C` "succeeds" on 586/742 but leaves 143-303
-  bytes over. Those successes are not evidence: see the next point.
+- **The music types `0x0A`-`0x0D` are framed, all four exactly, from the SDK
+  deserializer** (see [`audio_hirc_parser.md`](audio_hirc_parser.md)). They do
+  open with the shared node frame -- one flag byte in for `0x0A`, `0x0C` and
+  `0x0D`, and after the source and playlist lists for `0x0B` -- which is why the
+  offset-0 attempts recorded here died on group H and on a nonempty group B. The
+  corpus observations below (names near the end of `0x0C`, the reference
+  hierarchy, the offset-9 parent) all remain true; they are marker names, decision
+  tree keys, transition rule ids and `DirectParentID` respectively.
+- **The music family is one authored bank shipped twice.** Bank 266542773 appears
+  byte-identical in `audit_banks.pck` and `hotfix_main_b75.pck`, and it holds 99.7%
+  of the music objects, so every music count above is roughly double the distinct
+  population (`0x0A` 2,112, `0x0B` 2,195, `0x0C` 373, `0x0D` 1,230 distinct).
+  Corpus-wide, 10 banks ship in more than one package, duplicating 1.9% of objects,
+  almost all of it this one bank. A per-package census cannot see this; the audit
+  publishes the distinct count beside the total and gates their arithmetic.
 - **Numeric type `0x0C` carries NAMES at fixed distances from the end of its body.**
   The words 12 and 24 bytes from the end are FNV name hashes of shipped string
   literals in **406 of 1,484 draws** over the 742 bodies -- against a chance

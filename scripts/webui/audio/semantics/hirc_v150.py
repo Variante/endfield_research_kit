@@ -139,68 +139,21 @@ HIRC_STATE_SYNC_TYPE_LABELS = {
     9: "lastExitPosition",
 }
 
-HIRC_RTPC_PARAMETER_LABELS = {
-    0x00: "Volume",
-    0x01: "LFE",
-    0x02: "Pitch",
-    0x03: "LPF",
-    0x04: "HPF",
-    0x05: "BusVolume",
-    0x06: "InitialDelay",
-    0x07: "MakeUpGain",
-    0x08: "DeprecatedFeedbackVolume",
-    0x09: "DeprecatedFeedbackLowpass",
-    0x0A: "DeprecatedFeedbackPitch",
-    0x0B: "MidiTransposition",
-    0x0C: "MidiVelocityOffset",
-    0x0D: "PlaybackSpeed",
-    0x0E: "MuteRatio",
-    0x0F: "PlayMechanismSpecialTransitionsValue",
-    0x10: "MaxNumInstances",
-    0x11: "Priority",
-    0x12: "PositionPanX2D",
-    0x13: "PositionPanY2D",
-    0x14: "PositionPanX3D",
-    0x15: "PositionPanY3D",
-    0x16: "PositionPanZ3D",
-    0x17: "PositioningTypeBlend",
-    0x18: "PositioningDivergenceCenterPercent",
-    0x19: "PositioningConeAttenuationOnOff",
-    0x1A: "PositioningConeAttenuation",
-    0x1B: "PositioningConeLPF",
-    0x1C: "PositioningConeHPF",
-    0x1D: "BypassFX0",
-    0x1E: "BypassFX1",
-    0x1F: "BypassFX2",
-    0x20: "BypassFX3",
-    0x21: "BypassAllFX",
-    0x22: "HDRBusThreshold",
-    0x23: "HDRBusReleaseTime",
-    0x24: "HDRBusRatio",
-    0x25: "HDRActiveRange",
-    0x26: "GameAuxSendVolume",
-    0x27: "UserAuxSendVolume0",
-    0x28: "UserAuxSendVolume1",
-    0x29: "UserAuxSendVolume2",
-    0x2A: "UserAuxSendVolume3",
-    0x2B: "OutputBusVolume",
-    0x2C: "OutputBusHPF",
-    0x2D: "OutputBusLPF",
-    0x2E: "PositioningEnableAttenuation",
-    0x2F: "ReflectionsVolume",
-    0x30: "UserAuxSendLPF0",
-    0x31: "UserAuxSendLPF1",
-    0x32: "UserAuxSendLPF2",
-    0x33: "UserAuxSendLPF3",
-    0x34: "UserAuxSendHPF0",
-    0x35: "UserAuxSendHPF1",
-    0x36: "UserAuxSendHPF2",
-    0x37: "UserAuxSendHPF3",
-    0x38: "GameAuxSendLPF",
-    0x39: "GameAuxSendHPF",
-    0x3A: "PositionPanZ2D",
-    0x3B: "BypassAllMetadata",
-}
+# In Wwise 2023.1.17 the RTPC/state ParamID is the AkPropID itself (the SDK PDB
+# carries no separate RTPC id enum), so the curve and state property labels are
+# the same table as the initial-property bundle. Ids above 0xFF encode an effect
+# slot in the high byte: the shipped two-byte keys are 0x130 and 0x230, slot 1
+# and slot 2 of AkPropID_BypassFX (0x30). The label carries that slot.
+HIRC_RTPC_PARAMETER_LABELS = None  # replaced below, after HIRC_INITIAL_PROPERTY_LABELS
+
+
+def hirc_rtpc_parameter_label(parameter_id: int) -> str:
+    base = HIRC_INITIAL_PROPERTY_LABELS.get(parameter_id & 0xFF)
+    if base is None:
+        return f"parameter{parameter_id}"
+    slot = parameter_id >> 8
+    return f"{base}[slot {slot}]" if slot else base
+
 
 HIRC_INITIAL_PROPERTY_LABELS = {
     0x00: "Volume",
@@ -290,6 +243,7 @@ HIRC_INITIAL_PROPERTY_LABELS = {
     0x54: "Loop",
     0x55: "AttenuationID",
 }
+HIRC_RTPC_PARAMETER_LABELS = HIRC_INITIAL_PROPERTY_LABELS
 
 HIRC_INITIAL_PROPERTY_U32_LABELS = frozenset({"AttenuationID"})
 
@@ -1090,16 +1044,15 @@ def hirc_v150_control_action(data: bytes, bank_version: int | None) -> dict[str,
 
     def read_varuint(offset: int, reason: str) -> tuple[int, int] | dict[str, Any]:
         value = 0
-        shift = 0
         for _ in range(5):
             if offset >= len(data):
                 return failed(reason, offset, 1)
             byte = data[offset]
             offset += 1
-            value |= (byte & 0x7F) << shift
+            # The engine accumulates most-significant group first.
+            value = (value << 7) | (byte & 0x7F)
             if not byte & 0x80:
                 return value, offset
-            shift += 7
         return failed("invalidVarUInt", offset, 1)
 
     def read_exceptions(offset: int) -> tuple[list[dict[str, Any]], int] | dict[str, Any]:
@@ -3091,7 +3044,7 @@ def _hirc_v150_node_state_rtpc(
         value = 0
         for index in range(5):
             byte = take_u8(label)
-            value |= (byte & 0x7F) << (index * 7)
+            value = (value << 7) | (byte & 0x7F)  # most-significant group first, as the engine reads it
             if not byte & 0x80:
                 return value
         raise ValueError(
@@ -3159,9 +3112,7 @@ def _hirc_v150_node_state_rtpc(
         state_properties.append({
             "propertyIndex": property_index,
             "parameterId": parameter_id,
-            "parameterLabel": HIRC_RTPC_PARAMETER_LABELS.get(
-                parameter_id, f"parameter{parameter_id}"
-            ),
+            "parameterLabel": hirc_rtpc_parameter_label(parameter_id),
             "accum": accum,
             "accumLabel": HIRC_RTPC_ACCUM_LABELS[accum],
             "inDb": bool(in_db_raw),
@@ -3194,9 +3145,7 @@ def _hirc_v150_node_state_rtpc(
                 {
                     "valueIndex": value_index,
                     "parameterId": parameter_id,
-                    "parameterLabel": HIRC_RTPC_PARAMETER_LABELS.get(
-                        parameter_id, f"parameter{parameter_id}"
-                    ),
+                    "parameterLabel": hirc_rtpc_parameter_label(parameter_id),
                     "value": values[value_index],
                 }
                 for value_index, parameter_id in enumerate(property_ids)
@@ -3269,9 +3218,7 @@ def _hirc_v150_node_state_rtpc(
             "accum": accum,
             "accumLabel": HIRC_RTPC_ACCUM_LABELS[accum],
             "parameterId": parameter_id,
-            "parameterLabel": HIRC_RTPC_PARAMETER_LABELS.get(
-                parameter_id, f"parameter{parameter_id}"
-            ),
+            "parameterLabel": hirc_rtpc_parameter_label(parameter_id),
             "curveId": curve_id,
             "curveIdHex": f"0x{curve_id:08x}",
             "scaling": scaling,
@@ -3784,7 +3731,7 @@ def _hirc_v150_bus_rtpc_state(
         value = 0
         for index in range(5):
             byte = take_u8(label)
-            value |= (byte & 0x7F) << (index * 7)
+            value = (value << 7) | (byte & 0x7F)  # most-significant group first, as the engine reads it
             if not byte & 0x80:
                 return value
         raise ValueError(
@@ -3841,9 +3788,7 @@ def _hirc_v150_bus_rtpc_state(
                 "accum": accum,
                 "accumLabel": HIRC_RTPC_ACCUM_LABELS[accum],
                 "parameterId": parameter_id,
-                "parameterLabel": HIRC_RTPC_PARAMETER_LABELS.get(
-                    parameter_id, f"parameter{parameter_id}"
-                ),
+                "parameterLabel": hirc_rtpc_parameter_label(parameter_id),
                 "curveId": curve_id,
                 "curveIdHex": f"0x{curve_id:08x}",
                 "scaling": scaling,
@@ -3869,9 +3814,7 @@ def _hirc_v150_bus_rtpc_state(
             state_properties.append({
                 "propertyIndex": property_index,
                 "parameterId": parameter_id,
-                "parameterLabel": HIRC_RTPC_PARAMETER_LABELS.get(
-                    parameter_id, f"parameter{parameter_id}"
-                ),
+                "parameterLabel": hirc_rtpc_parameter_label(parameter_id),
                 "accum": accum,
                 "accumLabel": HIRC_RTPC_ACCUM_LABELS[accum],
                 "inDb": bool(in_db_raw),
@@ -3907,9 +3850,7 @@ def _hirc_v150_bus_rtpc_state(
                     {
                         "valueIndex": value_index,
                         "parameterId": parameter_id,
-                        "parameterLabel": HIRC_RTPC_PARAMETER_LABELS.get(
-                            parameter_id, f"parameter{parameter_id}"
-                        ),
+                        "parameterLabel": hirc_rtpc_parameter_label(parameter_id),
                         "value": values[value_index],
                     }
                     for value_index, parameter_id in enumerate(property_ids)
@@ -5747,7 +5688,7 @@ def hirc_v150_layer_tail(
         value = 0
         for index in range(10):
             byte = take_u8(label)
-            value |= (byte & 0x7F) << (index * 7)
+            value = (value << 7) | (byte & 0x7F)  # most-significant group first, as the engine reads it
             if not byte & 0x80:
                 return value
         raise ValueError(f"invalid{label}Varint")

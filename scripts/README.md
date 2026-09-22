@@ -26,6 +26,9 @@ axis. A path appears under exactly one owner.
 | | `game_data/il2cpp/` | `protocol.py` (metadata and PE primitives), `native_image.py` (the one opened installed build every contract validator checks against, with the shared method-identity, dispatcher-route, code-window and setter-order checks), `context.py` (generic-instantiation pointer tables), `method_resolver.py` (managed name to selected-build body), and the context audit split by the section it owns: `context_audit.py` (CLI, registration and method-spec sweeps, report assembly), `context_audit_common.py` (build gate through `contracts/il2cpp_context_audit_native.json`, hashing and sweep helpers), `context_audit_memorypack.py` (MemoryPack reader and BuffData consumer checks), `context_audit_skilldata.py` (SkillData branch witness, replay and static alignment), `context_audit_vfs.py` (stream, VFS and UnityPlayer consumer checks) |
 | | `game_data/monobehaviour/` | the exported MonoBehaviour corpus: `census.py`, `monoscript_catalog.py`, `script_names.py`, `field_semantics.py` (what each named class's fields hold) and `table_keys.py` (which string fields carry exported Table keys) |
 | | `game_data/schemas/` | the byte-pinned named JSON schema readers for the textual JsonData families (`gameplay_config.py`, `gameplay_config_polymorphic.py`, `text_schema.py`, `mission_runtime_main.py`, `mission_runtime_meta.py`, `npc_catalog.py`, `npc_prefab_info.py`, `map_config.py`, `ui_level_map_load_config.py`, `level_mount_point.py`, `gold_coin_config.py`), all validated by `named_schema.py` and keeping only their contract pin, path predicate, relations and result shape |
+| | `game_data/memorypack/derived_schema.py` | recursive read-plan resolution over the derived wrapper, union and wrapped-type tables; refuses the custom-formatter families rather than reading their member list |
+| | `game_data/memorypack/union_subtypes.py` | tag assignment for the nested unions the dispatcher walk cannot reach, inferred from the wrapper hierarchy and gated on the walked union reproducing exactly |
+| | `game_data/memorypack/derived_actions.py` | opt-in reader that adds the derived action routes whose members are all fixed-width or strings to the frozen `buff_actions` reader and names their fields; not wired into the corpus gates |
 | | `game_data/memorypack/action_dispatcher.py` | the whole AbilityActionData union dispatcher of the selected build, walked generically from the switch table the reviewed contracts pin; names the wrapper behind every tag, including the ones no contract covers |
 | | `game_data/memorypack/wrapper_members.py` | the selected build's generated wrapper member order and member types for every `*ForMemoryPack` type, derived in one metadata pass; the bulk source the per-tag contracts record one wrapper at a time |
 | | `game_data/memorypack/` | MemoryPack codecs and their corpus gates, including the current-build BuffData additions (`buff_icon_config.py`, `buff_residual_actions.py`, `buff_named_schema.py`) and the SkillData first-timeline lane (`skill_timeline_*.py`), which share `core.LabelledReader` and gate through `il2cpp.native_image` |
@@ -35,6 +38,7 @@ axis. A path appears under exactly one owner.
 | | `webui/mission_pipeline/` | standalone Mission Pipeline recovery (not a WebUI page) |
 | | `webui/{assets,audio,characters,gameplay,map,recovery,updates}/` | one folder per page: its `build_*.py` entry point and helper modules |
 | | `webui/recovery/` | the Recovery-progress page: `build_recovery.py` plus its tracked `recovery_declarations.json`. It derives from generated reports and the `memory/game_data/README.md` lane index only, never from installed bytes, and fails closed on a missing report, a schema-token mismatch, or a VFS block type with no declared lane |
+| | `webui/decoded_payloads.py` | export-relative path to the `game_data` reader that owns it, rendered as diffable text; the routing shared by consumers that need a serialized `.json` payload as text rather than as a page record |
 | **Shared** | `common.py`, `source_paths.py`, `repo_paths.py` | helpers used by both lines; `repo_paths.REPO_ROOT` is the only repo-root anchor |
 | **Tests** | `tests/` | stdlib `unittest`, untracked, run by explicit module path |
 
@@ -310,6 +314,11 @@ python -m scripts.game_data.memorypack.wrapper_members
 python -m scripts.game_data.memorypack.wrapper_members --wrapper Beyond_Gameplay_Core_CreateBuffAction_DataForMemoryPack
 python -m scripts.game_data.memorypack.action_dispatcher
 python -m scripts.game_data.memorypack.action_dispatcher --tag 0x92
+python -m scripts.game_data.memorypack.derived_actions
+python -m scripts.game_data.memorypack.derived_actions --list-routes
+python -m scripts.game_data.memorypack.union_subtypes
+python -m scripts.game_data.memorypack.union_subtypes --union Selector_Finder_DataForMemoryPack
+python -m scripts.game_data.memorypack.derived_schema
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
 %ASCLI% audit-refs --index OBJECT_INDEX.jsonl
@@ -338,8 +347,11 @@ its result under `reports/animestudio/`:
 | `game_data.memorypack.buff_corpus` | `buffdata_current_latest.{json,md}` |
 | `game_data.memorypack.buff_1b_corpus` | `buff_1b_current_latest.{json,md}` |
 | `game_data.memorypack.lipsync_corpus` | `lipsync_current_latest.{json,md}` |
+| `game_data.memorypack.derived_schema` | `reports/game_data/memorypack_derived_schema.json`; a recursive read plan per action tag over nested records, lists, arrays and nested unions, with each route's evidence tier and the named type blocking the rest |
+| `game_data.memorypack.union_subtypes` | `reports/game_data/memorypack_union_subtypes.json`; every union base's subtypes and predicted tag assignment, gated on reproducing the walked root union and corroborated against the reviewed nested rows |
+| `game_data.memorypack.derived_actions` | `reports/game_data/memorypack_derived_actions.json`; the union tags whose whole body this reader can consume, and the cross-check of that framing against the frozen reader |
 | `game_data.memorypack.action_dispatcher` | `reports/game_data/memorypack_action_dispatcher.json`; every AbilityActionData union tag's route, registered type, generated wrapper, named member order and member widths, with each reviewed tag re-derived and compared |
-| `game_data.memorypack.wrapper_members` | `reports/game_data/memorypack_wrapper_members.json`; every generated `*ForMemoryPack` wrapper's serialized member order, member types and fixed member widths (including each enum's real underlying width), derived from the selected build, plus its agreement with the reviewed contracts |
+| `game_data.memorypack.wrapper_members` | `reports/game_data/memorypack_wrapper_members.json`; every generated `*ForMemoryPack` wrapper's serialized member order, member types, fixed member widths (including each enum's real underlying width), and the wrapped type each wrapper frames, derived from the selected build, plus its agreement with the reviewed contracts |
 | `game_data.terrain.corpus` | `terrain_tret_latest.{json,md}` |
 | `game_data.dynamic_stream_area_corpus` | `dynamic_stream_area_current_latest.{json,md}` |
 | `game_data.il2cpp.context_audit` | `il2cpp_context_current_latest.*` (JSON on stdout) |
@@ -624,6 +636,16 @@ reports/animestudio/hirc_type04_u32_vector_current_latest.{json,md}
 reports/animestudio/hirc_type02_body_current_latest.{json,md}
 reports/animestudio/hirc_type05_body_current_latest.{json,md}
 reports/animestudio/hirc_type07_body_current_latest.{json,md}
+reports/animestudio/hirc_type09_body_current_latest.{json,md}
+reports/animestudio/hirc_type0a_body_current_latest.{json,md}
+reports/animestudio/hirc_type0b_body_current_latest.{json,md}
+reports/animestudio/hirc_type0c_body_current_latest.{json,md}
+reports/animestudio/hirc_type0d_body_current_latest.{json,md}
+reports/animestudio/hirc_type10_body_current_latest.{json,md}
+reports/animestudio/hirc_type11_body_current_latest.{json,md}
+reports/animestudio/hirc_type13_body_current_latest.{json,md}
+reports/animestudio/hirc_type14mod_body_current_latest.{json,md}
+reports/animestudio/hirc_type15_body_current_latest.{json,md}
 reports/animestudio/hirc_reference_graph_current_latest.{json,md}
 ```
 
@@ -765,6 +787,14 @@ process; the scanner is an internal component rather than a second CLI.
 .\build_updates.bat OLD NEW --exact
 python -m scripts.webui.updates.build_updates --refresh-previous-export-baseline
 ```
+
+A `.json` name does not mean the bytes are text. The scanner decides by
+content: UTF-8 text diffs as itself, a serialized payload is rendered through
+the `scripts.game_data` reader `webui/decoded_payloads.py` routes for it, and a
+payload with no reader or one over the diff size limit gets no text. Each file
+records which form it stored, so a bounded reader's diff is published as
+partial and a changed file with no diff says why. Changing that routing changes
+the cached text: refresh the previous-export baseline afterwards.
 
 The default scan covers WebUI-facing exported text plus image, model, video,
 and decoded audio assets. `--text-only` omits all assets, `--no-audio` keeps

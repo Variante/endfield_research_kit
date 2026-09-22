@@ -62,7 +62,7 @@ enumerated:
 
 | relation | edges | any music type at either end? |
 | --- | --- | --- |
-| main reference graph | 230,247 | no -- sources `04/05/06/07`, targets `02/05/06/07/09` |
+| main reference graph | 240,898 | no -- sources `04/05/06/07/09`, targets `02/05/06/07/09` |
 | parent field (its inverse) | 199,445 | no -- 13 type pairs, all in `02/05/06/07/09` |
 | `0x08`/`0x12` forest | 412 | no |
 | music hierarchy at `+9`, `0x0C` and `0x0A` counted arrays | 7,084 + 2,980 + 3,903 | internal only (`0A/0C/0D`, `0A->0B`) |

@@ -14,14 +14,13 @@ that are not the object graph. `STMG`, `ENVS` and `INIT` are framed byte-exact, 
   as an assertion; it is now a measurement. This matters because both external
   anchors gate on it: wwiser's definitions branch at `<= 150` and `<= 152`, and one
   version either side changes which fields exist.
-- **The Wwise SDK is installed locally** at `Wwise_2023.1.19.8928` with its SDK
-  component. Note the delta: the engine is 2023.1.**17** by its own DLL strings
-  (see [`audio_overview.md`](audio_overview.md)), so these headers are a strong
-  prior for this build rather than its exact witness. It
-  gives enum and codec tables and built-in plug-in parameter layouts. It does **not**
-  contain the bank layout -- the format is not a public API -- so it can name a field
-  and never frame one. Headers are Audiokinetic's under their EULA: record derived
-  facts, never vendor the headers.
+- **The Wwise SDK is installed locally** at `Wwise_2023.1.17.8841`, the exact
+  engine version (see [`audio_overview.md`](audio_overview.md)). Its headers give
+  enum and codec tables and built-in plug-in parameter layouts, and its Profile
+  static libraries plus PDBs carry the bank deserializers themselves as named
+  object code, which is what frames the HIRC node types
+  ([`audio_hirc_parser.md`](audio_hirc_parser.md)). Headers and libraries are
+  Audiokinetic's under their EULA: record derived facts, never vendor them.
 - **wwiser is checked out** under `tmp/audio/aux_sends/wwiser`. Its per-version
   definitions are the only anchor for the music hierarchy, because the engine skips
   those types and can supply no evidence. `tmp/` is disposable, so a conclusion drawn
