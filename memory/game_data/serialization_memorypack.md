@@ -1956,19 +1956,18 @@ envelope's `actionGroup` shape, 29 by the deliberate
 
 **SkillData reads whole, which no reviewed reader had claimed.** `SkillData`
 is itself a planned wrapper, so a file can be executed from its first byte
-rather than decoded to an anchor -- and **2,483 of the 2,621 exported files
-consume exactly to EOF, with not one landing short**. That shape is the
+rather than decoded to an anchor -- and **all 2,621 exported files consume
+exactly to EOF, with nothing refused and not one landing short**. That shape is the
 evidence: a wrong member layout drifts, and a drifted cursor stops at an
 arbitrary offset, so landing on the last byte repeatedly across files spanning
-orders of magnitude in size is not something a wrong layout produces. The
-remaining 138 refuse on a member-count or count-bounds check, which is the
-fail-closed path working rather than a silent misread. The sweep reports
-`shortOfEof` beside `exactEof` precisely because it is the number that would
-expose a drifting model.
+orders of magnitude in size is not something a wrong layout produces. The sweep reports `shortOfEof` beside `exactEof` precisely because it is the
+number that would expose a drifting model, and it reached zero only after the
+collection rule below; the 138 files that refused before it were refusing
+correctly.
 
 This also closes the family the decoder never reached. 88 files carry a
 non-empty `passiveEventActions` list, whose records no reviewed reader frames;
-**87 of them now consume exactly to EOF**. The other 206 files the timeline
+**all of them now consume exactly to EOF**. The other 206 files the timeline
 decoder refuses at the envelope are correctly refused -- both action-group
 lists are empty, so there is no first timeline record to decode, which is an
 absence rather than a gap.
@@ -1983,15 +1982,47 @@ holding no dispatcher roots *falsy*; three reader paths tested it for
 truthiness and so behaved as if unregistered, which is exactly the shape a
 named-root run has.
 
-***A hypothesis tested and refused, recorded so it is not retried.*** The
-dominant refusal is `TimelineAction+ForceSyncAnimData`, where the plan expects
-four members and the payload's header byte says zero -- the same type, the same
+***A hypothesis tested and refused, and then explained.*** The dominant
+refusal was `TimelineAction+ForceSyncAnimData`, where the plan expected four
+members and the payload's header byte said zero -- the same type, the same
 value, 85 times, which reads like MemoryPack writing fewer members than the
-type declares. Accepting a short header and reading only the members written
-gains **nothing**: still 2,483 exact, with 60 refusals merely changing
-category. Were those headers legitimately short, reading them short would land
-on EOF. It does not, so the cursor is wrong there rather than the header, and
-version tolerance is not the explanation.
+type declares. Accepting a short header gained **nothing**: still 2,483 exact,
+with 60 refusals merely changing category. Were those headers legitimately
+short, reading them short would land on EOF. It did not, so the cursor was
+wrong there rather than the header. The cause is the collection rule below,
+and the refutation is worth keeping: the zero was a symptom several members
+downstream of the real error, which is what a drifted cursor looks like when it
+happens to land on a plausible-looking byte.
+
+### A list and an array do not frame their elements the same way
+
+**`List<T>` writes each element through `T`'s own formatter; `T[]` of an
+unmanaged `T` is a packed array.** For a type with a generated wrapper the
+first emits that wrapper's member header before each element and the second
+does not, so the same type is four bytes in one position and five in the other.
+
+The reviewed readers state both halves. `_skill_read_gameplay_tag_list` frames
+every `List<GameplayTag>` element as five bytes -- a member-count byte of one,
+then four -- and `_skill_read_buff_id_list` calls the same shape the retained
+nested one-member wrapper. Against that, the frozen reader takes a
+`GameplayTag` *member* as four raw bytes in its tag-7 route, and this lane's
+own note that `GameplayTag[]` had been blocking hundreds of routes is the array
+half of the same fact.
+
+Getting it wrong in either direction is visible immediately, which is what
+fixes the rule rather than a preference. Framing every struct element through
+its wrapper costs BuffData 8 files and SkillData 98. Framing none of them
+leaves 138 SkillData files refused. Splitting on the container closes
+**both**: BuffData stays at 2,873 of 2,873 with no file's cursor moved, and
+SkillData goes to **2,621 of 2,621 -- every exported file, consumed exactly to
+EOF, with nothing refused and nothing short**.
+
+*The general shape of the error is worth naming.* A type's framing was being
+read as a property of the type, when it is a property of the type **in a
+position**. The same reading had already been made correctly once, for a struct
+as a member versus a struct in a counted map pair; a collection element is the
+third position, and nothing but a corpus was going to reveal that the first
+answer did not generalise.
 
 That BuffData closure is also fields 2-14 reaching the accepted id anchor, not
 a whole-file EOF claim: the named suffix beyond the anchor and the opaque nested

@@ -277,10 +277,35 @@ class Resolver:
             header=COUNTED_MAP_HEADS[head],
         )
 
-    def _plan_for_type(self, name: str, declared: str | None) -> MemberPlan | None:
-        """A plan for a member holding ``declared``, or None when unresolved."""
+    def _plan_for_type(
+        self, name: str, declared: str | None, *, as_element: bool = False
+    ) -> MemberPlan | None:
+        """A plan for a member holding ``declared``, or None when unresolved.
+
+        ``as_element`` marks a collection element, which is framed differently
+        from a member of the same type. A blittable struct is raw memory where
+        it is embedded directly -- the frozen reader takes ``GameplayTag`` as
+        four raw bytes in the tag-7 route -- but a collection writes each
+        element through that type's own generated formatter, which emits the
+        member header first. The reviewed ``_skill_read_gameplay_tag_list``
+        records exactly that: every element is five bytes, a member-count byte
+        of one and then four. ``_skill_read_buff_id_list`` frames ``BuffId``
+        the same way, calling it the retained nested one-member wrapper.
+
+        The distinction is whether the type has a generated wrapper at all. A
+        Unity value type has none, so nothing can write a header for it and it
+        stays raw in either position.
+        """
         if declared is None or self._refused(declared):
             return None
+        if as_element and declared in self.value_sizes:
+            # Only the raw-struct case is redirected. Everything else keeps its
+            # normal route, or this would preempt the primitives and the
+            # AnimationCurve profile, which a collection frames no differently.
+            definition = self.by_type.get(declared)
+            if definition is not None:
+                kind = UNION if self._is_union(definition) else OBJECT
+                return MemberPlan(name, kind, ref=definition)
         primitive = PRIMITIVE_KINDS.get(declared)
         if primitive == "string":
             return MemberPlan(name, STRING)
@@ -306,7 +331,11 @@ class Resolver:
         element_type = match.group("element") if match else (
             declared[:-2] if declared.endswith("[]") else None)
         if element_type is not None:
-            element = self._plan_for_type("item", element_type)
+            # Only ``List<T>`` writes each element through T's own formatter.
+            # ``T[]`` of an unmanaged T is a packed array, so its elements keep
+            # the raw width they have as a member.
+            element = self._plan_for_type(
+                "item", element_type, as_element=match is not None)
             return MemberPlan(name, LIST, element=element) if element else None
         definition = self.by_type.get(declared)
         if definition is None:
