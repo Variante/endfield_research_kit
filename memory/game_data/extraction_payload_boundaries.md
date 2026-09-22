@@ -91,6 +91,12 @@ Saved corpus consumers must recheck live catalog, build, CLI, parser and chunk
 fingerprints at both ends; authenticating the report hash alone does not
 establish freshness after a tool rebuild. Reauthenticate affected bytes with
 the rebuilt tool rather than rewriting old provenance pins.
+A corpus report is authenticated by that live provenance, not by a digest of
+its own bytes pinned in code: the context audit hashes its SkillData basis only
+to prove the file is stable while it runs. Each MemoryPack family report pins
+the static import closure of its own gate inside `memorypack/` (imports inside
+functions included), so an executed helper cannot escape provenance, while an
+unrelated family's reader edit no longer stales every other report.
 DummyDll population and setter declarations do not fill these gaps. Historical
 residual JsonData censuses supply family leads, not current denominators
 without a ledger rejoin. `jsondata_corpus` now owns that block-wide ledger
@@ -317,9 +323,15 @@ out of the native dispatcher one at a time, which is why the table is small.
 The table does not have to be recovered that way. Two facts hold across all 277
 reviewed rows, on three families whose tags run to 1341, 1101 and 216:
 
-- a union's compact tag is its **case-insensitive alphabetical rank** among the
-  `ForMemoryPack` wrapper types of its family, ranked on the name with that
-  suffix removed;
+- a union's compact tag is its **case-insensitive ordinal rank on the wrapped
+  type's full name** among the `ForMemoryPack` wrappers of its family. The
+  wrapper name flattens `.`, `<`, `,` and `>` to `_`, so the key must read them
+  back (`_` as `.`, a generic's closing `_` as `>`). Ranking the flattened name
+  directly -- the earlier rule -- reproduces all 277 reviewed rows yet
+  mis-tags `IFixAction.Data`..`IFixAction3.Data` in AbilityActionData and six
+  `GameConditionClientOnce<...>` instantiations, because `.` and `,` sort below
+  digits and `>` where `_` does not. *A rule that reproduces every reviewed row
+  can still be wrong on rows no reviewed family contains;*
 - a wrapper's members are its `set____name__` setters in **declaration order**,
   base chain first and root first, each typed by that setter's parameter.
 
@@ -334,8 +346,29 @@ bytes, and the divergence is reported instead of failing the run.
 
 Keep the two evidence tiers apart. A reviewed row's boundary is `exact`: its
 `nativeIdentity` was read from the dispatcher. A derived row's is `direct`: an
-observed declaration in the build's managed image, corroborated on 277 rows,
-with nothing here reading the dispatcher that assigns the tag.
+observed declaration in the build's managed image, with nothing in the
+derivation reading the dispatcher that assigns the tag.
+
+**The dispatcher can be read whole, not one row at a time.** Each family's
+`<Base>ForMemoryPackFormatter.Deserialize` guards a jump table with `cmp`/`ja`,
+whose bound equals the derived family size; each entry reaches (through at most
+one `e9` thunk) a body whose first `mov rdx,[rip+disp32]` loads the wrapper's
+type-usage cell. Resolving every cell names every tag natively: all 2,683
+LevelScript entries (ActionBase, PureGetter, ActionHeader), plus
+AbilityActionData, GameCondition and BaseComponentData, agree with the
+corrected derived table and with every reviewed row, with no shared targets.
+That sweep is what exposed the rank-rule error. It is maintained as
+`memorypack.union_dispatch`, which accepts a table only when its entries map
+one-for-one onto the family's derived wrappers with no shared targets; smaller
+families compile to compare chains rather than a jump table and are refused.
+Per-row getter contracts (`entityptr_getter`, `spawnerptr_getter`) now record
+tags, member counts and `GetResult` bodies as regenerated data keyed by managed
+type, and tie each authored reading to the body hash it was reviewed against:
+`--regenerate` refuses a row whose body changed. Between the recorded and the
+current build every such tag moved, one getter gained a member, and two
+recorded same-tag ambiguities split into distinct native tags. Tag identity read this way is native evidence, but a
+derived row's nested struct and enum declarations stay `direct` until their
+own codecs are proved.
 
 The derivation also closes the types those layouts refer to: 42 structs and 94
 enums, reached by running the reference set to a fixed point. Both are checked
@@ -813,7 +846,16 @@ the live BLC path set as well as fingerprint contents and executing sources.
 anonymous prefix/candidate framing and `skill_terminal` enumerates each terminal
 branch with complete record ranges. The gate joins current decrypted stream
 bytes to every selected outer-ledger identity and checks overlay, raw chunks,
-CLI and parser provenance at both ends. Historical census rebinding is rejected.
+CLI and parser provenance at both ends. Historical census rebinding is rejected,
+with one narrow, opt-in exception: `--allow-exporter-rebind` carries a cursor
+verification across input sets only when `AnimeStudio.CLI` is the sole moved
+build fingerprint and the identity set, every selected file's logical hash and
+length, and the BLC path set are identical. The rebuilt exporter otherwise
+strands the verified basis the context audit and the capture preflight both
+require, because only a capture can re-verify it and the preflight blocks the
+capture. The output records `cursorVerification.rebinding`; a fresh capture
+under the current input set supersedes it. A timeline continuation the reader
+stopped short of field 42 is a valid unverified state and promotes nothing.
 Unique, ambiguous, unsupported and failed rows remain explicit; no candidate
 establishes whole-schema ownership. Each prefix/candidate binds the input-set
 hash, logical identity/hash, `[start, hardLimit)`, grammar parser cursor, byte
