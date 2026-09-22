@@ -100,7 +100,7 @@ animation. Neither is spatial, so neither belongs in the world lane.
 | [`audio_overview.md`](audio_overview.md) -- the six evidence layers and the authored-versus-observed boundary | 2 | 542 |
 | [`audio_bank_format.md`](audio_bank_format.md) -- the bank sections outside HIRC | 2 | 171 |
 | [`audio_hirc_parser.md`](audio_hirc_parser.md) -- every HIRC layout, named from the SDK deserializer; the shipped parser read out of the engine | 2 | 819 |
-| [`audio_native_hooks.md`](audio_native_hooks.md) -- the native request chain, and what a bounded capture would prove | 2 | 464 |
+| [`audio_native_hooks.md`](audio_native_hooks.md) -- the native request chain, and what a bounded capture would prove | 2 | 482 |
 | [`audio_hirc_graph.md`](audio_hirc_graph.md) -- the object graph, the closed type layouts, and the typed v150 effect/bus parse | 3 | 1409 |
 | [`audio_naming_coverage.md`](audio_naming_coverage.md) -- what is named and owned, and what nothing reaches | 4 | 317 |
 

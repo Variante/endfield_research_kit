@@ -443,15 +443,33 @@ of it. It validates a session against the provider's own counters in
 session stop, an incomplete session -- and refuses the whole session naming the
 gate rather than reporting a smaller number across a hole.
 
-**It stops short of the join, deliberately.** The per-callback records ship as
-opaque `payloadHex` blobs in `events.jsonl`, and their serialized layout is not
-the in-memory `CallbackRecord`: the payload is 208 bytes where that struct is
-larger, so the writer packs a different form. The importer counts those
-payloads by type and size and decodes no field, because choosing an offset
-without the writer's layout would invent facts. Recovering that layout is the
-one remaining step between a validated session and the
-key-to-file-to-decoder rows, and it is a reading of `EndfieldCapture`'s own
-writer rather than of the game.
+**The payload layout is recovered, and it is the writer's own.** The
+per-callback records ship as opaque `payloadHex` blobs whose layout is not the
+in-memory `CallbackRecord` -- the payload is 208 bytes where that struct is
+larger. It is `AudioEventPayload` in `runtime_dll.cpp`: five u64, four u32, a
+kind byte, then a 48-byte hook name and a 96-byte key/path, summing to 201 and
+padding to 208. The decode is self-checking and checks out: across a real
+session every payload decodes, the hook-name field resolves to exactly the
+three constants the adapter declares, and calls and results pair one to one.
+
+***A session already on disk carried observed playback that nothing had
+read.*** Over 32.7 seconds of windowed capture: 693 calls and 693 results with
+**no unpaired call and no truncated text**, **111 distinct Events posted** in
+689 posts each returning its own playing id, and **19 of those Events have no
+recovered name** -- so they are genuinely hash-only *and* genuinely used, which
+authored evidence alone could not establish.
+
+The four opened paths are the same bank probed in order across
+`Persistent` and `StreamingAssets`, each with and without the `Chinese`
+subdirectory. That is the overlay fallback rule of
+[`../game_data_recovery.md`](../game_data_recovery.md) observed at runtime
+rather than inferred from the catalog.
+
+**What is still not joined.** Posts, prepared source keys and opened paths are
+counted separately. A key seen at two hooks in one session is a coincidence of
+numbers until ordering and identity are checked, and the key-to-file-to-decoder
+continuity therefore remains open: this session prepared no source keys at all,
+so it cannot speak to it.
 
 ## What remains unresolved
 

@@ -21,15 +21,22 @@ stop, or when the provider did not mark the session complete. Each of those
 means the record stream has holes, and anything computed across a hole is not
 an observation.
 
-**What this does not do, and why.** The per-callback records are published as
-opaque ``payloadHex`` blobs in ``events.jsonl``, not as JSON. Their serialized
-layout is not the in-memory ``CallbackRecord``: the shipped payload is 208
-bytes where that struct is larger, so the writer packs a different form. This
-module therefore *counts* those payloads by type and size and decodes none of
-their fields, because choosing an offset without the writer's layout would
-invent facts rather than read them. Finishing the decode needs that layout, and
-is what stands between a validated session and the key-to-file-to-decoder
-continuity the audio topic is waiting on.
+**What it decodes, and on whose authority.** The per-callback records ship as
+opaque ``payloadHex`` blobs in ``events.jsonl``. Their layout is not the
+in-memory ``CallbackRecord`` -- the shipped payload is 208 bytes where that
+struct is larger -- so it is read from the writer that packs it,
+``AudioEventPayload`` in ``runtime_dll.cpp``: five u64, four u32, a kind byte,
+then two fixed ASCII buffers, summing to 201 and padding to 208. That the
+layout is right is checkable rather than asserted, and it checks: across a real
+session every payload decodes, the hook-name field resolves to exactly the
+three hook constants the adapter declares, and calls and results pair one to
+one with no remainder.
+
+**Nothing is joined across hooks.** A call and its result share a capture id,
+so that pair is one observation. An Event posted and a file opened in the same
+session are two facts about the session and not a chain; calling them one would
+be the cross-record join this lane keeps refusing. Posts, prepared keys and
+opened paths are therefore counted separately.
 
 **A capture cannot recover an Event name, and it is worth being exact about
 why.** The hooked post is
@@ -43,6 +50,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import struct
 import sys
 import time
 from collections import Counter
@@ -59,6 +67,8 @@ WINDOW_SCHEMA = "endfieldCapture.audioWindow.v2"
 SUMMARY_SCHEMA = "endfieldCapture.audioSummary.v2"
 #: The audio provider's id in the session event stream.
 AUDIO_PROVIDER_ID = 2
+#: ``EventType::AudioCallback``.
+AUDIO_CALLBACK_TYPE = 10
 #: Hook names the provider publishes, as its integration contract fixes them.
 POST_HOOK = "AudioAdapter._PostEvent"
 POST_EXTERNAL_HOOK = "AudioAdapter._PostEventWithExternalSource"
@@ -147,32 +157,114 @@ def check_session(session: Path) -> dict[str, Any]:
     }
 
 
-def callback_payloads(session: Path) -> dict[str, Any]:
-    """Count the audio provider's binary callback payloads in the event stream.
+#: ``AudioEventPayload`` as ``runtime_dll.cpp`` packs it, read from that struct
+#: rather than inferred: five u64, four u32, a kind byte, then two fixed ASCII
+#: buffers. It sums to 201 and pads to 208, which is exactly the payload size
+#: every shipped record carries.
+PAYLOAD_BYTES = 208
+HOOK_NAME_OFFSET, HOOK_NAME_BYTES = 57, 48
+KEY_OR_PATH_OFFSET, KEY_OR_PATH_BYTES = 105, 96
+#: ``CallbackKind``: a call, and its paired result.
+KIND_CALL, KIND_RESULT = 0, 1
+#: The writer sets these when it had to truncate a bounded text field.
+FLAG_HOOK_NAME_TRUNCATED = 1 << 30
+FLAG_KEY_OR_PATH_TRUNCATED = 1 << 31
 
-    The per-callback records are published as opaque ``payloadHex`` blobs in
-    ``events.jsonl`` rather than as JSON, so this reports how many are present
-    and of what size, and does **not** decode their fields. Decoding them needs
-    the writer's serialized layout, which is not the in-memory ``CallbackRecord``
-    -- the shipped payload is 208 bytes where that struct is larger -- and
-    guessing an offset would invent facts rather than read them.
-    """
+
+def decode_payload(blob: bytes) -> dict[str, Any]:
+    """One ``AudioEventPayload``, or a refusal if it is not that shape."""
+    if len(blob) != PAYLOAD_BYTES:
+        raise SessionError(f"audio payload is {len(blob)} bytes, expected {PAYLOAD_BYTES}")
+    capture, parent, return_value, fact0, fact1 = struct.unpack_from("<5Q", blob, 0)
+    nesting, hook_index, result_code, flags = struct.unpack_from("<4I", blob, 40)
+
+    def text(offset: int, size: int) -> str:
+        return blob[offset:offset + size].split(bytes(1), 1)[0].decode("ascii", "replace")
+
+    return {
+        "captureId": capture,
+        "parentCaptureId": parent,
+        "returnValue": return_value,
+        "pointerFact0": fact0,
+        "pointerFact1": fact1,
+        "nestingId": nesting,
+        "hookIndex": hook_index,
+        "resultCode": result_code,
+        "flags": flags,
+        "kind": blob[56],
+        "hookName": text(HOOK_NAME_OFFSET, HOOK_NAME_BYTES),
+        "keyOrPath": text(KEY_OR_PATH_OFFSET, KEY_OR_PATH_BYTES),
+        "truncated": bool(flags & (FLAG_HOOK_NAME_TRUNCATED | FLAG_KEY_OR_PATH_TRUNCATED)),
+    }
+
+
+def decoded_callbacks(session: Path) -> list[dict[str, Any]]:
+    """Every audio callback record in the session, decoded."""
     stream = session / "events.jsonl"
     if not stream.is_file():
-        return {"status": "absent"}
-    sizes: Counter = Counter()
+        return []
+    records = []
     for row in _read_jsonl(stream):
-        if row.get("provider") == AUDIO_PROVIDER_ID:
-            sizes[(int(row.get("type") or 0), int(row.get("payloadBytes") or 0))] += 1
+        if row.get("provider") != AUDIO_PROVIDER_ID or row.get("type") != AUDIO_CALLBACK_TYPE:
+            continue
+        payload = row.get("payloadHex")
+        if not isinstance(payload, str) or not payload:
+            raise SessionError("an audio callback event carries no payload")
+        records.append(dict(decode_payload(bytes.fromhex(payload)),
+                            timestampNs=row.get("timestampNs")))
+    return records
+
+
+def observed(records: list[dict[str, Any]], inventory: dict[int, dict[str, Any]]) -> dict[str, Any]:
+    """What the decoded records say, with each claim kept to itself.
+
+    A call and its result share a capture id, so the pair is one observation.
+    Beyond that nothing is joined: an Event posted and a file opened in the
+    same session are two facts about the session, not a chain, and calling
+    them one would be the cross-record join this lane keeps refusing.
+    """
+    calls = [row for row in records if row["kind"] == KIND_CALL]
+    results = {row["captureId"]: row for row in records if row["kind"] == KIND_RESULT}
+    posts = Counter()
+    playing_ids = set()
+    for row in calls:
+        if row["hookName"] not in (POST_HOOK, POST_EXTERNAL_HOOK):
+            continue
+        posts[row["pointerFact0"] & 0xFFFFFFFF] += 1
+        paired = results.get(row["captureId"])
+        if paired is not None and paired["returnValue"]:
+            playing_ids.add(paired["returnValue"])
+    opened = {row["keyOrPath"] for row in records
+              if row["hookName"] == IO_OPEN_HOOK and row["keyOrPath"]}
+    prepared = {row["pointerFact0"] & 0xFFFFFFFF for row in records
+                if row["hookName"] == PROVIDER_HOOK}
+    unnamed = sorted(event for event in posts if event not in inventory)
     return {
-        "status": "counted",
-        "records": sum(sizes.values()),
-        "byTypeAndSize": {f"type{kind}:{size}b": count
-                          for (kind, size), count in sorted(sizes.items())},
+        "callbackRecords": len(records),
+        "calls": len(calls),
+        "results": len(results),
+        "unpairedCalls": sum(1 for row in calls if row["captureId"] not in results),
+        "truncatedTexts": sum(1 for row in records if row["truncated"]),
+        "postedEvents": {
+            "distinct": len(posts),
+            "total": sum(posts.values()),
+            "withRecoveredName": sum(1 for event in posts if event in inventory),
+            "withoutRecoveredName": len(unnamed),
+            "unnamedEventIds": [f"0x{value:08X}" for value in unnamed[:40]],
+            "distinctPlayingIds": len(playing_ids),
+            "boundary": (
+                "An Event id reached the post hook and the paired result returned a "
+                "playing id. That is a call that was accepted, not a proof that it "
+                "was audible, and the id is a hash: no name is recovered here."
+            ),
+        },
+        "openedPaths": sorted(opened)[:40],
+        "openedPathCount": len(opened),
+        "preparedSourceKeys": len(prepared),
         "boundary": (
-            "Counted, not decoded. The payload is a packed binary record whose "
-            "serialized layout differs from the in-memory struct, so no Event id, "
-            "source key or path is read from it here."
+            "Posts, prepared keys and opened paths are counted separately and not "
+            "joined. A key seen at two hooks in one session is a coincidence of "
+            "numbers until ordering and identity are checked, which this does not do."
         ),
     }
 
@@ -180,18 +272,18 @@ def callback_payloads(session: Path) -> dict[str, Any]:
 def summarize(session: Path, inventory: dict[int, dict[str, Any]]) -> dict[str, Any]:
     """What the session supports, with each claim kept separate."""
     gate = check_session(session)
-    payloads = callback_payloads(session)
+    records = decoded_callbacks(session)
+    body = observed(records, inventory)
     return {
         "gate": gate,
-        "callbackPayloads": payloads,
+        "observed": body,
         "eventNameRecovery": {
             "possible": False,
             "reason": (
-                "The hooked post takes a uint32 Event id, not a name: "
-                "PostEventFn in the audio hook adapter is "
-                "(uint32 eventId, uint64 audioObjectId, uint32 callbackType, ...). "
-                "A capture therefore observes which Events fired, never how they "
-                "are spelled, and cannot name a hash-only Event."
+                "The hooked post takes a uint32 Event id, not a name: PostEventFn in "
+                "the audio hook adapter is (uint32 eventId, uint64 audioObjectId, "
+                "uint32 callbackType, ...). A capture therefore observes which Events "
+                "fired, never how they are spelled."
             ),
             "inventoryEventsWithRecoveredName": len(inventory),
         },
@@ -247,7 +339,10 @@ def build(output: Path, session: Path | None, root: Path = DEFAULT_SESSION_ROOT)
                     "session": chosen.name,
                     "windows": body["gate"]["windowsCompleted"],
                     "observedMilliseconds": body["gate"]["observedMilliseconds"],
-                    "callbackPayloads": body["callbackPayloads"].get("records", 0),
+                    "callbackRecords": body["observed"]["callbackRecords"],
+                    "distinctEvents": body["observed"]["postedEvents"]["distinct"],
+                    "withoutRecoveredName": body["observed"]["postedEvents"]["withoutRecoveredName"],
+                    "openedPaths": body["observed"]["openedPathCount"],
                     "elapsedSeconds": round(time.perf_counter() - started, 3),
                 },
             }
