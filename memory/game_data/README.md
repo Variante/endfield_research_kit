@@ -76,9 +76,9 @@ animation. Neither is spatial, so neither belongs in the world lane.
 
 | File | Lines |
 | --- | --- |
-| [`install_and_vfs.md`](install_and_vfs.md) -- the block inventory, the reader each family routes to, and reading a logical file | 272 |
+| [`install_and_vfs.md`](install_and_vfs.md) -- the block inventory, the reader each family routes to, and reading a logical file | 282 |
 | [`shared_containers.md`](shared_containers.md) -- the `TRET` container, the terrain header, and the custom LZ4 with big-endian offsets and a bit-interleaved token | 164 |
-| [`containers_cabmap.md`](containers_cabmap.md) -- the `CABMap` container index that gives a PathID its source root | 94 |
+| [`containers_cabmap.md`](containers_cabmap.md) -- the `CABMap` container index that gives a PathID its source root | 154 |
 
 **World lane** -- terrain, chunks, irradiance.
 
@@ -97,7 +97,7 @@ animation. Neither is spatial, so neither belongs in the world lane.
 
 | File | Level | Lines |
 | --- | --- | --- |
-| [`audio_overview.md`](audio_overview.md) -- the six evidence layers and the authored-versus-observed boundary | 2 | 440 |
+| [`audio_overview.md`](audio_overview.md) -- the six evidence layers and the authored-versus-observed boundary | 2 | 499 |
 | [`audio_bank_format.md`](audio_bank_format.md) -- the bank sections outside HIRC | 2 | 171 |
 | [`audio_hirc_parser.md`](audio_hirc_parser.md) -- every HIRC layout, named from the SDK deserializer; the shipped parser read out of the engine | 2 | 819 |
 | [`audio_native_hooks.md`](audio_native_hooks.md) -- the native request chain, and what a bounded capture would prove | 2 | 435 |
@@ -108,13 +108,13 @@ animation. Neither is spatial, so neither belongs in the world lane.
 
 | File | Level | Lines |
 | --- | --- | --- |
-| [`gameplay_semantics.md`](gameplay_semantics.md) -- the root framing, the rules the 228 tracked contracts share, and what a decoded action row may be labelled | 4 | 205 |
+| [`gameplay_semantics.md`](gameplay_semantics.md) -- the root framing, the rules the 228 tracked contracts share, and what a decoded action row may be labelled | 4 | 224 |
 
 **Story lane** -- the carriers that activate and place Story.
 
 | File | Level | Lines |
 | --- | --- | --- |
-| [`story_carriers.md`](story_carriers.md) -- what a LevelScript action, Timeline record, or spatial carrier proves, its identity domain and slot action bindings, and the gates on all of it | 4 | 102 |
+| [`story_carriers.md`](story_carriers.md) -- what a LevelScript action, Timeline record, or spatial carrier proves, its identity domain and slot action bindings, and the gates on all of it | 4 | 109 |
 
 **Catalog lane** -- the `ExtendData` and `BundleManifest` blocks.
 
@@ -126,22 +126,22 @@ animation. Neither is spatial, so neither belongs in the world lane.
 
 | File | Level | Lines |
 | --- | --- | --- |
-| [`unity_assets.md`](unity_assets.md) -- object identity, the binding evidence order, and what exporting an object does not prove | 4 | 109 |
+| [`unity_assets.md`](unity_assets.md) -- object identity, the binding evidence order, and what exporting an object does not prove | 4 | 306 |
 
 **Extraction lane** -- the reader itself, and how far it is proven.
 
 | File | Level | Lines |
 | --- | --- | --- |
-| [`extraction_pipeline.md`](extraction_pipeline.md) -- AnimeStudio: export scopes, provenance states, scheduling, DummyDll, shader recovery, change workflow | 1 | 246 |
-| [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md) -- one statement per family: which reader is fail-closed and where it stops | 2 | 313 |
+| [`extraction_pipeline.md`](extraction_pipeline.md) -- AnimeStudio: export scopes, provenance states, scheduling, DummyDll, shader recovery, change workflow | 1 | 392 |
+| [`extraction_payload_boundaries.md`](extraction_payload_boundaries.md) -- one statement per family: which reader is fail-closed and where it stops | 2 | 911 |
 
 **Cross-lane**
 
 | File | Level | Lines |
 | --- | --- | --- |
-| [`serialization_memorypack.md`](serialization_memorypack.md) -- MemoryPack framing status, and the IL2CPP chain that resolves a formatter | 2 | 254 |
+| [`serialization_memorypack.md`](serialization_memorypack.md) -- MemoryPack framing status, and the IL2CPP chain that resolves a formatter | 2 | 2122 |
 | [`native_read_path.md`](native_read_path.md) -- from `ResourceManager` down to `ReadFile`, and why it yields no authenticated receipt | 2 | 164 |
-| [`settled_and_open.md`](settled_and_open.md) -- the settled tables, and what is open, stated accurately | 4 | 162 |
+| [`settled_and_open.md`](settled_and_open.md) -- the settled tables, and what is open, stated accurately | 4 | 171 |
 
 ## Start here for a specific question
 
@@ -154,7 +154,7 @@ animation. Neither is spatial, so neither belongs in the world lane.
 - *Does this LevelScript action or trigger volume prove a Story link?* -> [`story_carriers.md`](story_carriers.md).
 - *Which native fact does a Story or Mission Pipeline builder rely on?* -> its `scripts/game_data/contracts/<name>.json` and `<name>_native.py` loader, then that contract's `nativeInputs` against the selected build.
 - *Is this conclusion still current?* -> [`settled_and_open.md`](settled_and_open.md), then the contract's own `nativeInputs`.
-- *What is worth attempting next?* -> the remaining gaps in [`../game_data_recovery.md`](../game_data_recovery.md), and the eliminations in `world_chunk_unread_region.md`, `world_irradiance.md` and `audio_hirc_curves.md` so an excluded route is not retried.
+- *What is worth attempting next?* -> the remaining gaps in [`../game_data_recovery.md`](../game_data_recovery.md), and the eliminations in `world_chunk_unread_region.md`, `world_irradiance.md` and `audio_hirc_parser.md` so an excluded route is not retried.
 
 ## What these files are for
 

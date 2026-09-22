@@ -37,9 +37,21 @@ python tools\endfield_source_graph.py build --relevant-asset-maps --skip-referen
   covers the exporter binary, so changing the exporter breaks the corpus-gate
   chain -- VFS audit, the Buff and Skill gates, then `jsondata_corpus` -- and
   the tracked contracts recording it. Correct fail-closed behaviour, neither a
-  client update nor a regression, but a real cost: plan an exporter change and
-  a contract regeneration together, and re-run the audit rather than editing a
-  recorded value.
+  client update nor a regression. Recovering from it is now a maintained
+  operation rather than a hand edit: re-run the audit, then
+  `python -m scripts.game_data.contracts_repin --write`, which replaces the
+  fingerprint in every contract carrying it and settles the two pin families
+  that follow -- the `dependencies[]` rows contracts record for each other and
+  the digest each loader pins, including table-shaped pins such as
+  `buff_frontiers_native.FRONTIERS`. It edits bytes, never a JSON round-trip,
+  so line endings survive, and it **refuses unless the installed
+  `GameAssembly.dll` and `global-metadata.dat` equal both the audit's and the
+  contracts' own `nativeInputs`**. That gate is what separates an
+  exporter-only re-pin from a client update, where the rows may really be
+  stale and regeneration, not re-pinning, is the answer.
+- A test must not hardcode an `inputSetSha256`. It is an exporter fingerprint,
+  so a pinned copy passes only until the next rebuild and then fails a gate
+  that is working correctly. Read it from the contract the subject loads.
 - A field name, code address, registration order, hash collision, filename,
   proximity, or available asset is not ownership or runtime execution.
 - Preserve source root, logical path, file hash, record offset, parser/schema

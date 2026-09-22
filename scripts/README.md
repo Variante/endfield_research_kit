@@ -26,9 +26,11 @@ axis. A path appears under exactly one owner.
 | | `game_data/il2cpp/` | `protocol.py` (metadata and PE primitives), `native_image.py` (the one opened installed build every contract validator checks against, with the shared method-identity, dispatcher-route, code-window and setter-order checks), `context.py` (generic-instantiation pointer tables), `method_resolver.py` (managed name to selected-build body), and the context audit split by the section it owns: `context_audit.py` (CLI, registration and method-spec sweeps, report assembly), `context_audit_common.py` (build gate through `contracts/il2cpp_context_audit_native.json`, hashing and sweep helpers), `context_audit_memorypack.py` (MemoryPack reader and BuffData consumer checks), `context_audit_skilldata.py` (SkillData branch witness, replay and static alignment), `context_audit_vfs.py` (stream, VFS and UnityPlayer consumer checks) |
 | | `game_data/monobehaviour/` | the exported MonoBehaviour corpus: `census.py`, `monoscript_catalog.py`, `script_names.py`, `field_semantics.py` (what each named class's fields hold) and `table_keys.py` (which string fields carry exported Table keys) |
 | | `game_data/schemas/` | the byte-pinned named JSON schema readers for the textual JsonData families (`gameplay_config.py`, `gameplay_config_polymorphic.py`, `text_schema.py`, `mission_runtime_main.py`, `mission_runtime_meta.py`, `npc_catalog.py`, `npc_prefab_info.py`, `map_config.py`, `ui_level_map_load_config.py`, `level_mount_point.py`, `gold_coin_config.py`), all validated by `named_schema.py` and keeping only their contract pin, path predicate, relations and result shape |
-| | `game_data/memorypack/derived_schema.py` | recursive read-plan resolution over the derived wrapper, union and wrapped-type tables; refuses the custom-formatter families rather than reading their member list |
+| | `game_data/memorypack/derived_schema.py` | recursive read-plan resolution over the derived wrapper, union, enum and wrapped-type tables; models the counted-map framing a reviewed reader proves and refuses every other formatter-backed type rather than reading its member list |
 | | `game_data/memorypack/union_subtypes.py` | tag assignment for the nested unions the dispatcher walk cannot reach, inferred from the wrapper hierarchy and gated on the walked union reproducing exactly |
-| | `game_data/memorypack/derived_actions.py` | opt-in reader that adds the derived action routes whose members are all fixed-width or strings to the frozen `buff_actions` reader and names their fields; not wired into the corpus gates |
+| | `game_data/memorypack/derived_actions.py` | the narrow flat-body case of the same idea: adds only the routes whose members are all fixed-width or strings, with no plan registry. `derived_plans` is the superset |
+| | `game_data/contracts_repin.py` | re-pins the exporter fingerprint an AnimeStudio rebuild invalidates, then settles the dependency rows and loader digests that follow from it; refuses unless the installed build matches both the audit and the contracts |
+| | `game_data/memorypack/derived_plans.py` | opt-in reader that executes a `derived_schema` read plan with the frozen reader's own primitives, so a nested record, list, counted map or union is consumed rather than only described; `--corpus` is its adoption gate against exported BuffData |
 | | `game_data/memorypack/action_dispatcher.py` | the whole AbilityActionData union dispatcher of the selected build, walked generically from the switch table the reviewed contracts pin; names the wrapper behind every tag, including the ones no contract covers |
 | | `game_data/memorypack/wrapper_members.py` | the selected build's generated wrapper member order and member types for every `*ForMemoryPack` type, derived in one metadata pass; the bulk source the per-tag contracts record one wrapper at a time |
 | | `game_data/memorypack/` | MemoryPack codecs and their corpus gates, including the current-build BuffData additions (`buff_icon_config.py`, `buff_residual_actions.py`, `buff_named_schema.py`) and the SkillData first-timeline lane (`skill_timeline_*.py`), which share `core.LabelledReader` and gate through `il2cpp.native_image` |
@@ -319,6 +321,16 @@ python -m scripts.game_data.memorypack.derived_actions --list-routes
 python -m scripts.game_data.memorypack.union_subtypes
 python -m scripts.game_data.memorypack.union_subtypes --union Selector_Finder_DataForMemoryPack
 python -m scripts.game_data.memorypack.derived_schema
+python -m scripts.game_data.memorypack.derived_plans
+python -m scripts.game_data.memorypack.derived_plans --corpus
+
+Re-pin after rebuilding the exporter (dry-run first; `--write` applies):
+
+```bat
+python -m scripts.game_data.contracts_repin
+python -m scripts.game_data.contracts_repin --write
+python -m scripts.game_data.contracts_repin --verify
+```
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
 %ASCLI% audit-refs --index OBJECT_INDEX.jsonl
@@ -348,8 +360,9 @@ its result under `reports/animestudio/`:
 | `game_data.memorypack.buff_1b_corpus` | `buff_1b_current_latest.{json,md}` |
 | `game_data.memorypack.lipsync_corpus` | `lipsync_current_latest.{json,md}` |
 | `game_data.memorypack.derived_schema` | `reports/game_data/memorypack_derived_schema.json`; a recursive read plan per action tag over nested records, lists, arrays and nested unions, with each route's evidence tier and the named type blocking the rest |
-| `game_data.memorypack.union_subtypes` | `reports/game_data/memorypack_union_subtypes.json`; every union base's subtypes and predicted tag assignment, gated on reproducing the walked root union and corroborated against the reviewed nested rows |
+| `game_data.memorypack.union_subtypes` | `reports/game_data/memorypack_union_subtypes.json`; every union base's subtypes and predicted tag assignment, gated on reproducing the walked root union and corroborated against the reviewed nested rows plus the frozen reader's own per-tag member counts for six nested unions it never walks |
 | `game_data.memorypack.derived_actions` | `reports/game_data/memorypack_derived_actions.json`; the union tags whose whole body this reader can consume, and the cross-check of that framing against the frozen reader |
+| `game_data.memorypack.derived_plans` | `reports/game_data/memorypack_derived_plans.json`; each plan's framing cross-checked against the frozen reader tag by tag. `--corpus` prints instead: how many exported BuffData files each reader closes, whether every file the frozen reader already closed still ends at the same cursor, and how many routes and nested-union placements the run actually walked |
 | `game_data.memorypack.action_dispatcher` | `reports/game_data/memorypack_action_dispatcher.json`; every AbilityActionData union tag's route, registered type, generated wrapper, named member order and member widths, with each reviewed tag re-derived and compared |
 | `game_data.memorypack.wrapper_members` | `reports/game_data/memorypack_wrapper_members.json`; every generated `*ForMemoryPack` wrapper's serialized member order, member types, fixed member widths (including each enum's real underlying width), and the wrapped type each wrapper frames, derived from the selected build, plus its agreement with the reviewed contracts |
 | `game_data.terrain.corpus` | `terrain_tret_latest.{json,md}` |
