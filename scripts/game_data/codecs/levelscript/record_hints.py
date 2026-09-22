@@ -6,8 +6,7 @@ Moved verbatim out of ``scripts/game_data/levelscript_binary.py``.
 from __future__ import annotations
 
 from collections import Counter
-from scripts.common import RECORDED_NATIVE_GAMEASSEMBLY_SHA256
-from scripts.common import RECORDED_NATIVE_METADATA_SHA256
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.codecs.levelscript.framing_common import _record_start
 from typing import Any
 
@@ -24,31 +23,31 @@ LEVELSCRIPT_NATIVE_HEADER_CONTRACT_SCHEMA = "levelScriptNativeHeaderContract.v1"
 
 
 LEVELSCRIPT_NATIVE_HEADER_NAMES: dict[tuple[int, int], str] = {
-    (0x1052, 0x00): "LevelEvent_OnCustomEvent",
-    (0x1054, 0x00): "LevelEvent_OnDialogEnter",
-    (0x12BA, 0x00): "ScriptEvent_OnCustomEvent",
-    (0x12BE, 0x00): "ScriptEvent_OnLeaderEnterTriggerVolume",
-    (0x12C0, 0x00): "ScriptEvent_OnLeaderLeaveTriggerVolume",
-    (0x126A, 0x00): "LevelEvent_OnEntityHpChanged",
-    (0x1355, 0x00): "LevelEvent_OnDialogExit",
-    (0x1385, 0x00): "LevelEvent_OnQuestStateChanged",
-    (0x141E, 0x00): "EntityEvent_OnInteractiveStateChanged",
+    union_tags.header_code("LevelEvent_OnCustomEvent"): "LevelEvent_OnCustomEvent",
+    union_tags.header_code("LevelEvent_OnDialogEnter"): "LevelEvent_OnDialogEnter",
+    union_tags.header_code("ScriptEvent_OnCustomEvent"): "ScriptEvent_OnCustomEvent",
+    union_tags.header_code("ScriptEvent_OnLeaderEnterTriggerVolume"): "ScriptEvent_OnLeaderEnterTriggerVolume",
+    union_tags.header_code("ScriptEvent_OnLeaderLeaveTriggerVolume"): "ScriptEvent_OnLeaderLeaveTriggerVolume",
+    union_tags.header_code("LevelEvent_OnEntityHpChanged"): "LevelEvent_OnEntityHpChanged",
+    union_tags.header_code("LevelEvent_OnDialogExit"): "LevelEvent_OnDialogExit",
+    union_tags.header_code("LevelEvent_OnQuestStateChanged"): "LevelEvent_OnQuestStateChanged",
+    union_tags.header_code("EntityEvent_OnInteractiveStateChanged"): "EntityEvent_OnInteractiveStateChanged",
 }
 
 
 # Canonical current-build identities. The older table above remains for
 # report/tests that still carry the compact parser's combined observed pair.
 LEVELSCRIPT_NATIVE_HEADER_TAG_NAMES: dict[tuple[int, int], str] = {
-    (0x0052, 0x10): "LevelEvent_OnCustomEvent",
-    (0x0054, 0x10): "LevelEvent_OnDialogEnter",
-    (0x00BA, 0x12): "ScriptEvent_OnCustomEvent",
-    (0x00BE, 0x12): "ScriptEvent_OnLeaderEnterTriggerVolume",
-    (0x00C0, 0x12): "ScriptEvent_OnLeaderLeaveTriggerVolume",
-    (0x006A, 0x12): "LevelEvent_OnEntityHpChanged",
-    (0x0055, 0x13): "LevelEvent_OnDialogExit",
-    (0x0085, 0x13): "LevelEvent_OnQuestStateChanged",
-    (0x0085, 0x15): "LevelEvent_OnProxyPatrolCheckpointReach",
-    (0x001E, 0x14): "EntityEvent_OnInteractiveStateChanged",
+    union_tags.header("LevelEvent_OnCustomEvent"): "LevelEvent_OnCustomEvent",
+    union_tags.header("LevelEvent_OnDialogEnter"): "LevelEvent_OnDialogEnter",
+    union_tags.header("ScriptEvent_OnCustomEvent"): "ScriptEvent_OnCustomEvent",
+    union_tags.header("ScriptEvent_OnLeaderEnterTriggerVolume"): "ScriptEvent_OnLeaderEnterTriggerVolume",
+    union_tags.header("ScriptEvent_OnLeaderLeaveTriggerVolume"): "ScriptEvent_OnLeaderLeaveTriggerVolume",
+    union_tags.header("LevelEvent_OnEntityHpChanged"): "LevelEvent_OnEntityHpChanged",
+    union_tags.header("LevelEvent_OnDialogExit"): "LevelEvent_OnDialogExit",
+    union_tags.header("LevelEvent_OnQuestStateChanged"): "LevelEvent_OnQuestStateChanged",
+    union_tags.header("LevelEvent_OnProxyPatrolCheckpointReach"): "LevelEvent_OnProxyPatrolCheckpointReach",
+    union_tags.header("EntityEvent_OnInteractiveStateChanged"): "EntityEvent_OnInteractiveStateChanged",
 }
 
 
@@ -58,236 +57,7 @@ LEVELSCRIPT_NATIVE_HEADER_TAG_NAMES: dict[tuple[int, int], str] = {
 # concrete subtype member count remains separately retained on decoded records
 # as a payload-shape guard.
 LEVELSCRIPT_NATIVE_HEADER_UNION_TAG_NAMES: dict[int, str] = {
-    0x0000: "EntityEvent_OnAbandonPackInteract",
-    0x0001: "EntityEvent_OnAirborneApplied",
-    0x0002: "EntityEvent_OnBBVariableChanged",
-    0x0003: "EntityEvent_OnBeingBombed",
-    0x0004: "EntityEvent_OnBeingScanned",
-    0x0005: "EntityEvent_OnComboSkillActivated",
-    0x0006: "EntityEvent_OnComboSkillTimeout",
-    0x0007: "EntityEvent_OnCustomEvent",
-    0x0008: "EntityEvent_OnCustomEventNew",
-    0x0009: "EntityEvent_OnDefaultEvent",
-    0x000A: "EntityEvent_OnDefaultEvent2",
-    0x000B: "EntityEvent_OnDestructiblePhysicsDestroy",
-    0x000C: "EntityEvent_OnElectricPowerChanged",
-    0x000D: "EntityEvent_OnElectricSignal",
-    0x000E: "EntityEvent_OnEntityDestroy",
-    0x000F: "EntityEvent_OnEntityDie",
-    0x0010: "EntityEvent_OnEntityDieEnd",
-    0x0011: "EntityEvent_OnEntityDieStart",
-    0x0012: "EntityEvent_OnEntityEnterTrigger",
-    0x0013: "EntityEvent_OnEntityLeaveTrigger",
-    0x0014: "EntityEvent_OnEntityReceiveWaterDroneAttack",
-    0x0015: "EntityEvent_OnEntityStart",
-    0x0016: "EntityEvent_OnFactoryInstOptionAdded",
-    0x0017: "EntityEvent_OnFactoryInstOptionRemoved",
-    0x0018: "EntityEvent_OnFactoryInstRepaired",
-    0x0019: "EntityEvent_OnFactoryInstSetup",
-    0x001A: "EntityEvent_OnFactoryInstStateChanged",
-    0x001B: "EntityEvent_OnFactoryInstTypeUpdate",
-    0x001C: "EntityEvent_OnHpChanged",
-    0x001D: "EntityEvent_OnInteractiveScMove",
-    0x001E: "EntityEvent_OnInteractiveStateChanged",
-    0x001F: "EntityEvent_OnIntHpZero",
-    0x0020: "EntityEvent_OnIntLocked",
-    0x0021: "EntityEvent_OnIntReceiveAttack",
-    0x0022: "EntityEvent_OnIntSubmitSuccess",
-    0x0023: "EntityEvent_OnIntTryUnlock",
-    0x0024: "EntityEvent_OnIntUnlocked",
-    0x0025: "EntityEvent_OnIntUnlockFailed",
-    0x0026: "EntityEvent_OnKnockBackApplied",
-    0x0027: "EntityEvent_OnKnockDownApplied",
-    0x0028: "EntityEvent_OnLeaderEnterLogicStartArea",
-    0x0029: "EntityEvent_OnLeaderEnterTrigger",
-    0x002A: "EntityEvent_OnLeaderEnterTriggerArea",
-    0x002B: "EntityEvent_OnLeaderExitLogicStartArea",
-    0x002C: "EntityEvent_OnLeaderLeaveTrigger",
-    0x002D: "EntityEvent_OnLeaderLeaveTriggerArea",
-    0x002E: "EntityEvent_OnMonsterEnterTrigger",
-    0x002F: "EntityEvent_OnMonsterLeaveTrigger",
-    0x0030: "EntityEvent_OnPhysicalInfliction",
-    0x0031: "EntityEvent_OnPhysicalNoGuard",
-    0x0032: "EntityEvent_OnPhysicalStatusApplied",
-    0x0033: "EntityEvent_OnPoiseKnotBreak",
-    0x0034: "EntityEvent_OnPoiseZero",
-    0x0035: "EntityEvent_OnPropertyChanged",
-    0x0036: "EntityEvent_OnSavepointReach",
-    0x0037: "EntityEvent_OnSavePropertyChanged",
-    0x0038: "EntityEvent_OnTargetNodeReached",
-    0x0039: "EntityEvent_OnTriggerDisabled",
-    0x003A: "EntityEvent_OnTriggerEnabled",
-    0x003B: "EntityEvent_OnUIFacInteract",
-    0x003C: "EntityEvent_OnUIFunction",
-    0x003D: "EntityEvent_OnUIInteract",
-    0x003E: "EntityEvent_OnVisibleChanged",
-    0x003F: "EntityEventHeader",
-    0x0040: "LevelEvent_OnAetherEnergyLockEndPointScanned",
-    0x0041: "LevelEvent_OnAetherEnergyLockMidPointScanned",
-    0x0042: "LevelEvent_OnAnyEnemyPoiseKnotBreak",
-    0x0043: "LevelEvent_OnAnyEnemyPoiseZero",
-    0x0044: "LevelEvent_OnAnyEntityChangeMode",
-    0x0045: "LevelEvent_OnAnyEntityDie",
-    0x0046: "LevelEvent_OnAnyEntityStart",
-    0x0047: "LevelEvent_OnAtbZero",
-    0x0048: "LevelEvent_OnAudioStateChanged",
-    0x0049: "LevelEvent_OnBattlerActivated",
-    0x004A: "LevelEvent_OnBattlerCompleted",
-    0x004B: "LevelEvent_OnBattlerStageChanged",
-    0x004C: "LevelEvent_OnBattleSignal",
-    0x004D: "LevelEvent_OnBlightMiasmaAreaEnter",
-    0x004E: "LevelEvent_OnBlightMiasmaWeakGuide",
-    0x004F: "LevelEvent_OnCharacterPerfectDodge",
-    0x0050: "LevelEvent_OnCountdownFinish",
-    0x0051: "LevelEvent_OnCurveMoveReachNode",
-    0x0052: "LevelEvent_OnCustomEvent",
-    0x0053: "LevelEvent_OnCutsceneExit",
-    0x0054: "LevelEvent_OnDialogEnter",
-    0x0055: "LevelEvent_OnDialogExit",
-    0x0056: "LevelEvent_OnDynamicTriggerEnter",
-    0x0057: "LevelEvent_OnDynamicTriggerLeave",
-    0x0058: "LevelEvent_OnEncounterActivated",
-    0x0059: "LevelEvent_OnEncounterBattlePartBegin",
-    0x005A: "LevelEvent_OnEncounterBattlePartEnd",
-    0x005B: "LevelEvent_OnEncounterIntroPartBegin",
-    0x005C: "LevelEvent_OnEncounterIntroPartEnd",
-    0x005D: "LevelEvent_OnEncounterSurvivalBattlePartBegin",
-    0x005E: "LevelEvent_OnEncounterSurvivalBattlePartEnd",
-    0x005F: "LevelEvent_OnEncounterSurvivalIntroPartBegin",
-    0x0060: "LevelEvent_OnEncounterSurvivalIntroPartEnd",
-    0x0061: "LevelEvent_OnEncounterSurvivalTailPartBegin",
-    0x0062: "LevelEvent_OnEncounterSurvivalTailPartEnd",
-    0x0063: "LevelEvent_OnEncounterTailPartBegin",
-    0x0064: "LevelEvent_OnEncounterTailPartEnd",
-    0x0065: "LevelEvent_OnEnemyInFight",
-    0x0066: "LevelEvent_OnEnemyPatrolEvent",
-    0x0067: "LevelEvent_OnEnemyPoiseRecover",
-    0x0068: "LevelEvent_OnEnemyTakeLastAttackDamage",
-    0x0069: "LevelEvent_OnEntityCastSkill",
-    0x006A: "LevelEvent_OnEntityHpChanged",
-    0x006B: "LevelEvent_OnEntityTakeDamage",
-    0x006C: "LevelEvent_OnEntityWeaknessTriggered",
-    0x006D: "LevelEvent_OnFogNestCompleted",
-    0x006E: "LevelEvent_OnGameplayNpcInteract",
-    0x006F: "LevelEvent_OnGuideButterflyLsmReset",
-    0x0070: "LevelEvent_OnGuideGroupComplete",
-    0x0071: "LevelEvent_OnKickableBallDestroyed",
-    0x0072: "LevelEvent_OnKickableBallInsideSpawner",
-    0x0073: "LevelEvent_OnKickableBallOutsideSpawner",
-    0x0074: "LevelEvent_OnKickableReceiverPopUp",
-    0x0075: "LevelEvent_OnKickableTriggerInvoke",
-    0x0076: "LevelEvent_OnLevelReset",
-    0x0077: "LevelEvent_OnLinkWireModeEnd",
-    0x0078: "LevelEvent_OnMainCharacterChanged",
-    0x0079: "LevelEvent_OnMissionStateChanged",
-    0x007A: "LevelEvent_OnMusicBeatEvent",
-    0x007B: "LevelEvent_OnNpcDirtyBlockCleaned",
-    0x007C: "LevelEvent_OnNpcPatrolCheckpointReach",
-    0x007D: "LevelEvent_OnNpcPatrolStart",
-    0x007E: "LevelEvent_OnNpcPatrolStop",
-    0x007F: "LevelEvent_OnNpcReceiveAttack",
-    0x0080: "LevelEvent_OnNpcSwitchToAIBehaviorEnd",
-    0x0081: "LevelEvent_OnNpcSwitchToAIBehaviorStart",
-    0x0082: "LevelEvent_OnPatrolEvent",
-    0x0083: "LevelEvent_OnPlayerHitByAnchorWave",
-    0x0084: "LevelEvent_OnProxyPatrolCheckpointReach",
-    0x0085: "LevelEvent_OnQuestStateChanged",
-    0x0086: "LevelEvent_OnRpgLevelUpAbilityStart",
-    0x0087: "LevelEvent_OnSafeZoneScanHit",
-    0x0088: "LevelEvent_OnScriptedCharPatrolEvent",
-    0x0089: "LevelEvent_OnScriptedEnemyEvent",
-    0x008A: "LevelEvent_OnServerDialogExit",
-    0x008B: "LevelEvent_OnSetInSafeZone",
-    0x008C: "LevelEvent_OnSkipBattlePopupConfirm",
-    0x008D: "LevelEvent_OnSnailWaterFillingFinish",
-    0x008E: "LevelEvent_OnSnapShotEnter",
-    0x008F: "LevelEvent_OnSnapShotLeave",
-    0x0090: "LevelEvent_OnSpawnerComplete",
-    0x0091: "LevelEvent_OnSpawnerEntityDie",
-    0x0092: "LevelEvent_OnSpawnerEntityDieEnd",
-    0x0093: "LevelEvent_OnSpawnerEntityDieStart",
-    0x0094: "LevelEvent_OnSpawnerEntitySpawn",
-    0x0095: "LevelEvent_OnSpawnerEvent",
-    0x0096: "LevelEvent_OnSpawnerGroupBegin",
-    0x0097: "LevelEvent_OnSpawnerGroupComplete",
-    0x0098: "LevelEvent_OnSpawnerMonsterWaveAllDieEnd",
-    0x0099: "LevelEvent_OnSpawnerMonsterWaveAllDieStart",
-    0x009A: "LevelEvent_OnSpawnerPause",
-    0x009B: "LevelEvent_OnSpawnerStart",
-    0x009C: "LevelEvent_OnSpawnerStop",
-    0x009D: "LevelEvent_OnSpawnerWaveBegin",
-    0x009E: "LevelEvent_OnSpawnerWaveComplete",
-    0x009F: "LevelEvent_OnSpawnerWavePreComplete",
-    0x00A0: "LevelEvent_OnSpecificEntityDie",
-    0x00A1: "LevelEvent_OnSpecificEntityListDie",
-    0x00A2: "LevelEvent_OnSpellAbnormalFinish",
-    0x00A3: "LevelEvent_OnSpellAbnormalStart",
-    0x00A4: "LevelEvent_OnSpellInfliction",
-    0x00A5: "LevelEvent_OnSpotDiffMainStakeStateChanged",
-    0x00A6: "LevelEvent_OnSquadAllMemberDie",
-    0x00A7: "LevelEvent_OnSquadInFightChanged",
-    0x00A8: "LevelEvent_OnSquadMemberUspReachMax",
-    0x00A9: "LevelEvent_OnStartCharScriptedMode",
-    0x00AA: "LevelEvent_OnSuperPressureBoardGroupSequenceFailed",
-    0x00AB: "LevelEvent_OnTeleportFinish",
-    0x00AC: "LevelEvent_OnTrainLevelEvent",
-    0x00AD: "LevelEvent_OnTravelPoleBegin",
-    0x00AE: "LevelEvent_OnTravelPoleEnter",
-    0x00AF: "LevelEvent_OnTravelPoleExit",
-    0x00B0: "LevelEvent_OnTravelPoleReach",
-    0x00B1: "LevelEvent_OnWaterVolumeChanged",
-    0x00B2: "LevelEvent_OnWeekRaidDangerChange",
-    0x00B3: "LevelEvent_OnWeekRaidSettlement",
-    0x00B4: "LevelEventHeader",
-    0x00B5: "MissionEvent_OnClientGlobalVarChanged",
-    0x00B6: "MissionEvent_OnCustomEventForMission",
-    0x00B7: "MissionEvent_OnServerGlobalVarChanged",
-    0x00B8: "MissionEventHeader",
-    0x00B9: "ScriptEvent_OnBBVariableChanged",
-    0x00BA: "ScriptEvent_OnCustomEvent",
-    0x00BB: "ScriptEvent_OnKickableInteractiveEnterTriggerVolume",
-    0x00BC: "ScriptEvent_OnKickableInteractiveEnterTriggerVolumeList",
-    0x00BD: "ScriptEvent_OnKickableInteractiveLeaveTriggerVolume",
-    0x00BE: "ScriptEvent_OnLeaderEnterTriggerVolume",
-    0x00BF: "ScriptEvent_OnLeaderEnterTriggerVolumeList",
-    0x00C0: "ScriptEvent_OnLeaderLeaveTriggerVolume",
-    0x00C1: "ScriptEvent_OnLeaderLeaveTriggerVolumeList",
-    0x00C2: "ScriptEvent_OnPropertyChanged",
-    0x00C3: "ScriptEvent_OnScriptActive",
-    0x00C4: "ScriptEvent_OnScriptComplete",
-    0x00C5: "ScriptEvent_OnScriptEnd",
-    0x00C6: "ScriptEvent_OnScriptMarkDone",
-    0x00C7: "ScriptEvent_OnScriptPreActive",
-    0x00C8: "ScriptEvent_OnScriptPreStart",
-    0x00C9: "ScriptEvent_OnScriptStageChanged",
-    0x00CA: "ScriptEvent_OnScriptStart",
-    0x00CB: "ScriptEvent_OnScriptTick",
-    0x00CC: "ScriptEvent_OnStartScriptControlledCharMode",
-    0x00CD: "ScriptEvent_OnTeammateEnterTriggerVolume",
-    0x00CE: "ScriptEvent_OnTeammateEnterTriggerVolumeList",
-    0x00CF: "ScriptEvent_OnTeammateLeaveTriggerVolume",
-    0x00D0: "ScriptEvent_OnTeammateLeaveTriggerVolumeList",
-    0x00D1: "ScriptEventHeader",
-    0x00D2: "Conditions_OnGlobalBuffAdded",
-    0x00D3: "OnAnchorWaveProbeHit",
-    0x00D4: "OnBeaconPoleLsmGuidingDecoChanged",
-    0x00D5: "OnDecorationLoadDone",
-    0x00D6: "OnEnterFocusMode",
-    0x00D7: "OnForgeIronCameraShake",
-    0x00D8: "OnHitByLaser",
-    0x00D9: "OnHitByLaserEntity",
-    0x00DA: "OnLeaveFocusMode",
-    0x00DB: "OnMapVarChanged",
-    0x00DC: "OnRopePortPlayAnim",
-    0x00DD: "OnSettlementLevelUpFinish",
-    0x00DE: "OnSettlementReadyPerformance",
-    0x00DF: "OnSignalTowerScan",
-    0x00E0: "OnSquadChangeFinish",
-    0x00E1: "OnSubGameComplete",
-    0x00E2: "OnSubGameEnterExitingPhase",
-    0x00E3: "OnSubGameStart",
-    0x00E4: "OnTianshizhuangActivate",
-    0x00E5: "OnTianshizhuangFinish",
+    tag: name for (tag, _members), name in union_tags.names("ActionHeader").items()
 }
 
 
@@ -295,7 +65,8 @@ def levelscript_native_header_contract(
     gameassembly_sha256: str,
     metadata_sha256: str,
 ) -> dict[str, Any]:
-    """Gate the recorded ActionHeader union registry to its exact build."""
+    """Gate the ActionHeader union registry to the build its tag contract names."""
+    recorded = union_tags.contract_native_inputs()
     gameassembly_sha256 = str(gameassembly_sha256 or "").upper()
     metadata_sha256 = str(metadata_sha256 or "").upper()
     missing = [
@@ -316,12 +87,12 @@ def levelscript_native_header_contract(
             (
                 "GameAssembly.dll",
                 gameassembly_sha256,
-                RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
+                recorded["gameAssemblySha256"],
             ),
             (
                 "global-metadata.dat",
                 metadata_sha256,
-                RECORDED_NATIVE_METADATA_SHA256,
+                recorded["metadataSha256"],
             ),
         )
         if actual and actual != expected
@@ -412,7 +183,7 @@ def levelscript_native_header_name(
 
 
 LEVELSCRIPT_RECORD_HINTS = {
-    (0x002D, 0x09): {
+    union_tags.action("Branch"): {
         "label": "actionbase-branch-sequence",
         "confidence": "high",
         "note": (
@@ -421,19 +192,19 @@ LEVELSCRIPT_RECORD_HINTS = {
         ),
         "actionBaseAction": "Branch",
     },
-    (0x00FF, 0x0B): {
+    union_tags.action("IfElseAction"): {
         "label": "actionbase-if-else",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to IfElseAction",
         "actionBaseAction": "IfElseAction",
     },
-    (0x04BD, 0x0C): {
+    union_tags.action("SwitchInt"): {
         "label": "actionbase-switch-int",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to SwitchInt",
         "actionBaseAction": "SwitchInt",
     },
-    (0x04BE, 0x0C): {
+    union_tags.action("SwitchIntLarger"): {
         "label": "actionbase-switch-int-larger",
         "confidence": "high",
         "note": (
@@ -442,7 +213,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         ),
         "actionBaseAction": "SwitchIntLarger",
     },
-    (0x04BF, 0x0C): {
+    union_tags.action("SwitchString"): {
         "label": "actionbase-switch-string",
         "confidence": "high",
         "note": (
@@ -452,25 +223,25 @@ LEVELSCRIPT_RECORD_HINTS = {
         ),
         "actionBaseAction": "SwitchString",
     },
-    (0x0495, 0x09): {
+    union_tags.action("Split"): {
         "label": "actionbase-split",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to Split",
         "actionBaseAction": "Split",
     },
-    (0x04F6, 0x08): {
+    union_tags.action("WaitForOneFrame"): {
         "label": "actionbase-wait-one-frame",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to WaitForOneFrame",
         "actionBaseAction": "WaitForOneFrame",
     },
-    (0x04F5, 0x0A): {
+    union_tags.action("TreasureHuntConfigAction"): {
         "label": "actionbase-treasure-hunt-config",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to TreasureHuntConfigAction",
         "actionBaseAction": "TreasureHuntConfigAction",
     },
-    (0x04F9, 0x0E): {
+    union_tags.action("WaitForSecondsInTriggerVolume"): {
         "label": "actionbase-wait-seconds-trigger-volume",
         "confidence": "high",
         "note": (
@@ -480,7 +251,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         ),
         "actionBaseAction": "WaitForSecondsInTriggerVolume",
     },
-    (0x02FE, 0x0A): {
+    union_tags.action("MainCharMoveTo"): {
         "label": "actionbase-main-char-move-to",
         "confidence": "high",
         "note": (
@@ -489,7 +260,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         ),
         "actionBaseAction": "MainCharMoveTo",
     },
-    (0x04CA, 0x09): {
+    union_tags.action("ToggleClearScreenButRadio"): {
         "label": "actionbase-toggle-clear-screen-but-radio",
         "confidence": "high",
         "note": (
@@ -499,19 +270,19 @@ LEVELSCRIPT_RECORD_HINTS = {
         "actionBaseAction": "ToggleClearScreenButRadio",
         "presentationRole": "toggle-clear-screen-but-radio",
     },
-    (0x0376, 0x0C): {
+    union_tags.action("PreloadCutsceneAction"): {
         "label": "actionbase-preload-cutscene",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to PreloadCutsceneAction",
         "actionBaseAction": "PreloadCutsceneAction",
     },
-    (0x037E, 0x0A): {
+    union_tags.action("RaiseCustomLevelEvent"): {
         "label": "actionbase-raise-custom-level-event",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to RaiseCustomLevelEvent",
         "actionBaseAction": "RaiseCustomLevelEvent",
     },
-    (0x0380, 0x0B): {
+    union_tags.action("RaiseCustomScriptEvent"): {
         "label": "actionbase-raise-custom-script-event",
         "confidence": "high",
         "note": (
@@ -520,7 +291,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         ),
         "actionBaseAction": "RaiseCustomScriptEvent",
     },
-    (0x0304, 0x09): {
+    union_tags.action("LoadLevelSequenceAction"): {
         "label": "actionbase-load-level-sequence",
         "confidence": "high",
         "note": (
@@ -529,31 +300,31 @@ LEVELSCRIPT_RECORD_HINTS = {
         ),
         "actionBaseAction": "LoadLevelSequenceAction",
     },
-    (0x030E, 0x09): {
+    union_tags.action("ManuallyStartGuideGroup"): {
         "label": "actionbase-manually-start-guide-group",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to ManuallyStartGuideGroup",
         "actionBaseAction": "ManuallyStartGuideGroup",
     },
-    (0x03A9, 0x09): {
+    union_tags.action("RestorePlayerGait"): {
         "label": "actionbase-restore-player-gait",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to RestorePlayerGait",
         "actionBaseAction": "RestorePlayerGait",
     },
-    (0x0402, 0x09): {
+    union_tags.action("SetEnablePlayerMoveCamera"): {
         "label": "actionbase-set-enable-player-move-camera",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to SetEnablePlayerMoveCamera",
         "actionBaseAction": "SetEnablePlayerMoveCamera",
     },
-    (0x050C, 0x09): {
+    union_tags.action("WaitForEntityStart"): {
         "label": "actionbase-wait-for-entity-start",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to WaitForEntityStart",
         "actionBaseAction": "WaitForEntityStart",
     },
-    (0x0455, 0x0A): {
+    union_tags.action("SetOverrideInteractDialog"): {
         "label": "actionbase-set-override-interact-dialog",
         "confidence": "high",
         "note": (
@@ -562,7 +333,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         ),
         "actionBaseAction": "SetOverrideInteractDialog",
     },
-    (0x045D, 0x0A): {
+    union_tags.action("SetScriptTaskPtr"): {
         "label": "actionbase-set-script-task-ptr",
         "confidence": "high",
         "note": (
@@ -618,7 +389,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         ),
         "actionBaseAction": "SetChildGameObjectActive",
     },
-    (0x03EA, 0x0A): {
+    union_tags.action("SetCurrentTerminalReadingIndex"): {
         "label": "actionbase-set-current-terminal-reading-index",
         "confidence": "high",
         "note": (
@@ -637,7 +408,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         "propertyValueType": "uint64-list",
         "actionBaseAction": "ListAddValueUInt64",
     },
-    (0x0166, 0x0A): {
+    union_tags.action("ListAddValueEntityPtr"): {
         "label": "actionbase-list-add-value-entity-ptr",
         "confidence": "high",
         "note": (
@@ -665,21 +436,21 @@ LEVELSCRIPT_RECORD_HINTS = {
         ),
         "actionBaseAction": "ListShuffleScriptEntityPtr",
     },
-    (0x0302, 0x0A): {
+    union_tags.action("ManualEndLevelScript"): {
         "label": "actionbase-manual-end-levelscript",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to ManualEndLevelScript",
         "levelScriptControlRole": "manual-end",
         "actionBaseAction": "ManualEndLevelScript",
     },
-    (0x0308, 0x0A): {
+    union_tags.action("ManualStartLevelScript"): {
         "label": "actionbase-manual-start-levelscript",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to ManualStartLevelScript",
         "levelScriptControlRole": "manual-start",
         "actionBaseAction": "ManualStartLevelScript",
     },
-    (0x03DA, 0x0A): {
+    union_tags.action("SetBool"): {
         "label": "actionbase-set-bool",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to SetBool",
@@ -687,7 +458,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         "propertyValueType": "bool",
         "actionBaseAction": "SetBool",
     },
-    (0x0410, 0x0A): {
+    union_tags.action("SetInt"): {
         "label": "actionbase-set-int",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to SetInt",
@@ -695,7 +466,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         "propertyValueType": "int",
         "actionBaseAction": "SetInt",
     },
-    (0x0413, 0x0A): {
+    union_tags.action("SetIntIncrease"): {
         "label": "actionbase-set-int-increase",
         "confidence": "high",
         "note": "current installed ActionBase formatter tag maps this code to SetIntIncrease",
@@ -703,7 +474,7 @@ LEVELSCRIPT_RECORD_HINTS = {
         "propertyValueType": "int",
         "actionBaseAction": "SetIntIncrease",
     },
-    (0x0501, 0x0A): {
+    union_tags.action("WhileAction"): {
         "label": "actionbase-while",
         "confidence": "high",
         "note": (

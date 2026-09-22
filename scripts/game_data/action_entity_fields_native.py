@@ -1,7 +1,22 @@
-"""Load the build-locked action entity-field formatter contract."""
+"""Which ActionBase members hold an EntityPtr, for the selected build.
+
+Story binds a LevelScript action to the entities it names by reading the
+action's ``Param<EntityPtr>`` members. The contract lists, for each authored
+action, those members' names and serialized ordinals, the managed field
+offsets, and the action's current union tag and member count. None of that is
+reviewed by hand: ``--regenerate`` derives it from the installed build -- tags
+from ``levelscript_union_tags``, members and their declared types from
+``memorypack.wrapper_members``, offsets from the metadata registration.
+
+What stays authored is which actions Story reads, the ``nonEntityContract``
+flag for actions Story must skip, and ``serializedRecordLayouts``, which are
+bound to specific data files by their own hashes rather than to the build.
+
+Run as: python -m scripts.game_data.action_entity_fields_native --regenerate [--write]
+"""
 from __future__ import annotations
 
-import hashlib
+import argparse
 import json
 from functools import lru_cache
 from pathlib import Path
@@ -10,36 +25,19 @@ from typing import Any
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.contracts import CONTRACTS_DIR
 
-
-SCHEMA = "actionEntityFieldNativeContract.v2"
+SCHEMA = "actionEntityFieldNativeContract.v3"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "action_entity_fields.json"
-GAMEASSEMBLY_SHA256 = "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-METADATA_SHA256 = "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-NATIVE_MAPPING_ID = "gameassembly-2026-07-11-action-entity-formatter-fields"
-CONTRACT_SHA256 = "01FD8D207122F062D212DFB4048712689B5BC6618088D023FFEF55733B65EE42"
-_ALLOWED_PROOF_KINDS = {None, "closed_generic_companion_setter_call"}
-_CLOSED_GENERIC_COMPANION_PROOF = {
-    "key": (694, 11),
-    "actionFormatterTypeToken": "0x020018b4",
-    "genericDefinitionTypeToken": "0x020015a8",
-    "genericDefinitionFieldToken": "0x040062a3",
-    "closedGenericCompanionTypeToken": "0x020018b7",
-    "deserializeToken": "0x0600941e",
-    "deserializeVa": 0x18A2FC9E0,
-    "deserializeFileOffset": 170897376,
-    "setterToken": "0x06009425",
-    "setterVa": 0x18A307B9C,
-    "callSites": (
-        (857, 0x18A2FCD39, "E85EAE0000"),
-        (1205, 0x18A2FCE95, "E802AD0000"),
-    ),
-}
+#: Stable identifier cited in Story evidence; the build lives in the contract.
+NATIVE_MAPPING_ID = "action-entity-formatter-fields.v3"
+ENTITY_PARAM_TYPE = "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.EntityPtr>"
+ENTITY_PTR_TYPE = "Beyond.Gameplay.Core.EntityPtr"
 
 
 @lru_cache(maxsize=1)
 def load_action_entity_field_contract(
     contract_path: Path = DEFAULT_CONTRACT,
 ) -> tuple[dict[tuple[int, int], dict[str, Any]], dict[str, Any]]:
+    """Rows keyed by current ``(unionTag, serializedMemberCount)``, or nothing."""
     failures: list[dict[str, Any]] = []
 
     def reject(gate: str, expected: Any, actual: Any) -> None:
@@ -47,165 +45,39 @@ def load_action_entity_field_contract(
                          "expected": expected, "actual": actual})
 
     try:
-        raw = Path(contract_path).read_bytes()
-        contract = json.loads(raw.decode("utf-8-sig"))
+        contract = json.loads(Path(contract_path).read_bytes().decode("utf-8-sig"))
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         reject("read_valid_json", True, str(error)[:400])
-        return {}, {"status": "validation_failed", "validationFailures": failures}
-    source_sha256 = hashlib.sha256(raw).hexdigest().upper()
-    if source_sha256 != CONTRACT_SHA256:
-        reject("contract_sha256", CONTRACT_SHA256, source_sha256)
-    for gate, expected, actual in (
-        ("schema", SCHEMA, contract.get("schema")),
-        ("status", "validated", contract.get("status")),
-        ("gameassembly_sha256", GAMEASSEMBLY_SHA256,
-         (contract.get("metadata") or {}).get("gameAssemblySha256")),
-        ("metadata_sha256", METADATA_SHA256,
-         (contract.get("metadata") or {}).get("metadataSha256")),
-    ):
+        return {}, {"status": "validation_failed", "nativeMappingId": NATIVE_MAPPING_ID,
+                    "validationFailures": failures}
+    for gate, expected, actual in (("schema", SCHEMA, contract.get("schema")),
+                                   ("status", "validated", contract.get("status"))):
         if actual != expected:
             reject(gate, expected, actual)
-    native = check_installed_native_inputs(GAMEASSEMBLY_SHA256, METADATA_SHA256)
+    inputs = contract.get("nativeInputs") or {}
+    native = check_installed_native_inputs(
+        str(inputs.get("gameAssemblySha256") or ""), str(inputs.get("metadataSha256") or ""))
     if native.status != NATIVE_EVIDENCE_VALIDATED:
         reject("installed_native_inputs", NATIVE_EVIDENCE_VALIDATED,
                {"status": native.status, "detail": native.detail})
-    gameassembly = getattr(native, "gameassembly", None)
-    if gameassembly is None:
-        gameassembly = getattr(native, "gameAssembly", None)
-    try:
-        image = Path(gameassembly).read_bytes() if gameassembly else b""
-    except OSError as error:
-        image = b""
-        reject("read_gameassembly", True, str(error)[:400])
-
     out: dict[tuple[int, int], dict[str, Any]] = {}
     for action in contract.get("actions") or []:
-        if not isinstance(action, dict):
-            reject("action_object", "object", type(action).__name__)
-            continue
         key = (action.get("unionTag"), action.get("serializedMemberCount"))
-        if not all(isinstance(value, int) for value in key) or key in out:
+        if not isinstance(action, dict) or not all(isinstance(value, int) for value in key) or key in out:
             reject("unique_action_key", "unique integer pair", key)
             continue
-        methods = [action.get("deserialize") or {}]
-        methods.extend(action.get("entityFields") or [])
-        for method in methods:
-            offset = method.get("fileOffset", method.get("setterFileOffset"))
-            size = method.get("bodySize", method.get("setterBodySize"))
-            expected_hash = method.get("bodySha256", method.get("setterBodySha256"))
-            if not isinstance(offset, int) or not isinstance(size, int) or size <= 0:
-                reject("method_byte_range", {"offset": "int", "size": ">0"}, method)
-                continue
-            actual_hash = hashlib.sha256(image[offset:offset + size]).hexdigest().upper()
-            if len(image[offset:offset + size]) != size or actual_hash != expected_hash:
-                reject("method_body_sha256", expected_hash, actual_hash)
-        fields = action.get("entityFields") or []
-        proof_kind = action.get("proofKind")
-        if proof_kind not in _ALLOWED_PROOF_KINDS:
-            reject("proof_kind", sorted(
-                value for value in _ALLOWED_PROOF_KINDS if value is not None
-            ) + [None], proof_kind)
-        if proof_kind == "closed_generic_companion_setter_call":
-            proof = _CLOSED_GENERIC_COMPANION_PROOF
-            field = fields[0] if len(fields) == 1 else {}
-            expected_metadata = {
-                "key": proof["key"],
-                "actionFormatterTypeToken": proof["actionFormatterTypeToken"],
-                "genericDefinitionTypeToken": proof["genericDefinitionTypeToken"],
-                "genericDefinitionFieldToken": proof["genericDefinitionFieldToken"],
-                "closedGenericCompanionTypeToken": proof[
-                    "closedGenericCompanionTypeToken"
-                ],
-                "deserializeToken": proof["deserializeToken"],
-                "deserializeVa": f"0x{proof['deserializeVa']:x}",
-                "deserializeFileOffset": proof["deserializeFileOffset"],
-                "fieldName": "_value",
-                "fieldOrdinal": 10,
-                "fieldOffset": "0xe0",
-                "setterToken": proof["setterToken"],
-                "setterVa": f"0x{proof['setterVa']:x}",
-                "callOffsets": [site[0] for site in proof["callSites"]],
-                "callVas": [f"0x{site[1]:x}" for site in proof["callSites"]],
-                "callTargetVa": f"0x{proof['setterVa']:x}",
-            }
-            actual_metadata = {
-                "key": key,
-                "actionFormatterTypeToken": action.get("actionFormatterTypeToken"),
-                "genericDefinitionTypeToken": action.get("genericDefinitionTypeToken"),
-                "genericDefinitionFieldToken": action.get("genericDefinitionFieldToken"),
-                "closedGenericCompanionTypeToken": action.get(
-                    "closedGenericCompanionTypeToken"
-                ),
-                "deserializeToken": (action.get("deserialize") or {}).get(
-                    "methodToken"
-                ),
-                "deserializeVa": (action.get("deserialize") or {}).get(
-                    "methodPointerVa"
-                ),
-                "deserializeFileOffset": (action.get("deserialize") or {}).get(
-                    "fileOffset"
-                ),
-                "fieldName": field.get("fieldName"),
-                "fieldOrdinal": field.get("memberOrdinalZeroBased"),
-                "fieldOffset": field.get("fieldOffset"),
-                "setterToken": field.get("setterToken"),
-                "setterVa": field.get("setterPointerVa"),
-                "callOffsets": field.get("deserializeDirectCallOffsets"),
-                "callVas": field.get("deserializeDirectCallVas"),
-                "callTargetVa": field.get("deserializeDirectCallTargetVa"),
-            }
-            if actual_metadata != expected_metadata:
-                reject("closed_generic_companion_metadata", expected_metadata,
-                       actual_metadata)
-            for call_offset, call_va, expected_hex in proof["callSites"]:
-                file_offset = proof["deserializeFileOffset"] + call_offset
-                call_bytes = image[file_offset:file_offset + 5]
-                actual_hex = call_bytes.hex().upper()
-                if len(call_bytes) != 5 or actual_hex != expected_hex:
-                    reject("closed_generic_companion_call_bytes", {
-                        "fileOffset": file_offset,
-                        "hex": expected_hex,
-                    }, {
-                        "fileOffset": file_offset,
-                        "hex": actual_hex,
-                    })
-                    continue
-                relative = int.from_bytes(call_bytes[1:5], "little", signed=True)
-                actual_target = call_va + 5 + relative
-                if actual_target != proof["setterVa"]:
-                    reject("closed_generic_companion_call_target", {
-                        "callVa": f"0x{call_va:x}",
-                        "targetVa": f"0x{proof['setterVa']:x}",
-                    }, {
-                        "callVa": f"0x{call_va:x}",
-                        "targetVa": f"0x{actual_target:x}",
-                    })
-        non_entity_value = action.get("nonEntityContract", False)
-        if not isinstance(non_entity_value, bool):
-            reject("non_entity_contract", "bool", type(non_entity_value).__name__)
-        non_entity_contract = non_entity_value is True
-        value_layout = action.get("serializedValueLayout") or {}
-        expected_layout = {
-            "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
-            "parameterTypeIndex": 85044,
-            "fieldTypeIndex": 85046,
-            "genericTypeDefinitionToken": "0x02001930",
-            "genericArgumentTypeDefinitionToken": "0x02002f3a",
-            "outerMemberCount": 4,
-            "valueMemberCount": 3,
-            "valueFields": ["logicId", "slotId", "useSlotId"],
-        }
-        if non_entity_contract:
-            if action.get("entityFields") != []:
-                reject("non_entity_fields", [], action.get("entityFields"))
-            if "serializedValueLayout" in action:
-                reject("non_entity_serialized_layout", "absent", value_layout)
-        else:
-            if value_layout != expected_layout:
-                reject("serialized_entity_ptr_layout", expected_layout, value_layout)
-            ordinals = [field.get("constantPointerOrdinal") for field in fields]
-            if ordinals != list(range(len(fields))):
-                reject("constant_pointer_ordinals", list(range(len(fields))), ordinals)
+        fields = action.get("entityFields")
+        if not isinstance(fields, list):
+            reject("entity_fields", "list", type(fields).__name__)
+            continue
+        if bool(action.get("nonEntityContract")) != (not fields):
+            reject("non_entity_contract", "true exactly when no EntityPtr member exists",
+                   {"action": action.get("actionName"), "fields": len(fields)})
+            continue
+        ordinals = [field.get("constantPointerOrdinal") for field in fields]
+        if ordinals != list(range(len(fields))):
+            reject("constant_pointer_ordinals", list(range(len(fields))), ordinals)
+            continue
         out[key] = action
     if failures:
         out = {}
@@ -216,4 +88,112 @@ def load_action_entity_field_contract(
     }
 
 
-__all__ = ["load_action_entity_field_contract", "NATIVE_MAPPING_ID"]
+def regenerate(contract: dict[str, Any]) -> tuple[dict[str, Any], list[str]]:
+    """Re-derive every per-build field for the authored action set."""
+    from scripts.game_data import levelscript_union_tags as union_tags
+    from scripts.game_data.il2cpp import protocol
+    from scripts.game_data.il2cpp.native_image import NativeImage
+    from scripts.game_data.memorypack.wrapper_members import derive_from_image
+
+    native = check_installed_native_inputs()
+    if native.status != NATIVE_EVIDENCE_VALIDATED:
+        raise SystemExit(f"installed native inputs: {native.status}: {native.detail}")
+    if union_tags.union_tags_audit()["status"] != NATIVE_EVIDENCE_VALIDATED:
+        raise SystemExit("levelscript_union_tags.json does not describe the installed build")
+    image = NativeImage(native.gameassembly, native.metadata, label="actionEntityFields")
+    wrappers = derive_from_image(image)
+    by_wrapped = {wrapper.wrapped_type: wrapper for wrapper in wrappers.values() if wrapper.wrapped_type}
+    by_wrapper = {wrapper.name: wrapper for wrapper in wrappers.values()}
+    type_index = {image.metadata.type_full_name(t): i for i, t in enumerate(image.metadata.types)}
+    entity_ptr = by_wrapped.get(ENTITY_PTR_TYPE)
+    value_fields = [member.name for member in entity_ptr.members] if entity_ptr else []
+
+    refused: list[str] = []
+    actions = []
+    for authored in contract.get("actions") or []:
+        name = authored["actionName"]
+        tag = union_tags.action(name)
+        wrapper = by_wrapper.get(union_tags.wrapper_name("ActionBase", name))
+        if not isinstance(tag[0], int) or wrapper is None:
+            refused.append(f"{name}: not an ActionBase type in the current build")
+            continue
+        if tag[1] != len(wrapper.members):
+            refused.append(f"{name}: union-tag member count {tag[1]} differs from wrapper {len(wrapper.members)}")
+            continue
+        index = type_index.get(wrapper.wrapped_type or "")
+        try:
+            offsets = protocol.runtime_type_field_offsets(
+                image.metadata, image.pe, image.registration, index) if index is not None else {}
+        except RuntimeError:
+            # A type with no runtime offset row still serializes the same
+            # members; only the managed offset is then unrecorded.
+            offsets = {}
+        entity_members = [(ordinal, member) for ordinal, member in enumerate(wrapper.members)
+                          if member.declared_type == ENTITY_PARAM_TYPE]
+        row = {
+            "actionName": name,
+            "unionTag": tag[0],
+            "serializedMemberCount": tag[1],
+            "entityFields": [
+                {"fieldName": member.name, "memberOrdinalZeroBased": ordinal,
+                 "constantPointerOrdinal": position,
+                 "fieldOffset": hex(offsets[member.name]) if member.name in offsets else None}
+                for position, (ordinal, member) in enumerate(entity_members)
+            ],
+        }
+        if not entity_members:
+            row["nonEntityContract"] = True
+        else:
+            row["serializedValueLayout"] = {
+                "managedType": "Beyond.Gameplay.Actions.Param<Beyond.Gameplay.Core.EntityPtr>",
+                "valueFields": value_fields,
+            }
+        if bool(authored.get("nonEntityContract")) != bool(row.get("nonEntityContract")):
+            refused.append(f"{name}: nonEntityContract changed; review which members it reads")
+        if authored.get("serializedRecordLayouts"):
+            row["serializedRecordLayouts"] = authored["serializedRecordLayouts"]
+            known = {field["fieldName"] for field in row["entityFields"]}
+            for layout in authored["serializedRecordLayouts"]:
+                for state in layout.get("fieldStates") or []:
+                    if state.get("fieldName") not in known:
+                        refused.append(f"{name}: recorded layout names {state.get('fieldName')}, "
+                                       "which is no longer an EntityPtr member")
+        actions.append(row)
+    return {
+        "schema": SCHEMA,
+        "status": "validated",
+        "evidenceBoundary": {
+            "exact": "union tag from the ActionBase formatter switch; members, declared types and order from generated wrapper setters; field offsets from the metadata registration",
+            "unresolved": "what each action does with the entity at runtime",
+        },
+        "nativeInputs": {"gameAssemblySha256": native.gameassembly_sha256.upper(),
+                         "metadataSha256": native.metadata_sha256.upper()},
+        "actionCount": len(actions),
+        "actions": sorted(actions, key=lambda row: row["unionTag"]),
+    }, refused
+
+
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--contract", type=Path, default=DEFAULT_CONTRACT)
+    parser.add_argument("--regenerate", action="store_true")
+    parser.add_argument("--write", action="store_true")
+    args = parser.parse_args(argv)
+    if not args.regenerate:
+        _rows, audit = load_action_entity_field_contract(args.contract)
+        print(json.dumps(audit, indent=1))
+        return 0 if audit["status"] == NATIVE_EVIDENCE_VALIDATED else 1
+    regenerated, refused = regenerate(json.loads(args.contract.read_bytes().decode("utf-8-sig")))
+    print(json.dumps({"refused": refused, "actions": regenerated["actionCount"]}, indent=1))
+    if refused:
+        return 1
+    if args.write:
+        args.contract.write_bytes((json.dumps(regenerated, indent=1, ensure_ascii=False) + "\n").encode("utf-8"))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
+
+
+__all__ = ["load_action_entity_field_contract", "regenerate", "NATIVE_MAPPING_ID"]

@@ -71,9 +71,7 @@ from scripts.game_data.levelscript_binary import (
 from scripts.game_data.callserver_callback_native import (
     load_callserver_callback_contract,
 )
-from scripts.game_data.actionbase_formatter_native import (
-    load_actionbase_formatter_names as _load_actionbase_formatter_names,
-)
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.action_entity_fields_native import (
     NATIVE_MAPPING_ID as ACTION_ENTITY_FIELD_NATIVE_MAPPING_ID,
     load_action_entity_field_contract,
@@ -181,8 +179,8 @@ def _entity_ptr_field_state(pointer: dict) -> tuple[str, str | None]:
 # The legacy combined pair remains exported for compatibility. Unlike file-
 # order proximity, the event itself states that its action chain runs after the
 # named dialog exits.
-LEVELSCRIPT_DIALOG_EXIT_OPCODE = (0x1355, 0x00)
-LEVELSCRIPT_DIALOG_EXIT_TAG = (0x0055, 0x13)
+LEVELSCRIPT_DIALOG_EXIT_OPCODE = union_tags.header_code("LevelEvent_OnDialogExit")
+LEVELSCRIPT_DIALOG_EXIT_TAG = union_tags.header("LevelEvent_OnDialogExit")
 
 LEVELDATA_HORN_TEMPLATE_SHA256 = (
     "1200acb7208de5e4b9e861dc511cc3a3d4f1f5c56dd4b59f1dcb0ef7ab2ea33e"
@@ -647,19 +645,19 @@ LEVELSCRIPT_NATIVE_EXACT_CONTROL_PATH_STATUSES = frozenset({
 # SetResultDelayToNextTick. This is a runtime branch proof, not a formatter
 # or action-name guess.
 LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS = {
-    (0x002D, 0x09): {
+    union_tags.action("Branch"): {
         "kind": "ordered_sequence",
         "mappingId": "gameassembly-2026-08-02-branch-execute-0x18764d990",
     },
-    (0x0495, 0x09): {
+    union_tags.action("Split"): {
         "kind": "parallel_fanout",
         "mappingId": "gameassembly-2026-08-02-split-execute-0x18464b110",
     },
-    (0x00FF, 0x0B): {
+    union_tags.action("IfElseAction"): {
         "kind": "conditional_choice",
         "mappingId": "gameassembly-2026-08-02-ifelse-execute-0x183d3ad50",
     },
-    (0x04BD, 0x0C): {
+    union_tags.action("SwitchInt"): {
         "kind": "conditional_choice",
         "mappingId": "gameassembly-2026-08-02-switchint-execute-0x1849dcca0",
     },
@@ -669,140 +667,43 @@ LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS = {
     # compares the value, and calls SetResultReservedID plus SetResultNextID
     # on case/default paths.  The shared integer-switch decoder below admits
     # only the exact serialized list/value-getter shape.
-    (0x04BE, 0x0C): {
+    union_tags.action("SwitchIntLarger"): {
         "kind": "conditional_choice",
         "mappingId": "gameassembly-2026-08-08-switchint-larger-execute-0x18765b770",
     },
-    (0x04BF, 0x0C): {
+    union_tags.action("SwitchString"): {
         "kind": "conditional_choice",
         "mappingId": "gameassembly-2026-08-02-switchstring-execute-0x18765ba00",
     },
-    (0x0501, 0x0A): {
+    union_tags.action("WhileAction"): {
         "kind": "conditional_loop",
         "mappingId": "gameassembly-2026-08-02-while-execute-0x18765e758",
     },
-    (0x04F9, 0x0E): {
+    union_tags.action("WaitForSecondsInTriggerVolume"): {
         "kind": "conditional_choice",
         "mappingId": "gameassembly-2026-08-08-wait-trigger-volume-execute-0x187692760",
     },
 }
-LEVELSCRIPT_NATIVE_ACTION_NAMES: dict[tuple[int, int], str] = {
-    (0x0001, 0x00): "ActionForSubGame_ConfirmLeaveSubGame",
-    (0x0010, 0x0A): "AddSystemUnlockOverride",
-    (0x0011, 0x10): "AddTrackingPoint",
-    (0x0014, 0x0A): "AirWallEnable",
-    (0x001E, 0x11): "BlackScreenFadeIn",
-    (0x001F, 0x13): "BlackScreenFadeInAndOut",
-    (0x0007, 0x0D): "AddBuffsToTargetsFromGodEntity",
-    (0x0009, 0x0D): "AddBuffToTargetFromGodEntity",
-    (0x000B, 0x0F): "AddCameraControlState",
-    (0x000D, 0x0C): "AddGlobalBuffFromGodEntity",
-    (0x002D, 0x09): "Branch",
-    (0x0030, 0x09): "BuildingPosHintHide",
-    (0x0031, 0x0C): "BuildingPosHintShow",
-    (0x0041, 0x18): "CharacterPlayMontage",
-    (0x004B, 0x0E): "CharSetSpMoveLoop",
-    (0x006B, 0x0F): "CreateEffectAtPosition",
-    (0x0089, 0x0B): "EnterCustomMusicMode",
-    (0x008A, 0x25): "EnterDollyTrackCamera",
-    (0x00B5, 0x0D): "ExitCamera",
-    (0x00C5, 0x0A): "FacGuideHintEnable",
-    (0x00C6, 0x0A): "FacHighlightBuilding",
-    (0x00CC, 0x0B): "FacOverrideCullingSetting",
-    (0x00D5, 0x0B): "FacSetInteractLockedState",
-    (0x00FD, 0x09): "HelloWorld_DevOnly",
-    (0x00FF, 0x0B): "IfElseAction",
-    (0x02FA, 0x09): "LoadLevelSequenceAction",
-    (0x0410, 0x0A): "SetInt",
-    (0x0310, 0x14): "NarrativeBlackScreenAction",
-    (0x031E, 0x0C): "NpcPatrolStart",
-    (0x0303, 0x09): "ManuallyAcceptClientGuideGroup",
-    (0x0304, 0x09): "ManuallyStartGuideGroup",
-    (0x0305, 0x09): "ManuallyStopGuideGroup",
-    (0x034A, 0x14): "Play3DRadio",
-    (0x034B, 0x14): "Play3DRadioAndWait",
-    (0x034C, 0x0C): "PlayAudiAtPosition",
-    (0x034E, 0x0B): "PlayAudio",
-    (0x034F, 0x10): "PlayAudioAndWait",
-    (0x0352, 0x0C): "PlayAudioOnTarget",
-    (0x0357, 0x14): "PlayCutsceneAction",
-    (0x0358, 0x14): "PlayCutsceneIgnoreCinematicQueue",
-    (0x035E, 0x0E): "PlayFmvAction",
-    (0x0369, 0x0E): "PlayFmvAction",
-    (0x036B, 0x13): "PostAudioCue",
-    (0x0371, 0x0B): "PostAudioStatusEvent",
-    (0x0373, 0x0C): "PostMusicEvent",
-    (0x0376, 0x0C): "PreloadCutsceneAction",
-    (0x0378, 0x0A): "PreloadLevelSeqAction",
-    (0x037E, 0x0A): "RaiseCustomLevelEvent",
-    (0x0380, 0x0B): "RaiseCustomScriptEvent",
-    (0x038D, 0x09): "RemoveSystemUnlockOverride",
-    (0x038E, 0x09): "RemoveTrackingPoint",
-    (0x0392, 0x0B): "RequireSettlementShow",
-    (0x035A, 0x0F): "PlayDialogAndHideSceneObjectAction",
-    (0x0360, 0x0F): "PlayLevelSequenceAction",
-    (0x0361, 0x12): "PlayLevelSequenceAndControlSceneObjectsAction",
-    (0x0363, 0x0D): "PlayRadio",
-    (0x0364, 0x0D): "PlayRadioAndWait",
-    (0x0365, 0x11): "PlayRemoteComm",
-    (0x049B, 0x13): "StartCutsceneAndControlSceneObjectAction",
-    (0x049C, 0x12): "StartCutsceneAndHideSceneObjectAction",
-    (0x049D, 0x16): "StartCutsceneAndTeleportAction",
-    (0x049E, 0x0F): "StartDialogAction",
-    (0x049F, 0x10): "StartDialogAndTeleportAction",
-    (0x04A1, 0x10): "StartFmvAndTeleportAction",
-    (0x04A5, 0x1B): "StartNarrativeBlackScreenAndTeleport",
-    (0x04AD, 0x0C): "StopCharScriptedMode",
-    (0x04B1, 0x0C): "StopLevelSeqLoopSegment",
-    (0x04B2, 0x09): "StopLevelSequenceAction",
-    (0x04B5, 0x09): "StopRadio",
-    (0x04BD, 0x0C): "SwitchInt",
-    (0x04BE, 0x0C): "SwitchIntLarger",
-    (0x04BF, 0x0C): "SwitchString",
-    (0x0495, 0x09): "Split",
-    (0x0478, 0x09): "ShowDramaticPerformanceNewItemToast",
-    (0x0480, 0x0F): "ShowLimitedGuide",
-    (0x048C, 0x09): "ShowUIReadingPopPanel",
-    (0x04F6, 0x08): "WaitForOneFrame",
-    (0x04F7, 0x09): "WaitForSeconds",
-    (0x04F5, 0x09): "WaitForNpcProxyReady",
-    (0x04F9, 0x0E): "WaitForSecondsInTriggerVolume",
-    (0x04F0, 0x09): "WaitForCondition",
-    (0x0501, 0x0A): "WhileAction",
-    (0x0506, 0x09): "Core_RemoveMovementSettingModifier",
-    (0x0020, 0x0B): "BlackScreenFadeOut",
-    (0x0052, 0x09): "CheckBoolIfTrue",
-    (0x00B9, 0x09): "ExitLevelCustomPerformance",
-    (0x0034, 0x0E): "CallServer",
-    (0x02FE, 0x0A): "MainCharMoveTo",
-    (0x04CA, 0x09): "ToggleClearScreenButRadio",
-    (0x04D2, 0x0A): "ToggleMainHudActionPlayIgnoreMainHud",
-    (0x04DA, 0x09): "TravelPoleHandoverToCutscene",
-    (0x0456, 0x0A): "SetOverrideSceneState",
-    (0x03FE, 0x09): "SetFacMode",
-    (0x03FF, 0x09): "SetFacTopView",
-    (0x0400, 0x0A): "SetFacTopViewCustomRange",
-    (0x0465, 0x0A): "SetString",
-    (0x0485, 0x0A): "ShowSceneDecorationNew",
-    (0x048D, 0x0A): "ShowUIToast",
-}
+# Every current ActionBase pair, named from the installed build's formatter
+# switch. The former hand table mixed tags from several older builds.
+LEVELSCRIPT_NATIVE_ACTION_NAMES: dict[tuple[int, int], str] = union_tags.names("ActionBase")
 # Integer switch families share one serialized list/value-getter shape.  Keep
 # the family-specific output prefix and edge namespace in data so new
 # binary-validated variants do not require object-specific traversal code.
 LEVELSCRIPT_NATIVE_INTEGER_SWITCH_SPECS = {
-    (0x04BD, 0x0C): {
+    union_tags.action("SwitchInt"): {
         "actionName": "SwitchInt",
         "fieldPrefix": "switch",
         "edgePrefix": "SwitchInt",
     },
-    (0x04BE, 0x0C): {
+    union_tags.action("SwitchIntLarger"): {
         "actionName": "SwitchIntLarger",
         "fieldPrefix": "switchIntLarger",
         "edgePrefix": "SwitchIntLarger",
     },
 }
 ACTIONBASE_FORMATTER_ACTION_NAMES, ACTIONBASE_FORMATTER_NAME_AUDIT = (
-    _load_actionbase_formatter_names()
+    union_tags.formatter_name_table("ActionBase")
 )
 
 CALLSERVER_CALLBACK_CONTRACT_AUDIT = load_callserver_callback_contract()
@@ -825,20 +726,20 @@ LEVELSCRIPT_NATIVE_GETTER_MAPPING_ID = (
 # Split/IfElse/Switch paths are retained here. The member count guards against
 # confusing overlapping union-tag spaces or a future changed payload shape.
 LEVELSCRIPT_NATIVE_GETTER_NAMES: dict[tuple[int, int], str] = {
-    (0x0004, 0x0A): "BooleanCompare",
-    (0x0013, 0x0A): "CheckLevelScriptStage",
-    (0x0016, 0x09): "CheckMissionOrQuestIsComplete",
-    (0x001F, 0x0A): "CompareMissionState",
-    (0x0049, 0x0A): "FloatNewCompare",
-    (0x004E, 0x08): "GetConditionResult",
-    (0x0100, 0x09): "GetLevelScriptPropertyGenericBool",
-    (0x012F, 0x08): "GetLevelScriptStage",
-    (0x013A, 0x08): "GetMissionState",
-    (0x0184, 0x08): "GetterInt",
-    (0x01AA, 0x0A): "IntCompare",
-    (0x01AC, 0x09): "IntEqual",
-    (0x01BA, 0x09): "IntGetterRandom",
-    (0x01C2, 0x08): "IsEndminGender",
+    union_tags.getter("BooleanCompare"): "BooleanCompare",
+    union_tags.getter("CheckLevelScriptStage"): "CheckLevelScriptStage",
+    union_tags.getter("CheckMissionOrQuestIsComplete"): "CheckMissionOrQuestIsComplete",
+    union_tags.getter("CompareMissionState"): "CompareMissionState",
+    union_tags.getter("FloatNewCompare"): "FloatNewCompare",
+    union_tags.getter("GetConditionResult"): "GetConditionResult",
+    union_tags.getter("GetLevelScriptPropertyGenericBool"): "GetLevelScriptPropertyGenericBool",
+    union_tags.getter("GetLevelScriptStage"): "GetLevelScriptStage",
+    union_tags.getter("GetMissionState"): "GetMissionState",
+    union_tags.getter("GetterInt"): "GetterInt",
+    union_tags.getter("IntCompare"): "IntCompare",
+    union_tags.getter("IntEqual"): "IntEqual",
+    union_tags.getter("IntGetterRandom"): "IntGetterRandom",
+    union_tags.getter("IsEndminGender"): "IsEndminGender",
 }
 LEVELSCRIPT_STORY_KEY_PREFIXES = (
     "dlg_",
@@ -1199,52 +1100,54 @@ def match_entity_tracking_native_entity_event_context(
 # Shared semantic classes for reports and the Story/Mission join. These are
 # native formatter names above, not filename-shape guesses.
 LEVELSCRIPT_OPCODE_TABLE: dict[tuple[int, int], str] = {
-    (0x002D, 0x09): "sequence",
-    (0x00FF, 0x0B): "branch",
-    (0x0310, 0x14): "play_black",
-    (0x031E, 0x0C): "npc_patrol_control",
-    (0x034A, 0x14): "play_radio",
-    (0x034B, 0x14): "play_radio",
-    (0x0357, 0x14): "play_cutscene",
-    (0x0358, 0x14): "play_cutscene",
-    (0x035E, 0x0E): "play_fmv",
-    (0x0369, 0x0E): "play_fmv",
-    (0x0376, 0x0C): "preload_cutscene",
-    (0x037E, 0x0A): "raise_custom_event",
-    (0x0380, 0x0B): "raise_custom_event",
-    (0x035A, 0x0F): "play_dialog",
-    (0x0360, 0x0F): "play_levelseq",
-    (0x0361, 0x12): "play_levelseq",
-    (0x0363, 0x0D): "play_radio",
-    (0x0364, 0x0D): "play_radio",
-    (0x04B5, 0x09): "stop_radio",
-    (0x0365, 0x11): "play_remotecomm",
-    (0x049B, 0x13): "play_cutscene",
-    (0x049C, 0x12): "play_cutscene",
-    (0x049D, 0x16): "play_cutscene",
-    (0x049E, 0x0F): "play_dialog",
-    (0x049F, 0x10): "play_dialog",
-    (0x04A1, 0x10): "play_fmv",
-    (0x04A5, 0x1B): "play_black",
-    (0x04BD, 0x0C): "branch",
-    (0x04BF, 0x0C): "branch",
-    (0x0495, 0x09): "branch",
-    (0x04F6, 0x08): "control_wait",
-    (0x04F5, 0x09): "control_wait_npc_proxy",
-    (0x04F9, 0x0E): "control_wait_trigger_volume",
-    (0x0501, 0x0A): "control_loop",
-    (0x0020, 0x0B): "presentation_fade",
-    (0x0052, 0x09): "gate",
-    (0x00B9, 0x09): "presentation_cleanup",
-    (0x0034, 0x0E): "server_handoff",
-    (0x02FE, 0x0A): "movement_control",
-    (0x04CA, 0x09): "presentation_toggle",
-    (0x04DA, 0x09): "play_cutscene",
+    union_tags.action("Branch"): "sequence",
+    union_tags.action("IfElseAction"): "branch",
+    union_tags.action("NarrativeBlackScreenAction"): "play_black",
+    union_tags.action("NpcPatrolStart"): "npc_patrol_control",
+    union_tags.action("Play3DRadio"): "play_radio",
+    union_tags.action("Play3DRadioAndWait"): "play_radio",
+    union_tags.action("PlayCutsceneAction"): "play_cutscene",
+    union_tags.action("PlayCutsceneIgnoreCinematicQueue"): "play_cutscene",
+    union_tags.action("PlayFmvAction"): "play_fmv",
+    union_tags.action("PlayFmvAction"): "play_fmv",
+    union_tags.action("PreloadCutsceneAction"): "preload_cutscene",
+    union_tags.action("RaiseCustomLevelEvent"): "raise_custom_event",
+    union_tags.action("RaiseCustomScriptEvent"): "raise_custom_event",
+    union_tags.action("PlayDialogAndHideSceneObjectAction"): "play_dialog",
+    union_tags.action("PlayLevelSequenceAction"): "play_levelseq",
+    union_tags.action("PlayLevelSequenceAndControlSceneObjectsAction"): "play_levelseq",
+    union_tags.action("PlayRadio"): "play_radio",
+    union_tags.action("PlayRadioAndWait"): "play_radio",
+    union_tags.action("StopRadio"): "stop_radio",
+    union_tags.action("PlayRemoteComm"): "play_remotecomm",
+    union_tags.action("StartCutsceneAndControlSceneObjectAction"): "play_cutscene",
+    union_tags.action("StartCutsceneAndHideSceneObjectAction"): "play_cutscene",
+    union_tags.action("StartCutsceneAndTeleportAction"): "play_cutscene",
+    union_tags.action("StartDialogAction"): "play_dialog",
+    union_tags.action("StartDialogAndTeleportAction"): "play_dialog",
+    union_tags.action("StartFmvAndTeleportAction"): "play_fmv",
+    union_tags.action("StartNarrativeBlackScreenAndTeleport"): "play_black",
+    union_tags.action("SwitchInt"): "branch",
+    union_tags.action("SwitchString"): "branch",
+    union_tags.action("Split"): "branch",
+    union_tags.action("WaitForOneFrame"): "control_wait",
+    union_tags.action("WaitForNpcProxyReady"): "control_wait_npc_proxy",
+    union_tags.action("WaitForSecondsInTriggerVolume"): "control_wait_trigger_volume",
+    union_tags.action("WhileAction"): "control_loop",
+    union_tags.action("BlackScreenFadeOut"): "presentation_fade",
+    union_tags.action("CheckBoolIfTrue"): "gate",
+    union_tags.action("ExitLevelCustomPerformance"): "presentation_cleanup",
+    union_tags.action("CallServer"): "server_handoff",
+    union_tags.action("MainCharMoveTo"): "movement_control",
+    union_tags.action("ToggleClearScreenButRadio"): "presentation_toggle",
+    union_tags.action("TravelPoleHandoverToCutscene"): "play_cutscene",
+    # Unnamed in every recorded table; left as the old literal, which no
+    # current record carries, until its action is identified.
     (0x0016, 0x09): "set_state",
     (0x0015, 0x09): "set_state",
     (0x0070, 0x13): "set_state",
     (0x0450, 0x0f): "show_guide",
-    (0x048C, 0x09): "play_reading_popup",
+    union_tags.action("ShowUIReadingPopPanel"): "play_reading_popup",
 }
 
 LEVELSCRIPT_STORY_ACTION_EXECUTION_ROLES: dict[str, str] = {
@@ -1344,7 +1247,7 @@ def match_levelscript_native_reading_popup_record(
     identity or chronology.
     """
     if (
-        levelscript_record_semantic_key(record) != (0x048C, 0x09)
+        levelscript_record_semantic_key(record) != union_tags.action("ShowUIReadingPopPanel")
         or levelscript_native_action_name(record) != "ShowUIReadingPopPanel"
         or not str(script_id).isdigit()
     ):
@@ -1446,7 +1349,7 @@ def build_levelscript_unhosted_reading_popup_receiver_index(
             _action_map, membership = levelscript_action_map_membership(data, records)
             for record in records:
                 if (
-                    levelscript_record_semantic_key(record) != (0x048C, 0x09)
+                    levelscript_record_semantic_key(record) != union_tags.action("ShowUIReadingPopPanel")
                     or levelscript_native_action_name(record)
                     != "ShowUIReadingPopPanel"
                 ):
@@ -1779,17 +1682,17 @@ def _levelscript_native_action_successors(
     if isinstance(next_id, int) and next_id > 0:
         edges.append(("ActionBase.nextId", next_id))
     pair = levelscript_record_semantic_key(record)
-    if pair == (0x002D, 0x09):
+    if pair == union_tags.action("Branch"):
         for index, local_id in enumerate(
             detail.get("branchSequenceActionLocalIds") or []
         ):
             if isinstance(local_id, int) and local_id > 0:
                 edges.append((f"Branch.sequence[{index}]", local_id))
-    elif pair == (0x0495, 0x09):
+    elif pair == union_tags.action("Split"):
         for index, local_id in enumerate(detail.get("splitActionLocalIds") or []):
             if isinstance(local_id, int) and local_id > 0:
                 edges.append((f"Split.actions[{index}]", local_id))
-    elif pair == (0x00FF, 0x0B):
+    elif pair == union_tags.action("IfElseAction"):
         for field_name, label in (
             ("trueActionLocalId", "IfElseAction.trueAction"),
             ("falseActionLocalId", "IfElseAction.falseAction"),
@@ -1797,7 +1700,7 @@ def _levelscript_native_action_successors(
             local_id = detail.get(field_name)
             if isinstance(local_id, int) and local_id > 0:
                 edges.append((label, local_id))
-    elif pair == (0x0501, 0x0A):
+    elif pair == union_tags.action("WhileAction"):
         local_id = detail.get("whileDoActionLocalId")
         if isinstance(local_id, int) and local_id > 0:
             edges.append(("WhileAction.doAction", local_id))
@@ -1813,7 +1716,7 @@ def _levelscript_native_action_successors(
         default_id = detail.get(f"{field_prefix}DefaultActionLocalId")
         if isinstance(default_id, int) and default_id > 0:
             edges.append((f"{edge_prefix}.default", default_id))
-    elif pair == (0x04BF, 0x0C):
+    elif pair == union_tags.action("SwitchString"):
         case_ids = detail.get("switchStringCaseActionLocalIds") or []
         case_values = detail.get("switchStringCaseValues") or []
         for index, (case_value, local_id) in enumerate(zip(case_values, case_ids)):
@@ -1822,7 +1725,7 @@ def _levelscript_native_action_successors(
         default_id = detail.get("switchStringDefaultActionLocalId")
         if isinstance(default_id, int) and default_id > 0:
             edges.append(("SwitchString.default", default_id))
-    elif pair == (0x04F9, 0x0E):
+    elif pair == union_tags.action("WaitForSecondsInTriggerVolume"):
         if (detail.get("waitScriptPtr") or {}).get("mode") == "current_script":
             for field_name, label in (
                 (
@@ -1858,7 +1761,7 @@ def _levelscript_native_callserver_callback_successors(
     """
     if CALLSERVER_CALLBACK_CONTRACT_AUDIT.get("status") != "validated":
         return []
-    if levelscript_record_semantic_key(record) != (0x0034, 0x0E):
+    if levelscript_record_semantic_key(record) != union_tags.action("CallServer"):
         return []
     call_server = detail.get("callServer") or {}
     output_uids = call_server.get("callClientOutputUIDs")
@@ -2065,19 +1968,19 @@ def _levelscript_native_control_paths_to_record(
         control_runtime = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS.get(pair) or {}
         predicate: dict = {}
         getter_local_id = None
-        if pair == (0x00FF, 0x0B):
+        if pair == union_tags.action("IfElseAction"):
             getter_local_id = detail.get("conditionGetterLocalId")
         elif pair in {
-            (0x04BD, 0x0C),
-            (0x04BE, 0x0C),
-            (0x04BF, 0x0C),
+            union_tags.action("SwitchInt"),
+            union_tags.action("SwitchIntLarger"),
+            union_tags.action("SwitchString"),
         }:
             getter_field = (
                 "switchValueGetterLocalId"
-                if pair == (0x04BD, 0x0C)
+                if pair == union_tags.action("SwitchInt")
                 else (
                     "switchIntLargerValueGetterLocalId"
-                    if pair == (0x04BE, 0x0C)
+                    if pair == union_tags.action("SwitchIntLarger")
                     else "switchStringValueGetterLocalId"
                 )
             )
@@ -2156,10 +2059,10 @@ def _levelscript_native_control_paths_to_record(
                             if value not in ("", None, [], {})
                         }
         elif pair in {
-            (0x00FF, 0x0B),
-            (0x04BD, 0x0C),
-            (0x04BE, 0x0C),
-            (0x04BF, 0x0C),
+            union_tags.action("IfElseAction"),
+            union_tags.action("SwitchInt"),
+            union_tags.action("SwitchIntLarger"),
+            union_tags.action("SwitchString"),
         }:
             inline_param = (
                 detail.get("conditionParam")
@@ -2199,19 +2102,19 @@ def _levelscript_native_control_paths_to_record(
                     compact_callserver_serialized_contract(
                         detail.get("callServer") or {}
                     ) or None
-                    if pair == (0x0034, 0x0E)
+                    if pair == union_tags.action("CallServer")
                     else None
                 ),
                 "callServerCallbackOutputUIDs": (
                     (detail.get("callServer") or {}).get(
                         "callClientOutputUIDs"
                     )
-                    if pair == (0x0034, 0x0E)
+                    if pair == union_tags.action("CallServer")
                     else None
                 ),
                 "callServerCallbackMappingId": (
                     "gameassembly-2026-08-03-callserver-callback-header-uids-v1"
-                    if pair == (0x0034, 0x0E)
+                    if pair == union_tags.action("CallServer")
                     and isinstance(
                         (detail.get("callServer") or {}).get(
                             "callClientOutputUIDs"
@@ -5526,7 +5429,7 @@ def build_levelscript_registered_action_target_index(
             # intervening formatter members and, only when the walk lands on
             # that exact null byte, retain the constant `_entity` member while
             # proving `_targetEntity` is present-but-null rather than missing.
-            if pair == (0x0094, 15) and len(entity_fields) == 2:
+            if pair == union_tags.action("EntityCastSkill") and len(entity_fields) == 2:
                 entity_value = decode_constant_entity_ptr_param(data, payload_start)
                 if entity_value is not None:
                     cursor = entity_value[1]
@@ -6044,7 +5947,7 @@ def build_levelscript_registered_action_target_index(
                 # entity identity already passed the strict spatial resolver.
                 # This does not inherit from a sibling action or proximity.
                 if (
-                    pair in {(0x034A, 0x14), (0x034B, 0x14)}
+                    pair in {union_tags.action("Play3DRadio"), union_tags.action("Play3DRadioAndWait")}
                     and field
                     and field.get("fieldName") == "_entityPtr"
                     and field_contract_audit.get("status") == "validated"
@@ -6575,7 +6478,7 @@ def build_entity_tracking_native_event_story_context(
     for raise_record in records:
         if (
             not role(raise_record).startswith("actionList#")
-            or levelscript_record_semantic_key(raise_record) != (0x037E, 0x0A)
+            or levelscript_record_semantic_key(raise_record) != union_tags.action("RaiseCustomLevelEvent")
         ):
             continue
         control_paths = _levelscript_native_control_paths_to_record(
@@ -6804,7 +6707,7 @@ def build_levelscript_travel_pole_custom_event_story_routes(
                 if (
                     not role(raise_record).startswith("actionList#")
                     or levelscript_record_semantic_key(raise_record)
-                    != (0x037E, 0x0A)
+                    != union_tags.action("RaiseCustomLevelEvent")
                 ):
                     continue
                 event_literals = [
@@ -7011,7 +6914,7 @@ def decode_levelscript_mission_state_control_gates(
         }:
             continue
         if_else = actions.get(step.get("localId"))
-        if not if_else or levelscript_record_semantic_key(if_else) != (0x00FF, 0x0B):
+        if not if_else or levelscript_record_semantic_key(if_else) != union_tags.action("IfElseAction"):
             continue
         if_else_detail = decoded(if_else)
         compare_local_id = if_else_detail.get("conditionGetterLocalId")
@@ -7365,7 +7268,7 @@ def build_levelscript_custom_event_story_producer_routes(
             )
             for index, record in enumerate(records):
                 pair = levelscript_record_semantic_key(record)
-                if pair not in {(0x037E, 0x0A), (0x0380, 0x0B)}:
+                if pair not in {union_tags.action("RaiseCustomLevelEvent"), union_tags.action("RaiseCustomScriptEvent")}:
                     continue
                 record_start = int(record.get("start") or 0)
                 role = str(membership.get(record_start) or "")
@@ -7378,7 +7281,7 @@ def build_levelscript_custom_event_story_producer_routes(
                 )
                 receiver_mode = "level"
                 target_script_id = ""
-                if pair == (0x037E, 0x0A):
+                if pair == union_tags.action("RaiseCustomLevelEvent"):
                     event_literals = [
                         text
                         for text in _levelscript_record_texts(record)
@@ -7586,7 +7489,7 @@ def build_levelscript_manual_guide_group_story_routes(
                 if (
                     not role.startswith("actionList#")
                     or levelscript_record_semantic_key(record)
-                    != (0x0304, 0x09)
+                    != union_tags.action("ManuallyStartGuideGroup")
                 ):
                     continue
                 decoded = decode_levelscript_record_payload(
@@ -11113,7 +11016,7 @@ def build_npc_patrol_checkpoint_mission_contexts(
                     start = int(record.get("start") or 0)
                     role = str(membership.get(start) or "")
                     if (
-                        levelscript_record_semantic_key(record) != (0x031E, 0x0C)
+                        levelscript_record_semantic_key(record) != union_tags.action("NpcPatrolStart")
                         or not role.startswith("actionList#")
                     ):
                         continue

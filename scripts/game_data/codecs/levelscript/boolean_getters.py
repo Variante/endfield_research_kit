@@ -5,6 +5,7 @@ from __future__ import annotations
 import struct
 from typing import Any
 
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.codecs.levelscript.params import decode_bool_param, decode_i32_param
 from scripts.game_data.codecs.levelscript.params import finish_getter_fields as _finish_getter_fields
 
@@ -122,16 +123,16 @@ def decode_boolean_getter_fields(
     semantic_key: tuple[int, int],
 ) -> tuple[str, dict[str, Any]]:
     """Decode the Boolean getter selected by its current formatter identity."""
-    if semantic_key == (0x0004, 0x0A):
+    if semantic_key == union_tags.getter("BooleanCompare"):
         return "booleanCompare", decode_boolean_compare(payload)
-    if semantic_key == (0x0006, 0x09):
+    if semantic_key == union_tags.getter("BoolGetterAnd"):
         return "boolGetterAnd", decode_binary(payload, "And")
-    if semantic_key == (0x000A, 0x08):
+    if semantic_key == union_tags.getter("BoolGetterInvert"):
         return "boolGetterInvert", decode_invert(payload)
-    if semantic_key == (0x000B, 0x08):
+    if semantic_key == union_tags.getter("BoolGetterMultiAnd"):
         return "boolGetterMultiAnd", decode_multi_and(payload)
-    if semantic_key == (0x000D, 0x09):
+    if semantic_key == union_tags.getter("BoolGetterOr"):
         return "boolGetterOr", decode_binary(payload, "Or")
-    if semantic_key == (0x017C, 0x08):
+    if semantic_key == union_tags.getter("GetterBool"):
         return "getterBool", decode_getter_bool(payload)
     return "", {}

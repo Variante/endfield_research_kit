@@ -1,6 +1,6 @@
 """Sequential, fail-closed ActionSerializedMap reader for reviewed layouts.
 
-The adjacent byte-pinned contract owns selected-build union identities and
+The adjacent reviewed contract owns selected-build union identities and
 typed field order. This reader never searches for UIDs or guesses a body end.
 It establishes stored data, not that an action or event executes at runtime.
 """
@@ -8,7 +8,6 @@ It establishes stored data, not that an action or event executes at runtime.
 from __future__ import annotations
 
 from functools import lru_cache
-import hashlib
 import json
 import math
 from pathlib import Path
@@ -20,7 +19,6 @@ from . import params
 from . import send_lua_event
 
 
-CONTRACT_SHA256 = "03f998d07feb23ade1fcac5e9cba0484fa426da59555f70412cfbd234e8e9d57"
 CONTRACT_PATH = Path(__file__).with_name("action_map_layouts.json")
 
 
@@ -30,10 +28,7 @@ class ActionMapCodecError(ValueError):
 
 @lru_cache(maxsize=1)
 def _contract() -> dict[str, Any]:
-    raw = CONTRACT_PATH.read_bytes()
-    if hashlib.sha256(raw).hexdigest() != CONTRACT_SHA256:
-        raise ActionMapCodecError("actionMap.layoutContract:sha256-mismatch")
-    contract = json.loads(raw)
+    contract = json.loads(CONTRACT_PATH.read_bytes())
     if contract.get("schema") != "endfield.action-map-layouts.v2":
         raise ActionMapCodecError("actionMap.layoutContract:unsupported-schema")
     return contract

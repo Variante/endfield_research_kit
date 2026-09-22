@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import struct
 from typing import Any
+from scripts.game_data import levelscript_union_tags as union_tags
 
 
-_ACTION_SEMANTIC_KEY = (0x031E, 0x0C)
+_ACTION_SEMANTIC_KEY = union_tags.action("NpcPatrolStart")
 _PARAM_TAIL = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
 
 

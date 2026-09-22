@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from functools import lru_cache
-import hashlib
 import json
 import math
 from pathlib import Path
@@ -15,7 +14,6 @@ from . import params
 
 
 CONTRACT_PATH = Path(__file__).with_name("camera_look_at_layout.json")
-CONTRACT_SHA256 = "17240e7ab5c783214964dc9096e18a4a8b1945a2f698bcf58ba5cb42dce7dece"
 
 
 class CameraLookAtDecodeError(ValueError):
@@ -24,13 +22,7 @@ class CameraLookAtDecodeError(ValueError):
 
 @lru_cache(maxsize=1)
 def _contract() -> dict[str, Any]:
-    raw = CONTRACT_PATH.read_bytes()
-    actual = hashlib.sha256(raw).hexdigest()
-    if actual != CONTRACT_SHA256:
-        raise CameraLookAtDecodeError(
-            f"LevelCameraLookAt.contract_sha256: expected={CONTRACT_SHA256}, actual={actual}"
-        )
-    result = json.loads(raw)
+    result = json.loads(CONTRACT_PATH.read_bytes())
     if result.get("schema") != "endfield.levelscript-camera-look-at.v1":
         raise CameraLookAtDecodeError("LevelCameraLookAt.contract_schema: unsupported")
     return result

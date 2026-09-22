@@ -6,6 +6,7 @@ import re
 import struct
 from typing import Any
 
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.codecs.levelscript.params import (
     decode_constant_string_param,
     decode_i32_param,
@@ -14,7 +15,7 @@ from scripts.game_data.codecs.levelscript.params import (
 
 
 EVENT_NAME = "LevelEvent_OnProxyPatrolCheckpointReach"
-EVENT_SEMANTIC_KEY = (0x0084, 0x15)
+EVENT_SEMANTIC_KEY = union_tags.header("LevelEvent_OnProxyPatrolCheckpointReach")
 _OUTPUT_FIELDS = ("npcEntity", "npcPosition", "patrolId", "pointIndex")
 
 

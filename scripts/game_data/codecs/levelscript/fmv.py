@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import struct
 from typing import Any
+from scripts.game_data import levelscript_union_tags as union_tags
 
 
 LEVELSCRIPT_NATIVE_FMV_ACTION_MAPPING_ID = (
@@ -11,8 +12,7 @@ LEVELSCRIPT_NATIVE_FMV_ACTION_MAPPING_ID = (
 )
 
 PLAY_FMV_ACTION_SEMANTIC_KEYS = frozenset({
-    (0x035E, 0x0E),
-    (0x0369, 0x0E),
+    union_tags.action("PlayFmvAction"),
 })
 
 
@@ -93,7 +93,7 @@ def decode_fmv_action(
             "payloadShape": "play-fmv-movie-path-first-derived-field",
             "nativeMappingId": LEVELSCRIPT_NATIVE_FMV_ACTION_MAPPING_ID,
         }
-    if semantic_key == (0x04A1, 0x10):
+    if semantic_key == union_tags.action("StartFmvAndTeleportAction"):
         if not tagged_strings:
             return {}
         hit = tagged_strings[-1]

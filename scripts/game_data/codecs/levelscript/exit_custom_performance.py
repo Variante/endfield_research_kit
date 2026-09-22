@@ -4,9 +4,10 @@ from __future__ import annotations
 
 import struct
 from typing import Any
+from scripts.game_data import levelscript_union_tags as union_tags
 
 
-ACTION_SEMANTIC_KEY = (0x00B9, 0x09)
+ACTION_SEMANTIC_KEY = union_tags.action("ExitLevelCustomPerformance")
 
 
 def decode_exit_level_custom_performance_action(

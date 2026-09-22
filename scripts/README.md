@@ -20,12 +20,12 @@ axis. A path appears under exactly one owner.
 | **1. Game data** | `game_data/extraction/` | installed client to `export_full/`: the export and changed-file exporters, freshness guard, export benchmark, AnimeStudio object index, and `animestudio/` maintenance commands; never publishes page data |
 | | `game_data/` | the exact framing readers, one per payload family (`irradiance_volume.py`, `extend_data_binary.py`, `bundle_manifest.py`, `ifix_patch.py`, `inverted_lz4.py`, `dynamic_streaming.py`, the serialized-gameplay `*_binary.py` readers, and the MemoryPack JsonData readers such as `levelconfig_binary.py`, `navmesh_binary.py`, `gpu_ui_binary.py`); the `*_corpus.py` current-corpus gates (`jsondata_corpus.py`, `gpu_ui_corpus.py`, `dynamic_stream_area_corpus.py`) and `jsondata_schema_coverage.py`; the `*_native.py` loaders and validators for the reviewed native facts the Story, Mission Pipeline, Map and recovery tools consume; `native_union_atlas.py`, which re-validates every union contract; `dummydll_metadata.py`, `levelscript_union_layouts.py` and `dependency_snapshot.py`; `media_resolver.py` (game-media naming) and `cabmap.py` (the CABMap container index and the `m_FileID` -> dependency-slot rule) |
 | | `game_data/codecs/` | all per-record LevelScript and LevelData byte decoding behind the `*_binary.py` readers, which keep only the file-level framing walk, the record dispatcher and the result assembly; includes `send_lua_event.py` for the one nested value the derived declaration cannot describe |
-| | `game_data/contracts/` | the reviewed, byte-pinned contract JSON that every reader, loader and validator loads; `CONTRACTS_DIR` from the package is the only path anchor, and each owner pins its file's digest |
+| | `game_data/contracts/` | the reviewed contract JSON that every reader, loader and validator loads; `CONTRACTS_DIR` from the package is the only path anchor; git, not a pinned digest, owns each file's integrity |
 | | `game_data/streaming/` | the block-15 Streaming lane: `framing.py`, `pairs.py`, the marker parsers, their `*_native.py` validators and `*_corpus.py` gates |
 | | `game_data/terrain/` | the TRET container reader (`tret.py`), the height grids map recovery reads (`height.py`), the native consumer validator and the corpus gate |
 | | `game_data/il2cpp/` | `protocol.py` (metadata and PE primitives), `native_image.py` (the one opened installed build every contract validator checks against, with the shared method-identity, dispatcher-route, code-window and setter-order checks), `context.py` (generic-instantiation pointer tables), `method_resolver.py` (managed name to selected-build body), and the context audit split by the section it owns: `context_audit.py` (CLI, registration and method-spec sweeps, report assembly), `context_audit_common.py` (build gate through `contracts/il2cpp_context_audit_native.json`, hashing and sweep helpers), `context_audit_memorypack.py` (MemoryPack reader and BuffData consumer checks), `context_audit_skilldata.py` (SkillData branch witness, replay and static alignment), `context_audit_vfs.py` (stream, VFS and UnityPlayer consumer checks) |
 | | `game_data/monobehaviour/` | the exported MonoBehaviour corpus: `census.py`, `monoscript_catalog.py`, `script_names.py`, `field_semantics.py` (what each named class's fields hold) and `table_keys.py` (which string fields carry exported Table keys) |
-| | `game_data/schemas/` | the byte-pinned named JSON schema readers for the textual JsonData families (`gameplay_config.py`, `gameplay_config_polymorphic.py`, `text_schema.py`, `mission_runtime_main.py`, `mission_runtime_meta.py`, `npc_catalog.py`, `npc_prefab_info.py`, `map_config.py`, `ui_level_map_load_config.py`, `level_mount_point.py`, `gold_coin_config.py`), all validated by `named_schema.py` and keeping only their contract pin, path predicate, relations and result shape |
+| | `game_data/schemas/` | the reviewed named JSON schema readers for the textual JsonData families (`gameplay_config.py`, `gameplay_config_polymorphic.py`, `text_schema.py`, `mission_runtime_main.py`, `mission_runtime_meta.py`, `npc_catalog.py`, `npc_prefab_info.py`, `map_config.py`, `ui_level_map_load_config.py`, `level_mount_point.py`, `gold_coin_config.py`), all validated by `named_schema.py` and keeping only their contract pin, path predicate, relations and result shape |
 | | `game_data/wwise_sdk_symbols.py` | names functions in the shipped `AkSoundEngine.dll` by matching each `.pdata` function body against the named COMDAT sections of every installed Wwise SDK library, recording which one named it and dropping a symbol two archives define differently; a match needs an equal extent, 80% byte agreement and a clear margin over the runner-up, so an ambiguous or weak candidate leaves the function unnamed |
 | | `game_data/memorypack/derived_schema.py` | recursive read-plan resolution over the derived wrapper, union, enum and wrapped-type tables; models the counted-map framing a reviewed reader proves and refuses every other formatter-backed type rather than reading its member list |
 | | `game_data/memorypack/union_subtypes.py` | tag assignment for the nested unions the dispatcher walk cannot reach, inferred from the wrapper hierarchy and gated on the walked union reproducing exactly |
@@ -33,13 +33,13 @@ axis. A path appears under exactly one owner.
 | | `webui/story_recovery/refresh_audio_hook_catalog.py` | re-pins the audio hook catalog the capture host reads to the installed build: managed RVAs re-resolved by name, native RVAs kept only when still a `.pdata` function start. The host writes the activation manifest itself, and each native row is named from the Wwise SDK on every re-pin, an annotation cleared rather than carried when the match is lost |
 | | `webui/audio/semantics/runtime_capture_import.py` | validates one bounded EndfieldCapture audio session against the provider's own completeness counters, decodes its callback payloads with the writer's own `AudioEventPayload` layout, and reports the Events posted and files opened without joining them |
 | | `webui/audio/semantics/decoded_payload_event_names.py` | Wwise Event names taken from the decoded member that holds them rather than from a spelling grammar; standalone, not yet wired into `build_audio` |
-| | `game_data/contracts_repin.py` | re-pins the exporter fingerprint an AnimeStudio rebuild invalidates, then settles the dependency rows and loader digests that follow from it; refuses unless the installed build matches both the audit and the contracts |
 | | `game_data/memorypack/derived_values.py` | decodes a plan into named values rather than only framing it, and checks each decoded record's own identifier against its filename |
 | | `game_data/memorypack/derived_plans.py` | opt-in reader that executes a `derived_schema` read plan with the frozen reader's own primitives, so a nested record, list, counted map or union is consumed rather than only described; `--corpus` is its adoption gate against exported BuffData |
 | | `game_data/memorypack/action_dispatcher.py` | the whole AbilityActionData union dispatcher of the selected build, walked generically from the switch table the reviewed contracts pin; names the wrapper behind every tag, including the ones no contract covers |
 | | `game_data/memorypack/wrapper_members.py` | the selected build's generated wrapper member order and member types for every `*ForMemoryPack` type, derived in one metadata pass; the bulk source the per-tag contracts record one wrapper at a time |
 | | `game_data/memorypack/union_dispatch.py` | reads a union's tag assignment from its native `<Base>ForMemoryPackFormatter.Deserialize` jump table, found by name and instruction shape; accepts a table only when every entry resolves one-for-one onto the family's derived wrappers, and refuses unions compiled without one |
 | | `game_data/pure_getter_rows.py` | re-derives the per-build fields of reviewed PureGetter contract rows -- tag, member count and ordinals, `GetResult` body -- for the `*_getter_native.py` loaders' `--regenerate` |
+| | `game_data/levelscript_union_tags.py` | the current build's ActionBase / PureGetter / ActionHeader `(tag, member count)` for every type name, regenerated from the native formatter switches into `contracts/levelscript_union_tags.json`; LevelScript codecs and Story name a type (`union_tags.action("IfElseAction")`) instead of writing a tag literal that the next client update renumbers |
 | | `game_data/memorypack/` | MemoryPack codecs and their corpus gates, including the current-build BuffData additions (`buff_icon_config.py`, `buff_residual_actions.py`, `buff_named_schema.py`) and the SkillData first-timeline lane (`skill_timeline_*.py`), which share `core.LabelledReader` and gate through `il2cpp.native_image` |
 | **2. WebUI** | `webui/views.py`, `webui/package.py` | page-build orchestration, and packaging |
 | | `webui/story/` | Story and Text page data plus shared Story evidence |
@@ -331,19 +331,11 @@ python -m scripts.game_data.memorypack.derived_schema
 python -m scripts.game_data.memorypack.derived_plans
 python -m scripts.game_data.memorypack.derived_plans --corpus
 python -m scripts.game_data.memorypack.derived_values
-
-Re-pin after rebuilding the exporter (dry-run first; `--write` applies):
-
-```bat
-python -m scripts.game_data.contracts_repin
-python -m scripts.game_data.contracts_repin --write
-python -m scripts.game_data.contracts_repin --verify
 python -m scripts.webui.audio.semantics.decoded_payload_event_names
 python -m scripts.game_data.wwise_sdk_symbols
 python -m scripts.game_data.wwise_sdk_symbols --find CAkSrcMedia
 python -m scripts.webui.story_recovery.refresh_audio_hook_catalog
 python -m scripts.webui.audio.semantics.runtime_capture_import
-```
 %ASCLI% shader-recover --input PATH_TO_SPIRV --output PATH_TO_HLSL
 %ASCLI% inspect-object --index OBJECT_INDEX.jsonl --path-id PATH_ID --source SOURCE --type TYPE
 %ASCLI% audit-refs --index OBJECT_INDEX.jsonl
@@ -899,14 +891,12 @@ Reviewed per-build native facts are stored as data, not prose:
 `scripts/game_data/contracts/*_native.json` for raw-format consumers and MemoryPack
 formatter windows, and the native facts Story, Mission Pipeline, Map and the
 recovery tools consume through the `scripts/game_data/*_native.py` loaders. These JSON files **are tracked**: what they record is a data
-structure, and the per-build anchors beside each field are its provenance. The
-digest of a named consumer contract is pinned as `CONTRACT_SHA256` in its
-`*_native.py` module and re-checked at load, so editing the JSON without
-updating that pin fails closed. The pin covers exact bytes, so
-`.gitattributes` marks `scripts/**/*.json -text` and their line endings must
-never be converted. See the native-contract rules in `AGENTS.md` before adding
-or regenerating one, and never carry an RVA, registration index, or code-window
-hash over from a previous installed build.
+structure, and the per-build anchors beside each field are its provenance.
+No module pins a contract's own bytes; a loader checks the installed build
+against the contract's `nativeInputs` and the native code against its recorded
+window or body hashes. See the native-contract rules in `AGENTS.md` before
+adding or regenerating one, and never carry an RVA, registration index, or
+code-window hash over from a previous installed build.
 
 ### Measuring JsonData schema coverage
 

@@ -7,16 +7,17 @@ from typing import Any
 
 from scripts.game_data.codecs.levelscript.params import decode_param_tail
 from scripts.game_data.codecs.levelscript.params import decode_i32_param as _decode_i32_param
+from scripts.game_data.levelscript_union_tags import action
 
 
 _INTEGER_SWITCH_CONFIG = {
-    (0x04BD, 0x0C): ("switch", "typed-switch-int-actions"),
-    (0x04BE, 0x0C): (
+    action("SwitchInt"): ("switch", "typed-switch-int-actions"),
+    action("SwitchIntLarger"): (
         "switchIntLarger",
         "typed-switch-int-larger-actions",
     ),
 }
-_STRING_SWITCH_SEMANTIC_KEY = (0x04BF, 0x0C)
+_STRING_SWITCH_SEMANTIC_KEY = action("SwitchString")
 
 
 def _read_i32_list(

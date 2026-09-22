@@ -1,5 +1,6 @@
 """Build-locked offline exhaustion evidence and validators."""
 from __future__ import annotations
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.common import rel_path as export_rel_path
 
 import base64
@@ -2645,8 +2646,8 @@ def build_offline_exhaustion_index(
             actual_playback_records = []
             for record_index, record in enumerate(playback_records):
                 action = {
-                    (0x0363, 0x0D): "PlayRadio",
-                    (0x0364, 0x0D): "PlayRadioAndWait",
+                    union_tags.action("PlayRadio"): "PlayRadio",
+                    union_tags.action("PlayRadioAndWait"): "PlayRadioAndWait",
                 }.get(levelscript_record_semantic_key(record))
                 if not action:
                     continue

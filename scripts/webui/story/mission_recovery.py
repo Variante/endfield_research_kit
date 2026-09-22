@@ -26,6 +26,7 @@ from pathlib import Path
 from typing import Any
 
 
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
@@ -1198,8 +1199,8 @@ def typed_cutscene_single_char_parameter_action(
     except (TypeError, ValueError):
         return ""
     action_name = {
-        (0x049B, 0x13): "StartCutsceneAndControlSceneObjectAction",
-        (0x049C, 0x12): "StartCutsceneAndHideSceneObjectAction",
+        union_tags.action("StartCutsceneAndControlSceneObjectAction"): "StartCutsceneAndControlSceneObjectAction",
+        union_tags.action("StartCutsceneAndHideSceneObjectAction"): "StartCutsceneAndHideSceneObjectAction",
     }.get((code_value, kind_value), "")
     if not action_name:
         return ""

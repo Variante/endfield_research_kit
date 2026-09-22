@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import struct
 from typing import Any
+from scripts.game_data import levelscript_union_tags as union_tags
 
 
 MANUAL_CONTROL_MAPPING_ID = "levelscript-actionbase-manual-control-opcodes-v1"
 MANUAL_CONTROL_ACTIONS = {
-    (0x0308, 0x0A): ("manual-start", "ManualStartLevelScript"),
-    (0x0302, 0x0A): ("manual-end", "ManualEndLevelScript"),
+    union_tags.action("ManualStartLevelScript"): ("manual-start", "ManualStartLevelScript"),
+    union_tags.action("ManualEndLevelScript"): ("manual-end", "ManualEndLevelScript"),
 }
 
 

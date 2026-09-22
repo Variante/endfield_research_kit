@@ -5,9 +5,12 @@ Moved verbatim out of ``scripts/game_data/levelscript_binary.py``.
 
 from __future__ import annotations
 
+from functools import lru_cache
+
 import math
 import struct
 
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.codecs.levelscript import params as levelscript_params
 from scripts.game_data.codecs.levelscript.condition_params import _decode_audio_param_tail
 from scripts.game_data.codecs.levelscript.condition_params import _decode_quaternion_param
@@ -309,18 +312,12 @@ def _finish_audio_action_fields(
     return out
 
 
-def _decode_audio_action(
-    payload: bytes,
-    semantic_key: tuple[int, int],
-) -> dict[str, Any]:
-    """Decode the installed high-yield ActionBase audio field layouts.
-
-    The union tag/member-count pair selects one exact generated MemoryPack
-    formatter. Every declared derived member is decoded in generated-setter
-    order. Literal Event/cue bindings are emitted only for constant string
-    parameters; dynamic parameters retain idRef/source/path evidence without
-    being promoted to an authored name.
-    """
+@lru_cache(maxsize=1)
+def _audio_action_layouts() -> dict[
+    tuple[int, int],
+    tuple[str, tuple[tuple[str, Any], ...]],
+]:
+    """Exact generated field layouts, keyed by the current build's action pair."""
     layouts: dict[
         tuple[int, int],
         tuple[str, tuple[tuple[str, Any], ...]],
@@ -328,7 +325,7 @@ def _decode_audio_action(
         # These actions have no derived serialized fields in the current
         # MemoryPack payload.  The record can still carry the bounded
         # ActionMap list framing accepted by _finish_audio_action_fields.
-        (0x00B7, 0x08): ("ExitCustomMusicMode", ()),
+        union_tags.action("ExitCustomMusicMode"): ("ExitCustomMusicMode", ()),
         (0x0016, 0x09): (
             "AnnounceAudioOnTarget",
             (
@@ -336,19 +333,19 @@ def _decode_audio_action(
                 ("audioKey", _decode_audio_string_param),
             ),
         ),
-        (0x0028, 0x09): (
+        union_tags.action("BlockAutoMusicChange"): (
             "BlockAutoMusicChange",
             (("blockHandle", levelscript_params.decode_param_output),),
         ),
-        (0x0029, 0x09): (
+        union_tags.action("BlockAutoMusicChangeCancel"): (
             "BlockAutoMusicChangeCancel",
             (("blockHandle", _decode_audio_i32_param),),
         ),
-        (0x002A, 0x09): (
+        union_tags.action("BlockBattleMusic"): (
             "BlockBattleMusic",
             (("block", _decode_audio_bool_param),),
         ),
-        (0x0089, 0x0B): (
+        union_tags.action("EnterCustomMusicMode"): (
             "EnterCustomMusicMode",
             (
                 ("allowCombatMusic", _decode_audio_bool_param),
@@ -356,13 +353,13 @@ def _decode_audio_action(
                 ("autoExitOnRelease", _decode_audio_bool_param),
             ),
         ),
-        (0x0306, 0x09): (
+        union_tags.action("ManualRestoreMusicState"): (
             "ManualRestoreMusicState",
             (
                 ("delay", _decode_audio_float_param),
             ),
         ),
-        (0x0307, 0x0B): (
+        union_tags.action("ManualSetMusicState"): (
             "ManualSetMusicState",
             (
                 ("baseState", _decode_audio_i32_param),
@@ -370,7 +367,7 @@ def _decode_audio_action(
                 ("battleState", _decode_audio_i32_param),
             ),
         ),
-        (0x034C, 0x0C): (
+        union_tags.action("PlayAudiAtPosition"): (
             "PlayAudiAtPosition",
             (
                 ("audioPlayingId", levelscript_params.decode_param_output),
@@ -379,7 +376,7 @@ def _decode_audio_action(
                 ("stopOnRelease", _decode_audio_bool_param),
             ),
         ),
-        (0x034E, 0x0B): (
+        union_tags.action("PlayAudio"): (
             "PlayAudio",
             (
                 ("audioPlayingId", levelscript_params.decode_param_output),
@@ -387,7 +384,7 @@ def _decode_audio_action(
                 ("stopOnRelease", _decode_audio_bool_param),
             ),
         ),
-        (0x034F, 0x10): (
+        union_tags.action("PlayAudioAndWait"): (
             "PlayAudioAndWait",
             (
                 ("eventName", _decode_audio_string_param),
@@ -400,7 +397,7 @@ def _decode_audio_action(
                 ("targetProxy", _decode_audio_string_param),
             ),
         ),
-        (0x034A, 0x14): (
+        union_tags.action("Play3DRadio"): (
             "Play3DRadio",
             (
                 ("attenuationType", _decode_audio_i32_param),
@@ -417,7 +414,7 @@ def _decode_audio_action(
                 ("voOffset", _decode_audio_float_param),
             ),
         ),
-        (0x034B, 0x14): (
+        union_tags.action("Play3DRadioAndWait"): (
             "Play3DRadioAndWait",
             (
                 ("attenuationType", _decode_audio_i32_param),
@@ -434,7 +431,7 @@ def _decode_audio_action(
                 ("voOffset", _decode_audio_float_param),
             ),
         ),
-        (0x0352, 0x0C): (
+        union_tags.action("PlayAudioOnTarget"): (
             "PlayAudioOnTarget",
             (
                 ("audioKey", _decode_audio_string_param),
@@ -443,7 +440,7 @@ def _decode_audio_action(
                 ("target", _decode_audio_entity_param),
             ),
         ),
-        (0x0367, 0x11): (
+        union_tags.action("PlayStandaloneMusic"): (
             "PlayStandaloneMusic",
             (
                 ("handleId", levelscript_params.decode_param_output),
@@ -457,7 +454,7 @@ def _decode_audio_action(
                 ("stopOnRelease", _decode_audio_bool_param),
             ),
         ),
-        (0x0368, 0x0B): (
+        union_tags.action("PlayVoice"): (
             "PlayVoice",
             (
                 ("target", _decode_audio_entity_param),
@@ -465,14 +462,14 @@ def _decode_audio_action(
                 ("voId", _decode_audio_string_param),
             ),
         ),
-        (0x0369, 0x0A): (
+        union_tags.action("PlayVoiceNarrative"): (
             "PlayVoiceNarrative",
             (
                 ("voiceHandle", levelscript_params.decode_param_output),
                 ("voId", _decode_audio_string_param),
             ),
         ),
-        (0x0363, 0x0D): (
+        union_tags.action("PlayRadio"): (
             "PlayRadio",
             (
                 ("fromBegin", _decode_audio_bool_param),
@@ -482,7 +479,7 @@ def _decode_audio_action(
                 ("radioId", _decode_audio_string_param),
             ),
         ),
-        (0x0364, 0x0D): (
+        union_tags.action("PlayRadioAndWait"): (
             "PlayRadioAndWait",
             (
                 ("fromBegin", _decode_audio_bool_param),
@@ -492,7 +489,7 @@ def _decode_audio_action(
                 ("radioId", _decode_audio_string_param),
             ),
         ),
-        (0x036B, 0x13): (
+        union_tags.action("PostAudioCue"): (
             "PostAudioCue",
             (
                 ("behaviourType", _decode_audio_i32_param),
@@ -508,7 +505,7 @@ def _decode_audio_action(
                 ("volume0To10", _decode_audio_float_param),
             ),
         ),
-        (0x036E, 0x14): (
+        union_tags.action("PostAudioCueOnRelease"): (
             "PostAudioCueOnRelease",
             (
                 ("behaviourType", _decode_audio_i32_param),
@@ -525,7 +522,7 @@ def _decode_audio_action(
                 ("onlyIfExecuted", _decode_audio_bool_param),
             ),
         ),
-        (0x0371, 0x0B): (
+        union_tags.action("PostAudioStatusEvent"): (
             "PostAudioStatusEvent",
             (
                 ("onlyTriggerExitAfterNodeTriggered", _decode_audio_bool_param),
@@ -533,7 +530,7 @@ def _decode_audio_action(
                 ("statusExitEvent", _decode_audio_string_param),
             ),
         ),
-        (0x0373, 0x0C): (
+        union_tags.action("PostMusicEvent"): (
             "PostMusicEvent",
             (
                 ("musicEvent", _decode_audio_string_param),
@@ -542,7 +539,7 @@ def _decode_audio_action(
                 ("playingId", levelscript_params.decode_param_output),
             ),
         ),
-        (0x03D5, 0x0F): (
+        union_tags.action("SetAudioCueVar"): (
             "SetAudioCueVar",
             (
                 ("boolValue", _decode_audio_bool_param),
@@ -554,8 +551,8 @@ def _decode_audio_action(
                 ("varType", _decode_audio_i32_param),
             ),
         ),
-        (0x0372, 0x08): ("PostAudioStopAllEnemyVoice", ()),
-        (0x04A7, 0x0E): (
+        union_tags.action("PostAudioStopAllEnemyVoice"): ("PostAudioStopAllEnemyVoice", ()),
+        union_tags.action("StartPlaceholderMusic_DevOnly"): (
             "StartPlaceholderMusic_DevOnly",
             (
                 ("musicId", _decode_audio_i32_param),
@@ -566,14 +563,14 @@ def _decode_audio_action(
                 ("volume", _decode_audio_float_param),
             ),
         ),
-        (0x04AC, 0x0A): (
+        union_tags.action("StopAudio"): (
             "StopAudio",
             (
                 ("audioId", _decode_audio_i32_param),
                 ("fadeTimeMs", _decode_audio_i32_param),
             ),
         ),
-        (0x04B4, 0x0B): (
+        union_tags.action("StopPlaceholderMusic_DevOnly"): (
             "StopPlaceholderMusic_DevOnly",
             (
                 ("fadeOutTimeSeconds", _decode_audio_float_param),
@@ -581,26 +578,26 @@ def _decode_audio_action(
                 ("stopSpecificMusic", _decode_audio_bool_param),
             ),
         ),
-        (0x04B5, 0x09): (
+        union_tags.action("StopRadio"): (
             "StopRadio",
             (
                 ("radioId", _decode_audio_string_param),
             ),
         ),
-        (0x04B7, 0x0A): (
+        union_tags.action("StopVoice"): (
             "StopVoice",
             (
                 ("fadeOutTime", _decode_audio_i32_param),
                 ("voiceHandle", _decode_audio_i32_param),
             ),
         ),
-        (0x04BA, 0x09): (
+        union_tags.action("SwitchAIBarkEnable"): (
             "SwitchAIBarkEnable",
             (
                 ("enable", _decode_audio_bool_param),
             ),
         ),
-        (0x04BC, 0x0B): (
+        union_tags.action("SwitchAudioState"): (
             "SwitchAudioState",
             (
                 ("modelLevel", _decode_audio_i32_param),
@@ -608,14 +605,35 @@ def _decode_audio_action(
                 ("value", _decode_audio_i32_param),
             ),
         ),
-        (0x04CA, 0x09): (
+        union_tags.action("ToggleClearScreenButRadio"): (
             "ToggleClearScreenButRadio",
             (
                 ("isShow", _decode_audio_bool_param),
             ),
         ),
-        (0x00E9, 0x08): ("FlushRadio", ()),
+        union_tags.action("FlushRadio"): ("FlushRadio", ()),
     }
+    return layouts
+
+
+def audio_action_semantic_keys() -> frozenset[tuple[int, int]]:
+    """Every action pair ``_decode_audio_action`` has a layout for."""
+    return frozenset(_audio_action_layouts())
+
+
+def _decode_audio_action(
+    payload: bytes,
+    semantic_key: tuple[int, int],
+) -> dict[str, Any]:
+    """Decode the installed high-yield ActionBase audio field layouts.
+
+    The union tag/member-count pair selects one exact generated MemoryPack
+    formatter. Every declared derived member is decoded in generated-setter
+    order. Literal Event/cue bindings are emitted only for constant string
+    parameters; dynamic parameters retain idRef/source/path evidence without
+    being promoted to an authored name.
+    """
+    layouts = _audio_action_layouts()
     layout = layouts.get(semantic_key)
     if layout is None:
         return {}

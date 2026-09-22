@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
@@ -74,7 +75,7 @@ from scripts.common import EXPORT_LAYOUT
 
 SCHEMA = "sourceStoryPartialOrder.v46"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
-    (0x002D, 0x09)
+    union_tags.action("Branch")
 ]
 BRANCH_SEQUENCE_GAME_ASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"

@@ -5,9 +5,10 @@ from __future__ import annotations
 import math
 import struct
 from typing import Any
+from scripts.game_data import levelscript_union_tags as union_tags
 
 
-_EVENT_SEMANTIC_KEY = (0x006A, 0x12)
+_EVENT_SEMANTIC_KEY = union_tags.header("LevelEvent_OnEntityHpChanged")
 _PARAM_TAIL = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
 
 

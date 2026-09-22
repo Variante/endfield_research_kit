@@ -6,12 +6,13 @@ import struct
 from typing import Any
 
 from scripts.game_data.codecs.levelscript.params import decode_bool_param
+from scripts.game_data.levelscript_union_tags import action
 
 
-SPLIT = (0x0495, 0x09)
-BRANCH_SEQUENCE = (0x002D, 0x09)
-IF_ELSE = (0x00FF, 0x0B)
-WHILE = (0x0501, 0x0A)
+SPLIT = action("Split")
+BRANCH_SEQUENCE = action("Branch")
+IF_ELSE = action("IfElseAction")
+WHILE = action("WhileAction")
 
 
 def decode_split_action_refs(payload: bytes) -> list[int]:

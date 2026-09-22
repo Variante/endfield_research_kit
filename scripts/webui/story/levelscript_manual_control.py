@@ -7,6 +7,7 @@ from pathlib import Path
 import struct
 from typing import Any
 
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.common import ROOT, rel_path
 
 from scripts.webui.story.context import LEVELSCRIPT_DIR
@@ -19,8 +20,8 @@ from scripts.game_data.levelscript_binary import (
 
 
 EXPECTED_EVENT_OPCODES = {
-    "manual-start": (0x12BE, 0x00),
-    "manual-end": (0x12C0, 0x00),
+    "manual-start": union_tags.header_code("ScriptEvent_OnLeaderEnterTriggerVolume"),
+    "manual-end": union_tags.header_code("ScriptEvent_OnLeaderLeaveTriggerVolume"),
 }
 EVIDENCE_BOUNDARY = (
     "Serialized manual-control operands and exact ActionHeader.nextId links can "

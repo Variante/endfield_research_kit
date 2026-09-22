@@ -186,6 +186,8 @@ from scripts.game_data.codecs.levelscript.action_header import (  # noqa: F401
     LEVELSCRIPT_EXACT_GETTER_FIELDS,
     _predicate_local_getter_refs,
 )
+from scripts.game_data import levelscript_union_tags as union_tags
+from scripts.game_data.codecs.levelscript import audio_actions as levelscript_audio_actions
 from scripts.game_data.codecs.levelscript.audio_actions import (  # noqa: F401
     _decode_list_add_value_entity_ptr,
     _decode_audio_scalar_param,
@@ -219,7 +221,7 @@ from scripts.game_data.codecs.levelscript.trigger_volume_context import (  # noq
 )
 
 
-TRIGGER_VOLUME_RECORD_KEYS.update({(0x12BE, 0x00), (0x12C0, 0x00)})
+TRIGGER_VOLUME_RECORD_KEYS.update({union_tags.header_code("ScriptEvent_OnLeaderEnterTriggerVolume"), union_tags.header_code("ScriptEvent_OnLeaderLeaveTriggerVolume")})
 
 
 def decode_levelscript_action_map_header(data: bytes) -> dict[str, Any]:
@@ -1746,15 +1748,15 @@ def decode_levelscript_record_payload(
     )
     if switch_action:
         out.update(switch_action)
-    if semantic_key == (0x049E, 0x0F):
+    if semantic_key == union_tags.action("StartDialogAction"):
         start_dialog = _decode_start_dialog_action(payload)
         if start_dialog:
             out["startDialogAction"] = start_dialog
-    if getter_role and semantic_key == (0x0347, 0x09):
+    if getter_role and semantic_key == union_tags.getter("ListGetValueString"):
         list_get_value_string = _decode_list_get_value_string(payload)
         if list_get_value_string:
             out["listGetValueString"] = list_get_value_string
-    if semantic_key == (0x04F9, 0x0E):
+    if semantic_key == union_tags.action("WaitForSecondsInTriggerVolume"):
         wait_trigger_volume = _decode_wait_for_seconds_in_trigger_volume_action(
             payload
         )
@@ -1768,7 +1770,7 @@ def decode_levelscript_record_payload(
         out["play3DRadio"] = play3d_radio
     if semantic_key in {
         *levelscript_fmv.PLAY_FMV_ACTION_SEMANTIC_KEYS,
-        (0x04A1, 0x10),
+        union_tags.action("StartFmvAndTeleportAction"),
     }:
         fmv_action = levelscript_fmv.decode_fmv_action(
             payload,
@@ -1778,42 +1780,7 @@ def decode_levelscript_record_payload(
         )
         if fmv_action:
             out["fmvAction"] = fmv_action
-    if semantic_key in {
-        (0x0016, 0x09),
-        (0x0028, 0x09),
-        (0x0029, 0x09),
-        (0x002A, 0x09),
-        (0x0089, 0x0B),
-        (0x0306, 0x09),
-        (0x0307, 0x0B),
-        (0x034C, 0x0C),
-        (0x034E, 0x0B),
-        (0x034F, 0x10),
-        (0x034A, 0x14),
-        (0x034B, 0x14),
-        (0x0352, 0x0C),
-        (0x0367, 0x11),
-        (0x0368, 0x0B),
-        (0x0369, 0x0A),
-        (0x0363, 0x0D),
-        (0x0364, 0x0D),
-        (0x036B, 0x13),
-        (0x036E, 0x14),
-        (0x0372, 0x08),
-        (0x0371, 0x0B),
-        (0x0373, 0x0C),
-        (0x03D5, 0x0F),
-        (0x04A7, 0x0E),
-        (0x04AC, 0x0A),
-        (0x04B4, 0x0B),
-        (0x04B5, 0x09),
-        (0x04B7, 0x0A),
-        (0x04BA, 0x09),
-        (0x04BC, 0x0B),
-        (0x04CA, 0x09),
-        (0x00B7, 0x08),
-        (0x00E9, 0x08),
-    }:
+    if semantic_key in levelscript_audio_actions.audio_action_semantic_keys():
         # Audio ActionBase formatter tags are reused by getter/header unions
         # in the same LevelScript stream (notably 0x0016/9).  The maintained
         # ActionMap membership is the exact owning-union discriminator; do
@@ -1836,17 +1803,17 @@ def decode_levelscript_record_payload(
     )
     if exit_custom_performance:
         out["exitLevelCustomPerformance"] = exit_custom_performance
-    if semantic_key == (0x04CA, 0x09):
+    if semantic_key == union_tags.action("ToggleClearScreenButRadio"):
         toggle_clear_screen = _decode_toggle_clear_screen_but_radio_action(
             payload
         )
         if toggle_clear_screen:
             out["toggleClearScreenButRadio"] = toggle_clear_screen
-    if semantic_key == (0x02FE, 0x0A):
+    if semantic_key == union_tags.action("MainCharMoveTo"):
         main_char_move_to = _decode_main_char_move_to_action(payload)
         if main_char_move_to:
             out["mainCharMoveTo"] = main_char_move_to
-    if semantic_key == (0x0034, 0x0E):
+    if semantic_key == union_tags.action("CallServer"):
         call_server = levelscript_call_server.decode_call_server_action(payload)
         if call_server:
             record_uid = str(record.get("uid") or "").strip()
@@ -1863,7 +1830,7 @@ def decode_levelscript_record_payload(
                     "orderEvidence": False,
                 })
             out["callServer"] = call_server
-    if semantic_key == (0x0166, 0x0A):
+    if semantic_key == union_tags.action("ListAddValueEntityPtr"):
         list_add = _decode_list_add_value_entity_ptr(payload)
         if list_add:
             out["listAddValueEntityPtr"] = list_add
@@ -1876,33 +1843,33 @@ def decode_levelscript_record_payload(
     )
     if raise_custom_script_event:
         out["raiseCustomScriptEvent"] = raise_custom_script_event
-    if semantic_key == (0x0028, 0x0A):
+    if semantic_key == union_tags.getter("EntityCompare"):
         entity_compare = _decode_entity_compare_getter(payload, property_outputs)
         if entity_compare:
             out["entityCompare"] = entity_compare
     if getter_role and semantic_key in {
-        (0x0004, 0x0A),
-        (0x0006, 0x09),
-        (0x000A, 0x08),
-        (0x000B, 0x08),
-        (0x000D, 0x09),
-        (0x0013, 0x0A),
-        (0x0016, 0x09),
-        (0x001F, 0x0A),
-        (0x004E, 0x08),
-        (0x0049, 0x0A),
-        (0x0100, 0x09),
-        (0x012F, 0x08),
-        (0x0133, 0x09),
-        (0x013A, 0x08),
-        (0x017C, 0x08),
-        (0x0184, 0x08),
-        (0x01A5, 0x08),
-        (0x01AA, 0x0A),
-        (0x01AC, 0x09),
-        (0x01AD, 0x0A),
-        (0x01BA, 0x09),
-        (0x01C2, 0x08),
+        union_tags.getter("BooleanCompare"),
+        union_tags.getter("BoolGetterAnd"),
+        union_tags.getter("BoolGetterInvert"),
+        union_tags.getter("BoolGetterMultiAnd"),
+        union_tags.getter("BoolGetterOr"),
+        union_tags.getter("CheckLevelScriptStage"),
+        union_tags.getter("CheckMissionOrQuestIsComplete"),
+        union_tags.getter("CompareMissionState"),
+        union_tags.getter("GetConditionResult"),
+        union_tags.getter("FloatNewCompare"),
+        union_tags.getter("GetLevelScriptPropertyGenericBool"),
+        union_tags.getter("GetLevelScriptStage"),
+        union_tags.getter("GetLsmIsCompleted"),
+        union_tags.getter("GetMissionState"),
+        union_tags.getter("GetterBool"),
+        union_tags.getter("GetterInt"),
+        union_tags.getter("GetterString"),
+        union_tags.getter("IntCompare"),
+        union_tags.getter("IntEqual"),
+        union_tags.getter("InteractiveCheckState"),
+        union_tags.getter("IntGetterRandom"),
+        union_tags.getter("IsEndminGender"),
     }:
         getter_payload = _getter_subtype_payload(data, record, next_start)
         scalar_field, scalar_detail = (
@@ -1913,32 +1880,32 @@ def decode_levelscript_record_payload(
         )
         if scalar_field and scalar_detail:
             out[scalar_field] = scalar_detail
-        elif semantic_key == (0x013A, 0x08):
+        elif semantic_key == union_tags.getter("GetMissionState"):
             mission_state_getter = _decode_get_mission_state_getter(getter_payload)
             if mission_state_getter:
                 out["getMissionState"] = mission_state_getter
-        elif semantic_key == (0x0013, 0x0A):
+        elif semantic_key == union_tags.getter("CheckLevelScriptStage"):
             stage_check = _decode_check_levelscript_stage_getter(getter_payload)
             if stage_check:
                 out["checkLevelScriptStage"] = stage_check
-        elif semantic_key == (0x0016, 0x09):
+        elif semantic_key == union_tags.getter("CheckMissionOrQuestIsComplete"):
             completion_check = _decode_check_mission_or_quest_complete_getter(
                 getter_payload
             )
             if completion_check:
                 out["checkMissionOrQuestIsComplete"] = completion_check
-        elif semantic_key == (0x001F, 0x0A):
+        elif semantic_key == union_tags.getter("CompareMissionState"):
             mission_state_compare = _decode_compare_mission_state_getter(
                 getter_payload
             )
             if mission_state_compare:
                 out["compareMissionState"] = mission_state_compare
         elif semantic_key in {
-            (0x0004, 0x0A),
-            (0x0006, 0x09),
-            (0x000A, 0x08),
-            (0x000B, 0x08),
-            (0x000D, 0x09),
+            union_tags.getter("BooleanCompare"),
+            union_tags.getter("BoolGetterAnd"),
+            union_tags.getter("BoolGetterInvert"),
+            union_tags.getter("BoolGetterMultiAnd"),
+            union_tags.getter("BoolGetterOr"),
         }:
             field_name, boolean_detail = (
                 levelscript_boolean_getters.decode_boolean_getter_fields(
@@ -1948,29 +1915,29 @@ def decode_levelscript_record_payload(
             )
             if field_name and boolean_detail:
                 out[field_name] = boolean_detail
-        elif semantic_key == (0x004E, 0x08):
+        elif semantic_key == union_tags.getter("GetConditionResult"):
             condition_result = _decode_get_condition_result_getter(
                 getter_payload
             )
             if condition_result:
                 out["getConditionResult"] = condition_result
-        elif semantic_key == (0x0100, 0x09):
+        elif semantic_key == union_tags.getter("GetLevelScriptPropertyGenericBool"):
             property_bool = _decode_levelscript_property_bool_getter(
                 getter_payload
             )
             if property_bool:
                 out["getLevelScriptPropertyGenericBool"] = property_bool
-        elif semantic_key == (0x012F, 0x08):
+        elif semantic_key == union_tags.getter("GetLevelScriptStage"):
             levelscript_stage = _decode_get_levelscript_stage_getter(
                 getter_payload
             )
             if levelscript_stage:
                 out["getLevelScriptStage"] = levelscript_stage
-        elif semantic_key == (0x0133, 0x09):
+        elif semantic_key == union_tags.getter("GetLsmIsCompleted"):
             lsm_completed = _decode_get_lsm_is_completed_getter(getter_payload)
             if lsm_completed:
                 out["getLsmIsCompleted"] = lsm_completed
-        elif semantic_key == (0x017C, 0x08):
+        elif semantic_key == union_tags.getter("GetterBool"):
             field_name, boolean_detail = (
                 levelscript_boolean_getters.decode_boolean_getter_fields(
                     getter_payload,
@@ -1979,7 +1946,7 @@ def decode_levelscript_record_payload(
             )
             if field_name and boolean_detail:
                 out[field_name] = boolean_detail
-        elif semantic_key == (0x01AD, 0x0A):
+        elif semantic_key == union_tags.getter("InteractiveCheckState"):
             interactive_state = _decode_interactive_check_state_getter(
                 getter_payload
             )
@@ -1993,7 +1960,7 @@ def decode_levelscript_record_payload(
         if manual_control:
             out["manualControl"] = manual_control
 
-    if semantic_key == (0x04F7, 0x09) and payload[:1] == b"\x04" and len(payload) >= 5:
+    if semantic_key == union_tags.action("WaitForSeconds") and payload[:1] == b"\x04" and len(payload) >= 5:
         out["seconds"] = _round_float(struct.unpack_from("<f", payload, 1)[0])
     elif key in SCRIPT_POINTER_REF_RECORDS:
         pointer = decode_script_pointer_payload(data, record)

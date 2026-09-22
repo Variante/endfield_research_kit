@@ -5,16 +5,17 @@ from __future__ import annotations
 import struct
 from typing import Any
 
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.codecs.levelscript import params
 
 
-FLOAT_NEW_COMPARE = (0x0049, 0x0A)
-GETTER_INT = (0x0184, 0x08)
-GETTER_STRING = (0x01A5, 0x08)
-INT_COMPARE = (0x01AA, 0x0A)
-INT_EQUAL = (0x01AC, 0x09)
-INT_RANDOM = (0x01BA, 0x09)
-IS_ENDMIN_GENDER = (0x01C2, 0x08)
+FLOAT_NEW_COMPARE = union_tags.getter("FloatNewCompare")
+GETTER_INT = union_tags.getter("GetterInt")
+GETTER_STRING = union_tags.getter("GetterString")
+INT_COMPARE = union_tags.getter("IntCompare")
+INT_EQUAL = union_tags.getter("IntEqual")
+INT_RANDOM = union_tags.getter("IntGetterRandom")
+IS_ENDMIN_GENDER = union_tags.getter("IsEndminGender")
 
 
 def _decode_i32_operand(

@@ -4,6 +4,7 @@ import json
 import re
 from collections import defaultdict
 
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.common import (
     ROOT,
     read_bytes_cached,
@@ -240,10 +241,10 @@ def build_mission_map_pins(flow: dict | None) -> list[dict]:
 # Current installed MemoryPack formatter evidence maps the compact ActionHeader
 # tag 0x85 with 0x13 subtype members to LevelEvent_OnQuestStateChanged. Only
 # exact header-list membership is accepted below.
-_LEVELSCRIPT_QUEST_STATE_CHANGED_TAG = (0x0085, 0x13)
+_LEVELSCRIPT_QUEST_STATE_CHANGED_TAG = union_tags.header("LevelEvent_OnQuestStateChanged")
 _LEVELSCRIPT_QUEST_STATE_CHANGED_CONNECTIONS_CACHE: dict[str, list[dict]] | None = None
-_LEVELSCRIPT_LEADER_ENTER_TRIGGER_TAG = (0x00BE, 0x12)
-_LEVELSCRIPT_WAIT_FOR_CONDITION_OPCODE = (0x04F0, 0x09)
+_LEVELSCRIPT_LEADER_ENTER_TRIGGER_TAG = union_tags.header("ScriptEvent_OnLeaderEnterTriggerVolume")
+_LEVELSCRIPT_WAIT_FOR_CONDITION_OPCODE = union_tags.action("WaitForCondition")
 _LEVELSCRIPT_CHECK_QUEST_STATE_TAG = 0x7E
 _LEVELSCRIPT_QUEST_STATE_GATE_CONNECTIONS_CACHE: dict[str, list[dict]] | None = None
 _LEVELSCRIPT_STORY_PAYLOAD_PREFIXES = (

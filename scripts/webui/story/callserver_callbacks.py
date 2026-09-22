@@ -15,6 +15,7 @@ from pathlib import Path
 from typing import Any
 
 
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.common import (
     STORY_RECOVERY_REPORTS_DIR,
     md_escape,
@@ -42,7 +43,7 @@ from scripts.game_data.levelscript_binary import (
 
 
 SCHEMA = "levelScriptCallServerCallbackAudit.v2"
-CALLSERVER_PAIR = (0x0034, 14)
+CALLSERVER_PAIR = union_tags.action("CallServer")
 HEX_UID_RE = re.compile(r"[0-9a-fA-F]{8}")
 DEFAULT_JSON = STORY_RECOVERY_REPORTS_DIR / "levelscript_callserver_callback_audit.json"
 DEFAULT_MARKDOWN = STORY_RECOVERY_REPORTS_DIR / "levelscript_callserver_callback_audit.md"

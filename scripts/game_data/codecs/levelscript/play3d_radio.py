@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import struct
 from typing import Any
+from scripts.game_data import levelscript_union_tags as union_tags
 
 
 ACTION_SEMANTIC_KEYS = {
-    (0x034A, 0x14),  # Play3DRadio
-    (0x034B, 0x14),  # Play3DRadioAndWait; inherits the same serialized fields
+    union_tags.action("Play3DRadio"),  # Play3DRadio
+    union_tags.action("Play3DRadioAndWait"),  # Play3DRadioAndWait; inherits the same serialized fields
 }
 PARAM_SENTINEL = b"\xff\xff\xff\xff\x00\x00\x00\x00\xff\xff\xff\xff"
 
@@ -123,7 +124,7 @@ def decode_play3d_radio_action(
         "payloadShape": "play3d-radio-native-12-field-exact-eof",
         "actionKind": (
             "Play3DRadioAndWait"
-            if semantic_key == (0x034B, 0x14)
+            if semantic_key == union_tags.action("Play3DRadioAndWait")
             else "Play3DRadio"
         ),
         "radioId": str(values.get("radioId") or ""),
