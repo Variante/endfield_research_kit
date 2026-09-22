@@ -6,6 +6,7 @@ its production projection against this contract.
 """
 from __future__ import annotations
 
+from scripts.game_data.contracts import CONTRACTS_DIR
 import hashlib
 import json
 from pathlib import Path
@@ -22,7 +23,7 @@ from scripts.common import (
 SCHEMA = "cinematicQueueNativeContract.v1"
 AUDIT_SCHEMA = "cinematicQueueNativeContractAudit.v1"
 RECOVERY_AUDIT_SCHEMA = "cinematicQueueRuntimeAudit.v2"
-DEFAULT_CONTRACT = Path(__file__).with_name("cinematic_queue.json")
+DEFAULT_CONTRACT = CONTRACTS_DIR / "cinematic_queue.json"
 GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )

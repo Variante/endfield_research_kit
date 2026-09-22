@@ -1093,7 +1093,7 @@ consumer may resolve path identities only through an authenticated
 `StringPathHash.bin` catalog; the framing reader itself does not guess paths.
 
 AnimationConfig's shader declaration has a separate native consumption proof in
-`scripts/game_data/native_contracts/animation_material_publication.json`.
+`scripts/game_data/contracts/animation_material_publication.json`.
 The gameplay component reads numbered Animator output parameters and forwards
 their evaluated floats using configured shader IDs and renderer masks; this
 publication branch does not directly evaluate the stored montage curve keys.

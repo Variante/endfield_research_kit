@@ -4,11 +4,13 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+
+from scripts.game_data.contracts import CONTRACTS_DIR
 from typing import Any
 
 
 SCHEMA = "missionTaskPaths.nativeContract.v1"
-DEFAULT_CONTRACT = Path(__file__).with_name("mission_task_paths.json")
+DEFAULT_CONTRACT = CONTRACTS_DIR / "mission_task_paths.json"
 REQUIRED_HOOKS = frozenset({
     "conditionResultChanged",
     "sendProgress",

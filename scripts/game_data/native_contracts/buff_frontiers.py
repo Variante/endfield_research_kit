@@ -23,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs
+from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.il2cpp_context import generic_type_carrier, method_spec_usage_index
 from scripts.game_data.il2cpp_native_image import NativeImage, read_pinned_contract
 
@@ -39,7 +40,7 @@ class Frontier:
 
     @property
     def path(self) -> Path:
-        return Path(__file__).with_name(self.file)
+        return CONTRACTS_DIR / self.file
 
     @property
     def label(self) -> str:

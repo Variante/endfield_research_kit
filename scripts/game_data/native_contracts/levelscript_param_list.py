@@ -8,9 +8,10 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 
-CONTRACT_PATH = Path(__file__).with_suffix(".json")
+CONTRACT_PATH = CONTRACTS_DIR / "levelscript_param_list.json"
 CONTRACT_SHA256 = "4f89027a3f729937f6cf7b7b50606e9ae11c47629d9ba1974549ec7e3bda4d35"
 SCHEMA = "endfield.levelscript-template-param-list-native.v1"
 

@@ -3,7 +3,7 @@
   "gameBuild": "endfield-2026-07-11-gameassembly-0c557367",
   "processName": "Endfield.exe",
   "moduleName": "GameAssembly.dll",
-  "missionTaskPathsContract": "../../game_data/native_contracts/mission_task_paths.json",
+  "missionTaskPathsContract": "../../game_data/contracts/mission_task_paths.json",
   "files": {
     "executable": {
       "relativePath": "Endfield.exe",

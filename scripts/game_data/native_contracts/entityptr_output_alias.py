@@ -8,9 +8,10 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 SCHEMA = "entityPtrOutputAliasNativeContract.v1"
-DEFAULT_CONTRACT = Path(__file__).with_name("entityptr_output_alias.json")
+DEFAULT_CONTRACT = CONTRACTS_DIR / "entityptr_output_alias.json"
 GAMEASSEMBLY_SHA256 = "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 METADATA_SHA256 = "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
 NATIVE_MAPPING_ID = "gameassembly-2026-07-11-entityptr-producer-output-alias"

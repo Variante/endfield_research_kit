@@ -7,11 +7,12 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 
 SCHEMA = "actionBaseFormatterNativeContract.v1"
 AUDIT_SCHEMA = "actionBaseFormatterNameAudit.v1"
-DEFAULT_CONTRACT = Path(__file__).with_name("actionbase_formatter.json")
+DEFAULT_CONTRACT = CONTRACTS_DIR / "actionbase_formatter.json"
 GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )

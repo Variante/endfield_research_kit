@@ -1,6 +1,7 @@
 """Validate the reviewed case-sensitive cutscene lookup contract."""
 from __future__ import annotations
 
+from scripts.game_data.contracts import CONTRACTS_DIR
 import hashlib
 import json
 from pathlib import Path
@@ -23,7 +24,7 @@ from scripts.game_data.native_contracts.ifix_patch import (
 
 SCHEMA = "cutsceneCaseResolutionNativeContract.v3"
 AUDIT_SCHEMA = "cutsceneCaseResolutionNativeContractAudit.v2"
-DEFAULT_CONTRACT = Path(__file__).with_name("cutscene_case_resolution.json")
+DEFAULT_CONTRACT = CONTRACTS_DIR / "cutscene_case_resolution.json"
 GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )

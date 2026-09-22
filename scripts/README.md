@@ -23,7 +23,7 @@ axis. A path appears under exactly one owner.
 | | `game_data/` JsonData readers | one fail-closed reader per current JsonData family: MemoryPack payloads (`aether_energy_lock_binary.py`, `atmospheric_npc_binary.py`, `gameplay_compact_binary.py`, `levelconfig_binary.py`, `levelscript_template_binary.py`, `matrix_shockwave_binary.py`, `navmesh_binary.py`, `teleport_validation_binary.py`, `gpu_ui_binary.py` with its `gpu_ui_corpus.py` gate and `gpu_ui_damage_text_native.py` validator) and byte-pinned named JSON schemas (`gameplay_config_json.py`, `gameplay_config_polymorphic.py`, `jsondata_text_schema.py`, `mission_runtime_main.py`, `mission_runtime_meta.py`, `npc_catalog_json.py`, `npc_prefab_info.py`, `map_config_json.py`, `ui_level_map_load_config.py`, `level_mount_point_json.py`, `gold_coin_config_json.py`); the schema readers share one validator, `jsondata_named_schema.py`, and keep only their contract pin, path predicate, relations and result shape |
 | | `game_data/il2cpp_native_image.py`, `game_data/native_union_atlas.py` | the one opened installed build every contract validator checks against (PE image, metadata, code registration, module table, and the shared method-identity, dispatcher-route, code-window and setter-order checks), and the atlas that re-validates every union contract against it |
 | | `game_data/contracts/` | the reviewed, byte-pinned contract JSON that the readers above load: the per-tag BuffData formatter windows (`buff_*`, `finder_*`, `validator_*`, `postprocessor_*`), the SkillData timeline and current-build BuffData contracts, the streaming field layouts, and the named JSON schema contracts; `CONTRACTS_DIR` from the package is the only path anchor, and each owning reader pins its file's digest |
-| | `game_data/native_contracts/` | reviewed native facts about the installed binary, each a loader plus its byte-pinned JSON; `buff_frontiers.py` is one loader over the five BuffData residual-route contracts, and `levelscript_param_list.py`, `levelscript_task_condition.py`, `npc_animation_template.py` and `animation_material_publication.py` authenticate the LevelScript, NPC animation and animation/material consumer routes |
+| | `game_data/native_contracts/` | the loaders for the reviewed native facts the Story, Mission Pipeline and Map builders consume (their JSON is under `contracts/`); `buff_frontiers.py` is one loader over the five BuffData residual-route contracts, and `levelscript_param_list.py`, `levelscript_task_condition.py`, `npc_animation_template.py` and `animation_material_publication.py` authenticate the LevelScript, NPC animation and animation/material consumer routes |
 | | `game_data/memorypack/` | MemoryPack codecs and their corpus gates, including the current-build BuffData additions (`buff_icon_config.py`, `buff_residual_actions.py`, `buff_named_schema.py`) and the SkillData first-timeline lane (`skill_timeline_*.py`), which share `core.LabelledReader` and gate through `il2cpp_native_image` |
 | **2. WebUI** | `webui/views.py`, `webui/package.py` | page-build orchestration, and packaging |
 | | `webui/story/` | Story and Text page data plus shared Story evidence |
@@ -379,7 +379,7 @@ does not run it. It reads the canonical shipped-Lua consumer index through
 `webui.story.lua_consumer_references`; it does not consume a recovery-script
 artifact. Cinematic-handle classification and typed action-producer joins come
 from the reviewed, installed-build-gated
-`game_data/native_contracts/cinematic_queue.json`; the full native carrier
+`game_data/contracts/cinematic_queue.json`; the full native carrier
 report is not a production input. Standard WebUI extraction intentionally
 omits Lua, so refresh this tracked index only from an explicit complete
 plaintext-Lua extraction. To refresh it and optionally render Markdown, run:
@@ -484,7 +484,7 @@ request boundaries and exact Event-to-media relations, but never promotes a
 capture to selected Wwise branch, decoded leaf, or audibility evidence.
 
 The reviewed LevelScript task paths live in
-`game_data/native_contracts/mission_task_paths.json`. The protocol registry
+`game_data/contracts/mission_task_paths.json`. The protocol registry
 reads that contract directly; the mission runtime hook manifest references and
 validates the same contract before rendering its Frida agent, so task RVAs,
 message IDs, and field offsets have one mutable source of truth.

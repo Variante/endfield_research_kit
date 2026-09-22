@@ -1,6 +1,7 @@
 """Load and gate the reviewed CallServer callback native contract."""
 from __future__ import annotations
 
+from scripts.game_data.contracts import CONTRACTS_DIR
 import hashlib
 import json
 from pathlib import Path
@@ -16,7 +17,7 @@ from scripts.common import (
 
 SCHEMA = "callServerCallbackNativeContract.v1"
 AUDIT_SCHEMA = "callServerCallbackNativeContractAudit.v1"
-DEFAULT_CONTRACT = Path(__file__).with_name("callserver_callback.json")
+DEFAULT_CONTRACT = CONTRACTS_DIR / "callserver_callback.json"
 GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )

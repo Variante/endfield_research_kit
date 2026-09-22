@@ -6,9 +6,10 @@ import json
 from pathlib import Path
 
 from scripts.common import check_installed_native_inputs
+from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.animation_curve_native import _pe_file_offset
 
-CONTRACT_PATH = Path(__file__).with_suffix('.json')
+CONTRACT_PATH = CONTRACTS_DIR / "npc_animation_template.json"
 CONTRACT_SHA256 = '01E338948621CB5EE3F7A428FB02074C1B41402B4B859FE5FAFB163F2AEAB6F8'
 SCHEMA = 'endfield.npc-animation-template-native.v1'
 

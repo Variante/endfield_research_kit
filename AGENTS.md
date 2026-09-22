@@ -225,9 +225,10 @@ different shapes:
   `[metadata index, type name, method, RVA]`, and `codeWindows` with a
   per-window `sha256` and `boundary`. `memorypack/` and the audit read them.
 
-`scripts/game_data/native_contracts/` holds a third set, one loader module per
-contract JSON of the same name. Every loader except `mission_task_paths` gates
-on the installed native inputs itself. That contract is validated by its
+`scripts/game_data/native_contracts/` holds the loaders for a third set, the
+native facts the Story, Mission Pipeline and Map builders consume; their JSON
+lives in `scripts/game_data/contracts/` with everything else. Every loader
+except `mission_task_paths` gates on the installed native inputs itself. That contract is validated by its
 consumers, the protocol registry and the mission trace hook manifest. Where a
 loader declares a `CONTRACT_SHA256`, the same edit-requires-pin rule below
 applies.
@@ -904,9 +905,10 @@ from that layout:
   fingerprinted Lua consumer index that Mission Pipeline reads directly.
   Refreshing it requires an explicit complete plaintext-Lua extraction, because
   standard extraction omits Lua.
-- `scripts/game_data/native_contracts/` holds reviewed current-build native
-  facts consumed by builders. Recovery hooks must reference or validate those
-  contracts rather than duplicate them.
+- `scripts/game_data/contracts/` holds every reviewed contract JSON, and
+  `scripts/game_data/native_contracts/` the loaders for the current-build
+  native facts builders consume. Recovery hooks must reference or validate
+  those contracts rather than duplicate them.
 - A production builder must not import or execute a `scripts/webui/story_recovery/`
   module. Recovery tools may import stable builder primitives, not the reverse.
 - Native carrier audits go through the single

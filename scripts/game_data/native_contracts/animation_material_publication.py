@@ -6,9 +6,10 @@ import json
 from pathlib import Path
 
 from scripts.common import check_installed_native_inputs
+from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.animation_curve_native import _pe_file_offset
 
-CONTRACT_PATH = Path(__file__).with_suffix('.json')
+CONTRACT_PATH = CONTRACTS_DIR / "animation_material_publication.json"
 CONTRACT_SHA256 = '86E02CA931B13A54956972F3FBAB75757300B6EC2339783C0498B3EE77BD12CE'
 SCHEMA = 'endfield.animation-material-publication-native.v1'
 

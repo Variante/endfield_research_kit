@@ -8,10 +8,11 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs
+from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.animation_curve_native import _pe_file_offset
 
 
-CONTRACT_PATH = Path(__file__).with_suffix(".json")
+CONTRACT_PATH = CONTRACTS_DIR / "levelscript_task_condition.json"
 CONTRACT_SHA256 = "f1a98f4168db74db2fb7be4a84fff0ca2a8640ab5f6718dc083491df7ddfed5f"
 SCHEMA = "endfield.levelscript-task-condition-native.v1"
 

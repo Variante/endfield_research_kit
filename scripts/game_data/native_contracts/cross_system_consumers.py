@@ -6,6 +6,7 @@ profile or the installed IL2CPP inputs drift.
 """
 from __future__ import annotations
 
+from scripts.game_data.contracts import CONTRACTS_DIR
 import hashlib
 import json
 from collections import Counter
@@ -22,7 +23,7 @@ from scripts.common import (
 
 SCHEMA = "nativeCrossSystemConsumerCensus.v4"
 AUDIT_SCHEMA = "crossSystemConsumersNativeContractAudit.v1"
-DEFAULT_CONTRACT = Path(__file__).with_name("cross_system_consumers.json")
+DEFAULT_CONTRACT = CONTRACTS_DIR / "cross_system_consumers.json"
 GAMEASSEMBLY_SHA256 = (
     "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
 )
