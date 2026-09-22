@@ -281,6 +281,33 @@ SkillData and BuffData whole gave 4,091 strings sitting in members literally
 named `_soundEvent`, of which 4,072 hash to a current Event -- so the schema
 position said "Event" where the spelling grammar had to guess.
 
+## The member is a better handle than the spelling
+
+Fixing the scanner leaves a bound that no scanner can pass. A byte scan can
+only find names that *look* like Event names, and the corpus is full of Events
+that do not: `eny_0125_fdcentur_lance_skill_01_a_hit` is an Event and begins
+`eny_`, which the `au_`/`bark_`/`radio_` grammar will never accept and should
+not be widened to accept, because widening it on a suffix is the failure mode
+this lane exists to avoid.
+
+`decoded_payload_event_names` uses the member instead. A string in a member the
+generated wrapper calls `_soundEvent` is an Event reference because of where it
+sits, and the promotion gate is unchanged -- FNV-1 equality with a current
+Event object id. Over the decodable families it offers 4,090 candidates, of
+which 4,071 are claimed by a current Event against a coincidence expectation of
+0.024, and **197 of those are names the byte scan cannot reach at all**.
+
+Two constraints keep it from being a different guess. The member names are an
+explicit list of members that were read and found to hold Event references, not
+a pattern over member names -- admitting anything containing `sound` would move
+the guess up one level rather than remove it. And a decoded value counts only
+when its record consumed to EOF exactly, so a drifted cursor contributes
+nothing.
+
+The module is a standalone source with its own report and is **not yet wired
+into `build_audio`**; wiring it is the remaining step, and it would make the
+Audio build depend on the installed-build gate, which it currently does not.
+
 ## What still needs new evidence
 
 The remaining hash-only Events, and the media reached only by them, still need
