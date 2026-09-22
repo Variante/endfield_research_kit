@@ -527,13 +527,47 @@ opens -- `368289710.bnk`, then `1214305672.bnk` and `1645682467.bnk` -- each
 probed across `Persistent` and `StreamingAssets` with and without `Chinese`.
 Voice media is read by some path these hooks do not see.
 
-**What is still not joined, and one hook that never fires.** Posts, prepared
-source keys and opened paths are counted separately. More pointedly,
+## The two source hooks, named from the SDK, and why one is silent
+
 `SourceProviderPreparation` recorded **nothing in either session**, including
-110 seconds of heavy voice playback -- so the key-to-file-to-decoder continuity
-is not merely unproven, it is not reachable through this hook for this content.
-Before spending further sessions on it, the hook itself needs re-examining: it
-may sit on a path only some external sources take.
+110 seconds of heavy voice. That is not a capture problem, and no further
+session would have fixed it. The installed Wwise SDK answers it: the shipped
+`AkSoundEngine.dll` is built from `AkSoundEngine.lib`, whose objects carry
+named COMDAT sections, so a function's prologue locates it and the object's own
+symbol table names it.
+
+| catalog row | actually | evidence |
+| --- | --- | --- |
+| `SourceProviderPreparation` `0x1af7a0` | `CAkSrcFileBase::CreateStream(AkAutoStmBufSettings&, unsigned char)` | identical 437-byte extent, 97.9% byte agreement |
+| `SourceMediaLookup` `0x10df60` | `SpeakerVolumeMatrixCallback::operator()(AkMixConnection&)` | identical 325-byte extent, 92.6% byte agreement |
+
+Matching on length *and* body is what makes these identifications rather than
+guesses: a shared prologue proves nothing, but a function of exactly the same
+length agreeing on 93-98% of its bytes -- with the disagreements at relocated
+call targets and rip-relative displacements -- is the same code.
+
+***The silence is explained.*** `CAkSrcFileBase::CreateStream` is a **file**
+source creating its stream. External-source voice never takes it, which the
+sessions corroborate independently: not one `.wem` is opened in either capture,
+only banks. Voice media reaches the engine from the `.pck` packages by a route
+that is not a file-source stream, so hooking file-source stream creation
+observes it exactly never.
+
+***And one catalog row is simply wrong.*** `SourceMediaLookup` is a
+speaker-volume mixing callback. Its recorded argument shape and `sourceKey`
+memory read describe something that function does not do, so that row is not
+evidence about media lookup at all, whatever a session containing it might have
+seemed to show. Both rows now carry their resolved symbol.
+
+**What this costs the continuity question.** The key-to-file-to-decoder join is
+not reachable through either source hook: one is on a path this content does
+not take, and the other was never a source hook. Closing it needs a hook on
+whatever *does* deliver external-source media from a `.pck`, which is a new
+identification in `AkSoundEngine.dll` rather than a longer session.
+
+**What is still not joined.** Posts, prepared source keys and opened paths are
+counted separately, and a key seen at two hooks in one session is a coincidence
+of numbers until ordering and identity are checked.
 
 ## What remains unresolved
 

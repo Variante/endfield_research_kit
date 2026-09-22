@@ -1172,7 +1172,12 @@
      "kind": "pointer"
     }
    ],
-   "resolution": "recorded rva, verified as a .pdata function start"
+   "resolution": "recorded rva, verified as a .pdata function start",
+   "resolvedSymbol": "?CreateStream@CAkSrcFileBase@@IEAA?AW4AKRESULT@@AEAUAkAutoStmBufSettings@@E@Z",
+   "resolvedName": "CAkSrcFileBase::CreateStream(AkAutoStmBufSettings&, unsigned char)",
+   "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
+   "resolvedEvidence": "identical 437-byte extent, 97.9% byte agreement; differences are relocated operands",
+   "note": "A file source creating its stream. It does not fire for external-source voice, which is never opened as a loose file in any observed session."
   },
   {
    "name": "AkSoundEngine.ExternalSourceResolverCallback",
@@ -1362,7 +1367,12 @@
      "kind": "u32"
     }
    ],
-   "resolution": "recorded rva, verified as a .pdata function start"
+   "resolution": "recorded rva, verified as a .pdata function start",
+   "resolvedSymbol": "??RSpeakerVolumeMatrixCallback@@QEAAXAEAVAkMixConnection@@@Z",
+   "resolvedName": "SpeakerVolumeMatrixCallback::operator()(AkMixConnection&)",
+   "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
+   "resolvedEvidence": "identical 325-byte extent, 92.6% byte agreement; differences are relocated operands",
+   "note": "MISIDENTIFIED BY THIS ROW'S NAME. It is a speaker-volume mixing callback, not a media lookup, so its recorded argument and memory shape describe something it does not do."
   },
   {
    "name": "AkSoundEngine.FileOpenHelper",
