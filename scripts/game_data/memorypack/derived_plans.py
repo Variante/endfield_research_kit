@@ -93,6 +93,12 @@ BUFFDATA_DIRECTORY = "BuffData"
 # refuses.
 SKILLDATA_DIRECTORY = "SkillData"
 SKILLDATA_TYPE = "Beyond.Gameplay.Core.SkillData"
+BUFFDATA_TYPE = "Beyond.Gameplay.Core.BuffData"
+#: Each exported family read whole, as ``directory -> record type``.
+WHOLE_RECORD_FAMILIES = {
+    SKILLDATA_DIRECTORY: SKILLDATA_TYPE,
+    BUFFDATA_DIRECTORY: BUFFDATA_TYPE,
+}
 BUFFDATA_ROOT_MEMBER_COUNT = 30
 # A file with more id anchors than this is not selected between; the census
 # refuses it rather than picking one.
@@ -166,7 +172,8 @@ def load_registry(
         gameassembly=gameassembly, metadata=metadata)
     if resolver is None:
         return PlanRegistry({}, {}, {}), audit
-    registry = PlanRegistry.from_resolver(resolver, resolved, named=(SKILLDATA_TYPE,))
+    registry = PlanRegistry.from_resolver(
+        resolver, resolved, named=tuple(WHOLE_RECORD_FAMILIES.values()))
     return registry, dict(audit, determinedRoutes=len(registry))
 
 
@@ -501,14 +508,16 @@ def _sweep(files: list[Path]) -> dict[str, tuple[int, int]]:
     return closed
 
 
-def _skilldata_sweep(files: list[Path], registry: PlanRegistry) -> dict[str, Any]:
-    """Execute the whole ``SkillData`` plan over every exported file.
+def _whole_record_sweep(
+    files: list[Path], registry: PlanRegistry, type_name: str
+) -> dict[str, Any]:
+    """Execute a whole record plan over every exported file of one family.
 
-    This is a different measurement from the BuffData one and a stronger one.
-    There is no reader-versus-reader comparison here because no reviewed reader
-    frames a SkillData file whole -- they decode its first timeline record and
-    leave the rest an explicit opaque remainder. What is being asked is simply
-    whether the derived plan consumes each file exactly.
+    This is a different measurement from the reader-versus-reader one, and a
+    stronger one. No reviewed reader frames either family's file whole: they
+    decode a first record or reach an anchor and leave the rest an explicit
+    opaque remainder. What is being asked here is simply whether the derived
+    plan consumes each file exactly.
 
     The shape of the answer is what carries the evidence. A wrong member layout
     drifts, and a drifted cursor lands at an arbitrary offset; landing on the
@@ -517,9 +526,9 @@ def _skilldata_sweep(files: list[Path], registry: PlanRegistry) -> dict[str, Any
     beside ``exactEof``: it is the number that would expose a drifting model,
     and reporting the two together is what makes the claim checkable.
     """
-    definition = registry.named_roots.get(SKILLDATA_TYPE)
+    definition = registry.named_roots.get(type_name)
     if definition is None:
-        return {"status": "unplanned", "type": SKILLDATA_TYPE}
+        return {"status": "unplanned", "type": type_name}
 
     class _Driver(DerivedPlanMixin, _FrozenReader):
         pass
@@ -543,6 +552,7 @@ def _skilldata_sweep(files: list[Path], registry: PlanRegistry) -> dict[str, Any
             short += 1
     return {
         "status": "validated" if not short else "drifting",
+        "type": type_name,
         "files": len(files),
         "exactEof": exact,
         "shortOfEof": short,
@@ -583,15 +593,17 @@ def corpus_run(export_root: Path | None = None) -> dict[str, Any]:
     shared = sorted(set(before) & set(after))
     unchanged = sum(1 for name in shared if before[name] == after[name])
     moved = [name for name in shared if before[name] != after[name]]
-    skill_directory = layout.json_dir / SKILLDATA_DIRECTORY
-    skilldata = (
-        _skilldata_sweep(sorted(skill_directory.glob("*.json")), registry)
-        if skill_directory.is_dir() else {"status": "missing-export"}
-    )
+    whole: dict[str, Any] = {}
+    for directory_name, type_name in sorted(WHOLE_RECORD_FAMILIES.items()):
+        directory = layout.json_dir / directory_name
+        whole[directory_name] = (
+            _whole_record_sweep(sorted(directory.glob("*.json")), registry, type_name)
+            if directory.is_dir() else {"status": "missing-export"}
+        )
     return {
         "status": "validated" if not moved and not (set(before) - set(after)) else "regressed",
         "audit": audit,
-        "skillData": skilldata,
+        "wholeRecord": whole,
         "files": len(files),
         "frozenClosed": len(before),
         "planClosed": len(after),

@@ -1954,10 +1954,23 @@ point. What remains is structural rather than coverage: 294 files refused at the
 envelope's `actionGroup` shape, 29 by the deliberate
 `createBuff:requires-multiple-actions` rule, and 5 framing stops.
 
-**SkillData reads whole, which no reviewed reader had claimed.** `SkillData`
-is itself a planned wrapper, so a file can be executed from its first byte
-rather than decoded to an anchor -- and **all 2,621 exported files consume
-exactly to EOF, with nothing refused and not one landing short**. That shape is the
+**Both families read whole, which no reviewed reader had claimed.** A family's
+root type is itself a planned wrapper, so a file can be executed from its first
+byte rather than decoded to an anchor -- and **all 2,873 BuffData and all 2,621
+SkillData files consume exactly to EOF, with nothing refused and not one
+landing short**. The reviewed readers reach an anchor or a first record and
+leave the remainder explicitly opaque; this reaches the end.
+
+*BuffData took one more correction to get there, and it was a classification
+error rather than a framing one.* Every one of its 2,873 files stopped at
+`dispelConfig`, which the reviewed root reader takes as **eight raw bytes** and
+the plan was reading as a nested object. The type is a `bool` beside an enum,
+so it should have been sized as a blittable struct -- but the blittable test
+asked whether a type's base was `System.ValueType`, and **an enum's base is
+`System.Enum`**. That one omission excluded every enum, and with it every
+struct holding one: correcting it took the sized-struct table from 2,295 types
+to **7,498**, and gave `DispelConfig` exactly the 8 bytes the reviewed reader
+already recorded. That shape is the
 evidence: a wrong member layout drifts, and a drifted cursor stops at an
 arbitrary offset, so landing on the last byte repeatedly across files spanning
 orders of magnitude in size is not something a wrong layout produces. The sweep reports `shortOfEof` beside `exactEof` precisely because it is the
@@ -1999,7 +2012,8 @@ happens to land on a plausible-looking byte.
 Framing says where a member begins and ends. `derived_values` takes the same
 plan and the same cursor and keeps what each member holds, under the name its
 generated wrapper gives it, so the gameplay config reads as named data rather
-than as proven byte ranges. **All 2,621 SkillData records decode.**
+than as proven byte ranges. **All 5,494 records of both families decode** --
+2,873 BuffData and 2,621 SkillData.
 
 The interpretation is deliberately narrow, because a width is not a meaning. A
 primitive decodes as its declared type. An enum keeps the integer actually
@@ -2014,8 +2028,8 @@ reading it does not make.
 carries its own identifier and the exported file is named after it, from the
 exporter's logical path -- two sources that only agree if the framing, the
 member order *and* the string decoding are simultaneously right. A wrong member
-order still decodes a string; it decodes the wrong one. **All 2,621 decoded
-`skillId` values equal their filenames.**
+order still decodes a string; it decodes the wrong one. **All 5,494 decoded
+identifiers equal their filenames**, with none refused and none missing.
 
 What this does not establish is what any member means. The names come from the
 same metadata the framing does and carry the same tier, a stored value is not a

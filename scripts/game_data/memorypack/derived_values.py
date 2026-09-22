@@ -27,11 +27,13 @@ Nor does a member's name establish what the game does with it. The names come
 from the same metadata the framing does, so they carry the same evidence tier
 and no more.
 
-The oracle worth knowing about: a decoded record usually carries its own
-identifier, and the exported file is named after it. ``verify_identifier``
-checks that a decoded ``skillId`` or ``id`` equals the file's stem, which is an
-independent test of the whole chain -- the framing, the member order and the
-string decoding all have to be right for a name to come back matching.
+The oracle worth knowing about: a decoded record carries its own identifier,
+and the exported file is named after it. ``verify_identifier`` checks that the
+decoded ``skillId``/``id`` equals the file's stem, which is an independent test
+of the whole chain -- the framing, the member order and the string decoding all
+have to be right at once for a name to come back matching, and a wrong member
+order still decodes a string, just the wrong one. Across both exported
+families that is 5,494 records, all agreeing.
 """
 from __future__ import annotations
 
@@ -47,7 +49,7 @@ from scripts.game_data.memorypack.buff_actions import Reader as _FrozenReader, U
 from scripts.game_data.memorypack.derived_plans import (
     NULL_MARKER,
     PLAN_DEPTH_LIMIT,
-    SKILLDATA_TYPE,
+    WHOLE_RECORD_FAMILIES,
     WIDE_TAG_LEAD,
     DerivedPlanMixin,
     PlanRegistry,
@@ -304,35 +306,40 @@ def build(output: Path, export_root: Path | None = None) -> dict[str, Any]:
     if reports not in output.parents:
         raise ValueError(f"output-must-be-under={reports}")
     registry, audit = load_registry()
-    definition = registry.named_roots.get(SKILLDATA_TYPE)
-    if definition is None:
-        report = {"schema": "endfield.memorypack-derived-values.v1", "audit": audit,
-                  "summary": {"status": audit.get("status", "unresolved")}}
-    else:
-        layout = (ExportLayout(root=export_root) if export_root is not None
-                  else ExportLayout.configured())
-        directory = layout.json_dir / "SkillData"
+    layout = (ExportLayout(root=export_root) if export_root is not None
+              else ExportLayout.configured())
+    families: dict[str, Any] = {}
+    samples: dict[str, Any] = {}
+    for directory_name, type_name in sorted(WHOLE_RECORD_FAMILIES.items()):
+        definition = registry.named_roots.get(type_name)
+        directory = layout.json_dir / directory_name
+        if definition is None:
+            families[directory_name] = {"status": "unplanned", "type": type_name}
+            continue
         if not directory.is_dir():
-            report = {"schema": "endfield.memorypack-derived-values.v1", "audit": audit,
-                      "summary": {"status": "missing-export", "detail": str(directory)}}
-        else:
-            check = verify_identifier(directory, definition, registry)
-            sample_path = sorted(directory.glob("*.json"))[0]
-            sample, _ = decode_file(
-                sample_path.read_bytes(), definition, registry, source=sample_path.name)
-            report = {
-                "schema": "endfield.memorypack-derived-values.v1",
-                "audit": audit,
-                "identifierCheck": check,
-                "summary": {
-                    "status": check["status"],
-                    "decoded": check["decoded"],
-                    "identifierAgreed": check["identifierAgreed"],
-                    "identifierChecked": check["identifierChecked"],
-                    "elapsedSeconds": round(time.perf_counter() - started, 3),
-                },
-                "sample": {"file": sample_path.stem, "record": _summarize(sample)},
-            }
+            families[directory_name] = {"status": "missing-export", "detail": str(directory)}
+            continue
+        families[directory_name] = dict(
+            verify_identifier(directory, definition, registry), type=type_name)
+        first = sorted(directory.glob("*.json"))[:1]
+        if first:
+            value, _ = decode_file(
+                first[0].read_bytes(), definition, registry, source=first[0].name)
+            samples[directory_name] = {"file": first[0].stem, "record": _summarize(value)}
+    statuses = {row.get("status") for row in families.values()}
+    report = {
+        "schema": "endfield.memorypack-derived-values.v2",
+        "audit": audit,
+        "identifierChecks": families,
+        "summary": {
+            "status": "validated" if statuses == {"validated"} else "incomplete",
+            "decoded": sum(row.get("decoded", 0) for row in families.values()),
+            "identifierAgreed": sum(row.get("identifierAgreed", 0) for row in families.values()),
+            "identifierChecked": sum(row.get("identifierChecked", 0) for row in families.values()),
+            "elapsedSeconds": round(time.perf_counter() - started, 3),
+        },
+        "samples": samples,
+    }
     output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
     return report

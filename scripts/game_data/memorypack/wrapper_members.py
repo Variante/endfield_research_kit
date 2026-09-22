@@ -508,11 +508,19 @@ def unmanaged_value_sizes_from_image(image: NativeImage) -> dict[str, int]:
     deriver.index_wrappers()
     metadata, pe = image.metadata, image.pe
     table = int(image.registration["typeDefinitionsSizes"], 16)
+    # An enum is a value type too, but its parent is ``System.Enum`` rather
+    # than ``System.ValueType``, so testing the base alone silently excludes
+    # every enum -- and with it every struct that holds one. ``DispelConfig``
+    # is the case that exposed this: a bool beside an enum, which the reviewed
+    # reader takes as eight raw bytes.
     value_types = {
         type_def.index
         for type_def in metadata.types
-        if (parent := deriver._type_definition_for(type_def.parent_index)) is not None
-        and metadata.type_full_name(metadata.types[parent]) == VALUE_TYPE_BASE
+        if (
+            (parent := deriver._type_definition_for(type_def.parent_index)) is not None
+            and metadata.type_full_name(metadata.types[parent]) == VALUE_TYPE_BASE
+        )
+        or type_def.index in deriver.enum_definitions
     }
 
     def instance_fields(definition: int) -> list[Any]:
