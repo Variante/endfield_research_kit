@@ -424,18 +424,24 @@ match**, and no verified capture has produced the decoder continuity rows yet.
   the external descriptor and opened path with the selected stream callback and
   the resulting decoded data flow.
 
-## The catalog is not an activation manifest, and converting it is gated
+## The catalog is the host's input, and re-pinning it is gated
 
 `audio_runtime_trace_hooks.json` is an evidence catalog: 64 rows pinned to the
-build they were recorded on, of which the shipped provider implements **five**,
-and only one row carries the `abiId` that provider requires. `StartCapture.bat`
-pointed `BUILD_MANIFEST` straight at it, which cannot work for two independent
-reasons -- wrong shape, and wrong build.
+build they were recorded on, of which the capture host requires **five**.
+`StartCapture.bat` pointing `BUILD_MANIFEST` at it is correct -- the host reads
+this schema -- but the path had not followed the `scripts/` reorganisation, and
+the pin was a superseded build.
 
-`scripts/webui/story_recovery/build_audio_activation_manifest.py` performs the
-conversion that INTEGRATION.md says to make only after verifying the selected
-build, and verifies the two halves differently because they are different
-claims.
+**The host owns the conversion, not this repository.** It looks the five hooks
+up by name in the catalog, takes only each one's `rva`, supplies the module and
+ABI identifier from its own table, and writes the `activation.v1` manifest the
+provider consumes. Producing an activation file here writes something nothing
+reads -- a mistake worth recording, because the catalog's own integration note
+describes the conversion and it is easy to assume the conversion is ours.
+
+What actually blocks a capture is the catalog's build pin, and
+`scripts/webui/story_recovery/refresh_audio_hook_catalog.py` re-pins it,
+verifying the two halves differently because they are different claims.
 
 **The managed halves are re-resolved and they moved.** `AudioAdapter._PostEvent`
 and `_PostEventWithExternalSource` live in `GameAssembly.dll`, so their

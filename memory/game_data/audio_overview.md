@@ -159,6 +159,46 @@ Stable conclusions:
   carries: every child resolves in its own bank with a single referrer, and the
   longest chain grows from 7 to 8 references. See
   [`reports/animestudio/hirc_type09_body_current_latest.md`](../../reports/animestudio/hirc_type09_body_current_latest.md).
+- **The action type is a 16-bit word and the maintained lanes were masking half
+  of it away.** Framing keys on `actionType & 0xFF00`, which is correct --
+  the high byte is what decides the body layout -- but the serialized value is
+  the whole word, and `AkActionType` in the reviewed
+  `scripts/game_data/contracts/wwise_sdk_enums.json` names all of it. The corpus
+  ships **55 distinct words** where the masked table reported 26, and the
+  contract names **28,368 of 28,378** objects exactly: four different serialized
+  words were all being published as `stop` (`Stop_E` 465, `Stop_E_O` 716,
+  `Stop_ALL` 3, and `Stop_ALL_O` unshipped). Only `0x1B02` (1) and `0x1B03` (9)
+  are unnamed; the stock enum gives Trigger only `0x1B00`/`0x1B01`, and since
+  their low bytes match the element scopes every other action uses, a name
+  follows from the pattern -- which is why none is given. Fitting a name from a
+  suffix is the failure mode this lane exists to avoid, and the vendored
+  `RM42.Beyond` tree means an in-house extension is possible. The full-word
+  census is in
+  [`reports/animestudio/hirc_action_type_named_latest.md`](../../reports/animestudio/hirc_action_type_named_latest.md).
+  Read the **general lesson**, which is the same one the group I key and the
+  group H state taught in the other direction: a mask chosen because it decides
+  a layout quietly becomes the published identity, and nothing fails when it
+  throws information away. The masked codes were carried as "unnamed" through
+  four batches while the bytes that would name them sat in the same `u16`.
+- **The two corpora are not the same corpus, and the difference is exactly one
+  object.** The structural gate audits 21 AKPK packages and counts 28,379 type
+  `0x03` objects; the WebUI bank reader streams the 15 packages its bank regex
+  matches and counts 28,378. The one object is in `audit_stream.pck`, a media
+  stream package the regex excludes by design. Do not reconcile the two numbers
+  by widening the regex: quote which corpus a count came from instead. The
+  stream packages are also too large to base64 through the CLI's JSONL stream
+  (`default_chinese_stream.pck` throws `OutOfMemoryException`), so a whole-corpus
+  Python read is not available by that route.
+- **`AkRtpcType` is not in the contract, or in the SDK.** The RTPC curve's
+  one-byte type field is labelled from a five-entry table in `hirc_v150.py` that
+  no contract or PDB sources: the PDB extraction carries `AkRtpcAccum`,
+  `AkRtpcCurve::OwnerType` and `AkRTPCKeyFieldType`, and no `AkRtpcType` at all.
+  Only two values ship -- 0 (20,205 curves, labelled `gameParameter`) and 4
+  (1,025, labelled `modulator`) -- so the other three labels are unexercised.
+  Value 4 agrees with `AkRtpcCurve::OwnerType`'s `Modulator`; value 0 does not
+  agree with its `ParameterNode`. That is one agreement out of two and settles
+  nothing. Treat both published labels as unsourced until the deserializer names
+  the field.
 - **Layer 4 opens for audio.** The anonymous four-byte values inside the exactly
   framed terminal vectors of numeric types `0x04`, `0x05`, `0x06`, `0x07` and `0x09` are object
   identities. All 240,898 of them resolve, every one to exactly one HIRC object
@@ -448,14 +488,17 @@ handoff for the audio lane, with the witness each step needs. Read
 [`audio_hirc_parser.md`](audio_hirc_parser.md) first; the layouts there are the
 contract every step below builds on.
 
-1. **Name the values the lanes only count.** The framers consume AkPropID keys,
-   RTPC ParamIDs, action operands and modulator properties by extent. The names
-   are in `scripts/game_data/contracts/wwise_sdk_enums.json`; the typed reader in
-   `scripts/webui/audio/semantics/hirc_v150.py` already labels initial
-   properties, RTPC curves and actions, so the work is to audit its remaining
-   label tables against that contract (the RTPC table was wrong until this
-   batch) and to load the contract instead of carrying copies. Cheap, no new
-   evidence needed, and it changes what the Audio page shows.
+1. **Name the values the lanes only count.** *Started.*
+   `scripts/webui/audio/semantics/wwise_enums.py` is now the one loader for
+   `scripts/game_data/contracts/wwise_sdk_enums.json`, with the digest pinned as
+   `CONTRACT_SHA256` and a fail-closed load, and `hirc_v150.py` takes the
+   full-word action name from it and publishes `actionTypeName` on every action
+   row. An audit of the remaining tables against the contract found that
+   `AkCurveInterpolation`, `AkBankTypeEnum`, `AkValueMeaning`, `AkRtpcAccum`,
+   `AkCurveScaling`, `AkSyncType`, `AkPropID` and `AkPluginType` all agree
+   value-for-value, so only their *spelling* differs from the SDK's. What is
+   left is to have those tables read the contract as well rather than duplicate
+   it, and to resolve the unsourced `AkRtpcType` table above.
 2. **Rename the bus lane's fitted vocabulary.** `FrameSharedBody` and the
    `0x08`/`0x12` reports still say "second list", "middle block", "tail". The
    `CAkBus` layout in the parser topic names each of them (ducks, property

@@ -1,37 +1,42 @@
-"""Turn the audio evidence catalog into an activation manifest for one build.
+"""Re-pin the audio hook catalog to the installed build.
 
-`audio_runtime_trace_hooks.json` is an evidence catalog: 64 rows describing
-every audio carrier this lane has identified, pinned to the build they were
-recorded on. `EndfieldCapture`'s audio provider needs something narrower and
-stricter -- an `audioRuntimeTrace.activation.v1` manifest naming only hooks it
-actually implements, each with the ABI identifier its adapter declares, and a
-file gate matching the installed build. Its own integration note says to make
-that conversion *only after independently verifying the selected build*, which
-is what this module does rather than assumes.
+`audio_runtime_trace_hooks.json` is the `audioRuntimeTrace.hooks.v2` evidence
+catalog that `StartCapture.bat` hands to the capture host as its build
+manifest. **The host owns the conversion**: it looks up five required hooks by
+name, takes only each one's `rva`, supplies the module and ABI identifier from
+its own table, and writes the `audioRuntimeTrace.activation.v1` manifest the
+audio provider consumes. Producing that activation file here would be writing
+something nothing reads -- a mistake this module was built making.
 
-**The two halves are verified differently, because they are different claims.**
+What actually blocks a capture is that the catalog is pinned to the build it
+was recorded on. This re-pins it, and verifies the two halves differently
+because they are different claims.
 
-*The managed hooks* live in `GameAssembly.dll`, which is rebuilt on every client
-update, so their addresses are re-resolved by name against the selected build
-through `il2cpp.method_resolver` -- which derives `Il2CppCodeRegistration`
-rather than pinning it, and therefore runs unchanged on a future build. A
-recorded RVA is never carried forward.
+*The managed hooks* live in `GameAssembly.dll`, rebuilt on every client update,
+so their addresses are re-resolved by name through `il2cpp.method_resolver` --
+which derives `Il2CppCodeRegistration` rather than pinning it, and so runs
+unchanged on a future build. They do move: on this build
+`AudioAdapter._PostEvent` went from `0x328a690` to `0x337f270`, so carrying the
+recorded value forward would have attached a hook to unrelated code.
 
-*The native hooks* live in `AkSoundEngine.dll`. Carrying an address forward
-there would normally be exactly the mistake this repository warns about, so it
-is not taken on trust: each recorded RVA must still be a function start in the
-installed DLL, checked against that binary's own `.pdata` exception directory.
-That is a yes/no fact about the shipped file rather than a guess from prologue
-bytes. On the build this was written against, 29 of the catalog's 32 native
-rows land on a `.pdata` function start at one function per 212 bytes of
-`.text`, which is not something arbitrary addresses do; the three that do not
-are sixteen-byte leaf getters, which MSVC omits from `.pdata` by design.
+*The native hooks* live in `AkSoundEngine.dll`, which was rebuilt to a
+different SHA-256 at an identical 3,586,536 bytes. Their recorded addresses are
+nonetheless still right, and that is checked rather than assumed against the
+binary's own `.pdata` exception directory, where a `BeginAddress` *is* a
+function start by definition. 29 of the catalog's 32 native rows land exactly
+on one at a density of one function per 212 bytes of `.text`; the three that do
+not are sixteen-byte leaf getters, which MSVC omits from `.pdata` by design. A
+future rebuild that *does* move code therefore fails closed instead of hooking
+whatever now sits at the address.
 
-**Fails closed everywhere.** A missing installed input, an unresolvable managed
-name, an ambiguous type name, or a native RVA that is not a function start all
-refuse the whole manifest and say which hook stopped it. A partially correct
-activation manifest is worse than none: it would attach some hooks and silently
-omit others, and the session would look successful.
+**Only the five hooks the host requires are refreshed.** Every other row keeps
+a superseded address and is recorded as such in `refreshedHooks`, because a row
+that silently kept a stale address would be indistinguishable from a current
+one.
+
+Fails closed and names the hook that stopped it: a failed native gate, an
+ambiguous type name, an unresolved or overloaded method, a match with no native
+body, or a native RVA that is no longer a function start.
 """
 from __future__ import annotations
 
@@ -49,8 +54,7 @@ from scripts.repo_paths import REPO_ROOT as REPO
 
 
 CATALOG = REPO / "scripts/webui/story_recovery/audio_runtime_trace_hooks.json"
-DEFAULT_OUTPUT = REPO / "scripts/webui/story_recovery/audio_runtime_trace_activation.json"
-ACTIVATION_SCHEMA = "audioRuntimeTrace.activation.v1"
+DEFAULT_OUTPUT = CATALOG
 CATALOG_SCHEMA = "audioRuntimeTrace.hooks.v2"
 GAME_MODULE = "GameAssembly.dll"
 AUDIO_MODULE = "AkSoundEngine.dll"
@@ -148,8 +152,14 @@ def resolve_managed(names: list[str], gameassembly: Path, metadata: Path) -> dic
     return resolved
 
 
-def build_manifest(catalog: Path = CATALOG) -> dict[str, Any]:
-    """The activation manifest for the installed build, or a refusal."""
+def refresh_catalog(catalog: Path = CATALOG) -> tuple[dict[str, Any], dict[str, Any]]:
+    """The catalog re-pinned to the installed build, and a per-hook receipt.
+
+    The five hooks the host requires are refreshed; every other row keeps its
+    recorded address and is marked stale, because this build's evidence for it
+    has not been re-derived. Marking is the point: a row that silently kept a
+    superseded address would be indistinguishable from a current one.
+    """
     gate = check_installed_native_inputs()
     if gate.status != "validated":
         raise ManifestError(f"installed native inputs: {gate.status}: {gate.detail}")
@@ -157,69 +167,67 @@ def build_manifest(catalog: Path = CATALOG) -> dict[str, Any]:
     if value.get("schema") != CATALOG_SCHEMA:
         raise ManifestError(f"catalog schema {value.get('schema')!r} is not {CATALOG_SCHEMA}")
 
-    recorded: dict[str, dict[str, Any]] = {}
-    for section in ("hooks", "semanticHooks", "nativeHooks"):
-        for row in value.get(section, []):
-            if row.get("name") in IMPLEMENTED_HOOKS:
-                recorded[row["name"]] = row
-    missing = sorted(set(IMPLEMENTED_HOOKS) - set(recorded))
-    if missing:
-        raise ManifestError(f"the catalog has no row for {missing}")
-
-    audio_dll = Path(gate.gameassembly).parent / "Endfield_Data/Plugins/x86_64/AkSoundEngine.dll"
+    game_root = Path(gate.gameassembly).parent
+    audio_dll = game_root / AUDIO_MODULE_RELATIVE
     if not audio_dll.is_file():
         raise ManifestError(f"no AkSoundEngine.dll at {audio_dll}")
     starts = pdata_function_starts(audio_dll)
-
     managed_names = [name for name, (module, _) in IMPLEMENTED_HOOKS.items()
                      if module == GAME_MODULE]
     managed = resolve_managed(managed_names, Path(gate.gameassembly), Path(gate.metadata))
 
-    hooks: list[dict[str, Any]] = []
-    for name, (module, abi_id) in sorted(IMPLEMENTED_HOOKS.items()):
-        if module == GAME_MODULE:
-            rva = managed[name]
-            evidence = "re-resolved by name against the selected build"
-        else:
-            rva = int(str(recorded[name]["rva"]), 16)
-            if rva not in starts:
-                raise ManifestError(
-                    f"{name}: recorded rva 0x{rva:x} is not a function start in the "
-                    f"installed {AUDIO_MODULE}; it must be re-derived, not carried")
-            evidence = "recorded rva, verified as a .pdata function start"
-        hooks.append({
-            "name": name, "module": module, "abiId": abi_id,
-            "rva": f"0x{rva:x}", "required": True, "evidence": evidence,
-        })
+    receipt: list[dict[str, Any]] = []
+    seen: set[str] = set()
+    for section in ("hooks", "nativeHooks"):
+        for row in value.get(section, []):
+            name = row.get("name")
+            if name not in IMPLEMENTED_HOOKS:
+                continue
+            seen.add(name)
+            was = row.get("rva")
+            module, _abi = IMPLEMENTED_HOOKS[name]
+            if module == GAME_MODULE:
+                row["rva"] = f"0x{managed[name]:x}"
+                how = "re-resolved by name against the selected build"
+            else:
+                rva = int(str(was), 16)
+                if rva not in starts:
+                    raise ManifestError(
+                        f"{name}: recorded rva {was} is not a function start in the "
+                        f"installed {AUDIO_MODULE}; it must be re-derived, not carried")
+                how = "recorded rva, verified as a .pdata function start"
+            row["resolution"] = how
+            receipt.append({"name": name, "module": module, "was": was,
+                            "now": row["rva"], "moved": was != row["rva"], "how": how})
+    missing = sorted(set(IMPLEMENTED_HOOKS) - seen)
+    if missing:
+        raise ManifestError(f"the catalog has no row for {missing}")
 
-    game_root = Path(gate.gameassembly).parent
-    files = []
-    for relative in (GAME_MODULE, AUDIO_MODULE_RELATIVE,
-                     "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat"):
+    files = {}
+    for key, relative in (("executable", "Endfield.exe"),
+                          ("gameAssembly", GAME_MODULE),
+                          ("metadata", "Endfield_Data/il2cpp_data/Metadata/global-metadata.dat"),
+                          ("akSoundEngine", AUDIO_MODULE_RELATIVE)):
         path = game_root / relative
+        if not path.is_file() and key == "executable":
+            path = game_root.parent / relative
         if not path.is_file():
             raise ManifestError(f"no {relative} under {game_root}")
-        files.append({"relativePath": relative,
-                      "bytes": path.stat().st_size,
-                      "sha256": _sha256(path)})
-    return {
-        "schema": ACTIVATION_SCHEMA,
-        "gameBuild": f"endfield-gameassembly-{(gate.gameassembly_sha256 or '')[:8].lower()}",
-        "processName": PROCESS_NAME,
-        "moduleName": GAME_MODULE,
-        "nativeModuleName": AUDIO_MODULE,
-        "files": files,
-        "hooks": hooks,
-        "evidenceBoundary": (
-            "Activating a hook proves the method executed in the attached process. "
-            "Managed addresses are re-resolved by name against this build; native "
-            "addresses are the catalog's, kept only because each is still a function "
-            "start in the installed AkSoundEngine.dll. Neither establishes what the "
-            "call did, whether it was audible, or any join between hooks."
+        files[key] = {"relativePath": relative, "bytes": path.stat().st_size,
+                      "sha256": _sha256(path)}
+    value["files"] = {**value.get("files", {}), **files}
+    value["gameBuild"] = (
+        f"endfield-gameassembly-{(gate.gameassembly_sha256 or '')[:8].lower()}")
+    value["refreshedHooks"] = {
+        "note": (
+            "Only the five hooks the capture host requires are refreshed against the "
+            "installed build. Every other row keeps a superseded address and is not "
+            "evidence for this build until re-derived."
         ),
-        "sourceCatalog": {"path": str(catalog.relative_to(REPO)).replace("\\", "/"),
-                          "sha256": _sha256(catalog).upper()},
+        "hooks": receipt,
     }
+    return value, {"gameBuild": value["gameBuild"], "hooks": receipt,
+                   "files": {k: v["sha256"][:16] for k, v in files.items()}}
 
 
 def main() -> int:
@@ -227,26 +235,25 @@ def main() -> int:
     parser.add_argument("--catalog", type=Path, default=CATALOG)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--check", action="store_true",
-                        help="report what would be written without writing it")
+                        help="report what would change without writing it")
     args = parser.parse_args()
     started = time.perf_counter()
     try:
-        manifest = build_manifest(args.catalog)
+        catalog, receipt = refresh_catalog(args.catalog)
     except (ManifestError, OSError, ValueError, KeyError, struct.error) as error:
         print(json.dumps({"status": "refused", "detail": str(error)}), file=sys.stderr)
         return 2
     if not args.check:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(
-            json.dumps(manifest, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
+            json.dumps(catalog, ensure_ascii=False, indent=1) + chr(10),
+            encoding="utf-8")
     print(json.dumps({
         "status": "validated",
-        "gameBuild": manifest["gameBuild"],
-        "hooks": len(manifest["hooks"]),
-        "files": len(manifest["files"]),
+        **receipt,
         "written": None if args.check else str(args.output),
         "elapsedSeconds": round(time.perf_counter() - started, 3),
-    }, sort_keys=True))
+    }, ensure_ascii=False, sort_keys=True))
     return 0
 
 
