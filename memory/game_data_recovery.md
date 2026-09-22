@@ -251,8 +251,12 @@ and before/after evidence belongs in `tmp/<topic>/`.
   reverse.
 - Recover more exact gameplay action/selector/formula contracts without
   treating native names as byte-layout proof.
-- Close more authored and observed audio consumers through exact Event/media
-  traversal, while preserving branch and audibility gaps.
+- Audio: the HIRC structural lane is closed from the Wwise SDK; the ordered
+  handoff (value naming, decision trees, plug-in blocks, then a host process
+  for layers 5 and 6) is the recovery queue in
+  [`game_data/audio_overview.md`](game_data/audio_overview.md). Keep closing
+  authored and observed consumers through exact Event/media traversal while
+  preserving branch and audibility gaps.
 - Improve exact prefab, renderer, material, animation, and world-instance
   ownership.
 - Keep native gates and source-graph provenance deterministic across client

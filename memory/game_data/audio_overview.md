@@ -439,3 +439,61 @@ Stable conclusions:
   index of what is already known; **reading it first is cheaper than re-deriving
   it**, and the only reason this batch was not pure waste is that entropy and RTTI
   were questions the earlier pass had not asked.
+
+## Recovery queue
+
+The structural lane is closed: every shipped HIRC type frames from the SDK's
+own deserializer (see the standing note above). What follows is the ordered
+handoff for the audio lane, with the witness each step needs. Read
+[`audio_hirc_parser.md`](audio_hirc_parser.md) first; the layouts there are the
+contract every step below builds on.
+
+1. **Name the values the lanes only count.** The framers consume AkPropID keys,
+   RTPC ParamIDs, action operands and modulator properties by extent. The names
+   are in `scripts/game_data/contracts/wwise_sdk_enums.json`; the typed reader in
+   `scripts/webui/audio/semantics/hirc_v150.py` already labels initial
+   properties, RTPC curves and actions, so the work is to audit its remaining
+   label tables against that contract (the RTPC table was wrong until this
+   batch) and to load the contract instead of carrying copies. Cheap, no new
+   evidence needed, and it changes what the Audio page shows.
+2. **Rename the bus lane's fitted vocabulary.** `FrameSharedBody` and the
+   `0x08`/`0x12` reports still say "second list", "middle block", "tail". The
+   `CAkBus` layout in the parser topic names each of them (ducks, property
+   bundle, HDR bits, state chunk after group I). Report keys are the only cost.
+3. **Decision-tree keys.** `0x0C` and `0x0F` trees are counted as whole 12-byte
+   nodes but not walked. Walking them (children ranges, leaf audio-node ids
+   against the bank's objects, probability sums) is a bounded corpus check with
+   the node layout already known from `AkDecisionTree::ResolvePath`; the
+   `0x0C` "names near the end" in `audio_hirc_graph.md` are these keys.
+4. **Plug-in parameter blocks.** `0x10`/`0x11`/`0x15` and type `0x02` source
+   plug-ins carry `uSize` bytes the engine hands to the plug-in. The typed
+   v150 effect parse owns the built-in layouts; the SDK's
+   `SDK/samples/Plugins` and `include/AK/Plugin` headers are the witness for
+   any it does not cover. Do not fit these from the corpus.
+5. **Layers 5 and 6 need a host, not a reader.** The shipped DLL has no
+   profiler communication layer. Build a small process that links the SDK's
+   Profile libraries, loads the game's `.pck` files through the sample
+   file-package I/O (`SDK/samples/SoundEngine/Common`), registers the plug-ins
+   the game DLL compiles in, and then uses the Query API and output capture to
+   observe which media an Event resolves to under chosen switch, state and RTPC
+   values. That is the first evidence past the authored link, and the Wwise
+   Profiler can attach to it. The in-house `RM42.Beyond` modifications mean a
+   stock engine can differ from the game's; treat its output as a strong prior
+   and cross-check against the observed native path in
+   [`audio_native_hooks.md`](audio_native_hooks.md).
+6. **Music containers in the main reference graph.** Their child, segment and
+   playlist ids stay in the music censuses; folding them into the main graph
+   collides with the music-reach walk's own edge tables and changes every
+   published count, so do it as one gated step with the named-reach gate rerun.
+
+Do not repeat: corpus-only stride sweeps for any HIRC type (the reader that
+wrote the bytes is on disk); string-mining the game DLL; little-endian varint
+decoding; per-package joins for anything that can land in two `.pck` files.
+
+Recipes: the SDK reading workflow (dumpbin on the extracted objects, vtable
+slots from the relocation tables, `pdb_enums.py` for CodeView enums) lives with
+its annotated dumps under `scratch/reverse_engineering/wwise_sdk/`; the corpus
+gate is `python -m scripts.webui.audio.semantics.hirc_action_corpus
+--expected-input-set-sha256 <current inputSetSha256>` followed by
+`hirc_named_reach`, about four minutes each, after
+`scripts\game_data\extractionnimestudioebuild.bat -Target CLI`.
