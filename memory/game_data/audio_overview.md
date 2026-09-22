@@ -496,4 +496,4 @@ its annotated dumps under `scratch/reverse_engineering/wwise_sdk/`; the corpus
 gate is `python -m scripts.webui.audio.semantics.hirc_action_corpus
 --expected-input-set-sha256 <current inputSetSha256>` followed by
 `hirc_named_reach`, about four minutes each, after
-`scripts\game_data\extractionnimestudioebuild.bat -Target CLI`.
+`scripts\game_data\extraction\animestudio\rebuild.bat -Target CLI`.
