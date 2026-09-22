@@ -163,7 +163,7 @@ The stable code and fixture entry points are:
 | Streaming | `scripts/game_data/streaming/` (`framing.py`, `corpus.py`, `native.py`, the marker parsers, validators and gates) | no local tests; the corpus gates are the validation (all envelopes/roots, exact anonymous Info graphs, field-2 row slot partition plus terminal field-5 scalar32 vectors through EOF, selected-build native-gated fields 0--5 representations, family-level carrier base/length, and current filename-token relations, field3/4/5 first-level, and field6/7 paired-group subgraphs; concrete authenticated-file/final-cursor join, field names, field-5 key namespace/signedness, deeper parallel field-5 children, and semantics remain unresolved) |
 | DynamicStreaming | `scripts/game_data/dynamic_streaming.py` | `scripts/tests/test_dynamic_streaming.py` |
 | Irradiance volume | `scripts/game_data/irradiance_volume.py` | `scripts/tests/test_irradiance_volume.py` (region framing, bounded index filename tables, and single/grouped v3 index-directed payload ranges) |
-| Terrain | `scripts/game_data/terrain_tret.py`, `scripts/game_data/terrain_native.py`, `scripts/game_data/terrain_corpus.py` | `scripts/tests/test_terrain_tret.py`, `test_terrain_native.py`, `test_terrain_corpus.py` (current native gate, exact selected-build tiling, negative framing/provenance fixtures; unsupported shapes fail closed) |
+| Terrain | `scripts/game_data/terrain/tret.py`, `scripts/game_data/terrain/native.py`, `scripts/game_data/terrain/corpus.py` | `scripts/tests/test_terrain_tret.py`, `test_terrain_native.py`, `test_terrain_corpus.py` (current native gate, exact selected-build tiling, negative framing/provenance fixtures; unsupported shapes fail closed) |
 | Table / SparkBuffer | `AnimeStudio/Endfield/Extraction/EndfieldSparkBuffer.cs` | `EndfieldSparkBufferTests.cs` |
 | JsonData / LipSync | `scripts/game_data/memorypack/lipsync.py` | `scripts/tests/test_memorypack_lipsync.py` |
 | JsonData / gameplay subfamilies | `scripts/webui/story/*_binary.py`, `scripts/game_data/memorypack/`, routed per virtual-path family | matching `scripts/tests/test_*_binary.py`, including `test_jsondata_binary.py`; `buff_1b_corpus.py` binds current root-continuation tag `0x1B` bytes to its exact-build action reader, while whole BuffData and SkillData / LevelData / LevelScriptData framing remain partial |
@@ -205,7 +205,7 @@ For Terrain work, first rebuild the outer VFS audit and pass its exact
 `inputSetSha256` to the maintained corpus gate:
 
 ```bat
-python -m scripts.game_data.terrain_corpus --outer-summary OUTER.json --outer-ledger OUTER.jsonl.gz --expected-input-set-sha256 SHA256 --game-root ENDFIELD_DATA --output-json reports/animestudio/terrain_tret_latest.json --output-md reports/animestudio/terrain_tret_latest.md
+python -m scripts.game_data.terrain.corpus --outer-summary OUTER.json --outer-ledger OUTER.jsonl.gz --expected-input-set-sha256 SHA256 --game-root ENDFIELD_DATA --output-json reports/animestudio/terrain_tret_latest.json --output-md reports/animestudio/terrain_tret_latest.md
 ```
 
 The gate revalidates the current `GameAssembly.dll`, `global-metadata.dat`, and
