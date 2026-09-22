@@ -562,28 +562,49 @@ They are latent traps rather than active errors, and hooking one of them --
 `NotifySpeakerVolumeMatrix` fires per mix connection -- would be expensive and
 meaningless. Their symbols are now recorded so that does not happen.
 
-## Voice is not file-streamed, and `CAkSrcMedia` is the candidate
+## Three codec source families, and which one voice takes is open
 
-The map shows two complete source families at disjoint address ranges:
-`CAkSrcFileBase`, which streams from a file, and `CAkSrcMedia` with its
-`CAkSrcMediaCodec*` codecs, which plays media already in memory.
+Matching against *every* SDK library rather than only the one named after the
+DLL roughly doubles what can be named -- 1,943 of 12,512 functions -- because
+the engine links the stream manager, the memory manager and each codec as
+separate archives. That is what brings the decode path into view, and it also
+names three more catalog rows.
 
-`SourceProviderPreparation` is `CAkSrcFileBase::CreateStream`, the point where
-*any* streamed source -- in a package or not -- creates its stream. It never
-fired while external-source voice was posting, and no `.wem` was opened in
-either session, only banks. So within the observed windows voice took no file
-stream at all, which leaves in-memory media, and `CAkSrcMedia` is the class that
-plays it. Its constructor takes `(CAkPBI*, IAkSrcMediaCodec*(*)(const
-SrcMedia::Header*))` -- the voice's PBI and the codec chosen for it -- which is
-exactly the decoder end of the key-to-file-to-decoder join.
+The engine offers three ways to get compressed audio into a voice, and the map
+shows all three present in this build:
 
-**This is a deduction from a negative, and inherits that limit.** Capture
-windows are bounded, so a stream created before a window opened would not have
-been seen; the evidence is that voice is not file-streamed *in-window*, not that
-it never is. `CAkSrcMedia` is therefore the leading candidate and not a
-conclusion, and the way to settle it is a hook on its constructor rather than
-more reading. That hook does not exist yet: it needs a new ABI in the capture
-provider, which is a tooling change followed by a session.
+- `CAkSrcFileBase` and its `CAkSrcFileOpus` subclass -- Opus **streamed from a
+  file**, with `read_opus` as libopusfile's read callback;
+- `CAkSrcBankVorbis` -- Vorbis **resident in a loaded bank or prepared media**,
+  which takes no stream at all;
+- `CAkSrcMedia` with `CAkSrcMediaCodecVorbis` and `CAkSrcMediaCodecPCM` -- the
+  newer media-source interface, fed a `SrcMedia::Header` and a codec factory.
+
+***The three codec rows are Opus, and none of them is enabled.*** `CodecStreamRead`,
+`CodecMemorySourceCopy` and `CodecDecoderDecode` are `op_get_next_page`,
+`CAkSrcFileOpus::read_opus` and `AK_op_read_float_no_copy` -- so whoever wrote
+the catalog was reading the Opus file path. Because no session enabled them,
+that is a record of where someone looked, not evidence of what voice does.
+
+**The observation and the Opus path disagree, and that is the open question.**
+`CAkSrcFileOpus` derives from `CAkSrcFileBase`, so Opus-from-file voice would
+have to pass `CreateStream` -- and `CreateStream` recorded nothing while voice
+was posting, with no `.wem` opened in either session. Either voice is not the
+Opus file path at all, in which case a bank-resident or media-source class
+serves it, or the stream was created outside the bounded window. Both remain
+open; the earlier reading that named `CAkSrcMedia` as *the* candidate was too
+confident, because it was made before `CAkSrcBankVorbis` and `CAkSrcFileOpus`
+were known to be present.
+
+**The hook that would settle it.** `CAkSource::SetSource(unsigned int, void*,
+AkMediaInformation)` at 96.7% agreement is the overload binding a source to
+in-memory bytes *together with* its media information, and
+`CAkSource::LockDataPtr(AkMediaRef&)` is where a source resolves to the media
+it will actually play. Those carry the source id and the media identity in one
+frame, which is precisely the key-to-file-to-decoder join, and they sit above
+the choice between the three families rather than inside one -- so a single
+hook answers which path voice takes instead of assuming it. Adding it is a new
+ABI in the capture provider: a tooling change, then a session.
 
 ## What remains unresolved
 

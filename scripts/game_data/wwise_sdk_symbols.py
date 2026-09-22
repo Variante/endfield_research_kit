@@ -48,7 +48,7 @@ from scripts.repo_paths import REPO_ROOT as REPO
 
 
 DEFAULT_SDK = Path(r"D:\Program Files\Wwise_2023.1.17.8841")
-SDK_LIB_RELATIVE = "SDK/x64_vc170/Profile/lib/AkSoundEngine.lib"
+SDK_LIB_DIR_RELATIVE = "SDK/x64_vc170/Profile/lib"
 DEFAULT_DLL = Path(
     r"D:\Program Files\Endfield Game\Endfield_Data\Plugins\x86_64\AkSoundEngine.dll")
 DEFAULT_OUTPUT = REPO / "reports/audio/wwise_sdk_symbols.json"
@@ -99,6 +99,22 @@ def _coff_symbols(obj: bytes) -> list[tuple[str, int, int, int]]:
         # walk aligned, and getting this wrong silently returns section names.
         index += 1 + aux
     return rows
+
+
+def sdk_libraries(sdk: Path) -> list[Path]:
+    """Every static library the SDK ships for this configuration.
+
+    The engine DLL links far more than AkSoundEngine.lib -- the stream
+    manager, the memory manager and each codec are separate archives -- so
+    reading only the one named after the DLL leaves their functions anonymous.
+    """
+    directory = sdk / SDK_LIB_DIR_RELATIVE
+    if not directory.is_dir():
+        raise SymbolError(f"no Wwise SDK library directory at {directory}")
+    libraries = sorted(directory.glob("*.lib"))
+    if not libraries:
+        raise SymbolError(f"no .lib files under {directory}")
+    return libraries
 
 
 def library_functions(lib: Path) -> list[tuple[str, bytes]]:
@@ -172,7 +188,8 @@ def image_functions(dll: Path) -> tuple[dict[int, bytes], dict[str, Any]]:
 
 
 def match_functions(
-    bodies: dict[int, bytes], candidates: Iterable[tuple[str, bytes]]
+    bodies: dict[int, bytes], candidates: Iterable[tuple[str, bytes]],
+    origin: dict[str, str] | None = None,
 ) -> tuple[dict[int, dict[str, Any]], dict[str, int]]:
     """Name each function whose equal-length best candidate is clearly best."""
     by_length: dict[int, list[tuple[str, bytes]]] = collections.defaultdict(list)
@@ -199,7 +216,35 @@ def match_functions(
             counts["named"] += 1
             named[rva] = {"symbol": best[1], "agreement": round(best[0], 3),
                           "bytes": len(body)}
+            if origin and best[1] in origin:
+                named[rva]["library"] = origin[best[1]]
     return named, counts
+
+
+def sdk_candidates(sdk: Path) -> tuple[list[tuple[str, bytes]], dict[str, str], dict[str, int]]:
+    """Candidates from every SDK library, with the library each name came from.
+
+    A symbol defined in two archives is dropped rather than attributed to one,
+    for the same reason a COMDAT holding two names contributes nothing.
+    """
+    bodies: dict[str, bytes] = {}
+    origin: dict[str, str] = {}
+    duplicated: set[str] = set()
+    per_library: dict[str, int] = {}
+    for lib in sdk_libraries(sdk):
+        found = library_functions(lib)
+        per_library[lib.name] = len(found)
+        for name, body in found:
+            if name in bodies and bodies[name] != body:
+                duplicated.add(name)
+                continue
+            bodies[name] = body
+            origin.setdefault(name, lib.name)
+    for name in duplicated:
+        bodies.pop(name, None)
+        origin.pop(name, None)
+    per_library["_droppedAsDuplicate"] = len(duplicated)
+    return [(name, body) for name, body in bodies.items()], origin, per_library
 
 
 def name_addresses(
@@ -212,7 +257,8 @@ def name_addresses(
     """
     bodies, _image = image_functions(dll)
     wanted = {rva: bodies[rva] for rva in rvas if rva in bodies}
-    named, _counts = match_functions(wanted, library_functions(sdk / SDK_LIB_RELATIVE))
+    candidates, origin, _per = sdk_candidates(sdk)
+    named, _counts = match_functions(wanted, candidates, origin)
     for row in named.values():
         row["evidence"] = (
             f"identical {row['bytes']}-byte extent, "
@@ -228,12 +274,13 @@ def build(output: Path, sdk: Path = DEFAULT_SDK, dll: Path = DEFAULT_DLL) -> dic
     if reports not in output.parents:
         raise ValueError(f"output-must-be-under={reports}")
     bodies, image = image_functions(dll)
-    candidates = library_functions(sdk / SDK_LIB_RELATIVE)
-    named, counts = match_functions(bodies, candidates)
+    candidates, origin, per_library = sdk_candidates(sdk)
+    named, counts = match_functions(bodies, candidates, origin)
     report = {
         "schema": "endfield.wwise-sdk-symbols.v1",
         "inputs": {"sdk": str(sdk), "dll": str(dll), **image,
-                   "libraryFunctions": len(candidates)},
+                   "libraryFunctions": len(candidates),
+                   "perLibrary": per_library},
         "thresholds": {"accept": ACCEPT, "margin": MARGIN},
         "summary": {
             "status": "validated",

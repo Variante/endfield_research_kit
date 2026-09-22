@@ -1767,7 +1767,10 @@
      "offset": 100,
      "kind": "u32"
     }
-   ]
+   ],
+   "resolvedSymbol": "op_get_next_page",
+   "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
+   "resolvedEvidence": "identical 279-byte extent, 95.7% byte agreement; differences are relocated operands"
   },
   {
    "name": "AkSoundEngine.CodecMemorySourceCopy",
@@ -1813,7 +1816,10 @@
      "offset": 88,
      "kind": "pointer"
     }
-   ]
+   ],
+   "resolvedSymbol": "?read_opus@CAkSrcFileOpus@@KAHPEAXPEAEH@Z",
+   "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
+   "resolvedEvidence": "identical 171-byte extent, 95.9% byte agreement; differences are relocated operands"
   },
   {
    "name": "AkSoundEngine.CodecDecoderDecode",
@@ -1884,7 +1890,10 @@
      "kind": "u32"
     }
    ],
-   "returnKind": "i32"
+   "returnKind": "i32",
+   "resolvedSymbol": "AK_op_read_float_no_copy",
+   "resolvedFrom": "Wwise 2023.1.17 SDK x64_vc170 Profile AkSoundEngine.lib",
+   "resolvedEvidence": "identical 659-byte extent, 98.5% byte agreement; differences are relocated operands"
   }
  ],
  "evidenceBoundary": {
@@ -1941,7 +1950,7 @@
  "symbolNaming": {
   "note": "Symbols come from matching each recorded address against the Wwise SDK library. A symbol identifies the code and so the class and method; it does not establish when the function runs or what calls it. Where a row's name and its symbol disagree, the symbol is the fact.",
   "status": "named",
-  "named": 6,
+  "named": 9,
   "rows": 32
  }
 }
