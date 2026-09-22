@@ -164,11 +164,9 @@ until a run finishes.
 - `reports/`: generated inventories and audits.
 - `memory/`: current conclusions, evidence boundaries, and recovery queues.
 - `scratch/`: revisitable experiments; `tmp/`: disposable intermediates.
-- `endfield_reconstruction_lab/`: character rendering and animation lab (Git submodule).
 
 Only `tools/AnimeStudio` is initialized by `setup.bat`. The
-`tools/Cpp2IL-Endfield`, `endfield_reconstruction_lab`, and
-`tools/EndfieldCapture` submodules are optional and are not required for the
+`tools/Cpp2IL-Endfield` and `tools/EndfieldCapture` submodules are optional and are not required for the
 normal WebUI workflow.
 
 Technical documentation:

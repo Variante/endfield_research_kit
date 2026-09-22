@@ -41,8 +41,8 @@ Optional Updates sidecar: `webui/data/updates/characters.json`.
   not describe recovery confidence. Deleted identities are read-only
   old-version snapshots; the sidecar cannot alter grouping, names, merges, or
   evidence.
-- Rendering and animation parity claims belong in
-  [`../character_render_and_animation_recovery.md`](../character_render_and_animation_recovery.md).
+- Rendering and animation parity is not a claim this page makes; it publishes
+  identity and exact asset references only.
 
 ## Focused refresh
 

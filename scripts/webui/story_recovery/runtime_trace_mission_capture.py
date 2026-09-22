@@ -32,12 +32,6 @@ SCRIPT_DIR = Path(__file__).resolve().parent
 DEFAULT_GAME_ROOT = core.DEFAULT_GAME_ROOT
 DEFAULT_MANIFEST = SCRIPT_DIR / "mission_runtime_trace_hooks.json"
 DEFAULT_AGENT = SCRIPT_DIR / "mission_runtime_trace_agent.js"
-DEFAULT_SHADER_MANIFEST = (
-    ROOT / "endfield_reconstruction_lab" / "config" / "shader_runtime_trace_hooks.json"
-)
-DEFAULT_SHADER_AGENT = (
-    ROOT / "endfield_reconstruction_lab" / "tools" / "shader_runtime_trace_agent.js"
-)
 EVENT_SCHEMA = "missionRuntimeTrace.event.v1"
 MANIFEST_SCHEMA = "missionRuntimeTrace.hooks.v2"
 AGENT_PLACEHOLDER = "__MISSION_TRACE_CONFIG__"
@@ -53,18 +47,17 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--game-root", type=Path, default=DEFAULT_GAME_ROOT)
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--agent", type=Path, default=DEFAULT_AGENT)
-    parser.add_argument("--shader-manifest", type=Path, default=DEFAULT_SHADER_MANIFEST)
-    parser.add_argument("--shader-agent", type=Path, default=DEFAULT_SHADER_AGENT)
+    parser.add_argument(
+        "--shader-manifest",
+        type=Path,
+        help="shader hook manifest; shader sampling runs only when both --shader-manifest and --shader-agent are given",
+    )
+    parser.add_argument("--shader-agent", type=Path, help="shader trace agent source")
     parser.add_argument("--shader-target", default="wulfa-settled")
     parser.add_argument(
         "--shader-start-immediately",
         action="store_true",
         help="start shader sampling at attach instead of waiting for the trigger file",
-    )
-    parser.add_argument(
-        "--no-shader-hooks",
-        action="store_true",
-        help="capture only Mission/Story events",
     )
     parser.add_argument("--process", help="process name override; defaults to the manifest")
     parser.add_argument(
@@ -441,7 +434,11 @@ def capture(args: argparse.Namespace) -> int:
         shader_manifest = None
         shader_agent_source = None
         shader_verified: dict[str, Path] = {}
-        if not args.no_shader_hooks:
+        if bool(args.shader_manifest) != bool(args.shader_agent):
+            raise CaptureConfigurationError(
+                "--shader-manifest and --shader-agent must be given together"
+            )
+        if args.shader_manifest:
             shader_manifest = load_shader_manifest(
                 args.shader_manifest.resolve(), args.shader_target
             )

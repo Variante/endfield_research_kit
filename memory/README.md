@@ -8,7 +8,8 @@ ownership, not by investigation date.
 - [`webui_recovery.md`](webui_recovery.md): WebUI-wide export flow, shared
   contracts, verification, and links to each page guide.
 - [`webui/`](webui/README.md): one recovery guide for each active WebUI page:
-  Story, Map, Characters, Gameplay, Audio, Assets, Text, and Updates, plus
+  Story, Map, Characters, Gameplay, Audio, Assets, Text, Updates, and Recovery,
+  plus
   [`webui/story_recovery.md`](webui/story_recovery.md): Story evidence,
   ownership, branches, ordering, validation, and remaining reconstruction gaps,
   shared by every consumer of Story evidence.
@@ -18,10 +19,6 @@ ownership, not by investigation date.
   evidence domain below that topic: payload families, gameplay semantics, the
   Wwise/HIRC chain, irradiance volumes, terrain layers, chunk/streaming
   schemas, and the consolidated slot and HIRC state.
-- [`character_render_and_animation_recovery.md`](character_render_and_animation_recovery.md):
-  character models, rendering, animation, and parity gaps. Framing, ownership,
-  and the evidence hierarchy only; the detail lives in
-  `endfield_reconstruction_lab/docs/`.
 
 ## Retention boundary
 
@@ -33,7 +30,6 @@ no longer exist independently of the proposed owner:
 | WebUI recovery | Owns the shared export and publication sequence across pages. |
 | Story recovery (`webui/story_recovery.md`) | Supplies Story evidence to Map, Audio, Mission Pipeline, and the source graph as well as Story. |
 | Game-data recovery | Defines raw formats, overlays, native gates, and cross-domain semantics before page projection. |
-| Character render/animation | Owns the optional Unity parity lab and retail observation gates; it is not part of WebUI export. |
 
 ## Writing rules
 
