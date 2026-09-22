@@ -35,11 +35,14 @@ DEFAULT_METADATA = Path("export_full/recovered/il2cpp/global-metadata.dat")
 DEFAULT_CATALOG = Path("reports/story/recovery/options/option_flow_runtime_metadata_focus.json")
 DEFAULT_JSON = Path("reports/story/recovery/options/option_flow_body_targets_gameassembly.json")
 DEFAULT_MD = Path("reports/story/recovery/options/option_flow_body_targets_gameassembly.md")
-# CodeRegistration VA is build-specific (HGP relocates it each GameAssembly build).
-# Current value is for the July-11 install. When a game update breaks the mapping
-# (symptom: "VA outside image" in parse_codegen_modules), re-derive it with
-# scratch/reverse_engineering/il2cpp_gameplay_sim/stage0/find_code_registration.py and update here.
-# Prior build was 0x18C439740.
+# CodeRegistration VA is build-specific (HGP relocates it each GameAssembly
+# build), so this literal is a last-resort override, not the normal path. The
+# CLI derives the value instead, with find_code_registration_candidates() gating
+# on the complete metadata image-name set; a recorded literal goes stale on the
+# next client update and then fails closed with "VA outside image" inside
+# parse_codegen_modules. Pass --code-registration only to pin a specific build
+# deliberately. Observed values: 0x18C439740, then 0x18B9217D0, then
+# 0x18A88E640; do not reuse one against a different GameAssembly.dll.
 DEFAULT_CODE_REGISTRATION = 0x18B9217D0
 # MetadataRegistration is likewise build-specific. It is only needed to name
 # generic method instantiations, which live in CodeRegistration.genericMethodPointers
@@ -3000,7 +3003,19 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
     md = catalog_module.Metadata(metadata_path)
     pe = PeImage(args.gameassembly)
     catalog = json.loads(args.catalog.read_text(encoding="utf-8"))
-    code_reg = parse_int(args.code_registration)
+    if args.code_registration:
+        code_reg = parse_int(args.code_registration)
+    else:
+        image_names = {md.string(image.name_index) for image in md.images}
+        candidates = find_code_registration_candidates(pe, image_names)
+        if len(candidates) != 1:
+            raise SystemExit(
+                f"{args.gameassembly}: expected exactly one Il2CppCodeRegistration "
+                f"matching the {len(image_names)} metadata image names; actual "
+                f"{[hex(value) for value in candidates]}. Pass --code-registration "
+                "to pin one explicitly."
+            )
+        code_reg = candidates[0]
     code_reg_summary = code_registration_summary(pe, code_reg)
     modules = parse_codegen_modules(pe, code_reg)
     ranges = image_method_ranges(md)
@@ -3647,7 +3662,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--gameassembly", type=Path, default=DEFAULT_GAMEASSEMBLY)
     parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA)
     parser.add_argument("--catalog", type=Path, default=DEFAULT_CATALOG)
-    parser.add_argument("--code-registration", default=hex(DEFAULT_CODE_REGISTRATION))
+    parser.add_argument(
+        "--code-registration",
+        default="",
+        help="Il2CppCodeRegistration VA. Empty derives it from the selected "
+             "GameAssembly.dll against the complete metadata image-name set, "
+             "which is what survives a client update.",
+    )
     parser.add_argument(
         "--include-generic-instantiations",
         action="store_true",
