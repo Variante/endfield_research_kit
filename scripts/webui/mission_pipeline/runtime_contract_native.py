@@ -58,6 +58,34 @@ class ChainResolver:
         first = set().union(*(self.callees(name) for name in sources))
         return first.union(*(self.callees(name) for name in first))
 
+    def inlined_into(self, target: str, sources: list[str]) -> bool:
+        """Whether a source body carries ``target``'s own iFix patch test.
+
+        An iFix-wrapped method opens with ``IsPatched(<its patch id>)``, and the
+        id is unique to that method; when the compiler inlines it, the copy
+        keeps that test. So a caller that tests the target's id contains the
+        target's body even though it never calls it.
+        """
+        pointers = sorted(self.index.pointers_by_name.get(target) or [])
+        patch_id = self.index.ifix_patch_id(pointers[0]) if len(pointers) == 1 else None
+        if patch_id is None:
+            return False
+        for source in sources:
+            for body in self.index.overload_bodies(*_split(source)):
+                try:
+                    rows = self.index.body_with_fragments(body)
+                except ClaimError:
+                    rows = body.rows
+                texts = [str(row.get("text") or "") for row in rows]
+                for position, text in enumerate(texts):
+                    if text != f"mov ecx, {patch_id}":
+                        continue
+                    for later in texts[position + 1:position + 4]:
+                        call = re.fullmatch(r"call 0x([0-9a-f]+)", later)
+                        if call and "IFix.WrappersManagerImpl.IsPatched" in self.index.names_of(int(call.group(1), 16)):
+                            return True
+        return False
+
     def resolve(self, hop: str, previous_type: str | None) -> str | None:
         return self.index.resolve(hop, previous_type)
 
@@ -99,8 +127,14 @@ def verify_row(row: dict[str, Any], resolver: ChainResolver) -> dict[str, Any]:
                 _method(name) in DISPATCHERS for name in earlier
             ):
                 link["route"] = "dispatch"
+            elif target["resolved"] in resolver.reach(earlier):
+                link["holds"] = True
+            elif resolver.inlined_into(target["resolved"], earlier):
+                # The hop's body runs inside an earlier hop: same effect, no call.
+                link["holds"] = True
+                link["route"] = "inlined"
             else:
-                link["holds"] = target["resolved"] in resolver.reach(earlier)
+                link["holds"] = False
             links.append(link)
         earlier.extend(entry["resolved"] for entry in stage if entry["resolved"])
     # A middle hop the build inlined is unreachable while the hop after it is
@@ -119,6 +153,8 @@ def verify_row(row: dict[str, Any], resolver: ChainResolver) -> dict[str, Any]:
         status = "partially_resolved"
     elif any(link.get("route") == "bypassed" for link in links):
         status = "verified_with_bypassed_hops"
+    elif any(link.get("route") == "inlined" for link in links):
+        status = "verified_with_inlined_hops"
     else:
         status = "verified"
     addresses = " -> ".join(

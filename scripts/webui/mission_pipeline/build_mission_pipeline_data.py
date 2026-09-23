@@ -925,8 +925,9 @@ RUNTIME_CONTRACT = {
             "id": "factory-building-panel-lock-radio",
             "event": "FactoryBuildingPanelLock quest-state radio gate",
             "handler": (
-                "FactoryUtil.CheckBuildingLock -> CheckIsBuildingInteractLocked / "
-                "CheckIsBuildingMoveAndDelLocked -> GameAction.RadioRuntimeData"
+                "FactoryUtil.CheckIsBuildingInteractLocked / "
+                "FactoryUtil.CheckIsBuildingMoveAndDelLocked -> "
+                "FactoryUtil.CheckBuildingLock / GameAction.RadioRuntimeData..ctor"
             ),
             "address": None,
             "fields": ["startQuestId", "endQuestId", "lockType", "args", "radioId"],

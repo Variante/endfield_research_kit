@@ -59,21 +59,36 @@ model these carriers feed, and everything about presenting the result, is
   `contracts/dialog_finish_native.json`), not tokens pinned by body hash. On
   the current build DialogTreeIfNode delegates to a new
   `DialogManager.GetIfNextIndex`; the meaning holds (outgoing 1 exactly when
-  `GameCondition.result == 1`). The Timeline option write moved into
-  `TimelineRuntimeUtils.TrySetNewOptionIndex`, so the option-index contract is
-  `pendingReview` and Timeline option routes stay unvalidated until it is
-  re-read. Branch-sequence order edges are admitted only while the
-  `Branch.Execute` list-order claim holds.
+  `GameCondition.result == 1`). The Timeline option index now travels
+  `DialogTimelineOptionData.optionIndex` -> `DialogChooseOption` ->
+  `TimelineRuntimeUtils.TrySetNewOptionIndex` (every director under the root)
+  -> `TimelinePlayable.newOptionIndex`; `Evaluate` commits it to
+  `curOptionIndex` and keeps the previous one in `lastOptionIndex`, and
+  `CheckWillRuntimeElementEnabled` enables an element whose option index is
+  zero or equals the current *or previous* selection -- the gate is wider than
+  the previous build's single matching value during a switch. Branch-sequence
+  order edges are admitted only while the `Branch.Execute` list-order claim
+  holds.
+- An iFix-wrapped method opens with `IsPatched(<its own patch id>)`, and an
+  inlined copy keeps that test, so a caller testing a method's patch id
+  contains that method's body. This is how an inlined hop is proved without a
+  call edge. `TaskCondition.InvokeOnIsCompleteChangeAction` is inlined into
+  `LevelScriptRuntime.UpdateTaskMainObjectiveIsCompleted` on the current
+  build: the server progress path invokes `m_onIsCompleteChangeAction` without
+  calling the named method, so a runtime hook on that method misses this path;
+  `contracts/mission_task_paths.json` still names it and is pinned to the
+  previous build.
 - A generated artifact made on one build is current only when its recorded
   native hashes equal the installed build's. The reverse-PPtr audit (Story
   root playback aliases) and `webui/story/dynamic_scene.json` were made on the
   previous build and publish nothing until regenerated; the latter still names
   layout-v1 export paths.
-- Mission Pipeline `RUNTIME_CONTRACT` rows are re-verified by name each run.
-  Rows whose recorded chain no longer holds on the current build
-  (`FactoryUtil.CheckBuildingLock`, the objective-completion ->
-  `InvokeOnIsCompleteChangeAction` link) are `link_failed` and need a fresh
-  reading, not a pin.
+- Mission Pipeline `RUNTIME_CONTRACT` rows are re-verified by name each run;
+  a hop reached through an inlined copy is `verified_with_inlined_hops`. A row
+  whose chain no longer holds is `link_failed` and needs a fresh reading, not
+  a pin; the building-panel lock row had its chain written backwards (the
+  public `CheckIsBuilding*Locked` checks call `CheckBuildingLock` and build the
+  radio).
 
 ## Spatial carriers
 
