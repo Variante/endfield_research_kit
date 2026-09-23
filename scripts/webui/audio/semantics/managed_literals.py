@@ -1562,6 +1562,12 @@ MANAGED_AUDIO_CALLSITE_CONTEXTS = {
         "targetBinding": "imagePosterWorldPosition", "triggerRole": "spaceshipImagePosterPageFlip",
     },
     "au_ui_hud_hiddentube_outofrange": {
+        # The RemoteFactoryEventHandler callbacks were split into factory modes and
+        # event-hub handlers; these load this literal and reach the sink there.
+        "consumerCandidates": (
+            "Beyond.Gameplay.Factory.BuildingMode._UpdateUdpipeConnectList",
+            "Beyond.Gameplay.Core.GameMech.LinkWireBrain._UpdateLine",
+        ),
         "consumerType": "Beyond.Gameplay.RemoteFactory.RemoteFactoryEventHandler", "consumerMethod": "OnUdpipeConnectPreviewOutOfRange",
         "methodIndex": 29012, "methodVa": "0x182abf3a0",
         "literalLoadVa": "0x182abf8f6", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
@@ -1694,6 +1700,11 @@ MANAGED_AUDIO_CALLSITE_CONTEXTS = {
         "branchCondition": "newCoreState!=0",
     },
     "au_ui_belt_confirm": {
+        # The RemoteFactoryEventHandler callbacks were split into factory modes and
+        # event-hub handlers; these load this literal and reach the sink there.
+        "consumerCandidates": (
+            "Beyond.Gameplay.Factory.ConveyorMode+<>c__DisplayClass136_0.<ConveyorHandle_ConfirmWholeConveyor>b__0",
+        ),
         "consumerType": "Beyond.Gameplay.RemoteFactory.RemoteFactoryEventHandler", "consumerMethod": "OnConveyorWholeConfirmed",
         "methodIndex": 28989, "methodVa": "0x18752bcfc",
         "literalLoadVa": "0x18752bd49", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",
@@ -1729,6 +1740,11 @@ MANAGED_AUDIO_CALLSITE_CONTEXTS = {
         "targetBinding": "globalAudioObject", "triggerRole": "skillCastOutOfRangeHint",
     },
     "au_ui_fac_checkerboard_fail": {
+        # The RemoteFactoryEventHandler callbacks were split into factory modes and
+        # event-hub handlers; these load this literal and reach the sink there.
+        "consumerCandidates": (
+            "Beyond.Gameplay.Factory.BuildingMode._HandleGridHovered",
+        ),
         "consumerType": "Beyond.Gameplay.RemoteFactory.RemoteFactoryEventHandler", "consumerMethod": "OnBuildingPreviewPositionRotationChanged",
         "methodIndex": 29002, "methodVa": "0x18752ba14",
         "literalLoadVa": "0x18752ba60", "literalArgumentRegister": "rbx", "literalArgumentInstruction": "mov",
@@ -1737,6 +1753,11 @@ MANAGED_AUDIO_CALLSITE_CONTEXTS = {
         "branchCondition": "positionRotationValid=false",
     },
     "au_ui_fac_no_power": {
+        # The RemoteFactoryEventHandler callbacks were split into factory modes and
+        # event-hub handlers; these load this literal and reach the sink there.
+        "consumerCandidates": (
+            "Beyond.Gameplay.RemoteFactory.EventHub.FacChapterPowerChangedEventHandler.PreHandle",
+        ),
         "consumerType": "Beyond.Gameplay.RemoteFactory.RemoteFactoryEventHandler", "consumerMethod": "OnChapterPowerOutage",
         "methodIndex": 28984, "methodVa": "0x18752babc",
         "literalLoadVa": "0x18752bb23", "literalArgumentRegister": "rcx", "literalArgumentInstruction": "mov",

@@ -199,16 +199,51 @@ def _address(index: Any, full: str | None) -> str | None:
     return f"0x{pointers[0]:x}" if len(pointers) == 1 else None
 
 
-def _resolve_consumer(index: Any, type_name: str, method: str) -> str | None:
+# Compiler-generated names carry a per-build ordinal (``<M>d__106``,
+# ``<>c__DisplayClass136_0``, ``<M>b__12_0``) that renumbers when any sibling
+# closure or iterator is added; the part before it is the source method.
+_GENERATED_ORDINAL = re.compile(r"(d__|DisplayClass|b__|g__[^|]*\|)\d+(?:_\d+)?")
+
+
+def _without_ordinals(name: str) -> str:
+    return _GENERATED_ORDINAL.sub(lambda match: match.group(1) + "#", name)
+
+
+def _generated_name_index(index: Any) -> dict[str, list[str]]:
+    cached = getattr(index, "_generated_name_index", None)
+    if cached is None:
+        cached = defaultdict(list)
+        for full in index.pointers_by_name:
+            if "<" in full:
+                cached[_without_ordinals(full)].append(full)
+        try:
+            index._generated_name_index = cached
+        except AttributeError:
+            pass
+    return cached
+
+
+def _resolve_consumer(
+    index: Any, type_name: str, method: str, candidates: Iterable[str] = ()
+) -> str | None:
     """The consumer's full name on this build.
 
-    A type that moved namespace keeps its own name and nesting, so a missing
-    full name falls back to the unique ``Outer+Inner.Method`` suffix; the
-    literal and playback claims still have to hold on the body it finds.
+    In order: the recorded name; a reviewed candidate the row lists for a
+    consumer that moved; the same compiler-generated name with its ordinals
+    renumbered; and a type that moved namespace by its unique ``Outer+Inner``
+    suffix. Every route is a unique match, and the literal and playback claims
+    still have to hold on the body it finds.
     """
     full = _full(type_name, method)
     if full in index.pointers_by_name:
         return full
+    for candidate in candidates:
+        if candidate in index.pointers_by_name:
+            return candidate
+    if "<" in full:
+        renumbered = _generated_name_index(index).get(_without_ordinals(full)) or []
+        if len(renumbered) == 1:
+            return renumbered[0]
     resolve = getattr(index, "resolve", None)
     short_type = type_name.rsplit(".", 1)[-1]
     if resolve is None or not short_type:
@@ -219,7 +254,13 @@ def _resolve_consumer(index: Any, type_name: str, method: str) -> str | None:
 def verify_row(build: _Build, event: str, row: Mapping[str, Any]) -> tuple[dict[str, Any] | None, str]:
     """Return the row with this build's addresses, or ``None`` and the reason it is withheld."""
     index = build.index
-    consumer = _resolve_consumer(index, str(row.get("consumerType") or ""), str(row.get("consumerMethod") or ""))
+    consumer_type = str(row.get("consumerType") or "")
+    # A reviewed row may name alternative methods as ``A / B``; each is a candidate.
+    alternatives = [part.split("(")[0].strip() for part in str(row.get("consumerMethod") or "").split(" / ")]
+    consumer = _resolve_consumer(
+        index, consumer_type, alternatives[0],
+        [*(row.get("consumerCandidates") or ()), *(_full(consumer_type, name) for name in alternatives[1:])],
+    )
     if consumer is None:
         return None, "consumer-missing"
     literal = str(row.get("customStateName") or event)
@@ -270,10 +311,11 @@ def verify_row(build: _Build, event: str, row: Mapping[str, Any]) -> tuple[dict[
         "switchMethodVa": _address(index, row.get("switchMethod")),
         "playbackHashCallVa": _address(index, row.get("playbackHashCall")),
         "consumerType": _split(consumer)[0],
+        "consumerMethod": _split(consumer)[1] if len(alternatives) == 1 else row.get("consumerMethod"),
         "nativeRederivation": {
             "status": "verified",
-            **({"consumerMovedFrom": row.get("consumerType")}
-               if _split(consumer)[0] != row.get("consumerType") else {}),
+            **({"consumerMovedFrom": _full(consumer_type, str(row.get("consumerMethod")))}
+               if consumer not in {_full(consumer_type, name) for name in alternatives} else {}),
             "literalSource": source,
             "literalLoader": loader,
             "branchConditionStatus": "reviewedOnPreviousBuild",
