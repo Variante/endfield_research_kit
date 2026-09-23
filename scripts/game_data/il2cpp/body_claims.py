@@ -235,15 +235,61 @@ class BodyIndex:
         body.fragment_rows = self.body_with_fragments(body)[len(body.rows):]
         return body
 
+    @cached_property
+    def chained_fragments(self) -> dict[int, list[tuple[int, int]]]:
+        """Each function's split-off ``.pdata`` fragments, by chained unwind info.
+
+        A cold path the compiler moved into its own ``.pdata`` entry carries
+        ``UNW_FLAG_CHAININFO``, and its unwind data ends in the RUNTIME_FUNCTION of
+        the function it belongs to. Following that chain names a fragment's
+        owner exactly, however the owner reaches it.
+        """
+        pe = self.pe
+        section = next((row for row in pe.sections if row["name"] == ".pdata"), None)
+        if section is None:
+            return {}
+        raw = bytes(pe.buf[section["rawPointer"]:section["rawPointer"] + section["virtualSize"]])
+        entries: dict[int, tuple[int, int]] = {}
+        for offset in range(0, len(raw) - 11, 12):
+            begin, end, unwind = struct.unpack_from("<III", raw, offset)
+            if begin == 0:
+                break
+            entries[pe.image_base + begin] = (pe.image_base + end, unwind)
+
+        def root(start: int) -> int:
+            for _hop in range(8):
+                info = pe.file_offset_for_rva(entries[start][1])[0]
+                if not (pe.buf[info] >> 3) & 0x4:
+                    return start
+                chained = info + 4 + ((pe.buf[info + 2] + 1) & ~1) * 2
+                parent = pe.image_base + struct.unpack_from("<I", pe.buf, chained)[0]
+                if parent not in entries:
+                    return start
+                start = parent
+            return start
+
+        fragments: dict[int, list[tuple[int, int]]] = {}
+        for start, (end, _unwind) in entries.items():
+            owner = root(start)
+            if owner != start:
+                fragments.setdefault(owner, []).append((start, end - start))
+        return fragments
+
     def body_with_fragments(self, body: Body) -> list[dict[str, Any]]:
-        """A body's rows plus the split-off fragments it jumps to, one level."""
+        """A body's rows plus every fragment it owns and the fragments it jumps to."""
         rows = list(body.rows)
+        followed = set()
+        for start, size in self.chained_fragments.get(body.pointer, ()):
+            followed.add(start)
+            rows.extend(self._decode(start, size))
         for row in body.rows:
             match = _JUMP.fullmatch(str(row.get("text") or ""))
             if not match:
                 continue
             target = int(match.group(1), 16)
             if body.pointer <= target < body.pointer + body.size or target in self.names_by_pointer:
+                continue
+            if target in followed:
                 continue
             if target in self.extents and self.extents[target] - target <= MAX_FOLLOWED_BYTES:
                 rows.extend(self._decode(target, self.extents[target] - target))
