@@ -44,6 +44,24 @@
    "dispatcherVa": "0x183cb7030",
    "tableVa": "0x183cbc444",
    "entryCount": 309
+  },
+  "SelectorFinder": {
+   "base": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack",
+   "dispatcherVa": "0x18390c5f0",
+   "tableVa": "0x18390ce54",
+   "entryCount": 24
+  },
+  "SelectorValidator": {
+   "base": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_Validator_DataForMemoryPack",
+   "dispatcherVa": "0x183fd16d0",
+   "tableVa": "0x183fd1bdc",
+   "entryCount": 13
+  },
+  "SelectorPostProcessor": {
+   "base": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_PostProcessor_DataForMemoryPack",
+   "dispatcherVa": "0x1842a34f0",
+   "tableVa": "0x1842a3924",
+   "entryCount": 10
   }
  },
  "families": {
@@ -26111,6 +26129,341 @@
     "tag": 308,
     "memberCount": 8,
     "wrappedType": "Beyond.NPC.NPCCrowdEntityComponentData"
+   }
+  ],
+  "SelectorFinder": [
+   {
+    "name": "Core_Selector_AbilityEntityTargetFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AbilityEntityTargetFinder_DataForMemoryPack",
+    "tag": 0,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+AbilityEntityTargetFinder+Data"
+   },
+   {
+    "name": "Core_Selector_AllEnemyFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AllEnemyFinder_DataForMemoryPack",
+    "tag": 1,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+AllEnemyFinder+Data"
+   },
+   {
+    "name": "Core_Selector_CharacterTeamFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CharacterTeamFinder_DataForMemoryPack",
+    "tag": 2,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+CharacterTeamFinder+Data"
+   },
+   {
+    "name": "Core_Selector_FixedPointFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_FixedPointFinder_DataForMemoryPack",
+    "tag": 3,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+FixedPointFinder+Data"
+   },
+   {
+    "name": "Core_Selector_GlobalContextFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GlobalContextFinder_DataForMemoryPack",
+    "tag": 4,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+GlobalContextFinder+Data"
+   },
+   {
+    "name": "Core_Selector_GodEntityFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GodEntityFinder_DataForMemoryPack",
+    "tag": 5,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+GodEntityFinder+Data"
+   },
+   {
+    "name": "Core_Selector_GuardAITargetFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_GuardAITargetFinder_DataForMemoryPack",
+    "tag": 6,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+GuardAITargetFinder+Data"
+   },
+   {
+    "name": "Core_Selector_HitBoxFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HitBoxFinder_DataForMemoryPack",
+    "tag": 7,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+HitBoxFinder+Data"
+   },
+   {
+    "name": "Core_Selector_InFightEnemyFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InFightEnemyFinder_DataForMemoryPack",
+    "tag": 8,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+InFightEnemyFinder+Data"
+   },
+   {
+    "name": "Core_Selector_InteractiveShapeFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InteractiveShapeFinder_DataForMemoryPack",
+    "tag": 9,
+    "memberCount": 12,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+InteractiveShapeFinder+Data"
+   },
+   {
+    "name": "Core_Selector_MainTargetFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainTargetFinder_DataForMemoryPack",
+    "tag": 10,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+MainTargetFinder+Data"
+   },
+   {
+    "name": "Core_Selector_OwnerMountPointPosFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_OwnerMountPointPosFinder_DataForMemoryPack",
+    "tag": 11,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+OwnerMountPointPosFinder+Data"
+   },
+   {
+    "name": "Core_Selector_OwnerPartsFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_OwnerPartsFinder_DataForMemoryPack",
+    "tag": 12,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+OwnerPartsFinder+Data"
+   },
+   {
+    "name": "Core_Selector_OwnerSpawnedEntityFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_OwnerSpawnedEntityFinder_DataForMemoryPack",
+    "tag": 13,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+OwnerSpawnedEntityFinder+Data"
+   },
+   {
+    "name": "Core_Selector_PointFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_PointFinder_DataForMemoryPack",
+    "tag": 14,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+PointFinder+Data"
+   },
+   {
+    "name": "Core_Selector_ProjectileFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ProjectileFinder_DataForMemoryPack",
+    "tag": 15,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+ProjectileFinder+Data"
+   },
+   {
+    "name": "Core_Selector_RandomPointFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_RandomPointFinder_DataForMemoryPack",
+    "tag": 16,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+RandomPointFinder+Data"
+   },
+   {
+    "name": "Core_Selector_ShapeFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ShapeFinder_DataForMemoryPack",
+    "tag": 17,
+    "memberCount": 11,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+ShapeFinder+Data"
+   },
+   {
+    "name": "Core_Selector_ShapeFinder_ShapeFinderData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ShapeFinder_ShapeFinderDataForMemoryPack",
+    "tag": 18,
+    "memberCount": 11,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+ShapeFinder+ShapeFinderData"
+   },
+   {
+    "name": "Core_Selector_SmartTargetFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SmartTargetFinder_DataForMemoryPack",
+    "tag": 19,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+SmartTargetFinder+Data"
+   },
+   {
+    "name": "Core_Selector_SnapPointFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SnapPointFinder_DataForMemoryPack",
+    "tag": 20,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+SnapPointFinder+Data"
+   },
+   {
+    "name": "Core_Selector_SourceFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SourceFinder_DataForMemoryPack",
+    "tag": 21,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+SourceFinder+Data"
+   },
+   {
+    "name": "Core_Selector_TargetFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TargetFinder_DataForMemoryPack",
+    "tag": 22,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+TargetFinder+Data"
+   },
+   {
+    "name": "Core_Selector_TyphoeaArcherySelectedFinder_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPack",
+    "tag": 23,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+TyphoeaArcherySelectedFinder+Data"
+   }
+  ],
+  "SelectorValidator": [
+   {
+    "name": "Core_Selector_AttributeValidator_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_AttributeValidator_DataForMemoryPack",
+    "tag": 0,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+AttributeValidator+Data"
+   },
+   {
+    "name": "Core_Selector_BuffValidator_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_BuffValidator_DataForMemoryPack",
+    "tag": 1,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+BuffValidator+Data"
+   },
+   {
+    "name": "Core_Selector_CheckRaycastValidator_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CheckRaycastValidator_DataForMemoryPack",
+    "tag": 2,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+CheckRaycastValidator+Data"
+   },
+   {
+    "name": "Core_Selector_CurHpRatioValidator_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CurHpRatioValidator_DataForMemoryPack",
+    "tag": 3,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+CurHpRatioValidator+Data"
+   },
+   {
+    "name": "Core_Selector_DistanceValidator_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_DistanceValidator_DataForMemoryPack",
+    "tag": 4,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+DistanceValidator+Data"
+   },
+   {
+    "name": "Core_Selector_ExcludeOwnerValidator_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ExcludeOwnerValidator_DataForMemoryPack",
+    "tag": 5,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+ExcludeOwnerValidator+Data"
+   },
+   {
+    "name": "Core_Selector_HittableObjectValidator_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_HittableObjectValidator_DataForMemoryPack",
+    "tag": 6,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+HittableObjectValidator+Data"
+   },
+   {
+    "name": "Core_Selector_InScreenValidator_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InScreenValidator_DataForMemoryPack",
+    "tag": 7,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+InScreenValidator+Data"
+   },
+   {
+    "name": "Core_Selector_InteractiveKeyValidator_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InteractiveKeyValidator_DataForMemoryPack",
+    "tag": 8,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+InteractiveKeyValidator+Data"
+   },
+   {
+    "name": "Core_Selector_MainCharacterValidator_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_MainCharacterValidator_DataForMemoryPack",
+    "tag": 9,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+MainCharacterValidator+Data"
+   },
+   {
+    "name": "Core_Selector_SkillCastIdValidator_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_SkillCastIdValidator_DataForMemoryPack",
+    "tag": 10,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+SkillCastIdValidator+Data"
+   },
+   {
+    "name": "Core_Selector_TagValidator_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TagValidator_DataForMemoryPack",
+    "tag": 11,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+TagValidator+Data"
+   },
+   {
+    "name": "Core_Selector_TargetContainsValidator_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TargetContainsValidator_DataForMemoryPack",
+    "tag": 12,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+TargetContainsValidator+Data"
+   }
+  ],
+  "SelectorPostProcessor": [
+   {
+    "name": "Core_Selector_CircularOrderSort_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_CircularOrderSort_DataForMemoryPack",
+    "tag": 0,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+CircularOrderSort+Data"
+   },
+   {
+    "name": "Core_Selector_ConvertToBoxCenterPlaneProjectionPoint_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ConvertToBoxCenterPlaneProjectionPoint_DataForMemoryPack",
+    "tag": 1,
+    "memberCount": 1,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+ConvertToBoxCenterPlaneProjectionPoint+Data"
+   },
+   {
+    "name": "Core_Selector_ConvertToPosition_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ConvertToPosition_DataForMemoryPack",
+    "tag": 2,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+ConvertToPosition+Data"
+   },
+   {
+    "name": "Core_Selector_ConvertToSlot_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ConvertToSlot_DataForMemoryPack",
+    "tag": 3,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+ConvertToSlot+Data"
+   },
+   {
+    "name": "Core_Selector_ExcludeTarget_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ExcludeTarget_DataForMemoryPack",
+    "tag": 4,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+ExcludeTarget+Data"
+   },
+   {
+    "name": "Core_Selector_LockOrMarkTargetFilter_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_LockOrMarkTargetFilter_DataForMemoryPack",
+    "tag": 5,
+    "memberCount": 0,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+LockOrMarkTargetFilter+Data"
+   },
+   {
+    "name": "Core_Selector_NavMeshPathPositionProcessor_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_NavMeshPathPositionProcessor_DataForMemoryPack",
+    "tag": 6,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+NavMeshPathPositionProcessor+Data"
+   },
+   {
+    "name": "Core_Selector_PriorityFilter_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_PriorityFilter_DataForMemoryPack",
+    "tag": 7,
+    "memberCount": 6,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+PriorityFilter+Data"
+   },
+   {
+    "name": "Core_Selector_ShuffleTarget_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_ShuffleTarget_DataForMemoryPack",
+    "tag": 8,
+    "memberCount": 2,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+ShuffleTarget+Data"
+   },
+   {
+    "name": "Core_Selector_TargetPriorityFilter_Data",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TargetPriorityFilter_DataForMemoryPack",
+    "tag": 9,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.Core.Selector+TargetPriorityFilter+Data"
    }
   ]
  }

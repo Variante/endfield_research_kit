@@ -39,6 +39,11 @@ FAMILY_BASES = {
     "AbilityActionData": "Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
     "GameCondition": "Beyond_Gameplay_GameConditionForMemoryPack",
     "BaseComponentData": "Beyond_Gameplay_BaseComponentDataForMemoryPack",
+    # The selector unions inside every TargetSettings (Buff/Skill finders,
+    # validators and post-processors) renumber the same way.
+    "SelectorFinder": "Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack",
+    "SelectorValidator": "Beyond_Gameplay_Core_Selector_Validator_DataForMemoryPack",
+    "SelectorPostProcessor": "Beyond_Gameplay_Core_Selector_PostProcessor_DataForMemoryPack",
 }
 _WRAPPER_PREFIXES = ("Beyond.MemoryPack.Beyond_Gameplay_Actions_", "Beyond.MemoryPack.Beyond_Gameplay_")
 _WRAPPER_SUFFIX = "ForMemoryPack"

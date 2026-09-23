@@ -414,7 +414,14 @@ member-count table was missed once, which rejected most items and broke the
 audio build. Rekeying keeps each *reviewed* count, so an action whose current
 wrapper has a different member count (twelve on this build, EffectAction the
 largest) fails closed at the reviewed header rather than being read with a
-stale layout.
+stale layout. The selector unions inside TargetSettings (finder, validator,
+post-processor) are small unions ranked the same way, and their Buff tables
+had shifted by the subtypes added since (`AllEnemyFinder`, `BuffValidator`,
+`CircularOrderSort`, ...); SkillData had papered over this with a hand-kept
+override table. They are now `levelscript_union_tags` families, the Buff
+tables are keyed by name, every current subtype is listed, and each layout is
+the current wrapper's member list or `None` where a member type
+(`ColliderShapeData`, `BuffFindSettings`) has no reviewed reader.
 
 Items the reviewed decoders cannot read, reshaped or never typed, are
 consumed by the build's derived plan (`derived_values.ValueReader`) and

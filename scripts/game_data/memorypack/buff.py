@@ -21,6 +21,7 @@ from scripts.game_data.memorypack.core import (
     unique_strings,
 )
 from scripts.game_data.memorypack.schemas import BUFF_MEMBER_COUNT, MEMORYPACK_FIELD_SCHEMAS
+from scripts.game_data import levelscript_union_tags as union_tags
 
 
 BUFF_MEMORYPACK_FIELD_TYPES = {
@@ -751,10 +752,10 @@ BUFF_EFFECT_ACTION_CFG_MIN_BYTES = 256
 BUFF_CREATE_BUFF_ICON_DURATION_SOURCE_BYTES = 9
 
 
-BUFF_CREATE_BUFF_INPUT_TAIL_BYTES = 5
 
 
 BUFF_CREATE_BUFF_MAX_BUFF_IDS = 16
+BUFF_CREATE_BUFF_MAX_ASSIGN_ITEMS = 64
 
 
 BUFF_MODIFY_DYNAMIC_BLACKBOARD_OPERATION_NAMES = {
@@ -1926,74 +1927,101 @@ def read_buff_create_buff_icon_duration_source_partial(
     }, end
 
 
+def read_buff_create_buff_assign_pair(
+    data: bytes,
+    offset: int,
+    limit: int,
+    field_name: str,
+) -> tuple[dict[str, Any], int]:
+    """One ``Blackboard.AssignPair``: six members in wrapper order."""
+    if offset >= limit or data[offset] != 6:
+        raise ValueError(f"{field_name}:member-count")
+    offset += 1
+    if offset + 4 > limit:
+        raise ValueError(f"{field_name}.directValueType:truncated")
+    direct_value_type = struct.unpack_from("<i", data, offset)[0]
+    offset += 4
+    input_value_key, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.inputValueKey", max_length=256,
+    )
+    if offset + 4 > limit:
+        raise ValueError(f"{field_name}.numericValue:truncated")
+    numeric_value = struct.unpack_from("<f", data, offset)[0]
+    offset += 4
+    if not math.isfinite(numeric_value):
+        raise ValueError(f"{field_name}.numericValue:non-finite")
+    string_value, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.stringValue", max_length=512,
+    )
+    target_key, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.targetKey", max_length=256,
+    )
+    use_direct_value, offset = read_buff_bool_field_bounded(
+        data, offset, limit, f"{field_name}.useDirectValue",
+    )
+    return {
+        "directValueTypeRaw": direct_value_type,
+        "inputValueKey": input_value_key,
+        "numericValue": round(numeric_value, 6),
+        "stringValue": string_value,
+        "targetKey": target_key,
+        "useDirectValue": use_direct_value,
+    }, offset
+
+
 def read_buff_create_buff_input_partial(
     data: bytes,
     offset: int,
     limit: int,
     field_name: str,
 ) -> tuple[dict[str, Any], int]:
+    """One ``CreateBuffActionInput``, read member by member.
+
+    The wrapper's five members are assignBlackboard, assignItems (a list of
+    AssignPair), buffId, buffIdKey and readIdFromBlackboard. An earlier reading
+    took the list count for a reserved word and scanned forward for a ``buff_*``
+    string followed by five zero bytes -- an empty buffIdKey and a false flag --
+    so an input with a buffIdKey matched a later action's id instead of its own.
+    """
     start = offset
-    if offset + 10 > limit:
-        raise ValueError(f"{field_name}:truncated-prefix")
-    member_count = data[offset]
+    if offset >= limit or data[offset] != 5:
+        raise ValueError(f"{field_name}:member-count")
     offset += 1
-    if member_count != 5:
-        raise ValueError(f"{field_name}:member-count={member_count}")
-    flag_candidate, offset = read_buff_bool_field_bounded(data, offset, limit, f"{field_name}.flagCandidate")
-    reserved_u32, offset = read_buff_u32_field_bounded(data, offset, limit, f"{field_name}.reservedU32")
-    # CreateBuffActionInput flattens an inherited dynamic BuffId value.  The
-    # leading discriminator selects several blackboard expression shapes, so
-    # their inner byte length is not fixed.  Every current formatter branch
-    # terminates with the authored BuffId string and the same four zero u32
-    # fields.  Use both anchors and require one unique bounded candidate.
-    scan_end = min(limit, offset + 2048)
-    candidates: list[tuple[int, int, str]] = []
-    for marker in range(offset, max(offset, scan_end - 4)):
-        length = struct.unpack_from("<I", data, marker)[0]
-        if length < 5 or length > 256:
-            continue
-        string_end = marker + 4 + length
-        tail_end = string_end + BUFF_CREATE_BUFF_INPUT_TAIL_BYTES
-        if tail_end > scan_end:
-            continue
-        try:
-            value = data[marker + 4:string_end].decode("utf-8")
-        except UnicodeDecodeError:
-            continue
-        if re.fullmatch(r"buff_[A-Za-z0-9_]+", value) is None:
-            continue
-        if data[string_end:tail_end] != b"\x00" * BUFF_CREATE_BUFF_INPUT_TAIL_BYTES:
-            continue
-        candidates.append((marker, tail_end, value))
-    if not candidates:
-        raise ValueError(f"{field_name}.buffIdCandidates=0")
-    # The inherited expression payload precedes the authored fallback BuffId;
-    # later candidates can belong to following action fields/items because the
-    # outer action limit is intentionally broad.  The first terminal anchor is
-    # therefore the only candidate within this input's grammar.
-    marker, offset, buff_id = candidates[0]
-    inherited_value_raw = data[start + 6:marker]
-    tail = data[offset - BUFF_CREATE_BUFF_INPUT_TAIL_BYTES:offset]
+    assign_blackboard, offset = read_buff_bool_field_bounded(
+        data, offset, limit, f"{field_name}.assignBlackboard",
+    )
+    count, offset = read_buff_u32_field_bounded(data, offset, limit, f"{field_name}.assignItems.count")
+    assign_items: list[dict[str, Any]] | None
+    if count == MEMORYPACK_NULL_COUNT:
+        assign_items = None
+    elif count > BUFF_CREATE_BUFF_MAX_ASSIGN_ITEMS:
+        raise ValueError(f"{field_name}.assignItems.count={count}")
+    else:
+        assign_items = []
+        for index in range(count):
+            item, offset = read_buff_create_buff_assign_pair(
+                data, offset, limit, f"{field_name}.assignItems[{index}]",
+            )
+            assign_items.append(item)
+    buff_id, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.buffId", max_length=256,
+    )
+    buff_id_key, offset = read_buff_memorypack_utf8_string_strict_bounded(
+        data, offset, limit, f"{field_name}.buffIdKey", max_length=256,
+    )
+    read_id_from_blackboard, offset = read_buff_bool_field_bounded(
+        data, offset, limit, f"{field_name}.readIdFromBlackboard",
+    )
     return {
-        "status": "partial",
-        "semanticStatus": "partial-create-buff-input-fields-opaque",
+        "status": "exact",
         "offset": format_offset(start),
         "bytes": offset - start,
-        "memberCount": member_count,
-        "flagCandidate": flag_candidate,
-        "reservedU32": reserved_u32,
-        "buffId": buff_id,
-        "boundedBuffIdCandidateCount": len(candidates),
-        "inheritedValueBytes": len(inherited_value_raw),
-        "inheritedValueRawSha256": hashlib.sha256(inherited_value_raw).hexdigest(),
-        "inheritedValueStringHits": scan_length_prefixed_utf8_string_hits(
-            inherited_value_raw,
-            start=0,
-            max_scan_bytes=len(inherited_value_raw),
-            max_samples=8,
-            max_length=256,
-        ),
-        "tailRaw": tail.hex(" "),
+        "memberCount": 5,
+        "assignBlackboard": assign_blackboard,
+        "assignItems": assign_items,
+        "buffId": buff_id or "",
+        "buffIdKey": buff_id_key or "",
+        "readIdFromBlackboard": read_id_from_blackboard,
     }, offset
 
 
@@ -3605,79 +3633,109 @@ BUFF_SELECTOR_TARGETFINDER_MEMBERS = (
 )
 
 
-BUFF_SELECTOR_FINDER_SUBTYPES: dict[int, tuple[str, tuple | None]] = {
-    0x00: ("AbilityEntityTargetFinder", ()),
-    0x01: ("CharacterTeamFinder", ()),
-    0x02: ("FixedPointFinder", (("positionOffset", "vector3"),
+def _selector_subtypes(
+    family: str, rows: tuple[tuple[str, tuple | None], ...]
+) -> dict[Any, tuple[str, tuple | None]]:
+    """Key selector subtype layouts by the build's tag for each type name.
+
+    A selector tag is the type's rank in its union, so a subtype added to the
+    game shifts every later one; the tag is therefore resolved by name, never
+    written down. Without the recorded build every key is a placeholder that no
+    byte equals, so the reader fails closed. ``None`` marks a layout not proven
+    against the current wrapper. A nested type is written ``Outer.Inner``.
+    """
+    def wrapper(name: str) -> str:
+        if "." in name:
+            return "Core_Selector_" + name.replace(".", "_")
+        return f"Core_Selector_{name}_Data"
+
+    return {
+        union_tags.pair(family, wrapper(name))[0]: (name, layout)
+        for name, layout in rows
+    }
+
+
+BUFF_SELECTOR_FINDER_SUBTYPES: dict[Any, tuple[str, tuple | None]] = _selector_subtypes("SelectorFinder", (
+    ("AbilityEntityTargetFinder", ()),
+    ("CharacterTeamFinder", ()),
+    ("FixedPointFinder", (("positionOffset", "vector3"),
                                 ("rotationOffset", "quaternion"),
                                 ("sampleRadius", "bbparam"),
                                 ("snapToNavmesh", "bool"))),
-    0x03: ("GlobalContextFinder", (("targetGroupKey", "string"),)),
-    0x04: ("GodEntityFinder", ()),
-    0x05: ("GuardAITargetFinder", ()),
-    0x06: ("HitBoxFinder", BUFF_SELECTOR_TARGETFINDER_MEMBERS + (
+    ("GlobalContextFinder", (("targetGroupKey", "string"),)),
+    ("GodEntityFinder", ()),
+    ("GuardAITargetFinder", ()),
+    ("HitBoxFinder", BUFF_SELECTOR_TARGETFINDER_MEMBERS + (
         ("checkIntUnSelectableTag", "bool"), ("shapeList", "shapedatalist"),
         ("targetObjectType", "i32"))),
-    0x07: ("InFightEnemyFinder", ()),
-    0x08: ("InteractiveShapeFinder", (("checkIntUnSelectableTag", "bool"),)),
-    0x09: ("MainTargetFinder", ()),
-    0x0A: ("OwnerPartsFinder", (("partQuery", "tagquery"),)),
-    0x0B: ("OwnerSpawnedEntityFinder", (("spawnedObjectType", "i32"),)),
-    # Current formatter serializes only positionOffset even though the runtime
-    # Data type also retains a rotationOffset field.
-    0x0C: ("PointFinder", (("positionOffset", "bbvector3"),)),
-    0x0D: ("RandomPointFinder", (("angle", "bbparam"),
-                                 ("localPlaneRotationEulers", "bbvector3"),
-                                 ("minRadius", "bbparam"), ("pointNum", "bbparam"),
-                                 ("radius", "bbparam"), ("shape", "i32"),
-                                 ("snapToNavMesh", "bool"))),
-    0x0E: ("ShapeFinder", None),  # shapeData (battle shape data) layout unproven
-    0x0F: ("ShapeFinderData", ()),
-    0x10: ("SmartTargetFinder", (("range", "bbparam"),
-                                 ("selectSetting", "smarttargetselectsetting"),
-                                 ("useCustomRange", "bool"))),
-    0x11: ("SnapPointFinder", (("radius", "bbparam"),
+    ("InFightEnemyFinder", ()),
+    ("InteractiveShapeFinder", None),  # shapeData (ColliderShapeData) layout unproven
+    ("MainTargetFinder", ()),
+    ("OwnerPartsFinder", (("partQuery", "tagquery"),)),
+    ("OwnerMountPointPosFinder", (("mountPoint", "i32"),)),
+    ("OwnerSpawnedEntityFinder", (("spawnedObjectType", "i32"),)),
+    ("PointFinder", (("positionOffset", "bbvector3"), ("rotationOffset", "bbvector3"))),
+    ("RandomPointFinder", (("angle", "bbparam"), ("extent2D", "bbvector2"),
+                           ("localPlaneRotationEulers", "bbvector3"),
+                           ("minRadius", "bbparam"), ("pointNum", "bbparam"),
+                           ("radius", "bbparam"), ("shape", "i32"),
+                           ("snapToNavMesh", "bool"), ("useExtraJitter", "bool"))),
+    ("ProjectileFinder", None),  # shapeData (ColliderShapeData) layout unproven
+    ("ShapeFinder", None),  # shapeData (ColliderShapeData) layout unproven
+    ("ShapeFinder.ShapeFinderData", None),  # shapeData (ColliderShapeData) layout unproven
+    ("SmartTargetFinder", (("limitFallbackRange", "bool"), ("range", "bbparam"),
+                           ("selectSetting", "smarttargetselectsetting"),
+                           ("useCustomRange", "bool"))),
+    ("SnapPointFinder", (("radius", "bbparam"),
                                ("snapTargetSettings", "targetsettings"))),
-    0x12: ("SourceFinder", ()),
-    0x13: ("TargetFinder", BUFF_SELECTOR_TARGETFINDER_MEMBERS),
-}
+    ("SourceFinder", ()),
+    ("TargetFinder", BUFF_SELECTOR_TARGETFINDER_MEMBERS),
+    ("AllEnemyFinder", ()),
+    ("TyphoeaArcherySelectedFinder", ()),
+))
 
 
-BUFF_SELECTOR_VALIDATOR_SUBTYPES: dict[int, tuple[str, tuple | None]] = {
-    0x00: ("AttributeValidator", (("attributeType", "i32"), ("checkMax", "bool"),
+BUFF_SELECTOR_VALIDATOR_SUBTYPES: dict[Any, tuple[str, tuple | None]] = _selector_subtypes("SelectorValidator", (
+    ("AttributeValidator", (("attributeType", "i32"), ("checkMax", "bool"),
                                   ("checkMin", "bool"), ("maxValue", "f64"),
                                   ("minValue", "f64"))),
-    0x01: ("CheckRaycastValidator", (("checkLayerMask", "i32"),
+    ("CheckRaycastValidator", (("checkLayerMask", "i32"),
                                      ("secondCheckLayerMask", "i32"))),
-    0x02: ("CurHpRatioValidator", (("compareType", "i32"), ("value", "bbparam"))),
-    0x03: ("DistanceValidator", (("clampToXZ", "bool"), ("compareType", "i32"),
+    ("CurHpRatioValidator", (("compareType", "i32"), ("value", "bbparam"))),
+    ("DistanceValidator", (("clampToXZ", "bool"), ("compareType", "i32"),
                                  ("value", "bbparam"))),
-    0x04: ("ExcludeOwnerValidator", ()),
-    0x05: ("HittableObjectValidator", ()),
-    0x06: ("InteractiveKeyValidator", (("interactiveKey", "string"),)),
-    0x07: ("MainCharacterValidator", ()),
-    0x08: ("SkillCastIdValidator", ()),
-    0x09: ("TagValidator", (("query", "tagquery"),)),
-    0x0A: ("TargetContainsValidator", (("parentTargetSettings", "targetsettings"),)),
-}
+    ("ExcludeOwnerValidator", ()),
+    ("HittableObjectValidator", ()),
+    ("InteractiveKeyValidator", (("interactiveKey", "string"),)),
+    ("MainCharacterValidator", ()),
+    ("SkillCastIdValidator", ()),
+    ("TagValidator", (("query", "tagquery"),)),
+    ("TargetContainsValidator", (("parentTargetSettings", "targetsettings"),)),
+    ("BuffValidator", None),  # buffFindSettings layout unproven
+    ("InScreenValidator", ()),
+))
 
 
-BUFF_SELECTOR_POSTPROCESSOR_SUBTYPES: dict[int, tuple[str, tuple | None]] = {
-    0x00: ("ConvertToBoxCenterPlaneProjectionPoint", (("boxShape", "shapedatalist"),)),
-    0x01: ("ConvertToPosition", ()),
-    0x02: ("ConvertToSlot", ()),
-    0x03: ("ExcludeTarget", (("excludedTargetSettings", "targetsettings"),)),
-    0x04: ("LockOrMarkTargetFilter", ()),
-    0x05: ("NavMeshPathPositionProcessor", (
+BUFF_SELECTOR_POSTPROCESSOR_SUBTYPES: dict[Any, tuple[str, tuple | None]] = _selector_subtypes("SelectorPostProcessor", (
+    ("ConvertToBoxCenterPlaneProjectionPoint", (("boxShape", "shapedatalist"),)),
+    ("ConvertToPosition", ()),
+    ("ConvertToSlot", ()),
+    ("ExcludeTarget", (("excludedTargetSettings", "targetsettings"),
+                       ("processTargetType", "i32"))),
+    ("LockOrMarkTargetFilter", ()),
+    ("NavMeshPathPositionProcessor", (
         ("allowCheckMainCharPosToDestPathAvailable", "bool"),
         ("checkMaxDistance", "bool"), ("clampDirToXZ", "bool"),
         ("getNavPosInRangeRadius", "bbparam"), ("ignoreNavmeshLink", "bool"),
         ("maxDistance", "f32"), ("snapToFloor", "bool"), ("throughWall", "bool"))),
-    0x06: ("PriorityFilter", None),  # buffFilterSettings layout unproven
-    0x07: ("ShuffleTarget", (("targetNumLimit", "bbparam"),)),
-    0x08: ("TargetPriorityFilter", (("limitMaxNum", "bool"), ("maxNum", "i32"),
+    ("PriorityFilter", None),  # buffFilterSettings layout unproven
+    ("ShuffleTarget", (("processTargetType", "i32"), ("targetNumLimit", "bbparam"))),
+    ("TargetPriorityFilter", (("limitMaxNum", "bool"), ("maxNum", "i32"),
                                     ("targetSettings", "targetsettings"))),
-}
+    ("CircularOrderSort", (("desireCount", "bbparam"), ("heightOffset", "bbparam"),
+                           ("indexKey", "string"), ("rangeCheckTarget", "targetsettings"),
+                           ("rangeThreshold", "bbparam"), ("reverseFlag", "bbparam"))),
+))
 
 
 BUFF_FIND_TARGET_BODY_MEMBERS = (
@@ -3775,12 +3833,14 @@ def read_buff_selector_blackboard_vector3(
     offset: int,
     limit: int,
     field_name: str,
+    axes: tuple[str, ...] = ("x", "y", "z"),
 ) -> tuple[list[Any] | None, int]:
-    present, offset = read_buff_selector_object_header(data, offset, limit, 3, field_name)
+    # BlackboardVector2/3: one BlackboardDouble per axis.
+    present, offset = read_buff_selector_object_header(data, offset, limit, len(axes), field_name)
     if not present:
         return None, offset
     components = []
-    for axis in ("x", "y", "z"):
+    for axis in axes:
         component, offset = read_buff_selector_blackboard_param(
             data, offset, limit, f"{field_name}.{axis}",
         )
@@ -4200,6 +4260,8 @@ def read_buff_selector_member(
         return read_buff_selector_blackboard_param(data, offset, limit, field_name)
     if kind == "bbvector3":
         return read_buff_selector_blackboard_vector3(data, offset, limit, field_name)
+    if kind == "bbvector2":
+        return read_buff_selector_blackboard_vector3(data, offset, limit, field_name, ("x", "y"))
     if kind == "tagquery":
         return read_buff_selector_tag_query(data, offset, limit, field_name)
     if kind == "smarttargetselectsetting":
