@@ -44,9 +44,15 @@ model these carriers feed, and everything about presenting the result, is
   rare paths into separate `.pdata` fragments reached by a conditional jump,
   calls unnamed helpers (struct-argument shims and inlined copies of named
   methods), reallocates saved registers, and uses rel32 `jcc` where a short
-  jump was. Follow one level into a fragment or helper, name a jump from its
+  jump was. A split-off fragment's unwind info carries `UNW_FLAG_CHAININFO`
+  and ends in its owner's RUNTIME_FUNCTION, so a body is the function plus
+  every fragment chained to it (`BodyIndex.chained_fragments`), however the
+  fragment is reached; a jump-target walk misses fragments reached from other
+  fragments. Follow one level into an unnamed helper, name a jump from its
   opcode, and accept any save/restore register pair; label a helper-reached
-  callee as such rather than as a direct call.
+  callee as such rather than as a direct call. Compiler-generated names
+  (`<M>d__N`, `<>c__DisplayClassN_M`, `b__N_M`) renumber between builds; match
+  them with the ordinal normalized, and only when unique.
 - `withinActiveArea` is a hysteresis rule in the current build:
   `!rangeSensitive || hit(enterShapes) || (prevWithin &&
   !IsNullOrEmpty(exitShapes) && hit(exitShapes))`, proved from
