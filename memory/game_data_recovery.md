@@ -267,14 +267,16 @@ and before/after evidence belongs in `tmp/<topic>/`.
   [`game_data/audio_overview.md`](game_data/audio_overview.md). Keep closing
   authored and observed consumers through exact Event/media traversal while
   preserving branch and audibility gaps.
-- Audio's native consumer catalog (ModelView routes, voice triggers, managed
-  literal and selector callsites, playback chains) still records the previous
-  build's indexes and addresses, pinned in `contracts/audio_native.json`, so
-  every native Audio route is withheld on the installed build. Re-derive it by
-  name as Story's consumers were: consumer method, the literal or selector
-  field it loads (`il2cpp/call_graph.py` resolves string literals), and the
-  playback call, with the unnamed event-wrapper helpers identified by their
-  callee shape rather than their address.
+- Audio's native catalog was reviewed on the previous build; on another
+  build `scripts/webui/audio/semantics/native_callsite_rederivation.py`
+  re-proves it by name (callsites, voice routes, music groups and
+  transitions, selector setters, timeline and footstep anchors, ModelView
+  routes). Still open: the playback call chains (their links are delegate
+  callbacks, native engine stages and sibling entry points, which need a
+  per-relation model, not a linear call check), the callsite rows withheld
+  for real code changes (literals moved into config classes, one sink no
+  longer reached), and static selector fields at offset 0, which need the
+  type's static-storage load proved before a bare dereference counts.
 - Improve exact prefab, renderer, material, animation, and world-instance
   ownership.
 - Keep native gates and source-graph provenance deterministic across client
