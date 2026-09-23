@@ -330,14 +330,19 @@
       }
     },
     "dialogTimelineOptionIndex": {
-      "mappingId": "gameassembly-2026-08-02-dialog-timeline-option-index-v1",
-      "pendingReview": "The runtime option write moved from DialogUtils.DialogChooseOption into UnityEngine.Timeline.TimelineRuntimeUtils.TrySetNewOptionIndex, and SetDialogOption now routes through _ApplyDialogOptions. The selected-option value contract has not been re-reviewed on this shape.",
+      "mappingId": "gameassembly-2026-09-22-dialog-timeline-option-index-v2",
       "methods": {
         "DialogTimelineManager._SelectIndexInTimeline": {
           "type": "Beyond.Gameplay.Core.DialogTimelineManager",
           "method": "_SelectIndexInTimeline",
-          "contract": "passes the selected Timeline option's index to DialogUtils.DialogChooseOption",
+          "contract": "reads the chosen DialogTimelineOptionData.optionIndex from m_options and passes it to DialogUtils.DialogChooseOption",
           "claims": [
+            {
+              "readsField": "Beyond.Gameplay.Core.DialogTimelineManager::m_options"
+            },
+            {
+              "readsField": "Beyond.Gameplay.DialogTimelineOptionData::optionIndex"
+            },
             {
               "calls": [
                 "Beyond.Gameplay.Core.DialogUtils.DialogChooseOption"
@@ -348,7 +353,7 @@
         "DialogUtils.DialogChooseOption": {
           "type": "Beyond.Gameplay.Core.DialogUtils",
           "method": "DialogChooseOption",
-          "contract": "hands the selected runtime optionIndex to TimelineRuntimeUtils.TrySetNewOptionIndex",
+          "contract": "hands the option index to TimelineRuntimeUtils.TrySetNewOptionIndex for the Timeline root",
           "claims": [
             {
               "calls": [
@@ -357,38 +362,101 @@
             }
           ]
         },
-        "DialogTimelineManager.SetDialogOption": {
-          "type": "Beyond.Gameplay.Core.DialogTimelineManager",
-          "method": "SetDialogOption",
-          "contract": "collects and applies the visible dialog options",
+        "TimelineRuntimeUtils.TrySetNewOptionIndex(ITimelineRootMarker)": {
+          "type": "UnityEngine.Timeline.TimelineRuntimeUtils",
+          "method": "TrySetNewOptionIndex",
+          "parameters": [
+            "UnityEngine.Timeline.ITimelineRootMarker",
+            "System.Int32"
+          ],
+          "contract": "applies the option index to every PlayableDirector under the root",
           "claims": [
             {
               "calls": [
-                "Beyond.Gameplay.Core.DialogTimelineManager._CollectVisibleDialogOptions",
-                "Beyond.Gameplay.Core.DialogTimelineManager._ApplyDialogOptions"
+                "UnityEngine.GameObject.GetComponentsInChildren",
+                "UnityEngine.Timeline.TimelineRuntimeUtils.TrySetNewOptionIndex"
               ]
             }
           ]
         },
-        "DialogTimelineManager.TryTriggerTrunkBindingOption": {
-          "type": "Beyond.Gameplay.Core.DialogTimelineManager",
-          "method": "TryTriggerTrunkBindingOption",
-          "contract": "enumerates active clips before the option gate",
+        "TimelineRuntimeUtils.TrySetNewOptionIndex(PlayableDirector)": {
+          "type": "UnityEngine.Timeline.TimelineRuntimeUtils",
+          "method": "TrySetNewOptionIndex",
+          "parameters": [
+            "UnityEngine.Playables.PlayableDirector",
+            "System.Int32",
+            "System.Boolean"
+          ],
+          "contract": "stores the option index argument into the director's TimelinePlayable.newOptionIndex",
           "claims": [
             {
               "calls": [
-                "Beyond.Gameplay.Core.DialogUtils.DialogTimelineGetAllActiveClips"
+                "UnityEngine.Timeline.PlayableDirectorUtility.GetTimelinePlayable"
               ]
+            },
+            {
+              "storesArgument": {
+                "field": "UnityEngine.Timeline.TimelinePlayable::newOptionIndex",
+                "argument": "edx"
+              }
             }
           ]
         },
-        "DialogUtils.DialogTimelineGetAllActiveClips": {
-          "type": "Beyond.Gameplay.Core.DialogUtils",
-          "method": "DialogTimelineGetAllActiveClips",
-          "contract": "collects active Timeline clips for runtime matching",
-          "claims": []
+        "TimelinePlayable.Evaluate": {
+          "type": "UnityEngine.Timeline.TimelinePlayable",
+          "method": "Evaluate",
+          "contract": "commits a changed newOptionIndex to curOptionIndex, keeping the previous one in lastOptionIndex",
+          "claims": [
+            {
+              "readsField": "UnityEngine.Timeline.TimelinePlayable::newOptionIndex"
+            },
+            {
+              "readsField": "UnityEngine.Timeline.TimelinePlayable::curOptionIndex"
+            }
+          ]
+        },
+        "TimelinePlayable._CheckIfTimeJumping": {
+          "type": "UnityEngine.Timeline.TimelinePlayable",
+          "method": "_CheckIfTimeJumping",
+          "contract": "asks CheckWillRuntimeElementEnabled for each runtime element with curOptionIndex and lastOptionIndex",
+          "claims": [
+            {
+              "calls": [
+                "UnityEngine.Timeline.TimelineRuntimeUtils.CheckWillRuntimeElementEnabled"
+              ]
+            },
+            {
+              "readsField": "UnityEngine.Timeline.TimelinePlayable::curOptionIndex"
+            },
+            {
+              "readsField": "UnityEngine.Timeline.TimelinePlayable::lastOptionIndex"
+            }
+          ]
+        },
+        "TimelineRuntimeUtils.CheckWillRuntimeElementEnabled": {
+          "type": "UnityEngine.Timeline.TimelineRuntimeUtils",
+          "method": "CheckWillRuntimeElementEnabled",
+          "contract": "enables an element whose option index is zero (non-branch) or equals the current or previous selected option",
+          "claims": [
+            {
+              "comparesWithArguments": {
+                "arguments": [
+                  "edx",
+                  "r8d"
+                ],
+                "zero": true
+              }
+            }
+          ]
         }
-      }
+      },
+      "fields": [
+        "Beyond.Gameplay.Core.DialogTimelineManager::m_options",
+        "Beyond.Gameplay.DialogTimelineOptionData::optionIndex",
+        "UnityEngine.Timeline.TimelinePlayable::newOptionIndex",
+        "UnityEngine.Timeline.TimelinePlayable::curOptionIndex",
+        "UnityEngine.Timeline.TimelinePlayable::lastOptionIndex"
+      ]
     },
     "actionBranchSequence": {
       "mappingId": "gameassembly-2026-08-02-branch-execute-0x18764d990",

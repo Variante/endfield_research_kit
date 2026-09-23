@@ -19,6 +19,12 @@ by type and method, and evaluates them against whichever build is installed:
 ``readsField``        reads a named field (any base register)
 ``zeroArgumentAt``    a named call receives zero in the given argument register
 ``branchesOnSign``    compares a named field with zero and branches on less-than
+``storesArgument``    writes an argument register (through register moves) into a
+                      named field of any object
+``comparesWithArguments`` compares one value with each named argument register
+                      (through register moves), and with zero when ``zero`` is set
+
+A method with several overloads is selected by its ``parameters`` type names.
 
 Field offsets come from the selected build's MetadataRegistration, so no claim
 carries an offset, token, address or hash. A claim that fails is a reviewed
@@ -187,8 +193,30 @@ class BodyIndex:
                 return last_ecx
         return None
 
-    def body(self, type_name: str, method: str, method_arguments: list[str] | None = None) -> Body:
+    def parameter_types(self, pointer: int) -> list[list[str]]:
+        """The parameter type names of every method sharing the body."""
+        found = []
+        for row in self.names_by_pointer.get(pointer) or []:
+            index = row.get("methodIndex")
+            if not isinstance(index, int) or not 0 <= index < len(self.metadata.methods):
+                continue
+            method = self.metadata.methods[index]
+            found.append([
+                self.metadata.metadata_type_name(parameter.type_index)
+                for parameter in self.metadata.parameters_for(method)
+            ])
+        return found
+
+    def body(
+        self,
+        type_name: str,
+        method: str,
+        method_arguments: list[str] | None = None,
+        parameters: list[str] | None = None,
+    ) -> Body:
         pointers = sorted(self.pointers_by_name.get(f"{type_name}.{method}") or [])
+        if parameters is not None:
+            pointers = [pointer for pointer in pointers if list(parameters) in self.parameter_types(pointer)]
         if method_arguments is not None:
             pointers = [
                 pointer for pointer in pointers
@@ -345,7 +373,51 @@ def check_claim(index: BodyIndex, body: Body, claim: dict[str, Any]) -> str | No
                 if any(_condition(row) in {"jl", "js"} for row in rows[position + 1:position + 3]):
                     return None
         return f"no signed branch on +0x{offset:x}"
+    if "storesArgument" in claim:
+        offset = index.field_offset(claim["storesArgument"]["field"])
+        aliases = _argument_aliases(texts, claim["storesArgument"]["argument"])
+        for text in texts:
+            stored = re.fullmatch(rf"mov \[\w+\+0x{offset:x}\], (\w+)", text)
+            if stored and stored.group(1) in aliases:
+                return None
+        return f"argument {claim['storesArgument']['argument']} never stored at +0x{offset:x}"
+    if "comparesWithArguments" in claim:
+        spec = claim["comparesWithArguments"]
+        compared: set[str] = set()
+        for argument in spec["arguments"]:
+            aliases = _argument_aliases(texts, argument)
+            if any(
+                (match := re.fullmatch(r"cmp (\w+), (\w+)", text))
+                and (match.group(1) in aliases) != (match.group(2) in aliases)
+                for text in texts
+            ):
+                compared.add(argument)
+        missing = [argument for argument in spec["arguments"] if argument not in compared]
+        if missing:
+            return f"no comparison with {missing}"
+        if spec.get("zero") and not any(
+            re.fullmatch(r"test (\w+), \1", text) and _condition(rows[position + 1]) in {"je", "jne"}
+            for position, text in enumerate(texts[:-1])
+        ):
+            return "no zero test"
+        return None
     return f"unknown claim {sorted(claim)}"
+
+
+_ARGUMENT_WIDTHS = {
+    "rcx": "ecx", "rdx": "edx", "r8": "r8d", "r9": "r9d",
+    "ecx": "rcx", "edx": "rdx", "r8d": "r8", "r9d": "r9",
+}
+
+
+def _argument_aliases(texts: list[str], argument: str) -> set[str]:
+    """Registers holding ``argument`` after the prologue's register moves."""
+    aliases = {argument, _ARGUMENT_WIDTHS.get(argument, argument)}
+    for text in texts:
+        moved = re.fullmatch(r"mov (\w+), (\w+)", text)
+        if moved and moved.group(2) in aliases:
+            aliases.add(moved.group(1))
+    return aliases
 
 
 def evaluate(index: BodyIndex, methods: dict[str, dict[str, Any]]) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
@@ -354,7 +426,7 @@ def evaluate(index: BodyIndex, methods: dict[str, dict[str, Any]]) -> tuple[list
     failures: list[dict[str, Any]] = []
     for symbol, spec in methods.items():
         try:
-            body = index.body(spec["type"], spec["method"], spec.get("methodArguments"))
+            body = index.body(spec["type"], spec["method"], spec.get("methodArguments"), spec.get("parameters"))
         except ClaimError as error:
             failures.append({"symbol": symbol, "claim": "resolve", "reason": str(error)})
             continue

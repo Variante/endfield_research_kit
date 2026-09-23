@@ -261,11 +261,16 @@ DIALOG_TREE_BRANCH_BINARY_CONTRACT = {
 # windows; this contract does not invent a target from an option index.
 DIALOG_TIMELINE_OPTION_BINARY_CONTRACT = {
     "nativeGroup": "dialogTimelineOptionIndex",
-    "mappingId": "gameassembly-2026-08-02-dialog-timeline-option-index-v1",
+    "mappingId": "gameassembly-2026-09-22-dialog-timeline-option-index-v2",
     "selectionRule": (
-        "DialogTimelineManager._SelectIndexInTimeline passes the selected "
-        "option's index to DialogUtils.DialogChooseOption; the runtime option "
-        "gate accepts only a matching positive option value"
+        "DialogTimelineManager._SelectIndexInTimeline passes the chosen "
+        "DialogTimelineOptionData.optionIndex through DialogUtils."
+        "DialogChooseOption to TimelineRuntimeUtils.TrySetNewOptionIndex, "
+        "which stores it in each director's TimelinePlayable.newOptionIndex; "
+        "TimelinePlayable.Evaluate commits it to curOptionIndex (keeping "
+        "lastOptionIndex), and CheckWillRuntimeElementEnabled enables an "
+        "element whose option index is zero or equals the current or previous "
+        "selected option"
     ),
 }
 _DIALOG_TREE_BINARY_SOURCE_CACHE: dict[str, dict[str, Any] | None] = {}
