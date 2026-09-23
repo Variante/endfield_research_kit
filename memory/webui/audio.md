@@ -117,9 +117,14 @@ audio logic in the semantic publisher or import either entry point as a helper.
   its reviewed trigger prose (`branchConditionStatus`). The ModelView routes
   re-derive the same way: the consumer must still call each target, where a
   target that changed owner (the handler registry moved into
-  `ModelAnimatorContext`) is a reviewed re-reading. Playback call chains and
-  music transition registrations stay withheld: their links include delegate
-  callbacks and native engine stages that a call-graph check cannot prove. The selector catalog used to publish the music setters and
+  `ModelAnimatorContext`) is a reviewed re-reading. Music transition
+  registrations are read from each `RegisterTransitionAction` call's own
+  arguments (state mask, enter/leave, action order, delegate target): on the
+  current build every state registers an `_OnEnter*` (order 5) / `_OnLeave*`
+  (order 1) pair, and none matches the reviewed pairing, which the previous
+  build can no longer confirm. Playback call chains stay withheld: their links
+  include delegate callbacks and native engine stages a call-graph check cannot
+  prove, and sibling entry points are listed as sequential stages. The selector catalog used to publish the music setters and
   selector callsites with no build gate at all; with no measured build they
   now carry no native field.
   Authored and HIRC evidence is unaffected.

@@ -802,7 +802,151 @@ def verify_model_view_route(build: _Build, route: Mapping[str, Any]) -> tuple[di
     return current, "verified"
 
 
+def _method_reference_loads(build: _Build, full: str) -> list[tuple[int, str]]:
+    """``(load VA, method name)`` for each MethodDef metadata-usage cell the body loads.
+
+    A delegate is created from the MethodInfo its ``mov r64, [rip+cell]``
+    loads; the cell holds ``3 << 29 | methodDefIndex << 1 | 1``.
+    """
+    index = build.index
+    by_method_index = getattr(build, "_by_method_index", None)
+    if by_method_index is None:
+        by_method_index = {}
+        for rows in index.names_by_pointer.values():
+            for row in rows:
+                if isinstance(row.get("methodIndex"), int):
+                    by_method_index.setdefault(row["methodIndex"], f"{row.get('type')}.{row.get('method')}")
+        build._by_method_index = by_method_index
+    found = []
+    for start, size in build.spans(full):
+        body = index.pe.bytes_at_va(start, size)
+        for offset in range(max(0, size - 6)):
+            if body[offset] not in (0x48, 0x4C) or body[offset + 1] != 0x8B or (body[offset + 2] & 0xC7) != 0x05:
+                continue
+            cell = start + offset + 7 + struct.unpack_from("<i", body, offset + 3)[0]
+            try:
+                word = index.pe.u64_at_va(cell)
+            except (ValueError, IndexError, struct.error):
+                continue
+            if word > 0xFFFFFFFF or not word & 1 or word >> 29 != 3:
+                continue
+            name = by_method_index.get((word >> 1) & 0x0FFFFFFF)
+            if name:
+                found.append((start + offset, name))
+    return sorted(found)
+
+
+_REGISTER_TRANSITION = "Beyond.Gameplay.Audio.AudioStateSystem.RegisterTransitionAction"
+_IMMEDIATE_STORE = re.compile(r"mov (?:dword ptr |qword ptr )?\[(\w+)\+(0x[0-9a-f]+)\], (0x[0-9a-f]+)$")
+
+
+def _registration_rows(build: _Build, registration: str) -> list[dict[str, Any]]:
+    """Every RegisterTransitionAction call of ``registration``, read from its arguments.
+
+    Between two register calls the body builds the condition object (state mask
+    stored at ``+0x10``, condition type at ``+0x14``; a zero type is the default
+    and not written), creates ``new Action(this, callback)`` from the callback's
+    MethodInfo, and passes the action order as the stack argument ``[rsp+0x20]``.
+    """
+    index = build.index
+    start = min(index.pointers_by_name[registration])
+    loads = dict(_method_reference_loads(build, registration))
+    rows = []
+    for body_start, size in build.spans(registration)[:1]:
+        rows = index._decode(body_start, size)
+    registrations, window = [], []
+    for row in rows:
+        text = str(row.get("text") or "")
+        va = int(str(row.get("va") or "0"), 16)
+        window.append((va, text))
+        match = _CALL.search(text)
+        if not match or _REGISTER_TRANSITION not in index.names_of(int(match.group(1), 16)):
+            continue
+        callback = next((loads[v] for v, _t in reversed(window) if v in loads), None)
+        stores = [_IMMEDIATE_STORE.search(t) for _v, t in window]
+        stores = [m for m in stores if m]
+        order = next((int(m.group(3), 16) for m in reversed(stores) if m.group(1) == "rsp" and m.group(2) == "0x20"), None)
+        mask = next((int(m.group(3), 16) for m in reversed(stores) if m.group(2) == "0x10" and m.group(1) != "rsp"), None)
+        condition = next((int(m.group(3), 16) for m in reversed(stores) if m.group(2) == "0x14" and m.group(1) != "rsp"), 0)
+        registrations.append({
+            "registrationCallOffset": f"0x{va - start:x}",
+            "callbackMethod": callback.rsplit(".", 1)[-1] if callback else None,
+            "callbackFull": callback,
+            "actionOrder": order,
+            "stateMask": mask,
+            "conditionTypeRaw": condition,
+        })
+        window = []
+    return registrations
+
+
+def verify_music_transitions(build: _Build, transitions: Any) -> tuple[list[dict[str, Any]], str]:
+    """Read every music transition registration from the registration body.
+
+    Each registration is taken from its own call's arguments (state mask,
+    condition type, action order, delegate target), so the rows describe this
+    build rather than confirm a reviewed pairing; a row that disagrees with the
+    reviewed one says so. State names come from the reviewed rows by state mask.
+    """
+    index = build.index
+    owner = "Beyond.Gameplay.Audio.AudioMusicSystem"
+    registration = f"{owner}._RegisterStateTransitionActions"
+    if registration not in index.pointers_by_name:
+        return [], "registration-method-missing"
+    reviewed = {int(row["stateMask"]): row for row in transitions}
+    by_mask: dict[int, list[dict[str, Any]]] = defaultdict(list)
+    for row in _registration_rows(build, registration):
+        if row["stateMask"] is not None and row["callbackFull"]:
+            by_mask[row["stateMask"]].append(row)
+    current = []
+    for mask, rows in by_mask.items():
+        base = reviewed.get(mask) or {}
+        reviewed_pairs = [(r.get("callbackMethod"), r.get("conditionTypeRaw"), r.get("actionOrder"))
+                          for r in base.get("registrations") or ()]
+        registrations = []
+        for row in rows:
+            name = row["callbackFull"]
+            registrations.append({
+                "registrationCallOffset": row["registrationCallOffset"],
+                "actionOrder": row["actionOrder"],
+                "conditionTypeRaw": row["conditionTypeRaw"],
+                "conditionType": {0: "enter", 1: "leave"}.get(row["conditionTypeRaw"], "unknown"),
+                "callbackMethod": row["callbackMethod"],
+                "callbackMethodIndex": _method_index(index, name),
+                "callbackToken": _token(index, name),
+                "callbackVirtualAddress": _address(index, name),
+                "callbackEvidence": "delegateMethodInfoLoadedBeforeRegisterTransitionAction",
+                "directStateSetters": sorted(
+                    callee.rsplit(".", 1)[-1] for callee in build.reach(name)
+                    if callee.startswith(f"{owner}._SetWwise")
+                ),
+            })
+        pairs = [(r["callbackMethod"], r["conditionTypeRaw"], r["actionOrder"]) for r in registrations]
+        current.append({
+            "stateMask": mask,
+            "stateMaskHex": f"0x{mask:08x}",
+            "stateNames": list(base.get("stateNames") or ()),
+            "registrationMethod": "_RegisterStateTransitionActions",
+            "registrationMethodIndex": _method_index(index, registration),
+            "registrationToken": _token(index, registration),
+            "registrationVirtualAddress": _address(index, registration),
+            "registerMethod": _REGISTER_TRANSITION,
+            "registerVirtualAddress": _address(index, _REGISTER_TRANSITION),
+            "registrationCallOffsets": [r["registrationCallOffset"] for r in registrations],
+            "registrationCount": len(registrations),
+            "actionOrders": [r["actionOrder"] for r in registrations],
+            "registrations": registrations,
+            "runtimeObservationStatus": "staticRegistrationNotLiveStateTrace",
+            "nativeRederivation": {
+                "status": "readFromRegistrationBody",
+                "matchesReviewedPairing": pairs == reviewed_pairs,
+            },
+        })
+    return sorted(current, key=lambda row: row["registrationCallOffsets"][0] if row["registrationCallOffsets"] else ""), "verified"
+
+
 ROUTE_VERIFIERS = {
+    "musicTransitions": verify_music_transitions,
     "modelViewState": verify_model_view_route,
     "modelViewPositioned": verify_model_view_route,
     "timelineContracts": verify_timeline_contracts,
@@ -879,7 +1023,7 @@ def rederive_catalogs(
 
 def reviewed_routes() -> dict[str, Mapping[str, Any]]:
     """The native routes and group catalogs this module re-derives, as reviewed."""
-    from scripts.webui.audio.semantics import build_contracts, entity_contexts, native_evidence
+    from scripts.webui.audio.semantics import build_contracts, entity_contexts, mono_behaviour, native_evidence
 
     return {
         "enemyVoiceAction": native_evidence.ENEMY_TRIGGER_VOICE_ACTION_NATIVE,
@@ -889,6 +1033,7 @@ def reviewed_routes() -> dict[str, Mapping[str, Any]]:
         "selectorGroups": build_contracts.AUDIO_RUNTIME_SELECTOR_GROUPS,
         "timelineContracts": build_contracts.TIMELINE_AUDIO_RUNTIME_CONTRACTS,
         "modelViewState": native_evidence.MODEL_VIEW_STATE_AUDIO_NATIVE_ROUTE,
+        "musicTransitions": mono_behaviour.AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS,
         "modelViewPositioned": native_evidence.MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE,
         "customFootstep": {
             "nativeAnchors": entity_contexts.CUSTOM_FOOTSTEP_NATIVE_ANCHORS,
@@ -941,6 +1086,28 @@ def current_routes(native_context: Any) -> dict[str, dict[str, Any] | None]:
         return {name: None for name in routes}
     result = rederive_catalogs(reviewed_catalogs(), routes=routes)
     return {name: (result.get("routes") or {}).get(name) for name in routes}
+
+
+def overlay_runtime_model(runtime_model: dict[str, Any], native_context: Any) -> dict[str, Any]:
+    """Attach the re-derived music groups and transitions to AudioMusicSystem.
+
+    The runtime model publishes them only on the reviewed metadata; on another
+    measured build this adds the rows re-proved by name there.
+    """
+    if native_context is None or native_context.validated:
+        return runtime_model
+    routes = current_routes(native_context)
+    groups, transitions = routes.get("musicStateGroups"), routes.get("musicTransitions")
+    for system in runtime_model.get("systems") or ():
+        if system.get("type") != "Beyond.Gameplay.Audio.AudioMusicSystem":
+            continue
+        if groups:
+            system["nativeStateGroups"] = groups
+            system["nativeStateGroupStatus"] = "rederivedByNameOnInstalledBuild"
+        if transitions:
+            system["nativeStateTransitions"] = transitions
+            system["nativeStateTransitionStatus"] = "rederivedByNameOnInstalledBuild"
+    return runtime_model
 
 
 def withheld_summary(result: Mapping[str, Any]) -> dict[str, dict[str, int]]:

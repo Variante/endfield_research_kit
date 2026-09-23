@@ -958,7 +958,9 @@ def build_audio_semantic_data(
             if isinstance(cached_cutscene_events, dict) and cached_cutscene_events
             else collect_webui_cutscene_events(webui_root, language)
         )
-    runtime_model = build_runtime_model(metadata_path, export_root)
+    runtime_model = native_callsite_rederivation.overlay_runtime_model(
+        build_runtime_model(metadata_path, export_root), native_context,
+    )
     current_wwise_event_hashes = {
         int(row.get("eventHash")) & 0xFFFFFFFF
         for row in audio_index.get("wwiseEventInventory") or []
