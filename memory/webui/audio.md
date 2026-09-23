@@ -105,14 +105,20 @@ audio logic in the semantic publisher or import either entry point as a helper.
   (`contracts/audio_native.json`). On another installed build the callsite
   catalogs -- managed-literal and selector callsites, SwitchAudioCustomState
   callsites and voice-response triggers -- and the AnimatorMono, enemy
-  voice-action and AI-bark routes are re-derived by name
+  voice-action and AI-bark routes, the Wwise music state groups (setter,
+  enum members from the installed metadata, and each callsite that still
+  loads its value and calls the setter) and the native selector setters are
+  re-derived by name
   (`scripts/webui/audio/semantics/native_callsite_rederivation.py`): a row is
   published only when its consumer resolves, its literal reaches the consumer
   (in the body, a reached helper, or the selector field's initializer) and the
   playback sink is reached, with that build's addresses; the rest are withheld
   with a reason. A re-derived row proves the literal and playback path, not
   its reviewed trigger prose (`branchConditionStatus`). ModelView routes,
-  playback call chains and music contracts stay withheld until re-read.
+  playback call chains and music transition registrations stay withheld
+  until re-read. The selector catalog used to publish the music setters and
+  selector callsites with no build gate at all; with no measured build they
+  now carry no native field.
   Authored and HIRC evidence is unaffected.
 
 See [`../game_data_recovery.md`](../game_data_recovery.md) for durable

@@ -265,13 +265,18 @@ def verify_row(build: _Build, event: str, row: Mapping[str, Any]) -> tuple[dict[
     return current, "verified"
 
 
+# Every spelling a reviewed row uses for a fact of the build it was read on.
+_BUILD_KEY_SUFFIXES = ("Va", "VirtualAddress", "MethodIndex", "Token", "Sha256")
+_BUILD_KEYS = frozenset({"methodIndex", "token", "virtualAddress", "bodyLength"})
+
+
 def _clear_addresses(spec: Mapping[str, Any]) -> dict[str, Any]:
     """A copy with every build address and fingerprint of the reviewed build removed."""
     current: dict[str, Any] = {}
     for key, value in spec.items():
         if isinstance(value, list):
             current[key] = [_clear_addresses(item) if isinstance(item, Mapping) else item for item in value]
-        elif key.endswith(("Va", "MethodIndex")) or key in {"methodIndex", "metadataSha256", "gameAssemblySha256"}:
+        elif key.endswith(_BUILD_KEY_SUFFIXES) or key in _BUILD_KEYS:
             current[key] = None
         else:
             current[key] = value
@@ -373,7 +378,166 @@ def _verify_ai_bark(build: _Build, spec: Mapping[str, Any]) -> tuple[dict[str, A
     ))
 
 
+def _token(index: Any, full: str | None) -> str | None:
+    pointers = sorted(index.pointers_by_name.get(full or "") or [])
+    return str(index.names_by_pointer[pointers[0]][0].get("token") or "") or None if len(pointers) == 1 else None
+
+
+def _immediate_loaded(build: _Build, full: str, value: int) -> bool:
+    """Whether ``full`` (with fragments and helpers) moves ``value`` into a register."""
+    wanted = {f"0x{value & 0xFFFFFFFF:x}", str(value)}
+    for start, size in build.spans(full):
+        for row in build.index._decode(start, size):
+            parts = str(row.get("text") or "").split(", ")
+            if len(parts) == 2 and parts[0].startswith("mov ") and parts[1] in wanted:
+                return True
+    return False
+
+
+def _call_to(build: _Build, caller: str, target: str) -> int | None:
+    for va, names in build.calls(caller):
+        if target in names:
+            return va
+    return None
+
+
+def _enum_members(build: _Build, enum_type: str) -> list[str] | None:
+    index = build.index
+    type_def = index.types.get(enum_type)
+    if type_def is None:
+        return None
+    fields = index.metadata.fields_for(type_def) if hasattr(index.metadata, "fields_for") else None
+    if fields is None:
+        return None
+    names = [index.metadata.string(field.name_index) for field in fields]
+    return [name for name in names if name != "value__"]
+
+
+def _fnv1_lower(name: str) -> int:
+    value = 0x811C9DC5
+    for code_unit in name.lower().encode("utf-16-le")[::2]:
+        value = ((value * 0x01000193) & 0xFFFFFFFF) ^ code_unit
+    return value
+
+
+def verify_music_state_groups(build: _Build, groups: Any) -> tuple[list[dict[str, Any]], str]:
+    """Each group's setter by name, its enum members from metadata, its callsites by body.
+
+    A static callsite holds when its caller moves the value id into a register
+    and calls the setter; a runtime callsite when the caller calls the setter.
+    A callsite that no longer holds is dropped, and a group whose setter is gone
+    keeps its enum values but carries no native fields.
+    """
+    index = build.index
+    current_groups: list[dict[str, Any]] = []
+    for group in groups:
+        row = _clear_addresses(group)
+        row.pop("binaryEvidence", None)
+        owner = str(group.get("enumType") or "").split("+")[0]
+        setter = f"{owner}.{group.get('setterMethod')}"
+        members = _enum_members(build, str(group.get("enumType") or ""))
+        if members is not None:
+            reviewed = {value["member"]: value for value in group.get("values") or ()}
+            row["values"] = [
+                dict(reviewed[name]) if name in reviewed and reviewed[name].get("valueId") == _fnv1_lower(name)
+                else {"member": name, "hashInput": name.lower(), "valueId": _fnv1_lower(name),
+                      "valueIdHex": f"0x{_fnv1_lower(name):08x}",
+                      "resolution": "exactCurrentMetadataEnumMemberFNV1Utf16Hash"}
+                for name in members
+            ]
+        if setter not in index.pointers_by_name:
+            row.update({"staticValueCallsites": [], "runtimeValueCallsites": [],
+                        "nativeRederivation": {"status": "setter-missing"}})
+            current_groups.append(row)
+            continue
+        row.update({"methodIndex": _method_index(index, setter), "token": _token(index, setter),
+                    "virtualAddress": _address(index, setter)})
+        static_rows, dropped = [], 0
+        for callsite in group.get("staticValueCallsites") or ():
+            caller = f"{owner}.{callsite.get('callerMethod')}"
+            call_va = _call_to(build, caller, setter) if caller in index.pointers_by_name else None
+            if call_va is None or not _immediate_loaded(build, caller, int(callsite.get("valueId") or 0)):
+                dropped += 1
+                continue
+            static_rows.append({**_clear_addresses(callsite), "callerMethodIndex": _method_index(index, caller),
+                                "callVirtualAddress": f"0x{call_va:x}"})
+        runtime_rows = []
+        for callsite in group.get("runtimeValueCallsites") or ():
+            caller = f"{owner}.{callsite.get('callerMethod')}"
+            call_va = _call_to(build, caller, setter) if caller in index.pointers_by_name else None
+            if call_va is None:
+                dropped += 1
+                continue
+            runtime_rows.append({**_clear_addresses(callsite), "callerMethodIndex": _method_index(index, caller),
+                                 "callVirtualAddress": f"0x{call_va:x}"})
+        row.update({"staticValueCallsites": static_rows, "runtimeValueCallsites": runtime_rows,
+                    "nativeRederivation": {"status": "verified", "droppedCallsites": dropped,
+                                           "enumMembers": "installedMetadata" if members is not None else "reviewed"}})
+        current_groups.append(row)
+    return current_groups, "verified"
+
+
+def verify_selector_groups(build: _Build, groups: Any) -> tuple[list[dict[str, Any]], str]:
+    """Re-prove each selector group's native setter; drop the setter when it no longer holds."""
+    index = build.index
+    current_groups: list[dict[str, Any]] = []
+    for group in groups:
+        setter_spec = group.get("runtimeSetter")
+        if not setter_spec:
+            current_groups.append(dict(group))
+            continue
+        row = dict(group)
+        caller_type = str(setter_spec.get("callerType") or "")
+        setter = str(setter_spec.get("setter") or "").split("(")[0]
+        current = _clear_addresses(setter_spec)
+        holds = setter in index.pointers_by_name
+        if holds and setter_spec.get("callerMethod"):
+            caller = f"{caller_type}.{setter_spec['callerMethod']}"
+            call_va = _call_to(build, caller, setter) if caller in index.pointers_by_name else None
+            holds = call_va is not None
+            if holds:
+                current.update({"callerMethodIndex": _method_index(index, caller), "callerToken": _token(index, caller),
+                                "setSwitchCallVirtualAddress": f"0x{call_va:x}"})
+                source = setter_spec.get("audioObjectIdSource") or {}
+                if source.get("method") in index.pointers_by_name:
+                    current["audioObjectIdSource"] = {**_clear_addresses(source),
+                                                      "methodIndex": _method_index(index, source["method"]),
+                                                      "token": _token(index, source["method"]),
+                                                      "virtualAddress": _address(index, source["method"])}
+        if holds and setter_spec.get("calls"):
+            calls = []
+            for call in setter_spec["calls"]:
+                caller = f"{caller_type}.{call.get('method')}"
+                reached = caller in index.pointers_by_name and setter in build.reach(caller)
+                if not reached or not _immediate_loaded(build, caller, int(call.get("valueId") or 0)):
+                    holds = False
+                    break
+                call_va = _call_to(build, caller, setter)
+                calls.append({**_clear_addresses(call),
+                              "setStateCallVirtualAddress": f"0x{call_va:x}" if call_va is not None else None})
+            if holds:
+                current["calls"] = calls
+                current.update({"setterMethodIndex": _method_index(index, setter), "setterToken": _token(index, setter),
+                                "setterVirtualAddress": _address(index, setter)})
+        resolver = group.get("valueResolver")
+        if holds and resolver:
+            full = f"{caller_type}.{resolver.get('method')}"
+            row["valueResolver"] = ({**_clear_addresses(resolver), "methodIndex": _method_index(index, full),
+                                     "token": _token(index, full), "virtualAddress": _address(index, full)}
+                                    if full in index.pointers_by_name else None)
+        if holds:
+            row["runtimeSetter"] = {**current, "nativeRederivation": {"status": "verified"}}
+        else:
+            row.pop("runtimeSetter", None)
+            row.pop("valueResolver", None)
+            row["runtimeObservationStatus"] = "nativeSetterNotReprovedOnInstalledBuild"
+        current_groups.append(row)
+    return current_groups, "verified"
+
+
 ROUTE_VERIFIERS = {
+    "musicStateGroups": verify_music_state_groups,
+    "selectorGroups": verify_selector_groups,
     "enemyVoiceAction": verify_enemy_voice_action,
     "aiBark": _verify_ai_bark,
     "animationVoiceTrigger": verify_overloads_call,
@@ -403,6 +567,8 @@ def rederive_catalogs(
     key = {
         "_schema": SCHEMA,
         "catalogSha256": _catalog_digest({"catalogs": catalogs, "routes": routes or {}}),
+        # The verifier is an input of the report too: a changed rule re-evaluates.
+        "verifierSha256": hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         "gameAssemblySha256": native.gameassembly_sha256.upper(),
         "globalMetadataSha256": native.metadata_sha256.upper(),
     }
@@ -441,13 +607,15 @@ def rederive_catalogs(
 
 
 def reviewed_routes() -> dict[str, Mapping[str, Any]]:
-    """The native voice routes this module re-derives, as reviewed."""
-    from scripts.webui.audio.semantics import native_evidence
+    """The native routes and group catalogs this module re-derives, as reviewed."""
+    from scripts.webui.audio.semantics import build_contracts, native_evidence
 
     return {
         "enemyVoiceAction": native_evidence.ENEMY_TRIGGER_VOICE_ACTION_NATIVE,
         "aiBark": native_evidence.AI_BARK_NATIVE_RUNTIME,
         "animationVoiceTrigger": native_evidence.ANIMATION_VOICE_TRIGGER_NATIVE,
+        "musicStateGroups": build_contracts.AUDIO_MUSIC_NATIVE_STATE_GROUPS,
+        "selectorGroups": build_contracts.AUDIO_RUNTIME_SELECTOR_GROUPS,
     }
 
 
