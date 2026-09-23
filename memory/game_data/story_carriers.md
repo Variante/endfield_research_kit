@@ -82,7 +82,13 @@ model these carriers feed, and everything about presenting the result, is
   native hashes equal the installed build's. The reverse-PPtr audit (Story
   root playback aliases) and `webui/story/dynamic_scene.json` were made on the
   previous build and publish nothing until regenerated; the latter still names
-  layout-v1 export paths.
+  layout-v1 export paths. The reverse audit regenerates through
+  `scripts.webui.story_recovery.audit_story_objects`, but only after an
+  installed-game export published with `--animestudio-object-index`.
+  `dynamic_scene.json` has no generator in the tree: its two builders
+  (`build_dynamic_scene_mission_control_audit.py` and the LevelScript
+  action-bridge audit) were deleted when it was frozen in `74a263c7`, so
+  refreshing it means restoring and porting them from history.
 - Mission Pipeline `RUNTIME_CONTRACT` rows are re-verified by name each run;
   a hop reached through an inlined copy is `verified_with_inlined_hops`. A row
   whose chain no longer holds is `link_failed` and needs a fresh reading, not
