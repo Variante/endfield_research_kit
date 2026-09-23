@@ -429,10 +429,14 @@ published as `decodeStatus=derived` with `evidenceTier=direct` and the
 wrapper's member names. A chain still splits only when every item is consumed
 and the cursor lands on the proven payload end, and without the installed
 build there are no plans. Where both decoders read an item they must end on
-the same byte; they agree on all but six items, every one a reviewed
-`CreateBuffAction` whose anchor scan ran into the following item, so a
-disagreement fails closed instead of choosing a side. With the fallback, no
-non-empty BuffData action payload remains unsplit or ambiguous.
+the same byte, and a disagreement fails closed instead of choosing a side.
+Every disagreement traced back to a byte-shape heuristic in the reviewed
+reader -- a `CreateBuffActionInput` scan for a `buff_*` string, and the
+TargetSettings "envelope", which assumes fixed lengths for common shapes --
+and both now read by member (a typed TargetSettings read is kept over the
+envelope and the envelope's objection is recorded). The two decoders now
+agree on every item both read. With the fallback, no non-empty BuffData
+action payload remains unsplit or ambiguous.
 
 The derivation also closes the types those layouts refer to: 42 structs and 94
 enums, reached by running the reference set to a fixed point. Both are checked

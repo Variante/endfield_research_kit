@@ -2146,7 +2146,7 @@ def consume_buff_create_buff_action(
         limit,
         "createBuff.passTargetGroupsToBuff",
     )
-    target_settings, offset = read_buff_target_settings_envelope_partial(
+    target_settings, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -2228,7 +2228,7 @@ def consume_buff_modify_dynamic_blackboard_action(
     calculate_type_name = BUFF_MODIFY_DYNAMIC_BLACKBOARD_CALCULATION_TYPE_NAMES.get(calculate_type)
     if calculate_type_name is None:
         raise ValueError(f"modifyDynamicBlackboard.calculateTypeUnknown={calculate_type}")
-    calculation_target, offset = read_buff_target_settings_envelope_partial(
+    calculation_target, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -2379,7 +2379,7 @@ def consume_buff_effect_action(
         effect_source_start,
         "effectAction.effectActionCfg",
     )
-    effect_source, offset = read_buff_target_settings_envelope_partial(
+    effect_source, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -2389,7 +2389,7 @@ def consume_buff_effect_action(
     bool_fields["forceMainBody"], offset = read_buff_bool_field_bounded(
         data, offset, limit, "effectAction.forceMainBody",
     )
-    guard_lod_source, offset = read_buff_target_settings_envelope_partial(
+    guard_lod_source, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -2417,7 +2417,7 @@ def consume_buff_effect_action(
         raise ValueError(
             f"effectAction.targetSettings:envelope-anchor-not-at-cursor={format_offset(offset)}"
         )
-    target_settings, offset = read_buff_target_settings_envelope_partial(
+    target_settings, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -2472,7 +2472,7 @@ def consume_buff_convert_to_target_context_action(
     blackboard_vector3, offset = read_buff_blackboard_vector3_field_bounded(
         data, offset, limit, "convertToTargetContext.blackboardVector3",
     )
-    convert_from, offset = read_buff_target_settings_envelope_partial(
+    convert_from, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -2603,7 +2603,7 @@ def consume_buff_debug_print_action(
     log_type_names = {0: "TargetSetting", 1: "BlackboardItem"}
     if log_type not in log_type_names:
         raise ValueError(f"debugPrint.logType={log_type}")
-    target_settings, offset = read_buff_target_settings_envelope_partial(
+    target_settings, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -3148,13 +3148,13 @@ def consume_buff_interrupt_action(
         limit,
         "interruptAction.prefix",
     )
-    attacker, offset = read_buff_target_settings_envelope_partial(
+    attacker, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
         "interruptAction.attacker",
     )
-    defender, offset = read_buff_target_settings_envelope_partial(
+    defender, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -3216,13 +3216,13 @@ def consume_buff_spell_infliction_action(
         raise ValueError(f"spellInfliction.inflictionType={infliction_type}")
     infliction_type_name = BUFF_SPELL_INFLICTION_TYPE_NAMES[infliction_type]
     is_extra, offset = read_buff_bool_field_bounded(data, offset, limit, "spellInfliction.isExtra")
-    source, offset = read_buff_target_settings_envelope_partial(
+    source, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
         "spellInfliction.source",
     )
-    target, offset = read_buff_target_settings_envelope_partial(
+    target, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -3392,7 +3392,7 @@ def consume_buff_camera_impulse_action(
     if bool_offset != target_start:
         raise ValueError(f"cameraImpulse.boolTail:tail-at={format_offset(bool_offset)}")
 
-    target_settings, target_end = read_buff_target_settings_envelope_partial(
+    target_settings, target_end = read_buff_target_settings_full_or_partial(
         data,
         target_start,
         limit,
@@ -4162,17 +4162,24 @@ def read_buff_target_settings_full_or_partial(
                 data, offset, decoded_end, field_name,
             )
         except (IndexError, UnicodeDecodeError, ValueError, struct.error):
-            decoded = None
-        else:
-            if verified_end == decoded_end:
-                return {
-                    **partial,
-                    **decoded,
-                    "status": "exact",
-                    "semanticStatus": "exact-target-settings-selector-data",
-                    "schemaSource": BUFF_SELECTOR_SCHEMA_SOURCE_NOTE,
-                    "boundarySource": "typed-member-cursor-validated-by-envelope",
-                }, decoded_end
+            partial, verified_end = {}, None
+        # The typed cursor reads all 13 members and every nested selector
+        # subtype through a proven layout; the envelope is a byte-shape
+        # heuristic that expects fixed lengths for common shapes. Where they
+        # differ the typed read is kept (the build's derived plan agrees with
+        # it) and the envelope's disagreement is recorded, not obeyed.
+        return {
+            **partial,
+            **decoded,
+            "status": "exact",
+            "semanticStatus": "exact-target-settings-selector-data",
+            "schemaSource": BUFF_SELECTOR_SCHEMA_SOURCE_NOTE,
+            "boundarySource": (
+                "typed-member-cursor-validated-by-envelope"
+                if verified_end == decoded_end
+                else "typed-member-cursor-envelope-disagreed"
+            ),
+        }, decoded_end
 
     envelope_end = buff_target_settings_envelope_limit(
         data, offset, max_limit, field_name,
@@ -5351,7 +5358,7 @@ def consume_buff_check_super_armor_action(
         limit,
         "checkSuperArmor.prefix",
     )
-    check_target, offset = read_buff_target_settings_envelope_partial(
+    check_target, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -5410,7 +5417,7 @@ def consume_buff_check_main_character_action(
         limit,
         "checkMainCharacter.prefix",
     )
-    check_target, offset = read_buff_target_settings_envelope_partial(
+    check_target, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -5477,13 +5484,13 @@ def consume_buff_finish_buff_action(
         if not buff_id:
             raise ValueError(f"finishBuff.buffIds[{index}].value:empty")
         buff_ids.append(buff_id)
-    buff_owner, offset = read_buff_target_settings_envelope_partial(
+    buff_owner, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
         "finishBuff.buffOwner",
     )
-    buff_source, offset = read_buff_target_settings_envelope_partial(
+    buff_source, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -5498,7 +5505,7 @@ def consume_buff_finish_buff_action(
     )
     if offset > limit:
         raise ValueError("finishBuff.finishLayerCnt:past-limit")
-    finish_source, offset = read_buff_target_settings_envelope_partial(
+    finish_source, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -5573,7 +5580,7 @@ def consume_buff_create_timed_marker_action(
         limit,
         "createTimedMarker.markerId",
     )
-    target_settings, offset = read_buff_target_settings_envelope_partial(
+    target_settings, offset = read_buff_target_settings_full_or_partial(
         data,
         offset,
         limit,
@@ -5766,7 +5773,7 @@ def consume_buff_check_hp_action(
     offset = item_start + tag_width + 1
     prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "checkHp.prefix")
     compare_type, offset = read_buff_i32_field_bounded(data, offset, limit, "checkHp.compare")
-    hp_owner, offset = read_buff_target_settings_envelope_partial(data, offset, limit, "checkHp.hpOwner")
+    hp_owner, offset = read_buff_target_settings_full_or_partial(data, offset, limit, "checkHp.hpOwner")
     is_ratio, offset = read_buff_bool_field_bounded(data, offset, limit, "checkHp.isRatio")
     value, offset = read_buff_blackboard_float_raw_field_bounded(data, offset, limit, "checkHp.value")
     if offset > limit:
@@ -5807,7 +5814,7 @@ def consume_buff_check_tag_match_action(
         raise ValueError(f"checkTagMatch:header={tag_width}/{member_count}")
     offset = item_start + tag_width + 1
     prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "checkTagMatch.prefix")
-    check_target, offset = read_buff_target_settings_envelope_partial(data, offset, limit, "checkTagMatch.checkTarget")
+    check_target, offset = read_buff_target_settings_full_or_partial(data, offset, limit, "checkTagMatch.checkTarget")
     query, offset = read_buff_gameplay_tag_query_exact(data, offset, limit, "checkTagMatch.query")
     return {
         "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
@@ -5827,7 +5834,7 @@ def consume_buff_check_timed_marker_action(
     offset = item_start + tag_width + 1
     prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "checkTimedMarker.prefix")
     blackboard_key, offset = read_buff_memorypack_utf8_string_strict_bounded(data, offset, limit, "checkTimedMarker.blackboardKey", max_length=256)
-    check_target, offset = read_buff_target_settings_envelope_partial(data, offset, limit, "checkTimedMarker.checkTarget")
+    check_target, offset = read_buff_target_settings_full_or_partial(data, offset, limit, "checkTimedMarker.checkTarget")
     marker_id, offset = read_buff_memorypack_utf8_string_strict_bounded(data, offset, limit, "checkTimedMarker.id", max_length=256)
     return_true_if_not_exists, offset = read_buff_bool_field_bounded(data, offset, limit, "checkTimedMarker.returnTrueIfNotExists")
     use_blackboard_key, offset = read_buff_bool_field_bounded(data, offset, limit, "checkTimedMarker.useBlackboardKey")
@@ -5853,7 +5860,7 @@ def consume_buff_check_object_type_action(
     offset = item_start + tag_width + 1
     prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "checkObjectType.prefix")
     object_type_mask, offset = read_buff_i32_field_bounded(data, offset, limit, "checkObjectType.objectTypeMask")
-    target, offset = read_buff_target_settings_envelope_partial(data, offset, limit, "checkObjectType.target")
+    target, offset = read_buff_target_settings_full_or_partial(data, offset, limit, "checkObjectType.target")
     return {
         "type": BUFF_ABILITY_ACTION_TAG_NAMES[tag], "decodeStatus": "exact",
         "semanticStatus": "exact-object-type-condition", "schemaSource": "current-build runtime fields and exact MemoryPack setter order",
@@ -5925,7 +5932,7 @@ def consume_buff_finish_owner_action(
         raise ValueError(f"finishOwner:header={tag_width}/{member_count}")
     offset = item_start + tag_width + 1
     prefix, offset = read_buff_ability_action_common_prefix_bounded(data, offset, limit, "finishOwner.prefix")
-    owner, offset = read_buff_target_settings_envelope_partial(data, offset, limit, "finishOwner.owner")
+    owner, offset = read_buff_target_settings_full_or_partial(data, offset, limit, "finishOwner.owner")
     skip_die_display, offset = read_buff_bool_field_bounded(data, offset, limit, "finishOwner.skipDieDisplay")
     if offset > limit:
         raise ValueError("finishOwner:past-limit")
@@ -5957,7 +5964,7 @@ def consume_buff_check_buff_stack_num_action(
     )
     if not buff_id:
         raise ValueError("checkBuffStackNum.buffId.value:empty")
-    check_target, offset = read_buff_target_settings_envelope_partial(
+    check_target, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "checkBuffStackNum.checkTarget",
     )
     compare_type, offset = read_buff_i32_field_bounded(
@@ -6001,7 +6008,7 @@ def consume_buff_check_buff_stack_num_advanced_action(
     stack_num_type, offset = read_buff_i32_field_bounded(
         data, offset, limit, "checkBuffStackNumAdvanced.buffStackNumType",
     )
-    check_target, offset = read_buff_target_settings_envelope_partial(
+    check_target, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "checkBuffStackNumAdvanced.checkTarget",
     )
     compare_type, offset = read_buff_i32_field_bounded(
@@ -6044,13 +6051,13 @@ def consume_buff_finish_buff_advanced_action(
     prefix, offset = read_buff_ability_action_common_prefix_bounded(
         data, offset, limit, "finishBuffAdvanced.prefix",
     )
-    buff_owner, offset = read_buff_target_settings_envelope_partial(
+    buff_owner, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "finishBuffAdvanced.buffOwner",
     )
     buff_settings, offset = read_buff_find_settings_exact(
         data, offset, limit, "finishBuffAdvanced.buffSettings",
     )
-    buff_source, offset = read_buff_target_settings_envelope_partial(
+    buff_source, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "finishBuffAdvanced.buffSource",
     )
     finish_all, offset = read_buff_bool_field_bounded(
@@ -6059,7 +6066,7 @@ def consume_buff_finish_buff_advanced_action(
     finish_layer_cnt, offset = read_buff_blackboard_float_raw_field_bounded(
         data, offset, limit, "finishBuffAdvanced.finishLayerCnt",
     )
-    finish_source, offset = read_buff_target_settings_envelope_partial(
+    finish_source, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "finishBuffAdvanced.finishSource",
     )
     is_absorbed, offset = read_buff_bool_field_bounded(
@@ -6105,7 +6112,7 @@ def consume_buff_spawn_interactive_gold_coin_action(
     count, offset = read_buff_blackboard_int_field_exact(
         data, offset, limit, "spawnInteractiveGoldCoin.count",
     )
-    spawn_pos, offset = read_buff_target_settings_envelope_partial(
+    spawn_pos, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "spawnInteractiveGoldCoin.spawnPos",
     )
     return {
@@ -6135,7 +6142,7 @@ def consume_buff_save_value_from_ai_blackboard_action(
     ai_bb_key, offset = read_buff_memorypack_utf8_string_strict_bounded(
         data, offset, limit, "saveValueFromAIBlackboard.aiBBKey", max_length=256,
     )
-    bb_owner, offset = read_buff_target_settings_envelope_partial(
+    bb_owner, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "saveValueFromAIBlackboard.bbOwner",
     )
     keys: dict[str, str] = {}
@@ -6203,10 +6210,10 @@ def consume_buff_obtain_cost_action(
     play_obtain_atb_effect, offset = read_buff_bool_field_bounded(
         data, offset, limit, "obtainCost.playObtainAtbEffect",
     )
-    source, offset = read_buff_target_settings_envelope_partial(
+    source, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "obtainCost.source",
     )
-    target, offset = read_buff_target_settings_envelope_partial(
+    target, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "obtainCost.target",
     )
     use_usp_recover_tag, offset = read_buff_bool_field_bounded(
@@ -6283,7 +6290,7 @@ def consume_buff_add_global_cd_timer_action(
     cd_time, offset = read_buff_blackboard_float_raw_field_bounded(
         data, offset, limit, "addGlobalCdTimer.cdTime",
     )
-    target, offset = read_buff_target_settings_envelope_partial(
+    target, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "addGlobalCdTimer.target",
     )
     return {
@@ -6307,7 +6314,7 @@ def consume_buff_cast_skill_action(
     prefix, offset = read_buff_ability_action_common_prefix_bounded(
         data, offset, limit, "castSkill.prefix",
     )
-    caster, offset = read_buff_target_settings_envelope_partial(
+    caster, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "castSkill.caster",
     )
     inherit_source_skill_cast_id, offset = read_buff_bool_field_bounded(
@@ -6321,7 +6328,7 @@ def consume_buff_cast_skill_action(
     skip_apply_cost, offset = read_buff_bool_field_bounded(
         data, offset, limit, "castSkill.skipApplyCost",
     )
-    target, offset = read_buff_target_settings_envelope_partial(
+    target, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "castSkill.target",
     )
     return {
@@ -6388,10 +6395,10 @@ def consume_buff_check_distance_action(
     less_than, offset = read_buff_bool_field_bounded(
         data, offset, limit, "checkDistance.lessThan",
     )
-    source, offset = read_buff_target_settings_envelope_partial(
+    source, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "checkDistance.source",
     )
-    target, offset = read_buff_target_settings_envelope_partial(
+    target, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "checkDistance.target",
     )
     return {
@@ -6422,7 +6429,7 @@ def consume_buff_check_global_cd_timer_action(
     )
     if not buff_id:
         raise ValueError("checkGlobalCdTimer.buffId:empty")
-    target, offset = read_buff_target_settings_envelope_partial(
+    target, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "checkGlobalCdTimer.target",
     )
     return {
@@ -6449,7 +6456,7 @@ def consume_buff_check_poise_value_action(
     compare_type, offset = read_buff_i32_field_bounded(
         data, offset, limit, "checkPoiseValue.compare",
     )
-    poise_owner, offset = read_buff_target_settings_envelope_partial(
+    poise_owner, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "checkPoiseValue.poiseOwner",
     )
     return_if_missing, offset = read_buff_bool_field_bounded(
@@ -6482,10 +6489,10 @@ def consume_buff_check_targets_equal_action(
     prefix, offset = read_buff_ability_action_common_prefix_bounded(
         data, offset, limit, "checkTargetsEqual.prefix",
     )
-    first_target, offset = read_buff_target_settings_envelope_partial(
+    first_target, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "checkTargetsEqual.firstTargetSettings",
     )
-    second_target, offset = read_buff_target_settings_envelope_partial(
+    second_target, offset = read_buff_target_settings_full_or_partial(
         data, offset, limit, "checkTargetsEqual.secondTargetSettings",
     )
     return {
