@@ -26,6 +26,7 @@ from scripts.game_data.codecs.levelscript.params import decode_bool_param as _de
 from scripts.game_data.codecs.levelscript.params import decode_constant_string_param as _decode_constant_string_param
 from scripts.game_data.codecs.levelscript.params import decode_i32_param as _decode_i32_param
 from scripts.game_data.codecs.levelscript.params import decode_param_tail as _decode_param_tail
+from scripts.game_data import levelscript_union_tags as union_tags
 from scripts.game_data.levelscript_task_condition_native import load_levelscript_task_condition_rows
 from typing import Any
 
@@ -39,65 +40,89 @@ LEVELSCRIPT_TASK_CONDITION_MAPPING_ID = (
 )
 
 
+def _task_condition_tag(name: str) -> Any:
+    """The current GameCondition tag of ``name``, resolved by type name.
+
+    A tag is the type's rank in the union and renumbers when a condition is
+    added, so it is never written down. Names outside the ``Conditions``
+    namespace are recorded bare and looked up both ways; exactly one must
+    exist. Without the recorded build the key is a placeholder no byte equals.
+    """
+    candidates = [
+        found for found in (
+            union_tags.pair("GameCondition", name.replace(".", "_")),
+            union_tags.pair("GameCondition", "Conditions_" + name),
+        )
+        if isinstance(found[0], int)
+    ]
+    if len(candidates) != 1:
+        return ("unresolved", "GameCondition", name)
+    return candidates[0][0]
+
+
+# Reviewed condition payload layouts: the type name and the member count its
+# codec reads. A current wrapper with another member count fails closed.
 LEVELSCRIPT_TASK_CONDITION_TAGS = {
-    0x0017: ("CheckBuildingConnected", 8),
-    0x0018: ("CheckBuildingConnectedAsMA2SB", 8),
-    0x0019: ("CheckBuildingConnectedExist", 8),
-    0x001A: ("CheckBuildingConnectedSpecify", 9),
-    0x001B: ("CheckBuildingStateInArea", 9),
-    0x0023: ("CheckClientGlobalVar", 7),
-    0x0029: ("CheckCutsceneFinish", 5),
-    0x002E: ("CheckDomainShopChannelLevel", 7),
-    0x0035: ("CheckFacBuildingState", 8),
-    0x0037: ("CheckFactoryBlackBoxState", 7),
-    0x0038: ("CheckFluidVolume", 9),
-    0x0039: ("CheckFMVFinish", 5),
-    0x003D: ("CheckGuideGroupComplete", 6),
-    0x0045: ("CheckInteractiveDestroyed", 6),
-    0x0048: ("CheckInteractiveLock", 7),
-    0x0050: ("CheckLevelScriptPropertyBool", 9),
-    0x0051: ("CheckLevelScriptPropertyInt", 9),
-    0x0053: ("CheckLevelScriptStage", 8),
-    0x0054: ("CheckLevelScriptStageReachMax", 6),
-    0x005C: ("CheckLsmEncounterCompleted", 7),
-    0x0067: ("CheckMissionState", 7),
-    0x006A: ("CheckMonsterKilled", 9),
-    0x006B: ("CheckMonsterSpawnerComplete", 6),
-    0x0070: ("CheckPerfectlyPassDungeonId", 5),
-    0x0074: ("CheckPlayerInMap", 5),
-    0x007F: ("CheckPRTSUnlocked", 5),
-    0x0080: ("CheckQuestState", 7),
-    0x0084: ("CheckRepairBuilding", 6),
-    0x0087: ("CheckRepeatableTalkFinish", 6),
-    0x0086: ("CheckRichContentReadingDone", 5),
-    0x0089: ("CheckScanInteractive", 6),
-    0x008B: ("CheckScanInteractive", 6),
-    0x008D: ("CheckScriptTaskStateEqual", 9),
-    0x008E: ("CheckScriptMonsterKilled", 10),
-    0x008F: ("CheckServerGlobalVar", 7),
-    0x0091: ("CheckSewageTreatPlantLevel", 7),
-    0x009C: ("CheckSpaceshipRoomBuilt", 7),
-    0x00A3: ("CheckTalkOptionFinish", 6),
-    0x00A7: ("CheckTerminalReadingDone", 5),
-    0x00B7: ("CombineCondition", 6),
-    0x00BC: ("Conditions.CheckCurrentDungeonBoth", 5),
-    0x00D6: ("OnBuildingPanelOpen", 6),
-    0x0108: ("DepotHasItem", 7),
-    0x010B: ("FacBattleBuildingCurEnergy", 8),
-    0x010D: ("FacBuildingCountInScene", 8),
-    0x010E: ("FacBuildingFluidContainerHasItem", 9),
-    0x010F: ("FacBuildingProducingCountInScene", 8),
-    0x0112: ("FacProducePowerReach", 6),
-    0x0113: ("FacProducingFormulaCountInScene", 8),
-    0x0114: ("FacStatisticItemGen", 8),
-    0x0115: ("FacStatisticItemGenRate", 8),
-    0x0127: ("HasItemCount", 7),
-    0x0129: ("InteractiveCheckBool", 8),
-    0x0130: ("InteractiveCheckInt", 9),
-    0x012D: ("PlayerHasItem", 8),
-    0x012E: ("PlayerHasItemInItemBag", 8),
-    0x0132: ("TaskReachDestination", 6),
-    0x0137: ("SystemPoiLevel", 8),
+    _task_condition_tag(name): (name, member_count)
+    for name, member_count in (
+        ("CheckBuildingConnected", 8),
+        ("CheckBuildingConnectedAsMA2SB", 8),
+        ("CheckBuildingConnectedExist", 8),
+        ("CheckBuildingConnectedSpecify", 9),
+        ("CheckBuildingStateInArea", 9),
+        ("CheckClientGlobalVar", 7),
+        ("CheckCutsceneFinish", 5),
+        ("CheckDomainShopChannelLevel", 7),
+        ("CheckFacBuildingState", 8),
+        ("CheckFactoryBlackBoxState", 7),
+        ("CheckFluidVolume", 9),
+        ("CheckFMVFinish", 5),
+        ("CheckGuideGroupComplete", 6),
+        ("CheckInteractiveDestroyed", 6),
+        ("CheckInteractiveLock", 7),
+        ("CheckLevelScriptPropertyBool", 9),
+        ("CheckLevelScriptPropertyInt", 9),
+        ("CheckLevelScriptStage", 8),
+        ("CheckLevelScriptStageReachMax", 6),
+        ("CheckLsmEncounterCompleted", 7),
+        ("CheckMissionState", 7),
+        ("CheckMonsterKilled", 9),
+        ("CheckMonsterSpawnerComplete", 6),
+        ("CheckPerfectlyPassDungeonId", 5),
+        ("CheckPlayerInMap", 5),
+        ("CheckPRTSUnlocked", 5),
+        ("CheckQuestState", 7),
+        ("CheckRepairBuilding", 6),
+        ("CheckRepeatableTalkFinish", 6),
+        ("CheckRichContentReadingDone", 5),
+        ("CheckScanInteractive", 6),
+        ("CheckScriptTaskStateEqual", 9),
+        ("CheckScriptMonsterKilled", 10),
+        ("CheckServerGlobalVar", 7),
+        ("CheckSewageTreatPlantLevel", 7),
+        ("CheckSpaceshipRoomBuilt", 7),
+        ("CheckTalkOptionFinish", 6),
+        ("CheckTerminalReadingDone", 5),
+        ("CombineCondition", 6),
+        ("Conditions.CheckCurrentDungeonBoth", 5),
+        ("OnBuildingPanelOpen", 6),
+        ("DepotHasItem", 7),
+        ("FacBattleBuildingCurEnergy", 8),
+        ("FacBuildingCountInScene", 8),
+        ("FacBuildingFluidContainerHasItem", 9),
+        ("FacBuildingProducingCountInScene", 8),
+        ("FacProducePowerReach", 6),
+        ("FacProducingFormulaCountInScene", 8),
+        ("FacStatisticItemGen", 8),
+        ("FacStatisticItemGenRate", 8),
+        ("HasItemCount", 7),
+        ("InteractiveCheckBool", 8),
+        ("InteractiveCheckInt", 9),
+        ("PlayerHasItem", 8),
+        ("PlayerHasItemInItemBag", 8),
+        ("TaskReachDestination", 6),
+        ("SystemPoiLevel", 8),
+    )
 }
 
 
