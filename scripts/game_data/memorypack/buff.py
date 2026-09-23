@@ -5045,19 +5045,29 @@ def consume_buff_ability_action_item_derived(
     end = reader.pos
     member_count = data[offset + tag_width]
     wrapper = registry.wrapped_names.get(definition) or ""
+    name = BUFF_ABILITY_ACTION_TAG_NAMES.get(tag) or wrapper
+    # ``decoded`` repeats the summary identity (type, status, length, member
+    # count) the way every reviewed decoder's does, and keeps the member values
+    # under ``members``.
     return {
         "index": index,
         "offset": format_offset(offset),
         "bytes": end - offset,
         "tag": f"0x{tag:04x}",
-        "name": BUFF_ABILITY_ACTION_TAG_NAMES.get(tag) or wrapper,
+        "name": name,
         "tagBytes": tag_width,
         "memberCount": member_count,
         "bodyBytes": end - offset - tag_width - 1,
         "decodeStatus": "derived",
         "boundaryProof": "derived-plan-consumption",
         "evidenceTier": "direct",
-        "decoded": value,
+        "decoded": {
+            "type": name,
+            "decodeStatus": "derived",
+            "byteLength": end - offset,
+            "memberCount": member_count,
+            "members": value,
+        },
     }, end
 
 
