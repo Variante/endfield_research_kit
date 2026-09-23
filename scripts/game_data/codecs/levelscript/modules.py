@@ -6,6 +6,8 @@ import math
 import struct
 from typing import Any, Callable
 
+from scripts.game_data import levelscript_union_tags as union_tags
+
 
 class LevelScriptModuleCodecError(ValueError):
     """Raised when a declared module value cannot advance exactly."""
@@ -14,15 +16,20 @@ class LevelScriptModuleCodecError(ValueError):
 _MAX_COUNT = 16_384
 _MAX_STRING_BYTES = 1 << 20
 
+# Module types with a reviewed codec. Each tag is resolved from the
+# LevelScriptModuleData union by type name, never written down.
+_MODULE_TYPES = (
+    "EncounterData",
+    "FogNestControllerData",
+    "GhostWallModuleData",
+    "GuideButterflyModuleData",
+    "SpecialSightControllerData",
+    "SuperPressureBoardGroupData",
+    "TyphoeaArcheryUnitData",
+    "WaterProgressSyncData",
+)
 MODULE_TAG_NAMES = {
-    0x0002: "EncounterData",
-    0x0005: "FogNestControllerData",
-    0x0006: "GhostWallModuleData",
-    0x0007: "GuideButterflyModuleData",
-    0x000D: "SpecialSightControllerData",
-    0x000E: "SuperPressureBoardGroupData",
-    0x0011: "TyphoeaArcheryUnitData",
-    0x0013: "WaterProgressSyncData",
+    union_tags.pair("LevelScriptModuleData", name)[0]: name for name in _MODULE_TYPES
 }
 
 
@@ -634,16 +641,17 @@ def _parse_encounter(
     }, cursor
 
 
-_SUPPORTED = {
-    0x0002: (16, _parse_encounter),
-    0x0005: (7, _parse_fog_nest),
-    0x0006: (27, _parse_ghost_wall),
-    0x0007: (9, _parse_guide_butterfly),
-    0x000D: (4, _parse_special_sight),
-    0x000E: (9, _parse_pressure_group),
-    0x0011: (8, _parse_typhoea_archery),
-    0x0013: (7, _parse_water_progress),
+_PARSERS = {
+    "EncounterData": (16, _parse_encounter),
+    "FogNestControllerData": (7, _parse_fog_nest),
+    "GhostWallModuleData": (27, _parse_ghost_wall),
+    "GuideButterflyModuleData": (9, _parse_guide_butterfly),
+    "SpecialSightControllerData": (4, _parse_special_sight),
+    "SuperPressureBoardGroupData": (9, _parse_pressure_group),
+    "TyphoeaArcheryUnitData": (8, _parse_typhoea_archery),
+    "WaterProgressSyncData": (7, _parse_water_progress),
 }
+_SUPPORTED = {tag: _PARSERS[name] for tag, name in MODULE_TAG_NAMES.items()}
 
 
 def _union_header(data: bytes, cursor: int, field: str) -> tuple[int, int, int]:

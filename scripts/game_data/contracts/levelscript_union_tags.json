@@ -62,6 +62,12 @@
    "dispatcherVa": "0x1842a34f0",
    "tableVa": "0x1842a3924",
    "entryCount": 10
+  },
+  "LevelScriptModuleData": {
+   "base": "Beyond.MemoryPack.Beyond_Gameplay_LevelScriptModuleDataForMemoryPack",
+   "dispatcherVa": "0x1843f5ff0",
+   "tableVa": "0x1843f6524",
+   "entryCount": 20
   }
  },
  "families": {
@@ -26464,6 +26470,148 @@
     "tag": 9,
     "memberCount": 3,
     "wrappedType": "Beyond.Gameplay.Core.Selector+TargetPriorityFilter+Data"
+   }
+  ],
+  "LevelScriptModuleData": [
+   {
+    "name": "BeaconPoleControllerData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_BeaconPoleControllerDataForMemoryPack",
+    "tag": 0,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.BeaconPoleControllerData"
+   },
+   {
+    "name": "BossBattlerData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_BossBattlerDataForMemoryPack",
+    "tag": 1,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.BossBattlerData"
+   },
+   {
+    "name": "EncounterData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_EncounterDataForMemoryPack",
+    "tag": 2,
+    "memberCount": 16,
+    "wrappedType": "Beyond.Gameplay.EncounterData"
+   },
+   {
+    "name": "EncounterDataV2",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_EncounterDataV2ForMemoryPack",
+    "tag": 3,
+    "memberCount": 16,
+    "wrappedType": "Beyond.Gameplay.EncounterDataV2"
+   },
+   {
+    "name": "EncounterSurvivalData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_EncounterSurvivalDataForMemoryPack",
+    "tag": 4,
+    "memberCount": 25,
+    "wrappedType": "Beyond.Gameplay.EncounterSurvivalData"
+   },
+   {
+    "name": "FogNestControllerData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_FogNestControllerDataForMemoryPack",
+    "tag": 5,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.FogNestControllerData"
+   },
+   {
+    "name": "GhostWallModuleData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GhostWallModuleDataForMemoryPack",
+    "tag": 6,
+    "memberCount": 27,
+    "wrappedType": "Beyond.Gameplay.GhostWallModuleData"
+   },
+   {
+    "name": "GuideButterflyModuleData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_GuideButterflyModuleDataForMemoryPack",
+    "tag": 7,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.GuideButterflyModuleData"
+   },
+   {
+    "name": "KickSlugBallControllerData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_KickSlugBallControllerDataForMemoryPack",
+    "tag": 8,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.KickSlugBallControllerData"
+   },
+   {
+    "name": "MatrixRepairControllerData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_MatrixRepairControllerDataForMemoryPack",
+    "tag": 9,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.MatrixRepairControllerData"
+   },
+   {
+    "name": "RaceData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_RaceDataForMemoryPack",
+    "tag": 10,
+    "memberCount": 11,
+    "wrappedType": "Beyond.Gameplay.RaceData"
+   },
+   {
+    "name": "RollingStoneControllerData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_RollingStoneControllerDataForMemoryPack",
+    "tag": 11,
+    "memberCount": 3,
+    "wrappedType": "Beyond.Gameplay.RollingStoneControllerData"
+   },
+   {
+    "name": "RunePuzzleData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_RunePuzzleDataForMemoryPack",
+    "tag": 12,
+    "memberCount": 17,
+    "wrappedType": "Beyond.Gameplay.RunePuzzleData"
+   },
+   {
+    "name": "SpecialSightControllerData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_SpecialSightControllerDataForMemoryPack",
+    "tag": 13,
+    "memberCount": 4,
+    "wrappedType": "Beyond.Gameplay.SpecialSightControllerData"
+   },
+   {
+    "name": "SuperPressureBoardGroupData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_SuperPressureBoardGroupDataForMemoryPack",
+    "tag": 14,
+    "memberCount": 9,
+    "wrappedType": "Beyond.Gameplay.SuperPressureBoardGroupData"
+   },
+   {
+    "name": "TianshizhuangData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_TianshizhuangDataForMemoryPack",
+    "tag": 15,
+    "memberCount": 14,
+    "wrappedType": "Beyond.Gameplay.TianshizhuangData"
+   },
+   {
+    "name": "TyphoeaArcheryUnitAdvancedData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_TyphoeaArcheryUnitAdvancedDataForMemoryPack",
+    "tag": 16,
+    "memberCount": 5,
+    "wrappedType": "Beyond.Gameplay.TyphoeaArcheryUnitAdvancedData"
+   },
+   {
+    "name": "TyphoeaArcheryUnitData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_TyphoeaArcheryUnitDataForMemoryPack",
+    "tag": 17,
+    "memberCount": 8,
+    "wrappedType": "Beyond.Gameplay.TyphoeaArcheryUnitData"
+   },
+   {
+    "name": "WaterAbsorbedImpactData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_WaterAbsorbedImpactDataForMemoryPack",
+    "tag": 18,
+    "memberCount": 11,
+    "wrappedType": "Beyond.Gameplay.WaterAbsorbedImpactData"
+   },
+   {
+    "name": "WaterProgressSyncData",
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_WaterProgressSyncDataForMemoryPack",
+    "tag": 19,
+    "memberCount": 7,
+    "wrappedType": "Beyond.Gameplay.WaterProgressSyncData"
    }
   ]
  }

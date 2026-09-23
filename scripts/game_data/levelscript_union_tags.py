@@ -44,6 +44,7 @@ FAMILY_BASES = {
     "SelectorFinder": "Beyond_Gameplay_Core_Selector_Finder_DataForMemoryPack",
     "SelectorValidator": "Beyond_Gameplay_Core_Selector_Validator_DataForMemoryPack",
     "SelectorPostProcessor": "Beyond_Gameplay_Core_Selector_PostProcessor_DataForMemoryPack",
+    "LevelScriptModuleData": "Beyond_Gameplay_LevelScriptModuleDataForMemoryPack",
 }
 _WRAPPER_PREFIXES = ("Beyond.MemoryPack.Beyond_Gameplay_Actions_", "Beyond.MemoryPack.Beyond_Gameplay_")
 _WRAPPER_SUFFIX = "ForMemoryPack"
