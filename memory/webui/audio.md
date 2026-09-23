@@ -101,10 +101,19 @@ audio logic in the semantic publisher or import either entry point as a helper.
 - Close more authored consumer-to-Event and Event-to-media ownership paths.
 - Recover selector/parameter meaning without conflating control with playback.
 - Keep unsupported codecs, missing chunks, and unobserved runtime branches visible.
-- Native consumer routes (ModelView, voice triggers, managed-literal and
-  selector callsites) are withheld on the installed build: their catalog is
-  pinned to the previous build (`contracts/audio_native.json`) until it is
-  re-derived by name. Authored and HIRC evidence is unaffected.
+- The native audio catalog was reviewed on the previous build
+  (`contracts/audio_native.json`). On another installed build the callsite
+  catalogs -- managed-literal and selector callsites, SwitchAudioCustomState
+  callsites and voice-response triggers -- and the AnimatorMono, enemy
+  voice-action and AI-bark routes are re-derived by name
+  (`scripts/webui/audio/semantics/native_callsite_rederivation.py`): a row is
+  published only when its consumer resolves, its literal reaches the consumer
+  (in the body, a reached helper, or the selector field's initializer) and the
+  playback sink is reached, with that build's addresses; the rest are withheld
+  with a reason. A re-derived row proves the literal and playback path, not
+  its reviewed trigger prose (`branchConditionStatus`). ModelView routes,
+  playback call chains and music contracts stay withheld until re-read.
+  Authored and HIRC evidence is unaffected.
 
 See [`../game_data_recovery.md`](../game_data_recovery.md) for durable
 serialized-data and native-consumer conclusions, and

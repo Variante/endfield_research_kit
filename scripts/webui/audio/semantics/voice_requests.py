@@ -11,11 +11,10 @@ from scripts.webui.audio.semantics.context_utils import append_context as _appen
 from scripts.webui.audio.semantics.context_utils import normalize_posix as _normalize_posix
 from scripts.webui.audio.semantics.native_evidence import (
     ANIMATION_VOICE_TRIGGER_MAPPING_ID,
-    ANIMATION_VOICE_TRIGGER_NATIVE,
     NATIVE_VOICE_TRIGGER_MAPPING_ID,
-    NATIVE_VOICE_TRIGGER_ROWS,
     NativeAudioEvidence,
 )
+from scripts.webui.audio.semantics import native_callsite_rederivation
 
 ANIMATION_VOICE_CLIP_RELS = (
     Path("game/Unity/AnimationClip"),
@@ -46,7 +45,8 @@ def collect_native_voice_trigger_contexts(
     ``_<triggerKey>_sv`` suffix.
     """
 
-    if not native_context.validated:
+    trigger_rows = native_callsite_rederivation.current_catalogs(native_context)["voiceTrigger"]
+    if not trigger_rows:
         return {}
     aliases = [
         row for row in audio_index.get("audioDialogWwiseEventAliases") or []
@@ -54,7 +54,7 @@ def collect_native_voice_trigger_contexts(
     ]
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
-    for trigger_key, native in NATIVE_VOICE_TRIGGER_ROWS.items():
+    for trigger_key, native in trigger_rows.items():
         suffix = f"_{trigger_key}_sv"
         for alias in aliases:
             event_name = str(alias.get("name") or "").strip()
@@ -159,7 +159,8 @@ def collect_animation_voice_trigger_contexts(
     shared instead of inventing a unique template owner.
     """
 
-    if not native_context.validated:
+    animation_route = native_callsite_rederivation.current_routes(native_context)["animationVoiceTrigger"]
+    if not animation_route:
         return {}
 
     aliases: dict[tuple[str, str, str], list[dict[str, Any]]] = defaultdict(list)
@@ -262,6 +263,6 @@ def collect_animation_voice_trigger_contexts(
                             "fingerprintLockedCurrentBuildAnimatorMonoNativeForwarder",
                             "exactAudioDialogPathHashEqualsVoiceIdAndWwiseEventId",
                         ],
-                        **ANIMATION_VOICE_TRIGGER_NATIVE,
+                        **animation_route,
                     })
     return dict(contexts)

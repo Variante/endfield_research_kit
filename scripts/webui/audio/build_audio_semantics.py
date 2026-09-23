@@ -41,6 +41,7 @@ from scripts.source_paths import ExportLayout
 from scripts.common import EXPORT_LAYOUT
 
 from scripts.common import sha256_file as file_sha256
+from scripts.webui.audio.semantics import native_callsite_rederivation
 from scripts.webui.audio.semantics.entity_contexts import build_custom_footstep_model, collect_ability_voice_trigger_contexts, collect_char_interact_audio_semantics, collect_gameplay_contexts, collect_patrol_sub_action_audio_semantics, collect_spawner_pre_warn_semantics
 from scripts.webui.audio.semantics.levelsequence import build_levelsequence_audio_contexts, collect_levelsequence_play_actions
 from scripts.webui.audio.semantics.mono_behaviour import build_runtime_model, collect_metadata_event_symbol_aliases, collect_mono_behaviour_audio_id_contexts, AUDIO_MUSIC_NATIVE_TRANSITION_REGISTRATIONS
@@ -1175,8 +1176,11 @@ def build_audio_semantic_data(
         "evidenceClass": "authoredStatic",
         "wwiseEventStatus": "notApplicable",
     } for name in (
+        # Names come from the installed metadata and match HIRC ids by hash;
+        # they carry no address of the reviewed build, so any measured build
+        # supplies them.
         identifiers.collect_metadata_audio_literals(metadata_path)
-        if native_context.validated and native_context.gate_verified
+        if native_context.gate_verified and native_context.status in {"validated", "mismatched"}
         else []
     ) if identifiers.is_rtpc_parameter_name(name)]
     rtpc_names_by_hex: dict[str, str] = {}
@@ -2090,9 +2094,8 @@ def build_audio_semantic_data(
         "triggerCatalog": {
             "aiBark": ai_bark_catalog,
             "enemyTriggerVoiceAction": (
-                native_evidence.ENEMY_TRIGGER_VOICE_ACTION_NATIVE
-                if native_context.validated
-                else native_context.unavailable_contract(
+                native_callsite_rederivation.current_routes(native_context)["enemyVoiceAction"]
+                or native_context.unavailable_contract(
                     str(native_evidence.ENEMY_TRIGGER_VOICE_ACTION_NATIVE["nativeMappingId"])
                 )
             ),

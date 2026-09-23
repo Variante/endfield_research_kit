@@ -18,9 +18,9 @@ from scripts.webui.audio.semantics.context_utils import load_json as _load_json
 from scripts.webui.audio.semantics.context_utils import normalize_posix as _normalize_posix
 from scripts.webui.audio.semantics.native_evidence import (
     AI_BARK_NATIVE_RUNTIME,
-    ENEMY_TRIGGER_VOICE_ACTION_NATIVE,
     NativeAudioEvidence,
 )
+from scripts.webui.audio.semantics import native_callsite_rederivation
 
 def collect_ai_bark_trigger_rows(
     export_root: Path,
@@ -28,6 +28,8 @@ def collect_ai_bark_trigger_rows(
     native_context: NativeAudioEvidence,
 ) -> dict[str, list[dict[str, Any]]]:
     """Index exact AIBark rows by the response trigger key they dispatch."""
+    routes = native_callsite_rederivation.current_routes(native_context)
+    ai_bark_route = routes["aiBark"]
 
     merged: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
     for source_layer in ("game",):
@@ -64,10 +66,10 @@ def collect_ai_bark_trigger_rows(
                         ),
                         "runtimeActivationStatus": (
                             "aiBarkTypeToBarkIdDictionarySelectionAndLiveExecutionUnobserved"
-                            if native_context.validated
+                            if ai_bark_route
                             else "nativeAudioEvidenceUnavailable"
                         ),
-                        **(AI_BARK_NATIVE_RUNTIME if native_context.validated else {}),
+                        **(ai_bark_route or {}),
                     }
                     identity = json.dumps(
                         {key: value[key] for key in (
@@ -101,6 +103,8 @@ def build_ai_bark_catalog(
     native_context: NativeAudioEvidence,
 ) -> dict[str, Any]:
     """Summarize AIBark-authored response coverage, including absent media IDs."""
+    routes = native_callsite_rederivation.current_routes(native_context)
+    ai_bark_route = routes["aiBark"]
 
     bark_rows_by_trigger = collect_ai_bark_trigger_rows(
         export_root,
@@ -247,8 +251,8 @@ def build_ai_bark_catalog(
         } for voice_id in event_only_ids],
         "unresolvedResponses": unresolved_rows,
         "nativeRuntime": (
-            AI_BARK_NATIVE_RUNTIME
-            if native_context.validated
+            ai_bark_route
+            if ai_bark_route
             else native_context.unavailable_contract(
                 str(AI_BARK_NATIVE_RUNTIME["nativeMappingId"])
             )
@@ -277,6 +281,9 @@ def collect_responsive_voice_contexts(
     cooldown, probability, tone replacement, and the actually heard response
     remain unresolved.
     """
+    routes = native_callsite_rederivation.current_routes(native_context)
+    ai_bark_route = routes["aiBark"]
+    enemy_route = routes["enemyVoiceAction"]
 
     aliases = {
         int(row.get("eventHash")) & 0xFFFFFFFF: row
@@ -296,8 +303,8 @@ def collect_responsive_voice_contexts(
     )
     enemy_action_by_trigger = {
         row["triggerKey"].casefold(): row
-        for row in ENEMY_TRIGGER_VOICE_ACTION_NATIVE["voiceTypes"]
-    } if native_context.validated else {}
+        for row in enemy_route["voiceTypes"]
+    } if enemy_route else {}
 
     extra_by_hash: dict[int, list[dict[str, Any]]] = defaultdict(list)
     for source_layer in ("game",):
@@ -397,7 +404,7 @@ def collect_responsive_voice_contexts(
                             "aiBarkRequests": ai_bark_requests,
                             "aiBarkRuntimeStatus": (
                                 "exactAIBarkTableTriggerCandidate"
-                                if ai_bark_requests and native_context.validated
+                                if ai_bark_requests and ai_bark_route
                                 else "authoredAIBarkTableTriggerNativeRouteUnavailable"
                                 if ai_bark_requests
                                 else "notAnAIBarkTableTrigger"

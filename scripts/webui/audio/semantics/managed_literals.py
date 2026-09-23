@@ -8,6 +8,7 @@ import re
 from typing import Any
 
 from scripts.webui.audio.semantics import context_utils, identifiers, native_evidence
+from scripts.webui.audio.semantics import native_callsite_rederivation
 
 
 NATIVE_STRING_EVENT_PLAYBACK = {
@@ -1849,6 +1850,19 @@ MANAGED_AUDIO_CALLSITE_CONTEXTS = {
         "branchCondition": "linkCommitGuard [this+0x22]==false",
     },
 }
+def callsite_catalogs(
+    native_context: native_evidence.NativeAudioEvidence,
+) -> tuple[dict[str, dict[str, Any]], dict[str, dict[str, Any]]]:
+    """The managed-literal and custom-state callsite rows to publish.
+
+    See ``native_callsite_rederivation.current_catalogs``: the reviewed rows on
+    the reviewed build, the rows re-derived by name on another measured build,
+    and nothing otherwise.
+    """
+    catalogs = native_callsite_rederivation.current_catalogs(native_context)
+    return catalogs["managed"], catalogs["customState"]
+
+
 def collect_contexts(
     metadata_path: Path | None,
     *,
@@ -1861,11 +1875,9 @@ def collect_contexts(
     ]
     contexts: dict[str, list[dict[str, Any]]] = defaultdict(list)
     seen: dict[str, set[str]] = defaultdict(set)
-    callsite_contexts: dict[str, dict[str, Any]] = {}
     metadata_fingerprint = native_context.metadata_sha256
     gameassembly_fingerprint = native_context.gameassembly_sha256
-    if native_context.validated:
-        callsite_contexts = MANAGED_AUDIO_CALLSITE_CONTEXTS
+    callsite_contexts, custom_state_contexts = callsite_catalogs(native_context)
     for name in names:
         event_hash = identifiers.audio_hash_generator_compute(name)
         if (
@@ -1901,8 +1913,8 @@ def collect_contexts(
                 "runtimeExecutionStatus": "runtimeBranchExecutionUnobserved",
             })
         context_utils.append_context(contexts, seen, name, context)
-    if native_context.validated:
-        for event_name, callsite in NATIVE_CUSTOM_STATE_CALLSITE_CONTEXTS.items():
+    if custom_state_contexts:
+        for event_name, callsite in custom_state_contexts.items():
             event_hash = identifiers.audio_hash_generator_compute(event_name)
             if (
                 current_wwise_event_hashes is not None
