@@ -681,7 +681,130 @@ def verify_custom_footstep(build: _Build, spec: Mapping[str, Any]) -> tuple[dict
             "droppedFieldAnchors": len(spec.get("fieldAnchors") or ()) - len(fields)}, "verified"
 
 
+def _callees_by_offset(build: _Build, full: str) -> list[tuple[int, list[str]]]:
+    start = min(build.index.pointers_by_name[full])
+    return [(va - start, names) for va, names in build.calls(full)]
+
+
+def _endpoint_row(build: _Build, endpoint: Mapping[str, Any], default_type: str | None) -> dict[str, Any] | None:
+    index = build.index
+    target_type = str(endpoint.get("targetType") or default_type or "")
+    full = _resolve_consumer(index, target_type, str(endpoint.get("targetMethod") or ""))
+    if full is None:
+        return None
+    row = _clear_addresses(endpoint)
+    row.pop("calls", None)
+    row.update({
+        "targetType": _split(full)[0],
+        "targetMethodIndex": _method_index(index, full),
+        "targetToken": _token(index, full),
+        "targetVirtualAddress": _address(index, full),
+        "callees": sorted({name for _offset, names in _callees_by_offset(build, full) for name in names}),
+    })
+    return row
+
+
+# Reviewed re-readings of ModelView call targets whose owner changed on a later
+# build: the handler registry moved into the nested ModelAnimatorContext, the
+# game object comes from that context instead of Entity, the audio id is an
+# AudioId conversion, and the transform is read from the GameObject. The
+# consumer must still call the candidate.
+_MODEL_VIEW_TARGET_CANDIDATES = {
+    "Beyond.Gameplay.Core.ModelViewStateController.RegisterAudioBehaviorHandler": (
+        "Beyond.Gameplay.Core.ModelViewStateController.ModelAnimatorContext.RegisterAudioBehaviorHandler",
+    ),
+    "Beyond.Gameplay.Core.Entity.TryGetGameObject": (
+        "Beyond.Gameplay.Core.ModelViewStateController.ModelAnimatorContext.TryGetGameObject",
+    ),
+    "Beyond.Gameplay.Core.Entity.get_AudioId": ("Beyond.Audio.AudioId.op_Implicit",),
+    "UnityEngine.Component.get_transform": ("UnityEngine.GameObject.get_transform",),
+}
+
+
+def verify_model_view_route(build: _Build, route: Mapping[str, Any]) -> tuple[dict[str, Any] | None, str]:
+    """The consumer by name, each direct call target called by it, endpoints by name.
+
+    Call offsets are re-read from the consumer; endpoint callees are listed by
+    name from each endpoint's own body. A field contract keeps only what a name
+    re-proves (the ``m_audioHandle`` store); unnamed offsets are cleared and the
+    reviewed branch guards stay as a previous-build reading.
+    """
+    index = build.index
+    consumer_spec = route.get("consumer") or {}
+    consumer = _resolve_consumer(index, str(consumer_spec.get("type") or ""), str(consumer_spec.get("method") or ""))
+    if consumer is None:
+        return None, "consumer-missing"
+    calls = _callees_by_offset(build, consumer)
+    direct = []
+    used: set[int] = set()
+    for target in route.get("directCalls") or ():
+        name = f"{target.get('targetType')}.{target.get('targetMethod')}"
+        resolved = _resolve_consumer(index, str(target.get("targetType") or ""), str(target.get("targetMethod") or ""))
+        # A target called twice is recorded twice: each record takes the next call.
+        offsets = [offset for offset, names in calls if resolved and resolved in names and offset not in used]
+        if not offsets:
+            for candidate in _MODEL_VIEW_TARGET_CANDIDATES.get(name, ()):
+                offsets = [offset for offset, names in calls if candidate in names and offset not in used]
+                if offsets:
+                    resolved = candidate
+                    break
+        if not offsets:
+            return None, f"direct-call-missing:{name}"
+        used.add(offsets[0])
+        direct.append({
+            **_clear_addresses(target),
+            **({"targetType": _split(resolved)[0], "targetMethod": _split(resolved)[1], "targetMovedFrom": name}
+               if resolved != name else {}),
+            "offset": f"0x{offsets[0]:x}",
+            "targetMethodIndex": _method_index(index, resolved),
+            "targetToken": _token(index, resolved),
+            "targetVirtualAddress": _address(index, resolved),
+        })
+    current = _clear_addresses(route)
+    current["consumer"] = {
+        **_clear_addresses(consumer_spec),
+        "type": _split(consumer)[0],
+        "methodIndex": _method_index(index, consumer),
+        "token": _token(index, consumer),
+        "virtualAddress": _address(index, consumer),
+    }
+    current["directCalls"] = direct
+    if route.get("endpointAudits"):
+        endpoints = []
+        for endpoint in route["endpointAudits"]:
+            row = _endpoint_row(build, endpoint, "Beyond.Gameplay.Actions.GameAction")
+            if row is not None:
+                endpoints.append(row)
+        current["endpointAudits"] = endpoints
+    contract = route.get("fieldContract")
+    if contract:
+        fields = {key: value for key, value in contract.items() if not key.endswith("Offset")}
+        handle = dict(contract.get("audioHandleWrite") or {})
+        if handle:
+            try:
+                offset = index.field_offset(f"{_split(consumer)[0]}::{handle['field']}")
+            except Exception:
+                offset = None
+            texts = [str(row.get("text") or "") for start, size in build.spans(consumer)
+                     for row in index._decode(start, size)]
+            stored = offset is not None and any(
+                re.fullmatch(rf"mov (?:dword ptr )?\[\w+\+0x{offset:x}\], \w+", text) for text in texts
+            )
+            fields["audioHandleWrite"] = {
+                "field": handle["field"],
+                "offset": f"0x{offset:x}" if offset is not None else None,
+                "status": "verified" if stored else "not-reproved",
+            }
+        fields["guardsStatus"] = "reviewedOnPreviousBuild"
+        current["fieldContract"] = fields
+    current["evidence"] = "rederivedByNameOnInstalledBuild"
+    current["nativeRederivation"] = {"status": "verified"}
+    return current, "verified"
+
+
 ROUTE_VERIFIERS = {
+    "modelViewState": verify_model_view_route,
+    "modelViewPositioned": verify_model_view_route,
     "timelineContracts": verify_timeline_contracts,
     "customFootstep": verify_custom_footstep,
     "musicStateGroups": verify_music_state_groups,
@@ -765,6 +888,8 @@ def reviewed_routes() -> dict[str, Mapping[str, Any]]:
         "musicStateGroups": build_contracts.AUDIO_MUSIC_NATIVE_STATE_GROUPS,
         "selectorGroups": build_contracts.AUDIO_RUNTIME_SELECTOR_GROUPS,
         "timelineContracts": build_contracts.TIMELINE_AUDIO_RUNTIME_CONTRACTS,
+        "modelViewState": native_evidence.MODEL_VIEW_STATE_AUDIO_NATIVE_ROUTE,
+        "modelViewPositioned": native_evidence.MODEL_VIEW_POSITIONED_AUDIO_NATIVE_ROUTE,
         "customFootstep": {
             "nativeAnchors": entity_contexts.CUSTOM_FOOTSTEP_NATIVE_ANCHORS,
             "fieldAnchors": entity_contexts.CUSTOM_FOOTSTEP_FIELD_ANCHORS,

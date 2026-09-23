@@ -83,6 +83,13 @@ def project_model_view_state_audio_trigger_contexts(
     if native_context is not None:
         normal_route = native_evidence.model_view_state_audio_native_route(native_context)
         positioned_route = native_evidence.model_view_positioned_audio_native_route(native_context)
+        if normal_route is None or positioned_route is None:
+            # On another measured build, the routes re-proved by name there.
+            from scripts.webui.audio.semantics import native_callsite_rederivation
+
+            rederived = native_callsite_rederivation.current_routes(native_context)
+            normal_route = normal_route or rederived.get("modelViewState")
+            positioned_route = positioned_route or rederived.get("modelViewPositioned")
         if normal_route is None:
             diagnostics["normal"] = native_evidence.audit_model_view_state_audio_native_route(native_context)
         if positioned_route is None:

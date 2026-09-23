@@ -114,9 +114,12 @@ audio logic in the semantic publisher or import either entry point as a helper.
   (in the body, a reached helper, or the selector field's initializer) and the
   playback sink is reached, with that build's addresses; the rest are withheld
   with a reason. A re-derived row proves the literal and playback path, not
-  its reviewed trigger prose (`branchConditionStatus`). ModelView routes,
-  playback call chains and music transition registrations stay withheld
-  until re-read. The selector catalog used to publish the music setters and
+  its reviewed trigger prose (`branchConditionStatus`). The ModelView routes
+  re-derive the same way: the consumer must still call each target, where a
+  target that changed owner (the handler registry moved into
+  `ModelAnimatorContext`) is a reviewed re-reading. Playback call chains and
+  music transition registrations stay withheld: their links include delegate
+  callbacks and native engine stages that a call-graph check cannot prove. The selector catalog used to publish the music setters and
   selector callsites with no build gate at all; with no measured build they
   now carry no native field.
   Authored and HIRC evidence is unaffected.
