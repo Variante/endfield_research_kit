@@ -535,7 +535,94 @@ def verify_selector_groups(build: _Build, groups: Any) -> tuple[list[dict[str, A
     return current_groups, "verified"
 
 
+def _type_token(index: Any, type_name: str) -> str | None:
+    type_def = index.types.get(type_name)
+    return f"0x{type_def.token:08x}" if type_def is not None else None
+
+
+# Which method each timeline ``nativeEvidence`` address names, on which side.
+_TIMELINE_EVIDENCE_METHODS = {
+    "createPlayableVa": ("type", "CreatePlayable"),
+    "processFrameVa": ("behaviourType", "ProcessFrame"),
+    "stopPlayingVa": ("behaviourType", "_StopPlaying"),
+}
+
+
+def verify_timeline_contracts(build: _Build, contracts: Any) -> tuple[dict[str, Any], str]:
+    """Type and method tokens by name; native addresses and the stop claim by body."""
+    index = build.index
+    current: dict[str, Any] = {}
+    for key, contract in contracts.items():
+        row = _clear_addresses(contract)
+        types = {side: str(contract.get(side) or "") for side in ("type", "behaviourType")}
+        row["assetToken"] = _type_token(index, types["type"])
+        row["behaviourToken"] = _type_token(index, types["behaviourType"])
+        for list_key, methods in contract.items():
+            if not (list_key.endswith("Methods") and isinstance(methods, list)):
+                continue
+            resolved = []
+            for method in methods:
+                full = next((f"{types[side]}.{method['name']}" for side in ("behaviourType", "type")
+                             if f"{types[side]}.{method['name']}" in index.pointers_by_name), None)
+                if full is not None:
+                    resolved.append({**method, "token": _token(index, full)})
+            row[list_key] = resolved
+        evidence = dict(contract.get("nativeEvidence") or {})
+        if evidence:
+            for evidence_key, (side, method) in _TIMELINE_EVIDENCE_METHODS.items():
+                if evidence_key in evidence:
+                    evidence[evidence_key] = _address(index, f"{types[side]}.{method}")
+            behaviour = types["behaviourType"]
+            if "onClipDisableCallsStopPlaying" in evidence:
+                evidence["onClipDisableCallsStopPlaying"] = (
+                    _call_to(build, f"{behaviour}.OnClipDisable", f"{behaviour}._StopPlaying") is not None
+                    if f"{behaviour}.OnClipDisable" in index.pointers_by_name else False
+                )
+            resolver = evidence.get("processFrameAudioObjectResolver")
+            if resolver and resolver not in build.reach(f"{behaviour}.ProcessFrame"):
+                evidence["processFrameAudioObjectResolver"] = None
+            row["nativeEvidence"] = evidence
+        row["nativeRederivation"] = {"status": "verified" if row["assetToken"] and row["behaviourToken"] else "type-missing"}
+        current[key] = row
+    return current, "verified"
+
+
+def _unique_type(index: Any, short: str) -> str | None:
+    hits = [name for name in index.types if name == short or name.endswith(("." + short, "+" + short))]
+    return hits[0] if len(hits) == 1 else None
+
+
+def verify_custom_footstep(build: _Build, spec: Mapping[str, Any]) -> tuple[dict[str, Any], str]:
+    """Method anchors by their short type name; field anchors' token and offset from metadata."""
+    index = build.index
+    anchors, fields = [], []
+    for anchor in spec.get("nativeAnchors") or ():
+        full = index.resolve(f"{anchor['type']}.{anchor['method']}") if hasattr(index, "resolve") else None
+        if full is None:
+            continue
+        anchors.append({**_clear_addresses(anchor), "token": _token(index, full),
+                        "virtualAddress": _address(index, full), "evidence": "rederivedByNameOnInstalledBuild"})
+    for anchor in spec.get("fieldAnchors") or ():
+        type_name = _unique_type(index, str(anchor["type"]))
+        type_def = index.types.get(type_name) if type_name else None
+        if type_def is None:
+            continue
+        tokens = {index.metadata.string(field.name_index): field.token for field in index.metadata.fields_for(type_def)}
+        if anchor["field"] not in tokens:
+            continue
+        try:
+            offset = index.field_offset(f"{type_name}::{anchor['field']}")
+        except Exception:
+            continue
+        fields.append({**anchor, "token": f"0x{tokens[anchor['field']]:08x}", "offset": f"0x{offset:x}"})
+    return {"nativeAnchors": anchors, "fieldAnchors": fields,
+            "droppedAnchors": len(spec.get("nativeAnchors") or ()) - len(anchors),
+            "droppedFieldAnchors": len(spec.get("fieldAnchors") or ()) - len(fields)}, "verified"
+
+
 ROUTE_VERIFIERS = {
+    "timelineContracts": verify_timeline_contracts,
+    "customFootstep": verify_custom_footstep,
     "musicStateGroups": verify_music_state_groups,
     "selectorGroups": verify_selector_groups,
     "enemyVoiceAction": verify_enemy_voice_action,
@@ -608,7 +695,7 @@ def rederive_catalogs(
 
 def reviewed_routes() -> dict[str, Mapping[str, Any]]:
     """The native routes and group catalogs this module re-derives, as reviewed."""
-    from scripts.webui.audio.semantics import build_contracts, native_evidence
+    from scripts.webui.audio.semantics import build_contracts, entity_contexts, native_evidence
 
     return {
         "enemyVoiceAction": native_evidence.ENEMY_TRIGGER_VOICE_ACTION_NATIVE,
@@ -616,6 +703,11 @@ def reviewed_routes() -> dict[str, Mapping[str, Any]]:
         "animationVoiceTrigger": native_evidence.ANIMATION_VOICE_TRIGGER_NATIVE,
         "musicStateGroups": build_contracts.AUDIO_MUSIC_NATIVE_STATE_GROUPS,
         "selectorGroups": build_contracts.AUDIO_RUNTIME_SELECTOR_GROUPS,
+        "timelineContracts": build_contracts.TIMELINE_AUDIO_RUNTIME_CONTRACTS,
+        "customFootstep": {
+            "nativeAnchors": entity_contexts.CUSTOM_FOOTSTEP_NATIVE_ANCHORS,
+            "fieldAnchors": entity_contexts.CUSTOM_FOOTSTEP_FIELD_ANCHORS,
+        },
     }
 
 

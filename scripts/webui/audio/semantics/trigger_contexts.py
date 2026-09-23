@@ -2273,6 +2273,28 @@ def _build_native_custom_state_trigger_contexts(
             })
     return contexts
 
+def _timeline_runtime_contracts(native_context: Any) -> dict[str, Any]:
+    """Timeline playable contracts with tokens and addresses of the measured build only."""
+    if native_context is not None and native_context.validated:
+        return dict(TIMELINE_AUDIO_RUNTIME_CONTRACTS)
+    from scripts.webui.audio.semantics import native_callsite_rederivation
+
+    rederived = (
+        native_callsite_rederivation.current_routes(native_context)["timelineContracts"]
+        if native_context is not None else None
+    )
+    if rederived:
+        return rederived
+    return {
+        key: {
+            name: value for name, value in contract.items()
+            if name not in {"assetToken", "behaviourToken", "nativeEvidence"} and not name.endswith("Methods")
+        } | {name: [{"name": method["name"]} for method in value]
+             for name, value in contract.items() if name.endswith("Methods")}
+        for key, contract in TIMELINE_AUDIO_RUNTIME_CONTRACTS.items()
+    }
+
+
 def build_trigger_context_catalog(
     event_rows: Iterable[dict[str, Any]],
     media_rows: Iterable[dict[str, Any]],
@@ -2615,7 +2637,7 @@ def build_trigger_context_catalog(
                 if (row.get("owner") or {}).get("audioPlayableRuntimeContractId")
                 == "timelineMusicEventKey.audioMusic"
             ).items())),
-            "runtimeContracts": TIMELINE_AUDIO_RUNTIME_CONTRACTS,
+            "runtimeContracts": _timeline_runtime_contracts(native_context),
         },
     }
     return {

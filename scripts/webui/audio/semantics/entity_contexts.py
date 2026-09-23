@@ -99,6 +99,18 @@ CUSTOM_FOOTSTEP_NATIVE_ANCHORS = (
     },
 )
 
+
+# The runtime fields the footstep receiver reads, by type and field name; the
+# token and offset are the reviewed build's and are re-derived on any other.
+CUSTOM_FOOTSTEP_FIELD_ANCHORS = (
+    {"type": "FootStepConfig", "field": "footstepAudioSwitch", "token": "0x04001386",
+     "offset": "0x20", "meaning": "surface enum to AudioId"},
+    {"type": "FootStepConfig", "field": "footstepAudioCustomTypeSwitch", "token": "0x04001387",
+     "offset": "0x28", "meaning": "GameplayTag to AudioId"},
+    {"type": "WaterInteractSettings", "field": "waterDepthRtpc", "token": "0x040053b5",
+     "offset": "0x74", "meaning": "water-depth RTPC AudioId"},
+)
+
 normalize_posix = context_utils.normalize_posix
 
 def _attach_custom_footstep_parameters(
@@ -115,8 +127,32 @@ def _attach_custom_footstep_parameters(
     context["customFootstepParameterVariants"] = variants
 
 def build_custom_footstep_model(
-    events: Iterable[dict[str, Any]], webui_root: Path, language: str
+    events: Iterable[dict[str, Any]],
+    webui_root: Path,
+    language: str,
+    native_context: Any = None,
 ) -> dict[str, Any]:
+    # Anchors name methods and fields of one build: the reviewed ones on that
+    # build, the ones re-derived by name on another measured build, none else.
+    if native_context is not None and native_context.validated:
+        native_anchors, field_anchors = CUSTOM_FOOTSTEP_NATIVE_ANCHORS, CUSTOM_FOOTSTEP_FIELD_ANCHORS
+        status = "exactCurrentBuildStaticEvidence"
+        game_assembly_sha256, metadata_sha256 = CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256, MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256
+    else:
+        from scripts.webui.audio.semantics import native_callsite_rederivation
+
+        rederived = (
+            native_callsite_rederivation.current_routes(native_context)["customFootstep"]
+            if native_context is not None else None
+        ) or {}
+        native_anchors = rederived.get("nativeAnchors") or ()
+        field_anchors = rederived.get("fieldAnchors") or ()
+        status = (
+            "anchorsRederivedByNameReviewedSemanticsFromPreviousBuild" if rederived
+            else "nativeAnchorsUnavailable"
+        )
+        game_assembly_sha256 = native_context.gameassembly_sha256 if rederived else None
+        metadata_sha256 = native_context.metadata_sha256 if rederived else None
     event_rows = [
         event for event in events
         if isinstance(event, dict) and event.get("customFootstepParameterVariants")
@@ -199,39 +235,17 @@ def build_custom_footstep_model(
         )
         occurrence_owner_kind_counts[kind] += int(context.get("customFootstepOccurrenceCount") or 0)
     return {
-        "status": "exactCurrentBuildStaticEvidence",
+        "status": status,
         "callback": "OnCustomFootStep",
-        "gameAssemblySha256": CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256,
-        "metadataSha256": MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256,
+        "gameAssemblySha256": game_assembly_sha256,
+        "metadataSha256": metadata_sha256,
         "sourceFingerprint": fingerprint,
         "parameterMasks": {"footSide": "0x03", "vfxType": "0x1c", "playbackFilter": "0xe0"},
         "runtimeVfxWeightThreshold": (
             event_projection.CUSTOM_FOOTSTEP_RUNTIME_VFX_WEIGHT_THRESHOLD
         ),
-        "nativeAnchors": [dict(anchor) for anchor in CUSTOM_FOOTSTEP_NATIVE_ANCHORS],
-        "runtimeFieldAnchors": [
-            {
-                "type": "FootStepConfig",
-                "field": "footstepAudioSwitch",
-                "token": "0x04001386",
-                "offset": "0x20",
-                "meaning": "surface enum to AudioId",
-            },
-            {
-                "type": "FootStepConfig",
-                "field": "footstepAudioCustomTypeSwitch",
-                "token": "0x04001387",
-                "offset": "0x28",
-                "meaning": "GameplayTag to AudioId",
-            },
-            {
-                "type": "WaterInteractSettings",
-                "field": "waterDepthRtpc",
-                "token": "0x040053b5",
-                "offset": "0x74",
-                "meaning": "water-depth RTPC AudioId",
-            },
-        ],
+        "nativeAnchors": [dict(anchor) for anchor in native_anchors],
+        "runtimeFieldAnchors": [dict(anchor) for anchor in field_anchors],
         "corpus": {
             "eventCount": len(event_rows),
             "authoredEventIdCount": len(source_authored_event_ids) or len(event_rows),

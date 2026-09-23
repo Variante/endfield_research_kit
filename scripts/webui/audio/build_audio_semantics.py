@@ -1459,7 +1459,7 @@ def build_audio_semantic_data(
         media,
         native_context=native_context,
     )
-    custom_footstep_model = build_custom_footstep_model(events, webui_root, language)
+    custom_footstep_model = build_custom_footstep_model(events, webui_root, language, native_context)
     spawner_event_rows = [
         row for row in events
         if any(
