@@ -16,7 +16,6 @@ from scripts.common import (
 
 from scripts.game_data.ifix_patch_native import (
     DEFAULT_CONTRACT as DEFAULT_IFIX_CONTRACT,
-    PATCH_SHA256 as IFIX_PATCH_SHA256,
     load_ifix_patch_contract,
 )
 
@@ -24,12 +23,6 @@ from scripts.game_data.ifix_patch_native import (
 SCHEMA = "identityCarrierNegativeBoundaries.v1"
 AUDIT_SCHEMA = "identityCarrierNegativeBoundariesAudit.v1"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "identity_carrier_boundaries.json"
-GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-)
-METADATA_SHA256 = (
-    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-)
 BOUNDARY_IDS = (
     "mission_option_alternate_actions",
     "mission_property_script_pointer",
@@ -88,21 +81,6 @@ def load_identity_carrier_boundaries_contract(
         ("schema", SCHEMA, contract.get("schema")),
         ("status", "validated", contract.get("status")),
         (
-            "gameassembly_sha256",
-            GAMEASSEMBLY_SHA256,
-            sources.get("gameAssemblySha256"),
-        ),
-        (
-            "metadata_sha256",
-            METADATA_SHA256,
-            sources.get("globalMetadataSha256"),
-        ),
-        (
-            "ifix_patch_sha256",
-            IFIX_PATCH_SHA256,
-            sources.get("ifixPatchSha256"),
-        ),
-        (
             "boundary_ids",
             list(BOUNDARY_IDS),
             [row.get("id") for row in boundaries if isinstance(row, dict)],
@@ -145,10 +123,16 @@ def load_identity_carrier_boundaries_contract(
             },
             str(ifix_audit.get("sourceFile") or _source_file(ifix_contract_path)),
         )
+    else:
+        # The conclusions were reviewed with one installed patch; a different
+        # patch may fix one of the reviewed methods, so both must agree.
+        installed_patch = str((ifix_audit.get("source") or {}).get("patchSha256") or "").upper()
+        if str(sources.get("ifixPatchSha256") or "").upper() != installed_patch:
+            reject("ifix_patch_sha256", installed_patch, sources.get("ifixPatchSha256"))
 
     native = check_installed_native_inputs(
-        GAMEASSEMBLY_SHA256,
-        METADATA_SHA256,
+        str(sources.get("gameAssemblySha256") or ""),
+        str(sources.get("globalMetadataSha256") or ""),
         gameassembly=gameassembly,
         metadata=metadata,
     )
@@ -184,9 +168,6 @@ __all__ = [
     "BOUNDARY_IDS",
     "DEFAULT_CONTRACT",
     "DEFAULT_IFIX_CONTRACT",
-    "GAMEASSEMBLY_SHA256",
-    "IFIX_PATCH_SHA256",
-    "METADATA_SHA256",
     "SCHEMA",
     "load_identity_carrier_boundaries_contract",
 ]

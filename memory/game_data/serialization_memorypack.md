@@ -74,7 +74,7 @@ three atmospheric-NPC indexes, 1,956 NPC proxy placements, model paths and
 interactive lock-view metadata, 18,030 world-entity briefs, focus modes,
 mission areas, map regions and LevelScript teleport rows. The five broad
 polymorphic tables (`ForbidByGameplayTagTable`, `GameModeTable`, `LevelMapMark`,
-`ScriptTaskExtraInfoTable` and `SubGameInstanceDataTable`) use a byte-pinned
+`ScriptTaskExtraInfoTable` and `SubGameInstanceDataTable`) use a reviewed
 declarative contract covering 813 schema nodes and 88 stored `$type`
 identities. Only their explicitly named
 authored-ID dictionaries are dynamic; unknown fields, shapes, scalar types or
@@ -82,7 +82,7 @@ discriminators fail closed. This establishes stored configuration structure,
 while runtime selection and render consumption remain separate evidence.
 
 The remaining ten textual JsonData rows also have named schemas rather than a
-generic JSON classification. A byte-pinned 473-node contract closes the AI
+generic JSON classification. A reviewed 473-node contract closes the AI
 global settings and enemy-template paths, the root-level NPC-proxy and script-
 task tables, interactive collection counts, doodad groups, factory regions and
 spaceship cabin spawn data. The two LevelMountPoint files use a recursive
@@ -175,7 +175,7 @@ five-float `MovementData`, bounded `MoveMode`, and two-float proxy shape at the
 next component union. A present `ActionSerializedMap` with three zero list
 counts now advances through the same typed suffix to physical EOF, preserving
 the distinction from a null map. Positive maps now use the shared sequential
-`codecs/levelscript/action_map.py` reader. Its byte-pinned
+`codecs/levelscript/action_map.py` reader. Its reviewed
 `action_map_layouts.json` records selected native dispatcher/type-usage joins
 and generated inherited field order. Supported maps include control-flow
 checks/branches, effects/audio, typed assignments, interaction options, simple
@@ -613,7 +613,7 @@ SpawnerConfig files as exact named schemas. The older unique-tail fallback
 remains for a changed future route profile; failure of both readers preserves
 the exact enemy-library prefix as bounded partial evidence.
 CharInteractPerform now closes the complete 27-member owner through physical
-EOF for every current file. The byte-pinned
+EOF for every current file. The reviewed
 `char_interact_perform_native.json` contract records the exact 37-entry native
 tag-to-wrapper dispatch; generated wrapper properties and whole-owner cursor
 closure establish the read order of every concrete action shape present in the
@@ -882,12 +882,12 @@ markers fail at that element. Header `0x0085` is
 `LevelEvent_OnProxyPatrolCheckpointReach` with seven concrete members, while
 getter `0x0022` is `CompareQuestState` with its comparer and two quest-state
 parameters. Their switch routes, wrapper identities, setters and reader windows
-are byte-pinned independently; same-numbered rows in another dispatcher family
+are reviewed independently; same-numbered rows in another dispatcher family
 cannot select these layouts.
 
 `LevelCameraLookAt` now advances its 31 concrete parameters after the inherited
 action envelope. The LevelScript-owned `camera_look_at.py` reader loads the
-byte-pinned `camera_look_at_layout.json` contract and gates on both selected
+reviewed `camera_look_at_layout.json` contract and gates on both selected
 native inputs. Its initial/exit state constants are unmanaged 24-byte structs:
 the `Param` formatter copies that raw value, rather than invoking the separately
 generated seven-member state wrapper. Four booleans and three floats have exact
@@ -908,7 +908,7 @@ dynamic named-path form and one fully unset `-1/-1/null` form. The reader admits
 only that null constant and those exact `Param` tail rules, so a future concrete
 `CameraControlState` value fails before advancing the action cursor.
 
-The LevelScript sequence reader now reuses the shared byte-pinned
+The LevelScript sequence reader now reuses the shared reviewed
 `action_map_layouts.json` node codecs at each unsupported action, getter or
 header cursor. The shared entry point validates both selected native inputs
 before decoding; a missing/mismatched pair, unknown union, changed member count,
@@ -1063,7 +1063,7 @@ bulk unmanaged array whose 32-byte elements use native struct order:
 `inWeight`, `outWeight`. Treating bulk slots as standalone-wrapper fields turns
 one-third weight bit patterns into an enum and erases increasing key times.
 The matching curve wrapper directly reads `keys`, `postWrapMode`, then
-`preWrapMode`. The byte-pinned identities,
+`preWrapMode`. The reviewed identities,
 windows, offsets and helper joins live in
 `scripts/game_data/contracts/animation_curve_native.json`; its reader fails closed when
 the contract bytes or shape change. This closes character and ability
@@ -1180,7 +1180,7 @@ intervening action/task bytes exact.
 
 `LST_Test_1` additionally closes its one-entry positive task map. The selected
 current `GameCondition` dispatcher binds wide tag `0x012f`, member count eight,
-to `InteractiveCheckBool`. A byte-pinned native contract validates that switch
+to `InteractiveCheckBool`. A reviewed native contract validates that switch
 branch and generated inheritance before the task decoder admits the four
 common condition members followed by `compareValue`, `entityId`, `key`, and
 `levelId`. The task cursor then rejoins the terminal template ID at physical
@@ -1410,7 +1410,7 @@ native and input-set gates.
 
 Physical tag `0x00B2` similarly maps to the 18-member `FindTargetActionData`.
 Its nested selector tags differ from the older Buff selector table, so the
-Skill reader supplies only byte-pinned current finder, validator, and
+Skill reader supplies only reviewed current finder, validator, and
 postprocessor routes and fails closed elsewhere. The reached one-action first
 timeline records close exactly, but each still has later timeline records and
 therefore remains a bounded partial file. Tags `0x02` and `0x03` stay open
@@ -1455,14 +1455,14 @@ wrapper to close the whole SkillData file. Dispatch requires the complete
 top-level ActionGroup/timeline/sequence shape so an unrelated byte equal to
 `0x92` cannot select this decoder.
 
-The shared timeline-sequence reader reuses only byte-pinned action contracts
+The shared timeline-sequence reader reuses only reviewed action contracts
 and preserves the distinction between an exact action, an exact enclosing
 timeline record, and a whole ActionGroup. It closes reviewed roots for
 `ConvertToTargetContext` (`0x008C`), multi-action `CreateBuff` (`0x0092`),
 `LaunchProjectile` (`0x00DE`), and `SpawnAbilityEntity` (`0x0169`), then reuses
 the top-level continuation only when every timeline record is exact.
 `IfElseAction` (`0x00C9`) is an eight-member reader whose three nested
-`SequenceActionData` members are selected through the byte-pinned RIP-load and
+`SequenceActionData` members are selected through the reviewed RIP-load and
 usage-cell chain to MethodSpec 619962. The atlas mechanically validates that
 MethodSpec's generic instantiation as `SequenceActionData`, and the contract
 checks its ordered reads and member count against the shared reader. Recursive
@@ -1484,7 +1484,7 @@ closes every currently reached `IfElseAction` child, including nested use, but
 does not promote a multi-timeline file unless all later records also close.
 
 The same shared sequence lane admits `DamageAction` (`0x009A`) at the first
-timeline root through its byte-pinned dependency and exact action cursor. The
+timeline root through its reviewed dependency and exact action cursor. The
 complete supported wrapper can rejoin the top-level Skill continuation and EOF;
 six distinct unsupported variants still stop at their owning selector rather
 than borrowing the admitted layout. This distinction accounts for the large
@@ -2135,7 +2135,7 @@ answer did not generalise.
 That BuffData closure is also fields 2-14 reaching the accepted id anchor, not
 a whole-file EOF claim: the named suffix beyond the anchor and the opaque nested
 bodies inside those fields are unchanged. BuffData is one family -- the
-SkillData timeline readers sit behind their own `inputSetSha256` gates and this
+SkillData timeline readers are validated by the Skill corpus gate and this
 run does not cover them. And what the plans describe is still a generated
 member order, not a proven cursor, for every tag no reviewed route touches.
 
@@ -2244,7 +2244,7 @@ LevelScript union contracts through one shared current-build PE/metadata
 context and writes its generated index under `reports/`. Tags remain qualified
 by dispatcher family, conflicting identities fail closed, and the atlas cannot
 promote a field or invent a schema: setter types, nested layouts, and exact
-cursors still come from the owning byte-pinned contract and reader. It replaces
+cursors still come from the owning reviewed contract and reader. It replaces
 repeated native discovery during frontier ranking, while publication continues
 to require complete family and JsonData corpus gates. Dependency-scoped replay
 remains developmental until mechanically derived transitive dependencies and

@@ -8,6 +8,8 @@ declarations in this module and logic in the collectors that read them. See
 
 from __future__ import annotations
 
+from scripts.webui.audio.semantics import native_evidence
+
 
 TIMELINE_AUDIO_RUNTIME_CONTRACTS = {
     "DialogAudioEventPlayableAsset": {
@@ -261,14 +263,10 @@ AUDIO_MUSIC_NATIVE_STATE_GROUPS = (
 )
 
 
-MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256 = (
-    "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
-)
+MODEL_VIEW_NATIVE_ANCHOR_METADATA_SHA256 = native_evidence.EXPECTED_METADATA_SHA256
 
 
-CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256 = (
-    "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
-)
+CUSTOM_FOOTSTEP_GAME_ASSEMBLY_SHA256 = native_evidence.EXPECTED_GAMEASSEMBLY_SHA256
 
 
 _AUDIO_MUSIC_ENUM_VALUES = {

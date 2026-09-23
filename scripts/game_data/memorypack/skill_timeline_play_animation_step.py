@@ -12,7 +12,7 @@ from functools import lru_cache
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-from scripts.game_data.il2cpp.native_image import check_dependency_contracts, open_native_image, read_pinned_contract
+from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 from scripts.game_data.memorypack.buff import read_buff_target_settings_full
 from scripts.game_data.memorypack.skill_timeline_play_animation import (
@@ -24,16 +24,14 @@ from scripts.game_data.memorypack.skill_timeline_play_animation import (
 
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_play_animation_step_native.json"
 LABEL = "skillTimelinePlayAnimationStep"
-CONTRACT_SHA256 = "E0F4E348B48C2CD94FC42B0A6507F33BC9A67169E458DE781C802D4E7BB61740"
 PLAY_ANIMATION_STEP_TAG = 0x0116
 
 
 @lru_cache(maxsize=1)
 def _contract() -> dict[str, Any]:
-    value, _digest = read_pinned_contract(
-        CONTRACT_PATH, sha256=CONTRACT_SHA256, schema="endfield.skill-timeline-play-animation-step-native-contract.v1", label=LABEL
+    value, _digest = read_reviewed_contract(
+        CONTRACT_PATH, schema="endfield.skill-timeline-play-animation-step-native-contract.v1", label=LABEL
     )
-    check_dependency_contracts(value, CONTRACT_PATH.parent, label=LABEL)
     return value
 
 
@@ -59,7 +57,6 @@ def validate_current_native_contract() -> dict[str, Any]:
         raise ValueError(f"{LABEL}.native:setter-order")
     return {
         "status": "validated",
-        "inputSetSha256": contract["inputSetSha256"],
         "nativeInputs": expected,
         "unionTag": dispatcher["unionTag"],
         "methodIndices": validated_methods,
@@ -179,13 +176,9 @@ def _decode_play_animation_step(reader: _Reader) -> dict[str, Any]:
 def decode_first_timeline_play_animation_step(
     data: bytes,
     *,
-    input_set_sha256: str,
     limit: int | None = None,
 ) -> dict[str, Any]:
     """Decode the first TimelineActionData when its sole action is tag 0x0116."""
-    contract = _contract()
-    if input_set_sha256.upper() != contract["inputSetSha256"]:
-        raise ValueError("skillTimelinePlayAnimationStep.input-set:mismatch")
     hard_limit = len(data) if limit is None else limit
     reader = _Reader(data, hard_limit)
     reader.header(48, "skillData.memberCount")

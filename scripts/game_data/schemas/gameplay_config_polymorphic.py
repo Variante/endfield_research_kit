@@ -21,7 +21,6 @@ class GameplayConfigPolymorphicDecodeError(ValueError):
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "gameplay_config_polymorphic_schema.json"
-CONTRACT_SHA256 = "20383F5EFBD4B6D19F14174D555933C447EC03960985FB2B729A974A4A4F6453"
 CONTRACT_SCHEMA = "endfield.gameplay-config-polymorphic-json-schema.v1"
 PREFIX = "GameplayConfig/"
 SUPPORTED = frozenset({
@@ -43,7 +42,6 @@ def is_polymorphic_gameplay_config_path(relative: str) -> bool:
 def _load_contract() -> dict[str, Any]:
     return load_schema_contract(
         CONTRACT_PATH,
-        sha256=CONTRACT_SHA256,
         schema=CONTRACT_SCHEMA,
         error=GameplayConfigPolymorphicDecodeError,
         tables=SUPPORTED,

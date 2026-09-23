@@ -15,14 +15,23 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import check_installed_native_inputs, native_evidence_required
+from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.il2cpp.native_image import read_reviewed_contract
 
 
-EXPECTED_METADATA_SHA256 = (
-    "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
+# The build this module's catalog was reviewed on. Every row below carries that
+# build's indexes, tokens, addresses and body hashes, so the catalog publishes
+# nothing on any other build; the digests live in a contract so the drift is
+# reviewable in one place.
+AUDIO_NATIVE_CONTRACT_PATH = CONTRACTS_DIR / "audio_native.json"
+AUDIO_NATIVE_CONTRACT, _AUDIO_NATIVE_CONTRACT_DIGEST = read_reviewed_contract(
+    AUDIO_NATIVE_CONTRACT_PATH,
+    schema="endfield.audio-native-catalog.v1",
+    label="audio-native",
+    status="exact-pinned-build",
 )
-EXPECTED_GAMEASSEMBLY_SHA256 = (
-    "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
-)
+EXPECTED_METADATA_SHA256 = AUDIO_NATIVE_CONTRACT["nativeInputs"]["global-metadata.dat"].lower()
+EXPECTED_GAMEASSEMBLY_SHA256 = AUDIO_NATIVE_CONTRACT["nativeInputs"]["GameAssembly.dll"].lower()
 NATIVE_VOICE_TRIGGER_MAPPING_ID = (
     "gameassembly-2026-08-13-native-voice-response-trigger-callsites"
 )

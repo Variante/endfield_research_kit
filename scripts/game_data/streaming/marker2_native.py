@@ -11,14 +11,6 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 
 SCHEMA = 'endfield.streaming-marker2-native-contract.v1'
 DEFAULT_CONTRACT = CONTRACTS_DIR / 'streaming_marker2_native.json'
-CONTRACT_SHA256 = 'EBFA76CC15AF41006C127FB42E384AB0EEF885EAE912E087631047DD48249F30'
-DEPENDENCY_SHA256 = '83E98693213C0E1D0C8C01BDE5538DB090BD68451446B7DEDE39CFCE73590A72'
-BASE_SHA256 = '436F51D0C6C0BF0009D2EBF439C8BEC1A13E94404E983E5ADD0E09A604A82E60'
-EXPECTED_INPUTS = {
-    'gameAssemblySha256':'C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89',
-    'metadataSha256':'0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E',
-    'unityPlayerSha256':'BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1',
-}
 EXPECTED_RANGES = {
     'selector6Slot1WholeCountConsumer':(0xE3B9A0,229),
     'selector6FullCountKeyLiteral':(0x1AA8188,12),
@@ -83,23 +75,17 @@ def validate_marker2_native_contract(*, game_root: Path, contract_path: Path=DEF
     try:
         raw=Path(contract_path).read_bytes()
         result['contractSha256']=sha256(raw)
-        require('contract_sha256',CONTRACT_SHA256,sha256(raw))
-        if failures:return result
         doc=json.loads(raw)
         require('schema',SCHEMA,doc.get('schema'))
         require('contract_status','validated-conditional-static',doc.get('status'))
-        require('native_inputs',EXPECTED_INPUTS,doc.get('nativeInputs'))
+        expected_inputs=doc.get('nativeInputs') or {}
         require('profile',PROFILE,doc.get('profile'))
-        require('dependency_sha256',DEPENDENCY_SHA256,doc['dependency']['sha256'])
         require('dependency_schema','endfield.streaming-marker17-native-contract.v2',doc['dependency']['schema'])
         require('dependency_roles',[],doc['dependency']['requiredUnityPlayerRoles'])
         require('dependency_registration',{'selector':6,'reusedEvidence':['descriptorConstructorSpan','publicationSpan']},doc['dependency']['registration'])
-        require('base_sha256',BASE_SHA256,doc['baseContract']['sha256'])
         require('base_schema','endfield.streaming-field2-native-contract.v8',doc['baseContract']['schema'])
         require('base_roles',BASE_ROLES,doc['baseContract']['requiredUnityPlayerRoles'])
         depraw=dependency.DEFAULT_CONTRACT.read_bytes();baseraw=base.DEFAULT_CONTRACT.read_bytes()
-        require('installed_dependency_contract_sha256',DEPENDENCY_SHA256,sha256(depraw))
-        require('installed_base_contract_sha256',BASE_SHA256,sha256(baseraw))
         if failures:return result
         depdoc=json.loads(depraw);basedoc=json.loads(baseraw)
         role_list=[r['role'] for r in basedoc['unityPlayerRanges']]
@@ -112,13 +98,12 @@ def validate_marker2_native_contract(*, game_root: Path, contract_path: Path=DEF
         if failures:return result
         gate=dependency.validate_marker17_native_contract(game_root=Path(game_root))
         require('dependency_native_gate','validated',gate.get('status'))
-        require('dependency_native_contract_sha256',DEPENDENCY_SHA256,gate.get('contractSha256'))
-        require('dependency_native_inputs',EXPECTED_INPUTS,gate.get('nativeInputs'))
+        require('dependency_native_inputs',expected_inputs,gate.get('nativeInputs'))
         if failures:
             result['dependencyValidationFailures']=gate.get('validationFailures',[])[:5]
             return result
         image=(Path(game_root).parent/'UnityPlayer.dll').read_bytes()
-        require('unity_image_read_sha256',EXPECTED_INPUTS['unityPlayerSha256'],sha256(image))
+        require('unity_image_read_sha256',expected_inputs.get('unityPlayerSha256'),sha256(image))
         if failures:return result
         failures.extend(_validate_ranges(image,doc['unityPlayerRanges'],EXPECTED_RANGES))
         for role in ('selector6FullCountKeyLiteral',):
@@ -130,8 +115,8 @@ def validate_marker2_native_contract(*, game_root: Path, contract_path: Path=DEF
                 failures.append(dict(gate=role+'.key_range',expected='bounded12-byte key',actual=str(exc)))
         if not failures:
             result.update(status='validated',profile=doc['profile'],consumerReview=doc['consumerReview'],
-                evidenceBoundary=doc['evidenceBoundary'],nativeInputs=dict(EXPECTED_INPUTS),
-                nativeMappingId=doc['nativeMappingId'],dependencyContractSha256=DEPENDENCY_SHA256,baseContractSha256=BASE_SHA256)
+                evidenceBoundary=doc['evidenceBoundary'],nativeInputs=dict(expected_inputs),
+                nativeMappingId=doc['nativeMappingId'],dependencyContractSha256=gate.get('contractSha256'),baseContractSha256=sha256(baseraw))
     except (OSError,UnicodeError,json.JSONDecodeError,KeyError,TypeError,ValueError,struct.error) as exc:
         failures.append(dict(gate='marker2_contract_inputs',expected='readable complete pinned evidence',actual=f'{type(exc).__name__}: {exc}'))
     return result

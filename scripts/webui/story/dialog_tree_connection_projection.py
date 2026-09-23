@@ -1,4 +1,5 @@
 from __future__ import annotations
+from scripts.game_data.story_native_consumers_native import cited_address, cited_token
 
 
 def dialog_tree_story_playback_connection(
@@ -52,51 +53,51 @@ def dialog_tree_story_playback_connection(
             native_consumers.extend([
                 {
                     "method": "DTTrunkNodeData.get_trunkId",
-                    "token": "0x06003977",
-                    "address": "0x187292f78",
+                    "token": cited_token("DTTrunkNodeData.get_trunkId"),
+                    "address": cited_address("DTTrunkNodeData.get_trunkId"),
                 },
                 {
                     "method": "DialogPlayTrunkActionData.get_trunkId",
-                    "token": "0x06003945",
-                    "address": "0x18729799c",
+                    "token": cited_token("DialogPlayTrunkActionData.get_trunkId"),
+                    "address": cited_address("DialogPlayTrunkActionData.get_trunkId"),
                 },
                 {
                     "method": "DialogTreeTrunkNode.DoExecute",
-                    "token": "0x06003bb4",
-                    "address": "0x1872a74b4",
+                    "token": cited_token("DialogTreeTrunkNode.DoExecute"),
+                    "address": cited_address("DialogTreeTrunkNode.DoExecute"),
                 },
                 {
                     "method": "DialogTreeTrunkNode.FindTrunkIdForReplacement",
-                    "token": "0x06003bb3",
-                    "address": "0x1872a76f8",
+                    "token": cited_token("DialogTreeTrunkNode.FindTrunkIdForReplacement"),
+                    "address": cited_address("DialogTreeTrunkNode.FindTrunkIdForReplacement"),
                 },
                 {
                     "method": "DialogTreeTrunkNode._DoPlayTrunk",
-                    "token": "0x06003bb6",
-                    "address": "0x1872a80b8",
+                    "token": cited_token("DialogTreeTrunkNode._DoPlayTrunk"),
+                    "address": cited_address("DialogTreeTrunkNode._DoPlayTrunk"),
                 },
                 {
                     "method": "DialogPlayTrunkActionData.SetOverrideTrunkId",
-                    "token": "0x06003955",
-                    "address": "0x187297578",
+                    "token": cited_token("DialogPlayTrunkActionData.SetOverrideTrunkId"),
+                    "address": cited_address("DialogPlayTrunkActionData.SetOverrideTrunkId"),
                 },
                 {
                     "method": "DialogManager.PlayTrunkNode",
-                    "token": "0x0600f785",
-                    "address": "0x186e16cc8",
+                    "token": cited_token("DialogManager.PlayTrunkNode"),
+                    "address": cited_address("DialogManager.PlayTrunkNode"),
                 },
             ])
         if has_dialog_carrier:
             native_consumers.extend([
                 {
                     "method": "DialogTreeDialogNode.DoExecute",
-                    "token": "0x06003b6e",
-                    "address": "0x1872a3770",
+                    "token": cited_token("DialogTreeDialogNode.DoExecute"),
+                    "address": cited_address("DialogTreeDialogNode.DoExecute"),
                 },
                 {
                     "method": "DialogManager.PlayNextDialog",
-                    "token": "0x0600f78e",
-                    "address": "0x186e168e8",
+                    "token": cited_token("DialogManager.PlayNextDialog"),
+                    "address": cited_address("DialogManager.PlayNextDialog"),
                 },
             ])
         connection = {
@@ -328,18 +329,18 @@ def dialog_tree_narrative_connection(
             connection["nativeConsumers"] = [
                 {
                     "method": "DialogLeftSubtitleAction.OnPlay",
-                    "token": "0x0600f682",
-                    "address": "0x186e37bc8",
+                    "token": cited_token("DialogLeftSubtitleAction.OnPlay"),
+                    "address": cited_address("DialogLeftSubtitleAction.OnPlay"),
                 },
                 {
                     "method": "LangKey.GetText",
-                    "token": "0x0600047e",
-                    "address": "0x183036af0",
+                    "token": cited_token("LangKey.GetText"),
+                    "address": cited_address("LangKey.GetText"),
                 },
                 {
                     "method": "UILeftSubtitle.SetLeftSubTitle",
-                    "token": "0x06000751",
-                    "address": "0x18b0de1f4",
+                    "token": cited_token("UILeftSubtitle.SetLeftSubTitle"),
+                    "address": cited_address("UILeftSubtitle.SetLeftSubTitle"),
                 },
             ]
             connection["serverEvidenceStatus"] = (

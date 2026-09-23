@@ -1,0 +1,291 @@
+{
+  "schema": "endfield.dialog-finish-native-claims.v1",
+  "status": "reviewed",
+  "methods": {
+    "DialogTree.ImportFromJson": {
+      "type": "Beyond.Gameplay.DialogTree",
+      "method": "ImportFromJson",
+      "contract": "passes the authored JSON to NodeCanvas Graph.Deserialize",
+      "claims": [
+        {
+          "calls": [
+            "NodeCanvas.Framework.Graph.Deserialize"
+          ]
+        }
+      ]
+    },
+    "NodeCanvas.Framework.Graph.get_primeNode": {
+      "type": "NodeCanvas.Framework.Graph",
+      "method": "get_primeNode",
+      "contract": "returns allNodes[0] when the serialized node list is nonempty",
+      "claims": [
+        {
+          "calls": [
+            "NodeCanvas.Framework.Graph.get_allNodes",
+            "System.Collections.Generic.List`1.get_Item"
+          ]
+        },
+        {
+          "zeroArgumentAt": {
+            "call": "System.Collections.Generic.List`1.get_Item",
+            "register": "edx"
+          }
+        }
+      ]
+    },
+    "DialogTree.OnGraphStarted": {
+      "type": "Beyond.Gameplay.DialogTree",
+      "method": "OnGraphStarted",
+      "contract": "uses Graph.primeNode when no current node exists and tail-enters that exact node through DialogTree.EnterNode",
+      "claims": [
+        {
+          "calls": [
+            "NodeCanvas.Framework.Graph.get_primeNode",
+            "Beyond.Gameplay.DialogTree.EnterNode"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "NodeCanvas.Graph.Deserialize": {
+      "type": "NodeCanvas.Framework.Graph",
+      "method": "Deserialize",
+      "contract": "uses JSONSerializer.TryDeserializeOverwrite for the graph source",
+      "claims": [
+        {
+          "calls": [
+            "ParadoxNotion.Serialization.JSONSerializer.TryDeserializeOverwrite"
+          ]
+        }
+      ]
+    },
+    "JSONSerializer.TryDeserializeOverwrite<System.Object>": {
+      "type": "ParadoxNotion.Serialization.JSONSerializer",
+      "method": "TryDeserializeOverwrite",
+      "contract": "passes an existing instance to FullSerializer deserialization",
+      "claims": [
+        {
+          "calls": [
+            "ParadoxNotion.Serialization.JSONSerializer.Internal_Deserialize"
+          ]
+        }
+      ],
+      "methodArguments": [
+        "System.Object"
+      ]
+    },
+    "fsReflectedConverter.TryDeserialize": {
+      "type": "ParadoxNotion.Serialization.FullSerializer.Internal.fsReflectedConverter",
+      "method": "TryDeserialize",
+      "contract": "sets a reflected field only after its JSON-name lookup succeeds; an absent field is left at its initialized managed value",
+      "claims": [
+        {
+          "calls": [
+            "System.Collections.Generic.Dictionary`2.TryGetValue",
+            "ParadoxNotion.Serialization.FullSerializer.fsMetaProperty.Write"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "fsMetaType.CreateInstance": {
+      "type": "ParadoxNotion.Serialization.FullSerializer.fsMetaType",
+      "method": "CreateInstance",
+      "contract": "creates reflected objects through FormatterServices.GetSafeUninitializedObject, whose managed value-type fields start at their zero/default value",
+      "claims": [
+        {
+          "calls": [
+            "System.Runtime.Serialization.FormatterServices.GetSafeUninitializedObject"
+          ]
+        }
+      ]
+    },
+    "DialogTreeOptionNode.get_maxOutConnections": {
+      "type": "Beyond.Gameplay.DialogTreeOptionNode",
+      "method": "get_maxOutConnections",
+      "contract": "returns ten rather than the normal-option count, so unequal option/connection counts are an allowed serialized shape",
+      "claims": [
+        {
+          "returnsConstant": 10
+        }
+      ]
+    },
+    "DialogTreeOptionNode.get_exOptionIndex": {
+      "type": "Beyond.Gameplay.DialogTreeOptionNode",
+      "method": "get_exOptionIndex",
+      "contract": "scans the physical outgoing connection list and returns the first target whose runtime node type is DialogTreeExOptionNode",
+      "claims": [
+        {
+          "calls": [
+            "System.Collections.Generic.List`1.get_Item"
+          ]
+        }
+      ]
+    },
+    "DialogTreeOptionNode.GetNextIndex": {
+      "type": "Beyond.Gameplay.DialogTreeOptionNode",
+      "method": "GetNextIndex",
+      "contract": "shifts the default normal-option ordinal over an earlier DialogTreeExOptionNode connection",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.DialogTreeOptionNode._GetDefaultOptionIndex",
+            "Beyond.Gameplay.DialogTreeOptionNode.get_exOptionIndex"
+          ]
+        }
+      ]
+    },
+    "DialogTreeOptionBase..ctor": {
+      "type": "Beyond.Gameplay.DialogTreeOptionBase",
+      "method": ".ctor",
+      "contract": "initializes doNext true on constructed option data before runtime option display",
+      "claims": [
+        {
+          "storesConstant": {
+            "field": "Beyond.Gameplay.DialogTreeOptionBase::<doNext>k__BackingField",
+            "value": 1
+          }
+        }
+      ]
+    },
+    "DialogManager.ShowOptions": {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "ShowOptions",
+      "contract": "writes DialogTreeOptionBase.doNext true while registering each normal option; the one false write belongs to the bounded auto-selected default path before SelectIndex",
+      "claims": [
+        {
+          "storesConstant": {
+            "field": "Beyond.Gameplay.DialogTreeOptionBase::<doNext>k__BackingField",
+            "value": 1
+          }
+        }
+      ]
+    },
+    "NormalOptionHandler.OnSelectWhenOptionEnd": {
+      "type": "Beyond.Gameplay.Core.NormalOptionHandler",
+      "method": "OnSelectWhenOptionEnd",
+      "contract": "checks DialogTreeOptionBase.doNext, then reads NormalOptionData.index at the MetadataRegistration-backed 0x80 field and passes it to DialogManager.SelectDialogTreeIndex",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.DialogTreeOptionBase::<doNext>k__BackingField"
+        },
+        {
+          "readsField": "Beyond.Gameplay.NormalOptionData::index"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DialogManager.SelectDialogTreeIndex"
+          ]
+        }
+      ]
+    },
+    "DialogManager.SelectDialogTreeIndex": {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "SelectDialogTreeIndex",
+      "contract": "passes the selected NormalOptionData.index unchanged to the controller",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.DialogTreeController.SelectIndex"
+          ]
+        }
+      ]
+    },
+    "DialogTreeController.SelectIndex": {
+      "type": "Beyond.Gameplay.DialogTreeController",
+      "method": "SelectIndex",
+      "contract": "calls currentNode.GetRealIndex and then DialogTree.Continue",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.DialogTreeNode.GetRealIndex",
+            "Beyond.Gameplay.DialogTree.Continue"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "DialogTreeNode.GetRealIndex": {
+      "type": "Beyond.Gameplay.DialogTreeNode",
+      "method": "GetRealIndex",
+      "contract": "returns the supplied connection index unchanged on the native path",
+      "claims": [
+        {
+          "returnsArgument": "edx"
+        }
+      ]
+    },
+    "DialogTree.Continue": {
+      "type": "Beyond.Gameplay.DialogTree",
+      "method": "Continue",
+      "contract": "bounds-checks the supplied index against outConnections.Count and enters exactly outConnections[index]",
+      "claims": [
+        {
+          "calls": [
+            "System.Collections.Generic.List`1.get_Item",
+            "Beyond.Gameplay.DialogTree.EnterNode"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "DialogTreeFinishNode.DoExecute": {
+      "type": "Beyond.Gameplay.DialogTreeFinishNode",
+      "method": "DoExecute",
+      "contract": "passes the serialized finishId and finish type to DialogManager.FinishDialog",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DialogManager.FinishDialog"
+          ]
+        }
+      ]
+    },
+    "DialogManager.FinishDialog": {
+      "type": "Beyond.Gameplay.Core.DialogManager",
+      "method": "FinishDialog",
+      "contract": "records the supplied finishId before exiting the dialog",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DialogManager.SetFinishId",
+            "Beyond.Gameplay.Core.DialogManager.ExitDialog"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "CheckTalkOptionFinish.Check": {
+      "type": "Beyond.Gameplay.CheckTalkOptionFinish",
+      "method": "Check",
+      "contract": "accepts any recorded finish for a negative operand and requires exact dialogFinishInfos membership for a nonnegative operand",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.CinematicSystem.get_dialogFinishInfos",
+            "System.Collections.Generic.Dictionary`2.TryGetValue",
+            "System.Collections.Generic.List`1.Contains"
+          ],
+          "ordered": true
+        },
+        {
+          "branchesOnSign": "Beyond.Gameplay.CheckTalkOptionFinish::m_finishNum"
+        }
+      ]
+    }
+  },
+  "runtimeFields": {
+    "Beyond.Gameplay.DialogTreeOptionBase": [
+      "<doNext>k__BackingField"
+    ],
+    "Beyond.Gameplay.NormalOptionData": [
+      "main",
+      "index"
+    ],
+    "Beyond.Gameplay.DialogTreeOptionNode": [
+      "_normalOptions",
+      "_hasExOption"
+    ]
+  },
+  "evidenceBoundary": "Each method's claims are checked against the installed binary by name; field offsets come from its MetadataRegistration. The claims prove how finish numbers are produced and tested. They do not reveal which option a player selected, which successor the server started, or a total Story-file chronology."
+}

@@ -46,9 +46,9 @@ from scripts.webui.story.source_gap.data import (
     KNOWN_NON_PLAYBACK_ACTIONS,
     KNOWN_NON_PLAYBACK_MAPPING_ID,
     NPC_PROXY_DIALOG_SELECTION_MAPPING_ID,
-    NPC_PROXY_DIALOG_SELECTION_GAMEASSEMBLY_SHA256,
+    npc_proxy_dialog_selection_sha256,
     DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID,
-    OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+    offline_exhaustion_gameassembly_sha256,
 )
 
 from scripts.webui.story.source_gap.providers import (
@@ -67,6 +67,8 @@ from scripts.webui.story.source_gap.providers import (
     _timeline,
 )
 from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR
+from scripts.game_data.story_native_consumers_native import cited_address, cited_token
+
 
 @lru_cache(maxsize=1)
 def _current_tracked_proxy_dialog_sources() -> dict[str, Any]:
@@ -183,7 +185,7 @@ def _validate_general_tracked_proxy_flow_context(
         and safe_key(row.get("nativeMappingId"))
         == NPC_PROXY_DIALOG_SELECTION_MAPPING_ID
         and safe_key(row.get("gameAssemblySha256"))
-        == NPC_PROXY_DIALOG_SELECTION_GAMEASSEMBLY_SHA256
+        == npc_proxy_dialog_selection_sha256()
     )
     if not valid:
         return None, {
@@ -3907,7 +3909,7 @@ def _generic_prime_reachable_dialog_dependency_facts(
             source_files[0]: _sha256_file(source_path),
         },
         "nativeMappingId": required_route["nativeMappingId"],
-        "gameAssemblySha256": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+        "gameAssemblySha256": offline_exhaustion_gameassembly_sha256(),
         "playbackSemantics": (
             "the current registered parent DialogTree's exact prime-node "
             "paths reach every typed Story carrier retained for this file"
@@ -4118,7 +4120,7 @@ def _generic_registered_dialog_non_owning_context_facts(
         })
         return None, definition_failure, None
     current_binary_hash = _current_game_assembly_sha256_for_validation()
-    if current_binary_hash != OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256:
+    if current_binary_hash != offline_exhaustion_gameassembly_sha256():
         return None, {
             "validator": validator,
             "gate": "currentGameAssembly",
@@ -4126,7 +4128,7 @@ def _generic_registered_dialog_non_owning_context_facts(
             "questId": quest_id,
             "storyKey": scene_key,
             "sourcePath": str(_configured_game_assembly_path()),
-            "expected": OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256,
+            "expected": offline_exhaustion_gameassembly_sha256(),
             "actual": current_binary_hash,
         }, None
     definition_source = safe_key(definition_facts.get("sourceFile"))
@@ -5011,7 +5013,7 @@ def _closed_exact_runtime_config_isolated_scenes(
             or safe_key(row.get("nativeMappingId"))
             != NPC_PROXY_DIALOG_SELECTION_MAPPING_ID
             or safe_key(row.get("gameAssemblySha256"))
-            != NPC_PROXY_DIALOG_SELECTION_GAMEASSEMBLY_SHA256
+            != npc_proxy_dialog_selection_sha256()
             or safe_key(row.get("selectionOrderStatus"))
             != (
                 "one_based_active_row_selection_only_no_cross_row_"
@@ -5041,7 +5043,7 @@ def _closed_exact_runtime_config_isolated_scenes(
             not mission_ids
             or mapping_ids != {NPC_PROXY_DIALOG_SELECTION_MAPPING_ID}
             or hashes
-            != {NPC_PROXY_DIALOG_SELECTION_GAMEASSEMBLY_SHA256}
+            != {npc_proxy_dialog_selection_sha256()}
         ):
             continue
         context_missions = sorted(mission_ids, key=natural_key)
@@ -5126,12 +5128,12 @@ def _closed_exact_runtime_config_isolated_scenes(
             "nativeConsumers": [{
                 "method":
                     "NpcInteractComponent._TryGetNpcProxyInteractDialogId",
-                "token": "0x06011381",
-                "address": "0x183564080",
+                "token": cited_token("NpcInteractComponent._TryGetNpcProxyInteractDialogId"),
+                "address": cited_address("NpcInteractComponent._TryGetNpcProxyInteractDialogId"),
             }, {
                 "method": "NpcProxy._IsMissionConflict",
-                "token": "0x060131f4",
-                "address": "0x18706ac74",
+                "token": cited_token("NpcProxy._IsMissionConflict"),
+                "address": cited_address("NpcProxy._IsMissionConflict"),
             }],
             "nativeMappingId": next(iter(mapping_ids)),
             "gameAssemblySha256": next(iter(hashes)),

@@ -41,11 +41,14 @@ axis. A path appears under exactly one owner.
 | | `game_data/pure_getter_rows.py` | re-derives the per-build fields of reviewed PureGetter contract rows -- tag, member count and ordinals, `GetResult` body -- for the `*_getter_native.py` loaders' `--regenerate` |
 | | `game_data/levelscript_union_tags.py` | the current build's ActionBase / PureGetter / ActionHeader `(tag, member count)` for every type name, regenerated from the native formatter switches into `contracts/levelscript_union_tags.json`; LevelScript codecs and Story name a type (`union_tags.action("IfElseAction")`) instead of writing a tag literal that the next client update renumbers |
 | | `game_data/il2cpp/call_graph.py` | names a body's direct calls (ordinary and generic method pointers), the string literals it loads and the fields it reads before a call, so a native contract can state "A calls B, then C" by name and re-prove it on each build |
+| | `game_data/il2cpp/body_claims.py` | name-addressed method bodies of the selected build (`BodyIndex`: short-name resolution, `.pdata` fragments, one level of unnamed helpers, iFix patch ids) and the claim kinds a reviewed contract states about them -- `calls`, `notCallsPrefix`, `comparesResult`, `readsField`, `storesConstant`, `returnsConstant`, `matches` -- evaluated on whichever build is installed |
+| | `game_data/story_native_consumers_native.py` | proves the Story builders' native claim groups and resolves their `cited` methods from `contracts/story_native_consumers.json`, caching the evaluation in `reports/story/recovery/story_native_consumers.json` keyed by the installed build and the contract bytes; a failed or `pendingReview` group publishes nothing |
 | | `game_data/memorypack/` | MemoryPack codecs and their corpus gates, including the current-build BuffData additions (`buff_icon_config.py`, `buff_residual_actions.py`, `buff_named_schema.py`) and the SkillData first-timeline lane (`skill_timeline_*.py`), which share `core.LabelledReader` and gate through `il2cpp.native_image` |
 | **2. WebUI** | `webui/views.py`, `webui/package.py` | page-build orchestration, and packaging |
 | | `webui/story/` | Story and Text page data plus shared Story evidence |
 | | `webui/story_recovery/` | Story audits, OCR ordering, runtime traces, candidate generation |
 | | `webui/mission_pipeline/` | standalone Mission Pipeline recovery (not a WebUI page) |
+| | `webui/mission_pipeline/runtime_contract_native.py` | re-derives `RUNTIME_CONTRACT`'s addresses, tokens, iFix patch ids and ParamBlackboard key slot by name on the installed build and labels each native chain row `verified`, `verified_with_bypassed_hops`, `partially_resolved` or `link_failed` |
 | | `webui/{assets,audio,characters,gameplay,map,recovery,updates}/` | one folder per page: its `build_*.py` entry point and helper modules |
 | | `webui/recovery/` | the Recovery-progress page: `build_recovery.py` plus its tracked `recovery_declarations.json`. It derives from generated reports and the `memory/game_data/README.md` lane index only, never from installed bytes, and fails closed on a missing report, a schema-token mismatch, or a VFS block type with no declared lane |
 | | `webui/decoded_payloads.py` | export-relative path to the `game_data` reader that owns it, rendered as diffable text; the routing shared by consumers that need a serialized `.json` payload as text rather than as a page record |
@@ -432,9 +435,9 @@ python -m scripts.webui.story.lua_consumer_references --markdown
 
 To refresh and reconcile the optional full cinematic native audit against the
 compact contract, run
-`python -m scripts.webui.story_recovery.audit_native_carriers cinematic`. Use
-`--skip-contract-reconciliation` only while reviewing a new installed build
-before intentionally updating the versioned contract.
+`python -m scripts.webui.story_recovery.audit_native_carriers cinematic`. After
+a client update, `--write-contract` regenerates the contract from that audit
+when it validates; `--skip-contract-reconciliation` only writes the audit.
 
 `webui/story/source_gap/` owns the canonical source-only Story gap queue.
 Mission Pipeline refreshes it through the in-process builder API; it is not a
@@ -1102,6 +1105,40 @@ repeated. Each resolution records the route that reached it: `name`,
 tokens renumber). `memory/game_data_recovery.md` owns why each drift class
 exists. The report is evidence that the identity still exists at a new address,
 not that the old contract's body conclusions still hold.
+
+Contracts whose claims can be re-proved on a new build carry their own
+regenerator. Each re-derives rows by managed name, re-checks every claim in the
+installed binary, and refuses to write when one no longer holds:
+
+```bat
+python -m scripts.game_data.callserver_callback_native --regenerate [--write]
+python -m scripts.game_data.cutscene_case_resolution_native --regenerate [--write]
+python -m scripts.game_data.ifix_patch_native --regenerate PATCH [--write]
+python -m scripts.webui.story_recovery.audit_native_carriers cinematic --write-contract
+python -m scripts.webui.story_recovery.audit_native_carriers generic ^
+  --carrier-type Beyond.Gameplay.TeleportParam --focus-field missionId ^
+  --focus-field levelScriptId --focus-field actionId --focus-field performId --write-contract
+```
+
+`PATCH` is `Gameplay.Beyond.patch.bytes` from a bounded
+`AnimeStudio.CLI dump -b i-fix-patch` into `tmp/`. Review contracts that record
+a census conclusion rather than a re-provable claim
+(`identity_carrier_boundaries.json`, `cross_system_consumers.json`) have no
+regenerator; on a new build they stay `mismatched` until reviewed again.
+
+Other reviewed native meanings are claims about named method bodies, checked
+live on the installed build rather than pinned by body hash:
+`contracts/dialog_finish_native.json` (the DialogTree finish audit) and
+`contracts/story_native_consumers.json` (Story consumer groups: NPC proxy
+selection, trunk playback, If/Branch next-index, Branch.Execute order,
+CutsceneRoot playback, module save-key prefix, protocol event paths, plus a
+`cited` map of methods rows only name). A claim that fails, or a group marked
+`pendingReview` because its code moved, publishes nothing. Generated artifacts
+made on one build -- the reverse-PPtr audit, `webui/story/dynamic_scene.json`
+-- are current only when their recorded native hashes equal the installed
+build's. The Audio native catalog still pins its reviewed build in
+`contracts/audio_native.json`: its rows carry that build's indexes and
+addresses and are withheld on any other build until re-derived.
 
 ## Output hygiene
 

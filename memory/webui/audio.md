@@ -101,6 +101,10 @@ audio logic in the semantic publisher or import either entry point as a helper.
 - Close more authored consumer-to-Event and Event-to-media ownership paths.
 - Recover selector/parameter meaning without conflating control with playback.
 - Keep unsupported codecs, missing chunks, and unobserved runtime branches visible.
+- Native consumer routes (ModelView, voice triggers, managed-literal and
+  selector callsites) are withheld on the installed build: their catalog is
+  pinned to the previous build (`contracts/audio_native.json`) until it is
+  re-derived by name. Authored and HIRC evidence is unaffected.
 
 See [`../game_data_recovery.md`](../game_data_recovery.md) for durable
 serialized-data and native-consumer conclusions, and

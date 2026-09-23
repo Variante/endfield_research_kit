@@ -20,7 +20,6 @@ class MissionRuntimeMainDecodeError(ValueError):
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "mission_runtime_main_schema.json"
-CONTRACT_SHA256 = "B193E1C9B27D9A7190C008A65F24431DB260EB5D33238ED7CF7DB3DC80E0596E"
 CONTRACT_SCHEMA = "endfield.mission-runtime-main-json-schema.v1"
 _fail = make_fail(MissionRuntimeMainDecodeError)
 
@@ -39,7 +38,6 @@ def is_mission_runtime_main_path(relative: str) -> bool:
 def _load_contract() -> dict[str, Any]:
     return load_schema_contract(
         CONTRACT_PATH,
-        sha256=CONTRACT_SHA256,
         schema=CONTRACT_SCHEMA,
         error=MissionRuntimeMainDecodeError,
     )

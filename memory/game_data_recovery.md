@@ -33,25 +33,23 @@ python tools\endfield_source_graph.py build --relevant-asset-maps --skip-referen
   and consumers of pinned methods, code windows, field offsets, registrations,
   or native contracts; current-export Story classifiers validate their own
   tables, object-index stage signatures, and source fingerprints instead.
-- **Rebuilding AnimeStudio invalidates every `inputSetSha256` pin.** That hash
-  covers the exporter binary, so changing the exporter breaks the corpus-gate
-  chain -- VFS audit, the Buff and Skill gates, then `jsondata_corpus` -- and
-  the tracked contracts recording it. Correct fail-closed behaviour, neither a
-  client update nor a regression. Recovering from it is now a maintained
-  operation rather than a hand edit: re-run the audit, then
-  `python -m scripts.game_data.contracts_repin --write`, which replaces the
-  fingerprint in every contract carrying it and settles the two pin families
-  that follow -- the `dependencies[]` rows contracts record for each other and
-  the digest each loader pins, including table-shaped pins such as
-  `buff_frontiers_native.FRONTIERS`. It edits bytes, never a JSON round-trip,
-  so line endings survive, and it **refuses unless the installed
-  `GameAssembly.dll` and `global-metadata.dat` equal both the audit's and the
-  contracts' own `nativeInputs`**. That gate is what separates an
-  exporter-only re-pin from a client update, where the rows may really be
-  stale and regeneration, not re-pinning, is the answer.
-- A test must not hardcode an `inputSetSha256`. It is an exporter fingerprint,
-  so a pinned copy passes only until the next rebuild and then fails a gate
-  that is working correctly. Read it from the contract the subject loads.
+- **`inputSetSha256` identifies one audit run, not the game build.** It covers
+  the exporter binary and the absolute asset roots, so rebuilding AnimeStudio
+  or moving the install changes it with the game data untouched. It is
+  therefore only a join key between the generated artifacts of one run -- the
+  VFS audit summary, its ledger, and the corpus reports built from them -- and
+  a fresh audit regenerates every side together. No tracked contract is gated
+  on it and no reader decodes differently because of it; whether a contract's
+  rows apply is decided by its `nativeInputs` against the installed build, and
+  by the corpus gate that validates those contracts before it decodes.
+- Hash checks survive only where they guard something git does not: the
+  installed build against `nativeInputs`, native code bytes against a recorded
+  window or body hash, installed game files such as the iFix patch, and a
+  generated report against the inputs it was built from. A contract's own
+  bytes, one contract's hash recorded in another, and Python restating a
+  contract's values are not gates, because git already owns tracked files.
+- A test must not hardcode an `inputSetSha256`: it changes on every exporter
+  rebuild. Read it from the fixture's own audit summary.
 - A field name, code address, registration order, hash collision, filename,
   proximity, or available asset is not ownership or runtime execution.
 - Preserve source root, logical path, file hash, record offset, parser/schema
@@ -269,6 +267,14 @@ and before/after evidence belongs in `tmp/<topic>/`.
   [`game_data/audio_overview.md`](game_data/audio_overview.md). Keep closing
   authored and observed consumers through exact Event/media traversal while
   preserving branch and audibility gaps.
+- Audio's native consumer catalog (ModelView routes, voice triggers, managed
+  literal and selector callsites, playback chains) still records the previous
+  build's indexes and addresses, pinned in `contracts/audio_native.json`, so
+  every native Audio route is withheld on the installed build. Re-derive it by
+  name as Story's consumers were: consumer method, the literal or selector
+  field it loads (`il2cpp/call_graph.py` resolves string literals), and the
+  playback call, with the unnamed event-wrapper helpers identified by their
+  callee shape rather than their address.
 - Improve exact prefab, renderer, material, animation, and world-instance
   ownership.
 - Keep native gates and source-graph provenance deterministic across client

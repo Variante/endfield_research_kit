@@ -24,65 +24,18 @@ from scripts.common import (
 SCHEMA = "nativeCrossSystemConsumerCensus.v4"
 AUDIT_SCHEMA = "crossSystemConsumersNativeContractAudit.v1"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "cross_system_consumers.json"
-GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-)
-METADATA_SHA256 = (
-    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-)
-EXPECTED_CLASS_COUNTS = {
-    "mission_state_controls_dynamic_component_availability": 4,
-    "shared_trigger_geometry_adapter": 3,
-    "global_level_load_synchronization": 1,
-    "story_dynamic_scene_visual_context": 8,
-    "mission_or_dialog_alternate_action_consumer": 1,
+#: Counts that are review conclusions: each must stay zero. Every other count
+#: is census data, checked for consistency with the rows it summarises.
+ZERO_CONCLUSIONS = {
+    "summary": (
+        "missionLevelScriptCallers", "tripleOrGreaterFamilyCallers", "unreviewedCallers",
+        "storyBindingsAdded", "missionOrderEdgesAdded",
+    ),
+    "directConsumerClosure": ("levelScriptMethods", "storyMethods", "unreviewedIndirectSites"),
+    "missionRuntimeSurface": ("crossFamilyMethodSignatures", "trackingMissionFieldWrites", "unreviewedCallers"),
+    "managedCallableSurface": ("crossIdentityCallableFields", "missionLevelScriptBindings", "unreviewedBindingCallers"),
 }
-EXPECTED_DIRECT_CLOSURE = {
-    "seedMethods": 4,
-    "reachableMethods": 23,
-    "directEdges": 30,
-    "maximumDepth": 2,
-    "levelScriptMethods": 0,
-    "storyMethods": 0,
-    "reviewedIndirectSites": 1,
-    "unreviewedIndirectSites": 0,
-}
-EXPECTED_DEFERRED_COUNTS = {
-    "enqueueWriters": 2,
-    "scheduledReaders": 1,
-    "fieldWriterReferences": 1,
-    "fieldReaderReferences": 3,
-    "refreshEntityStatusTargets": 1,
-    "conditionUpdateTargets": 1,
-}
-EXPECTED_PENDING_FIELD = {
-    "name": "m_pendingRefreshCompSet",
-    "token": "0x0400e5f9",
-    "offset": "0x48",
-}
-EXPECTED_MISSION_RUNTIME_COUNTS = {
-    "missionIdentityTypes": 174,
-    "familyTargetPointers": 4322,
-    "crossSystemCallers": 2,
-    "missionRuntimeLevelScriptCallers": 1,
-    "missionRuntimeStoryCallers": 1,
-    "crossFamilyMethodSignatures": 0,
-    "trackingMissionFieldWrites": 0,
-    "trackingSceneFieldWrites": 3,
-    "unreviewedCallers": 0,
-}
-EXPECTED_CALLABLE_COUNTS = {
-    "callableFields": 13,
-    "missionRuntimeCallableFields": 9,
-    "levelScriptCallableFields": 4,
-    "crossIdentityCallableFields": 0,
-    "callableEntryMethods": 5,
-    "callableEntryTargetPointers": 5,
-    "directBindingCalls": 5,
-    "missionLevelScriptBindings": 0,
-    "unreviewedBindingCallers": 0,
-}
-
+PENDING_FIELD_NAME = "m_pendingRefreshCompSet"
 
 from scripts.common import repo_path as _source_file
 
@@ -102,40 +55,37 @@ def validate_cross_system_consumers(
             "actual": actual,
         })
 
-    source = contract.get("source") or {}
     summary = contract.get("summary") or {}
     closure = contract.get("directConsumerClosure") or {}
     deferred = contract.get("deferredRefreshClosure") or {}
     mission_runtime = contract.get("missionRuntimeSurface") or {}
     callable_surface = contract.get("managedCallableSurface") or {}
     validation = contract.get("validation") or {}
+    rows = [row for row in contract.get("rows") or [] if isinstance(row, dict)]
+    row_classes = dict(Counter(str(row.get("classification") or "") for row in rows))
     exact_gates = (
         ("schema", SCHEMA, contract.get("schemaVersion")),
         ("validation_status", "passed", validation.get("status")),
         ("validation_failures", [], validation.get("failures")),
-        ("gameassembly_sha256", GAMEASSEMBLY_SHA256, str(source.get("gameAssemblySha256") or "").upper()),
-        ("metadata_sha256", METADATA_SHA256, str(source.get("globalMetadataSha256") or "").upper()),
-        ("cross_system_callers", 17, summary.get("crossSystemCallers")),
-        ("mission_levelscript_callers", 0, summary.get("missionLevelScriptCallers")),
-        ("triple_family_callers", 0, summary.get("tripleOrGreaterFamilyCallers")),
-        ("unreviewed_callers", 0, summary.get("unreviewedCallers")),
-        ("story_bindings_added", 0, summary.get("storyBindingsAdded")),
-        ("mission_order_edges_added", 0, summary.get("missionOrderEdgesAdded")),
-        ("classification_counts", EXPECTED_CLASS_COUNTS, summary.get("classificationCounts")),
-        ("row_classification_counts", EXPECTED_CLASS_COUNTS, dict(Counter(
-            str(row.get("classification") or "")
-            for row in contract.get("rows") or []
-            if isinstance(row, dict)
-        ))),
-        ("direct_closure_counts", EXPECTED_DIRECT_CLOSURE, closure.get("counts")),
-        ("deferred_pending_field", EXPECTED_PENDING_FIELD, deferred.get("pendingField")),
-        ("deferred_counts", EXPECTED_DEFERRED_COUNTS, deferred.get("counts")),
-        ("mission_runtime_counts", EXPECTED_MISSION_RUNTIME_COUNTS, mission_runtime.get("counts")),
-        ("managed_callable_counts", EXPECTED_CALLABLE_COUNTS, callable_surface.get("counts")),
+        ("cross_system_callers", len(rows), summary.get("crossSystemCallers")),
+        ("row_classification_counts", summary.get("classificationCounts"), row_classes),
+        ("deferred_pending_field", PENDING_FIELD_NAME, (deferred.get("pendingField") or {}).get("name")),
     )
     for gate, expected, actual in exact_gates:
         if actual != expected:
             reject(gate, expected, actual)
+    sections = {
+        "summary": summary,
+        "directConsumerClosure": closure.get("counts") or {},
+        "missionRuntimeSurface": mission_runtime.get("counts") or {},
+        "managedCallableSurface": callable_surface.get("counts") or {},
+    }
+    for section, keys in ZERO_CONCLUSIONS.items():
+        for key in keys:
+            if sections[section].get(key) != 0:
+                reject(f"{section}.{key}", 0, sections[section].get(key))
+    if not isinstance(deferred.get("counts"), dict) or not deferred["counts"]:
+        reject("deferred_counts", "recorded", deferred.get("counts"))
     return failures
 
 
@@ -234,9 +184,10 @@ def load_cross_system_consumers_contract(
     if contract:
         failures.extend(validate_cross_system_consumers(contract, source_file))
 
+    source = contract.get("source") or {}
     native = check_installed_native_inputs(
-        GAMEASSEMBLY_SHA256,
-        METADATA_SHA256,
+        str(source.get("gameAssemblySha256") or ""),
+        str(source.get("globalMetadataSha256") or ""),
         gameassembly=gameassembly,
         metadata=metadata,
     )
@@ -275,15 +226,9 @@ def load_cross_system_consumers_contract(
 __all__ = [
     "AUDIT_SCHEMA",
     "DEFAULT_CONTRACT",
-    "EXPECTED_CALLABLE_COUNTS",
-    "EXPECTED_CLASS_COUNTS",
-    "EXPECTED_DEFERRED_COUNTS",
-    "EXPECTED_DIRECT_CLOSURE",
-    "EXPECTED_MISSION_RUNTIME_COUNTS",
-    "EXPECTED_PENDING_FIELD",
-    "GAMEASSEMBLY_SHA256",
-    "METADATA_SHA256",
+    "PENDING_FIELD_NAME",
     "SCHEMA",
+    "ZERO_CONCLUSIONS",
     "load_cross_system_consumers_contract",
     "project_cross_system_consumers",
     "validate_cross_system_consumers",

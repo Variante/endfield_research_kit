@@ -13,7 +13,6 @@ from scripts.game_data.animation_curve_native import _pe_file_offset
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "gpu_ui_damage_text_native.json"
-CONTRACT_SHA256 = "DE18498C2E987E866160EFE45A204D81E3C0A5DC55CAFC62FCBB9FBE2D6BEF43"
 SCHEMA = "endfield.gpui-damage-text-native-contract.v1"
 
 
@@ -29,10 +28,6 @@ def load_damage_text_schema(
         raw = Path(contract_path).read_bytes()
         digest = hashlib.sha256(raw).hexdigest().upper()
         audit["contractSha256"] = digest
-        if digest != CONTRACT_SHA256:
-            failures.append({"gate": "contract_sha256", "expected": CONTRACT_SHA256,
-                             "actual": digest})
-            return None, audit
         contract = json.loads(raw)
         if contract.get("schema") != SCHEMA or contract.get("status") != "validated":
             raise ValueError("unsupported contract schema or status")

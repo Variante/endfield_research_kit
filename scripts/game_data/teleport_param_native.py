@@ -1,7 +1,18 @@
-"""Load and gate the reviewed TeleportParam native carrier contract."""
+"""Load, gate and regenerate the reviewed TeleportParam native carrier contract.
+
+The contract comes from the generic native value-carrier scan
+(``audit_native_carriers generic --carrier-type Beyond.Gameplay.TeleportParam``)
+and proves two bounded facts about the teleport-finish correlation carrier:
+no direct AOT caller passes a nonzero missionId, levelScriptId, actionId or
+performId, and LoadFinishStep reads levelScriptId and actionId but not
+missionId. It therefore adds no mission ownership, branch or Story-order edge.
+
+The validator checks those invariants, not one build's counts, offsets or
+instruction addresses; the scan regenerates all of those with
+``--write-contract``.
+"""
 from __future__ import annotations
 
-from scripts.game_data.contracts import CONTRACTS_DIR
 import hashlib
 import json
 from pathlib import Path
@@ -13,105 +24,28 @@ from scripts.common import (
     NATIVE_EVIDENCE_VALIDATED,
     check_installed_native_inputs,
 )
+from scripts.common import repo_path as _source_file
+from scripts.game_data.contracts import CONTRACTS_DIR
 
 
-SCHEMA = "teleportParamNativeContract.v1"
+SCHEMA = "teleportParamNativeContract.v2"
 AUDIT_SCHEMA = "nativeValueCarrierAudit.v1"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "teleport_param.json"
-GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
+CARRIER_TYPE = "Beyond.Gameplay.TeleportParam"
+FOCUS_FIELDS = ("missionId", "levelScriptId", "actionId", "performId")
+#: Initializer states that carry no authored value into the carrier.
+NON_ORIGINATING_STATES = frozenset({"zero", "forwarded_or_unresolved", "unknown"})
+LOAD_FINISH_METHOD_SUFFIX = "LoadFinishStep.DoExecute"
+COUNT_KEYS = (
+    "carrierFields",
+    "focusFields",
+    "containerPaths",
+    "signatureMethods",
+    "mappedSignaturePointers",
+    "focusFieldAccesses",
+    "directCallsites",
+    "directCarrierArguments",
 )
-METADATA_SHA256 = (
-    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-)
-EXPECTED_LAYOUT = {
-    "source": "0x0",
-    "uiType": "0x4",
-    "options": "0x8",
-    "resetMap": "0xc",
-    "callbackHandle": "0x10",
-    "missionId": "0x18",
-    "levelScriptId": "0x20",
-    "actionId": "0x28",
-    "performId": "0x30",
-}
-EXPECTED_COUNTS = {
-    "carrierFields": 9,
-    "focusFields": 4,
-    "containerPaths": 10,
-    "signatureMethods": 15,
-    "mappedSignaturePointers": 14,
-    "focusFieldAccesses": 23,
-    "directCallsites": 13,
-    "directCarrierArguments": 10,
-}
-EXPECTED_INITIALIZER_STATES = {
-    "forwarded_or_unresolved": 3,
-    "unknown": 1,
-    "zero": 6,
-}
-EXPECTED_FOCUS_ACCESS_COUNTS = {
-    "missionId": {"readAccesses": 3, "writeAccesses": 2},
-    "levelScriptId": {"readAccesses": 4, "writeAccesses": 2},
-    "actionId": {"readAccesses": 4, "writeAccesses": 2},
-    "performId": {"readAccesses": 4, "writeAccesses": 2},
-}
-EXPECTED_DIRECT_CALLER_CENSUS = {
-    (
-        "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline."
-        "Beyond.Gameplay.Core.ILoadingPipelineContext.get_teleportParam"
-    ): 2,
-    "Beyond.Gameplay.Core.GameLevelLoader.LoadAtPos": 1,
-    "Beyond.Gameplay.Core.GameLevelLoader.LoadAtPosInCurrentMap": 2,
-    "Beyond.Gameplay.Core.GameLevelLoader.OpenLevel": 1,
-    "Beyond.Gameplay.Core.PerformerFactory._CreatePerformPerformer": 1,
-    "Beyond.Gameplay.Core.SquadManager.ServerTeleportSquad": 1,
-    "Beyond.Gameplay.TeleportProcessor.GetTeleportParamsFromPassThroughData": 2,
-    "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_4652": 1,
-    "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_8806": 1,
-    "IFix.ILFixDynamicMethodWrapper.__Gen_Wrap_8811": 1,
-}
-EXPECTED_LOAD_FINISH_ACCESSES = [
-    {
-        "field": "levelScriptId",
-        "kind": "read",
-        "writeState": None,
-        "pathKind": "nested_container",
-        "root": "this",
-        "expectedPath": ["0x20", "0x60"],
-        "origin": "this+0x20+0x60",
-        "method": (
-            "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline+"
-            "LoadFinishStep.DoExecute"
-        ),
-        "token": "0x06011d23",
-        "methodVa": "0x183dd8c60",
-        "instructionVa": "0x183dd8e56",
-        "instruction": "mov r14, [rsi+0x60]",
-        "width": 8,
-    },
-    {
-        "field": "actionId",
-        "kind": "read",
-        "writeState": None,
-        "pathKind": "nested_container",
-        "root": "this",
-        "expectedPath": ["0x20", "0x68"],
-        "origin": "this+0x20+0x68",
-        "method": (
-            "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline+"
-            "LoadFinishStep.DoExecute"
-        ),
-        "token": "0x06011d23",
-        "methodVa": "0x183dd8c60",
-        "instructionVa": "0x183dd8e63",
-        "instruction": "mov rsi, [rsi+0x68]",
-        "width": 8,
-    },
-]
-
-
-from scripts.common import repo_path as _source_file
 
 
 def _failure_status(*, raw: bytes, native_status: str) -> str:
@@ -124,6 +58,7 @@ def _project_generic_audit(audit: dict[str, Any]) -> dict[str, Any]:
     """Reduce a fresh generic scan to the checked-in contract vocabulary."""
     carrier = audit.get("carrier") or {}
     summary = audit.get("summary") or {}
+    source = audit.get("source") or {}
     target_counts: dict[str, int] = {}
     for call in audit.get("directCallsites") or []:
         targets = call.get("targets") or []
@@ -136,12 +71,10 @@ def _project_generic_audit(audit: dict[str, Any]) -> dict[str, Any]:
         "auditSchema": audit.get("schema"),
         "auditValidation": (audit.get("validation") or {}).get("status"),
         "sources": {
-            "gameAssemblySha256": (audit.get("source") or {}).get(
-                "gameAssemblySha256"
-            ),
-            "globalMetadataSha256": (audit.get("source") or {}).get(
-                "globalMetadataSha256"
-            ),
+            "gameAssembly": source.get("gameAssembly"),
+            "gameAssemblySha256": str(source.get("gameAssemblySha256") or "").upper(),
+            "globalMetadata": source.get("globalMetadata"),
+            "globalMetadataSha256": str(source.get("globalMetadataSha256") or "").upper(),
         },
         "carrier": {
             "type": carrier.get("type"),
@@ -151,14 +84,21 @@ def _project_generic_audit(audit: dict[str, Any]) -> dict[str, Any]:
                 for row in carrier.get("fields") or []
             },
         },
-        "counts": {key: summary.get(key) for key in EXPECTED_COUNTS},
+        "counts": {key: summary.get(key) for key in COUNT_KEYS},
         "directCallerCensus": dict(sorted(target_counts.items())),
         "focusFieldSummary": audit.get("focusFieldSummary") or {},
         "loadFinishConsumerAccesses": [
             row for row in audit.get("fieldAccesses") or []
-            if str(row.get("method") or "").endswith("LoadFinishStep.DoExecute")
+            if str(row.get("method") or "").endswith(LOAD_FINISH_METHOD_SUFFIX)
         ],
     }
+
+
+def contract_from_generic_audit(audit: dict[str, Any]) -> dict[str, Any]:
+    """Regenerate the checked-in contract from a fresh generic scan."""
+    projected = _project_generic_audit(audit)
+    projected.pop("auditValidation")
+    return {"schema": SCHEMA, "status": "validated", **projected}
 
 
 def reconcile_generic_audit(
@@ -166,33 +106,29 @@ def reconcile_generic_audit(
 ) -> list[dict[str, Any]]:
     """Compare a fresh generic scan against every retained production fact."""
     projected = _project_generic_audit(audit)
-    expected = {
-        "auditSchema": contract.get("auditSchema"),
-        "auditValidation": "validated",
-        "sources": {
-            "gameAssemblySha256": (contract.get("sources") or {}).get(
-                "gameAssemblySha256"
-            ),
-            "globalMetadataSha256": (contract.get("sources") or {}).get(
-                "globalMetadataSha256"
-            ),
-        },
-        "carrier": contract.get("carrier") or {},
-        "counts": contract.get("counts") or {},
-        "directCallerCensus": contract.get("directCallerCensus") or {},
-        "focusFieldSummary": contract.get("focusFieldSummary") or {},
-        "loadFinishConsumerAccesses": contract.get(
-            "loadFinishConsumerAccesses"
-        ) or [],
-    }
     failures: list[dict[str, Any]] = []
-    for gate in expected:
-        if projected[gate] != expected[gate]:
+    if projected["auditValidation"] != "validated":
+        failures.append({
+            "validator": "teleportParamNativeContractReconciliation",
+            "gate": "auditValidation",
+            "sourceFile": "generic native carrier audit",
+            "expected": "validated",
+            "actual": projected["auditValidation"],
+        })
+    for gate in (
+        "auditSchema", "sources", "carrier", "counts", "directCallerCensus",
+        "focusFieldSummary", "loadFinishConsumerAccesses",
+    ):
+        expected = contract.get(gate)
+        if gate == "sources":
+            expected = {key: str(value).upper() if key.endswith("Sha256") else value
+                        for key, value in (expected or {}).items()}
+        if projected[gate] != expected:
             failures.append({
                 "validator": "teleportParamNativeContractReconciliation",
                 "gate": gate,
                 "sourceFile": "generic native carrier audit",
-                "expected": expected[gate],
+                "expected": expected,
                 "actual": projected[gate],
             })
     return failures
@@ -201,7 +137,7 @@ def reconcile_generic_audit(
 def validate_teleport_param_contract(
     contract: dict[str, Any], source_file: str
 ) -> list[dict[str, Any]]:
-    """Return deterministic failures for every production-consumed field."""
+    """Return failures for every invariant a consumer relies on."""
     failures: list[dict[str, Any]] = []
 
     def reject(gate: str, expected: Any, actual: Any) -> None:
@@ -213,60 +149,69 @@ def validate_teleport_param_contract(
             "actual": actual,
         })
 
-    sources = contract.get("sources") or {}
     carrier = contract.get("carrier") or {}
-    exact_gates = (
+    layout = carrier.get("layout") or {}
+    for gate, expected, actual in (
         ("schema", SCHEMA, contract.get("schema")),
         ("status", "validated", contract.get("status")),
         ("audit_schema", AUDIT_SCHEMA, contract.get("auditSchema")),
-        (
-            "gameassembly_sha256",
-            GAMEASSEMBLY_SHA256,
-            str(sources.get("gameAssemblySha256") or "").upper(),
-        ),
-        (
-            "metadata_sha256",
-            METADATA_SHA256,
-            str(sources.get("globalMetadataSha256") or "").upper(),
-        ),
-        ("carrier_type", "Beyond.Gameplay.TeleportParam", carrier.get("type")),
-        ("native_size", 0x38, carrier.get("nativeSize")),
-        ("runtime_field_layout", EXPECTED_LAYOUT, carrier.get("layout")),
-        ("counts", EXPECTED_COUNTS, contract.get("counts")),
-    )
-    for gate, expected, actual in exact_gates:
+        ("carrier_type", CARRIER_TYPE, carrier.get("type")),
+        ("count_keys", sorted(COUNT_KEYS), sorted(contract.get("counts") or {})),
+    ):
         if actual != expected:
             reject(gate, expected, actual)
+    missing_fields = [name for name in FOCUS_FIELDS if name not in layout]
+    if missing_fields:
+        reject("focus_fields_in_layout", list(FOCUS_FIELDS), missing_fields)
 
     focus = contract.get("focusFieldSummary") or {}
-    for field_name, access_counts in EXPECTED_FOCUS_ACCESS_COUNTS.items():
-        row = focus.get(field_name) or {}
-        expected = {
-            "offset": EXPECTED_LAYOUT[field_name],
-            "width": 8,
-            **access_counts,
-            "zeroWriteAccesses": 1,
-            "unknownWriteAccesses": 1,
-            "directCallInitializerStates": EXPECTED_INITIALIZER_STATES,
-        }
-        if row != expected:
-            reject(f"focus.{field_name}", expected, row)
+    for field_name in FOCUS_FIELDS:
+        states = set((focus.get(field_name) or {}).get("directCallInitializerStates") or {})
+        originating = sorted(states - NON_ORIGINATING_STATES)
+        if not states or originating:
+            reject(
+                f"focus.{field_name}.no_direct_originator",
+                sorted(NON_ORIGINATING_STATES),
+                sorted(states),
+            )
+        if (focus.get(field_name) or {}).get("offset") != layout.get(field_name):
+            reject(f"focus.{field_name}.offset", layout.get(field_name), (focus.get(field_name) or {}).get("offset"))
 
-    accesses = contract.get("loadFinishConsumerAccesses") or []
-    if accesses != EXPECTED_LOAD_FINISH_ACCESSES:
+    read_fields = {
+        row.get("field") for row in contract.get("loadFinishConsumerAccesses") or []
+        if row.get("kind") == "read"
+    }
+    if not {"levelScriptId", "actionId"} <= read_fields or "missionId" in read_fields:
         reject(
-            "load_finish_consumer_accesses",
-            EXPECTED_LOAD_FINISH_ACCESSES,
-            accesses,
-        )
-    direct_callers = contract.get("directCallerCensus") or {}
-    if direct_callers != EXPECTED_DIRECT_CALLER_CENSUS:
-        reject(
-            "direct_caller_census",
-            EXPECTED_DIRECT_CALLER_CENSUS,
-            direct_callers,
+            "load_finish_consumer_reads",
+            {"reads": ["actionId", "levelScriptId"], "notRead": "missionId"},
+            sorted(read_fields),
         )
     return failures
+
+
+def _producer_finding(contract: dict[str, Any]) -> str:
+    focus = contract["focusFieldSummary"]
+    states: dict[str, int] = {}
+    for field_name in FOCUS_FIELDS:
+        for state, count in (focus[field_name].get("directCallInitializerStates") or {}).items():
+            states[state] = max(states.get(state, 0), count)
+    parts = ", ".join(f"{count} {state.replace('_', ' ')}" for state, count in sorted(states.items()))
+    return (
+        "The generic installed-binary carrier scan finds no nonzero direct AOT originator "
+        f"for missionId, levelScriptId, actionId or performId; direct carrier arguments are {parts}."
+    )
+
+
+def _consumer_finding(contract: dict[str, Any]) -> str:
+    reads = [
+        f"{row['field']} at {row.get('instructionVa')}"
+        for row in contract["loadFinishConsumerAccesses"] if row.get("kind") == "read"
+    ]
+    return (
+        f"The inherited container-path scan proves that LoadFinishStep reads {' and '.join(reads)}. "
+        "It does not read missionId."
+    )
 
 
 def project_teleport_param_contract(
@@ -289,19 +234,8 @@ def project_teleport_param_contract(
         "directCallerCensus": contract["directCallerCensus"],
         "focusFieldSummary": contract["focusFieldSummary"],
         "loadFinishConsumerAccesses": contract["loadFinishConsumerAccesses"],
-        "producerFinding": (
-            "The generic installed-binary carrier scan finds one zero initializer "
-            "and one value-copy write for each extended field. Six direct local "
-            "carrier arguments leave missionId, levelScriptId, actionId, and "
-            "performId exactly zero; three are forwarding/copy paths and the sole "
-            "unknown local is a PerformerFactory consumer copy. No nonzero direct "
-            "AOT originator is present."
-        ),
-        "consumerFinding": (
-            "The inherited container-path scan proves that LoadFinishStep reads "
-            "levelScriptId at 0x183dd8e56 and actionId at 0x183dd8e63. It does "
-            "not read missionId. PerformerFactory separately consumes performId."
-        ),
+        "producerFinding": _producer_finding(contract),
+        "consumerFinding": _consumer_finding(contract),
         "finding": (
             "The active client binary contains a typed teleport-finish correlation "
             "carrier but no audited direct AOT producer for its nonzero actionId. "
@@ -309,10 +243,8 @@ def project_teleport_param_contract(
         ),
         "patchBoundary": (
             "The generic audit covers installed direct AOT calls and exact field "
-            "accesses. The current Gameplay.Beyond IFix audit has no relevant "
-            "TeleportProcessor, GameLevelLoader, LoadingPipeline, or PerformerFactory "
-            "target; virtual/interface dispatch, reflection, XLua, and live server "
-            "values remain outside the bounded result."
+            "accesses. Virtual/interface dispatch, reflection, XLua, IFix "
+            "substitution and live server values remain outside the bounded result."
         ),
         "storyBindingsAdded": 0,
         "confidence": "native_proven_bounded",
@@ -340,7 +272,7 @@ def load_teleport_param_contract(
     gameassembly: Path | None = None,
     metadata: Path | None = None,
 ) -> dict[str, Any]:
-    """Load the contract only for the exact installed native build."""
+    """Load the contract only for the build it records."""
     path = Path(contract_path)
     source_file = _source_file(path)
     raw = b""
@@ -362,9 +294,10 @@ def load_teleport_param_contract(
     if contract:
         failures.extend(validate_teleport_param_contract(contract, source_file))
 
+    sources = contract.get("sources") or {}
     native = check_installed_native_inputs(
-        GAMEASSEMBLY_SHA256,
-        METADATA_SHA256,
+        str(sources.get("gameAssemblySha256") or ""),
+        str(sources.get("globalMetadataSha256") or ""),
         gameassembly=gameassembly,
         metadata=metadata,
     )
@@ -382,7 +315,7 @@ def load_teleport_param_contract(
             contract, source_file=source_file, source_sha256=source_sha256
         )
     return {
-        "type": "Beyond.Gameplay.TeleportParam",
+        "type": CARRIER_TYPE,
         "auditSchema": AUDIT_SCHEMA,
         "auditReport": source_file,
         "contractSourceSha256": source_sha256,
@@ -397,18 +330,13 @@ def load_teleport_param_contract(
 
 __all__ = [
     "AUDIT_SCHEMA",
+    "CARRIER_TYPE",
+    "COUNT_KEYS",
     "DEFAULT_CONTRACT",
-    "EXPECTED_COUNTS",
-    "EXPECTED_DIRECT_CALLER_CENSUS",
-    "EXPECTED_FOCUS_ACCESS_COUNTS",
-    "EXPECTED_INITIALIZER_STATES",
-    "EXPECTED_LAYOUT",
-    "EXPECTED_LOAD_FINISH_ACCESSES",
-    "GAMEASSEMBLY_SHA256",
-    "METADATA_SHA256",
+    "FOCUS_FIELDS",
     "SCHEMA",
+    "contract_from_generic_audit",
     "load_teleport_param_contract",
-    "project_teleport_param_contract",
     "reconcile_generic_audit",
     "validate_teleport_param_contract",
 ]

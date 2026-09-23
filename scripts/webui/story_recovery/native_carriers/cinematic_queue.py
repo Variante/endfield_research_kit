@@ -26,6 +26,7 @@ from scripts.common import (
 )
 from scripts.game_data.cinematic_queue_native import (
     DEFAULT_CONTRACT,
+    project_runtime_audit,
     reconcile_runtime_audit,
     validate_cinematic_queue_contract,
 )
@@ -539,7 +540,10 @@ def build_payload(args: argparse.Namespace) -> dict[str, Any]:
 def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--gameassembly", type=Path, default=DEFAULT_GAMEASSEMBLY)
     parser.add_argument("--metadata", type=Path)
-    parser.add_argument("--code-registration", default="0x18b9217d0")
+    parser.add_argument(
+        "--code-registration", default="",
+        help="pin Il2CppCodeRegistration; by default it is located in the selected build",
+    )
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MD)
     parser.add_argument(
@@ -553,6 +557,11 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
         action="store_true",
         help="write a new-build audit even when the reviewed contract is not updated yet",
     )
+    parser.add_argument(
+        "--write-contract",
+        action="store_true",
+        help="regenerate the reviewed contract from this audit when it validates",
+    )
 
 
 def run(args: argparse.Namespace) -> int:
@@ -560,7 +569,19 @@ def run(args: argparse.Namespace) -> int:
     args.json.parent.mkdir(parents=True, exist_ok=True)
     args.json.write_text(json.dumps(payload, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     args.markdown.write_text(render_markdown(payload), encoding="utf-8")
-    if not args.skip_contract_reconciliation:
+    if args.write_contract:
+        regenerated = project_runtime_audit(payload)
+        failures = validate_cinematic_queue_contract(regenerated, str(args.contract))
+        if failures:
+            first = failures[0]
+            raise RuntimeError(
+                "validator=cinematic_queue_contract_regeneration failed: "
+                f"gate={first['gate']} expected={first['expected']} actual={first['actual']}"
+            )
+        args.contract.write_bytes(
+            (json.dumps(regenerated, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
+        )
+    elif not args.skip_contract_reconciliation:
         try:
             contract = json.loads(args.contract.read_text(encoding="utf-8-sig"))
             if not isinstance(contract, dict):

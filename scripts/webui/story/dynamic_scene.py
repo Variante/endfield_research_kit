@@ -31,12 +31,6 @@ DEFAULT_ARTIFACT = Path(__file__).with_name("dynamic_scene.json")
 DEFAULT_EXPORT_ROOT = EXPORT_LAYOUT.root
 DEFAULT_EXPORT_SUMMARY = ROOT / "reports" / "export" / "export_full_summary.json"
 
-GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-)
-METADATA_SHA256 = (
-    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-)
 DYNAMIC_STREAM_SHA256 = (
     "1702E7F78D19E43F30208BC8A5CE1CAEDC16994DA9A7360FEFDD5F404E900320"
 )
@@ -292,11 +286,20 @@ def validate_dynamic_scene_context(
     if error:
         reject("read_valid_artifact", {"readableJsonObject": True}, error)
     sources = artifact.get("sources") if isinstance(artifact.get("sources"), dict) else {}
+    # The artifact is a projection made on one build; it is current only when
+    # that build is the installed one.
+    native = check_installed_native_inputs(gameassembly=gameassembly, metadata=metadata)
+    if native.status != NATIVE_EVIDENCE_VALIDATED:
+        reject(
+            "installed_native_inputs",
+            {"status": NATIVE_EVIDENCE_VALIDATED},
+            {"status": native.status, "detail": native.detail},
+        )
     exact_gates = (
         ("schema", SCHEMA, artifact.get("schema")),
         ("status", "validated", artifact.get("status")),
-        ("gameassembly_sha256", GAMEASSEMBLY_SHA256, str(sources.get("gameAssemblySha256") or "").upper()),
-        ("metadata_sha256", METADATA_SHA256, str(sources.get("globalMetadataSha256") or "").upper()),
+        ("gameassembly_sha256", native.gameassembly_sha256.upper(), str(sources.get("gameAssemblySha256") or "").upper()),
+        ("metadata_sha256", native.metadata_sha256.upper(), str(sources.get("globalMetadataSha256") or "").upper()),
         ("dynamic_stream_sha256", DYNAMIC_STREAM_SHA256, str(sources.get("dynamicStreamingStreamSha256") or "").upper()),
         ("source_fingerprints", SOURCE_FINGERPRINTS, {
             str(key): str(value).upper()
@@ -307,18 +310,6 @@ def validate_dynamic_scene_context(
         if actual != expected:
             reject(gate, expected, actual)
 
-    native = check_installed_native_inputs(
-        GAMEASSEMBLY_SHA256,
-        METADATA_SHA256,
-        gameassembly=gameassembly,
-        metadata=metadata,
-    )
-    if native.status != NATIVE_EVIDENCE_VALIDATED:
-        reject(
-            "installed_native_inputs",
-            {"status": NATIVE_EVIDENCE_VALIDATED},
-            {"status": native.status, "detail": native.detail},
-        )
 
     summary, _summary_raw, summary_error = _read_json(Path(export_summary_path))
     if summary_error:

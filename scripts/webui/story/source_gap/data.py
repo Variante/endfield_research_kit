@@ -1,4 +1,7 @@
-from scripts.common import EXPORT_LAYOUT, rel_path as export_rel_path
+from functools import lru_cache
+
+from scripts.common import EXPORT_LAYOUT, check_installed_native_inputs, rel_path as export_rel_path
+from scripts.game_data.story_native_consumers_native import validated_group
 """Build-locked declarations used by source Story gap evidence.
 
 This module intentionally contains data rather than recovery algorithms. Its
@@ -37,9 +40,16 @@ NPC_PROXY_DIALOG_SELECTION_MAPPING_ID = (
 NON_OWNING_DIAGNOSTIC_QUEST_ATTACH_SOURCES = frozenset({
     "npcProxyDialog",
 })
-NPC_PROXY_DIALOG_SELECTION_GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-)
+NPC_PROXY_DIALOG_SELECTION_NATIVE_GROUP = "npcProxyDialogSelection"
+
+
+@lru_cache(maxsize=1)
+def npc_proxy_dialog_selection_sha256() -> str | None:
+    """The build that proves the proxy selector claims, or None."""
+    group = validated_group(NPC_PROXY_DIALOG_SELECTION_NATIVE_GROUP)
+    return group["gameAssemblySha256"] if group else None
+
+
 NPC_PROXY_TRACKING_INFO_TYPE = (
     "Beyond.Gameplay.NpcProxyTrackingInfo, Gameplay.Beyond"
 )
@@ -75,34 +85,36 @@ DIALOG_TREE_NARRATIVE_CONNECTION_MAPPING_ID = (
 DIALOG_TREE_TRUNK_GROUP_MAPPING_ID = (
     "gameassembly-2026-07-11-dialog-tree-trunk-playback-v1"
 )
-DIALOG_TREE_TRUNK_NATIVE_CONSUMERS = (
-    {
-        "method": "DTTrunkNodeData.get_trunkId",
-        "token": "0x06003977",
-        "address": "0x187292f78",
-    },
-    {
-        "method": "DialogTreeTrunkNode.DoExecute",
-        "token": "0x06003bb4",
-        "address": "0x1872a74b4",
-    },
-    {
-        "method": "DialogTreeTrunkNode._DoPlayTrunk",
-        "token": "0x06003bb6",
-        "address": "0x1872a80b8",
-    },
-    {
-        "method": "DialogManager.PlayTrunkNode",
-        "token": "0x0600f785",
-        "address": "0x186e16cc8",
-    },
+DIALOG_TREE_TRUNK_NATIVE_GROUP = "dialogTreeTrunkPlayback"
+DIALOG_TREE_TRUNK_NATIVE_METHODS = (
+    "DTTrunkNodeData.get_trunkId",
+    "DialogTreeTrunkNode.DoExecute",
+    "DialogTreeTrunkNode._DoPlayTrunk",
+    "DialogManager.PlayTrunkNode",
 )
 OFFLINE_EXHAUSTION_MAPPING_ID = (
     "current-build-offline-story-carrier-exhaustion-v93"
 )
-OFFLINE_EXHAUSTION_GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-)
+
+
+@lru_cache(maxsize=1)
+def _installed_native_sha256() -> tuple[str | None, str | None]:
+    native = check_installed_native_inputs()
+    if not native.validated:
+        return None, None
+    return native.gameassembly_sha256.upper(), native.metadata_sha256.upper()
+
+
+def offline_exhaustion_gameassembly_sha256() -> str | None:
+    """The installed GameAssembly the offline exhaustion is evaluated on."""
+    return _installed_native_sha256()[0]
+
+
+def offline_exhaustion_metadata_sha256() -> str | None:
+    """The installed global-metadata the offline exhaustion is evaluated on."""
+    return _installed_native_sha256()[1]
+
+
 OFFLINE_EXHAUSTION_ABSENT_BINARY_TOKENS = {
     "dlg_gm01m13_2": "dlg_gm01m13_2",
     "dlg_gm01m13_3": "dlg_gm01m13_3",
@@ -1131,9 +1143,6 @@ OFFLINE_EXHAUSTION_LEVELSCRIPT_TASK_CONSUMERS = {
 }
 OFFLINE_EXHAUSTION_REVERSE_PPTR_MAPPING_ID = (
     "gameassembly-2026-07-28-cutscene-root-director-playback-v1"
-)
-OFFLINE_EXHAUSTION_METADATA_SHA256 = (
-    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
 )
 OFFLINE_EXHAUSTION_RADIO_TABLE_SHA256 = (
     "78E0974495915D1F126EA9FE2923DC44DFD260D8358702A01504147BFABBD1D1"

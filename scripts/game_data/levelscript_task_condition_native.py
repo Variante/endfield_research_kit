@@ -13,7 +13,6 @@ from scripts.game_data.animation_curve_native import _pe_file_offset
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "levelscript_task_condition.json"
-CONTRACT_SHA256 = "f1a98f4168db74db2fb7be4a84fff0ca2a8640ab5f6718dc083491df7ddfed5f"
 SCHEMA = "endfield.levelscript-task-condition-native.v1"
 
 
@@ -27,10 +26,6 @@ def load_levelscript_task_condition_rows(
     try:
         raw = contract_path.read_bytes()
         digest = hashlib.sha256(raw).hexdigest()
-        if digest != CONTRACT_SHA256:
-            raise ValueError(
-                f"contract_sha256: expected {CONTRACT_SHA256}, actual {digest}"
-            )
         contract = json.loads(raw)
         if contract.get("schema") != SCHEMA or contract.get("status") != "validated":
             raise ValueError("contract_schema_or_status: unsupported contract")

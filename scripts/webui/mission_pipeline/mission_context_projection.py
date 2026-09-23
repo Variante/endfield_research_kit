@@ -75,8 +75,46 @@ def load_activity_quest_level_hosts(
     }
 
 
+def _bind_script_native_evidence(activation_audit: dict[str, Any] | None) -> dict[str, Any]:
+    """The start consumer as the selected build's activation audit proves it.
+
+    Offsets, tokens and addresses come from that audit, never from a recorded
+    build; without a validated audit only the reviewed shape is published.
+    """
+    evidence: dict[str, Any] = {
+        "startConsumer": "InteractiveLogicChallengeStartPoint._OnInteract",
+        "startEffect": (
+            "SubGame table lookup -> bindScriptId read -> "
+            "LevelScriptManager.TryGetLevelScript -> LevelScriptRuntime.ManualStart"
+        ),
+        "stopConsumer": "WorldChallengeGame.SendQuit",
+        "stopEffect": (
+            "LevelScriptManager.TryGetLevelScript -> "
+            "LevelScriptRuntime.ManualEnd -> send stop request"
+        ),
+    }
+    audit = activation_audit or {}
+    flow = audit.get("subGameInteractionFlow") or {}
+    start = (audit.get("methods") or {}).get("ChallengeOnInteract") or {}
+    offset = (audit.get("fieldOffsets") or {}).get("subGameInstanceData.bindScriptId")
+    validated = (
+        (audit.get("validation") or {}).get("status") == "validated"
+        and flow.get("bindScriptIdFieldRead") is True
+        and flow.get("manualStartCallCount") == 1
+    )
+    evidence["auditedOnStartConsumerFound"] = validated
+    if validated:
+        evidence.update({
+            "serializedFieldOffset": f"0x{offset:x}" if isinstance(offset, int) else None,
+            "startConsumerToken": start.get("token"),
+            "startConsumerAddress": start.get("methodPointerVa"),
+        })
+    return evidence
+
+
 def load_subgame_mission_bindings(
     table_path: Path | None,
+    activation_audit: dict[str, Any] | None = None,
 ) -> tuple[dict[str, list[dict[str, Any]]], dict[str, Any]]:
     """Load exact mission/script identities co-authored in typed SubGame rows.
 
@@ -187,23 +225,7 @@ def load_subgame_mission_bindings(
             "runtimeOnlyFields": ["gameInstId", "gameUniqueId", "isReenter"],
             "missingOwnershipFields": ["missionId", "questId", "sceneNumId", "bindScriptId"],
         },
-        "bindScriptNativeEvidence": {
-            "serializedFieldOffset": "0x50",
-            "startConsumer": "InteractiveLogicChallengeStartPoint._OnInteract",
-            "startConsumerToken": "0x0600231a",
-            "startConsumerAddress": "0x18713e548",
-            "startEffect": (
-                "SubGame table lookup -> bindScriptId read -> "
-                "LevelScriptManager.TryGetLevelScript -> LevelScriptRuntime.ManualStart"
-            ),
-            "stopConsumer": "WorldChallengeGame.SendQuit",
-            "stopConsumerAddress": "0x186f60cc8",
-            "stopEffect": (
-                "LevelScriptManager.TryGetLevelScript -> "
-                "LevelScriptRuntime.ManualEnd -> send stop request"
-            ),
-            "auditedOnStartConsumerFound": True,
-        },
+        "bindScriptNativeEvidence": _bind_script_native_evidence(activation_audit),
         "evidenceBoundary": (
             "Exact typed mission-to-SubGame-to-LevelScript shell and authored task "
             "lanes only; the binary proves the generic interaction ManualStart "

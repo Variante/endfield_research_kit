@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
+from scripts.game_data.il2cpp import protocol as il2cpp_protocol
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
@@ -261,18 +262,19 @@ def build_pointer_index(
     metadata: Any,
     mapper: Any,
 ) -> tuple[list[int], dict[int, list[dict[str, Any]]], dict[int, list[int]]]:
-    modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    code_registration = il2cpp_protocol.locate_code_registration(mapper, pe, metadata)
+    modules = mapper.parse_codegen_modules(pe, code_registration)
     ranges = mapper.image_method_ranges(metadata)
     _by_image, methods_by_pointer = mapper.build_pointer_indexes(
         pe, metadata, modules, ranges
     )
-    registration = mapper.find_metadata_registration(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    registration = mapper.find_metadata_registration(pe, code_registration)
     if registration is None:
         raise AuditError("could not derive MetadataRegistration")
     for pointer, aliases in mapper.build_generic_method_index(
         pe,
         metadata,
-        mapper.DEFAULT_CODE_REGISTRATION,
+        code_registration,
         registration,
     ).items():
         methods_by_pointer.setdefault(pointer, aliases)
@@ -656,7 +658,8 @@ def build_report(
     catalog = load_module("native_value_carrier_catalog", CATALOG_PATH)
     metadata = catalog.Metadata(metadata_path)
     pe = mapper.PeImage(gameassembly)
-    registration = mapper.find_metadata_registration(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    code_registration = il2cpp_protocol.locate_code_registration(mapper, pe, metadata)
+    registration = mapper.find_metadata_registration(pe, code_registration)
     if registration is None:
         raise AuditError("could not derive MetadataRegistration from current GameAssembly")
     runtime = RuntimeTypes(pe, metadata, mapper, registration)
@@ -921,7 +924,7 @@ def build_report(
             "gameAssemblySha256": game_hash,
             "globalMetadata": str(metadata_path.resolve()),
             "globalMetadataSha256": metadata_hash,
-            "codeRegistrationVa": f"0x{mapper.DEFAULT_CODE_REGISTRATION:x}",
+            "codeRegistrationVa": f"0x{code_registration:x}",
             "metadataRegistrationVa": f"0x{registration:x}",
         },
         "carrier": {
@@ -1050,6 +1053,11 @@ def add_arguments(parser: argparse.ArgumentParser) -> None:
     parser.add_argument("--max-container-depth", type=int, default=MAX_CONTAINER_DEPTH)
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MARKDOWN)
+    parser.add_argument(
+        "--write-contract",
+        action="store_true",
+        help="for TeleportParam, regenerate the reviewed contract from this scan when it validates",
+    )
 
 
 def run(args: argparse.Namespace) -> int:
@@ -1069,8 +1077,25 @@ def run(args: argparse.Namespace) -> int:
     if args.carrier_type == "Beyond.Gameplay.TeleportParam":
         from scripts.game_data.teleport_param_native import (
             DEFAULT_CONTRACT,
+            contract_from_generic_audit,
             reconcile_generic_audit,
+            validate_teleport_param_contract,
         )
+        if getattr(args, "write_contract", False):
+            regenerated = contract_from_generic_audit(report)
+            invariant_failures = validate_teleport_param_contract(regenerated, str(DEFAULT_CONTRACT))
+            if invariant_failures:
+                failure = invariant_failures[0]
+                print(
+                    "TeleportParam contract regeneration refused: "
+                    f"gate={failure['gate']}; expected={failure['expected']!r}; "
+                    f"actual={failure['actual']!r}",
+                    file=sys.stderr,
+                )
+                return 1
+            DEFAULT_CONTRACT.write_bytes(
+                (json.dumps(regenerated, indent=2, ensure_ascii=False) + "\n").encode("utf-8")
+            )
         try:
             contract = json.loads(DEFAULT_CONTRACT.read_text(encoding="utf-8-sig"))
             reconciliation_failures = reconcile_generic_audit(report, contract)

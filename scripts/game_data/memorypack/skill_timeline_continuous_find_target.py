@@ -3,7 +3,7 @@
 The selected SkillData AbilityActionData union uses current physical tag
 ``0x008A`` for ``ContinuousFindTargetAction.Data``.  Its nested selector unions do not use
 the older compact tag table retained by the Buff decoder, so this module
-supplies the current, byte-pinned subtype routes explicitly and fails closed
+supplies the current, reviewed subtype routes explicitly and fails closed
 for every route absent from the contract.
 """
 from __future__ import annotations
@@ -12,7 +12,7 @@ from functools import lru_cache
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-from scripts.game_data.il2cpp.native_image import check_dependency_contracts, read_pinned_contract
+from scripts.game_data.il2cpp.native_image import read_reviewed_contract
 from scripts.game_data.memorypack.core import CONTRACTS_DIR, LabelledReader
 from scripts.game_data.memorypack.buff import (
     BUFF_FIND_TARGET_BODY_MEMBERS,
@@ -31,7 +31,6 @@ from scripts.game_data.memorypack.skill_timeline_play_animation import (
 
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_continuous_find_target_native.json"
 LABEL = "skillTimelineContinuousFindTarget"
-CONTRACT_SHA256 = "7536544C31D184EDDA059E4FDA23CEAAB6A618AC3DF9A5B115D2BDD789B7478D"
 CONTINUOUS_FIND_TARGET_TAG = 0x008A
 CONTINUOUS_SELECTOR_SUBTYPE_TABLES = {
     **CURRENT_SELECTOR_SUBTYPE_TABLES,
@@ -51,10 +50,9 @@ CONTINUOUS_SELECTOR_SUBTYPE_TABLES = {
 
 @lru_cache(maxsize=1)
 def _contract() -> dict[str, Any]:
-    value, _digest = read_pinned_contract(
-        CONTRACT_PATH, sha256=CONTRACT_SHA256, schema="endfield.skill-timeline-continuous-find-target-native-contract.v1", label=LABEL
+    value, _digest = read_reviewed_contract(
+        CONTRACT_PATH, schema="endfield.skill-timeline-continuous-find-target-native-contract.v1", label=LABEL
     )
-    check_dependency_contracts(value, CONTRACT_PATH.parent, label=LABEL)
     return value
 
 
@@ -71,7 +69,6 @@ def validate_current_native_contract() -> dict[str, Any]:
     selectors = validate_selector_native_contract()
     return {
         "status": "validated",
-        "inputSetSha256": contract["inputSetSha256"],
         "nativeInputs": expected,
         "timelineValidation": timeline,
         "selectorValidation": selectors,
@@ -125,13 +122,9 @@ def _decode_continuous_find_target(data: bytes, start: int, limit: int) -> tuple
 def decode_first_timeline_continuous_find_target(
     data: bytes,
     *,
-    input_set_sha256: str,
     limit: int | None = None,
 ) -> dict[str, Any]:
     """Decode one-action first TimelineActionData records beginning with tag 8A."""
-    contract = _contract()
-    if input_set_sha256.upper() != contract["inputSetSha256"]:
-        raise ValueError("skillTimelineContinuousFindTarget.input-set:mismatch")
     hard_limit = len(data) if limit is None else limit
     reader = _Reader(data, hard_limit)
     reader.header(48, "skillData.memberCount")

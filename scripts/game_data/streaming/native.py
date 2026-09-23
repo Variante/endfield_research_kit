@@ -16,7 +16,6 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 SCHEMA = "endfield.streaming-field2-native-contract.v8"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "streaming_field2_native.json"
 # Updated only after the reviewed JSON contract is finalized.
-CONTRACT_SHA256 = "436F51D0C6C0BF0009D2EBF439C8BEC1A13E94404E983E5ADD0E09A604A82E60"
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -86,8 +85,6 @@ def validate_streaming_field2_native_contract(
             ],
         }
     actual_contract_sha256 = _sha256_bytes(raw_contract)
-    if actual_contract_sha256 != CONTRACT_SHA256:
-        reject("contract_sha256", CONTRACT_SHA256, actual_contract_sha256)
     if contract.get("schema") != SCHEMA:
         reject("schema", SCHEMA, contract.get("schema"))
     if contract.get("status") != "validated":

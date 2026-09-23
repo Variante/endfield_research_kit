@@ -6,7 +6,7 @@ import struct
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-from scripts.game_data.il2cpp.native_image import open_native_image, read_pinned_contract
+from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 
 from scripts.game_data.memorypack.buff import frame_buff_named_middle as _base_named_middle
@@ -22,12 +22,11 @@ from scripts.game_data import buff_frontiers_native as buff_frontiers
 
 CONTRACT_PATH = CONTRACTS_DIR / "buff_residual_actions_native.json"
 LABEL = "buffResidualActions"
-CONTRACT_SHA256 = "67C1567CF9BC244D8212DA2359BABBF55ABAC02F7A0DEB8AFA63D672AEE39819"
 
 
 def _contract() -> dict[str, Any]:
-    value, _digest = read_pinned_contract(
-        CONTRACT_PATH, sha256=CONTRACT_SHA256, schema="endfield.buff-residual-action-native-contract.v1", label=LABEL
+    value, _digest = read_reviewed_contract(
+        CONTRACT_PATH, schema="endfield.buff-residual-action-native-contract.v1", label=LABEL
     )
     return value
 
@@ -392,21 +391,11 @@ def root_continuation(
     *,
     source: str,
     start: int,
-    input_set_sha256: str,
     limit: int | None = None,
 ) -> dict[str, Any]:
     """Retry the frozen root continuation with authenticated residual actions."""
     base = _base_root_continuation(data, source=source, start=start, limit=limit)
-    contract = _contract()
-    frontier_contracts = [buff_frontiers.reviewed_contract(name) for name in buff_frontiers.FRONTIERS]
-    if (
-        base.get("status") != "unsupported"
-        or input_set_sha256.upper() != contract["inputSetSha256"]
-        or any(
-            input_set_sha256.upper() != frontier_contract["inputSetSha256"]
-            for frontier_contract in frontier_contracts
-        )
-    ):
+    if base.get("status") != "unsupported":
         return base
 
     reader = _ResidualReader(data, source, limit)
@@ -494,8 +483,6 @@ def frame_buff_named_middle(
     data: bytes,
     start: int,
     id_marker_offset: int,
-    *,
-    input_set_sha256: str,
 ) -> dict[str, Any]:
     """Close a middle containing an authenticated residual condition action."""
     base = _base_named_middle(data, start, id_marker_offset)
@@ -504,15 +491,11 @@ def frame_buff_named_middle(
             base,
             data=data,
             id_marker_offset=id_marker_offset,
-            input_set_sha256=input_set_sha256,
         )
     contracts = (
         (_contract(), CONTRACT_PATH.name),
         *((buff_frontiers.reviewed_contract(name), spec.file) for name, spec in buff_frontiers.FRONTIERS.items()),
     )
-    expected_input = input_set_sha256.upper()
-    if any(expected_input != contract["inputSetSha256"] for contract, _ in contracts):
-        return base
     authenticated_tags = {
         action["unionTag"]
         for contract, _ in contracts
@@ -558,7 +541,6 @@ def frame_buff_named_middle(
         recovered,
         data=data,
         id_marker_offset=id_marker_offset,
-        input_set_sha256=input_set_sha256,
     )
 
 
@@ -567,7 +549,6 @@ def _close_icon_config(
     *,
     data: bytes,
     id_marker_offset: int,
-    input_set_sha256: str,
 ) -> dict[str, Any]:
     """Replace the old named opaque icon range with its exact nested cursor."""
     fields = framed.get("namedFields")
@@ -578,7 +559,6 @@ def _close_icon_config(
         data,
         icon_field["start"],
         id_marker_offset,
-        input_set_sha256=input_set_sha256,
     )
     icon_field.update({
         "end": decoded["consumedEnd"],

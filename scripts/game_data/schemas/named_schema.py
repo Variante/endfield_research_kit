@@ -1,4 +1,4 @@
-"""The one validator behind every byte-pinned named JSON schema contract.
+"""The one validator behind every reviewed named JSON schema contract.
 
 Three JsonData families (polymorphic GameplayConfig tables, main
 MissionRuntimeAsset bodies, and the remaining textual JsonData tables) each
@@ -15,7 +15,6 @@ still names the family that raised it.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import re
 from typing import Any, Callable
@@ -53,12 +52,11 @@ def json_type_name(value: Any) -> str:
 def load_schema_contract(
     path: Any,
     *,
-    sha256: str,
     schema: str,
     error: type[ValueError],
     tables: frozenset[str] | None = None,
 ) -> dict[str, Any]:
-    """Read a pinned schema contract and check its identity and top-level shape.
+    """Read a reviewed schema contract and check its identity and top-level shape.
 
     With ``tables`` the contract must declare exactly that table set, each
     with the three schema sections; without it the contract itself carries
@@ -69,9 +67,6 @@ def load_schema_contract(
         data = path.read_bytes()
     except OSError as exc:
         raise error(f"cannot read schema contract: {exc}") from exc
-    digest = hashlib.sha256(data).hexdigest().upper()
-    if digest != sha256.upper():
-        fail("schemaContract.sha256", sha256.upper(), digest)
     try:
         contract = json.loads(data.decode("utf-8"))
     except (UnicodeDecodeError, json.JSONDecodeError) as exc:

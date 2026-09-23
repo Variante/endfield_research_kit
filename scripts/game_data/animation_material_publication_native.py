@@ -10,7 +10,6 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.animation_curve_native import _pe_file_offset
 
 CONTRACT_PATH = CONTRACTS_DIR / "animation_material_publication.json"
-CONTRACT_SHA256 = '86E02CA931B13A54956972F3FBAB75757300B6EC2339783C0498B3EE77BD12CE'
 SCHEMA = 'endfield.animation-material-publication-native.v1'
 
 
@@ -23,8 +22,6 @@ def load_animation_material_publication(*, game_root: Path | None = None,
     try:
         raw = contract_path.read_bytes()
         digest = hashlib.sha256(raw).hexdigest().upper()
-        if digest != CONTRACT_SHA256:
-            raise ValueError('contract_sha256: expected ' + CONTRACT_SHA256 + ', actual ' + digest)
         contract = json.loads(raw)
         if contract.get('schema') != SCHEMA or contract.get('status') != 'validated':
             raise ValueError('contract_schema_or_status: unsupported contract')

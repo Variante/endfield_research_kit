@@ -13,23 +13,21 @@ from functools import lru_cache
 from typing import Any, Callable
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-from scripts.game_data.il2cpp.native_image import check_dependency_contracts, open_native_image, read_pinned_contract
+from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 from scripts.game_data.memorypack.buff_actions import Reader
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_create_buff_native.json"
 LABEL = "skillTimelineCreateBuff"
-CONTRACT_SHA256 = "78D4DCDCEFCA7E7BABC5A4A782ED9C95D656BC7BFE63B5D5A49B77097800CB4E"
 CREATE_BUFF_TAG = 0x0092
 
 
 @lru_cache(maxsize=1)
 def _contract() -> dict[str, Any]:
-    value, _digest = read_pinned_contract(
-        CONTRACT_PATH, sha256=CONTRACT_SHA256, schema="endfield.skill-timeline-create-buff-native-contract.v1", label=LABEL
+    value, _digest = read_reviewed_contract(
+        CONTRACT_PATH, schema="endfield.skill-timeline-create-buff-native-contract.v1", label=LABEL
     )
-    check_dependency_contracts(value, CONTRACT_PATH.parent, label=LABEL)
     return value
 
 
@@ -62,11 +60,9 @@ def validate_current_native_contract() -> dict[str, Any]:
         raise ValueError(f"{LABEL}.native:setter-order")
     return {
         "status": "validated",
-        "inputSetSha256": contract["inputSetSha256"],
         "nativeInputs": expected,
         "unionTag": dispatcher["unionTag"],
         "methodIndices": validated_methods,
-        "dependencySha256": contract["dependencies"][0]["sha256"],
     }
 
 
@@ -196,13 +192,9 @@ def _decode_create_buff_action(
 def decode_first_timeline_create_buff(
     data: bytes,
     *,
-    input_set_sha256: str,
     limit: int | None = None,
 ) -> dict[str, Any]:
     """Decode the first CreateBuff action and, when sole, its timeline record."""
-    contract = _contract()
-    if input_set_sha256.upper() != contract["inputSetSha256"]:
-        raise ValueError("skillTimelineCreateBuff.input-set:mismatch")
     hard_limit = len(data) if limit is None else limit
     reader = Reader(data, "SkillData.CreateBuff", hard_limit)
     ranges: list[dict[str, Any]] = []
@@ -276,7 +268,7 @@ def decode_first_timeline_create_buff(
         "wholeActionGroupDataExact": action_count == 1 and timeline_count == 1,
         "wholeSkillDataExact": False,
         "evidenceBoundary": (
-            "The current dispatcher, member-19 wrapper and byte-pinned nested readers "
+            "The current dispatcher, member-19 wrapper and reviewed nested readers "
             "close the first CreateBuff action exactly. The containing TimelineActionData "
             "is exact only for a one-action sequence; later actions and timeline records "
             "remain at their first unconsumed byte."

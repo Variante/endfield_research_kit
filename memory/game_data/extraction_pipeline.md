@@ -234,8 +234,8 @@ referring.
 Two cautions before this reaches a build. The shipped
 `bin/Release/net9.0-windows` CLI is deliberately **not** rebuilt here: the
 corpus gates' `inputSetSha256` covers the CLI binary, so rebuilding it
-invalidates that audit, every gate below it and the contracts pinning it, and
-that should be a deliberate act rather than a side effect. And the export must
+invalidates that audit and every gate report below it until the audit is
+re-run, and that should be a deliberate act rather than a side effect. And the export must
 be re-run before any consumer sees the new field, so a builder reading it must
 tolerate its absence.
 

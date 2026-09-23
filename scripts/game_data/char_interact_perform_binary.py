@@ -9,7 +9,6 @@ the prefilter is never semantic evidence by itself.
 """
 from __future__ import annotations
 
-import hashlib
 import json
 import struct
 from pathlib import Path
@@ -23,18 +22,11 @@ AUDIO_EVENT_TAG = 0x02
 AUDIO_EVENT_MEMBER_COUNT = 15
 SCHEMA_MAPPING_ID = "endfield.char-interact-perform-runtime-cfg.v1"
 UNION_MAPPING_ID = "endfield.char-interact-perform-native-contract.v1"
-CONTRACT_SHA256 = "eda3372ffdb67955b2f216d256f9d583d889a93c5f1f62de1525a891d78816ac"
 
 
 def _load_action_contract() -> tuple[dict[int, tuple[bool, int]], dict[int, str]]:
     path = CONTRACTS_DIR / "char_interact_perform_native.json"
-    raw = path.read_bytes()
-    digest = hashlib.sha256(raw).hexdigest()
-    if digest != CONTRACT_SHA256:
-        raise RuntimeError(
-            f"{path}: contract SHA256 {digest} does not match {CONTRACT_SHA256}"
-        )
-    payload = json.loads(raw)
+    payload = json.loads(path.read_bytes())
     if payload.get("schema") != UNION_MAPPING_ID or payload.get("status") != "validated":
         raise RuntimeError(f"{path}: unsupported or unvalidated contract")
     tags = {int(tag): str(name) for tag, name in payload.get("tags", [])}
@@ -622,7 +614,7 @@ def decode_char_interact_complete_frame(data: bytes) -> dict[str, Any]:
         "evidenceBoundary": (
             "The exact current 27-member root and every reached concrete action "
             "wrapper are consumed in generated field order through physical EOF. "
-            "The byte-pinned native contract supplies the complete 0..36 tag-to-type "
+            "The reviewed native contract supplies the complete 0..36 tag-to-type "
             "mapping; unknown tags, member counts, or trailing bytes fail closed."
         ),
     }

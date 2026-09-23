@@ -11,7 +11,7 @@ from functools import lru_cache
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-from scripts.game_data.il2cpp.native_image import check_dependency_contracts, read_pinned_contract
+from scripts.game_data.il2cpp.native_image import read_reviewed_contract
 from scripts.game_data.memorypack.core import CONTRACTS_DIR, LabelledReader
 from scripts.game_data.memorypack.buff import (
     BUFF_FIND_TARGET_BODY_MEMBERS,
@@ -28,7 +28,6 @@ from scripts.game_data.memorypack.skill_timeline_play_animation import (
 
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_find_target_native.json"
 LABEL = "skillTimelineFindTarget"
-CONTRACT_SHA256 = "C91D20FC13FE2D4BB984092EDFC717CD6D1695912EC468CE71376E5F95C3417B"
 FIND_TARGET_TAG = 0x00B2
 
 
@@ -54,10 +53,9 @@ CURRENT_SELECTOR_SUBTYPE_TABLES = {
 
 @lru_cache(maxsize=1)
 def _contract() -> dict[str, Any]:
-    value, _digest = read_pinned_contract(
-        CONTRACT_PATH, sha256=CONTRACT_SHA256, schema="endfield.skill-timeline-find-target-native-contract.v1", label=LABEL
+    value, _digest = read_reviewed_contract(
+        CONTRACT_PATH, schema="endfield.skill-timeline-find-target-native-contract.v1", label=LABEL
     )
-    check_dependency_contracts(value, CONTRACT_PATH.parent, label=LABEL)
     return value
 
 
@@ -73,7 +71,6 @@ def validate_current_native_contract() -> dict[str, Any]:
     timeline = validate_timeline_native_contract()
     return {
         "status": "validated",
-        "inputSetSha256": contract["inputSetSha256"],
         "nativeInputs": expected,
         "timelineValidation": timeline,
         "selectedSubtypeRoutes": contract["selectedSubtypeRoutes"],
@@ -120,13 +117,9 @@ def _decode_find_target(data: bytes, start: int, limit: int) -> tuple[dict[str, 
 def decode_first_timeline_find_target(
     data: bytes,
     *,
-    input_set_sha256: str,
     limit: int | None = None,
 ) -> dict[str, Any]:
     """Decode one-action first TimelineActionData records beginning with tag B2."""
-    contract = _contract()
-    if input_set_sha256.upper() != contract["inputSetSha256"]:
-        raise ValueError("skillTimelineFindTarget.input-set:mismatch")
     hard_limit = len(data) if limit is None else limit
     reader = _Reader(data, hard_limit)
     reader.header(48, "skillData.memberCount")

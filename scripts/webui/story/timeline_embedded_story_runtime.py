@@ -30,8 +30,6 @@ from scripts.repo_paths import REPO_ROOT
 ROOT = REPO_ROOT
 TOOLS = ROOT / "tools" / "endfield-il2cpp"
 from scripts.common import (
-    RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-    RECORDED_NATIVE_METADATA_SHA256,
     NativeEvidenceUnavailable,
     check_installed_native_inputs,
     native_evidence_required,
@@ -42,7 +40,7 @@ from scripts.common import (
 
 
 class TimelineNativeUnavailable(NativeEvidenceUnavailable):
-    """The installed client cannot back this audit's recorded runtime facts.
+    """The installed client's native inputs are absent, so nothing can be read.
 
     Defined here so a caller catches the exact class this module raises even
     when both modules reach ``common`` under different import names.
@@ -101,10 +99,18 @@ def repo_path(path: Path) -> str:
 
 
 def resolved_targets(row: dict[str, Any]) -> set[tuple[str, str]]:
+    """Methods a body calls, directly or through one unnamed helper.
+
+    Current builds outline parts of these Timeline bodies into unnamed helpers,
+    so the mapper's ``resolvedViaHelper`` counts as reaching the same callee.
+    """
     return {
         (str(target.get("type") or ""), str(target.get("method") or ""))
         for call in row.get("directCalls") or []
-        for target in call.get("resolved") or []
+        for target in [
+            *(call.get("resolved") or []),
+            *((call.get("resolvedViaHelper") or {}).get("targets") or []),
+        ]
     }
 
 
@@ -417,6 +423,37 @@ def analyze_npc_proxy_dialog_runtime_contract(
     }
 
 
+def returns_this_field(summary: dict[str, Any], origin: str) -> bool:
+    """Whether a getter returns ``origin`` on its unpatched path.
+
+    A plain getter ends with that field in ``rax``. An iFix-wrapped one first
+    tests its patch flag and returns the field on the fall-through path, then
+    calls the patched body below the first ``ret``; there the last ``rax``
+    writer is the patch call, so accept a field load into ``rax`` that reaches
+    the first ``ret`` with no call in between.
+    """
+    if str((summary.get("finalRegisterOrigins") or {}).get("rax") or "") == origin:
+        return True
+    ret_offset = summary.get("firstRetOffset")
+    if not isinstance(ret_offset, int):
+        return False
+    loads = [
+        int(row.get("offset") or 0)
+        for row in summary.get("fieldAccesses") or []
+        if row.get("origin") == origin
+        and row.get("kind") == "read"
+        and str(row.get("text") or "").startswith("mov rax, ")
+        and int(row.get("offset") or 0) < ret_offset
+    ]
+    if not loads:
+        return False
+    last_load = max(loads)
+    return not any(
+        last_load < int(call.get("offset") or 0) < ret_offset
+        for call in summary.get("calls") or []
+    )
+
+
 def analyze_control_runtime_contract(
     catalog: dict[str, Any],
     body_map: dict[str, Any],
@@ -488,14 +525,15 @@ def analyze_control_runtime_contract(
             len(top_rows), root_type,
         ))
     else:
-        final_rax = str(
-            ((top_rows[0].get("methodBodySummary") or {})
-             .get("finalRegisterOrigins") or {}).get("rax") or ""
-        )
-        if final_rax != "this+0x20":
+        summary = top_rows[0].get("methodBodySummary") or {}
+        if not returns_this_field(summary, "this+0x20"):
             failures.append(validation_failure(
                 "cutscene_root_director_field", "get_topDirector returns this+0x20",
-                final_rax, root_type,
+                {
+                    "finalRax": (summary.get("finalRegisterOrigins") or {}).get("rax"),
+                    "firstRetOffset": summary.get("firstRetOffset"),
+                },
+                root_type,
             ))
 
     required_create_targets = {
@@ -2248,6 +2286,7 @@ def mapper_args(
         body_summary_method_regex=r".*",
         body_summary_max_instructions=500,
         include_unresolved_calls=True,
+        follow_unnamed_helpers=True,
     )
 
 
@@ -2675,13 +2714,12 @@ def render_markdown(report: dict[str, Any]) -> str:
 def build_default_report() -> dict[str, Any]:
     """Build the canonical current-install audit for pipeline integration.
 
-    The recorded code-registration address and runtime contracts describe one
-    client build, so an absent or different install raises
+    Every runtime fact is re-derived from the installed binary by type, method
+    and field names, and the code registration is located rather than pinned,
+    so any build is readable. An absent install raises
     ``TimelineNativeUnavailable`` for the caller to skip on.
     """
     native = check_installed_native_inputs(
-        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-        RECORDED_NATIVE_METADATA_SHA256,
         gameassembly=DEFAULT_GAMEASSEMBLY,
         metadata=DEFAULT_METADATA,
     )
@@ -2692,7 +2730,7 @@ def build_default_report() -> dict[str, Any]:
         metadata=DEFAULT_METADATA,
         story_root=DEFAULT_STORY_ROOT,
         extract_dir=DEFAULT_EXTRACT_DIR,
-        code_registration="0x18b9217d0",
+        code_registration="",
     ))
 
 
@@ -2702,7 +2740,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--metadata", type=Path, default=DEFAULT_METADATA)
     parser.add_argument("--story-root", type=Path, default=DEFAULT_STORY_ROOT)
     parser.add_argument("--extract-dir", type=Path, default=DEFAULT_EXTRACT_DIR)
-    parser.add_argument("--code-registration", default="0x18b9217d0")
+    parser.add_argument(
+        "--code-registration", default="",
+        help="pin Il2CppCodeRegistration; by default it is located in the selected build",
+    )
     parser.add_argument("--json", type=Path, default=DEFAULT_JSON)
     parser.add_argument("--markdown", type=Path, default=DEFAULT_MD)
     return parser.parse_args()
@@ -2711,8 +2752,6 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     native = check_installed_native_inputs(
-        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-        RECORDED_NATIVE_METADATA_SHA256,
         gameassembly=args.gameassembly,
         metadata=args.metadata,
     )

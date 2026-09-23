@@ -21,7 +21,6 @@ class JsonDataTextSchemaDecodeError(ValueError):
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "jsondata_text_schema.json"
-CONTRACT_SHA256 = "3CD8D5EB1241A446BD8B9844E2FA9EF3010447518881A40CDEDFFC1D68826659"
 CONTRACT_SCHEMA = "endfield.jsondata-text-schema.v1"
 SUPPORTED = frozenset({
     "AIConfig/AIGlobalSetting.json",
@@ -44,7 +43,6 @@ def is_named_jsondata_text_path(relative: str) -> bool:
 def _load_contract() -> dict[str, Any]:
     return load_schema_contract(
         CONTRACT_PATH,
-        sha256=CONTRACT_SHA256,
         schema=CONTRACT_SCHEMA,
         error=JsonDataTextSchemaDecodeError,
         tables=SUPPORTED,

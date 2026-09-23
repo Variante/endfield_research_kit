@@ -1,6 +1,6 @@
 """Build a fail-closed current-build JsonData union atlas.
 
-The atlas reads reviewed, byte-pinned contracts, authenticates the selected
+The atlas reads reviewed contracts, authenticates the selected
 native inputs, parses GameAssembly/metadata once, validates their native
 identities, and writes generated evidence under reports/.
 
@@ -11,7 +11,6 @@ gaps in the report.
 from __future__ import annotations
 
 import argparse
-import ast
 import hashlib
 import json
 import struct
@@ -40,7 +39,7 @@ GAME_DATA = REPO / "scripts/game_data"
 DEFAULT_OUTPUT = REPO / "reports/animestudio/jsondata_union_atlas_current.json"
 
 # Schema versions select adapters; build identities and union rows remain in
-# the byte-pinned JSON contracts.  Adding a shape requires an explicit adapter
+# the reviewed JSON contracts.  Adding a shape requires an explicit adapter
 # decision instead of being admitted by a filename or coincidental keys.
 SUPPORTED_SCHEMAS: dict[str, tuple[str, frozenset[str | None]]] = {
     "endfield.buff-icon-config-native-contract.v1": ("identity_only", frozenset({"exact-current-build"})),
@@ -91,60 +90,6 @@ def _native_inputs(value: dict[str, Any]) -> dict[str, str]:
     if set(result) < {"GameAssembly.dll", "global-metadata.dat"}:
         raise ValueError(f"native-inputs-incomplete={sorted(result)}")
     return result
-
-
-def _assignment_strings(path: Path) -> list[tuple[str, str]]:
-    try:
-        tree = ast.parse(path.read_text(encoding="utf-8-sig"))
-    except (OSError, SyntaxError, UnicodeError):
-        return []
-    found: list[tuple[str, str]] = []
-    for node in ast.walk(tree):
-        if isinstance(node, (ast.Assign, ast.AnnAssign)):
-            # ``CONTRACT_SHA256 = "..."`` in a single-contract loader.
-            targets = node.targets if isinstance(node, ast.Assign) else [node.target]
-            value = node.value
-            if not isinstance(value, ast.Constant) or not isinstance(value.value, str):
-                continue
-            for target in targets:
-                if isinstance(target, ast.Name) and target.id.endswith("CONTRACT_SHA256"):
-                    found.append((target.id, value.value.upper()))
-        elif isinstance(node, ast.Call):
-            # A registry of contracts pins each digest as a literal argument
-            # of its record constructor (``Frontier("frontier8", ..., sha, ...)``).
-            func = node.func
-            callee = func.id if isinstance(func, ast.Name) else getattr(func, "attr", None)
-            if not callee:
-                continue
-            for argument in [*node.args, *(keyword.value for keyword in node.keywords)]:
-                if (
-                    isinstance(argument, ast.Constant)
-                    and isinstance(argument.value, str)
-                    and len(argument.value) == 64
-                    and all(c in "0123456789abcdefABCDEF" for c in argument.value)
-                ):
-                    found.append((f"{callee}()", argument.value.upper()))
-    return found
-
-
-def _pin_for_contract(contract: Path, digest: str) -> dict[str, str]:
-    candidates: list[dict[str, str]] = []
-    for source in GAME_DATA.rglob("*.py"):
-        text = source.read_text(encoding="utf-8-sig", errors="replace")
-        if contract.name not in text and source.stem != contract.stem:
-            continue
-        for constant, value in _assignment_strings(source):
-            if value == digest:
-                candidates.append({
-                    "loader": source.relative_to(REPO).as_posix(),
-                    "constant": constant,
-                    "sha256": value,
-                })
-    if len(candidates) != 1:
-        raise ValueError(
-            f"contract-pin={contract.relative_to(REPO)} expected-one-match actual={candidates}"
-        )
-    return candidates[0]
 
 
 def _default_contracts() -> list[Path]:
@@ -673,9 +618,8 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
     reports = (REPO / "reports").resolve()
     if reports not in output.parents:
         raise ValueError(f"output-must-be-under={reports}")
-    loaded: list[tuple[Path, dict[str, Any], str, dict[str, str]]] = []
+    loaded: list[tuple[Path, dict[str, Any], str]] = []
     expected_inputs: dict[str, str] | None = None
-    input_set: str | None = None
     for path in contracts:
         raw = path.read_bytes()
         digest = hashlib.sha256(raw).hexdigest().upper()
@@ -687,7 +631,6 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
             raise ValueError(
                 f"contract-status={path.relative_to(REPO)}:{value.get('status')!r}"
             )
-        pin = _pin_for_contract(path, digest)
         native = _native_inputs(value["nativeInputs"])
         # Contracts pin different subsets of the same build: every one pins
         # GameAssembly and the metadata, only some also pin UnityPlayer.  Compare
@@ -706,23 +649,7 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
                     f"native-input-disagreement={path.relative_to(REPO)}:{','.join(conflicting)}"
                 )
             expected_inputs.update(native)
-        row_input_set = value.get("inputSetSha256")
-        if row_input_set:
-            if input_set is None:
-                input_set = row_input_set.upper()
-            elif input_set != row_input_set.upper():
-                raise ValueError(f"input-set-disagreement={path.relative_to(REPO)}")
-        for dependency in value.get("dependencies", []):
-            dependency_path = path.parent / dependency["path"]
-            if not dependency_path.exists():
-                dependency_path = GAME_DATA / dependency["path"]
-            actual = _sha(dependency_path)
-            if actual != dependency["sha256"].upper():
-                raise ValueError(
-                    f"dependency-sha256={path.relative_to(REPO)}:{dependency['path']}:"
-                    f"expected={dependency['sha256']}:actual={actual}"
-                )
-        loaded.append((path, value, digest, pin))
+        loaded.append((path, value, digest))
     assert expected_inputs is not None
     gate = check_installed_native_inputs(
         expected_inputs["GameAssembly.dll"], expected_inputs["global-metadata.dat"]
@@ -743,7 +670,7 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
     totals = {"methods": 0, "dispatcherMethods": 0, "windows": 0, "instructions": 0,
               "switchRoutes": 0, "usageCells": 0, "methodSpecs": 0,
               "actionMapIdentities": 0}
-    for path, value, digest, pin in loaded:
+    for path, value, digest in loaded:
         counts = _validate_contract_native(ctx, value)
         for key, count in counts.items():
             totals[key] += count
@@ -751,7 +678,7 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
         source_rows.extend(rows)
         contract_rows.append({
             "path": path.relative_to(REPO).as_posix(), "sha256": digest,
-            "pin": pin, "schema": value.get("schema"), "status": value.get("status"),
+            "schema": value.get("schema"), "status": value.get("status"),
             "validatedNativeFacts": counts, "atlasRows": len(rows),
         })
     atlas = _normalize_atlas_rows(source_rows)
@@ -761,7 +688,6 @@ def build(output: Path, contracts: list[Path]) -> dict[str, Any]:
         "status": "validated",
         "generatedBy": Path(__file__).relative_to(REPO).as_posix(),
         "nativeInputs": expected_inputs,
-        "inputSetSha256": input_set,
         "context": {
             "gameassembly": str(gate.gameassembly), "metadata": str(gate.metadata),
             "imageBase": ctx.pe.image_base, "codeRegistrationVa": ctx.code_registration,

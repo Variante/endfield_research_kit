@@ -1,0 +1,606 @@
+{
+  "schema": "endfield.story-native-consumers.v1",
+  "groups": {
+    "npcProxyDialogSelection": {
+      "mappingId": "npc-proxy-dialog-selection-native-v1",
+      "methods": {
+        "NpcInteractComponent._TryGetNpcProxyInteractDialogId": {
+          "type": "Beyond.Gameplay.Core.NpcInteractComponent",
+          "method": "_TryGetNpcProxyInteractDialogId",
+          "contract": "Selects exDatas[activeCondIndex - 1] for the interacting NPC's proxy and returns that row's dialogId; it does not consult MissionSystem.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.NpcProxyMgr.TryGetNpcProxyByNpcId",
+                "Beyond.Gameplay.Core.NpcProxy.get_activeCondIndex",
+                "System.Collections.Generic.List`1.get_Item"
+              ]
+            },
+            {
+              "notCallsPrefix": "Beyond.Gameplay.MissionSystem."
+            }
+          ]
+        },
+        "NpcProxy._IsMissionConflict": {
+          "type": "Beyond.Gameplay.Core.NpcProxy",
+          "method": "_IsMissionConflict",
+          "contract": "Consumes the proxy's missionId only to look up mission state for the paused-mission deactivation guard.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.MissionSystem.GetMissionData"
+              ]
+            }
+          ]
+        },
+        "NpcProxyDataSys.SyncAllActiveProxy": {
+          "type": "Beyond.Gameplay.Core.NpcProxyDataSys",
+          "method": "SyncAllActiveProxy",
+          "contract": "Applies the server's full active-proxy resync by deserializing each proxy's state.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.ProxyUtils.DeserializeData"
+              ]
+            }
+          ]
+        },
+        "NpcProxyDataSys.OnProxyChange": {
+          "type": "Beyond.Gameplay.Core.NpcProxyDataSys",
+          "method": "OnProxyChange",
+          "contract": "Applies one server active-change notification by converting it to the proxy's data row.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.NpcProxyDataSys._ConvertToOneNpcProxyData"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "dialogTreeTrunkPlayback": {
+      "mappingId": "gameassembly-2026-07-11-dialog-tree-trunk-playback-v1",
+      "methods": {
+        "DTTrunkNodeData.get_trunkId": {
+          "type": "Beyond.Gameplay.DTTrunkNodeData",
+          "method": "get_trunkId",
+          "contract": "The trunk node's trunkId is its play-trunk action's trunkId.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.DialogPlayTrunkActionData.get_trunkId"
+              ]
+            }
+          ]
+        },
+        "DialogTreeTrunkNode.DoExecute": {
+          "type": "Beyond.Gameplay.DialogTreeTrunkNode",
+          "method": "DoExecute",
+          "contract": "Executing a trunk node plays its trunk.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.DialogTreeTrunkNode._DoPlayTrunk"
+              ]
+            }
+          ]
+        },
+        "DialogTreeTrunkNode._DoPlayTrunk": {
+          "type": "Beyond.Gameplay.DialogTreeTrunkNode",
+          "method": "_DoPlayTrunk",
+          "contract": "Hands the node's trunk to DialogManager for playback.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DialogManager.PlayTrunkNode"
+              ]
+            }
+          ]
+        },
+        "DialogManager.PlayTrunkNode": {
+          "type": "Beyond.Gameplay.Core.DialogManager",
+          "method": "PlayTrunkNode",
+          "contract": "Starts the main-flow trunk playback.",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DialogManager._DoPlayTrunk"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "levelScriptModuleSavePrefix": {
+      "mappingId": "gameassembly-2026-08-02-levelscriptmodule-save-prefix-v1",
+      "fields": [
+        "Beyond.Gameplay.Core.LevelScriptModule::<id>k__BackingField"
+      ],
+      "methods": {
+        "LevelScriptModule.GetSaveKeyPrefixed": {
+          "type": "Beyond.Gameplay.Core.LevelScriptModule",
+          "method": "GetSaveKeyPrefixed",
+          "contract": "Formats a module save key with the module's own id, so LevelData writes module state as @<module id>_<save key>.",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.Core.LevelScriptModule::<id>k__BackingField"
+            }
+          ]
+        }
+      }
+    },
+    "cutsceneRootDirectorPlayback": {
+      "mappingId": "gameassembly-2026-07-28-cutscene-root-director-playback-v1",
+      "fields": [
+        "Beyond.Gameplay.View.CutsceneRootComponent::_director",
+        "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle::root"
+      ],
+      "methods": {
+        "CutsceneRootComponent.get_topDirector": {
+          "type": "Beyond.Gameplay.View.CutsceneRootComponent",
+          "method": "get_topDirector",
+          "contract": "returns the root component's _director",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.View.CutsceneRootComponent::_director"
+            }
+          ]
+        },
+        "TimelineHandle.get_director": {
+          "type": "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle",
+          "method": "get_director",
+          "contract": "reads the handle's root and returns its top director",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle::root"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.View.CutsceneRootComponent.get_topDirector"
+              ]
+            }
+          ]
+        },
+        "TimelineHandle.Play": {
+          "type": "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle",
+          "method": "Play",
+          "contract": "gets the root director and plays it",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle.get_director",
+                "UnityEngine.Playables.PlayableDirector.Play"
+              ]
+            }
+          ]
+        },
+        "MainStreamTimelineManagerBase._PlayMainTimelineStep3": {
+          "type": "Beyond.Gameplay.Core.MainStreamTimelineManagerBase",
+          "method": "_PlayMainTimelineStep3",
+          "contract": "instantiates the Timeline root then plays the main timeline",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.CinematicTimelineManagerBase.InstantiateTimelineRoot",
+                "Beyond.Gameplay.Core.MainStreamTimelineManagerBase.PlayMainTimelineSync"
+              ]
+            }
+          ]
+        },
+        "MainStreamTimelineManagerBase.PlayMainTimelineSync": {
+          "type": "Beyond.Gameplay.Core.MainStreamTimelineManagerBase",
+          "method": "PlayMainTimelineSync",
+          "contract": "plays the timeline handle",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.CinematicTimelineManagerBase+TimelineHandle.Play"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "dialogTreeIfNextIndex": {
+      "mappingId": "gameassembly-2026-08-02-dialog-tree-if-next-index-v1",
+      "methods": {
+        "DialogTreeIfNode.GetNextIndex": {
+          "type": "Beyond.Gameplay.DialogTreeIfNode",
+          "method": "GetNextIndex",
+          "contract": "delegates the outgoing index to DialogManager.GetIfNextIndex",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DialogManager.GetIfNextIndex"
+              ]
+            }
+          ]
+        },
+        "DialogManager.GetIfNextIndex": {
+          "type": "Beyond.Gameplay.Core.DialogManager",
+          "method": "GetIfNextIndex",
+          "contract": "returns outgoing index 1 exactly when GameCondition.result equals 1",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.GameCondition.Activate",
+                "Beyond.Gameplay.GameCondition.get_result"
+              ],
+              "ordered": true
+            },
+            {
+              "comparesResult": {
+                "call": "Beyond.Gameplay.GameCondition.get_result",
+                "value": 1
+              }
+            }
+          ]
+        },
+        "GameCondition.Activate": {
+          "type": "Beyond.Gameplay.GameCondition",
+          "method": "Activate",
+          "contract": "activates the serialized condition before it is read",
+          "claims": []
+        },
+        "GameCondition.get_result": {
+          "type": "Beyond.Gameplay.GameCondition",
+          "method": "get_result",
+          "contract": "returns the condition's current result",
+          "claims": []
+        }
+      }
+    },
+    "dialogTreeBranchNextIndex": {
+      "mappingId": "gameassembly-2026-08-02-dialog-tree-branch-next-index-v1",
+      "fields": [
+        "Beyond.Gameplay.DialogBranchData::conditions"
+      ],
+      "methods": {
+        "DialogTreeBranchNode.GetNextIndex": {
+          "type": "Beyond.Gameplay.DialogTreeBranchNode",
+          "method": "GetNextIndex",
+          "contract": "delegates to DialogManager.GetBranchNextIndex",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DialogManager.GetBranchNextIndex"
+              ]
+            }
+          ]
+        },
+        "DialogTreeBranchNode._TrySelectBranch": {
+          "type": "Beyond.Gameplay.DialogTreeBranchNode",
+          "method": "_TrySelectBranch",
+          "contract": "delegates branch selection to DialogManager.DoBranchSelect",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DialogManager.DoBranchSelect"
+              ]
+            }
+          ]
+        },
+        "DialogManager.GetBranchNextIndex": {
+          "type": "Beyond.Gameplay.Core.DialogManager",
+          "method": "GetBranchNextIndex",
+          "contract": "iterates DialogBranchData.conditions and returns the first condition ordinal with GameCondition.result == 1, else 0",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.DialogBranchData::conditions"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.GameCondition.Activate",
+                "Beyond.Gameplay.GameCondition.get_result"
+              ]
+            },
+            {
+              "comparesResult": {
+                "call": "Beyond.Gameplay.GameCondition.get_result",
+                "value": 1
+              }
+            }
+          ]
+        },
+        "DialogManager.DoBranchSelect": {
+          "type": "Beyond.Gameplay.Core.DialogManager",
+          "method": "DoBranchSelect",
+          "contract": "applies the selected DialogBranchData arm",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DialogManager._DoSelectBranchInternal"
+              ]
+            }
+          ]
+        },
+        "GameCondition.Activate": {
+          "type": "Beyond.Gameplay.GameCondition",
+          "method": "Activate",
+          "contract": "activates the serialized condition before it is read",
+          "claims": []
+        },
+        "GameCondition.get_result": {
+          "type": "Beyond.Gameplay.GameCondition",
+          "method": "get_result",
+          "contract": "returns the condition's current result",
+          "claims": []
+        }
+      }
+    },
+    "dialogTimelineOptionIndex": {
+      "mappingId": "gameassembly-2026-08-02-dialog-timeline-option-index-v1",
+      "pendingReview": "The runtime option write moved from DialogUtils.DialogChooseOption into UnityEngine.Timeline.TimelineRuntimeUtils.TrySetNewOptionIndex, and SetDialogOption now routes through _ApplyDialogOptions. The selected-option value contract has not been re-reviewed on this shape.",
+      "methods": {
+        "DialogTimelineManager._SelectIndexInTimeline": {
+          "type": "Beyond.Gameplay.Core.DialogTimelineManager",
+          "method": "_SelectIndexInTimeline",
+          "contract": "passes the selected Timeline option's index to DialogUtils.DialogChooseOption",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DialogUtils.DialogChooseOption"
+              ]
+            }
+          ]
+        },
+        "DialogUtils.DialogChooseOption": {
+          "type": "Beyond.Gameplay.Core.DialogUtils",
+          "method": "DialogChooseOption",
+          "contract": "hands the selected runtime optionIndex to TimelineRuntimeUtils.TrySetNewOptionIndex",
+          "claims": [
+            {
+              "calls": [
+                "UnityEngine.Timeline.TimelineRuntimeUtils.TrySetNewOptionIndex"
+              ]
+            }
+          ]
+        },
+        "DialogTimelineManager.SetDialogOption": {
+          "type": "Beyond.Gameplay.Core.DialogTimelineManager",
+          "method": "SetDialogOption",
+          "contract": "collects and applies the visible dialog options",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DialogTimelineManager._CollectVisibleDialogOptions",
+                "Beyond.Gameplay.Core.DialogTimelineManager._ApplyDialogOptions"
+              ]
+            }
+          ]
+        },
+        "DialogTimelineManager.TryTriggerTrunkBindingOption": {
+          "type": "Beyond.Gameplay.Core.DialogTimelineManager",
+          "method": "TryTriggerTrunkBindingOption",
+          "contract": "enumerates active clips before the option gate",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.Core.DialogUtils.DialogTimelineGetAllActiveClips"
+              ]
+            }
+          ]
+        },
+        "DialogUtils.DialogTimelineGetAllActiveClips": {
+          "type": "Beyond.Gameplay.Core.DialogUtils",
+          "method": "DialogTimelineGetAllActiveClips",
+          "contract": "collects active Timeline clips for runtime matching",
+          "claims": []
+        }
+      }
+    },
+    "actionBranchSequence": {
+      "mappingId": "gameassembly-2026-08-02-branch-execute-0x18764d990",
+      "fields": [
+        "Beyond.Gameplay.Actions.Branch::_idList",
+        "Beyond.Gameplay.Actions.Branch::m_index"
+      ],
+      "methods": {
+        "Beyond.Gameplay.Actions.Branch.Execute": {
+          "type": "Beyond.Gameplay.Actions.Branch",
+          "method": "Execute",
+          "contract": "dispatches _idList[m_index], reserves Branch for the next item, then resumes ActionBase.nextId after the list",
+          "claims": [
+            {
+              "readsField": "Beyond.Gameplay.Actions.Branch::_idList"
+            },
+            {
+              "readsField": "Beyond.Gameplay.Actions.Branch::m_index"
+            },
+            {
+              "calls": [
+                "System.Collections.Generic.List`1.get_Item",
+                "Beyond.Gameplay.Actions.ActionBase.SetResultReservedID",
+                "Beyond.Gameplay.Actions.ActionBase.SetResultNextID"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "protocolEventPaths": {
+      "mappingId": "protocol-registry-native-event-paths-v1",
+      "fields": [
+        "Proto.SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT::missionId_",
+        "Proto.SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT::eventName_",
+        "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::sceneNumId_",
+        "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::scriptId_",
+        "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::eventName_",
+        "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::ctxToken_"
+      ],
+      "methods": {
+        "MissionSystem.Handle_ClientMissionEvent": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "Handle_ClientMissionEvent",
+          "contract": "reads missionId/eventName, interns the pair through KeyGenerator<T1,T2>.GetKey, and publishes it with EventManager.SendGlobal",
+          "claims": [
+            {
+              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT::missionId_"
+            },
+            {
+              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT::eventName_"
+            },
+            {
+              "calls": [
+                "Beyond.KeyGenerator`2.GetKey",
+                "Beyond.EventManager.SendGlobal"
+              ],
+              "ordered": true
+            }
+          ]
+        },
+        "GameplayNetwork._Handle_SceneTriggerClientLevelScriptEvent": {
+          "type": "Beyond.Gameplay.GameplayNetwork",
+          "method": "_Handle_SceneTriggerClientLevelScriptEvent",
+          "contract": "stores a non-empty ctxToken in the event ParamBlackboard, then raises eventName through LevelEventManager.RaiseScriptEvent",
+          "claims": [
+            {
+              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::scriptId_"
+            },
+            {
+              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::eventName_"
+            },
+            {
+              "readsField": "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT::ctxToken_"
+            },
+            {
+              "calls": [
+                "Beyond.Gameplay.ParamBlackboard.SetValue",
+                "Beyond.Gameplay.Core.LevelEventManager.RaiseScriptEvent"
+              ],
+              "ordered": true
+            }
+          ]
+        },
+        "CallServer.Execute": {
+          "type": "Beyond.Gameplay.Actions.CallServer",
+          "method": "Execute",
+          "contract": "reads netToken back from the ParamBlackboard and passes it to GameAction.TriggerServerEvent",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.ParamBlackboard.TryGetValue",
+                "Beyond.Gameplay.Actions.GameAction.TriggerServerEvent"
+              ]
+            }
+          ]
+        },
+        "GameplayNetwork.TriggerLevelScriptServerEvent": {
+          "type": "Beyond.Gameplay.GameplayNetwork",
+          "method": "TriggerLevelScriptServerEvent",
+          "contract": "copies netToken into CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.CtxToken",
+          "claims": [
+            {
+              "calls": [
+                "Proto.CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken"
+              ]
+            }
+          ]
+        },
+        "MissionSystem.Handle_MissionStateUpdate": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "Handle_MissionStateUpdate",
+          "contract": "applies the role snapshot through CharacterPositionCorrection",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.MissionSystem.CharacterPositionCorrection"
+              ]
+            }
+          ]
+        },
+        "MissionSystem.Handle_QuestStateUpdate": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "Handle_QuestStateUpdate",
+          "contract": "applies the role snapshot through CharacterPositionCorrection",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.MissionSystem.CharacterPositionCorrection"
+              ]
+            }
+          ]
+        },
+        "MissionSystem.CharacterPositionCorrection": {
+          "type": "Beyond.Gameplay.MissionSystem",
+          "method": "CharacterPositionCorrection",
+          "contract": "resolves sceneName to a map, compares it with the current level and map, and teleports the squad only when the guards require it",
+          "claims": [
+            {
+              "calls": [
+                "Beyond.Gameplay.GameUtil.GetLevelConfigMapIdByLevelId",
+                "Beyond.Gameplay.Core.SquadManager.TeleportSquad"
+              ]
+            }
+          ]
+        }
+      }
+    }
+  },
+  "cited": {
+    "ActivitySystem.SendDoSkipChapter": "Beyond.Gameplay.ActivitySystem.SendDoSkipChapter",
+    "ActivitySystem._HandleDoSkipChapter": "Beyond.Gameplay.ActivitySystem._HandleDoSkipChapter",
+    "Beyond.Gameplay.NpcInteractComponent._TryGetNpcProxyInteractDialogId": "Beyond.Gameplay.Core.NpcInteractComponent._TryGetNpcProxyInteractDialogId",
+    "CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken": "Proto.CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken",
+    "CheckQuestState.OnActivate": "Beyond.Gameplay.CheckQuestState.OnActivate",
+    "CheckQuestState._OnQuestStateChange": "Beyond.Gameplay.CheckQuestState._OnQuestStateChange",
+    "CombineKeyManager.GetKey": "Beyond.CombineKeyManager.GetKey",
+    "DTTrunkNodeData.get_trunkId": "Beyond.Gameplay.DTTrunkNodeData.get_trunkId",
+    "DialogLeftSubtitleAction.OnPlay": "Beyond.Gameplay.Core.DialogLeftSubtitleAction.OnPlay",
+    "DialogManager.DoBranchSelect": "Beyond.Gameplay.Core.DialogManager.DoBranchSelect",
+    "DialogManager.GetBranchNextIndex": "Beyond.Gameplay.Core.DialogManager.GetBranchNextIndex",
+    "DialogManager.PlayNextDialog": "Beyond.Gameplay.Core.DialogManager.PlayNextDialog",
+    "DialogManager.PlayTrunkNode": "Beyond.Gameplay.Core.DialogManager.PlayTrunkNode",
+    "DialogPlayTrunkActionData.SetOverrideTrunkId": "Beyond.Gameplay.DialogPlayTrunkActionData.SetOverrideTrunkId",
+    "DialogPlayTrunkActionData.get_trunkId": "Beyond.Gameplay.DialogPlayTrunkActionData.get_trunkId",
+    "DialogTimelineManager.SetDialogOption": "Beyond.Gameplay.Core.DialogTimelineManager.SetDialogOption",
+    "DialogTimelineManager.TryTriggerTrunkBindingOption": "Beyond.Gameplay.Core.DialogTimelineManager.TryTriggerTrunkBindingOption",
+    "DialogTimelineManager._SelectIndexInTimeline": "Beyond.Gameplay.Core.DialogTimelineManager._SelectIndexInTimeline",
+    "DialogTree.EnterNode": "Beyond.Gameplay.DialogTree.EnterNode",
+    "DialogTree.OnGraphStarted": "Beyond.Gameplay.DialogTree.OnGraphStarted",
+    "DialogTree.get_requiresPrimeNode": "Beyond.Gameplay.DialogTree.get_requiresPrimeNode",
+    "DialogTreeBranchNode.GetNextIndex": "Beyond.Gameplay.DialogTreeBranchNode.GetNextIndex",
+    "DialogTreeBranchNode._TrySelectBranch": "Beyond.Gameplay.DialogTreeBranchNode._TrySelectBranch",
+    "DialogTreeController.StartDialog": "Beyond.Gameplay.DialogTreeController.StartDialog",
+    "DialogTreeController.StartDialogue()": "Beyond.Gameplay.DialogTreeController.StartDialogue",
+    "DialogTreeController.StartDialogue(instigator,callback)": "Beyond.Gameplay.DialogTreeController.StartDialogue",
+    "DialogTreeDialogNode.DoExecute": "Beyond.Gameplay.DialogTreeDialogNode.DoExecute",
+    "DialogTreeIfNode.GetNextIndex": "Beyond.Gameplay.DialogTreeIfNode.GetNextIndex",
+    "DialogTreeIfNode._TrySelectIfBranch": "Beyond.Gameplay.DialogTreeIfNode._TrySelectIfBranch",
+    "DialogTreeTrunkNode.DoExecute": "Beyond.Gameplay.DialogTreeTrunkNode.DoExecute",
+    "DialogTreeTrunkNode.FindTrunkIdForReplacement": "Beyond.Gameplay.DialogTreeTrunkNode.FindTrunkIdForReplacement",
+    "DialogTreeTrunkNode._DoPlayTrunk": "Beyond.Gameplay.DialogTreeTrunkNode._DoPlayTrunk",
+    "DialogUtils.DialogChooseOption": "Beyond.Gameplay.Core.DialogUtils.DialogChooseOption",
+    "DialogUtils.DialogTimelineGetAllActiveClips": "Beyond.Gameplay.Core.DialogUtils.DialogTimelineGetAllActiveClips",
+    "EventManager.SendGlobal": "Beyond.EventManager.SendGlobal",
+    "FactoryUtil.CheckBuildingLock": "Beyond.Gameplay.Factory.FactoryUtil.CheckBuildingLock",
+    "GameAction.TriggerServerEvent": "Beyond.Gameplay.Actions.GameAction.TriggerServerEvent",
+    "GameCondition.Activate": "Beyond.Gameplay.GameCondition.Activate",
+    "GameCondition.get_result": "Beyond.Gameplay.GameCondition.get_result",
+    "GetDeliverStaticDataForMissionWrapper": "Beyond.Gameplay.DomainDepotSystem.GetDeliverStaticDataForMissionWrapper",
+    "KeyGenerator`2.GetKey": "Beyond.KeyGenerator`2.GetKey",
+    "LangKey.GetText": "Beyond.LangKey.GetText",
+    "NodeCanvas.Framework.Graph.StartGraph": "NodeCanvas.Framework.Graph.StartGraph",
+    "NodeCanvas.Framework.Graph.get_primeNode": "NodeCanvas.Framework.Graph.get_primeNode",
+    "NpcInteractComponent._TryGetNpcProxyInteractDialogId": "Beyond.Gameplay.Core.NpcInteractComponent._TryGetNpcProxyInteractDialogId",
+    "NpcManager.AddOverrideInteractDialogId": "Beyond.Gameplay.Core.NpcManager.AddOverrideInteractDialogId",
+    "NpcProxy.OnDeActive": "Beyond.Gameplay.Core.NpcProxy.OnDeActive",
+    "NpcProxy._IsMissionConflict": "Beyond.Gameplay.Core.NpcProxy._IsMissionConflict",
+    "NpcProxyMgr.ApplyLazyDestroyData": "Beyond.Gameplay.Core.NpcProxyMgr.ApplyLazyDestroyData",
+    "NpcProxyTrackingInfo.GetTargetPos": "Beyond.Gameplay.NpcProxyTrackingInfo.GetTargetPos",
+    "OnScriptStageChanged": "Beyond.Gameplay.Core.LevelScriptRuntime.OnScriptStageChanged",
+    "ParamBlackboard.TryGetValue": "Beyond.Gameplay.ParamBlackboard.TryGetValue",
+    "ServerSyncLevelScriptStage": "Beyond.Gameplay.Core.LevelScriptManager.ServerSyncLevelScriptStage",
+    "UILeftSubtitle.SetLeftSubTitle": "Beyond.UI.UILeftSubtitle.SetLeftSubTitle",
+    "UpdateStage": "Beyond.Gameplay.Core.LevelScriptRuntime.UpdateStage",
+    "_AddDialogInDelivering": "Beyond.Gameplay.DomainDepotSystem._AddDialogInDelivering",
+    "_Handle_SyncLevelScriptStage": "Beyond.Gameplay.GameplayNetwork._Handle_SyncLevelScriptStage",
+    "_OnTargetDialogFinish": "Beyond.Gameplay.DomainDepotSystem._OnTargetDialogFinish"
+  },
+  "evidenceBoundary": {
+    "direct": "Each claim is an observed call or field read in the named method body on the selected build.",
+    "unresolved": "Claims establish which consumer reads the value, not mission ownership, playback, or relative Story order.",
+    "cited": "A cited method is only resolved by name on the selected build; its meaning is the reviewed prose beside it, not a claim this contract checks."
+  }
+}

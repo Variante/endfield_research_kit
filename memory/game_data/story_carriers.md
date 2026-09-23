@@ -27,6 +27,54 @@ model these carriers feed, and everything about presenting the result, is
 - Native evidence is locked to exact `GameAssembly.dll` and metadata hashes.
   Registration order and code addresses never imply Story order.
 
+## Native claims across a client update
+
+- A contract records its build in its own `nativeInputs`/`sources`; no module
+  repeats that hash. On another build it reports `mismatched` until its claim
+  is proved again there, and only names carry over: every address, token,
+  offset, register and enum value is re-derived. Code registration is located
+  from the metadata image names, never pinned.
+- Claims that re-prove from the binary have a regenerator (CallServer
+  callback, cutscene case resolution, iFix patch, cinematic queue,
+  TeleportParam); `scripts/README.md` lists them. Census conclusions
+  (identity-carrier negative boundaries, cross-system consumers) have none and
+  stay `mismatched` until reviewed again.
+- Instruction-shape analyses must survive codegen churn, not match one build's
+  text. The current build wraps many methods in an iFix patch-flag test, moves
+  rare paths into separate `.pdata` fragments reached by a conditional jump,
+  calls unnamed helpers (struct-argument shims and inlined copies of named
+  methods), reallocates saved registers, and uses rel32 `jcc` where a short
+  jump was. Follow one level into a fragment or helper, name a jump from its
+  opcode, and accept any save/restore register pair; label a helper-reached
+  callee as such rather than as a direct call.
+- `withinActiveArea` is a hysteresis rule in the current build:
+  `!rangeSensitive || hit(enterShapes) || (prevWithin &&
+  !IsNullOrEmpty(exitShapes) && hit(exitShapes))`, proved from
+  `_CalcWithinAreaHysteresis`. The outside list is therefore a hold zone, not
+  an exclusion zone; the previous build's "outside hit clears" reading no
+  longer applies. UpdateWithinActiveArea calls an inlined copy, tied to the
+  named body by its five arguments and result store (`conditional`).
+- Consumer meanings the Story builders cite are claims about named bodies,
+  proved on the installed build (`contracts/story_native_consumers.json`,
+  `contracts/dialog_finish_native.json`), not tokens pinned by body hash. On
+  the current build DialogTreeIfNode delegates to a new
+  `DialogManager.GetIfNextIndex`; the meaning holds (outgoing 1 exactly when
+  `GameCondition.result == 1`). The Timeline option write moved into
+  `TimelineRuntimeUtils.TrySetNewOptionIndex`, so the option-index contract is
+  `pendingReview` and Timeline option routes stay unvalidated until it is
+  re-read. Branch-sequence order edges are admitted only while the
+  `Branch.Execute` list-order claim holds.
+- A generated artifact made on one build is current only when its recorded
+  native hashes equal the installed build's. The reverse-PPtr audit (Story
+  root playback aliases) and `webui/story/dynamic_scene.json` were made on the
+  previous build and publish nothing until regenerated; the latter still names
+  layout-v1 export paths.
+- Mission Pipeline `RUNTIME_CONTRACT` rows are re-verified by name each run.
+  Rows whose recorded chain no longer holds on the current build
+  (`FactoryUtil.CheckBuildingLock`, the objective-completion ->
+  `InvokeOnIsCompleteChangeAction` link) are `link_failed` and need a fresh
+  reading, not a pin.
+
 ## Spatial carriers
 
 Story may be placed on Map only through the exact carrier's own authored

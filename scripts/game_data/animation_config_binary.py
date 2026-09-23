@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import json
 import math
 from pathlib import Path
@@ -104,18 +103,11 @@ _MAX_CURVE_COUNT = 4_096
 _MAX_KEYFRAME_COUNT = 1_000_000
 
 CURVE_CONTRACT_SCHEMA = "endfield.animation-curve-native-contract.v1"
-CURVE_CONTRACT_SHA256 = "6cd01647d099ca52a8398f9ddb6eab1753634d4ca7333c693d8eecf3b7be1428"
 
 
 def _load_curve_contract() -> tuple[tuple[str, ...], str, tuple[str, ...]]:
     path = CONTRACTS_DIR / "animation_curve_native.json"
-    raw = path.read_bytes()
-    digest = hashlib.sha256(raw).hexdigest()
-    if digest != CURVE_CONTRACT_SHA256:
-        raise RuntimeError(
-            f"{path}: contract SHA256 {digest} does not match {CURVE_CONTRACT_SHA256}"
-        )
-    payload = json.loads(raw)
+    payload = json.loads(path.read_bytes())
     if (
         payload.get("schema") != CURVE_CONTRACT_SCHEMA
         or payload.get("status") != "validated"

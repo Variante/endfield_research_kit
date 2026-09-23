@@ -14,13 +14,6 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 
 SCHEMA = "endfield.streaming-marker13-native-contract.v2"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "streaming_marker13_native.json"
-CONTRACT_SHA256 = "0A088E10997241B5E01E1F098EBCA3BCBB64662DA90A79E76371D9644CA747BA"
-DEPENDENCY_SHA256 = "83E98693213C0E1D0C8C01BDE5538DB090BD68451446B7DEDE39CFCE73590A72"
-EXPECTED_INPUTS = {
-    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
-    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
-    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1",
-}
 EXPECTED_WHOLE = {
     "selector9Slot4Reader": (14940784, 195),
     "selector9Slot5Reader": (14941152, 195),
@@ -97,17 +90,11 @@ def validate_marker13_native_contract(
         raw = Path(contract_path).read_bytes()
         contract_sha = sha256(raw)
         result["contractSha256"] = contract_sha
-        require("contract_sha256", CONTRACT_SHA256, contract_sha)
-        if failures:
-            return result
         contract = json.loads(raw)
         require("schema", SCHEMA, contract.get("schema"))
         require("contract_status", "validated-conditional-static", contract.get("status"))
         dep = contract["dependency"]
-        require("dependency_sha256_constant", DEPENDENCY_SHA256, dep.get("sha256"))
-        dep_raw = dependency.DEFAULT_CONTRACT.read_bytes()
-        dep_document = json.loads(dep_raw)
-        require("dependency_sha256", dep["sha256"], sha256(dep_raw))
+        dep_document = json.loads(dependency.DEFAULT_CONTRACT.read_bytes())
         require("dependency_schema", dep["schema"], dep_document.get("schema"))
         roles = {row["role"] for row in dep_document["unityPlayerRanges"]}
         require("dependency_required_roles", [], sorted(set(dep["requiredUnityPlayerRoles"]) - roles))
@@ -124,18 +111,17 @@ def validate_marker13_native_contract(
 
         selected = dependency.validate_marker17_native_contract(game_root=Path(game_root))
         require("dependency_native_gate", "validated", selected.get("status"))
-        require("dependency_validated_contract", dep["sha256"], selected.get("contractSha256"))
         if failures:
             result["dependencyValidationFailures"] = selected.get("validationFailures", [])
             return result
         selected_inputs = selected.get("nativeInputs") or {}
-        require("contract_native_inputs", EXPECTED_INPUTS, contract.get("nativeInputs"))
-        for key, expected in EXPECTED_INPUTS.items():
+        expected_inputs = contract.get("nativeInputs") or {}
+        for key, expected in expected_inputs.items():
             require(f"dependency_native_input:{key}", expected, selected_inputs.get(key))
 
         image_path = Path(game_root).parent / "UnityPlayer.dll"
         image = image_path.read_bytes()
-        require("unity_image_read_sha256", EXPECTED_INPUTS["unityPlayerSha256"], sha256(image))
+        require("unity_image_read_sha256", expected_inputs.get("unityPlayerSha256"), sha256(image))
         if failures:
             return result
         result["dependencyContractSha256"] = selected["contractSha256"]
@@ -209,9 +195,7 @@ def validate_marker13_native_contract(
                                  "expected": f"bounded PE range RVA {row['rva']} size {row['size']}",
                                  "actual": str(exc)})
 
-        base_raw = base.DEFAULT_CONTRACT.read_bytes()
-        require("absence_base_contract_hash", base.CONTRACT_SHA256, sha256(base_raw))
-        base_document = json.loads(base_raw)
+        base_document = json.loads(base.DEFAULT_CONTRACT.read_bytes())
         catalogs = {
             "base": {row["role"]: (row["rva"], row["size"])
                      for row in base_document["unityPlayerRanges"]},

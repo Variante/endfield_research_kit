@@ -28,6 +28,7 @@ from scripts.game_data.memorypack import buff_named_schema
 from scripts.game_data.memorypack.buff_residual_actions import (
     frame_buff_named_middle,
     root_continuation,
+    validate_current_native_contract as validate_residual_native_contract,
 )
 from scripts.game_data import buff_frontiers_native as buff_frontiers
 from scripts.common import canonical_json_sha256
@@ -67,7 +68,7 @@ def select_rows(rows, *, expected_input):
     return vfs.family_rows(rows,expected_input=expected_input,prefix=PREFIX,pattern=PATTERN,label='buff')
 
 
-def frame_candidates(data: bytes, *, source: str, input_set_sha256: str) -> dict:
+def frame_candidates(data: bytes, *, source: str) -> dict:
     result={'wholeSchemaExact':False,'candidates':[],'candidateCount':0,
             'eventPrefixStatus':'unsupported','rootContinuationStatus':'unsupported'}
     if not data or data[0]!=30:
@@ -92,13 +93,11 @@ def frame_candidates(data: bytes, *, source: str, input_set_sha256: str) -> dict
             if current_prefix['status']=='supported-prefix':
                 continuation=root_continuation(
                     data,source=source,start=current_prefix['consumedEnd'],limit=at,
-                    input_set_sha256=input_set_sha256,
                 )
                 _profile_boundary(continuation,file_length=len(data))
                 if continuation['status']=='supported-prefix':
                     named_middle=frame_buff_named_middle(
                         data,continuation['consumedEnd'],at,
-                        input_set_sha256=input_set_sha256,
                     )
             prefix=decode_buff_pre_id_modifier_prefix(data,at)
             prefix_end=prefix.get('endOffset')
@@ -206,8 +205,7 @@ def join_and_frame(ledger, stream, *, stderr):
         if len(data)!=length or length!=identity['length']:vfs._fail('stream-length-mismatch',source=path,expected=identity['length'],actual=[length,len(data)])
         md5=hashlib.md5(data).hexdigest().upper()
         if md5!=identity['recomputedFileDataMd5']:vfs._fail('stream-ledger-md5-mismatch',source=path,expected=identity['recomputedFileDataMd5'],actual=md5)
-        try:framed=frame_candidates(
-            data,source=path,input_set_sha256=identity['inputSetSha256'])
+        try:framed=frame_candidates(data,source=path)
         except (ValueError,IndexError,KeyError,OverflowError,struct.error) as exc:
             framed={'coverageStatus':'failed','wholeSchemaExact':False,'candidateCount':0,
                 'diagnostic':getattr(exc,'diagnostic',{'source':path,'offset':None,'expected':'bounded suffix-candidate reader','actual':f'{type(exc).__name__}: {exc}'})}
@@ -284,9 +282,7 @@ def _read_stream_rows(command: list[str]) -> tuple[list[dict], str]:
 def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sha256,outputs=()):
     expected=expected_input_set_sha256.upper()
     native_validation=validate_current_native_contract()
-    if native_validation.get('inputSetSha256') != expected:
-        vfs._fail('buff-icon-config-input-set-mismatch',source='buff_icon_config_native.json',
-            expected=expected,actual=native_validation.get('inputSetSha256'))
+    residual_validation=validate_residual_native_contract()
     expected_frontier_rows={
         'residual':[0x21,0x100,0x15F],
         'frontier6':[0x2A,0x9E,0xD7,0xE4,0x111,0x12F,0x18D],
@@ -302,9 +298,6 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
         frontier_validations[name]=validation
         if validation.get('status')!='validated':
             vfs._fail(f'buff-{name}-native-validation',source=source,expected='validated',actual=validation)
-        if validation.get('inputSetSha256')!=expected:
-            vfs._fail(f'buff-{name}-input-set-mismatch',source=source,expected=expected,
-                actual=validation.get('inputSetSha256'))
         if sorted(rows)!=expected_rows:
             vfs._fail(f'buff-{name}-row-set',source=source,expected=expected_rows,actual=sorted(rows))
     outer,_,files,provenance=vfs._read_outer_and_ledger(outer_path,ledger_path,expected_input_set_sha256=expected)
@@ -396,6 +389,7 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
         'publicationEligible':not failed,'wholeSchemaExact':False,
         'provenance':{**provenance,**before,
             'buffIconConfigNativeValidation':native_validation,
+            'buffResidualActionsNativeValidation':residual_validation,
             'buffFrontiersNativeValidation':frontier_validations},'evidenceBoundary':BOUNDARY,
         'summary':{'filesSelected':len(selected),'filesSucceeded':counts['unique']+counts['ambiguous'],
             'filesFailed':counts['failed'],'filesUnsupported':counts['unsupported'],

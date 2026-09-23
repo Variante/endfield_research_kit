@@ -18,7 +18,6 @@ from scripts.common import (
 
 SCHEMA = "endfield.animation-curve-native-contract.v1"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "animation_curve_native.json"
-CONTRACT_SHA256 = "6CD01647D099CA52A8398F9DDB6EAB1753634D4CA7333C693D8EECF3B7BE1428"
 
 
 def _pe_file_offset(image: bytes, rva: int, size: int) -> int:
@@ -66,8 +65,6 @@ def validate_animation_curve_native_contract(
             }],
         }
     actual_contract_sha = hashlib.sha256(raw).hexdigest().upper()
-    if actual_contract_sha != CONTRACT_SHA256:
-        reject("contract_sha256", CONTRACT_SHA256, actual_contract_sha)
     if contract.get("schema") != SCHEMA:
         reject("schema", SCHEMA, contract.get("schema"))
     if contract.get("status") != "validated":

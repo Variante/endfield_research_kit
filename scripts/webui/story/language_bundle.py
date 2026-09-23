@@ -58,6 +58,7 @@ from scripts.webui.story.context import (
     shared_load_dialog_id_registry,
     write_json,
 )
+from scripts.game_data.story_native_consumers_native import cited_address, cited_token
 
 
 def append_native_event_producer_family_diagnostic(
@@ -397,6 +398,10 @@ from scripts.webui.story.narrative_video_overrides import (
 
 _FMV_CLIP_BINDINGS_PATH = VIDEO_BINDINGS_PATH
 from scripts.repo_paths import REPO_ROOT
+from scripts.game_data.story_native_consumers_native import (
+    consumer_rows,
+    validated_group,
+)
 from scripts.common import WEBUI_BUILD_DIR
 
 _NARRATIVE_VIDEO_OVERRIDES_PATH = (
@@ -413,6 +418,30 @@ _STORY_TEXT_KEY_RE = re.compile(
     r"map\d+_(?:lv|research)\d+))(?:_(?P<scene>.+))?$",
     re.IGNORECASE,
 )
+
+
+
+NPC_PROXY_NATIVE_GROUP = "npcProxyDialogSelection"
+
+
+def npc_proxy_consumer_rows(methods: list[str]) -> list[dict]:
+    """The selector's native consumers, resolved on the installed build."""
+    return consumer_rows(NPC_PROXY_NATIVE_GROUP, methods)
+
+
+def _cited_consumer(display: str) -> dict:
+    """A native consumer row whose token/address the installed build supplies."""
+    return {
+        "method": display,
+        "address": cited_address(display),
+        "token": cited_token(display),
+    }
+
+
+def npc_proxy_native_sha256() -> str:
+    """The build that proved the selector claims; empty when they do not hold."""
+    group = validated_group(NPC_PROXY_NATIVE_GROUP)
+    return group["gameAssemblySha256"] if group else ""
 
 
 def story_text_key_parts(text_key: str) -> tuple[str, str] | None:
@@ -11538,25 +11567,14 @@ def build_language_bundle(
                         "activeCondIndex, not mission, quest, dialog, or "
                         "relative Story order"
                     ),
-                    "nativeConsumers": [{
-                        "method": (
-                            "NpcInteractComponent."
-                            "_TryGetNpcProxyInteractDialogId"
-                        ),
-                        "token": "0x06011381",
-                        "address": "0x183564080",
-                    }, {
-                        "method": "NpcProxy._IsMissionConflict",
-                        "token": "0x060131f4",
-                        "address": "0x18706ac74",
-                    }],
+                    "nativeConsumers": npc_proxy_consumer_rows([
+                        "NpcInteractComponent._TryGetNpcProxyInteractDialogId",
+                        "NpcProxy._IsMissionConflict",
+                    ]),
                     "nativeMappingId": (
                         "npc-proxy-dialog-selection-native-v1"
                     ),
-                    "gameAssemblySha256": (
-                        "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2"
-                        "B983FB9D45677D80FFCE"
-                    ),
+                    "gameAssemblySha256": npc_proxy_native_sha256(),
                 }
                 story_owner = story_owner_by_key.get(story_key) or ""
                 if story_owner:
@@ -12441,19 +12459,19 @@ def build_language_bundle(
             "nativeConsumers": [
                 {
                     "method": "_Handle_SyncLevelScriptStage",
-                    "address": "0x1873867cc",
+                    "address": cited_address("_Handle_SyncLevelScriptStage"),
                 },
                 {
                     "method": "ServerSyncLevelScriptStage",
-                    "address": "0x186f95310",
+                    "address": cited_address("ServerSyncLevelScriptStage"),
                 },
                 {
                     "method": "UpdateStage",
-                    "address": "0x186fad930",
+                    "address": cited_address("UpdateStage"),
                 },
                 {
                     "method": "OnScriptStageChanged",
-                    "address": "0x186fab7dc",
+                    "address": cited_address("OnScriptStageChanged"),
                 },
             ],
             "worldEntityIds": world_entity_ids,
@@ -12589,15 +12607,15 @@ def build_language_bundle(
             "nativeConsumers": [
                 {
                     "method": "GetDeliverStaticDataForMissionWrapper",
-                    "address": "0x187300b08",
+                    "address": cited_address("GetDeliverStaticDataForMissionWrapper"),
                 },
                 {
                     "method": "_AddDialogInDelivering",
-                    "address": "0x18730238c",
+                    "address": cited_address("_AddDialogInDelivering"),
                 },
                 {
                     "method": "_OnTargetDialogFinish",
-                    "address": "0x187305764",
+                    "address": cited_address("_OnTargetDialogFinish"),
                 },
             ],
             "nativeMappingId": "domain-depot-delivery-dialog-tables-native-v1",
@@ -12660,13 +12678,13 @@ def build_language_bundle(
             "nativeConsumers": [
                 {
                     "method": "ActivitySystem.SendDoSkipChapter",
-                    "address": "0x1872cd7d0",
-                    "token": "0x06003dab",
+                    "address": cited_address("ActivitySystem.SendDoSkipChapter"),
+                    "token": cited_token("ActivitySystem.SendDoSkipChapter"),
                 },
                 {
                     "method": "ActivitySystem._HandleDoSkipChapter",
-                    "address": "0x1872cf2b8",
-                    "token": "0x06003dbd",
+                    "address": cited_address("ActivitySystem._HandleDoSkipChapter"),
+                    "token": cited_token("ActivitySystem._HandleDoSkipChapter"),
                 },
             ],
             "nativeMappingId": "skip-chapter-table-native-protocol-v1",
@@ -12747,8 +12765,8 @@ def build_language_bundle(
             ),
             "nativeConsumer": {
                 "method": "FactoryUtil.CheckBuildingLock",
-                "address": "0x18747ec68",
-                "token": "0x060063eb",
+                "address": cited_address("FactoryUtil.CheckBuildingLock"),
+                "token": cited_token("FactoryUtil.CheckBuildingLock"),
             },
             "nativeMappingId": "factory-panel-lock-quest-radio-native-v1",
         }
@@ -14603,27 +14621,15 @@ def build_language_bundle(
                 } - {""}),
                 "npcProxyTableRow": context.get("npcProxyTableRow"),
                 "npcProxyExRows": context.get("npcProxyExRows"),
-                "nativeConsumers": [{
-                    "method": (
-                        "NpcInteractComponent."
-                        "_TryGetNpcProxyInteractDialogId"
-                    ),
-                    "token": "0x06011381",
-                    "address": "0x183564080",
-                }, {
-                    "method": "NpcProxyDataSys.SyncAllActiveProxy",
-                    "address": "0x183480890",
-                }, {
-                    "method": "NpcProxyDataSys.OnProxyChange",
-                    "address": "0x18706550c",
-                }],
+                "nativeConsumers": npc_proxy_consumer_rows([
+                    "NpcInteractComponent._TryGetNpcProxyInteractDialogId",
+                    "NpcProxyDataSys.SyncAllActiveProxy",
+                    "NpcProxyDataSys.OnProxyChange",
+                ]),
                 "nativeMappingId": (
                     "npc-proxy-dialog-selection-native-v1"
                 ),
-                "gameAssemblySha256": (
-                    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2"
-                    "B983FB9D45677D80FFCE"
-                ),
+                "gameAssemblySha256": npc_proxy_native_sha256(),
             }
             flow_payload.setdefault(
                 "missionStoryConnections", []
@@ -14704,20 +14710,20 @@ def build_language_bundle(
             "npcProxyTableRow": context.get("npcProxyTableRow"),
             "nativeConsumers": [{
                 "method": "NpcProxyTrackingInfo.GetTargetPos",
-                "token": "0x06004ca6",
-                "address": "0x18384f850",
+                "token": cited_token("NpcProxyTrackingInfo.GetTargetPos"),
+                "address": cited_address("NpcProxyTrackingInfo.GetTargetPos"),
             }, {
                 "method": "NpcProxy.OnDeActive",
-                "token": "0x060131f3",
-                "address": "0x187069e7c",
+                "token": cited_token("NpcProxy.OnDeActive"),
+                "address": cited_address("NpcProxy.OnDeActive"),
             }, {
                 "method": "NpcProxyMgr.ApplyLazyDestroyData",
-                "token": "0x0601324f",
-                "address": "0x187065af4",
+                "token": cited_token("NpcProxyMgr.ApplyLazyDestroyData"),
+                "address": cited_address("NpcProxyMgr.ApplyLazyDestroyData"),
             }, {
                 "method": "NpcManager.AddOverrideInteractDialogId",
-                "token": "0x060131cf",
-                "address": "0x18705f854",
+                "token": cited_token("NpcManager.AddOverrideInteractDialogId"),
+                "address": cited_address("NpcManager.AddOverrideInteractDialogId"),
             }],
             "nativeMappingId": (
                 "npc-proxy-lazy-destroy-dialog-context-native-v1"
@@ -14837,16 +14843,16 @@ def build_language_bundle(
             "dialogTreeChildRoutes": context.get("dialogTreeChildRoutes"),
             "nativeConsumers": [{
                 "method": "NpcProxyTrackingInfo.GetTargetPos",
-                "token": "0x06004ca6",
-                "address": "0x18384f850",
+                "token": cited_token("NpcProxyTrackingInfo.GetTargetPos"),
+                "address": cited_address("NpcProxyTrackingInfo.GetTargetPos"),
             }, {
                 "method": "NpcInteractComponent._TryGetNpcProxyInteractDialogId",
-                "token": "0x06011381",
-                "address": "0x183564080",
+                "token": cited_token("NpcInteractComponent._TryGetNpcProxyInteractDialogId"),
+                "address": cited_address("NpcInteractComponent._TryGetNpcProxyInteractDialogId"),
             }, {
                 "method": "DialogTreeDialogNode.DoExecute",
-                "token": "0x06003b6e",
-                "address": "0x1872a3770",
+                "token": cited_token("DialogTreeDialogNode.DoExecute"),
+                "address": cited_address("DialogTreeDialogNode.DoExecute"),
             }],
             "nativeMappingId": (
                 "npc-proxy-tracking-dialog-navigation-context-native-v1"
@@ -18127,14 +18133,14 @@ def build_language_bundle(
             "dialogTreePrimeStoryPlaybackCarriers": occurrence_rows,
             "parentCompletionConditions": scope_rows,
             "nativeEntryMethods": [
-                {"method": "DialogTreeController.StartDialog", "token": "0x06003a9b", "va": "0x1872a3454"},
-                {"method": "DialogTreeController.StartDialogue()", "token": "0x06003a92", "va": "0x1872a35a8"},
-                {"method": "DialogTreeController.StartDialogue(instigator,callback)", "token": "0x06003a96", "va": "0x1872a3604"},
-                {"method": "NodeCanvas.Framework.Graph.StartGraph", "token": "0x06001120", "va": "0x18306edb0"},
-                {"method": "NodeCanvas.Framework.Graph.get_primeNode", "token": "0x06001109", "va": "0x18306d980"},
-                {"method": "DialogTree.get_requiresPrimeNode", "token": "0x06003a63", "va": "0x1872ac6a4"},
-                {"method": "DialogTree.OnGraphStarted", "token": "0x06003a77", "va": "0x1872a969c"},
-                {"method": "DialogTree.EnterNode", "token": "0x06003a75", "va": "0x1872a8ed4"},
+                {"method": "DialogTreeController.StartDialog", "token": cited_token("DialogTreeController.StartDialog"), "va": cited_address("DialogTreeController.StartDialog")},
+                {"method": "DialogTreeController.StartDialogue()", "token": cited_token("DialogTreeController.StartDialogue()"), "va": cited_address("DialogTreeController.StartDialogue()")},
+                {"method": "DialogTreeController.StartDialogue(instigator,callback)", "token": cited_token("DialogTreeController.StartDialogue(instigator,callback)"), "va": cited_address("DialogTreeController.StartDialogue(instigator,callback)")},
+                {"method": "NodeCanvas.Framework.Graph.StartGraph", "token": cited_token("NodeCanvas.Framework.Graph.StartGraph"), "va": cited_address("NodeCanvas.Framework.Graph.StartGraph")},
+                {"method": "NodeCanvas.Framework.Graph.get_primeNode", "token": cited_token("NodeCanvas.Framework.Graph.get_primeNode"), "va": cited_address("NodeCanvas.Framework.Graph.get_primeNode")},
+                {"method": "DialogTree.get_requiresPrimeNode", "token": cited_token("DialogTree.get_requiresPrimeNode"), "va": cited_address("DialogTree.get_requiresPrimeNode")},
+                {"method": "DialogTree.OnGraphStarted", "token": cited_token("DialogTree.OnGraphStarted"), "va": cited_address("DialogTree.OnGraphStarted")},
+                {"method": "DialogTree.EnterNode", "token": cited_token("DialogTree.EnterNode"), "va": cited_address("DialogTree.EnterNode")},
             ],
             "nativeMappingId": (
                 "dialog-tree-prime-reachable-completion-dependency-native-v1"
@@ -19179,34 +19185,20 @@ def build_language_bundle(
             "nativeConsumers": [
                 {
                     "method": "CheckQuestState.OnActivate",
-                    "address": "0x18400f840",
-                    "token": "0x060045c5",
+                    "address": cited_address("CheckQuestState.OnActivate"),
+                    "token": cited_token("CheckQuestState.OnActivate"),
                 },
                 {
                     "method": "CheckQuestState._OnQuestStateChange",
-                    "address": "0x1873418f0",
-                    "token": "0x060045c6",
+                    "address": cited_address("CheckQuestState._OnQuestStateChange"),
+                    "token": cited_token("CheckQuestState._OnQuestStateChange"),
                 },
-                {
-                    "method": (
-                        "DialogTreeIfNode._TrySelectIfBranch"
-                        if carrier.get("nodeType")
-                        == "Beyond.Gameplay.DialogTreeIfNode"
-                        else "DialogTreeBranchNode._TrySelectBranch"
-                    ),
-                    "address": (
-                        "0x1872a5280"
-                        if carrier.get("nodeType")
-                        == "Beyond.Gameplay.DialogTreeIfNode"
-                        else "0x1872a1d0c"
-                    ),
-                    "token": (
-                        "0x06003be4"
-                        if carrier.get("nodeType")
-                        == "Beyond.Gameplay.DialogTreeIfNode"
-                        else "0x06003bd4"
-                    ),
-                },
+                _cited_consumer(
+                    "DialogTreeIfNode._TrySelectIfBranch"
+                    if carrier.get("nodeType")
+                    == "Beyond.Gameplay.DialogTreeIfNode"
+                    else "DialogTreeBranchNode._TrySelectBranch"
+                ),
             ],
             "nativeMappingId": "dialog-tree-check-quest-state-native-v1",
         }

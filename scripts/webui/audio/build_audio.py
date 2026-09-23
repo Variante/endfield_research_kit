@@ -40,6 +40,7 @@ from scripts.webui.audio.semantics.identifiers import (
     is_rtpc_parameter_name,
 )
 from scripts.webui.audio.semantics import name_recovery
+from scripts.webui.audio.semantics import native_evidence
 from scripts.webui.audio.semantics.authored_payload_event_names import (
     collect_authored_payload_event_names,
     summarize_authored_payload_event_name_recovery,
@@ -159,12 +160,11 @@ HASHED_EVENT_KEY_RE = re.compile(r"^hashed-event:0x([0-9a-f]{8})$", re.IGNORECAS
 # IL2CPP metadata and cross-matched against serialized HIRC RTPC IDs.  Keep
 # these separate from Wwise property labels: these are game-side parameter
 # symbols, not DSP/property names.  The metadata hash pins this catalog to the
-# audited client build; an absent HIRC match is intentionally not invented.
+# audited client build (contracts/audio_native.json); an absent HIRC match is
+# intentionally not invented.
 HIRC_GAME_PARAMETER_NAME_EVIDENCE = {
     "source": "il2cpp_data/Metadata/global-metadata.dat",
-    "metadataSha256": (
-        "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
-    ),
+    "metadataSha256": native_evidence.EXPECTED_METADATA_SHA256,
     "evidence": "exactStaticFieldValueCrossMatchedToSerializedHircRtpcId",
     "entries": CANONICAL_RTPC_ENTRIES,
     "evidenceBoundary": (

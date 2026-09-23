@@ -27,6 +27,29 @@ def load_metadata_helper(path: Path) -> Any:
     return module
 
 
+_CODE_REGISTRATION_CACHE: dict[tuple[str, int], int] = {}
+
+
+def locate_code_registration(mapper: Any, pe: Any, metadata: Any) -> int:
+    """Locate Il2CppCodeRegistration in the selected build instead of pinning it.
+
+    The registration moves with every client build. It is the one table whose
+    code-gen module names match the selected metadata's image names; zero or
+    several matches fail closed.
+    """
+    key = (str(getattr(pe, "path", id(pe))), len(pe.buf))
+    if key not in _CODE_REGISTRATION_CACHE:
+        names = {metadata.string(image.name_index) for image in metadata.images}
+        candidates = mapper.find_code_registration_candidates(pe, names)
+        if len(candidates) != 1:
+            raise RuntimeError(
+                "gate=codeRegistration expected=one table matching "
+                f"{len(names)} metadata images actual={[hex(value) for value in candidates]}"
+            )
+        _CODE_REGISTRATION_CACHE[key] = candidates[0]
+    return _CODE_REGISTRATION_CACHE[key]
+
+
 def load_native_mapper(path: Path) -> Any:
     spec = importlib.util.spec_from_file_location("endfield_protocol_native_mapper", path)
     if spec is None or spec.loader is None:

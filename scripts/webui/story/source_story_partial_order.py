@@ -71,15 +71,14 @@ from scripts.webui.story.dialog_tree_control_flow import (
 )
 from scripts.webui.story.timeline_recovery import rel_path as _repo_path
 from scripts.common import EXPORT_LAYOUT
+from scripts.game_data.story_native_consumers_native import validated_group
 
 
 SCHEMA = "sourceStoryPartialOrder.v46"
 BRANCH_SEQUENCE_RUNTIME = LEVELSCRIPT_NATIVE_CONTROL_RUNTIME_MAPPINGS[
     union_tags.action("Branch")
 ]
-BRANCH_SEQUENCE_GAME_ASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-)
+BRANCH_SEQUENCE_NATIVE_GROUP = "actionBranchSequence"
 _NATIVE_ACTION_TOPOLOGY_CACHE: dict[str, tuple[dict, dict | None]] = {}
 NATIVE_LEVELSCRIPT_ROOTS = (
     EXPORT_LAYOUT.json_dir / "LevelScriptData",
@@ -226,10 +225,8 @@ EDGE_EVIDENCE_FIELDS = (
 # Serialized DialogTree routes still have to prove the complete parent/child
 # carrier closure before this generic rule can emit a Story edge.
 DIALOG_TREE_IF_BINARY_CONTRACT = {
+    "nativeGroup": "dialogTreeIfNextIndex",
     "mappingId": "gameassembly-2026-08-02-dialog-tree-if-next-index-v1",
-    "gameAssemblySha256": (
-        "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-    ),
     "conditionResultTrue": 1,
     "selectionRule": (
         "GameCondition.result equals 1 -> outgoing ordinal 1; "
@@ -237,27 +234,6 @@ DIALOG_TREE_IF_BINARY_CONTRACT = {
     ),
     "conditionTrueConnectionIndex": 1,
     "conditionFalseConnectionIndex": 0,
-    "nativeConsumers": (
-        {
-            "method": "DialogTreeIfNode.GetNextIndex",
-            "token": "0x06003be3",
-            "address": "0x1872a51f8",
-            "contract": (
-                "returns outgoing index 1 exactly when "
-                "GameCondition.result equals 1"
-            ),
-        },
-        {
-            "method": "GameCondition.Activate",
-            "token": "0x0600489f",
-            "address": "0x18332c000",
-        },
-        {
-            "method": "GameCondition.get_result",
-            "token": "0x06004884",
-            "address": "0x183a8ad10",
-        },
-    ),
 }
 
 # Current-build binary authority for every serialized DialogTreeBranchNode.
@@ -267,55 +243,13 @@ DIALOG_TREE_IF_BINARY_CONTRACT = {
 # outgoing ordinal 0 when no condition is true.  This maps internal arm
 # selection only; it never promotes a file-order or mission-ownership edge.
 DIALOG_TREE_BRANCH_BINARY_CONTRACT = {
+    "nativeGroup": "dialogTreeBranchNextIndex",
     "mappingId": "gameassembly-2026-08-02-dialog-tree-branch-next-index-v1",
-    "gameAssemblySha256": (
-        "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-    ),
     "conditionResultTrue": 1,
     "defaultConnectionOrdinal": 0,
-    "branchDataConditionsFieldOffset": "0x10",
     "selectionRule": (
         "first serialized condition whose GameCondition.result equals 1; "
         "no true condition returns outgoing ordinal 0"
-    ),
-    "nativeConsumers": (
-        {
-            "method": "DialogTreeBranchNode.GetNextIndex",
-            "token": "0x06003bd3",
-            "address": "0x1872a1c84",
-            "contract": "delegates to DialogManager.GetBranchNextIndex",
-        },
-        {
-            "method": "DialogTreeBranchNode._TrySelectBranch",
-            "token": "0x06003bd4",
-            "address": "0x1872a1d0c",
-            "contract": "delegates branch selection to DialogManager.DoBranchSelect",
-        },
-        {
-            "method": "DialogManager.GetBranchNextIndex",
-            "token": "0x0600f851",
-            "address": "0x186e127b4",
-            "contract": (
-                "iterates DialogBranchData.conditions and returns the first "
-                "condition ordinal with GameCondition.result == 1, else 0"
-            ),
-        },
-        {
-            "method": "DialogManager.DoBranchSelect",
-            "token": "0x0600f787",
-            "address": "0x186e0e8e0",
-            "contract": "applies the selected DialogBranchData arm",
-        },
-        {
-            "method": "GameCondition.Activate",
-            "token": "0x0600489f",
-            "address": "0x18332c000",
-        },
-        {
-            "method": "GameCondition.get_result",
-            "token": "0x06004884",
-            "address": "0x183a8ad10",
-        },
     ),
 }
 
@@ -326,56 +260,12 @@ DIALOG_TREE_BRANCH_BINARY_CONTRACT = {
 # Runtime Jump/clip track still supplies the actual skipped/returned line
 # windows; this contract does not invent a target from an option index.
 DIALOG_TIMELINE_OPTION_BINARY_CONTRACT = {
+    "nativeGroup": "dialogTimelineOptionIndex",
     "mappingId": "gameassembly-2026-08-02-dialog-timeline-option-index-v1",
-    "gameAssemblySha256": (
-        "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-    ),
-    "metadataSha256": (
-        "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-    ),
     "selectionRule": (
-        "DialogTimelineManager._SelectIndexInTimeline reads selected option "
-        "+0x98; DialogUtils.DialogChooseOption writes runtime +0x18; "
-        "SetDialogOption/active-clip traversal accepts a matching positive "
-        "+0x18"
-    ),
-    "nativeConsumers": (
-        {
-            "method": "DialogTimelineManager._SelectIndexInTimeline",
-            "token": "0x0600f97b",
-            "address": "0x186e4aa04",
-            "contract": (
-                "reads the selected Timeline option +0x98 and passes it to "
-                "DialogUtils.DialogChooseOption"
-            ),
-        },
-        {
-            "method": "DialogUtils.DialogChooseOption",
-            "token": "0x0600f9fb",
-            "address": "0x186e4bbac",
-            "contract": "writes the selected runtime optionIndex to +0x18",
-        },
-        {
-            "method": "DialogTimelineManager.SetDialogOption",
-            "token": "0x0600f979",
-            "address": "0x186e484a8",
-            "contract": (
-                "compares current and candidate +0x18 and treats zero as "
-                "the non-branch/default value"
-            ),
-        },
-        {
-            "method": "DialogTimelineManager.TryTriggerTrunkBindingOption",
-            "token": "0x0600f955",
-            "address": "0x186e48e28",
-            "contract": "enumerates active clips before the option gate",
-        },
-        {
-            "method": "DialogUtils.DialogTimelineGetAllActiveClips",
-            "token": "0x0600f9f9",
-            "address": "0x186e4d6bc",
-            "contract": "collects active Timeline clips for runtime matching",
-        },
+        "DialogTimelineManager._SelectIndexInTimeline passes the selected "
+        "option's index to DialogUtils.DialogChooseOption; the runtime option "
+        "gate accepts only a matching positive option value"
     ),
 }
 _DIALOG_TREE_BINARY_SOURCE_CACHE: dict[str, dict[str, Any] | None] = {}
@@ -483,6 +373,38 @@ def _dialog_tree_branch_conditions(node: dict[str, Any]) -> list[dict[str, Any]]
     return [_dialog_tree_normalize_condition(value) for value in values]
 
 
+def _binary_contract(base: dict[str, Any]) -> dict[str, Any]:
+    """A reviewed binary contract bound to the build that proves its claims.
+
+    The hashes, consumer rows and field offsets come from the named claim
+    group in ``contracts/story_native_consumers.json`` as evaluated on the
+    installed build. When the group does not hold they are None/empty, which
+    no installed hash equals, so every gate on the contract fails closed.
+    """
+    group = validated_group(base["nativeGroup"])
+    contract = {key: value for key, value in base.items() if key != "nativeGroup"}
+    contract["nativeClaimStatus"] = "validated" if group else "unvalidated"
+    contract["gameAssemblySha256"] = group["gameAssemblySha256"] if group else None
+    contract["metadataSha256"] = group["globalMetadataSha256"] if group else None
+    contract["nativeConsumers"] = tuple(dict(row) for row in group["methods"]) if group else ()
+    if group and base["nativeGroup"] == "dialogTreeBranchNextIndex":
+        contract["branchDataConditionsFieldOffset"] = group["fieldOffsets"][
+            "Beyond.Gameplay.DialogBranchData::conditions"
+        ]
+    return contract
+
+
+def _branch_sequence_native() -> tuple[str | None, list[dict[str, Any]]]:
+    """The build hash and consumer rows proving Branch.Execute's list order."""
+    group = validated_group(BRANCH_SEQUENCE_NATIVE_GROUP)
+    if group is None:
+        return None, []
+    return group["gameAssemblySha256"], [
+        {"method": row["method"], "address": row["address"], "contract": row["contract"]}
+        for row in group["methods"]
+    ]
+
+
 def _configured_game_assembly_path() -> Path:
     return resolve_installed_native_inputs()[0]
 
@@ -524,7 +446,7 @@ def _dialog_timeline_option_evidence(risk: dict[str, Any]) -> dict[str, Any]:
     the binary gate auditable; it never turns an option index into a line or
     Story target by itself.
     """
-    contract = DIALOG_TIMELINE_OPTION_BINARY_CONTRACT
+    contract = _binary_contract(DIALOG_TIMELINE_OPTION_BINARY_CONTRACT)
     related_files: list[dict[str, Any]] = []
     missing_tracks: list[str] = []
     track_files = _string_list(risk.get("assetTracks"))
@@ -2355,7 +2277,7 @@ def _dialog_tree_cross_story_conditional_edges(
         if game_assembly_path is not None
         else ""
     )
-    contract = DIALOG_TREE_IF_BINARY_CONTRACT
+    contract = _binary_contract(DIALOG_TREE_IF_BINARY_CONTRACT)
 
     for row in _story_connection_rows(flow):
         if not isinstance(row, dict):
@@ -2623,7 +2545,7 @@ def _dialog_tree_local_conditional_branches(
         if game_assembly_path is not None
         else ""
     )
-    contract = DIALOG_TREE_IF_BINARY_CONTRACT
+    contract = _binary_contract(DIALOG_TREE_IF_BINARY_CONTRACT)
 
     def source_file_for(
         conv: dict[str, Any],
@@ -3005,7 +2927,7 @@ def _dialog_tree_local_branch_nodes(
         if game_assembly_path is not None
         else ""
     )
-    contract = DIALOG_TREE_BRANCH_BINARY_CONTRACT
+    contract = _binary_contract(DIALOG_TREE_BRANCH_BINARY_CONTRACT)
     branch_node_type = "Beyond.Gameplay.DialogTreeBranchNode"
 
     for conversation_file, conv in dialog_payloads or []:
@@ -3203,7 +3125,7 @@ def _dialog_tree_local_if_nodes(
         if game_assembly_path is not None
         else ""
     )
-    contract = DIALOG_TREE_IF_BINARY_CONTRACT
+    contract = _binary_contract(DIALOG_TREE_IF_BINARY_CONTRACT)
     node_type = "Beyond.Gameplay.DialogTreeIfNode"
     advertised_types = {"DialogTreeIfNode", node_type}
 
@@ -5191,6 +5113,7 @@ def _native_ordered_sequence_contexts(
     order edges; the separate ``_native_ordered_branch_sequences`` gate owns
     that stricter admission.
     """
+    branch_sha256, branch_consumers = _branch_sequence_native()
     action_by_local = {
         int(action.get("localId")): action
         for action in topology.get("actions") or []
@@ -5330,15 +5253,8 @@ def _native_ordered_sequence_contexts(
                 )
             ],
             "runtimeMappingId": BRANCH_SEQUENCE_RUNTIME["mappingId"],
-            "gameAssemblySha256": BRANCH_SEQUENCE_GAME_ASSEMBLY_SHA256,
-            "nativeConsumers": [{
-                "method": "Beyond.Gameplay.Actions.Branch.Execute",
-                "address": "0x18764d990",
-                "contract": (
-                    "dispatches _idList[m_index], reserves Branch for the next "
-                    "item, then resumes ActionBase.nextId after the list"
-                ),
-            }],
+            "gameAssemblySha256": branch_sha256,
+            "nativeConsumers": [dict(row) for row in branch_consumers],
             "evidenceBoundary": (
                 "The original serialized Branch slots and exact Story playback "
                 "paths identify which sequence arms are observed. A missing Story "
@@ -5849,8 +5765,12 @@ def _native_ordered_branch_sequences(
     Branch reserves itself, dispatches one ``_idList[m_index]`` action, then
     advances ``m_index``. After the last list item it resumes ActionBase.nextId.
     Consequently different sequence indexes have strict order, while Story
-    files reached inside the same item remain unordered here.
+    files reached inside the same item remain unordered here. Without the
+    installed build proving that loop, no sequence or edge is emitted.
     """
+    branch_sha256, branch_consumers = _branch_sequence_native()
+    if branch_sha256 is None:
+        return [], []
     route_type = tuple[
         str,
         tuple[tuple[Any, ...], ...],
@@ -5932,15 +5852,8 @@ def _native_ordered_branch_sequences(
                 "arms": arm_rows,
                 "sourceFiles": source_files,
                 "runtimeMappingId": BRANCH_SEQUENCE_RUNTIME["mappingId"],
-                "gameAssemblySha256": BRANCH_SEQUENCE_GAME_ASSEMBLY_SHA256,
-                "nativeConsumers": [{
-                    "method": "Beyond.Gameplay.Actions.Branch.Execute",
-                    "address": "0x18764d990",
-                    "contract": (
-                        "dispatches _idList[m_index], reserves Branch for the next "
-                        "item, then resumes ActionBase.nextId after the list"
-                    ),
-                }],
+                "gameAssemblySha256": branch_sha256,
+                "nativeConsumers": [dict(row) for row in branch_consumers],
             }
             sequences.append(sequence_row)
             for source_position, source_ordinal in enumerate(ordered_ordinals):
@@ -5965,7 +5878,7 @@ def _native_ordered_branch_sequences(
                                 "runtimeMappingId": BRANCH_SEQUENCE_RUNTIME[
                                     "mappingId"
                                 ],
-                                "gameAssemblySha256": BRANCH_SEQUENCE_GAME_ASSEMBLY_SHA256,
+                                "gameAssemblySha256": branch_sha256,
                                 "nativeConsumers": sequence_row["nativeConsumers"],
                             })
 
@@ -5994,7 +5907,7 @@ def _native_ordered_branch_sequences(
                 for source_file in evidence["sourceFiles"]
             }, key=natural_key),
             "runtimeMappingId": BRANCH_SEQUENCE_RUNTIME["mappingId"],
-            "gameAssemblySha256": BRANCH_SEQUENCE_GAME_ASSEMBLY_SHA256,
+            "gameAssemblySha256": branch_sha256,
             "nativeConsumers": evidence_rows[0]["nativeConsumers"],
             "events": evidence_rows,
         })

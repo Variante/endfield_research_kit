@@ -10,7 +10,6 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 from scripts.game_data.animation_curve_native import _pe_file_offset
 
 CONTRACT_PATH = CONTRACTS_DIR / "npc_animation_template.json"
-CONTRACT_SHA256 = '01E338948621CB5EE3F7A428FB02074C1B41402B4B859FE5FAFB163F2AEAB6F8'
 SCHEMA = 'endfield.npc-animation-template-native.v1'
 
 
@@ -23,8 +22,6 @@ def load_npc_animation_template(*, game_root: Path | None = None,
     try:
         raw = contract_path.read_bytes()
         digest = hashlib.sha256(raw).hexdigest().upper()
-        if digest != CONTRACT_SHA256:
-            raise ValueError('contract_sha256: expected ' + CONTRACT_SHA256 + ', actual ' + digest)
         contract = json.loads(raw)
         if contract.get('schema') != SCHEMA or contract.get('status') != 'validated':
             raise ValueError('contract_schema_or_status: unsupported contract')

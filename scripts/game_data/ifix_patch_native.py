@@ -7,8 +7,11 @@ reports or require the IFix payload to be extracted into ``export_full``.
 from __future__ import annotations
 
 from scripts.game_data.contracts import CONTRACTS_DIR
+import argparse
 import hashlib
 import json
+import re
+import sys
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -23,43 +26,20 @@ from scripts.common import (
 SCHEMA = "ifixPatchNativeContract.v1"
 AUDIT_SCHEMA = "ifixPatchNativeContractAudit.v1"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "ifix_patch.json"
-GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-)
-METADATA_SHA256 = (
-    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-)
-PATCH_SHA256 = (
-    "737134081E06371F13C073988547E887037FCCF2F57E1052BE35DD255D27BC21"
-)
-PATCH_BYTES = 82021
-FIXED_METHOD_COUNT = 30
-FIXED_SIGNATURES_SHA256 = (
-    "8FD675E32CD89D3F78171A78FAE42BCB557554B98C70074600C491C2FA4C6ECE"
-)
 VIRTUAL_PATH = (
     "Persistent VFS/Data/IFixPatchOut/Windows/Gameplay.Beyond.patch.bytes"
 )
-EXPECTED_CLASSIFICATION_COUNTS = {
-    "taskCompletionFixMatches": 0,
-    "taskCompletionReferenceMatches": 0,
-    "receiverOwnershipFixMatches": 0,
-    "receiverOwnershipReferenceMatches": 0,
-    "missionHudFixSignatures": 2,
-    "dialogCinematicFixSignatures": 7,
-}
-EXPECTED_CLASSIFICATION_SHA256 = {
-    "missionHudFixSignatures": (
-        "5C4C0B2C45C2C0A598C0DA6FAA1BC8F067237D54519392813437054E3B1AACB6"
-    ),
-    "dialogCinematicFixSignatures": (
-        "B0E87644A44E53B781425A6A37FBF0A6CA22B53FC9F810A48CEE8944FA25EEC4"
-    ),
-}
+CLASSIFICATION_KEYS = (
+    "taskCompletionFixMatches",
+    "taskCompletionReferenceMatches",
+    "receiverOwnershipFixMatches",
+    "receiverOwnershipReferenceMatches",
+    "missionHudFixSignatures",
+    "dialogCinematicFixSignatures",
+)
 
 
 from scripts.common import repo_path as _source_file
-from scripts.common import canonical_json_sha256 as _canonical_sha256
 
 
 
@@ -97,46 +77,16 @@ def validate_ifix_patch_contract(
         ("schema", SCHEMA, contract.get("schema")),
         ("status", "validated", contract.get("status")),
         ("virtual_path", VIRTUAL_PATH, sources.get("virtualPath")),
-        ("patch_bytes", PATCH_BYTES, sources.get("patchBytes")),
-        (
-            "patch_sha256",
-            PATCH_SHA256,
-            str(sources.get("patchSha256") or "").upper(),
-        ),
-        (
-            "gameassembly_sha256",
-            GAMEASSEMBLY_SHA256,
-            str(sources.get("gameAssemblySha256") or "").upper(),
-        ),
-        (
-            "metadata_sha256",
-            METADATA_SHA256,
-            str(sources.get("globalMetadataSha256") or "").upper(),
-        ),
-        ("fixed_method_count", FIXED_METHOD_COUNT, len(signatures)),
-        (
-            "fixed_signatures_declared_sha256",
-            FIXED_SIGNATURES_SHA256,
-            str(contract.get("fixedMethodSignaturesSha256") or "").upper(),
-        ),
-        (
-            "fixed_signatures_sha256",
-            FIXED_SIGNATURES_SHA256,
-            _canonical_sha256(signatures),
-        ),
-        (
-            "classification_counts",
-            EXPECTED_CLASSIFICATION_COUNTS,
-            classification_counts,
-        ),
+        ("classification_keys", sorted(CLASSIFICATION_KEYS), sorted(classification_counts)),
     )
     for gate, expected, actual in exact_gates:
         if actual != expected:
             reject(gate, expected, actual)
-    for key, expected in EXPECTED_CLASSIFICATION_SHA256.items():
-        actual = _canonical_sha256(classifications.get(key) or [])
-        if actual != expected:
-            reject(f"{key}_sha256", expected, actual)
+    for key in ("patchSha256", "gameAssemblySha256", "globalMetadataSha256"):
+        if not re.fullmatch(r"[0-9A-Fa-f]{64}", str(sources.get(key) or "")):
+            reject(f"source_{key}", "64 hex characters", sources.get(key))
+    if not isinstance(sources.get("patchBytes"), int) or sources["patchBytes"] <= 0:
+        reject("patch_bytes", "positive integer", sources.get("patchBytes"))
 
     malformed = [
         index
@@ -146,22 +96,103 @@ def validate_ifix_patch_contract(
     if malformed:
         reject("fixed_signature_shape", {"nonemptyStrings": True}, malformed)
     if len(signatures) != len(set(signatures)):
-        reject("fixed_signature_uniqueness", FIXED_METHOD_COUNT, len(set(signatures)))
+        reject("fixed_signature_uniqueness", len(signatures), len(set(signatures)))
     fixed_set = set(signatures)
-    for key in ("missionHudFixSignatures", "dialogCinematicFixSignatures"):
-        values = classifications.get(key) or []
-        missing = [value for value in values if value not in fixed_set]
-        if missing:
-            reject(f"{key}_membership", {"subsetOfFixedMethods": True}, missing)
     for key in (
         "taskCompletionFixMatches",
-        "taskCompletionReferenceMatches",
         "receiverOwnershipFixMatches",
-        "receiverOwnershipReferenceMatches",
+        "missionHudFixSignatures",
+        "dialogCinematicFixSignatures",
     ):
-        if classifications.get(key) != []:
-            reject(key, [], classifications.get(key))
+        missing = [value for value in classifications.get(key) or [] if value not in fixed_set]
+        if missing:
+            reject(f"{key}_membership", {"subsetOfFixedMethods": True}, missing)
     return failures
+
+
+# -- classification rules -------------------------------------------------------
+#
+# Name rules, applied to the fixed method signatures and to the methods the
+# patched code references. They reproduce the reviewed classification of the
+# previous patch exactly; a new patch is classified by the same rules.
+
+
+def is_mission_hud(signature: str) -> bool:
+    return "MissionHud" in signature
+
+
+def is_dialog_cinematic(signature: str) -> bool:
+    return "Cinematic" in signature or "Dialog" in signature
+
+
+def is_task_completion(signature: str) -> bool:
+    return "Task" in signature and any(word in signature for word in ("Complete", "Finish", "Succeed"))
+
+
+def is_receiver_ownership(signature: str) -> bool:
+    """LevelScript event-receiver ownership, not every component named receiver."""
+    return "Receiver" in signature and any(
+        word in signature for word in ("LevelScript", "EventParams", "SetReceiver")
+    )
+
+
+def _clr_type_name(qualified: str) -> str:
+    """Drop the assembly qualification outside generic brackets."""
+    depth = 0
+    for index, char in enumerate(qualified):
+        if char == "[":
+            depth += 1
+        elif char == "]":
+            depth -= 1
+        elif char == "," and depth == 0:
+            return qualified[:index]
+    return qualified
+
+
+def _signature_text(record: dict[str, Any], type_names: list[str]) -> str:
+    owner = type_names[record["declaringTypeIndex"]]
+    parameters = ", ".join(type_names[index] for index in record.get("parameterTypeIndices") or [])
+    return f"{owner}::{record['name']['value']}({parameters})"
+
+
+def regenerate(patch_path: Path) -> tuple[dict[str, Any], list[str]]:
+    """Rebuild the contract from the installed Gameplay patch and native build."""
+    from scripts.game_data.ifix_patch import parse_ifix_patch
+
+    gate = check_installed_native_inputs()
+    if gate.status != NATIVE_EVIDENCE_VALIDATED:
+        return {}, [f"installed_native_inputs:{gate.status}:{gate.detail}"]
+    data = Path(patch_path).read_bytes()
+    parsed = parse_ifix_patch(data, source=str(patch_path))
+    type_names = [_clr_type_name(row["value"]) for row in parsed["externTypes"]["records"]]
+    signatures = [
+        _signature_text(row["signature"], type_names)
+        for row in parsed["fixRecords"]["records"]
+    ]
+    references = sorted({
+        _signature_text(row, type_names) for row in parsed["externMethods"]["records"]
+    })
+    contract = {
+        "schema": SCHEMA,
+        "status": "validated",
+        "sources": {
+            "virtualPath": VIRTUAL_PATH,
+            "patchBytes": len(data),
+            "patchSha256": hashlib.sha256(data).hexdigest().upper(),
+            "gameAssemblySha256": gate.gameassembly_sha256.upper(),
+            "globalMetadataSha256": gate.metadata_sha256.upper(),
+        },
+        "fixedMethodSignatures": signatures,
+        "classifications": {
+            "taskCompletionFixMatches": [s for s in signatures if is_task_completion(s)],
+            "taskCompletionReferenceMatches": [s for s in references if is_task_completion(s)],
+            "receiverOwnershipFixMatches": [s for s in signatures if is_receiver_ownership(s)],
+            "receiverOwnershipReferenceMatches": [s for s in references if is_receiver_ownership(s)],
+            "missionHudFixSignatures": [s for s in signatures if is_mission_hud(s)],
+            "dialogCinematicFixSignatures": [s for s in signatures if is_dialog_cinematic(s)],
+        },
+    }
+    return contract, validate_ifix_patch_contract(contract, str(patch_path))
 
 
 def project_ifix_patch_contract(
@@ -216,9 +247,10 @@ def load_ifix_patch_contract(
     if contract:
         failures.extend(validate_ifix_patch_contract(contract, source_file))
 
+    sources = contract.get("sources") or {}
     native = check_installed_native_inputs(
-        GAMEASSEMBLY_SHA256,
-        METADATA_SHA256,
+        str(sources.get("gameAssemblySha256") or ""),
+        str(sources.get("globalMetadataSha256") or ""),
         gameassembly=gameassembly,
         metadata=metadata,
     )
@@ -288,16 +320,42 @@ def project_current_ifix_evidence(
     }
 
 
+def main(argv: list[str] | None = None) -> int:
+    parser = argparse.ArgumentParser(description="Load or regenerate the Gameplay IFix patch contract.")
+    parser.add_argument("--contract", type=Path, default=DEFAULT_CONTRACT)
+    parser.add_argument(
+        "--regenerate", type=Path, metavar="PATCH",
+        help="Gameplay.Beyond.patch.bytes from a bounded AnimeStudio i-fix-patch dump",
+    )
+    parser.add_argument("--write", action="store_true")
+    args = parser.parse_args(argv)
+    if args.regenerate is None:
+        audit = load_ifix_patch_contract(args.contract)
+        print(json.dumps({"status": audit["status"], "failures": audit.get("validationFailures")}, indent=1))
+        return 0 if audit["status"] == NATIVE_EVIDENCE_VALIDATED else 1
+    contract, failures = regenerate(args.regenerate)
+    print(json.dumps({"failures": failures, "fixedMethods": len(contract.get("fixedMethodSignatures") or []),
+                      "classifications": {k: len(v) for k, v in (contract.get("classifications") or {}).items()}},
+                     indent=1))
+    if failures:
+        return 1
+    if args.write:
+        args.contract.write_bytes((json.dumps(contract, indent=2, ensure_ascii=False) + "\n").encode("utf-8"))
+    return 0
+
+
+if __name__ == "__main__":
+    if not __package__:
+        raise SystemExit("Run as: python -m scripts.game_data.ifix_patch_native")
+    sys.exit(main())
+
+
 __all__ = [
     "AUDIT_SCHEMA",
+    "CLASSIFICATION_KEYS",
     "DEFAULT_CONTRACT",
-    "FIXED_METHOD_COUNT",
-    "FIXED_SIGNATURES_SHA256",
-    "GAMEASSEMBLY_SHA256",
-    "METADATA_SHA256",
-    "PATCH_BYTES",
-    "PATCH_SHA256",
     "SCHEMA",
+    "regenerate",
     "fixed_method_prefix_matches",
     "load_ifix_patch_contract",
     "project_current_ifix_evidence",

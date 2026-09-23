@@ -102,11 +102,10 @@ reviewed contracts under `scripts/` and the correction layer in
 - A new manual correction layer belongs in `webui/overrides/`; a new reviewed
   contract belongs in `scripts/game_data/contracts/`.
   Anything a tool writes belongs in `reports/`.
-- **Contract JSON is byte-pinned, so it must never be EOL-converted.** Readers
-  hash the file's exact bytes and fail closed on a mismatch. 217 of these files
-  are CRLF on disk and three are deliberately mixed, so `.gitattributes` marks
-  `scripts/**/*.json -text`. Never change that to `eol=lf`: it would rewrite
-  the bytes on checkout and break every pin with no other visible symptom.
+- **Contract JSON is not pinned by its own hash.** Git owns a tracked file's
+  integrity, so no module records a contract's digest and no contract records
+  another's. `.gitattributes` still marks `scripts/**/*.json -text` so checkout
+  leaves the bytes as reviewed; there is no reason to change it to `eol=lf`.
 - Prose still must not carry per-build addresses and hashes. They belong in the
   contract JSON, with the durable interpretation in the owning `memory/` topic.
 - A contract pins one build. When the installed build differs its consumers
@@ -174,7 +173,7 @@ file under `memory/game_data_recovery.md`; its commands belong to
   never beside the page builder that first needs it;
 - `*_native.py` loaders for the reviewed native facts that Story, Mission
   Pipeline, Map and the recovery tools consume, one per contract, each
-  reaching its byte-pinned JSON in `contracts/`;
+  reaching its reviewed JSON in `contracts/`;
 - `media_resolver.py`, game-media naming (inline image tags, env-emoji prefab
   layers, SNS and video naming) and asset-candidate resolution;
 - `*_corpus.py` current-corpus gates, which sweep the installed set and fail
@@ -236,9 +235,17 @@ A third set, the native facts the Story, Mission Pipeline and Map builders
 consume, is loaded by the `*_native.py` modules beside the readers, each from
 its JSON in `scripts/game_data/contracts/`. Every loader except
 `mission_task_paths_native` gates on the installed native inputs itself. That contract is validated by its
-consumers, the protocol registry and the mission trace hook manifest. Where a
-loader declares a `CONTRACT_SHA256`, the same edit-requires-pin rule below
-applies.
+consumers, the protocol registry and the mission trace hook manifest.
+
+A fourth shape records no build at all. **Claims contracts**
+(`dialog_finish_native.json`, `story_native_consumers.json`) name methods by
+type and method and state what each body does as checkable claims (`calls`,
+`readsField`, `comparesResult`, ...); `il2cpp/body_claims.py` proves them on
+whichever build is installed, and tokens and addresses are read from that
+evaluation. Prefer this shape for a new consumer claim: a client update then
+re-proves it instead of failing a pin. When code moves so a claim can no
+longer be checked, mark the group `pendingReview` rather than loosening the
+claim.
 
 `evidenceBoundary` is the vocabulary to use when recording what a contract
 proves, in both the JSON and any memory prose that cites it: `exact` for what
@@ -248,18 +255,19 @@ read, `structuralOnly` for a stored representation whose meaning is anonymous,
 `unresolved` for the named open join. Do not promote a row between tiers on a
 name match, an address ordering, or a proximity argument.
 
-Editing one of these JSON files is a code change:
+Editing one of these JSON files is a code change, reviewed like one:
 
-- the reviewed contract's digest is pinned as `CONTRACT_SHA256` in its
-  `*_native.py` module and re-checked at load, and the MemoryPack audit hashes
-  its contracts the same way. A JSON edit without the matching pin update fails
-  closed rather than silently taking effect;
-- the pin covers the file's exact bytes, so never let a tool or editor rewrite
-  its line endings; `.gitattributes` keeps git from doing so;
 - change the `schema`/`schemaVersion` token when the shape changes, and update
   every reader in the same commit;
 - never carry a registration index, RVA, or code-window hash over from a
   previous installed build; regenerate it against the selected build;
+- keep a hash check only where it guards something git does not: the
+  installed build against `nativeInputs`, native code bytes against a
+  recorded window or body hash, or a generated report against the inputs it
+  was built from. Do not pin a tracked file's bytes in code or in another
+  contract, restate a contract's own values in Python to compare against it,
+  or gate a reader on `inputSetSha256`, which fingerprints an exporter run
+  rather than the game build;
 
 A contract whose pinned build differs from the installed one returns
 `mismatched`, and its consumers correctly produce nothing. Check a contract's
@@ -416,7 +424,7 @@ in the audit rather than silently keeping stale rows.
 ```python
 mismatched = SimpleNamespace(status="mismatched", detail="GameAssembly.dll hash differs")
 with mock.patch.object(module, "check_installed_native_inputs", return_value=mismatched):
-    names, audit = module.load_actionbase_formatter_names()
+    rows, audit = module.load_levelscript_task_condition_rows()
 ```
 
 This is why a validator's diagnostics can be improved and verified without a

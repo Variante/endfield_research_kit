@@ -31,11 +31,17 @@ from typing import Any
 
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.game_data.story_native_consumers_native import (
+    load_story_native_consumers,
+    validated_group,
+)
 
 ROOT = REPO_ROOT
 from scripts.common import (
+    NATIVE_EVIDENCE_MISMATCHED,
     STORY_RECOVERY_REPORTS_DIR,
     md_escape,
+    native_evidence_required,
     read_bytes_cached,
     read_json,
     rel_path,
@@ -167,23 +173,18 @@ TELEPORT_FINISH_FILTER_RE = re.compile(r"[0-9a-f]{8}")
 TELEPORT_FINISH_FILTER_BYTES_RE = re.compile(
     rb"(?<![0-9a-f])([0-9a-f]{8})(?![0-9a-f])"
 )
+# Names only: the listener's address comes from the Mission Pipeline's
+# verified nativeEvidence row, and the TeleportParam layout from its
+# selected-build carrier contract.
 TELEPORT_FINISH_RUNTIME_CONTRACT = {
     "mappingId": TELEPORT_FINISH_CORRELATION_MAPPING_ID,
     "listenerType": "Beyond.Gameplay.Actions.LevelEvent.OnTeleportFinish",
-    "listenerActionIdFieldToken": "0x04006dec",
-    "listenerProcessMethodToken": "0x060095f5",
-    "listenerProcessMethodVa": "0x186abe000",
+    "listenerActionIdField": "actionId",
+    "listenerProcessMethod": "Beyond.Gameplay.Actions.LevelEvent.OnTeleportFinish.Process",
     "teleportParamType": "Beyond.Gameplay.TeleportParam",
-    "teleportParamActionIdFieldToken": "0x04004c72",
+    "teleportParamActionIdField": "actionId",
     "teleportFinishPublisherMethod": (
         "Beyond.Gameplay.TeleportProcessor._OnTeleportFinish"
-    ),
-    "teleportFinishPublisherMethodVa": "0x184970510",
-    "gameAssemblySha256": (
-        "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
-    ),
-    "globalMetadataSha256": (
-        "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
     ),
 }
 
@@ -196,19 +197,17 @@ TELEPORT_FINISH_RUNTIME_CONTRACT = {
 LEVELSCRIPT_MODULE_PROPERTY_MAPPING_ID = (
     "gameassembly-2026-08-02-levelscriptmodule-save-prefix-v1"
 )
-LEVELSCRIPT_MODULE_PROPERTY_GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-)
-LEVELSCRIPT_MODULE_PROPERTY_METADATA_SHA256 = (
-    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-)
+# The reviewed native meaning, "GetSaveKeyPrefixed formats the save key from
+# the module's own id", is a claim group in contracts/story_native_consumers.json.
+MODULE_PREFIX_GROUP = "levelScriptModuleSavePrefix"
+MODULE_PREFIX_ID_FIELD = "Beyond.Gameplay.Core.LevelScriptModule::<id>k__BackingField"
 LEVELSCRIPT_MODULE_PROPERTY_NAME_RE = re.compile(r"@(?P<module_id>\d+)_(?P<suffix>.+)")
 
-# The installed 2026-08-02 binary identifies this serialized property family
-# as the reusable Encounter controller contract.  The names below are suffixes
+# The installed binary identifies this serialized property family as the
+# reusable Encounter controller contract.  The names below are suffixes
 # because LevelData namespaces every property with its owning LsmPtr module id.
-# GameAssembly's LevelScriptModule.GetSaveKeyPrefixed reads the module id at
-# this+0x18 before formatting the supplied save key; it is not necessarily the
+# GameAssembly's LevelScriptModule.GetSaveKeyPrefixed reads the module's own
+# id field before formatting the supplied save key; it is not necessarily the
 # hosting LevelScript id.  This
 # is deliberately a structural classifier: host filenames and Story-key names
 # never participate.
@@ -235,12 +234,6 @@ ENCOUNTER_EMPTY_ENEMY_VALUE_TYPE = 14
 ENCOUNTER_POPULATED_ENEMY_LIST_VALUE_TYPE = 61
 ENCOUNTER_RUNTIME_TYPE = "Beyond.Gameplay.Core.EncounterBase<T>"
 ENCOUNTER_DATA_TYPE = "Beyond.Gameplay.EncounterData"
-ENCOUNTER_GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-)
-ENCOUNTER_METADATA_SHA256 = (
-    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-)
 DEFAULT_PIPELINE_INDEX = ROOT / "webui" / "data" / "mission_pipeline" / "index.json"
 DEFAULT_PIPELINE_MISSION_ROOT = (
     ROOT / "webui" / "data" / "mission_pipeline" / "missions"
@@ -810,28 +803,28 @@ def teleport_finish_runtime_contract(
         )
     ]
     failures: list[dict[str, Any]] = []
-    checks = (
-        (
-            "reviewedGameAssembly",
-            game_rows,
-            TELEPORT_FINISH_RUNTIME_CONTRACT["gameAssemblySha256"],
-        ),
-        (
-            "reviewedGlobalMetadata",
-            metadata_rows,
-            TELEPORT_FINISH_RUNTIME_CONTRACT["globalMetadataSha256"],
-        ),
-    )
-    for gate, rows, expected_hash in checks:
+    related_hashes = sorted({safe_text(row.get("sha256")).lower() for row in related})
+    activation_hashes = {
+        safe_text(row.get("sourceFile")).lower().rsplit("/", 1)[-1].rsplit("\\", 1)[-1]:
+            safe_text(row.get("sha256")).lower()
+        for row in activation.get("relatedOriginalFiles") or []
+        if isinstance(row, dict) and safe_text(row.get("sha256"))
+    }
+    # Both audits are regenerated per build, so they must describe one build.
+    for gate, rows, name in (
+        ("carrierGameAssembly", game_rows, "gameassembly.dll"),
+        ("carrierGlobalMetadata", metadata_rows, "global-metadata.dat"),
+    ):
         hashes = sorted({safe_text(row.get("sha256")).lower() for row in rows})
-        if len(rows) != 1 or hashes != [expected_hash]:
+        expected_hash = activation_hashes.get(name)
+        if len(rows) != 1 or (expected_hash and hashes != [expected_hash]):
             failures.append({
                 "validator": "teleport_finish_runtime_contract",
                 "gate": gate,
                 "sourceFile": safe_text((rows or [{}])[0].get("sourceFile")),
                 "expected": {
                     "sourceCount": 1,
-                    "sha256": expected_hash,
+                    "sha256": expected_hash or "same build as the activation audit",
                 },
                 "actual": {
                     "sourceCount": len(rows),
@@ -846,13 +839,13 @@ def teleport_finish_runtime_contract(
             "sourceFile": safe_text(activation.get("source")),
             "expected": "validated",
             "actual": (activation.get("validation") or {}).get("status"),
-            "sourceHashes": sorted({
-                safe_text(row.get("sha256")).lower() for row in related
-            }),
+            "sourceHashes": related_hashes,
         })
+    action_field = (teleport_param.get("focusFieldSummary") or {}).get("actionId") or {}
     teleport_shape = {
         "type": teleport_param.get("type"),
         "actionIdOffset": (teleport_param.get("layout") or {}).get("actionId"),
+        "actionIdFocusOffset": action_field.get("offset"),
         "auditSchema": teleport_param.get("auditSchema"),
         "auditValidation": (teleport_param.get("validation") or {}).get("status"),
         "metadataSignatureMethodCount": teleport_param.get(
@@ -862,54 +855,74 @@ def teleport_finish_runtime_contract(
         "focusFieldAccessCount": teleport_param.get("focusFieldAccessCount"),
         "storyBindingsAdded": teleport_param.get("storyBindingsAdded"),
     }
-    expected_teleport_shape = {
-        "type": "Beyond.Gameplay.TeleportParam",
-        "actionIdOffset": "0x28",
-        "auditSchema": "nativeValueCarrierAudit.v1",
-        "auditValidation": "validated",
-        "metadataSignatureMethodCount": 15,
-        "containerPathCount": 10,
-        "focusFieldAccessCount": 23,
-        "storyBindingsAdded": 0,
-    }
-    if teleport_shape != expected_teleport_shape:
+    # Invariants, not one build's counts: a typed carrier whose actionId the
+    # focused audit tracked, with no Story binding added.
+    shape_holds = (
+        teleport_shape["type"] == TELEPORT_FINISH_RUNTIME_CONTRACT["teleportParamType"]
+        and bool(re.fullmatch(r"0x[0-9a-f]+", safe_text(teleport_shape["actionIdOffset"])))
+        and teleport_shape["actionIdFocusOffset"] == teleport_shape["actionIdOffset"]
+        and teleport_shape["auditSchema"] == "nativeValueCarrierAudit.v1"
+        and teleport_shape["auditValidation"] == "validated"
+        and all(
+            isinstance(teleport_shape[key], int) and teleport_shape[key] > 0
+            for key in (
+                "metadataSignatureMethodCount",
+                "containerPathCount",
+                "focusFieldAccessCount",
+            )
+        )
+        and teleport_shape["storyBindingsAdded"] == 0
+    )
+    if not shape_holds:
         failures.append({
             "validator": "teleport_finish_runtime_contract",
             "gate": "typedTeleportParamActionIdCarrier",
             "sourceFile": safe_text(activation.get("source")),
-            "expected": expected_teleport_shape,
+            "expected": {
+                "type": TELEPORT_FINISH_RUNTIME_CONTRACT["teleportParamType"],
+                "actionIdOffset": "hex offset equal to actionIdFocusOffset",
+                "auditSchema": "nativeValueCarrierAudit.v1",
+                "auditValidation": "validated",
+                "counts": "positive",
+                "storyBindingsAdded": 0,
+            },
             "actual": teleport_shape,
-            "sourceHashes": sorted({
-                safe_text(row.get("sha256")).lower() for row in related
-            }),
+            "sourceHashes": related_hashes,
         })
-    expected_native_row = {
-        "symbol": "LevelEvent.OnTeleportFinish.Process",
-        "address": TELEPORT_FINISH_RUNTIME_CONTRACT[
-            "listenerProcessMethodVa"
-        ],
-    }
     actual_native_rows = [
         {
             "symbol": safe_text(row.get("symbol")),
             "address": safe_text(row.get("address")),
+            "nativeVerification": safe_text(
+                (row.get("nativeVerification") or {}).get("status")
+            ),
         }
         for row in native_rows
     ]
-    if actual_native_rows != [expected_native_row]:
+    if (
+        len(actual_native_rows) != 1
+        or actual_native_rows[0]["nativeVerification"] != "verified"
+        or not actual_native_rows[0]["address"]
+    ):
         failures.append({
             "validator": "teleport_finish_runtime_contract",
             "gate": "typedListenerRuntimeComparison",
             "sourceFile": safe_text(activation.get("source")),
-            "expected": [expected_native_row],
+            "expected": [{
+                "symbol": "LevelEvent.OnTeleportFinish.Process",
+                "address": "resolved on the selected build",
+                "nativeVerification": "verified",
+            }],
             "actual": actual_native_rows,
-            "sourceHashes": sorted({
-                safe_text(row.get("sha256")).lower() for row in related
-            }),
+            "sourceHashes": related_hashes,
         })
     return {
         "schema": "teleportFinishRuntimeContract.v1",
         **TELEPORT_FINISH_RUNTIME_CONTRACT,
+        "listenerProcessMethodVa": (
+            actual_native_rows[0]["address"] if len(actual_native_rows) == 1 else ""
+        ),
+        "actionIdOffset": teleport_shape["actionIdOffset"],
         "classification": "runtime_action_id_correlation",
         "teleportParamCarrier": teleport_param,
         "listenerNativeEvidence": native_rows[0] if len(native_rows) == 1 else {},
@@ -919,7 +932,7 @@ def teleport_finish_runtime_contract(
             "failures": failures,
         },
         "evidenceBoundary": (
-            "The reviewed client binary proves that OnTeleportFinish compares "
+            "The selected client binary proves that OnTeleportFinish compares "
             "its serialized actionId filter with the TeleportParam actionId "
             "published at runtime. The generic carrier audit finds no nonzero direct "
             "AOT originator for that field. It does not prove that an indirect, "
@@ -4047,10 +4060,40 @@ def _module_property_family_pattern(
     }
 
 
+def module_prefix_binary_evidence() -> dict[str, Any]:
+    """The module save-key prefix rule as proved on the installed binaries.
+
+    Returns ``status: validated`` with the selected build's hashes, the
+    prefix method's address and the id field offset, or the failed status.
+    """
+    group = validated_group(MODULE_PREFIX_GROUP)
+    if group is None:
+        evaluation = load_story_native_consumers()
+        status = evaluation.get("status")
+        if status == "validated":
+            status = NATIVE_EVIDENCE_MISMATCHED
+        if native_evidence_required():
+            raise SystemExit(
+                f"levelscript-module-prefix: native evidence {status}: "
+                f"{evaluation.get('detail') or (evaluation.get('groups') or {}).get(MODULE_PREFIX_GROUP)}"
+            )
+        return {"status": status}
+    method = group["methods"][0]
+    return {
+        "status": "validated",
+        "gameAssemblySha256": group["gameAssemblySha256"],
+        "globalMetadataSha256": group["globalMetadataSha256"],
+        "modulePrefixMethod": method["method"],
+        "modulePrefixMethodVa": method["address"],
+        "moduleIdFieldOffset": f"this+{group['fieldOffsets'][MODULE_PREFIX_ID_FIELD]}",
+    }
+
+
 def module_property_family_contexts(
     hosts: list[dict[str, Any]],
     *,
     receiver_script_id: str = "",
+    binary_evidence: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Census every serialized ``@module_suffix`` family in every host.
 
@@ -4105,16 +4148,9 @@ def module_property_family_contexts(
                 "missionOwnerStatus": "unresolved",
                 "storyBinding": False,
                 "orderEvidence": False,
-                "binaryEvidence": {
-                    "gameAssemblySha256": (
-                        LEVELSCRIPT_MODULE_PROPERTY_GAMEASSEMBLY_SHA256
-                    ),
-                    "globalMetadataSha256": (
-                        LEVELSCRIPT_MODULE_PROPERTY_METADATA_SHA256
-                    ),
-                    "namespaceMethod": "LevelScriptModule.GetSaveKeyPrefixed",
-                    "moduleIdFieldOffset": "this+0x18",
-                },
+                "binaryEvidence": dict(
+                    binary_evidence or {"status": "missing"}
+                ),
                 "evidenceBoundary": (
                     "The original LevelData property names and native value "
                     "shapes prove a reusable module namespace family only. "
@@ -4131,6 +4167,7 @@ def encounter_controller_contexts(
     hosts: list[dict[str, Any]],
     *,
     spawner_root: Path,
+    binary_evidence: dict[str, Any] | None = None,
 ) -> list[dict[str, Any]]:
     """Recognize the binary-proven Encounter contract without name guesses.
 
@@ -4139,9 +4176,12 @@ def encounter_controller_contexts(
     have their current native value shapes. The native prefix is the LsmPtr
     module id, which can differ from the hosting LevelScript id. This proves
     controller type and related source files only; it cannot identify a
-    MissionRuntime owner.
+    MissionRuntime owner. Without a validated module-prefix proof on the
+    selected build nothing is classified.
     """
     contexts: list[dict[str, Any]] = []
+    if (binary_evidence or {}).get("status") != "validated":
+        return contexts
     for host in hosts:
         brief = host.get("briefData") or {}
         properties = {
@@ -4244,13 +4284,7 @@ def encounter_controller_contexts(
                 "matchedPropertyNames": required_names,
                 "relatedFiles": related_files,
                 "binaryEvidence": {
-                    "gameAssemblySha256": ENCOUNTER_GAMEASSEMBLY_SHA256,
-                    "globalMetadataSha256": ENCOUNTER_METADATA_SHA256,
-                    "modulePrefixMethod": (
-                        "LevelScriptModule.GetSaveKeyPrefixed"
-                    ),
-                    "modulePrefixMethodVa": "0x183be6a50",
-                    "moduleIdFieldOffset": "this+0x18",
+                    **binary_evidence,
                     "lifecycleMethods": [
                         "ManuallyActivate",
                         "_TriggerActivate",
@@ -4671,7 +4705,7 @@ def exact_client_active_request_contract(
         if isinstance((host.get("briefData") or {}).get("levelScriptType"), int)
     ]
     binary_validated = (
-        activation_control.get("schema") == "levelScriptActivationControl.v6"
+        activation_control.get("schema") == "levelScriptActivationControl.v7"
         and validation.get("status") == "validated"
         and selector.get("nonSubLevelRequiresEnabledAndActiveArea") is True
         and selector.get("subLevelRequiresPublicActive") is True
@@ -4707,11 +4741,12 @@ def exact_client_active_request_contract(
         and isinstance(active_shapes.get("count"), int)
         and int(active_shapes["count"]) > 0
         and len(active_shapes.get("shapes") or []) == int(active_shapes["count"])
-        and active_area_flow.get("emptyActiveListSetsWithinTrue") is True
-        and active_area_flow.get("activeShapeHitSetsWithinTrue") is True
-        and active_area_flow.get("missingOutsideListPreservesPriorWithin") is True
-        and active_area_flow.get("outsideShapeMissPreservesPriorWithin") is True
-        and active_area_flow.get("outsideShapeHitClearsWithin") is True
+        and active_area_flow.get("enterShapeHitSetsWithinTrue") is True
+        and active_area_flow.get("priorOutsideRequiresEnterHit") is True
+        and active_area_flow.get("exitShapeHitHoldsPriorWithin") is True
+        and active_area_flow.get("emptyExitListClearsWithin") is True
+        and active_area_flow.get("callSitePassesFieldsInSignatureOrder") is True
+        and active_area_flow.get("callResultStoredToWithin") is True
     )
     return {
         "schema": "exactClientActiveRequest.v1",
@@ -4935,6 +4970,7 @@ def build_report(
         structured_json_root=structured_json_root,
     )
     teleport_runtime_contract = teleport_finish_runtime_contract(index_payload)
+    module_prefix_evidence = module_prefix_binary_evidence()
     teleport_finish_census = build_teleport_finish_correlation_census(
         levelscript_root,
         teleport_runtime_contract,
@@ -4973,12 +5009,14 @@ def build_report(
         module_property_families = module_property_family_contexts(
             hosts,
             receiver_script_id=script_id,
+            binary_evidence=module_prefix_evidence,
         )
         encounter_contexts = encounter_controller_contexts(
             level_id,
             script_id,
             hosts,
             spawner_root=spawner_root,
+            binary_evidence=module_prefix_evidence,
         )
         story_candidates = nominal_story_mission_candidates(
             index_payload,
@@ -5445,25 +5483,11 @@ def build_report(
                 "runtimeType": ENCOUNTER_RUNTIME_TYPE,
                 "dataType": ENCOUNTER_DATA_TYPE,
                 "mappingId": ENCOUNTER_CONTROLLER_MAPPING_ID,
-                "modulePrefixMethod": (
-                    "Beyond.Gameplay.Core.LevelScriptModule."
-                    "GetSaveKeyPrefixed"
-                ),
-                "modulePrefixMethodVa": "0x183be6a50",
-                "moduleIdFieldOffset": "this+0x18",
-                "gameAssemblySha256": ENCOUNTER_GAMEASSEMBLY_SHA256,
-                "globalMetadataSha256": ENCOUNTER_METADATA_SHA256,
+                **module_prefix_evidence,
             },
             "modulePropertyFamilyEvidence": {
                 "mappingId": LEVELSCRIPT_MODULE_PROPERTY_MAPPING_ID,
-                "namespaceMethod": "Beyond.Gameplay.Core.LevelScriptModule.GetSaveKeyPrefixed",
-                "moduleIdFieldOffset": "this+0x18",
-                "gameAssemblySha256": (
-                    LEVELSCRIPT_MODULE_PROPERTY_GAMEASSEMBLY_SHA256
-                ),
-                "globalMetadataSha256": (
-                    LEVELSCRIPT_MODULE_PROPERTY_METADATA_SHA256
-                ),
+                **module_prefix_evidence,
             },
         },
         "evidencePolicy": {

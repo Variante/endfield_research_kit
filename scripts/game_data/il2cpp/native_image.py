@@ -42,38 +42,27 @@ METADATA_HELPER_PATH = REPO_ROOT / "tools/endfield-il2cpp/catalog_option_flow_me
 RIP_RELATIVE_LOAD_PREFIXES = (b"\x48\x8b\x15", b"\x4c\x8b\x05")
 
 
-def read_pinned_contract(
+def read_reviewed_contract(
     path: Path,
     *,
-    sha256: str,
     schema: str,
     label: str,
     status: str | None = None,
 ) -> tuple[dict[str, Any], str]:
-    """Return ``(contract, digest)`` for a byte-pinned reviewed contract.
+    """Return ``(contract, digest)`` for a reviewed contract.
 
-    The digest is compared case-insensitively because pins were recorded in
-    both cases; the returned digest is uppercase.
+    The contract is tracked, so git owns its integrity; this checks only the
+    identity a reader depends on.  The uppercase digest is returned as report
+    provenance, not compared against a pin.
     """
     raw = path.read_bytes()
     digest = hashlib.sha256(raw).hexdigest().upper()
-    if digest != sha256.upper():
-        raise ValueError(f"{label}.contract:sha256-mismatch expected={sha256.upper()} actual={digest}")
     value = json.loads(raw)
     if not isinstance(value, dict) or value.get("schema") != schema:
         raise ValueError(f"{label}.contract:unsupported-schema")
     if status is not None and value.get("status") != status:
         raise ValueError(f"{label}.contract:unsupported-status")
     return value, digest
-
-
-def check_dependency_contracts(contract: dict[str, Any], directory: Path, *, label: str) -> None:
-    """Re-hash every ``dependencies[]`` entry a contract pins beside itself."""
-    for dependency in contract.get("dependencies", []):
-        path = directory / dependency["path"]
-        actual = hashlib.sha256(path.read_bytes()).hexdigest().upper()
-        if actual != dependency["sha256"].upper():
-            raise ValueError(f"{label}.dependency:sha256-mismatch:{path.name}")
 
 
 class NativeImage:

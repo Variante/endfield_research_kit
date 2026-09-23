@@ -1,0 +1,13 @@
+{
+  "schema": "endfield.audio-native-catalog.v1",
+  "status": "exact-pinned-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
+    "global-metadata.dat": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
+  },
+  "evidenceBoundary": "exact",
+  "notes": [
+    "The build the Audio native catalog was reviewed on: the ModelView routes and voice-trigger rows in scripts/webui/audio/semantics/native_evidence.py, the managed-literal and selector callsites in managed_literals.py, the playback call chains and music transition registrations in mono_behaviour.py, the music/timeline contracts in build_contracts.py and entity_contexts.py, and the RTPC game-parameter catalog in build_audio.py.",
+    "Those rows carry method indexes, tokens, virtual addresses and body hashes of this build and are published only while the installed build matches these digests. On any other build every native Audio route is withheld; the catalog must be re-derived against the installed build, not re-pinned."
+  ]
+}

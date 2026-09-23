@@ -1234,7 +1234,6 @@ def _join_and_frame(
             try:
                 timeline_play_animation_profile = decode_first_timeline_play_animation(
                     data,
-                    input_set_sha256=expected_input_set_sha256,
                 )
             except ValueError as exc:
                 _fail(
@@ -1257,7 +1256,6 @@ def _join_and_frame(
                 timeline_play_animation_step_profile = (
                     decode_first_timeline_play_animation_step(
                         data,
-                        input_set_sha256=expected_input_set_sha256,
                     )
                 )
             except ValueError as exc:
@@ -1290,7 +1288,6 @@ def _join_and_frame(
             try:
                 timeline_create_buff_profile = decode_first_timeline_create_buff(
                     data,
-                    input_set_sha256=expected_input_set_sha256,
                 )
             except ValueError as exc:
                 _fail(
@@ -1311,7 +1308,6 @@ def _join_and_frame(
         try:
             timeline_shared_sequence_profile = decode_first_timeline_shared_sequence(
                 data,
-                input_set_sha256=expected_input_set_sha256,
             )
         except ValueError:
             # The shared decoder is intentionally sparse. Non-contracted roots,
@@ -1339,7 +1335,6 @@ def _join_and_frame(
             try:
                 timeline_find_target_profile = decode_first_timeline_find_target(
                     data,
-                    input_set_sha256=expected_input_set_sha256,
                 )
             except ValueError:
                 # The current contract intentionally covers only authenticated
@@ -1356,7 +1351,6 @@ def _join_and_frame(
                 timeline_continuous_find_target_profile = (
                     decode_first_timeline_continuous_find_target(
                         data,
-                        input_set_sha256=expected_input_set_sha256,
                     )
                 )
                 if timeline_continuous_find_target_profile.get("wholeActionGroupDataExact"):
@@ -1373,7 +1367,7 @@ def _join_and_frame(
                     ] = continuation
             except ValueError:
                 # Only the exact current selector subtype routes in the
-                # byte-pinned contract are promoted.
+                # reviewed contract are promoted.
                 timeline_continuous_find_target_profile = None
         prefix_end = int(common_prefix["cursorOffset"], 0)
         prefix_ranges = _prefix_byte_ranges(common_prefix)

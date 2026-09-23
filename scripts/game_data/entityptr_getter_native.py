@@ -29,7 +29,6 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 
 SCHEMA = "entityPtrGetterNativeContract.v2"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "entityptr_getter.json"
-CONTRACT_SHA256 = "809195D8923707225C09B45B44BBA5CF4D90C5719E26DFBA44B393EDC853CF29"
 #: Stable identifier cited in Story evidence; the build lives in the contract.
 NATIVE_MAPPING_ID = "entityptr-getter-semantics.v2"
 
@@ -63,9 +62,6 @@ def load_entityptr_getter_contract(
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         reject("read_valid_json", True, str(error)[:400])
         return {}, {"status": "validation_failed", "validationFailures": failures}
-    actual_hash = hashlib.sha256(raw).hexdigest().upper()
-    if actual_hash != CONTRACT_SHA256:
-        reject("contract_sha256", CONTRACT_SHA256, actual_hash)
     for gate, expected, actual in (("schema", SCHEMA, contract.get("schema")),
                                    ("status", "validated", contract.get("status"))):
         if actual != expected:

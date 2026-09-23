@@ -26,8 +26,6 @@ from typing import Any
 
 
 from scripts.common import (
-    RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-    RECORDED_NATIVE_METADATA_SHA256,
     ROOT,
     check_installed_native_inputs,
     md_escape,
@@ -39,6 +37,11 @@ from scripts.common import (
     write_text_if_changed,
 )
 from scripts.game_data.il2cpp import protocol as il2cpp
+from scripts.game_data.ifix_patch_native import (
+    fixed_method_prefix_matches,
+    load_ifix_patch_contract,
+)
+from scripts.game_data.story_native_consumers_native import cited, validated_group
 from scripts.game_data.levelscript_binary import (
     extract_levelscript_uid_records,
     levelscript_action_map_membership,
@@ -64,178 +67,249 @@ MISSION_RUNTIME_ROOT = EXPORT_LAYOUT.json_dir / "MissionRuntimeAsset"
 LEVELSCRIPT_ROOTS = (
     EXPORT_LAYOUT.json_dir / "LevelScriptData",
 )
-MESSAGE_125_SEND_GLOBAL_VA = 0x187BDFD38
 MESSAGE_125_PAYLOAD_TYPE = "Beyond.Gameplay.EventData"
+def located_code_registration(mapper: Any, pe: Any, metadata: Any, gameassembly_path: Path) -> int:
+    """Locate Il2CppCodeRegistration in the selected build instead of pinning it."""
+    try:
+        return il2cpp.locate_code_registration(mapper, pe, metadata)
+    except RuntimeError as error:
+        raise RuntimeError(f"validator=protocol_registry {error} source={gameassembly_path}") from error
 
 
-NATIVE_MISSION_EVENT_PATHS: dict[int, dict[str, Any]] = {
-    125: {
-        "symbol": "Beyond.Gameplay.MissionSystem.Handle_ClientMissionEvent",
-        "token": "0x060052a6",
-        "methodIndex": 21157,
-        "va": "0x1873bdf58",
-        "rva": "0x73bdf58",
-        "dispatchTarget": "0x184a428a0",
-        "fieldOffsets": {
-            "missionId": "0x18",
-            "eventName": "0x20",
-        },
-        "keyGenerator": {
-            "symbol": "Beyond.KeyGenerator`2.GetKey",
-            "va": "0x184a428a0",
-            "genericMethodPointerSlot": 193461,
-            "methodSpecIndex": 204894,
-        },
-        "keyBackend": {
-            "symbol": "Beyond.CombineKeyManager.GetKey",
-            "va": "0x1846a2e60",
-        },
-        "dispatch": {
-            "symbol": "Beyond.EventManager.SendGlobal",
-            "va": "0x187bdfd38",
-        },
-        "consumerSurface": "keyed_global_event_bus",
-        "directCallCensus": {
-            "keyGenerator2Instantiations": 7,
-            "namedCallSites": 35,
-            "sameInstantiationClass": 1055,
-            "sameInstantiationCallers": [
-                "Beyond.Gameplay.MapVarSystem.SetClientMapVar",
-                "Beyond.Gameplay.MapVarSystem._Handle_UpdateMapVar",
-                "Beyond.Gameplay.SimpleConditionCheckMapVar.InnerStartListening",
-                "Beyond.Gameplay.MissionSystem.Handle_ClientMissionEvent",
-            ],
-            "typedPairingStatus": (
-                "no exact authored pair in the direct key-construction census: the "
-                "only subscriber-side caller in the same generic instantiation consumes "
-                "belongMapId/mapVarName, while message 125 publishes missionId/eventName"
-            ),
-            "coverage": (
-                "direct E8 rel32 key-construction calls only; the separate AOT generic "
-                "specialization census closes compiled managed typed subscribers"
-            ),
-        },
-        "finding": (
-            "The native handler reads missionId/eventName from the protobuf object and "
-            "interns that pair as a two-part CombineKey before publishing it through "
-            "EventManager.SendGlobal. It does not dispatch to the serialized "
-            "MissionEvent_OnCustomEventForMission surface."
-        ),
-    },
-}
+# The reviewed native event paths are claims in
+# contracts/story_native_consumers.json (group ``protocolEventPaths``), proved on
+# the installed build; tokens, addresses, field offsets and iFix patch ids below
+# are read from that evaluation, never recorded here.
+PROTOCOL_NATIVE_GROUP = "protocolEventPaths"
+MISSION_EVENT_125 = "Proto.SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT"
+LEVEL_SCRIPT_EVENT_57 = "Proto.SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT"
 
-NATIVE_LEVEL_SCRIPT_EVENT_PATHS: dict[int, dict[str, Any]] = {
-    57: {
-        "symbol": "Beyond.Gameplay.GameplayNetwork._Handle_SceneTriggerClientLevelScriptEvent",
-        "token": "0x06004dbf",
-        "methodIndex": 19902,
-        "va": "0x187386320",
-        "rva": "0x7386320",
-        "ifixPatchId": "0x5ac7",
-        "fieldOffsets": {
-            "sceneNumId": "0x18",
-            "scriptId": "0x20",
-            "eventName": "0x28",
-            "ctxToken": "0x30",
-        },
-        "eventParamsPath": {
-            "allocate": "Beyond.Gameplay.Core.EventParams.Allocate",
-            "receiver": "Beyond.Gameplay.Core.LevelScriptPtr(scriptId)",
-            "receiverSetter": "Beyond.Gameplay.Core.EventParams.SetReceiver",
-            "ctxToken": (
-                "when the protobuf ByteString is non-empty, store it in the "
-                "EventParams/ParamBlackboard before dispatch"
-            ),
-            "dispatch": "Beyond.Gameplay.Core.LevelEventManager.RaiseScriptEvent",
-        },
-        "ctxTokenFinding": (
-            "ctxToken is propagated as event context rather than discarded. Its sole "
-            "current direct AOT key-slot reader is CallServer.Execute, which recovers it "
-            "as netToken and returns it on CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER. Neither "
-            "side decodes it into missionId or questId, and neither packet contains "
-            "either identity."
-        ),
-        "ctxTokenReaderAudit": {
-            "paramBlackboardKeySlotVa": "0x18e2eef08",
-            "directRipReferenceCount": 4,
-            "referencingMethodCount": 2,
-            "referencingMethods": [
-                {
-                    "symbol": (
-                        "Beyond.Gameplay.GameplayNetwork."
-                        "_Handle_SceneTriggerClientLevelScriptEvent"
-                    ),
-                    "va": "0x187386320",
-                    "references": ["0x187386362", "0x187386442"],
-                    "role": "static-key initialization and ctxToken writer",
-                },
-                {
-                    "symbol": "Beyond.Gameplay.Actions.CallServer.Execute",
-                    "token": "0x06008f04",
-                    "va": "0x1845f6000",
-                    "references": ["0x1845f6098", "0x1845f618f"],
-                    "role": (
-                        "static-key initialization and "
-                        "ParamBlackboard.TryGetValue(netToken) reader"
-                    ),
-                },
-            ],
-            "readerCall": {
-                "symbol": "Beyond.Gameplay.ParamBlackboard.TryGetValue",
-                "va": "0x1836eb730",
-                "callSite": "0x1845f61a6",
-                "genericInstantiation": True,
+
+def _native_row(group: dict[str, Any], display: str, symbol: str) -> dict[str, Any]:
+    row = {entry["method"]: entry for entry in group["methods"]}[display]
+    return {
+        "symbol": symbol,
+        "token": row["token"],
+        "va": row["address"],
+        "fallbackPatchId": row["fallbackPatchId"],
+    }
+
+
+def _cited_row(display: str, symbol: str) -> dict[str, Any]:
+    row = cited(display)
+    result = {"symbol": symbol, "token": row["token"], "va": row["address"]}
+    if row.get("overloads"):
+        result["instantiations"] = row["overloads"]
+    return result
+
+
+def _installed_ifix(prefixes: tuple[str, ...], patch_ids: list[str | None]) -> dict[str, Any]:
+    """The installed Gameplay IFix payload against the named methods."""
+    audit = load_ifix_patch_contract()
+    if audit.get("status") != "validated":
+        return {"status": audit.get("status") or "missing"}
+    return {
+        "sha256": str(audit["source"]["patchSha256"]).lower(),
+        "signatureTargetCount": len(audit["fixedMethodSignatures"]),
+        "fallbackPatchIds": sorted({patch_id for patch_id in patch_ids if patch_id}),
+        "matchedMethods": len(fixed_method_prefix_matches(audit, prefixes)),
+    }
+
+
+def native_mission_event_paths() -> dict[int, dict[str, Any]]:
+    """Message 125's handler path on the installed build, or {} unproved."""
+    group = validated_group(PROTOCOL_NATIVE_GROUP)
+    if group is None:
+        return {}
+    offsets = group["fieldOffsets"]
+    handler = _native_row(
+        group,
+        "MissionSystem.Handle_ClientMissionEvent",
+        "Beyond.Gameplay.MissionSystem.Handle_ClientMissionEvent",
+    )
+    return {
+        125: {
+            **handler,
+            "fieldOffsets": {
+                "missionId": offsets[f"{MISSION_EVENT_125}::missionId_"],
+                "eventName": offsets[f"{MISSION_EVENT_125}::eventName_"],
             },
-            "outboundPath": [
-                {
-                    "symbol": "Beyond.Gameplay.Actions.GameAction.TriggerServerEvent",
-                    "token": "0x060080c7",
-                    "va": "0x1845f6640",
-                    "parameter": "netToken",
-                },
-                {
-                    "symbol": (
-                        "Beyond.Gameplay.GameplayNetwork."
-                        "TriggerLevelScriptServerEvent"
-                    ),
-                    "token": "0x06004dc5",
-                    "va": "0x1845f6710",
-                    "parameter": "netToken",
-                },
-                {
-                    "symbol": (
-                        "Proto.CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken"
-                    ),
-                    "token": "0x0600891c",
-                    "va": "0x1865a3aac",
-                },
-            ],
-            "installedIfix": {
-                "sha256": (
-                    "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21"
+            "keyGenerator": _cited_row("KeyGenerator`2.GetKey", "Beyond.KeyGenerator`2.GetKey"),
+            "keyBackend": _cited_row("CombineKeyManager.GetKey", "Beyond.CombineKeyManager.GetKey"),
+            "dispatch": _cited_row("EventManager.SendGlobal", "Beyond.EventManager.SendGlobal"),
+            "consumerSurface": "keyed_global_event_bus",
+            "directCallCensus": {
+                "sameInstantiationCallers": [
+                    "Beyond.Gameplay.MapVarSystem.SetClientMapVar",
+                    "Beyond.Gameplay.MapVarSystem._Handle_UpdateMapVar",
+                    "Beyond.Gameplay.SimpleConditionCheckMapVar.InnerStartListening",
+                    "Beyond.Gameplay.MissionSystem.Handle_ClientMissionEvent",
+                ],
+                "typedPairingStatus": (
+                    "no exact authored pair in the direct key-construction census: the "
+                    "only subscriber-side caller in the same generic instantiation consumes "
+                    "belongMapId/mapVarName, while message 125 publishes missionId/eventName"
                 ),
-                "signatureTargetCount": 30,
-                "fallbackPatchIds": ["0x5ac7", "0x8939", "0x39bb", "0x39bc"],
-                "matchedMethods": 0,
+                "coverage": (
+                    "direct E8 rel32 key-construction calls only; the separate AOT generic "
+                    "specialization census closes compiled managed typed subscribers"
+                ),
             },
-            "classification": "level_script_event_round_trip_correlation",
-            "missionQuestReaders": 0,
-            "storyBindingsAdded": 0,
-            "coverage": (
-                "Current installed AOT direct RIP references to the exact static key "
-                "slot, including the generic-shared TryGetValue instantiation, plus the "
-                "decoded installed IFix target list. Separately constructed equal keys, "
-                "reflection, native memory manipulation, future IFix, and future builds "
-                "remain outside the bound."
+            "finding": (
+                "The native handler reads missionId/eventName from the protobuf object and "
+                "interns that pair as a two-part CombineKey before publishing it through "
+                "EventManager.SendGlobal. It does not dispatch to the serialized "
+                "MissionEvent_OnCustomEventForMission surface."
             ),
         },
-        "finding": (
-            "The handler constructs a LevelScript receiver from scriptId, optionally "
-            "copies ctxToken into EventParams, and raises eventName through "
-            "LevelEventManager.RaiseScriptEvent."
+    }
+
+
+def native_level_script_event_paths() -> dict[int, dict[str, Any]]:
+    """Message 57's handler and ctxToken round trip on the installed build, or {}."""
+    group = validated_group(PROTOCOL_NATIVE_GROUP)
+    if group is None:
+        return {}
+    offsets = group["fieldOffsets"]
+    handler = _native_row(
+        group,
+        "GameplayNetwork._Handle_SceneTriggerClientLevelScriptEvent",
+        "Beyond.Gameplay.GameplayNetwork._Handle_SceneTriggerClientLevelScriptEvent",
+    )
+    reader = _native_row(
+        group, "CallServer.Execute", "Beyond.Gameplay.Actions.CallServer.Execute"
+    )
+    trigger = _native_row(
+        group,
+        "GameplayNetwork.TriggerLevelScriptServerEvent",
+        "Beyond.Gameplay.GameplayNetwork.TriggerLevelScriptServerEvent",
+    )
+    server_event = _cited_row(
+        "GameAction.TriggerServerEvent",
+        "Beyond.Gameplay.Actions.GameAction.TriggerServerEvent",
+    )
+    set_ctx_token = _cited_row(
+        "CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken",
+        "Proto.CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER.set_CtxToken",
+    )
+    return {
+        57: {
+            **handler,
+            "fieldOffsets": {
+                name: offsets[f"{LEVEL_SCRIPT_EVENT_57}::{name}_"]
+                for name in ("sceneNumId", "scriptId", "eventName", "ctxToken")
+            },
+            "eventParamsPath": {
+                "allocate": "Beyond.Gameplay.Core.EventParams.Allocate",
+                "receiver": "Beyond.Gameplay.Core.LevelScriptPtr(scriptId)",
+                "receiverSetter": "Beyond.Gameplay.Core.EventParams.SetReceiver",
+                "ctxToken": (
+                    "when the protobuf ByteString is non-empty, store it in the "
+                    "EventParams/ParamBlackboard before dispatch"
+                ),
+                "dispatch": "Beyond.Gameplay.Core.LevelEventManager.RaiseScriptEvent",
+            },
+            "ctxTokenFinding": (
+                "ctxToken is propagated as event context rather than discarded. Its sole "
+                "current direct AOT key-slot reader is CallServer.Execute, which recovers it "
+                "as netToken and returns it on CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER. Neither "
+                "side decodes it into missionId or questId, and neither packet contains "
+                "either identity."
+            ),
+            "ctxTokenReaderAudit": {
+                "referencingMethods": [
+                    {**handler, "role": "static-key initialization and ctxToken writer"},
+                    {
+                        **reader,
+                        "role": (
+                            "static-key initialization and "
+                            "ParamBlackboard.TryGetValue(netToken) reader"
+                        ),
+                    },
+                ],
+                "readerCall": {
+                    **_cited_row(
+                        "ParamBlackboard.TryGetValue",
+                        "Beyond.Gameplay.ParamBlackboard.TryGetValue",
+                    ),
+                    "genericInstantiation": True,
+                },
+                "outboundPath": [
+                    {**server_event, "parameter": "netToken"},
+                    {**trigger, "parameter": "netToken"},
+                    set_ctx_token,
+                ],
+                "installedIfix": _installed_ifix(
+                    (
+                        "Beyond.Gameplay.GameplayNetwork::_Handle_SceneTriggerClientLevelScriptEvent(",
+                        "Beyond.Gameplay.Actions.CallServer::Execute(",
+                        "Beyond.Gameplay.Actions.GameAction::TriggerServerEvent(",
+                        "Beyond.Gameplay.GameplayNetwork::TriggerLevelScriptServerEvent(",
+                    ),
+                    [handler["fallbackPatchId"], reader["fallbackPatchId"], trigger["fallbackPatchId"]],
+                ),
+                "classification": "level_script_event_round_trip_correlation",
+                "missionQuestReaders": 0,
+                "storyBindingsAdded": 0,
+                "coverage": (
+                    "Installed AOT direct references to the exact static key slot, "
+                    "including the generic-shared TryGetValue instantiation, plus the "
+                    "decoded installed IFix target list. Separately constructed equal keys, "
+                    "reflection, native memory manipulation, future IFix, and future builds "
+                    "remain outside the bound."
+                ),
+            },
+            "finding": (
+                "The handler constructs a LevelScript receiver from scriptId, optionally "
+                "copies ctxToken into EventParams, and raises eventName through "
+                "LevelEventManager.RaiseScriptEvent."
+            ),
+        },
+    }
+
+
+def role_snapshot_consumer() -> dict[str, Any]:
+    """Messages 111/112's role-snapshot consumer on the installed build."""
+    group = validated_group(PROTOCOL_NATIVE_GROUP)
+    if group is None:
+        return {"status": "unvalidated"}
+    mission = _native_row(
+        group, "MissionSystem.Handle_MissionStateUpdate",
+        "Beyond.Gameplay.MissionSystem.Handle_MissionStateUpdate",
+    )
+    quest = _native_row(
+        group, "MissionSystem.Handle_QuestStateUpdate",
+        "Beyond.Gameplay.MissionSystem.Handle_QuestStateUpdate",
+    )
+    consumer = _native_row(
+        group, "MissionSystem.CharacterPositionCorrection",
+        "Beyond.Gameplay.MissionSystem.CharacterPositionCorrection",
+    )
+    return {
+        "missionHandler": mission,
+        "questHandler": quest,
+        "consumer": {
+            **consumer,
+            "fields": [
+                "roleBaseInfo.leaderPosition",
+                "roleBaseInfo.leaderRotation",
+                "roleBaseInfo.sceneName",
+            ],
+            "operation": (
+                "Resolve sceneName through GameUtil.GetLevelConfigMapIdByLevelId, "
+                "compare it with the current player/controller level and map, then "
+                "teleport the squad only when the synchronization guards require it."
+            ),
+        },
+        "installedIfix": _installed_ifix(
+            (
+                "Beyond.Gameplay.MissionSystem::Handle_MissionStateUpdate(",
+                "Beyond.Gameplay.MissionSystem::Handle_QuestStateUpdate(",
+                "Beyond.Gameplay.MissionSystem::CharacterPositionCorrection(",
+            ),
+            [mission["fallbackPatchId"], quest["fallbackPatchId"], consumer["fallbackPatchId"]],
         ),
-    },
-}
+    }
 
 
 MISSION_EVENT_CONSTRUCTOR_XREF_FINDING = {
@@ -441,8 +515,11 @@ def event_bus_specialization_census(
     """
     mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
+    code_registration = located_code_registration(
+        mapper, pe, metadata, gameassembly_path
+    )
     metadata_registration = mapper.find_metadata_registration(
-        pe, mapper.DEFAULT_CODE_REGISTRATION
+        pe, code_registration
     )
     if metadata_registration is None:
         raise RuntimeError("could not derive MetadataRegistration from GameAssembly")
@@ -450,7 +527,7 @@ def event_bus_specialization_census(
         pe, metadata_registration
     )
     code_summary = mapper.code_registration_summary(
-        pe, mapper.DEFAULT_CODE_REGISTRATION
+        pe, code_registration
     )
     method_specs_va = int(metadata_summary["methodSpecs"], 16)
     method_specs_offset, _section, _rva = pe.file_offset_for_va(method_specs_va)
@@ -529,19 +606,14 @@ def event_bus_specialization_census(
     message_send_rows = [
         row
         for row in send_rows
-        if int(row["methodPointerVa"], 16) == MESSAGE_125_SEND_GLOBAL_VA
+        if row["genericArguments"] == [MESSAGE_125_PAYLOAD_TYPE]
     ]
     if len(message_send_rows) != 1:
         raise RuntimeError(
-            "expected exactly one message-125 SendGlobal specialization at "
-            f"0x{MESSAGE_125_SEND_GLOBAL_VA:x}, found {len(message_send_rows)}"
+            "expected exactly one SendGlobal specialization over "
+            f"{MESSAGE_125_PAYLOAD_TYPE}, found {len(message_send_rows)}"
         )
     message_send = message_send_rows[0]
-    if message_send["genericArguments"] != [MESSAGE_125_PAYLOAD_TYPE]:
-        raise RuntimeError(
-            "message-125 SendGlobal payload drift: "
-            f"{message_send['genericArguments']!r}"
-        )
     subscriber_rows = matching_event_bus_subscriber_rows(
         bind_rows, MESSAGE_125_PAYLOAD_TYPE
     )
@@ -553,7 +625,7 @@ def event_bus_specialization_census(
         "gameAssemblySize": gameassembly_path.stat().st_size,
         "gameAssemblySha256": file_sha256(gameassembly_path),
         "mapper": str(mapper_path.resolve()),
-        "codeRegistration": f"0x{mapper.DEFAULT_CODE_REGISTRATION:x}",
+        "codeRegistration": f"0x{code_registration:x}",
         "metadataRegistration": f"0x{metadata_registration:x}",
         "genericMethodTableRows": table_count,
         "methodSpecRows": spec_count,
@@ -881,7 +953,10 @@ def levelscript_start_policy_contract(
     """Discover SameWithActive semantics from names, enums, and native flow."""
     mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
-    modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    code_registration = located_code_registration(
+        mapper, pe, metadata, gameassembly_path
+    )
+    modules = mapper.parse_codegen_modules(pe, code_registration)
     ranges = mapper.image_method_ranges(metadata)
     pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(
         pe, metadata, modules, ranges
@@ -1424,7 +1499,10 @@ def levelscript_manual_self_control_contract(
     """Discover current-level/current-script ManualStart semantics generically."""
     mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
-    modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    code_registration = located_code_registration(
+        mapper, pe, metadata, gameassembly_path
+    )
+    modules = mapper.parse_codegen_modules(pe, code_registration)
     ranges = mapper.image_method_ranges(metadata)
     pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(
         pe, metadata, modules, ranges
@@ -1445,7 +1523,7 @@ def levelscript_manual_self_control_contract(
                 )
 
     metadata_registration = mapper.find_metadata_registration(
-        pe, mapper.DEFAULT_CODE_REGISTRATION
+        pe, code_registration
     )
     if metadata_registration is None:
         raise RuntimeError(
@@ -1732,6 +1810,188 @@ def levelscript_manual_self_control_contract(
     }
 
 
+def _returned_bool_at(pe: Any, target: int) -> bool | None:
+    """The constant a two-byte ``mov al, 1`` / ``xor al, al`` block returns."""
+    head = pe.bytes_at_va(target, 2)
+    if head == b"\xb0\x01":
+        return True
+    if head in (b"\x32\xc0", b"\x30\xc0"):
+        return False
+    return None
+
+
+def active_area_hysteresis_flow(
+    mapper: Any,
+    pe: Any,
+    area_body: dict[str, Any],
+    hysteresis: dict[str, Any],
+    range_sensitive: dict[str, Any],
+    method_by_pointer: dict[int, list[dict[str, Any]]],
+    field_offsets: dict[str, Any],
+) -> dict[str, Any]:
+    """Prove the within-active-area rule and tie UpdateWithinActiveArea to it."""
+    enter_offset = field_offsets.get("levelScriptRuntime.activeShapeList")
+    exit_offset = field_offsets.get("levelScriptRuntime.activeShapeOutsideList")
+    within_offset = field_offsets.get("levelScriptRuntime.withinActiveArea")
+    flow: dict[str, Any] = {
+        "rule": "withinActiveArea = !rangeSensitive || hit(enterShapes) || "
+                "(prevWithin && !IsNullOrEmpty(exitShapes) && hit(exitShapes))",
+        "activeShapeListFieldOffset": enter_offset,
+        "activeShapeOutsideListFieldOffset": exit_offset,
+        "withinActiveAreaFieldOffset": within_offset,
+        "hysteresisMethodVa": hysteresis.get("methodPointerVa"),
+    }
+
+    # -- the named rule body ------------------------------------------------
+    rule: dict[str, bool] = {
+        "rangeInsensitiveSetsWithinTrue": False,
+        "enterShapeHitSetsWithinTrue": False,
+        "priorOutsideRequiresEnterHit": False,
+        "emptyExitListClearsWithin": False,
+        "exitShapeHitHoldsPriorWithin": False,
+    }
+    if hysteresis.get("mappingStatus") == "mapped_unique":
+        pointer = int(hysteresis["methodPointerVa"], 16)
+        size = mapper.pdata_function_extents(pe).get(pointer, pointer + 0x400) - pointer
+        rows = mapper.decode_x64_subset(pe.bytes_at_va(pointer, size), pointer, stop_offset=size)
+        texts = [str(row.get("text") or "") for row in rows]
+        params: dict[str, str] = {}
+        for text in texts[:16]:
+            match = re.fullmatch(r"mov (\w+), (cl|rdx|r8|r9)", text)
+            if match:
+                params.setdefault(match.group(2), match.group(1))
+        sensitive, enter, exit_ = params.get("cl"), params.get("rdx"), params.get("r8")
+
+        def next_branch(index: int) -> tuple[str, int] | None:
+            for row in rows[index + 1:index + 3]:
+                text = equality_branch_text(row)
+                if text:
+                    return text.split(" ", 1)[0], int(text.split(" ", 1)[1], 16)
+            return None
+
+        def call_rows() -> list[tuple[int, int, str | None]]:
+            found = []
+            for index, text in enumerate(texts):
+                match = re.fullmatch(r"call 0x([0-9a-f]+)", text)
+                if not match:
+                    continue
+                argument = next(
+                    (
+                        re.fullmatch(r"mov rcx, (\w+)", earlier).group(1)
+                        for earlier in reversed(texts[max(0, index - 8):index])
+                        if re.fullmatch(r"mov rcx, (\w+)", earlier)
+                    ),
+                    None,
+                )
+                found.append((index, int(match.group(1), 16), argument))
+            return found
+
+        for index, text in enumerate(texts):
+            if sensitive and text == f"test {sensitive}, {sensitive}":
+                branch = next_branch(index)
+                if branch and branch[0] == "je" and _returned_bool_at(pe, branch[1]) is True:
+                    rule["rangeInsensitiveSetsWithinTrue"] = True
+        calls = call_rows()
+        enter_calls = [row for row in calls if row[2] == enter]
+        exit_calls = [row for row in calls if row[2] == exit_]
+        shape_tests = {target for _i, target, _a in enter_calls} & {target for _i, target, _a in exit_calls}
+        for index, target, _argument in enter_calls:
+            if target in shape_tests and texts[index + 1:index + 2] == ["test al, al"]:
+                branch = next_branch(index + 1)
+                if branch and branch[0] == "jne" and _returned_bool_at(pe, branch[1]) is True:
+                    rule["enterShapeHitSetsWithinTrue"] = True
+        for index, text in enumerate(texts):
+            if re.fullmatch(r"cmp \[rsp\+0x[0-9a-f]+\], 0x0", text):
+                branch = next_branch(index)
+                if branch and branch[0] == "je" and _returned_bool_at(pe, branch[1]) is False:
+                    rule["priorOutsideRequiresEnterHit"] = True
+        for index, target, _argument in exit_calls:
+            names = {row.get("method") for row in method_by_pointer.get(target, [])}
+            if "IsNullOrEmpty" in names and texts[index + 1:index + 2] == ["test al, al"]:
+                branch = next_branch(index + 1)
+                if branch and branch[0] == "jne" and _returned_bool_at(pe, branch[1]) is False:
+                    rule["emptyExitListClearsWithin"] = True
+            if target in shape_tests and index + 1 < len(texts) and texts[index + 1].startswith("jmp "):
+                rule["exitShapeHitHoldsPriorWithin"] = True
+        flow["shapeTestCallee"] = sorted(f"0x{target:x}" for target in shape_tests)
+    flow.update(rule)
+
+    # -- the UpdateWithinActiveArea call site --------------------------------
+    area_pointer = int(area_body.get("methodPointerVa") or "0x0", 16)
+    tie = {"callSiteOffset": -1, "withinStoreOffset": -1, "calleeRoute": "unresolved"}
+    if area_pointer and all(isinstance(value, int) for value in (enter_offset, exit_offset, within_offset)):
+        size = int(area_body.get("scanBytes") or 0)
+        rows = mapper.decode_x64_subset(pe.bytes_at_va(area_pointer, size), area_pointer, stop_offset=size)
+        texts = [str(row.get("text") or "") for row in rows]
+        this_regs = {"rcx"}
+        for text in texts[:12]:
+            match = re.fullmatch(r"mov (\w+), rcx", text)
+            if match:
+                this_regs.add(match.group(1))
+        loaded: dict[int, str] = {}
+        for text in texts[:80]:
+            match = re.fullmatch(r"(?:mov|movzx) (\w+), \[(\w+)\+0x([0-9a-f]+)\]", text)
+            if match and match.group(2) in this_regs:
+                loaded.setdefault(int(match.group(3), 16), match.group(1))
+        enter_reg, exit_reg, within_reg = (loaded.get(enter_offset), loaded.get(exit_offset), loaded.get(within_offset))
+        sensitive_pointer = int(range_sensitive.get("methodPointerVa") or "0x0", 16)
+        hysteresis_pointer = int(hysteresis.get("methodPointerVa") or "0x0", 16)
+        sensitive_seen = False
+        for index, text in enumerate(texts):
+            match = re.fullmatch(r"call 0x([0-9a-f]+)", text)
+            if not match:
+                continue
+            target = int(match.group(1), 16)
+            if target == sensitive_pointer:
+                sensitive_seen = True
+                continue
+            window = texts[max(0, index - 12):index]
+            if not (
+                sensitive_seen and enter_reg and exit_reg and within_reg
+                and f"mov rdx, {enter_reg}" in window
+                and f"mov r8, {exit_reg}" in window
+                and any(re.fullmatch(r"lea r9, \[rsp\+0x[0-9a-f]+\]", text) for text in window)
+                and any(re.fullmatch(rf"mov \[rsp\+0x20\], {within_reg[1:] if within_reg.startswith('e') else within_reg}l?", text)
+                        or text == f"mov [rsp+0x20], {'bl' if within_reg in ('ebx', 'rbx') else within_reg}"
+                        for text in window)
+            ):
+                continue
+            tie["callSiteOffset"] = int(rows[index]["offset"])
+            tie["calleeRoute"] = (
+                "named" if target == hysteresis_pointer else "inlinedCopyWithMatchingSignature"
+            )
+            result = next(
+                (
+                    re.fullmatch(r"movzx (\w+), al", later).group(1)
+                    for later in texts[index + 1:index + 4]
+                    if re.fullmatch(r"movzx (\w+), al", later)
+                ),
+                None,
+            )
+            byte_reg = {"r15d": "r15b", "r14d": "r14b", "r13d": "r13b", "r12d": "r12b",
+                        "ebx": "bl", "esi": "sil", "edi": "dil", "ebp": "bpl"}.get(result or "", "")
+            for later_index in range(index + 1, len(rows)):
+                later = texts[later_index]
+                if byte_reg and re.fullmatch(
+                    rf"mov \[(?:{'|'.join(sorted(this_regs))})\+0x{within_offset:x}\], {byte_reg}", later
+                ):
+                    tie["withinStoreOffset"] = int(rows[later_index]["offset"])
+                    break
+            break
+    flow.update(tie)
+    flow["callSitePassesFieldsInSignatureOrder"] = tie["callSiteOffset"] >= 0
+    flow["callResultStoredToWithin"] = tie["withinStoreOffset"] >= 0
+    flow["evidenceBoundary"] = {
+        "exact": "the named _CalcWithinAreaHysteresis body decides the rule",
+        "conditional": (
+            "an inlined callee is tied to that body by its argument shape and "
+            "result store, not by comparing its bytes"
+            if tie["calleeRoute"] == "inlinedCopyWithMatchingSignature" else ""
+        ),
+    }
+    return flow
+
+
 def validate_levelscript_activation_control_observation(
     observation: dict[str, Any],
     *,
@@ -1811,33 +2071,33 @@ def validate_levelscript_activation_control_observation(
     if actual_fields != expected_fields:
         fail("messageSchemas", expected_fields, actual_fields)
 
-    expected_offsets = {
-        "challengeStartPoint.m_subGameId": 0x68,
-        "subGameInstanceData.bindScriptId": 0x50,
-        "stateNotify.sceneNumId_": 0x18,
-        "stateNotify.scriptId_": 0x20,
-        "stateNotify.state_": 0x28,
-        "stateNotify.isComplete_": 0x2C,
-        "selfSceneInfo.sceneNumId_": 0x18,
-        "selfSceneInfo.sceneId_": 0x20,
-        "selfSceneInfo.levelScripts_": 0x38,
-        "levelScriptInfo.scriptId_": 0x18,
-        "levelScriptInfo.state_": 0x20,
-        "levelScriptInfo.properties_": 0x28,
-        "levelScriptInfo.isDone_": 0x30,
-        "levelScriptInfo.stage_": 0x34,
-        "levelScriptInfo.triggerVolumeInfos_": 0x38,
-        "levelScriptRuntime.m_manualStartTriggered": 0xF8,
-        "levelScriptRuntime.withinActiveArea": 0x68,
-        "levelScriptRuntime.activeShapeList": 0x70,
-        "levelScriptRuntime.activeShapeOutsideList": 0x78,
-    }
-    actual_offsets = {
-        key: (observation.get("fieldOffsets") or {}).get(key)
-        for key in expected_offsets
-    }
-    if actual_offsets != expected_offsets:
-        fail("fieldOffsets", expected_offsets, actual_offsets)
+    required_offsets = (
+        "challengeStartPoint.m_subGameId",
+        "subGameInstanceData.bindScriptId",
+        "stateNotify.sceneNumId_",
+        "stateNotify.scriptId_",
+        "stateNotify.state_",
+        "stateNotify.isComplete_",
+        "selfSceneInfo.sceneNumId_",
+        "selfSceneInfo.sceneId_",
+        "selfSceneInfo.levelScripts_",
+        "levelScriptInfo.scriptId_",
+        "levelScriptInfo.state_",
+        "levelScriptInfo.properties_",
+        "levelScriptInfo.isDone_",
+        "levelScriptInfo.stage_",
+        "levelScriptInfo.triggerVolumeInfos_",
+        "levelScriptRuntime.m_manualStartTriggered",
+        "levelScriptRuntime.withinActiveArea",
+        "levelScriptRuntime.activeShapeList",
+        "levelScriptRuntime.activeShapeOutsideList",
+    )
+    missing_offsets = sorted(
+        key for key in required_offsets
+        if not isinstance((observation.get("fieldOffsets") or {}).get(key), int)
+    )
+    if missing_offsets:
+        fail("fieldOffsets", "every required field offset read from metadata", missing_offsets)
 
     expected_methods = {
         "SelfSceneInfoHandler",
@@ -1986,8 +2246,8 @@ def validate_levelscript_activation_control_observation(
         "networkStartToSendMsg": 1,
         "runtimeActiveToSendMsg": 1,
         "runtimeStartToSendMsg": 1,
-        "networkActiveDirectCallerCount": 0,
-        "networkStartDirectCallerCount": 0,
+        "networkSetActiveOnlyFromRuntime": True,
+        "networkSetStartOnlyFromRuntime": True,
         "runtimeActiveDirectCallerCount": 2,
         "runtimeStartDirectCallerCount": 2,
         "runtimeActiveArguments": [True, False],
@@ -2010,8 +2270,6 @@ def validate_levelscript_activation_control_observation(
         "RuntimeSendStart": [
             ("Beyond.Gameplay.Core.LevelScriptRuntime", "UpdateRuntimeState", 2)
         ],
-        "NetworkSetActive": [],
-        "NetworkSetStart": [],
     }
     actual_runtime_callers = {
         key: [
@@ -2032,69 +2290,39 @@ def validate_levelscript_activation_control_observation(
             "SubLevelScript": 4,
             "ControlledGame": 5,
         },
-        "enabledStateValue": 2,
-        "activeStateValue": 3,
-        "preActiveStateValue": 7,
-        "preActiveEndSendActiveStateValue": 9,
-        "waitForStateActiveValue": 10,
-        "inactiveLevelScriptTypeCallOffset": 1240,
-        "nonSubLevelEnabledStateCallOffset": 1255,
-        "activeAreaGateCallOffset": 1274,
-        "subLevelActiveStateCallOffset": 1288,
-        "preActiveSetterCallOffset": 1313,
-        "preActiveLevelScriptTypeCallOffset": 2106,
-        "activeTrueRequestCallOffset": 2124,
-        "waitForStateActiveSetterOffsets": [2140, 2155],
         "nonSubLevelRequiresEnabledAndActiveArea": True,
         "subLevelRequiresPublicActive": True,
         "nonSubLevelSendsActiveTrueAfterPreActive": True,
         "subLevelSkipsActiveTrueRequest": True,
     }
-    actual_activation_selector_flow = {
-        name: (observation.get("activationSelectorFlow") or {}).get(name)
-        for name in expected_activation_selector_flow
-    }
-    if actual_activation_selector_flow != expected_activation_selector_flow:
-        fail(
-            "activationSelectorFlow",
-            expected_activation_selector_flow,
-            actual_activation_selector_flow,
-        )
+    observed_activation_selector_flow = observation.get("activationSelectorFlow") or {}
+    for name in ['levelScriptTypeValues', 'nonSubLevelRequiresEnabledAndActiveArea', 'subLevelRequiresPublicActive', 'nonSubLevelSendsActiveTrueAfterPreActive', 'subLevelSkipsActiveTrueRequest']:
+        if observed_activation_selector_flow.get(name) != expected_activation_selector_flow[name]:
+            fail("activationSelectorFlow", {name: expected_activation_selector_flow[name]}, {name: observed_activation_selector_flow.get(name)})
+    for name in ['enabledStateValue', 'activeStateValue', 'preActiveStateValue', 'preActiveEndSendActiveStateValue', 'waitForStateActiveValue', 'inactiveLevelScriptTypeCallOffset', 'nonSubLevelEnabledStateCallOffset', 'activeAreaGateCallOffset', 'subLevelActiveStateCallOffset', 'preActiveSetterCallOffset', 'preActiveLevelScriptTypeCallOffset', 'activeTrueRequestCallOffset', 'waitForStateActiveSetterOffsets']:
+        value = observed_activation_selector_flow.get(name)
+        values = value if isinstance(value, list) else [value]
+        if not values or any(not isinstance(item, int) or item < 0 for item in values):
+            fail("activationSelectorFlow", {name: "found in the current body"}, {name: value})
 
     expected_active_area_flow = {
-        "activeShapeListFieldOffset": 0x70,
-        "activeShapeOutsideListFieldOffset": 0x78,
-        "withinActiveAreaFieldOffset": 0x68,
-        "activeShapeListReadOffsets": [363, 1356, 1374],
-        "activeShapeOutsideListReadOffsets": [1630, 1648],
-        "withinActiveAreaAccessOffsets": [1704, 1743, 3388, 3394, 3398],
-        "activeListPositiveCountSetterOffset": 430,
-        "emptyActiveListBranchOffset": 555,
-        "activeShapeTestCallOffset": 1617,
-        "activeShapeHitBranchOffset": 1624,
-        "missingOutsideListBranchOffset": 1635,
-        "outsideShapeTestCallOffset": 1691,
-        "outsideShapeMissBranchOffset": 1698,
-        "withinFalseSetterOffsets": [1743, 3388],
-        "outsideShapeHitClearOffset": 1743,
-        "withinTrueSetterOffset": 3394,
-        "withinReturnOffset": 3398,
-        "emptyActiveListSetsWithinTrue": True,
-        "activeShapeHitSetsWithinTrue": True,
-        "missingOutsideListPreservesPriorWithin": True,
-        "outsideShapeMissPreservesPriorWithin": True,
-        "outsideShapeHitClearsWithin": True,
+        "rangeInsensitiveSetsWithinTrue": True,
+        "enterShapeHitSetsWithinTrue": True,
+        "priorOutsideRequiresEnterHit": True,
+        "emptyExitListClearsWithin": True,
+        "exitShapeHitHoldsPriorWithin": True,
+        "callSitePassesFieldsInSignatureOrder": True,
+        "callResultStoredToWithin": True,
     }
-    actual_active_area_flow = {
-        name: (observation.get("activeAreaFlow") or {}).get(name)
-        for name in expected_active_area_flow
-    }
-    if actual_active_area_flow != expected_active_area_flow:
-        fail(
-            "activeAreaFlow",
-            expected_active_area_flow,
-            actual_active_area_flow,
-        )
+    observed_active_area_flow = observation.get("activeAreaFlow") or {}
+    for name in expected_active_area_flow:
+        if observed_active_area_flow.get(name) != expected_active_area_flow[name]:
+            fail("activeAreaFlow", {name: expected_active_area_flow[name]}, {name: observed_active_area_flow.get(name)})
+    for name in ['activeShapeListFieldOffset', 'activeShapeOutsideListFieldOffset', 'withinActiveAreaFieldOffset', 'callSiteOffset', 'withinStoreOffset']:
+        value = observed_active_area_flow.get(name)
+        values = value if isinstance(value, list) else [value]
+        if not values or any(not isinstance(item, int) or item < 0 for item in values):
+            fail("activeAreaFlow", {name: "found in the current body"}, {name: value})
 
     expected_active_receiver_flow = {
         "triggerActiveDuringValues": {"Active": 0, "Start": 1},
@@ -2103,20 +2331,17 @@ def validate_levelscript_activation_control_observation(
             {"active": True, "triggerActiveDuring": 0},
             {"active": True, "triggerActiveDuring": 0},
         ],
-        "activeBeginStateValue": 14,
-        "waitForSubEntityInitNewlyStateValue": 15,
         "activePhaseEnableBetweenStateSetters": True,
     }
-    actual_active_receiver_flow = {
-        name: (observation.get("activeReceiverFlow") or {}).get(name)
-        for name in expected_active_receiver_flow
-    }
-    if actual_active_receiver_flow != expected_active_receiver_flow:
-        fail(
-            "activeReceiverFlow",
-            expected_active_receiver_flow,
-            actual_active_receiver_flow,
-        )
+    observed_active_receiver_flow = observation.get("activeReceiverFlow") or {}
+    for name in ['triggerActiveDuringValues', 'setupRegisterTriggerCallCount', 'activePhaseEnableArguments', 'activePhaseEnableBetweenStateSetters']:
+        if observed_active_receiver_flow.get(name) != expected_active_receiver_flow[name]:
+            fail("activeReceiverFlow", {name: expected_active_receiver_flow[name]}, {name: observed_active_receiver_flow.get(name)})
+    for name in ['activeBeginStateValue', 'waitForSubEntityInitNewlyStateValue']:
+        value = observed_active_receiver_flow.get(name)
+        values = value if isinstance(value, list) else [value]
+        if not values or any(not isinstance(item, int) or item < 0 for item in values):
+            fail("activeReceiverFlow", {name: "found in the current body"}, {name: value})
 
     return {
         "status": "validation_failed" if failures else "validated",
@@ -2136,13 +2361,16 @@ def levelscript_activation_control_contract(
     """Recover general public-state and SubGame ManualStart producers."""
     mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
-    modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    code_registration = located_code_registration(
+        mapper, pe, metadata, gameassembly_path
+    )
+    modules = mapper.parse_codegen_modules(pe, code_registration)
     ranges = mapper.image_method_ranges(metadata)
     pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(
         pe, metadata, modules, ranges
     )
     metadata_registration = mapper.find_metadata_registration(
-        pe, mapper.DEFAULT_CODE_REGISTRATION
+        pe, code_registration
     )
     if metadata_registration is None:
         raise RuntimeError(
@@ -2151,7 +2379,7 @@ def levelscript_activation_control_contract(
     generic_index = mapper.build_generic_method_index(
         pe,
         metadata,
-        mapper.DEFAULT_CODE_REGISTRATION,
+        code_registration,
         metadata_registration,
     )
     for pointer, aliases in generic_index.items():
@@ -2196,7 +2424,7 @@ def levelscript_activation_control_contract(
             "_Handle_SceneLevelScriptStateNotify",
             1,
             "System.Void",
-            parameter_types=("Proto.SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY+<>c&",),
+            parameter_types=("Proto.SC_SCENE_LEVEL_SCRIPT_STATE_NOTIFY",),
         ),
         "ManagerStateShort": mapped_method(
             "Beyond.Gameplay.Core.LevelScriptManager",
@@ -2288,6 +2516,18 @@ def levelscript_activation_control_contract(
             0,
             "System.Boolean",
             parameter_types=(),
+        ),
+        "CalcWithinAreaHysteresis": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "_CalcWithinAreaHysteresis",
+            5,
+            "System.Boolean",
+        ),
+        "GetActiveRangeSensitive": mapped_method(
+            "Beyond.Gameplay.Core.LevelScriptRuntime",
+            "get_activeRangeSensitive",
+            0,
+            "System.Boolean",
         ),
         "Setup": mapped_method(
             "Beyond.Gameplay.Core.LevelScriptRuntime",
@@ -2825,11 +3065,18 @@ def levelscript_activation_control_contract(
         row for row in update_start_calls if boolean_argument(row) is True
     ]
     update_setter_calls = calls_to("UpdateRuntimeState", "set_runtimeState")
+    prestart_value = {
+        row["name"]: row["id"]
+        for row in il2cpp.enum_members(
+            metadata, defaults, "Beyond.Gameplay.Core.LevelScriptRuntime+RuntimeState"
+        )
+    }.get("PreStartActionRunning")
     prestart_action_running_calls = [
         row for row in update_setter_calls
-        if str((((row.get("argumentContext") or {}).get("argRegisterWrites") or {})
+        if isinstance(prestart_value, int)
+        and str((((row.get("argumentContext") or {}).get("argRegisterWrites") or {})
                 .get("rdx") or {}).get("text") or "").lower()
-        in {"mov edx, 0x17", "mov dl, 0x17"}
+        in {f"mov edx, 0x{prestart_value:x}", f"mov dl, 0x{prestart_value:x}"}
     ]
     request_links = {
         "networkActiveToSendMsg": calls_to("NetworkSetActive", "BaseSendMsg"),
@@ -2840,6 +3087,21 @@ def levelscript_activation_control_contract(
     client_request_flow = {
         name: len(rows) for name, rows in request_links.items()
     }
+    # A build may inline the network send into the runtime method or keep
+    # the network method as the runtime's only callee; both reach SendMsg.
+    for runtime_key, network_key, flow_key in (
+        ("RuntimeSendActive", "NetworkSetActive", "runtimeActiveToSendMsg"),
+        ("RuntimeSendStart", "NetworkSetStart", "runtimeStartToSendMsg"),
+    ):
+        via_network = calls_to(runtime_key, network_key)
+        if not client_request_flow[flow_key] and len(via_network) == 1:
+            client_request_flow[flow_key] = 1
+        network_callers = {
+            row.get("methodIndex") for row in direct_callers.get(network_key) or []
+        }
+        client_request_flow[f"{network_key[0].lower()}{network_key[1:]}OnlyFromRuntime"] = (
+            network_callers <= {(methods.get(runtime_key) or {}).get("methodIndex")}
+        )
     client_request_flow.update({
         "networkActiveDirectCallerCount": sum(
             len(row.get("callSites") or [])
@@ -3035,124 +3297,22 @@ def levelscript_activation_control_contract(
             < int(wait_active_setters[1]["offset"])
         ),
     }
-    active_area_pointer = int(methods["UpdateWithinActiveArea"]["methodPointerVa"], 16)
-    active_area_instructions = mapper.decode_x64_subset(
-        pe.bytes_at_va(
-            active_area_pointer,
-            int(bodies["UpdateWithinActiveArea"]["scanBytes"]),
-        ),
-        active_area_pointer,
-        stop_offset=int(bodies["UpdateWithinActiveArea"]["scanBytes"]),
+    # The active-area rule is ``_CalcWithinAreaHysteresis(rangeSensitive,
+    # enterShapes, exitShapes, center, prevWithin)``: an enter-shape hit sets
+    # the flag, and once inside it holds while an exit shape still contains the
+    # position. Its named body proves that rule. UpdateWithinActiveArea calls
+    # either that method or an inlined copy of it, so the call site is tied to
+    # it by passing exactly its five arguments from the three runtime fields
+    # and storing the result back into withinActiveArea.
+    active_area_flow = active_area_hysteresis_flow(
+        mapper,
+        pe,
+        bodies.get("UpdateWithinActiveArea") or {},
+        methods.get("CalcWithinAreaHysteresis") or {},
+        methods.get("GetActiveRangeSensitive") or {},
+        method_by_pointer,
+        field_offsets,
     )
-
-    def area_rows(text: str) -> list[dict[str, Any]]:
-        return [
-            row
-            for row in active_area_instructions
-            if str(row.get("text") or "").lower() == text.lower()
-        ]
-
-    def area_offset(text: str, rank: int = 0) -> int:
-        rows = area_rows(text)
-        return int(rows[rank]["offset"]) if len(rows) > rank else -1
-
-    active_list_read_offsets = sorted({
-        int(row["offset"])
-        for row in active_area_instructions
-        if "[rsi+0x70]" in str(row.get("text") or "").lower()
-    })
-    outside_list_read_offsets = sorted({
-        int(row["offset"])
-        for row in active_area_instructions
-        if "[rsi+0x78]" in str(row.get("text") or "").lower()
-    })
-    within_access_offsets = sorted({
-        int(row["offset"])
-        for row in active_area_instructions
-        if "[rsi+0x68]" in str(row.get("text") or "").lower()
-    })
-    within_false_offsets = [
-        int(row["offset"])
-        for row in area_rows("mov [rsi+0x68], 0x0")
-    ]
-    outside_hit_clear_offset = within_false_offsets[0] if within_false_offsets else -1
-    within_true_offset = area_offset("mov [rsi+0x68], 0x1")
-    within_return_offset = area_offset("movzx eax, [rsi+0x68]")
-    active_count_setter_offset = area_offset("setg al")
-    empty_active_branch_offset = area_offset(
-        f"jcc 0x{active_area_pointer + within_true_offset:x}"
-    )
-    active_shape_test_offset = area_offset("call 0x1821e6930")
-    active_shape_hit_branch_offset = area_offset(
-        f"jcc 0x{active_area_pointer + within_true_offset:x}",
-        1,
-    )
-    missing_outside_branch_offset = area_offset(
-        f"jcc 0x{active_area_pointer + within_return_offset:x}"
-    )
-    outside_shape_test_offset = area_offset("call 0x1834c3790")
-    outside_shape_miss_branch_offset = area_offset(
-        f"jcc 0x{active_area_pointer + within_return_offset:x}",
-        1,
-    )
-
-    def area_bytes(offset: int) -> str:
-        row = next(
-            (
-                item
-                for item in active_area_instructions
-                if int(item.get("offset") or -1) == offset
-            ),
-            {},
-        )
-        return str(row.get("bytes") or "").lower()
-
-    active_area_flow = {
-        "activeShapeListFieldOffset": field_offsets.get(
-            "levelScriptRuntime.activeShapeList"
-        ),
-        "activeShapeOutsideListFieldOffset": field_offsets.get(
-            "levelScriptRuntime.activeShapeOutsideList"
-        ),
-        "withinActiveAreaFieldOffset": field_offsets.get(
-            "levelScriptRuntime.withinActiveArea"
-        ),
-        "activeShapeListReadOffsets": active_list_read_offsets,
-        "activeShapeOutsideListReadOffsets": outside_list_read_offsets,
-        "withinActiveAreaAccessOffsets": within_access_offsets,
-        "activeListPositiveCountSetterOffset": active_count_setter_offset,
-        "emptyActiveListBranchOffset": empty_active_branch_offset,
-        "activeShapeTestCallOffset": active_shape_test_offset,
-        "activeShapeHitBranchOffset": active_shape_hit_branch_offset,
-        "missingOutsideListBranchOffset": missing_outside_branch_offset,
-        "outsideShapeTestCallOffset": outside_shape_test_offset,
-        "outsideShapeMissBranchOffset": outside_shape_miss_branch_offset,
-        "withinFalseSetterOffsets": within_false_offsets,
-        "outsideShapeHitClearOffset": outside_hit_clear_offset,
-        "withinTrueSetterOffset": within_true_offset,
-        "withinReturnOffset": within_return_offset,
-        "emptyActiveListSetsWithinTrue": (
-            area_bytes(empty_active_branch_offset).startswith("0f 84")
-            and active_count_setter_offset < empty_active_branch_offset
-        ),
-        "activeShapeHitSetsWithinTrue": (
-            area_bytes(active_shape_hit_branch_offset).startswith("0f 85")
-            and active_shape_test_offset < active_shape_hit_branch_offset
-        ),
-        "missingOutsideListPreservesPriorWithin": (
-            area_bytes(missing_outside_branch_offset).startswith("0f 84")
-            and missing_outside_branch_offset < outside_shape_test_offset
-        ),
-        "outsideShapeMissPreservesPriorWithin": (
-            area_bytes(outside_shape_miss_branch_offset).startswith("0f 84")
-            and outside_shape_test_offset < outside_shape_miss_branch_offset
-        ),
-        "outsideShapeHitClearsWithin": (
-            outside_shape_miss_branch_offset < outside_hit_clear_offset
-            < within_return_offset
-            and within_false_offsets[-1] < within_true_offset < within_return_offset
-        ),
-    }
     setup_register_calls = calls_to("Setup", "RegisterTriggerFromLevelScript")
     phase_calls = calls_to("UpdateRuntimeState", "SetAllTriggerActiveByPhase")
 
@@ -3284,7 +3444,7 @@ def levelscript_activation_control_contract(
         source_hashes=source_hashes,
     )
     return {
-        "schema": "levelScriptActivationControl.v6",
+        "schema": "levelScriptActivationControl.v7",
         "classification": "server_state_subgame_and_runtime_request_paths",
         "discoveryPattern": {
             "methodSelection": "exact metadata type, name, signature, and return type",
@@ -3444,8 +3604,11 @@ def protobuf_identity_carrier_census(
     """Census direct and nested message identity carriers in the current build."""
     mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
+    code_registration = located_code_registration(
+        mapper, pe, metadata, gameassembly_path
+    )
     metadata_registration = mapper.find_metadata_registration(
-        pe, mapper.DEFAULT_CODE_REGISTRATION
+        pe, code_registration
     )
     if metadata_registration is None:
         raise RuntimeError("could not derive MetadataRegistration from GameAssembly")
@@ -3666,8 +3829,11 @@ def levelscript_task_lifecycle_contract(
     """
     mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
+    code_registration = located_code_registration(
+        mapper, pe, metadata, gameassembly_path
+    )
     metadata_registration = mapper.find_metadata_registration(
-        pe, mapper.DEFAULT_CODE_REGISTRATION
+        pe, code_registration
     )
     if metadata_registration is None:
         raise RuntimeError(
@@ -3678,7 +3844,7 @@ def levelscript_task_lifecycle_contract(
     metadata_summary = mapper.metadata_registration_summary(
         pe, metadata_registration
     )
-    modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    modules = mapper.parse_codegen_modules(pe, code_registration)
     ranges = mapper.image_method_ranges(metadata)
     pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(
         pe, metadata, modules, ranges
@@ -3909,15 +4075,17 @@ def levelscript_task_lifecycle_contract(
     )
     inner_calls = calls_to(outer_update, task_runtime_name, "UpdateTaskState")
 
-    # The task-condition processing body is hot/cold split in the current
-    # binary. Discover its outbound cold block from the native jump, then
-    # resolve its calls through the current method-pointer index.
+    # The task-condition processing body is hot/cold split. Builds reach the
+    # cold block by an unconditional or a conditional jump, so follow every
+    # jump that leaves the body, bound each block by its .pdata extent when it
+    # has one, and resolve its calls through the current method-pointer index.
     condition_pointer = int(condition_processing["va"], 16)
     condition_end = condition_pointer + int(condition_processing["scanBytes"])
+    function_extents = mapper.pdata_function_extents(pe)
     cold_targets: list[int] = []
     for instruction in condition_processing["decodedInstructions"]:
         text = str(instruction.get("text") or "")
-        match = re.fullmatch(r"jmp 0x([0-9a-f]+)", text, re.I)
+        match = re.fullmatch(r"j[a-z]{1,3} 0x([0-9a-f]+)", text, re.I)
         if not match:
             continue
         target = int(match.group(1), 16)
@@ -3926,7 +4094,8 @@ def levelscript_task_lifecycle_contract(
     cold_operations: list[str] = []
     cold_blocks: list[dict[str, Any]] = []
     for target in sorted(set(cold_targets)):
-        block_bytes = pe.bytes_at_va(target, 224)
+        extent = function_extents.get(target, target + 224) - target
+        block_bytes = pe.bytes_at_va(target, min(extent, 0x800))
         instructions = mapper.decode_x64_subset(
             block_bytes, target, stop_offset=len(block_bytes)
         )
@@ -4710,6 +4879,89 @@ def validate_quest_start_application_observation(
     }
 
 
+def split_fragment_this_accesses(
+    mapper: Any, pe: Any, pointer: int, size: int, *, prologue_bytes: int = 96
+) -> set[str]:
+    """``this+0x..`` operands used in a body's split-off fragments.
+
+    Builds move rarely taken paths of a managed body into separate .pdata
+    functions reached by a jump, so a field the method touches only there is
+    invisible to a hot-body decode. A fragment inherits the hot body's
+    registers; the ones copied from ``rcx`` in the prologue still alias
+    ``this`` there. Fragments are followed one level and bounded by their
+    exact .pdata extents.
+    """
+    body = pe.bytes_at_va(pointer, size)
+    instructions = mapper.decode_x64_subset(body, pointer, stop_offset=size)
+    aliases = {"rcx"}
+    changed = True
+    while changed:
+        changed = False
+        for row in instructions:
+            if int(row.get("offset") or 0) > prologue_bytes:
+                break
+            match = re.fullmatch(r"mov ([a-z0-9]+), ([a-z0-9]+)", str(row.get("text") or ""))
+            if match and match.group(2) in aliases and match.group(1) not in aliases:
+                aliases.add(match.group(1))
+                changed = True
+    extents = mapper.pdata_function_extents(pe)
+    origins: set[str] = set()
+    for row in instructions:
+        match = re.fullmatch(r"j[a-z]{1,3} 0x([0-9a-f]+)", str(row.get("text") or ""), re.I)
+        if not match:
+            continue
+        target = int(match.group(1), 16)
+        if pointer <= target < pointer + size or target not in extents:
+            continue
+        extent = min(extents[target] - target, 0x800)
+        for inner in mapper.decode_x64_subset(pe.bytes_at_va(target, extent), target, stop_offset=extent):
+            for register, displacement in re.findall(
+                r"\[([a-z0-9]+)\+0x([0-9a-f]+)\]", str(inner.get("text") or "")
+            ):
+                if register in aliases and register != "rcx":
+                    origins.add(f"this+0x{int(displacement, 16):x}")
+    return origins
+
+
+_NEAR_JCC_MNEMONICS = {0x84: "je", 0x85: "jne"}
+
+
+def equality_branch_text(row: dict[str, Any] | None) -> str:
+    """Return a conditional branch as ``je``/``jne`` text, or ``""``.
+
+    The subset decoder names the short forms (74/75) but prints the rel32
+    forms (0F 84/0F 85) as ``jcc``; builds pick either encoding for the same
+    comparison, so the condition is read from the opcode byte instead.
+    """
+    text = str((row or {}).get("text") or "")
+    if re.match(r"^j(?:e|ne)\b", text, re.I):
+        return text
+    raw = str((row or {}).get("bytes") or "").split()
+    if text.startswith("jcc ") and len(raw) >= 2 and raw[0].lower() == "0f":
+        mnemonic = _NEAR_JCC_MNEMONICS.get(int(raw[1], 16))
+        if mnemonic:
+            return mnemonic + text[3:]
+    return ""
+
+
+def saves_and_restores_register(flow_text: list[str], register: str) -> bool:
+    """Whether a body saves ``register`` into another and restores it from there.
+
+    Register allocation changes between builds (ebx in one, edi in the next),
+    so the proof is the round trip through one saved register, not its name.
+    """
+    saved = {
+        match.group(1).lower()
+        for text in flow_text
+        if (match := re.fullmatch(rf"mov\s+(\w+),\s*{register}", text.strip(), re.I))
+    }
+    return any(
+        re.fullmatch(rf"mov\s+{register},\s*{name}", text.strip(), re.I)
+        for text in flow_text
+        for name in saved
+    )
+
+
 def validate_quest_succeed_action_observation(
     *,
     enum_values: dict[str, int],
@@ -4958,13 +5210,16 @@ def action_extra_thread_scheduler_census(
     """
     mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
+    code_registration = located_code_registration(
+        mapper, pe, metadata, gameassembly_path
+    )
     registration = mapper.find_metadata_registration(
-        pe, mapper.DEFAULT_CODE_REGISTRATION
+        pe, code_registration
     )
     if registration is None:
         raise RuntimeError("extra-thread audit could not derive MetadataRegistration")
     registration_summary = mapper.metadata_registration_summary(pe, registration)
-    modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    modules = mapper.parse_codegen_modules(pe, code_registration)
     ranges = mapper.image_method_ranges(metadata)
     pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(
         pe, metadata, modules, ranges
@@ -5092,7 +5347,7 @@ def action_extra_thread_scheduler_census(
     non_child_extra_thread_consumers: list[dict[str, Any]] = []
     carrier_byval = carrier_defs[0][0].byval_type_index if len(carrier_defs) == 1 else -1
     for type_def in metadata.types:
-        if type_def.declaring_type_index != carrier_byval:
+        if type_def.parent_index != carrier_byval:
             continue
         executes = [
             method
@@ -5338,11 +5593,11 @@ def semantic_enum_branch_observations(
                 (
                     row for row in controls
                     if read_offset < int(row.get("offset") or 0) <= read_offset + 16
-                    and re.match(r"^j(?:e|ne)\b", str(row.get("text") or ""), re.I)
+                    and equality_branch_text(row)
                 ),
                 None,
             )
-            branch_text = str((branch or {}).get("text") or "")
+            branch_text = equality_branch_text(branch)
             branch_mnemonic = branch_text.split(" ", 1)[0].lower()
             target_text = str((branch or {}).get("targetVa") or "")
             target_offset = (
@@ -5948,7 +6203,7 @@ def quest_optional_objective_flag_contract(
                 "text": write_inst.get("text") if write_inst else None,
             },
         }
-        if optional_branch.get("branchText", "").split(" ", 1)[0].lower() != "je":
+        if str(optional_branch.get("branchText") or "").split(" ", 1)[0].lower() != "je":
             fail("optionalEqualBranch", "je", optional_branch)
         if target_text.lower() != "mov al, 0x1":
             fail("optionalEqualValue", "mov al, 0x1", target_text)
@@ -6714,8 +6969,7 @@ def quest_succeed_action_contract(
                 ],
                 "preservesQuestActionArgument": (
                     len(run_calls) == 1
-                    and any("mov ebx, r8d" in text for text in flow_text)
-                    and any("mov r8d, ebx" in text for text in flow_text)
+                    and saves_and_restores_register(flow_text, "r8d")
                 ),
             }
 
@@ -6879,6 +7133,10 @@ def quest_succeed_action_contract(
                 for row in safe_body.get("fieldAccesses") or []
                 if str(row.get("origin") or "").startswith("this+")
             }
+            if isinstance(safe_next, int):
+                safe_origins |= split_fragment_this_accesses(
+                    mapper, pe, safe_va, safe_next - safe_va
+                )
             pending_body = decoded_caller_bodies.get(
                 "Beyond.Gameplay.MissionSystem.ProcessPendingQuestAction", {}
             )
@@ -6898,9 +7156,8 @@ def quest_succeed_action_contract(
                 "va": f"0x{run_va:x}",
                 "scanBytes": run_next - run_va if isinstance(run_next, int) else None,
                 "paramQuestActionFlow": run_param_flow,
-                "preservesQuestActionArgument": (
-                    any("mov edi, r8d" in text for text in run_flow_text)
-                    and any("mov r8d, edi" in text for text in run_flow_text)
+                "preservesQuestActionArgument": saves_and_restores_register(
+                    run_flow_text, "r8d"
                 ),
                 "sharedPendingCarrier": (
                     len(shared_fields) == 1
@@ -7335,13 +7592,16 @@ def state_update_application_census(
     """Recover the general server-selected mission/quest state application pattern."""
     mapper = il2cpp.load_native_mapper(mapper_path)
     pe = mapper.PeImage(gameassembly_path)
+    code_registration = located_code_registration(
+        mapper, pe, metadata, gameassembly_path
+    )
     metadata_registration = mapper.find_metadata_registration(
-        pe, mapper.DEFAULT_CODE_REGISTRATION
+        pe, code_registration
     )
     if metadata_registration is None:
         raise RuntimeError("state-update audit could not derive MetadataRegistration")
     metadata_summary = mapper.metadata_registration_summary(pe, metadata_registration)
-    modules = mapper.parse_codegen_modules(pe, mapper.DEFAULT_CODE_REGISTRATION)
+    modules = mapper.parse_codegen_modules(pe, code_registration)
     ranges = mapper.image_method_ranges(metadata)
     pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(
         pe, metadata, modules, ranges
@@ -7810,44 +8070,7 @@ def finish_protobuf_identity_carrier_census(
         "weakMissionSceneCandidateCount": len(weak_scene_candidates),
         "expectedWeakCandidateTypes": sorted(expected_weak_types),
         "weakCandidateSetMatchesExpected": actual_weak_types == expected_weak_types,
-        "roleSnapshotConsumer": {
-            "missionHandler": {
-                "symbol": "Beyond.Gameplay.MissionSystem.Handle_MissionStateUpdate",
-                "token": "0x060052a2",
-                "va": "0x1873be300",
-                "fallbackPatchId": "0x5ec5",
-            },
-            "questHandler": {
-                "symbol": "Beyond.Gameplay.MissionSystem.Handle_QuestStateUpdate",
-                "token": "0x0600529e",
-                "va": "0x1873bf0a0",
-                "fallbackPatchId": "0x5ebe",
-            },
-            "consumer": {
-                "symbol": "Beyond.Gameplay.MissionSystem.CharacterPositionCorrection",
-                "token": "0x0600527b",
-                "va": "0x1873b84c4",
-                "fallbackPatchId": "0x5ea7",
-                "fields": [
-                    "roleBaseInfo.leaderPosition",
-                    "roleBaseInfo.leaderRotation",
-                    "roleBaseInfo.sceneName",
-                ],
-                "operation": (
-                    "Resolve sceneName through GameUtil.GetLevelConfigMapIdByLevelId, "
-                    "compare it with the current player/controller level and map, then "
-                    "teleport the squad only when the synchronization guards require it."
-                ),
-            },
-            "installedIfix": {
-                "sha256": (
-                    "737134081e06371f13c073988547e887037fccf2f57e1052be35dd255d27bc21"
-                ),
-                "signatureTargetCount": 30,
-                "relevantPatchIds": ["0x5ec5", "0x5ebe", "0x5ea7"],
-                "matchedMethods": 0,
-            },
-        },
+        "roleSnapshotConsumer": role_snapshot_consumer(),
         "storyBindingsAdded": 0,
         "finding": (
             f"Recursive runtime-type traversal across {len(roots):,} enum-backed "
@@ -7878,6 +8101,8 @@ def build_report(
     helper = il2cpp.load_metadata_helper(helper_path)
     metadata = helper.Metadata(metadata_path)
     defaults = il2cpp.field_defaults(metadata)
+    mission_event_paths = native_mission_event_paths()
+    level_script_event_paths = native_level_script_event_paths()
     native_task_paths = load_mission_task_paths(task_contract_path)
     mission_event_assets = mission_event_asset_coverage(
         mission_runtime_root,
@@ -7975,8 +8200,8 @@ def build_report(
                 "classification": selection["classification"],
                 "nativeHooks": sorted(native_hooks_by_message_id.get(actual_id, [])),
                 "nativeEvidence": (
-                    NATIVE_MISSION_EVENT_PATHS.get(actual_id)
-                    or NATIVE_LEVEL_SCRIPT_EVENT_PATHS.get(actual_id)
+                    mission_event_paths.get(actual_id)
+                    or level_script_event_paths.get(actual_id)
                 ),
             }
         )
@@ -8006,8 +8231,8 @@ def build_report(
             "selectedSchemas": len(schemas),
             "selectedSchemaIdsMatched": sum(row["idMatches"] for row in schemas),
             "nativeTaskHooks": len(native_task_paths["hooks"]),
-            "nativeMissionEventPaths": len(NATIVE_MISSION_EVENT_PATHS),
-            "nativeLevelScriptEventPaths": len(NATIVE_LEVEL_SCRIPT_EVENT_PATHS),
+            "nativeMissionEventPaths": len(mission_event_paths),
+            "nativeLevelScriptEventPaths": len(level_script_event_paths),
             "serializedCustomMissionEventListeners": (
                 mission_event_assets["customMissionEventListeners"]
                 + mission_event_assets["levelScriptCustomMissionEventRecords"]
@@ -8192,8 +8417,8 @@ def build_report(
         },
         "knownIdChecks": checks,
         "nativeTaskPaths": native_task_paths["hooks"],
-        "nativeMissionEventPaths": NATIVE_MISSION_EVENT_PATHS,
-        "nativeLevelScriptEventPaths": NATIVE_LEVEL_SCRIPT_EVENT_PATHS,
+        "nativeMissionEventPaths": mission_event_paths,
+        "nativeLevelScriptEventPaths": level_script_event_paths,
         "protobufIdentityCarrierCensus": identity_carrier_census,
         "stateUpdateApplicationCensus": state_application_census,
         "actionExtraThreadSchedulerCensus": extra_thread_scheduler_census,
@@ -8375,20 +8600,27 @@ def render_markdown(report: dict[str, Any]) -> str:
     ])
     coverage = report["missionEventAssetCoverage"]
     event_bus = report["message125EventBusSpecializations"]
+    paths = report["nativeMissionEventPaths"]
+    path = paths.get(125) or paths.get("125")
+    path_text = (
+        "`SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT (125)` reaches "
+        f"`MissionSystem.Handle_ClientMissionEvent` at `{path['va']}`. The handler "
+        f"reads `missionId` from object offset `+{path['fieldOffsets']['missionId']}`, "
+        f"reads `eventName` from `+{path['fieldOffsets']['eventName']}`, and calls "
+        "`KeyGenerator<T1,T2>.GetKey`. That generic body reaches "
+        "`CombineKeyManager.GetKey`; the returned runtime-interned key is then "
+        "published through `EventManager.SendGlobal`"
+        + (f" at `{path['dispatch']['va']}`." if path["dispatch"].get("va") else ".")
+        if path
+        else "The message 125 handler claims do not hold on the selected build; "
+        "no native mission-event path is published."
+    )
     lines.extend(
         [
             "",
             "## Current-build mission-event path",
             "",
-            (
-                "`SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT (125)` reaches "
-                "`MissionSystem.Handle_ClientMissionEvent` at `0x1873bdf58`. The handler "
-                "reads `missionId` from object offset `+0x18`, reads `eventName` from "
-                "`+0x20`, and calls `KeyGenerator<T1,T2>.GetKey` at `0x184a428a0`. "
-                "That generic body reaches `CombineKeyManager.GetKey`; the returned "
-                "runtime-interned key is then published through "
-                "`EventManager.SendGlobal` at `0x187bdfd38`."
-            ),
+            path_text,
             "",
             (
                 f"The refreshed asset scan found **{coverage['missionActionHeaders']:,}** "
@@ -8402,8 +8634,8 @@ def render_markdown(report: dict[str, Any]) -> str:
             ),
             "",
             (
-                "Across all seven `KeyGenerator<T1,T2>.GetKey` instantiations, the "
-                "direct-call census names all 35 `E8 rel32` callers. Message 125 shares "
+                "Across the `KeyGenerator<T1,T2>.GetKey` instantiations, the "
+                "direct-call census names every `E8 rel32` caller. Message 125 shares "
                 "one instantiation with `SimpleConditionCheckMapVar`, but the subscriber "
                 "serializes `belongMapId/mapVarName` while the publisher supplies "
                 "`missionId/eventName`; this is not an exact typed pairing."
@@ -8515,10 +8747,13 @@ def render_markdown(report: dict[str, Any]) -> str:
                 "For messages 111 and 112, the native handlers pass "
                 "`roleBaseInfo.leaderPosition`, `leaderRotation`, and `sceneName` to "
                 f"`MissionSystem.CharacterPositionCorrection` at "
-                f"`{role_consumer['consumer']['va']}`. The scene value selects the map "
-                "for guarded player-position reconciliation; it is not retained as an "
-                "authored mission/quest scene owner. The current installed 30-target "
-                "Gameplay IFix matches none of the two handlers or that consumer."
+                f"`{(role_consumer.get('consumer') or {}).get('va')}`. The scene value "
+                "selects the map for guarded player-position reconciliation; it is not "
+                "retained as an authored mission/quest scene owner. The installed "
+                f"{(role_consumer.get('installedIfix') or {}).get('signatureTargetCount')}"
+                "-target Gameplay IFix matches "
+                f"{(role_consumer.get('installedIfix') or {}).get('matchedMethods')} of the "
+                "two handlers and that consumer."
             ),
             "",
             carrier_census["coverage"],
@@ -9199,8 +9434,6 @@ def current_report_status(
 def main() -> int:
     args = parse_args()
     native = check_installed_native_inputs(
-        RECORDED_NATIVE_GAMEASSEMBLY_SHA256,
-        RECORDED_NATIVE_METADATA_SHA256,
         gameassembly=args.gameassembly,
         metadata=args.metadata,
     )

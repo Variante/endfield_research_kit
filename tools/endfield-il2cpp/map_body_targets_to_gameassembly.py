@@ -35,22 +35,13 @@ DEFAULT_METADATA = Path("export_full/recovered/il2cpp/global-metadata.dat")
 DEFAULT_CATALOG = Path("reports/story/recovery/options/option_flow_runtime_metadata_focus.json")
 DEFAULT_JSON = Path("reports/story/recovery/options/option_flow_body_targets_gameassembly.json")
 DEFAULT_MD = Path("reports/story/recovery/options/option_flow_body_targets_gameassembly.md")
-# CodeRegistration VA is build-specific (HGP relocates it each GameAssembly
-# build), so this literal is a last-resort override, not the normal path. The
-# CLI derives the value instead, with find_code_registration_candidates() gating
-# on the complete metadata image-name set; a recorded literal goes stale on the
-# next client update and then fails closed with "VA outside image" inside
-# parse_codegen_modules. Pass --code-registration only to pin a specific build
-# deliberately. Observed values: 0x18C439740, then 0x18B9217D0, then
-# 0x18A88E640; do not reuse one against a different GameAssembly.dll.
-DEFAULT_CODE_REGISTRATION = 0x18B9217D0
-# MetadataRegistration is likewise build-specific. It is only needed to name
-# generic method instantiations, which live in CodeRegistration.genericMethodPointers
-# rather than in the per-image Il2CppCodeGenModule tables. Without it, every call
-# into a generic instantiation reports as an unresolved address, which silently
-# understates the coverage of any direct-call census. Re-derive with
-# find_metadata_registration() after a game update.
-DEFAULT_METADATA_REGISTRATION = 0x18B921C30
+# CodeRegistration and MetadataRegistration move with every GameAssembly build
+# (HGP relocates them), so nothing here pins either. The CLI derives
+# CodeRegistration with find_code_registration_candidates(), gated on the
+# complete metadata image-name set, and MetadataRegistration with
+# find_metadata_registration(). Pass --code-registration only to pin a specific
+# build deliberately. MetadataRegistration is needed to name generic method
+# instantiations; without it every call into one reports as unresolved.
 DEFAULT_BODY_SUMMARY_METHOD_RE = (
     r"GenPlayable|InitDialogOptions|"
     r"DialogChooseOption|DialogTimelineDoNext|DialogTimelineGetAllTimelinePlayable|"
@@ -2986,6 +2977,80 @@ def scan_direct_calls(
     return calls, unresolved_count
 
 
+_PDATA_EXTENT_CACHE: dict[tuple[str, int], dict[int, int]] = {}
+# An unnamed helper longer than this is not a call shim or outlined fragment.
+MAX_UNNAMED_HELPER_BYTES = 0x800
+
+
+def pdata_function_extents(pe: PeImage) -> dict[int, int]:
+    """Map each ``.pdata`` RUNTIME_FUNCTION start VA to its exclusive end VA.
+
+    The x64 exception directory records the exact extent of every function the
+    compiler emitted, including the unnamed ones IL2CPP outlines from managed
+    bodies, so it bounds a helper without guessing where it ends.
+    """
+    key = (str(getattr(pe, "path", id(pe))), len(pe.buf))
+    cached = _PDATA_EXTENT_CACHE.get(key)
+    if cached is not None:
+        return cached
+    extents: dict[int, int] = {}
+    for section in pe.sections:
+        if section["name"] != ".pdata" or not section["rawSize"]:
+            continue
+        size = min(section["virtualSize"] or section["rawSize"], section["rawSize"])
+        base = section["rawPointer"]
+        for index in range(size // 12):
+            begin, end, _unwind = struct.unpack_from("<III", pe.buf, base + index * 12)
+            if begin and end > begin:
+                extents[pe.image_base + begin] = pe.image_base + end
+    _PDATA_EXTENT_CACHE[key] = extents
+    return extents
+
+
+def resolve_calls_through_unnamed_helpers(
+    pe: PeImage,
+    calls: list[dict[str, Any]],
+    method_by_pointer: dict[int, list[dict[str, Any]]],
+) -> int:
+    """Name the callees of unnamed helpers that direct calls land on.
+
+    Newer builds move part of a managed body into unnamed functions (struct
+    argument shims, outlined fragments), so a call that used to reach
+    ``PlayableExtensions.SetInputWeight`` directly now reaches a helper that
+    calls it. Follow exactly one level, only into a ``.pdata`` function that is
+    no managed or generic method pointer and is at most
+    ``MAX_UNNAMED_HELPER_BYTES`` long, and record what it calls under
+    ``resolvedViaHelper``. ``resolved`` keeps meaning a direct call.
+    """
+    extents = pdata_function_extents(pe)
+    followed = 0
+    for call in calls:
+        if call.get("resolved"):
+            continue
+        target = int(call["targetVa"], 16)
+        end = extents.get(target)
+        if end is None or target in method_by_pointer or end - target > MAX_UNNAMED_HELPER_BYTES:
+            continue
+        inner, _unresolved = scan_direct_calls(
+            pe, target, end - target, method_by_pointer, set(),
+            include_unresolved=False, arg_context_window=0,
+        )
+        targets = [row for inner_call in inner for row in inner_call["resolved"]]
+        if not targets:
+            continue
+        call["resolvedViaHelper"] = {
+            "helperVa": f"0x{target:x}",
+            "helperBytes": end - target,
+            "boundary": (
+                "one level into an unnamed .pdata function; byte-level E8 rel32 "
+                "scan of its exact extent, same as a direct call scan"
+            ),
+            "targets": targets,
+        }
+        followed += 1
+    return followed
+
+
 def estimate_scan_size(pointer: int, sorted_module_pointers: list[int], max_scan_bytes: int) -> tuple[int, int | None]:
     pos = bisect_right(sorted_module_pointers, pointer)
     next_pointer = sorted_module_pointers[pos] if pos < len(sorted_module_pointers) else None
@@ -3140,6 +3205,13 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             continue
         else:
             mapping_status = "mapped" if pointer else "nullPointer"
+        if not pointer:
+            # A null slot is a real IL2CPP state (stripped or shared-generic
+            # body); report it rather than scanning address zero.
+            mapped.update({"mappingStatus": mapping_status, "methodPointerVa": "0x0",
+                           "directCalls": [], "unresolvedDirectCallCount": 0})
+            mapped_targets.append(mapped)
+            continue
         file_offset, section, rva = pe.file_offset_for_va(pointer)
         scan_size, next_pointer = estimate_scan_size(pointer, sorted_all_pointers, args.max_scan_bytes)
         direct_calls, unresolved_call_count = scan_direct_calls(
@@ -3151,6 +3223,8 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             include_unresolved=args.include_unresolved_calls,
             arg_context_window=args.arg_context_window,
         )
+        if getattr(args, "follow_unnamed_helpers", False) and args.include_unresolved_calls:
+            resolve_calls_through_unnamed_helpers(pe, direct_calls, method_by_pointer)
         mapped.update(
             {
                 "mappingStatus": mapping_status,
@@ -3194,6 +3268,7 @@ def build_report(args: argparse.Namespace) -> dict[str, Any]:
             "headBytes": args.head_bytes,
             "maxScanBytes": args.max_scan_bytes,
             "includeUnresolvedCalls": args.include_unresolved_calls,
+            "followUnnamedHelpers": bool(getattr(args, "follow_unnamed_helpers", False)),
             "argContextWindow": args.arg_context_window,
             "bodySummaryMethodRegex": args.body_summary_method_regex,
             "bodySummaryMaxInstructions": args.body_summary_max_instructions,
@@ -3690,6 +3765,10 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--body-summary-method-regex", default=DEFAULT_BODY_SUMMARY_METHOD_RE)
     parser.add_argument("--body-summary-max-instructions", type=int, default=80)
     parser.add_argument("--include-unresolved-calls", action="store_true")
+    parser.add_argument(
+        "--follow-unnamed-helpers", action="store_true",
+        help="name what an unresolved call's unnamed .pdata helper calls, one level deep",
+    )
     return parser.parse_args()
 
 

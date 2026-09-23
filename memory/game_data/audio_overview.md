@@ -490,8 +490,8 @@ contract every step below builds on.
 
 1. **Name the values the lanes only count.** *Started.*
    `scripts/webui/audio/semantics/wwise_enums.py` is now the one loader for
-   `scripts/game_data/contracts/wwise_sdk_enums.json`, with the digest pinned as
-   `CONTRACT_SHA256` and a fail-closed load, and `hirc_v150.py` takes the
+   `scripts/game_data/contracts/wwise_sdk_enums.json`, with a fail-closed
+   schema and status load, and `hirc_v150.py` takes the
    full-word action name from it and publishes `actionTypeName` on every action
    row. An audit of the remaining tables against the contract found that
    `AkCurveInterpolation`, `AkBankTypeEnum`, `AkValueMeaning`, `AkRtpcAccum`,

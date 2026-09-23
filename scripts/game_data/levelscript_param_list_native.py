@@ -12,7 +12,6 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "levelscript_param_list.json"
-CONTRACT_SHA256 = "4f89027a3f729937f6cf7b7b50606e9ae11c47629d9ba1974549ec7e3bda4d35"
 SCHEMA = "endfield.levelscript-template-param-list-native.v1"
 
 
@@ -25,8 +24,6 @@ def load_param_list_for_graph_contract(
     try:
         raw = contract_path.read_bytes()
         digest = hashlib.sha256(raw).hexdigest()
-        if digest != CONTRACT_SHA256:
-            raise ValueError(f"contract_sha256: expected={CONTRACT_SHA256}, actual={digest}")
         contract = json.loads(raw)
         if contract.get("schema") != SCHEMA or contract.get("status") != "exact-current-build":
             raise ValueError("contract_schema_or_status: unsupported contract")

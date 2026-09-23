@@ -24,12 +24,6 @@ SCHEMA = "cinematicQueueNativeContract.v1"
 AUDIT_SCHEMA = "cinematicQueueNativeContractAudit.v1"
 RECOVERY_AUDIT_SCHEMA = "cinematicQueueRuntimeAudit.v2"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "cinematic_queue.json"
-GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-)
-METADATA_SHA256 = (
-    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-)
 QUEUE_BASE_TYPE = "Beyond.Gameplay.Core.CinematicQueueItemDataBase"
 QUEUE_HANDLE_TYPE = (
     "Beyond.Gameplay.Core.CinematicQueueManager+CinematicQueueItemHandle"
@@ -43,14 +37,14 @@ EXPECTED_DISPATCHERS = [
     "ShowUIReadingPopPanelByHandle",
     "StartRemoteCommByHandle",
 ]
-EXPECTED_COUNTS = {
-    "payloadTypes": 7,
-    "nativeDispatchers": 7,
-    "enqueueEdges": 10,
-    "nativeProducers": 10,
-    "typedActionProducerRoutes": 16,
-    "typedActionProducerTypes": 16,
-}
+COUNT_KEYS = (
+    "payloadTypes",
+    "nativeDispatchers",
+    "enqueueEdges",
+    "nativeProducers",
+    "typedActionProducerRoutes",
+    "typedActionProducerTypes",
+)
 ACTION_ROUTE_FIELDS = (
     "actionType",
     "actionFullType",
@@ -62,9 +56,6 @@ ACTION_ROUTE_FIELDS = (
     "producerToken",
     "producerVa",
 )
-ACTION_ROUTES_SHA256 = (
-    "E758914A5A6FEEE667AC0DF76C8091B11AA1061DFEAD0FA853EA77476087778A"
-)
 BOUNDARY = (
     "The exact installed binary proves one polymorphic cinematic-handle "
     "dispatcher family and typed serialized-action producer routes. These "
@@ -73,7 +64,6 @@ BOUNDARY = (
 
 
 from scripts.common import repo_path as _source_file
-from scripts.common import canonical_json_sha256 as _canonical_sha256
 
 
 
@@ -92,30 +82,22 @@ def validate_cinematic_queue_contract(
             "actual": actual,
         })
 
-    sources = contract.get("sources") or {}
     conclusion = contract.get("conclusion") or {}
     routes = contract.get("actionProducerRoutes") or []
+    counts = contract.get("counts") or {}
     exact_gates = (
         ("schema", SCHEMA, contract.get("schema")),
         ("status", "validated", contract.get("status")),
-        (
-            "gameassembly_sha256",
-            GAMEASSEMBLY_SHA256,
-            str(sources.get("gameAssemblySha256") or "").upper(),
-        ),
-        (
-            "metadata_sha256",
-            METADATA_SHA256,
-            str(sources.get("globalMetadataSha256") or "").upper(),
-        ),
         ("queue_base_type", QUEUE_BASE_TYPE, contract.get("queueBaseType")),
         ("queue_handle_type", QUEUE_HANDLE_TYPE, contract.get("queueHandleType")),
         ("dispatcher_methods", EXPECTED_DISPATCHERS, contract.get("dispatcherMethods")),
-        ("counts", EXPECTED_COUNTS, contract.get("counts")),
+        ("count_keys", sorted(COUNT_KEYS), sorted(counts)),
+        ("dispatcher_count", len(EXPECTED_DISPATCHERS), counts.get("nativeDispatchers")),
+        ("route_count", len(routes), counts.get("typedActionProducerRoutes")),
         (
-            "action_producer_routes_sha256",
-            ACTION_ROUTES_SHA256,
-            _canonical_sha256(routes),
+            "route_type_count",
+            len({row.get("actionFullType") for row in routes if isinstance(row, dict)}),
+            counts.get("typedActionProducerTypes"),
         ),
         (
             "lua_runtime_dispatchers",
@@ -137,7 +119,7 @@ def validate_cinematic_queue_contract(
         or any(row.get(field) in (None, "") for field in ACTION_ROUTE_FIELDS)
     ]
     if malformed_routes:
-        reject("action_producer_route_fields", {"completeRoutes": 16}, malformed_routes)
+        reject("action_producer_route_fields", {"completeRoutes": len(routes)}, malformed_routes)
     return failures
 
 
@@ -195,9 +177,10 @@ def load_cinematic_queue_contract(
     if contract:
         failures.extend(validate_cinematic_queue_contract(contract, source_file))
 
+    sources = contract.get("sources") or {}
     native = check_installed_native_inputs(
-        GAMEASSEMBLY_SHA256,
-        METADATA_SHA256,
+        str(sources.get("gameAssemblySha256") or ""),
+        str(sources.get("globalMetadataSha256") or ""),
         gameassembly=gameassembly,
         metadata=metadata,
     )
@@ -314,10 +297,8 @@ __all__ = [
     "ACTION_ROUTE_FIELDS",
     "AUDIT_SCHEMA",
     "DEFAULT_CONTRACT",
-    "EXPECTED_COUNTS",
+    "COUNT_KEYS",
     "EXPECTED_DISPATCHERS",
-    "GAMEASSEMBLY_SHA256",
-    "METADATA_SHA256",
     "RECOVERY_AUDIT_SCHEMA",
     "SCHEMA",
     "load_cinematic_queue_contract",

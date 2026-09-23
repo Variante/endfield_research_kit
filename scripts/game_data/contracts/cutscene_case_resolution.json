@@ -1,100 +1,195 @@
 {
-  "schema": "cutsceneCaseResolutionNativeContract.v3",
+ "schema": "cutsceneCaseResolutionNativeContract.v4",
+ "status": "validated",
+ "sources": {
+  "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+  "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+  "ifixPatchSha256": "A5BB5B3B4A4C7C0F3BD59685D809772F0A3FD73AD3E02A1CB28FFFA05FB98A5C"
+ },
+ "luaPlayback": {
+  "module": "Phase/GenderSelect/PhaseGenderSelect.lua",
+  "sourcePath": "scratch/animestudio/zhuangfy_lizi_lua_dither_20260724/Lua/Data/LuaScripts/Phase/GenderSelect/PhaseGenderSelect.lua",
+  "sourceSha256": "A56B82797427F179D4F21E6C28989BE8AB8CCFAEDAC1B06D2BD5D286E243E368",
+  "line": 75,
+  "method": "PlayCutsceneAndGetHandle",
+  "resolvedLiteral": "Cutscene_e0m0_1",
+  "canonicalStoryKey": "cutscene_e0m0_1",
+  "registryStatus": "case_mismatch_registry_match"
+ },
+ "resolver": {
+  "gameAction": {
+   "type": "Beyond.Gameplay.Actions.GameAction",
+   "method": "PlayCutsceneAndGetHandle",
+   "parameters": [
+    "cutsceneId",
+    "callback",
+    "existingEntities",
+    "existingEnemies",
+    "existingSceneObjects",
+    "playParam",
+    "cinematicQueueItemHandle"
+   ],
+   "token": "0x0600866e",
+   "va": "0x1869030ac"
+  },
+  "playCutscene": {
+   "type": "Beyond.Gameplay.Core.CutsceneManager",
+   "method": "PlayCutscene",
+   "parameters": [
+    "key",
+    "afterFinish",
+    "existingInteractives",
+    "existingEnemies",
+    "existingSceneObjects",
+    "playParam",
+    "queueItemHandle"
+   ],
+   "token": "0x0600f86a",
+   "va": "0x1860c00e4"
+  },
+  "checkCanPlay": {
+   "type": "Beyond.Gameplay.Core.CutsceneManager",
+   "method": "CheckCanPlay",
+   "parameters": [
+    "key",
+    "cutsceneData"
+   ],
+   "token": "0x0600f86b",
+   "va": "0x1860bf6ac"
+  },
+  "getGenderedCutsceneId": {
+   "type": "Beyond.Gameplay.NarrativeUtils",
+   "method": "GetGenderedCutsceneId",
+   "parameters": [
+    "cutsceneId",
+    "gender"
+   ],
+   "token": "0x06001a7b",
+   "va": "0x18613f8a0"
+  },
+  "tryGetCinematicData": {
+   "type": "Beyond.Gameplay.Core.CinematicTimelineManagerBase",
+   "method": "TryGetCinematicData",
+   "parameters": [
+    "key",
+    "data"
+   ],
+   "token": "0x0600f6e5",
+   "va": "0x186d93aa8"
+  },
+  "tryLoadCutsceneDataByName": {
+   "type": "Beyond.Gameplay.Core.CinematicTimelineManagerBase",
+   "method": "_TryLoadCutsceneDataByName",
+   "parameters": [
+    "timelineName",
+    "cinematicData"
+   ],
+   "token": "0x0600f6e3",
+   "va": "0x186d93b18"
+  },
+  "cachedPathTryLoad": {
+   "type": "Beyond.Resource.CachedPathAssetLoader",
+   "method": "TryLoad",
+   "parameters": [
+    "path",
+    "asset"
+   ],
+   "token": "0x06000fd7",
+   "va": "0x183a6f720"
+  },
+  "cachedPathTypedTryLoad": {
+   "type": "Beyond.Resource.CachedPathAssetLoader",
+   "method": "TryLoad",
+   "parameters": [
+    "path",
+    "type",
+    "handle"
+   ],
+   "token": "0x06000fda",
+   "va": "0x183a6f7b0"
+  },
+  "stringPathHashConstructor": {
+   "type": "Beyond.Resource.StringPathHash",
+   "method": ".ctor",
+   "parameters": [
+    "str"
+   ],
+   "token": "0x06001179",
+   "va": "0x185bd7730"
+  },
+  "rawStringHashEntryPoints": [
+   "0x18351cda0"
+  ],
+  "caseConversionCalls": 0,
+  "caseConversionSites": [],
+  "protectedMethodPrefixes": [
+   "Beyond.Gameplay.Actions.GameAction::PlayCutsceneAndGetHandle",
+   "Beyond.Gameplay.Core.CinematicTimelineManagerBase::TryGetCinematicData",
+   "Beyond.Gameplay.Core.CinematicTimelineManagerBase::_TryLoadCutsceneDataByName",
+   "Beyond.Gameplay.Core.CutsceneManager::CheckCanPlay",
+   "Beyond.Gameplay.Core.CutsceneManager::PlayCutscene",
+   "Beyond.Gameplay.NarrativeUtils::GetGenderedCutsceneId",
+   "Beyond.Resource.CachedPathAssetLoader::TryLoad",
+   "Beyond.Resource.StringPathHash::.ctor"
+  ],
+  "ifixResolverMatches": 0
+ },
+ "conclusion": {
+  "caseResolution": "case_sensitive",
+  "literalResolvesToCanonicalKey": false,
+  "graphAction": "record_native_case_mismatch",
+  "ownershipAction": "none"
+ },
+ "recoveryAssociationPolicy": {
+  "comparison": "ascii_case_insensitive",
+  "requiresUniqueCanonicalStoryKey": true,
+  "literalAssociatesToCanonicalKey": true,
+  "graphAction": "associate_casefolded_playback_reference",
+  "suppliesMissionOrQuestOwnership": false,
+  "suppliesSpatialEvidence": false
+ },
+ "genderSelectBridge": {
   "status": "validated",
-  "sources": {
-    "gameAssemblySha256": "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE",
-    "metadataSha256": "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E",
-    "ifixPatchSha256": "737134081E06371F13C073988547E887037FCCF2F57E1052BE35DD255D27BC21"
+  "nativeMappingId": "gameassembly-2026-08-23-start-gender-select-phase-bridge",
+  "actionType": "Beyond.Gameplay.Actions.StartGenderSelect",
+  "actionTypeToken": "0x0200183d",
+  "execute": {
+   "token": "0x0600919d",
+   "virtualAddress": "0x185d735e8",
+   "fileOffset": 97984488,
+   "bodySize": 217,
+   "bodySha256": "CC89BFAB7E93456F225296F7B71395A96EB6AF0574CB29100862829FA8E9A08A",
+   "gameActionCallOffset": 159,
+   "gameActionCallBytes": "E86C68B900"
   },
-  "luaPlayback": {
-    "module": "Phase/GenderSelect/PhaseGenderSelect.lua",
-    "sourcePath": "scratch/animestudio/zhuangfy_lizi_lua_dither_20260724/Lua/Data/LuaScripts/Phase/GenderSelect/PhaseGenderSelect.lua",
-    "sourceSha256": "A56B82797427F179D4F21E6C28989BE8AB8CCFAEDAC1B06D2BD5D286E243E368",
-    "line": 75,
-    "method": "PlayCutsceneAndGetHandle",
-    "resolvedLiteral": "Cutscene_e0m0_1",
-    "canonicalStoryKey": "cutscene_e0m0_1",
-    "registryStatus": "case_mismatch_registry_match"
+  "gameAction": {
+   "token": "0x0600861f",
+   "virtualAddress": "0x186909ef8",
+   "fileOffset": 110135544,
+   "bodySize": 184,
+   "bodySha256": "A7834EFF7613DB69293973A7F6E1D8A5189CAE168399AC492B997277700AECD7",
+   "messageDispatchCallOffset": 130,
+   "messageDispatchCallBytes": "E851EE0EFD",
+   "messageDispatchTarget": "0x1839f8dd0",
+   "messageDispatch": "Beyond.EventManager.SendGlobal"
   },
-  "resolver": {
-    "gameAction": ["0x06008058", "0x1875e6aac"],
-    "playCutscene": ["0x0600eeec", "0x186db94cc"],
-    "checkCanPlay": ["0x0600eeed", "0x186db8a94"],
-    "getGenderedCutsceneId": ["0x06001983", "0x1835fd630"],
-    "tryGetCinematicData": ["0x0600ed74", "0x1848511c0"],
-    "tryLoadCutsceneDataByName": ["0x0600ed72", "0x184495b60"],
-    "cachedPathTryLoad": ["0x06000f27", "0x18304bb40"],
-    "cachedPathTypedTryLoad": ["0x06000f2a", "0x18304bbd0"],
-    "stringPathHashConstructor": ["0x060010c8", "0x1868c15bc"],
-    "rawStringHashEntryPoint": "0x182f75f50",
-    "caseConversionCalls": 0,
-    "ifixResolverMatches": 0,
-    "protectedMethodPrefixes": [
-      "Beyond.Gameplay.Actions.GameAction::PlayCutsceneAndGetHandle",
-      "Beyond.Gameplay.Core.CutsceneManager::PlayCutscene",
-      "Beyond.Gameplay.Core.CutsceneManager::CheckCanPlay",
-      "Beyond.Gameplay.NarrativeUtils::GetGenderedCutsceneId",
-      "Beyond.Gameplay.Core.CinematicTimelineManagerBase::TryGetCinematicData",
-      "Beyond.Gameplay.Core.CinematicTimelineManagerBase::_TryLoadCutsceneDataByName",
-      "Beyond.Resource.CachedPathAssetLoader::TryLoad",
-      "Beyond.Resource.StringPathHash::.ctor"
-    ]
+  "levelScript": {
+   "levelId": "indie_dg002",
+   "scriptId": 8700020000,
+   "sourceFile": "game/Json/LevelScriptData/indie_dg002/8700020000.json",
+   "sourceSha256": "37ACE277162E10253B7AB29C94B4DF901E3871DD5CDB4DD0662281E2D8DB7BF1",
+   "headerLocalId": 12,
+   "triggerSlotId": 80001,
+   "switchLocalId": 13,
+   "switchCase": 0,
+   "actionLocalId": 16,
+   "actionRecordOffset": 310,
+   "actionName": "StartGenderSelect"
   },
-  "conclusion": {
-    "caseResolution": "case_sensitive",
-    "literalResolvesToCanonicalKey": false,
-    "graphAction": "record_native_case_mismatch",
-    "ownershipAction": "none"
-  },
-  "recoveryAssociationPolicy": {
-    "comparison": "ascii_case_insensitive",
-    "requiresUniqueCanonicalStoryKey": true,
-    "literalAssociatesToCanonicalKey": true,
-    "graphAction": "associate_casefolded_playback_reference",
-    "suppliesMissionOrQuestOwnership": false,
-    "suppliesSpatialEvidence": false
-  },
-  "genderSelectBridge": {
-    "status": "validated",
-    "nativeMappingId": "gameassembly-2026-08-23-start-gender-select-phase-bridge",
-    "actionType": "Beyond.Gameplay.Actions.StartGenderSelect",
-    "actionTypeToken": "0x02001768",
-    "execute": {
-      "token": "0x06008b48",
-      "virtualAddress": "0x18765b560",
-      "fileOffset": 124099424,
-      "bodySize": 220,
-      "bodySha256": "9CDD33A29B7DEF241BD40369914CF22DB4A6A66DE94445909C35F2535B050EE2",
-      "gameActionCallOffset": 159,
-      "gameActionCallBytes": "E84424F9FF"
-    },
-    "gameAction": {
-      "token": "0x0600800c",
-      "virtualAddress": "0x1875eda48",
-      "fileOffset": 123650120,
-      "bodySize": 184,
-      "bodySha256": "89B62AF66309BD4F8E9848E5E537D42910BA408731B932159AB3F3D5DC4DC010",
-      "messageDispatchCallOffset": 130,
-      "messageDispatchCallBytes": "E8716CBAFB",
-      "messageDispatchTarget": "0x183194740"
-    },
-    "levelScript": {
-      "levelId": "indie_dg002",
-      "scriptId": 8700020000,
-      "sourceFile": "game/Json/LevelScriptData/indie_dg002/8700020000.json",
-      "sourceSha256": "86F89BFBCCDFF9111FFBE851CA73886B931B390753F8D5C4F7E3D7B6E6448B88",
-      "headerLocalId": 12,
-      "triggerSlotId": 80001,
-      "switchLocalId": 13,
-      "switchCase": 0,
-      "actionLocalId": 16,
-      "actionRecordOffset": 310,
-      "actionName": "StartGenderSelect"
-    },
-    "luaMessage": "GENDER_SELECT_START",
-    "storyKey": "cutscene_e0m0_1",
-    "suppliesMissionOrQuestOwnership": false,
-    "conditionalPlayback": true
-  },
-  "boundary": "The reviewed current-build resolver preserves the original cutscene spelling through StringPathHash and therefore remains case-sensitive at runtime. The recovery association policy intentionally admits the unique ASCII-case-insensitive Story key as playback evidence only; this contract supplies no mission ownership, order, or spatial evidence."
+  "luaMessage": "GENDER_SELECT_START",
+  "storyKey": "cutscene_e0m0_1",
+  "suppliesMissionOrQuestOwnership": false,
+  "conditionalPlayback": true
+ },
+ "boundary": "The reviewed current-build resolver preserves the original cutscene spelling through StringPathHash and therefore remains case-sensitive at runtime. The recovery association policy intentionally admits the unique ASCII-case-insensitive Story key as playback evidence only; this contract supplies no mission ownership, order, or spatial evidence."
 }

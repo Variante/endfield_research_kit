@@ -12,22 +12,20 @@ from functools import lru_cache
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-from scripts.game_data.il2cpp.native_image import check_dependency_contracts, open_native_image, read_pinned_contract
+from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.core import CONTRACTS_DIR, LabelledReader
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_play_animation_native.json"
 LABEL = "skillTimelinePlayAnimation"
-CONTRACT_SHA256 = "ABF65A6BC1FDBDE90D6D8144BBF6C66821104B99F0C5DC0850F597F1EDAB196A"
 PLAY_ANIMATION_TAG = 0x0115
 
 
 @lru_cache(maxsize=1)
 def _contract() -> dict[str, Any]:
-    value, _digest = read_pinned_contract(
-        CONTRACT_PATH, sha256=CONTRACT_SHA256, schema="endfield.skill-timeline-play-animation-native-contract.v1", label=LABEL
+    value, _digest = read_reviewed_contract(
+        CONTRACT_PATH, schema="endfield.skill-timeline-play-animation-native-contract.v1", label=LABEL
     )
-    check_dependency_contracts(value, CONTRACT_PATH.parent, label=LABEL)
     return value
 
 
@@ -52,7 +50,6 @@ def validate_current_native_contract() -> dict[str, Any]:
             raise ValueError(f"{LABEL}.native:setter-order={wrapper['typeName']}")
     return {
         "status": "validated",
-        "inputSetSha256": contract["inputSetSha256"],
         "nativeInputs": expected,
         "methodIndices": validated_methods,
     }
@@ -126,13 +123,9 @@ def _decode_play_animation(reader: _Reader) -> dict[str, Any]:
 def decode_first_timeline_play_animation(
     data: bytes,
     *,
-    input_set_sha256: str,
     limit: int | None = None,
 ) -> dict[str, Any]:
     """Decode the dominant current SkillData first timeline record exactly."""
-    contract = _contract()
-    if input_set_sha256.upper() != contract["inputSetSha256"]:
-        raise ValueError("skillTimelinePlayAnimation.input-set:mismatch")
     hard_limit = len(data) if limit is None else limit
     reader = _Reader(data, hard_limit)
     reader.header(48, "skillData.memberCount")
@@ -202,7 +195,7 @@ def decode_first_timeline_play_animation(
         "wholeSkillDataExact": False,
         "evidenceBoundary": (
             "The first TimelineActionData and its one PlayAnimation child close at exact "
-            "physical cursors under the current byte-pinned wrapper contract. Later timeline "
+            "physical cursors under the current reviewed wrapper contract. Later timeline "
             "list elements and later SkillData fields are not consumed."
         ),
     }

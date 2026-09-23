@@ -31,13 +31,13 @@ from scripts.common import (
     sha256_file as shared_sha256_file,
 )
 
+from scripts.game_data.story_native_consumers_native import validated_group
 from scripts.webui.story.animestudio_story_objects import carrier
 from scripts.webui.story.animestudio_story_objects import hierarchy as gameobjects
 from scripts.game_data.extraction.animestudio_index_io import EffectiveObjectRows
 from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
 from scripts.webui.story.animestudio_story_objects import (
-    REVERSE_GAMEASSEMBLY_SHA256,
-    REVERSE_METADATA_SHA256,
+    REVERSE_NATIVE_GROUP,
     REVERSE_NATIVE_MAPPING_ID,
     REVERSE_REPORT_PATH,
     REVERSE_SCHEMA,
@@ -45,8 +45,6 @@ from scripts.webui.story.animestudio_story_objects import (
 
 SCHEMA = REVERSE_SCHEMA
 DEFAULT_STORY_INDEX = ROOT / "webui" / "data" / "lang" / "CN" / "index.json"
-EXPECTED_GAMEASSEMBLY_SHA256 = REVERSE_GAMEASSEMBLY_SHA256
-EXPECTED_METADATA_SHA256 = REVERSE_METADATA_SHA256
 NATIVE_MAPPING_ID = REVERSE_NATIVE_MAPPING_ID
 SOURCES = ("StreamingAssets", "Persistent")
 
@@ -622,15 +620,19 @@ def build_report(
         raise AuditError(f"IL2CPP metadata not found: {metadata}")
     gameassembly_sha256 = sha256(gameassembly)
     metadata_sha256 = sha256(metadata)
-    if gameassembly_sha256 != EXPECTED_GAMEASSEMBLY_SHA256:
+    playback = validated_group(REVERSE_NATIVE_GROUP)
+    if playback is None:
         raise AuditError(
-            "GameAssembly hash changed; revalidate the CutsceneRoot/"
-            "TimelineHandle playback mapping before publishing aliases"
+            "the CutsceneRoot/TimelineHandle playback claims do not hold on the "
+            "selected build; see reports/story/recovery/story_native_consumers.json"
         )
-    if metadata_sha256 != EXPECTED_METADATA_SHA256:
+    if (gameassembly_sha256, metadata_sha256) != (
+        playback["gameAssemblySha256"],
+        playback["globalMetadataSha256"],
+    ):
         raise AuditError(
-            "global-metadata.dat hash changed; revalidate the CutsceneRoot/"
-            "TimelineHandle playback mapping before publishing aliases"
+            "the audited GameAssembly/metadata are not the selected build that "
+            "proved the CutsceneRoot/TimelineHandle playback claims"
         )
     target_missions = carrier.load_gap_targets(gap_queue)
     all_story_keys = story_index_keys(story_index)
@@ -765,62 +767,12 @@ def build_report(
             "metadataSha256": metadata_sha256,
             "methods": [
                 {
-                    "type":
-                        "Beyond.Gameplay.View.CutsceneRootComponent",
-                    "method": "get_topDirector",
-                    "token": "0x0600cb29",
-                    "va": "0x1839efb40",
-                    "evidence": "returns _director at this+0x20",
-                },
-                {
-                    "type": (
-                        "Beyond.Gameplay.Core."
-                        "CinematicTimelineManagerBase+TimelineHandle"
-                    ),
-                    "method": "get_director",
-                    "token": "0x0600edfb",
-                    "va": "0x18366d620",
-                    "evidence": (
-                        "reads root at this+0x10 and tail-jumps to "
-                        "CutsceneRootComponent.get_topDirector"
-                    ),
-                },
-                {
-                    "type": (
-                        "Beyond.Gameplay.Core."
-                        "CinematicTimelineManagerBase+TimelineHandle"
-                    ),
-                    "method": "Play",
-                    "token": "0x0600ee15",
-                    "va": "0x186db66a8",
-                    "evidence": (
-                        "gets the root director and calls "
-                        "PlayableDirector.Play/Resume/Evaluate"
-                    ),
-                },
-                {
-                    "type": (
-                        "Beyond.Gameplay.Core."
-                        "MainStreamTimelineManagerBase"
-                    ),
-                    "method": "_PlayMainTimelineStep3",
-                    "token": "0x0600ef70",
-                    "va": "0x186dc1cdc",
-                    "evidence": (
-                        "instantiates the Timeline root then calls "
-                        "PlayMainTimelineSync"
-                    ),
-                },
-                {
-                    "type": (
-                        "Beyond.Gameplay.Core."
-                        "MainStreamTimelineManagerBase"
-                    ),
-                    "method": "PlayMainTimelineSync",
-                    "token": "0x0600ef75",
-                    "va": "0x186dbf934",
-                    "evidence": "calls TimelineHandle.Play",
-                },
+                    "method": row["method"],
+                    "token": row["token"],
+                    "va": row["address"],
+                    "evidence": row["contract"],
+                }
+                for row in playback["methods"]
             ],
         },
         "evidencePolicy": {
@@ -836,8 +788,6 @@ def build_report(
 STORY_ROOT_PLAYBACK_ALIAS_REPORT = REVERSE_REPORT_PATH
 STORY_ROOT_PLAYBACK_ALIAS_SCHEMA = REVERSE_SCHEMA
 STORY_ROOT_PLAYBACK_ALIAS_MAPPING_ID = REVERSE_NATIVE_MAPPING_ID
-STORY_ROOT_PLAYBACK_ALIAS_GAMEASSEMBLY_SHA256 = REVERSE_GAMEASSEMBLY_SHA256
-STORY_ROOT_PLAYBACK_ALIAS_METADATA_SHA256 = REVERSE_METADATA_SHA256
 
 
 def story_root_playback_aliases(
@@ -854,6 +804,9 @@ def story_root_playback_aliases(
     report = read_json(Path(report_path), {})
     export_summary = read_json(Path(export_summary_path), {})
     native = report.get("nativeEvidence") if isinstance(report, dict) else {}
+    playback = validated_group(REVERSE_NATIVE_GROUP)
+    if playback is None:
+        return []
     if (
         not isinstance(report, dict)
         or report.get("_schema") != STORY_ROOT_PLAYBACK_ALIAS_SCHEMA
@@ -862,9 +815,9 @@ def story_root_playback_aliases(
         or safe_key(native.get("mappingId"))
         != STORY_ROOT_PLAYBACK_ALIAS_MAPPING_ID
         or safe_key(native.get("gameAssemblySha256")).upper()
-        != STORY_ROOT_PLAYBACK_ALIAS_GAMEASSEMBLY_SHA256
+        != playback["gameAssemblySha256"]
         or safe_key(native.get("metadataSha256")).upper()
-        != STORY_ROOT_PLAYBACK_ALIAS_METADATA_SHA256
+        != playback["globalMetadataSha256"]
     ):
         return []
     source_sizes = export_summary.get("source_sizes")

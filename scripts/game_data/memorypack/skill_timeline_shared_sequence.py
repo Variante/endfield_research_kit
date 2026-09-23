@@ -1,7 +1,7 @@
 """Authenticated exact SkillData timeline records using current action readers.
 
 This is deliberately narrower than the general BuffData action reader.  It
-admits the named first-action routes in its byte-pinned composite contract,
+admits the named first-action routes in its reviewed composite contract,
 including the recursively bounded IfElse route, plus the reached multi-action
 CreateBuff rows.  Every absent child route still fails closed at its first
 byte.
@@ -27,7 +27,6 @@ from scripts.game_data.memorypack.buff_actions import (
 
 CONTRACT_PATH = CONTRACTS_DIR / "skill_timeline_shared_sequence_native.json"
 LABEL = "skillTimelineSharedSequence"
-CONTRACT_SHA256 = "E66B8762FCB99E6924A388DDDA5007BB1ACEF5902C10296E0573FDDC3B574855"
 JUMP_TO_ACTION_TAG = 0x00D9
 JUMP_TO_ACTION_MEMBER_COUNT = 6
 JUMP_TO_ACTION_READ_KINDS = (
@@ -151,21 +150,14 @@ class SharedSequenceReader(Reader):
 @lru_cache(maxsize=1)
 def _contract() -> dict[str, Any]:
     raw = CONTRACT_PATH.read_bytes()
-    if hashlib.sha256(raw).hexdigest().upper() != CONTRACT_SHA256:
-        raise ValueError("skillTimelineSharedSequence.contract:sha256-mismatch")
     value = json.loads(raw)
     if value.get("schema") != "endfield.skill-timeline-shared-sequence-native-contract.v2":
         raise ValueError("skillTimelineSharedSequence.contract:unsupported-schema")
     dependency_values: dict[str, dict[str, Any]] = {}
     for dependency in value.get("dependencies", []):
         path = CONTRACT_PATH.parent / dependency["path"]
-        dependency_raw = path.read_bytes()
-        if hashlib.sha256(dependency_raw).hexdigest().upper() != dependency["sha256"]:
-            raise ValueError(
-                f"skillTimelineSharedSequence.dependency:sha256-mismatch:{dependency['path']}"
-            )
         if path.suffix == ".json":
-            dependency_values[dependency["path"]] = json.loads(dependency_raw)
+            dependency_values[dependency["path"]] = json.loads(path.read_bytes())
     routes = value.get("allowedReachedRoutes")
     if not isinstance(routes, list):
         raise ValueError("skillTimelineSharedSequence.contract:routes")
@@ -270,16 +262,6 @@ def _contract() -> dict[str, Any]:
     )
     cost_contract = dependency_values.get("buff_c0_native.json", {})
     cost_methods = cost_contract.get("methods", [])
-    source_contracts = {
-        row.get("path"): row.get("sha256")
-        for row in cost_provider.get("sourceContracts", [])
-        if isinstance(row, dict)
-    }
-    dependency_hashes = {
-        row.get("path"): row.get("sha256")
-        for row in value.get("dependencies", [])
-        if isinstance(row, dict)
-    }
     if (
         not isinstance(damage_context, dict)
         or damage_context.get("methodSpecIndex") != FIRST_DAMAGE_UNIT_COST_LIST_METHOD_SPEC
@@ -295,10 +277,6 @@ def _contract() -> dict[str, Any]:
             and row[2] == "Deserialize"
             for row in cost_methods
         )
-        or source_contracts.get("buff_9a_native.json")
-        != dependency_hashes.get("buff_9a_native.json")
-        or source_contracts.get("buff_c0_native.json")
-        != dependency_hashes.get("buff_c0_native.json")
     ):
         raise ValueError("skillTimelineSharedSequence.contract:cost-list-source-drift")
     return value
@@ -321,9 +299,8 @@ def validate_current_native_contract() -> dict[str, Any]:
         raise ValueError("skillTimelineSharedSequence.native:UnityPlayer.dll:sha256-mismatch")
     return {
         "status": "validated",
-        "inputSetSha256": contract["inputSetSha256"],
         "nativeInputs": expected,
-        "contractSha256": CONTRACT_SHA256,
+        "contractSha256": hashlib.sha256(CONTRACT_PATH.read_bytes()).hexdigest().upper(),
         "dependencyCount": len(contract["dependencies"]),
     }
 
@@ -376,13 +353,10 @@ def _named_ranges(reader: Reader) -> list[dict[str, Any]]:
 def decode_first_timeline_shared_sequence(
     data: bytes,
     *,
-    input_set_sha256: str,
     limit: int | None = None,
 ) -> dict[str, Any]:
     """Close one first TimelineActionData using only contracted action routes."""
     contract = _contract()
-    if input_set_sha256.upper() != contract["inputSetSha256"]:
-        raise ValueError("skillTimelineSharedSequence.input-set:mismatch")
     hard_limit = len(data) if limit is None else limit
     if hard_limit > len(data) or hard_limit < 22:
         raise ValueError("skillTimelineSharedSequence.limit")

@@ -29,6 +29,7 @@ from pathlib import Path
 from typing import Any, Iterable
 
 
+from scripts.game_data.il2cpp import protocol as il2cpp_protocol
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
@@ -1107,11 +1108,10 @@ def _recover_static_port_family_contract_uncached(
     mapper = _load_module("dialog_tree_control_mapper", MAPPER_PATH)
     metadata = catalog.Metadata(metadata_path)
     pe = mapper.PeImage(game_assembly_path)
-    code_registration = mapper.DEFAULT_CODE_REGISTRATION
-    metadata_registration = (
-        mapper.find_metadata_registration(pe, code_registration)
-        or mapper.DEFAULT_METADATA_REGISTRATION
-    )
+    code_registration = il2cpp_protocol.locate_code_registration(mapper, pe, metadata)
+    metadata_registration = mapper.find_metadata_registration(pe, code_registration)
+    if metadata_registration is None:
+        raise ContractError("could not derive MetadataRegistration from the selected GameAssembly")
     modules = mapper.parse_codegen_modules(pe, code_registration)
     ranges = mapper.image_method_ranges(metadata)
     pointers_by_image, method_by_pointer = mapper.build_pointer_indexes(

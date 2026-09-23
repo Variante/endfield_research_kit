@@ -30,6 +30,7 @@ if __package__ in {None, ""}:
 from scripts.common import require_export_layout
 
 from scripts.common import (
+    check_installed_native_inputs,
     combined_non_mission_content_keys,
     compact_dict,
     native_evidence_required,
@@ -144,6 +145,9 @@ from scripts.common import write_canonical_json as write_json
 from scripts.common import read_json_strict as read_json
 from scripts.common import repo_path
 from scripts.webui.mission_pipeline.quest_keys import natural_quest_key
+from scripts.webui.mission_pipeline.runtime_contract_native import verify_runtime_contract
+from scripts.game_data.il2cpp.body_claims import BodyIndex
+from scripts.game_data.il2cpp.native_image import open_native_image
 from scripts.webui.story.mission_recovery import const_value
 from scripts.webui.story.mission_recovery import vector3 as vector3_row
 from scripts.webui.mission_pipeline.source_order_shells import _resolve_report_source_path
@@ -321,8 +325,8 @@ RUNTIME_CONTRACT = {
         "type": "Beyond.Gameplay.GameConditionServerPlaceHolder",
         "conditionTypeFallback": 2147483647,
         "clientOnlyConditionType": 9999,
-        "conditionTypeAddress": "0x18479ec70",
-        "startQuestBinderAddress": "0x183a89700",
+        "conditionTypeAddress": None,
+        "startQuestBinderAddress": None,
         "identityFields": ["questId", "conditionId"],
         "outboundMessage": None,
         "inboundMessage": "SC_QUEST_OBJECTIVES_UPDATE (116)",
@@ -342,17 +346,17 @@ RUNTIME_CONTRACT = {
             "(questId, conditionId) key."
         ),
         "patchBoundary": (
-            "The current installed Gameplay.Beyond patch has 30 signature targets and "
-            "matches none of patch ids 0x5605, 0x54d1, or 0x54d2. Future patches can "
-            "change that result, so rebuild-scoped audits must still fail closed."
+            "The installed Gameplay.Beyond patch is compared by method name with the "
+            "placeholder and StartQuest binder; installedPatch records the result. "
+            "Future patches can change it, so rebuild-scoped audits must fail closed."
         ),
         "confidence": "native_proven",
     },
     "levelScriptCtxTokenAudit": {
         "serverMessage": "SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT (57)",
         "clientMessage": "CS_SCENE_LEVEL_SCRIPT_EVENT_TRIGGER (55)",
-        "paramBlackboardKeySlot": "0x18e2eef08",
-        "directKeySlotReferences": 4,
+        "paramBlackboardKeySlot": None,
+        "directKeySlotReferences": None,
         "referencingMethods": [
             "Beyond.Gameplay.GameplayNetwork._Handle_SceneTriggerClientLevelScriptEvent",
             "Beyond.Gameplay.Actions.CallServer.Execute",
@@ -362,12 +366,12 @@ RUNTIME_CONTRACT = {
                 "Beyond.Gameplay.GameplayNetwork."
                 "_Handle_SceneTriggerClientLevelScriptEvent"
             ),
-            "address": "0x187386320",
+            "address": None,
             "operation": "ParamBlackboard.SetValue(ctxToken)",
         },
         "reader": {
             "symbol": "Beyond.Gameplay.Actions.CallServer.Execute",
-            "address": "0x1845f6000",
+            "address": None,
             "operation": "ParamBlackboard.TryGetValue(netToken)",
         },
         "outboundPath": [
@@ -429,21 +433,21 @@ RUNTIME_CONTRACT = {
             "handlers": [
                 {
                     "symbol": "MissionSystem.Handle_MissionStateUpdate",
-                    "token": "0x060052a2",
-                    "address": "0x1873be300",
-                    "fallbackPatchId": "0x5ec5",
+                    "token": None,
+                    "address": None,
+                    "fallbackPatchId": None,
                 },
                 {
                     "symbol": "MissionSystem.Handle_QuestStateUpdate",
-                    "token": "0x0600529e",
-                    "address": "0x1873bf0a0",
-                    "fallbackPatchId": "0x5ebe",
+                    "token": None,
+                    "address": None,
+                    "fallbackPatchId": None,
                 },
             ],
             "symbol": "MissionSystem.CharacterPositionCorrection",
-            "token": "0x0600527b",
-            "address": "0x1873b84c4",
-            "fallbackPatchId": "0x5ea7",
+            "token": None,
+            "address": None,
+            "fallbackPatchId": None,
             "fields": [
                 "roleBaseInfo.leaderPosition",
                 "roleBaseInfo.leaderRotation",
@@ -514,9 +518,9 @@ RUNTIME_CONTRACT = {
         "nativeChain": [
             {
                 "symbol": "AirWallManager._InitMissionListener",
-                "token": "0x06001c6f",
-                "address": "0x1845d5df0",
-                "fallbackPatchId": "0x260e",
+                "token": None,
+                "address": None,
+                "fallbackPatchId": None,
                 "effect": "binds global mission and quest state listeners",
             },
             {
@@ -524,9 +528,9 @@ RUNTIME_CONTRACT = {
                     "AirWallManager._OnMissionStateChanged / "
                     "_OnQuestStateChanged"
                 ),
-                "tokens": ["0x06001c71", "0x06001c72"],
-                "addresses": ["0x186f49038", "0x186f49278"],
-                "fallbackPatchIds": ["0x260f", "0x2610"],
+                "tokens": [],
+                "addresses": [],
+                "fallbackPatchIds": [],
                 "effect": "routes exact cared identifiers to AirWallGroupAgent",
             },
             {
@@ -534,8 +538,8 @@ RUNTIME_CONTRACT = {
                     "AirWallGroupAgent.OnMissionStateChanged / "
                     "OnQuestStateChanged"
                 ),
-                "tokens": ["0x06001c5e", "0x06001c5f"],
-                "address": "0x186f45be8 / 0x186f45c50",
+                "tokens": [],
+                "address": None,
                 "effect": "re-evaluates the authored MissionCheckData predicates",
             },
             {
@@ -543,8 +547,8 @@ RUNTIME_CONTRACT = {
                     "AirWallManager.TriggerMainCharGoBack callback -> "
                     "GameAction.PlayRadio"
                 ),
-                "token": "0x06001cb9",
-                "address": "0x186f4ecc0 + 0x24a",
+                "token": None,
+                "address": None,
                 "effect": "plays pushBackRadioId after local AirWall contact",
             },
         ],
@@ -760,7 +764,7 @@ RUNTIME_CONTRACT = {
                 "SendBattleSignalToLevel.ExecuteInternal -> "
                 "LevelEventManager.RaiseLevelEvent -> OnBattleSignal.Process"
             ),
-            "address": "0x186d27734 -> 0x18318f2a0 -> 0x186aa3260",
+            "address": None,
             "fields": ["signalId", "doubleValue"],
             "effect": (
                 "Raise a local client LevelEvent from an Ability action. The receiver "
@@ -777,7 +781,7 @@ RUNTIME_CONTRACT = {
                 "TimelineGroupBlock.StartGroup -> LevelEventManager.RaiseLevelEvent -> "
                 "OnSpawnerGroupBegin.Process"
             ),
-            "address": "0x186fd61e4 -> 0x18318f2a0",
+            "address": None,
             "fields": ["spawnerId", "groupKey"],
             "effect": (
                 "Raise the group-begin event locally after an acknowledged spawner wave "
@@ -796,7 +800,7 @@ RUNTIME_CONTRACT = {
                 "AbilitySystem.SetHpInternal -> LevelEventManager.RaiseLevelEvent -> "
                 "OnEntityHpChanged.Process"
             ),
-            "address": "0x183a92014 -> 0x18318f2a0",
+            "address": None,
             "fields": ["entity", "oldHpRatio", "newHpRatio"],
             "effect": (
                 "Raise a local event for the AbilitySystem owner whose HP changed. A Down "
@@ -814,7 +818,7 @@ RUNTIME_CONTRACT = {
                 "NpcAIPatrolController._RaiseCheckpointReachEvent -> "
                 "LevelEventManager.RaiseLevelEvent -> OnNpcPatrolCheckpointReach.Process"
             ),
-            "address": "0x186b4d610/0x186b7576c -> 0x18318f2a0 -> 0x186ab44d0",
+            "address": None,
             "fields": ["npcEntity", "patrolId", "checkpointIndex", "npcPosition"],
             "effect": (
                 "Raise a local patrol event with the controller entity as both sender and "
@@ -830,7 +834,7 @@ RUNTIME_CONTRACT = {
                 "AbilitySystem.BeforeCastStart -> LevelEventManager.RaiseLevelEvent -> "
                 "OnEntityCastSkill.Process"
             ),
-            "address": "0x1842afe20 -> 0x1842b0d53",
+            "address": None,
             "fields": ["entity", "entityTemplateId", "firstTargetId", "skillId"],
             "effect": (
                 "Raise a local cast event. Current residual listeners have filter mode "
@@ -847,7 +851,7 @@ RUNTIME_CONTRACT = {
                 "WorldInfo.OnEntityDie -> LevelEventManager.RaiseLevelEvent -> "
                 "typed death receiver Process"
             ),
-            "address": "0x183ed3210 -> 0x183ed40e8",
+            "address": None,
             "fields": ["entity", "isMonster", "filterByList", "entityList/filterEntity"],
             "effect": (
                 "Dispatch local entity-death state to exact serialized filters. Entity "
@@ -863,7 +867,7 @@ RUNTIME_CONTRACT = {
                 "BattleManager._OnSquadInFight -> LevelEventManager.RaiseLevelEvent -> "
                 "OnSquadInFightChanged.Process"
             ),
-            "address": "0x183823204",
+            "address": None,
             "fields": ["inFight (output only)"],
             "effect": (
                 "Raise the local squad combat-state event. The installed listener has no "
@@ -894,7 +898,7 @@ RUNTIME_CONTRACT = {
                 "LevelScriptRuntime.UpdateRuntimeState -> _RaiseOnScriptEvent(8) -> "
                 "OnScriptComplete.Process"
             ),
-            "address": "0x1834bfa20",
+            "address": None,
             "fields": ["owning LevelScript receiver identity"],
             "effect": (
                 "Raise the SELF-scoped local completion event for the owning script. "
@@ -924,7 +928,7 @@ RUNTIME_CONTRACT = {
                 "FactoryUtil.CheckBuildingLock -> CheckIsBuildingInteractLocked / "
                 "CheckIsBuildingMoveAndDelLocked -> GameAction.RadioRuntimeData"
             ),
-            "address": "0x18747ec68 -> 0x18747f034 / 0x18747f3a8",
+            "address": None,
             "fields": ["startQuestId", "endQuestId", "lockType", "args", "radioId"],
             "effect": (
                 "Read the synchronized local states for the two exact configured quest ids, "
@@ -944,10 +948,7 @@ RUNTIME_CONTRACT = {
                 "DialogTreeIfNode._TrySelectIfBranch or "
                 "DialogTreeBranchNode._TrySelectBranch (route selection)"
             ),
-            "address": (
-                "0x18400f840 / 0x1873418f0; "
-                "0x1872a5280 or 0x1872a1d0c"
-            ),
+            "address": None,
             "fields": ["_questId", "_comparer", "_targetQuestState", "connections"],
             "effect": (
                 "Read the synchronized local state for the exact serialized quest id, "
@@ -968,7 +969,7 @@ RUNTIME_CONTRACT = {
             "direction": "server_to_client",
             "message": "SC_NPC_ENTER_MAP_RESYNC",
             "handler": "NpcProxyDataSys.SyncAllActiveProxy",
-            "address": "0x183480890",
+            "address": None,
             "fields": [
                 "SCD_NPC_PROXY_INFO.proxyNumId",
                 "SCD_NPC_PROXY_INFO.metaKvs",
@@ -988,7 +989,7 @@ RUNTIME_CONTRACT = {
             "direction": "server_to_client",
             "message": "SC_NPC_ACTIVE_CHANGE_NTF",
             "handler": "NpcProxyDataSys.OnProxyChange",
-            "address": "0x18706550c",
+            "address": None,
             "fields": [
                 "SCD_NPC_PROXY_INFO.proxyNumId",
                 "SCD_NPC_PROXY_INFO.metaKvs",
@@ -1006,7 +1007,7 @@ RUNTIME_CONTRACT = {
             "direction": "server_to_client",
             "message": "SC_SYNC_ALL_MISSION",
             "handler": "MissionSystem.Handle_SyncAllMission",
-            "address": "0x1833784e0",
+            "address": None,
             "fields": [
                 "trackMissionId",
                 "missions",
@@ -1031,7 +1032,7 @@ RUNTIME_CONTRACT = {
                 "MissionSystem.Handle_ClientMissionEvent -> "
                 "KeyGenerator<T1,T2>.GetKey -> EventManager.SendGlobal"
             ),
-            "address": "0x1873bdf58 -> 0x184a428a0 -> 0x187bdfd38",
+            "address": None,
             "fields": ["missionId", "eventName"],
             "effect": (
                 "Interns the exact missionId/eventName pair as a two-part CombineKey and "
@@ -1058,7 +1059,7 @@ RUNTIME_CONTRACT = {
             "direction": "server_to_client",
             "message": "SC_SYNC_ALL_DIALOG",
             "handler": "CinematicSystem._Handle_SyncAllDialog",
-            "address": "0x1837a2530",
+            "address": None,
             "fields": ["dialogs[].dialogId", "optionIds[]", "finishNums[]"],
             "effect": "Rebuild the dialog history that exact-finish mission conditions query.",
             "confidence": "native_proven",
@@ -1068,7 +1069,7 @@ RUNTIME_CONTRACT = {
             "direction": "server_to_client",
             "message": "SC_MISSION_STATE_UPDATE",
             "handler": "MissionSystem.Handle_MissionStateUpdate",
-            "address": "0x1873be300",
+            "address": None,
             "fields": [
                 "missionId",
                 "missionState",
@@ -1094,7 +1095,7 @@ RUNTIME_CONTRACT = {
             "direction": "server_to_client",
             "message": "SC_QUEST_STATE_UPDATE { questId, questState = 2, bRollback, roleBaseInfo }",
             "handler": "MissionSystem.Handle_QuestStateUpdate -> MissionRuntime.StartQuest",
-            "address": "0x1873bf0a0 -> 0x183a885d0",
+            "address": None,
             "effect": (
                 "Create/bind the active client quest and its objective callbacks. "
                 "roleBaseInfo leader position/rotation/sceneName is consumed only by "
@@ -1107,7 +1108,7 @@ RUNTIME_CONTRACT = {
             "direction": "server_to_client",
             "message": "SC_QUEST_STATE_UPDATE { questId, questState = 3, bRollback, roleBaseInfo }",
             "handler": "MissionSystem.Handle_QuestStateUpdate -> MissionRuntime.SucceedQuest",
-            "address": "0x1873bf0a0 -> 0x1873c32ac",
+            "address": None,
             "effect": (
                 "Mark the quest completed on the client. Any roleBaseInfo sceneName is "
                 "position-reconciliation context, not an authored quest host."
@@ -1120,7 +1121,7 @@ RUNTIME_CONTRACT = {
             "message": "SC_QUEST_OBJECTIVES_UPDATE",
             "messageId": 116,
             "handler": "MissionSystem.Handle_QuestObjectiveUpdate",
-            "address": "0x183a882e0",
+            "address": None,
             "fields": [
                 "questId",
                 "questObjectives[].conditionId",
@@ -1141,7 +1142,7 @@ RUNTIME_CONTRACT = {
             "direction": "server_to_client",
             "message": "SC_QUEST_FAILED",
             "handler": "Handle_QuestFailed -> MissionRuntime.FailQuest",
-            "address": "0x1873bef80 -> 0x1873bac84",
+            "address": None,
             "effect": "Mark the quest failed on the client.",
             "confidence": "native_proven",
         },
@@ -1150,7 +1151,7 @@ RUNTIME_CONTRACT = {
             "direction": "server_to_client",
             "message": "SC_FINISH_DIALOG { dialogId, optionIds[], finishNums[] }",
             "handler": "CinematicSystem._Handle_FinishDialog",
-            "address": "0x1872f1758",
+            "address": None,
             "effect": "CheckTalkOptionFinish can test any finish or an exact finish id.",
             "confidence": "native_proven",
         },
@@ -1183,7 +1184,7 @@ RUNTIME_CONTRACT = {
                 "GameplayNetwork._Handle_SceneTriggerClientLevelScriptEvent -> "
                 "LevelEventManager.RaiseScriptEvent"
             ),
-            "address": "0x187386320 -> 0x186f922a4",
+            "address": None,
             "fields": ["sceneNumId", "scriptId", "eventName", "ctxToken"],
             "effect": (
                 "Raise the named client event on the exact LevelScript receiver selected "
@@ -1225,7 +1226,7 @@ RUNTIME_CONTRACT = {
                 "LevelScriptManager.ServerSyncLevelScriptStage -> "
                 "LevelScriptRuntime.UpdateStage"
             ),
-            "address": "0x1873867cc -> 0x186f95310 -> 0x186fad930",
+            "address": None,
             "fields": ["sceneNumId", "scriptId", "stage"],
             "effect": (
                 "Apply the server-authored stage to the exact ready LevelScript, then "
@@ -1353,7 +1354,7 @@ RUNTIME_CONTRACT = {
             "direction": "server_to_client",
             "message": "SC_SCENE_TELEPORT",
             "handler": "TeleportProcessor.OnServerTeleport",
-            "address": "0x18315a3f0",
+            "address": None,
             "fields": [
                 "objIdList[]",
                 "sceneNumId",
@@ -1385,7 +1386,7 @@ RUNTIME_CONTRACT = {
             ),
             "messageId": 1257,
             "handler": "GameMechanicsSystem._Handle_EnterSubGameInst",
-            "address": "0x18736b59c",
+            "address": None,
             "fields": ["gameId", "isHunterMode", "gameInstId", "gameUniqueId", "isReenter"],
             "effect": (
                 "Resolve gameId through SubGameInstanceDataTable and construct the live "
@@ -1407,7 +1408,7 @@ RUNTIME_CONTRACT = {
             ),
             "messageId": 1254,
             "handler": "GameMechanicsSystem._Handle_ChallengeStart",
-            "address": "0x18736b190",
+            "address": None,
             "fields": ["gameId", "challengeStartTs", "challengeExpireTs", "prepareChallengeSeconds"],
             "effect": (
                 "Resolve the runtime by gameId, then invoke its prepare or start path. "
@@ -1429,7 +1430,7 @@ RUNTIME_CONTRACT = {
             ),
             "messageId": 1255,
             "handler": "GameMechanicsSystem._Handle_ChallengeComplete",
-            "address": "0x18736aef0",
+            "address": None,
             "fields": ["gameId", "isPass", "forceLeaveTs", "passTime"],
             "effect": (
                 "Resolve the runtime by gameId and invoke its fail or complete path. "
@@ -1451,7 +1452,7 @@ RUNTIME_CONTRACT = {
             ),
             "messageId": 1256,
             "handler": "GameMechanicsSystem._Handle_CompletionReward",
-            "address": "0x18736b290",
+            "address": None,
             "fields": [
                 "gameId",
                 "isPass",
@@ -1476,7 +1477,7 @@ RUNTIME_CONTRACT = {
             ),
             "messageId": 1258,
             "handler": "GameMechanicsSystem._Handle_LeaveSubGameInst",
-            "address": "0x18736b8a4",
+            "address": None,
             "fields": ["gameId", "gameInstId", "gameUniqueId"],
             "effect": "Resolve and leave the live SubGame runtime; no mission/quest or scene/script pair is returned.",
             "exchangeFamily": "subgame_lifecycle",
@@ -1491,7 +1492,7 @@ RUNTIME_CONTRACT = {
             "direction": "server_to_client",
             "message": "SC_DOMAIN_DEPOT_RECV_PACKAGE_FOR_DELIVER_RSP { deliverInstId }",
             "handler": "DomainDepotSystem._HandleDomainDepotRecvPackageForDeliverRsp",
-            "address": "0x18730424c",
+            "address": None,
             "fields": ["deliverInstId"],
             "effect": (
                 "Resolve the exact delivery instance, update its local delivery state, call "
@@ -1513,7 +1514,7 @@ RUNTIME_CONTRACT = {
                 "rewardValue, extraCreditCount }"
             ),
             "handler": "DomainDepotSystem._HandleDomainDepotSendPackageForDeliverRsp",
-            "address": "0x187304774",
+            "address": None,
             "fields": ["deliverInstId", "rewardValue", "extraCreditCount"],
             "effect": (
                 "Resolve the delivery instance and remove the delivery dialog override. The "
@@ -1531,7 +1532,7 @@ RUNTIME_CONTRACT = {
             "direction": "server_to_client",
             "message": "SC_DO_SKIP_CHAPTER { skipChapterConfigId }",
             "handler": "ActivitySystem._HandleDoSkipChapter",
-            "address": "0x1872cf2b8",
+            "address": None,
             "fields": ["skipChapterConfigId"],
             "effect": (
                 "Handle the reply carrying the same skip-chapter configuration id. The "
@@ -1557,7 +1558,7 @@ RUNTIME_CONTRACT = {
                 "LevelScriptManager.UpdateLevelScriptTaskState -> "
                 "LevelScriptRuntime.UpdateTaskState"
             ),
-            "address": "0x183bd6fa0 -> 0x183bd7140 -> 0x183bd71f0",
+            "address": None,
             "fields": ["sceneNumId", "scriptId", "taskId", "taskState"],
             "effect": (
                 "Resolve the exact scene/script runtime and task, then apply its server "
@@ -1583,7 +1584,7 @@ RUNTIME_CONTRACT = {
                 "LevelScriptRuntime.UpdateTaskMainObjectiveIsCompleted -> "
                 "TaskCondition.InvokeOnIsCompleteChangeAction"
             ),
-            "address": "0x1842ba410 -> 0x1842b9140 -> 0x1842bad00",
+            "address": None,
             "fields": ["sceneNumId", "scriptId", "taskId", "conditionCompletedMap"],
             "effect": (
                 "Apply the server condition-completion map to one exact LevelScript task. "
@@ -1609,7 +1610,7 @@ RUNTIME_CONTRACT = {
                 "GameplayNetwork._Handle_LevelScriptTaskStartFinish -> "
                 "LevelScriptManager.UpdateLevelScriptTaskStartFinish"
             ),
-            "address": "0x1845e7f50 -> 0x1845e8090",
+            "address": None,
             "fields": ["sceneNumId", "scriptId", "taskId"],
             "effect": (
                 "Route a server task lifecycle boundary to the exact scene/script/task. "
@@ -1630,7 +1631,7 @@ RUNTIME_CONTRACT = {
                 "GameplayNetwork._Handle_SceneLevelScriptStateNotify -> "
                 "LevelScriptManager.ServerSyncLevelScriptIsDone"
             ),
-            "address": "0x187386060 -> 0x186f95218",
+            "address": None,
             "fields": ["sceneNumId", "scriptId"],
             "effect": (
                 "Apply a server-authored done boundary to one LevelScript. The message has "
@@ -1651,7 +1652,7 @@ RUNTIME_CONTRACT = {
             "message": "CS_ACCEPT_MISSION { missionId }",
             "messageId": 315,
             "handler": "MissionSystem.AcceptMission -> BasePlayerManager.SendMsg",
-            "address": "0x1873b7b48",
+            "address": None,
             "fields": ["missionId"],
             "effect": "Request mission acceptance; await an asynchronous mission-state update rather than a paired accept response.",
             "responseMessage": None,
@@ -1665,7 +1666,7 @@ RUNTIME_CONTRACT = {
             "message": "CS_UPDATE_QUEST_OBJECTIVE",
             "messageId": 314,
             "handler": "MissionSystem.OnSubConditionProgressChanged -> BasePlayerManager.SendMsg",
-            "address": "0x183a6fc20",
+            "address": None,
             "fields": [
                 "questId",
                 "objectiveValueOps[].conditionId",
@@ -1696,7 +1697,7 @@ RUNTIME_CONTRACT = {
                 "GameplayNetwork.SendLevelScriptUpdateTaskProgress -> "
                 "BaseNetworkSystem.SendMsg"
             ),
-            "address": "0x186fb0f9c -> 0x1873825c8 -> 0x183f54e20",
+            "address": None,
             "fields": [
                 "sceneNumId",
                 "scriptId",
@@ -1727,7 +1728,7 @@ RUNTIME_CONTRACT = {
             "message": "CS_FINISH_DIALOG",
             "messageId": 341,
             "handler": "DialogManager.FinishDialog -> _SendServer -> CinematicSystem.SendFinishDialog",
-            "address": "0x186e0f2d4 -> 0x186e2d2c0 -> 0x1872f0d88",
+            "address": None,
             "fields": ["dialogId", "optionIds[]", "finishNums[]", "dialogExtraInfoType", "submitInfo?"],
             "effect": (
                 "Submit the stable selected option ids and resolved dialog finish. "
@@ -1765,7 +1766,7 @@ RUNTIME_CONTRACT = {
                 "ctxToken:bytes }"
             ),
             "handler": "GameplayNetwork.TriggerLevelScriptServerEvent[WithProperties]",
-            "address": "0x1845f6710 / 0x187383640",
+            "address": None,
             "fields": ["sceneNumId", "scriptId", "eventName", "properties", "ctxToken"],
             "effect": (
                 "Trigger a server LevelScript event and await an empty acknowledgement. "
@@ -1849,7 +1850,7 @@ RUNTIME_CONTRACT = {
                 "scriptLocalId:uint32, isLeaveAction:bool }"
             ),
             "handler": "_OnLeaderTouchTriggerVolume -> BaseNetworkSystem.SendMsg",
-            "address": "0x184256ac0",
+            "address": None,
             "fields": ["sceneNumId", "scriptId", "scriptLocalId", "isLeaveAction"],
             "effect": (
                 "Report leader entry or exit for one LevelScript trigger slot and await the "
@@ -1867,7 +1868,7 @@ RUNTIME_CONTRACT = {
             "direction": "client_to_server",
             "message": "CS_SCENE_TELEPORT",
             "handler": "TeleportProcessor.SendC2STeleportMsg",
-            "address": "0x183a4c6f0",
+            "address": None,
             "fields": [
                 "sceneNumId",
                 "position",
@@ -1893,7 +1894,7 @@ RUNTIME_CONTRACT = {
             "direction": "client_to_server",
             "message": "CS_SCENE_TELEPORT_FINISH { tpUuid:uint64 }",
             "handler": "TeleportProcessor._OnTeleportFinish",
-            "address": "0x184970510",
+            "address": None,
             "fields": ["tpUuid"],
             "effect": (
                 "Acknowledge completion of the SC_SCENE_TELEPORT identified by tpUuid. "
@@ -1914,7 +1915,7 @@ RUNTIME_CONTRACT = {
             ),
             "messageId": 385,
             "handler": "GameMechanicsSystem.SendReqStartGameMechanic",
-            "address": "0x18736a320",
+            "address": None,
             "fields": ["gameId", "interactiveObjId", "npcProxyId", "npcObjId"],
             "effect": (
                 "Request the authored SubGame identified by gameId. Expect asynchronous "
@@ -1933,7 +1934,7 @@ RUNTIME_CONTRACT = {
             "message": "CS_GAME_MECHANICS_REQ_STOP { curGameId }",
             "messageId": 386,
             "handler": "GameMechanicsSystem.SendReqStopGameMechanic",
-            "address": "0x18736a5ec",
+            "address": None,
             "fields": ["curGameId"],
             "effect": (
                 "Request that the current SubGame stop. WorldChallengeGame first ends its "
@@ -1954,7 +1955,7 @@ RUNTIME_CONTRACT = {
                 "DomainDepotSystem._SendDomainDepotRecvPackageForDeliverReq -> "
                 "BasePlayerManager.SendMsg"
             ),
-            "address": "0x18730628c",
+            "address": None,
             "fields": ["deliverInstId"],
             "effect": (
                 "Ask the server to receive the package for one delivery instance. The "
@@ -1979,7 +1980,7 @@ RUNTIME_CONTRACT = {
                 "DomainDepotSystem._OnTargetDialogFinish -> "
                 "_SendDomainDepotSendPackageForDeliverReq -> BasePlayerManager.SendMsg"
             ),
-            "address": "0x187305764 -> 0x18730632c",
+            "address": None,
             "fields": ["deliverInstId"],
             "effect": (
                 "After the exact target dialog finishes, submit the delivery instance. The "
@@ -2001,7 +2002,7 @@ RUNTIME_CONTRACT = {
             "direction": "client_to_server",
             "message": "CS_DO_SKIP_CHAPTER { skipChapterConfigId }",
             "handler": "ActivitySystem.SendDoSkipChapter -> BasePlayerManager.SendUIMsg",
-            "address": "0x1872cd7d0",
+            "address": None,
             "fields": ["skipChapterConfigId"],
             "effect": (
                 "Construct and send the request using the exact typed SkipChapterTable "
@@ -2019,10 +2020,11 @@ RUNTIME_CONTRACT = {
     "nativeEvidence": [
         {
             "symbol": "GameConditionServerPlaceHolder.get_conditionType",
-            "address": "0x18479ec70",
+            "address": None,
+            "fallbackPatchId": None,
             "finding": (
                 "The installed-build fallback returns int.MaxValue (0x7fffffff); "
-                "the method is IFix-gated at patch id 0x5605."
+                "the method is IFix-gated; fallbackPatchId names the installed patch id."
             ),
             "confidence": "native_proven",
         },
@@ -2040,7 +2042,7 @@ RUNTIME_CONTRACT = {
         },
         {
             "symbol": "MissionSystem.<StartQuest>g__BindCallback|0",
-            "address": "0x183a89700",
+            "address": None,
             "finding": (
                 "Keeps a ResultChange callback only when conditionType equals ClientOnly "
                 "(9999 / 0x270f), excluding the unpatched server placeholder."
@@ -2049,7 +2051,7 @@ RUNTIME_CONTRACT = {
         },
         {
             "symbol": "LevelEvent.OnTeleportFinish.Process",
-            "address": "0x186abe000",
+            "address": None,
             "finding": (
                 "Compares the authored actionId filter with the local teleport-finish "
                 "event actionId by exact string equality. That actionId is not tpUuid and "
@@ -2059,7 +2061,7 @@ RUNTIME_CONTRACT = {
         },
         {
             "symbol": "TeleportParam -> LoadingPipeline.LoadFinishStep",
-            "address": "0x18315a6c0 -> 0x18315ade0 -> 0x183dd8c60",
+            "address": None,
             "finding": (
                 "The generic native value-carrier audit derives TeleportParam's nine "
                 "fields, 15 signature methods, ten inherited container paths, 13 "
@@ -2073,13 +2075,13 @@ RUNTIME_CONTRACT = {
         },
         {
             "symbol": "MissionSystem.StartQuest",
-            "address": "0x183a885d0",
+            "address": None,
             "finding": "Binds local quest/objective callbacks; no successor traversal was found.",
             "confidence": "native_proven",
         },
         {
             "symbol": "MissionRuntimeAsset.RunQuestAction",
-            "address": "0x1872208d0 (action chain: 0x18722154c)",
+            "address": None,
             "finding": (
                 "QuestAction is a flags enum: slot 1 is OnStartClientAction, slot 2 is "
                 "OnSucceedClientAction, and slot 4 is OnFailedClientAction. SucceedQuest "
@@ -2091,7 +2093,7 @@ RUNTIME_CONTRACT = {
         },
         {
             "symbol": "MissionSystem.Handle_ClientMissionEvent",
-            "address": "0x1873bdf58 -> 0x184a428a0 -> 0x187bdfd38",
+            "address": None,
             "finding": (
                 "Reads SC_SCENE_TRIGGER_CLIENT_MISSION_EVENT.missionId at +0x18 and "
                 "eventName at +0x20, interns that exact pair through "
@@ -2108,10 +2110,7 @@ RUNTIME_CONTRACT = {
         },
         {
             "symbol": "GameplayNetwork._Handle_SceneTriggerClientLevelScriptEvent",
-            "address": (
-                "0x187386320 -> 0x1845f6000 -> 0x1845f6640 -> "
-                "0x1845f6710 -> 0x1865a3aac"
-            ),
+            "address": None,
             "finding": (
                 "Consumes SC_SCENE_TRIGGER_CLIENT_LEVEL_SCRIPT_EVENT, constructs the "
                 "LevelScript receiver from scriptId, copies a non-empty ctxToken into "
@@ -2131,7 +2130,7 @@ RUNTIME_CONTRACT = {
                 "MissionSystem.Handle_MissionStateUpdate / Handle_QuestStateUpdate "
                 "-> CharacterPositionCorrection"
             ),
-            "address": "0x1873be300 / 0x1873bf0a0 -> 0x1873b84c4",
+            "address": None,
             "finding": (
                 "Recursive runtime-type traversal across all 983 current enum-backed "
                 "CS/SC message classes found zero mission/quest + LevelScript/Story "
@@ -2149,10 +2148,7 @@ RUNTIME_CONTRACT = {
                 "AirWallManager mission/quest listeners -> AirWallGroupAgent "
                 "-> TriggerMainCharGoBack -> GameAction.PlayRadio"
             ),
-            "address": (
-                "0x1845d5df0 -> 0x186f49038 / 0x186f49278 -> "
-                "0x186f45be8 / 0x186f45c50 -> 0x186f4ecc0"
-            ),
+            "address": None,
             "finding": (
                 "LevelData member 0 contains 822 exactly decoded AirWallGroup rows. "
                 "Sixty co-carry typed mission/quest predicates and a pushback radio; "
@@ -2166,7 +2162,7 @@ RUNTIME_CONTRACT = {
         },
         {
             "symbol": "GameplayNetwork._Handle_SyncLevelScriptStage",
-            "address": "0x1873867cc",
+            "address": None,
             "finding": (
                 "Consumes the one-way SC_SCENE_LEVEL_SCRIPT_STAGE_CHANGE packet, resolves "
                 "the exact scene/script runtime, and updates its stage. On ready containers "
@@ -2177,7 +2173,7 @@ RUNTIME_CONTRACT = {
         },
         {
             "symbol": "SendBattleSignalToLevel.ExecuteInternal",
-            "address": "0x186d27734",
+            "address": None,
             "finding": (
                 "Resolves the authored signal/value and raises local LevelEvent 0x28 "
                 "directly. No network packet is sent; OnBattleSignal filters only the "
@@ -2187,7 +2183,7 @@ RUNTIME_CONTRACT = {
         },
         {
             "symbol": "SubGameManager.SrvCreateSubGame -> GameModeFactory.CreateGame",
-            "address": "0x1870b31c8 -> 0x186f55a38",
+            "address": None,
             "finding": (
                 "SC_GAME_MECHANICS_SYNC_ENTER_GAME_INST.gameId selects the authored table "
                 "row and concrete client runtime. Typed rows containing bindScriptId and "
@@ -2198,7 +2194,7 @@ RUNTIME_CONTRACT = {
         },
         {
             "symbol": "WorldChallengeGame.SendQuit",
-            "address": "0x186f60cc8",
+            "address": None,
             "finding": (
                 "Reads SubGameInstanceData.bindScriptId at exact row offset +0x50, resolves "
                 "the LevelScript, calls LevelScriptRuntime.ManualEnd when its type is not 5, "
@@ -2212,7 +2208,7 @@ RUNTIME_CONTRACT = {
                 "InteractiveLogicChallengeStartPoint._OnInteract -> "
                 "LevelScriptRuntime.ManualStart"
             ),
-            "address": "0x18713e548 + 0x34a -> 0x186faac74",
+            "address": None,
             "finding": (
                 "Resolves the typed SubGame row from m_subGameId, reads "
                 "bindScriptId at exact row offset +0x50, resolves that LevelScript, "
@@ -2224,7 +2220,7 @@ RUNTIME_CONTRACT = {
         },
         {
             "symbol": "MissionSystem.OnSubConditionProgressChanged",
-            "address": "0x183a6fc20",
+            "address": None,
             "finding": "Sends an absolute CS_UPDATE_QUEST_OBJECTIVE operation for the changed condition id.",
             "confidence": "native_proven",
         },
@@ -2295,11 +2291,123 @@ RUNTIME_CONTRACT = {
 }
 
 
+def verify_installed_runtime_contract(contract: dict[str, Any]) -> dict[str, Any]:
+    """Re-derive RUNTIME_CONTRACT's build facts on the selected native inputs."""
+    native = check_installed_native_inputs()
+    if not native.validated:
+        if native_evidence_required():
+            raise SystemExit(native_evidence_skip_message("runtime-contract", native, required=True))
+        print(native_evidence_skip_message("runtime-contract", native), file=sys.stderr)
+        return verify_runtime_contract(
+            contract, None, unavailable_reason=f"{native.status}: {native.detail}"
+        )
+    index = BodyIndex(open_native_image(native.gameassembly, native.metadata))
+    return verify_runtime_contract(contract, index)
+
+
+def _patch_prefix(full_name: str) -> str:
+    """The IFix signature prefix of a resolved ``Type.Method`` name."""
+    type_name, _, method = full_name.rpartition(".")
+    if method == "ctor" and type_name.endswith("."):
+        type_name, method = type_name[:-1], ".ctor"
+    return f"{type_name}::{method}("
+
+
+def _record_patch_ids(records: Iterable[Any]) -> list[str]:
+    ids: list[str] = []
+    for record in records:
+        if not isinstance(record, dict):
+            continue
+        ids.extend(str(value) for value in record.get("fallbackPatchIds") or [] if value)
+        if record.get("fallbackPatchId"):
+            ids.append(str(record["fallbackPatchId"]))
+    return sorted(set(ids))
+
+
+def _ifix_patch_finding(ifix_audit: dict[str, Any]) -> tuple[str, str]:
+    """The Gameplay.Beyond patch finding, stated for the installed payload."""
+    if ifix_audit.get("status") != "validated":
+        return (
+            "The installed Persistent IFix payload is not validated for the selected "
+            f"build (status {ifix_audit.get('status') or 'missing'}); no patch "
+            "conclusion is published.",
+            "native_unavailable",
+        )
+    source = ifix_audit["source"]
+    classes = ifix_audit["classifications"]
+    owner_hits = sum(
+        len(classes[key])
+        for key in (
+            "taskCompletionFixMatches",
+            "taskCompletionReferenceMatches",
+            "receiverOwnershipFixMatches",
+            "receiverOwnershipReferenceMatches",
+        )
+    )
+    owner_sentence = (
+        "It replaces no selected receiver-ownership or LevelScript task "
+        "registration/completion method and contains no explicit selected task-lane "
+        "reference."
+        if not owner_hits
+        else f"It touches {owner_hits} selected receiver-ownership or task-lane "
+        "methods or references; see installedPatch for the matches."
+    )
+    return (
+        f"The current {source['patchBytes']:,}-byte Persistent IFix payload parses "
+        f"completely as {len(ifix_audit['fixedMethodSignatures'])} signature targets. "
+        f"{owner_sentence} It has {len(classes['missionHudFixSignatures'])} "
+        "MissionSystem HUD presentation targets and "
+        f"{len(classes['dialogCinematicFixSignatures'])} dialog/cinematic playback "
+        "targets, none of which adds an exact mission/task/LevelScript owner.",
+        "installed_patch_proven",
+    )
+
+
+def _teleport_param_finding(teleport: dict[str, Any]) -> tuple[str, str]:
+    """The TeleportParam carrier finding, stated from the selected-build contract."""
+    if (teleport.get("validation") or {}).get("status") != "validated":
+        return (
+            "The TeleportParam carrier contract is not validated for the selected "
+            "build; no carrier conclusion is published. This adds zero ownership or "
+            "order edges.",
+            "native_unavailable",
+        )
+    callsites = sum((teleport.get("directCallerCensus") or {}).values())
+    return (
+        "The generic native value-carrier audit derives TeleportParam's "
+        f"{len(teleport['layout'])} fields, {teleport['metadataSignatureMethodCount']} "
+        f"signature methods, {teleport['containerPathCount']} inherited container "
+        f"paths, {callsites} direct callsites, and {teleport['focusFieldAccessCount']} "
+        "focused native accesses without content-id allowlists. "
+        f"{teleport['producerFinding']} {teleport['consumerFinding']} "
+        "This adds zero ownership or order edges.",
+        str(teleport.get("confidence") or "native_proven_bounded"),
+    )
+
+
+def project_native_evidence_findings(
+    runtime_contract: dict[str, Any],
+    ifix_audit: dict[str, Any],
+    teleport_contract: dict[str, Any],
+) -> None:
+    """Generate the build-scoped nativeEvidence findings from their contracts."""
+    for row in runtime_contract.get("nativeEvidence") or []:
+        symbol = row.get("symbol")
+        if symbol == "Gameplay.Beyond.patch.bytes":
+            row["finding"], row["confidence"] = _ifix_patch_finding(ifix_audit)
+        elif symbol == "TeleportParam -> LoadingPipeline.LoadFinishStep":
+            row["finding"], row["confidence"] = _teleport_param_finding(teleport_contract)
+
+
 def project_ifix_runtime_contract(
     runtime_contract: dict[str, Any],
     ifix_audit: dict[str, Any],
 ) -> dict[str, Any]:
-    """Attach shared IFix facts without publishing stale negative conclusions."""
+    """Attach shared IFix facts without publishing stale negative conclusions.
+
+    Patch ids and method names come from the verified runtime contract, which
+    derives them from the selected build; patch matches are by method name.
+    """
     projected = copy.deepcopy(runtime_contract)
     status = str(ifix_audit.get("status") or "missing")
     if status != "validated":
@@ -2321,13 +2429,18 @@ def project_ifix_runtime_contract(
     source = ifix_audit["source"]
     signatures = ifix_audit["fixedMethodSignatures"]
     classifications = ifix_audit["classifications"]
+    placeholder = projected["serverPlaceholder"]
+    relevant_methods = list(placeholder.get("relevantMethods") or [])
     projected["serverPlaceholder"]["installedPatch"] = {
         "source": source["label"],
         "size": source["patchBytes"],
         "sha256": str(source["patchSha256"]).lower(),
         "signatureTargetCount": len(signatures),
-        "relevantPatchIds": ["0x5605", "0x54d1", "0x54d2"],
-        "matchedRelevantPatchIds": [],
+        "relevantPatchIds": list(placeholder.get("relevantPatchIds") or []),
+        "relevantMethods": relevant_methods,
+        "matchedRelevantMethods": fixed_method_prefix_matches(
+            ifix_audit, [_patch_prefix(name) for name in relevant_methods]
+        ),
         "taskCompletionTargetMatches": len(
             classifications["taskCompletionFixMatches"]
         ),
@@ -2346,6 +2459,9 @@ def project_ifix_runtime_contract(
         ),
         "auditReport": ifix_audit["sourceFile"],
     }
+    consumer = (
+        projected["protobufIdentityCarrierAudit"].get("roleSnapshotConsumer") or {}
+    )
     protobuf_prefixes = (
         "Beyond.Gameplay.MissionSystem::Handle_MissionStateUpdate(",
         "Beyond.Gameplay.MissionSystem::Handle_QuestStateUpdate(",
@@ -2354,7 +2470,9 @@ def project_ifix_runtime_contract(
     projected["protobufIdentityCarrierAudit"]["installedPatch"] = {
         "sha256": str(source["patchSha256"]).lower(),
         "signatureTargetCount": len(signatures),
-        "relevantPatchIds": ["0x5ec5", "0x5ebe", "0x5ea7"],
+        "relevantPatchIds": _record_patch_ids(
+            [consumer, *(consumer.get("handlers") or [])]
+        ),
         "matchedMethods": len(
             fixed_method_prefix_matches(ifix_audit, protobuf_prefixes)
         ),
@@ -2370,6 +2488,9 @@ def project_ifix_runtime_contract(
     projected["airWallMissionRadioContext"]["installedPatch"] = {
         "sha256": str(source["patchSha256"]).lower(),
         "signatureTargetCount": len(signatures),
+        "relevantPatchIds": _record_patch_ids(
+            projected["airWallMissionRadioContext"].get("nativeChain") or []
+        ),
         "matchedAirWallMethods": len(
             fixed_method_prefix_matches(ifix_audit, air_wall_prefixes)
         ),
@@ -4502,7 +4623,7 @@ def load_levelscript_activation_control_contract(
         "serializedObjectInputs": discovery.get("serializedObjectInputs"),
     }
     expected_shape = {
-        "schema": "levelScriptActivationControl.v6",
+        "schema": "levelScriptActivationControl.v7",
         "classification": "server_state_subgame_and_runtime_request_paths",
         "serializedObjectInputs": expected_inputs,
     }
@@ -7356,8 +7477,12 @@ def build_all(
     produced: set[str] = set()
     condition_counts: Counter[str] = Counter()
     placeholder_condition_counts: Counter[str] = Counter()
+    protocol_contracts = load_protocol_runtime_contracts()
     subgame_bindings, subgame_registry = (
-        mission_context_projection.load_subgame_mission_bindings(subgame_table)
+        mission_context_projection.load_subgame_mission_bindings(
+            subgame_table,
+            protocol_contracts["levelScriptActivationControlAudit"],
+        )
     )
     activity_hosts, activity_host_registry = (
         mission_context_projection.load_activity_quest_level_hosts(
@@ -7470,20 +7595,22 @@ def build_all(
             "selectedRoot": repo_path(mission_root),
             "selection": "explicit_mission_root",
         }
-    protocol_contracts = load_protocol_runtime_contracts()
     state_update_contract = protocol_contracts["stateUpdateApplicationAudit"]
     extra_thread_scheduler_contract = protocol_contracts[
         "actionExtraThreadSchedulerAudit"
     ]
     ifix_patch_contract = load_ifix_patch_contract()
+    teleport_param_contract = load_teleport_param_contract()
+    verified_runtime_contract = verify_installed_runtime_contract(RUNTIME_CONTRACT)
+    project_native_evidence_findings(
+        verified_runtime_contract, ifix_patch_contract, teleport_param_contract
+    )
     runtime_contract = {
-        **project_ifix_runtime_contract(RUNTIME_CONTRACT, ifix_patch_contract),
+        **project_ifix_runtime_contract(verified_runtime_contract, ifix_patch_contract),
         "identityCarrierBoundaries": (
             load_identity_carrier_boundaries_contract()
         ),
-        "teleportMissionScriptCarrier": (
-            load_teleport_param_contract()
-        ),
+        "teleportMissionScriptCarrier": teleport_param_contract,
         "nativeCrossSystemConsumerCensus": (
             load_cross_system_consumers_contract()
         ),

@@ -5,18 +5,17 @@ import struct
 from typing import Any
 
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
-from scripts.game_data.il2cpp.native_image import open_native_image, read_pinned_contract
+from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
 
 
 CONTRACT_PATH = CONTRACTS_DIR / "buff_icon_config_native.json"
 LABEL = "buffIconConfig"
-CONTRACT_SHA256 = "D4984B74DC1D02CC93091EE4130F572AD89CD45F86C19997B3B6D369C9278359"
 
 
 def _contract() -> dict[str, Any]:
-    value, _digest = read_pinned_contract(
-        CONTRACT_PATH, sha256=CONTRACT_SHA256, schema="endfield.buff-icon-config-native-contract.v1", label=LABEL
+    value, _digest = read_reviewed_contract(
+        CONTRACT_PATH, schema="endfield.buff-icon-config-native-contract.v1", label=LABEL
     )
     return value
 
@@ -45,7 +44,6 @@ def validate_current_native_contract() -> dict[str, Any]:
         "status": "validated",
         "methodIndices": validated_methods,
         "nativeInputs": contract["nativeInputs"],
-        "inputSetSha256": contract["inputSetSha256"],
     }
 
 
@@ -53,17 +51,12 @@ def decode_icon_config(
     data: bytes,
     start: int,
     limit: int,
-    *,
-    input_set_sha256: str,
 ) -> dict[str, Any]:
     """Decode exactly one BuffIconConfig wrapper ending at ``limit``.
 
     The caller supplies an independently selected following-field boundary.
-    Contract and input-set mismatches fail closed before any field is named.
     """
     contract = _contract()
-    if input_set_sha256.upper() != contract["inputSetSha256"]:
-        raise ValueError("buffIconConfig.input-set:mismatch")
     if type(start) is not int or type(limit) is not int or not 0 <= start < limit <= len(data):
         raise ValueError(f"buffIconConfig.boundary:invalid start={start} limit={limit}")
 

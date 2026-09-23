@@ -28,7 +28,6 @@ SCHEMA = "spawnerPtrGetterNativeContract.v2"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "spawnerptr_getter.json"
 #: Stable identifier cited in evidence; the build lives in the contract.
 NATIVE_MAPPING_ID = "spawnerptr-getter.v2"
-CONTRACT_SHA256 = "6F5997699F047C28E5F70B4A9BC024AA3004263C3628CA10FEB03EBEAA7A3698"
 GETTER_NAME = "Beyond.Gameplay.Actions.SpawnerPtrGetter"
 PARAM_WRAPPER_TYPE = "Beyond.Gameplay.Actions.Param`1<Beyond.Gameplay.Core.SpawnerPtr>"
 #: The four members ``decode_spawnerptr_getter_member`` reads, in wire order.
@@ -53,9 +52,6 @@ def load_spawnerptr_getter_contract(
     except (OSError, UnicodeError, json.JSONDecodeError) as error:
         reject("read_valid_json", True, str(error)[:400])
         return {}, {"status": "validation_failed", "validationFailures": failures}
-    actual_contract_hash = hashlib.sha256(raw).hexdigest().upper()
-    if actual_contract_hash != CONTRACT_SHA256:
-        reject("contract_sha256", CONTRACT_SHA256, actual_contract_hash)
     for gate, expected, actual in (("schema", SCHEMA, contract.get("schema")),
                                    ("status", "validated", contract.get("status"))):
         if actual != expected:

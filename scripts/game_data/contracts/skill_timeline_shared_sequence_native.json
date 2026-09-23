@@ -1,7 +1,6 @@
 {
   "schema": "endfield.skill-timeline-shared-sequence-native-contract.v2",
   "status": "exact-current-build-composite",
-  "inputSetSha256": "A916D545859C402CF4CD673817572D1D248BA60152E6B26D98B2A3B3BDD4B2AF",
   "nativeInputs": {
     "gameassemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
     "globalMetadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
@@ -581,244 +580,184 @@
   ],
   "dependencies": [
     {
-      "path": "buff_136_native.json",
-      "sha256": "93FBDCD0CEFF945F7681E333A780680CA0E12281521817F7E53D812DF11E5650"
+      "path": "buff_136_native.json"
     },
     {
-      "path": "buff_128_native.json",
-      "sha256": "1B81B51EA3990329B4D78A94D7C4CA0315605CDE762C45E29F762C5E29F431FD"
+      "path": "buff_128_native.json"
     },
     {
-      "path": "buff_140_native.json",
-      "sha256": "5863AAE7BF92ADF317B593F5AA1E948300BE5A457038733C536752D1C7AABD04"
+      "path": "buff_140_native.json"
     },
     {
-      "path": "buff_05_native.json",
-      "sha256": "B5EB475165CFA7886D22DE8A09A591786A8B9E8762D2A0B0F9C40D3AF2EEC482"
+      "path": "buff_05_native.json"
     },
     {
-      "path": "buff_16a_native.json",
-      "sha256": "B1140A962A9C207513C60BEF059104529735B915C06B1E6811BDDE183027664E"
+      "path": "buff_16a_native.json"
     },
     {
-      "path": "buff_1b_native.json",
-      "sha256": "190E9FD0C5799FAD3722758A6DDA225108D54837B34C6FBCA46ABE998909E435"
+      "path": "buff_1b_native.json"
     },
     {
-      "path": "buff_06_native.json",
-      "sha256": "B7C608205DE61D5DCF6EE3BA5A14EBE3D88ECE8CB9FCBF807227A17B43188CA3"
+      "path": "buff_06_native.json"
     },
     {
-      "path": "buff_144_native.json",
-      "sha256": "C9102B1A1EB36623BC9E6B0081448EE4DDC17C1861136E44DDB7FDE39A9B8DC5"
+      "path": "buff_144_native.json"
     },
     {
-      "path": "buff_f6_native.json",
-      "sha256": "476110FC9C63E172FCEFEF7FACC8B67942E2B5C6EAA6BB2CAF3FE88BAAA5EAF7"
+      "path": "buff_f6_native.json"
     },
     {
-      "path": "buff_42_native.json",
-      "sha256": "AFA35C54E71E46FC9DF3C3BD6220E14F41AD1FB32B5ED44AEEE432F486594419"
+      "path": "buff_42_native.json"
     },
     {
-      "path": "buff_14a_native.json",
-      "sha256": "40CC69121F664E8C0B34A66C2A4D99D3AE7CCA6195F76842E1EF5E265C3640DA"
+      "path": "buff_14a_native.json"
     },
     {
-      "path": "buff_120_native.json",
-      "sha256": "98B9FBD96FAC2404CFCDF4D238853A4C8F52AF738DC13C6CCAFF741C42109CCB"
+      "path": "buff_120_native.json"
     },
     {
-      "path": "buff_16_native.json",
-      "sha256": "08B7737E71A92F3CDDE7976A4521A1A1C0A3EF336422D0680BD5B924586AA897"
+      "path": "buff_16_native.json"
     },
     {
-      "path": "buff_37_native.json",
-      "sha256": "7319F980384E5C673B4B3F273600B658618448EF1034CC7655ADC3A6C66016C5"
+      "path": "buff_37_native.json"
     },
     {
-      "path": "buff_bd_native.json",
-      "sha256": "096C04016EF4264A34C4CEF921949CB7723393E55C4256434BA2D6935B04B964"
+      "path": "buff_bd_native.json"
     },
     {
-      "path": "buff_08_native.json",
-      "sha256": "FA94A0DF32108057B6F80CD9482446B0E5AF3D0014BF4F188506F70BBACEE568"
+      "path": "buff_08_native.json"
     },
     {
-      "path": "buff_11c_native.json",
-      "sha256": "7EA5AEAABEEF46D931936162647F4EB4A4706E0B9B82469255F6ED196EF140CD"
+      "path": "buff_11c_native.json"
     },
     {
-      "path": "buff_163_native.json",
-      "sha256": "98F46ECB4897823A507B1382425D2BDA489A23DC18CA550A00FAF22A13C6A292"
+      "path": "buff_163_native.json"
     },
     {
-      "path": "buff_0b_native.json",
-      "sha256": "9B249AE264EE38B03610ADF2D6851314C69FA6AB9B0A1822FFBAF96A730749A1"
+      "path": "buff_0b_native.json"
     },
     {
-      "path": "buff_119_native.json",
-      "sha256": "E47E2076CC4F98DC7D65463A2E9F8AF2D8085CF775D7C84FF191D45607569EBD"
+      "path": "buff_119_native.json"
     },
     {
-      "path": "buff_145_native.json",
-      "sha256": "AEC09B4A7FF09F87B79D77CAA2230FC3F6C4898D171831CAF6C97FAC95CB5364"
+      "path": "buff_145_native.json"
     },
     {
-      "path": "buff_166_native.json",
-      "sha256": "346DEC82FFBE10A1283DC382EB2DAFF5E6C84259999C61EA19C2D96D6099ADB4"
+      "path": "buff_166_native.json"
     },
     {
-      "path": "buff_169_native.json",
-      "sha256": "F188AC60DB7C17576D4C0C48F7F59D122DB65BC58BECA038BB99A6B22E8263D0"
+      "path": "buff_169_native.json"
     },
     {
-      "path": "buff_16d_native.json",
-      "sha256": "3FDBDE4A7941565832FABC8F4332C8D8EA05052F27EEFD4FCDA4761F741E51DD"
+      "path": "buff_16d_native.json"
     },
     {
-      "path": "buff_16e_native.json",
-      "sha256": "78B05482797A51C15185DA9CF984C426E4E66269196FB84251D219550FAC6137"
+      "path": "buff_16e_native.json"
     },
     {
-      "path": "buff_171_native.json",
-      "sha256": "ABB0C10EA07903E1136CC8315156BE92CE2F7E16EAA1EAB41D9B4BC7B46FE643"
+      "path": "buff_171_native.json"
     },
     {
-      "path": "buff_183_native.json",
-      "sha256": "F1E9D9A5BE97C5E3922F8D14BFFF78FDC39A77DA8CAE13EA24E0A2B07073AE87"
+      "path": "buff_183_native.json"
     },
     {
-      "path": "buff_1c_native.json",
-      "sha256": "0E7FEC73B8287EFFFD75436E461CDD7053C1075F0014549B46499EBC7F1C3A52"
+      "path": "buff_1c_native.json"
     },
     {
-      "path": "buff_24_native.json",
-      "sha256": "F294BAAB30A05C95BFDD4641AAD4CB67B377A6A8B0FD18D8E3DCA364B7EE5413"
+      "path": "buff_24_native.json"
     },
     {
-      "path": "buff_27_native.json",
-      "sha256": "2F19D81D2184D3E98CDD71AC6B6AE42820226D224ABC504591676ED3DEFA7DD3"
+      "path": "buff_27_native.json"
     },
     {
-      "path": "buff_35_native.json",
-      "sha256": "64DBC996FCAD85B26B096A4C5C93040965577EB25A0E7F926C9F5C9564CB137D"
+      "path": "buff_35_native.json"
     },
     {
-      "path": "buff_3c_native.json",
-      "sha256": "4D43B6CBA8E2353132738846A13DBA44B3C8D011AB9B91A85788B04254B7C9E5"
+      "path": "buff_3c_native.json"
     },
     {
-      "path": "buff_50_native.json",
-      "sha256": "34476A8DACFEF56F2349D518BBDCAFEE324881EAD6B15FF7678A3EAE92B30AE9"
+      "path": "buff_50_native.json"
     },
     {
-      "path": "buff_58_native.json",
-      "sha256": "74542E9E5B7B30E0B147C5E96CC1B80C3EF9561CBBCD947A77D59CF775A16F0A"
+      "path": "buff_58_native.json"
     },
     {
-      "path": "buff_61_native.json",
-      "sha256": "43CEC3462707D00E38197240DDE8EE27345612598CC8F31D151B2262FCC871E9"
+      "path": "buff_61_native.json"
     },
     {
-      "path": "buff_68_native.json",
-      "sha256": "D98ED75E70126F274B7619ECD4CA6B6D0D8C90B57044F692A3446775A9B9934C"
+      "path": "buff_68_native.json"
     },
     {
-      "path": "buff_69_native.json",
-      "sha256": "829F0C16DE45C48147C60A41C9D49DF6FF74284BE7372CC478B9D4CEEEF47DAB"
+      "path": "buff_69_native.json"
     },
     {
-      "path": "buff_7c_native.json",
-      "sha256": "782FFCA63A4548A25F5DEFCD199C1CD95472238869D9D46F607EBEB435566692"
+      "path": "buff_7c_native.json"
     },
     {
-      "path": "buff_81_native.json",
-      "sha256": "492CF9EC3B997311CC0C14FFC78286525FC0DA54580B2B871785C6D345874E31"
+      "path": "buff_81_native.json"
     },
     {
-      "path": "buff_88_native.json",
-      "sha256": "EC9EBFEE77CFCFF0D8F77AE02C86DE3C8B10B7B2BF3C4EEE3E89ACB97789A641"
+      "path": "buff_88_native.json"
     },
     {
-      "path": "buff_8c_native.json",
-      "sha256": "25A0711C3B7F0BC5F4D85ADF7F4B28AC79B5A5314D1B4FC85827A3FF91188290"
+      "path": "buff_8c_native.json"
     },
     {
-      "path": "buff_92_native.json",
-      "sha256": "D3FE6B7AA5D8BF2B03F670946706F318D091CBC05D9E92982B82D8F96231D26A"
+      "path": "buff_92_native.json"
     },
     {
-      "path": "buff_96_native.json",
-      "sha256": "B97187C43CDFD855446EB401A0511BCFBE4091C40CAB74DF5D372B52337F5891"
+      "path": "buff_96_native.json"
     },
     {
-      "path": "buff_9a_native.json",
-      "sha256": "EBD0AAAD5660D5A21EF3A1ACB27139D7DA17ED5E992B81F875FCA93DB85AB75C"
+      "path": "buff_9a_native.json"
     },
     {
-      "path": "buff_9b_native.json",
-      "sha256": "AAE6AEF1DC05F5FAB853D2FDCA1ADE0E976BBBB7E2812CCF3933ED81EB163A46"
+      "path": "buff_9b_native.json"
     },
     {
-      "path": "buff_a2_native.json",
-      "sha256": "1BBA5E4FB6E2A7330CBADE76F3FAF6D699E4813B24BB4D666E7AEDC97FCE5766"
+      "path": "buff_a2_native.json"
     },
     {
-      "path": "buff_a9_native.json",
-      "sha256": "46F034221D5512CD48141A0F6534A211B495AC46B5EAEF1F18E73C8839486608"
+      "path": "buff_a9_native.json"
     },
     {
-      "path": "buff_b2_native.json",
-      "sha256": "738B27AF41A661832BA6D30E7F86FF07EBF7E6241178DFF35B0C007FC0B8CED7"
+      "path": "buff_b2_native.json"
     },
     {
-      "path": "buff_b4_native.json",
-      "sha256": "F6CAAABD807B8D7F346BF96DB6F90AF2E6B7446AAA3A688B3F56C2361460220D"
+      "path": "buff_b4_native.json"
     },
     {
-      "path": "buff_b6_native.json",
-      "sha256": "A7ED5FF53CCDC4B1A3E69997AC9601026CEF573D94A0E11751526A9806858BCD"
+      "path": "buff_b6_native.json"
     },
     {
-      "path": "buff_c0_native.json",
-      "sha256": "B58BF7A077BCD2BC22372F45B6E70EF508AA25492E090D6D7D728E9D5865AFE3"
+      "path": "buff_c0_native.json"
     },
     {
-      "path": "buff_c5_native.json",
-      "sha256": "DF8D3BF278E4C2C4AD7C708BB29EF53A3EE5434C96A40EEBF44C76D300D4AD2B"
+      "path": "buff_c5_native.json"
     },
     {
-      "path": "buff_c7_native.json",
-      "sha256": "35F5273F38C6859596A3EA0540036D6890ADD975485DF74E4610F4BF4D58BF6E"
+      "path": "buff_c7_native.json"
     },
     {
-      "path": "buff_d4_native.json",
-      "sha256": "0C1B4064869081CD2BEBF42831D44518ED31FD79DF5B8A56682A54A3C08BB9F2"
+      "path": "buff_d4_native.json"
     },
     {
-      "path": "buff_de_native.json",
-      "sha256": "C1B7C9C44CF9BBDD4A6D617C98AFDB8D972F035F77FC69A57FE1224BBF0FCC6D"
+      "path": "buff_de_native.json"
     },
     {
-      "path": "buff_ea_native.json",
-      "sha256": "796C7F22C08E16CC7772704D3D32EA47914AB3C2F4B9CF0C599471B6912E7BAD"
+      "path": "buff_ea_native.json"
     },
     {
-      "path": "buff_ec_native.json",
-      "sha256": "59F3C41A010BEF314E9E74E2E4940BDD65C16462B5A1001A7124182FDF4E8396"
+      "path": "buff_ec_native.json"
     },
     {
-      "path": "buff_fe_native.json",
-      "sha256": "71597B80DE153C17064B940E3ACC108E675B6A543B1598039A449E4EE9619A6B"
+      "path": "buff_fe_native.json"
     },
     {
-      "path": "buff_frontier8.json",
-      "sha256": "EA48E3F3FA3EAC0B1DE10A9B1DB8C0AFB4B80C43A943A4D0B5042DAB911A1048"
+      "path": "buff_frontier8.json"
     },
     {
-      "path": "../memorypack/buff_actions.py",
-      "sha256": "F222941A7F486846BED4DB51305EF5F875D7216C99BB45F087424AA9753A36DE"
+      "path": "../memorypack/buff_actions.py"
     }
   ],
   "evidenceBoundary": {
@@ -1016,7 +955,6 @@
     "serializedMemberCount": 6,
     "sourceContract": {
       "path": "buff_frontier8.json",
-      "sha256": "196820A6FD2BCD811CCABACC5E17565289193E05C19E906EA2E29F0D0E91DDAB",
       "schema": "endfield.buff-frontier8-native-contract.v1"
     },
     "orderedSourceReads": [
@@ -1191,12 +1129,10 @@
     "sourceContracts": [
       {
         "path": "buff_9a_native.json",
-        "sha256": "EBD0AAAD5660D5A21EF3A1ACB27139D7DA17ED5E992B81F875FCA93DB85AB75C",
         "boundary": "DamageUnit member-five generic list provider and CostData element join"
       },
       {
         "path": "buff_c0_native.json",
-        "sha256": "B58BF7A077BCD2BC22372F45B6E70EF508AA25492E090D6D7D728E9D5865AFE3",
         "boundary": "CostData formatter/reader, header three, and ordered element reads"
       }
     ],

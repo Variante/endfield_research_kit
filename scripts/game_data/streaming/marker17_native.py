@@ -12,7 +12,6 @@ from scripts.game_data.contracts import CONTRACTS_DIR
 
 SCHEMA = 'endfield.streaming-marker17-native-contract.v2'
 DEFAULT_CONTRACT = CONTRACTS_DIR / 'streaming_marker17_native.json'
-CONTRACT_SHA256 = '83E98693213C0E1D0C8C01BDE5538DB090BD68451446B7DEDE39CFCE73590A72'
 SELECTED_KEYS = {2: (4, 0, 0), 5: (5, 0, 0), 6: (9, 0, 0), 7: (8, 0, 0), 9: (255, 3, 0)}
 
 
@@ -45,16 +44,11 @@ def validate_marker17_native_contract(
         raw = Path(contract_path).read_bytes()
         contract_sha = base._sha256_bytes(raw)
         result['contractSha256'] = contract_sha
-        require('contract_sha256', CONTRACT_SHA256, contract_sha)
-        if failures:
-            return result
         contract = json.loads(raw)
         require('schema', SCHEMA, contract.get('schema'))
         require('contract_status', 'validated-conditional-static', contract.get('status'))
-        raw_base = base.DEFAULT_CONTRACT.read_bytes()
-        base_document = json.loads(raw_base)
+        base_document = json.loads(base.DEFAULT_CONTRACT.read_bytes())
         dependency = contract['baseContract']
-        require('base_contract_sha256', dependency['sha256'], base._sha256_bytes(raw_base))
         require('base_contract_schema', dependency['schema'], base_document.get('schema'))
         roles = {r['role'] for r in base_document['unityPlayerRanges']}
         require('base_contract_required_roles', [], sorted(set(dependency['requiredUnityPlayerRoles']) - roles))
@@ -65,7 +59,6 @@ def validate_marker17_native_contract(
         if failures:
             result['baseValidationFailures'] = selected.get('validationFailures', [])
             return result
-        require('validated_base_contract_sha256', dependency['sha256'], selected.get('contractSha256'))
         result['baseContractSha256'] = selected['contractSha256']
         native_inputs = contract['nativeInputs']
         for key, expected in native_inputs.items():

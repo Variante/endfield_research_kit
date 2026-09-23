@@ -13,6 +13,7 @@ recovery package.
 """
 from __future__ import annotations
 
+import dataclasses
 import argparse
 import base64
 import binascii
@@ -26,9 +27,14 @@ from pathlib import Path
 from typing import Any, Iterable
 
 from scripts.repo_paths import REPO_ROOT
+from scripts.game_data.contracts import CONTRACTS_DIR
+from scripts.game_data.il2cpp.body_claims import BodyIndex, ClaimError
+from scripts.game_data.il2cpp.body_claims import evaluate as evaluate_claims
+from scripts.game_data.il2cpp.native_image import open_native_image
 
 _REPO_ROOT = REPO_ROOT
 from scripts.common import (
+    NATIVE_EVIDENCE_MISMATCHED,
     NATIVE_EVIDENCE_MISSING,
     NativeEvidenceUnavailable,
     check_installed_native_inputs,
@@ -102,209 +108,8 @@ DEFAULT_MARKDOWN = (
 )
 MAPPER_PATH = ROOT / "tools" / "endfield-il2cpp" / "map_body_targets_to_gameassembly.py"
 
-EXPECTED_GAME_ASSEMBLY_SHA256 = (
-    "0c5573679bc6dec2d068a14335466db7ccf20af9bae2b983fb9d45677d80ffce"
-)
-EXPECTED_METADATA_SHA256 = (
-    "90c58e26e87c7227a85dda3fedf6ce5ed0b06dc1f76e0abbe75ab20750adf97e"
-)
-EXPECTED_METADATA_REGISTRATION = 0x18B921C30
-EXPECTED_RUNTIME_FIELD_OFFSETS = {
-    "Beyond.Gameplay.DialogTreeOptionBase": {
-        "<doNext>k__BackingField": 0x54,
-    },
-    "Beyond.Gameplay.NormalOptionData": {
-        "main": 0x70,
-        "index": 0x80,
-    },
-    "Beyond.Gameplay.DialogTreeOptionNode": {
-        "_normalOptions": 0xA0,
-        "_hasExOption": 0xA8,
-    },
-}
-NATIVE_METHODS = {
-    "DialogTree.ImportFromJson": {
-        "token": "0x06003a7f",
-        "va": 0x1872A946C,
-        "bytes": 144,
-        "sha256": "0e2c39227f5f81f5d96e8ef8d04984540f1deb5d773963191d5e0d0dc751498b",
-        "contract": "passes the authored JSON to NodeCanvas Graph.Deserialize",
-    },
-    "NodeCanvas.Framework.Graph.get_primeNode": {
-        "token": "0x06001109",
-        "va": 0x18306D980,
-        "bytes": 112,
-        "sha256": "327d2c5ab57cf630fa0dd3e72ffc9596fa2761f97a6d02b5b62b099a5d4af85e",
-        "contract": "returns allNodes[0] when the serialized node list is nonempty",
-    },
-    "DialogTree.OnGraphStarted": {
-        "token": "0x06003a77",
-        "va": 0x1872A969C,
-        "bytes": 352,
-        "sha256": "833998a346f36ea53a4d79c5e123b0e02905e5d376ec15db527c73ed5d389592",
-        "contract": (
-            "uses Graph.primeNode when no current node exists and tail-enters "
-            "that exact node through DialogTree.EnterNode"
-        ),
-    },
-    "NodeCanvas.Graph.Deserialize": {
-        "token": "0x060010c3",
-        "va": 0x183114AB0,
-        "bytes": 1040,
-        "sha256": "6625564e124290623f307e03d2edb7dd01b59a1dc5eb410e5e82bf3d25ee2e44",
-        "contract": (
-            "uses JSONSerializer.TryDeserializeOverwrite for the graph source"
-        ),
-    },
-    "JSONSerializer.TryDeserializeOverwrite<System.Object>": {
-        "token": "0x06001756",
-        "va": 0x183113B60,
-        "bytes": 256,
-        "sha256": "38cb9f2978747c9c5206efb4147e0389cd0cc7f3290eeb128681937b4ea67a72",
-        "contract": "passes an existing instance to FullSerializer deserialization",
-    },
-    "fsReflectedConverter.TryDeserialize": {
-        "token": "0x060018bf",
-        "va": 0x18360DA00,
-        "bytes": 880,
-        "sha256": "81afac7887a0533e9faf9ecf3c2b3d39af42625fc061192cfea76aa9ee3db572",
-        "contract": (
-            "sets a reflected field only after its JSON-name lookup succeeds; "
-            "an absent field is left at its initialized managed value"
-        ),
-    },
-    "fsMetaType.CreateInstance": {
-        "token": "0x0600183e",
-        "va": 0x183604F50,
-        "bytes": 128,
-        "sha256": "dee02a026414a74bd96d292a6a825a224da0642717e5d425b72a16deb6223a2c",
-        "contract": (
-            "creates reflected objects through FormatterServices."
-            "GetSafeUninitializedObject, whose managed value-type fields start "
-            "at their zero/default value"
-        ),
-    },
-    "DialogTreeOptionNode.get_maxOutConnections": {
-        "token": "0x06003b8f",
-        "va": 0x1872A721C,
-        "bytes": 80,
-        "sha256": "b5cba6675adf30a99f4751b3b00bfeb7a4bbf86d4830b1037e663a26c4cd846c",
-        "contract": (
-            "returns ten rather than the normal-option count, so unequal "
-            "option/connection counts are an allowed serialized shape"
-        ),
-    },
-    "DialogTreeOptionNode.get_exOptionIndex": {
-        "token": "0x06003b90",
-        "va": 0x1872A70A4,
-        "bytes": 220,
-        "sha256": "059f36a29c0cff656135384abcf5fcfd8f22db2935f30f84ef3338f5dd9998ef",
-        "contract": (
-            "scans the physical outgoing connection list and returns the "
-            "first target whose runtime node type is DialogTreeExOptionNode"
-        ),
-    },
-    "DialogTreeOptionNode.GetNextIndex": {
-        "token": "0x06003b98",
-        "va": 0x1872A6B7C,
-        "bytes": 120,
-        "sha256": "470f865abaa215a04d82fdcc4faf8a5b4972bec7215c00d80fab85de6cd5f32a",
-        "contract": (
-            "shifts the default normal-option ordinal over an earlier "
-            "DialogTreeExOptionNode connection"
-        ),
-    },
-    "DialogTreeOptionBase..ctor": {
-        "token": "0x06003a06",
-        "va": 0x1872A6544,
-        "bytes": 112,
-        "sha256": "54f809b09e6662c82aff3d38f018de4dc8dac5c6a0e534c4ff83b92577b47dcb",
-        "contract": (
-            "initializes doNext true on constructed option data before runtime "
-            "option display"
-        ),
-    },
-    "DialogManager.ShowOptions": {
-        "token": "0x0600f789",
-        "va": 0x186E19790,
-        "bytes": 1064,
-        "sha256": "096e5a7226944be950d98ceac9efaa715f2f091f424def60091bc80a577ae119",
-        "contract": (
-            "writes DialogTreeOptionBase.doNext true while registering each "
-            "normal option; the one false write belongs to the bounded "
-            "auto-selected default path before SelectIndex"
-        ),
-    },
-    "NormalOptionHandler.OnSelectWhenOptionEnd": {
-        "token": "0x0600fa1e",
-        "va": 0x186E512B0,
-        "bytes": 176,
-        "sha256": "10fac7b20f31417754dd81e2ec8955cc50ac369f9348e4a05e96cee675213416",
-        "contract": (
-            "checks DialogTreeOptionBase.doNext, then reads NormalOptionData.index "
-            "at the MetadataRegistration-backed 0x80 field and passes it to "
-            "DialogManager.SelectDialogTreeIndex"
-        ),
-    },
-    "DialogManager.SelectDialogTreeIndex": {
-        "token": "0x0600f7dc",
-        "va": 0x186E18578,
-        "bytes": 112,
-        "sha256": "37976498f3a1ee76a34ee8134da4bc24cc8652e65eb040995e14002e992470b4",
-        "contract": "passes the selected NormalOptionData.index unchanged to the controller",
-    },
-    "DialogTreeController.SelectIndex": {
-        "token": "0x06003a9e",
-        "va": 0x1872A2F9C,
-        "bytes": 176,
-        "sha256": "fe722e939949c4907f2362ff716a9d67ee76ad6995fb6fbf2fc36514a5484d3b",
-        "contract": "calls currentNode.GetRealIndex and then DialogTree.Continue",
-    },
-    "DialogTreeNode.GetRealIndex": {
-        "token": "0x06003b04",
-        "va": 0x1872A56E0,
-        "bytes": 88,
-        "sha256": "ee0588ce28b0c7f7b261f1490213d2a56b0d0f2707c7bd4e1c6adc1259a989d5",
-        "contract": "returns the supplied connection index unchanged on the native path",
-    },
-    "DialogTree.Continue": {
-        "token": "0x06003a74",
-        "va": 0x1872A8CE8,
-        "bytes": 492,
-        "sha256": "e26813edbe2614638bbd8039571b830460cec7e129bbccd9c0eb6d3a12e8bf99",
-        "contract": (
-            "bounds-checks the supplied index against outConnections.Count "
-            "and enters exactly outConnections[index]"
-        ),
-    },
-    "DialogTreeFinishNode.DoExecute": {
-        "token": "0x06003b86",
-        "va": 0x1872A4F80,
-        "bytes": 128,
-        "sha256": "8545a30e2e0b2903e11dd70b7db6bc640e79c9f3fbcfb8db9e856dd76d2a3721",
-        "contract": (
-            "passes the serialized finishId and finish type to "
-            "DialogManager.FinishDialog"
-        ),
-    },
-    "DialogManager.FinishDialog": {
-        "token": "0x0600f78b",
-        "va": 0x186E0F2D4,
-        "bytes": 256,
-        "sha256": "616928bc9e48dd51b66b0485dbf40881b6aa1dd80a926e11d9f208e5be4d4546",
-        "contract": "records the supplied finishId before exiting the dialog",
-    },
-    "CheckTalkOptionFinish.Check": {
-        "token": "0x06004634",
-        "va": 0x187345808,
-        "bytes": 128,
-        "sha256": "ff7a6b72974c083a797dabd17c0012362b8cb374bd0e92ef0b17196f90ed26be",
-        "contract": (
-            "accepts any recorded finish for a negative operand and requires "
-            "exact dialogFinishInfos membership for a nonnegative operand"
-        ),
-    },
-}
+NATIVE_CLAIMS_CONTRACT = CONTRACTS_DIR / "dialog_finish_native.json"
+NATIVE_CLAIMS_SCHEMA = "endfield.dialog-finish-native-claims.v1"
 
 
 class AuditValidationError(RuntimeError):
@@ -333,22 +138,9 @@ def _native_gate_diagnostic(validator: str, native: Any) -> str:
             f"validator={validator} gate=sourceExists expected=file "
             f"actual=missing source={sources}"
         )
-    drifted = [
-        (path, actual, expected)
-        for path, actual, expected in (
-            (
-                native.gameassembly,
-                native.gameassembly_sha256,
-                EXPECTED_GAME_ASSEMBLY_SHA256,
-            ),
-            (native.metadata, native.metadata_sha256, EXPECTED_METADATA_SHA256),
-        )
-        if actual.casefold() != expected.casefold()
-    ]
-    return "; ".join(
-        f"validator={validator} gate=sourceSha256 source={source_label(path)} "
-        f"expected={expected} actual={actual}"
-        for path, actual, expected in drifted
+    return (
+        f"validator={validator} gate=installedNativeInputs "
+        f"expected=validated actual={native.status} detail={native.detail}"
     )
 
 
@@ -386,105 +178,58 @@ def validate_native_contract(
     game_assembly: Path = DEFAULT_GAME_ASSEMBLY,
     metadata: Path = DEFAULT_METADATA,
 ) -> dict[str, Any]:
-    """Bind the recorded native contract to the installed binaries.
+    """Prove the reviewed finish-number claims on the installed binaries.
 
-    Raises ``NativeEvidenceUnavailable`` when the client is absent or is a
-    different build, so callers can skip this audit instead of failing a
-    pipeline that is otherwise build-independent.
+    Every claim in ``contracts/dialog_finish_native.json`` names a method and
+    what its body does; each is checked against whichever build is installed,
+    with field offsets read from its MetadataRegistration. Raises
+    ``NativeEvidenceUnavailable`` when the client is absent or a claim no
+    longer holds, so callers can skip this audit instead of failing a pipeline
+    that is otherwise build-independent.
     """
     validator = "dialog_finish_native_contract"
-    native = check_installed_native_inputs(
-        EXPECTED_GAME_ASSEMBLY_SHA256,
-        EXPECTED_METADATA_SHA256,
-        gameassembly=game_assembly,
-        metadata=metadata,
-    )
+    native = check_installed_native_inputs(gameassembly=game_assembly, metadata=metadata)
     if not native.validated:
-        raise NativeContractUnavailable(
-            native,
-            _native_gate_diagnostic(validator, native),
+        raise NativeContractUnavailable(native, _native_gate_diagnostic(validator, native))
+    contract = json.loads(NATIVE_CLAIMS_CONTRACT.read_bytes())
+    if contract.get("schema") != NATIVE_CLAIMS_SCHEMA:
+        raise AuditValidationError(
+            f"validator={validator} gate=contractSchema expected={NATIVE_CLAIMS_SCHEMA} "
+            f"actual={contract.get('schema')} source={source_label(NATIVE_CLAIMS_CONTRACT)}"
         )
-    mapper = _load_mapper()
-    pe = mapper.PeImage(game_assembly)
-    methods: list[dict[str, Any]] = []
-    for symbol, expected in NATIVE_METHODS.items():
-        body = pe.bytes_at_va(expected["va"], expected["bytes"])
-        actual = hashlib.sha256(body).hexdigest()
-        if actual != expected["sha256"]:
-            raise AuditValidationError(
-                f"validator={validator} gate=methodBodySha256 symbol={symbol} "
-                f"source={game_assembly} expected={expected['sha256']} actual={actual}"
-            )
-        methods.append(
-            {
-                "symbol": symbol,
-                "token": expected["token"],
-                "address": f"0x{expected['va']:x}",
-                "byteCount": expected["bytes"],
-                "bodySha256": actual,
-                "contract": expected["contract"],
-            }
-        )
-    catalog_module = mapper.load_catalog_module()
-    metadata_image = catalog_module.Metadata(metadata)
-    registration = mapper.metadata_registration_summary(
-        pe, EXPECTED_METADATA_REGISTRATION
-    )
-    offsets_table = int(registration["fieldOffsets"], 16)
+    index = BodyIndex(open_native_image(game_assembly, metadata))
+    methods, failures = evaluate_claims(index, contract["methods"])
     runtime_field_offsets: dict[str, dict[str, int]] = {}
-    type_by_name = {
-        metadata_image.type_full_name(type_def): type_def
-        for type_def in metadata_image.types
-    }
-    for type_name, expected_offsets in EXPECTED_RUNTIME_FIELD_OFFSETS.items():
-        type_def = type_by_name.get(type_name)
-        if type_def is None:
-            raise AuditValidationError(
-                f"validator={validator} gate=runtimeFieldOwner "
-                f"expected={type_name} actual=missing source={metadata}"
-            )
-        row_va = pe.u64_at_va(offsets_table + type_def.index * 8)
-        if not row_va:
-            raise AuditValidationError(
-                f"validator={validator} gate=runtimeFieldOffsetRow "
-                f"expected=nonzero actual=0 owner={type_name} source={game_assembly}"
-            )
-        actual_offsets = {
-            metadata_image.string(field.name_index): pe.u32_at_va(
-                row_va + ordinal * 4
-            )
-            for ordinal, field in enumerate(
-                metadata_image.fields[
-                    type_def.field_start : type_def.field_start + type_def.field_count
-                ]
-            )
-        }
-        selected = {
-            field_name: actual_offsets.get(field_name)
-            for field_name in expected_offsets
-        }
-        if selected != expected_offsets:
-            raise AuditValidationError(
-                f"validator={validator} gate=runtimeFieldOffsets owner={type_name} "
-                f"expected={expected_offsets} actual={selected} "
-                f"source={game_assembly}"
-            )
-        runtime_field_offsets[type_name] = selected
-
+    for type_name, field_names in contract["runtimeFields"].items():
+        try:
+            runtime_field_offsets[type_name] = {
+                name: index.field_offset(f"{type_name}::{name}") for name in field_names
+            }
+        except ClaimError as error:
+            failures.append({"symbol": type_name, "claim": "runtimeFields", "reason": str(error)})
+    if failures:
+        first = failures[0]
+        raise NativeContractUnavailable(
+            dataclasses.replace(native, status=NATIVE_EVIDENCE_MISMATCHED),
+            f"validator={validator} gate=nativeClaim symbol={first['symbol']} "
+            f"claim={json.dumps(first['claim'], sort_keys=True)} actual={first['reason']} "
+            f"failures={len(failures)} source={source_label(game_assembly)}",
+        )
     return {
         "status": "validated",
         "validator": validator,
         "gameAssembly": {
             "sourceFile": source_label(game_assembly),
-            "sha256": EXPECTED_GAME_ASSEMBLY_SHA256,
+            "sha256": native.gameassembly_sha256,
         },
         "globalMetadata": {
             "sourceFile": source_label(metadata),
-            "sha256": EXPECTED_METADATA_SHA256,
+            "sha256": native.metadata_sha256,
         },
+        "claimsContract": source_label(NATIVE_CLAIMS_CONTRACT),
         "methods": methods,
         "metadataRegistration": {
-            "address": f"0x{EXPECTED_METADATA_REGISTRATION:x}",
+            "address": f"0x{index.image.metadata_registration:x}",
             "fieldOffsets": runtime_field_offsets,
         },
         "serializedFieldDefaults": {
@@ -504,11 +249,7 @@ def validate_native_contract(
                 "fsMetaType.CreateInstance",
             ],
         },
-        "evidenceBoundary": (
-            "The installed client proves how finish numbers are produced and "
-            "tested. It does not reveal which option a player selected, which "
-            "successor the server started, or a total Story-file chronology."
-        ),
+        "evidenceBoundary": contract["evidenceBoundary"],
     }
 
 
@@ -1311,18 +1052,18 @@ def _validate_levelscript_task_contracts(
         "bindScriptIdFieldRead": interaction.get("bindScriptIdFieldRead"),
         "callsInCarrierOrder": interaction.get("callsInCarrierOrder"),
         "manualStartCallCount": interaction.get("manualStartCallCount"),
-        "challengeToken": (methods.get("ChallengeOnInteract") or {}).get("token"),
-        "manualStartToken": (methods.get("ManualStart") or {}).get("token"),
+        "challengeMapped": bool((methods.get("ChallengeOnInteract") or {}).get("token")),
+        "manualStartMapped": bool((methods.get("ManualStart") or {}).get("token")),
     }
     expected_activation_shape = {
-        "schema": "levelScriptActivationControl.v6",
+        "schema": "levelScriptActivationControl.v7",
         "status": "validated",
         "subGameIdFieldRead": True,
         "bindScriptIdFieldRead": True,
         "callsInCarrierOrder": True,
         "manualStartCallCount": 1,
-        "challengeToken": "0x0600231a",
-        "manualStartToken": "0x0601218f",
+        "challengeMapped": True,
+        "manualStartMapped": True,
     }
     if activation_shape != expected_activation_shape:
         raise AuditValidationError(

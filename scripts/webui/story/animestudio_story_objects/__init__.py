@@ -24,11 +24,8 @@ REVERSE_SCHEMA = "animestudioStoryReversePPtrAudit.v4"
 REVERSE_NATIVE_MAPPING_ID = (
     "gameassembly-2026-07-28-cutscene-root-director-playback-v1"
 )
-REVERSE_GAMEASSEMBLY_SHA256 = (
-    "0C5573679BC6DEC2D068A14335466DB7CCF20AF9BAE2B983FB9D45677D80FFCE"
-)
-REVERSE_METADATA_SHA256 = (
-    "90C58E26E87C7227A85DDA3FEDF6CE5ED0B06DC1F76E0ABBE75AB20750ADF97E"
-)
+# The CutsceneRoot/TimelineHandle playback claims, checked on the installed
+# build: contracts/story_native_consumers.json.
+REVERSE_NATIVE_GROUP = "cutsceneRootDirectorPlayback"
 
 STAGES = ("carrier", "hierarchy", "reverse")

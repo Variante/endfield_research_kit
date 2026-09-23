@@ -49,27 +49,27 @@ AMBIGUOUS_STATUSES = frozenset(("ambiguous-key", "ambiguous-target"))
 def source_paths(repo_root: Path) -> dict[str, Path]:
     return {
         "rootParserSha256": repo_root / "scripts/game_data/streaming/framing.py",
-        "orderedPairValidatorSha256": repo_root / "scripts/game_data/contracts/streaming_pairs.py",
+        "orderedPairValidatorSha256": repo_root / "scripts/game_data/streaming/pairs.py",
         "invertedLz4DecoderSha256": repo_root / "scripts/game_data/inverted_lz4.py",
         "commonNativeGateSha256": repo_root / "scripts/common.py",
-        "rootCorpusGateSha256": repo_root / "scripts/game_data/contracts/streaming_corpus.py",
-        "rootNativeValidatorSha256": repo_root / "scripts/game_data/contracts/streaming_native.py",
+        "rootCorpusGateSha256": repo_root / "scripts/game_data/streaming/corpus.py",
+        "rootNativeValidatorSha256": repo_root / "scripts/game_data/streaming/native.py",
         "rootNativeContractSha256": repo_root / "scripts/game_data/contracts/streaming_field2_native.json",
-        "marker17ParserSha256": repo_root / "scripts/game_data/contracts/streaming_marker17.py",
-        "marker17NativeValidatorSha256": repo_root / "scripts/game_data/contracts/streaming_marker17_native.py",
+        "marker17ParserSha256": repo_root / "scripts/game_data/streaming/marker17.py",
+        "marker17NativeValidatorSha256": repo_root / "scripts/game_data/streaming/marker17_native.py",
         "marker17NativeContractSha256": repo_root / "scripts/game_data/contracts/streaming_marker17_native.json",
         # The shared helper module imports these at module initialization even
         # though this gate never calls their domain functions.
-        "sharedMarker13ParserSha256": repo_root / "scripts/game_data/contracts/streaming_marker13.py",
-        "sharedMarker13NativeValidatorSha256": repo_root / "scripts/game_data/contracts/streaming_marker13_native.py",
+        "sharedMarker13ParserSha256": repo_root / "scripts/game_data/streaming/marker13.py",
+        "sharedMarker13NativeValidatorSha256": repo_root / "scripts/game_data/streaming/marker13_native.py",
         "sharedMarker13NativeContractSha256": repo_root / "scripts/game_data/contracts/streaming_marker13_native.json",
-        "marker2DirectorySha256": repo_root / "scripts/game_data/contracts/streaming_marker2_directory.py",
-        "marker2ParserSha256": repo_root / "scripts/game_data/contracts/streaming_marker2.py",
-        "marker2NativeValidatorSha256": repo_root / "scripts/game_data/contracts/streaming_marker2_native.py",
+        "marker2DirectorySha256": repo_root / "scripts/game_data/streaming/marker2_directory.py",
+        "marker2ParserSha256": repo_root / "scripts/game_data/streaming/marker2.py",
+        "marker2NativeValidatorSha256": repo_root / "scripts/game_data/streaming/marker2_native.py",
         "marker2NativeContractSha256": repo_root / "scripts/game_data/contracts/streaming_marker2_native.json",
         # Imported generic snapshot/ledger/output-isolation helpers are an
         # explicit transitive source dependency, never an implicit copy.
-        "sharedCorpusHelpersSha256": repo_root / "scripts/game_data/contracts/streaming_marker13_corpus.py",
+        "sharedCorpusHelpersSha256": repo_root / "scripts/game_data/streaming/marker13_corpus.py",
         "marker2CorpusGateSha256": Path(__file__).resolve(),
     }
 
