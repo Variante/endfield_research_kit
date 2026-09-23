@@ -71,6 +71,60 @@ class _Build:
         self.starts = index.sorted_pointers
         self.loads = self._literal_loads()
         self._calls: dict[str, list[tuple[int, list[str]]]] = {}
+        self.functions, self.fragments = self._chained_functions()
+        self.function_starts = sorted(self.functions)
+
+    def _chained_functions(self) -> tuple[dict[int, tuple[int, int]], dict[int, list[tuple[int, int]]]]:
+        """``.pdata`` functions (start -> (end, root)) and each root's chained fragments.
+
+        A cold path the compiler split into its own ``.pdata`` entry carries
+        ``UNW_FLAG_CHAININFO``: its unwind data ends in the RUNTIME_FUNCTION of the
+        function it belongs to. Following that chain names a fragment's owner
+        exactly, however it is reached.
+        """
+        pe = self.index.pe
+        section = next((row for row in pe.sections if row["name"] == ".pdata"), None)
+        functions: dict[int, tuple[int, int]] = {}
+        if section is None:
+            return functions, {}
+        raw = bytes(pe.buf[section["rawPointer"]:section["rawPointer"] + section["virtualSize"]])
+        entries: dict[int, tuple[int, int]] = {}
+        for offset in range(0, len(raw) - 11, 12):
+            begin, end, unwind = struct.unpack_from("<III", raw, offset)
+            if begin == 0:
+                break
+            entries[pe.image_base + begin] = (pe.image_base + end, unwind)
+
+        def root(start: int) -> int:
+            for _hop in range(8):
+                end, unwind = entries[start]
+                info = pe.file_offset_for_rva(unwind)[0]
+                flags, count = pe.buf[info] >> 3, pe.buf[info + 2]
+                if not flags & 0x4:
+                    return start
+                chained = info + 4 + ((count + 1) & ~1) * 2
+                parent = pe.image_base + struct.unpack_from("<I", pe.buf, chained)[0]
+                if parent not in entries:
+                    return start
+                start = parent
+            return start
+
+        fragments: dict[int, list[tuple[int, int]]] = defaultdict(list)
+        for start, (end, _unwind) in entries.items():
+            owner = root(start)
+            functions[start] = (end, owner)
+            if owner != start:
+                fragments[owner].append((start, end - start))
+        return functions, dict(fragments)
+
+    def owner_of(self, va: int) -> int | None:
+        """The function start that owns ``va``, through chained fragments."""
+        position = bisect.bisect_right(self.function_starts, va) - 1
+        if position < 0:
+            return None
+        start = self.function_starts[position]
+        end, owner = self.functions[start]
+        return owner if va < end else None
 
     def _literal_loads(self) -> dict[str, list[int]]:
         """``literal -> [instruction VA]`` for every ``mov r64, [rip+cell]`` of a string literal."""
@@ -110,6 +164,7 @@ class _Build:
         type_name, method = _split(full)
         for body in self.index.overload_bodies(type_name, method):
             spans.append((body.pointer, body.size))
+            spans.extend(self.fragments.get(body.pointer, ()))
             for row in body.rows:
                 match = _BRANCH.search(str(row.get("text") or ""))
                 if not match:
@@ -159,12 +214,13 @@ class _Build:
         """Named methods whose own body span holds a load of ``literal``."""
         owners = set()
         for va in self.loads.get(literal.lower(), []):
-            position = bisect.bisect_right(self.starts, va) - 1
-            if position < 0:
+            owner = self.owner_of(va)
+            if owner is not None:
+                owners.update(self.index.names_of(owner))
                 continue
-            pointer = self.starts[position]
-            if va < pointer + self.index._extent(pointer):
-                owners.update(self.index.names_of(pointer))
+            position = bisect.bisect_right(self.starts, va) - 1
+            if position >= 0 and va < self.starts[position] + self.index._extent(self.starts[position]):
+                owners.update(self.index.names_of(self.starts[position]))
         return owners
 
 
