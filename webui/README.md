@@ -38,7 +38,7 @@ precedence; `WEBUI_PREVIOUS_EXPORT_ROOT` remains the server-specific override.
 
 ## Pages and routing
 
-Nine tabs, in navigation order. `data-view` is the tab token in `index.html`
+Eight tabs, in navigation order. `data-view` is the tab token in `index.html`
 and the value of `document.body.dataset.activeView`.
 
 | Page | `data-view` | Scope |
@@ -51,11 +51,12 @@ and the value of `document.body.dataset.activeView`.
 | Assets | `assets` | Exported images, models, materials, video, and metadata |
 | Text | `reference` | Searchable localized table/reference rows |
 | Updates | `updates` | Exported game-data changes between two complete versions |
-| Recovery | `recovery` | How far the installed data is understood, by level and lane, with every figure marked measured or declared |
 
-`data-inspector` is a tenth, debug-only tab revealed by `Show debug info`. It
-browses decoder output and mounted raw export sources without turning recovery
-internals into normal semantic navigation.
+`recovery` and `data-inspector` are two more, debug-only tabs revealed by
+`Show debug info`. Recovery shows block volume and each file type's L1-L4
+recovery state. `data-inspector`
+browses decoder output and mounted raw export sources. Keeping both behind the
+debug toggle keeps recovery internals out of normal semantic navigation.
 
 Deep links are query parameters kept current with `history.replaceState`.
 `#<view>` also selects a tab: the retired `#projectiles` falls back to
@@ -95,7 +96,7 @@ Load order, as `index.html` declares it:
 | `src/features/next_views.js` | shared page-bootstrap wiring |
 | `src/features/reference/index.js` | localized Text Tables browser |
 | `src/features/updates/index.js` | Updates page |
-| `src/features/recovery/{index.js,style.css}` | Recovery progress page |
+  | `src/features/recovery/{index.js,style.css}` | debug-only Recovery progress page |
 | `src/features/data_inspector/{index.js,style.css}` | debug-only generic decoded-data browser |
 
 Generated data belongs in `webui/data/`; user-managed inputs belong in
@@ -207,7 +208,7 @@ outside `webui/overrides/`, and export tools never replace these files.
 
 ## Shared behavior
 
-- Normal navigation exposes exactly the nine pages above.
+- Normal navigation exposes exactly the eight pages above.
 - The top bar owns the data-language select (`#language`), the interface-locale
   select (`#ui-language`), and the shared `Show debug info` toggle
   (`#show-debug`).
@@ -591,39 +592,24 @@ shared green, gold, and red semantic palette as Character update badges.
 
 ## Recovery
 
-Recovery is a single scrolling dashboard, not a list/detail page, so it has no
-search box, filter panel, or pager. It reads one payload,
-`data/recovery/index.json`, and renders it as one segmented progress bar over
-the whole installed corpus, the same corpus broken down level by level, a
-lane x level matrix, four level cards, per-family JsonData named-byte bars, the
-MonoBehaviour census, and the recorded eliminations.
+Recovery is a debug-only page at `#recovery` with two parts, read from the v4
+`data/recovery/index.json` payload.
 
-- Every figure-bearing node in the payload carries `evidence: "measured"` or
-  `evidence: "declared"`. The page renders the two differently: a declared
-  figure sits in its own bordered panel with a visible `declared` chip and its
-  own reason, and it is never shown as a plain statistic beside measured ones.
-- Named bytes are labelled as a level-3 result. The page must not present a
-  100% named family as an understood family; the caveat is rendered as section
-  prose, not as a footnote.
-- Hover and keyboard focus reveal the same tooltip, so the graph is usable
-  without a pointer. Tooltips carry counts, bytes, the level's question, the
-  topic files behind a cell, and what is recorded as unreachable there.
-- A lane's bar is measured volume; its four level cells count documented topic
-  files. The page states that distinction rather than implying byte coverage
-  per level.
-- The corpus bar is one bar with one section per VFS block type, coloured by
-  lane, sized by linear byte share. The level-by-level bars below it reuse that
-  same total and show the part with no conclusion at that level as an explicit
-  hatched remainder, so a short bar cannot read as a small corpus. Their shared
-  basis line states that this is lane-documentation depth, not byte coverage.
-- The MonoBehaviour not-understood set is measured and gets the most prominent
-  block in its section. It is rendered as a range: the strict bound is the
-  headline, the floor is shown beside it as the looser reading, a two-tone range
-  bar spans them, and one line says why they differ. The classes between the
-  bounds are charted both by object count and by how many references land on
-  nothing named. What is open must read as loudly as what is closed.
-- The payload is optional: a 404 shows an explicit missing state naming the
-  build command, not an empty success state.
+- A log-scaled VFS volume bar, by payload bytes or logical-file count. Hatched
+  segments are catalog-declared files whose chunks are absent locally. Widths
+  use `log10(1 + 100 × value / smallest nonzero value)` so small blocks remain
+  visible; hover and keyboard focus give the measured value and true share.
+  Selecting a segment opens and focuses its block in the tree. The bar shows
+  inventory composition, never the fraction recovered.
+- A tree of VFS blocks whose leaves are logical-file types (declared path
+  families, plus `Other / unclassified` for unmatched paths). Blocks start
+  open; each type row shows its file count, bytes and four L1–L4 state chips.
+  Selecting a type shows its per-level statements, cited sources, evidence
+  limits, path pattern and sample paths beside the tree. One compact key above
+  the tree names the levels and states. States are scoped declarations, not
+  numeric progress.
+- The payload is optional: a 404 or older schema shows an explicit rebuild
+  state, not an empty success state.
 
 ```bat
 python -m scripts.webui.recovery.build_recovery

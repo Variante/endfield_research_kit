@@ -22,8 +22,8 @@
     "recovery",
     "data-inspector",
   ]);
-  const DEBUG_ONLY_VIEWS = new Set(["data-inspector"]);
-  const DEBUG_VIEW_FALLBACKS = Object.freeze({ "data-inspector": "characters" });
+  const DEBUG_ONLY_VIEWS = new Set(["data-inspector", "recovery"]);
+  const DEBUG_VIEW_FALLBACKS = Object.freeze({ "data-inspector": "characters", recovery: "story" });
   const RETIRED_VIEW_FALLBACKS = Object.freeze({ projectiles: "gameplay" });
   const SHARED_ASSET_NAME_PREFIXES = new Set(["S", "T", "P", "M"]);
   const MODEL_PREFIX_RE = /^([A-Z])_(.+)$/;

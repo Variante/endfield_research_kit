@@ -290,7 +290,13 @@ exist, including the `ui_overview_start`, `_loop`, `_to_equip`, `_to_skill` and
   filled references that resolve to nothing named:
   `Beyond.UI.UIActionKeyHint` has thirteen of them and not one lands on a name.
   Quote the range, not the floor: a filled reference is evidence that a field
-  is a reference, and no evidence about what it means.
+  is a reference, and no evidence about what it means. Three rules decide the
+  count and must not be relaxed if it is re-measured: the four universal fields
+  (`m_GameObject`, `m_Enabled`, `m_Script`, `m_Name`) are excluded before
+  anything counts; public engine namespaces are excluded by prefix, so game
+  namespaces such as `ScriptAnimation.*` stay in; and the class whose script
+  could not be named stays in. A string field joining a Table key set, or a
+  path-shaped string field, also counts as signal.
 - Which classes a page actually consumes is still open, and is a question about consumers rather than about layouts.
 - Exact runtime prefab assembly and entity-to-renderable ownership.
 - Material keyword/pass/queue selection and runtime overrides.

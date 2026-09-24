@@ -1,6 +1,5 @@
-/* Recovery progress page. One scrolling dashboard column; no list/detail split,
-   because the page has no per-record navigation. Uses the shared light palette
-   tokens from style.css so it stays consistent with every other page. */
+/* Recovery progress page: a log-scaled block-volume bar, then a tree of VFS
+   blocks whose leaves are logical-file types with their L1-L4 states. */
 
 #recovery-app {
   height: 100%;
@@ -13,7 +12,12 @@
   margin: 0 auto;
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: 24px;
+}
+
+#recovery-body :focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
 }
 
 .recovery-status {
@@ -32,137 +36,89 @@
   font-size: 22px;
 }
 
-.recovery-intro {
-  margin: 0 0 14px;
-  color: var(--muted);
-  max-width: 76ch;
-}
-
-.recovery-stat-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 12px;
-}
-
-.recovery-stat {
-  flex: 1 1 150px;
-  min-width: 132px;
-  padding: 10px 12px;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--surface);
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.recovery-stat-value {
-  font-size: 19px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.recovery-stat-label {
-  font-size: 11.5px;
-  color: var(--muted);
-  line-height: 1.35;
-}
-
-.recovery-caveats {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.recovery-caveat {
-  margin: 0;
-  padding: 8px 10px;
-  border-left: 3px solid var(--accent);
-  background: rgba(var(--accent-rgb), 0.07);
-  border-radius: 0 4px 4px 0;
-  font-size: 12.5px;
-  line-height: 1.5;
-}
-
-.recovery-section {
-  border-top: 1px solid var(--border);
-  padding-top: 18px;
-}
-
-.recovery-section-head h2 {
+.recovery-section h2 {
   margin: 0 0 4px;
-  font-size: 15px;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-  color: var(--accent-2-text);
+  font-size: 16px;
 }
 
 .recovery-note {
-  margin: 0 0 12px;
-  font-size: 12px;
+  margin: 0 0 10px;
   color: var(--muted);
-  max-width: 82ch;
+  font-size: 12px;
+  line-height: 1.5;
+  max-width: 90ch;
 }
 
-.recovery-subhead {
-  margin: 16px 0 8px;
-  font-size: 13px;
-  font-weight: 600;
+.recovery-note code,
+.recovery-samples code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  overflow-wrap: anywhere;
 }
 
-/* --- evidence markers --------------------------------------------------- */
+.recovery-footer { margin: 0; }
 
-.recovery-evidence {
-  display: inline-block;
-  padding: 1px 6px;
-  border-radius: 999px;
-  font-size: 10.5px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  border: 1px solid transparent;
-  cursor: help;
-  align-self: flex-start;
-  margin-top: 4px;
+/* --- volume bar --------------------------------------------------------- */
+
+.recovery-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px 16px;
+  margin-bottom: 10px;
 }
 
-.recovery-evidence.is-measured {
-  color: var(--status-added);
-  border-color: rgba(var(--status-added-rgb), 0.5);
-  background: rgba(var(--status-added-rgb), 0.1);
-}
-
-.recovery-evidence.is-declared {
-  color: var(--status-modified);
-  border-color: rgba(var(--status-modified-rgb), 0.55);
-  background: rgba(var(--status-modified-rgb), 0.12);
-}
-
-/* --- bars --------------------------------------------------------------- */
-
-.recovery-bar-track {
-  position: relative;
-  height: 12px;
-  border-radius: 3px;
-  background: rgba(var(--fg-rgb), 0.07);
+.recovery-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 5px;
   overflow: hidden;
 }
 
-.recovery-bar-fill {
-  height: 100%;
-  background: var(--accent-2);
-  border-radius: 3px;
+.recovery-toggle-btn {
+  font: inherit;
+  font-size: 12px;
+  padding: 4px 10px;
+  border: 0;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
 }
 
-.recovery-bar-fill.is-named { background: var(--accent-2); }
-.recovery-bar-fill.is-classification { background: #5a7d9a; }
+.recovery-toggle-btn + .recovery-toggle-btn { border-left: 1px solid var(--border); }
+.recovery-toggle-btn:hover { background: var(--hover); }
+.recovery-toggle-btn[aria-pressed="true"] {
+  background: rgba(var(--accent-2-rgb), 0.22);
+  font-weight: 600;
+}
 
-/* --- one segmented progress bar for the whole corpus -------------------- */
+.recovery-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+.recovery-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.recovery-swatch {
+  width: 18px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--accent-2);
+  border: 1px solid var(--border);
+}
 
 .recovery-segbar {
   display: flex;
   width: 100%;
-  height: 22px;
+  height: 30px;
   border-radius: 4px;
   overflow: hidden;
   background: rgba(var(--fg-rgb), 0.07);
@@ -170,461 +126,230 @@
 }
 
 .recovery-segbar-piece {
-  min-width: 2px;
-  outline-offset: 1px;
-  border-right: 1px solid rgba(var(--bg-rgb), 0.55);
-  cursor: help;
+  flex: 0 0 auto;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid rgba(var(--bg-rgb), 0.7);
+  cursor: pointer;
 }
 
 .recovery-segbar-piece:last-child { border-right: 0; }
+.recovery-segbar-piece:hover { filter: brightness(1.12); }
 
-.recovery-segbar-piece.is-remainder {
+#recovery-body .recovery-segbar-piece:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: -2px;
+}
+
+/* Hatched means "declared by the catalog, never read"; shared with the legend. */
+.recovery-segbar-piece.is-absent,
+.recovery-swatch.is-absent {
   background: repeating-linear-gradient(
     135deg,
-    rgba(var(--fg-rgb), 0.08) 0 4px,
-    rgba(var(--fg-rgb), 0.02) 4px 8px
+    rgba(var(--fg-rgb), 0.28) 0 3px,
+    rgba(var(--fg-rgb), 0.05) 3px 7px
   );
 }
 
-.recovery-legend {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 2px 18px;
-  margin-top: 12px;
-}
+/* --- key ---------------------------------------------------------------- */
 
-.recovery-legend-row {
-  display: grid;
-  grid-template-columns: 10px minmax(0, 1fr) auto auto auto;
-  align-items: baseline;
-  gap: 8px;
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-size: 11.5px;
-  font-variant-numeric: tabular-nums;
-  outline-offset: 2px;
-}
-
-.recovery-legend-row:hover,
-.recovery-legend-row:focus-visible { background: var(--hover); }
-
-.recovery-legend-name {
-  font-family: var(--mono);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.recovery-legend-value { text-align: right; }
-.recovery-legend-share { text-align: right; color: var(--muted); }
-.recovery-legend-files { text-align: right; color: var(--muted); white-space: nowrap; }
-
-/* --- level-by-level breakdown of the same bar --------------------------- */
-
-.recovery-depth {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-
-.recovery-depth-row {
-  display: grid;
-  grid-template-columns: minmax(150px, 210px) minmax(120px, 1fr) minmax(130px, auto);
-  align-items: center;
-  gap: 12px;
-}
-
-.recovery-depth-label {
-  display: flex;
-  align-items: baseline;
-  gap: 7px;
-  min-width: 0;
-  outline-offset: 2px;
-}
-
-.recovery-depth-name {
-  font-size: 12.5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.recovery-depth-status {
-  display: flex;
-  align-items: baseline;
-  justify-content: flex-end;
-  gap: 8px;
-  outline-offset: 2px;
-}
-
-.recovery-depth-chip {
-  font-size: 10.5px;
-  padding: 1px 6px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--muted);
-  white-space: nowrap;
-}
-
-.recovery-depth-pct {
-  font-size: 13px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-/* --- the not-understood range ------------------------------------------- */
-
-.recovery-range-track {
-  display: flex;
-  width: 100%;
-  height: 14px;
-  margin: 8px 0 10px;
-  border-radius: 3px;
-  overflow: hidden;
-  background: rgba(var(--fg-rgb), 0.07);
-  cursor: help;
-  outline-offset: 2px;
-}
-
-.recovery-range-floor { background: var(--accent); }
-
-.recovery-range-span {
-  background: repeating-linear-gradient(
-    135deg,
-    rgba(var(--accent-rgb), 0.55) 0 5px,
-    rgba(var(--accent-rgb), 0.2) 5px 10px
-  );
-}
-
-.recovery-between {
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px dashed var(--border);
-}
-
-.recovery-declared-detail.is-why {
-  color: var(--muted);
-  font-size: 11.5px;
-}
-
-.recovery-blocks,
-.recovery-families,
-.recovery-classification .recovery-family-row {
-  font-variant-numeric: tabular-nums;
-}
-
-.recovery-block-row,
-.recovery-family-row {
-  display: grid;
-  grid-template-columns: minmax(96px, 168px) 1fr minmax(64px, 92px);
-  align-items: center;
-  gap: 10px;
-  padding: 3px 4px;
-  border-radius: 3px;
-  outline-offset: 2px;
-}
-
-.recovery-block-row:hover,
-.recovery-family-row:hover,
-.recovery-block-row:focus-visible,
-.recovery-family-row:focus-visible {
-  background: var(--hover);
-}
-
-.recovery-block-name,
-.recovery-family-name {
-  font-family: var(--mono);
-  font-size: 11.5px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.recovery-block-value,
-.recovery-family-value {
-  text-align: right;
-  font-size: 11.5px;
-  color: var(--muted);
-}
-
-/* --- lane x level matrix ------------------------------------------------ */
-
-.recovery-matrix {
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--surface);
-  overflow: hidden;
-}
-
-.recovery-matrix-row {
-  display: grid;
-  grid-template-columns: minmax(130px, 200px) minmax(120px, 1fr) auto;
-  align-items: center;
-  gap: 12px;
-  padding: 6px 10px;
-  border-top: 1px solid var(--border);
-}
-
-.recovery-matrix-row:first-child { border-top: 0; }
-.recovery-matrix-row.is-head {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--muted);
-  background: rgba(var(--fg-rgb), 0.03);
-}
-
-.recovery-matrix-lane {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  min-width: 0;
-  outline-offset: 2px;
-}
-
-.recovery-matrix-lane-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 12.5px;
-}
-
-.recovery-swatch {
-  width: 9px;
-  height: 9px;
-  border-radius: 2px;
-  flex: 0 0 auto;
-}
-
-.recovery-flag {
-  font-size: 10px;
-  color: var(--muted);
-}
-
-.recovery-matrix-volume {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 0;
-  outline-offset: 2px;
-}
-
-.recovery-matrix-volume .recovery-bar-track { flex: 1 1 auto; }
-
-.recovery-matrix-bytes {
-  font-size: 11px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.recovery-matrix-levels {
-  display: grid;
-  grid-template-columns: repeat(4, 30px);
-  gap: 4px;
-}
-
-.recovery-matrix-levelhead {
-  text-align: center;
-  font-size: 10.5px;
-  cursor: help;
-}
-
-.recovery-cell {
-  height: 26px;
-  border-radius: 3px;
-  border: 1px dashed rgba(var(--fg-rgb), 0.22);
-  background: transparent;
-  display: grid;
-  place-items: center;
-  font-size: 11.5px;
-  color: var(--muted);
-  cursor: help;
-  outline-offset: 2px;
-}
-
-.recovery-cell.is-reached {
-  border-style: solid;
-  border-color: rgba(var(--accent-2-rgb), 0.7);
-  background: rgba(var(--accent-2-rgb), 0.24);
-  color: var(--text);
-  font-weight: 600;
-}
-
-.recovery-cell.has-open {
-  box-shadow: inset 0 -3px 0 0 var(--accent);
-}
-
-/* --- level cards -------------------------------------------------------- */
-
-.recovery-levels {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
-  gap: 12px;
-}
-
-.recovery-level-card {
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--surface);
-  padding: 12px;
-}
-
-.recovery-level-card h3 {
-  margin: 4px 0 6px;
-  font-size: 14px;
-}
-
-.recovery-level-num {
-  font-size: 11px;
-  font-weight: 700;
-  color: var(--accent-2-text);
-  letter-spacing: 0.06em;
-}
-
-.recovery-level-q {
-  margin: 0 0 8px;
+.recovery-key {
+  margin-bottom: 12px;
   font-size: 12px;
-  color: var(--muted);
-  line-height: 1.5;
 }
 
-.recovery-level-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-size: 11.5px;
-  color: var(--muted);
-  font-variant-numeric: tabular-nums;
-}
-
-.recovery-level-lanes,
-.recovery-chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 8px;
-}
-
-.recovery-lane-chip {
-  font-size: 10.5px;
-  padding: 1px 6px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  color: var(--muted);
-}
-
-.recovery-level-open {
-  margin: 8px 0 0;
-  font-size: 11.5px;
-  color: var(--accent-text);
-  cursor: help;
-}
-
-/* --- declarations and open items ---------------------------------------- */
-
-.recovery-declared-panel {
-  border: 1px solid rgba(var(--status-modified-rgb), 0.45);
-  border-radius: 5px;
-  background: rgba(var(--status-modified-rgb), 0.06);
-  padding: 12px;
-  margin: 12px 0;
-}
-
-.recovery-declared-head {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.recovery-declared-value {
-  margin: 6px 0 4px;
-  font-size: 17px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-.recovery-declared-detail {
+.recovery-key-row {
   margin: 0 0 4px;
-  font-size: 12px;
-  line-height: 1.5;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
 }
 
-/* The measured not-understood set. It uses the accent border so what is open
-   reads as loudly as what is closed, without borrowing the declared styling. */
-.recovery-open-panel {
+.recovery-key-state {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  cursor: help;
+}
+
+/* --- stage states ------------------------------------------------------- */
+
+.recovery-stages {
+  display: inline-flex;
+  gap: 3px;
+}
+
+.recovery-stage-cell {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 42px;
+  padding: 1px 6px;
   border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: 0 5px 5px 0;
-  background: rgba(var(--accent-rgb), 0.05);
-  padding: 12px;
-  margin: 12px 0;
+  border-radius: 999px;
+  font-size: 11px;
+  white-space: nowrap;
 }
 
-.recovery-criteria-head {
-  margin: 8px 0 2px;
-  font-size: 11.5px;
-  font-weight: 600;
+.recovery-stage-level { color: var(--muted); font-variant-numeric: tabular-nums; }
+.recovery-stage-glyph { line-height: 1; }
+
+.recovery-stage-cell.is-closed {
+  border-color: rgba(var(--accent-2-rgb), 0.8);
+  background: rgba(var(--accent-2-rgb), 0.26);
 }
 
-.recovery-criteria {
-  margin: 0;
-  padding-left: 18px;
-  font-size: 11.5px;
-  line-height: 1.55;
+.recovery-stage-cell.is-partial {
+  border-color: rgba(var(--accent-2-rgb), 0.55);
+  background: rgba(var(--accent-2-rgb), 0.09);
 }
 
-.recovery-signal-list { margin-top: 10px; }
+.recovery-stage-cell.is-open {
+  border-color: rgba(var(--accent-rgb), 0.6);
+  color: var(--accent-text);
+}
 
-.recovery-bar-fill.is-open { background: var(--accent); }
-
-.recovery-declared-why {
-  margin: 8px 0 0;
-  font-size: 11.5px;
+.recovery-stage-cell.is-notAssessed {
+  border-style: dashed;
   color: var(--muted);
+}
+
+.recovery-key-state.is-closed .recovery-stage-glyph,
+.recovery-key-state.is-partial .recovery-stage-glyph { color: var(--accent-2-text); }
+.recovery-key-state.is-open .recovery-stage-glyph { color: var(--accent-text); }
+.recovery-key-state.is-notAssessed { color: var(--muted); }
+
+/* --- tree and detail ---------------------------------------------------- */
+
+.recovery-browser {
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(280px, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.recovery-tree,
+.recovery-families {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.recovery-tree {
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+}
+
+.recovery-block + .recovery-block { border-top: 1px solid var(--border); }
+
+.recovery-block-toggle,
+.recovery-family {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  width: 100%;
+  font: inherit;
+  color: var(--text);
+  text-align: left;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+}
+
+.recovery-block-toggle {
+  padding: 8px 12px;
+  border-left: 3px solid var(--lane-color);
+  font-size: 13px;
+}
+
+.recovery-block-toggle:hover,
+.recovery-family:hover { background: var(--hover); }
+
+.recovery-chevron { width: 1em; color: var(--muted); }
+.recovery-block-name { font-weight: 600; }
+
+.recovery-size {
+  margin-left: auto;
+  color: var(--muted);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.recovery-avail {
+  font-size: 10.5px;
+  font-weight: 400;
+  padding: 0 6px;
+  margin-left: 6px;
+  border: 1px dashed var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+}
+
+.recovery-families {
+  padding: 0 0 6px 22px;
+  border-left: 3px solid var(--lane-color);
+}
+
+.recovery-family {
+  padding: 5px 12px 5px 8px;
+  border-radius: 4px;
+  font-size: 12.5px;
+}
+
+.recovery-family-name { flex: 1 1 180px; min-width: 0; }
+.recovery-family .recovery-size { margin-left: 0; }
+.recovery-family.is-other .recovery-family-name { color: var(--muted); font-style: italic; }
+.recovery-family[aria-pressed="true"] { background: var(--selected); }
+
+.recovery-detail {
+  position: sticky;
+  top: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  font-size: 12.5px;
   line-height: 1.5;
 }
 
-.recovery-open-list {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 12px;
-  margin-top: 10px;
-}
+.recovery-detail h3 { margin: 0 0 2px; font-size: 14px; }
+.recovery-detail > p { margin: 0 0 8px; }
 
-.recovery-open-card {
-  border: 1px solid var(--border);
-  border-left: 3px solid var(--accent);
-  border-radius: 0 5px 5px 0;
-  background: var(--surface);
-  padding: 12px;
-}
-
-.recovery-open-card h3 { margin: 0 0 6px; font-size: 13.5px; }
-.recovery-open-detail { margin: 0 0 6px; font-size: 12px; line-height: 1.55; }
-.recovery-open-meta { margin: 0; font-size: 11px; color: var(--muted); font-family: var(--mono); }
-
-.recovery-sources {
+.recovery-stage-list {
   list-style: none;
-  margin: 0 0 10px;
+  margin: 10px 0;
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-}
-
-.recovery-sources li {
-  display: flex;
-  flex-wrap: wrap;
   gap: 8px;
-  align-items: baseline;
-  font-size: 11.5px;
 }
 
-.recovery-sources code { font-size: 11.5px; }
+.recovery-stage-list > li {
+  padding: 4px 0 4px 10px;
+  border-left: 3px solid var(--border);
+}
 
-.recovery-source-meta { color: var(--muted); font-variant-numeric: tabular-nums; }
+.recovery-stage-list > li.is-closed { border-left-color: rgba(var(--accent-2-rgb), 0.85); }
+.recovery-stage-list > li.is-partial { border-left-color: rgba(var(--accent-2-rgb), 0.45); }
+.recovery-stage-list > li.is-open { border-left-color: rgba(var(--accent-rgb), 0.6); }
+.recovery-stage-list > li.is-notAssessed { border-left-style: dashed; }
+.recovery-stage-list p { margin: 0 0 3px; }
+.recovery-stage-list .recovery-note { margin: 0; }
+
+.recovery-stage-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.recovery-samples {
+  margin: 0;
+  padding-left: 18px;
+}
 
 /* --- tooltip ------------------------------------------------------------ */
 
@@ -642,25 +367,11 @@
   pointer-events: none;
 }
 
-.recovery-tip-line { white-space: normal; }
-.recovery-tip-line.is-strong { font-weight: 600; margin-bottom: 2px; }
-.recovery-tip-line.is-muted { color: var(--muted); font-size: 11px; }
+.recovery-tip-line.is-strong { font-weight: 600; }
 
 @media (max-width: 760px) {
-  .recovery-depth-row {
-    grid-template-columns: 1fr;
-    gap: 5px;
-  }
-  .recovery-depth-status { justify-content: flex-start; }
-  .recovery-legend { grid-template-columns: 1fr; }
-  .recovery-matrix-row {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-  .recovery-matrix-row.is-head { display: none; }
-  .recovery-matrix-levels { grid-template-columns: repeat(4, 1fr); }
-  .recovery-block-row,
-  .recovery-family-row {
-    grid-template-columns: minmax(80px, 110px) 1fr minmax(56px, 78px);
-  }
+  .recovery-browser { grid-template-columns: minmax(0, 1fr); }
+  .recovery-detail { position: static; }
+  .recovery-families { padding-left: 10px; }
+  .recovery-family-name { flex-basis: 100%; }
 }

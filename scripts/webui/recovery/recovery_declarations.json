@@ -1,22 +1,9 @@
 {
-  "schema": "endfield.recovery-progress-declarations.v1",
-  "_note": "Declarations for the Recovery page. Everything here is a DECLARATION, not a measurement: no generated report under reports/ carries it, so the builder cannot derive it. Each entry states its own 'why'. Measured figures never appear in this file -- they are read from the reports named in scripts/webui/recovery/build_recovery.py and are marked evidence=measured in the published payload.",
-
-  "memoryIndexSections": {
-    "_why": "memory/game_data/README.md groups its topic files under bold lane headings. The heading text is prose, so the heading-to-lane mapping is declared here rather than guessed from the words. The per-file level and line count beside each row ARE parsed from that table.",
-    "Level 1 -- all lanes": { "lane": "shared", "defaultLevel": 1 },
-    "World lane": { "lane": "world" },
-    "Audio lane": { "lane": "audio" },
-    "Gameplay lane": { "lane": "gameplay" },
-    "Story lane": { "lane": "story" },
-    "Catalog lane": { "lane": "catalog" },
-    "Unity assets lane": { "lane": "unity_assets" },
-    "Extraction lane": { "lane": "extraction" },
-    "Cross-lane": { "lane": "cross_lane" }
-  },
+  "schema": "endfield.recovery-progress-declarations.v3",
+  "_note": "Declarations for the Recovery page. Everything here is a DECLARATION, not a measurement: no generated report under reports/ carries it, so the builder cannot derive it. Each entry states its own 'why' or cites its source. Measured figures never appear in this file -- they are read from the VFS payload profile named in scripts/webui/recovery/build_recovery.py and are marked evidence=measured in the published payload.",
 
   "lanes": {
-    "_why": "The lane list and each lane's one-line scope restate memory/game_data/README.md. A lane is an editorial grouping of content kinds; nothing measures it.",
+    "_why": "The lane list restates memory/game_data/README.md. A lane is an editorial grouping of content kinds; nothing measures it. On this page a lane only labels and colours a VFS block.",
     "order": [
       "unity_assets",
       "world",
@@ -34,139 +21,1716 @@
     "entries": {
       "unity_assets": {
         "label": "Unity assets",
-        "labelZh": "Unity 资源",
-        "blurb": "Asset bundles and FMV: models, materials, textures, prefabs, scenes, video.",
-        "blurbZh": "资源包与过场影片：模型、材质、贴图、预制体、场景、视频。",
-        "documentedHere": true
+        "labelZh": "Unity 资源"
       },
       "world": {
         "label": "World",
-        "labelZh": "世界",
-        "blurb": "Streaming chunks, terrain, dynamic streaming, irradiance volumes.",
-        "blurbZh": "流式区块、地形、动态流送、辐照度体积。",
-        "documentedHere": true
+        "labelZh": "世界"
       },
       "audio": {
         "label": "Audio",
-        "labelZh": "音频",
-        "blurb": "Wwise banks and media, from bank container to what is actually named.",
-        "blurbZh": "Wwise 音频库与媒体，从容器到实际命名。",
-        "documentedHere": true
+        "labelZh": "音频"
       },
       "gameplay": {
         "label": "Gameplay",
-        "labelZh": "玩法",
-        "blurb": "Authored config tables joined to native action contracts.",
-        "blurbZh": "配置表与原生行为契约的连接。",
-        "documentedHere": true
+        "labelZh": "玩法"
       },
       "text": {
         "label": "Text",
-        "labelZh": "文本",
-        "blurb": "Presentation-facing table text and JsonData conversations.",
-        "blurbZh": "面向展示的表格文本与 JsonData 对话。",
-        "documentedHere": false,
-        "ownedElsewhere": "memory/webui/story_recovery.md"
+        "labelZh": "文本"
       },
       "catalog": {
         "label": "Catalog",
-        "labelZh": "目录",
-        "blurb": "Global path/hash catalogs and the opaque bundle manifest.",
-        "blurbZh": "全局路径/哈希目录与不透明的资源清单。",
-        "documentedHere": true
+        "labelZh": "目录"
       },
       "code": {
         "label": "Code",
-        "labelZh": "代码",
-        "blurb": "Lua mission and consumer scripts, plus runtime IFix patches.",
-        "blurbZh": "Lua 任务与消费者脚本，以及运行时 IFix 补丁。",
-        "documentedHere": false,
-        "ownedElsewhere": "memory/webui/story_recovery.md for Lua; IFixPatch has a reader but no durable conclusions"
+        "labelZh": "代码"
       },
       "story": {
         "label": "Story carriers",
-        "labelZh": "剧情载体",
-        "blurb": "Activation and placement carriers read out of Bundle and JsonData. No block of its own.",
-        "blurbZh": "从 Bundle 与 JsonData 中读出的激活与放置载体，没有独立的数据块。",
-        "documentedHere": true,
-        "noBlockOfItsOwn": true
+        "labelZh": "剧情载体"
       },
       "extraction": {
         "label": "Extraction",
-        "labelZh": "提取",
-        "blurb": "The reader itself, and how far each family's reader is proven.",
-        "blurbZh": "读取器本身，以及每个家族的读取器被证明到哪一步。",
-        "documentedHere": true,
-        "noBlockOfItsOwn": true
+        "labelZh": "提取"
       },
       "shared": {
         "label": "Shared containers",
-        "labelZh": "共享容器",
-        "blurb": "Level-1 files every lane depends on: the block inventory, shared containers, CABMap.",
-        "blurbZh": "所有通道共用的第 1 层文件：数据块清单、共享容器、CABMap。",
-        "documentedHere": true,
-        "noBlockOfItsOwn": true,
-        "appliesToAllLanes": true,
-        "appliesToAllLanesWhy": "memory/game_data/README.md heads this section 'Level 1 -- all lanes': its conclusions hold for every block type, so a corpus-wide level breakdown must credit them to all lanes rather than to a lane with no block of its own."
+        "labelZh": "共享容器"
       },
       "cross_lane": {
         "label": "Cross-lane",
-        "labelZh": "跨通道",
-        "blurb": "Serialization framework, the native read path, and what is settled versus open.",
-        "blurbZh": "序列化框架、原生读取路径，以及已定论与未决内容。",
-        "documentedHere": true,
-        "noBlockOfItsOwn": true
+        "labelZh": "跨通道"
       },
       "provenance": {
         "label": "Provenance",
-        "labelZh": "来源校验",
-        "blurb": "Audit variants of other blocks; they carry no separate content.",
-        "blurbZh": "其他数据块的审计副本，不含独立内容。",
-        "documentedHere": false,
-        "ownedElsewhere": "memory/game_data/extraction_pipeline.md"
+        "labelZh": "来源校验"
       }
     }
   },
 
-  "blockTypeLanes": {
-    "_why": "memory/game_data/README.md names block types in collapsed form (`Audio` + `InitialAudio`, `Audit*`, per-language variants). The installed VFS enum emits concrete names. Pairing the two is a reading of that table, not a measurement, and an unmapped observed block type fails the build closed so a client update is noticed.",
-    "Bundle": { "lane": "unity_assets" },
-    "InitBundle": { "lane": "unity_assets" },
-    "Video": { "lane": "unity_assets" },
-    "Audio": { "lane": "audio" },
-    "InitAudio": { "lane": "audio" },
-    "HotfixAudio": { "lane": "audio" },
-    "AudioChinese": { "lane": "audio" },
-    "AudioEnglish": { "lane": "audio" },
-    "AudioJapanese": { "lane": "audio" },
-    "AudioKorean": { "lane": "audio" },
-    "AuditAudio": { "lane": "provenance" },
-    "Streaming": { "lane": "world" },
-    "DynamicStreaming": { "lane": "world" },
-    "Terrain": { "lane": "world" },
-    "IV": { "lane": "world" },
-    "Table": { "lane": "gameplay", "alsoLanes": ["text"] },
-    "JsonData": { "lane": "text", "alsoLanes": ["world", "gameplay", "story"] },
-    "ExtendData": { "lane": "catalog" },
-    "InitialExtendData": { "lane": "catalog" },
-    "BundleManifest": { "lane": "catalog" },
-    "Lua": { "lane": "code" },
-    "IFixPatchOut": { "lane": "code" }
+  "stageStates": {
+    "_why": "The vocabulary a family's per-level stage may use. A stage is an editorial reading of the owning memory topic, so its state is declared; the builder only checks that the vocabulary, the level order, and the cited source hold.",
+    "order": ["closed", "partial", "open", "notAssessed"],
+    "entries": {
+      "closed": {
+        "rank": 2,
+        "label": "closed",
+        "labelZh": "已闭合",
+        "meaning": "The level's question is answered for every current file of the family, by the cited reader or gate.",
+        "meaningZh": "该层问题已由所引读取器或校验对该家族当前全部文件给出回答。"
+      },
+      "partial": {
+        "rank": 1,
+        "label": "partial",
+        "labelZh": "部分",
+        "meaning": "Answered for part of the family, or only up to a stated boundary. The text names where it stops.",
+        "meaningZh": "只对家族的一部分回答，或只回答到所述边界为止。文字说明停在哪里。"
+      },
+      "open": {
+        "rank": 0,
+        "label": "open",
+        "labelZh": "未解决",
+        "meaning": "Not answered. The recorded boundary or blocker is stated.",
+        "meaningZh": "尚未回答。文字给出已记录的边界或阻碍。"
+      },
+      "notAssessed": {
+        "rank": 0,
+        "label": "not assessed",
+        "labelZh": "未评估",
+        "meaning": "No documented conclusion at this level. Unknown, not zero.",
+        "meaningZh": "该层没有已记录的结论。是未知，而不是零。"
+      }
+    }
+  },
+
+  "stageTemplates": {
+    "_why": "Level-1 statements that hold for every family located through the authenticated VFS metadata. Reused by reference so the same claim is not restated in slightly different words per family.",
+    "l1VfsLocated": {
+      "level": 1,
+      "state": "closed",
+      "text": "Every logical file is located by the authenticated VFS metadata (block, chunk, offset, length) and routed to its maintained reader. A .chk chunk is a physical container that may pack many logical files.",
+      "textZh": "每个逻辑文件都由已认证的 VFS 元数据（数据块、chunk、偏移、长度）定位，并路由到其维护中的读取器。一个 .chk chunk 是物理容器，可能打包多个逻辑文件。",
+      "source": "memory/game_data/install_and_vfs.md"
+    },
+    "l1VfsLocatedMaybeAbsent": {
+      "level": 1,
+      "state": "closed",
+      "text": "Located by the authenticated VFS metadata. Location does not need the payload, so this holds even when the block's chunks are not installed locally; the availability row above says whether any byte was read.",
+      "textZh": "由已认证的 VFS 元数据定位。定位不依赖载荷，因此即使该数据块的 chunk 未在本地安装也成立；上方的可用性一栏说明是否实际读取了字节。",
+      "source": "memory/game_data/extraction_payload_boundaries.md"
+    }
+  },
+
+  "familySets": {
+    "_why": "Some block types carry the same logical-file families (the Wwise package pair appears in shared, initial, per-language and audit audio blocks). A set is declared once and resolved per block; family ids are scoped to their block.",
+    "wwisePackages": [
+      {
+        "id": "wwise-banks",
+        "label": "Wwise bank package (*_banks.pck)",
+        "labelZh": "Wwise 音频库包（*_banks.pck）",
+        "description": "AKPK package holding soundbanks: HIRC object graph, DIDX/DATA media index, bank sections.",
+        "descriptionZh": "装载 soundbank 的 AKPK 包：HIRC 对象图、DIDX/DATA 媒体索引与其他库区段。",
+        "pathRegex": "Data/Audio/PCK/Windows/[^/]+/[^/]+_banks\\.pck",
+        "stages": [
+          { "template": "l1VfsLocatedMaybeAbsent" },
+          {
+            "level": 2,
+            "state": "partial",
+            "text": "AKPK/BNK/DIDX/DATA framing is fail-closed. SDK-backed readers also frame the shipped music object bodies (types 0x0A-0x0D) exactly, although the game's built-in HIRC dispatcher skips them unless a hook is registered.",
+            "textZh": "AKPK/BNK/DIDX/DATA 帧结构为失败即关闭的读取。基于 SDK 的读取器也精确划分已安装的音乐对象正文（类型 0x0A-0x0D），尽管游戏内置 HIRC 分派器在未注册钩子时会跳过它们。",
+            "source": "memory/game_data/extraction_payload_boundaries.md"
+          },
+          {
+            "level": 3,
+            "state": "partial",
+            "text": "SDK-backed HIRC layouts type the shipped music objects 0x0A-0x0D as well as the other closed object types; the v150 effect/bus parse covers its selected fields. Authored structure does not establish a live consumer.",
+            "textZh": "基于 SDK 的 HIRC 布局为已安装的音乐对象 0x0A-0x0D 及其他已闭合类型命名字段；v150 效果/总线解析覆盖所选字段。编写时结构不能证明存在实际运行的消费者。",
+            "source": "memory/game_data/audio_hirc_parser.md"
+          },
+          {
+            "level": 4,
+            "state": "partial",
+            "text": "Almost every declared media id is named by some source record, but only a small share is reachable from a named Event. Runtime selection and audibility are not observed.",
+            "textZh": "几乎所有声明的媒体 id 都被某条源记录命名，但只有一小部分能从已命名的 Event 到达。运行时选择与是否可闻均未观测。",
+            "source": "memory/game_data/audio_naming_coverage.md"
+          }
+        ]
+      },
+      {
+        "id": "wwise-stream",
+        "label": "Wwise streamed media package (*_stream*.pck)",
+        "labelZh": "Wwise 流式媒体包（*_stream*.pck）",
+        "description": "AKPK package holding streamed encoded media referenced by id from the banks.",
+        "descriptionZh": "装载按 id 被音频库引用的流式编码媒体的 AKPK 包。",
+        "pathRegex": "Data/Audio/PCK/Windows/[^/]+/[^/]+_stream(_[0-9]+)?\\.pck",
+        "stages": [
+          { "template": "l1VfsLocatedMaybeAbsent" },
+          {
+            "level": 2,
+            "state": "partial",
+            "text": "AKPK and media-entry framing is fail-closed. Media bodies are encoded audio handed to the decoder, not framed further here.",
+            "textZh": "AKPK 与媒体条目帧结构为失败即关闭。媒体正文是交给解码器的编码音频，此处不再进一步划分。",
+            "source": "memory/game_data/audio_overview.md"
+          },
+          {
+            "level": 3,
+            "state": "partial",
+            "text": "A media entry's id joins it to bank DIDX/HIRC records; its own fields beyond the entry table are the codec's, not recovered here.",
+            "textZh": "媒体条目的 id 把它连接到音频库的 DIDX/HIRC 记录；条目表之外的字段属于编解码器，本处未恢复。",
+            "source": "memory/game_data/audio_overview.md"
+          },
+          {
+            "level": 4,
+            "state": "partial",
+            "text": "Names reach streamed media only through bank source records; which media the game plays in a given moment is a runtime question.",
+            "textZh": "名称只能通过音频库源记录到达流式媒体；某一时刻游戏播放哪条媒体属于运行时问题。",
+            "source": "memory/game_data/audio_naming_coverage.md",
+            "eliminations": ["runtime-consumer-questions"]
+          }
+        ]
+      }
+    ],
+    "unityBundles": [
+      {
+        "id": "unity-bundle",
+        "label": "Unity asset bundle (*.ab)",
+        "labelZh": "Unity 资源包（*.ab）",
+        "description": "Hash-named Unity asset bundles: models, materials, textures, prefabs, scenes, MonoBehaviours.",
+        "descriptionZh": "以哈希命名的 Unity 资源包：模型、材质、贴图、预制体、场景、MonoBehaviour。",
+        "pathRegex": "Data/Bundles/Windows/[^/]+/[^/]+\\.ab",
+        "stages": [
+          {
+            "level": 1,
+            "state": "closed",
+            "text": "Located by the authenticated VFS metadata; the CABMap container index gives each PathID its source root.",
+            "textZh": "由已认证的 VFS 元数据定位；CABMap 容器索引为每个 PathID 给出其来源根。",
+            "source": "memory/game_data/containers_cabmap.md"
+          },
+          {
+            "level": 2,
+            "state": "closed",
+            "text": "Nested container framing has fail-closed readers over the current VFS logical-file reads.",
+            "textZh": "嵌套容器帧结构在当前 VFS 逻辑文件读取上具备失败即关闭的读取器。",
+            "source": "memory/game_data/extraction_payload_boundaries.md"
+          },
+          {
+            "level": 3,
+            "state": "partial",
+            "text": "Serialized objects read through their type trees. MonoBehaviour fields are classified per field (measured below); many game classes still have no class-specific signal.",
+            "textZh": "序列化对象通过类型树读取。MonoBehaviour 字段逐字段分类（下文实测）；许多游戏类仍没有类特异信号。",
+            "source": "memory/game_data/unity_assets.md"
+          },
+          {
+            "level": 4,
+            "state": "partial",
+            "text": "Object identity and selected asset-to-entity bindings carry explicit provenance. Exporting an object does not prove live prefab composition, selected variant, or placement.",
+            "textZh": "对象身份与部分资源到实体的绑定带有明确来源。导出对象并不证明实际的预制体组合、所选变体或摆放。",
+            "source": "memory/game_data/unity_assets.md"
+          }
+        ]
+      }
+    ]
+  },
+
+  "vfsBlocks": {
+    "_why": "The client's EndfieldVfsBlockType enum is the authoritative block list. Each entry pairs the enum name and raw id with the display name the exporter writes as blockTypeName (the enum says IFixPatch; the exporter and directory say IFixPatchOut). A profile row whose raw id is not declared here, or whose name disagrees, fails the build closed, as does a path matching two families. Paths no family matches stay visible as Other / unclassified. Family path patterns are declarations; the counts behind them are measured.",
+    "enumSource": "tools/AnimeStudio/AnimeStudio/Endfield/Vfs/EndfieldVfsTypes.cs",
+    "entries": [
+      {
+        "enumName": "InitialAudio",
+        "rawId": 1,
+        "profileName": "InitAudio",
+        "lane": "audio",
+        "holds": "Initial Wwise packages loaded before the main audio block.",
+        "holdsZh": "在主音频块之前加载的初始 Wwise 包。",
+        "familySet": "wwisePackages"
+      },
+      {
+        "enumName": "InitialBundle",
+        "rawId": 2,
+        "profileName": "InitBundle",
+        "lane": "unity_assets",
+        "holds": "Initial Unity asset bundles.",
+        "holdsZh": "初始 Unity 资源包。",
+        "familySet": "unityBundles"
+      },
+      {
+        "enumName": "InitialExtendData",
+        "rawId": 3,
+        "profileName": "InitialExtendData",
+        "lane": "catalog",
+        "holds": "The initial path-hash dictionary.",
+        "holdsZh": "初始路径哈希字典。",
+        "families": [
+          {
+            "id": "init-string-path-hash",
+            "label": "InitStringPathHash.bin",
+            "labelZh": "InitStringPathHash.bin",
+            "description": "The initial-stage path/hash dictionary beside the main StringPathHash.bin.",
+            "descriptionZh": "与主 StringPathHash.bin 并列的初始阶段路径/哈希字典。",
+            "pathRegex": "Data/ExtendData/Initial/InitStringPathHash\\.bin",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "Both StringPathHash dictionaries self-bound their lookup and value pools.",
+                "textZh": "两个 StringPathHash 字典的查找池与值池都能自我界定。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "notAssessed",
+                "text": "No field conclusion is recorded for this dictionary separately from the main one.",
+                "textZh": "此字典没有独立于主字典的字段结论记录。",
+                "source": "memory/game_data/extend_data.md"
+              },
+              {
+                "level": 4,
+                "state": "notAssessed",
+                "text": "What the initial stage resolves with it is not recorded.",
+                "textZh": "初始阶段用它解析什么尚无记录。",
+                "source": "memory/game_data/extend_data.md"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "enumName": "BundleManifest",
+        "rawId": 4,
+        "profileName": "BundleManifest",
+        "lane": "catalog",
+        "holds": "The encrypted bundle manifest.",
+        "holdsZh": "加密的资源包清单。",
+        "families": [
+          {
+            "id": "bundle-manifest",
+            "label": "manifest.hgmmap",
+            "labelZh": "manifest.hgmmap",
+            "description": "One large encrypted manifest file for the bundle set.",
+            "descriptionZh": "资源包集合的单个大型加密清单文件。",
+            "pathRegex": "Data/Bundles/Windows/manifest\\.hgmmap",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "An exact framing sweep closes the fixed-width sections and the repeated-size terminal envelope, a UTF-16LE fragment span, and 48-byte rows indexing a second span. Terminal bytes stay opaque.",
+                "textZh": "精确帧扫描闭合定宽区段与重复尺寸的末端外壳、一段 UTF-16LE 片段区以及索引第二段的 48 字节行。末端字节仍不透明。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "open",
+                "text": "No serialized field ownership: row witnesses count and order records but name no field.",
+                "textZh": "没有序列化字段归属：行级证据只计数和排序记录，不命名字段。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "Manifest-row and mmap value semantics are unresolved; unresolved stream/ref-out carriers block a safe lookup capture.",
+                "textZh": "清单行与 mmap 值语义未解决；未解决的 stream/ref-out 载体阻碍了安全的查找捕获。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "enumName": "IFixPatch",
+        "rawId": 5,
+        "profileName": "IFixPatchOut",
+        "lane": "code",
+        "holds": "Encrypted IFix runtime code patches.",
+        "holdsZh": "加密的 IFix 运行时代码补丁。",
+        "families": [
+          {
+            "id": "ifix-patch",
+            "label": "IFix patch (*.patch.bytes)",
+            "labelZh": "IFix 补丁（*.patch.bytes）",
+            "description": "One patch file per patched assembly, holding the IFix file-VM stream.",
+            "descriptionZh": "每个被修补程序集一个补丁文件，装载 IFix 文件虚拟机流。",
+            "pathRegex": "Data/IFixPatchOut/Windows/[^/]+\\.patch\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "The maintained reader consumes every current file exactly: a bounded opaque prefix, then strings, external type/method tables, instruction and exception spans, and fix records through EOF.",
+                "textZh": "维护中的读取器精确消费当前每个文件：一段有界的不透明前缀，随后是字符串、外部类型/方法表、指令与异常区段和修补记录，直至 EOF。",
+                "source": "memory/game_data/ifix_patch.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "The selected native Instruction layout and Code enum name every opcode in the current spans; call, branch, field, string and return operands are joined to file tables. The delegate path and other operands stay uninterpreted.",
+                "textZh": "所选原生 Instruction 布局与 Code 枚举为当前区段的每个操作码命名；调用、分支、字段、字符串与返回操作数已连接到文件表。委托构造路径与其他操作数尚未解释。",
+                "source": "memory/game_data/ifix_patch.md"
+              },
+              {
+                "level": 4,
+                "state": "partial",
+                "text": "Authored replacement targets and control-flow edges are established. Whether a patch ran, and its effect, needs an authenticated load and dispatch receipt.",
+                "textZh": "已确立编写时的替换目标与控制流边。补丁是否运行及其效果需要已认证的加载与分派回执。",
+                "source": "memory/game_data/ifix_patch.md",
+                "eliminations": ["runtime-consumer-questions"]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "enumName": "AuditStreaming",
+        "rawId": 6,
+        "profileName": "AuditStreaming",
+        "lane": "provenance",
+        "holds": "Audit variant of Streaming; no separate content.",
+        "holdsZh": "Streaming 的审计副本；无独立内容。",
+        "families": []
+      },
+      {
+        "enumName": "AuditDynamicStreaming",
+        "rawId": 7,
+        "profileName": "AuditDynamicStreaming",
+        "lane": "provenance",
+        "holds": "Audit variant of DynamicStreaming; no separate content.",
+        "holdsZh": "DynamicStreaming 的审计副本；无独立内容。",
+        "families": []
+      },
+      {
+        "enumName": "AuditIV",
+        "rawId": 8,
+        "profileName": "AuditIV",
+        "lane": "provenance",
+        "holds": "Audit variant of IV; no separate content.",
+        "holdsZh": "IV 的审计副本；无独立内容。",
+        "families": []
+      },
+      {
+        "enumName": "AuditAudio",
+        "rawId": 9,
+        "profileName": "AuditAudio",
+        "lane": "provenance",
+        "holds": "Audit variant of the audio packages; no separate content.",
+        "holdsZh": "音频包的审计副本；无独立内容。",
+        "familySet": "wwisePackages"
+      },
+      {
+        "enumName": "AuditVideo",
+        "rawId": 10,
+        "profileName": "AuditVideo",
+        "lane": "provenance",
+        "holds": "Audit variant of Video; no separate content.",
+        "holdsZh": "Video 的审计副本；无独立内容。",
+        "families": []
+      },
+      {
+        "enumName": "Bundle",
+        "rawId": 11,
+        "profileName": "Bundle",
+        "lane": "unity_assets",
+        "holds": "The main Unity asset bundles.",
+        "holdsZh": "主 Unity 资源包。",
+        "familySet": "unityBundles"
+      },
+      {
+        "enumName": "Audio",
+        "rawId": 12,
+        "profileName": "Audio",
+        "lane": "audio",
+        "holds": "Shared (non-language) Wwise packages.",
+        "holdsZh": "共享（非语言）Wwise 包。",
+        "familySet": "wwisePackages"
+      },
+      {
+        "enumName": "Video",
+        "rawId": 13,
+        "profileName": "Video",
+        "lane": "unity_assets",
+        "holds": "CRI USM video, split by directory.",
+        "holdsZh": "CRI USM 视频，按目录区分。",
+        "families": [
+          {
+            "id": "video-narrative",
+            "label": "Narrative video",
+            "labelZh": "剧情视频",
+            "description": "Story cutscene FMV under Data/Video/PC/Narrative.",
+            "descriptionZh": "Data/Video/PC/Narrative 下的剧情过场影片。",
+            "pathRegex": "Data/Video/PC/Narrative/.+\\.usm",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "Video outer framing has a fail-closed reader; inner streams are handed to the decoder.",
+                "textZh": "视频外层帧结构具备失败即关闭的读取器；内部流交给解码器。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "notAssessed",
+                "text": "USM is a public container; no field-level recovery is recorded or needed for playback.",
+                "textZh": "USM 是公开容器格式；没有记录也不需要字段级恢复即可播放。",
+                "source": "memory/game_data/unity_assets.md"
+              },
+              {
+                "level": 4,
+                "state": "notAssessed",
+                "text": "Story attaches narrative videos by its own naming rules; no per-file binding is measured here.",
+                "textZh": "剧情按其自身命名规则挂接剧情视频；此处没有逐文件的绑定测量。",
+                "source": "memory/webui/story_recovery.md"
+              }
+            ]
+          },
+          {
+            "id": "video-guide",
+            "label": "Guide video",
+            "labelZh": "引导视频",
+            "description": "Tutorial clips under Data/Video/PC/Guide.",
+            "descriptionZh": "Data/Video/PC/Guide 下的教程短片。",
+            "pathRegex": "Data/Video/PC/Guide/.+\\.usm",
+            "stagesFrom": "video-narrative"
+          },
+          {
+            "id": "video-ui",
+            "label": "UI video",
+            "labelZh": "界面视频",
+            "description": "Interface background clips under Data/Video/PC/UI.",
+            "descriptionZh": "Data/Video/PC/UI 下的界面背景短片。",
+            "pathRegex": "Data/Video/PC/UI/.+\\.usm",
+            "stagesFrom": "video-narrative"
+          }
+        ]
+      },
+      {
+        "enumName": "IV",
+        "rawId": 14,
+        "profileName": "IV",
+        "lane": "world",
+        "holds": "Irradiance volumes: per-scene indexes, packed payloads, and room region files.",
+        "holdsZh": "辐照度体积：各场景索引、打包载荷与房间区域文件。",
+        "families": [
+          {
+            "id": "iv-index",
+            "label": "IV index (index.bytes)",
+            "labelZh": "IV 索引（index.bytes）",
+            "description": "Per-volume index: a UTF-16LE filename table and a directory of payload ranges.",
+            "descriptionZh": "每个体积的索引：UTF-16LE 文件名表与载荷区间目录。",
+            "pathRegex": "Data/IrradianceVolume/.+/index\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "Every current index has a bounded unique filename-table parse and a uniquely located directory; legacy indexes use a separate EOF-ending directory.",
+                "textZh": "当前每个索引都有有界且唯一的文件名表解析和唯一定位的目录；旧版索引使用另一种以 EOF 结束的目录。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Offset and length words are proven by exact payload tiling. The other words carry exact stored additive relations but no names.",
+                "textZh": "偏移与长度字由载荷的精确铺满证明。其他字存在精确的存储加法关系，但没有名称。",
+                "source": "memory/game_data/world_irradiance.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "No renderer field, compression stage, or runtime use follows from the index arithmetic.",
+                "textZh": "索引算术不能推出任何渲染字段、压缩阶段或运行时用途。",
+                "source": "memory/game_data/world_irradiance.md"
+              }
+            ]
+          },
+          {
+            "id": "iv-payload",
+            "label": "IV payload (iv_*.bytes)",
+            "labelZh": "IV 载荷（iv_*.bytes）",
+            "description": "Packed irradiance payloads addressed by an index directory. By far the largest IV bytes.",
+            "descriptionZh": "由索引目录寻址的打包辐照度载荷，占 IV 字节的绝大部分。",
+            "pathRegex": "Data/IrradianceVolume/.+/iv_[^/]+\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "Index-directed ranges tile every referenced payload through EOF without gaps or overlaps. The records inside a range are not framed.",
+                "textZh": "索引指向的区间无缝无重叠地铺满每个被引用载荷直至 EOF。区间内部的记录尚未划分。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "open",
+                "text": "Record fields are opaque. The native parser takes no payload length and checks no final EOF, and repeated in-payload magic rules out signature scanning.",
+                "textZh": "记录字段不透明。原生解析器不接收载荷长度也不检查最终 EOF，且载荷内重复出现的魔数排除了签名扫描。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "Renderer meaning is open; a runtime capture candidate exists but its contracts are not closed.",
+                "textZh": "渲染含义未解决；存在一个运行时捕获候选，但其契约尚未闭合。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          },
+          {
+            "id": "iv-room",
+            "label": "IV room region (regionIv_room_*.bytes)",
+            "labelZh": "IV 房间区域（regionIv_room_*.bytes）",
+            "description": "Unpacked room region volumes: a small header, a bounding box, grid dimensions, and probe records.",
+            "descriptionZh": "未打包的房间区域体积：小型头部、包围盒、网格尺寸与探针记录。",
+            "pathRegex": "Data/IrradianceVolume/.+/regionIv_room_[^/]+\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "Region framing is exact: header plus nx*ny*nz fixed-size probe records equals the file length in every current file.",
+                "textZh": "区域帧结构精确：在当前每个文件中，头部加 nx*ny*nz 个定长探针记录恰好等于文件长度。",
+                "source": "memory/game_data/world_irradiance.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Bounding box and grid dimensions are confirmed independently by a constant probe density. The probe record's own fields are not named.",
+                "textZh": "包围盒与网格尺寸由恒定的探针密度独立确认。探针记录自身的字段尚未命名。",
+                "source": "memory/game_data/world_irradiance.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "No renderer consumer is recorded.",
+                "textZh": "没有记录渲染消费者。",
+                "source": "memory/game_data/world_irradiance.md"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "enumName": "Streaming",
+        "rawId": 15,
+        "profileName": "Streaming",
+        "lane": "world",
+        "holds": "Static world streaming chunks: per-directory info files and paired Init/Streaming chunk data.",
+        "holdsZh": "静态世界流式区块：各目录的信息文件与成对的 Init/Streaming 区块数据。",
+        "families": [
+          {
+            "id": "streaming-chunk-info",
+            "label": "StreamingChunkInfo",
+            "labelZh": "StreamingChunkInfo",
+            "description": "One info file per streaming directory, cataloguing its chunk files.",
+            "descriptionZh": "每个流式目录一个信息文件，为其区块文件编目。",
+            "pathRegex": "Data/Streaming/.+/StreamingChunkInfo\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "The anonymous table/vector graph is exact-framed in every current file, including reused vtables and 4/8/12-byte vector widths; every nonzero byte is owned.",
+                "textZh": "当前每个文件的匿名 table/vector 图都被精确划分，包括复用的 vtable 与 4/8/12 字节向量宽度；每个非零字节都有归属。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Standard rows' anonymous projections uniquely match the same-directory secondary-file catalog. Legacy three-field roots are framed but unsupported by that projection, and no field is named.",
+                "textZh": "标准行的匿名投影与同目录次级文件目录唯一匹配。旧版三字段根已划分但不受该投影支持，且没有字段被命名。",
+                "source": "memory/game_data/install_and_vfs.md"
+              },
+              {
+                "level": 4,
+                "state": "partial",
+                "text": "A native gate proves conditional static value provenance from Info pairs to the paired path formatters. No concrete runtime Info instance or spatial meaning.",
+                "textZh": "原生校验证明了从 Info 对到成对路径格式化器的条件性静态值来源。没有具体的运行时 Info 实例，也没有空间含义。",
+                "source": "memory/game_data/install_and_vfs.md"
+              }
+            ]
+          },
+          {
+            "id": "init-chunk-data",
+            "label": "InitChunkData",
+            "labelZh": "InitChunkData",
+            "description": "Initial chunk payloads, numeric grid-named or Global.",
+            "descriptionZh": "初始区块载荷，按数字网格命名或为 Global。",
+            "pathRegex": "Data/Streaming/.+/InitChunkData_[^/]+\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "Three exact anonymous subgraphs (root field 2 through EOF, parallel fields 3/4/5, paired fields 6/7) -- not whole-file closure. Nested targets outside them stay opaque.",
+                "textZh": "三个精确的匿名子图（根字段 2 至 EOF、并行字段 3/4/5、成对字段 6/7），并非整文件闭合。其外的嵌套目标仍不透明。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Field 2 is an empty vector here; filename relations are structural only. No union, entity, component or field name follows.",
+                "textZh": "此处字段 2 为空向量；文件名关系仅是结构性的。推不出任何 union、实体、组件或字段名。",
+                "source": "memory/game_data/install_and_vfs.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "The runtime root is not joined to one logical file, and no spatial or gameplay meaning is established.",
+                "textZh": "运行时根没有连接到单个逻辑文件，也没有确立空间或玩法含义。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          },
+          {
+            "id": "streaming-chunk-data",
+            "label": "StreamingChunkData",
+            "labelZh": "StreamingChunkData",
+            "description": "Streamed chunk payloads paired with InitChunkData.",
+            "descriptionZh": "与 InitChunkData 成对的流式区块载荷。",
+            "pathRegex": "Data/Streaming/.+/StreamingChunkData_[^/]+\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "The same three exact subgraphs; field-2 rows close against seven selected-build layouts with counted scalar32 vectors through EOF. Bytes outside the certified subgraphs stay opaque.",
+                "textZh": "同样的三个精确子图；字段 2 的行按所选版本的七种布局闭合，并以计数 scalar32 向量延续到 EOF。认证子图之外的字节仍不透明。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Native gates establish row fields 0-5 as scalar32 x3, int32[2], float32[6] and a scalar32 key vector. Names, key namespace and signedness are unresolved.",
+                "textZh": "原生校验确立行字段 0-5 为 3 个 scalar32、int32[2]、float32[6] 与 scalar32 键向量。名称、键命名空间与符号性未解决。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "A consumer uses each field-5 value as a hash-table key, but what the key names is unresolved and the runtime root is unavailable.",
+                "textZh": "某个消费者把每个字段 5 值用作哈希表键，但键指向什么未解决，运行时根也不可得。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "enumName": "DynamicStreaming",
+        "rawId": 16,
+        "profileName": "DynamicStreaming",
+        "lane": "world",
+        "holds": "Generated-FlatBuffer dynamic scene data: main grids, area records, and auxiliary roots.",
+        "holdsZh": "生成式 FlatBuffer 动态场景数据：主网格、区域记录与辅助根。",
+        "families": [
+          {
+            "id": "ds-main",
+            "label": "Main grid (fb_main_*.bytes)",
+            "labelZh": "主网格（fb_main_*.bytes）",
+            "description": "Per-grid scene data whose filename encodes the packed grid id.",
+            "descriptionZh": "按网格划分的场景数据，文件名编码了打包的网格 id。",
+            "pathRegex": "Data/DynamicStreaming/.+/fb_main_[^/]+\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "Selected-build accessor widths bound every grid vector count and body without overlap: exact vector extent, not whole-file closure. Grid tables, strings, padding and nested fields are not yet owned.",
+                "textZh": "所选版本的访问器宽度无重叠地界定每个网格向量的计数与正文：这是精确的向量范围，而非整文件闭合。网格表、字符串、填充与嵌套字段尚无归属。",
+                "source": "memory/game_data/world_dynamic_streaming.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Generated accessors name the fields; DataIndex Type/Grid/Index partition the named vectors exactly. DataMask stays a raw UInt64, with the presence-bit reading rejected.",
+                "textZh": "生成的访问器为字段命名；DataIndex 的 Type/Grid/Index 精确划分已命名向量。DataMask 仍是原始 UInt64，存在位的解读已被否定。",
+                "source": "memory/game_data/world_dynamic_streaming.md"
+              },
+              {
+                "level": 4,
+                "state": "partial",
+                "text": "The filename-to-root UniqueId join and native file-selection routes are direct but conditional. Which grid the game requests in play, and runtime activation, remain open.",
+                "textZh": "文件名到根 UniqueId 的连接与原生文件选择路径是直接但有条件的。游戏实际请求哪个网格及运行时激活仍未解决。",
+                "source": "memory/game_data/world_dynamic_streaming.md",
+                "eliminations": ["runtime-consumer-questions"]
+              }
+            ]
+          },
+          {
+            "id": "ds-area",
+            "label": "Stream area (FBStreamArea.bytes)",
+            "labelZh": "流送区域（FBStreamArea.bytes）",
+            "description": "One area file per scene: visibility groups and area records.",
+            "descriptionZh": "每个场景一个区域文件：可见组与区域记录。",
+            "pathRegex": "Data/DynamicStreaming/.+/FBStreamArea\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "With the corrected Int32 widths, all six vector count words and bodies tile the tail from root end to EOF in the current corpus.",
+                "textZh": "采用修正后的 Int32 宽度后，当前语料中六个向量的计数字与正文从根末尾铺满到 EOF。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Selected-build accessors and the reviewed area-record contract name the fields; several record fields remain unresolved.",
+                "textZh": "所选版本的访问器与已审查的区域记录契约为字段命名；若干记录字段仍未解决。",
+                "source": "memory/game_data/world_dynamic_streaming.md"
+              },
+              {
+                "level": 4,
+                "state": "partial",
+                "text": "A native route reads the scene's area file through VFS into a typed root and sets up triggers. That is a static route, not an observed activation.",
+                "textZh": "某条原生路径经 VFS 把场景区域文件读入类型化根并建立触发器。这是静态路径，不是观测到的激活。",
+                "source": "memory/game_data/world_dynamic_streaming.md",
+                "eliminations": ["runtime-consumer-questions"]
+              }
+            ]
+          },
+          {
+            "id": "ds-aux-init",
+            "label": "Auxiliary init root (fb_init_*.bytes)",
+            "labelZh": "辅助初始根（fb_init_*.bytes）",
+            "description": "Auxiliary root named by the dynamic loader's fb_init template.",
+            "descriptionZh": "由动态加载器 fb_init 模板命名的辅助根。",
+            "pathRegex": "Data/DynamicStreaming/.+/fb_init_[^/]+\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "Envelope and root framing go through the maintained DynamicStreaming reader; the auxiliary roots keep a framing-only boundary.",
+                "textZh": "外壳与根帧结构经由维护中的 DynamicStreaming 读取器；辅助根只保留帧结构边界。",
+                "source": "memory/game_data/README.md"
+              },
+              {
+                "level": 3,
+                "state": "open",
+                "text": "No field-level contract is recorded for the auxiliary roots.",
+                "textZh": "辅助根没有记录字段级契约。",
+                "source": "memory/game_data/README.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "The native loader names the fb_init, fb_streaming and fb_version paths, which is a file-selection route, not a meaning.",
+                "textZh": "原生加载器命名了 fb_init、fb_streaming 与 fb_version 路径；这是文件选择路径，不是含义。",
+                "source": "memory/game_data/world_dynamic_streaming.md"
+              }
+            ]
+          },
+          {
+            "id": "ds-aux-streaming",
+            "label": "Auxiliary streaming root (fb_streaming_*.bytes)",
+            "labelZh": "辅助流送根（fb_streaming_*.bytes）",
+            "description": "Auxiliary root named by the dynamic loader's fb_streaming template.",
+            "descriptionZh": "由动态加载器 fb_streaming 模板命名的辅助根。",
+            "pathRegex": "Data/DynamicStreaming/.+/fb_streaming_[^/]+\\.bytes",
+            "stagesFrom": "ds-aux-init"
+          },
+          {
+            "id": "ds-aux-version",
+            "label": "Auxiliary version root (fb_version.bytes)",
+            "labelZh": "辅助版本根（fb_version.bytes）",
+            "description": "Per-scene version/ban set named by DynamicSceneVersionBanSet.",
+            "descriptionZh": "由 DynamicSceneVersionBanSet 命名的各场景版本/禁用集合。",
+            "pathRegex": "Data/DynamicStreaming/.+/fb_version\\.bytes",
+            "stagesFrom": "ds-aux-init"
+          }
+        ]
+      },
+      {
+        "enumName": "Lua",
+        "rawId": 17,
+        "profileName": "Lua",
+        "lane": "code",
+        "holds": "Encrypted Lua scripts: UI, mission phases, constants, runtime systems.",
+        "holdsZh": "加密的 Lua 脚本：界面、任务阶段、常量与运行时系统。",
+        "families": [
+          {
+            "id": "lua-script",
+            "label": "Lua script (*.lua)",
+            "labelZh": "Lua 脚本（*.lua）",
+            "description": "base64 + XXTEA wrapped Lua source.",
+            "descriptionZh": "以 base64 + XXTEA 包装的 Lua 源码。",
+            "pathRegex": "Data/LuaScripts/.+\\.lua",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "The exporter decodes the base64 + XXTEA wrapper and writes plaintext Lua source.",
+                "textZh": "导出器解开 base64 + XXTEA 包装并写出明文 Lua 源码。",
+                "source": "memory/game_data/extraction_pipeline.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Plaintext source is self-describing code; a fingerprinted consumer-reference index is built from it for the Mission Pipeline. Most scripts are not indexed.",
+                "textZh": "明文源码本身即可读代码；从中构建了带指纹的消费者引用索引供 Mission Pipeline 使用。大多数脚本未被索引。",
+                "source": "memory/webui/story_recovery.md"
+              },
+              {
+                "level": 4,
+                "state": "partial",
+                "text": "Selected mission and consumer references feed Story evidence. Runtime behaviour of the scripts is not modelled.",
+                "textZh": "部分任务与消费者引用进入剧情证据。脚本的运行时行为未建模。",
+                "source": "memory/webui/story_recovery.md"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "enumName": "Table",
+        "rawId": 18,
+        "profileName": "Table",
+        "lane": "gameplay",
+        "alsoLanes": ["text"],
+        "holds": "Single-instance SparkBuffer config tables.",
+        "holdsZh": "单实例 SparkBuffer 配置表。",
+        "families": [
+          {
+            "id": "table-cfg",
+            "label": "Config table (TableCfg/*.bytes)",
+            "labelZh": "配置表（TableCfg/*.bytes）",
+            "description": "One SparkBuffer file per table, carrying its own column names.",
+            "descriptionZh": "每张表一个 SparkBuffer 文件，自带列名。",
+            "pathRegex": "Data/TableCfg/[^/]+\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "A direct sweep checks overlay provenance, decoded MD5, exact read length, SparkBuffer parsing and EOF for every metadata declaration.",
+                "textZh": "直接扫描对每条元数据声明检查覆盖来源、解码 MD5、精确读取长度、SparkBuffer 解析与 EOF。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Column names and types travel with each table. Units, enum meanings and cross-table keys are proven only where a consumer has been checked.",
+                "textZh": "列名与类型随表一同存储。单位、枚举含义与跨表键只在检查过消费者的地方被证明。",
+                "source": "memory/game_data/gameplay_semantics.md"
+              },
+              {
+                "level": 4,
+                "state": "partial",
+                "text": "Gameplay joins selected Buff/Skill tables to native contracts and Story publishes text tables. Most tables have no consumer-proven meaning.",
+                "textZh": "玩法把部分 Buff/Skill 表连接到原生契约，剧情发布文本表。大多数表没有经消费者证明的含义。",
+                "source": "memory/game_data/gameplay_semantics.md"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "enumName": "JsonData",
+        "rawId": 19,
+        "profileName": "JsonData",
+        "lane": "text",
+        "alsoLanes": ["world", "gameplay", "story"],
+        "holds": "Mixed plain JSON and MemoryPack-serialized payloads, grouped by root directory.",
+        "holdsZh": "混合的纯 JSON 与 MemoryPack 序列化载荷，按根目录分组。",
+        "families": [
+          {
+            "id": "json-lipsync",
+            "label": "LipSync",
+            "labelZh": "口型同步 LipSync",
+            "description": "Per-voice-line lip-sync payloads, by language.",
+            "descriptionZh": "按语言划分的每句语音口型同步载荷。",
+            "pathRegex": "Data/Json/LipSync/.+",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "A strict 15-member reader runs through EOF on every current file, joined to the ledger by logical MD5.",
+                "textZh": "严格的 15 成员读取器在当前每个文件上读到 EOF，并按逻辑 MD5 与台账连接。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "The reader names the members; what the values drive at playback is not proven.",
+                "textZh": "读取器为成员命名；数值在播放时驱动什么尚未证明。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "notAssessed",
+                "text": "No consumer conclusion is recorded.",
+                "textZh": "没有记录消费者结论。",
+                "source": "memory/game_data/install_and_vfs.md"
+              }
+            ]
+          },
+          {
+            "id": "json-npc-montage",
+            "label": "NPC montage (NPC/MontageJson)",
+            "labelZh": "NPC 蒙太奇（NPC/MontageJson）",
+            "description": "MemoryPack NPC montage records.",
+            "descriptionZh": "MemoryPack 序列化的 NPC 蒙太奇记录。",
+            "pathRegex": "Data/Json/NPC/MontageJson/.+",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "The montage gate binds each identity by path, length and logical MD5 and requires exact EOF closure.",
+                "textZh": "蒙太奇校验按路径、长度与逻辑 MD5 绑定每个身份，并要求精确的 EOF 闭合。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Generated formatter setters name the root and every NPCMontageAnim member; nested DynamicEntity vector/value spans remain explicit unresolved ranges.",
+                "textZh": "生成的格式化器 setter 命名了根与全部 NPCMontageAnim 成员；嵌套 DynamicEntity 向量/值区段仍是明确标出的未解决区间。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "Field names alone do not prove runtime selection or playback.",
+                "textZh": "仅有字段名不能证明运行时选择或播放。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          },
+          {
+            "id": "json-npc-prefab",
+            "label": "NPC prefab info (NPC/PrefabInfo)",
+            "labelZh": "NPC 预制体信息（NPC/PrefabInfo）",
+            "description": "Plain-JSON NPC prefab descriptors.",
+            "descriptionZh": "纯 JSON 的 NPC 预制体描述。",
+            "pathRegex": "Data/Json/NPC/PrefabInfo/.+",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "Real JSON: the registry records complete UTF-8 JSON syntax for these files.",
+                "textZh": "真正的 JSON：注册表记录这些文件为完整的 UTF-8 JSON 语法。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "notAssessed",
+                "text": "JSON keys name themselves, but no key is proven against a consumer.",
+                "textZh": "JSON 键自带名称，但没有键经过消费者证明。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "notAssessed",
+                "text": "No consumer conclusion is recorded.",
+                "textZh": "没有记录消费者结论。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          },
+          {
+            "id": "json-levelscript",
+            "label": "LevelScriptData",
+            "labelZh": "关卡脚本 LevelScriptData",
+            "description": "MemoryPack level scripts: activation, collections, action maps.",
+            "descriptionZh": "MemoryPack 关卡脚本：激活、集合与动作表。",
+            "pathRegex": "Data/Json/LevelScriptData/.+",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "Empty-action-map files close a complete schema at EOF; most others expose a named five-member terminal suffix with weaker earlier framing. Non-empty action maps are blocked on the union table.",
+                "textZh": "空动作表文件在 EOF 处闭合完整模式；其他多数文件只暴露已命名的五成员末端后缀，前部帧结构较弱。非空动作表受 union 表阻碍。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "A generated-order owner cursor names the activation, collection, identity and reset fields.",
+                "textZh": "按生成顺序的所有者游标为激活、集合、身份与重置字段命名。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "partial",
+                "text": "Selected LevelScript actions prove Story links under explicit gates. That covers the carriers Story reads, not the whole family.",
+                "textZh": "部分 LevelScript 动作在明确的校验下证明了剧情连接。这只覆盖剧情读取的载体，而非整个家族。",
+                "source": "memory/game_data/story_carriers.md"
+              }
+            ]
+          },
+          {
+            "id": "json-levelscript-template",
+            "label": "LevelScriptTemplateData",
+            "labelZh": "关卡脚本模板 LevelScriptTemplateData",
+            "description": "Level script templates.",
+            "descriptionZh": "关卡脚本模板。",
+            "pathRegex": "Data/Json/LevelScriptTemplateData/.+",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "Opaque-middle files reach EOF without locating what the framing skipped: unmeasured, not covered, until the reader declares its ranges.",
+                "textZh": "中段不透明的文件读到 EOF，却没有定位帧结构跳过的内容：在读取器声明区间之前属于未测量，而非已覆盖。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "open",
+                "text": "The skipped middle is not named.",
+                "textZh": "被跳过的中段没有命名。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "notAssessed",
+                "text": "No consumer conclusion is recorded.",
+                "textZh": "没有记录消费者结论。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          },
+          {
+            "id": "json-leveldata",
+            "label": "LevelData",
+            "labelZh": "关卡数据 LevelData",
+            "description": "MemoryPack per-level authored data: camera poses, regions, patrols, spawns.",
+            "descriptionZh": "MemoryPack 各关卡编写数据：相机位姿、区域、巡逻、生成。",
+            "pathRegex": "Data/Json/LevelData/.+",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "The sequential reader closes the complete 43-field schema for supported shapes; other files stop at the first unsupported nested body and keep one independent EOF frame.",
+                "textZh": "顺序读取器对支持的形态闭合完整的 43 字段模式；其他文件停在第一个不支持的嵌套正文处，并保留一个独立的 EOF 帧。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Generated field order names the closed members, including patrol, attract-point and waypoint records.",
+                "textZh": "生成的字段顺序为已闭合成员命名，包括巡逻、吸引点与路径点记录。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "Runtime selection (which point, which patrol) is outside the static payload evidence.",
+                "textZh": "运行时选择（哪个点、哪条巡逻）超出了静态载荷证据。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          },
+          {
+            "id": "json-skilldata",
+            "label": "SkillData",
+            "labelZh": "技能数据 SkillData",
+            "description": "MemoryPack skill definitions and action groups.",
+            "descriptionZh": "MemoryPack 技能定义与动作组。",
+            "pathRegex": "Data/Json/SkillData/.+",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "Whole-object cursor proof holds only for the empty-ActionGroup profile; other files keep a bounded prefix and an authenticated terminal.",
+                "textZh": "整对象游标证明只对空 ActionGroup 形态成立；其他文件保留有界前缀与已认证的末端。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Wrapper order names the outer fields; one nested action tag is unsupported.",
+                "textZh": "包装顺序为外层字段命名；有一个嵌套动作标签尚不支持。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "partial",
+                "text": "Gameplay joins selected action tags to native reader contracts. Provider selection and action semantics remain unresolved.",
+                "textZh": "玩法把部分动作标签连接到原生读取器契约。提供者选择与动作语义仍未解决。",
+                "source": "memory/game_data/gameplay_semantics.md"
+              }
+            ]
+          },
+          {
+            "id": "json-buffdata",
+            "label": "BuffData",
+            "labelZh": "增益数据 BuffData",
+            "description": "MemoryPack buff definitions with icon config and action events.",
+            "descriptionZh": "带图标配置与动作事件的 MemoryPack 增益定义。",
+            "pathRegex": "Data/Json/BuffData/.+",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "Rows with a contiguous named 30-field outer cursor are framed; rows stopped by a positive unsupported modifier list or action stay bounded partial. Internal icon/action bodies stay opaque.",
+                "textZh": "具有连续已命名 30 字段外层游标的行已划分；被不支持的正数修饰符列表或动作挡住的行保持有界部分。内部图标/动作正文仍不透明。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Generated wrapper order names the outer fields; per-tag action layouts live in reviewed native contracts.",
+                "textZh": "生成的包装顺序为外层字段命名；各标签的动作布局在已审查的原生契约中。",
+                "source": "memory/game_data/gameplay_semantics.md"
+              },
+              {
+                "level": 4,
+                "state": "partial",
+                "text": "Selected action tags carry native-contract meaning; provider selection, action semantics and whole-file EOF remain unresolved.",
+                "textZh": "部分动作标签带有原生契约含义；提供者选择、动作语义与整文件 EOF 仍未解决。",
+                "source": "memory/game_data/gameplay_semantics.md"
+              }
+            ]
+          },
+          {
+            "id": "json-mission-runtime",
+            "label": "MissionRuntimeAsset",
+            "labelZh": "任务运行时资源 MissionRuntimeAsset",
+            "description": "Plain-JSON mission runtime assets.",
+            "descriptionZh": "纯 JSON 的任务运行时资源。",
+            "pathRegex": "Data/Json/MissionRuntimeAsset/.+",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "Real JSON with complete UTF-8 syntax.",
+                "textZh": "语法完整的 UTF-8 真 JSON。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Keys are self-named; the Mission Pipeline reads selected fields for Story evidence.",
+                "textZh": "键自带名称；Mission Pipeline 为剧情证据读取部分字段。",
+                "source": "memory/webui/story_recovery.md"
+              },
+              {
+                "level": 4,
+                "state": "partial",
+                "text": "Mission ordering and activation are evidence-typed chains, never inferred from registration order; most mission behaviour is runtime.",
+                "textZh": "任务顺序与激活是带证据类型的链条，绝不从注册顺序推断；大部分任务行为属于运行时。",
+                "source": "memory/webui/story_recovery.md"
+              }
+            ]
+          },
+          {
+            "id": "json-interactive",
+            "label": "Interactive",
+            "labelZh": "交互物 Interactive",
+            "description": "MemoryPack interactive definitions and ModelView state controllers.",
+            "descriptionZh": "MemoryPack 交互物定义与 ModelView 状态控制器。",
+            "pathRegex": "Data/Json/Interactive/.+",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "Supported variants have exact readers; unsupported tails keep opaque or ambiguous ranges visible.",
+                "textZh": "受支持的变体有精确读取器；不受支持的尾部保留可见的不透明或歧义区间。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Generated order names the supported variants' fields only.",
+                "textZh": "生成顺序只为受支持变体的字段命名。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "notAssessed",
+                "text": "No whole-family consumer conclusion is recorded.",
+                "textZh": "没有记录针对整个家族的消费者结论。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          },
+          {
+            "id": "json-spawner",
+            "label": "SpawnerConfig",
+            "labelZh": "生成器配置 SpawnerConfig",
+            "description": "MemoryPack spawner configs: enemy library, routes, waves.",
+            "descriptionZh": "MemoryPack 生成器配置：敌人库、路线、波次。",
+            "pathRegex": "Data/Json/SpawnerConfig/.+",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "Every current file closes the named enemy-library prefix; files whose wave map does not close remain bounded partial.",
+                "textZh": "当前每个文件都闭合已命名的敌人库前缀；波次表未闭合的文件保持有界部分。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "The generated five-field order joins enemy library, route maps, settings and the wave cursor; positive polymorphic route actions keep only a prefix.",
+                "textZh": "生成的五字段顺序连接敌人库、路线表、设置与波次游标；正数多态路线动作只保留前缀。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "notAssessed",
+                "text": "No consumer conclusion is recorded.",
+                "textZh": "没有记录消费者结论。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          },
+          {
+            "id": "json-animation-config",
+            "label": "AnimationConfig",
+            "labelZh": "动画配置 AnimationConfig",
+            "description": "MemoryPack animation configs with montage dictionaries.",
+            "descriptionZh": "带蒙太奇字典的 MemoryPack 动画配置。",
+            "pathRegex": "Data/Json/AnimationConfig/.+",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "The empty-montage shape closes exactly; montage-bearing files advance a named five-member prefix before opaque nested unions.",
+                "textZh": "空蒙太奇形态精确闭合；带蒙太奇的文件先推进已命名的五成员前缀，之后是不透明的嵌套 union。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Sync-group and time-reference curves close with fixed-width keyframes; populated polymorphic montage dictionaries remain partial.",
+                "textZh": "同步组与时间参考曲线以定宽关键帧闭合；已填充的多态蒙太奇字典仍为部分。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "notAssessed",
+                "text": "No consumer conclusion is recorded.",
+                "textZh": "没有记录消费者结论。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          },
+          {
+            "id": "json-gameplay-config",
+            "label": "GameplayConfig",
+            "labelZh": "玩法配置 GameplayConfig",
+            "description": "The GameplayConfig directory and its top-level GameplayConfig*.json registries.",
+            "descriptionZh": "GameplayConfig 目录及其顶层 GameplayConfig*.json 注册表。",
+            "pathRegex": "Data/Json/GameplayConfig(/.+|[^/]*\\.json)",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "Each file is real JSON or closes an exact declared root.",
+                "textZh": "每个文件要么是真 JSON，要么闭合一个精确的已声明根。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "notAssessed",
+                "text": "No field conclusion is recorded beyond the reader's own names.",
+                "textZh": "除读取器自身的名称外，没有记录字段结论。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "notAssessed",
+                "text": "No consumer conclusion is recorded.",
+                "textZh": "没有记录消费者结论。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          },
+          {
+            "id": "json-level-config",
+            "label": "LevelConfig",
+            "labelZh": "关卡配置 LevelConfig",
+            "description": "Per-level configuration roots.",
+            "descriptionZh": "各关卡配置根。",
+            "pathRegex": "Data/Json/LevelConfig/.+",
+            "stagesFrom": "json-gameplay-config"
+          },
+          {
+            "id": "json-atmospheric-npc",
+            "label": "AtmosphericNpcData",
+            "labelZh": "氛围 NPC 数据 AtmosphericNpcData",
+            "description": "Ambient NPC placement data.",
+            "descriptionZh": "氛围 NPC 摆放数据。",
+            "pathRegex": "Data/Json/AtmosphericNpcData/.+",
+            "stagesFrom": "json-gameplay-config"
+          },
+          {
+            "id": "json-char-interact",
+            "label": "CharInteractPerformCfgs",
+            "labelZh": "角色交互表现 CharInteractPerformCfgs",
+            "description": "Character interaction performance configs.",
+            "descriptionZh": "角色交互表现配置。",
+            "pathRegex": "Data/Json/CharInteractPerformCfgs/.+",
+            "stagesFrom": "json-gameplay-config"
+          },
+          {
+            "id": "json-map-config",
+            "label": "MapConfig",
+            "labelZh": "地图配置 MapConfig",
+            "description": "Plain-JSON map configuration consumed by the Map page.",
+            "descriptionZh": "供地图页使用的纯 JSON 地图配置。",
+            "pathRegex": "Data/Json/MapConfig/.+",
+            "stagesFrom": "json-gameplay-config"
+          },
+          {
+            "id": "json-ui-level-map",
+            "label": "UILevelMapLoadConfig",
+            "labelZh": "界面关卡地图加载 UILevelMapLoadConfig",
+            "description": "Plain-JSON UI level-map load configuration.",
+            "descriptionZh": "纯 JSON 的界面关卡地图加载配置。",
+            "pathRegex": "Data/Json/UILevelMapLoadConfig/.+",
+            "stagesFrom": "json-gameplay-config"
+          },
+          {
+            "id": "json-small-roots",
+            "label": "Small config roots",
+            "labelZh": "小型配置根",
+            "description": "NavMesh, GPUISystemConfig, NonGeneratedConfigs, AIConfig, LevelGenForRuntime, LevelMountPoint, InteractiveData and SpaceshipCabinData.json.",
+            "descriptionZh": "NavMesh、GPUISystemConfig、NonGeneratedConfigs、AIConfig、LevelGenForRuntime、LevelMountPoint、InteractiveData 与 SpaceshipCabinData.json。",
+            "pathRegex": "Data/Json/((NavMesh|GPUISystemConfig|NonGeneratedConfigs|AIConfig|LevelGenForRuntime|LevelMountPoint|InteractiveData)/.+|SpaceshipCabinData\\.json)",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "Each root is real JSON or has an exact reader, except GPU UI DamageText, which has named outer framing only.",
+                "textZh": "每个根要么是真 JSON，要么有精确读取器；GPU UI DamageText 例外，只有已命名的外层帧结构。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "notAssessed",
+                "text": "No field conclusion is recorded beyond the reader's own names.",
+                "textZh": "除读取器自身的名称外，没有记录字段结论。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "notAssessed",
+                "text": "No consumer conclusion is recorded.",
+                "textZh": "没有记录消费者结论。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "enumName": "ExtendData",
+        "rawId": 20,
+        "profileName": "ExtendData",
+        "lane": "catalog",
+        "holds": "Three individual catalog files: the path table, facial-bone matrices, and one opaque file.",
+        "holdsZh": "三个独立目录文件：路径表、面部骨骼矩阵与一个不透明文件。",
+        "families": [
+          {
+            "id": "string-path-hash",
+            "label": "StringPathHash.bin",
+            "labelZh": "StringPathHash.bin",
+            "description": "The game's complete 64-bit-hash to asset-path table.",
+            "descriptionZh": "游戏完整的 64 位哈希到资源路径表。",
+            "pathRegex": "Data/ExtendData/Main/StringPathHash\\.bin",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "Decoded end to end: the string pool walk ends exactly on the last byte, and the lookup and value pools self-bound.",
+                "textZh": "端到端解码：字符串池遍历恰好结束于最后一个字节，查找池与值池自我界定。",
+                "source": "memory/game_data/extend_data.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "The index region is 16-byte records of a pool offset and a 64-bit hash, and every offset lands on a string start. The hash function is not identified.",
+                "textZh": "索引区是由池偏移与 64 位哈希组成的 16 字节记录，每个偏移都落在字符串起点。哈希函数尚未识别。",
+                "source": "memory/game_data/extend_data.md"
+              },
+              {
+                "level": 4,
+                "state": "partial",
+                "text": "It resolves a hash to an asset path by lookup, naming essentially every shipped asset. It cannot yet compute a hash for a new path.",
+                "textZh": "它通过查找把哈希解析为资源路径，几乎为所有随包资源命名。目前还无法为新路径计算哈希。",
+                "source": "memory/game_data/extend_data.md"
+              }
+            ]
+          },
+          {
+            "id": "fac-bone-trs",
+            "label": "FacBoneTRS.bin",
+            "labelZh": "FacBoneTRS.bin",
+            "description": "Facial-bone transform records.",
+            "descriptionZh": "面部骨骼变换记录。",
+            "pathRegex": "Data/ExtendData/Main/FacBone/FacBoneTRS\\.bin",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "File-provided unit count, contiguous bone records, and 64-byte ranges through EOF.",
+                "textZh": "文件自带的单元计数、连续的骨骼记录与直至 EOF 的 64 字节区间。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Every value is shape-consistent with a row-vector rigid-affine 4x4 float matrix; the exact type and convention remain unnamed.",
+                "textZh": "每个值在形态上都与行向量刚体仿射 4x4 浮点矩阵一致；确切类型与约定仍未命名。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "Unit and bone hashes match neither StringPathHash dictionary, so ownership is unresolved.",
+                "textZh": "单元与骨骼哈希与两个 StringPathHash 字典都不匹配，归属未解决。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          },
+          {
+            "id": "compress-data",
+            "label": "CompressData.bin",
+            "labelZh": "CompressData.bin",
+            "description": "A small file whose bytes are indistinguishable from random.",
+            "descriptionZh": "字节与随机数据无法区分的小文件。",
+            "pathRegex": "Data/ExtendData/Main/CompressData\\.bin",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "open",
+                "text": "Entropy is indistinguishable from random: encrypted or fully compressed, and not parsable as it stands.",
+                "textZh": "熵与随机数据无法区分：已加密或完全压缩，按现状无法解析。",
+                "source": "memory/game_data/extend_data.md"
+              },
+              {
+                "level": 3,
+                "state": "open",
+                "text": "No field can be named without a decoding step.",
+                "textZh": "没有解码步骤就无法命名任何字段。",
+                "source": "memory/game_data/extend_data.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "Nothing is known about its consumer.",
+                "textZh": "对其消费者一无所知。",
+                "source": "memory/game_data/extend_data.md"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "enumName": "HotfixAudio",
+        "rawId": 21,
+        "profileName": "HotfixAudio",
+        "lane": "audio",
+        "holds": "Small Wwise hotfix packages.",
+        "holdsZh": "小型 Wwise 热修复包。",
+        "families": [
+          {
+            "id": "wwise-hotfix",
+            "label": "Wwise hotfix package (hotfix_*.pck)",
+            "labelZh": "Wwise 热修复包（hotfix_*.pck）",
+            "description": "Hotfix packages beside the shipped audio packages.",
+            "descriptionZh": "与随包音频包并列的热修复包。",
+            "pathRegex": "Data/Audio/PCK/Windows/Hotfix/hotfix_[^/]+\\.pck",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "partial",
+                "text": "The same AKPK container, read by the same fail-closed package reader as the base packages.",
+                "textZh": "相同的 AKPK 容器，由与基础包相同的失败即关闭包读取器读取。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "notAssessed",
+                "text": "No hotfix-specific field conclusion is recorded.",
+                "textZh": "没有记录热修复包特有的字段结论。",
+                "source": "memory/game_data/audio_overview.md"
+              },
+              {
+                "level": 4,
+                "state": "notAssessed",
+                "text": "Which base content each hotfix replaces is not documented.",
+                "textZh": "每个热修复包替换哪些基础内容尚无记录。",
+                "source": "memory/game_data/audio_overview.md"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "enumName": "Terrain",
+        "rawId": 22,
+        "profileName": "Terrain",
+        "lane": "world",
+        "holds": "TRET-wrapped terrain textures: six-file tile groups and per-scene LAYER arrays.",
+        "holdsZh": "TRET 包装的地形贴图：六文件地块组与各场景 LAYER 数组。",
+        "families": [
+          {
+            "id": "terrain-tile",
+            "label": "Terrain tile (Terrain_*_{A,C,H,N,S,T})",
+            "labelZh": "地形地块（Terrain_*_{A,C,H,N,S,T}）",
+            "description": "Six channel files per tile: H and C two-byte grids, N/T/A DXT5 blocks, S RGBA texels.",
+            "descriptionZh": "每个地块六个通道文件：H 与 C 为双字节网格，N/T/A 为 DXT5 块，S 为 RGBA 像素。",
+            "pathRegex": "Data/Terrain/.+/Terrain_[^/]+_[ACHNST]\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "Every tile file parses exactly as TRET; the corpus gate checks the declared body length against the complete decoded file.",
+                "textZh": "每个地块文件都精确解析为 TRET；语料校验将声明的正文长度与完整解码文件核对。",
+                "source": "memory/game_data/world_terrain.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "The selected native enum names each channel's GraphicsFormat and footprint; texel values stay anonymous.",
+                "textZh": "所选原生枚举为每个通道命名 GraphicsFormat 与占用；像素值仍是匿名的。",
+                "source": "memory/game_data/world_terrain.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "Channel meaning and renderer binding are unresolved. The _H composite drawn on the Map page is display contrast, not a proved height.",
+                "textZh": "通道含义与渲染绑定未解决。地图页绘制的 _H 合成值只是显示对比，不是经证明的高度。",
+                "source": "memory/game_data/world_terrain.md"
+              }
+            ]
+          },
+          {
+            "id": "terrain-layer-c",
+            "label": "LAYER_C",
+            "labelZh": "LAYER_C",
+            "description": "Per-scene one-byte-per-unit layer arrays.",
+            "descriptionZh": "各场景每单元一字节的层数组。",
+            "pathRegex": "Data/Terrain/.+/Layers/LAYER_C_[^/]+\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "TRET with GraphicsFormat 5 and a one-byte footprint, decoded end to end.",
+                "textZh": "GraphicsFormat 为 5、单字节占用的 TRET，端到端解码。",
+                "source": "memory/game_data/world_terrain.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "The format selector is read directly by the native consumer; the contained values stay anonymous.",
+                "textZh": "格式选择字由原生消费者直接读取；所含数值仍是匿名的。",
+                "source": "memory/game_data/world_terrain.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "The recorded consumer was disconfirmed on re-test; no current static evidence names one.",
+                "textZh": "此前记录的消费者在复测中被推翻；目前没有静态证据指明消费者。",
+                "source": "memory/game_data/world_terrain.md",
+                "eliminations": ["layer-c-consumer"]
+              }
+            ]
+          },
+          {
+            "id": "terrain-layer-dn",
+            "label": "LAYER_D / LAYER_N",
+            "labelZh": "LAYER_D / LAYER_N",
+            "description": "Per-scene BC7 texture arrays (sRGB for D, UNorm for N).",
+            "descriptionZh": "各场景 BC7 贴图数组（D 为 sRGB，N 为 UNorm）。",
+            "pathRegex": "Data/Terrain/.+/Layers/LAYER_[DN]_[^/]+\\.bytes",
+            "stages": [
+              { "template": "l1VfsLocated" },
+              {
+                "level": 2,
+                "state": "closed",
+                "text": "BC7 bodies at 16 bytes per 4x4 block split into exact contiguous mip-like ranges and consume EOF.",
+                "textZh": "每个 4x4 块 16 字节的 BC7 正文被精确划分为连续的类 mip 区间并消费至 EOF。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              },
+              {
+                "level": 3,
+                "state": "partial",
+                "text": "Format names are direct; the mip-count reading of offset 12 is inferred and block contents are anonymous.",
+                "textZh": "格式名称是直接证据；偏移 12 的 mip 数解读属推断，块内容是匿名的。",
+                "source": "memory/game_data/world_terrain.md"
+              },
+              {
+                "level": 4,
+                "state": "open",
+                "text": "D/N path meaning, texture-array ownership and final rendering are unresolved.",
+                "textZh": "D/N 路径含义、贴图数组归属与最终渲染均未解决。",
+                "source": "memory/game_data/extraction_payload_boundaries.md"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "enumName": "AudioChinese",
+        "rawId": 101,
+        "profileName": "AudioChinese",
+        "lane": "audio",
+        "holds": "Chinese voice packages.",
+        "holdsZh": "中文语音包。",
+        "familySet": "wwisePackages"
+      },
+      {
+        "enumName": "AudioEnglish",
+        "rawId": 102,
+        "profileName": "AudioEnglish",
+        "lane": "audio",
+        "holds": "English voice packages.",
+        "holdsZh": "英文语音包。",
+        "familySet": "wwisePackages"
+      },
+      {
+        "enumName": "AudioJapanese",
+        "rawId": 103,
+        "profileName": "AudioJapanese",
+        "lane": "audio",
+        "holds": "Japanese voice packages.",
+        "holdsZh": "日文语音包。",
+        "familySet": "wwisePackages"
+      },
+      {
+        "enumName": "AudioKorean",
+        "rawId": 104,
+        "profileName": "AudioKorean",
+        "lane": "audio",
+        "holds": "Korean voice packages.",
+        "holdsZh": "韩文语音包。",
+        "familySet": "wwisePackages"
+      }
+    ]
   },
 
   "unreachableFromStaticData": {
-    "_why": "These are recorded eliminations, not open work. A generated report can show that nothing was recovered; only the owning memory topic records that nothing CAN be recovered from installed data alone. Presenting them as 'todo' would invite the same dead ends.",
+    "_why": "These are reviewed evidence limits from the owning memory topics. One previously proposed LAYER_C consumer was disconfirmed; runtime-selected outcomes require observation. Neither entry proves that all future static routes are impossible.",
+    "_whyZh": "这些边界来自所属记忆主题的复核：先前提出的一条 LAYER_C 消费者路径已被推翻；运行时选中的结果需要观测。两项都不表示将来不可能找到其他静态证据。",
     "items": [
-      {
-        "id": "hirc-0a-0d",
-        "lane": "audio",
-        "level": 3,
-        "title": "HIRC object types 0x0A-0x0D",
-        "titleZh": "HIRC 对象类型 0x0A-0x0D",
-        "detail": "The engine's own shipped HIRC parser skips these types, so no installed byte establishes what they mean. Framing alone remains available.",
-        "detailZh": "游戏自带的 HIRC 解析器直接跳过这些类型，因此安装数据本身无法确定其含义，只能得到帧结构。",
-        "owner": "memory/game_data/audio_hirc_parser.md"
-      },
       {
         "id": "layer-c-consumer",
         "lane": "world",
@@ -188,17 +1752,5 @@
         "owner": "memory/game_data/audio_native_hooks.md"
       }
     ]
-  },
-
-  "levelCaveats": {
-    "_why": "The page's central honesty rule. It is an editorial statement about what the measured numbers do and do not prove, so it is declared rather than derived.",
-    "namedIsNotUnderstood": {
-      "text": "Named bytes are a level-2/3 result: every byte is inside a framed, named field. That is not level 4. A 100% named family can still have fields whose meaning is unproven.",
-      "textZh": "“已命名字节”是第 2/3 层的结果：每个字节都落在已划分、已命名的字段内，但这不是第 4 层。100% 命名的家族仍可能有含义未经证明的字段。"
-    },
-    "documentedTopicsAreNotBytes": {
-      "text": "A lane's level strip counts documented topic files, not bytes. A level being reached means at least one conclusion at that level exists for that lane, never that the lane's data is understood at that level.",
-      "textZh": "通道的层级条统计的是已记录的主题文件，而非字节。某层被点亮只表示该通道在该层至少有一条结论，不表示该通道的数据在该层已被理解。"
-    }
   }
 }
