@@ -53,6 +53,8 @@ CHARACTER_NAME_OVERRIDES_PATH = WEBUI_ROOT / "overrides" / "character_name_overr
 AUDIO_NOTES_OVERRIDE_PATH = WEBUI_ROOT / "overrides" / "audio_notes.json"
 MAX_WRITE_BYTES = 5 * 1024 * 1024
 EXPORT_ROUTE_PREFIXES = ("/export_full", "/export_data", "/export_previous")
+# Read-only query API over the export stores, used by the Data page.
+STORE_API_PREFIX = "/api/stores"
 UNITY_STORE_FILE = "Unity.sqlite"
 # Object documents the Unity store holds, by suffix, with the type they are served as.
 UNITY_STORE_CONTENT_TYPES = {
@@ -92,7 +94,8 @@ def resolve_export_full_root() -> Path:
 
 
 EXPORT_FULL_ROOT = resolve_export_full_root()
-# The export's game/ tree: Table/, Json/, Video/, Audio/, Unity/ (layout v2).
+# The export's game/ tree: Table/, Json/, Video/, Audio/, Unity/, and the
+# Unity.sqlite / GameFiles.sqlite stores (layout v4).
 DEFAULT_DATA_EXPORT_ROOT = EXPORT_FULL_ROOT / "game"
 
 
@@ -341,8 +344,63 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         return True
 
     def do_GET(self) -> None:
+        if urlsplit(self.path).path.startswith(STORE_API_PREFIX):
+            self._handle_store_api()
+            return
         if not self._redirect_webui_alias():
             super().do_GET()
+
+    def _handle_store_api(self) -> None:
+        """Answer ``/api/stores[/rows|/sql]`` from scripts.webui.data_inspector.store_browser.
+
+        ``root`` is ``current`` (the export root) or ``previous`` (the saved
+        previous export); every other parameter is passed through and validated
+        by the browser module, whose refusals are HTTP 400.
+        """
+        from urllib.parse import parse_qs
+
+        try:
+            from scripts.webui.data_inspector import store_browser
+        except ImportError as exc:  # served outside the repository
+            self._send_json(503, {"error": f"store API unavailable: {exc}"})
+            return
+        request = urlsplit(self.path)
+        params = {key: values[-1] for key, values in parse_qs(request.query).items()}
+        which = params.get("root", "current")
+        if which == "current":
+            root, route = EXPORT_FULL_ROOT, "/export_data"
+        elif which == "previous":
+            root, route = resolve_previous_export_root(), "/export_previous"
+        else:
+            self._send_json(400, {"error": f"unknown root {which!r}; expected current or previous"})
+            return
+        endpoint = request.path[len(STORE_API_PREFIX):].strip("/")
+        try:
+            if endpoint == "":
+                payload = store_browser.list_stores(root, route=route)
+            elif endpoint == "rows":
+                payload = store_browser.query_rows(
+                    root,
+                    route=route,
+                    store=params.get("store", ""),
+                    group=params.get("group", ""),
+                    query=params.get("q", ""),
+                    field=params.get("field", "name"),
+                    offset=int(params.get("offset", "0") or 0),
+                    limit=int(params.get("limit", str(store_browser.DEFAULT_ROW_LIMIT)) or 0),
+                )
+            elif endpoint == "sql":
+                payload = store_browser.run_sql(root, store=params.get("store", ""), sql=params.get("q", ""))
+            else:
+                self._send_json(404, {"error": f"unknown store endpoint {request.path}"})
+                return
+        except (store_browser.StoreBrowserError, ValueError) as exc:
+            self._send_json(400, {"error": str(exc)})
+            return
+        except Exception as exc:  # noqa: BLE001 - report, never crash the server thread
+            self._send_json(500, {"error": f"{type(exc).__name__}: {exc}"})
+            return
+        self._send_json(200, payload)
 
     def do_HEAD(self) -> None:
         if not self._redirect_webui_alias():

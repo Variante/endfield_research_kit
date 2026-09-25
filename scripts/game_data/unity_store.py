@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS objects (
 CREATE UNIQUE INDEX IF NOT EXISTS objects_type_name ON objects (type, name);
 CREATE INDEX IF NOT EXISTS objects_type_object_name ON objects (type, object_name);
 CREATE INDEX IF NOT EXISTS objects_path_id ON objects (path_id, source_file);
+CREATE INDEX IF NOT EXISTS objects_source_file ON objects (source_file, type);
 CREATE INDEX IF NOT EXISTS objects_script ON objects (script_path_id) WHERE script_path_id IS NOT NULL;
 """
 
@@ -640,6 +641,9 @@ class UnityObjectStoreWriter:
         if self.connection is None:
             return
         self.connection.commit()
+        # Refresh planner statistics so lookups by PathID or CAB use their
+        # indexes instead of scanning a whole type.
+        self.connection.execute("PRAGMA optimize=0x10002")
         # Leave one self-contained file: fold the WAL back and drop its sidecars,
         # so read-only openers need no -wal/-shm and a copy of the file is complete.
         self.connection.execute("PRAGMA wal_checkpoint(TRUNCATE)")
