@@ -1,0 +1,436 @@
+{
+  "schema": "endfield.dynamic-stream-area-native-contract.v2",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "layout": {
+    "rootType": "Beyond.Gameplay.FBStreamAreaTotalData",
+    "vectors": [
+      {
+        "fieldIndex": 0,
+        "name": "TotalAreas",
+        "elementType": "System.Int32",
+        "elementWidth": 4,
+        "accessorMethodIndex": 25234
+      },
+      {
+        "fieldIndex": 1,
+        "name": "RootVisible",
+        "elementType": "System.Int32",
+        "elementWidth": 4,
+        "accessorMethodIndex": 25238
+      },
+      {
+        "fieldIndex": 2,
+        "name": "AreaVisibleGroups",
+        "elementType": "System.Int32",
+        "elementWidth": 4,
+        "accessorMethodIndex": 25242
+      },
+      {
+        "fieldIndex": 4,
+        "name": "Areas",
+        "elementType": "Beyond.Gameplay.FBStreamArea",
+        "elementWidth": 12,
+        "accessorMethodIndex": 25247
+      },
+      {
+        "fieldIndex": 5,
+        "name": "Triggers",
+        "elementType": "Beyond.Gameplay.FBStreamAreaTrigger",
+        "elementWidth": 36,
+        "accessorMethodIndex": 25249
+      },
+      {
+        "fieldIndex": 6,
+        "name": "Points",
+        "elementType": "Beyond.Gameplay.FBStreamAreaCoord",
+        "elementWidth": 8,
+        "accessorMethodIndex": 25251
+      }
+    ],
+    "inline": {
+      "fieldIndex": 3,
+      "name": "Bounds",
+      "type": "Beyond.Gameplay.FBStreamAreaBounds",
+      "width": 24,
+      "accessorMethodIndex": 25246
+    },
+    "records": [
+      {
+        "type": "Beyond.Gameplay.FBStreamAreaCoord",
+        "width": 8,
+        "fields": [
+          {
+            "name": "X",
+            "type": "System.Single",
+            "offset": 0,
+            "accessorMethodIndex": 25198
+          },
+          {
+            "name": "Y",
+            "type": "System.Single",
+            "offset": 4,
+            "accessorMethodIndex": 25199
+          }
+        ]
+      },
+      {
+        "type": "Beyond.Gameplay.FBStreamAreaBounds",
+        "width": 24,
+        "fields": [
+          {
+            "name": "MinCoord",
+            "type": "Beyond.Gameplay.FBStreamAreaCoord",
+            "offset": 0,
+            "accessorMethodIndex": 25205
+          },
+          {
+            "name": "MaxCoord",
+            "type": "Beyond.Gameplay.FBStreamAreaCoord",
+            "offset": 8,
+            "accessorMethodIndex": 25206
+          },
+          {
+            "name": "MinHeight",
+            "type": "System.Single",
+            "offset": 16,
+            "accessorMethodIndex": 25207
+          },
+          {
+            "name": "MaxHeight",
+            "type": "System.Single",
+            "offset": 20,
+            "accessorMethodIndex": 25208
+          }
+        ]
+      },
+      {
+        "type": "Beyond.Gameplay.FBStreamArea",
+        "width": 12,
+        "fields": [
+          {
+            "name": "AreaId",
+            "type": "System.Int32",
+            "offset": 0,
+            "accessorMethodIndex": 25223
+          },
+          {
+            "name": "VisibleStart",
+            "type": "System.Int32",
+            "offset": 4,
+            "accessorMethodIndex": 25224
+          },
+          {
+            "name": "VisibleNum",
+            "type": "System.Int32",
+            "offset": 8,
+            "accessorMethodIndex": 25225
+          }
+        ]
+      },
+      {
+        "type": "Beyond.Gameplay.FBStreamAreaTrigger",
+        "width": 36,
+        "fields": [
+          {
+            "name": "AreaId",
+            "type": "System.Int32",
+            "offset": 0,
+            "accessorMethodIndex": 25214
+          },
+          {
+            "name": "AreaPointStart",
+            "type": "System.Int32",
+            "offset": 4,
+            "accessorMethodIndex": 25215
+          },
+          {
+            "name": "AreaPointNum",
+            "type": "System.Int32",
+            "offset": 8,
+            "accessorMethodIndex": 25216
+          },
+          {
+            "name": "Bounds",
+            "type": "Beyond.Gameplay.FBStreamAreaBounds",
+            "offset": 12,
+            "accessorMethodIndex": 25217
+          }
+        ]
+      }
+    ]
+  },
+  "methods": [
+    {
+      "index": 25234,
+      "type": "Beyond.Gameplay.FBStreamAreaTotalData",
+      "method": "TotalAreas",
+      "parameters": [
+        "System.Int32"
+      ],
+      "returnType": "System.Int32",
+      "rva": 108434504,
+      "bodyExtent": 132,
+      "bodySha256": "DB1B5BA48F4AA5C7E91025C21D77D802DA880E221E14418F51CE6A4C78018346",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25238,
+      "type": "Beyond.Gameplay.FBStreamAreaTotalData",
+      "method": "RootVisible",
+      "parameters": [
+        "System.Int32"
+      ],
+      "returnType": "System.Int32",
+      "rva": 108433584,
+      "bodyExtent": 132,
+      "bodySha256": "B2A17E76F596926DDCB74A348990587B79FD00222E99DE51D92EA314C60269C6",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25242,
+      "type": "Beyond.Gameplay.FBStreamAreaTotalData",
+      "method": "AreaVisibleGroups",
+      "parameters": [
+        "System.Int32"
+      ],
+      "returnType": "System.Int32",
+      "rva": 108429956,
+      "bodyExtent": 132,
+      "bodySha256": "5868E7B77E9DEBB1C090EA4540B82982073E7F3D23D8913384676F457311B557",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25247,
+      "type": "Beyond.Gameplay.FBStreamAreaTotalData",
+      "method": "Areas",
+      "parameters": [
+        "System.Int32"
+      ],
+      "returnType": "Beyond.Gameplay.FBStreamArea",
+      "rva": 108430088,
+      "bodyExtent": 164,
+      "bodySha256": "179783EE31829FB949A44C897905218D27A16FDCA784F4D1DFF223036CB0AD41",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25249,
+      "type": "Beyond.Gameplay.FBStreamAreaTotalData",
+      "method": "Triggers",
+      "parameters": [
+        "System.Int32"
+      ],
+      "returnType": "Beyond.Gameplay.FBStreamAreaTrigger",
+      "rva": 108434636,
+      "bodyExtent": 164,
+      "bodySha256": "252881E9339E974250797AE096341EB164492D26B4312DECB60569AE6DE4A875",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25251,
+      "type": "Beyond.Gameplay.FBStreamAreaTotalData",
+      "method": "Points",
+      "parameters": [
+        "System.Int32"
+      ],
+      "returnType": "Beyond.Gameplay.FBStreamAreaCoord",
+      "rva": 108433424,
+      "bodyExtent": 160,
+      "bodySha256": "8F82C2D5EA67D1EC58CE0D90580FE15ED00436C3EFD48BE1B3D7036C658BA321",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25246,
+      "type": "Beyond.Gameplay.FBStreamAreaTotalData",
+      "method": "get_Bounds",
+      "parameters": [],
+      "returnType": "Beyond.Gameplay.FBStreamAreaBounds",
+      "rva": 57287312,
+      "bodyExtent": 160,
+      "bodySha256": "1AA6D20CC68C683CEA8681A67A4836624F1E6595F35F0E8BF4360B0A8E19C01A",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25198,
+      "type": "Beyond.Gameplay.FBStreamAreaCoord",
+      "method": "get_X",
+      "parameters": [],
+      "returnType": "System.Single",
+      "rva": 48574256,
+      "bodyExtent": 400,
+      "bodySha256": "A26E2CA2B5871D8F28502331F2A9E673BC467DCD1506AC1F46E766A4C54C3F03",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25199,
+      "type": "Beyond.Gameplay.FBStreamAreaCoord",
+      "method": "get_Y",
+      "parameters": [],
+      "returnType": "System.Single",
+      "rva": 48574656,
+      "bodyExtent": 400,
+      "bodySha256": "267087950D4410F87C8174B70C2FE1E0FA988843A29850B90C422B0E0D8D3955",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25205,
+      "type": "Beyond.Gameplay.FBStreamAreaBounds",
+      "method": "get_MinCoord",
+      "parameters": [],
+      "returnType": "Beyond.Gameplay.FBStreamAreaCoord",
+      "rva": 57295584,
+      "bodyExtent": 176,
+      "bodySha256": "48E30F2674CF29FAEFD150DB7333B464D0C578BEC30B977A08E4CD5E7F01D930",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25206,
+      "type": "Beyond.Gameplay.FBStreamAreaBounds",
+      "method": "get_MaxCoord",
+      "parameters": [],
+      "returnType": "Beyond.Gameplay.FBStreamAreaCoord",
+      "rva": 57295760,
+      "bodyExtent": 192,
+      "bodySha256": "EAB538833039E0745BC8B8AC32425CD81C871286EE60D55035ECEAE2222F034C",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25207,
+      "type": "Beyond.Gameplay.FBStreamAreaBounds",
+      "method": "get_MinHeight",
+      "parameters": [],
+      "returnType": "System.Single",
+      "rva": 57295952,
+      "bodyExtent": 400,
+      "bodySha256": "9ADB5BD87422B6CDC7A81958D4597F77AA441CDBCFD80CE0CB40AFA5BD36F3CC",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25208,
+      "type": "Beyond.Gameplay.FBStreamAreaBounds",
+      "method": "get_MaxHeight",
+      "parameters": [],
+      "returnType": "System.Single",
+      "rva": 57296352,
+      "bodyExtent": 400,
+      "bodySha256": "783232ED60A13EE29E05BD89925372C47D1C2126244BFC448B518D3519B7BDC5",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25223,
+      "type": "Beyond.Gameplay.FBStreamArea",
+      "method": "get_AreaId",
+      "parameters": [],
+      "returnType": "System.Int32",
+      "rva": 57290608,
+      "bodyExtent": 880,
+      "bodySha256": "F0D8ADD7E617210420D52E6761B1AD8C257F63673889456C55CA4F714C2DA116",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25224,
+      "type": "Beyond.Gameplay.FBStreamArea",
+      "method": "get_VisibleStart",
+      "parameters": [],
+      "returnType": "System.Int32",
+      "rva": 64818288,
+      "bodyExtent": 192,
+      "bodySha256": "B410C38928F5D5F160B38ED099459CFEE4A9875ED1E63E0DB458683DE5772878",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25225,
+      "type": "Beyond.Gameplay.FBStreamArea",
+      "method": "get_VisibleNum",
+      "parameters": [],
+      "returnType": "System.Int32",
+      "rva": 64818480,
+      "bodyExtent": 192,
+      "bodySha256": "AEC80BE2FE9CFEF6F2F9245457F7E80FEC22643FBC5F61613BE89B0B9A8A7030",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25214,
+      "type": "Beyond.Gameplay.FBStreamAreaTrigger",
+      "method": "get_AreaId",
+      "parameters": [],
+      "returnType": "System.Int32",
+      "rva": 57291488,
+      "bodyExtent": 128,
+      "bodySha256": "C2CB2ACAA00FAA506D81056D60E5E69D077FD338AD1705E9B9C9F0F54481096B",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25215,
+      "type": "Beyond.Gameplay.FBStreamAreaTrigger",
+      "method": "get_AreaPointStart",
+      "parameters": [],
+      "returnType": "System.Int32",
+      "rva": 64818672,
+      "bodyExtent": 192,
+      "bodySha256": "5AC3A7039B6BD9DE903D3DC777CD10EA4F37E4446CF1C0E2F46CAE52D4B4152B",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25216,
+      "type": "Beyond.Gameplay.FBStreamAreaTrigger",
+      "method": "get_AreaPointNum",
+      "parameters": [],
+      "returnType": "System.Int32",
+      "rva": 64818864,
+      "bodyExtent": 192,
+      "bodySha256": "838ED89E9A49FDD98096EDB94EA480052E064941F32A28F09152BB2F7BCEB14B",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    },
+    {
+      "index": 25217,
+      "type": "Beyond.Gameplay.FBStreamAreaTrigger",
+      "method": "get_Bounds",
+      "parameters": [],
+      "returnType": "Beyond.Gameplay.FBStreamAreaBounds",
+      "rva": 57292464,
+      "bodyExtent": 192,
+      "bodySha256": "37CAA7F668F1AA795D7C17DB25D3E2309D91E7613E925E97BBCC3B8ECC61BC11",
+      "boundary": "pointer-gap upper bound including alignment padding"
+    }
+  ],
+  "runtimePredicate": {
+    "method": {
+      "index": 51305,
+      "type": "Beyond.Gameplay.View.FBStreamingAreaHelper",
+      "method": "CheckInArea",
+      "parameters": [
+        "Beyond.Gameplay.FBStreamAreaTotalData",
+        "System.Int32",
+        "UnityEngine.Vector3"
+      ],
+      "returnType": "System.Boolean",
+      "rva": 48578192,
+      "bodyExtent": 10470,
+      "bodySha256": "045F470CC59B90A8E38EE77FD073A75E2B5B417184D6EDE0BE130D19E46069A8"
+    },
+    "toggleOffWindow": {
+      "rva": 80192040,
+      "branchOffset": 6620,
+      "bodyExtent": 10,
+      "sha256": "5338A062D6426F39E9725293E67DD61526D8AF43FE0044DD81CE19655E18A6A3"
+    },
+    "reviewedMeaning": {
+      "index": "The trigger index selects Triggers; its AreaPointStart and AreaPointNum select a closed ring from Points.",
+      "queryAxes": "The query Vector3.x and Vector3.z compare with stored Coord.X and Coord.Y; Vector3.y compares with stored height limits.",
+      "bounds": "For finite values, the minimum and maximum horizontal and height comparisons include equality.",
+      "polygon": "The unpatched branch toggles even-odd parity when the endpoints' stored Coord.Y comparisons straddle query Z and the edge's positive-X ray intersection is strictly greater than query X.",
+      "boundary": "The rectangle and height limits are inclusive; points exactly on a polygon edge need separate case analysis and are not asserted inside."
+    }
+  },
+  "evidenceBoundary": {
+    "exact": "The selected native input hashes, metadata method identities and complete pointer-gap code windows are revalidated before naming fields.",
+    "direct": "Generated FlatBuffer indexed accessors return int32 or fixed structs; getter code reads the recorded struct offsets. The current payload vectors and inline bounds use those widths. The selected unpatched CheckInArea body reads a trigger's point span, compares query Vector3 X/Z and Y with horizontal and height bounds, and evaluates even-odd ray crossings over the stored ring; the separately pinned toggle-off window completes the parity branch.",
+    "structuralOnly": "Area visibility and trigger point spans are authored index relations in the serialized data; XY containment is checked against serialized bounds.",
+    "unresolved": "Runtime selection, active visibility, source or transform of query centers, exact polygon-edge boundary classification, and live area activation are not observed."
+  }
+}

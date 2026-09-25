@@ -8,6 +8,11 @@ descriptor, each identified against a named engine enum rather than a magnitude
 distribution. The refused candidates are kept beside the accepted ones, because
 the refusals are what make the accepted reading load-bearing.
 
+**Current correction:** slot-7 field 3 is a forward uoffset to 8-byte
+descriptors, and field 4 is a forward uoffset to a wrapper around a byte
+vector. The older arithmetic reading below is retracted; see
+[`world_chunk_unread_region.md`](world_chunk_unread_region.md).
+
 ## SLOT 5's KIND CODES, IDENTIFIED: `StreamingLayer` AND `ECSEntityType`
 
 Four independent lines agree, and each could have failed.
@@ -251,9 +256,11 @@ give and a mask over distinct concepts does not.
 zero**, with 60.9% of reads landing on non-powers-of-two. 964 distinct values, a long tail
 past 2048 in 0.39%.
 
-**Field 4 is the constant 4** in all 18,391 reads.
+**Retracted interpretation:** field 4 has the stored value `4` in the cited
+sample, but that value is a forward FlatBuffers offset to a wrapper table,
+not a scalar constant.
 
-### Field 3 is a byte offset into the slot-4 region
+### Retracted: field 3 as a byte offset into a slot-4 region
 
 Its values are multiples of four -- 100, 180, 528, 340 -- which is a hint worth following
 rather than a coincidence:

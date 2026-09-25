@@ -9,6 +9,11 @@ name-to-id join at 100%. Check it before trusting any per-slot census in
 [`world_chunk_slots.md`](world_chunk_slots.md) or
 [`world_chunk_unread_region.md`](world_chunk_unread_region.md).
 
+**Current correction:** slot-7 field 3 points to 8-byte descriptors, and
+field 4 reaches a wrapper around a byte vector. The former 4-byte
+"alternating code/zero" read below stopped halfway through each descriptor;
+see [`world_chunk_unread_region.md`](world_chunk_unread_region.md).
+
 ## CORRECTION: slot 3 is a vector, not a size
 
 Reading one large file from the top -- rather than from the unreached end -- exposes an
@@ -121,7 +126,7 @@ void, so field 3 was dereferenced the same way -- **with controls this time**:
 | --- | --- | --- |
 | **3** | "byte offset into `s4`'s region" | **434 / 434 = 100.00%** |
 | 1 | a count *(control)* | 9 / 434 = 2.07% |
-| 4 | the constant 4 *(control)* | **0 / 434 = 0.00%** |
+| 4 | then treated as the constant 4 *(invalid control: it is a uoffset)* | **0 / 434 = 0.00%** |
 
 **Field 3 is a uoffset**, and the controls show the test discriminates rather than accepting
 anything. The vectors it reaches are short -- **length 2 in 392 of 434**, 15 in 32, 16 in 10
@@ -138,7 +143,7 @@ and each was a uoffset. *The formulas were real and the types were invented* -- 
 uoffset that lands at a predictable distance from the end of a buffer will satisfy an
 arithmetic identity every time.
 
-## What field 3's vectors hold: an alternating code/zero list, three codes in all
+## Retracted: field 3 as an alternating code/zero list
 
 Reading the elements: **952 words, and only 4 distinct values.**
 
@@ -159,9 +164,10 @@ Read as two 16-bit halves the codes are `(64, 21)`, `(4, 0)` and `(4, 1)` -- a h
 flag or kind list, not payload**, which fits the vector being two entries long in 392 of 434
 cases.
 
-*This completes the slot-7 element*: a component mask, a count, world centre and extents, a
-**uoffset to a short code list**, and the constant 4. **Nothing in it is a size, and nothing
-in it points outside the file** -- which is the opposite of what this section concluded twice.
+That historical reading did **not** complete the slot-7 element: it parsed
+half-width words from an 8-byte descriptor vector and missed the field-4
+wrapper. The current framing is in
+[`world_chunk_unread_region.md`](world_chunk_unread_region.md).
 
 ## SWEEPING SLOT 5 FOR THE SAME ERROR -- two more uoffsets
 

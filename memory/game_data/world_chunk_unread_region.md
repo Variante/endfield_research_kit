@@ -1,12 +1,178 @@
-# The slot-4 region, and the gap the walker could not follow
+# The former slot-4 hypothesis and the gap the walker could not follow
 
 Part of [`../game_data_recovery.md`](../game_data_recovery.md). See
 [`README.md`](README.md) for the level and lane map.
 
-**Level 3, world lane.** The largest honest gap in this family, including a
-retraction and a coverage figure that turned out to be an artefact of the
-measurement rather than a property of the files. Read it as a worked example of
-how a walk-based coverage number can mislead.
+**Level 3, world lane.** This is the history of the unread-byte investigation,
+including retractions and coverage figures that depended on the walk. Read
+[`world_chunk_union_vectors.md`](world_chunk_union_vectors.md) before using any
+old claim about a runtime "slot-4 region": root slot 4 is a vector of
+packed four-byte entries, and
+slot-7 field 3 is a forward FlatBuffers offset rather than an offset into that
+hypothetical region. The large unread runs discussed below are a separate
+remaining gap.
+
+## Current framing of the slot-7 references
+
+The maintained paired-group reader in
+`scripts/game_data/streaming/framing.py` (`_parse_paired_group_subgraph`)
+continues the earlier correction. In the selected framing, each nonempty Init
+group's slot-7 field 3 reaches a counted vector of **8-byte descriptors**. Each
+descriptor has a little-endian `u16` anonymous id, a `u16` stride-shaped value,
+and a zero `u32`.
+In the current bounded probe, slot-7 field 4 stores the short forward offset
+`4` in every nonempty group; dereferencing it reaches a one-field table, whose
+field 0 reaches a counted byte vector. The complete byte-level equality is:
+
+```
+wrapped byte-vector length = group field-1 count * sum(descriptor u16 strides)
+```
+
+The byte reader establishes **exact anonymous framing**; the selected native
+consumer below independently reads those vectors but does not name the
+components. The old field-3 reading as an alternating `(code, 0)` list used 4-byte
+elements and stopped halfway through the descriptor vector. The old field-4
+reading as a scalar constant missed the wrapper because the relative offset
+was never followed. A current source-authenticated, path-stratified probe of
+paired Init/Streaming files, including large files, rechecks the equation from
+the decoded bytes and compares it to the maintained reader. Every nonempty
+Init group in that bounded probe satisfies it; the Streaming twins have empty
+paired-group vectors in this selection, so the sample does not establish a
+nonempty Streaming group shape. Changing counts and the source identities live
+in `reports/chunk_data/slot4_pair_probe_latest.json`; the reusable check is in
+the maintained reader. Increasing one descriptor stride by one makes the
+reader reject the original blob length, and changing a field-4 relative offset
+from `4` to `8` in the blackbox example makes the target fail table framing.
+
+### Descriptor-major byte layout: one directly identified field
+
+The length equation alone permits both descriptor-major and row-major storage.
+Four bounded Init files from different scene directories resolve that ambiguity
+without assigning the other descriptor IDs. Their packed MD5 and decoded SHA256
+match the VFS-authenticated paired-file report, and the VFS stream independently
+verified each file's MD5. For each group, split the byte vector in descriptor
+order into regions of `group count * descriptor stride`, then split each region
+into `group count` fixed-width slots. In those files, selected descriptor
+**21** has stride **64** in each of 14 populated groups. All **239/239** of its
+resulting slots are printable ASCII strings containing `#`, followed by a NUL
+byte and zero padding through byte 63. Examples include
+`New Game Object#0_3B09708` and `MergedCollider_-4_-2_0_0#0_5DC8105`.
+The row-major control, using the same descriptor sequence and bytes, fails
+that exact slot predicate in **224/239** slots.
+
+There is an independent same-file identity join. The paired field-6 wrapper
+holds one `u32` per group row. Pairing those values by index with the
+descriptor-major strings yields **239/239** exact `(u32, string)` matches
+against the root field-3 / field-5-field-0 parallel rows. The row-major
+control gives only **9/239** exact pair matches. Three files' grouped pairs
+cover all their root pairs; one has 22 grouped pairs among 30 root pairs.
+That four-file result identified a stored name field and confirmed the
+descriptor-major layout, but it missed a fixed-width limit. A current full
+corpus gate now rereads every authenticated Init logical file from its physical
+VFS chunk, checks its ledger MD5 and input-set identity, and applies the
+maintained framing reader. Descriptor **21** occurs once per populated group
+at stride **64**. Every NUL-terminated printable slot joins its paired group
+ID to the same-file root ID and the **first 63 bytes** of the root name. The
+row-major control fails that relationship for most slots.
+
+The full-name comparison fails on long names whose serialized slot omits a
+suffix; in a few cases truncation removes even the later `#` token. The old
+predicate's requirement for `#` and full-name equality therefore rejected
+valid stored prefixes. Additional root pairs have no matching descriptor-21
+slot; the root catalog is not exhausted by these groups. This establishes a
+duplicated *name prefix*,
+not recovery of every complete name from the descriptor bytes, a component
+label for other IDs, or runtime object ownership. The independently authenticated
+DynamicStreaming auxiliary pairs show the same descriptor-21 prefix rule; see
+[`world_dynamic_streaming.md`](world_dynamic_streaming.md). Neither selected
+consumer maps that column to a named runtime component. The reusable audit is
+`scripts/game_data/streaming/descriptor_name_corpus.py`, its selected-slot
+reader and row-major control are in `streaming/descriptor_names.py`, and the
+source identities, exceptions and changing totals are in
+`reports/chunk_data/descriptor_name_corpus_latest.json`.
+
+### Selected native consumer of the group descriptor and byte vectors
+
+The reviewed `streaming_field2_native.json` contract now closes the **static
+consumer path** from the first paired root, whose path formatter selects
+`InitChunkData`. On the branch where both paired roots are available and the
+group runtime state has not been populated, the selected UnityPlayer body
+loads the first root from its carrier, follows root slot 7 to each group,
+follows group field 3 to the counted
+8-byte descriptor vector, and follows group field 4 through its one-field
+wrapper to the counted byte vector. In parallel it follows root slot 6's
+wrapper to an ID-vector count. It passes all three counts and the descriptor
+and byte-vector data pointers to one native consumer. The exact body and
+accessor bytes validate against the explicitly selected installed
+`GameAssembly.dll`, metadata and `UnityPlayer.dll`; the direct call targets were
+also checked in the local receipt.
+
+That consumer reads the first and second descriptor words as signed 16-bit
+values. The first selects an anonymous runtime field; the second is multiplied
+by the group ID count. The consumer copies that many bytes from the current
+position of the wrapped byte vector, then advances the position before the
+next descriptor. It compares each proposed end with the passed blob length
+and compares the final position with that length. **Both mismatch branches log
+diagnostics and continue**; the native routine is evidence for
+descriptor-major ordering and the count-times-stride extent, not a safe input
+validator. The maintained framing reader is stricter and rejects a length
+mismatch. The reader's `u16` labels describe the stored two-byte widths; the
+selected consumer sign-extends **both** words. In the authenticated bounded
+corpus, IDs and strides stay within the nonnegative signed range, so the two
+interpretations agree there. A word with its high bit set would need separate
+review.
+
+This strengthens the byte-side ID/name join above: the native consumer uses
+the same descriptor-major portions that make descriptor 21's 64-byte name prefixes
+line up with the root IDs. It still does not assign component names to other
+descriptor IDs, prove an actual run through this branch, or bind the runtime
+root to one authenticated VFS file. The remaining native discriminator is a
+checked mapping from a descriptor ID to a named component consumer, followed
+by a concrete runtime root/file receipt. The selected contract records the
+per-build instructions and hashes; `reports/chunk_data/slot7_native_consumer_latest.json`
+holds the local call-target and source-byte checks.
+
+A selected-build name-binding check narrows one tempting shortcut. The
+`PropertySerializeId.GetComponentIndexFromType` UnityPlayer binding computes
+the bit index of an input mask; the descriptor consumer uses a separate
+anonymous bit-prefix helper to select a packed column. A raw executable-section
+literal-call census finds only three calls to that helper: the selected
+descriptor copy loop, its archetype setup, and another generic copy loop. The
+`FlatBufferConvertContextV2.get_componentScopeEntityName_Injected` binding
+does read a NUL-terminated pointer at native conversion context `+0x88`, but
+the selected IL2CPP type has no corresponding getter method, and none of those
+checked generic loops carries descriptor **21** to that context field. The
+binding name and the matching stored strings therefore do **not** identify
+descriptor 21 as a named runtime component. A direct reader of that packed
+column, or a checked conversion-context constructor that passes its pointer
+to the name getter, is the next discriminator. The reviewed contract's
+`groupComponentNameCandidate` block pins the binding tables, code windows,
+metadata absence, and bounded call census; it does not exclude indirect or
+inlined column selection.
+
+The previous complete Streaming root-subgraph corpus gate has an older
+`inputSetSha256`, so its publication status is **not refreshed** by the
+descriptor-name corpus gate. A separate
+current-audit byte-identity transfer reread every block-15 packed logical file,
+checked each against its VFS ledger MD5, reproduced the complete gate's sorted
+logical-identity digest, and checked that the maintained framing reader has the
+same bytes as the gate's recorded parser. The selected field-2 native contract
+also validates against the explicitly selected installed client. Thus the
+older complete gate's structural observations apply **conditionally to these
+identical bytes**; its old provenance fingerprint remains old. The join receipt
+and changing totals are under `reports/chunk_data/slot4_identity_join_latest.json`.
+This transfer concerns byte framing; other native consumer claims in that
+older report are outside this check.
+
+The blackbox file used below gives a bounded example: group field-1 count `33`,
+descriptors `(21, 64, 0)` and `(44, 16, 0)`, and a `2,640`-byte blob, exactly
+`33 * (64 + 16)`. **The native join does not resolve its historical large unread
+run.**
+The current reader certifies the small wrapper and blob but no range within
+that named run. The reader's `decodedCertifiedRanges` distinguish bytes it has
+framed from other bytes merely present in the same decoded file; the residual
+needs its own references or structure before it can be assigned an extent or
+meaning.
 
 ## RETRACTED, AND A MUCH LARGER GAP FOUND
 

@@ -37,6 +37,7 @@ INPUT_SET_RE = re.compile(r"^[0-9A-F]{64}$")
 MD5_RE = re.compile(r"^[0-9A-F]{32}$")
 SHA256_RE = re.compile(r"^[0-9A-F]{64}$")
 STREAM_AREA_NAME_RE = re.compile(r"(?:^|/)FBStreamArea\.bytes$", re.IGNORECASE)
+MAIN_NAME_RE = re.compile(r"(?:^|/)fb_main_[^/]+\.bytes$", re.IGNORECASE)
 STREAM_AREA_FILE_REGEX = r"(?:^|/)FBStreamArea\.bytes$"
 
 
@@ -149,13 +150,13 @@ def _verify_build_fingerprints(rows: Any, cli_path: Path) -> tuple[list[dict[str
     return checked_game_builds, stream_cli
 
 
-def _is_stream_area_row(row: dict[str, Any]) -> bool:
+def _is_dynamic_file_row(row: dict[str, Any], file_name_re: re.Pattern[str]) -> bool:
     block = str(row.get("blockName") or "").casefold()
     path = row.get("virtualPath") or row.get("fileName")
     return (
         block == "dynamicstreaming"
         and isinstance(path, str)
-        and STREAM_AREA_NAME_RE.search(path.replace("\\", "/")) is not None
+        and file_name_re.search(path.replace("\\", "/")) is not None
     )
 
 
@@ -179,10 +180,12 @@ def _dynamic_streaming_block_type_value(outer: dict[str, Any]) -> int:
     return value
 
 
-def _collect_current_stream_area_files(
+def _collect_current_dynamic_files(
     ledger_path: Path,
     expected_input_set_sha256: str,
     expected_file_row_count: int,
+    file_name_re: re.Pattern[str],
+    selection_label: str,
 ) -> tuple[list[dict[str, Any]], int]:
     expected_input_set = expected_input_set_sha256.upper()
     files: list[dict[str, Any]] = []
@@ -203,13 +206,13 @@ def _collect_current_stream_area_files(
                     "outer VFS ledger row input-set mismatch: "
                     f"row={line_number} expected={expected_input_set} actual={row_input_set or '<missing>'}"
                 )
-            if not _is_stream_area_row(row):
+            if not _is_dynamic_file_row(row, file_name_re):
                 continue
             path = row.get("virtualPath") or row.get("fileName")
             assert isinstance(path, str)
             path_identity = path.replace("\\", "/").casefold()
             if path_identity in seen_paths:
-                raise ValueError(f"outer VFS ledger has duplicate DynamicStreaming path: {path}")
+                raise ValueError(f"outer VFS ledger has duplicate {selection_label} path: {path}")
             seen_paths.add(path_identity)
             status = str(row.get("boundaryStatus") or "")
             if status != "boundary_verified":
@@ -253,7 +256,7 @@ def _collect_current_stream_area_files(
             f"expected={expected_file_row_count} actual={file_row_count}"
         )
     if not files:
-        raise ValueError("outer VFS ledger has no current DynamicStreaming FBStreamArea.bytes files")
+        raise ValueError(f"outer VFS ledger has no current DynamicStreaming {selection_label} files")
     return files, file_row_count
 
 
@@ -262,6 +265,9 @@ def load_current_inputs(
     ledger_path: Path,
     cli_path: Path,
     expected_input_set_sha256: str,
+    *,
+    file_name_re: re.Pattern[str] = STREAM_AREA_NAME_RE,
+    selection_label: str = "FBStreamArea.bytes",
 ) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
     expected = expected_input_set_sha256.upper()
     if INPUT_SET_RE.fullmatch(expected) is None:
@@ -319,8 +325,8 @@ def load_current_inputs(
         expected_file_rows = int(summary["ledgerFileCount"])
     except (KeyError, TypeError, ValueError) as exc:
         raise ValueError("outer VFS report has an invalid ledgerFileCount") from exc
-    files, ledger_file_rows = _collect_current_stream_area_files(
-        ledger_path, expected, expected_file_rows
+    files, ledger_file_rows = _collect_current_dynamic_files(
+        ledger_path, expected, expected_file_rows, file_name_re, selection_label
     )
     return outer, files, {
         "outerReportSha256": sha256_file(outer_path),
@@ -415,6 +421,7 @@ def validate_stream_output(
         root = framed.get("root") or {}
         vectors = framed.get("Vectors")
         inline_fields = framed.get("InlineFields")
+        tail = framed.get("ContiguousVectorTail")
         if (
             decoded_length != len(data)
             or not isinstance(vectors, list)
@@ -429,6 +436,16 @@ def validate_stream_output(
                 f"rootFieldCount={root.get('fieldCount')} "
                 f"vectorCount={len(vectors) if isinstance(vectors, list) else '<invalid>'} "
                 f"inlineFieldCount={len(inline_fields) if isinstance(inline_fields, list) else '<invalid>'}"
+            )
+        expected_tail = {
+            "startOffset": int(root["tableOffset"]) + int(root["objectSize"]),
+            "endOffset": len(data),
+            "status": "exact",
+        }
+        if tail != expected_tail:
+            raise ValueError(
+                f"maintained stream_area parser tail mismatch: {path} "
+                f"expected={expected_tail} actual={tail}"
             )
         vector_widths = {
             int(vector.get("fieldIndex", -1)): int(vector.get("elementWidth", -1))
@@ -472,6 +489,7 @@ def validate_stream_output(
                 "rootObjectSize": int(root.get("objectSize") or 0),
                 "finalVectorEndOffset": final_vector_end,
                 "finalVectorReachesPayloadEof": True,
+                "contiguousVectorTail": tail,
                 "vectors": vectors,
             }
         )
@@ -490,6 +508,7 @@ def validate_stream_output(
         "sourceBytes": payload_bytes,
         "decodedBytes": payload_bytes,
         "finalVectorReachesPayloadEofCount": len(parsed_files),
+        "contiguousVectorTailCount": len(parsed_files),
         "vectorFieldCounts": [
             {
                 "fieldIndex": field_index,
@@ -512,15 +531,15 @@ def _markdown(report: dict[str, Any]) -> str:
     ) or "| _none_ | _none_ | 0 | 0 |"
     return "\n".join(
         [
-            "# DynamicStreaming `FBStreamArea.bytes` terminal-vector gate",
+            "# DynamicStreaming `FBStreamArea.bytes` contiguous-vector gate",
             "",
             f"- Status: `{report['status']}`.",
             f"- Current VFS input set: `{report['inputSetSha256']}`.",
             f"- Authenticated outer ledger: `{report['outer']['ledgerSha256']}`.",
             f"- Verified source fingerprints: {report['outer']['sourceFingerprintCount']:,}; non-CLI game build fingerprints: {report['outer']['gameBuildFingerprintsMatched']:,}/{report['outer']['buildFingerprintCount'] - 1:,}.",
             f"- Streamed and FileDataMd5-matched files: {corpus['fileCount']:,}/{corpus['fileCount']:,}.",
-            f"- Maintained parser final-vector EOF checks: {corpus['finalVectorReachesPayloadEofCount']:,}/{corpus['fileCount']:,}; payload bytes: {corpus['sourceBytes']:,}.",
-            "- All six vector ranges are bounded; the greatest vector end equals payload EOF. Gaps between offsets remain unassigned, and vector elements remain unnamed and opaque.",
+            f"- Maintained parser contiguous-tail and EOF checks: {corpus['contiguousVectorTailCount']:,}/{corpus['fileCount']:,}; payload bytes: {corpus['sourceBytes']:,}.",
+            "- The six count words and vector bodies tile the range from the root object end through payload EOF. Record contents remain unnamed here.",
             f"- Current stream CLI matches the outer audit fingerprint: `{report['outer']['outerAuditCliMatchesCurrent']}` (outer `{report['outer']['outerAuditCliSha256']}`, current `{report['stream']['cliSha256']}`).",
             "",
             "## Current vector-width census",
@@ -529,7 +548,7 @@ def _markdown(report: dict[str, Any]) -> str:
             "|---:|---:|---:|---:|",
             vector_rows,
             "",
-            "The gate establishes authenticated VFS identity, selected-build table/vector bounds, and that the final vector endpoint equals payload EOF. It does not close gaps between offsets or assign names or gameplay/runtime meaning to record contents.",
+            "The gate establishes authenticated VFS identity, selected-build table/vector bounds, and exact contiguous tail coverage. It does not assign gameplay or runtime meaning to record contents.",
             "",
             f"AnimeStudio CLI SHA-256: `{report['stream']['cliSha256']}`; maintained parser SHA-256: `{report['parser']['sha256']}`; gate SHA-256: `{report['gate']['sha256']}`.",
             "",
@@ -595,8 +614,8 @@ def run_current_gate(
             f"DynamicStreaming corpus gate changed during the run: before={gate_sha} after={actual_gate_sha}"
         )
     return {
-        "format": "endfield.dynamic-stream-area-current.v1",
-        "schemaVersion": 1,
+        "format": "endfield.dynamic-stream-area-current.v2",
+        "schemaVersion": 2,
         "generatedUtc": datetime.now(timezone.utc).replace(microsecond=0).isoformat(),
         "status": "current_corpus_pass",
         "inputSetSha256": str(outer["inputSetSha256"]).upper(),
@@ -641,8 +660,8 @@ def run_current_gate(
             "after the outer audit; AnimeStudio verifies each current chunk and every returned "
             "payload is independently matched to its ledger FileDataMd5. The maintained "
             "generated-accessor framing parser bounds six vectors and one 24-byte inline root "
-            "field and requires the greatest vector end to equal payload EOF. It does not close "
-            "gaps between offsets. Record contents remain unnamed and opaque; "
+            "field and requires their count words and bodies to tile the tail from the "
+            "root object end through payload EOF. Record contents remain unnamed here; "
             "this does not establish gameplay or runtime semantics."
         ),
     }
@@ -678,7 +697,7 @@ def main(argv: list[str] | None = None) -> int:
     corpus = report["corpus"]
     print(
         "DynamicStreaming stream_area current corpus gate passed: "
-        f"files={corpus['fileCount']} finalVectorAtEof={corpus['finalVectorReachesPayloadEofCount']} "
+        f"files={corpus['fileCount']} contiguousTail={corpus['contiguousVectorTailCount']} "
         f"inputSetSha256={report['inputSetSha256']}"
     )
     print(f"JSON: {args.json_output}")

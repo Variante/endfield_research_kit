@@ -1,0 +1,40 @@
+{
+  "schema": "endfield.dynamic-sludge-surf-tile-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "layout": {
+    "gridType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",
+    "recordType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSludgeComp",
+    "recordVector": "SludgeComp",
+    "recordFieldIndex": 44,
+    "recordWidth": 264,
+    "groupType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+    "groupField": "SurfTileIDs",
+    "groupOffset": 224,
+    "groupWidth": 24,
+    "targetDataType": "PrimitiveInt",
+    "targetVector": "PrimitiveIntList"
+  },
+  "getter": {
+    "index": 89654,
+    "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSludgeComp",
+    "method": "get_SurfTileIDs",
+    "parameters": [],
+    "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+    "rva": 53020528,
+    "windowLength": 160,
+    "windowSha256": "ED9713B21A13AC6DC0E8305401476931B2FE34026D0E4B053F31925D9A6DB900",
+    "offsetInstructionRva": 53020595,
+    "offsetInstructionHex": "81C2E0000000",
+    "windowBoundary": "selected generated getter fast path through first return; alternate branch lies outside this window"
+  },
+  "evidenceBoundary": {
+    "direct": "The selected generated SurfTileIDs getter fast path takes the inline DataGroup from SludgeComp byte offset 224. The selected main, RootComp, and ResourceComp contracts independently establish record and DataGroup widths, primitive vector identity, and competing visible-group spans.",
+    "structuralOnly": "A current authenticated main corpus audit can compare SurfTileIDs spans with the primitive integers left outside RootComp and ResourceGroup visibility groups.",
+    "unresolved": "The getter's alternate native branch, the stored tile IDs' runtime consumer, tile activation, and physical or rendering behavior are not established by this fast-path window."
+  }
+}

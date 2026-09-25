@@ -1,0 +1,2248 @@
+{
+  "schema": "endfield.dynamic-visibility-runtime-claims.v16",
+  "status": "validated",
+  "methods": {
+    "ConditionRuntimeBase.GetResult": {
+      "type": "Beyond.Gameplay.ConditionRuntimeBase",
+      "method": "GetResult",
+      "contract": "Uses the cached condition state when listening and otherwise takes the virtual result path.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.ConditionRuntimeBase::<isListening>k__BackingField"
+        },
+        {
+          "readsField": "Beyond.Gameplay.ConditionRuntimeBase::m_currentConditionState"
+        }
+      ]
+    },
+    "CombinedConditionRuntime.GetResultWithoutListening": {
+      "type": "Beyond.Gameplay.CombinedConditionRuntime",
+      "method": "GetResultWithoutListening",
+      "contract": "Selects a condition-operator branch, iterates subconditions, and applies the reverse flag to the Boolean result.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.CombinedConditionRuntime::conditionOperator"
+        },
+        {
+          "readsField": "Beyond.Gameplay.CombinedConditionRuntime::reverse"
+        },
+        {
+          "readsField": "Beyond.Gameplay.CombinedConditionRuntime::subConditions"
+        }
+      ]
+    },
+    "SimpleConditionCheckQuestState.GetResultWithoutListening": {
+      "type": "Beyond.Gameplay.SimpleConditionCheckQuestState",
+      "method": "GetResultWithoutListening",
+      "contract": "Gets the named quest state and compares it with the stored target using the stored operator.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.SimpleConditionCheckQuestState::questId"
+        },
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.SimpleConditionCheckQuestState::compareOperator",
+            "call": "Beyond.TableUtils.DoCompare",
+            "register": "ecx"
+          }
+        },
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.SimpleConditionCheckQuestState::compareTarget",
+            "call": "Beyond.TableUtils.DoCompare",
+            "register": "r8d"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.MissionSystem.GetQuestState",
+            "Beyond.TableUtils.DoCompare"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "SimpleConditionCheckMissionState.GetResultWithoutListening": {
+      "type": "Beyond.Gameplay.SimpleConditionCheckMissionState",
+      "method": "GetResultWithoutListening",
+      "contract": "Gets the named mission data and compares its state, or a missing-data default, with the stored target and operator.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.SimpleConditionCheckMissionState::missionId"
+        },
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.SimpleConditionCheckMissionState::compareOperator",
+            "call": "Beyond.TableUtils.DoCompare",
+            "register": "ecx"
+          }
+        },
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.SimpleConditionCheckMissionState::compareTarget",
+            "call": "Beyond.TableUtils.DoCompare",
+            "register": "r8d"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.MissionSystem.GetMissionData",
+            "Beyond.TableUtils.DoCompare"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "SimpleConditionCheckMapVar.GetResultWithoutListening": {
+      "type": "Beyond.Gameplay.SimpleConditionCheckMapVar",
+      "method": "GetResultWithoutListening",
+      "contract": "Looks up the named variable in the current map, converts its value and target to Single, and compares them when lookup succeeds.",
+      "claims": [
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.SimpleConditionCheckMapVar::mapVarName",
+            "call": "Beyond.Gameplay.MapVarSystem.TryGetMapVarInCurrentMap",
+            "register": "rdx"
+          }
+        },
+        {
+          "readsField": "Beyond.Gameplay.SimpleConditionCheckMapVar::compareOperator"
+        },
+        {
+          "readsField": "Beyond.Gameplay.SimpleConditionCheckMapVar::compareTarget"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.MapVarSystem.TryGetMapVarInCurrentMap",
+            "Beyond.TableUtils.DoCompare"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "SimpleConditionCheckGlobalVar.GetResultWithoutListening": {
+      "type": "Beyond.Gameplay.SimpleConditionCheckGlobalVar",
+      "method": "GetResultWithoutListening",
+      "contract": "Looks up the named client global variable, converts its value and target to Single, and compares them when lookup succeeds.",
+      "claims": [
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.SimpleConditionCheckGlobalVar::globalVarName",
+            "call": "Beyond.Gameplay.GlobalVarSystem.TryGetClientVar",
+            "register": "rdx"
+          }
+        },
+        {
+          "readsField": "Beyond.Gameplay.SimpleConditionCheckGlobalVar::compareOperator"
+        },
+        {
+          "readsField": "Beyond.Gameplay.SimpleConditionCheckGlobalVar::compareTarget"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.GlobalVarSystem.TryGetClientVar",
+            "Beyond.TableUtils.DoCompare"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "MapVarSystem.TryGetMapVarInCurrentMap": {
+      "type": "Beyond.Gameplay.MapVarSystem",
+      "method": "TryGetMapVarInCurrentMap",
+      "parametersPrefix": [
+        "System.String"
+      ],
+      "contract": "Passes m_curMapStr as the map key to the named MapVar lookup.",
+      "claims": [
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.MapVarSystem::m_curMapStr",
+            "call": "Beyond.Gameplay.MapVarSystem.TryGetMapVar",
+            "register": "rdx"
+          }
+        }
+      ]
+    },
+    "TableUtils.DoCompare.Int32": {
+      "type": "Beyond.TableUtils",
+      "method": "DoCompare",
+      "parameters": [
+        "Beyond.GEnums.CompareOperator",
+        "System.Int32",
+        "System.Int32"
+      ],
+      "contract": "The selected Int32 comparer has direct equality and inequality result branches.",
+      "claims": [
+        {
+          "matches": "sete al"
+        },
+        {
+          "matches": "setne al"
+        }
+      ]
+    },
+    "TableUtils.DoCompare.Single": {
+      "type": "Beyond.TableUtils",
+      "method": "DoCompare",
+      "parameters": [
+        "Beyond.GEnums.CompareOperator",
+        "System.Single",
+        "System.Single"
+      ],
+      "contract": "The selected Single comparer has tolerance-bounded equality and inequality result branches.",
+      "claims": [
+        {
+          "loadsFloat32": 1e-05
+        },
+        {
+          "matches": "setae al"
+        },
+        {
+          "matches": "setb al"
+        }
+      ]
+    },
+    "SimpleConditionCheckQuestState.InnerStartListening": {
+      "type": "Beyond.Gameplay.SimpleConditionCheckQuestState",
+      "method": "InnerStartListening",
+      "contract": "Registers a quest-state change callback with GameConditionManager.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.GameConditionManager.RegisterQuestStateChange"
+          ]
+        }
+      ]
+    },
+    "SimpleConditionCheckMissionState.InnerStartListening": {
+      "type": "Beyond.Gameplay.SimpleConditionCheckMissionState",
+      "method": "InnerStartListening",
+      "contract": "Registers a mission-state change callback with GameConditionManager.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.GameConditionManager.RegisterMissionStateChange"
+          ]
+        }
+      ]
+    },
+    "SimpleConditionCheckMapVar.InnerStartListening": {
+      "type": "Beyond.Gameplay.SimpleConditionCheckMapVar",
+      "method": "InnerStartListening",
+      "contract": "Registers a map-variable change callback with GameConditionManager.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.GameConditionManager.RegisterMapVarChanged"
+          ]
+        }
+      ]
+    },
+    "SimpleConditionCheckGlobalVar.InnerStartListening": {
+      "type": "Beyond.Gameplay.SimpleConditionCheckGlobalVar",
+      "method": "InnerStartListening",
+      "contract": "Binds a client global-variable change callback through EventManager.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.EventManager.BindGlobal"
+          ]
+        }
+      ]
+    },
+    "BaseGameScene._RegisterSceneStateConditionChangeEvent": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "_RegisterSceneStateConditionChangeEvent",
+      "contract": "Iterates the selected MapConfig's authored scene-state conditions when registering change listeners.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.View.BaseGameScene::m_mapConfig",
+            "field": "Beyond.Gameplay.MapConfig::sceneStateConditions"
+          }
+        }
+      ]
+    },
+    "ResourceRouter.GetMapJsonConfigFullPath": {
+      "type": "Beyond.Gameplay.ResourceRouter",
+      "method": "GetMapJsonConfigFullPath",
+      "contract": "Uses the MapConfig JSON directory and extension literals in its selected path-construction body.",
+      "claims": [
+        {
+          "loadsLiterals": [
+            "Data/Json/MapConfig/",
+            ".json"
+          ]
+        }
+      ]
+    },
+    "BaseGameScene.get_sceneConfigPath": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "get_sceneConfigPath",
+      "contract": "Returns the selected MapConfig's authored streaming asset path on the unpatched branch.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.View.BaseGameScene::m_mapConfig",
+            "field": "Beyond.Gameplay.MapConfig::streamingMapConfigPath"
+          }
+        }
+      ]
+    },
+    "BaseGameScene.GetCurPlatformPath": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "GetCurPlatformPath",
+      "contract": "Combines the selected asset-platform name with the authored relative path under the DynamicAssets scene directory.",
+      "claims": [
+        {
+          "loadsLiterals": [
+            "Assets/Beyond/DynamicAssets/Scenes",
+            "{0}/{1}/{2}"
+          ]
+        },
+        {
+          "calls": [
+            "Beyond.Resource.PathConsts.GetCurrentAssetPlatformName"
+          ]
+        }
+      ]
+    },
+    "GameScene._ExtractSceneConfig": {
+      "type": "Beyond.Gameplay.View.GameScene",
+      "method": "_ExtractSceneConfig",
+      "contract": "Loads the selected MapConfig's streaming asset path and stores the returned object in the scene's StreamingMapConfig field.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.View.BaseGameScene::m_mapConfig",
+            "field": "Beyond.Gameplay.MapConfig::streamingMapConfigPath"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.View.BaseGameScene.GetCurPlatformPath",
+            "Beyond.Resource.SimpleAssetLoader.Load",
+            "Beyond.Resource.FAssetProxyHandle.Get"
+          ],
+          "ordered": true
+        },
+        {
+          "writesField": "Beyond.Gameplay.View.BaseGameScene::<streamingMapConfig>k__BackingField"
+        }
+      ]
+    },
+    "BaseGameScene.get_mapSceneName": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "get_mapSceneName",
+      "contract": "Returns mapSceneName from the loaded StreamingMapConfig on its non-null branch.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.View.BaseGameScene::<streamingMapConfig>k__BackingField",
+            "field": "Beyond.Gameplay.Streaming.StreamingMapConfig::mapSceneName"
+          }
+        }
+      ]
+    },
+    "BaseGameScene.CreateDynamicStreamingScene": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "CreateDynamicStreamingScene",
+      "contract": "Passes the loaded streaming config's map-scene name into DynamicStreamingScene.InitScene on the nonempty-name branch.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.View.BaseGameScene.get_mapSceneName",
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.InitScene"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "DynamicStreamingScene.InitScene": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+      "method": "InitScene",
+      "contract": "Builds a DynamicStreaming Scene base path and passes it to its data loader and version-set loader.",
+      "claims": [
+        {
+          "loadsLiterals": [
+            "Scene",
+            "{0}/{1}/{2}/{3}"
+          ]
+        },
+        {
+          "calls": [
+            "Beyond.PathDef.GetDynamicStreamingReadRoot",
+            "Beyond.Resource.PathConsts.GetCurrentDataDynamicSceneAssetFolderName",
+            "Beyond.Gameplay.Core.DynamicScene.DynamicDataLoader.SetBasePath",
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet.LoadFromBasePath"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "DynamicSceneFbDataLoader.Init": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoader",
+      "method": "Init",
+      "contract": "Initializes the main FlatBuffer path parser from the scene base path using the fb_main filename template.",
+      "claims": [
+        {
+          "loadsLiterals": [
+            "{0}/fb_main_0_0000_0000.bytes",
+            ".bytes"
+          ]
+        },
+        {
+          "writesField": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoader::m_baseDirectoryString"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicScenePathParser.SetBaseString"
+          ]
+        }
+      ]
+    },
+    "DynamicSceneFbDataLoader.GetPath": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoader",
+      "method": "GetPath",
+      "contract": "Replaces the main filename's indexed digits from a packed grid value and returns the parser's current path.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoader::m_zIndex"
+        },
+        {
+          "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoader::m_xIndex"
+        },
+        {
+          "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoader::m_bitIndex"
+        },
+        {
+          "matches": "shr eax, 0x8"
+        },
+        {
+          "matches": "shr ebx, 0x10"
+        },
+        {
+          "matches": "and ebx, 0xf"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicScenePathParser.Replace",
+            "Beyond.Gameplay.Core.DynamicScene.DynamicScenePathParser.get_currentPath"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "DynamicSceneFbDataLoader.GetGridData": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoader",
+      "method": "GetGridData",
+      "parametersPrefix": [
+        "System.UInt32",
+        "System.UInt32"
+      ],
+      "contract": "Gets the typed FlatBuffer chunk, reads its grid vector, and caches grids by their UniqueId.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoaderBase`2.GetFbData",
+            "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneChunkData.get_GridsLength",
+            "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid.get_UniqueId"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "DynamicSceneFbDataLoader.GetFbData": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoader",
+      "method": "GetFbData",
+      "contract": "Reads a valid low-IO handle as a FlatBuffer chunk and checks its data and streaming versions.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.VFS.FVFSTrackedLowIOHandle.IsValid",
+            "Beyond.VFS.FVFSTrackedLowIOHandle.GetData",
+            "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneChunkData.GetRootAsFBDynamicSceneChunkData",
+            "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneChunkData.get_Version",
+            "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneChunkData.get_StreamingVersion",
+            "UnityEngine.HyperGryph.Streaming.HGStreamingSceneManager.get_streamingVersion"
+          ]
+        },
+        {
+          "comparesResult": {
+            "call": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneChunkData.get_Version",
+            "value": 94
+          }
+        },
+        {
+          "matches": "cmp edi, eax"
+        }
+      ]
+    },
+    "DynamicSceneFbDataLoaderBase.GetFbData": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoaderBase`2",
+      "method": "GetFbData",
+      "classArguments": [
+        "System.UInt32",
+        "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneChunkData"
+      ],
+      "contract": "The UInt32/FBDynamicSceneChunkData base loader checks its tracked low-IO handle on the cache or load path.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.VFS.FVFSTrackedLowIOHandle.IsValid"
+          ]
+        }
+      ]
+    },
+    "DynamicSceneFbDataLoaderBase.TryLoadResource": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoaderBase`2",
+      "method": "TryLoadResource",
+      "classArguments": [
+        "System.UInt32",
+        "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneChunkData"
+      ],
+      "contract": "The typed base loader requests a low-IO read through VirtualFileSystem and checks the returned handle.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.VFS.VirtualFileSystem.get_instance",
+            "Beyond.VFS.VirtualFileSystem.ReadFileByLowIO",
+            "Beyond.VFS.FVFSTrackedLowIOHandle.IsValid"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "DynamicSceneFbDataLoader.AddChunkRef": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoader",
+      "method": "AddChunkRef",
+      "contract": "A new or incremented main-chunk reference can tail-call the typed base loader's resource request.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoaderBase`2.TryLoadResource"
+          ]
+        }
+      ]
+    },
+    "DynamicDataLoader.SetBasePath": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicDataLoader",
+      "method": "SetBasePath",
+      "contract": "Initializes the main loader and separate init and streaming path templates from one scene base path.",
+      "claims": [
+        {
+          "loadsLiterals": [
+            "{0}/fb_init_{1:00}_00000000.bytes",
+            "{0}/fb_streaming_{1:00}_00000000.bytes"
+          ]
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneFbDataLoader.Init",
+            "Beyond.Gameplay.Core.DynamicScene.DynamicScenePathParser.SetBaseString"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "DynamicSceneVersionBanSet.LoadFromBasePath": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet",
+      "method": "LoadFromBasePath",
+      "contract": "Builds a version-file path from the same scene base path.",
+      "claims": [
+        {
+          "loadsLiterals": [
+            "fb_version.bytes",
+            "{0}/{1}"
+          ]
+        }
+      ]
+    },
+    "DataManager.MapConfigTable.TryGetData": {
+      "type": "Beyond.Gameplay.DataManager+MapConfigTable",
+      "method": "TryGetData",
+      "contract": "On the cache-miss path, obtains a MapConfig JSON path and calls DataManager.LoadJson before caching the result.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.ResourceRouter.GetMapJsonConfigFullPath",
+            "Beyond.Gameplay.DataManager.LoadJson"
+          ],
+          "ordered": true
+        },
+        {
+          "readsField": "Beyond.Gameplay.DataManager+MapConfigTable::m_dataManager"
+        }
+      ]
+    },
+    "LoadingPipeline.LoadBeginStep._TryLoadMapConfig": {
+      "type": "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline+LoadBeginStep",
+      "method": "_TryLoadMapConfig",
+      "contract": "Passes its map ID key and result output to the DataManager MapConfig table lookup.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.DataManager+MapConfigTable.TryGetData"
+          ]
+        }
+      ]
+    },
+    "LoadingPipeline.LoadBeginStep.DoPrepare": {
+      "type": "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline+LoadBeginStep",
+      "method": "DoPrepare",
+      "contract": "Loads LevelConfig, requests MapConfig, then stores the returned config in the loading pipeline on success.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline+LoadBeginStep._TryLoadLevelConfig",
+            "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline+LoadBeginStep._TryLoadMapConfig"
+          ],
+          "ordered": true
+        },
+        {
+          "writesField": "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline::m_mapConfig"
+        }
+      ]
+    },
+    "LoadingPipeline.LoadSceneStep.MoveNext": {
+      "type": "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline+LoadSceneStep+<DoExecuteAsync>d__11",
+      "method": "MoveNext",
+      "contract": "Reads LoadingPipeline.m_mapConfig, stores it in BaseGameScene on the map-ID change branch, then initializes scene state and notifies the dynamic scene.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline+LoadingPipelineAsyncStep::m_pipeline",
+            "field": "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline::m_mapConfig"
+          }
+        },
+        {
+          "writesField": "Beyond.Gameplay.View.BaseGameScene::m_mapConfig"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.View.BaseGameScene._UnregisterSceneStateConditionChangeEvent",
+            "Beyond.Gameplay.View.BaseGameScene._InitSceneState",
+            "Beyond.Gameplay.View.BaseGameScene._OnMapConfigChanged"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "SeamlessLoadingPipeline.PrepareStep.DoExecute": {
+      "type": "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline+PrepareStep",
+      "method": "DoExecute",
+      "contract": "Uses the target level to obtain a map ID, looks up MapConfig, and stores it in the seamless loading pipeline on success.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline+SeamlessLoadingSyncStep::m_pipeline",
+            "field": "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline::m_targetLevelIdStr"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.DataManager+MapConfigTable.TryGetData"
+          ]
+        },
+        {
+          "writesField": "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline::m_mapConfig"
+        }
+      ]
+    },
+    "SeamlessLoadingPipeline.PreloadSceneStep.MoveNext": {
+      "type": "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline+PreloadSceneStep+<DoExecuteAsync>d__6",
+      "method": "MoveNext",
+      "contract": "Passes the pipeline's selected MapConfig to BaseGameScene.TryChangeMapConfig.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline+SeamlessLoadingAsyncStep::m_pipeline",
+            "field": "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline::m_mapConfig"
+          }
+        },
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline::m_mapConfig",
+            "call": "Beyond.Gameplay.View.BaseGameScene.TryChangeMapConfig",
+            "register": "rdx"
+          }
+        }
+      ]
+    },
+    "BaseGameScene.TryChangeMapConfig": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "TryChangeMapConfig",
+      "contract": "Compares map IDs and, on the change branch, unregisters scene-state listeners, stores the incoming MapConfig, reinitializes state, and notifies DynamicStreaming.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.View.BaseGameScene::m_mapConfig",
+            "field": "Beyond.Gameplay.MapConfig::mapIdStr"
+          }
+        },
+        {
+          "storesArgument": {
+            "field": "Beyond.Gameplay.View.BaseGameScene::m_mapConfig",
+            "argument": "rdx"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.View.BaseGameScene._UnregisterSceneStateConditionChangeEvent",
+            "Beyond.Gameplay.View.BaseGameScene._InitSceneState",
+            "Beyond.Gameplay.View.BaseGameScene._OnMapConfigChanged"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "BaseGameScene._InitSceneState": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "_InitSceneState",
+      "contract": "Registers scene-state condition listeners before invoking the state update.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.View.BaseGameScene._RegisterSceneStateConditionChangeEvent",
+            "Beyond.Gameplay.View.BaseGameScene.DoUpdateSceneState"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "BaseGameScene._OnMapConfigChanged": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "_OnMapConfigChanged",
+      "contract": "Forwards the map-config change to its DynamicStreamingScene when present.",
+      "claims": [
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.View.BaseGameScene::m_dynamicStreamingScene",
+            "call": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.OnMapConfigChanged",
+            "register": "rcx"
+          }
+        }
+      ]
+    },
+    "DynamicStreamingScene.OnMapConfigChanged": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+      "method": "OnMapConfigChanged",
+      "contract": "Refreshes registered dynamic entities on a map-config change when the entity system is present.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.RefreshAllEntity"
+          ]
+        }
+      ]
+    },
+    "BaseGameScene.CalculateSceneStateMask": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "CalculateSceneStateMask",
+      "contract": "Reads the selected MapConfig's scene-state conditions and name-to-index dictionary while constructing the state mask and lists.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.View.BaseGameScene::m_mapConfig"
+        },
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.View.BaseGameScene::m_mapConfig",
+            "field": "Beyond.Gameplay.MapConfig::sceneStateConditions"
+          }
+        },
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.View.BaseGameScene::m_mapConfig",
+            "field": "Beyond.Gameplay.MapConfig::sceneStates"
+          }
+        }
+      ]
+    },
+    "BaseGameScene.SetSceneState": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "SetSceneState",
+      "contract": "Looks up a state name in MapConfig.sceneStates and can call the same mask-and-list setter independently of condition rows.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.View.BaseGameScene::m_mapConfig",
+            "field": "Beyond.Gameplay.MapConfig::sceneStates"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.View.BaseGameScene.SetSceneStateMaskAndList"
+          ]
+        }
+      ]
+    },
+    "BaseGameScene.DoUpdateSceneState": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "DoUpdateSceneState",
+      "contract": "Calls state-mask calculation before passing its result to the scene-state setter.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.View.BaseGameScene.CalculateSceneStateMask",
+            "Beyond.Gameplay.View.BaseGameScene.SetSceneStateMaskAndList"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "BaseGameScene.SetSceneStateMaskAndList": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "SetSceneStateMaskAndList",
+      "contract": "Stores the state-index-list argument, then reads the stored list and dynamic scene on a path that calls SyncSceneStates.",
+      "claims": [
+        {
+          "storesArgument": {
+            "field": "Beyond.Gameplay.View.BaseGameScene::m_sceneStateIndexList",
+            "argument": "r9"
+          }
+        },
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.View.BaseGameScene::m_sceneStateIndexList",
+            "call": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.SyncSceneStates",
+            "register": "rdx"
+          }
+        },
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.View.BaseGameScene::m_dynamicStreamingScene",
+            "call": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.SyncSceneStates",
+            "register": "rcx"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.SyncSceneStates"
+          ]
+        }
+      ]
+    },
+    "DynamicStreamingScene.SyncSceneStates": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+      "method": "SyncSceneStates",
+      "contract": "Reads the scene's active state-index set and calls the entity and resource systems' state-index update methods.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene::m_activeSceneStateIndices"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.UpdateStateIndex",
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneResourceGroupSystem.UpdateStateIndex"
+          ]
+        }
+      ]
+    },
+    "DynamicStreamingScene.OnAreaChanged": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+      "method": "OnAreaChanged",
+      "contract": "Reads the scene's active area-ID set and calls the entity and resource systems' area-ID update methods.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene::m_activeAreaIds"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem.UpdateAreaId",
+            "Beyond.Gameplay.Core.DynamicScene.DynamicSceneResourceGroupSystem.UpdateAreaId"
+          ]
+        }
+      ]
+    },
+    "SquadManager.ServerTeleportSquad": {
+      "type": "Beyond.Gameplay.Core.SquadManager",
+      "method": "ServerTeleportSquad",
+      "contract": "Forwards its requested teleport position into the regular level loader.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.GameLevelLoader.LoadAtPos"
+          ]
+        }
+      ]
+    },
+    "LogicComponentWithDynamicProperty.AssignData": {
+      "type": "Beyond.Gameplay.Core.LogicComponentWithDynamicProperty`1",
+      "method": "AssignData",
+      "classArguments": [
+        "System.Object"
+      ],
+      "contract": "The shared generic body creates a component property blackboard, loads the template property list, and adds that blackboard under the component key to the entity blackboard.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.BaseComponent.AssignData",
+            "Beyond.Gameplay.ParamBlackboard.NewEmpty",
+            "Beyond.Gameplay.Core.DynamicPropertyComponentData.get_properties",
+            "Beyond.Gameplay.ParamBlackboard.LoadValue",
+            "Beyond.Gameplay.Core.DynamicPropertyComponentData.get_interactiveComponentKey",
+            "Beyond.Gameplay.ParamBlackboard.AddSubBlackboard"
+          ]
+        }
+      ]
+    },
+    "LogicComponentWithDynamicProperty.InitSelf": {
+      "type": "Beyond.Gameplay.Core.LogicComponentWithDynamicProperty`1",
+      "method": "InitSelf",
+      "classArguments": [
+        "System.Object"
+      ],
+      "contract": "The shared generic body creates instance data and passes its component property blackboard through the native virtual ApplyProperties slot before base component initialization; both portal data classes override that slot.",
+      "claims": [
+        {
+          "calls": [
+            "System.Activator.CreateInstance",
+            "Beyond.Gameplay.Core.BaseComponent.InitSelf"
+          ]
+        },
+        {
+          "dispatchesVirtualMethod": {
+            "base": "Beyond.Gameplay.Core.DynamicPropertyComponentData.ApplyProperties",
+            "overrides": [
+              "Beyond.Gameplay.LoadingPortalComponentData.ApplyProperties",
+              "Beyond.Gameplay.SeamlessPortalComponentData.ApplyProperties"
+            ]
+          }
+        }
+      ]
+    },
+    "Entity.AssignLevelEntityData": {
+      "type": "Beyond.Gameplay.Core.Entity",
+      "method": "AssignLevelEntityData",
+      "contract": "Stores the supplied LevelEntityData on the entity before dispatching the level-data assignment notification.",
+      "claims": [
+        {
+          "storesArgument": {
+            "field": "Beyond.Gameplay.Core.Entity::<inLevelData>k__BackingField",
+            "argument": "rdx"
+          }
+        }
+      ]
+    },
+    "EntityAllocator.AllocateObject": {
+      "type": "Beyond.Gameplay.Core.EntityAllocator",
+      "method": "AllocateObject",
+      "parametersPrefix": [
+        "Beyond.Gameplay.EntityTemplateData",
+        "System.UInt64",
+        "Beyond.Gameplay.Core.EntityAllocator+AllocObjParam"
+      ],
+      "contract": "The ordinary allocated-entity route constructs components, prepares the root position, assigns placed LevelData, then starts pre-initialization in that order.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.Entity.Construct",
+            "Beyond.Gameplay.Core.RootComponent.PreparePosRot",
+            "Beyond.Gameplay.Core.Entity.AssignLevelEntityData",
+            "Beyond.Gameplay.Core.Entity.PreInit"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "Entity.PreInit": {
+      "type": "Beyond.Gameplay.Core.Entity",
+      "method": "PreInit",
+      "contract": "Pre-initialization enters the component container's pre-initialization path.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.ComponentContainer.PreInit"
+          ]
+        }
+      ]
+    },
+    "ComponentContainer.PreInit": {
+      "type": "Beyond.Gameplay.Core.ComponentContainer",
+      "method": "PreInit",
+      "contract": "The component container pre-initializes its contained components.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.BaseComponent.PreInit"
+          ]
+        }
+      ]
+    },
+    "ComponentContainer.Init": {
+      "type": "Beyond.Gameplay.Core.ComponentContainer",
+      "method": "Init",
+      "contract": "The separate component-container initialization path calls BaseComponent.Init for contained components.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.BaseComponent.Init"
+          ]
+        }
+      ]
+    },
+    "InteractiveRootComponent.OnLevelDataAssigned": {
+      "type": "Beyond.Gameplay.Core.InteractiveRootComponent",
+      "method": "OnLevelDataAssigned",
+      "contract": "Reads the assigned LevelInteractiveData component override map, enumerates its typed keys, and loads a selected component's property rows into a ParamBlackboard.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.Core.Entity::<inLevelData>k__BackingField"
+        },
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.LevelInteractiveData::componentProperties",
+            "call": "System.Collections.Generic.Dictionary`2.GetEnumerator",
+            "register": "rdx"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.RootComponent.OnLevelDataAssigned",
+            "System.Collections.Generic.Dictionary`2.GetEnumerator",
+            "System.Collections.Generic.Dictionary`2+Enumerator.MoveNext",
+            "Beyond.Gameplay.Core.InteractiveConfigStatic.TryInit",
+            "Beyond.Gameplay.Core.ECClassCollection.GetIdFromCompType",
+            "Beyond.Gameplay.ParamBlackboard.LoadValue"
+          ]
+        }
+      ]
+    },
+    "LoadingPortalComponentData.get_interactiveComponentType": {
+      "type": "Beyond.Gameplay.LoadingPortalComponentData",
+      "method": "get_interactiveComponentType",
+      "contract": "Returns the selected native LoadingPortal interactive component enum member.",
+      "claims": [
+        {
+          "returnsEnumMember": {
+            "type": "Beyond.Gameplay.InteractiveComponentType",
+            "member": "LoadingPortal"
+          }
+        }
+      ]
+    },
+    "SeamlessPortalComponentData.get_interactiveComponentType": {
+      "type": "Beyond.Gameplay.SeamlessPortalComponentData",
+      "method": "get_interactiveComponentType",
+      "contract": "Returns the selected native SeamlessPortal interactive component enum member.",
+      "claims": [
+        {
+          "returnsEnumMember": {
+            "type": "Beyond.Gameplay.InteractiveComponentType",
+            "member": "SeamlessPortal"
+          }
+        }
+      ]
+    },
+    "LoadingPortalComponentData.ApplyProperties": {
+      "type": "Beyond.Gameplay.LoadingPortalComponentData",
+      "method": "ApplyProperties",
+      "contract": "Looks up the tp_position property through the component's typed assignment helper.",
+      "claims": [
+        {
+          "loadsLiterals": [
+            "tp_position"
+          ]
+        },
+        {
+          "bindsLiteralToCallback": {
+            "literal": "tp_position",
+            "callback": "Beyond.Gameplay.LoadingPortalComponentData.<ApplyProperties>b__30_1",
+            "assignCall": "Beyond.Gameplay.LoadingPortalComponentData._TryAssign"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.LoadingPortalComponentData._TryAssign"
+          ]
+        }
+      ]
+    },
+    "LoadingPortalComponentData.<ApplyProperties>b__30_1": {
+      "type": "Beyond.Gameplay.LoadingPortalComponentData",
+      "method": "<ApplyProperties>b__30_1",
+      "contract": "The Vector3 assignment callback writes tpPosition.",
+      "claims": [
+        {
+          "writesField": "Beyond.Gameplay.LoadingPortalComponentData::<tpPosition>k__BackingField"
+        }
+      ]
+    },
+    "SeamlessPortalComponentData.ApplyProperties": {
+      "type": "Beyond.Gameplay.SeamlessPortalComponentData",
+      "method": "ApplyProperties",
+      "contract": "Looks up the tp_position property through the component's typed assignment helper.",
+      "claims": [
+        {
+          "loadsLiterals": [
+            "tp_position"
+          ]
+        },
+        {
+          "bindsLiteralToCallback": {
+            "literal": "tp_position",
+            "callback": "Beyond.Gameplay.SeamlessPortalComponentData.<ApplyProperties>b__26_1",
+            "assignCall": "Beyond.Gameplay.SeamlessPortalComponentData._TryAssign"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.SeamlessPortalComponentData._TryAssign"
+          ]
+        }
+      ]
+    },
+    "SeamlessPortalComponentData.<ApplyProperties>b__26_1": {
+      "type": "Beyond.Gameplay.SeamlessPortalComponentData",
+      "method": "<ApplyProperties>b__26_1",
+      "contract": "The Vector3 assignment callback writes tpPosition.",
+      "claims": [
+        {
+          "writesField": "Beyond.Gameplay.SeamlessPortalComponentData::<tpPosition>k__BackingField"
+        }
+      ]
+    },
+    "LoadingPortalComponent.OnInitDone": {
+      "type": "Beyond.Gameplay.LoadingPortalComponent",
+      "method": "OnInitDone",
+      "contract": "Stores its typed component data before interaction.",
+      "claims": [
+        {
+          "writesField": "Beyond.Gameplay.LoadingPortalComponent::m_compData"
+        }
+      ]
+    },
+    "SeamlessPortalComponent.OnInitDone": {
+      "type": "Beyond.Gameplay.SeamlessPortalComponent",
+      "method": "OnInitDone",
+      "contract": "Stores its typed component data before interaction.",
+      "claims": [
+        {
+          "writesField": "Beyond.Gameplay.SeamlessPortalComponent::m_compData"
+        }
+      ]
+    },
+    "LoadingPortalComponent._OnInteract": {
+      "type": "Beyond.Gameplay.LoadingPortalComponent",
+      "method": "_OnInteract",
+      "contract": "Reads its component data's teleport position and starts seamless map loading on the selected unpatched branch.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.LoadingPortalComponent::m_compData",
+            "field": "Beyond.Gameplay.LoadingPortalComponentData::<tpPosition>k__BackingField"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.GameLevelLoader.SeamlessLoadMap"
+          ]
+        }
+      ]
+    },
+    "SeamlessPortalComponent.StartLoading": {
+      "type": "Beyond.Gameplay.SeamlessPortalComponent",
+      "method": "StartLoading",
+      "contract": "Reads its component data's teleport position and starts seamless map loading on the selected unpatched branch.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.SeamlessPortalComponent::m_compData",
+            "field": "Beyond.Gameplay.SeamlessPortalComponentData::<tpPosition>k__BackingField"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.GameLevelLoader.SeamlessLoadMap"
+          ]
+        }
+      ]
+    },
+    "GameLevelLoader.LoadAtPos": {
+      "type": "Beyond.Gameplay.Core.GameLevelLoader",
+      "method": "LoadAtPos",
+      "contract": "Creates a regular loading pipeline from its requested position.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline..ctor"
+          ]
+        }
+      ]
+    },
+    "LoadingPipeline..ctor": {
+      "type": "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline",
+      "method": ".ctor",
+      "contract": "Stores the requested Vector3 position as the regular loading center.",
+      "claims": [
+        {
+          "writesField": "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline::m_centerPos"
+        }
+      ]
+    },
+    "GameLevelLoader.SeamlessLoadMap": {
+      "type": "Beyond.Gameplay.Core.GameLevelLoader",
+      "method": "SeamlessLoadMap",
+      "contract": "Creates a seamless loading pipeline from teleport parameters that include its requested position.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline..ctor"
+          ]
+        }
+      ]
+    },
+    "SeamlessLoadingPipeline.Prepare": {
+      "type": "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline",
+      "method": "Prepare",
+      "contract": "Copies the teleport parameter position into the seamless pipeline's center field on the selected unpatched branch.",
+      "claims": [
+        {
+          "writesField": "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline::m_tpPos"
+        }
+      ]
+    },
+    "LoadSceneStep.MoveNext": {
+      "type": "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline+LoadSceneStep+<DoExecuteAsync>d__11",
+      "method": "MoveNext",
+      "contract": "Passes the regular loading pipeline's center to the scene streaming-center setter.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline+LoadingPipelineAsyncStep::m_pipeline",
+            "field": "Beyond.Gameplay.Core.GameLevelLoader+LoadingPipeline::m_centerPos"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.View.BaseGameScene.SetStreamingCenter"
+          ]
+        }
+      ]
+    },
+    "PreloadSceneStep.MoveNext": {
+      "type": "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline+PreloadSceneStep+<DoExecuteAsync>d__6",
+      "method": "MoveNext",
+      "contract": "Passes the seamless pipeline's teleport center to the scene streaming-center setter.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline+SeamlessLoadingAsyncStep::m_pipeline",
+            "field": "Beyond.Gameplay.Core.GameLevelLoader+SeamlessLoadingPipeline::m_tpPos"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.View.BaseGameScene.SetStreamingCenter"
+          ]
+        }
+      ]
+    },
+    "BaseGameScene.SetStreamingCenter": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "SetStreamingCenter",
+      "contract": "Stores the supplied center after initialization gating, then copies it to a valid area dealer and marks a refresh.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.View.BaseGameScene::m_hasInitCenter"
+        },
+        {
+          "writesField": "Beyond.Gameplay.View.BaseGameScene::m_streamingCenter"
+        },
+        {
+          "readsField": "Beyond.Gameplay.View.BaseGameScene::m_areaDealer"
+        },
+        {
+          "writesField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_mainCenter"
+        },
+        {
+          "storesConstant": {
+            "field": "Beyond.Gameplay.View.GameSceneAreaDealer::m_needUpdate",
+            "value": 1
+          }
+        }
+      ]
+    },
+    "BaseGameScene.Update": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "Update",
+      "contract": "Uses the stored streaming center to refresh a valid area dealer after its distance threshold check.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.View.BaseGameScene::m_streamingCenter"
+        },
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.View.BaseGameScene::m_areaDealer",
+            "field": "Beyond.Gameplay.View.GameSceneAreaDealer::m_lastCheckCenter"
+          }
+        },
+        {
+          "writesField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_mainCenter"
+        },
+        {
+          "storesConstant": {
+            "field": "Beyond.Gameplay.View.GameSceneAreaDealer::m_needUpdate",
+            "value": 1
+          }
+        }
+      ]
+    },
+    "BaseGameScene.ForceRefreshAreaMainCenter": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "ForceRefreshAreaMainCenter",
+      "contract": "Copies the stored streaming center into a valid area dealer and marks a refresh.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.View.BaseGameScene::m_streamingCenter"
+        },
+        {
+          "readsField": "Beyond.Gameplay.View.BaseGameScene::m_areaDealer"
+        },
+        {
+          "writesField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_mainCenter"
+        },
+        {
+          "storesConstant": {
+            "field": "Beyond.Gameplay.View.GameSceneAreaDealer::m_needUpdate",
+            "value": 1
+          }
+        }
+      ]
+    },
+    "GameSceneAreaDealer.UpdateMainCenter": {
+      "type": "Beyond.Gameplay.View.GameSceneAreaDealer",
+      "method": "UpdateMainCenter",
+      "contract": "Stores a main center and marks refresh when forced or beyond the last-check distance threshold.",
+      "claims": [
+        {
+          "writesField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_mainCenter"
+        },
+        {
+          "readsField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_lastCheckCenter"
+        },
+        {
+          "storesConstant": {
+            "field": "Beyond.Gameplay.View.GameSceneAreaDealer::m_needUpdate",
+            "value": 1
+          }
+        },
+        {
+          "calls": [
+            "UnityEngine.Vector3.SqrMagnitude"
+          ]
+        }
+      ]
+    },
+    "BaseGameScene.LoadExtraAtPos.MoveNext": {
+      "type": "Beyond.Gameplay.View.BaseGameScene+<LoadExtraAtPos>d__112",
+      "method": "MoveNext",
+      "contract": "Passes the requested extra-load position to both the area sub-center setter and the extra streaming load.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.View.BaseGameScene+<LoadExtraAtPos>d__112::position"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.View.BaseGameScene.SetAreaSubCenter",
+            "Beyond.Gameplay.View.BaseGameScene._LoadExtraStreamingAtPosAndClearFirst"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "BaseGameScene.SetAreaSubCenter": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "SetAreaSubCenter",
+      "contract": "Passes an extra position to the area dealer's sub-center setter.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.View.BaseGameScene::m_areaDealer"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.View.GameSceneAreaDealer.SetSubCenter"
+          ]
+        }
+      ]
+    },
+    "GameSceneAreaDealer.SetSubCenter": {
+      "type": "Beyond.Gameplay.View.GameSceneAreaDealer",
+      "method": "SetSubCenter",
+      "contract": "Stores the supplied extra-load position as the dealer's optional sub-center and requests a refresh.",
+      "claims": [
+        {
+          "writesField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_subCenter"
+        }
+      ]
+    },
+    "BaseGameScene.ClearAreaSubCenter": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "ClearAreaSubCenter",
+      "contract": "Passes sub-center clearing to the area dealer.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.View.BaseGameScene::m_areaDealer"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.View.GameSceneAreaDealer.ClearSubCenter"
+          ]
+        }
+      ]
+    },
+    "GameSceneAreaDealer.ClearSubCenter": {
+      "type": "Beyond.Gameplay.View.GameSceneAreaDealer",
+      "method": "ClearSubCenter",
+      "contract": "Clears optional sub-center use and requests a refresh.",
+      "claims": [
+        {
+          "writesField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_useSubCenter"
+        },
+        {
+          "writesField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_subCenter"
+        },
+        {
+          "storesConstant": {
+            "field": "Beyond.Gameplay.View.GameSceneAreaDealer::m_needUpdate",
+            "value": 1
+          }
+        }
+      ]
+    },
+    "GameSceneAreaDealer.InitData": {
+      "type": "Beyond.Gameplay.View.GameSceneAreaDealer",
+      "method": "InitData",
+      "contract": "Builds the scene-specific FBStreamArea path, reads it through VFS low IO, stores the typed root, initializes the area quad tree, and builds the area's mappings.",
+      "claims": [
+        {
+          "loadsLiterals": [
+            "Scene",
+            "{0}/{1}/{2}/{3}/FBStreamArea.bytes"
+          ]
+        },
+        {
+          "calls": [
+            "Beyond.PathDef.GetDynamicStreamingReadRoot",
+            "Beyond.Resource.PathConsts.GetCurrentDataDynamicSceneAssetFolderName",
+            "Beyond.Gameplay.View.BaseGameScene.get_mapSceneName",
+            "Beyond.VFS.VirtualFileSystem.ReadFileByLowIO",
+            "Beyond.Gameplay.FBStreamAreaTotalData.GetRootAsFBStreamAreaTotalData",
+            "Beyond.Gameplay.View.FastQuadTreeForStreamingArea.Init",
+            "Beyond.Gameplay.View.GameSceneAreaDealer._BuildMapping"
+          ]
+        }
+      ]
+    },
+    "GameSceneAreaDealer._BuildMapping": {
+      "type": "Beyond.Gameplay.View.GameSceneAreaDealer",
+      "method": "_BuildMapping",
+      "contract": "Enumerates total areas, area IDs, trigger area IDs, and root-visible entries; it reads the dealer's active-area set and adds the root-visible entries on the selected body.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_activeAreaIds"
+        },
+        {
+          "readsField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_triggerToAreaMap"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.FBStreamAreaTotalData.get_TotalAreasLength",
+            "Beyond.Gameplay.FBStreamAreaTotalData.get_AreasLength",
+            "Beyond.Gameplay.FBStreamArea.get_AreaId",
+            "Beyond.Gameplay.FBStreamAreaTotalData.get_TriggersLength",
+            "Beyond.Gameplay.FBStreamAreaTrigger.get_AreaId",
+            "Beyond.Gameplay.FBStreamAreaTotalData.get_RootVisibleLength",
+            "System.Collections.Generic.HashSet`1.Add"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "FastQuadTreeForStreamingArea.Init": {
+      "type": "Beyond.Gameplay.View.FastQuadTreeForStreamingArea",
+      "method": "Init",
+      "contract": "Builds the trigger query tree from the area root's bounds and trigger vector.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.FBStreamAreaTotalData.get_Bounds",
+            "Beyond.Gameplay.View.FBStreamingAreaHelper.GetMinMaxPos",
+            "Beyond.Gameplay.View.FastQuadTreeForStreamingArea.AllocateNode",
+            "Beyond.Gameplay.FBStreamAreaTotalData.get_TriggersLength",
+            "Beyond.Gameplay.View.FastQuadNodeForStreamingArea.Insert"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "FastQuadNodeForStreamingArea.Query": {
+      "type": "Beyond.Gameplay.View.FastQuadNodeForStreamingArea",
+      "method": "Query",
+      "contract": "Tests candidate triggers through CheckInArea and adds qualifying trigger indices to the query set.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.View.FBStreamingAreaHelper.CheckInArea",
+            "System.Collections.Generic.HashSet`1.AddIfNotPresent"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "GameSceneAreaDealer._UpdateIfNeeded": {
+      "type": "Beyond.Gameplay.View.GameSceneAreaDealer",
+      "method": "_UpdateIfNeeded",
+      "contract": "On a requested refresh, copies the main center into the last-check center, adds the center list entries, and recomputes active areas.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_needUpdate"
+        },
+        {
+          "readsField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_mainCenter"
+        },
+        {
+          "writesField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_lastCheckCenter"
+        },
+        {
+          "readsField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_updateCenterList"
+        },
+        {
+          "readsField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_useSubCenter"
+        },
+        {
+          "readsField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_subCenter"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.View.GameSceneAreaDealer._UpdateActiveArea"
+          ]
+        }
+      ]
+    },
+    "GameSceneAreaDealer._UpdateActiveArea": {
+      "type": "Beyond.Gameplay.View.GameSceneAreaDealer",
+      "method": "_UpdateActiveArea",
+      "contract": "Queries area triggers, reads area visible-group spans, compares the newly selected area IDs with the active IDs, and sends changes to the base game scene.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_activeTriggerIndices"
+        },
+        {
+          "readsField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_activeAreaIds"
+        },
+        {
+          "readsField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_tmpValidSet"
+        },
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.View.GameSceneAreaDealer::gameScene",
+            "call": "Beyond.Gameplay.View.BaseGameScene.SetAreaEnable",
+            "register": "rcx"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.View.FastQuadNodeForStreamingArea.Query",
+            "Beyond.Gameplay.FBStreamArea.get_VisibleStart",
+            "Beyond.Gameplay.FBStreamArea.get_VisibleNum",
+            "Beyond.Gameplay.View.BaseGameScene.SetAreaEnable",
+            "Beyond.Gameplay.View.BaseGameScene.UpdateStreamingNeedProcessChunkGridSet"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "BaseGameScene.SetAreaEnable": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "SetAreaEnable",
+      "contract": "For a nonzero area ID on the selected native path, sends the enable state to the streaming engine and the dynamic scene's area-change handler.",
+      "claims": [
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.View.BaseGameScene::m_dynamicStreamingScene",
+            "call": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.OnAreaChanged",
+            "register": "rcx"
+          }
+        },
+        {
+          "calls": [
+            "UnityEngine.HyperGryph.Streaming.StreamingSceneV2.SetArea_Injected",
+            "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene.OnAreaChanged"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "BaseGameScene.FlushStreamingArea": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "FlushStreamingArea",
+      "contract": "Walks the area dealer's total-area list, checks the dealer's active-area set, and sends the membership result to SetAreaEnable.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.View.BaseGameScene::m_areaDealer"
+        },
+        {
+          "readsField": "Beyond.Gameplay.View.GameSceneAreaDealer::m_totalAreaList"
+        },
+        {
+          "passesFieldToCall": {
+            "field": "Beyond.Gameplay.View.GameSceneAreaDealer::m_activeAreaIds",
+            "call": "System.Collections.Generic.HashSet`1.Contains",
+            "register": "rcx"
+          }
+        },
+        {
+          "calls": [
+            "System.Collections.Generic.HashSet`1.Contains",
+            "Beyond.Gameplay.View.BaseGameScene.SetAreaEnable"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "BaseGameScene.CreateStreamingScene": {
+      "type": "Beyond.Gameplay.View.BaseGameScene",
+      "method": "CreateStreamingScene",
+      "contract": "Flushes the current area selection after setting up the streaming scene.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.View.BaseGameScene.FlushStreamingArea"
+          ]
+        }
+      ]
+    },
+    "DynamicSceneEntitySystem.InitSceneVisible": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem",
+      "method": "InitSceneVisible",
+      "contract": "Reads its state and area controllers and calls the base controller's active-set initializer.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem::m_stateCtrl"
+        },
+        {
+          "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem::m_areaCtrl"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.SceneVisibilityControllerBase.InitActiveSet"
+          ]
+        }
+      ]
+    },
+    "DynamicSceneResourceGroupSystem.InitSceneVisible": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneResourceGroupSystem",
+      "method": "InitSceneVisible",
+      "contract": "Reads its state and area controllers and calls the base controller's active-set initializer.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneResourceGroupSystem::m_stateCtrl"
+        },
+        {
+          "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneResourceGroupSystem::m_areaCtrl"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.SceneVisibilityControllerBase.InitActiveSet"
+          ]
+        }
+      ]
+    },
+    "DynamicSceneEntitySystem.UpdateStateIndex": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem",
+      "method": "UpdateStateIndex",
+      "contract": "Reads its state controller and calls the base controller's index-update method.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem::m_stateCtrl"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.SceneVisibilityControllerBase.UpdateIndex"
+          ]
+        }
+      ]
+    },
+    "DynamicSceneResourceGroupSystem.UpdateStateIndex": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneResourceGroupSystem",
+      "method": "UpdateStateIndex",
+      "contract": "Reads its state controller and calls the base controller's index-update method.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneResourceGroupSystem::m_stateCtrl"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.SceneVisibilityControllerBase.UpdateIndex"
+          ]
+        }
+      ]
+    },
+    "DynamicSceneEntitySystem.UpdateAreaId": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem",
+      "method": "UpdateAreaId",
+      "contract": "Reads its area controller and calls the base controller's index-update method.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEntitySystem::m_areaCtrl"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.SceneVisibilityControllerBase.UpdateIndex"
+          ]
+        }
+      ]
+    },
+    "DynamicSceneResourceGroupSystem.UpdateAreaId": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneResourceGroupSystem",
+      "method": "UpdateAreaId",
+      "contract": "Reads its area controller and calls the base controller's index-update method.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneResourceGroupSystem::m_areaCtrl"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.DynamicScene.SceneVisibilityControllerBase.UpdateIndex"
+          ]
+        }
+      ]
+    },
+    "EntityManager.SpawnInLevelClientInteractive": {
+      "type": "Beyond.Gameplay.Core.EntityManager",
+      "method": "SpawnInLevelClientInteractive",
+      "contract": "For an in-level client interactive, derives its level, creates its InteractiveInfo, and commits it when present.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityManager._CreateInLevelClientInteractiveInfo",
+            "Beyond.Gameplay.Core.BaseEntityData.Commit"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "EntityManager._CreateInLevelClientInteractiveInfo": {
+      "type": "Beyond.Gameplay.Core.EntityManager",
+      "method": "_CreateInLevelClientInteractiveInfo",
+      "contract": "Looks up the selected level interactive by logic ID and passes the returned LevelInteractiveData to entity-data storage.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.WorldInfo.GetLevel",
+            "Beyond.Gameplay.LevelData.TryGetInteractiveInLevelData",
+            "Beyond.Gameplay.Core.EntityManager+EntityDataStorage.CreateInteractiveFromLevelData"
+          ],
+          "ordered": true
+        },
+        {
+          "passesOutParameterToCall": {
+            "fromCall": "Beyond.Gameplay.LevelData.TryGetInteractiveInLevelData",
+            "outParameter": "data",
+            "toCall": "Beyond.Gameplay.Core.EntityManager+EntityDataStorage.CreateInteractiveFromLevelData",
+            "inParameter": "inLevelData"
+          }
+        }
+      ]
+    },
+    "LevelData.TryGetInteractiveInLevelData": {
+      "type": "Beyond.Gameplay.LevelData",
+      "method": "TryGetInteractiveInLevelData",
+      "parametersPrefix": [
+        "System.UInt64"
+      ],
+      "contract": "The logic-ID overload obtains its interactive lookup table and tries the keyed dictionary lookup.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.LevelData.get_interactiveLookupTable",
+            "System.Collections.Generic.Dictionary`2.TryGetValue"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "EntityDataStorage.CreateInteractiveFromLevelData": {
+      "type": "Beyond.Gameplay.Core.EntityManager+EntityDataStorage",
+      "method": "CreateInteractiveFromLevelData",
+      "contract": "Passes the selected level interactive into InteractiveInfo initialization.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.InteractiveInfo.InitFromLevelData"
+          ]
+        },
+        {
+          "passesArgumentToCall": {
+            "fromParameter": "inLevelData",
+            "call": "Beyond.Gameplay.Core.InteractiveInfo.InitFromLevelData",
+            "toParameter": "levelInteractiveData"
+          }
+        }
+      ]
+    },
+    "InteractiveInfo.InitFromLevelData": {
+      "type": "Beyond.Gameplay.Core.InteractiveInfo",
+      "method": "InitFromLevelData",
+      "contract": "Sets up the template, then passes the same level interactive to BaseEntityData.SetupInLevelData.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.BaseEntityData.SetupTemplate",
+            "Beyond.Gameplay.Core.BaseEntityData.SetupInLevelData"
+          ],
+          "ordered": true
+        },
+        {
+          "passesArgumentToCall": {
+            "fromParameter": "levelInteractiveData",
+            "call": "Beyond.Gameplay.Core.BaseEntityData.SetupInLevelData",
+            "toParameter": "entityInLevelData"
+          }
+        }
+      ]
+    },
+    "BaseEntityData.SetupInLevelData": {
+      "type": "Beyond.Gameplay.Core.BaseEntityData",
+      "method": "SetupInLevelData",
+      "contract": "Stores the incoming placed LevelEntityData on BaseEntityData.",
+      "claims": [
+        {
+          "storesArgument": {
+            "field": "Beyond.Gameplay.Core.BaseEntityData::<inLevelData>k__BackingField",
+            "argument": "rdx"
+          }
+        }
+      ]
+    },
+    "BaseEntityData.Commit": {
+      "type": "Beyond.Gameplay.Core.BaseEntityData",
+      "method": "Commit",
+      "contract": "On the immediate-apply branch, tail-calls _Apply.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.BaseEntityData._Apply"
+          ]
+        }
+      ]
+    },
+    "BaseEntityData._Apply": {
+      "type": "Beyond.Gameplay.Core.BaseEntityData",
+      "method": "_Apply",
+      "contract": "Creates an entity node from the committed BaseEntityData on the selected branch.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityManager.CreateNodeFromData"
+          ]
+        }
+      ]
+    },
+    "EntityManager.CreateNodeFromData": {
+      "type": "Beyond.Gameplay.Core.EntityManager",
+      "method": "CreateNodeFromData",
+      "contract": "Constructs and adds an EntityNode for the supplied BaseEntityData when creation succeeds.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityManager+EntityNode._Construct",
+            "Beyond.Gameplay.Core.EntityManager._AddEntityNode"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "EntityNode._Construct": {
+      "type": "Beyond.Gameplay.Core.EntityManager+EntityNode",
+      "method": "_Construct",
+      "contract": "Stores the incoming BaseEntityData on the entity node.",
+      "claims": [
+        {
+          "storesArgument": {
+            "field": "Beyond.Gameplay.Core.EntityManager+EntityNode::<data>k__BackingField",
+            "argument": "rdx"
+          }
+        }
+      ]
+    },
+    "EntityNode._EnterPipeline": {
+      "type": "Beyond.Gameplay.Core.EntityManager+EntityNode",
+      "method": "_EnterPipeline",
+      "contract": "The selected pipeline entry can call the node spawn method.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityManager+EntityNode._SpawnEntity"
+          ]
+        }
+      ]
+    },
+    "EntityNode._SpawnEntity": {
+      "type": "Beyond.Gameplay.Core.EntityManager+EntityNode",
+      "method": "_SpawnEntity",
+      "contract": "Passes the placed level data reached through the node BaseEntityData to ObjectContainer.SpawnEntity.",
+      "claims": [
+        {
+          "passesNestedFieldToCall": {
+            "parentField": "Beyond.Gameplay.Core.EntityManager+EntityNode::<data>k__BackingField",
+            "field": "Beyond.Gameplay.Core.BaseEntityData::<inLevelData>k__BackingField",
+            "call": "Beyond.Gameplay.Core.ObjectContainer.SpawnEntity",
+            "parameter": "overrideInLevelData"
+          }
+        }
+      ]
+    },
+    "ObjectContainer.SpawnEntity": {
+      "type": "Beyond.Gameplay.Core.ObjectContainer",
+      "method": "SpawnEntity",
+      "contract": "Forwards its placed LevelEntityData override to ObjectContainer.LoadEntity.",
+      "claims": [
+        {
+          "forwardsStackParameter": {
+            "fromParameter": "overrideInLevelData",
+            "call": "Beyond.Gameplay.Core.ObjectContainer.LoadEntity",
+            "toParameter": "inLevelData"
+          }
+        }
+      ]
+    },
+    "ObjectContainer.LoadEntity": {
+      "type": "Beyond.Gameplay.Core.ObjectContainer",
+      "method": "LoadEntity",
+      "contract": "Passes placed LevelEntityData to the ordinary allocator, then assigns entity data, initializes and registers the result.",
+      "claims": [
+        {
+          "forwardsStackParameter": {
+            "fromParameter": "inLevelData",
+            "call": "Beyond.Gameplay.Core.EntityAllocator.AllocateObject",
+            "toParameter": "inLevelData"
+          }
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityAllocator.AllocateObject",
+            "Beyond.Gameplay.Core.Entity.AssignEntityData",
+            "Beyond.Gameplay.Core.Entity.Init",
+            "Beyond.Gameplay.Core.ObjectContainer.Register"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "Entity.Init": {
+      "type": "Beyond.Gameplay.Core.Entity",
+      "method": "Init",
+      "contract": "Enters ComponentContainer.Init after allocation.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.ComponentContainer.Init"
+          ]
+        }
+      ]
+    },
+    "LevelData.get_interactiveLookupTable": {
+      "type": "Beyond.Gameplay.LevelData",
+      "method": "get_interactiveLookupTable",
+      "contract": "Reads the stored interactive lookup table backing field.",
+      "claims": [
+        {
+          "readsField": "Beyond.Gameplay.LevelData::m_interactiveLookupTable"
+        }
+      ]
+    },
+    "EntityManager._AddEntityNode": {
+      "type": "Beyond.Gameplay.Core.EntityManager",
+      "method": "_AddEntityNode",
+      "contract": "Adds the constructed node and can route it through script or dependency grouping.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityManager+EntityGroupProcessor.AddToScriptGroup",
+            "Beyond.Gameplay.Core.EntityManager+EntityGroupProcessor.AddToGroup"
+          ]
+        }
+      ]
+    },
+    "EntityNode.get_dependencyGroupId": {
+      "type": "Beyond.Gameplay.Core.EntityManager+EntityNode",
+      "method": "get_dependencyGroupId",
+      "contract": "Reads dependencyGroupId through the node BaseEntityData and its stored LevelEntityData.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.Core.EntityManager+EntityNode::<data>k__BackingField",
+            "field": "Beyond.Gameplay.Core.BaseEntityData::<inLevelData>k__BackingField"
+          }
+        },
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.Core.BaseEntityData::<inLevelData>k__BackingField",
+            "field": "Beyond.Gameplay.LevelEntityData::dependencyGroupId"
+          }
+        }
+      ]
+    },
+    "BaseEntityData.get_dependencyGroupId": {
+      "type": "Beyond.Gameplay.Core.BaseEntityData",
+      "method": "get_dependencyGroupId",
+      "contract": "Reads the placed LevelEntityData dependency group identifier.",
+      "claims": [
+        {
+          "readsNestedField": {
+            "parentField": "Beyond.Gameplay.Core.BaseEntityData::<inLevelData>k__BackingField",
+            "field": "Beyond.Gameplay.LevelEntityData::dependencyGroupId"
+          }
+        }
+      ]
+    },
+    "EntityNode.SetInAoi": {
+      "type": "Beyond.Gameplay.Core.EntityManager+EntityNode",
+      "method": "SetInAoi",
+      "contract": "Tests the placed dependency group; without one, complements the Boolean AOI input and selects SetAoiState, otherwise notifies the group processor.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityManager+EntityNode.get_dependencyGroupId",
+            "Beyond.Gameplay.Core.EntityManager+EntityNode.SetAoiState"
+          ],
+          "ordered": true
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityManager+EntityGroupProcessor.MarkEntityAoiIntrested"
+          ]
+        },
+        {
+          "matches": "xor edx, 0x1"
+        },
+        {
+          "matches": "inc rdx"
+        }
+      ]
+    },
+    "EntityNode.SetAoiState": {
+      "type": "Beyond.Gameplay.Core.EntityManager+EntityNode",
+      "method": "SetAoiState",
+      "contract": "The Interested state enters the selected launch branch when the node is ready.",
+      "claims": [
+        {
+          "matches": "cmp ebx, 0x1"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityManager+EntityNode._LaunchSpawnPipeline"
+          ]
+        }
+      ]
+    },
+    "EntityNode._LaunchSpawnPipeline": {
+      "type": "Beyond.Gameplay.Core.EntityManager+EntityNode",
+      "method": "_LaunchSpawnPipeline",
+      "contract": "Advances to the next pipeline state on the selected unpatched branch.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityManager+EntityNode.SwitchToNextPipelineState"
+          ]
+        }
+      ]
+    },
+    "EntityNode.SwitchToNextPipelineState": {
+      "type": "Beyond.Gameplay.Core.EntityManager+EntityNode",
+      "method": "SwitchToNextPipelineState",
+      "contract": "Gets the next pipeline state and enters it when available.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityManager+EntityNode._GetNextPipelineState",
+            "Beyond.Gameplay.Core.EntityManager+EntityNode._EnterPipeline"
+          ],
+          "ordered": true
+        }
+      ]
+    },
+    "SpawnQueueProcessor._SpawnNode": {
+      "type": "Beyond.Gameplay.Core.EntityManager+SpawnQueueProcessor",
+      "method": "_SpawnNode",
+      "contract": "The selected queue spawn body can also enter the node pipeline; its call occurs in a chained native fragment.",
+      "claims": [
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityManager+EntityNode._EnterPipeline"
+          ]
+        }
+      ]
+    },
+    "EntityGroupProcessor.AddToGroup": {
+      "type": "Beyond.Gameplay.Core.EntityManager+EntityGroupProcessor",
+      "method": "AddToGroup",
+      "contract": "The dependency-group admission branch initially assigns the NotIntrested AOI state.",
+      "claims": [
+        {
+          "passesEnumMemberToCall": {
+            "enumType": "Beyond.Gameplay.Core.EntityManager+EntityNode+AoiState",
+            "member": "NotIntrested",
+            "call": "Beyond.Gameplay.Core.EntityManager+EntityNode.SetAoiState",
+            "parameter": "state"
+          }
+        }
+      ]
+    },
+    "DependencyEntityGroup._SetAnyIntrested": {
+      "type": "Beyond.Gameplay.Core.EntityManager+EntityGroupProcessor+DependencyEntityGroup",
+      "method": "_SetAnyIntrested",
+      "contract": "When the group becomes interested, its selected loop assigns Interested to member nodes.",
+      "claims": [
+        {
+          "passesEnumMemberToCall": {
+            "enumType": "Beyond.Gameplay.Core.EntityManager+EntityNode+AoiState",
+            "member": "Intrested",
+            "call": "Beyond.Gameplay.Core.EntityManager+EntityNode.SetAoiState",
+            "parameter": "state"
+          }
+        }
+      ]
+    },
+    "GridProcessor._TryDoSetInAoi": {
+      "type": "Beyond.Gameplay.Core.EntityManager+GridProcessor",
+      "method": "_TryDoSetInAoi",
+      "contract": "Passes the named node and Boolean AOI input to an unnamed native setter that reads its dependency group and maps the AOI state.",
+      "claims": [
+        {
+          "callsAnonymousHelper": {
+            "helperCalls": [
+              "Beyond.Gameplay.Core.EntityManager+EntityNode.get_dependencyGroupId",
+              "Beyond.Gameplay.Core.EntityManager+EntityNode.SetAoiState"
+            ],
+            "helperMatches": [
+              "mov rsi, rcx",
+              "movzx ebp, dl",
+              "xor edx, 0x1",
+              "inc rdx"
+            ],
+            "argumentMap": {
+              "node": "rcx",
+              "inAoi": "rdx"
+            }
+          }
+        }
+      ]
+    },
+    "NodeGrid._AddToForceLoadNodes": {
+      "type": "Beyond.Gameplay.Core.EntityManager+NodeGrid",
+      "method": "_AddToForceLoadNodes",
+      "contract": "On the selected force-load branch, passes its node and true to the same shaped AOI setter.",
+      "claims": [
+        {
+          "callsAnonymousHelper": {
+            "helperCalls": [
+              "Beyond.Gameplay.Core.EntityManager+EntityNode.get_dependencyGroupId",
+              "Beyond.Gameplay.Core.EntityManager+EntityNode.SetAoiState"
+            ],
+            "helperMatches": [
+              "mov rsi, rcx",
+              "movzx ebp, dl",
+              "xor edx, 0x1",
+              "inc rdx"
+            ],
+            "argumentMap": {
+              "node": "rcx"
+            },
+            "constantArguments": {
+              "rdx": 1
+            }
+          }
+        }
+      ]
+    },
+    "NodeGrid.TickUpdateGridRange": {
+      "type": "Beyond.Gameplay.Core.EntityManager+NodeGrid",
+      "method": "TickUpdateGridRange",
+      "contract": "Can pass false to a same-shaped AOI setter for a node leaving the grid range.",
+      "claims": [
+        {
+          "callsAnonymousHelper": {
+            "helperCalls": [
+              "Beyond.Gameplay.Core.EntityManager+EntityNode.get_dependencyGroupId",
+              "Beyond.Gameplay.Core.EntityManager+EntityNode.SetAoiState"
+            ],
+            "helperMatches": [
+              "mov rsi, rcx",
+              "movzx ebp, dl",
+              "xor edx, 0x1",
+              "inc rdx"
+            ],
+            "constantArguments": {
+              "rdx": 0
+            }
+          }
+        }
+      ]
+    },
+    "NodeGrid.OnNodeSkipAoiCheck": {
+      "type": "Beyond.Gameplay.Core.EntityManager+NodeGrid",
+      "method": "OnNodeSkipAoiCheck",
+      "contract": "When skip-AOI is enabled, adds the node to force-load nodes and removes it from AOI-check nodes; the other branch removes force load.",
+      "claims": [
+        {
+          "matches": "test sil, sil"
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityManager+NodeGrid._AddToForceLoadNodes",
+            "Beyond.Gameplay.Core.EntityManager+NodeGrid._RemoveFromAoiCheckNodes"
+          ],
+          "ordered": true
+        },
+        {
+          "calls": [
+            "Beyond.Gameplay.Core.EntityManager+NodeGrid._RemoveFromForceLoadNodes"
+          ]
+        }
+      ]
+    }
+  },
+  "enumClaims": {
+    "Beyond.GEnums.CompareOperator": {
+      "Equal": 0,
+      "NotEqual": 1,
+      "GreaterThan": 2,
+      "GreaterEqual": 3,
+      "LessThan": 4,
+      "LessEqual": 5
+    },
+    "Beyond.Gameplay.CombinedConditionRuntime+ConditionOperator": {
+      "And": 0,
+      "Or": 1
+    },
+    "Beyond.GEnums.QuestState": {
+      "None": 0,
+      "Processing": 2,
+      "Completed": 3,
+      "Failed": 4,
+      "Disabled": 5
+    },
+    "Beyond.GEnums.MissionState": {
+      "None": 0,
+      "Available": 1,
+      "Processing": 2,
+      "Completed": 3,
+      "Failed": 4,
+      "Disabled": 5
+    },
+    "Beyond.Gameplay.Core.EntityManager+EntityNode+AoiState": {
+      "None": 0,
+      "Intrested": 1,
+      "NotIntrested": 2
+    }
+  },
+  "evidenceBoundary": {
+    "direct": "On the selected native bodies, the named methods use the MapConfig JSON and streaming-asset path literals; load, cache, and pass a MapConfig through both pipelines; read the streaming asset path, store its load result in the scene's typed field, read its scene name, and initialize a DynamicStreaming base path. The selected main, init, streaming, and version path bodies name their file templates; the typed FlatBuffer loader calls the VFS low-IO reader and checks chunk versions. The area dealer loads a typed FBStreamArea root, builds trigger mappings and a query tree, seeds its active set from RootVisible, and consults area visibility spans on updates. The shared dynamic-property component body creates a component blackboard, loads template properties, and adds it under the component key; its init body passes instance data and the component blackboard through the selected ApplyProperties virtual slot, which both portal data classes override. The logic-ID interactive lookup passes its selected LevelInteractiveData out slot into InteractiveInfo, which stores that level data on BaseEntityData before commit and node construction. On the selected node pipeline spawn branch, the node reads the stored level data and forwards it through both ObjectContainer stack arguments into the ordinary EntityAllocator overload; that overload assigns placed LevelData before pre-initializing components. Entity.Init enters ComponentContainer.Init, whose body calls BaseComponent.Init. The node dependency-group getter reads the stored LevelEntityData ID. SetInAoi tests that ID; its zero-group branch maps a true AOI flag to the selected Intrested enum member. A named grid processor passes its node and AOI Boolean to an unnamed native setter with the same checked group lookup and state mapping. NodeGrid has force-load entry and grid-range exit calls to that setter; the skip-AOI handler selects the force-load branch. SetAoiState checks that state before launching the pipeline; SwitchToNextPipelineState can enter the spawn branch. Dependency-group admission instead assigns NotIntrested until an interested group transition changes the member state, and the spawn queue has a separate pipeline-entry body. The interactive root reads the LevelInteractiveData component override map, enumerates its keys, and loads selected property rows into a ParamBlackboard; each portal data getter returns its selected enum member and each ApplyProperties binds tp_position to a Vector3 callback. Squad teleport and portal component-data positions reach the regular and seamless loading centers; their selected steps pass those centers to the base scene, and extra loading can provide an optional area sub-center. The dealer assembles its center list before querying. The base scene flushes the active set and sends changes to engine and DynamicStreaming area routes. Condition classes, selected enum defaults, and body hashes are also checked.",
+    "conditional": "Cache misses, successful lookups and asset loads, map-ID changes, variable availability, listener registration, valid streaming scenes, teleport and portal entrypoints, successful interactive lookup, node creation, a grid AOI-interest update or runtime force-load selection, node readiness, a selected spawn pipeline state, unpatched entity methods, center updates, and non-null scene systems select the observed branches. The contract does not assert that a particular grid, area, or entity executes them.",
+    "unresolved": "A generic field-offset match alone does not prove the receiver object. The shared asset loader pointer is instantiated as System.Object and does not prove its target class. The dynamic-property component body is also shared under System.Object, and its data-application dispatch helper is unnamed; the concrete portal inheritance is checked by the separate portal join. The indexed RootVisible getter in _BuildMapping is an unnamed native clone, and simple call/read claims do not independently prove its full output-to-set dataflow. The checked grid callers reach an unnamed body with equivalent group/state behavior rather than the named SetInAoi entry; other callers of that named entry are not classified. They do not prove that an observed portal node received a grid AOI update or reached the spawn state, the origin of a squad teleport position, that a particular stored portal override populated a live component-data value, condition truth, a selected live scene, active-set contents, or the CheckInArea geometry predicate. The selected Single comparer tolerance and compound-condition Boolean branches need reinspection if their body hashes change."
+  }
+}

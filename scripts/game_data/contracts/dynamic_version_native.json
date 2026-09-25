@@ -1,0 +1,146 @@
+{
+  "schema": "endfield.dynamic-version-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "layout": {
+    "rootType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionData",
+    "rootFieldCount": 3,
+    "entriesFieldIndex": 0,
+    "majorFieldIndex": 1,
+    "minorFieldIndex": 2,
+    "entryType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionEntry",
+    "entryWidth": 16,
+    "entryAlignment": 8,
+    "entryIdOffset": 0,
+    "entryVersionOffset": 8,
+    "entryPaddingWidth": 4
+  },
+  "methods": [
+    {
+      "index": 90106,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionData",
+      "method": "Entries",
+      "parameters": ["System.Int32"],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionEntry",
+      "rva": 105208984,
+      "windowLength": 161,
+      "windowSha256": "F95981F3103A72CE6E18DB5EC1488D5B5D89F0E19FEC228ED958CF6DD420A9A4"
+    },
+    {
+      "index": 90107,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionData",
+      "method": "get_EntriesLength",
+      "parameters": [],
+      "returnType": "System.Int32",
+      "rva": 49082208,
+      "windowLength": 71,
+      "windowSha256": "E5DD5DA3D7FDADC1C14FBD6BD16A9EEA9E3B00433D3507EFF149E8ABCE133F9C"
+    },
+    {
+      "index": 90108,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionData",
+      "method": "get_Major",
+      "parameters": [],
+      "returnType": "System.Int32",
+      "rva": 49082288,
+      "windowLength": 57,
+      "windowSha256": "3E4CFC33BC569EAEE4D9B352A2B13D8EC77C413537A6BDC432D07C11ADBCA7B0"
+    },
+    {
+      "index": 90109,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionData",
+      "method": "get_Minor",
+      "parameters": [],
+      "returnType": "System.Int32",
+      "rva": 49082448,
+      "windowLength": 57,
+      "windowSha256": "5EA8DDFA59212D62AFAA5261175580A53A610C6B794FF496ED4376E08FB5172C"
+    },
+    {
+      "index": 90113,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionData",
+      "method": "StartEntriesVector",
+      "parameters": ["Google.FlatBuffers.FlatBufferBuilder", "System.Int32"],
+      "returnType": "System.Void",
+      "rva": 105370520,
+      "windowLength": 116,
+      "windowSha256": "19DA44F587A6BF7E22EE1EE479FCEE3270FBEFC3D18B70E9431B361D5D7C4465"
+    },
+    {
+      "index": 90096,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionEntry",
+      "method": "get_Id",
+      "parameters": [],
+      "returnType": "System.UInt64",
+      "rva": 105371232,
+      "windowLength": 147,
+      "windowSha256": "518FA97E0E7E949318C547DECF37EDFDA69FE87CD8B501DBF0AC2824399C52F4"
+    },
+    {
+      "index": 90097,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionEntry",
+      "method": "get_Version",
+      "parameters": [],
+      "returnType": "System.Int32",
+      "rva": 105371380,
+      "windowLength": 148,
+      "windowSha256": "E45D38826FA00308E358A355C3A6F695FB72661ABD1DDABF0DFE4ED8B1FD63A4"
+    },
+    {
+      "index": 90098,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionEntry",
+      "method": "CreateFBDynamicSceneVersionEntry",
+      "parameters": ["Google.FlatBuffers.FlatBufferBuilder", "System.UInt64", "System.Int32"],
+      "returnType": "<type-index:71310>",
+      "rva": 105370908,
+      "windowLength": 208,
+      "windowSha256": "6DBF33C0F9C6F8C348CEFE83CADA389988DF5BEB8549D72855252526314AF0FF"
+    },
+    {
+      "index": 90110,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionData",
+      "method": "CreateFBDynamicSceneVersionData",
+      "parameters": ["Google.FlatBuffers.FlatBufferBuilder", "<type-index:147871>", "<type-index:126186>", "<type-index:126186>"],
+      "returnType": "<type-index:71309>",
+      "rva": 105369996,
+      "windowLength": 189,
+      "windowSha256": "2B6F6CF25E6B6B3FFA9E10FB001B116D6C10F07FFC16D65AEFD32A55260BEC9C"
+    }
+  ],
+  "fragments": [
+    {
+      "methodIndex": 90108,
+      "startRva": 49082345,
+      "length": 85,
+      "sha256": "8615306A27DD5518D407962569EF19AC536F599659FA721C7A55E11F6A2BBDF7"
+    },
+    {
+      "methodIndex": 90109,
+      "startRva": 49082505,
+      "length": 85,
+      "sha256": "CD2EC861983B3B0D7D0476ED4A13A047AE40A807A6A01E9159DA2685C6FB0BC1"
+    }
+  ],
+  "instructionChecks": [
+    {"role": "entriesSlot", "rva": 105209011, "hex": "BA04000000"},
+    {"role": "entriesStride", "rva": 105209060, "hex": "C1E604"},
+    {"role": "lengthSlot", "rva": 49082237, "hex": "BA04000000"},
+    {"role": "majorSlot", "rva": 49082350, "hex": "BA06000000"},
+    {"role": "minorSlot", "rva": 49082510, "hex": "BA08000000"},
+    {"role": "vectorAlignment", "rva": 105370562, "hex": "41B908000000"},
+    {"role": "vectorWidth", "rva": 105370574, "hex": "418D5108"},
+    {"role": "idOffset", "rva": 105371319, "hex": "8BD3"},
+    {"role": "versionOffset", "rva": 105371467, "hex": "8D5308"},
+    {"role": "entryBuilderWidth", "rva": 105370987, "hex": "418D5108458D4110"},
+    {"role": "rootFieldCount", "rva": 105370051, "hex": "488BCF418D5003"}
+  ],
+  "evidenceBoundary": {
+    "direct": "Selected generated accessors identify FBDynamicSceneVersionData field zero as a 16-byte aligned Entries vector and fields one and two as Int32 Major and Minor. FBDynamicSceneVersionEntry accessors and builder place UInt64 Id at zero and Int32 Version at eight in a 16-byte struct. The selected native pair and UnityPlayer are pinned.",
+    "exact": "The selected code windows and instruction operands authenticate the declared slots, vector stride, entry width and offsets against this installed build.",
+    "unresolved": "The meaning of each Id, the runtime version-ban decision and the executed file selection are not established by these generated accessors."
+  }
+}

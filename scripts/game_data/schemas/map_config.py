@@ -57,7 +57,9 @@ def _object(value: Any, fields: tuple[str, ...], path: str) -> dict[str, Any]:
     return value
 
 
-def _condition(value: Any, path: str, depth: int = 0) -> None:
+def _condition(
+    value: Any, path: str, *, map_id: str, map_var_names: set[str], depth: int = 0,
+) -> None:
     if depth > 16:
         _fail(path, "condition nesting <= 16", depth)
     if not isinstance(value, dict):
@@ -74,12 +76,20 @@ def _condition(value: Any, path: str, depth: int = 0) -> None:
         if not isinstance(row["subConditions"], list):
             _fail(path + ".subConditions", "array", type(row["subConditions"]).__name__)
         for index, child in enumerate(row["subConditions"]):
-            _condition(child, f"{path}.subConditions[{index}]", depth + 1)
+            _condition(
+                child, f"{path}.subConditions[{index}]",
+                map_id=map_id, map_var_names=map_var_names, depth=depth + 1,
+            )
         return
     for field in fields[1:-2]:
         _typed(row[field], str, f"{path}.{field}")
     _typed(row["compareOperator"], int, path + ".compareOperator")
     _typed(row["compareTarget"], int, path + ".compareTarget")
+    if condition_type == "Beyond.Gameplay.SimpleConditionCheckMapVar, Gameplay.Beyond":
+        if row["belongMapId"] != map_id:
+            _fail(path + ".belongMapId", map_id, row["belongMapId"])
+        if row["mapVarName"] not in map_var_names:
+            _fail(path + ".mapVarName", "mapVarName2NumId key", row["mapVarName"])
 
 
 def decode_map_config(data: bytes, *, source: str = "<bytes>") -> dict[str, Any]:
@@ -106,18 +116,16 @@ def decode_map_config(data: bytes, *, source: str = "<bytes>") -> dict[str, Any]
             _fail(f"{source}.{field}", "array", type(values).__name__)
         for index, value in enumerate(values):
             _typed(value, item_type, f"{source}.{field}[{index}]")
-    state_rows = root["sceneStateConditions"]
-    if not isinstance(state_rows, list):
-        _fail(source + ".sceneStateConditions", "array", type(state_rows).__name__)
-    for index, value in enumerate(state_rows):
-        path = f"{source}.sceneStateConditions[{index}]"
-        row = _object(value, STATE_ROW_FIELDS, path)
-        _typed(row["stateName"], str, path + ".stateName")
-        _condition(row["condition"], path + ".condition")
     scene_states = root.get("sceneStates", {})
+    if not isinstance(scene_states, dict):
+        _fail(source + ".sceneStates", "object", type(scene_states).__name__)
+    state_indexes: set[int] = set()
     for key, value in scene_states.items():
         _typed(key, str, source + ".sceneStates.key")
         _typed(value, int, f"{source}.sceneStates[{key!r}]")
+        if not key or not 0 <= value < 32 or value in state_indexes:
+            _fail(f"{source}.sceneStates[{key!r}]", "unique name and UInt32 mask index 0..31", value)
+        state_indexes.add(value)
     number_to_name = root["mapVarNumId2Name"]
     name_to_number = root["mapVarName2NumId"]
     if not isinstance(number_to_name, dict) or not isinstance(name_to_number, dict):
@@ -133,6 +141,22 @@ def decode_map_config(data: bytes, *, source: str = "<bytes>") -> dict[str, Any]
         _typed(value, int, f"{source}.mapVarName2NumId[{key!r}]")
         if number_to_name.get(str(value)) != key:
             _fail(source + ".mapVarInverse", (str(value), key), number_to_name.get(str(value)))
+    state_rows = root["sceneStateConditions"]
+    if not isinstance(state_rows, list):
+        _fail(source + ".sceneStateConditions", "array", type(state_rows).__name__)
+    condition_names: set[str] = set()
+    map_var_names = set(name_to_number)
+    for index, value in enumerate(state_rows):
+        path = f"{source}.sceneStateConditions[{index}]"
+        row = _object(value, STATE_ROW_FIELDS, path)
+        name = _typed(row["stateName"], str, path + ".stateName")
+        if name not in scene_states or name in condition_names:
+            _fail(path + ".stateName", "unique sceneStates key", name)
+        condition_names.add(name)
+        _condition(
+            row["condition"], path + ".condition",
+            map_id=root["mapIdStr"], map_var_names=map_var_names,
+        )
     if root["mapVarClientDefaultValues"] != {}:
         _fail(source + ".mapVarClientDefaultValues", "current empty object", root["mapVarClientDefaultValues"])
     return {
@@ -145,7 +169,8 @@ def decode_map_config(data: bytes, *, source: str = "<bytes>") -> dict[str, Any]
         "mapVariableCount": len(number_to_name),
         "evidenceBoundary": (
             "Every JSON key is stored explicitly. Both current root shapes, typed "
-            "condition variants, scene-state values, and inverse map-variable "
+            "condition variants, unique scene-state mask indices, condition-name "
+            "membership, map-variable condition ownership, and inverse map-variable "
             "dictionaries are validated exactly; client defaults remain fail-closed "
             "on the currently unobserved populated shape."
         ),

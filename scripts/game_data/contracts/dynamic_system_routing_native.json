@@ -1,0 +1,67 @@
+{
+  "schema": "endfield.dynamic-system-routing-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "layout": {
+    "sceneType": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+    "dataEnumType": "Beyond.Gameplay.Core.DynamicScene.EDynamicSceneData",
+    "systemEnumType": "Beyond.Gameplay.Core.DynamicScene.EDynamicSystem",
+    "systemTypeMethodIndex": 89158,
+    "systemLookupMethodIndex": 89159,
+    "getSystemMethodIndex": 89160,
+    "calledRoute": {
+      "rva": 49009920,
+      "codeExtent": 34,
+      "codeSha256": "286A14FFFD0D376D952252CDBE5A7E406674FAD950352A3F757AA38BF75716BD",
+      "tableRva": 49010032,
+      "tableCount": 58,
+      "tableSha256": "C4CBAA9ABD969755A6937CCE035C4ADCC1CB2E688DB58657E275BBF826005FEA"
+    }
+  },
+  "methods": [
+    {
+      "index": 89158,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+      "method": "GetSystemTypeByDataType",
+      "parameters": [
+        "Beyond.Gameplay.Core.DynamicScene.EDynamicSceneData"
+      ],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.EDynamicSystem",
+      "rva": 105243668,
+      "bodyExtent": 588,
+      "bodySha256": "7FF54CC6B8C8E270E771D12CFD080B1352358BFDCAECE408AA77B645E3EE56B8"
+    },
+    {
+      "index": 89159,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+      "method": "GetSystemByDataType",
+      "parameters": [
+        "Beyond.Gameplay.Core.DynamicScene.EDynamicSceneData"
+      ],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneSystemBase",
+      "rva": 105243528,
+      "bodyExtent": 140,
+      "bodySha256": "67B568D87B96E57572633D2C9381E5ABB1201DC6A33690BAC06E2479F4E45A98"
+    },
+    {
+      "index": 89160,
+      "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene",
+      "method": "GetSystem",
+      "parameters": [
+        "Beyond.Gameplay.Core.DynamicScene.EDynamicSystem"
+      ],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneSystemBase",
+      "rva": 49009776,
+      "bodyExtent": 64,
+      "bodySha256": "2A889A90A174FE70B99F60C5A3AA3203C878D5DD824E4273D94E47BE19BF7AC3"
+    }
+  ],
+  "evidenceBoundary": {
+    "direct": "The selected GetSystemByDataType body calls the authenticated route dispatcher, which indexes a bounded native jump table and returns a system code. The separately registered GetSystemTypeByDataType body is decoded independently and must agree for every enum code.",
+    "conditional": "Routes describe this selected native build and do not prove a DataIndex record is loaded, activated, or acted on at runtime."
+  }
+}

@@ -280,7 +280,11 @@ on the `w1 == 0x2024` family (6,570 elements); the other families, `0x0820` (393
 bit (73 = 72|1, 137 = 136|1, 4360 = 264|4096), which is why the relation is a **subset**
 test and not equality -- as equality it would have shown 8 spurious counter-examples.
 
-**Field 4 is the constant 4** in all 11,016 elements.
+**Correction:** field 4 stored `4` in that sample, but it is a forward
+FlatBuffers uoffset to a wrapper table containing a byte vector, not a scalar
+constant. Field 3 likewise reaches a vector of 8-byte descriptors. See
+[`world_chunk_unread_region.md`](world_chunk_unread_region.md) for the current
+framing and the count-times-stride equality.
 
 ***Disproved:*** field 3 as an index into a sibling vector. Its 2,136 distinct small
 integers look exactly like indices, but they fall inside slot 5's length only 4.37% of

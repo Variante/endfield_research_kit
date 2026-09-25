@@ -17,7 +17,7 @@
   },
   "baseContract": {
     "path": "scripts/game_data/contracts/streaming_field2_native.json",
-    "schema": "endfield.streaming-field2-native-contract.v8",
+    "schema": "endfield.streaming-field2-native-contract.v10",
     "requiredUnityPlayerRoles": [
       "callbackAssignment",
       "callbackReset",

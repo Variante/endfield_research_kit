@@ -1,5 +1,5 @@
 {
-  "schema": "endfield.streaming-field2-native-contract.v8",
+  "schema": "endfield.streaming-field2-native-contract.v10",
   "status": "validated",
   "nativeMappingId": "endfield-2026-09-04-streaming-field2-row-carrier-and-scene-object-chain",
   "nativeInputs": {
@@ -1049,6 +1049,69 @@
       "bodySha256": "830C36064389B2CCCF203320175135214C8AF5E33FC4EDA15207AEF76BC1C0F9",
       "entryBytesHex": "0000008000000080",
       "rangeKind": "selected-code-or-table"
+    },
+    {
+      "role": "rootSlot7GroupVectorAccessor",
+      "rva": 23514824,
+      "fileOffset": 23512264,
+      "size": 41,
+      "bodySha256": "2502EE05703E24412294FF9CAE31FB0FAF9BA7826FC88C6C070FA90F1DA5D06B",
+      "entryBytesHex": "486301488BD1482BD0B812000000663B0273130FB74212488D14016685C07406",
+      "rangeKind": "function"
+    },
+    {
+      "role": "rootSlot6IdWrapperVectorAccessor",
+      "rva": 23514868,
+      "fileOffset": 23512308,
+      "size": 41,
+      "bodySha256": "4F87942F4B41C0B1A7C3639B759BE469F5E756797B6EBA1F89570817AD1A3AEB",
+      "entryBytesHex": "486301488BD1482BD0B810000000663B0273130FB74210488D14016685C07406",
+      "rangeKind": "function"
+    },
+    {
+      "role": "groupWrapperField0ByteVectorAccessor",
+      "rva": 16048764,
+      "fileOffset": 16046204,
+      "size": 41,
+      "bodySha256": "F19C1CC41E1F0AA86046BC05498329437E7B32432FF66F432704E6EA4B1ABF67",
+      "entryBytesHex": "486301488BD1482BD0B804000000663B0273130FB74204488D14016685C07406",
+      "rangeKind": "function"
+    },
+    {
+      "role": "groupDescriptorByteConsumer",
+      "rva": 1875056,
+      "fileOffset": 1872496,
+      "size": 630,
+      "bodySha256": "02B1D43BECB27550801252614C63250D22E57A4473B824D04625A18C5DA4CEB1",
+      "entryBytesHex": "48895C241844894C2420488954241055565741544155415641574881EC900000",
+      "rangeKind": "function"
+    },
+    {
+      "role": "groupDescriptorPrefixMaskHelper",
+      "rva": 1876560,
+      "fileOffset": 1874000,
+      "size": 58,
+      "bodySha256": "CE5FB9A4D251C3FA8BE72D37D6A8A1C976AEA9BE03FA0F9A618DF2800D657FD9",
+      "entryBytesHex": "488BC141B80100000083FA3F7F148BCA48C74008",
+      "rangeKind": "function"
+    },
+    {
+      "role": "propertySerializeTypeBitIndexIcall",
+      "rva": 5559104,
+      "fileOffset": 5556544,
+      "size": 5,
+      "bodySha256": "9CE4BFC06C92AB6391AAE1CC217FC1F0E2839FA5B61B3489694173D91291403D",
+      "entryBytesHex": "480FBCC1C3",
+      "rangeKind": "function"
+    },
+    {
+      "role": "componentScopeEntityNameIcall",
+      "rva": 16944324,
+      "fileOffset": 16941764,
+      "size": 122,
+      "bodySha256": "A3FDAFD855EC7BD999BF568E10DE5FB2DE9B331D4B82286E77D8A3B36E75AE6B",
+      "entryBytesHex": "4883EC58488B014983C8FF488B90880000008B05",
+      "rangeKind": "function"
     }
   ],
   "utf8Strings": [
@@ -1101,6 +1164,16 @@
       "role": "secondaryPathdevPrefix",
       "rva": 28323076,
       "text": "[dev]"
+    },
+    {
+      "role": "propertySerializeTypeBitIndexIcallName",
+      "rva": 27650912,
+      "text": "UnityEngine.HyperGryph.Streaming.PropertySerializeId::GetComponentIndexFromType"
+    },
+    {
+      "role": "componentScopeEntityNameIcallName",
+      "rva": 27651328,
+      "text": "UnityEngine.HyperGryph.Streaming.FlatBufferConvertContextV2::get_componentScopeEntityName_Injected"
     }
   ],
   "rowLayout": [
@@ -1410,9 +1483,9 @@
   },
   "evidenceBoundary": {
     "exact": "Current GameAssembly.dll, global-metadata.dat, UnityPlayer.dll, the bounded row construction and runtime-consumer bodies, record copy/index helpers, scalar lookup, and each accessor body are hash-gated before the representation claim is published.",
-    "direct": "The selected row consumer reads fields 0-2 with one 32-bit scalar accessor each, field 3 through an inline pointer followed by two signed 32-bit loads, and field 4 through an inline pointer followed by six float32 loads. It stores the source row pointer at byte 16 of a copied 72-byte runtime record. A later state consumer reloads that pointer, obtains vtable entry 14, reads the vector count, and loads each element at vector+4+index*4 before passing the 32-bit value as a hash-table lookup key. The first scene read formats the static leaf StreamingChunkInfo under an unavailable runtime root. A separate static object chain propagates anonymous scene-root pairs through a state-selected 16-byte handle to two secondary reads, then reaches the second secondary root's vtable-entry-8 row vector and this row consumer.",
-    "structuralOnly": "The contract proves stored value representations for anonymous fields 0-5, direct field-5 iteration, a family-level carrier base/requested-length/actual-length contract, and the selected static scene-object chain. It does not prove a managed serialized field order, the key namespace, one concrete Create instance, or the identity of one authenticated logical file at either native read boundary.",
-    "unresolved": "The concrete runtime root/path-to-authenticated-logical-file joins and scheduler edge to one Create instance are not closed. The selected closure is proven pointer-only after I/O and therefore has no outer-length offset checks, parsed-length result, or final cursor; differently encoded, inlined, dynamically dispatched, or unconnected verifier code elsewhere remains unexcluded. Field names, field-5 element meaning, cross-file ownership, runtime selection, and game semantics remain unresolved."
+    "direct": "The selected row consumer reads fields 0-2 with one 32-bit scalar accessor each, field 3 through an inline pointer followed by two signed 32-bit loads, and field 4 through an inline pointer followed by six float32 loads. It stores the source row pointer at byte 16 of a copied 72-byte runtime record. A later state consumer reloads that pointer, obtains vtable entry 14, reads the vector count, and loads each element at vector+4+index*4 before passing the 32-bit value as a hash-table lookup key. The first scene read formats the static leaf StreamingChunkInfo under an unavailable runtime root. A separate static object chain propagates anonymous scene-root pairs through a state-selected 16-byte handle to two secondary reads, then reaches the second secondary root's vtable-entry-8 row vector and this row consumer. A separate selected first-root slot7 loop reads each group's descriptor and wrapped byte vectors and passes their counts and pointers to an explicit descriptor-major byte consumer.",
+    "structuralOnly": "The contract proves stored value representations for anonymous fields 0-5, direct field-5 iteration, a family-level carrier base/requested-length/actual-length contract, and the selected static scene-object chain. It does not prove a managed serialized field order, the key namespace, one concrete Create instance, or the identity of one authenticated logical file at either native read boundary. Group descriptor id and stride have direct selected consumer reads; only the id's runtime field selector, not a component name, is proved.",
+    "unresolved": "The concrete runtime root/path-to-authenticated-logical-file joins and scheduler edge to one Create instance are not closed. The selected closure is proven pointer-only after I/O and therefore has no outer-length offset checks, parsed-length result, or final cursor; differently encoded, inlined, dynamically dispatched, or unconnected verifier code elsewhere remains unexcluded. Field names, field-5 element meaning, cross-file ownership, runtime selection, and game semantics remain unresolved. No concrete execution receipt or selected logical file binds the group consumer to one installed Init file; mismatch diagnostics are non-fatal."
   },
   "nestedKeyIndexObservations": {
     "status": "exact-selected-static-u32-key-to-first-vector-index-helper-chain",
@@ -1775,5 +1848,92 @@
       ]
     },
     "targetOwnedBytes": 0
+  },
+  "groupConsumerObservations": {
+    "status": "conditional-direct-selected-static-first-root-slot7-to-descriptors-and-wrapped-bytes",
+    "sourceRoot": "First secondary root at runtime carrier+0x28, formatted as InitChunkData under the conditional paired-path contract; no concrete logical-file execution receipt.",
+    "sourceChain": {
+      "branchGuard": "Both root pointers at carrier+0x28/+0x30 must be nonnull and the group runtime-state pointer at carrier+0x40 must be null; otherwise this group-consumer branch is skipped.",
+      "rootSlot7AccessorCalls": [
+        438810,
+        438836,
+        438880,
+        439235
+      ],
+      "rootSlot6AccessorCall": 438854,
+      "groupField3DescriptorVectorAccessorCall": 438908,
+      "groupField4WrapperAccessorCalls": [
+        438916,
+        438935
+      ],
+      "wrapperField0ByteVectorAccessorCalls": [
+        438924,
+        438943
+      ],
+      "idWrapperField0VectorAccessorCall": 438954,
+      "consumerCall": 439000,
+      "consumerRva": 1875056
+    },
+    "consumerAbi": {
+      "rcx": "Runtime destination/context at [owner+0x68].",
+      "rdx": "Caller output pointer.",
+      "r8d": "Root.slot6[i].field0 ID-vector count (u32).",
+      "r9d": "Root.slot7[i].field3 descriptor-vector count (u32).",
+      "stackArg5": "Descriptor-vector data at count-prefix+4; entries are eight bytes.",
+      "stackArg6": "Root.slot7[i].field4 wrapper.field0 byte-vector length (u32).",
+      "stackArg7": "Wrapped byte-vector data at count-prefix+4."
+    },
+    "descriptorLoop": {
+      "strideLoadRva": 1875328,
+      "strideRepresentation": "Signed 16-bit load from descriptor+8*index+2; observed stored corpus values are nonnegative.",
+      "extentCompareRva": 1875341,
+      "extentDiagnosticBranchRva": 1875344,
+      "idLoadRva": 1875440,
+      "idRepresentation": "Signed 16-bit load from descriptor+8*index.",
+      "sourcePointerRva": 1875459,
+      "copyLengthRva": 1875467,
+      "sourceCopyCallRva": 1875521,
+      "advanceRva": 1875526,
+      "finalEqualityCompareRva": 1875550,
+      "finalEqualityDiagnosticBranchRva": 1875553,
+      "boundary": "For each descriptor, multiply signed stride by group ID count, compare cumulative bytes against passed blob length, pass blob+prior-offset and product to a copy helper, then compare final cumulative bytes with blob length. Both mismatch branches log diagnostics and continue; they are not rejection gates. Descriptor ID selects a runtime field via an anonymous bitmask, with no reviewed component-name mapping here."
+    },
+    "evidenceBoundary": {
+      "exact": "Gated selected UnityPlayer bodies and FlatBuffers accessor offsets prove first-root slot7 group vector and slot6 ID-wrapper vector reach one checked descriptor/byte consumer.",
+      "direct": "The consumer uses the first signed 16-bit descriptor word as an anonymous selector, the second as a per-ID stride, and copies count-times-stride bytes from consecutive descriptor-major portions of the wrapped byte vector.",
+      "structuralOnly": "The byte equation and descriptor-major ordering have a native consumer independent of the decoded-byte control. Other descriptor IDs remain anonymous.",
+      "unresolved": "No concrete runtime root is bound to one authenticated VFS logical file and no live execution is witnessed. Mismatch diagnostics do not stop copying. The historical large unread runs are outside the small wrapped vector in the bounded example and remain without an exact record extent."
+    }
+  },
+  "groupComponentNameCandidate": {
+    "status": "candidate-unjoined",
+    "unityPlayerImageBase": "0x180000000",
+    "icallBindings": [
+      {
+        "slot": 592,
+        "name": "UnityEngine.HyperGryph.Streaming.PropertySerializeId::GetComponentIndexFromType",
+        "nameRva": "0x1A5EB60",
+        "namePointerRva": "0x1A52E20",
+        "functionRva": "0x54D340",
+        "functionPointerRva": "0x1A54500"
+      },
+      {
+        "slot": 596,
+        "name": "UnityEngine.HyperGryph.Streaming.FlatBufferConvertContextV2::get_componentScopeEntityName_Injected",
+        "nameRva": "0x1A5ED00",
+        "namePointerRva": "0x1A52E40",
+        "functionRva": "0x1028CC4",
+        "functionPointerRva": "0x1A54520"
+      }
+    ],
+    "prefixMaskHelperRva": "0x1CA250",
+    "literalRel32CallSites": ["0x1C9DFB", "0x1CA0CD", "0x322612"],
+    "metadataType": "UnityEngine.HyperGryph.Streaming.FlatBufferConvertContextV2",
+    "absentMetadataMethods": ["get_componentScopeEntityName", "get_componentScopeEntityName_Injected"],
+    "evidenceBoundary": {
+      "exact": "The selected UnityPlayer name/function pointer tables bind the two named icalls to hash-gated bodies. The component-index icall computes a bit index from a mask; the entity-name getter reads a NUL-terminated pointer at native conversion context+0x88. An executable-section raw rel32 census finds only the three listed literal calls to the descriptor prefix-mask helper. The selected IL2CPP type has no entity-name getter method.",
+      "structuralOnly": "The descriptor consumer and the other two literal prefix-mask callers select generic packed columns. The getter establishes a named native context field, but no reviewed edge carries descriptor ID 21's column to that context field.",
+      "unresolved": "Descriptor 21 remains a 64-byte stored name field by same-file byte identity, not a named runtime component. A direct packed-column reader or conversion-context constructor carrying descriptor 21 to context+0x88 is required before assigning the native component label. Indirect calls, computed aliases, and inlined prefix-mask code are outside the literal-call census."
+    }
   }
 }

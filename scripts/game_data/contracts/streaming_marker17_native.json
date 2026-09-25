@@ -4,7 +4,7 @@
   "nativeMappingId": "endfield-2026-09-04-streaming-marker17-slot3-body-profiles",
   "baseContract": {
     "path": "scripts/game_data/contracts/streaming_field2_native.json",
-    "schema": "endfield.streaming-field2-native-contract.v8",
+    "schema": "endfield.streaming-field2-native-contract.v10",
     "requiredUnityPlayerRoles": [
       "defaultConstructorContextBasePrefix",
       "descriptorConstructor",
@@ -14,7 +14,7 @@
       "inlineCallbackVtable",
       "keyIndexLookupWrapper"
     ],
-    "dependencyBoundary": "The exact v8 hash reuses its selected-build descriptor/publication and shared key-index lookup proof. This contract adds only marker-17 slot3/key/count-prefix/tag5 evidence."
+    "dependencyBoundary": "The selected base contract reuses its hash-gated descriptor/publication and shared key-index lookup proof. This contract adds only marker-17 slot3/key/count-prefix/tag5 evidence."
   },
   "nativeInputs": {
     "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",

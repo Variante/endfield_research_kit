@@ -1,0 +1,83 @@
+{
+  "schema": "endfield.dynamic-version-ban-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "methods": [
+    {"index": 88871, "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet", "method": "LoadFromBasePath", "parameters": ["System.String"], "returnType": "System.Void", "rva": 49078064},
+    {"index": 88870, "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet", "method": "_ResolveActiveVersion", "parameters": [], "returnType": "System.Void", "rva": 49082816},
+    {"index": 89007, "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene", "method": "IsEntityVersionBanned", "parameters": ["System.UInt64"], "returnType": "System.Boolean", "rva": 67039280},
+    {"index": 88868, "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet", "method": "IsBanned", "parameters": ["System.UInt64"], "returnType": "System.Boolean", "rva": 67039360},
+    {"index": 88869, "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet", "method": "Reset", "parameters": [], "returnType": "System.Void", "rva": 68960016},
+    {"index": 88872, "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet", "method": ".ctor", "parameters": [], "returnType": "System.Void", "rva": 71889296}
+  ],
+  "fields": [
+    {"type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet", "name": "m_banned", "fieldType": "System.Collections.Generic.HashSet`1<ulong>", "offset": 16},
+    {"type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet", "name": "m_activeMajor", "fieldType": "int", "offset": 24},
+    {"type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet", "name": "m_activeMinor", "fieldType": "int", "offset": 28},
+    {"type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet", "name": "m_activePhase", "fieldType": "int", "offset": 32},
+    {"type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet", "name": "m_needCheck", "fieldType": "bool", "offset": 36},
+    {"type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene", "name": "m_versionBanSet", "fieldType": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet", "offset": 160}
+  ],
+  "windows": [
+    {"name": "LoadFromBasePath", "startRva": 49078064, "endRva": 49081474, "sha256": "1CE40A3B845815B395FB397EEEC4D108CDF0CA688E89C2DC9B1EFEDF310FEF22"},
+    {"name": "_ResolveActiveVersion", "startRva": 49082816, "endRva": 49083128, "sha256": "C3BC6ACE91D9C3E54894F195EF294B37DD4CF1BF3B365196B690A2B1A7589B10"},
+    {"name": "IsEntityVersionBanned", "startRva": 67039280, "endRva": 67039356, "sha256": "C5EA87E26B3153858801A58ECADC0B04E155F734B4AFDFA70618EA5F7EA00D5D"},
+    {"name": "IsBanned", "startRva": 67039360, "endRva": 67039446, "sha256": "22CAE21F78DD354758E2A6C31A9AC63A7C4CA123F1D261AE6B451D5CB159F30E"},
+    {"name": "IsBannedCold", "startRva": 83231526, "endRva": 83231602, "sha256": "020A282E890A7EB8ACFC00FCEC461570CB44058235A8D474178F9BB5E32DAB39"},
+    {"name": "Reset", "startRva": 68960016, "endRva": 68960123, "sha256": "22CEC49CB0E64FD38E98860DCFD669246511511EA24E39E9BF8ECFEA0C49ADBE"},
+    {"name": ".ctor", "startRva": 71889296, "endRva": 71889421, "sha256": "8197527CC7856A953BBD3EC3673C296328AD92C6069A66ACFEA069E915E2643E"}
+  ],
+  "instructionChecks": [
+    {"role": "loadInitialNeedCheck", "rva": 49078272, "hex": "41884524"},
+    {"role": "loadActivePhaseFullGuard", "rva": 49078305, "hex": "41837D2063"},
+    {"role": "loadMajorCompare", "rva": 49080640, "hex": "413B4518"},
+    {"role": "loadMinorCompare", "rva": 49080950, "hex": "413B451C"},
+    {"role": "entryVersionCompare", "rva": 49081201, "hex": "413B4520"},
+    {"role": "candidateSkip", "rva": 49081205, "hex": "7E2E"},
+    {"role": "loadSet", "rva": 49081207, "hex": "498B7510"},
+    {"role": "candidateCount", "rva": 49081250, "hex": "41FFC6"},
+    {"role": "needCheckCount", "rva": 49081260, "hex": "4585F6"},
+    {"role": "needCheckFromCandidateCount", "rva": 49081263, "hex": "0F9FC0"},
+    {"role": "needCheckSet", "rva": 49081266, "hex": "41884524"},
+    {"role": "sceneBanSet", "rva": 67039316, "hex": "488B8BA0000000"},
+    {"role": "sceneIdToCall", "rva": 67039331, "hex": "488BD7"},
+    {"role": "queryNeedCheck", "rva": 67039405, "hex": "384324"},
+    {"role": "querySet", "rva": 83231526, "hex": "488B4B10"},
+    {"role": "queryIdToContains", "rva": 83231542, "hex": "488BD7"},
+    {"role": "resetNeedCheck", "rva": 68960096, "hex": "C6432400"},
+    {"role": "constructorSet", "rva": 71889388, "hex": "48897B10"}
+  ],
+  "calls": [
+    {"role": "loadResolve", "rva": 49078300, "targetRva": 49082816, "target": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet._ResolveActiveVersion"},
+    {"role": "entryVersion", "rva": 49081196, "targetRva": 105371380, "target": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionEntry.get_Version"},
+    {"role": "entryId", "rva": 49081218, "targetRva": 105371232, "target": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVersionEntry.get_Id"},
+    {"role": "addId", "rva": 49081245, "targetRva": 58285920, "target": "System.Collections.Generic.HashSet`1.Add<generic>"},
+    {"role": "sceneToBanSet", "rva": 67039334, "targetRva": 67039360, "target": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneVersionBanSet.IsBanned"},
+    {"role": "containsId", "rva": 83231545, "targetRva": 61567872, "target": "System.Collections.Generic.HashSet`1.Contains<generic>"},
+    {"role": "resetClear", "rva": 68960089, "targetRva": 47622080, "target": "System.Collections.Generic.HashSet`1.Clear<generic>"},
+    {"role": "constructorHashSet", "rva": 71889379, "targetRva": 49098416, "target": "System.Collections.Generic.HashSet`1..ctor<generic>"},
+    {"role": "loadPatchGuard", "rva": 49078259, "targetRva": 46758256, "target": "IFix.WrappersManagerImpl.IsPatched"},
+    {"role": "scenePatchGuard", "rva": 67039303, "targetRva": 46758256, "target": "IFix.WrappersManagerImpl.IsPatched"},
+    {"role": "queryPatchGuard", "rva": 67039392, "targetRva": 46758256, "target": "IFix.WrappersManagerImpl.IsPatched"}
+  ],
+  "branches": [
+    {"role": "loadPatchOverride", "rva": 49078266, "targetRva": 49081387, "kind": "jne"},
+    {"role": "activeFullSkip", "rva": 49078310, "targetRva": 49081425, "kind": "jge"},
+    {"role": "majorMismatch", "rva": 49080644, "targetRva": 49081302, "kind": "jne"},
+    {"role": "minorMismatch", "rva": 49080954, "targetRva": 49081302, "kind": "jne"},
+    {"role": "candidateSkipWhenVersionNotGreater", "rva": 49081205, "targetRva": 49081253, "kind": "jle"},
+    {"role": "scenePatchOverride", "rva": 67039310, "targetRva": 83231482, "kind": "jne"},
+    {"role": "queryPatchOverride", "rva": 67039399, "targetRva": 83231556, "kind": "jne"},
+    {"role": "queryNeedCheckTrue", "rva": 67039408, "targetRva": 83231526, "kind": "jne"},
+    {"role": "resetPatchOverride", "rva": 68960067, "targetRva": 83434600, "kind": "jne"}
+  ],
+  "evidenceBoundary": {
+    "direct": "On the selected unpatched and successful load branch, entries with Version greater than resolved m_activePhase feed Entry.Id to m_banned.Add; m_needCheck records whether a candidate was processed. The unpatched scene query passes globalId to IsBanned, which returns false when m_needCheck is false and otherwise returns m_banned.Contains(globalId).",
+    "conditional": "IFix patch checks in LoadFromBasePath, IsEntityVersionBanned, and IsBanned can route away from these bodies. File and version-root validity, major/minor match, and active-phase guards also select the loading branch. Reset clears the set on its unpatched branch.",
+    "unresolved": "No live patch state, active phase, selected version file, or observed ban result is established. The selected LoadFromBasePath body does not directly call HashSet.Clear; whether one ban-set object is reused across loads remains open."
+  }
+}

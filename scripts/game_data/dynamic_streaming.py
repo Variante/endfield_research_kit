@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import struct
 from collections import Counter
-from typing import Any
+from typing import Any, Iterator, Mapping
 
 from scripts.game_data.inverted_lz4 import decompress_inverted_lz4
 
@@ -32,25 +32,21 @@ OBSERVED_ROOT_SHAPES = {
 }
 # These widths are structural contracts from the selected-build FlatBuffer
 # layouts.  They intentionally do not name the values carried by the vectors.
-# The FBStreamAreaTotalData accessors additionally expose the byte-vector
-# fields and the fixed-size FBStreamArea/FBStreamAreaTrigger/FBStreamAreaCoord
-# records; the two compressed roots have only corpus-observed vector widths.
+# FBStreamAreaTotalData has Get*Bytes helpers for the first three vectors,
+# but its indexed accessors advance by four bytes per element. A byte-array
+# view does not imply byte-sized elements. The fixed-size Area, Trigger, and
+# Coord records and the two compressed roots retain their separate evidence.
 OBSERVED_INIT_VECTOR_WIDTHS = (4, 4, 1, 4, 4, 4)
 OBSERVED_STREAM_AREA_VECTOR_WIDTHS = {
     0: 4,
-    1: 1,
-    2: 1,
+    1: 4,
+    2: 4,
     4: 12,
     5: 36,
     6: 8,
 }
 OBSERVED_STREAM_AREA_INLINE_WIDTHS = {3: 24}
 OBSERVED_VERSION_SCALAR_WIDTH = 4
-REJECTED_DATA_MASK_PRESENCE_CANDIDATE = (
-    "sum(1 << (fieldIndex - base)) for every nonempty vector field at or after base"
-)
-
-
 def _u16(data: bytes, offset: int) -> int:
     if offset < 0 or offset + 2 > len(data):
         raise ValueError(f"u16 outside payload at {offset}/{len(data)}")
@@ -201,12 +197,21 @@ def _validate_string_vector(data: bytes, vector: int, count: int) -> None:
             raise ValueError(f"TotalStr[{index}] is not strict UTF-8") from exc
 
 
-def parse_dynamic_chunk_framing(data: bytes) -> dict[str, Any]:
+def parse_dynamic_chunk_framing(
+    data: bytes, *, vector_widths: Mapping[int, int] | None = None
+) -> dict[str, Any]:
     """Validate the observed five-field chunk root and 61-field grid tables.
 
     Returned values use generated accessor names for the three scalar root
-    accessors.  Grid field contents and DataMask are intentionally not decoded.
+    accessors. Without a native width contract, grid vector spans use only a
+    one-byte lower bound. Grid field contents and DataMask remain undecoded.
     """
+
+    if vector_widths is not None and (
+        set(vector_widths) != set(range(1, SINGLE_GRID_FIELD_COUNT - 1))
+        or any(type(width) is not int or width <= 0 for width in vector_widths.values())
+    ):
+        raise ValueError("main grid vector widths must cover fields 1..59 with positive integers")
 
     root = _root_layout(data)
     if root["fieldCount"] != 5 or root["presentFields"] != [0, 1, 2, 3, 4]:
@@ -233,6 +238,14 @@ def parse_dynamic_chunk_framing(data: bytes) -> dict[str, Any]:
 
     grid_vector, grid_count = _vector(data, root, 3)
     shapes: Counter[tuple[int, int, tuple[int, ...]]] = Counter()
+    vector_counts: Counter[int] = Counter()
+    vector_elements: Counter[int] = Counter()
+    nonempty_vectors: Counter[int] = Counter()
+    vector_spans: list[tuple[int, int, int, int]] = []
+    vector_body_bytes = 0
+    data_mask_checked = 0
+    data_mask_nonempty_matches: Counter[int] = Counter()
+    data_mask_present_matches: Counter[int] = Counter()
     for index in range(grid_count):
         slot = grid_vector + index * 4
         relative = _u32(data, slot)
@@ -254,18 +267,48 @@ def parse_dynamic_chunk_framing(data: bytes) -> dict[str, Any]:
                 tuple(int(value) for value in layout["presentFields"]),
             )
         ] += 1
-        # The selected-build metadata exposes a Length accessor for every
-        # field 1..59.  Their element schemas are intentionally not decoded,
-        # but each vector envelope must still be bounded exactly.  Field 0 is
-        # the generated UInt32 UniqueId; field 60 is generated UInt64 DataMask.
+        # Selected-build metadata exposes a Length accessor for every field
+        # 1..59. A one-byte minimum only bounds their count words and a lower
+        # bound on bodies; the optional reviewed native widths close those
+        # bodies exactly. Field 0 is UniqueId; field 60 is DataMask.
         _field_span(data, layout, 0, 4)
+        present_fields: list[int] = []
+        nonempty_fields: list[int] = []
         for field_index in range(1, SINGLE_GRID_FIELD_COUNT - 1):
-            _vector(data, layout, field_index)
-        _field_span(data, layout, SINGLE_GRID_FIELD_COUNT - 1, 8)
+            width = vector_widths[field_index] if vector_widths is not None else 1
+            body, count, end = _bounded_vector(data, layout, field_index, width)
+            if vector_widths is not None and body:
+                vector_spans.append((body - 4, end, index, field_index))
+                vector_counts[field_index] += 1
+                vector_elements[field_index] += count
+                nonempty_vectors[field_index] += count > 0
+                vector_body_bytes += count * width
+                present_fields.append(field_index)
+                if count:
+                    nonempty_fields.append(field_index)
+        data_mask_address = _field_span(data, layout, SINGLE_GRID_FIELD_COUNT - 1, 8)
+        if vector_widths is not None and data_mask_address is not None:
+            data_mask = struct.unpack_from("<Q", data, data_mask_address)[0]
+            data_mask_checked += 1
+            for base in range(1, 6):
+                nonempty_candidate = sum(1 << (field - base) for field in nonempty_fields if field >= base)
+                present_candidate = sum(1 << (field - base) for field in present_fields if field >= base)
+                data_mask_nonempty_matches[base] += nonempty_candidate == data_mask
+                data_mask_present_matches[base] += present_candidate == data_mask
+
+    if vector_widths is not None:
+        vector_spans.sort()
+        for previous, current in zip(vector_spans, vector_spans[1:]):
+            if current[0] < previous[1]:
+                raise ValueError(
+                    "main grid vectors overlap: "
+                    f"grid {previous[2]} field {previous[3]} ends {previous[1]}, "
+                    f"grid {current[2]} field {current[3]} begins {current[0]}"
+                )
 
     strings_vector, strings_count = _vector(data, root, 4)
     _validate_string_vector(data, strings_vector, strings_count)
-    return {
+    result = {
         **scalars,
         "GridsLength": grid_count,
         "TotalStrLength": strings_count,
@@ -274,12 +317,30 @@ def parse_dynamic_chunk_framing(data: bytes) -> dict[str, Any]:
             {"fieldCount": key[0], "objectSize": key[1], "presentFields": list(key[2]), "count": count}
             for key, count in shapes.most_common()
         ],
-        "DataMaskInference": {
-            "status": "rejected",
-            "candidate": REJECTED_DATA_MASK_PRESENCE_CANDIDATE,
-            "reason": "full-corpus matches were 28 at base 1, 3682 at base 2, and zero at bases 3-5",
-        },
     }
+    if vector_widths is not None:
+        result["ProvidedWidthGridVectorFraming"] = {
+            "status": "bounded_nonoverlapping",
+            "countWordAndBodySpanCount": len(vector_spans),
+            "nonemptyVectorCount": sum(nonempty_vectors.values()),
+            "bodyBytes": vector_body_bytes,
+            "dataMaskCandidate": {
+                "checkedGrids": data_mask_checked,
+                "nonemptyMatchCounts": {str(base): data_mask_nonempty_matches[base] for base in range(1, 6)},
+                "presentMatchCounts": {str(base): data_mask_present_matches[base] for base in range(1, 6)},
+            },
+            "fieldCounts": [
+                {
+                    "fieldIndex": field_index,
+                    "elementWidth": vector_widths[field_index],
+                    "vectorCount": vector_counts[field_index],
+                    "nonemptyVectorCount": nonempty_vectors[field_index],
+                    "elementCount": vector_elements[field_index],
+                }
+                for field_index in range(1, SINGLE_GRID_FIELD_COUNT - 1)
+            ],
+        }
+    return result
 
 
 def _parse_observed_init_or_streaming(
@@ -329,12 +390,92 @@ def _parse_observed_init_or_streaming(
     }
 
 
+def parse_dynamic_aux_reference_shapes(data: bytes, parsed: Mapping[str, Any]) -> list[dict[str, Any]]:
+    """Validate the observed auxiliary uoffset-vector targets as tables.
+
+    Only fields 5-7 are examined. The returned vtable shapes prove FlatBuffer
+    framing, not the element types or meanings of their nested fields.
+    """
+
+    if parsed.get("kind") not in ("init", "streaming") or len(data) != parsed.get("decodedBytes"):
+        raise ValueError("auxiliary reference-shape input kind or decoded length differs")
+    vectors = {int(row["fieldIndex"]): row for row in parsed["Vectors"]}
+    if set(vectors) != set(range(2, 8)):
+        raise ValueError("auxiliary root vector set differs")
+    shapes: list[dict[str, Any]] = []
+    for field in (5, 6, 7):
+        vector = vectors[field]
+        if int(vector["elementWidth"]) != 4:
+            raise ValueError(f"auxiliary field {field} is not four-byte offset framed")
+        count = int(vector["count"])
+        body = int(vector["bodyOffset"])
+        if body < 0 or count > (len(data) - body) // 4:
+            raise ValueError(f"auxiliary field {field} offset vector exceeds payload")
+        census: Counter[tuple[int, int, tuple[int, ...]]] = Counter()
+        for index in range(count):
+            slot = body + 4 * index
+            relative = _u32(data, slot)
+            target = slot + relative
+            if relative == 0 or target <= slot or target + 4 > len(data):
+                raise ValueError(f"auxiliary field {field}[{index}] table offset is invalid")
+            layout = _table_layout(data, target)
+            census[(int(layout["fieldCount"]), int(layout["objectSize"]),
+                    tuple(int(value) for value in layout["presentFields"]))] += 1
+        shapes.append({
+            "fieldIndex": field,
+            "tableCount": count,
+            "shapes": [
+                {"fieldCount": field_count, "objectSize": object_size,
+                 "presentFields": list(present), "tables": number}
+                for (field_count, object_size, present), number in sorted(census.items())
+            ],
+        })
+    return shapes
+
+
+def iter_dynamic_aux_field5_table_views(
+    data: bytes, parsed: Mapping[str, Any]
+) -> Iterator[dict[str, Any]]:
+    """Yield structural same-index comparison views of field-5 tables.
+
+    The five four-byte slots after field zero are raw bytes, not typed scalar
+    values. A missing vtable field yields ``None``; no nested schema is named.
+    """
+
+    if parsed.get("kind") not in ("init", "streaming") or len(data) != parsed.get("decodedBytes"):
+        raise ValueError("auxiliary field-5 input kind or decoded length differs")
+    vectors = {int(row["fieldIndex"]): row for row in parsed["Vectors"]}
+    if set(vectors) != set(range(2, 8)) or int(vectors[5]["elementWidth"]) != 4:
+        raise ValueError("auxiliary field-5 offset vector framing differs")
+    vector = vectors[5]
+    count = int(vector["count"])
+    body = int(vector["bodyOffset"])
+    if body < 0 or count > (len(data) - body) // 4:
+        raise ValueError("auxiliary field-5 vector exceeds payload")
+    for index in range(count):
+        slot = body + index * 4
+        relative = _u32(data, slot)
+        target = slot + relative
+        if relative == 0 or target <= slot or target + 4 > len(data):
+            raise ValueError(f"auxiliary field 5[{index}] has invalid table offset")
+        layout = _table_layout(data, target)
+        if int(layout["fieldCount"]) != 6:
+            raise ValueError(f"auxiliary field 5[{index}] does not have six vtable fields")
+        slots: dict[int, bytes | None] = {}
+        for field in range(1, 6):
+            address = _field_span(data, layout, field, 4)
+            slots[field] = None if address is None else data[address:address + 4]
+        yield {"index": index, "presentFields": tuple(layout["presentFields"]),
+               "slots": slots}
+
+
 def _parse_stream_area_framing(data: bytes) -> dict[str, Any]:
     """Frame the generated ``FBStreamAreaTotalData`` root.
 
-    ``Get*Bytes`` accessors prove the first three vectors are byte vectors;
-    the generated record types prove the remaining vector widths.  Record
-    contents remain opaque here, including the 24-byte inline bounds value.
+    Indexed accessors prove the first three vectors use four-byte elements;
+    ``Get*Bytes`` exposes their raw byte span, not their element type. The
+    generated record types prove the remaining vector widths. Record contents
+    remain opaque here, including the 24-byte inline bounds value.
     """
 
     root = _root_layout(data)
@@ -359,30 +500,66 @@ def _parse_stream_area_framing(data: bytes) -> dict[str, Any]:
             }
         )
     ordered = sorted(vectors, key=lambda item: item["bodyOffset"])
-    for previous, current in zip(ordered, ordered[1:]):
-        if current["bodyOffset"] < previous["endOffset"]:
+    expected_count_word = int(root["tableOffset"]) + int(root["objectSize"])
+    for current in ordered:
+        count_word = current["bodyOffset"] - 4
+        if count_word != expected_count_word:
             raise ValueError(
-                f"stream_area vector fields {previous['fieldIndex']} and {current['fieldIndex']} overlap"
+                f"stream_area vector field {current['fieldIndex']} count word at "
+                f"{count_word}, expected contiguous tail offset {expected_count_word}"
             )
+        expected_count_word = current["endOffset"]
     if ordered and ordered[-1]["endOffset"] != len(data):
         raise ValueError(
             f"stream_area vector data ends at {ordered[-1]['endOffset']}, expected payload EOF {len(data)}"
         )
-    return {"root": root, "InlineFields": inline, "Vectors": vectors}
+    return {
+        "root": root,
+        "InlineFields": inline,
+        "Vectors": vectors,
+        "ContiguousVectorTail": {
+            "startOffset": int(root["tableOffset"]) + int(root["objectSize"]),
+            "endOffset": len(data),
+            "status": "exact",
+        },
+    }
 
 
-def _parse_version_framing(data: bytes) -> dict[str, Any]:
-    """Frame the generated three-scalar ``fb_version`` root without naming it."""
+def _parse_version_framing(data: bytes, entry_width: int | None = None) -> dict[str, Any]:
+    """Frame the version root's vector and two scalars.
+
+    Without a selected native width, the vector receives only the one-byte
+    FlatBuffer lower bound. A validated caller supplies the exact entry width.
+    """
 
     root = _root_layout(data)
     _check_observed_root("version", root)
     values = []
-    for index in range(3):
+    for index in (1, 2):
         address = _field_span(data, root, index, OBSERVED_VERSION_SCALAR_WIDTH)
         if address is None:
             raise ValueError(f"version root scalar field {index} is absent")
         values.append(_u32(data, address))
-    return {"root": root, "ScalarFieldValues": values}
+    width = 1 if entry_width is None else entry_width
+    body, count, end = _bounded_vector(data, root, 0, width)
+    if entry_width is not None:
+        expected_count_word = int(root["tableOffset"]) + int(root["objectSize"])
+        if body - 4 != expected_count_word or end != len(data):
+            raise ValueError(
+                "version vector does not close the root-to-EOF tail: "
+                f"countWord={body - 4} expected={expected_count_word} end={end} payload={len(data)}"
+            )
+    return {
+        "root": root,
+        "ScalarFieldValues": values,
+        "VectorField0": {
+            "elementWidth": width,
+            "widthBoundary": "lowerBound" if entry_width is None else "selectedNative",
+            "count": count,
+            "bodyOffset": body,
+            "endOffset": end,
+        },
+    }
 
 
 def decode_dynamic_payload(kind: str, packed: bytes) -> bytes:
@@ -420,17 +597,25 @@ def _check_observed_root(kind: str, root: dict[str, Any]) -> None:
         )
 
 
-def parse_dynamic_file(kind: str, packed: bytes) -> dict[str, Any]:
+def parse_dynamic_file(
+    kind: str, packed: bytes, *, main_vector_widths: Mapping[int, int] | None = None,
+    version_entry_width: int | None = None,
+) -> dict[str, Any]:
     """Decode and frame any of the five observed DynamicStreaming roots.
 
     ``main`` and ``stream_area`` use selected-build generated accessor
-    witnesses; the compressed roots and ``version`` remain unnamed and are
-    returned as exact scalar/vector framing observations.
+    witnesses. ``version`` frames its two scalars and entry vector; the vector
+    is exact only when a native caller supplies its entry width. The compressed
+    roots remain unnamed.
     """
 
+    if main_vector_widths is not None and kind != "main":
+        raise ValueError("main_vector_widths is only valid for the main DynamicStreaming family")
+    if version_entry_width is not None and kind != "version":
+        raise ValueError("version_entry_width is only valid for the version DynamicStreaming family")
     clear = decode_dynamic_payload(kind, packed)
     if kind == "main":
-        parsed = parse_dynamic_chunk_framing(clear)
+        parsed = parse_dynamic_chunk_framing(clear, vector_widths=main_vector_widths)
     elif kind in ("init", "streaming"):
         parsed = _parse_observed_init_or_streaming(
             kind, clear, OBSERVED_INIT_VECTOR_WIDTHS
@@ -438,7 +623,7 @@ def parse_dynamic_file(kind: str, packed: bytes) -> dict[str, Any]:
     elif kind == "stream_area":
         parsed = _parse_stream_area_framing(clear)
     elif kind == "version":
-        parsed = _parse_version_framing(clear)
+        parsed = _parse_version_framing(clear, version_entry_width)
     else:
         root = _root_layout(clear)
         _check_observed_root(kind, root)

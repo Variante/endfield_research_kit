@@ -13,7 +13,7 @@ from scripts.common import sha256_file_upper as _sha256_file
 from scripts.game_data.contracts import CONTRACTS_DIR
 
 
-SCHEMA = "endfield.streaming-field2-native-contract.v8"
+SCHEMA = "endfield.streaming-field2-native-contract.v10"
 DEFAULT_CONTRACT = CONTRACTS_DIR / "streaming_field2_native.json"
 # Updated only after the reviewed JSON contract is finalized.
 
@@ -60,6 +60,43 @@ def _bounded_pe_range(image: bytes, rva: int, size: int) -> tuple[int, bytes]:
     if end > len(image):
         raise ValueError(f"PE range RVA 0x{rva:X} file offset {offset}: expected end <= {len(image)}, actual {end}")
     return offset, image[offset:end]
+
+
+def _pe_image_base(image: bytes) -> int:
+    pe_offset = struct.unpack_from("<I", image, 0x3C)[0]
+    optional = pe_offset + 24
+    if struct.unpack_from("<H", image, optional)[0] != 0x20B:
+        raise ValueError("expected PE32+ image")
+    return struct.unpack_from("<Q", image, optional + 24)[0]
+
+
+def _literal_rel32_calls_to(image: bytes, target_rva: int) -> list[int]:
+    """Over-approximate literal calls in raw executable sections."""
+    pe_offset = struct.unpack_from("<I", image, 0x3C)[0]
+    section_count = struct.unpack_from("<H", image, pe_offset + 6)[0]
+    section_table = pe_offset + 24 + struct.unpack_from("<H", image, pe_offset + 20)[0]
+    result: list[int] = []
+    for index in range(section_count):
+        header = section_table + index * 40
+        virtual_address, raw_size, raw_pointer = (
+            struct.unpack_from("<I", image, header + 12)[0],
+            struct.unpack_from("<I", image, header + 16)[0],
+            struct.unpack_from("<I", image, header + 20)[0],
+        )
+        characteristics = struct.unpack_from("<I", image, header + 36)[0]
+        if not characteristics & 0x20000000:
+            continue
+        body = image[raw_pointer : raw_pointer + raw_size]
+        cursor = 0
+        while True:
+            cursor = body.find(b"\xE8", cursor)
+            if cursor < 0 or cursor + 5 > len(body):
+                break
+            site = virtual_address + cursor
+            if site + 5 + struct.unpack_from("<i", body, cursor + 1)[0] == target_rva:
+                result.append(site)
+            cursor += 1
+    return sorted(result)
 
 
 def validate_streaming_field2_native_contract(
@@ -178,6 +215,58 @@ def validate_streaming_field2_native_contract(
             except (KeyError, TypeError, ValueError) as exc:
                 reject(f"{role}.utf8", "valid bounded UTF-8 string", str(exc))
 
+        candidate = contract.get("groupComponentNameCandidate") or {}
+        try:
+            base = _pe_image_base(unity_image)
+            expected_base = int(candidate["unityPlayerImageBase"], 0)
+            if base != expected_base:
+                reject("component_name_candidate.image_base", hex(expected_base), hex(base))
+            for row in candidate["icallBindings"]:
+                role = str(row["name"])
+                for kind in ("name", "function"):
+                    pointer_rva = int(row[f"{kind}PointerRva"], 0)
+                    target_rva = int(row[f"{kind}Rva"], 0)
+                    pointer_offset = _pe_file_offset(unity_image, pointer_rva, size=8)
+                    actual = struct.unpack_from("<Q", unity_image, pointer_offset)[0]
+                    expected = base + target_rva
+                    if actual != expected:
+                        reject(f"{role}.{kind}_pointer", hex(expected), hex(actual))
+            expected_calls = sorted(int(row, 0) for row in candidate["literalRel32CallSites"])
+            actual_calls = _literal_rel32_calls_to(
+                unity_image, int(candidate["prefixMaskHelperRva"], 0)
+            )
+            if actual_calls != expected_calls:
+                reject(
+                    "component_name_candidate.literal_rel32_calls",
+                    [hex(row) for row in expected_calls],
+                    [hex(row) for row in actual_calls[:20]],
+                )
+        except (KeyError, TypeError, ValueError, struct.error) as exc:
+            reject("component_name_candidate.native", "valid selected binding and call census", str(exc))
+
+        if native.status == NATIVE_EVIDENCE_VALIDATED:
+            try:
+                from scripts.game_data.il2cpp.native_image import METADATA_HELPER_PATH
+                from scripts.game_data.il2cpp.protocol import load_metadata_helper
+
+                metadata = load_metadata_helper(METADATA_HELPER_PATH).Metadata(native.metadata)
+                matching_types = [
+                    row for row in metadata.types
+                    if metadata.type_full_name(row) == candidate["metadataType"]
+                ]
+                if len(matching_types) != 1:
+                    reject("component_name_candidate.metadata_type", 1, len(matching_types))
+                else:
+                    names = {
+                        metadata.string(row.name_index)
+                        for row in metadata.methods_for(matching_types[0])
+                    }
+                    present = sorted(set(candidate["absentMetadataMethods"]) & names)
+                    if present:
+                        reject("component_name_candidate.absent_metadata_methods", [], present)
+            except (OSError, KeyError, TypeError, ValueError) as exc:
+                reject("component_name_candidate.metadata", "parsed selected metadata", str(exc))
+
     status = NATIVE_EVIDENCE_VALIDATED if not failures else "validation_failed"
     return {
         "status": status,
@@ -203,6 +292,9 @@ def validate_streaming_field2_native_contract(
         ),
         "infoKeyProducerObservations": (
             contract.get("infoKeyProducerObservations") if not failures else None
+        ),
+        "groupComponentNameCandidate": (
+            contract.get("groupComponentNameCandidate") if not failures else None
         ),
         "evidenceBoundary": contract.get("evidenceBoundary"),
         "validationFailures": failures,

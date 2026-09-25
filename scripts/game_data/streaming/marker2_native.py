@@ -83,7 +83,7 @@ def validate_marker2_native_contract(*, game_root: Path, contract_path: Path=DEF
         require('dependency_schema','endfield.streaming-marker17-native-contract.v2',doc['dependency']['schema'])
         require('dependency_roles',[],doc['dependency']['requiredUnityPlayerRoles'])
         require('dependency_registration',{'selector':6,'reusedEvidence':['descriptorConstructorSpan','publicationSpan']},doc['dependency']['registration'])
-        require('base_schema','endfield.streaming-field2-native-contract.v8',doc['baseContract']['schema'])
+        require('base_schema',base.SCHEMA,doc['baseContract']['schema'])
         require('base_roles',BASE_ROLES,doc['baseContract']['requiredUnityPlayerRoles'])
         depraw=dependency.DEFAULT_CONTRACT.read_bytes();baseraw=base.DEFAULT_CONTRACT.read_bytes()
         if failures:return result

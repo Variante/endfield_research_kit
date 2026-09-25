@@ -31,7 +31,7 @@ MAX_GROUP_COUNT = 1_024
 MAX_STRING_BYTES = 256
 
 SPAWNER_ENEMY_LIBRARY_SCHEMA_MAPPING_ID = (
-    "gameassembly-0c557367-memorypack-spawner-enemy-library-item-v13"
+    "gameassembly-0c557367-memorypack-spawner-enemy-library-item-v14"
 )
 
 SPAWNER_WAVE_SCHEMA_MAPPING_ID = (
@@ -75,6 +75,23 @@ def _enemy_read_bool(data: bytes, offset: int, field: str) -> tuple[bool, int]:
     if offset >= len(data) or data[offset] not in (0, 1):
         raise SpawnerEnemyLibraryDecodeError(f"{field}: invalid bool")
     return bool(data[offset]), offset + 1
+
+
+def _enemy_read_optional_vector3(
+    data: bytes, offset: int, field: str
+) -> tuple[list[float] | None, int]:
+    """Read the 16-byte nullable Vector3 value, including its ABI padding."""
+    if offset + 16 > len(data):
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: truncated Optional<Vector3>")
+    present, cursor = _enemy_read_bool(data, offset, f"{field}.hasValue")
+    if data[cursor:cursor + 3] != b"\x00\x00\x00":
+        raise SpawnerEnemyLibraryDecodeError(f"{field}: nonzero Optional<Vector3> padding")
+    cursor += 3
+    vector: list[float] = []
+    for axis in range(3):
+        value, cursor = _enemy_read_f32(data, cursor, f"{field}[{axis}]")
+        vector.append(value)
+    return (vector if present else None), cursor
 
 
 def _enemy_read_string(
@@ -226,14 +243,9 @@ def decode_spawner_enemy_library(data: bytes) -> dict[str, Any]:
         pre_warn_audio_event_key, offset = _enemy_read_string(
             data, offset, f"enemyLibrary[{index}].preWarnAudioEventKey"
         )
-        pre_warn_effect_fixed_rotation: list[float] = []
-        for axis in range(4):
-            value, offset = _enemy_read_f32(
-                data,
-                offset,
-                f"enemyLibrary[{index}].preWarnEffectFixedRotation[{axis}]",
-            )
-            pre_warn_effect_fixed_rotation.append(value)
+        pre_warn_effect_fixed_rotation, offset = _enemy_read_optional_vector3(
+            data, offset, f"enemyLibrary[{index}].preWarnEffectFixedRotation"
+        )
         pre_warn_effect_key, offset = _enemy_read_string(
             data, offset, f"enemyLibrary[{index}].preWarnEffectKey"
         )

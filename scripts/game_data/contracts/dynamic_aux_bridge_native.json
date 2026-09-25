@@ -1,0 +1,105 @@
+{
+  "schema": "endfield.dynamic-aux-bridge-native-contract.v4",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "methods": [
+    {"role": "ecsTransition", "index": 87162, "type": "Beyond.Gameplay.Core.DynamicScene.DynamicSceneEcsSystem", "method": "TransitionFromUnLoadedToLoaded", "parameters": ["<type-index:93831>", "<type-index:93822>", "<type-index:93928>"], "returnType": "System.Boolean", "rva": 49063472, "windowLength": 144, "windowSha256": "EA2820BF4B97B359B476FC6CFED0A82EA9A97E1EF2196A7143B146A58AD19C7C"},
+    {"role": "getDataHandle", "index": 89061, "type": "Beyond.Gameplay.Core.DynamicScene.DynamicStreamingScene", "method": "GetDataHandle", "parameters": ["System.Int32", "System.UInt32", "System.Int32"], "returnType": "System.UInt32", "rva": 49064208, "windowLength": 368, "windowSha256": "56DD3DB63F60B6469C67F5C46BFD2BB7C8F32FAF26D1FEBE53A351C2A0CE209E"},
+    {"role": "getInitPath", "index": 89207, "type": "Beyond.Gameplay.Core.DynamicScene.DynamicDataLoader", "method": "GetIniStreamPath", "parameters": ["System.Int32", "System.Int32"], "returnType": "System.String", "rva": 49067968, "windowLength": 128, "windowSha256": "F0FF8A43C3EFD99833026D3B57EA470B8BC6A36CF6FB25E071C5AB827797A55E"},
+    {"role": "getStreamingPath", "index": 89208, "type": "Beyond.Gameplay.Core.DynamicScene.DynamicDataLoader", "method": "GetStreamPath", "parameters": ["System.Int32", "System.Int32"], "returnType": "System.String", "rva": 49068112, "windowLength": 128, "windowSha256": "BE7D8F00E889D2841EA139B2F772448779BE124315B0F26124DA5C22E3F492E8"},
+    {"role": "allocateRuntimeChunkInjected", "index": 435639, "type": "UnityEngine.HyperGryph.Streaming.StreamingGameplayManager", "method": "AllocateRuntimeChunk_Injected", "parameters": ["<type-index:95037>", "System.String", "System.String"], "returnType": "System.UInt32", "rva": 71233312, "windowLength": 128, "windowSha256": "ACD924DCDFA26A23D3EEBBAA3C3F79B257A3DFC92C2CF2A206805D56EFFD7E3B"}
+  ],
+  "managedDirectCalls": [
+    {"role": "transitionToHandle", "owner": "ecsTransition", "siteRva": 49063607, "target": "getDataHandle"},
+    {"role": "handleToInitPath", "owner": "getDataHandle", "siteRva": 49064486, "target": "getInitPath"},
+    {"role": "handleToStreamingPath", "owner": "getDataHandle", "siteRva": 49064544, "target": "getStreamingPath"},
+    {"role": "handleToInjectedAllocator", "owner": "getDataHandle", "siteRva": 49064562, "target": "allocateRuntimeChunkInjected"}
+  ],
+  "managedArgumentHandoff": {"siteRva": 49064549, "hex": "488D4F204533C94C8BC0488BD3", "boundary": "Immediately before the checked injected call, RCX is the StreamingGameplayManager field address, RDX is the saved init-path result, and R8 is the streaming-path result."},
+  "managedIcallResolver": {"methodRole": "allocateRuntimeChunkInjected", "literalLoadRva": 71233375, "resolverCallRva": 71233382, "resolverTargetRva": 127408, "literal": "UnityEngine.HyperGryph.Streaming.StreamingGameplayManager::AllocateRuntimeChunk_Injected(UnityEngine.HyperGryph.Streaming.StreamingGameplayManager&,System.String,System.String)"},
+  "unityInternalCallTable": {
+    "nameArrayRva": 27597728,
+    "functionArrayRva": 27603584,
+    "entryCount": 731,
+    "entryIndex": 605,
+    "name": "UnityEngine.HyperGryph.Streaming.StreamingGameplayManager::AllocateRuntimeChunk_Injected",
+    "functionRva": 1964912
+  },
+  "unityCodeWindows": [
+    {"role": "allocateRuntimeChunkInjected", "startRva": 1964912, "endRva": 1965194, "sha256": "4802E7EE269D11967488BC470A46F274B31CC287D72AAF138CAABCF38F815F7C"},
+    {"role": "runtimeChunkPathStore", "startRva": 1966320, "endRva": 1966509, "sha256": "4BBC95AE1E5898919BA869B36C70AE931676287D3B7B57300CC906837B3DDA5E"}
+  ],
+  "unityDirectCalls": [
+    {"role": "injectedToPathStore", "siteRva": 1965132, "targetRva": 1966320},
+    {"role": "storeInitPath", "siteRva": 1966448, "targetRva": 475536},
+    {"role": "storeStreamingPath", "siteRva": 1966479, "targetRva": 475536}
+  ],
+  "unityInstructionChecks": [
+    {"role": "helperReceivesInitPath", "rva": 1966354, "hex": "488BDA"},
+    {"role": "helperReceivesStreamingPath", "rva": 1966398, "hex": "498BF0"},
+    {"role": "initStringMember", "rva": 1966415, "hex": "488D8F70C30000"},
+    {"role": "initStringArgument", "rva": 1966442, "hex": "488BD3"},
+    {"role": "streamingStringMember", "rva": 1966453, "hex": "488D8F90C30000"},
+    {"role": "streamingStringArgument", "rva": 1966473, "hex": "488BD6"}
+  ],
+  "unityWorkerCodeWindows": [
+    {"role": "initRequest", "startRva": 1965488, "endRva": 1965846, "sha256": "6858065F39F4FE70139A84AAEA39BA2683FD93C83B84F5637E310D5150EF4621"},
+    {"role": "streamingRequest", "startRva": 1965856, "endRva": 1966197, "sha256": "F6A8A7BA83547CF7CFE7B21B63DD623AD663B60D0256B611FCDA5B5A3ED59A4B"},
+    {"role": "indexedPathLookup", "startRva": 1966512, "endRva": 1967041, "sha256": "F3D0BEE38AF1FBB0312870BEA5109A961C79D75934D9718DF513A3B9E1BD243D"},
+    {"role": "resourceLookup", "startRva": 1967200, "endRva": 1968317, "sha256": "A940BAA49306EA0DDF0A11825431B57827CA364175C79EFFCBC16D620AF09DEC"},
+    {"role": "streamConstruction", "startRva": 2086368, "endRva": 2086607, "sha256": "5795BCA088B9F3368827EB508B52DAE2247B9F49231213E803A0A6FD129233A5"},
+    {"role": "readyStatus", "startRva": 2086048, "endRva": 2086227, "sha256": "9F7415FBC5C46ED4429C027DDBBEC48AC5E13FD5AA0E14DBB34E29C0254D3330"},
+    {"role": "readyDataPointer", "startRva": 2086896, "endRva": 2086935, "sha256": "57A33E8289BD53E787EAF42009EEBAD2BA6FA1EAD0059802A4478A7BD57A7658"},
+    {"role": "rootResolution", "startRva": 2081648, "endRva": 2081798, "sha256": "3F824778A811AFBFB0D50D1D089F3283A400C49B122945387328D1FB56D295D8"},
+    {"role": "rootConsumer", "startRva": 1814208, "endRva": 1815518, "sha256": "7398CDA05C88FEE0328432B79AA808EC2604AB75718BAB5DFAD63CC068951DFA"}
+  ],
+  "unityWorkerDirectCalls": [
+    {"role": "initPathIndex", "siteRva": 1965620, "targetRva": 1966512},
+    {"role": "initResourceLookup", "siteRva": 1965633, "targetRva": 1967200},
+    {"role": "initStreamConstructionStub", "siteRva": 1965654, "targetRva": 14965680},
+    {"role": "streamingPathIndex", "siteRva": 1965988, "targetRva": 1966512},
+    {"role": "streamingResourceLookup", "siteRva": 1966001, "targetRva": 1967200},
+    {"role": "streamingStreamConstructionStub", "siteRva": 1966022, "targetRva": 14965680},
+    {"role": "lookupResultDispatch", "siteRva": 1967901, "targetRva": 833824},
+    {"role": "firstReadyStatus", "siteRva": 2081683, "targetRva": 2086048},
+    {"role": "firstReadyData", "siteRva": 2081704, "targetRva": 2086896},
+    {"role": "secondReadyStatus", "siteRva": 2081734, "targetRva": 2086048},
+    {"role": "secondReadyData", "siteRva": 2081753, "targetRva": 2086896},
+    {"role": "readyDataChecksStatus", "siteRva": 2086905, "targetRva": 2086048}
+  ],
+  "unityWorkerStubJump": {"siteRva": 14965680, "targetRva": 2086368, "hex": "E92B7A3BFF"},
+  "unityWorkerInstructionChecks": [
+    {"role": "initPathToHandle", "rva": 1965595, "hex": "488D4C2468E8AB020000488D8F70C30000488D9424B8000000E877030000488BC8488D542468E81A06000084C07440448B07488D4B18488D542468E8555DC600"},
+    {"role": "streamingPathToHandle", "rva": 1965963, "hex": "488D4C2468E83B010000488D8F90C30000488D9424B8000000E807020000488BC8488D542468E8AA04000084C07440448B07488D4B20488D542468E8E55BC600"},
+    {"role": "rootRecordSelection", "rva": 2081658, "hex": "8B4124488D1C80488B0148C1E30448039838C20000"},
+    {"role": "firstReadyBufferToRoot", "rva": 2081694, "hex": "48397B28751E488D4B18E843140000488BC84885C075048BC7EB058B004803C148894328"},
+    {"role": "secondReadyBufferToRoot", "rva": 2081743, "hex": "48397B307517488D4B20E8121400004885C074058B384803F848897B30"},
+    {"role": "consumerSameRecordAndRoots", "rva": 1814228, "hex": "8B41244533C94C8BF9488D3480488B0148C1E6044803B038C200004C8BA0C8C200008B384C89A424E8000000488B6E28488B5E30"},
+    {"role": "secondRootField6Indexed", "rva": 1814350, "hex": "486303488BCB4D8B6C2468482BC8B810000000663B0173140FB74110488D14036685C074078B0A4803CAEB03498BC9418B4728C1E0024883C0044803C848634500448B314C03F1"},
+    {"role": "firstRootField7Indexed", "rva": 1814421, "hex": "488BCD482BC8B812000000663B0173140FB74112488D14286685C074078B0A4803CAEB03498BC9418B4728C1E0024883C0044803C88B29"}
+  ],
+  "unityDescriptorBuilderCodeWindows": [
+    {"role": "descriptorBuilder", "startRva": 1875056, "endRva": 1875686, "sha256": "02B1D43BECB27550801252614C63250D22E57A4473B824D04625A18C5DA4CEB1"},
+    {"role": "byteCopy", "startRva": 15301568, "endRva": 15303213, "sha256": "7F9A835A6EAF2EF3177F94F85B47B1B707EFCDBCAA982093D86CD068E2082FC4"}
+  ],
+  "unityDescriptorBuilderCalls": [
+    {"role": "consumerToDescriptorBuilder", "siteRva": 1814778, "targetRva": 1875056},
+    {"role": "descriptorBuilderToByteCopy", "siteRva": 1875521, "targetRva": 15301568}
+  ],
+  "unityDescriptorBuilderInstructionChecks": [
+    {"role": "pairedVectorHandoff", "rva": 1814746, "hex": "458B00498BCD4C8954243044894C2428448B0A488D9424D00000004C895C2420E871EB0000"},
+    {"role": "descriptorBuilderArguments", "rva": 1875089, "hex": "4C8BAC24F0000000418BC1458BF84D8BCD448BC044897C24284C8BE2488BD9"},
+    {"role": "descriptorSignedStrideAndLength", "rva": 1875328, "hex": "410FBF5CED02410FAFDF8D0433413BC6"},
+    {"role": "descriptorIdAndCopy", "rva": 1875440, "hex": "410FBF54ED00488D4C2450E8500400004863D648039424000100004C63C30F10000F54471066480F7EC0660F73D808F34C0FB8C866480F7EC0F3480FB8C84C03C9428B44CF440FAF47304863C848034F20E87ADDCC00"}
+  ],
+  "evidenceBoundary": {
+    "direct": "The selected managed GetDataHandle passes the two named auxiliary paths to the injected allocator. The registered UnityPlayer callback stores the paths separately. Two selected native request branches use those members as indexed resource-lookup keys, construct separate stream handles in the same indexed 80-byte record, and a later root-resolution branch derives first and second FlatBuffer root pointers from the handles' ready data buffers. A consumer addressing the same owner record by the same index reads root vtable slots 18 and 16 respectively. At that ordinal, it passes the second-root row's field-0 UInt32 vector, the first-root row's field-3 eight-byte descriptor vector, and the first-root row's field-4 nested field-0 byte vector to a native builder. The builder reads each descriptor's signed 16-bit identifier and signed 16-bit stride, advances by count times stride, and copies that many bytes from the blob through its byte-copy helper.",
+    "conditional": "The handoff is on the selected unpatched managed path and native success/ready branches. It proves the static code route, not that a particular current VFS file was loaded or this worker ran in play.",
+    "structuralOnly": "Slot 18 is first-root field seven and slot 16 is second-root field six, both indexed with the consumer's ordinal. The selected builder establishes the ID-vector, descriptor and blob representation, but it does not name a gameplay component or assign a semantic name to either root or record.",
+    "unresolved": "The runtime-selected resource provider, concrete VFS file identity, worker scheduling and loaded ordinal, descriptor-ID semantic names and downstream component activation remain open."
+  }
+}

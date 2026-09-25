@@ -1,0 +1,346 @@
+{
+  "schema": "endfield.dynamic-resource-comp-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "layout": {
+    "gridType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneSingleGrid",
+    "dataGroupType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+    "dataGroupWidth": 24,
+    "visibleDescType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVisibleDesc",
+    "visibleDescWidth": 48,
+    "resourceGroup": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceGroupWithStateDesc",
+      "gridVectorFieldIndex": 12,
+      "width": 88,
+      "alignment": 4,
+      "builderMethodIndex": 89363,
+      "fields": [
+        {
+          "name": "Group",
+          "offset": 0,
+          "getterMethodIndex": 89357
+        },
+        {
+          "name": "SceneState",
+          "offset": 24,
+          "getterMethodIndex": 89358
+        },
+        {
+          "name": "LogicState",
+          "offset": 28,
+          "getterMethodIndex": 89359
+        },
+        {
+          "name": "LevelNum",
+          "offset": 32,
+          "getterMethodIndex": 89360
+        },
+        {
+          "name": "FactoryIndex",
+          "offset": 36,
+          "getterMethodIndex": 89361
+        },
+        {
+          "name": "VisibleDesc",
+          "offset": 40,
+          "getterMethodIndex": 89362
+        }
+      ]
+    },
+    "resourceComp": {
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceComp",
+      "gridVectorFieldIndex": 32,
+      "width": 124,
+      "alignment": 4,
+      "builderMethodIndex": 89527,
+      "fields": [
+        {
+          "name": "Res",
+          "offset": 0,
+          "getterMethodIndex": 89521
+        },
+        {
+          "name": "Mount",
+          "offset": 24,
+          "getterMethodIndex": 89522
+        },
+        {
+          "name": "MountViewModel",
+          "offset": 48,
+          "getterMethodIndex": 89523
+        },
+        {
+          "name": "NavState",
+          "offset": 72,
+          "getterMethodIndex": 89524
+        },
+        {
+          "name": "NavData",
+          "offset": 76,
+          "getterMethodIndex": 89525
+        },
+        {
+          "name": "LodInfo",
+          "offset": 100,
+          "getterMethodIndex": 89526
+        }
+      ]
+    },
+    "resourceCompLinks": [
+      {
+        "field": "Res",
+        "dataType": "ResourceGroupWithStateDesc",
+        "vector": "ResourceGroupWithStateDesc"
+      },
+      {
+        "field": "Mount",
+        "dataType": "MountPair",
+        "vector": "MountPair"
+      },
+      {
+        "field": "MountViewModel",
+        "dataType": "PrimitiveString",
+        "vector": "PrimitiveStringList"
+      },
+      {
+        "field": "NavData",
+        "dataType": "DataGroup",
+        "vector": "DataGroup"
+      },
+      {
+        "field": "LodInfo",
+        "dataType": "LodGridResource",
+        "vector": "LodGridResource"
+      }
+    ],
+    "resourcePayloadTypes": [
+      "Model",
+      "Effect",
+      "Ecs"
+    ],
+    "visibleDataType": "PrimitiveInt",
+    "visibleVector": "PrimitiveIntList"
+  },
+  "methods": [
+    {
+      "index": 89357,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceGroupWithStateDesc",
+      "method": "get_Group",
+      "parameters": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 48972160,
+      "windowLength": 141,
+      "windowSha256": "ACEC0784D4B1ED7B710C7541A1764632D0089B733B248EBC7213782397D50056",
+      "windowBoundary": "selected generated getter fast path through first return"
+    },
+    {
+      "index": 89358,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceGroupWithStateDesc",
+      "method": "get_SceneState",
+      "parameters": [],
+      "returnType": "System.UInt32",
+      "rva": 105305204,
+      "windowLength": 78,
+      "windowSha256": "3ACA542FC19DB83AFAF48136183D81823B6F6DF5EB121915F956CCF838E8F49A",
+      "windowBoundary": "selected generated getter fast path through first return"
+    },
+    {
+      "index": 89359,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceGroupWithStateDesc",
+      "method": "get_LogicState",
+      "parameters": [],
+      "returnType": "System.UInt32",
+      "rva": 48976784,
+      "windowLength": 110,
+      "windowSha256": "50C78AD8BE076ED4AA2EA44A18CC07FB9ECD2F995A21EB2B4082138D3CF1E420",
+      "windowBoundary": "selected generated getter fast path through first return"
+    },
+    {
+      "index": 89360,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceGroupWithStateDesc",
+      "method": "get_LevelNum",
+      "parameters": [],
+      "returnType": "System.Int32",
+      "rva": 48512320,
+      "windowLength": 86,
+      "windowSha256": "08C9FCC63DDA6079CB92A17DE0D728DD3884C885D65B0AF700D2BCF23236F904",
+      "windowBoundary": "selected generated getter fast path through first return"
+    },
+    {
+      "index": 89361,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceGroupWithStateDesc",
+      "method": "get_FactoryIndex",
+      "parameters": [],
+      "returnType": "System.Int32",
+      "rva": 48512416,
+      "windowLength": 86,
+      "windowSha256": "0263D61D36D7372B3EB6A813109249673CBBE4F9EF9B0CE2B40E6A629D6701CA",
+      "windowBoundary": "selected generated getter fast path through first return"
+    },
+    {
+      "index": 89362,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceGroupWithStateDesc",
+      "method": "get_VisibleDesc",
+      "parameters": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneVisibleDesc",
+      "rva": 48969888,
+      "windowLength": 144,
+      "windowSha256": "8EBA28A84D0E1A28D34377F4035799FF216F3A29C0236EF74819D4555916C8BD",
+      "windowBoundary": "selected generated getter fast path through first return"
+    },
+    {
+      "index": 89363,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceGroupWithStateDesc",
+      "method": "CreateFBDynamicSceneResourceGroupWithStateDesc",
+      "parameters": [
+        "Google.FlatBuffers.FlatBufferBuilder",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32",
+        "System.UInt32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32"
+      ],
+      "returnType": "<type-index:71294>",
+      "rva": 105304084,
+      "windowLength": 144,
+      "windowSha256": "9571B09BAC8A3CD858A1B68CFD3E67ED4892202F7FAF9C1E40A85A38FECC21E1",
+      "windowBoundary": "selected generated builder prefix through StartStruct size/alignment"
+    },
+    {
+      "index": 89521,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceComp",
+      "method": "get_Res",
+      "parameters": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 48978624,
+      "windowLength": 117,
+      "windowSha256": "BB8EA9F2F7027B799246E6C71B2F433DDF6037D5F29538613169CC04D12B201A",
+      "windowBoundary": "selected generated getter fast path through first return"
+    },
+    {
+      "index": 89522,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceComp",
+      "method": "get_Mount",
+      "parameters": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 48979504,
+      "windowLength": 120,
+      "windowSha256": "7A0B37CA86144CAA3D1099348E958931A2A402E7BAC2615C509A6FB69F8B8B72",
+      "windowBoundary": "selected generated getter fast path through first return"
+    },
+    {
+      "index": 89523,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceComp",
+      "method": "get_MountViewModel",
+      "parameters": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 48979632,
+      "windowLength": 120,
+      "windowSha256": "CE5EFD8C4F2233FC614F63504D978FDFB48C9FE03DDC4E46BDA2C3CE6B118318",
+      "windowBoundary": "selected generated getter fast path through first return"
+    },
+    {
+      "index": 89524,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceComp",
+      "method": "get_NavState",
+      "parameters": [],
+      "returnType": "System.Int32",
+      "rva": 49036384,
+      "windowLength": 86,
+      "windowSha256": "B5747BB209943E10A5E0BFE1E0DFEB36DEC0B63E7B1A01FB937E66C1A41970E8",
+      "windowBoundary": "selected generated getter fast path through first return"
+    },
+    {
+      "index": 89525,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceComp",
+      "method": "get_NavData",
+      "parameters": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 70982192,
+      "windowLength": 120,
+      "windowSha256": "7F97B3E9F5D83333ACB29BB30E0FE42D43ABB17DC88D1C2315D679DF8AB86146",
+      "windowBoundary": "selected generated getter fast path through first return"
+    },
+    {
+      "index": 89526,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceComp",
+      "method": "get_LodInfo",
+      "parameters": [],
+      "returnType": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneDataGroup",
+      "rva": 48978496,
+      "windowLength": 120,
+      "windowSha256": "A7615092AA38CB8E71D868A988A0A54F2C9117C23BFB6FA2BB8088BE0C386F5F",
+      "windowBoundary": "selected generated getter fast path through first return"
+    },
+    {
+      "index": 89527,
+      "type": "Beyond.Gameplay.Core.DynamicScene.FBDynamicSceneResourceComp",
+      "method": "CreateFBDynamicSceneResourceComp",
+      "parameters": [
+        "Google.FlatBuffers.FlatBufferBuilder",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32",
+        "System.Boolean",
+        "System.Int32",
+        "System.UInt32",
+        "System.Int32",
+        "System.Int32",
+        "System.Int32"
+      ],
+      "returnType": "<type-index:71293>",
+      "rva": 105302588,
+      "windowLength": 144,
+      "windowSha256": "E7755F55C80BDEAA58F88ED9958D9A9CBAAA786DF02A919A4AFB55933AC031E3",
+      "windowBoundary": "selected generated builder prefix through StartStruct size/alignment"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected native pair and UnityPlayer, generated getter field offsets and StartStruct size/alignment for ResourceComp and ResourceGroupWithStateDesc; shared DataGroup and VisibleDesc layouts come from their separate reviewed contract.",
+    "structuralOnly": "Current ResourceComp groups and nested resource groups can be joined by scene-scoped grid ID, checked type, index and count to current main vectors. The stored visibility groups can be checked against PrimitiveIntList and RootComp groups.",
+    "unresolved": "Live grid selection, resource loading, component activation, resource state conditions and semantics of remaining unowned primitive integers."
+  }
+}
