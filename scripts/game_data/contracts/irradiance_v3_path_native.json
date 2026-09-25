@@ -1,0 +1,771 @@
+{
+  "schema": "endfield.irradiance-v3-path-native-contract.v13",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "methods": [
+    {
+      "index": 266883,
+      "type": "HG.Rendering.Runtime.HGIrradianceVolumeManager",
+      "method": "ReloadIndexFileV3",
+      "pointerRva": "0x8FC27D8"
+    },
+    {
+      "index": 266878,
+      "type": "HG.Rendering.Runtime.HGIrradianceVolumeManager",
+      "method": "PipelineUpdate",
+      "pointerRva": "0x2E7BF80"
+    },
+    {
+      "index": 435411,
+      "type": "UnityEngine.HyperGryph.HGIrradianceVolume",
+      "method": "SetMapV3",
+      "pointerRva": "0x2E7D6F0"
+    },
+    {
+      "index": 266887,
+      "type": "HG.Rendering.Runtime.HGIrradianceVolumeManager",
+      "method": "StreamingInNewMap",
+      "pointerRva": "0x3D3A010"
+    },
+    {
+      "index": 266879,
+      "type": "HG.Rendering.Runtime.HGIrradianceVolumeManager",
+      "method": "CreateGachaIV",
+      "pointerRva": "0x2E7D7C0"
+    },
+    {
+      "index": 266880,
+      "type": "HG.Rendering.Runtime.HGIrradianceVolumeManager",
+      "method": "UpdateGachaIV",
+      "pointerRva": "0x8FC29A0"
+    },
+    {
+      "index": 274867,
+      "type": "System.String",
+      "method": "Concat",
+      "pointerRva": "0x2F52C40"
+    },
+    {
+      "index": 880,
+      "type": "UnityEngine.HyperGryph.Streaming.HGIrradianceVolumeProxyEntityConvertFunc",
+      "method": "ConvertFrom",
+      "pointerRva": "0x3D39CE0"
+    },
+    {
+      "index": 881,
+      "type": "UnityEngine.HyperGryph.Streaming.HGIrradianceVolumeProxyEntityConvertFunc",
+      "method": ".cctor",
+      "pointerRva": "0x4189100"
+    },
+    {
+      "index": 435617,
+      "type": "UnityEngine.HyperGryph.Streaming.FlatBufferConvertContextV2",
+      "method": "ConvertStringFrom_Injected",
+      "pointerRva": "0x49EDF70"
+    }
+  ],
+  "managedInstructions": [
+    {
+      "role": "ReloadIndexFileV3 stores the supplied path in manager +0x20",
+      "rva": "0x8FC2823",
+      "hex": "488D4B2048897B20"
+    },
+    {
+      "role": "PipelineUpdate passes manager +0x20 to SetMapV3",
+      "rva": "0x2E7C2E2",
+      "hex": "488B5620488B4E10E801140000",
+      "callTargetRva": "0x2E7D6F0"
+    },
+    {
+      "role": "PipelineUpdate has a separate +0x40 path branch",
+      "rva": "0x2E7C307",
+      "hex": "488B56404533C0488B4E30E8D9130000",
+      "callTargetRva": "0x2E7D6F0"
+    }
+  ],
+  "managedIcallStub": {
+    "nameLoadRva": "0x2E7D71F",
+    "nameLoadHex": "488D0D8A2B9B07",
+    "fullName": "UnityEngine.HyperGryph.HGIrradianceVolume::SetMapV3(System.Int64,System.String)"
+  },
+  "unityIcallTable": {
+    "nameTableRva": "0x1A51BA0",
+    "functionTableRva": "0x1A53280",
+    "count": 731,
+    "slot": 372,
+    "name": "UnityEngine.HyperGryph.HGIrradianceVolume::SetMapV3",
+    "functionRva": "0x55C460"
+  },
+  "unityWindows": [
+    {
+      "startRva": "0x55C460",
+      "endRva": "0x55C4B4",
+      "sha256": "FFFAEA1F5C7EF3C3E928610C30078F5BF9D1F872E9CD2972B116B59EEA0F02EB"
+    },
+    {
+      "startRva": "0x55C4B4",
+      "endRva": "0x55C4F3",
+      "sha256": "E951F378ACCE1DBC22CB3867B10CC42E0C59BB04D19716A8503DA969939242F4"
+    },
+    {
+      "startRva": "0x55C4F3",
+      "endRva": "0x55C509",
+      "sha256": "9FB3A6147FD9C630F15B8947FD363EEE22E29AF549634577D787187D482A7598"
+    },
+    {
+      "startRva": "0x55C510",
+      "endRva": "0x55C532",
+      "sha256": "4B4AB04D1C72B85AC913141F54F30386743B1BB8378BDBEC22C7FCE3151BE615"
+    }
+  ],
+  "nativePathHelper": {
+    "wrapperCallRva": "0x55C4CE",
+    "helperRva": "0x55C510",
+    "objectAccessCallRva": "0x55C519",
+    "objectAccessTargetRva": "0x92ED0",
+    "fieldAddressRva": "0x55C521",
+    "fieldAddressHex": "488D8820020000",
+    "assignmentJumpRva": "0x55C52D",
+    "assignmentTargetRva": "0x74190"
+  },
+  "nativeIndexCursor": {
+    "windows": [
+      {
+        "startRva": "0x92960",
+        "endRva": "0x92974",
+        "sha256": "6349AC02A10A10D9C8F1887C9389BFC12193D1CBD0BC7855A662F2D3E3A6468C"
+      },
+      {
+        "startRva": "0x916B0",
+        "endRva": "0x91982",
+        "sha256": "E4BE8E66A281A025CA33F883648F8CA08DB12FBDDD0C29E2FB7B0BB3401A7A17"
+      },
+      {
+        "startRva": "0x93140",
+        "endRva": "0x93160",
+        "sha256": "4C677985DC69BE1883843D65C2C6FF0E86EA757C45494EBAAC98F9937FD1BB2A"
+      },
+      {
+        "startRva": "0x93160",
+        "endRva": "0x93A75",
+        "sha256": "548554EE2C680A7637338CD837159E40C57EA8A8111CBD648D577543B59DEB69"
+      },
+      {
+        "startRva": "0x93A75",
+        "endRva": "0x93AB4",
+        "sha256": "CDFBD41BFDD59AC4B240B68610971B0FDEEA24BB7D0A0B5208DA66FCCA6756DE"
+      }
+    ],
+    "pathGetterRva": "0x92960",
+    "pathGetterFieldRva": "0x92969",
+    "pathGetterFieldHex": "480520020000",
+    "pathGetterCallRva": "0x918F4",
+    "parserRva": "0x93140",
+    "parserEndRva": "0x93AB4",
+    "parserCallRva": "0x9190F",
+    "pathToParserHex": "E8671000004C8BC0498D8C24B00000004C8D8D50020000488D5584E82C180000",
+    "cursorReadRva": "0xE59ED0",
+    "cursorReadHex": "488B5110488B018B04024883411004C3",
+    "byteReadRva": "0xE59EC0",
+    "byteReadHex": "488B5110488B010FB6040248FF4110C3",
+    "byteReadCallRva": "0x93397",
+    "magicReadCallRva": "0x9332B",
+    "magicGateRva": "0x9332B",
+    "magicGateHex": "E8A06BDC00448BE88D88FEFFFFFC3BCE0F8777060000",
+    "sceneRecordRva": "0x93835",
+    "sceneRecordHex": "4181FD030000037520488B5424404C8D04DB4803542450498B4E6849C1E002E86743E000",
+    "gachaRecordRva": "0x93880",
+    "gachaRecordHex": "410F1001498BD2498D4E68410F1049104D8D4920"
+  },
+  "nativeBufferJoin": {
+    "codeWindows": [
+      {
+        "startRva": "0x93182",
+        "endRva": "0x931A5",
+        "sha256": "1B83D32403200714297F9F18CB4D61A3F2EDE6C9B98DE5230D7D1DCEA98E1540",
+        "boundary": "parser path input copied into retained +0xB0 key"
+      },
+      {
+        "startRva": "0x939E5",
+        "endRva": "0x93A4D",
+        "sha256": "4A32F70FB817BD787E06E2614F3C655A58FE3E31FEC8FE89792AD9A740CA54B9",
+        "boundary": "retained path key used for lookup and stream construction"
+      },
+      {
+        "startRva": "0x1E0460",
+        "endRva": "0x1E08BD",
+        "sha256": "A940BAA49306EA0DDF0A11825431B57827CA364175C79EFFCBC16D620AF09DEC",
+        "boundary": "path-keyed native lookup yields two u64 result words and resource name"
+      },
+      {
+        "startRva": "0x561E30",
+        "endRva": "0x561F00",
+        "sha256": "9C68B80F3F894096DECEB7137E060C1EF2FFBAEC65CD5B4923F1183086F5D3B8",
+        "boundary": "stream construction allocates lookup size plus header and stores data buffer, size and first lookup word"
+      },
+      {
+        "startRva": "0x1FD7F0",
+        "endRva": "0x1FD817",
+        "sha256": "57A33E8289BD53E787EAF42009EEBAD2BA6FA1EAD0059802A4478A7BD57A7658",
+        "boundary": "ready stream returns stored data buffer pointer"
+      },
+      {
+        "startRva": "0xE59ED0",
+        "endRva": "0xE59EE0",
+        "sha256": "3CEB83255BEF967B7D24A49479A85047CB8F776B9FD56A2E90E7EA208CC56A25",
+        "boundary": "u32 cursor reads pointer plus offset without a local bound check"
+      }
+    ],
+    "calls": [
+      {
+        "role": "retained path comparison",
+        "callRva": "0x93188",
+        "targetRva": "0x93AC0"
+      },
+      {
+        "role": "retained path copy",
+        "callRva": "0x931A0",
+        "targetRva": "0x15DE40"
+      },
+      {
+        "role": "path-keyed lookup",
+        "callRva": "0x93A16",
+        "targetRva": "0x1E0460"
+      },
+      {
+        "role": "stream construction",
+        "callRva": "0x93A31",
+        "targetRva": "0x561E30"
+      },
+      {
+        "role": "stream data buffer retrieval",
+        "callRva": "0x93303",
+        "targetRva": "0x1FD7F0"
+      },
+      {
+        "role": "lookup result dispatch",
+        "callRva": "0x1E071D",
+        "targetRva": "0xCB920"
+      }
+    ],
+    "instructions": [
+      {
+        "role": "same parser input retained at +0xB0",
+        "rva": "0x93182",
+        "hex": "4D8BE94D8BD8E833090000BE0100000084C0743F498D8EB0000000498BD3E89BAC0C00"
+      },
+      {
+        "role": "retained key drives lookup and stream",
+        "rva": "0x93A0B",
+        "hex": "498D8EB0000000488D55D0E845CA140084C07419458B8600010000498D8EA8000000488D55D0E8FAE34C00"
+      },
+      {
+        "role": "lookup hashes string key",
+        "rva": "0x1E0499",
+        "hex": "E85247E9FF807B2001488BC87403488B1B"
+      },
+      {
+        "role": "lookup result pair copied to output",
+        "rva": "0x1E0742",
+        "hex": "488B8424C0010000F20F1040200F107010"
+      },
+      {
+        "role": "stream allocates by lookup size",
+        "rva": "0x561E50",
+        "hex": "488B4A08488D05FF323001488BF248894424204881C1C8000000"
+      },
+      {
+        "role": "stream stores buffer and lookup pair",
+        "rva": "0x561E88",
+        "hex": "488D8FC8000000488D561048894868498B0E488B0648894178498B0E488B460848894170"
+      },
+      {
+        "role": "ready stream returns stored buffer",
+        "rva": "0x1FD802",
+        "hex": "488B03488B4068"
+      },
+      {
+        "role": "parser cursor initializes middle word to minus one",
+        "rva": "0x932FC",
+        "hex": "498D8EA8000000E8E8A41600488D4C2440488944244048C7442448FFFFFFFF4C897C2450"
+      },
+      {
+        "role": "u32 cursor advances without bound comparison",
+        "rva": "0xE59ED0",
+        "hex": "488B5110488B018B04024883411004C3"
+      }
+    ]
+  },
+  "nativeStreamCompletion": {
+    "handlerLoadRva": "0x561EB7",
+    "handlerLoadHex": "488D0D5220FAFF",
+    "handlerRva": "0x503F10",
+    "queueJumpRva": "0x561EFB",
+    "queueTargetRva": "0x126490",
+    "handlerWindow": {
+      "startRva": "0x503F10",
+      "endRva": "0x503F35",
+      "sha256": "7745EA134A9664B0E39BE6C76781259E9AC358A9495A85EDE933E96B7E95514B",
+      "boundary": "selected stream completion writes status and decrements reference count; it does not fill the data buffer"
+    }
+  },
+  "nativeStreamFill": {
+    "sharedSingletonRva": "0x1CF42D8",
+    "queueSingletonLoadRva": "0x126496",
+    "queueSingletonLoadHex": "488B1D3BDEBC01",
+    "workerWrapperRva": "0xB0100",
+    "workerWrapperHex": "488BD1488B0DCE41C401E901000000",
+    "workerWrapperSingletonLoadRva": "0xB0103",
+    "workerWrapperJumpRva": "0xB010A",
+    "workerRva": "0xB0110",
+    "codeWindows": [
+      {"startRva": "0x126490", "endRva": "0x1264E4", "sha256": "17EDA5DB3A2D4014F107A296330ED18C19B6E418BDF38483B586379249BA94A2", "boundary": "selected stream object enters singleton pending queue"},
+      {"startRva": "0x31A32C", "endRva": "0x31A431", "sha256": "67DFEAC609B91E4FBACC1102D11A12298DD174162F6F49FDCF1576B63E396FA9", "boundary": "one request producer chooses direct same-singleton worker or queued same-singleton route"},
+      {"startRva": "0xB0110", "endRva": "0xB01BA", "sha256": "5CE54546D5FF9591386B104DF16D90C6A97798C328AE1EC73D215977BEF59235", "boundary": "same-singleton worker reads buffer and compares returned byte count with requested size"},
+      {"startRva": "0xB02E0", "endRva": "0xB0308", "sha256": "6028A8E4F04377461071B4C1BA9232C13909AD2C7F04F3C514097BCA42228EDA", "boundary": "read helper entry"},
+      {"startRva": "0xB0308", "endRva": "0xB0363", "sha256": "FA2BF13BBD1F9BA7EE182E831FC88BE222B5B3AA4DB7B9144272D228AB4543DB", "boundary": "read helper repeats backend reads and accumulates returned bytes"},
+      {"startRva": "0xB0363", "endRva": "0xB0375", "sha256": "06F1A0780998E77240700C29B537DAE089A1CABAAA6C3335EBCA4729382ADCE3", "boundary": "read helper returns accumulated byte count"},
+      {"startRva": "0xB0380", "endRva": "0xB03D1", "sha256": "068E15EEA7B4FD1B85905059907D769318441EB0CBCE67F4F5593473E1208CD5", "boundary": "read helper dispatches through selected resource backend virtual method"},
+      {"startRva": "0xB1010", "endRva": "0xB1066", "sha256": "BA12E627D24BCE75275B3E69B65DAC5B083C181F26A1F3B7753D9CB872F14283", "boundary": "completion dispatcher selects callback"},
+      {"startRva": "0xB1066", "endRva": "0xB119F", "sha256": "FE9BCF5B3238B3A5246841614204077E164F623B08013B2CDF2540A5F7A3CD88", "boundary": "completion dispatcher middle branches"},
+      {"startRva": "0xB119F", "endRva": "0xB11A8", "sha256": "515C4E814D1068D1BF8D86E7B1C27B30BC5A0DCC15FD64B1BFCC9580C887757F", "boundary": "completion dispatcher invokes selected callback"},
+      {"startRva": "0xB11A8", "endRva": "0xB11B6", "sha256": "C63649383E04D6DDFE96425A8B254556CD70A46AF99835BDE99099F6658FFFE6", "boundary": "completion dispatcher no-callback status"}
+    ],
+    "calls": [
+      {"role": "queue append", "callRva": "0x1264BF", "targetRva": "0xEF270"},
+      {"role": "alternate direct worker", "callRva": "0x31A3D3", "targetRva": "0xB0110"},
+      {"role": "alternate queued request", "callRva": "0x31A40A", "targetRva": "0xEF270"},
+      {"role": "worker resource lookup", "callRva": "0xB013F", "targetRva": "0xB0AB0"},
+      {"role": "worker buffer read", "callRva": "0xB016E", "targetRva": "0xB02E0"},
+      {"role": "worker completion dispatch", "callRva": "0xB019C", "targetRva": "0xB1010"},
+      {"role": "read helper backend dispatch", "callRva": "0xB0339", "targetRva": "0xB0380"},
+      {"role": "parser ready status", "callRva": "0x932BF", "targetRva": "0x1FD4A0"},
+      {"role": "parser buffer pointer", "callRva": "0x93303", "targetRva": "0x1FD7F0"}
+    ],
+    "instructions": [
+      {"role": "alternate direct-or-queued branch", "rva": "0x31A3C5", "hex": "84D27418"},
+      {"role": "alternate direct singleton load", "rva": "0x31A3C9", "hex": "488B0D089F9D01"},
+      {"role": "alternate queued singleton load", "rva": "0x31A3E1", "hex": "488B1DF09E9D01"},
+      {"role": "worker passes stored source offset, requested size, and data buffer", "rva": "0xB014E", "hex": "488B4E788B56344C8B4E704C8B4668"},
+      {"role": "worker records byte count and sets success only on exact size", "rva": "0xB0173", "hex": "488B4E7048898680000000483BC1750433FFEB0F4885C0740A483BC17705BF04000000"},
+      {"role": "parser takes buffer pointer only after success status", "rva": "0x932F4", "hex": "85C00F8551070000498D8EA8000000E8E8A41600"}
+    ]
+  },
+  "nativeSelectedQueueDispatch": {
+    "singletonRva": "0x1CF42D8",
+    "globalStoreRva": "0x55C3BD",
+    "globalLoadRva": "0x55C3DF",
+    "threadFunctionLoadRva": "0x55C3FE",
+    "threadFunctionStoreRva": "0x55C409",
+    "threadFunctionRva": "0x371DF0",
+    "threadEntryLoadRva": "0x55C41E",
+    "threadEntryRva": "0x3726B0",
+    "selectorTableRva": "0xAEAA8",
+    "selectorIndex": 0,
+    "selectorTargetRva": "0xAE802",
+    "codeWindows": [
+      {"startRva": "0x55C380", "endRva": "0x55C3CD", "sha256": "E42A462C430EFB08367428420519DC339051C4B9F2A780540E3F60DF99E66895", "boundary": "singleton allocation, initialization and publication"},
+      {"startRva": "0x55C3D0", "endRva": "0x55C452", "sha256": "231383ABAE00B6A76CF10511FC5584BDE536FB2E2FBBB490B08A9769B63D0AB5", "boundary": "singleton thread function, context and entry setup"},
+      {"startRva": "0xC5C6C0", "endRva": "0xC5C7C8", "sha256": "162C1ABFF14E1A7A93BA575CEB9EC41F956A56D4F773AD9E015C460D1BEF3BD6", "boundary": "singleton pending-vector and lock initialization"},
+      {"startRva": "0xEF270", "endRva": "0xEF2C7", "sha256": "6F509848DEC244226B30DDE729DC42908FEA943443B840AD884126C71BD109F9", "boundary": "queue append copies request pointer into singleton vector"},
+      {"startRva": "0xBCA30", "endRva": "0xBCA8E", "sha256": "CE6FA1CF161633C2AFCDD15DBEC621F4CD9D9E2E6F83DE6792847996C6EFE998", "boundary": "selected request constructor calls base initialization"},
+      {"startRva": "0xBCAB0", "endRva": "0xBCB36", "sha256": "E0F1EF5C39990EFA3DB13C6CD2C83B7C13A992FC3ABEF7533C21A28FB2C528DE", "boundary": "base request type and single-read fields initialized"},
+      {"startRva": "0x371DF0", "endRva": "0x371E00", "sha256": "147DEA09A34B6F7B62123F8A72B87A52A6F6B152D77AAEA7416CD1BEA0EC3CC8", "boundary": "thread function enters singleton queue loop"},
+      {"startRva": "0x3726B0", "endRva": "0x37277B", "sha256": "7F833608086B659AB6DC5C34EA438C8BE9FD3A9AD38E7319280B39C69EAE899D", "boundary": "thread entry invokes stored function with stored singleton context"},
+      {"startRva": "0xAE4E0", "endRva": "0xAE536", "sha256": "358BA79BB8343A002622571CB9A4E83BF1BCD8A758A47025F53C5C1486FE7EAC", "boundary": "queue loop setup"},
+      {"startRva": "0xAE536", "endRva": "0xAE573", "sha256": "06C65CA1F0DD0CC64D94978476F7127C18A4BF09F4F15422A204032CA20C01F1", "boundary": "queue loop invokes drain and dispatch"},
+      {"startRva": "0xAE573", "endRva": "0xAE58D", "sha256": "4B553C81377D9EB3634F5049FEFB733839FEBE851156BD0E4384242B3E53FFE8", "boundary": "queue loop exit"},
+      {"startRva": "0xAE590", "endRva": "0xAE6DF", "sha256": "33B3681D21CECF6E62735209C19F5158D4A0B392BD8DBA5EE69BF2C9DD1EDA64", "boundary": "pending-vector drain and selected request partition"},
+      {"startRva": "0xAE720", "endRva": "0xAE78C", "sha256": "9E2960A908DE8653AD753DBB2BAD539B77B608702043E70680820DF9794B36DF", "boundary": "dispatch selects nonempty request batch"},
+      {"startRva": "0xAE78C", "endRva": "0xAE7D9", "sha256": "504D1E41C3879E92286B7C969EACB3D9744D4296CAA8FAE502E9C20A60C06771", "boundary": "dispatch retrieves queued request"},
+      {"startRva": "0xAE7D9", "endRva": "0xAE802", "sha256": "4FED29561CD81B8CC53FE850C700AA1E6F8FFF3390791CAACDD78C58E0B40103", "boundary": "request type switch"},
+      {"startRva": "0xAE802", "endRva": "0xAE9B8", "sha256": "63DADD560F5961632A9689D60949E8A59021DCE5D4CF102DE1BF1507174DC288", "boundary": "type-zero request reads buffer and classifies byte count"},
+      {"startRva": "0xAE9B8", "endRva": "0xAEA8F", "sha256": "B237C2ED4882E16514027516C3E45028EE517A62320410FF545756A0FA458FCF", "boundary": "alternate request cases and completion"},
+      {"startRva": "0xAEA8F", "endRva": "0xAEAA8", "sha256": "EA71F44A119BF70CF4854C7313006FCEFE7C1D1330AB68C92B3CF1590B05DE41", "boundary": "dispatch return"},
+      {"startRva": "0xAEAA8", "endRva": "0xAEAC4", "sha256": "2100B1F8739D27C96E2CF62BC64094E0940322321F5E2E40AE5101EE9AC059A0", "boundary": "seven request-type switch targets"}
+    ],
+    "calls": [
+      {"role": "singleton constructor", "callRva": "0x55C3B8", "targetRva": "0xC5C6C0"},
+      {"role": "selected request constructor", "callRva": "0x561E80", "targetRva": "0xBCA30"},
+      {"role": "selected base constructor", "callRva": "0xBCA39", "targetRva": "0xBCA90"},
+      {"role": "base request fields", "callRva": "0xBCA80", "targetRva": "0xBCAB0"},
+      {"role": "thread function bridge", "callRva": "0x371DF4", "targetRva": "0xAE4E0"},
+      {"role": "queue loop dispatch", "callRva": "0xAE55D", "targetRva": "0xAE720"},
+      {"role": "selected queue drain", "callRva": "0xAE73A", "targetRva": "0xAE590"},
+      {"role": "pending vector snapshot", "callRva": "0xAE633", "targetRva": "0xE97BC0"},
+      {"role": "request pointer into type batch", "callRva": "0xAE69F", "targetRva": "0xC3FC20"},
+      {"role": "type-zero optional handle test", "callRva": "0xAE827", "targetRva": "0xAE710"},
+      {"role": "type-zero resource selector", "callRva": "0xAE844", "targetRva": "0xB0AB0"},
+      {"role": "type-zero buffer read", "callRva": "0xAE912", "targetRva": "0xB02E0"},
+      {"role": "type-zero exact-count classification", "callRva": "0xAE939", "targetRva": "0xB1000"},
+      {"role": "type-zero completion", "callRva": "0xAEA77", "targetRva": "0xB1010"}
+    ],
+    "instructions": [
+      {"role": "selected request type zero", "rva": "0x561EC3", "hex": "C7402C00000000"},
+      {"role": "base queue partition zero", "rva": "0xBCACB", "hex": "897930"},
+      {"role": "base single-read descriptor null", "rva": "0xBCB13", "hex": "4889BB88000000"},
+      {"role": "base alternate resource handle null", "rva": "0xBCB1A", "hex": "4889BBB0000000"},
+      {"role": "queue append copies request pointer", "rva": "0xEF2B1", "hex": "488B06488901"},
+      {"role": "thread stores singleton context", "rva": "0x55C415", "hex": "48897F58"},
+      {"role": "thread entry calls stored function with context", "rva": "0x37274B", "hex": "488B4718488B4F10FFD0"},
+      {"role": "queue drain locks singleton pending vector", "rva": "0xAE5DE", "hex": "488D4E20"},
+      {"role": "queue drain reads source vector and count", "rva": "0xAE5F2", "hex": "488B7E10488B4424384C8B36"},
+      {"role": "queue drain partitions type zero", "rva": "0xAE660", "hex": "498B06498BDC4D8D24CF83783000490F45DD"},
+      {"role": "queue drain clears pending count", "rva": "0xAE644", "hex": "488D4E2048896E10"},
+      {"role": "dispatch falls back to type-zero batch", "rva": "0xAE766", "hex": "49837F10004C0F44FB"},
+      {"role": "dispatch dereferences queued request", "rva": "0xAE76F", "hex": "498B1F488B1B"},
+      {"role": "dispatch switches on request type", "rva": "0xAE7D5", "hex": "4863432C"},
+      {"role": "null optional handle returns false", "rva": "0xAE710", "hex": "4885D2750332C0C3B001C3"},
+      {"role": "type-zero single descriptor from request fields", "rva": "0xAE849", "hex": "4883BB8800000000488BE8488B43684889442450488B43784889442458488B43704889442460"},
+      {"role": "type-zero single-descriptor choice", "rva": "0xAE88D", "hex": "488D44245041BE010000004889442438"},
+      {"role": "type-zero records byte count", "rva": "0xAE917", "hex": "48018380000000"},
+      {"role": "type-zero zero-status aggregation", "rva": "0xAE985", "hex": "4584C0750B"},
+      {"role": "type-zero final status dispatch", "rva": "0xAEA71", "hex": "448BC7488BD3"},
+      {"role": "exact-count success", "rva": "0xB1000", "hex": "493BD00F855F65E00033C0C3"},
+      {"role": "short/over-read failure", "rva": "0xEB7568", "hex": "B8020000004885D20F84959A1FFF493BD0B9040000000F46C1C3"}
+    ]
+  },
+  "nativeBackendBoundary": {
+    "codeWindows": [
+      {"startRva": "0xB0AB0", "endRva": "0xB0B48", "sha256": "CFADB8DD0B7B428A88114F5E1C95CE4749EE119D502B184882A5EE9237EAF1A0", "boundary": "selected handle selector receives request name and looks in resource cache"},
+      {"startRva": "0xB0B48", "endRva": "0xB0D06", "sha256": "32DE863FC619A89DD4FE32C2DA77605BBCECDF581CDA58A4B5878F70F13D918F", "boundary": "handle selector chooses cached slot or populates a miss"},
+      {"startRva": "0xB0EF0", "endRva": "0xB0FCD", "sha256": "FCA09F620F19CEA2C67D3D6735464FC47DB5C2C5065C4E5EE9A52BBFFD2831AD", "boundary": "resource cache compares stored and requested string bytes"},
+      {"startRva": "0xB0FD0", "endRva": "0xB0FF8", "sha256": "181D4E3D9D629F3F6FA18D9903490DEBB56E9884ECD58C42CD8B02F86C27C48D", "boundary": "selected cache lookup compares the request key with a stored name"},
+      {"startRva": "0xAEAD0", "endRva": "0xAEB67", "sha256": "BE56C19C937E4D40988AC301C4FC08AF8F0A9D4B7526166CCD8D5111A957F4E9", "boundary": "resource miss passes the request name to handle creation"},
+      {"startRva": "0xB3580", "endRva": "0xB3675", "sha256": "736F6B120B690F9127E42C8FDB4D8448A3F576B0179737AE3778EECEABE9A424", "boundary": "handle creation calls provider open"},
+      {"startRva": "0xB40E0", "endRva": "0xB4142", "sha256": "C5F7E3DAB88057534B1D20A2A5C521A0C44BA9790F485D72205D0B4329DEB034", "boundary": "provider open dispatches through a loaded virtual method"}
+    ],
+    "calls": [
+      {"role": "request-name length", "callRva": "0xB0AC3", "targetRva": "0x74BF0"},
+      {"role": "cache name compare", "callRva": "0xB0AF2", "targetRva": "0xB0FD0"},
+      {"role": "stored-name byte compare", "callRva": "0xB0FE1", "targetRva": "0x1E08C0"},
+      {"role": "resource cache lookup", "callRva": "0xB0CD8", "targetRva": "0xAFED0"},
+      {"role": "cache miss creates handle", "callRva": "0xB0C83", "targetRva": "0xAEAD0"},
+      {"role": "miss creates resource", "callRva": "0xAEB3D", "targetRva": "0xB3580"},
+      {"role": "resource provider open", "callRva": "0xB3641", "targetRva": "0xB40E0"}
+    ],
+    "instructions": [
+      {"role": "selector receives request as name key", "rva": "0xB0ABA", "hex": "488BD9488BFA488BCA"},
+      {"role": "selected key compares stored bytes", "rva": "0x1E08F0", "hex": "0FB6023801751148FFC148FFC24983E80175ED"},
+      {"role": "cached slot address", "rva": "0xB0B15", "hex": "488BC248C1E0064883C0084803C3"},
+      {"role": "miss passes zero flags to handle creation", "rva": "0xB0C6C", "hex": "4863CE488BD048C1E1064533C94883C1084533C04803CB"},
+      {"role": "miss forwards zero flags to resource creation", "rva": "0xAEB2F", "hex": "448BCB488D542440448BC7488BCE"},
+      {"role": "open loads provider and vtable method", "rva": "0xB4101", "hex": "488B4610448BCB488B4E10448BC748C7462000000000C6464001488B10488B4208488D5608FFD0"},
+      {"role": "read loads provider and calls virtual method", "rva": "0xB038B", "hex": "488B41104C8B10"},
+      {"role": "read virtual slot", "rva": "0xB03C1", "hex": "41FF5218"}
+    ]
+  },
+  "nativeFallbackProvider": {
+    "managerGlobalRva": "0x1CF4A50",
+    "defaultVtableRva": "0x1868F18",
+    "fallbackMethodRva": "0x584310",
+    "methodSlots": [
+      {"role": "open", "offset": "0x8", "targetRva": "0xB4D10"},
+      {"role": "read", "offset": "0x18", "targetRva": "0x134610"},
+      {"role": "provide fallback", "offset": "0x70", "targetRva": "0x584310"}
+    ],
+    "codeWindows": [
+      {"startRva": "0x42DAD0", "endRva": "0x42DB19", "sha256": "F355A4DCA0EB31F8251D483F501C48797EAB7F317B5EDA912DDE33F91BEB9B75", "boundary": "construct global provider registry"},
+      {"startRva": "0xC99530", "endRva": "0xC996E5", "sha256": "E65E9290569F08F402796A3E70C89564F18F10DF8896FCF8B4DBD61B8BF37B15", "boundary": "initialize registry fallback and empty override vector"},
+      {"startRva": "0x1F8E00", "endRva": "0x1F8EB0", "sha256": "40EA7A5E96C5D4E91163A24E39B326D974BAF438D6DF4BC87900159DFFD70C4B", "boundary": "default provider constructor installs final vtable"},
+      {"startRva": "0xB3ED0", "endRva": "0xB3F91", "sha256": "4092024C01CB6F5AC66C28ED42BD5FCDA7D323FD5022138111981D3E41F3D644", "boundary": "resource name lookup and provider output"},
+      {"startRva": "0xB4A00", "endRva": "0xB4AD5", "sha256": "0F43760DACDC061F9EC1131573323CE6B4C6A43831A420D005A685DF0442E7E6", "boundary": "registered-provider search and fallback return"},
+      {"startRva": "0xB45F0", "endRva": "0xB460B", "sha256": "56011EF4A10F1478E6FA08B33B503BF0CAEAD5E54EBCA8E4C986277ACE9B64AF", "boundary": "provider copy entry"},
+      {"startRva": "0xB460B", "endRva": "0xB4713", "sha256": "4CC19440A2C74F6A95B692EDE71010FF83668ED8AEF49998DD128951228E814B", "boundary": "provider pointer copied into resource handle"},
+      {"startRva": "0xB4D10", "endRva": "0xB50E0", "sha256": "E25EC747A5F4A474DDAECBBA382D6AC93CA5D84333E4721666E82F3F48896E86", "boundary": "fallback open including selected CreateFileW import"},
+      {"startRva": "0x134610", "endRva": "0x134649", "sha256": "768C015BE4AFFE7E3FB977B03BA083C8FC295A7DC3E83AAF8215C724A6DA4218", "boundary": "fallback read entry"},
+      {"startRva": "0x134649", "endRva": "0x1346CA", "sha256": "AEB321858D3DF679B3DB28DA750345DE973A833943694856D1EBDDD04BE4585E", "boundary": "fallback read file-position gate"},
+      {"startRva": "0x1346CA", "endRva": "0x1346F2", "sha256": "DCDA67E13F4601F0A88D58E6EB4621A631252FD7E9DAEE0D975B096AF1A043D0", "boundary": "fallback read count initialization"},
+      {"startRva": "0x1346F2", "endRva": "0x1347EB", "sha256": "093D2D054B6A699F875EDE12848DCB74B0DA8E928B6984566BA89B9EF4DA24F0", "boundary": "fallback ReadFile loop"},
+      {"startRva": "0x1347EB", "endRva": "0x13480F", "sha256": "0ABA36FF5E3F77B254D43E486FA40B5270C3A496DCEF9926802850A389DE2021", "boundary": "fallback read success return"},
+      {"startRva": "0x13480F", "endRva": "0x13482C", "sha256": "3D233DD701B1A31E87BE6CCD6B327A870332A77EA4E64617C380340FC63A27A4", "boundary": "fallback read failure return"},
+      {"startRva": "0x13482C", "endRva": "0x1349E0", "sha256": "BDF81A236C7B3A0ED292570E033590B9BF304F756C8A35936A1805D5E6C64167", "boundary": "fallback read cold path and tables"}
+    ],
+    "calls": [
+      {"role": "global registry constructor", "callRva": "0x42DB08", "targetRva": "0xC99530"},
+      {"role": "default provider constructor", "callRva": "0xC9965F", "targetRva": "0x1F8E00"},
+      {"role": "resource lookup consults registry", "callRva": "0xB3F55", "targetRva": "0xB4A00"}
+    ],
+    "instructions": [
+      {"role": "manager receives new registry", "rva": "0x42DB0D", "hex": "4889053C6F8C01"},
+      {"role": "registry starts with no overrides", "rva": "0xC9954F", "hex": "48896920"},
+      {"role": "registry default pointer", "rva": "0xC99670", "hex": "48894708488907"},
+      {"role": "default provider final vtable load", "rva": "0x1F8E7D", "hex": "488D0594006701"},
+      {"role": "resource lookup loads registry", "rva": "0xB3F40", "hex": "488B0D090BC401"},
+      {"role": "registry dispatch reads provider method", "rva": "0xB3F5D", "hex": "488B084C8B4170"},
+      {"role": "registry returns fallback when search misses", "rva": "0xB4ACB", "hex": "488B07"},
+      {"role": "fallback method returns provider object", "rva": "0x584310", "hex": "48890A48894A08C3"},
+      {"role": "provider copied into resource handle", "rva": "0xB46B5", "hex": "488B33488937488B43084889470848896F1048896F18896F20"}
+    ],
+    "importDirectory": {"descriptorRva": "0x1C3624C", "descriptorHex": "4866C30100000000000000008880C30158B28501", "dllNameRva": "0x1C38088", "dll": "KERNEL32.dll", "firstLookupRva": "0x1C36648", "firstThunkRva": "0x185B258"},
+    "imports": [
+      {"role": "open", "callRva": "0xB4DF6", "iatIndex": 15, "nameRva": "0x1C37B96", "hint": 230, "name": "CreateFileW"},
+      {"role": "seek", "callRva": "0x13464E", "iatIndex": 25, "nameRva": "0x1C37C3E", "hint": 1385, "name": "SetFilePointerEx"},
+      {"role": "read", "callRva": "0x134741", "iatIndex": 26, "nameRva": "0x1C37C52", "hint": 1193, "name": "ReadFile"}
+    ]
+  },
+  "nativeRegionRoomPath": {
+    "literalRva": "0x1B03AB8",
+    "literalAscii": "regionIv_%s_%u.bytes",
+    "codeWindow": {"startRva": "0x42C300", "endRva": "0x42CB7E", "sha256": "6B1ED3F08C0125237A10FEDF1F50A7A9C5E820285A60972485844691DC550CCC"},
+    "literalLoadRva": "0x42C8E6",
+    "literalLoadHex": "488D15CB716D01",
+    "formatCallRva": "0x42C8F1",
+    "formatTargetRva": "0x77D40",
+    "lookupCallRva": "0x42C972",
+    "lookupTargetRva": "0x1E0460",
+    "lookupSuccessGateRva": "0x42C977",
+    "lookupSuccessGateHex": "84C0741C",
+    "streamConstructionCallRva": "0x42C990",
+    "streamConstructionTargetRva": "0x561E30",
+    "boundary": "Selected native function contains a direct room filename-format literal load followed by a formatting call, then a later call to the already checked path-keyed lookup and conditional stream construction. The separate room-assembly block authenticates intermediate path construction; runtime file selection remains open."
+  },
+  "nativeRegionRoomParse": {
+    "roomFunctionStartRva": "0x42C300",
+    "codeWindows": [
+      {"role": "twelve-byte triple cursor leaf", "startRva": "0xE59EE0", "endRva": "0xE59F02", "sha256": "6853CAB4A45CDDF03E6626F71F16BFE0263E97FB87FC93F0D2D0161D4C119C76"},
+      {"role": "record byte-copy helper", "startRva": "0xE97BC0", "endRva": "0xE9822D", "sha256": "7F9A835A6EAF2EF3177F94F85B47B1B707EFCDBCAA982093D86CD068E2082FC4"}
+    ],
+    "instructions": [
+      {"role": "cursor starts at byte four after magic", "rva": "0x42C3EE", "hex": "BF04000000"},
+      {"role": "ready buffer and magic 0x1000 gate", "rva": "0x42C47A", "hex": "498D4F58E86D13DDFF4889458848C74590FFFFFFFF48897D98448B004181F8001000007460"},
+      {"role": "header size then two twelve-byte triples", "rva": "0x42C4FF", "hex": "488D4D88E8C8D9A200488D5520448BC8488D4D88E8C8D9A200488D5530488D4D88E8BBD9A200"},
+      {"role": "three dimensions and header-sized record start", "rva": "0x42C560", "hex": "E86BD9A200488D4D88894424448BF8E85CD9A200488D4D888985F0000000448BC0E84AD9A2004C034D888BD041837F2C028985000100004C894C2448"},
+      {"role": "selected eight-or-sixteen bytes per grid cell", "rva": "0x42C5FE", "hex": "B9040000008BC2410FAFC00FAFC741399C24B400000089442440B8020000000F46C1498BCD0FAFC2488D542460410FAFC041B8300000000FAFF848C1E702E88F30D8FF448BC7488D5540498BCDE8D0E8F6FF488B5424484C8BC7488B4D50"},
+      {"role": "record source, byte count, destination and copy call", "rva": "0x42C650", "hex": "488B5424484C8BC7488B4D50E85FB5A600"}
+    ],
+    "calls": [
+      {"role": "ready status", "callRva": "0x42C448", "targetRva": "0x1FD4A0"},
+      {"role": "ready buffer pointer", "callRva": "0x42C47E", "targetRva": "0x1FD7F0"},
+      {"role": "header size", "callRva": "0x42C503", "targetRva": "0xE59ED0"},
+      {"role": "first triple", "callRva": "0x42C513", "targetRva": "0xE59EE0"},
+      {"role": "second triple", "callRva": "0x42C520", "targetRva": "0xE59EE0"},
+      {"role": "first grid dimension", "callRva": "0x42C560", "targetRva": "0xE59ED0"},
+      {"role": "second grid dimension", "callRva": "0x42C56F", "targetRva": "0xE59ED0"},
+      {"role": "third grid dimension", "callRva": "0x42C581", "targetRva": "0xE59ED0"},
+      {"role": "record byte copy", "callRva": "0x42C65C", "targetRva": "0xE97BC0"}
+    ],
+    "boundary": "After a selected ready stream-buffer status, the native room handler checks magic 0x1000; starts its cursor at byte 4; reads a header-size word, two 12-byte triples, and three dimension words; points at buffer plus header size; and copies grid-cell count times 8 or 16 bytes under a selected configuration branch. The current seven offline room files use the 16-byte variant. Runtime file choice, triple axes, record fields, and renderer upload remain unresolved."
+  },
+  "nativeRegionRoomAssembly": {
+    "codeWindows": [
+      {"role": "caller passes supplied root and room handler", "startRva": "0x91BF2", "endRva": "0x91C4E", "sha256": "00CC6C7C9A30A4050CD6C5C4651B592322B8455F9D2CF9E0F4F62F6D63EA4996"},
+      {"role": "conditional room root copy", "startRva": "0x8FFE0", "endRva": "0x90020", "sha256": "3357A6EA82EDDA9B8666DE611C857B3BCC19C792D781F116F5F751BC7E083DA9"},
+      {"role": "stored path equality check", "startRva": "0xAEEF0", "endRva": "0xAEF9F", "sha256": "CAA028CAE15D0AF6458764D24DB8FAE6CC1C058954DFA72D7A3AC2A6A69F2F0C"},
+      {"role": "stored path assignment", "startRva": "0x74190", "endRva": "0x74240", "sha256": "17D53C0E103DBDC7BD04EB5C417414B6C04C3040206FAA547B41F28ABF628892"},
+      {"role": "last slash wrapper", "startRva": "0x4A31B0", "endRva": "0x4A31E2", "sha256": "48233317282CACF4215265E3CE9BE494100B89749333C2AF4CFFF749E16784B3"},
+      {"role": "last slash search leaf", "startRva": "0x4A31F0", "endRva": "0x4A324A", "sha256": "989D0D48DAF79BABD57BB7089455BDCF6ED28760BF55BA2089DD26B8994ED988"},
+      {"role": "root prefix substring", "startRva": "0x231DC0", "endRva": "0x231DFA", "sha256": "76FDC9EE2C89E212B58483DC8DE0EAFF36C39AC206C4707F26FC58B5AFA969D2"},
+      {"role": "root prefix copy", "startRva": "0xC44D30", "endRva": "0xC44D5D", "sha256": "B6A28DE72E1BE5692EE5B0507C5BC97EE84C102E14882C6DD4698DFEA5EC2B8D"},
+      {"role": "append formatted basename", "startRva": "0x32D5F0", "endRva": "0x32D663", "sha256": "884DC7F565EFA0505956A738FC1C8E4E300A1E6BEFB644F8A69DB3276EFD04C4"},
+      {"role": "room path construction", "startRva": "0x42C8C8", "endRva": "0x42C955", "sha256": "6026F699DCAC25004C01B5D94024120CF7B0E2EE53346343BA4DA80E02D2F81F"},
+      {"role": "assembled path to lookup", "startRva": "0x42C955", "endRva": "0x42C995", "sha256": "E96BE9EB4E7BD442A7E4B21CAB7BE3A87DF4E4FB7D56D498D7A3930F4485799B"}
+    ],
+    "slashLiteralRva": "0x18650D0",
+    "slashLiteralHex": "2F00",
+    "slashLiteralLoadRva": "0x4A31C2",
+    "slashLiteralLoadHex": "4C8D0D071F3C01",
+    "instructions": [
+      {"role": "caller root and handler object", "rva": "0x91BF2", "hex": "498BB42410020000498D942460010000"},
+      {"role": "caller reloads handler object", "rva": "0x91C24", "hex": "498B8C2410020000"},
+      {"role": "conditional copy to handler plus eight", "rva": "0x9000F", "hex": "488D4F08488BD3E87541FEFF"},
+      {"role": "handler root plus eight to slash helper", "rva": "0x42C8C8", "hex": "498D4C2408E8DE680700"},
+      {"role": "root substring through slash plus one", "rva": "0x42C905", "hex": "498D4C24084533C04C8D4F01488D9598000000E8A354E0FF"},
+      {"role": "copy prefix then append formatted name", "rva": "0x42C91D", "hex": "41B84D000000488D4D40488BD0E801848100488BD04C8D8588000000488D4C2460E8AD0CF0FF"},
+      {"role": "assembled local passed to keyed lookup", "rva": "0x42C95B", "hex": "488D55A0488D4C24608945D4885DB0C645C818C645D001E8E93ADBFF"}
+    ],
+    "calls": [
+      {"role": "caller root copy", "callRva": "0x91C14", "targetRva": "0x8FFE0"},
+      {"role": "caller room handler", "callRva": "0x91C49", "targetRva": "0x42C300"},
+      {"role": "stored path equality", "callRva": "0x8FFF4", "targetRva": "0xAEEF0"},
+      {"role": "stored path changed assignment", "callRva": "0x90016", "targetRva": "0x74190"},
+      {"role": "stored path byte copy", "callRva": "0x74235", "targetRva": "0xE97BC0"},
+      {"role": "last slash search", "callRva": "0x4A31D8", "targetRva": "0x4A31F0"},
+      {"role": "handler last slash", "callRva": "0x42C8CD", "targetRva": "0x4A31B0"},
+      {"role": "formatted basename", "callRva": "0x42C8F1", "targetRva": "0x77D40"},
+      {"role": "formatted basename view", "callRva": "0x42C900", "targetRva": "0xAF980"},
+      {"role": "root prefix substring", "callRva": "0x42C918", "targetRva": "0x231DC0"},
+      {"role": "root prefix copy", "callRva": "0x42C92A", "targetRva": "0xC44D30"},
+      {"role": "append formatted basename", "callRva": "0x42C93E", "targetRva": "0x32D5F0"},
+      {"role": "append helper copies directory prefix", "callRva": "0x32D63C", "targetRva": "0x74190"},
+      {"role": "append helper adds basename", "callRva": "0x32D64B", "targetRva": "0x77190"},
+      {"role": "assembled path lookup", "callRva": "0x42C972", "targetRva": "0x1E0460"}
+    ],
+    "boundary": "A selected caller offers its +0x160 string to a room-handler object's +8 path. The helper checks equality and copies on change. The handler takes the prefix through the last forward slash of that stored path, appends its formatted regionIv_%s_%u.bytes basename, and passes the assembled local to the checked path-keyed lookup. No live root value or unique installed VFS room file is authenticated."
+  },
+  "nativeRegionRoomConsumer": {
+    "codeWindows": [
+      {"role": "record allocation descriptor", "startRva": "0x39AF20", "endRva": "0x39AF69", "sha256": "600CDE58B75EF0AADCE9438F1F67FDEB41236EE235727706B9959F7A01702F18"},
+      {"role": "callback entry", "startRva": "0x16ACD44", "endRva": "0x16ACDAE", "sha256": "B8ACAE7C18A4C7161C580DC3D721A9B0574AA1FF2331C5DCD107F9C21E520E45"},
+      {"role": "callback payload clone", "startRva": "0x16ACDB0", "endRva": "0x16ACDF9", "sha256": "733CB748DE6D37473227BB879CC7A5E16080CEB1C97737B301C294D2180C63CA"},
+      {"role": "callback thunk", "startRva": "0x16ACD3C", "endRva": "0x16ACD41", "sha256": "750F927105B832B268BF7FAF83F5CA6B098D26AC374F42193628741D1A4B7AE6"},
+      {"role": "callback body", "startRva": "0x16AD9CC", "endRva": "0x16ADAD7", "sha256": "4B88A06FEA968AF808D665ABFE42D2640C306D7A3A51CF5E4F68F9046CD2804B"},
+      {"role": "record binding", "startRva": "0x324FC0", "endRva": "0x32508A", "sha256": "354545B04EE9403279A75F185AA8706440DE4A72B8F4F985A7ADC8DB7F25B8F1"},
+      {"role": "binding slot setter", "startRva": "0x325090", "endRva": "0x325118", "sha256": "4460DD5AE67E65D65F123FC0B48B075C9D8EFC0B091A3521C4C406BCE022FB9D"},
+      {"role": "dispatch wrapper", "startRva": "0x1302F0", "endRva": "0x13039B", "sha256": "E420AA47AEDC9055CA1AC522469A71A7BA00233F46C59CAF3B3A70F83E4A38E3"}
+    ],
+    "instructions": [
+      {"role": "allocate and copy record bytes", "rva": "0x42C641", "hex": "448BC7488D5540498BCDE8D0E8F6FF488B5424484C8BC7488B4D50E85FB5A600"},
+      {"role": "write grid and configuration descriptor", "rva": "0x42C661", "hex": "488B4C24708B44244489018B85F00000008941048B85000100008941088B454489410C418B4730894110418B4734894114418B47388941188BC341399C24B40000000F94C089411C418B842498000000894120418B84249C000000894124418B8424A00000008941288B44244089412C"},
+      {"role": "pack callback payload", "rva": "0x42C73D", "hex": "0F10442460488B8D10010000458BC6F20F104C24704889442448488945E88B44244048894DA0418B8C24DC0000000F1145A88945F0488D45A00F104540894DC0498BCDF20F114DB8F20F104D500F1145C848897DE0F20F114DD84889442420E8A3052801"},
+      {"role": "callback entry and payload clone", "rva": "0x16ACD6C", "hex": "488D0DC9FFFFFF488B4708488B5424604C6BC33849894C0010488B4F48E822000000488B4F08486BD338488B5C24404889440A18"},
+      {"role": "bind record descriptor first word", "rva": "0x16AD9ED", "hex": "448B4610488D1550186600448B4E0C8BF8488B0E4489442420448B4608E881E4B3FF448B4E284C8D0532186600488B0E8BD7834C2428FF8364242000E89275C7FE"},
+      {"role": "dispatch groups from cell count", "rva": "0x16ADAA6", "hex": "448B465041B901000000488B0E4183C03F41C1E8068BD744894C2420E82928A8FE"},
+      {"role": "positive-count virtual dispatch", "rva": "0x130320", "hex": "85ED7E3085F67E2C8B7C247085FF7E24E8CB8CF4FF498B5608448BCE448BC5897C2420488BC84C8B1041FF92D00A0000"}
+    ],
+    "callbackPointerLoadRva": "0x16ACD6C",
+    "callbackPointerLoadHex": "488D0DC9FFFFFF",
+    "calls": [
+      {"role": "record allocation", "callRva": "0x42C64B", "targetRva": "0x39AF20"},
+      {"role": "record byte copy", "callRva": "0x42C65C", "targetRva": "0xE97BC0"},
+      {"role": "register callback", "callRva": "0x42C79C", "targetRva": "0x16ACD44"},
+      {"role": "clone callback payload", "callRva": "0x16ACD89", "targetRva": "0x16ACDB0"},
+      {"role": "bind record descriptor", "callRva": "0x16ADA29", "targetRva": "0x324FC0"},
+      {"role": "binding slot setter", "callRva": "0x32507B", "targetRva": "0x325090"},
+      {"role": "dispatch wrapper", "callRva": "0x16ADAC2", "targetRva": "0x1302F0"}
+    ],
+    "boundary": "The selected room handler copies the calculated record byte count into a context-owned allocation and packs its allocation descriptor into a 0x58-byte callback payload. The selected callback path clones that payload, reads the record allocation descriptor's first word at +0x28, binds it through a native command slot, and requests a positive-count virtual dispatch with ceil(grid-cell count / 64), one, one as its group dimensions. This is a structural consumer of the copied room records. It does not decode an individual 8- or 16-byte record, prove successful GPU execution, or establish a texture format."
+  },
+  "evidenceBoundary": {
+    "direct": "The managed ReloadIndexFileV3 path at +0x20 reaches native volume +0x220 and a parser-retained +0xB0 key. The selected parser calls a native lookup with that key; on lookup success it constructs a stream object from the result pair. The stream allocates result word1 plus 0xC8 bytes, stores result word1 as its requested buffer size, and later returns its stored data-buffer pointer to the V3 cursor. Its constructor sets request type and queue partition to zero, leaves the multi-read descriptor null, and queues the object on a native singleton. That singleton's thread drains the pending vector, retrieves the type-zero request and invokes its read branch. The branch passes request +0x78 as backend offset, +0x68 as data buffer, and +0x70 as requested size to an accumulating read helper. It sends success status zero to the completion dispatcher only after the returned byte count equals the requested size. The installed completion callback writes status and releases a reference. A sibling worker on the same singleton has a similar exact-count gate, but is not needed to establish this selected route. The selected parser obtains a buffer pointer only after status zero. The parser checks V3 magics 0x03000002/03 and handles scene records in 36-byte units and Gacha records in 32-byte units. Its complete selected body has no final cursor-offset-versus-stream-size or EOF equality comparison; both u8 and u32 cursor leaf readers load pointer-plus-offset and advance without a local bound comparison. Both the scene StreamingInNewMap and Gacha CreateGachaIV paths append the selected managed literal /v3/index.bytes through System.String.Concat before their stored paths can reach SetMapV3. UpdateGachaIV compares and replaces its Gacha path using the same suffix. In the selected HGIrradianceVolumeProxyEntityConvertFunc.ConvertFrom branch, a static PROP_ID_IV_INDEX_PATH is passed to ConvertStringFrom_Injected and its returned string is concatenated with that suffix before staging manager +0x28.",
+    "conditional": "The suffix join applies when the respective scene, Gacha, or proxy path branch is selected. A separate selected caller supplies its +0x160 string to a room handler that derives its directory through the last forward slash, appends a formatted regionIv_%s_%u.bytes basename, and passes that assembled local to the checked path-keyed lookup and stream constructor. A ready-buffer branch in that handler checks room magic 0x1000, reads the header-size word, two twelve-byte triples, and three grid dimensions, then copies grid-cell count times eight or sixteen bytes from buffer plus header size under a configuration branch. It hands the copy's allocation descriptor through a cloned callback payload to a native command binding and requests a virtual dispatch sized as ceil(grid-cell count / 64) by one by one. The current seven room files fit the sixteen-byte variant. The live supplied-root value and selected room file remain open. If the resource registry has no matching registered provider, its default provider is returned. That default provider's open/read virtual slots lead to the selected KERNEL32 CreateFileW, SetFilePointerEx, and ReadFile imports. This static fallback does not establish that an IV request selected the default provider at runtime.",
+    "unresolved": "The supplied scene/Gacha root strings, the serialized proxy property value, and native lookup normalization are not joined to a unique authenticated VFS index.bytes entry. The provider selected for the IV request, payload record meaning, actual GPU execution, and texture format are not identified."
+  },
+  "managedIndexPath": {
+    "literal": "/v3/index.bytes",
+    "literalIndex": 2065,
+    "usageCellRva": "0xD0B7808",
+    "literalLoads": [
+      {
+        "role": "scene StreamingInNewMap",
+        "rva": "0x3D3A034",
+        "hex": "488B15CDD73709"
+      },
+      {
+        "role": "selected proxy ConvertFrom",
+        "rva": "0x3D39E32",
+        "hex": "488B15CFD93709"
+      },
+      {
+        "role": "Gacha CreateGachaIV",
+        "rva": "0x2E7D933",
+        "hex": "488B15CE9E230A"
+      },
+      {
+        "role": "Gacha UpdateGachaIV compare",
+        "rva": "0x8FC29C7",
+        "hex": "488B153A4E0F04"
+      },
+      {
+        "role": "Gacha UpdateGachaIV replace",
+        "rva": "0x8FC29F3",
+        "hex": "488B150E4E0F04"
+      }
+    ],
+    "concatCalls": [
+      {
+        "role": "scene staged path",
+        "rva": "0x3D3A041"
+      },
+      {
+        "role": "selected proxy staged path",
+        "rva": "0x3D39E3C"
+      },
+      {
+        "role": "Gacha initial path",
+        "rva": "0x2E7D93A"
+      },
+      {
+        "role": "Gacha compared path",
+        "rva": "0x8FC29D4"
+      },
+      {
+        "role": "Gacha replacement path",
+        "rva": "0x8FC29FD"
+      }
+    ],
+    "codeWindows": [
+      {
+        "role": "scene path construction",
+        "startRva": "0x3D3A034",
+        "endRva": "0x3D3A04E",
+        "sha256": "79831136F31EB6EFB7E0FFE9C1B445C8A2188318FAE7E2AA3468A9307147BA9E",
+        "boundary": "scene path construction"
+      },
+      {
+        "role": "scene staged path promoted to current path",
+        "startRva": "0x2E7C1EB",
+        "endRva": "0x2E7C1FF",
+        "sha256": "8C0B1EBC070F86A0B1CC158E6A1301330B41E2B42947E1EFA141C4290131E99D",
+        "boundary": "scene staged path promoted to current path"
+      },
+      {
+        "role": "Gacha path construction",
+        "startRva": "0x2E7D929",
+        "endRva": "0x2E7D947",
+        "sha256": "D2318F05212594F0D4A4B4DF3FE49214233E1FEB8995675FDC4A5A91EE7EFEDD",
+        "boundary": "Gacha path construction"
+      },
+      {
+        "role": "Gacha branch passes stored path to SetMapV3",
+        "startRva": "0x2E7C2FD",
+        "endRva": "0x2E7C317",
+        "sha256": "367EA1FFB9F6306C3B82B94358B66BDCBB820D5D773EB24A389DF62757736B39",
+        "boundary": "Gacha branch passes stored path to SetMapV3"
+      },
+      {
+        "role": "Gacha path update keeps literal suffix",
+        "startRva": "0x8FC29C0",
+        "endRva": "0x8FC2A0F",
+        "sha256": "D324A2665B374BEFF07F591C9E87D2FC5DB44C5BDC1265E96D817354334FAFC4",
+        "boundary": "Gacha path update keeps literal suffix"
+      }
+    ]
+  },
+  "managedProxyRoot": {
+    "ownerTypeIndex": 165,
+    "ownerType": "UnityEngine.HyperGryph.Streaming.HGIrradianceVolumeProxyEntityConvertFunc",
+    "propertyField": {
+      "name": "PROP_ID_IV_INDEX_PATH",
+      "staticOffset": "0x0"
+    },
+    "classLoadRva": "0x3D39D91",
+    "classLoadHex": "488B05D00A3909",
+    "classUsageCellRva": "0xD0CA868",
+    "registeredTypeIndex": 122683,
+    "convertFromRva": "0x3D39CE0",
+    "converterNameLoadRva": "0x3D39DD4",
+    "converterNameLoadHex": "488D0D256AB206",
+    "converterFullName": "UnityEngine.HyperGryph.Streaming.FlatBufferConvertContextV2::ConvertStringFrom_Injected(UnityEngine.HyperGryph.Streaming.FlatBufferConvertContextV2&,UnityEngine.HyperGryph.Streaming.PropertySerializeId&)",
+    "initializerRva": "0x418913A",
+    "propertyIdInitializerBytes": "FF0000000000000000000000",
+    "codeWindows": [
+      {
+        "role": "property ID copied to converter and result concatenated with V3 suffix",
+        "startRva": "0x3D39D91",
+        "endRva": "0x3D39E45",
+        "sha256": "2B6220C2B9DE855CBF78507DD7BCC49CF2CE838B06478725F06DC27578164497"
+      },
+      {
+        "role": "property ID initializer writes twelve bytes",
+        "startRva": "0x418913A",
+        "endRva": "0x4189162",
+        "sha256": "CAA1758407A46FB69C87AC738873F6AB04D3B5A5ADE5DAFC4E34F71918197560"
+      }
+    ],
+    "unityConverter": {
+      "slot": 602,
+      "name": "UnityEngine.HyperGryph.Streaming.FlatBufferConvertContextV2::ConvertStringFrom_Injected",
+      "functionRva": "0x4F4CA0",
+      "codeWindow": {
+        "startRva": "0x4F4CA0",
+        "endRva": "0x4F4CE5",
+        "sha256": "C0F33EBA56A0481CE4FC1E4FD2462EB23540CCD5CABA6EE0A6EB7E15655697D7"
+      }
+    }
+  }
+}

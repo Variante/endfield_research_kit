@@ -1,0 +1,42 @@
+{
+  "schema": "endfield.leveldata-bezier-knot-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "formatterMethod": [
+    5258,
+    "Beyond.Gameplay.LevelSplineData+BezierKnotFormatter",
+    "Deserialize",
+    63291056
+  ],
+  "fastPathWindow": {
+    "startRva": 63291128,
+    "endRva": 63291202,
+    "sha256": "7243BEC832CFA98D4FF6633B06B2DBB5C087D6FBC0BFDD090B89DC4FBE6E464B",
+    "wireStride": 56,
+    "boundary": "Reader checks 0x38 available bytes, copies 16+16+16+8 bytes from its current byte pointer to the output struct, then advances pointer and two consumed counters by 0x38. Cold/refill paths are not described by this window."
+  },
+  "structType": "UnityEngine.Splines.BezierKnot",
+  "boxedFields": {
+    "Position": 16,
+    "TangentIn": 28,
+    "TangentOut": 40,
+    "Rotation": 52,
+    "Width": 68
+  },
+  "wireStride": 56,
+  "wireFields": [
+    ["Position", 0, 12],
+    ["TangentIn", 12, 12],
+    ["TangentOut", 24, 12],
+    ["Rotation", 36, 16],
+    ["Width", 52, 4]
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected formatter fast path reads one raw 56-byte BezierKnot value; selected native struct offsets map those bytes to three float3 vectors, one quaternion and one float. Current LevelData spline list framing uses that same stride.",
+    "unresolved": "The window does not prove a live caller, cold/refill implementation, spline semantics or a changed future build. The LevelData corpus gate separately checks selected exported payloads through EOF."
+  }
+}

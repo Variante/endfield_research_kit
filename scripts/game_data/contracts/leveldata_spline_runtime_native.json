@@ -1,0 +1,48 @@
+{
+  "schema": "endfield.leveldata-spline-runtime-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "methods": {
+    "splineTable": [5018, "Beyond.Gameplay.LevelData", "get_splineTable", 65537488],
+    "onEnter": [80704, "Beyond.Gameplay.Core.MovePipelineSpline", "OnEnter", 104033596],
+    "processVelocity": [80710, "Beyond.Gameplay.Core.MovePipelineSpline", "ProcessVelocity", 104035880],
+    "setTrs": [358660, "UnityEngine.Matrix4x4", "SetTRS", 55322192],
+    "splineConstructor": [446992, "UnityEngine.Splines.Spline", ".ctor", 65543808],
+    "matrixInverse": [358663, "UnityEngine.Matrix4x4", "get_inverse", 48122592],
+    "logicPosition": [79625, "Beyond.Gameplay.Core.MovementComponent", "get_logicPos", 51600672],
+    "multiplyPoint": [358688, "UnityEngine.Matrix4x4", "MultiplyPoint", 47549280]
+  },
+  "genericMethod": [447087, "UnityEngine.Splines.SplineUtility", "Evaluate"],
+  "bodyWindows": [
+    {"startRva": 65537488, "endRva": 65538181, "sha256": "A140E6AF842E3DE5C882FAC07D52025C023B3FE5513D6FE06430B250CF2FF90C", "role": "LevelData splineId dictionary construction"},
+    {"startRva": 104033596, "endRva": 104034582, "sha256": "5D69DF17EFCDE665CFEB0CF783C7FFDA5E9AB52F7D8DA79E0B91D383A3F5EB9A", "role": "normal-path spline lookup, transform and local position projection"},
+    {"startRva": 104035880, "endRva": 104037899, "sha256": "A40D9A401A85BA5D1AF87E7D40AF1BCF94187A44897D4B186F8A39EEB3A482C8", "role": "normal-path spline evaluation and transformed movement position"}
+  ],
+  "fieldOffsets": {
+    "Beyond.Gameplay.LevelData": {"splines": 208, "m_splineTable": 440},
+    "Beyond.Gameplay.LevelSplineData": {"splineId": 16, "position": 20, "rotation": 32, "closed": 44, "knots": 48},
+    "Beyond.Gameplay.Core.MovePipelineSpline": {"m_splinePtr": 84, "m_splineTransform": 88, "m_spline": 152, "m_posOnSpline": 168},
+    "Beyond.Gameplay.Core.SplinePtr": {"id": 16}
+  },
+  "callSites": [
+    {"caller": "onEnter", "offset": 344, "target": "splineTable"},
+    {"caller": "onEnter", "offset": 516, "target": "setTrs"},
+    {"caller": "onEnter", "offset": 578, "target": "splineConstructor"},
+    {"caller": "onEnter", "offset": 644, "target": "matrixInverse"},
+    {"caller": "onEnter", "offset": 701, "target": "logicPosition"},
+    {"caller": "onEnter", "offset": 740, "target": "multiplyPoint"},
+    {"caller": "onEnter", "offset": 892, "target": "multiplyPoint"},
+    {"caller": "processVelocity", "offset": 1373, "targetRva": 111721192, "genericName": "UnityEngine.Splines.SplineUtility.Evaluate"},
+    {"caller": "processVelocity", "offset": 1723, "target": "multiplyPoint"}
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected method identities, complete bounded native body bytes, selected field offsets and direct call targets are verified against one installed native build.",
+    "direct": "The unpatched LevelData spline-table getter inserts rows keyed by splineId. The unpatched MovePipelineSpline.OnEnter reads the selected row by m_splinePtr.id, passes knots and closed to Spline construction, forms m_splineTransform with position, rotation converted by an unnamed helper and unit scale, then projects MovementComponent.logicPos through its inverse. ProcessVelocity calls SplineUtility.Evaluate and applies m_splineTransform.MultiplyPoint to the evaluated position.",
+    "conditional": "These paths are behind iFix IsPatched checks. The selected installed patch state and whether a concrete entity entered spline movement are unobserved; direct describes reviewed normal-branch code, not executed movement.",
+    "unresolved": "The unnamed rotation conversion helper, patch branches, non-movement spline consumers, scene/file selection, and map projection remain open. Do not render knots as world coordinates without the row transform."
+  }
+}
