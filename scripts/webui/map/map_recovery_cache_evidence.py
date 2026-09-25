@@ -34,6 +34,7 @@ import re
 from functools import lru_cache
 from pathlib import Path
 
+from scripts.game_data.unity_store import UnityObjectRow, is_store_file, open_store_if_present, split_logical_ref
 from scripts.repo_paths import REPO_ROOT
 
 ROOT = REPO_ROOT
@@ -189,6 +190,40 @@ def load_object_hash_index(
     return cached
 
 
+def unity_document_row(path: Path | str) -> UnityObjectRow | None:
+    """The object-store row behind a logical ``<export>/game/Unity/<Type>/<name>`` document path.
+
+    Layout v3 keeps exported Unity object documents (Material JSON among
+    them) in ``game/Unity.sqlite``; only converted media (OBJ, PNG) is still a
+    loose file. None for a media path, a non-Unity path, or an absent row.
+    """
+    path = Path(path)
+    parts = split_logical_ref(path)
+    if parts is None or not is_store_file(parts[1]) or len(path.parents) < 4:
+        return None
+    store = open_store_if_present(path.parents[3])
+    return store.row(*parts) if store is not None else None
+
+
+def unity_document_exists(path: Path | str) -> bool:
+    """``is_file`` for a render input: a store row for object documents, a file otherwise."""
+    parts = split_logical_ref(path)
+    if parts is not None and is_store_file(parts[1]):
+        return unity_document_row(path) is not None
+    return Path(path).is_file()
+
+
+def read_unity_document_text(path: Path | str) -> str:
+    """Text of a Unity object document from the export's store; OSError when absent."""
+    row = unity_document_row(path)
+    if row is None:
+        raise FileNotFoundError(f"no Unity object document for {path}")
+    store = open_store_if_present(Path(path).parents[3])
+    if store is None:
+        raise FileNotFoundError(f"no Unity object store for {path}")
+    return store.read_text(row.type, row.name)
+
+
 def content_sha256(path: Path) -> str:
     """SHA-256 of one file, memoized per process by its identity on disk.
 
@@ -223,15 +258,19 @@ def source_evidence(path: Path, index: dict) -> dict:
     """
     path = Path(path)
     record: dict[str, object] = {"path": repo_rel(path)}
-    if not path.is_file():
+    # An object document (Material JSON) is a store row; its size and SHA256
+    # are the row's, byte-for-byte those of the former loose file.
+    parts = split_logical_ref(path)
+    stored = unity_document_row(path) if parts is not None and is_store_file(parts[1]) else None
+    if stored is None and (parts is not None and is_store_file(parts[1]) or not path.is_file()):
         record["evidence"] = "missing"
         return record
-    record["bytes"] = path.stat().st_size
+    record["bytes"] = stored.size if stored is not None else path.stat().st_size
     path_id = path_id_from_export_path(path)
     if path_id is None:
         record["evidence"] = "contentSha256"
         record["fallback"] = "noPathIdInFileName"
-        record["sha256"] = content_sha256(path)
+        record["sha256"] = stored.sha256 if stored is not None else content_sha256(path)
         return record
     key = path_id_key(path_id)
     token = (index.get("objects") or {}).get(key)
@@ -246,7 +285,7 @@ def source_evidence(path: Path, index: dict) -> dict:
         record["fallback"] = "ambiguousPathId"
     else:
         record["fallback"] = "pathIdNotInAssetMap"
-    record["sha256"] = content_sha256(path)
+    record["sha256"] = stored.sha256 if stored is not None else content_sha256(path)
     return record
 
 

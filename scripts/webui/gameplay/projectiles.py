@@ -1,4 +1,4 @@
-"""Build a compact projectile inspector payload from AnimeStudio JSON.
+"""Build a compact projectile inspector payload from AnimeStudio JSON (game/Unity.sqlite).
 
 The source records are ``data_projectile_*`` MonoBehaviour objects whose
 managed references (``ProjectileTemplateData`` and
@@ -19,7 +19,7 @@ regression to surface, not data to guess at.
 Examples:
     python -m scripts.webui.gameplay.build_gameplay --stage projectiles
     python -m scripts.webui.gameplay.projectiles --pretty
-    python -m scripts.webui.gameplay.projectiles --input-root PATH --output PATH
+    python -m scripts.webui.gameplay.projectiles --export-root PATH --output PATH
 """
 
 from __future__ import annotations
@@ -29,10 +29,12 @@ import argparse
 import json
 import sys
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 
+from scripts.game_data.unity_store import UnityObjectStore, open_store_if_present
 from scripts.repo_paths import REPO_ROOT
+from scripts.source_paths import ExportLayout
 
 if __package__ in {None, ""}:
     raise SystemExit(
@@ -41,9 +43,9 @@ if __package__ in {None, ""}:
     )
 
 EXPORT_ROOT = EXPORT_LAYOUT.root
-DEFAULT_INPUTS = (
-    EXPORT_ROOT / "game/Unity/MonoBehaviour",
-)
+#: The scanned Unity type; its documents are rows of game/Unity.sqlite.
+PROJECTILE_UNITY_TYPE = "MonoBehaviour"
+PROJECTILE_NAME_GLOB = "*projectile*.json"
 DEFAULT_OUTPUT = REPO_ROOT / "webui/data/gameplay/projectiles.json"
 SCHEMA_VERSION = 5
 SOURCE_LABEL = "AnimeStudio exact managed-reference TypeTree decode"
@@ -478,11 +480,15 @@ def registry_fully_decoded(payload: dict[str, Any]) -> bool:
     )
 
 
-def build_entry(path: Path, root: Path) -> tuple[dict[str, Any] | None, str | None]:
-    """Return ``(entry, None)`` or ``(None, skip_reason)``."""
+def build_entry(path: Path, root: Path, data: bytes) -> tuple[dict[str, Any] | None, str | None]:
+    """Return ``(entry, None)`` or ``(None, skip_reason)``.
+
+    ``path`` is the document's logical ``game/Unity/<Type>/<name>`` path under
+    the export root and ``data`` its exact bytes from the object store.
+    """
     try:
-        payload = json.loads(path.read_text(encoding="utf-8-sig"))
-    except (OSError, UnicodeError, json.JSONDecodeError):
+        payload = json.loads(data.decode("utf-8-sig"))
+    except (UnicodeError, json.JSONDecodeError):
         return None, SKIP_NOT_JSON
     if not isinstance(payload, dict):
         return None, SKIP_NOT_JSON
@@ -634,10 +640,9 @@ def build_entry(path: Path, root: Path) -> tuple[dict[str, Any] | None, str | No
     return result, None
 
 
-def candidate_files(root: Path) -> Iterable[Path]:
-    if not root.exists():
-        return ()
-    return sorted(root.rglob("*projectile*.json"), key=lambda item: item.as_posix().lower())
+def candidate_names(store: UnityObjectStore) -> list[str]:
+    """Projectile candidate document names; a names-only pass, bytes are read per match."""
+    return sorted(store.names(PROJECTILE_UNITY_TYPE, PROJECTILE_NAME_GLOB), key=str.lower)
 
 
 def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
@@ -645,10 +650,13 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         description="Build compact WebUI projectile data from exact AnimeStudio MonoBehaviour JSON.",
     )
     parser.add_argument(
-        "--input-root",
+        "--export-root",
         type=Path,
-        action="append",
-        help="MonoBehaviour JSON directory to scan; repeat for multiple source roots. Defaults to the export root's game/Unity/MonoBehaviour.",
+        default=EXPORT_ROOT,
+        help=(
+            "Export root whose game/Unity.sqlite object store holds the "
+            f"*projectile*.json MonoBehaviour documents (default: {EXPORT_ROOT})."
+        ),
     )
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT, help=f"Output JSON path (default: {DEFAULT_OUTPUT})")
     parser.add_argument("--pretty", action="store_true", help="Write indented JSON for inspection instead of compact JSON.")
@@ -662,22 +670,25 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
 
 def main(argv: list[str] | None = None) -> int:
     args = parse_args(argv)
-    roots = tuple(path.resolve() for path in (args.input_root or DEFAULT_INPUTS))
+    export_root = args.export_root.resolve()
+    layout = ExportLayout(export_root)
+    root = layout.unity_type_dir(PROJECTILE_UNITY_TYPE)
+    roots = (root,)
     entries: list[dict[str, Any]] = []
     scanned = 0
     missing = []
     skipped: dict[str, list[str]] = {}
-    for root in roots:
-        if not root.exists():
-            missing.append(str(root))
-            continue
-        for path in candidate_files(root):
+    store = open_store_if_present(export_root)
+    if store is None:
+        missing.append(str(layout.unity_store_path))
+    else:
+        for name in candidate_names(store):
             scanned += 1
-            entry, reason = build_entry(path, root)
+            entry, reason = build_entry(root / name, root, store.read_bytes(PROJECTILE_UNITY_TYPE, name))
             if entry:
                 entries.append(entry)
             elif reason:
-                skipped.setdefault(reason, []).append(path.name)
+                skipped.setdefault(reason, []).append(name)
     entries.sort(key=lambda row: (str(row.get("id") or ""), str(row.get("source", {}).get("root") or ""), str(row.get("source", {}).get("pathId") or "")))
     source_counts: dict[str, int] = {}
     for row in entries:
@@ -765,7 +776,7 @@ def main(argv: list[str] | None = None) -> int:
     if effect_enum_evidence["status"] == "incomplete":
         print(f"[projectiles.effect-config-enums] {effect_enum_evidence['detail']}", file=sys.stderr)
     if missing:
-        print(f"missing input roots: {', '.join(missing)}")
+        print(f"missing Unity object store: {', '.join(missing)}")
     if args.require_exact and non_exact_skips:
         for reason, names in sorted(non_exact_skips.items()):
             print(f"non-exact skip {reason}: {', '.join(sorted(names)[:5])}{' ...' if len(names) > 5 else ''}")

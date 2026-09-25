@@ -71,10 +71,13 @@ from scripts.webui.map.map_recovery_cache_evidence import (
     asset_map_sha256,
     binding_relations,
     file_content_evidence,
+    read_unity_document_text,
     repo_rel,
     source_evidence_list,
     streaming_source_evidence,
+    unity_document_exists,
 )
+from scripts.game_data.unity_store import open_store_if_present
 from scripts.webui.map.map_recovery_sources import isolated_art_source, projection_streaming_scene
 from scripts.webui.map.recover_map_streaming_instances import DEFAULT_CLI as STREAMING_CLI
 
@@ -86,6 +89,8 @@ EXPORT_ROOT_REL = (
 )
 MESH_ROOT = EXPORT_LAYOUT.unity_type_dir("Mesh")
 TEXTURE_ROOT = EXPORT_LAYOUT.unity_type_dir("Texture2D")
+# Logical: Material JSON documents are rows of game/Unity.sqlite (layout v3);
+# game/Unity/Material/<name> stays their reference and binding path.
 MATERIAL_ROOT = EXPORT_LAYOUT.unity_type_dir("Material")
 RENDERER_INDEX = EXPORT_LAYOUT.renderer_index_dir("StreamingAssets") / "renderers.jsonl"
 MAPS_ROOT = ROOT / "webui/data/map_recovery/maps"
@@ -1515,7 +1520,7 @@ def texture_bindings() -> dict[str, dict]:
                 _HLOD_TEXTURE_BINDINGS[key] = None
                 continue
             _HLOD_TEXTURE_BINDINGS[key] = None
-            if selected and texture_path and material_path and texture_path.is_file() and material_path.is_file():
+            if selected and texture_path and material_path and texture_path.is_file() and unity_document_exists(material_path):
                 binding = {
                     "slot": selected["slot"],
                     "textureRel": selected["rel"],
@@ -1544,7 +1549,7 @@ def texture_bindings() -> dict[str, dict]:
             continue
         texture_path = _relation_path(selected["rel"], source_roots)
         material_path = _relation_path(materials[0]["rel"], source_roots)
-        if texture_path and material_path and texture_path.is_file() and material_path.is_file():
+        if texture_path and material_path and texture_path.is_file() and unity_document_exists(material_path):
             _TEXTURE_BINDINGS[asset_rel] = {
                 "slot": selected["slot"],
                 "textureRel": selected["rel"],
@@ -1613,14 +1618,15 @@ def install_hlod_material_json_bindings(
     texture_bindings()
     available = _HLOD_TEXTURE_BINDINGS
     installed = unresolved = 0
-    if not material_root.is_dir():
+    material_paths = material_document_paths(material_root)
+    if material_paths is None:
         return installed, unresolved
     identities = {
         int(row["pathId"]): (str(row["level"]).lower(), int(row["lod"]), int(row["hash"]))
         for row in ((index or {}).get("hlodMaterialIdentities") or [])
         if isinstance(row.get("pathId"), int)
     }
-    for material_path in material_root.glob("*.json"):
+    for material_path in material_paths:
         stem = material_path.stem.rsplit("_p", 1)[0]
         matched = HLOD_MATERIAL_NAME_RE.fullmatch(stem)
         identity = None
@@ -1636,7 +1642,7 @@ def install_hlod_material_json_bindings(
         if identity is None:
             continue
         try:
-            payload = json.loads(material_path.read_text(encoding="utf-8"))
+            payload = json.loads(read_unity_document_text(material_path))
             env = ((payload.get("m_SavedProperties") or {}).get("m_TexEnvs") or {}).get("_BaseColorMap") or {}
             path_id = (env.get("m_Texture") or {}).get("m_PathID")
         except (OSError, UnicodeError, json.JSONDecodeError, AttributeError):
@@ -1712,7 +1718,7 @@ def _texture_binding_table_signature(
         "textureRoot": repo_rel(TEXTURE_ROOT),
         "materialRoot": repo_rel(material_root),
         "exportedTextureCount": len(texture_files),
-        "exportedMaterialCount": sum(1 for _ in material_root.glob("*.json")) if material_root.is_dir() else 0,
+        "exportedMaterialCount": len(material_document_paths(material_root) or ()),
         "cli": exporter_cli_evidence(),
     }
     encoded = json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -1799,7 +1805,7 @@ def _material_render_params(binding: dict) -> dict:
         "alphaMode": "opaque", "cutoff": 0.05,
     }
     try:
-        payload = json.loads(key[0].read_text(encoding="utf-8"))
+        payload = json.loads(read_unity_document_text(key[0]))
         saved = payload.get("m_SavedProperties") or {}
         env = (saved.get("m_TexEnvs") or {}).get(key[1]) or {}
         scale = env.get("m_Scale") or {}
@@ -2361,13 +2367,23 @@ def texture_file_index(texture_root: Path) -> dict[str, Path]:
     }
 
 
+def material_document_paths(material_root: Path) -> list[Path] | None:
+    """Logical paths of the exported Material JSON documents, or None without a store.
+
+    ``material_root`` is ``<export>/game/Unity/Material``; the documents are
+    rows of that export's ``game/Unity.sqlite``, listed by name only.
+    """
+    store = open_store_if_present(material_root.parents[2])
+    if store is None:
+        return None
+    return [material_root / name for name in store.names(material_root.name, "*.json")]
+
+
 def material_file_index(material_root: Path) -> dict[str, Path]:
-    """Exported Material JSON files keyed by AnimeStudio's PathID suffix."""
-    if not material_root.is_dir():
-        return {}
+    """Exported Material JSON documents keyed by AnimeStudio's PathID suffix."""
     return {
         path.stem.rsplit("_p", 1)[-1].upper(): path
-        for path in material_root.glob("*.json") if "_p" in path.stem
+        for path in material_document_paths(material_root) or () if "_p" in path.stem
     }
 
 
@@ -4092,7 +4108,7 @@ def renderer_texture_bindings() -> dict[tuple[str, int], dict]:
         if material_path is None:
             return None
         try:
-            payload = json.loads(material_path.read_text(encoding="utf-8"))
+            payload = json.loads(read_unity_document_text(material_path))
             environments = (payload.get("m_SavedProperties") or {}).get("m_TexEnvs") or {}
         except (OSError, UnicodeError, json.JSONDecodeError, AttributeError):
             return None

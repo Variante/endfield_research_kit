@@ -20,6 +20,7 @@ from scripts.common import require_export_layout
 
 from scripts.common import EXPORT_ROOT, LANG_DIR, OUT_DIR, rel_path, write_json
 from scripts.common import WEBUI_BUILD_DIR, read_json
+from scripts.game_data.unity_store import open_store_if_present
 from scripts.source_paths import ExportLayout
 
 
@@ -186,7 +187,8 @@ def iter_asset_entries(asset_index_path: Path, export_root: Path) -> tuple[Itera
     recovered_root = ExportLayout(export_root).unity_dir
 
     def scan() -> Iterable[dict[str, Any]]:
-        if not recovered_root.is_dir():
+        store = open_store_if_present(export_root)
+        if not recovered_root.is_dir() and store is None:
             return
         kind_by_suffix = {
             ".png": "image", ".jpg": "image", ".jpeg": "image", ".webp": "image",
@@ -195,22 +197,23 @@ def iter_asset_entries(asset_index_path: Path, export_root: Path) -> tuple[Itera
             ".json": "json",
         }
         # Converted media only (the former convert_by_type set), never the
-        # object JSON folders, which hold over a million files.
-        media_paths = (
-            path
-            for type_name in CONVERTED_MEDIA_TYPES
-            for path in (recovered_root / type_name).rglob("*")
-        )
-        for path in media_paths:
-            if not path.is_file():
-                continue
-            kind = kind_by_suffix.get(path.suffix.lower())
-            if not kind:
-                continue
-            yield {
-                "k": kind,
-                "r": path.relative_to(recovered_root).as_posix(),
-            }
+        # object JSON types, which hold over a million documents. The loose
+        # files are the converted media; the same types' object documents are
+        # rows of game/Unity.sqlite and keep their <Type>/<name> reference.
+        for type_name in CONVERTED_MEDIA_TYPES:
+            for path in (recovered_root / type_name).rglob("*"):
+                if not path.is_file():
+                    continue
+                kind = kind_by_suffix.get(path.suffix.lower())
+                if not kind:
+                    continue
+                yield {
+                    "k": kind,
+                    "r": path.relative_to(recovered_root).as_posix(),
+                }
+            if store is not None:
+                for name in store.names(type_name, "*.json"):
+                    yield {"k": "json", "r": f"{type_name}/{name}"}
 
     return scan(), rel_path(recovered_root)
 

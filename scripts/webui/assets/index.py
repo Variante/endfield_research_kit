@@ -19,6 +19,7 @@ from scripts.source_paths import (
     resolve_asset_source_roots,
     resolve_material_source_roots,
 )
+from scripts.game_data.unity_store import open_store_if_present
 from scripts.common import (
     path_id_export_base_stem,
     path_id_export_path_id,
@@ -328,14 +329,6 @@ def _browser_asset_kind_for_suffix(
     return ""
 
 
-def _should_index_browser_json(path: Path, source_root: Path) -> bool:
-    if path.suffix.lower() not in JSON_EXTENSIONS:
-        return False
-    rel_parts = path.relative_to(source_root).parts
-    if not rel_parts:
-        return False
-    return rel_parts[0] in BROWSER_JSON_TYPE_DIRS
-
 def _looks_like_base64_text(value: str) -> bool:
     compact = re.sub(r"\s+", "", value or "")
     return len(compact) >= 8 and len(compact) % 4 != 1 and bool(BASE64_TEXT_RE.fullmatch(compact))
@@ -393,17 +386,15 @@ def _iter_m_script_values(value: Any):
             yield from _iter_m_script_values(item)
 
 
-def _decoded_m_script_search_text(path: Path) -> str:
+def _decoded_m_script_search_text(data: bytes) -> str:
+    """Searchable decoded ``m_Script`` text of one exported JSON document."""
+    if len(data) > JSON_SCRIPT_SEARCH_MAX_FILE_BYTES:
+        return ""
+    if "m_Script" not in data[:JSON_SCRIPT_SCAN_PREFIX_BYTES].decode("utf-8", errors="ignore"):
+        return ""
     try:
-        if path.stat().st_size > JSON_SCRIPT_SEARCH_MAX_FILE_BYTES:
-            return ""
-        with path.open("r", encoding="utf-8", errors="ignore") as f:
-            prefix = f.read(JSON_SCRIPT_SCAN_PREFIX_BYTES)
-            if "m_Script" not in prefix:
-                return ""
-            f.seek(0)
-            payload = json.load(f)
-    except (OSError, json.JSONDecodeError):
+        payload = json.loads(data.decode("utf-8", errors="ignore"))
+    except json.JSONDecodeError:
         return ""
 
     chunks: list[str] = []
@@ -523,7 +514,17 @@ def _image_dimensions(path: Path) -> tuple[int, int] | None:
     return None
 
 
-def _add_duplicate_candidate_hashes(entries: list[dict], paths_by_rel: dict[str, Path]) -> None:
+def _add_duplicate_candidate_hashes(
+    entries: list[dict],
+    paths_by_rel: dict[str, Path],
+    sha256_by_rel: dict[str, str] | None = None,
+) -> None:
+    """Mark same-size, same-header candidates with their SHA256 (``h``).
+
+    Store documents have no file; their recorded SHA256 (``sha256_by_rel``)
+    stands in for both the header signature and the file hash.
+    """
+    known = sha256_by_rel or {}
     coarse_counts: Counter[tuple[str, str, int]] = Counter()
     for entry in entries:
         rel = str(entry.get("r") or "")
@@ -537,10 +538,13 @@ def _add_duplicate_candidate_hashes(entries: list[dict], paths_by_rel: dict[str,
         coarse_key = (str(entry.get("k") or ""), Path(rel).suffix.lower(), int(entry.get("s") or 0))
         if coarse_counts[coarse_key] <= 1:
             continue
-        path = paths_by_rel.get(rel)
-        if not path:
-            continue
-        key = (*coarse_key, _header_signature(path))
+        if rel in known:
+            key = (*coarse_key, f"sha256:{known[rel]}")
+        else:
+            path = paths_by_rel.get(rel)
+            if not path:
+                continue
+            key = (*coarse_key, _header_signature(path))
         header_keys[rel] = key
         header_counts[key] += 1
 
@@ -548,6 +552,9 @@ def _add_duplicate_candidate_hashes(entries: list[dict], paths_by_rel: dict[str,
         rel = str(entry.get("r") or "")
         key = header_keys.get(rel)
         if not key or header_counts[key] <= 1:
+            continue
+        if rel in known:
+            entry["h"] = known[rel]
             continue
         path = paths_by_rel.get(rel)
         if path:
@@ -622,9 +629,14 @@ def scan_exported_media_assets(
     obj_rels_by_source_base: dict[tuple[str, str], list[str]] = defaultdict(list)
     obj_rels_by_base: dict[str, list[str]] = defaultdict(list)
     asset_paths_by_rel: dict[str, Path] = {}
+    document_sha256_by_rel: dict[str, str] = {}
 
     asset_roots = resolve_asset_source_roots(export_root)
+    # Unity object documents (Material, TextAsset, ...) are rows of the
+    # export's Unity store; material_roots names the logical root their
+    # ``Unity/<Type>/<name>`` refs belong to.
     material_roots = resolve_material_source_roots(export_root)
+    unity_store = open_store_if_present(export_root) if material_roots else None
     media_root_labels = {source: rel_path(path, root) for source, path in asset_roots}
     asset_root_labels = {
         source: rel_path(path, root)
@@ -677,10 +689,6 @@ def scan_exported_media_assets(
             if is_material_like_texture_name(stem):
                 entry["mt"] = 1
                 material_like_image_count += 1
-        elif kind == "json":
-            script_search = _decoded_m_script_search_text(path)
-            if script_search:
-                entry["sx"] = script_search
         asset_entries.append(entry)
         asset_paths_by_rel[asset_rel] = path
 
@@ -725,23 +733,28 @@ def scan_exported_media_assets(
                     include_json=False,
                 )
 
-    for source, source_root in material_roots:
-        for dirpath, dirnames, filenames in os.walk(source_root):
-            dirnames.sort()
-            filenames.sort()
-            base_dir = Path(dirpath)
-            for filename in filenames:
-                path = base_dir / filename
-                if not _should_index_browser_json(path, source_root):
+    for source, _source_root in material_roots:
+        if unity_store is None:
+            continue
+        for type_name in sorted(BROWSER_JSON_TYPE_DIRS):
+            rows = [row for row in unity_store.rows(type_name) if Path(row.name).suffix.lower() in JSON_EXTENSIONS]
+            for row in sorted(rows, key=lambda item: item.name):
+                asset_rel = f"{source}/{type_name}/{row.name}"
+                logical = _logical_export_stem(asset_rel, Path(row.name).stem)
+                if logical is None:
                     continue
-                add_asset_file(
-                    source=source,
-                    source_root=source_root,
-                    path=path,
-                    include_regular_assets=False,
-                    include_media=False,
-                    include_json=True,
-                )
+                _stem, path_id = logical
+                entry = {"k": "json", "r": asset_rel, "s": row.size}
+                if path_id:
+                    entry["pid"] = path_id
+                if row.size <= JSON_SCRIPT_SEARCH_MAX_FILE_BYTES:
+                    script_search = _decoded_m_script_search_text(unity_store.read_bytes(type_name, row.name))
+                    if script_search:
+                        entry["sx"] = script_search
+                asset_entries.append(entry)
+                document_sha256_by_rel[asset_rel] = row.sha256
+                counts["total"] += 1
+                counts["json"] += 1
 
     relations: dict[str, dict] = {}
     material_count = 0
@@ -768,12 +781,12 @@ def scan_exported_media_assets(
             entry["p"] = preview_rel
             preview_proxy_count += 1
 
-    for source, source_root in material_roots:
-        for material_path in sorted(source_root.rglob("Material/*.json")):
+    for source, _source_root in material_roots:
+        material_rows = [] if unity_store is None else unity_store.rows("Material", "*.json")
+        for material_row in sorted(material_rows, key=lambda item: item.name):
             try:
-                with material_path.open(encoding="utf-8") as f:
-                    material_payload = json.load(f)
-            except (OSError, json.JSONDecodeError):
+                material_payload = json.loads(unity_store.read_bytes("Material", material_row.name).decode("utf-8"))
+            except (UnicodeDecodeError, json.JSONDecodeError):
                 continue
 
             texture_refs = _extract_material_texture_refs(material_payload)
@@ -781,9 +794,8 @@ def scan_exported_media_assets(
                 continue
 
             material_count += 1
-            rel_suffix = material_path.relative_to(source_root).as_posix()
-            material_rel = f"{source}/{rel_suffix}" if rel_suffix else source
-            logical = _logical_export_stem(material_rel, material_path.stem)
+            material_rel = f"{source}/Material/{material_row.name}"
+            logical = _logical_export_stem(material_rel, Path(material_row.name).stem)
             if logical is None:
                 continue
             material_name, _path_id = logical
@@ -855,7 +867,7 @@ def scan_exported_media_assets(
                             "rel": model_rel,
                         })
 
-    _add_duplicate_candidate_hashes(asset_entries, asset_paths_by_rel)
+    _add_duplicate_candidate_hashes(asset_entries, asset_paths_by_rel, document_sha256_by_rel)
     _add_duplicate_candidate_hashes(video_entries, asset_paths_by_rel)
 
     count_keys = ("total", "image", "model", "video", "json")

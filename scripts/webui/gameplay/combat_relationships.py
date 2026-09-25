@@ -24,21 +24,21 @@ try:
     from scripts.game_data.extraction.animestudio_index_io import (
         ObjectIndexUnavailable,
         iter_effective_objects,
-        raw_json_path_for_object,
     )
 except ImportError:  # direct script execution
-    from animestudio_index_io import ObjectIndexUnavailable, iter_effective_objects, raw_json_path_for_object
+    from animestudio_index_io import ObjectIndexUnavailable, iter_effective_objects
 
 
+from scripts.game_data.unity_store import UnityObjectRow, open_store_if_present
 from scripts.repo_paths import REPO_ROOT
 from scripts.common import write_canonical_json as write_json
+from scripts.source_paths import ExportLayout
 from scripts.common import read_json_strict as load_json
 
 ROOT = REPO_ROOT
 EXPORT_ROOT = EXPORT_LAYOUT.root
 DEFAULT_DATA_ROOT = ROOT / "webui" / "data" / "lang"
 DEFAULT_GRAPH = ROOT / "reports" / "source_graph" / "endfield_source_graph.sqlite"
-DEFAULT_ANIMESTUDIO_ROOT = EXPORT_LAYOUT.unity_dir
 SCHEMA_VERSION = 7
 
 GRAPH_EDGE_TYPES = {
@@ -74,11 +74,59 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--languages", nargs="+", default=["CN"])
     parser.add_argument("--data-root", type=Path, default=DEFAULT_DATA_ROOT)
     parser.add_argument("--graph", type=Path, default=DEFAULT_GRAPH)
-    parser.add_argument("--animestudio-root", type=Path, default=DEFAULT_ANIMESTUDIO_ROOT)
+    parser.add_argument(
+        "--export-root",
+        type=Path,
+        default=EXPORT_ROOT,
+        help=(
+            "export root whose game/Unity.sqlite object store holds the "
+            "data_abilityentity*/data_chr_* MonoBehaviour documents"
+        ),
+    )
     parser.add_argument("--max-assets-per-entity", type=int, default=8)
     parser.add_argument("--max-assets-per-effect", type=int, default=2)
     return parser.parse_args(argv)
 
+
+
+def unity_documents_with_prefix(export_root: Path, prefix: str) -> list[tuple[Path, UnityObjectRow]]:
+    """Exported MonoBehaviour documents whose object name starts with ``prefix``.
+
+    The published object index selects the effective objects when it exists;
+    otherwise the store's MonoBehaviour rows are globbed by file name. Each row
+    comes with its logical ``game/Unity/<Type>/<name>`` path, which is what the
+    evidence records cite; the bytes come from ``game/Unity.sqlite``.
+    """
+    store = open_store_if_present(export_root)
+    if store is None:
+        return []
+    rows: list[UnityObjectRow] = []
+    try:
+        for _layer, row in iter_effective_objects(export_root):
+            name = str(row.get("name") or "")
+            if not name.lower().startswith(prefix):
+                continue
+            identity = row.get("object") if isinstance(row.get("object"), dict) else {}
+            try:
+                path_id = int(identity.get("pathId"))
+            except (TypeError, ValueError):
+                continue
+            file_name = f"{name}_p{path_id & ((1 << 64) - 1):016X}.json"
+            found = store.row(str(row.get("type") or "MonoBehaviour"), file_name)
+            if found is not None:
+                rows.append(found)
+    except ObjectIndexUnavailable:
+        rows = store.rows("MonoBehaviour", f"{prefix}*.json")
+    layout = ExportLayout(export_root)
+    documents = [(layout.unity_type_dir(row.type) / row.name, row) for row in rows]
+    return sorted(documents, key=lambda item: item[0].as_posix().lower())
+
+
+def load_store_json(export_root: Path, row: UnityObjectRow) -> Any:
+    store = open_store_if_present(export_root)
+    if store is None:
+        raise OSError(f"no Unity object store under {export_root}")
+    return json.loads(store.read_bytes(row.type, row.name).decode("utf-8"))
 
 
 def compact_source(value: Any) -> Any:
@@ -140,7 +188,7 @@ class PayloadBuilder:
         gameplay: dict[str, Any],
         graph_path: Path,
         graph_stale_reason: str,
-        animestudio_root: Path,
+        export_root: Path,
         max_assets_per_entity: int,
         max_assets_per_effect: int,
     ) -> None:
@@ -148,7 +196,7 @@ class PayloadBuilder:
         self.gameplay = gameplay
         self.graph_path = graph_path
         self.graph_stale_reason = graph_stale_reason
-        self.animestudio_root = animestudio_root
+        self.export_root = export_root
         self.max_assets_per_entity = max(0, max_assets_per_entity)
         self.max_assets_per_effect = max(0, max_assets_per_effect)
         self.nodes: dict[str, dict[str, Any]] = {}
@@ -494,24 +542,8 @@ class PayloadBuilder:
                     raw=key,
                 )
 
-    def ability_entity_paths(self) -> list[Path]:
-        paths: list[Path] = []
-        export_root = self.animestudio_root.parent.parent
-        for source in ("game",):
-            try:
-                indexed = [
-                    raw_json_path_for_object(export_root, layer, row)
-                    for layer, row in iter_effective_objects(export_root)
-                    if str(row.get("name") or "").lower().startswith("data_abilityentity")
-                ]
-                paths.extend(path for path in indexed if path is not None)
-                continue
-            except ObjectIndexUnavailable:
-                pass
-            directory = self.animestudio_root / "MonoBehaviour"
-            if directory.is_dir():
-                paths.extend(directory.glob("data_abilityentity*.json"))
-        return sorted(paths, key=lambda path: path.as_posix().lower())
+    def ability_entity_paths(self) -> list[tuple[Path, UnityObjectRow]]:
+        return unity_documents_with_prefix(self.export_root, "data_abilityentity")
 
     def ability_entity_root_candidates(self, ability_key: str) -> list[str]:
         wrapped = f"_{ability_key.lower()}_"
@@ -534,9 +566,9 @@ class PayloadBuilder:
         paths = self.ability_entity_paths()
         self.ability_entity_files = len(paths)
         self.ability_entity_available = bool(paths)
-        for path in paths:
+        for path, object_row in paths:
             try:
-                document = load_json(path)
+                document = load_store_json(self.export_root, object_row)
             except (OSError, ValueError):
                 continue
             relative_path = path.relative_to(ROOT).as_posix() if path.is_relative_to(ROOT) else path.as_posix()
@@ -784,28 +816,12 @@ class PayloadBuilder:
         self.target_selector_links += 1
 
     def add_character_target_settings(self) -> None:
-        paths: list[Path] = []
-        export_root = self.animestudio_root.parent.parent
-        for source in ("game",):
-            try:
-                indexed = [
-                    raw_json_path_for_object(export_root, layer, row)
-                    for layer, row in iter_effective_objects(export_root)
-                    if str(row.get("name") or "").lower().startswith("data_chr_")
-                ]
-                paths.extend(path for path in indexed if path is not None)
-                continue
-            except ObjectIndexUnavailable:
-                pass
-            directory = self.animestudio_root / "MonoBehaviour"
-            if directory.is_dir():
-                paths.extend(directory.glob("data_chr_*.json"))
-        paths = sorted(paths, key=lambda path: path.as_posix().lower())
+        paths = unity_documents_with_prefix(self.export_root, "data_chr_")
         self.target_settings_files = len(paths)
         self.target_settings_available = bool(paths)
-        for path in paths:
+        for path, object_row in paths:
             try:
-                document = load_json(path)
+                document = load_store_json(self.export_root, object_row)
             except (OSError, ValueError):
                 continue
             references = ((document.get("references") or {}).get("RefIds") or []) if isinstance(document, dict) else []
@@ -1235,10 +1251,14 @@ def build_language(args: argparse.Namespace, language: str) -> tuple[Path, dict[
         raise FileNotFoundError(f"Gameplay input not found: {input_path}")
     gameplay = load_json(input_path)
     freshness_inputs = [input_path, args.data_root.parent / "manifest.json", ROOT / "webui" / "data" / "assets" / "index.json"]
-    for directory in (args.animestudio_root / "MonoBehaviour",):
-        if directory.is_dir():
-            freshness_inputs.extend(directory.glob("data_abilityentity*.json"))
-            freshness_inputs.extend(directory.glob("data_chr_*.json"))
+    # Unity object documents have no file of their own: when any consumed row
+    # exists, the object store's own mtime stands in for them.
+    store = open_store_if_present(args.export_root)
+    if store is not None and (
+        store.names("MonoBehaviour", "data_abilityentity*.json")
+        or store.names("MonoBehaviour", "data_chr_*.json")
+    ):
+        freshness_inputs.append(store.path)
     existing_inputs = [path for path in freshness_inputs if path.is_file()]
     graph_stale_reason = ""
     if args.graph.is_file() and existing_inputs:
@@ -1251,7 +1271,7 @@ def build_language(args: argparse.Namespace, language: str) -> tuple[Path, dict[
         gameplay,
         args.graph,
         graph_stale_reason,
-        args.animestudio_root,
+        args.export_root,
         args.max_assets_per_entity,
         args.max_assets_per_effect,
     )

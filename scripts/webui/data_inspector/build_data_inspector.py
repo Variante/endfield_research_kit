@@ -90,7 +90,8 @@ from scripts.game_data.teleport_validation_binary import (
     decode_teleport_validation_json_table,
     decode_teleport_validation_table,
 )
-from scripts.source_paths import ExportLayout, configured_export_root
+from scripts.game_data.unity_store import UnityObjectStore, open_store, open_store_if_present, split_logical_ref
+from scripts.source_paths import EXPORT_LAYOUT_SCHEMA, ExportLayout, configured_export_root
 from scripts.webui.data_inspector.contract import (
     json_safe,
     publish_dataset,
@@ -946,10 +947,81 @@ def _controller_facts(payload: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+#: Datasets whose documents are Unity objects: rows of game/Unity.sqlite, not
+#: loose files. Their records keep the logical game/Unity/<Type>/<name> path.
+UNITY_DATASET_TYPES = {
+    "animator-controller": "AnimatorController",
+    "animator-override-controller": "AnimatorOverrideController",
+}
+
+
+def _unity_document(path: Path, export_root: Path) -> bytes:
+    """The exact bytes behind a logical ``game/Unity/<Type>/<name>`` path."""
+
+    parts = split_logical_ref(path)
+    if parts is None:
+        raise OSError(f"not a Unity object document path: {path}")
+    try:
+        return open_store(export_root).read_bytes(*parts)
+    except KeyError as exc:
+        raise OSError(f"no Unity object document {parts[0]}/{parts[1]} in the export store") from exc
+
+
+def _unity_source(path: Path, export_root: Path, size: int, media_type: str) -> dict[str, Any]:
+    """``source_descriptor`` for a store row: the same logical path, the row's size."""
+
+    relative = path.relative_to(export_root).as_posix()
+    return {
+        "path": relative,
+        "href": f"/export_full/{relative}",
+        "bytes": size,
+        "mediaType": media_type,
+    }
+
+
+def _unity_selector(type_name: str, export_root: Path) -> Callable[[Path], list[Path]]:
+    """Selector over one Unity type's JSON documents in the export store."""
+
+    def select(root: Path) -> list[Path]:
+        store = open_store_if_present(export_root)
+        if store is None:
+            return []
+        return sorted(root / name for name in store.names(type_name, "*.json"))
+
+    return select
+
+
+def _unity_input_signature(store: UnityObjectStore | None, type_name: str) -> dict[str, Any]:
+    """Reuse key for a store-backed dataset: document names, sizes and SHA256s."""
+
+    digest = hashlib.sha256()
+    count = 0
+    total_bytes = 0
+    rows = sorted(store.rows(type_name, "*.json"), key=lambda row: row.name.lower()) if store is not None else []
+    for row in rows:
+        digest.update(row.name.encode("utf-8"))
+        digest.update(b"\0")
+        digest.update(str(row.size).encode("ascii"))
+        digest.update(b"\0")
+        digest.update(row.sha256.lower().encode("ascii"))
+        digest.update(b"\n")
+        count += 1
+        total_bytes += row.size
+    return {
+        "algorithm": "unity-store-name-size-sha256",
+        "sha256": digest.hexdigest(),
+        "files": count,
+        "bytes": total_bytes,
+    }
+
+
 def _animator_controller_record(path: Path, export_root: Path) -> dict[str, Any]:
     relative = path.relative_to(export_root).as_posix()
+    size = 0
     try:
-        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+        data = _unity_document(path, export_root)
+        size = len(data)
+        payload = json.loads(data.decode("utf-8-sig"))
         if not isinstance(payload, dict):
             raise ValueError("controller JSON root is not an object")
         facts = _controller_facts(payload)
@@ -974,7 +1046,7 @@ def _animator_controller_record(path: Path, export_root: Path) -> dict[str, Any]
                 f"hashes={facts['hashCount']}",
             )),
             "tags": ["animation", "controller", "unity-json"],
-            "source": _source(path, export_root, "application/json"),
+            "source": _unity_source(path, export_root, size, "application/json"),
             "facts": facts,
             "payload": {
                 "animestudio": compact_metadata,
@@ -992,15 +1064,18 @@ def _animator_controller_record(path: Path, export_root: Path) -> dict[str, Any]
             "status": "decode_error",
             "summary": str(exc),
             "tags": ["animation", "controller", "decode_error"],
-            "source": _source(path, export_root, "application/json"),
+            "source": _unity_source(path, export_root, size, "application/json"),
             "diagnostic": str(exc),
         }
 
 
 def _animator_override_record(path: Path, export_root: Path) -> dict[str, Any]:
     relative = path.relative_to(export_root).as_posix()
+    size = 0
     try:
-        payload = json.loads(path.read_text(encoding="utf-8-sig"))
+        data = _unity_document(path, export_root)
+        size = len(data)
+        payload = json.loads(data.decode("utf-8-sig"))
         if not isinstance(payload, dict):
             raise ValueError("override-controller JSON root is not an object")
         overrides = payload.get("m_Clips") if isinstance(payload.get("m_Clips"), list) else []
@@ -1021,7 +1096,7 @@ def _animator_override_record(path: Path, export_root: Path) -> dict[str, Any]:
             "status": "decoded_unity_json",
             "summary": f"overrides={facts['overrideCount']}; null={facts['nullOverrideCount']}",
             "tags": ["animation", "controller-override", "unity-json"],
-            "source": _source(path, export_root, "application/json"),
+            "source": _unity_source(path, export_root, size, "application/json"),
             "facts": facts,
             "payload": {
                 "animestudio": payload.get("$animestudio"),
@@ -1038,7 +1113,7 @@ def _animator_override_record(path: Path, export_root: Path) -> dict[str, Any]:
             "status": "decode_error",
             "summary": str(exc),
             "tags": ["animation", "controller-override", "decode_error"],
-            "source": _source(path, export_root, "application/json"),
+            "source": _unity_source(path, export_root, size, "application/json"),
             "diagnostic": str(exc),
         }
 
@@ -1207,14 +1282,14 @@ def main(argv: list[str] | None = None) -> int:
             "Controller layers, states, conditions, hashes, string tables, and raw exported JSON.",
             layout.unity_type_dir("AnimatorController"),
             _animator_controller_record,
-            _all_json,
+            _unity_selector("AnimatorController", args.export_root),
         ),
         "animator-override-controller": (
             "Animator override controllers",
             "Controller and clip override references with raw exported JSON.",
             layout.unity_type_dir("AnimatorOverrideController"),
             _animator_override_record,
-            _all_json,
+            _unity_selector("AnimatorOverrideController", args.export_root),
         ),
         "level-config": (
             "Level configs",
@@ -1289,9 +1364,16 @@ def main(argv: list[str] | None = None) -> int:
                 descriptors.append(descriptor)
             continue
         title, description, root, reader, selector = specs[dataset_id]
-        available = root.is_dir()
-        diagnostic = "" if available else f"missing source directory: {root}"
-        input_signature = _input_signature(root, selector)
+        unity_type = UNITY_DATASET_TYPES.get(dataset_id)
+        if unity_type is not None:
+            unity_store = open_store_if_present(args.export_root)
+            available = unity_store is not None
+            diagnostic = "" if available else f"missing Unity object store: {layout.unity_store_path}"
+            input_signature = _unity_input_signature(unity_store, unity_type)
+        else:
+            available = root.is_dir()
+            diagnostic = "" if available else f"missing source directory: {root}"
+            input_signature = _input_signature(root, selector)
         skill_registry = None
         skill_definition = None
         buff_receipt_records = None
@@ -1333,7 +1415,11 @@ def main(argv: list[str] | None = None) -> int:
         elif available and dataset_id == "buff-action-receipts":
             records = buff_receipt_records
         else:
-            records = _build_records(root, args.export_root, reader, selector) if available else []
+            records = (
+                [reader(path, args.export_root) for path in selector(root)]
+                if available and unity_type is not None else
+                _build_records(root, args.export_root, reader, selector) if available else []
+            )
         descriptor = publish_dataset(
             args.out_dir,
             dataset_id=dataset_id,
@@ -1341,7 +1427,7 @@ def main(argv: list[str] | None = None) -> int:
             description=description,
             records=records,
             provenance={
-                "exportLayout": "endfield.export-layout.v2",
+                "exportLayout": EXPORT_LAYOUT_SCHEMA,
                 "sourceRoot": root.relative_to(args.export_root).as_posix(),
                 "reader": (
                     "scripts.game_data.memorypack.derived_values.decode_file"

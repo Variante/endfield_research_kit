@@ -26,6 +26,7 @@ from scripts.game_data.il2cpp import protocol as il2cpp
 from scripts.webui.gameplay import loadout_data
 from scripts.game_data.extraction.animestudio_index_io import is_effective_row
 from scripts.game_data.extraction.unity_overlay import effective_chunk_slot_keys
+from scripts.game_data.unity_store import open_store_if_present
 from scripts.source_paths import INSTALLED_LAYERS, ExportLayout
 
 
@@ -411,14 +412,15 @@ def _load_gameplay_tag_config_names(
         "serializedPathCount": 0,
     }
     script_path_ids: set[str] = set()
-    script_glob = ExportLayout(export_root).unity_type_dir("MonoScript").glob("GameplayTagConfig_p*.json")
-    for script_path in script_glob:
+    store = open_store_if_present(export_root)
+    script_documents = store.iter_documents("MonoScript", "GameplayTagConfig_p*.json") if store is not None else ()
+    for _script_row, script_bytes in script_documents:
         try:
-            script_row = json.loads(script_path.read_text(encoding="utf-8"))
+            script_row = json.loads(script_bytes.decode("utf-8"))
             path_id = script_row.get("$animestudio", {}).get("pathId")
             if path_id not in (None, ""):
                 script_path_ids.add(str(path_id))
-        except (OSError, TypeError, ValueError):
+        except (TypeError, ValueError):
             continue
     if not script_path_ids:
         return names, sources, evidence
