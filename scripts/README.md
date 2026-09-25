@@ -484,7 +484,7 @@ Every export records build-step timings and a process-tree benchmark under
 `reports/export/`. The Combat builder rejects stale graph inputs and publishes
 a degraded reason instead of using them as direct evidence.
 
-### Unity object store (layout v3)
+### Export stores (layout v4)
 
 The exporter publishes every exported Unity object document (`.json` and the
 `.anim` clips, about 1.7 M files) into one SQLite file,
@@ -495,9 +495,21 @@ reader: builders call `UnityObjectStore.for_export(root)` and query by type
 plus a file-name glob, by object name, or by PathID. Rows keep the exported
 file name and exact bytes, so `game/Unity/<Type>/<name>` stays the provenance
 reference, and `serve.py` still answers those URLs from the store. Nothing
-falls back to loose files: a v2 root, or a v3 root with no store, fails closed.
+falls back to loose files: an older root, or a root with no store, fails closed.
 
-A layout-v2 root (a saved previous export, for example) is converted in
+Final VFS folders of many small files with few readers go the same way:
+every file under `PACKED_GAME_DIRS` (`scripts/source_paths.py`; currently
+`Json/LipSync`, about 74 K files) lives in `game/GameFiles.sqlite`, keyed by
+its game/-relative path. `scripts/game_data/game_file_store.py` owns it;
+readers use `read_game_file`, `game_file_exists` and `iter_game_tree`, which
+answer packed paths from the store and every other path from disk, so a
+reader need not know which folders are packed. Both exporters (the full
+structured publish and the changed-only transaction) write packed folders
+into the store; the JsonData corpus gate, schema coverage, source graph and
+Story provenance read LipSync from it. Add a folder to `PACKED_GAME_DIRS` only
+together with its readers.
+
+A layout-v2 or v3 root (a saved previous export, for example) is converted in
 place. The pack re-hashes every row before it deletes a loose file, resumes
 after an interruption, and `--unpack` restores the v2 tree. A file the disk
 cannot read stops the pack before anything is deleted, with every such file
@@ -506,8 +518,8 @@ record them as lost (moved to a quarantine, listed in the store's
 `unreadableAtPack` meta row) and finish:
 
 ```bat
-python -m scripts.game_data.extraction.pack_unity_store --export-root export_full_1d5d1 --dry-run
-python -m scripts.game_data.extraction.pack_unity_store --export-root export_full_1d5d1
+python -m scripts.game_data.extraction.pack_export_stores --export-root export_full_1d5d1 --dry-run
+python -m scripts.game_data.extraction.pack_export_stores --export-root export_full_1d5d1
 ```
 
 For ad-hoc study, the store CLI lists, prints, extracts and runs SQL, with
@@ -523,6 +535,8 @@ python -m scripts.game_data.unity_store extract MonoBehaviour "DynamicScene*" --
 The `objects` table carries `type, name, object_name, path_id, source_file`
 (the CAB) and `script_path_id` columns, all indexed; any other SQLite client
 can read it, and only the document body needs `zlib` to inflate.
+`python -m scripts.game_data.game_file_store` offers `stats`, `ls`, `cat`,
+`extract` and `verify` for the packed game files.
 
 ## Main builders
 
@@ -1261,7 +1275,8 @@ and decoded audio assets. `--text-only` omits all assets, `--no-audio` keeps
 other assets, `--exact` hashes contents, and `--full-export-scan` is for broad
 audits only. A broad scan expands `game/Unity.sqlite` into one entry per stored
 document at its `game/Unity/<Type>/<name>` path, fingerprinted by the row's
-SHA256, so both export roots must be layout v3. The published feed keeps every matching changed entry by default;
+SHA256, and `game/GameFiles.sqlite` into one entry per packed file at its
+`game/<path>`, so both export roots must be layout v4. The published feed keeps every matching changed entry by default;
 `--sample-limit N` is an opt-in diagnostic cap, while `0` remains unlimited.
 Only an individual oversized text diff preview is bounded; that does not omit
 the update entry itself.

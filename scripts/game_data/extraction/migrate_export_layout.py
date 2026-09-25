@@ -1,4 +1,4 @@
-"""Convert a layout-v1 export root to layout v2 in place (then pack_unity_store makes it v3).
+"""Convert a layout-v1 export root to layout v2 in place (then pack_export_stores makes it v4).
 
 v1 kept both installed layers side by side (``structured/<Layer>``,
 ``recovered/AnimeStudio-cli/<Layer>``) and mixed extraction metadata, run
@@ -499,7 +499,7 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         execute(root, quarantine, planner.moves)
         print(f"migrated {len(planner.moves)} entries; quarantine at {quarantine}")
-        print(f"next, pack its Unity objects (layout v3): {EXPORT_LAYOUT_PACK_COMMAND} --export-root \"{root}\"")
+        print(f"next, pack its small files (layout v4): {EXPORT_LAYOUT_PACK_COMMAND} --export-root \"{root}\"")
         return 0
     except (MigrationError, OverlayError, ExportLayoutError) as exc:
         print(f"migrate_export_layout: {exc}", file=sys.stderr)

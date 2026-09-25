@@ -10,18 +10,20 @@ from typing import Any
 from scripts.repo_paths import REPO_ROOT
 
 # ---------------------------------------------------------------------------
-# Export root layout v3
+# Export root layout v4
 #
 # An export root holds exactly two roles:
 #
 #   game/   final, exactly decoded game data, one tree = what the client loads
 #           (Persistent overlaid on StreamingAssets). Flat: native VFS names
 #           with the leading ``Data/`` dropped, plus one folder per decoded
-#           family (Audio, Unity). v3 publishes the exported Unity object
-#           documents (.json, .anim) into game/Unity.sqlite
-#           (scripts/game_data/unity_store.py); game/Unity/<Type>/ keeps only
-#           converted media (.png, .obj, .fbx, ...). v2 kept every Unity
-#           object as a loose file.
+#           family (Audio, Unity). Folders of many small files are packed
+#           into SQLite: the exported Unity object documents (.json, .anim)
+#           into game/Unity.sqlite (scripts/game_data/unity_store.py), and the
+#           PACKED_GAME_DIRS below into game/GameFiles.sqlite
+#           (scripts/game_data/game_file_store.py); game/Unity/<Type>/ keeps
+#           only converted media (.png, .obj, .fbx, ...). v2 kept all of it
+#           as loose files; v3 packed only the Unity documents.
 #   meta/   indexes and provenance that describe game/. Never game data.
 #           Per installed layer (meta/<Layer>/...), because each index,
 #           asset map and fingerprint describes one physical root, and the
@@ -32,12 +34,30 @@ from scripts.repo_paths import REPO_ROOT
 # root is built by ExportLayout; do not join export-root segments by hand.
 # ---------------------------------------------------------------------------
 
-EXPORT_LAYOUT_SCHEMA = "endfield.export-layout.v3"
+EXPORT_LAYOUT_SCHEMA = "endfield.export-layout.v4"
 EXPORT_LAYOUT_SCHEMA_V2 = "endfield.export-layout.v2"
+EXPORT_LAYOUT_SCHEMA_V3 = "endfield.export-layout.v3"
+#: Older layouts a packer converts in place; a writer of the current layout refuses them.
+EXPORT_LAYOUT_PACKABLE_SCHEMAS = (EXPORT_LAYOUT_SCHEMA_V2, EXPORT_LAYOUT_SCHEMA_V3)
 EXPORT_LAYOUT_FILE = "layout.json"
 EXPORT_LAYOUT_MIGRATE_COMMAND = "python -m scripts.game_data.extraction.migrate_export_layout"
-EXPORT_LAYOUT_PACK_COMMAND = "python -m scripts.game_data.extraction.pack_unity_store"
+EXPORT_LAYOUT_PACK_COMMAND = "python -m scripts.game_data.extraction.pack_export_stores"
 UNITY_STORE_FILE = "Unity.sqlite"
+GAME_FILE_STORE_FILE = "GameFiles.sqlite"
+#: game/-relative folders whose files live in GAME_FILE_STORE_FILE, not on disk.
+#: Add a folder only for a family of many small files with few readers; every
+#: reader of it must go through scripts/game_data/game_file_store.py.
+PACKED_GAME_DIRS: tuple[str, ...] = ("Json/LipSync",)
+
+
+def packed_game_dir(game_relative: str) -> str | None:
+    """The PACKED_GAME_DIRS entry holding a game/-relative path, or None (case-insensitive)."""
+    text = str(game_relative).replace("\\", "/").strip("/").casefold()
+    for folder in PACKED_GAME_DIRS:
+        key = folder.casefold()
+        if text == key or text.startswith(key + "/"):
+            return folder
+    return None
 
 # The installed roots, in overlay order: a later layer overrides an earlier one.
 INSTALLED_LAYERS: tuple[str, ...] = ("StreamingAssets", "Persistent")
@@ -147,6 +167,11 @@ class ExportLayout:
         return self.unity_dir / type_name
 
     @property
+    def game_file_store_path(self) -> Path:
+        """game/GameFiles.sqlite: every file under PACKED_GAME_DIRS (layout v4)."""
+        return self.game / GAME_FILE_STORE_FILE
+
+    @property
     def unity_store_path(self) -> Path:
         """game/Unity.sqlite: every exported Unity object document (layout v3)."""
         return self.game / UNITY_STORE_FILE
@@ -224,10 +249,10 @@ class ExportLayout:
                 f"{self.root} has no {EXPORT_LAYOUT_FILE}; it predates layout v2. "
                 f"Run: {EXPORT_LAYOUT_MIGRATE_COMMAND} --export-root \"{self.root}\""
             )
-        if marker.get("schema") == EXPORT_LAYOUT_SCHEMA_V2:
+        if marker.get("schema") in EXPORT_LAYOUT_PACKABLE_SCHEMAS:
             raise ExportLayoutError(
-                f"{self.root} is a layout-v2 root: its Unity objects are loose files. "
-                f"Pack them into {UNITY_STORE_FILE} with: {EXPORT_LAYOUT_PACK_COMMAND} --export-root \"{self.root}\""
+                f"{self.root} is an older layout ({marker.get('schema')}) that keeps small files loose. "
+                f"Pack it with: {EXPORT_LAYOUT_PACK_COMMAND} --export-root \"{self.root}\""
             )
         if marker.get("schema") != EXPORT_LAYOUT_SCHEMA:
             raise ExportLayoutError(
@@ -249,18 +274,18 @@ class ExportLayout:
             raise ExportLayoutError(f"{self.root} is not a complete {schema} root (found {found!r})")
         return self
 
-    def begin_write(self, *, schema: str = EXPORT_LAYOUT_SCHEMA, upgrade_from_v2: bool = False, **fields: Any) -> None:
+    def begin_write(self, *, schema: str = EXPORT_LAYOUT_SCHEMA, upgrade: bool = False, **fields: Any) -> None:
         """Mark the root as being rewritten. Writers call this first.
 
-        A writer of the current layout refuses a root still in layout v2, so an
-        export into it never leaves loose v2 objects under a v3 marker; the
-        packer and the v1 migration pass ``schema`` explicitly.
+        A writer of the current layout refuses a root still in an older layout,
+        so an export into it never leaves loose files under a current marker;
+        the packer (``upgrade``) and the v1 migration (``schema``) opt out.
         """
-        if schema == EXPORT_LAYOUT_SCHEMA and not upgrade_from_v2:
+        if schema == EXPORT_LAYOUT_SCHEMA and not upgrade:
             marker = self.read_marker() if self.root.is_dir() else None
-            if marker is not None and marker.get("schema") == EXPORT_LAYOUT_SCHEMA_V2:
+            if marker is not None and marker.get("schema") in EXPORT_LAYOUT_PACKABLE_SCHEMAS:
                 raise ExportLayoutError(
-                    f"{self.root} is a layout-v2 root; pack it before writing into it: "
+                    f"{self.root} is an older layout ({marker.get('schema')}); pack it before writing into it: "
                     f"{EXPORT_LAYOUT_PACK_COMMAND} --export-root \"{self.root}\""
                 )
         self._publish_marker(EXPORT_LAYOUT_STATE_WRITING, fields, schema)

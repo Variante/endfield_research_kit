@@ -40,9 +40,10 @@ from scripts.game_data.extraction.animestudio_object_index import (
 
 
 from scripts.repo_paths import REPO_ROOT
-from scripts.source_paths import INSTALLED_LAYERS, ExportLayout, configured_export_root
+from scripts.source_paths import INSTALLED_LAYERS, PACKED_GAME_DIRS, ExportLayout, configured_export_root
 from scripts.game_data.extraction.unity_overlay import load_overlay_catalog, normalize_chunk_path
 from scripts.game_data.unity_store import UnityObjectStore, UnityObjectStoreWriter, is_store_file
+from scripts.game_data.game_file_store import GameFileStoreWriter
 
 ROOT = REPO_ROOT
 DEFAULT_GAME_ROOT = resolve_installed_game_data_root()
@@ -3018,10 +3019,39 @@ def publish_structured_dump(output_root: Path, layer: str) -> dict[str, Any]:
             published.append(entry.name)
         else:
             raise SystemExit(f"structured dump produced {entry}, which has no place in game/")
+    packed = pack_published_game_dirs(layout, published)
     if graveyard.exists():
         shutil.rmtree(graveyard)
     log(f"  published structured dump from {layer}: {', '.join(published) or 'nothing'}")
-    return {"layer": layer, "folders": published}
+    return {"layer": layer, "folders": published, "packed": packed}
+
+
+def pack_published_game_dirs(layout: ExportLayout, published: list[str]) -> dict[str, dict[str, int]]:
+    """Move each PACKED_GAME_DIRS folder of a just-published game/ tree into GameFiles.sqlite.
+
+    Publishing replaced the whole top-level folder, so a packed folder's rows
+    are synced to exactly what this dump wrote (an absent folder empties its
+    rows) and its loose files are then removed. An unreadable file fails the
+    publish (strict sync) with the root still marked as being written.
+    """
+    counts: dict[str, dict[str, int]] = {}
+    folders = [folder for folder in PACKED_GAME_DIRS if folder.split("/", 1)[0] in published]
+    if not folders:
+        return counts
+    with GameFileStoreWriter(layout.game_file_store_path) as writer:
+        for folder in folders:
+            base = layout.game.joinpath(*folder.split("/"))
+            files: dict[str, Path] = {}
+            if base.is_dir():
+                for dirpath, _dirnames, filenames in os.walk(base):
+                    for filename in filenames:
+                        path = Path(dirpath) / filename
+                        files[path.relative_to(base).as_posix()] = path
+            counts[folder] = writer.sync_folder(folder, files, remove_missing=True)
+            if base.is_dir():
+                shutil.rmtree(base)
+            log(f"  packed game/{folder} into {layout.game_file_store_path.name}: {counts[folder]}")
+    return counts
 
 
 def _link_or_copy(source: Path, target: Path) -> None:

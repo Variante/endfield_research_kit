@@ -38,7 +38,8 @@ if __package__ in {None, ""}:
     )
 
 from scripts.common import ROOT, read_json
-from scripts.source_paths import ExportLayout, ExportLayoutError
+from scripts.source_paths import ExportLayout, ExportLayoutError, packed_game_dir
+from scripts.game_data.game_file_store import GameFileStoreWriter
 from scripts.game_data.extraction.export_full_from_game import (
     DEFAULT_ANIMESTUDIO,
     DEFAULT_GAME_ROOT,
@@ -500,6 +501,8 @@ class PublishJournal:
     def __init__(self) -> None:
         self._moved_backups: list[tuple[Path, Path]] = []
         self._published: list[Path] = []
+        # (store, game/-relative path, backup of its previous bytes or None)
+        self._store_changes: list[tuple[Path, str, Path | None]] = []
 
     def record_backup(self, backup_path: Path, destination: Path) -> None:
         self._moved_backups.append((backup_path, destination))
@@ -507,7 +510,23 @@ class PublishJournal:
     def record_publish(self, destination: Path) -> None:
         self._published.append(destination)
 
+    def record_store_change(self, store: Path, game_path: str, backup_path: Path | None) -> None:
+        """Record a packed file about to change: rollback restores ``backup_path`` or drops the row."""
+        self._store_changes.append((store, game_path, backup_path))
+
     def roll_back(self) -> None:
+        if self._store_changes:
+            by_store: dict[Path, list[tuple[str, Path | None]]] = {}
+            for store, game_path, backup_path in self._store_changes:
+                by_store.setdefault(store, []).append((game_path, backup_path))
+            for store, changes in by_store.items():
+                with GameFileStoreWriter(store) as writer:
+                    for game_path, backup_path in reversed(changes):
+                        if backup_path is not None:
+                            writer.put(game_path, backup_path.read_bytes())
+                        else:
+                            writer.delete(game_path)
+            self._store_changes.clear()
         for destination in reversed(self._published):
             destination.unlink(missing_ok=True)
         self._published.clear()
@@ -544,6 +563,7 @@ def publish_transaction(
         actions[relative] = None
     owned = journal is None
     active = PublishJournal() if journal is None else journal
+    store_writer: GameFileStoreWriter | None = None
     try:
         for relative, staged_path in sorted(actions.items(), key=lambda item: str(item[0])):
             try:
@@ -554,6 +574,26 @@ def publish_transaction(
                 destination.relative_to(destination_root)
             except ValueError as exc:
                 raise ChangedExportError(f"structured destination escapes output root: {destination}") from exc
+            game_path = destination.relative_to(destination_root).as_posix()
+            if packed_game_dir(game_path) is not None:
+                # Layout v4 keeps this folder in game/GameFiles.sqlite.
+                if store_writer is None:
+                    store_writer = GameFileStoreWriter(layout.game_file_store_path)
+                current = store_writer.read_existing(game_path)
+                if staged_path is None and current is None:
+                    continue
+                backup_path = None
+                if current is not None:
+                    backup_path = backup.joinpath(*relative.parts)
+                    backup_path.parent.mkdir(parents=True, exist_ok=True)
+                    backup_path.write_bytes(current)
+                active.record_store_change(layout.game_file_store_path, game_path, backup_path)
+                if staged_path is not None:
+                    store_writer.put(game_path, staged_path.read_bytes(), mtime_ns=staged_path.stat().st_mtime_ns)
+                    staged_path.unlink()
+                else:
+                    store_writer.delete(game_path)
+                continue
             # A previous failed wrapper run may already have applied this
             # deletion while deliberately leaving the baseline unadvanced.
             # Treat that state as retryable; the old snapshot still proves
@@ -570,9 +610,15 @@ def publish_transaction(
                 os.replace(staged_path, destination)
                 active.record_publish(destination)
     except Exception:
+        if store_writer is not None:
+            store_writer.close()
+            store_writer = None
         if owned:
             active.roll_back()
         raise
+    finally:
+        if store_writer is not None:
+            store_writer.close()
 
 
 def _snapshot_path(output_root: Path, source: str) -> Path:

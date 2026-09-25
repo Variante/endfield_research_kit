@@ -104,12 +104,13 @@ file-regex filters. Audio defaults to direct lossless FLAC: the CLI pipes PCM
 from the pinned repo-local vgmstream decoder into its in-process FLAC encoder,
 without an intermediate WAV file or `ffmpeg`.
 
-## Export root layout (v3)
+## Export root layout (v4)
 
 `ExportLayout` (`scripts/source_paths.py`) owns every export path. A root is
 `game/` (final, exactly decoded data: `Table Json Video Terrain Lua` with the
 VFS `Data/` prefix dropped, `Audio/<LANG|shared>`, the Unity object store
-`Unity.sqlite`, and converted Unity media under `Unity/<Type>`) plus
+`Unity.sqlite`, the packed-folder store `GameFiles.sqlite`, and converted
+Unity media under `Unity/<Type>`) plus
 per-layer `meta/<Layer>/{vfs_index,asset_map,object_index,asset_status,export_manifest,renderer_index}`,
 `meta/cab_map`, and `meta/extraction/{failures,incremental}`. `layout.json`
 (`state` writing|complete) gates every reader.
@@ -125,7 +126,7 @@ per-layer `meta/<Layer>/{vfs_index,asset_map,object_index,asset_status,export_ma
   effective (`animestudio_index_io.EffectiveObjectRows`), counting every
   `object` row for its integrity check. Slots match by (chunk file name,
   offset); the catalogue loader fails closed if one name denotes two chunks.
-- v3 differs from v2 only in how Unity output is published. Loose files made
+- v3 and v4 differ from v2 only in which small files are published loose. Loose files made
   every consumer pay for directory enumeration and cold small-file reads
   (about 2.8 ms per MonoBehaviour cold, against about 20 us per row scanned
   from SQLite), so the object documents -- `.json` dumps and `.anim` clips,
@@ -136,9 +137,17 @@ per-layer `meta/<Layer>/{vfs_index,asset_map,object_index,asset_status,export_ma
   script PathID). The file name is kept so `game/Unity/<Type>/<name>` remains
   every report's provenance reference; `serve.py` answers it from the store.
   Media stays loose because the browser opens it by path. There is no loose
-  fallback: a v2 root fails `require()` with the pack command, and a writer
-  refuses to publish into one. `pack_unity_store.py` converts a v2 root in
-  place (verify every row, then delete; resumable; `--unpack` reverses it).
+  fallback: an older root fails `require()` with the pack command, and a writer
+  refuses to publish into one. v4 applies the same rule to final VFS folders:
+  `PACKED_GAME_DIRS` (`Json/LipSync`, three quarters of `game/Json` by count
+  with a handful of readers) lives in `game/GameFiles.sqlite`
+  (`game_file_store.py`) keyed by game/-relative path, and readers resolve any
+  game path through `read_game_file`/`iter_game_tree`. The rest of `game/Json`
+  stays loose: about 21 K files read by dozens of builders by path, where the
+  small-file cost is modest. `meta/` stays loose: about a hundred large
+  indexes, already streamed. `pack_export_stores.py` converts a v2 or v3 root
+  in place (verify every row, then delete; resumable; an unreadable file stops
+  it unless `--accept-unreadable` records the loss; `--unpack` reverses it).
 - Staging (also the per-asset reuse cache), filters and index parts live under
   `tmp/game_data/export/<root>-<hash>/` and stay one file per object, because
   AnimeStudio writes files and the per-asset reuse depends on them. Publishing

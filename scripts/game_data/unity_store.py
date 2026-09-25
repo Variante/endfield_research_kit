@@ -11,7 +11,7 @@ file name, so ``game/Unity/<Type>/<name>`` stays the logical reference every
 report and published record already uses. The stored bytes are the exported
 bytes exactly (zlib-compressed), with their SHA256; nothing is re-serialized.
 
-Readers use :class:`UnityObjectStore`; the exporter and the v2 -> v3 packer use
+Readers use :class:`UnityObjectStore`; the exporter and the packer (``pack_export_stores``) use
 :class:`UnityObjectStoreWriter`. For ad-hoc study, the CLI registers SQL
 functions ``inflate(data)`` (the document text) and ``doc(data, '$.path')``
 (``json_extract`` over it):
@@ -46,13 +46,14 @@ if __package__ in {None, ""}:
 from scripts.source_paths import ExportLayout
 
 STORE_SCHEMA = "endfield.unity-object-store.v1"
+PACK_COMMAND = "python -m scripts.game_data.extraction.pack_export_stores"
 STORE_FILE_NAME = "Unity.sqlite"
 #: Exported suffixes that are object documents and live in the store. Every
 #: other suffix is converted media and stays a loose file.
 STORE_SUFFIXES: tuple[str, ...] = (".json", ".anim")
 ZLIB_LEVEL = 6
 #: meta key listing source documents the v2 packer could not read and the
-#: caller accepted as lost (``pack_unity_store --accept-unreadable``).
+#: caller accepted as lost (``pack_export_stores --accept-unreadable``).
 UNREADABLE_META_KEY = "unreadableAtPack"
 _MISSING = object()
 _PATH_ID_SUFFIX = re.compile(r"_p([0-9A-Fa-f]{16})(?=\.)")
@@ -201,19 +202,22 @@ class UnityObjectStore:
     _cache: dict[str, "UnityObjectStore"] = {}
     _cache_lock = threading.Lock()
 
-    def __init__(self, path: Path) -> None:
+    def __init__(self, path: Path, *, schema: str = STORE_SCHEMA) -> None:
+        """``schema`` lets another keyed document store reuse this engine
+        (``game_file_store`` does); it is checked against the file's meta row."""
         self.path = Path(path)
+        self.schema = schema
         if not self.path.is_file():
             raise UnityStoreError(
-                f"no Unity object store at {self.path}; export the Unity stages, or pack a layout-v2 root with "
-                "python -m scripts.game_data.extraction.pack_unity_store --export-root <root>"
+                f"no {schema} store at {self.path}; export the stages that produce it, or pack an older root with "
+                f"{PACK_COMMAND} --export-root <root>"
             )
         self._local = threading.local()
         self._connections: list[sqlite3.Connection] = []
         self._connections_lock = threading.Lock()
         schema = self._connection().execute("SELECT value FROM meta WHERE key='schema'").fetchone()
-        if not schema or schema[0] != STORE_SCHEMA:
-            raise UnityStoreError(f"{self.path} declares schema {schema[0] if schema else None!r}; expected {STORE_SCHEMA!r}")
+        if not schema or schema[0] != self.schema:
+            raise UnityStoreError(f"{self.path} declares schema {schema[0] if schema else None!r}; expected {self.schema!r}")
 
     @classmethod
     def for_export(cls, export_root: Path | None = None) -> "UnityObjectStore":
@@ -421,7 +425,7 @@ def store_loose_documents(export_root: Path, *, jobs: int = 4) -> int:
     """Move every loose object document under game/Unity into the store; returns the count.
 
     Test fixtures and small hand-built roots write loose files and call this;
-    it does not touch the layout marker. Real v2 roots use pack_unity_store.
+    it does not touch the layout marker. Real older roots use pack_export_stores.
     """
     layout = ExportLayout(export_root)
     moved = 0
@@ -504,8 +508,9 @@ def _prepare(name: str, path: Path) -> _Prepared:
 class UnityObjectStoreWriter:
     """Create or update a store. One writer per file; not for concurrent use."""
 
-    def __init__(self, path: Path, *, jobs: int = 8) -> None:
+    def __init__(self, path: Path, *, jobs: int = 8, schema: str = STORE_SCHEMA) -> None:
         self.path = Path(path)
+        self.schema = schema
         self.path.parent.mkdir(parents=True, exist_ok=True)
         self.jobs = max(1, int(jobs))
         self.unreadable: list[tuple[str, UnreadableDocument]] = []
@@ -514,10 +519,10 @@ class UnityObjectStoreWriter:
         self.connection.execute("PRAGMA synchronous=NORMAL")
         self.connection.executescript(_SCHEMA_SQL)
         existing = self.connection.execute("SELECT value FROM meta WHERE key='schema'").fetchone()
-        if existing and existing[0] != STORE_SCHEMA:
+        if existing and existing[0] != schema:
             self.connection.close()
-            raise UnityStoreError(f"{self.path} declares schema {existing[0]!r}; expected {STORE_SCHEMA!r}")
-        self.connection.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('schema', ?)", (STORE_SCHEMA,))
+            raise UnityStoreError(f"{self.path} declares schema {existing[0]!r}; expected {schema!r}")
+        self.connection.execute("INSERT OR REPLACE INTO meta (key, value) VALUES ('schema', ?)", (schema,))
         self.connection.commit()
 
     def __enter__(self) -> "UnityObjectStoreWriter":
@@ -644,9 +649,9 @@ class UnityObjectStoreWriter:
         UnityObjectStore.clear_cache()
 
 
-def verify_store(path: Path, *, jobs: int = 8) -> dict[str, Any]:
+def verify_store(path: Path, *, jobs: int = 8, schema: str = STORE_SCHEMA) -> dict[str, Any]:
     """Decompress every row and compare its SHA256 and size; the first mismatches are reported."""
-    store = UnityObjectStore(path)
+    store = UnityObjectStore(path, schema=schema)
     try:
         return _verify(store, jobs)
     finally:

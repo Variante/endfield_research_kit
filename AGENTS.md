@@ -534,11 +534,14 @@ Setup and export internals:
 
 Browser data inputs and outputs:
 
-- Active inputs are the export root's `game/` tree (layout v3, see
+- Active inputs are the export root's `game/` tree (layout v4, see
   `memory/game_data/extraction_pipeline.md`): `game/Table`, `game/Json`,
   `game/Video`, `game/Audio`, the decoded Unity object documents in
   `game/Unity.sqlite` (read only through `scripts/game_data/unity_store.py`,
-  never as loose files), and converted Unity media under `game/Unity/<Type>/`,
+  never as loose files), the packed small-file folders (`PACKED_GAME_DIRS`,
+  now `Json/LipSync`) in `game/GameFiles.sqlite` (read through
+  `scripts/game_data/game_file_store.py`), and converted Unity media under
+  `game/Unity/<Type>/`,
   plus generated data under `webui/data/`. Builder
   evidence and comparison inputs go to `webui/data/_build/`, which is neither
   served nor packaged.
