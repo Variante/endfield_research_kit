@@ -22,7 +22,7 @@ axis. A path appears under exactly one owner.
 | | `game_data/codecs/` | all per-record LevelScript and LevelData byte decoding behind the `*_binary.py` readers, which keep only the file-level framing walk, the record dispatcher and the result assembly; includes `send_lua_event.py` for the one nested value the derived declaration cannot describe |
 | | `game_data/contracts/` | the reviewed contract JSON that every reader, loader and validator loads; `CONTRACTS_DIR` from the package is the only path anchor; git, not a pinned digest, owns each file's integrity |
 | | `game_data/streaming/` | the block-15 Streaming lane: `framing.py`, `pairs.py`, the marker parsers, their `*_native.py` validators and `*_corpus.py` gates |
-| | `game_data/terrain/` | the TRET container reader (`tret.py`), the height grids map recovery reads (`height.py`), the native consumer validator and the corpus gate |
+| | `game_data/terrain/` | the TRET container reader (`tret.py`), Map's `_H` texture-byte diagnostic (`height.py`), the native consumer and layer-path validators, and the corpus gate |
 | | `game_data/il2cpp/` | `protocol.py` (metadata and PE primitives), `native_image.py` (the one opened installed build every contract validator checks against, with the shared method-identity, dispatcher-route, code-window and setter-order checks), `context.py` (generic-instantiation pointer tables), `method_resolver.py` (managed name to selected-build body), and the context audit split by the section it owns: `context_audit.py` (CLI, registration and method-spec sweeps, report assembly), `context_audit_common.py` (build gate through `contracts/il2cpp_context_audit_native.json`, hashing and sweep helpers), `context_audit_memorypack.py` (MemoryPack reader and BuffData consumer checks), `context_audit_skilldata.py` (SkillData branch witness, replay and static alignment), `context_audit_vfs.py` (stream, VFS and UnityPlayer consumer checks) |
 | | `game_data/monobehaviour/` | the exported MonoBehaviour corpus: `census.py`, `monoscript_catalog.py`, `script_names.py`, `field_semantics.py` (what each named class's fields hold) and `table_keys.py` (which string fields carry exported Table keys) |
 | | `game_data/schemas/` | the reviewed named JSON schema readers for the textual JsonData families (`gameplay_config.py`, `gameplay_config_polymorphic.py`, `text_schema.py`, `mission_runtime_main.py`, `mission_runtime_meta.py`, `npc_catalog.py`, `npc_prefab_info.py`, `map_config.py`, `ui_level_map_load_config.py`, `level_mount_point.py`, `gold_coin_config.py`), all validated by `named_schema.py` and keeping only their contract pin, path predicate, relations and result shape |
@@ -32,10 +32,10 @@ axis. A path appears under exactly one owner.
 | | `game_data/memorypack/derived_actions.py` | the narrow flat-body case of the same idea: adds only the routes whose members are all fixed-width or strings, with no plan registry. `derived_plans` is the superset |
 | | `webui/story_recovery/refresh_audio_hook_catalog.py` | re-pins the audio hook catalog the capture host reads to the installed build: managed RVAs re-resolved by name, native RVAs kept only when still a `.pdata` function start. The host writes the activation manifest itself, and each native row is named from the Wwise SDK on every re-pin, an annotation cleared rather than carried when the match is lost |
 | | `webui/audio/semantics/runtime_capture_import.py` | validates one bounded EndfieldCapture audio session against the provider's own completeness counters, decodes its callback payloads with the writer's own `AudioEventPayload` layout, and reports the Events posted and files opened without joining them |
-| | `webui/audio/semantics/decoded_payload_event_names.py` | Wwise Event names taken from the decoded member that holds them rather than from a spelling grammar; standalone, not yet wired into `build_audio` |
+| | `webui/audio/semantics/decoded_payload_event_names.py` | Wwise Event-name candidates from exact decoded payload members, gated by selected native inputs and promoted by the source Audio index's HIRC inventory; also feeds `build_audio` |
 | | `game_data/memorypack/derived_values.py` | decodes a plan into named values rather than only framing it, and checks each decoded record's own identifier against its filename |
 | | `game_data/memorypack/derived_plans.py` | opt-in reader that executes a `derived_schema` read plan with the frozen reader's own primitives, so a nested record, list, counted map or union is consumed rather than only described; `--corpus` is its adoption gate against exported BuffData |
-| | `game_data/memorypack/action_dispatcher.py` | the whole AbilityActionData union dispatcher of the selected build, walked generically from the switch table the reviewed contracts pin; names the wrapper behind every tag, including the ones no contract covers |
+| | `game_data/memorypack/action_dispatcher.py` | the whole AbilityActionData union dispatcher of the selected build, walked from the reviewed catalog's matching wrapper/table pins; names the wrapper behind every tag, including the ones no contract covers |
 | | `game_data/memorypack/wrapper_members.py` | the selected build's generated wrapper member order and member types for every `*ForMemoryPack` type, derived in one metadata pass; the bulk source the per-tag contracts record one wrapper at a time |
 | | `game_data/memorypack/union_dispatch.py` | reads a union's tag assignment from its native `<Base>ForMemoryPackFormatter.Deserialize` jump table, found by name and instruction shape; accepts a table only when every entry resolves one-for-one onto the family's derived wrappers, and refuses unions compiled without one |
 | | `game_data/pure_getter_rows.py` | re-derives the per-build fields of reviewed PureGetter contract rows -- tag, member count and ordinals, `GetResult` body -- for the `*_getter_native.py` loaders' `--regenerate` |
@@ -43,14 +43,14 @@ axis. A path appears under exactly one owner.
 | | `game_data/il2cpp/call_graph.py` | names a body's direct calls (ordinary and generic method pointers), the string literals it loads and the fields it reads before a call, so a native contract can state "A calls B, then C" by name and re-prove it on each build |
 | | `game_data/il2cpp/body_claims.py` | name-addressed method bodies of the selected build (`BodyIndex`: short-name resolution, `.pdata` fragments, one level of unnamed helpers, iFix patch ids) and the claim kinds a reviewed contract states about them -- `calls`, `notCallsPrefix`, `comparesResult`, `readsField`, `storesConstant`, `returnsConstant`, `matches` -- evaluated on whichever build is installed |
 | | `game_data/story_native_consumers_native.py` | proves the Story builders' native claim groups and resolves their `cited` methods from `contracts/story_native_consumers.json`, caching the evaluation in `reports/story/recovery/story_native_consumers.json` keyed by the installed build and the contract bytes; a failed or `pendingReview` group publishes nothing |
-| | `game_data/memorypack/` | MemoryPack codecs and their corpus gates, including the current-build BuffData additions (`buff_icon_config.py`, `buff_residual_actions.py`, `buff_named_schema.py`) and the SkillData first-timeline lane (`skill_timeline_*.py`), which share `core.LabelledReader` and gate through `il2cpp.native_image` |
+| | `game_data/memorypack/` | MemoryPack codecs and their corpus gates, including the current-build BuffData additions (`buff_icon_config.py`, `buff_residual_actions.py`, `buff_named_schema.py`) and the SkillData timeline lane (`skill_timeline_*.py`), which share `core.LabelledReader` and gate through `il2cpp.native_image` |
 | **2. WebUI** | `webui/views.py`, `webui/package.py` | page-build orchestration, and packaging |
 | | `webui/story/` | Story and Text page data plus shared Story evidence |
 | | `webui/story_recovery/` | Story audits, OCR ordering, runtime traces, candidate generation |
 | | `webui/mission_pipeline/` | standalone Mission Pipeline recovery (not a WebUI page) |
 | | `webui/mission_pipeline/runtime_contract_native.py` | re-derives `RUNTIME_CONTRACT`'s addresses, tokens, iFix patch ids and ParamBlackboard key slot by name on the installed build and labels each native chain row `verified`, `verified_with_bypassed_hops`, `partially_resolved` or `link_failed` |
 | | `webui/{assets,audio,characters,gameplay,map,recovery,updates}/` | one folder per page: its `build_*.py` entry point and helper modules |
-| | `webui/recovery/` | the debug-only Recovery page: `build_recovery.py` aggregates the VFS logical-file profile by concrete block and declared path family; `recovery_declarations.json` owns the reviewed enum names, family rules, and four-stage evidence text. It reads the profile report and the level table in `memory/game_data/README.md`, never installed bytes, and fails closed on unknown block ids, malformed rows, or ambiguous family rules |
+| | `webui/recovery/` | the debug-only Recovery page: `build_recovery.py` aggregates the VFS logical-file profile by concrete block and declared path family, and counts Unity objects per type from the export's asset maps; `recovery_declarations.json` owns the reviewed enum names, family rules, per-type entries, and four-stage evidence text. It reads the profile report, the export's `meta/` asset maps and VFS index, and the level table in `memory/game_data/README.md`, never installed bytes, and fails closed on unknown block ids, malformed rows, or ambiguous family rules |
 | | `webui/decoded_payloads.py` | export-relative path to the `game_data` reader that owns it, rendered as diffable text; the routing shared by consumers that need a serialized `.json` payload as text rather than as a page record |
 | **Shared** | `common.py`, `source_paths.py`, `repo_paths.py` | helpers used by both lines; `repo_paths.REPO_ROOT` is the only repo-root anchor |
 | **Tests** | `tests/` | stdlib `unittest`, untracked, run by explicit module path |
@@ -101,15 +101,291 @@ The maintained Terrain structure gate is
 summary/ledger plus that audit's exact `inputSetSha256`, revalidates the pinned
 current native consumer contract, and writes
 `reports/animestudio/terrain_tret_latest.{json,md}`. It is a focused recovery
-command, not part of normal WebUI export.
+command, not part of normal WebUI export. Its current-corpus receipt checks
+complete H/N/T/A/S/C tile groups, paired D/N layer indices with C as an
+optional subset, and GraphicsFormat/header-shape distributions by path family.
+
+`python -m scripts.game_data.terrain.layer_paths_native --game-root ".../Endfield_Data"`
+checks the selected native build and nine path-template loads in one
+`UnityPlayer.dll` routine, including its entry, path continuation and
+epilogue. It validates the grouped `LAYER_C/D/N` 32-byte
+record and the separate packed-tile `Terrain_H/N/T/A/S/C` 56-byte record,
+including each formatter/helper forwarding, the tile formatter's
+root/high/low/middle argument order, and collection append.
+It writes `reports/terrain/layer_paths_native.json` and withholds the result
+if any input or checked instruction differs. The separate `LAYER_C/D/N`
+render-property route is checked by `layer_slots_native.py` below.
+
+`python -m scripts.game_data.terrain.tile_slots_native --game-root ".../Endfield_Data"`
+checks the selected tile queue, ready callback, six result handles, guarded
+copies, and the render-property ID binding. Its receipt is
+`reports/terrain/tile_slots_native.json`. The exact suffix-to-property route is
+H/Heightmap, N/Normalmap, T/TintColor, A/Albedo, S/SplatCtrl, and C/CliffIndex;
+the native gate checks the A/S temporary-slot swap. This names render-property
+literals, not encoded channels, runtime selection, or final GPU sampling.
+
+`python -m scripts.game_data.terrain.layer_slots_native --game-root ".../Endfield_Data"`
+checks the selected `LAYER_D/N/C` queue, callback, handle forwarding, distinct
+owner-local destinations, guarded copy helper, and same-handle render-property
+binding. Its receipt is `reports/terrain/layer_slots_native.json` and proves
+D/`_Splats`, N/`_Normals`, and C/`_ConeMaps` (C is conditional). Managed field
+names, encoded channels, shader sampling, and live selection remain open.
+
+`python -m scripts.game_data.terrain.virtual_texture_managed_native --game-root ".../Endfield_Data"`
+checks the separate managed `HGTerrainRenderer` to `VirtualTextureRenderer`
+`TerrainResource` handoff and the child constructor's eight
+`runtimeResources.textures` field copies, including field names, runtime
+types/offsets, and selected instruction bytes. It also checks the direct
+converter-to-terrain-manager setup route and four named converter property IDs,
+`TryConvertAssetFrom<T>` MethodSpecs, and local output slots forwarded as
+typed Phase 1 arguments. Its receipt is
+`reports/terrain/virtual_texture_managed_native.json`. It does not join those
+fields to the installed `LAYER_*` or six-file tile paths.
+
+`python -m scripts.game_data.irradiance_path_native` validates the selected
+IrradianceVolume V3 scene/Gacha `/v3/index.bytes` suffix construction,
+the selected proxy property's conversion into a scene path,
+managed-to-native path handoff, path-keyed stream lookup, the selected request's
+type-zero queue drain and exact-count read success gate, queued status
+completion, resource-name keyed handle cache, conditional default Windows-file
+provider method set and virtual provider boundary,
+ready buffer-pointer transfer, and downstream native cursor. It also checks a
+conditional `regionIv_%s_%u.bytes` format, supplied-root directory plus
+formatted-basename path assembly and shared lookup/stream route for room
+files, plus the selected ready-buffer room-header parser and conditional
+8- or 16-byte grid-record copy. It also checks the copied-record allocation
+descriptor's callback handoff, command binding and grid-cell-count-sized
+virtual dispatch request. The ignored
+receipt is `reports/irradiance/v3_path_native.json`. The cursor checks both V3
+index magics and uses 36-byte scene versus 32-byte Gacha records. The complete
+selected parser body has no final EOF comparison; its byte and u32 readers have
+no local length check. The selected read gate bounds successful I/O, separate
+from the parser's missing final EOF comparison. The default provider's open and
+read slots reach `CreateFileW`, `SetFilePointerEx`, and `ReadFile` if no
+registered provider matches the request. The runtime-selected provider,
+exact VFS file identity, backend normalization, supplied directory roots, and
+the serialized property value remain unresolved. Room record fields, actual
+GPU execution, and texture format also remain unresolved.
 
 The maintained DynamicStreaming `stream_area` gate is
 `python -m scripts.game_data.dynamic_stream_area_corpus --expected-input-set-sha256 INPUT_SET_SHA256`.
 It revalidates the authenticated outer VFS inputs, streams only current
 `FBStreamArea.bytes` files, checks every payload against its ledger identity,
 and writes `reports/animestudio/dynamic_stream_area_current_latest.{json,md}`.
-It bounds the root fields and requires the greatest vector end to equal payload
-EOF; gaps between offsets and record contents remain unassigned.
+It bounds the root fields and requires all six vector count words and bodies
+to tile the tail from the root object through payload EOF. The first three
+vectors have four-byte elements; a `Get*Bytes` accessor does not make them
+byte vectors.
+
+`python -m scripts.game_data.dynamic_stream_area_native --gameassembly PATH
+--metadata PATH --corpus-report reports/animestudio/dynamic_stream_area_current_latest.json
+--input-root DUMP_ROOT --expected-input-set-sha256 INPUT_SET_SHA256
+--output reports/animestudio/dynamic_stream_area_native_latest.json` checks the
+reviewed selected-build accessors, reads the matching `AnimeStudio.CLI dump`
+tree, and audits area/visibility and trigger/point ownership. It also checks
+the selected `CheckInArea` body and parity-branch window that establish its
+X/Z, height, and even-odd polygon tests. `DUMP_ROOT`
+contains the `Data/DynamicStreaming/.../FBStreamArea.bytes` paths. The output
+is a local report; it does not establish live activation.
+
+`python -m scripts.game_data.dynamic_main_native --gameassembly PATH
+--metadata PATH --input-root DUMP_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256` validates the selected-build
+`SingleGrid` vector builders and indexed accessors, authenticates the current
+VFS ledger and matching `AnimeStudio.CLI dump` tree, and writes
+`reports/animestudio/dynamic_main_vector_native_latest.{json,md}`. `DUMP_ROOT`
+contains `Data/DynamicStreaming/.../fb_main_*.bytes` from a targeted dump.
+The generic main reader uses a one-byte lower bound; this native audit proves
+field-specific vector extents and nonoverlap, without claiming whole-file
+closure or nested record meaning.
+
+`python -m scripts.game_data.dynamic_data_index_native --gameassembly PATH
+--metadata PATH --input-root DUMP_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256` checks the selected-build
+`DataIndex` record layout and enum values, then audits every current main
+grid's stored `Grid`/`Type`/`Index` references against its named vectors. It
+writes `reports/animestudio/dynamic_data_index_native_latest.{json,md}` and
+keeps count-only rival mappings visible. It does not prove runtime dereference.
+
+`python -m scripts.game_data.dynamic_system_routing_native --gameassembly PATH
+--metadata PATH --input-root DUMP_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256` authenticates the selected
+`GetSystemByDataType` jump-table route and its independently registered switch,
+then rejoins the current DataIndex corpus. It writes
+`reports/animestudio/dynamic_system_routing_native_latest.{json,md}` with
+named system routes; stored records do not establish live lookup or activation.
+
+`python -m scripts.game_data.dynamic_root_comp_native --gameassembly PATH
+--metadata PATH --game-root GAME_DATA_ROOT --export-root EXPORT_ROOT
+--input-root DUMP_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256` validates the selected RootComp
+and DataGroup layout, the grid lifecycle to `_ParseLoad` to `RegisterEntity`
+call chain, and the typed `DynamicSceneTemplates` load into the entity map.
+It checks the fresh exported MonoBehaviour against its asset map and manifest,
+then proves every current grid's RootComp groups tile its DataIndex vector and
+match their template `comps` lists in order. It also checks that the selected
+`IdComp` detour reads `UniqueId` and rejoins the common type route. It writes
+`reports/animestudio/dynamic_root_comp_native_latest.{json,md}`.
+The same audit checks RootComp's `State`, `NeedLazyDestroy`, and both nested
+visible groups; their `PrimitiveInt` spans address the grid's
+`PrimitiveIntList` without overlap, with unassigned integers reported locally.
+It also validates the typed entity visibility controllers and their native
+`Register` path from each group to the `PrimitiveIntList` vector reader.
+The static consumer and authored match do not establish that a grid loaded or
+a component ran.
+
+`python -m scripts.game_data.dynamic_resource_comp_native --gameassembly PATH
+--metadata PATH --input-root DUMP_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256` authenticates current main grids
+and the selected ResourceComp/ResourceGroup record layout. It checks each
+scene-scoped Grid ID and resource group against the Model, Effect, and Ecs
+vectors, including same-scene cross-file targets, and reports exact span
+coverage of the PrimitiveIntList alongside RootComp visibility. The generated
+receipt is `reports/animestudio/dynamic_resource_comp_native_latest.{json,md}`;
+stored references do not establish live resource activation.
+
+`python -m scripts.game_data.dynamic_sludge_surf_tile_native --gameassembly PATH
+--metadata PATH --input-root DUMP_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256` authenticates the selected
+`SludgeComp.SurfTileIDs` inline group and checks its disjoint span with the
+RootComp and ResourceGroup visibility groups in each current main grid. Its
+ignored receipt is `reports/animestudio/dynamic_sludge_surf_tile_native_latest.{json,md}`;
+the stored tile IDs do not establish runtime use.
+
+`python -m scripts.game_data.dynamic_version_native --gameassembly PATH
+--metadata PATH --input-root DUMP_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256` authenticates the selected
+`fb_version` root as an `Entries` vector with `Major` and `Minor`, checks its
+16-byte `Id`/`Version` entries against the current VFS ledger and dump, and
+writes `reports/animestudio/dynamic_version_native_latest.{json,md}`. The
+runtime version decision remains unresolved.
+
+`python -m scripts.game_data.dynamic_version_id_domain --gameassembly PATH
+--metadata PATH --expected-input-set-sha256 INPUT_SET_SHA256
+--control-scene map01` checks the selected native version and IdComp layouts,
+streams the relevant files through AnimeStudio, and rejoins them to the
+current VFS ledger. Its ignored receipt is
+`reports/animestudio/dynamic_version_id_domain_latest.{json,md}`. It checks
+same-scene version-ID containment in indexed `IdComp.UniqueId`, a separate
+grid-ID negative check, and an explicit control scene. It does not classify a
+live version-ban decision.
+
+`python -m scripts.game_data.dynamic_version_ban_native --gameassembly PATH
+--metadata PATH` checks the selected `LoadFromBasePath` candidate selection
+and `IsEntityVersionBanned`/`IsBanned` HashSet query path, including IFix
+override branches. It gates on the installed native inputs and the reviewed
+version-entry layout, then writes the ignored
+`reports/animestudio/dynamic_version_ban_native_latest.json`. It makes no
+live patch-state, phase, or ban-outcome claim.
+
+`python -m scripts.game_data.dynamic_active_version_native --gameassembly PATH
+--metadata PATH` checks the selected network login response through the
+typed yield, shared object reference, protocol-message branch-version setter,
+player getter, parser regex and capture-to-output path, default active fields,
+and guarded stores into the version ban set. It writes
+`reports/animestudio/dynamic_active_version_native_latest.json`; the live
+response bytes/value and selected phase remain unobserved.
+
+`python -m scripts.game_data.dynamic_aux_pair_corpus --input-root DUMP_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256` authenticates all paired
+`fb_init`/`fb_streaming` dumps against the current VFS ledger and checks their
+anonymous root framing, same-index table shapes, bounded byte/count
+equalities, grouped-ID partition of root field three, exact descriptor
+stride times ID count blob lengths, and descriptor 21's 63-byte stored-name
+projection. It writes `reports/animestudio/dynamic_aux_pair_latest.{json,md}`;
+other descriptor meanings and live file selection remain open.
+
+`python -m scripts.game_data.dynamic_aux_bridge_native --gameassembly PATH
+--metadata PATH` checks the selected managed calls from the DynamicStreaming
+ECS load transition through both auxiliary path getters to the UnityPlayer
+runtime-chunk allocator. It validates the internal-call registration and the
+native helper's separate storage of the two paths. It also checks the indexed
+native resource requests, ready-buffer root resolution, consumer reads of
+first-root field seven and second-root field six, and the paired ID,
+descriptor, and blob handoff to a descriptor-major copy builder, then writes
+`reports/animestudio/dynamic_aux_bridge_native_latest.json`. Field meanings,
+the selected provider, concrete VFS file identity, and live selection remain
+open.
+
+`python -m scripts.game_data.dynamic_visibility_area_join --gameassembly PATH
+--metadata PATH --main-input-root MAIN_DUMP_ROOT
+--area-input-root AREA_DUMP_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256` joins the two validated native
+reports and the current area corpus report, rechecks their selected inputs,
+predicate receipt, and dump hashes, and proves each `Scene/` main file's
+visible-area integers occur
+in the matching `FBStreamArea.TotalAreas`. Unpaired `Extra/` main files remain
+explicit. It writes `reports/animestudio/dynamic_visibility_area_join_latest.{json,md}`.
+
+`python -m scripts.game_data.dynamic_visibility_state_join --gameassembly PATH
+--metadata PATH --game-root GAME_DATA_ROOT --main-input-root MAIN_DUMP_ROOT
+--export-root EXPORT_ROOT --expected-input-set-sha256 INPUT_SET_SHA256`
+rechecks the RootComp native report, main dump hashes, and Persistent export
+freshness, then joins each authored scene visible-state integer to the same
+scene's `MapConfig.sceneStates` index. It reports the independent auxiliary
+grid-vector counts and leaves runtime state selection open. It writes
+`reports/animestudio/dynamic_visibility_state_join_latest.{json,md}`.
+
+`python -m scripts.game_data.dynamic_visibility_runtime_native
+--gameassembly PATH --metadata PATH --expected-gameassembly-sha256 SHA256
+--expected-metadata-sha256 SHA256` evaluates the reviewed, build independent
+field and call claims in `contracts/dynamic_visibility_runtime_claims.json`.
+It checks MapConfig JSON path literals, table lookup and both scene-loading
+handoffs, the `MapConfig` scene-state calculation, the named
+`SetSceneState` route, and the index-list handoff to DynamicStreaming.
+It also checks the streaming-config asset load and scene-name handoff, main,
+init, streaming and version file path builders, typed FlatBuffer chunk reads,
+condition evaluator and listener calls, selected enum defaults, and state and
+area active-set routes through the entity and resource systems.
+It also checks the `FBStreamArea.bytes` VFS read, area-dealer root and trigger
+tree setup, `RootVisible` active-set seeding, initial area flush, and later
+trigger queries through `CheckInArea` and area-change handoff to the streaming
+engine and DynamicStreaming. Portal claims check the LevelData component
+override handoff, the placed-interactive lookup and node spawn arguments into
+the allocator, the dependency-group and AOI-state pipeline branches, the
+grid callers of the checked anonymous AOI setter, typed
+`tp_position` assignment, component-data enum keys and field reads, the
+shared dynamic-property setup, and load handoff.
+A successful run writes
+`reports/animestudio/dynamic_visibility_runtime_claims_latest.json`; failed
+claims write a separate pending-review report and leave the validated report
+untouched. The checks do not observe live controller execution or condition
+results.
+
+`python -m scripts.game_data.dynamic_streaming_config_join --gameassembly PATH
+--metadata PATH --game-root GAME_DATA_ROOT --export-root EXPORT_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256` rechecks both native reports and
+freshness of the StreamingAssets and Persistent exports. It joins all
+catalogued scene streaming assets to exported MonoBehaviours and original
+object-index rows by container, source and PathID, verifies their resolved
+`StreamingMapConfig` MonoScript, and marks current MapConfig references.
+It compares `mapSceneName` with authenticated DynamicStreaming main-file
+directories and ordinary Streaming VFS paths (default ledger under
+`reports/animestudio/`, override with `--vfs-ledger`). It writes
+`reports/animestudio/dynamic_streaming_config_join_latest.json`, retaining
+unreferenced assets and scene names present on only one side. The joined
+paths are authored evidence; the tool does not claim a live asset load.
+
+`python -m scripts.game_data.dynamic_main_path_join --gameassembly PATH
+--metadata PATH --main-input-root MAIN_DUMP_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256` rechecks the selected native
+`GetPath` claims and RootComp report, authenticates each main dump by its VFS
+MD5, and proves the `fb_main` filename encodes the root `UniqueId` in every
+current file. It writes `reports/animestudio/dynamic_main_path_join_latest.json`.
+The relation does not identify a live grid request.
+
+`python -m scripts.game_data.portal_center_join --gameassembly PATH
+--metadata PATH --game-root GAME_DATA_ROOT --export-root EXPORT_ROOT
+--expected-input-set-sha256 INPUT_SET_SHA256` rechecks selected native claims,
+union tags, the interactive component enum, the VFS audit, and export
+freshness. It joins exact portal templates to exact LevelData interactives,
+keeping template defaults, placed source positions, and destination overrides
+separate. It also retains each placed dependency-group ID and authored
+force-load flag. It writes
+`reports/game_data/portal_center_join_latest.json`. The
+selected native claims trace the LevelData override into a component
+blackboard and the conditional AOI-to-spawn route into the placed-data
+allocator; live execution and the actual selected center remain open.
 
 `game_data/dependency_snapshot.py` is the maintained development-only input
 closure for scoped parser caches and diagnostics. Call
@@ -231,6 +507,22 @@ a degraded reason instead of using them as direct evidence.
 | Audio semantics | `build_audio_semantics.py` | compact Audio page evidence and shards |
 | Audio HIRC structural gates | `webui/audio/semantics/hirc_action_corpus.py` | Action cursors and type `0x02` source prefixes under `reports/animestudio/` |
 | DynamicStreaming stream-area gate | `game_data/dynamic_stream_area_corpus.py` | `reports/animestudio/dynamic_stream_area_current_latest.{json,md}` |
+| DynamicStreaming main vector audit | `game_data/dynamic_main_native.py` | `reports/animestudio/dynamic_main_vector_native_latest.{json,md}` |
+| DynamicStreaming DataIndex native audit | `game_data/dynamic_data_index_native.py` | `reports/animestudio/dynamic_data_index_native_latest.{json,md}` |
+| DynamicStreaming system route audit | `game_data/dynamic_system_routing_native.py` | `reports/animestudio/dynamic_system_routing_native_latest.{json,md}` |
+| DynamicStreaming RootComp group audit | `game_data/dynamic_root_comp_native.py` | `reports/animestudio/dynamic_root_comp_native_latest.{json,md}` |
+| DynamicStreaming Sludge SurfTileIDs audit | `game_data/dynamic_sludge_surf_tile_native.py` | `reports/animestudio/dynamic_sludge_surf_tile_native_latest.{json,md}` |
+| DynamicStreaming version root audit | `game_data/dynamic_version_native.py` | `reports/animestudio/dynamic_version_native_latest.{json,md}` |
+| DynamicStreaming active-version source audit | `game_data/dynamic_active_version_native.py` | `reports/animestudio/dynamic_active_version_native_latest.json` |
+| DynamicStreaming auxiliary pair corpus | `game_data/dynamic_aux_pair_corpus.py` | `reports/animestudio/dynamic_aux_pair_latest.{json,md}` |
+| DynamicStreaming auxiliary native bridge | `game_data/dynamic_aux_bridge_native.py` | `reports/animestudio/dynamic_aux_bridge_native_latest.json` |
+| DynamicStreaming area native audit | `game_data/dynamic_stream_area_native.py` | `reports/animestudio/dynamic_stream_area_native_latest.json` |
+| DynamicStreaming scene-local area join | `game_data/dynamic_visibility_area_join.py` | `reports/animestudio/dynamic_visibility_area_join_latest.{json,md}` |
+| DynamicStreaming scene-local state join | `game_data/dynamic_visibility_state_join.py` | `reports/animestudio/dynamic_visibility_state_join_latest.{json,md}` |
+| DynamicStreaming visibility runtime claims | `game_data/dynamic_visibility_runtime_native.py` | `reports/animestudio/dynamic_visibility_runtime_claims_latest.json` |
+| DynamicStreaming config asset and scene join | `game_data/dynamic_streaming_config_join.py` | `reports/animestudio/dynamic_streaming_config_join_latest.json` |
+| DynamicStreaming main path and root ID join | `game_data/dynamic_main_path_join.py` | `reports/animestudio/dynamic_main_path_join_latest.json` |
+| Portal template and instance center join | `game_data/portal_center_join.py` | `reports/game_data/portal_center_join_latest.json` |
 | Updates | `build_updates.py` | `webui/data/updates/latest.json`, `webui/data/updates/characters.json` |
 | Recovery progress | `webui/recovery/build_recovery.py` | `webui/data/recovery/index.json` |
 | Packaging | `webui/package.py` | distributable static package |
@@ -255,7 +547,11 @@ is the build/publication order. With no argument all four are built:
 ### Gameplay datasets
 
 `build_gameplay.py` owns every Gameplay dataset. Behavior-focused stages live
-in `webui/gameplay/`; its `asset-refs` stage calls the public
+in `webui/gameplay/`; `loadout_data.py` publishes the character loadout inputs
+(`attributeCalculation`, `attributeRows`, equipment `attributeModifiers`,
+`skillAttributeModifiers`) and publishes the formula only when
+`game_data/attribute_formula_native.py` validates it on the installed build
+(`python -m scripts.game_data.attribute_formula_native` checks it directly); its `asset-refs` stage calls the public
 `webui.assets.gameplay_refs` API with the current Gameplay and Assets indexes
 and is the sole writer of `webui/data/assets/gameplay_refs.json`.
 What those datasets establish, and the registry/tag join rules they obey, are
@@ -295,6 +591,7 @@ python -m scripts.webui.story.source_links
 python -m scripts.webui.story.build --languages CN --default-language CN
 python -m scripts.webui.characters.build_character_data --languages CN --default-language CN
 python -m scripts.webui.data_inspector.build_data_inspector
+python -m scripts.webui.data_inspector.build_data_inspector --dataset buff-action-receipts
 python -m scripts.webui.mission_pipeline.build_mission_pipeline_data
 python -m scripts.webui.gameplay.build_gameplay
 python -m scripts.webui.assets.build_assets --mode default
@@ -311,7 +608,11 @@ AnimeStudio offline recovery probes:
 set ASCLI=tools\AnimeStudio\AnimeStudio.CLI\bin\Release\net9.0-windows\AnimeStudio.CLI.exe
 %ASCLI% vfs-audit --streaming-assets PERSISTENT --fallback-assets STREAMING_ASSETS --summary-json reports\animestudio\vfs_understanding_latest.json --ledger-jsonl-gz reports\animestudio\vfs_understanding_files_latest.jsonl.gz --report-md reports\animestudio\vfs_understanding_latest.md
 python -m scripts.game_data.memorypack.buff_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --output-json reports/animestudio/buffdata_current_latest.json --output-md reports/animestudio/buffdata_current_latest.md
-python -m scripts.game_data.memorypack.skill_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --cursor-verification reports/animestudio/skilldata_cursor_verification_latest.json --output reports/animestudio/skilldata_current_latest.json --output-md reports/animestudio/skilldata_current_latest.md
+python -m scripts.game_data.memorypack.buff_stacking_compact_corpus --corpus-report reports/animestudio/buffdata_current_latest.json --export-root export_full/game/Json/BuffData --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --output reports/animestudio/buff_stacking_compact_current_latest.json
+python -m scripts.game_data.memorypack.buff_timeline_empty_receipt --compact-report reports/animestudio/buff_stacking_compact_current_latest.json --buff-report reports/animestudio/buffdata_current_latest.json --export-root export_full/game/Json/BuffData --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --output reports/animestudio/buff_timeline_empty_current_latest.json
+python -m scripts.game_data.memorypack.buff_damage_modifier_receipt --buff-report reports/animestudio/buffdata_current_latest.json --export-root export_full/game/Json/BuffData --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --output reports/animestudio/buff_damage_modifier_child_receipt_latest.json
+python -m scripts.game_data.memorypack.buff_action_receipt_corpus --buff-report reports/animestudio/buffdata_current_latest.json --export-root export_full --game-root ".../Endfield_Data" --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
+python -m scripts.game_data.memorypack.skill_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256 --cursor-verification COMPLETE_CURSOR_VERIFICATION_JSON --output reports/animestudio/skilldata_current_latest.json --output-md reports/animestudio/skilldata_current_latest.md
 python -m scripts.game_data.jsondata_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.gpu_ui_corpus --expected-input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
 python -m scripts.game_data.streaming.corpus --input-set-sha256 CURRENT_VFS_INPUT_SET_SHA256
@@ -335,6 +636,7 @@ python -m scripts.game_data.memorypack.derived_schema
 python -m scripts.game_data.memorypack.derived_plans
 python -m scripts.game_data.memorypack.derived_plans --corpus
 python -m scripts.game_data.memorypack.derived_values
+python -m scripts.game_data.leveldata_bezier_knot_corpus --game-root ".../Endfield_Data"
 python -m scripts.webui.audio.semantics.decoded_payload_event_names
 python -m scripts.game_data.wwise_sdk_symbols
 python -m scripts.game_data.wwise_sdk_symbols --find CAkSrcMedia
@@ -347,6 +649,47 @@ python -m scripts.webui.audio.semantics.runtime_capture_import
 %ASCLI% replay --index OBJECT_INDEX.jsonl --requests RECOVERY_REQUESTS.jsonl
 %ASCLI% schema-diff --left LEFT.json --right RIGHT.json
 ```
+
+For the SkillData gate, choose a complete cursor verification whose receipt,
+source corpus, native context, and verifier still match its recorded hashes.
+If the VFS audit changes only because AnimeStudio.CLI was rebuilt, add
+`--allow-exporter-rebind`; the gate then proves the selected logical bytes,
+physical identities, game build, and asset roots are unchanged before
+accepting that older receipt. A replaced `latest` report is not sufficient
+provenance merely because it has the expected name.
+The Skill gate also fingerprints every JSON dependency declared by the shared
+timeline route contract before and after streaming, so a route update during
+the run fails the report rather than publishing mixed evidence.
+
+The LevelData knot gate validates the selected native formatter window and
+struct offsets, then requires every exported LevelData file to close its named
+43-field frame and every knot to occupy the proved stride. It writes
+`reports/game_data/leveldata_bezier_knot_corpus.json`; run the export freshness
+guard above first when claiming the export matches the installed client.
+`python -m scripts.game_data.leveldata_spline_runtime_native` separately
+validates the selected native spline-table and movement-transform consumer
+contract. Its `validated` status describes reviewed normal branches; iFix patch
+selection and actual movement remain unobserved.
+
+For the complete current Init slot-7 name-prefix gate, run
+`python -m scripts.game_data.streaming.descriptor_name_corpus
+--expected-input-set-sha256 CURRENT_VFS_AUDIT_INPUT_SET_SHA256`. It rereads
+every Init logical file from the VFS ledger's physical chunk, checks MD5 and
+input-set provenance, and writes
+`reports/chunk_data/descriptor_name_corpus_latest.json`. A `--limit` run is a
+diagnostic and cannot certify the corpus. Descriptor 21's 64-byte slot is
+compared with the paired root name's first 63 bytes, retaining full-name and
+row-major controls separately.
+
+For a bounded selected-file reproduction, run
+`python -m scripts.game_data.streaming.descriptor_names --input-jsonl VERIFIED_INIT_STREAM_JSONL
+--expected-report reports/chunk_data/slot4_pair_probe_latest.json
+--output reports/chunk_data/descriptor_name_join_latest.json`. The input is a
+targeted AnimeStudio `stream --verify-md5 --block-type streaming` JSONL. The
+auditor checks complete Init framing, both byte layouts, source hashes and the
+same-file root ID/name prefixes. The selected Streaming native contract separately
+validates the direct descriptor and wrapped-byte consumer; neither check names
+the other descriptor IDs as components.
 
 These are bundle-free, fail-closed diagnostics. `vfs-audit` streams each
 selected physical chunk once and intentionally returns non-zero for any missing
@@ -362,11 +705,16 @@ its result under `reports/animestudio/`:
 | `game_data.streaming.marker2_corpus` | `streaming_marker2_latest.{json,md}` + inventory `.jsonl.gz` |
 | `game_data.jsondata_corpus` | `jsondata_current_latest.{json,md}` + per-file `.jsonl.gz` |
 | `game_data.gpu_ui_corpus` | `gpu_ui_current_latest.json`; authenticated GPUI named schemas, including native-gated DamageText |
-| `game_data.memorypack.skill_corpus` | `skilldata_current_latest.{json,md}` |
+| `game_data.memorypack.skill_corpus` | `skilldata_current_latest.{json,md}`; positive passive and shared timeline first refusals appear per file, in bounded summaries, and in the CLI result |
 | `game_data.memorypack.skill_timeline_cursor` | `skilldata_timeline_cursor_latest.{json,md}` |
 | `game_data.memorypack.npc_montage_corpus` | `npc_montage_current_latest.{json,md}` |
 | `game_data.memorypack.buff_corpus` | `buffdata_current_latest.{json,md}` |
+| `game_data.memorypack.buff_stacking_compact_corpus` | `buff_stacking_compact_current_latest.json`; selected-native child and raw GameplayTag array ownership rejoined to each complete Buff report identity and exported logical SHA/length; positive nested bodies and whole-BuffData schema stay open |
+| `game_data.memorypack.buff_timeline_empty_receipt` | `buff_timeline_empty_current_latest.json`; selected-native timeline list source/store plus per-file null/empty count and exact following-tail joins; positive timeline bodies and whole-BuffData schema stay open |
+| `game_data.memorypack.buff_damage_modifier_receipt` | `buff_damage_modifier_child_receipt_latest.json`; selected native and logical-byte hash gate for named child spans in the positive `damageModifier` first-blocker subset; nested processors/actions and whole-BuffData schema remain unresolved |
+| `game_data.memorypack.buff_action_receipt_corpus` | `buff_action_receipts_current_latest.{json,md}`; a separate source-hash and selected-native gate for named `0x0092` and `0x00B4` action wrappers, retaining nested and whole-BuffData gaps |
 | `game_data.memorypack.buff_1b_corpus` | `buff_1b_current_latest.{json,md}` |
+| `game_data.memorypack.buff_1b_action_native --gameassembly GA --metadata META` | `reports/game_data/buff_1b_action_native.json`; selected tag `0x1B` reader-to-field setter order and guarded `BlowOffAction.ExecuteInternal` direct call to `ControlledStateComponent.ApplyBlowOff`. Requires the explicit selected native pair; no live execution or final motion claim. |
 | `game_data.memorypack.lipsync_corpus` | `lipsync_current_latest.{json,md}` |
 | `game_data.memorypack.derived_schema` | `reports/game_data/memorypack_derived_schema.json`; a recursive read plan per action tag over nested records, lists, arrays and nested unions, with each route's evidence tier and the named type blocking the rest |
 | `game_data.memorypack.union_subtypes` | `reports/game_data/memorypack_union_subtypes.json`; every union base's subtypes and predicted tag assignment, gated on reproducing the walked root union and corroborated against the reviewed nested rows plus the frozen reader's own per-tag member counts for six nested unions it never walks |
@@ -375,6 +723,17 @@ its result under `reports/animestudio/`:
 | `game_data.memorypack.derived_plans` | `reports/game_data/memorypack_derived_plans.json`; each plan's framing cross-checked against the frozen reader tag by tag. `--corpus` prints instead: how many exported BuffData files each reader closes, whether every file the frozen reader already closed still ends at the same cursor, how many routes and nested-union placements the run actually walked, and and how many files of each of the four whole-record families the plan consumes exactly to EOF, against how many land short and how often a refused body's position was reached |
 | `game_data.memorypack.action_dispatcher` | `reports/game_data/memorypack_action_dispatcher.json`; every AbilityActionData union tag's route, registered type, generated wrapper, named member order and member widths, with each reviewed tag re-derived and compared |
 | `game_data.memorypack.wrapper_members` | `reports/game_data/memorypack_wrapper_members.json`; every generated `*ForMemoryPack` wrapper's serialized member order, member types, fixed member widths (including each enum's real underlying width), and the wrapped type each wrapper frames, derived from the selected build, plus its agreement with the reviewed contracts |
+| `game_data.memorypack.target_settings_corpus --gameassembly GA --metadata META [--export-root EXPORT]` | `reports/game_data/memorypack_target_settings.json`; exact SkillData/BuffData `TargetSettings` instances found by derived-plan references, selected enum labels, target-source co-occurrences, and bounded exceptions. Stored authored values only; missing or changed native inputs and incomplete records fail closed. |
+| `game_data.memorypack.effect_config_corpus --gameassembly GA --metadata META [--export-root EXPORT]` | `reports/game_data/memorypack_effect_config_enums.json`; exact SkillData/BuffData `EffectActionCfg` instances and selected enum labels across 15 fields. Stored authored values only; missing or changed native inputs and incomplete records fail closed. |
+| `game_data.memorypack.damage_unit_corpus --gameassembly GA --metadata META [--export-root EXPORT]` | `reports/game_data/memorypack_damage_unit_enums.json`; exact SkillData/BuffData `DamageUnit` instances, four selected enum fields, attack/poise calculation subtype identities, and four selected calculation enum fields. Missing or changed native inputs and incomplete records fail closed. |
+| `game_data.memorypack.multiply_attribute_native --gameassembly GA --metadata META` | `reports/game_data/multiply_attribute_calculation_native.json`; selected unpatched `MultiplyAttributeCalculation.Evaluate` field, call, branch and code-window proof for `GetAttribute × multiplier + addition`. The installed native pair must match; no live execution or final-damage claim. |
+| `game_data.memorypack.atk_scale_native --gameassembly GA --metadata META` | `reports/game_data/atk_scale_calculation_native.json`; selected unpatched `AtkScaleCalculation.Evaluate` proof for attacker ATK (override element 2 or getter) times resolved `atkScale`. A present short override array fails; no live execution or final-damage claim. |
+| `game_data.memorypack.definite_value_native --gameassembly GA --metadata META` | `reports/game_data/definite_value_calculation_native.json`; selected unpatched `DefiniteValueCalculation.Evaluate` proof for resolved `value`, optionally multiplied by resolved `valueScale` when `applyScale` is true. A patched path bypasses this formula. |
+| `game_data.memorypack.breaking_attack_native --gameassembly GA --metadata META` | `reports/game_data/breaking_attack_calculation_native.json`; selected unpatched `BreakingAttackCalculation.Evaluate` proof for attacker ATK, defender break-damage scalar, and resolved scale/multiplier with the native Single/Double order. A patched path bypasses this formula. |
+| `game_data.memorypack.damage_action_route_native --gameassembly GA --metadata META` | `reports/game_data/damage_action_normal_route_native.json`; selected normal-entity `DamageAction` snapshot/simple/calculation branch proof, the simple attack-array-times-resolved-scale expression, and `CalculationBase.GetAttribute` override-array fallback. Requires the explicit selected native pair; no live action or final-damage claim. |
+| `game_data.memorypack.damage_action_poise_route_native --gameassembly GA --metadata META` | `reports/game_data/damage_action_poise_route_native.json`; selected `_ProcessDamage` join from indexed DamageUnit's nonnull stored `poiseCalculation` through before-calculation Poise modifier and calculation dispatch to intermediate `PoisePackData.calcResult.value`. Requires the explicit selected native pair; no applied or displayed Poise claim. |
+| `game_data.memorypack.poise_result_native --gameassembly GA --metadata META` | `reports/game_data/poise_result_native.json`; selected post-calculation Poise modifier path, closed metadata vtable candidate set for virtual `ApplyModifier`, and conditional base Poise controller/writeback path. The God override returns `Failed` on its unpatched branch; live target, patch state and applied amount remain unknown. |
+| `scripts.webui.gameplay.route_audit [--index webui/data/lang/CN/gameplay/index.json]` | `reports/game_data/character_damage_routes.json`; exact character SkillData partition by authored snapshot/simple attack flags and stored Poise calculation subtype/scale, requiring validated generated DamageUnit and both native caller routes plus DefiniteValue evaluator evidence. Run after the CN Gameplay base build. |
 | `game_data.terrain.corpus` | `terrain_tret_latest.{json,md}` |
 | `game_data.dynamic_stream_area_corpus` | `dynamic_stream_area_current_latest.{json,md}` |
 | `game_data.il2cpp.context_audit` | `il2cpp_context_current_latest.*` (JSON on stdout) |
@@ -625,6 +984,12 @@ or converted. WEM decoding uses the pinned 64-bit vgmstream CLI, installed by
 a fresh HIRC bank pass while decoded audio is already current; plain
 `--skip-decode` reuses the existing event-media/HIRC cache. Use direct
 `build_audio.py` runs for non-CN languages or audio-only maintenance.
+Typed effect parameters require the selected `GameAssembly.dll`, metadata,
+and `AkSoundEngine.dll` to pass the reviewed
+`game_data/contracts/wwise_effect_parameters_native.json` gate, including its
+12 stock `SetParamsBlock` windows. A mismatched build leaves raw class IDs,
+parameter lengths and hashes visible while withholding native-derived values;
+the proprietary Convolution Reverb and Mastering Suite rows remain opaque.
 
 Projectile behavior and authored event hashes stay immutable in
 `webui/data/gameplay/projectiles.json`; Audio publishes playable HIRC candidates
@@ -634,7 +999,11 @@ whose template and component references are exact managed-reference TypeTree
 decodes; every other candidate is skipped and counted by reason
 (`counts.skipped`, `skippedFiles`), and `--require-exact` turns a non-exact
 skip into a non-zero exit. Sound fields carry the signed int32 plus the
-uint32 hex that Audio joins on.
+uint32 hex that Audio joins on. The direct builder also checks every exported
+`EffectActionCfg` value against the selected native enum fields and publishes
+optional `effectConfigEnums` with explicit evidence. The raw authored values
+remain available when that native join cannot validate; these labels do not
+establish runtime effect behavior.
 
 ### HIRC structural corpus gates
 
@@ -697,7 +1066,29 @@ Audio evidence page; page data changes only after a formal semantic rebuild
 
 ```bat
 python -m scripts.webui.audio.build_audio_semantics --language CN
+python -m scripts.webui.audio.semantics.play_sound_action_corpus
+python -m scripts.webui.audio.semantics.native_play_sound_string --gameassembly GA --metadata META
 ```
+
+`play_sound_action_corpus` is a focused exact-decoding audit, not a page build.
+It writes `reports/audio/play_sound_action_corpus.json` with SkillData/BuffData
+PlaySound paths, enclosing timeline, Buff/Ability event context, selected native
+enum labels, raw literals, and a comparison to the narrower local action reader.
+It requires the selected
+`GameAssembly.dll` and `global-metadata.dat`, refuses incomplete whole-record
+decodes, and does not promote a sound string into a Wwise Event.
+`decoded_payload_event_names.py` collects those same exact SkillData/BuffData
+action rows during its one-pass native-gated source decode; `build_audio.py`
+publishes their Gameplay sound catalog and owner links after HIRC identity is
+known. `play_sound_actions.py` owns the shared action walker and selected
+Buff/Ability event-enum labels. `entity_contexts.py` projects HIRC-matched
+SkillData/BuffData actions into Audio Event detail contexts.
+`native_play_sound_string` is a selected-build, fail-closed audit of the
+unpatched PlaySound object and position routes from the serialized sound
+string through `AudioHashGenerator.Compute(string)`. It writes
+`reports/audio/play_sound_string_native.json`; optional `--event-literal`
+and `--audio-source-index` compare the raw and hypothetically trimmed hashes
+with one scanned HIRC inventory. iFix replacement and live posting remain open.
 
 Maintained domain code lives under `webui/audio/semantics/`: `native_evidence.py`
 (installed-build gate), `wwise_enums.py` (the one loader for the pinned
@@ -719,7 +1110,11 @@ sound projection), `name_recovery.py` (grammar-derived Event name recovery),
 `authored_payload_event_names.py` (shipped MemoryPack length-prefixed Event-name
 literals in the `LevelScriptData`/`LevelScriptTemplateData`/`SpawnerConfig`/
 `Interactive`/`LevelData` payload roots; `gameplay_audio.py` keeps `SkillData`
-and `BuffData`), and `event_projection.py`/`event_summary.py` (WebUI row
+and `BuffData`), `decoded_payload_event_names.py` (native-gated exact-member
+Event candidates), `play_sound_actions.py` (exact action walker and selected
+event-enum labels), `play_sound_action_corpus.py` (whole-record action audit),
+`native_play_sound_string.py` (selected default-branch string-to-hash proof),
+and `event_projection.py`/`event_summary.py` (WebUI row
 projection).
 
 `build_audio.py` imports shared primitives from these owners instead of treating
@@ -917,6 +1312,20 @@ status, and a consumer must still gate on the status. Never read
 `bytesConsumed` as coverage -- see
 [`memory/game_data/extraction_payload_boundaries.md`](../memory/game_data/extraction_payload_boundaries.md)
 for why, and for the recovery order the measurement sets.
+
+### Auditing static map-mark joins
+
+```bat
+python -m scripts.game_data.map_mark_relations
+```
+
+Writes `reports/game_data/map_mark_relations.json`. It checks six
+GameplayConfig JsonData sources against the complete JsonData corpus receipt,
+reruns their named schemas, joins stored marker templates to `MapMarkTempTable`,
+then records individual markers whose exact instance ID and decoded position
+match `WorldEntityRegistry`. A smaller subset also has a unique
+`LevelShortIdTable` scene. Group-key matches to MapBrief and MapRegion remain
+separate from scene ownership and runtime visibility.
 
 ### Deriving the LevelScript union layout table
 
@@ -1125,6 +1534,51 @@ python -m scripts.webui.story_recovery.audit_native_carriers generic ^
 a census conclusion rather than a re-provable claim
 (`identity_carrier_boundaries.json`, `cross_system_consumers.json`) have no
 regenerator; on a new build they stay `mismatched` until reviewed again.
+
+The IFix VM opcode command derives the selected build's `Instruction` layout
+and `Code` enum from the explicit native pair; it names opcodes inside the
+patch reader's exact method spans and retains raw operands. Pass fresh,
+MD5-verified patch dumps as inputs; the command does not select live VFS files.
+
+```bat
+python -m scripts.game_data.ifix_vm_instruction_native --gameassembly GA --metadata META ^
+  --input PATCH [--input PATCH2] --output reports/animestudio/ifix_vm_opcodes_current.json
+python -m scripts.game_data.ifix_vm_operands_native --gameassembly GA --metadata META ^
+  --input PATCH [--input PATCH2] --output reports/animestudio/ifix_vm_operands_current.json
+python -m scripts.game_data.ifix_external_signatures_native --gameassembly GA --metadata META ^
+  --input PATCH [--input PATCH2] --output reports/animestudio/ifix_external_signatures_current.json
+```
+
+The operand command additionally checks the reviewed selected-build
+`ifix_vm_operands_native.json` loader and interpreter bodies. It joins the
+low-half indices for `Call`, `Callvirt`, `CallExtern`, and `Newobj` to declared
+file rows, and resolves signed relative targets for `Br`, `Brtrue`, and
+`Brfalse`. It also joins `Ldstr` and nonnegative `Ldfld`, `Ldsfld`, `Stfld`,
+and `Stsfld` operands to declared string and field rows. The signed upper
+half of `Call` and `Callvirt` is the recursive `argsCount`. For `CallExtern`,
+the signed upper half rewinds that many 12-byte evaluation-stack slots to the
+external argument base. `Newobj` uses that same signed upper-half rewind
+when the resolved constructor's declaring-type base differs from
+`System.MulticastDelegate`; the delegate path is separate. The negative
+field-operand path and execution remain open.
+It also decodes `StackSpace` local and evaluation-stack counts, validates
+local-slot indices for `Ldloc`, `Ldloca`, and `Stloc`, names `Ldarg` slots
+without assuming a runtime argument count, records their coverage under
+authored recursive call edges, and records whether `Ret` selects a stack
+value. It validates the loader's six `ReadInt32` calls and field stores for
+each 24-byte exception record, then reports handler type, catch-type id,
+instruction boundary indices, and their bounds against the VM method.
+It reports `Leave` as an absolute pending instruction target (with zero
+kept as a sentinel) and `Endfinally -1` as a conditional resume from that
+pending target. These are authored control-flow edges, not an execution trace.
+The audit also validates `CallExtern`'s encoded MethodDef delegate
+target and the conditional reflected-result path through
+`ReflectionMethodInvoker.Invoke` and `Call.PushObjectAsResult`.
+The external-signature command restores generic parameters to their file
+positions, substitutes constructed owner and method arguments, and requires a
+unique full parameter match in the selected native metadata. It reports each
+definition's return type and static flag; reflection selection remains
+unobserved. Its explicit native pair must match the reviewed IFix contract.
 
 Other reviewed native meanings are claims about named method bodies, checked
 live on the installed build rather than pinned by body hash:

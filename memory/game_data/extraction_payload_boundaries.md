@@ -35,6 +35,17 @@ Current durable boundaries:
   Every current SpawnerConfig file independently closes the exact named
   enemy-library prefix; files whose wave map does not close remain bounded
   partial rather than unclassified.
+  For DynamicStreaming `FBStreamArea.bytes`, the corrected `Int32` widths of
+  `RootVisible` and `AreaVisibleGroups` close the previous apparent gaps:
+  all six vector count words and bodies tile the tail from root end to EOF in
+  the authenticated current corpus. The selected native accessor and record
+  evidence is separate from this framing gate and belongs to
+  [`world_dynamic_streaming.md`](world_dynamic_streaming.md).
+  For `fb_main_*.bytes`, the former four-byte assumption for every `SingleGrid`
+  vector was wrong in both directions: generated builders and indexers now
+  prove field-specific widths, and the current native-gated audit bounds those
+  vector bodies without overlap. The generic reader uses a one-byte minimum;
+  neither route yet claims whole-file or nested-record closure.
   Terrain additionally validates its body-length word against the complete
   decoded payload. A current-build UnityPlayer reader, IL2CPP GraphicsFormat
   enum, and native format-footprint table now close every selected-build body
@@ -56,8 +67,19 @@ Current durable boundaries:
   exact inner-file-count, basename-multiplicity, and row-index witnesses, but
   no serialized field ownership. Stale AssetMap source chunks cannot supply it.
   Exact method pins exist, but unresolved stream/ref-out carriers still block a
-  safe lookup capture ABI. IFix instruction/runtime meanings remain separate
-  claims.
+  safe lookup capture ABI. For IFix, the selected native `Instruction` layout
+  and `Code` enum name every opcode in the current exact method spans;
+  pinned `PatchManager.LoadInternal` and `VirtualMachine.Execute` bodies
+  directly join four call opcodes' low-half indices to file method rows and
+  three branch opcodes' signed relative offsets to instruction rows. It also
+  joins `Ldstr` and four field opcodes' nonnegative operands to their
+  loader-preserved file tables. The `StackSpace` header bounds local slots,
+  and `Ret` selects whether a stack value returns. The reviewed VM operand
+  gate also frames exception handler fields, relates `Leave`/`Endfinally` to
+  a pending absolute index, and gives `Newobj`'s signed upper half a
+  conditional stack-rewind reading. Actual reflection selection, call
+  argument counts outside those selected paths, remaining operands, and
+  patch activation remain separate claims.
 - Irradiance-volume region framing is exact for seven files; all 92 IV indexes
   have a bounded unique UTF-16LE filename-table parser that references the 138
   remaining payloads exactly once. Supported single/grouped v3 indexes strictly
@@ -68,13 +90,14 @@ Current durable boundaries:
   legacy indexes use a separate EOF-ending 24-record directory whose grouped
   ranges also tile every referenced payload. All indexed payload boundaries are
   now exact; record and renderer semantics remain open.
-- IV runtime capture has a narrow UnityPlayer parser/cursor candidate, but must
-  still close exact module/build/entry/caller, buffer-length, and final-cursor
-  contracts. A generic file-I/O hook cannot preserve the authenticated virtual-
-  path/hash join, and a stale capture manifest must fail preflight before the
-  game starts. The current native parsers have no payload-length parameter or
-  final EOF check, and repeated in-payload magic values rule out signature
-  scanning as a replacement boundary witness.
+- The selected IV native gate follows the managed V3 path into a path-keyed
+  stream lookup, then the ready stream's buffer pointer and parser cursor. That
+  cursor checks both V3 index magics and advances through 36-byte scene or
+  32-byte Gacha records, but has no local finite length bound. The buffer's
+  authenticated VFS file identity, asynchronous fill, outer/final EOF and
+  record values still need proof. A generic file-I/O hook
+  cannot preserve the virtual-path/hash join, and a stale capture manifest must
+  fail preflight before the game starts.
 - Audio has fail-closed AKPK/BNK/DIDX/DATA/media framing and a direct audit;
   its non-voice HIRC lane now exact-frames numeric object envelopes and keeps
   unknown types. HIRC behavior, selected runtime playback, and audibility
@@ -300,6 +323,13 @@ in four places, largest unnamed region first:
 4. **SkillData** -- a minority of files are `exact-closed` through a named
    profile; the rest keep a bounded prefix and an authenticated terminal.
    Extending the profile route is incremental and already has its pattern.
+
+The JsonData gate also accepts a SkillData row whose first shared-sequence
+action group is exact but whose later top-level continuation stops at an
+unsupported field. That row remains `structural-prefix` with its remaining
+bytes opaque; exact child closure cannot promote the parent to whole-schema
+exactness. The gate checks the explicit stop status and keeps this distinction
+when joining the SkillData report to the authenticated JsonData corpus.
 
 Everything else in the lane is closed or plain JSON: LipSync, LevelData,
 Interactive, SpawnerConfig, LevelConfig, AtmosphericNpcData,
@@ -724,25 +754,25 @@ A reader that consumes its payload exactly to EOF has shown that its *total* is
 right. It has not shown that its *fields* are. The two come apart whenever a
 mis-reading has the same width as the truth, and this lane has a confirmed case:
 
-**`spawner_binary.py` reads `preWarnEffectFixedRotation` as four consecutive
-`f32` axes. It is `Optional<Vector3>`** -- a `bool hasValue`, three bytes of ABI
-padding, then the `Vector3`. Sixteen bytes either way, so the reader consumes
-correctly and never fails, and the wrong value is published to the Audio page
-through `audio/semantics/entity_contexts.py` and `event_summary.py`.
+**`spawner_binary.py` formerly read `preWarnEffectFixedRotation` as four
+consecutive `f32` axes. It is `Optional<Vector3>`** -- a `bool hasValue`, three
+bytes of ABI padding, then the `Vector3`. Sixteen bytes either way, so the old
+reader consumed the right length while publishing a wrong value to the Audio
+page. The reader now checks the flag and zero padding, returns no vector when
+absent, and returns the three stored components when present.
 
-Measured across all 608 SpawnerConfig files: 17 distinct tuples, 1,452 all-zero
-rows (`hasValue == false`), and **every one of the 45 non-zero rows begins
-`1.401298464324817e-45`** -- float bits `0x00000001`, the `hasValue` byte read as
-a float. The remaining three components are `(0, yaw, 0)`, plain Euler-Y
-rotations of 90, 80, 78, 110 degrees. Boundary: `exact`.
+The corrected reader accepts all 608 current SpawnerConfig files and 1,497
+enemy rows: 1,452 absent values and 45 present values, with 16 distinct present
+vectors. The old first "float" on every present row was
+`1.401298464324817e-45` -- float bits `0x00000001`, the `hasValue` byte.
+Present values have the form `(0, yaw, 0)` including 90, 80, 78, and 110
+degrees. Boundary: `exact` for the selected current corpus.
 
-Two things follow. The fix is to apply the `Optional<T>` framing this lane
-already records for other families -- `levelscript_union_layouts.py` and the
-nullable-padding rule above both have it; spawner simply never used it. And when
-a framing conclusion rests on EOF closure, say so and look for a second
-signal: a boundary landing on a known marker, a value distribution that makes
-sense, a field whose domain is closed. Closure alone cannot distinguish a right
-reading from a same-width wrong one.
+The correction applies the `Optional<T>` framing this lane already records for
+other families. When a framing conclusion rests on EOF closure, look for a
+second signal: a boundary landing on a known marker, a coherent value
+distribution, or a closed field domain. Closure alone cannot distinguish a
+right reading from a same-width wrong one.
 
 ### Check the hand-written formatters first
 
@@ -760,12 +790,59 @@ build are `AnimationCurve`, `AudioId`, `BezierKnot`, `Gradient`, `RectOffset`,
 `SerializeFieldDictionary` / `SerializeReferenceDictionary` family;
 `FORMATTER_BACKED_TYPES` records them.
 
-Only two are settled. `StringPathHash`'s formatter agrees with its single
-int64 field, corroborated by SpawnerConfig and LevelConfig closing every file.
-`AnimationCurve`'s disagrees. The rest are still read from their field lists
-on the strength of nothing, so that list is the first place to look when a
-family stalls -- `BezierKnot` in particular sits under LevelData's spline
-knots.
+`StringPathHash`'s formatter agrees with its single int64 field, corroborated
+by SpawnerConfig and LevelConfig closing every file. `AudioId` is a raw int32;
+`AnimationCurve`'s keyframes disagree with their declared field list.
+`BezierKnot` is now settled separately below. The other hand-written
+formatters still need their own wire checks before their field lists can be
+used as framing evidence.
+
+### The BezierKnot that is a raw struct
+
+The selected `Beyond.Gameplay.LevelSplineData+BezierKnotFormatter.Deserialize`
+fast path copies one contiguous 56-byte value from the reader's current buffer
+to the output, then advances the reader pointer and counters by 56. Selected
+native offsets for `UnityEngine.Splines.BezierKnot`, less the 16-byte boxed
+value header, place `Position`, `TangentIn`, `TangentOut`, `Rotation`, and
+`Width` at bytes 0, 12, 24, 36, and 52. Their widths are 12, 12, 12, 16,
+and 4 bytes. Thus LevelData's existing 14-float knot reader agrees with the
+hand-written formatter; it does not need an added object header or an altered
+stride. The reviewed selected-build method window and field offsets live in
+`scripts/game_data/contracts/leveldata_bezier_knot_native.json`.
+
+`leveldata_bezier_knot_corpus.py` gates that claim against the selected native
+inputs and every exported LevelData file. The selected export passes a separate
+freshness check; all its files close the 43-field named schema through EOF,
+including nonempty spline lists and their knot byte spans. The changing counts
+and aggregate source digest live in
+`reports/game_data/leveldata_bezier_knot_corpus.json`. This is `exact` for the
+selected native fast path and exported payloads. It does not establish the
+formatter's cold/refill behavior or curve behavior in the game world.
+
+### A spline row's runtime transform
+
+The selected normal native branch of `LevelData.get_splineTable` indexes
+`LevelSplineData` rows by `splineId`. `MovePipelineSpline.OnEnter` looks up a row
+with its `m_splinePtr.id`, constructs a Unity `Spline` from the row's `knots`
+and `closed` fields, and builds `m_splineTransform` with the row's `position`,
+converted `rotation`, and unit scale. It applies the inverse transform to
+`MovementComponent.logicPos` before querying the spline. The normal
+`ProcessVelocity` branch calls `SplineUtility.Evaluate` on that spline and
+applies `m_splineTransform.MultiplyPoint` to the evaluated position. Thus this
+consumer treats knot positions as local to the row transform, and the
+movement position after transformation is in the logic-position space. The
+reviewed body windows, selected field offsets and direct callsites are in
+`scripts/game_data/contracts/leveldata_spline_runtime_native.json`;
+`leveldata_spline_runtime_native.py` validates them against the selected
+installed build.
+
+This is `direct` for the selected normal branch and `conditional` for runtime
+behavior: both methods have iFix patch checks, and the selected patch state or
+actual entity movement was not observed. The unnamed helper converting the
+stored rotation vector to a quaternion has not been proved, nor has a scene
+file been joined to the active level. A WebUI spline overlay should transform
+knots through each row's transform and keep that rotation convention and
+scene placement explicit until independently verified.
 
 ### The keyframe that was not a struct
 

@@ -28,10 +28,10 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   grid, string, resource/state, and area accessors. The deeper meaning of its
   DataMask and several record fields remains unresolved. The maintained
   `stream_area` gate rejoins current `FBStreamArea.bytes` files to the
-  authenticated outer VFS ledger and requires the final vector to reach payload
-  EOF; its six vector widths and one inline root field are framing evidence,
-  not field names or runtime semantics. Current corpus details are in
-  [`dynamic_stream_area_current_latest.md`](../../reports/animestudio/dynamic_stream_area_current_latest.md).
+  authenticated outer VFS ledger and proves a contiguous vector tail through
+  EOF. The selected-build main-grid vector widths and area-record index
+  evidence belong to [`world_dynamic_streaming.md`](world_dynamic_streaming.md),
+  with generated corpus details in `reports/animestudio/`.
 - StreamingChunkInfo has an exact anonymous EOF graph and slot partitions
   derived from actual vtable positions. Standard rows provide one inline
   eight-byte pair and a counted vector of eight-byte pairs. Their anonymous
@@ -109,6 +109,22 @@ its reader, fixtures, and generated corpus report. Durable current conclusions:
   reads, with known-range overlap checks.
   Missing count keys remain explicit unsupported rows; readable spans are not
   record extents or execution receipts.
+  A separate installed-byte neighbor probe rechecked selected packed slices
+  against the VFS ledger MD5 and walked their decoded certified ranges and
+  *all* nested target pointers in each file. Marker15 targets occur under
+  several key prefixes, not only the selector-5 `5,1,index` route. In the
+  bounded sample every target has sixteen readable bytes before the next
+  certified range, but multiple targets often occupy one physical gap; the
+  gap can also extend beyond the last target. Target spacing and available
+  bytes therefore do not establish a serialized record end or identify a
+  producer. The sample selection, per-file identities, key counts, target
+  neighbors and gap bounds are in
+  `reports/chunk_data/marker15_physical_neighbors_latest.json`. The next
+  useful discriminator is a writer or a selected consumer that carries the
+  target pointer together with a checked byte extent. For the prevalent
+  selector-9 keys, this also requires the live mapping index and component
+  pool span already missing from that route; applying the selector-5 reader
+  to those keys would cross an unproved dispatch boundary.
   The marker2 finite-gap parser selects only the independently gated
   selector6/full-key09020000 context. It rebuilds the complete nested target
   directory; unknown markers preserve raw slots and prevent occupancy closure.

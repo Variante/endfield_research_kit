@@ -18,7 +18,8 @@ ownership, not by investigation date.
 - [`game_data/`](game_data/README.md): one detail file per installed-data
   evidence domain below that topic: payload families, gameplay semantics, the
   Wwise/HIRC chain, irradiance volumes, terrain layers, chunk/streaming
-  schemas, and the consolidated slot and HIRC state.
+  schemas, DynamicStreaming grids and area records, IFix patch records, and the
+  consolidated slot and HIRC state.
 
 ## Retention boundary
 

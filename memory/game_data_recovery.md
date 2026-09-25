@@ -27,6 +27,11 @@ python tools\endfield_source_graph.py build --relevant-asset-maps --skip-referen
 - Native claims require the selected `GameAssembly.dll` plus
   `global-metadata.dat` gate. Missing or mismatched inputs skip that evidence
   and leave the last validated report untouched.
+- Metadata default blobs require their primitive backing type. Applying the
+  signed compressed-`Int32` decoder to a byte-backed enum invents negative
+  values from ordinary byte IDs. Resolve the backing type from the selected
+  MetadataRegistration before using those IDs; the native enum helper supports
+  reviewed byte and `Int32` cases and fails closed on other types.
 - A source-only classifier must not inherit that gate merely because native
   evidence once motivated its interpretation. The maintained direct gate
   callers are limited to current runtime-capture identity, metadata enum reads,
@@ -136,24 +141,28 @@ level-2 framing -- a field name, an address order, or a filename standing in for
 a proof.
 
 The client's own `EndfieldVfsBlockType` enum is the authoritative list of what
-the installed data contains. `game_data/` documents five of its lanes -- **world**
-(`Streaming`, `DynamicStreaming`, `Terrain`, `IV`), **audio**, **gameplay** (the
-`Table` Buff/Skill subset), **catalog** (`ExtendData`, `BundleManifest`), and
-**extraction**, which owns the AnimeStudio reader itself plus how far each
-family's reader is proven. A **story** lane sits beside them with no block of
+the installed data contains. `game_data/` documents **world** (`Streaming`,
+`DynamicStreaming`, `Terrain`, `IV`), **audio**, **gameplay** (the `Table`
+Buff/Skill subset), **catalog** (`ExtendData`, `BundleManifest`), **Unity
+assets** (`Bundle`, `Video`), and **code** (`IFixPatchOut`). An **extraction** lane
+owns the AnimeStudio reader itself plus how far each family's reader is proven.
+A **story** lane sits beside them with no block of
 its own: [`game_data/story_carriers.md`](game_data/story_carriers.md) owns what
 a serialized LevelScript action, Timeline record, or spatial carrier proves
 about Story activation and placement. Two cross-lane files sit beside them for the
 serialization framework (MemoryPack and its IL2CPP formatter resolution) and the
-native read path down to `ReadFile`.
-**Unity assets** (`Bundle`, `Video`) are here too, in
+native read path down to `ReadFile`. Unity asset identity is in
 [`game_data/unity_assets.md`](game_data/unity_assets.md), with the container
 index in [`game_data/containers_cabmap.md`](game_data/containers_cabmap.md).
+The selected-build main-grid vector widths, area records, and authored area
+index relations in DynamicStreaming belong to
+[`game_data/world_dynamic_streaming.md`](game_data/world_dynamic_streaming.md).
 Only **text** remains elsewhere: `Table` text and `JsonData` conversations are
 presentation-facing and belong to
-[`webui/story_recovery.md`](webui/story_recovery.md). `IFixPatch` has a reader
-and no durable conclusions. [`game_data/README.md`](game_data/README.md) carries the
-full block-to-lane table.
+[`webui/story_recovery.md`](webui/story_recovery.md). IFix replacement-target,
+VM operand, and external-signature evidence, with its patch-currentness boundary, is in
+[`game_data/ifix_patch.md`](game_data/ifix_patch.md).
+[`game_data/README.md`](game_data/README.md) carries the full block-to-lane table.
 
 Read [`game_data/settled_and_open.md`](game_data/settled_and_open.md) before
 reopening `InitChunkData`/`StreamingChunkData` slot typing or HIRC type
@@ -252,21 +261,80 @@ and before/after evidence belongs in `tmp/<topic>/`.
   prove concrete runtime root/key receipt, fresh key state, absence of overrides
   or execution. Native Info provenance is conditional, not a concrete record.
   Keep field namespaces and runtime semantics behind those gaps. Then Terrain
-  block/channel semantics, DynamicStreaming, irradiance, manifest, mmap,
-  patch, and JsonData body semantics.
+  block/channel semantics, DynamicStreaming's other nested main records,
+  auxiliary fields beyond the now-proved descriptor-21 stored name prefix and
+  live grid/area selection,
+  irradiance supplied-root/VFS identity, selected read provider, and room
+  record semantics; manifest,
+  mmap, patch, and JsonData body semantics.
 - Continue Streaming nested element/byte-body framing using the bottom-up
   queue below, whose current Streaming framing state is in
-  [`game_data/world_chunk_slots.md`](game_data/world_chunk_slots.md);
-  concrete runtime paths and field names follow structural closure, not the
-  reverse.
+  [`game_data/world_chunk_slots.md`](game_data/world_chunk_slots.md).
+  Init slot 7 now has a selected native descriptor-major byte consumer with a
+  log-only extent comparison. A current complete-corpus gate proves that
+  descriptor 21 stores each paired root name's first 63 bytes under the same
+  ID; long suffixes are absent from the slot. Other component labels, a
+  concrete runtime root/file receipt, and the large unread run remain open.
+  Further field names follow structural closure, not the reverse.
+- Continue SkillData action-union recovery after the reviewed timeline
+  shared-sequence reader. It now walks every later timeline record only while
+  all reached routes match the current native contract, and otherwise retains
+  the exact first-record prefix. It also handles positive passive action maps
+  followed by an empty timeline list when every reached route is admitted.
+  A complete ActionGroup can rejoin the selected top-level terminal;
+  unsupported action children, other ActionGroup shapes, and runtime
+  execution remain open. The corpus now retains positive passive and shared
+  timeline reader first refusals explicitly. It classifies a physical action
+  tag only when the reader fails at a union-tag check, so nested counts and
+  profile markers cannot masquerade as routes. Current coverage is in the
+  generated SkillData corpus report, with the evidence boundary in
+  [`game_data/serialization_memorypack.md`](game_data/serialization_memorypack.md).
+- Continue BuffData recursive naming from the corrected compact stacking and
+  timeline joins. The selected native readers now own the signed-length
+  `stackingKey`, two-byte `stackingType`, following raw GameplayTag array, and
+  empty `timelineActions` list through the trigger tail. Positive timeline
+  bodies still have structural endpoints; anonymous action interiors and
+  positive modifier children need their own recursive ownership proofs.
+  Action-wrapper receipts may be shown as bounded spans in the debug Inspector,
+  but they do not make the enclosing BuffData file a complete named schema.
+  Current coverage is in the generated BuffData corpus and child receipts;
+  the durable boundary is in
+  [`game_data/serialization_memorypack.md`](game_data/serialization_memorypack.md).
 - Recover more exact gameplay action/selector/formula contracts without
-  treating native names as byte-layout proof.
-- Audio: the HIRC structural lane is closed from the Wwise SDK; the ordered
-  handoff (value naming, decision trees, plug-in blocks, then a host process
-  for layers 5 and 6) is the recovery queue in
-  [`game_data/audio_overview.md`](game_data/audio_overview.md). Keep closing
+  treating native names as byte-layout proof. Selected `DamageUnit` enum fields,
+  calculation subtype identities, and two subtypes' enum parameters now close
+  across exact Skill/Buff records. A separately authenticated, unpatched
+  `MultiplyAttributeCalculation.Evaluate` body computes selected attribute
+  times resolved multiplier plus addition. A separate unpatched
+  `AtkScaleCalculation.Evaluate` body multiplies attacker ATK by resolved
+  `atkScale`; `DefiniteValueCalculation.Evaluate` returns a resolved value,
+  optionally multiplied by a resolved scale. The selected unpatched
+  `BreakingAttackCalculation.Evaluate` body combines attacker ATK, defender
+  break-damage scalar, and two resolved multipliers with explicit
+  Single/Double conversions. The selected normal-entity DamageAction caller
+  now proves the snapshot/simple/calculation selector and the simple
+  `attackerAttributes[2] × resolved unit atkScale` intermediate; stored
+  evaluator subtypes may be bypassed by the simple branch. A separate
+  `_ProcessDamage` caller now joins a nonnull stored `poiseCalculation` to the
+  intermediate `PoisePackData.calcResult` after a before-calculation modifier;
+  the selected `DefiniteValueCalculation` evaluator gives its conditional
+  resolved-value expression. A further selected Poise result contract proves
+  after-calculation modifiers, output/taken Poise scalars, signed modifier
+  construction, and the guarded controller path that converts Double to
+  Single and records a readback `realDelta`. The selected slot-87 vtable census
+  finds five AbilitySystem types using base `ApplyModifier`; the God override
+  returns failure on its unpatched branch. Runtime receiver identity, live
+  invocation, calculation subtype selection, patch state, provider values,
+  final damage, and an observed
+  character-specific applied Poise amount remain unresolved.
+- Audio: the HIRC layout and shipped decision-tree traversal are structurally
+  closed against the Wwise SDK and current bank corpus. A current-build
+  SDK/native gate types twelve stock effect families; proprietary Convolution
+  Reverb and Mastering Suite parameters remain opaque. Remaining value naming,
+  other plug-in blocks, and a host process for layers 5 and 6 remain in the queue
+  in [`game_data/audio_overview.md`](game_data/audio_overview.md). Keep closing
   authored and observed consumers through exact Event/media traversal while
-  preserving branch and audibility gaps.
+  preserving runtime branch and audibility gaps.
 - Audio's native catalog was reviewed on the previous build; on another
   build `scripts/webui/audio/semantics/native_callsite_rederivation.py`
   re-proves it by name (callsites, voice routes, music groups and

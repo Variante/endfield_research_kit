@@ -75,10 +75,11 @@ model these carriers feed, and everything about presenting the result, is
   the previous build's single matching value during a switch. Branch-sequence
   order edges are admitted only while the `Branch.Execute` list-order claim
   holds.
-- An iFix-wrapped method opens with `IsPatched(<its own patch id>)`, and an
-  inlined copy keeps that test, so a caller testing a method's patch id
-  contains that method's body. This is how an inlined hop is proved without a
-  call edge. `TaskCondition.InvokeOnIsCompleteChangeAction` is inlined into
+- An iFix-wrapped method can test `IsPatched(<its own patch id>)` after a
+  class-initialization prologue; a bounded opening-window search that misses
+  the test does not prove the wrapper absent. An inlined copy may retain the
+  id test, which supports an inlined-hop claim when its surrounding body and
+  arguments also match. `TaskCondition.InvokeOnIsCompleteChangeAction` is inlined into
   `LevelScriptRuntime.UpdateTaskMainObjectiveIsCompleted` on the current
   build: the server progress path invokes `m_onIsCompleteChangeAction` without
   calling the named method, so a runtime hook on that method misses this path;

@@ -12,20 +12,22 @@ The consolidated conclusions for the families above, so a later session does not
 re-derive them. Read this before reopening `InitChunkData`/`StreamingChunkData`
 slot typing or the HIRC type coverage.
 
-## `InitChunkData` / `StreamingChunkData` -- the slot-7 element, complete
+## `InitChunkData` / `StreamingChunkData` -- current slot-7 framing
 
-| field | meaning | evidence |
+| field | current reading | boundary |
 | --- | --- | --- |
-| 0 | **`StreamingComponentType` mask** -- bits 0-5 always set, bits 6-7 optional (`SphereCollider`, `CapsuleCollider`), one-hot in 8-14 naming the component kind | 12,932/12,932 in range; one-hot counts reproduce an earlier blind census exactly |
-| 1 | a **count**, 1-based, never zero | dense over small integers, 60.9% non-powers-of-two |
-| 2 | **centre + extents**, `(x, height, z)` world space | centre in its own chunk 73.96% vs 1.28% control; extents never negative in 21,336 components |
-| 3 | **byte offset** into the region `s4` sizes | 4-aligned 18,391/18,391; `max+24 <= s4` 6,002/6,002 |
-| 4 | the constant **4** | 18,391/18,391 |
+| 0 | `StreamingComponentType` mask, with optional collider bits and one-hot kind bits | selected enum and observed masks |
+| 1 | count | multiplies the sum of field-3 descriptor strides to give the wrapped byte-vector length |
+| 2 | centre and extents | spatial interpretation from paired chunk evidence |
+| 3 | forward uoffset to a counted vector of 8-byte `(u16 anonymous id, u16 stride, u32 zero)` descriptors | exact framing and direct selected first-root consumer; descriptor 21 carries a NUL-terminated 63-byte name prefix duplicated with its ID in root rows across the current complete Init corpus; other descriptors remain open |
+| 4 | forward uoffset, observed as `4`, to a one-field table wrapping a counted byte vector | exact framing and direct selected first-root consumer; the observed `4` is an offset, not a scalar constant |
 
-Root: slot 0 = version **47**; slot 1 = chunk origin `(x*128, y*128)`; slots 2/3/4 =
-**runtime allocation sizes**, not file offsets; slot 5 = entries keyed by
-`StreamingLayer` x `ECSEntityType`; slot 6 = one constant per placement; slot 7 = the
-placements.
+Root slot 0 is version `47`; slot 1 is the chunk origin. Slots 2 through 7
+are vectors: slot 2 is empty in the observed set; slots 3/4/5 are parallel
+ids, packed words, and typed records; slots 6/7 are parallel. See
+[`world_chunk_union_vectors.md`](world_chunk_union_vectors.md) and the current
+correction in [`world_chunk_unread_region.md`](world_chunk_unread_region.md).
+Later historical hypotheses in this file do not override this framing.
 
 ## Audio -- the HIRC types the notes called SDK-only
 
@@ -46,9 +48,21 @@ engine, whose layouts are now framed.
 
 ## Still open, accurately
 
-- **`LAYER_C`'s consumer.** The recorded answer is *disconfirmed* (`m_colorVariationTex`
-  is a `Texture2D`, one per terrain, so the argument that eliminated the control map
-  eliminates it too) and the mask-map rival is excluded by the binding list.
+- **`LAYER_C`'s managed field and encoded channel.** The selected UnityPlayer
+  path loads `LAYER_C/D/N`; a checked consumer routes them through distinct
+  owner-local handles and render-property IDs D/`_Splats`, N/`_Normals`, and
+  C/`_ConeMaps`, with C conditional. A separate selected managed constructor
+  directly copies eight `TextureResources` fields into
+  `VirtualTextureRenderer`, including the two layer arrays and the color
+  variation texture. The join from any installed `LAYER_*` file or native
+  owner-local handle into those managed fields remains open, as does shader
+  sampling. The separate six-file `Terrain_H/N/T/A/S/C` tile family has
+  a checked render-property route: H/Heightmap, N/Normalmap, T/TintColor,
+  A/Albedo, S/SplatCtrl, and C/CliffIndex. Neither `m_colorVariationTex` nor
+  a mask-map reading for `LAYER_C` is established by the selected binding or field
+  types; see [`world_terrain.md`](world_terrain.md) and the reviewed
+  `terrain_layer_paths_native.json`/`terrain_layer_slots_native.json`/
+  `terrain_virtual_texture_managed_native.json` contracts.
 - ~~**`0x0B`'s `+12`/`+20` words.**~~ **CLOSED** by the SDK: they are the `sourceID`
   and `eventID` of the 44-byte playlist item `CAkMusicTrack::SetInitialValues` reads,
   and the whole type frames exactly.
@@ -85,7 +99,19 @@ engine, whose layouts are now framed.
 
   *The characterisation was right in shape and wrong in both particulars, which is what
   happens when a set is described from its summary rather than enumerated.*
-- **Slot-7 field 3's record contents**, which are not in these files at all.
+- **The other slot-7 descriptor payloads and their component labels.** The
+  selected native path now follows the first paired root's slot 7 through
+  each group's descriptor and wrapped byte vectors, consuming consecutive
+  `group count * descriptor stride` byte regions. A complete current-corpus
+  audit joins every descriptor-21 64-byte slot by ID and first-63-byte name
+  prefix to a root row, while long full names lose their suffix in that slot.
+  The selected native entity-name getter is only a candidate: its
+  context pointer is not joined to descriptor 21's packed column, and the
+  corresponding getter is absent from the selected IL2CPP type. The remaining
+  gap is a checked mapping from descriptor IDs to named component consumers
+  and a concrete runtime root/file receipt; the large
+  residual runs have no certified record extent. See
+  [`world_chunk_unread_region.md`](world_chunk_unread_region.md).
 
 *Three blockers recorded earlier turned out to be misdiagnosed:* the chunk
 reader's "packed native code" (it is in unpacked `UnityPlayer.dll`), the audio types'

@@ -3,26 +3,30 @@
 Part of [`../game_data_recovery.md`](../game_data_recovery.md). See
 [`README.md`](README.md) for the level and lane map.
 
-**Level 2, catalog lane.** The `ExtendData` block: three files split by a single
-entropy profile into two that decode completely and one that cannot be attacked at
-the byte level at all. `StringPathHash.bin` is the game's complete source-path
-table, so it is a global catalog rather than world data; `FacBoneTRS.bin` is
-facial-bone animation. Neither is spatial.
+**Level 2, catalog lane.** The `ExtendData` block contains the source-path
+table, facial-bone transforms, and a still-opaque compressed payload.
+`StringPathHash.bin` is a global catalog rather than world data;
+`FacBoneTRS.bin` carries facial-bone animation. Neither is spatial. The
+separate `BundleManifest` block has since gained exact partial framing; see
+[`extraction_payload_boundaries.md`](extraction_payload_boundaries.md).
 
-## `extend-data`: two files are plain, two are opaque
+## Entropy was a useful triage signal, not a framing limit
 
 A single entropy/adjacency profile separates them, calibrated against known-readable references
 (plain JSON reads 5.111 bits/byte at +0.678; the decoded `regionIv` reads 6.301):
 
 | file | bytes | entropy | adjacency | verdict |
 | --- | --- | --- | --- | --- |
-| `manifest.hgmmap` | 50,002,822 | **7.997** | +0.002 | ***indistinguishable from random*** |
+| `manifest.hgmmap` | 50,002,822 | **7.997** | +0.002 | high entropy; later framed in part |
 | `CompressData.bin` | 873,686 | **7.994** | +0.016 | ***indistinguishable from random*** |
 | `FacBoneTRS.bin` | 17,909,576 | 3.956 | +0.411 | plain |
 | `StringPathHash.bin` | 157,726,628 | 4.022 | +0.379 | plain |
 
-***`manifest.hgmmap` and `CompressData.bin` are encrypted or fully compressed and cannot be
-parsed as they stand*** -- recorded so no one spends time on a byte-level attack.
+The original entropy pass could not distinguish the manifest's structure from
+random-looking bytes. A later exact framing sweep identified its fixed-width
+sections and part of its variable envelope. The terminal bytes, serialized
+field ownership, and value semantics remain open. `CompressData.bin` has no
+comparable framing result yet.
 
 ### `FacBoneTRS.bin` is an array of 4x4 matrices
 
