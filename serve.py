@@ -8,10 +8,19 @@ Serves the `webui` app at `/`, raw current exported assets at
 `/export_full/...` (the export root: game/ and meta/), final game files from the
 export's game/ tree at `/export_data/...`, and
 saved previous-export assets at `/export_previous/...`.
+
+Layout-v3 export roots keep every Unity object document (.json, .anim) in
+`game/Unity.sqlite` rather than under `game/Unity/<Type>/`. A request under one
+of the three export routes for a `.../Unity/<Type>/<name>` document that is not
+on disk is answered from the `Unity.sqlite` beside that `Unity/` folder, so
+published links to those documents keep working. The store is opened read-only
+per request and imported only when such a request arrives.
 """
 from __future__ import annotations
 
+import email.utils
 import http.server
+import io
 import json
 import os
 import re
@@ -30,6 +39,13 @@ CHARACTER_MERGES_OVERRIDE_PATH = WEBUI_ROOT / "overrides" / "character_merges.js
 CHARACTER_NAME_OVERRIDES_PATH = WEBUI_ROOT / "overrides" / "character_name_overrides.json"
 AUDIO_NOTES_OVERRIDE_PATH = WEBUI_ROOT / "overrides" / "audio_notes.json"
 MAX_WRITE_BYTES = 5 * 1024 * 1024
+EXPORT_ROUTE_PREFIXES = ("/export_full", "/export_data", "/export_previous")
+UNITY_STORE_FILE = "Unity.sqlite"
+# Object documents the Unity store holds, by suffix, with the type they are served as.
+UNITY_STORE_CONTENT_TYPES = {
+    ".json": "application/json; charset=utf-8",
+    ".anim": "text/plain; charset=utf-8",
+}
 
 
 def read_paths_bat_value(name: str) -> str:
@@ -96,6 +112,54 @@ def resolve_previous_export_root() -> Path:
 
 
 DATA_EXPORT_ROOT = resolve_data_export_root()
+
+
+def is_export_route(request_path: str) -> bool:
+    return any(
+        request_path == prefix or request_path.startswith(prefix + "/")
+        for prefix in EXPORT_ROUTE_PREFIXES
+    )
+
+
+def unity_store_document(translated_path: str) -> tuple[Path, str, str] | None:
+    """``(store, type, name)`` when a missing file is a Unity store document.
+
+    ``translated_path`` is the filesystem path a request resolved to. It
+    names a store document when it is ``<game>/Unity/<Type>/<name>`` with a
+    store suffix, the file itself does not exist, and ``<game>/Unity.sqlite``
+    does. Whether the row exists is the store's answer, not this one.
+    """
+
+    path = Path(translated_path)
+    if path.suffix.lower() not in UNITY_STORE_CONTENT_TYPES:
+        return None
+    type_dir = path.parent
+    unity_dir = type_dir.parent
+    if not path.name or not type_dir.name or unity_dir.name.lower() != "unity":
+        return None
+    if path.exists():
+        return None
+    store = unity_dir.parent / UNITY_STORE_FILE
+    if not store.is_file():
+        return None
+    return store, type_dir.name, path.name
+
+
+def read_unity_store_document(store: Path, type_name: str, name: str) -> bytes | None:
+    """One document's exact bytes, or None when the store has no such row.
+
+    The store module is imported here, not at startup, and each call opens
+    its own read-only connection and closes it: the server keeps no handle on
+    the database between requests, so an export can replace it.
+    """
+
+    from scripts.game_data.unity_store import UnityObjectStore
+
+    with UnityObjectStore(store) as unity_store:
+        try:
+            return unity_store.read_bytes(type_name, name)
+        except KeyError:
+            return None
 
 
 ERROR_PAGE_TEMPLATE = """<!doctype html>
@@ -327,7 +391,51 @@ class Handler(http.server.SimpleHTTPRequestHandler):
         if args and isinstance(args[0], str) and args[0].startswith(("4", "5")):
             super().log_message(fmt, *args)
 
+    def send_unity_store_head(self):
+        """Answer an export-route Unity document from the store.
+
+        Returns ``(handled, body)``. ``handled`` is False when the request is
+        not a store document, so normal file serving applies; otherwise the
+        response head is sent and ``body`` is the document or None.
+        """
+        request_path = urlsplit(self.path).path or "/"
+        if not is_export_route(request_path):
+            return False, None
+        document = unity_store_document(self.translate_path(self.path))
+        if document is None:
+            return False, None
+        store, type_name, name = document
+        try:
+            data = read_unity_store_document(store, type_name, name)
+        except Exception as exc:  # the store is unreadable or another schema
+            self.send_error(500, f"Unity object store unreadable: {exc}")
+            return True, None
+        if data is None:
+            self.send_error(404, "File not found")
+            return True, None
+        modified = int(os.path.getmtime(store))
+        since = self.headers.get("If-Modified-Since")
+        if since:
+            try:
+                since_time = email.utils.parsedate_to_datetime(since).timestamp()
+            except (TypeError, ValueError, IndexError, OverflowError):
+                since_time = None
+            if since_time is not None and modified <= since_time:
+                self.send_response(304)
+                self.end_headers()
+                return True, None
+        self.send_response(200)
+        self.send_header("Content-type", UNITY_STORE_CONTENT_TYPES[Path(name).suffix.lower()])
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Last-Modified", self.date_time_string(modified))
+        self.end_headers()
+        return True, io.BytesIO(data)
+
     def send_head(self):
+        handled, body = self.send_unity_store_head()
+        if handled:
+            return body
+
         range_header = self.headers.get("Range")
         if not range_header:
             return super().send_head()

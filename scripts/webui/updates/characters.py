@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from scripts.common import ROOT, WEBUI_BUILD_DIR, read_json, rel_path
+from scripts.game_data.unity_store import open_store_if_present
 from scripts.source_paths import ExportLayout
 from scripts.webui.characters.build_character_data import CONVERTED_MEDIA_TYPES
 
@@ -27,7 +28,8 @@ def comparison_character_catalog_dir(export_root: Path, state_dir: Path) -> Path
     shared asset index), and no Story actor registry, which exists only for
     the export the WebUI was built from. A builder change or a Story-only
     input therefore never shows up as a game update. The cache key covers the
-    builder source, the tables, and the media folders the builder scans.
+    builder source, the tables, the media folders the builder scans, and the
+    same types' object documents in game/Unity.sqlite (name, size, SHA256).
     """
     layout = ExportLayout(export_root)
     digest = hashlib.sha256()
@@ -41,6 +43,11 @@ def comparison_character_catalog_dir(export_root: Path, state_dir: Path) -> Path
         # A folder's mtime changes when a file is added, removed, or renamed.
         stamp = type_dir.stat().st_mtime_ns if type_dir.is_dir() else 0
         digest.update(f"{type_name}|{stamp};".encode("utf-8"))
+    store = open_store_if_present(export_root)
+    if store is not None:
+        for type_name in CONVERTED_MEDIA_TYPES:
+            for row in store.rows(type_name, "*.json"):
+                digest.update(f"{type_name}/{row.name}|{row.size}|{row.sha256};".encode("utf-8"))
     cache_dir = state_dir / "characters" / digest.hexdigest()[:16]
     catalog_dir = cache_dir / "catalog"
     if catalog_dir.is_dir() and any(catalog_dir.glob("*.json")):

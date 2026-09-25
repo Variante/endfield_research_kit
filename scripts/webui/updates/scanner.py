@@ -1,3 +1,15 @@
+"""Stateful export-tree change scanner behind the Updates feed.
+
+Each run compares one export root with the snapshot cached in its state
+directory and records every added, modified and deleted file. Layout-v3 roots
+keep their Unity object documents in ``game/Unity.sqlite``; the scanner never
+fingerprints that database as one opaque file. It expands it into one virtual
+entry per row at the row's logical path ``game/Unity/<Type>/<name>``,
+fingerprinted by the row's stored SHA256 and size, so a broad audit reports
+per-object changes exactly as it did for loose files. A row's bytes are read
+from the store only when a loose file of the same name would have been read:
+when the row is new or changed and has a text extension.
+"""
 from __future__ import annotations
 
 import concurrent.futures
@@ -13,8 +25,9 @@ import sys
 import time
 from collections import Counter
 from pathlib import Path
-from typing import Iterable
+from typing import Iterable, NamedTuple
 
+from scripts.game_data.unity_store import STORE_FILE_NAME, UnityObjectStore, logical_ref
 from scripts.webui.decoded_payloads import render_decoded_payload
 
 
@@ -50,6 +63,42 @@ TEXT_KIND_DECODED_PARTIAL = "decoded_partial"   # a reader bounded to part of it
 TEXT_KIND_BINARY = "binary"          # serialized, and no reader routes it
 TEXT_KIND_TOO_LARGE = "binary_too_large"  # serialized, and over the diff limit
 DEFAULT_HASH_WORKERS = max(2, min(8, (os.cpu_count() or 4)))
+# The export's Unity object store, relative to the export root, and the
+# SQLite sidecars that may sit beside it while a writer has it open. The
+# store is expanded into per-row entries; neither it nor a sidecar is ever
+# scanned as a file of its own.
+UNITY_STORE_RELATIVE_PATH = f"game/{STORE_FILE_NAME}"
+UNITY_STORE_UNITY_PREFIX = "game/Unity"
+_UNITY_STORE_SIDECAR_SUFFIXES = ("-journal", "-wal", "-shm")
+
+
+def is_unity_store_relative_path(rel_path: str) -> bool:
+    """True for ``game/Unity.sqlite`` and its SQLite sidecars (any case)."""
+
+    lower = normalize_relative_path(rel_path).lower()
+    base = UNITY_STORE_RELATIVE_PATH.lower()
+    return lower == base or any(lower == base + suffix for suffix in _UNITY_STORE_SIDECAR_SUFFIXES)
+
+
+class StoreRowRef(NamedTuple):
+    """Where a virtual scan entry's bytes live: one row of the Unity store."""
+
+    type_name: str
+    name: str
+
+
+class ExportFileEntry(NamedTuple):
+    """One file to scan: a real file, or one Unity store row at its logical path."""
+
+    rel_path: str
+    full_path: str
+    size: int
+    mtime_ns: int
+    extension: str
+    # Set for a store row: its stored SHA256 is the entry's digest, so the row
+    # needs no read to be compared.
+    store_row: StoreRowRef | None = None
+    store_digest: str | None = None
 
 
 @dataclasses.dataclass(slots=True)
@@ -78,6 +127,8 @@ class PendingFile:
     old_line_count: int | None
     old_text_content: str | None
     old_text_kind: str | None = None
+    store_row: StoreRowRef | None = None
+    store_digest: str | None = None
 
 
 @dataclasses.dataclass(slots=True)
@@ -432,26 +483,77 @@ def scan_file(
                 line_count += chunk.count(b"\n")
                 last_byte = chunk[-1:]
                 has_nul = has_nul or b"\x00" in chunk
+    return finish_text_scan(
+        digest.hexdigest(),
+        rel_path,
+        count_lines=count_lines,
+        line_count=line_count,
+        last_byte=last_byte,
+        has_nul=has_nul,
+        captured=None if text_chunks is None else b"".join(text_chunks),
+    )
+
+
+def finish_text_scan(
+    digest: str,
+    rel_path: str,
+    *,
+    count_lines: bool,
+    line_count: int,
+    last_byte: bytes | None,
+    has_nul: bool,
+    captured: bytes | None,
+) -> tuple[str, int | None, str | None, str | None]:
+    """The line count, diffable text and text kind of one scanned file's bytes."""
+
     if count_lines and last_byte is not None and last_byte != b"\n":
         line_count += 1
     if not count_lines:
-        return digest.hexdigest(), None, None, None
-    if text_chunks is None:
+        return digest, None, None, None
+    if captured is None:
         # Over the diff size limit, so the bytes were never held. A NUL still
         # proves the file is not text, so its stray line feeds are not reported
         # as lines and the page can say why there is no diff -- the size, not a
         # missing reader.
         if has_nul:
-            return digest.hexdigest(), None, None, TEXT_KIND_TOO_LARGE
-        return digest.hexdigest(), line_count, None, None
-    text_content, kind = textual_form(rel_path, b"".join(text_chunks))
+            return digest, None, None, TEXT_KIND_TOO_LARGE
+        return digest, line_count, None, None
+    text_content, kind = textual_form(rel_path, captured)
     if text_content is None:
-        return digest.hexdigest(), None, None, kind
+        return digest, None, None, kind
     if kind != TEXT_KIND_PLAIN:
         # "Lines" must describe the text actually diffed, not the payload's
         # stray line-feed bytes, or a decoded diff and its line delta disagree.
         line_count = len(text_content.splitlines())
-    return digest.hexdigest(), line_count, text_content, kind
+    return digest, line_count, text_content, kind
+
+
+def scan_store_row(
+    store: UnityObjectStore,
+    row: StoreRowRef,
+    digest: str,
+    count_lines: bool,
+    capture_text: bool,
+    rel_path: str,
+) -> tuple[str, int | None, str | None, str | None]:
+    """:func:`scan_file` for one Unity store row, whose SHA256 is already known.
+
+    The row's bytes are read only when a loose file would have been read past
+    its digest: for a text extension, to count lines and capture diff text.
+    """
+
+    if not count_lines:
+        return digest, None, None, None
+    data = store.read_bytes(row.type_name, row.name)
+    return finish_text_scan(
+        digest,
+        rel_path,
+        count_lines=True,
+        line_count=data.count(b"\n"),
+        last_byte=data[-1:] or None,
+        has_nul=b"\x00" in data,
+        captured=data if capture_text else None,
+    )
 
 
 def should_ignore_path(rel_path: str, ignored_exact_paths: set[str], ignored_dir_prefixes: tuple[str, ...]) -> bool:
@@ -484,7 +586,7 @@ def build_include_roots(root: Path, include_relative_paths: Iterable[str]) -> li
     return roots or [root]
 
 
-def file_scan_entry(root: Path, path: Path) -> tuple[str, str, int, int, str] | None:
+def file_scan_entry(root: Path, path: Path) -> ExportFileEntry | None:
     try:
         stat_result = path.stat()
     except FileNotFoundError:
@@ -493,7 +595,58 @@ def file_scan_entry(root: Path, path: Path) -> tuple[str, str, int, int, str] | 
         return None
     rel_path = normalize_relative_path(str(path.relative_to(root)))
     extension = path.suffix.lower()
-    return rel_path, str(path), stat_result.st_size, stat_result.st_mtime_ns, extension
+    return ExportFileEntry(rel_path, str(path), stat_result.st_size, stat_result.st_mtime_ns, extension)
+
+
+def open_unity_store(root: Path) -> UnityObjectStore | None:
+    """The export root's Unity object store, or None when it has none."""
+
+    path = root / UNITY_STORE_RELATIVE_PATH
+    return UnityObjectStore(path) if path.is_file() else None
+
+
+def unity_store_scope(rel_path: str) -> tuple[bool, str | None] | None:
+    """Which store rows an include root covers, as ``(all_types, type_name)``.
+
+    ``None`` means the include root reaches no store row. The export root,
+    ``game``, ``game/Unity`` and the store file cover every row;
+    ``game/Unity/<Type>`` covers one type. A deeper include path names no
+    row, because the store keys rows by type folder and file name only.
+    """
+
+    lower = rel_path.lower()
+    if rel_path in ("", ".") or lower in ("game", UNITY_STORE_UNITY_PREFIX.lower(), UNITY_STORE_RELATIVE_PATH.lower()):
+        return True, None
+    prefix = UNITY_STORE_UNITY_PREFIX.lower() + "/"
+    if lower.startswith(prefix):
+        rest = rel_path[len(prefix):]
+        if rest and "/" not in rest:
+            return False, rest
+    return None
+
+
+def iter_unity_store_entries(
+    store: UnityObjectStore,
+    type_name: str | None,
+    ignored_exact_paths: set[str],
+    ignored_dir_prefixes: tuple[str, ...],
+) -> Iterable[ExportFileEntry]:
+    """One virtual entry per store row, at its ``game/Unity/<Type>/<name>`` path."""
+
+    for row in store.iter_rows(type_name):
+        row_type, name = row.type, row.name
+        rel_path = logical_ref(row_type, name)
+        if should_ignore_path(rel_path, ignored_exact_paths, ignored_dir_prefixes):
+            continue
+        yield ExportFileEntry(
+            rel_path=rel_path,
+            full_path=str(store.path),
+            size=int(row.size),
+            mtime_ns=int(row.mtime_ns),
+            extension=Path(name).suffix.lower(),
+            store_row=StoreRowRef(row_type, name),
+            store_digest=str(row.sha256),
+        )
 
 
 def iter_export_files(
@@ -501,16 +654,28 @@ def iter_export_files(
     ignored_exact_paths: set[str],
     ignored_dir_prefixes: tuple[str, ...],
     include_relative_paths: Iterable[str] = (),
-) -> Iterable[tuple[str, str, int, int, str]]:
+    unity_store: UnityObjectStore | None = None,
+) -> Iterable[ExportFileEntry]:
+    """Every file under the include roots, with the Unity store expanded.
+
+    ``game/Unity.sqlite`` and its SQLite sidecars are never yielded as files.
+    When ``unity_store`` is given, its rows are yielded at their logical
+    paths for every include root that covers them; without it the store is
+    simply skipped.
+    """
+
     yielded_paths: set[str] = set()
-    stack = list(reversed(build_include_roots(root, include_relative_paths)))
+    include_roots = build_include_roots(root, include_relative_paths)
+    stack = list(reversed(include_roots))
     while stack:
         current = stack.pop()
         if current.is_file():
             scan_entry = file_scan_entry(root, current)
             if scan_entry is None:
                 continue
-            rel_path = scan_entry[0]
+            rel_path = scan_entry.rel_path
+            if is_unity_store_relative_path(rel_path):
+                continue
             if should_ignore_path(rel_path, ignored_exact_paths, ignored_dir_prefixes):
                 continue
             if rel_path in yielded_paths:
@@ -533,6 +698,8 @@ def iter_export_files(
                 continue
             if not entry.is_file(follow_symlinks=False):
                 continue
+            if is_unity_store_relative_path(rel_path):
+                continue
             if should_ignore_path(rel_path, ignored_exact_paths, ignored_dir_prefixes):
                 continue
             if rel_path in yielded_paths:
@@ -540,7 +707,34 @@ def iter_export_files(
             yielded_paths.add(rel_path)
             stat_result = entry.stat(follow_symlinks=False)
             extension = full_path.suffix.lower()
-            yield rel_path, str(full_path), stat_result.st_size, stat_result.st_mtime_ns, extension
+            yield ExportFileEntry(rel_path, str(full_path), stat_result.st_size, stat_result.st_mtime_ns, extension)
+
+    if unity_store is None:
+        return
+    if should_ignore_path(UNITY_STORE_RELATIVE_PATH, ignored_exact_paths, ignored_dir_prefixes):
+        return
+    all_types = False
+    type_names: list[str] = []
+    for include_root in include_roots:
+        rel = try_relative_to(include_root, root)
+        scope = None if rel is None else unity_store_scope(rel)
+        if scope is None:
+            continue
+        if scope[0]:
+            all_types = True
+            break
+        if scope[1] not in type_names:
+            type_names.append(scope[1])
+    for type_name in [None] if all_types else sorted(type_names):
+        for store_entry in iter_unity_store_entries(
+            unity_store, type_name, ignored_exact_paths, ignored_dir_prefixes
+        ):
+            # A loose document at the same logical path does not belong in a
+            # v3 root; if one exists it was yielded above and keeps its entry.
+            if store_entry.rel_path in yielded_paths:
+                continue
+            yielded_paths.add(store_entry.rel_path)
+            yield store_entry
 
 
 def ensure_database_schema(conn: sqlite3.Connection) -> None:
@@ -609,26 +803,38 @@ def batch_insert_rows(conn: sqlite3.Connection, rows: list[SnapshotRow]) -> None
     rows.clear()
 
 
+def submit_pending_scan(
+    executor: concurrent.futures.Executor,
+    item: PendingFile,
+    unity_store: UnityObjectStore | None,
+) -> concurrent.futures.Future:
+    if item.store_row is None:
+        return executor.submit(scan_file, item.full_path, item.count_lines, item.capture_text, item.rel_path)
+    if unity_store is None or item.store_digest is None:
+        raise RuntimeError(f"store row {item.rel_path} was queued without its Unity store")
+    return executor.submit(
+        scan_store_row,
+        unity_store,
+        item.store_row,
+        item.store_digest,
+        item.count_lines,
+        item.capture_text,
+        item.rel_path,
+    )
+
+
 def process_pending_batch(
     pending_batch: list[PendingFile],
     conn: sqlite3.Connection,
     accumulator: ChangeAccumulator,
     executor: concurrent.futures.Executor,
+    unity_store: UnityObjectStore | None = None,
 ) -> None:
     if not pending_batch:
         return
 
     insert_rows: list[SnapshotRow] = []
-    future_map = {
-        executor.submit(
-            scan_file,
-            item.full_path,
-            item.count_lines,
-            item.capture_text,
-            item.rel_path,
-        ): item
-        for item in pending_batch
-    }
+    future_map = {submit_pending_scan(executor, item, unity_store): item for item in pending_batch}
     for future in concurrent.futures.as_completed(future_map):
         item = future_map[future]
         digest, line_count, text_content, text_kind = future.result()
@@ -918,16 +1124,20 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
     select_cursor = conn.cursor()
     unchanged_rows: list[SnapshotRow] = []
     pending_batch: list[PendingFile] = []
+    unity_store: UnityObjectStore | None = None
 
     try:
+        unity_store = open_unity_store(root)
         with concurrent.futures.ThreadPoolExecutor(max_workers=config.workers) as executor:
             with conn:
-                for rel_path, full_path, size, mtime_ns, extension in iter_export_files(
+                for scan_entry in iter_export_files(
                     root,
                     ignored_exact_paths,
                     ignored_dir_prefixes,
                     config.include_relative_paths,
+                    unity_store,
                 ):
+                    rel_path, full_path, size, mtime_ns, extension = scan_entry[:5]
                     accumulator.note_scan()
                     old_row = read_old_row(select_cursor, rel_path)
                     if old_row is not None:
@@ -948,7 +1158,14 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
                             or old_text_content is not None
                             or old_text_kind is not None
                         )
-                        if size == old_size and mtime_ns == old_mtime_ns and has_cached_text:
+                        # A store row carries its content hash, so it is
+                        # unchanged exactly when the hash is; a file falls
+                        # back to its size and modification time.
+                        if scan_entry.store_digest is not None:
+                            metadata_match = scan_entry.store_digest == old_digest and size == old_size
+                        else:
+                            metadata_match = size == old_size and mtime_ns == old_mtime_ns
+                        if metadata_match and has_cached_text:
                             accumulator.note_reused_metadata_match()
                             unchanged_rows.append(
                                 SnapshotRow(
@@ -989,15 +1206,17 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
                             old_line_count=old_line_count,
                             old_text_content=old_text_content,
                             old_text_kind=old_text_kind,
+                            store_row=scan_entry.store_row,
+                            store_digest=scan_entry.store_digest,
                         )
                     )
                     if len(pending_batch) >= config.hash_batch_size:
-                        process_pending_batch(pending_batch, conn, accumulator, executor)
+                        process_pending_batch(pending_batch, conn, accumulator, executor, unity_store)
                     if accumulator.scanned_files % PROGRESS_EVERY_FILES == 0:
                         print_progress("scanned", accumulator.scanned_files, monotonic_start)
 
                 batch_insert_rows(conn, unchanged_rows)
-                process_pending_batch(pending_batch, conn, accumulator, executor)
+                process_pending_batch(pending_batch, conn, accumulator, executor, unity_store)
 
                 for (
                     rel_path,
@@ -1021,6 +1240,8 @@ def scan_export_changes(config: ScanConfig) -> ScanResult:
                 conn.execute("ALTER TABLE files_scan RENAME TO files")
     finally:
         conn.close()
+        if unity_store is not None:
+            unity_store.close()
 
     finished_at = dt.datetime.now(dt.timezone.utc).astimezone()
     payload = accumulator.to_dict(started_at, finished_at)
