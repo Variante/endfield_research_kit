@@ -1,6 +1,8 @@
 (() => {
   const WebUI = window.WebUI = window.WebUI || {};
-  const PAGE_SIZES = [50, 100, 200, 500];
+  const PAGE_SIZES = [50, 100, 200, 500, 1000];
+  // Lists show this many items per page until the viewer picks another size.
+  const DEFAULT_PAGE_SIZE = 1000;
   const MIN_PAGE_SIZE = 1;
   const MAX_PAGE_SIZE = 10000;
   let pagerSequence = 0;
@@ -23,10 +25,10 @@
     return normalizePageSize(WebUI.storageGet?.(storageKey), fallback);
   }
 
-  function createPager({ container, storageKey, defaultPageSize = 100, onChange }) {
+  function createPager({ container, storageKey, defaultPageSize = DEFAULT_PAGE_SIZE, onChange }) {
     const host = typeof container === "string" ? document.querySelector(container) : container;
     if (!host) return null;
-    const fallbackPageSize = normalizePageSize(defaultPageSize, 100);
+    const fallbackPageSize = normalizePageSize(defaultPageSize, DEFAULT_PAGE_SIZE);
     const suggestionsId = `list-pager-size-suggestions-${++pagerSequence}`;
     const state = {
       page: 0,
@@ -149,5 +151,5 @@
     return api;
   }
 
-  WebUI.pagination = { createPager, PAGE_SIZES, MIN_PAGE_SIZE, MAX_PAGE_SIZE };
+  WebUI.pagination = { createPager, PAGE_SIZES, DEFAULT_PAGE_SIZE, MIN_PAGE_SIZE, MAX_PAGE_SIZE };
 })();
