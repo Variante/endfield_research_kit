@@ -22,6 +22,8 @@
   const DEBUG_ONLY_VIEWS = new Set(["recovery"]);
   const DEBUG_VIEW_FALLBACKS = Object.freeze({ recovery: "story" });
   const RETIRED_VIEW_FALLBACKS = Object.freeze({ projectiles: "gameplay" });
+  // Facet value for files directly under the export root (empty source).
+  const ROOT_SOURCE = "(root)";
   const SHARED_ASSET_NAME_PREFIXES = new Set(["S", "T", "P", "M"]);
   const MODEL_PREFIX_RE = /^([A-Z])_(.+)$/;
   const MODEL_UNPATTERNED_OBJ_GROUP = Object.freeze({
@@ -313,6 +315,7 @@
     detailToken: 0,
     imageObjectUrl: "",
     filters: createDefaultFilters(),
+    facets: createAssetFacets(),
     modelCache: new Map(),
     fbxSummaryCache: new Map(),
     viewer: {
@@ -386,13 +389,27 @@
   }
 
   function createDefaultFilters() {
-    return {
-      q: "",
-      types: new Set(),
-      categories: new Set(),
-      sources: new Set(),
-      sort: "path",
-    };
+    return { q: "", sort: "path" };
+  }
+
+  // Type/category/source chips. Counts are totals over every asset (not
+  // narrowed by search); the score-ranked search stays in applyAssetFilters.
+  function createAssetFacets() {
+    return window.WebUI.facets.create({
+      countMode: "total",
+      chipClassName: "asset-filter-chip",
+      groups: [
+        { id: "type", container: "#asset-type-filter", section: "asset-type", order: "count",
+          values: (entry) => entry.ext || entry.kind, label: assetTypeLabel },
+        { id: "category", container: "#asset-category-filter", section: "asset-category",
+          className: "asset-category-chip", values: assetCategoryValues, label: assetCategoryLabel,
+          order: (a, b) => naturalCompare(assetCategoryLabel(a), assetCategoryLabel(b)) || naturalCompare(a, b) },
+        { id: "source", container: "#asset-source-filter", section: "asset-source", order: "count",
+          className: "asset-source-chip", values: (entry) => entry.source || ROOT_SOURCE,
+          label: (value) => (value === ROOT_SOURCE ? assetUiText("rootFolder") : value) },
+      ],
+      onChange: () => applyAssetFilters(),
+    });
   }
 
   function isMobileLayout() {
@@ -557,9 +574,7 @@
     setDocumentTitleForView(ASSET_STATE.activeView);
 
     if (!refresh || !ASSET_STATE.loaded) return;
-    buildTypeChips();
-    buildCategoryChips();
-    buildSourceChips();
+    ASSET_STATE.facets.render();
     applyAssetFilters();
     if (ASSET_STATE.selectedEntry) renderSelectedAsset();
   }
@@ -728,8 +743,7 @@
       ASSET_STATE.filters = createDefaultFilters();
       $("#asset-q").value = "";
       $("#asset-sort").value = "path";
-      $$(".asset-filter-chip.on").forEach((chip) => chip.classList.remove("on"));
-      applyAssetFilters();
+      ASSET_STATE.facets.reset();
     });
 
     $("#asset-preview-bg-color").addEventListener("input", (ev) => {
@@ -825,9 +839,7 @@
         window.WebUI.updateLoader("assets", 0.7);
         await window.WebUI.nextPaint();
 
-        buildTypeChips();
-        buildCategoryChips();
-        buildSourceChips();
+        ASSET_STATE.facets.render(ASSET_STATE.entries);
         seedAssetExpansions();
         window.WebUI.updateLoader("assets", 0.85);
         await window.WebUI.nextPaint();
@@ -1394,52 +1406,6 @@
     };
   }
 
-  function buildTypeChips() {
-    const counts = countBy(ASSET_STATE.entries, (entry) => entry.ext || entry.kind);
-    const items = Object.keys(counts)
-      .filter((type) => counts[type])
-      .sort((a, b) => counts[b] - counts[a] || naturalCompare(a, b))
-      .map((type) => ({ value: type, label: assetTypeLabel(type), count: counts[type] }));
-    window.WebUI.filters.buildChips("#asset-type-filter", items, {
-      active: ASSET_STATE.filters.types,
-      className: "asset-filter-chip",
-      prune: false,
-      onToggle: () => applyAssetFilters(),
-    });
-  }
-
-  function buildCategoryChips() {
-    const counts = {};
-    for (const entry of ASSET_STATE.entries) {
-      for (const category of assetCategoryValues(entry)) {
-        counts[category] = (counts[category] || 0) + 1;
-      }
-    }
-    const items = Object.keys(counts)
-      .filter((name) => counts[name])
-      .sort((a, b) => naturalCompare(assetCategoryLabel(a), assetCategoryLabel(b)) || naturalCompare(a, b))
-      .map((name) => ({ value: name, label: assetCategoryLabel(name), count: counts[name] }));
-    window.WebUI.filters.buildChips("#asset-category-filter", items, {
-      active: ASSET_STATE.filters.categories,
-      className: "asset-filter-chip asset-category-chip",
-      prune: false,
-      onToggle: () => applyAssetFilters(),
-    });
-  }
-
-  function buildSourceChips() {
-    const counts = countBy(ASSET_STATE.entries, (entry) => entry.source);
-    const items = Object.keys(counts)
-      .sort((a, b) => counts[b] - counts[a] || naturalCompare(a, b))
-      .map((name) => ({ value: name, label: name || assetUiText("rootFolder"), count: counts[name] }));
-    window.WebUI.filters.buildChips("#asset-source-filter", items, {
-      active: ASSET_STATE.filters.sources,
-      className: "asset-filter-chip asset-source-chip",
-      prune: false,
-      onToggle: () => applyAssetFilters(),
-    });
-  }
-
   function seedAssetExpansions() {
     if (ASSET_STATE.expanded.size) return;
     const sources = Array.from(new Set(ASSET_STATE.entries.map((entry) => entry.source).filter(Boolean)));
@@ -1451,9 +1417,6 @@
   function syncFilterSectionActiveCounts() {
     window.WebUI.setFilterSectionActiveCounts?.({
       "asset-basic": ASSET_STATE.filters.q ? 1 : 0,
-      "asset-type": ASSET_STATE.filters.types.size,
-      "asset-category": ASSET_STATE.filters.categories.size,
-      "asset-source": ASSET_STATE.filters.sources.size,
       "asset-sort-section": ASSET_STATE.filters.sort === "path" ? 0 : 1,
     });
   }
@@ -1465,19 +1428,11 @@
     const tokens = window.WebUI.parseQuery(filters.q);
     const scores = new Map();
 
-    ASSET_STATE.filtered = ASSET_STATE.entries.filter((entry) => {
-      if (tokens.length) {
-        const score = window.WebUI.queryScore(entry.searchText, tokens);
-        if (score <= 0) return false;
-        scores.set(entry, score);
-      }
-      if (filters.sources.size && !filters.sources.has(entry.source)) return false;
-      if (filters.types.size && !filters.types.has(entry.ext || entry.kind)) return false;
-      if (filters.categories.size) {
-        const categories = assetCategoryValues(entry);
-        if (!categories.some((category) => filters.categories.has(category))) return false;
-      }
-      return true;
+    ASSET_STATE.filtered = ASSET_STATE.facets.filter(ASSET_STATE.entries).filter((entry) => {
+      if (!tokens.length) return true;
+      const score = window.WebUI.queryScore(entry.searchText, tokens);
+      if (score > 0) scores.set(entry, score);
+      return score > 0;
     });
 
     ASSET_STATE.searchTokens = tokens;
