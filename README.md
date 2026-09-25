@@ -66,11 +66,14 @@ space and memory than the initial Story/Text setup.
   projectiles, related assets, and recovered sound effects.
 - **Audio** exposes decoded voices, music, sound effects, event relationships,
   and playback evidence.
-- **Assets** browses exported images, videos, materials, models, and their
-  recovered references.
-- **Data** browses every exported Unity document and packed game file as a
-  file viewer or with read-only SQL (needs `python serve.py`), plus decoded
-  datasets.
+- **Assets** browses exported images, videos, and models with their linked
+  materials and recovered references.
+- **Data** is a file viewer and SQL console over the export itself: every
+  exported Unity object document (MonoBehaviour, TextAsset, Material,
+  AnimationClip, ...) and every packed game file (such as LipSync). Search by
+  name, object name, PathID, or CAB; read JSON as a tree with base64 decoded
+  inline; or query with read-only SQL. It also keeps the decoded datasets of
+  the maintained binary readers.
 - **Text** provides searchable localized tables and source records.
 - **Updates** compares exported game data across two saved versions.
 
@@ -82,13 +85,13 @@ listed keep their previously generated data.
 | Command | Pages ready or refreshed | What it uses |
 | --- | --- | --- |
 | `.\setup.bat` | **Story**, **Text** | Installed client; also builds AnimeStudio and starts the WebUI server by default |
-| `.\export.bat` | **Story**, **Text**, **Map**, **Characters**, **Gameplay** | The current, freshness-checked export; existing Assets and Audio are unchanged |
-| `.\export.bat --from-game` | **Story**, **Text**, **Map**, **Characters**, **Gameplay** | Refreshes structured data from the installed client first |
+| `.\export.bat` | **Story**, **Text**, **Map**, **Characters**, **Gameplay**, **Data** | The current, freshness-checked export; existing Assets and Audio are unchanged |
+| `.\export.bat --from-game` | **Story**, **Text**, **Map**, **Characters**, **Gameplay**, **Data** | Refreshes structured data from the installed client first |
 | `.\export.bat --with-assets` | Every page except **Updates** | Reuses the current export and its existing media; also rebuilds Assets and relinks Audio |
 | `.\export.bat --with-assets --skip-freshness` | Every page except **Updates** | Same as above, but bypasses the export freshness guard for this run |
 | `.\export.bat --from-game --with-assets` | Every page except **Updates** | Complete installed-client refresh, including asset extraction and CN audio decoding |
-| `.\export_assets.bat` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets** | Reuses current Story/Text and existing exported media |
-| `.\export_assets.bat --from-game` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets** | Keeps Story/Text, but refreshes assets and CN audio from the installed client |
+| `.\export_assets.bat` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets**, **Data** | Reuses current Story/Text and existing exported media |
+| `.\export_assets.bat --from-game` | **Map**, **Characters**, **Gameplay**, **Audio**, **Assets**, **Data** | Keeps Story/Text, but refreshes assets and CN audio from the installed client |
 | `.\build_updates.bat OLD NEW` | **Updates** | Compares two complete export folders |
 
 Asset-enabled commands without `--from-game` can only publish media already
@@ -96,7 +99,12 @@ present in the current export. Use `--from-game` when that media has not yet
 been extracted or the installed client changed.
 
 `python serve.py` serves whatever has already been generated; it does not build
-page data. `python -m scripts.webui.package` packages the current generated WebUI
+page data. The **Data** page's file viewer and SQL console are the exception:
+they query the export's `Unity.sqlite` and `GameFiles.sqlite` live through
+`serve.py`, so they need no build step but do need the repository's
+`serve.py` (restart it after updating the code). A packaged WebUI has no such
+server, so there the Data page shows only its decoded datasets.
+`python -m scripts.webui.package` packages the current generated WebUI
 without refreshing it.
 
 Mission Pipeline recovery remains available as a separate direct Python
@@ -134,7 +142,8 @@ client:
 | `game/Unity` media | ~0.2 M | ~64 GB |
 | `game/Audio` | ~93 K | ~30 GB |
 | `game/Video` | ~600 | ~6 GB |
-| `game/Json` | ~95 K | ~0.8 GB |
+| `game/Json` | ~21 K | ~0.2 GB |
+| `game/GameFiles.sqlite` | 1 (~74 K files) | ~0.3 GB |
 | `game/Table` | ~700 | ~0.3 GB |
 | `meta` | ~120 | ~3 GB |
 | **Total** | **~0.4 M** | **~110 GB** |
@@ -144,8 +153,8 @@ Budget roughly double that during a run: AnimeStudio stages into
 then publishes into `game/`: media as hardlinks, object documents into
 `Unity.sqlite`, and `Json/LipSync` into `GameFiles.sqlite`. An export saved
 before those stores existed (layout v2 or v3) is converted once with
-`python -m scripts.game_data.extraction.pack_export_stores --export-root <folder>`. Generated browser data in
-`webui/data/` adds a few GB more.
+`python -m scripts.game_data.extraction.pack_export_stores --export-root <folder>`.
+Generated browser data in `webui/data/` adds a few GB more.
 
 Time and memory, measured on a desktop with 8 AnimeStudio workers (the
 `--asset-jobs` default):
