@@ -21,6 +21,7 @@ from scripts.common import (
     NATIVE_EVIDENCE_VALIDATED,
     check_installed_native_inputs,
 )
+from scripts.game_data.ifix_patch import ordered_signature_parameters
 
 
 SCHEMA = "ifixPatchNativeContract.v1"
@@ -151,8 +152,16 @@ def _clr_type_name(qualified: str) -> str:
 
 def _signature_text(record: dict[str, Any], type_names: list[str]) -> str:
     owner = type_names[record["declaringTypeIndex"]]
-    parameters = ", ".join(type_names[index] for index in record.get("parameterTypeIndices") or [])
-    return f"{owner}::{record['name']['value']}({parameters})"
+    method = record["name"]["value"]
+    if record["genericTypeIndices"]:
+        arguments = ", ".join(type_names[index] for index in record["genericTypeIndices"])
+        method += f"<{arguments}>"
+    parameters = ", ".join(
+        type_names[parameter["typeIndex"]]
+        if parameter["kind"] == "extern-type-index" else parameter["name"]
+        for parameter in ordered_signature_parameters(record)
+    )
+    return f"{owner}::{method}({parameters})"
 
 
 def regenerate(patch_path: Path) -> tuple[dict[str, Any], list[str]]:

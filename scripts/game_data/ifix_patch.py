@@ -168,6 +168,25 @@ class MethodSignature:
         }
 
 
+def ordered_signature_parameters(record: dict[str, Any]) -> list[dict[str, Any]]:
+    """Restore serialized parameter order across type-index and generic-name streams."""
+    flags = list(record["parameterGenericFlags"])
+    type_indices = iter(record["parameterTypeIndices"])
+    generic_names = iter(record["parameterGenericNames"])
+    if (
+        flags.count(False) != len(record["parameterTypeIndices"])
+        or flags.count(True) != len(record["parameterGenericNames"])
+    ):
+        raise ValueError("IFix method signature parameter streams do not cover every flag")
+    parameters = []
+    for generic in flags:
+        if generic:
+            parameters.append({"kind": "generic-parameter", "name": next(generic_names)["value"]})
+        else:
+            parameters.append({"kind": "extern-type-index", "typeIndex": next(type_indices)})
+    return parameters
+
+
 @dataclass(frozen=True)
 class FixRecord:
     signature: MethodSignature

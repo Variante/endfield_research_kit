@@ -1,0 +1,544 @@
+{
+  "schema": "endfield.ifix-vm-operands-native-contract.v11",
+  "status": "validated",
+  "evidenceBoundary": "direct",
+  "executionBoundary": "unresolved",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "globalMetadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "consumer": {
+    "type": "IFix.Core.VirtualMachine",
+    "method": "Execute",
+    "parameterCount": 8,
+    "parameterNames": [
+      "pc",
+      "argumentBase",
+      "managedStack",
+      "evaluationStackBase",
+      "argsCount",
+      "methodIndex",
+      "refCount",
+      "topWriteBack"
+    ],
+    "token": "0x060000af",
+    "rva": "0x90b8900",
+    "bodyBytes": 53075,
+    "bodySha256": "87A2F6CD9719A6E517A462DAA6516E894A1D7739DCE85C8C49F145BD492D6F58"
+  },
+  "loader": {
+    "type": "IFix.Core.PatchManager",
+    "method": "LoadInternal",
+    "parameterCount": 3,
+    "token": "0x0600000d",
+    "rva": "0x28be7b0",
+    "bodyBytes": 15036,
+    "bodySha256": "AF87B00C461953711CE0152CA33C4B378F33215ED6C241795A14306F2D296C27",
+    "loadedTables": [
+      {
+        "runtimeField": "unmanagedCodes",
+        "fileTable": "methods",
+        "countReadRva": "0x28becac",
+        "rowStoreRva": "0x28bee22",
+        "vmFieldStoreRva": "0x28c0a32"
+      },
+      {
+        "runtimeField": "externMethods",
+        "fileTable": "externMethods",
+        "countReadRva": "0x28befdc",
+        "methodReadRva": "0x28bf027",
+        "rowStoreRva": "0x28bf04c",
+        "vmFieldStoreRva": "0x28c0bd2",
+        "cacheCountReadRva": "0x28c0bec",
+        "cacheStoreRva": "0x28c0bfc"
+      },
+      {
+        "runtimeField": "internStrings",
+        "fileTable": "internStrings",
+        "countReadRva": "0x28bf065",
+        "rowStoreRva": "0x28bf0c2",
+        "vmFieldStoreRva": "0x28c0c32"
+      },
+      {
+        "runtimeField": "fieldInfos",
+        "fileTable": "fieldInfos",
+        "arrayAllocationRva": "0x28bf31c",
+        "rowStoreRva": "0x28bf3da",
+        "vmFieldStoreRva": "0x28c0c44"
+      }
+    ]
+  },
+  "exceptionHandler": {
+    "recordBytes": 24,
+    "type": "IFix.Core.ExceptionHandler",
+    "fieldOffsets": {
+      "CatchType": 16,
+      "CatchTypeId": 24,
+      "HandlerEnd": 28,
+      "HandlerStart": 32,
+      "HandlerType": 36,
+      "TryEnd": 40,
+      "TryStart": 44
+    },
+    "enumType": "IFix.Core.ExceptionHandlerType",
+    "enumMembers": [
+      {"id": 0, "name": "Catch"},
+      {"id": 1, "name": "Filter"},
+      {"id": 2, "name": "Finally"},
+      {"id": 4, "name": "Fault"}
+    ],
+    "readMethod": {
+      "type": "System.IO.BinaryReader",
+      "method": "ReadInt32",
+      "parameterCount": 0,
+      "token": "0x060034b4",
+      "rva": "0x3b2f800"
+    },
+    "loaderReadOrder": [
+      {"field": "HandlerType", "readCallRva": "0x28beead", "fieldStoreRva": "0x28beeb2"},
+      {"field": "CatchTypeId", "readCallRva": "0x28beec5", "fieldStoreRva": "0x28beeca"},
+      {"field": "TryStart", "readCallRva": "0x28beedd", "fieldStoreRva": "0x28beee2"},
+      {"field": "TryEnd", "readCallRva": "0x28beef5", "fieldStoreRva": "0x28beefa"},
+      {"field": "HandlerStart", "readCallRva": "0x28bef0d", "fieldStoreRva": "0x28bef12"},
+      {"field": "HandlerEnd", "readCallRva": "0x28bef25", "fieldStoreRva": "0x28bef2a"}
+    ],
+    "evidenceBoundary": "direct"
+  },
+  "exceptionControl": {
+    "evidenceBoundary": "direct",
+    "leave": {
+      "opcode": "Leave",
+      "opcodeId": 163,
+      "targetMeaning": "absoluteInstructionIndex",
+      "dispatchBranchRva": "0x90c1eb2",
+      "dispatchEntryRva": "0x90c1fce",
+      "operandReadRva": "0x90c1fd6",
+      "pendingTargetStoreRva": "0x90c1fda"
+    },
+    "endfinally": {
+      "opcode": "Endfinally",
+      "opcodeId": 4,
+      "minusOneMeaning": "pendingLeaveTargetWhenNonzero",
+      "pendingTargetCheckRva": "0x90b90ee",
+      "pendingZeroBranchRva": "0x90b90f3",
+      "pendingZeroPathRva": "0x90c47f1",
+      "minusOneCheckRva": "0x90b9106",
+      "minusOneBranchRva": "0x90b910a",
+      "resumeIndexReadRva": "0x90b91bc",
+      "scaleImmediateRva": "0x90b91c1",
+      "slotMultiplyCallRva": "0x90b91c6",
+      "codeBaseReadRva": "0x90b91ce",
+      "pointerAddCallRva": "0x90b91d3",
+      "pendingTargetClearRva": "0x90b91e8"
+    },
+    "byteWitnesses": [
+      {"name": "leaveOperandRead", "rva": "0x90c1fd6", "hex": "418b4604"},
+      {"name": "leavePendingStore", "rva": "0x90c1fda", "hex": "89442474"},
+      {"name": "endfinallyPendingCheck", "rva": "0x90b90ee", "hex": "44396c2474"},
+      {"name": "endfinallyMinusOneCheck", "rva": "0x90b9106", "hex": "41394604"},
+      {"name": "endfinallyResumeRead", "rva": "0x90b91bc", "hex": "48634c2474"},
+      {"name": "endfinallyScale", "rva": "0x90b91c1", "hex": "ba08000000"},
+      {"name": "endfinallyCodeBase", "rva": "0x90b91ce", "hex": "488b4c2478"},
+      {"name": "endfinallyPendingClear", "rva": "0x90b91e8", "hex": "44896c2474"}
+    ]
+  },
+  "newobjSelector": {
+    "evidenceBoundary": "conditional",
+    "opcode": "Newobj",
+    "opcodeId": 24,
+    "zeroRegister": {"rva": "0x90b8974", "hex": "4533ed"},
+    "virtualInvokeHelper": {
+      "rva": "0x5c10",
+      "windowRva": "0x5c24",
+      "byteCount": 32,
+      "sha256": "322B2A6C7EEC13B2838FD2012611DDD35A643ADB7609DF31E87F42BA1C3E8230"
+    },
+    "declaringTypeGetter": {
+      "type": "System.Reflection.MemberInfo",
+      "method": "get_DeclaringType",
+      "parameterCount": 0,
+      "token": "0x0600258b",
+      "virtualSlot": 9,
+      "slotLiteralRva": "0x90bb41f",
+      "invokeCallRva": "0x90bb427"
+    },
+    "baseTypeGetter": {
+      "type": "System.Type",
+      "method": "get_BaseType",
+      "parameterCount": 0,
+      "token": "0x06000c38",
+      "virtualSlot": 151,
+      "slotLiteralRva": "0x90bb437",
+      "invokeCallRva": "0x90bb43f"
+    },
+    "delegateBaseType": {
+      "typeName": "System.MulticastDelegate",
+      "loadRva": "0x90bb447",
+      "cellRva": "0xd063f78",
+      "usageTag": 2,
+      "registeredTypeIndex": 132011,
+      "encodedWord": "0x40040757"
+    },
+    "typeFromHandle": {
+      "type": "System.Type",
+      "method": "GetTypeFromHandle",
+      "parameterCount": 1,
+      "token": "0x06000c56",
+      "rva": "0x2da58f0",
+      "callRva": "0x90bb45f"
+    },
+    "pointerEquality": {
+      "rva": "0x2c9b310",
+      "byteCount": 7,
+      "sha256": "6C7155320C195D0556DF9718ADE8E8010234F4168A018C3A4AC41BA1B48480F7",
+      "callRva": "0x90bb46d",
+      "zeroCompareRva": "0x90bb472",
+      "zeroCompareHex": "413ac5",
+      "nonDelegateBranchRva": "0x90bb475",
+      "nonDelegateTargetRva": "0x90bb77e"
+    },
+    "rewindPath": {
+      "instructionRestoreRva": "0x90bb77e",
+      "instructionRestoreHex": "4c8b742450",
+      "signedUpper16ReadRva": "0x90bb78b",
+      "signedUpper16ReadHex": "458b7604",
+      "signedShiftRva": "0x90bb78f",
+      "signedShiftHex": "41c1fe10",
+      "slotMultiplyCallRva": "0x90bb855",
+      "pointerSubtractCallRva": "0x90bb860",
+      "argumentBaseWriteRva": "0x90bb87a"
+    }
+  },
+  "fieldOffsets": {
+    "unmanagedCodes": 24,
+    "externInvokers": 48,
+    "externMethods": 64,
+    "internStrings": 80,
+    "fieldInfos": 88
+  },
+  "entryHeader": {
+    "opcode": "StackSpace",
+    "opcodeId": 82,
+    "slotBytes": 12,
+    "localCountHalf": "signedUpper16",
+    "evaluationReserveHalf": "unsignedLower16",
+    "headerCheckRva": "0x90b8e72",
+    "localCountReadRva": "0x90b8ee9",
+    "evaluationReserveReadRva": "0x90b8efb",
+    "localBaseRva": "0x90b8fba",
+    "evaluationBaseRva": "0x90b8fda",
+    "firstInstructionAdvanceRva": "0x90b8ff4"
+  },
+  "arithmeticWindows": [
+    {
+      "name": "signedSlotMultiply",
+      "rva": "0x31a150",
+      "byteCount": 8,
+      "sha256": "AFEB4F6784A5AB14ADD8EC15615BA5F7E5D07D7B7B017E4E24A1B21C7B586628"
+    },
+    {
+      "name": "stackPointerSubtract",
+      "rva": "0x394218",
+      "byteCount": 7,
+      "sha256": "41F90767FC355FD6A85B8E971CD542284FDBD7BDCBC50A5C9623852C9EAE35EA"
+    },
+    {
+      "name": "pointerAdd",
+      "rva": "0x31a130",
+      "byteCount": 5,
+      "sha256": "6FB4C168D1124C971BE2282D198B27329D727FACB694B21661AA8A7F43A9C4B1"
+    }
+  ],
+  "callClaims": [
+    {
+      "opcode": "Call",
+      "opcodeId": 20,
+      "low16TargetTable": "unmanagedCodes",
+      "dispatchRva": "0x90ba438",
+      "low16ReadRva": "0x90ba455",
+      "tableReadRva": "0x90ba45a",
+      "upper16Meaning": "recursiveArgsCount",
+      "upper16SignedReadRva": "0x90ba44a",
+      "argsCountForwardRva": "0x90ba4a3",
+      "recursiveCallRva": "0x90ba4c5"
+    },
+    {
+      "opcode": "Callvirt",
+      "opcodeId": 10,
+      "low16TargetTable": "unmanagedCodes",
+      "dispatchRva": "0x90b9690",
+      "low16ReadRva": "0x90b9787",
+      "tableReadRva": "0x90b9793",
+      "upper16Meaning": "recursiveArgsCount",
+      "upper16SignedReadRva": "0x90b96a2",
+      "argsCountForwardRva": "0x90b97da",
+      "recursiveCallRva": "0x90b97fd"
+    },
+    {
+      "opcode": "Newobj",
+      "opcodeId": 24,
+      "low16TargetTable": "externMethods",
+      "dispatchRva": "0x90ba680",
+      "low16ReadRva": "0x90bb3ed",
+      "tableReadRva": "0x90bb3fd",
+      "upper16Meaning": "conditionalExternStackRewind"
+    },
+    {
+      "opcode": "CallExtern",
+      "opcodeId": 44,
+      "low16TargetTable": "externMethods",
+      "cacheTable": "externInvokers",
+      "dispatchRva": "0x90bb3df",
+      "low16ReadRva": "0x90bb3ed",
+      "cacheReadRva": "0x90bb79b",
+      "tableReadRva": "0x90bb7ca",
+      "upper16Meaning": "externStackRewind",
+      "upper16SignedReadRva": "0x90bb78f",
+      "slotMultiplyCallRva": "0x90bb855",
+      "pointerSubtractCallRva": "0x90bb860",
+      "argumentBaseWriteRva": "0x90bb87a",
+      "invokerCallRva": "0x90bb945"
+    }
+  ],
+  "branchClaims": [
+    {
+      "opcode": "Br",
+      "opcodeId": 48,
+      "branchKind": "unconditional",
+      "dispatchRva": "0x90bbc8f",
+      "signedOffsetReadRva": "0x90bbef3",
+      "targetAddressRva": "0x90bbf07"
+    },
+    {
+      "opcode": "Brtrue",
+      "opcodeId": 67,
+      "branchKind": "conditional",
+      "dispatchRva": "0x90bcd45",
+      "signedOffsetReadRva": "0x90c0942",
+      "targetAddressRva": "0x90c0956",
+      "fallthroughAdvanceRva": "0x90b9344"
+    },
+    {
+      "opcode": "Brfalse",
+      "opcodeId": 138,
+      "branchKind": "conditional",
+      "dispatchRva": "0x90c060a",
+      "signedOffsetReadRva": "0x90c0942",
+      "targetAddressRva": "0x90c0956",
+      "fallthroughAdvanceRva": "0x90b9344"
+    }
+  ],
+  "tableOperandClaims": [
+    {
+      "opcode": "Ldfld",
+      "opcodeId": 14,
+      "targetRuntimeField": "fieldInfos",
+      "selectedWhen": "nonnegativeOperand",
+      "dispatchRva": "0x90b9a97",
+      "operandReadRva": "0x90b9f74",
+      "tableReadRva": "0x90b9ffd"
+    },
+    {
+      "opcode": "Ldstr",
+      "opcodeId": 58,
+      "targetRuntimeField": "internStrings",
+      "selectedWhen": "allOperands",
+      "dispatchRva": "0x90bc842",
+      "operandReadRva": "0x90bcc67",
+      "tableReadRva": "0x90bcc5b"
+    },
+    {
+      "opcode": "Stfld",
+      "opcodeId": 146,
+      "targetRuntimeField": "fieldInfos",
+      "selectedWhen": "nonnegativeOperand",
+      "dispatchRva": "0x90c0a96",
+      "operandReadRva": "0x90c0c7b",
+      "tableReadRva": "0x90c0d49"
+    },
+    {
+      "opcode": "Stsfld",
+      "opcodeId": 172,
+      "targetRuntimeField": "fieldInfos",
+      "selectedWhen": "nonnegativeOperand",
+      "dispatchRva": "0x90c25a3",
+      "operandReadRva": "0x90c2b7c",
+      "tableReadRva": "0x90c2c38"
+    },
+    {
+      "opcode": "Ldsfld",
+      "opcodeId": 173,
+      "targetRuntimeField": "fieldInfos",
+      "selectedWhen": "nonnegativeOperand",
+      "dispatchRva": "0x90c25ac",
+      "operandReadRva": "0x90c29ac",
+      "tableReadRva": "0x90c2a54"
+    }
+  ],
+  "frameSlotClaims": [
+    {
+      "opcode": "Stloc",
+      "opcodeId": 8,
+      "slotDomain": "local",
+      "dispatchRva": "0x90b967e",
+      "operandReadRva": "0x90b9833",
+      "localBaseReadRva": "0x90b983e",
+      "slotAccessRva": "0x90b9849"
+    },
+    {
+      "opcode": "Ldloc",
+      "opcodeId": 34,
+      "slotDomain": "local",
+      "dispatchRva": "0x90ba65f",
+      "operandReadRva": "0x90bad85",
+      "localBaseReadRva": "0x90bad90",
+      "slotAccessRva": "0x90bad9b"
+    },
+    {
+      "opcode": "Ldloca",
+      "opcodeId": 85,
+      "slotDomain": "localAddress",
+      "dispatchRva": "0x90bd4b3",
+      "operandReadRva": "0x90bd4c9",
+      "localBaseReadRva": "0x90bd4d4",
+      "slotAccessRva": "0x90bd4df"
+    },
+    {
+      "opcode": "Ldarg",
+      "opcodeId": 117,
+      "slotDomain": "argument",
+      "dispatchRva": "0x90bf3d7",
+      "operandReadRva": "0x90bf526",
+      "argumentBaseReadRva": "0x90bf531",
+      "slotAccessRva": "0x90bad9b"
+    }
+  ],
+  "returnClaim": {
+    "opcode": "Ret",
+    "opcodeId": 49,
+    "valueWhen": "nonzeroOperand",
+    "dispatchRva": "0x90bbc98",
+    "operandTestRva": "0x90bbce7",
+    "valueCopyRva": "0x90bbd76",
+    "exitRva": "0x90bbeea"
+  },
+  "reflectionDispatch": {
+    "evidenceBoundary": "conditional",
+    "metadataUsage": {
+      "loadRva": "0x90bb823",
+      "cellRva": "0xd456b90",
+      "encodedWord": "0x600d8465"
+    },
+    "executeWitnesses": {
+      "reflectionConstructorCallRva": "0x90bb804",
+      "delegateConstructorCallRva": "0x90bb830",
+      "delegateInvokeCallRva": "0x90bb945",
+      "currentTopReadRva": "0x90bb94a"
+    },
+    "methodWitnesses": {
+      "reflectionConstructor": {
+        "hasReturnStoreRva": "0x90cc6ff",
+        "hasThisStoreRva": "0x90cc713"
+      },
+      "reflectionInvoke": {
+        "isStaticCallRva": "0x90cbd25",
+        "isConstructorCallRva": "0x90cbe88",
+        "hasReturnTestRva": "0x90cbe67",
+        "pushResultCallRva": "0x90cbf44"
+      },
+      "pushResult": {
+        "evaluationPushCallRva": "0x90c67a5",
+        "currentTopStoreRva": "0x90c67b1"
+      }
+    },
+    "fieldOffsets": {
+      "IFix.Core.ReflectionMethodInvoker": {
+        "hasThis": 20,
+        "hasReturn": 21,
+        "method": 48,
+        "returnType": 64,
+        "isNullableHasValue": 72,
+        "isNullableValue": 73
+      },
+      "IFix.Core.Call": {
+        "argumentBase": 16,
+        "currentTop": 40
+      }
+    },
+    "methods": {
+      "reflectionConstructor": {
+        "type": "IFix.Core.ReflectionMethodInvoker",
+        "method": ".ctor",
+        "parameterCount": 1,
+        "token": "0x06000047",
+        "rva": "0x90cc3ac",
+        "bodyBytes": 1103,
+        "bodySha256": "95B25021B6D5E92520347E0479E8F83AB9386ACBC5BB74DA28AEA43851E2357E"
+      },
+      "delegateConstructor": {
+        "type": "IFix.Core.ExternInvoker",
+        "method": ".ctor",
+        "parameterCount": 2,
+        "token": "0x0600007a",
+        "rva": "0x8a3aa34",
+        "bodyBytes": 293,
+        "bodySha256": "56FE38F0A47DA5ED16F1801D92E8ABD29582AFC555ADC95824E2B521BC175593"
+      },
+      "delegateInvoke": {
+        "type": "IFix.Core.ExternInvoker",
+        "method": "Invoke",
+        "parameterCount": 3,
+        "token": "0x0600007b",
+        "rva": "0xf5ef90",
+        "bodyExtent": "sharedDelegateTrampoline"
+      },
+      "reflectionInvoke": {
+        "type": "IFix.Core.ReflectionMethodInvoker",
+        "method": "Invoke",
+        "parameterCount": 3,
+        "parameterNames": ["virtualMachine", "call", "isInstantiate"],
+        "token": "0x06000048",
+        "rva": "0x90cb524",
+        "bodyBytes": 3118,
+        "bodySha256": "2FC059CE2673800115558BB53B46830155C8686D622EC3AD0F4E266D5872F892"
+      },
+      "pushResult": {
+        "type": "IFix.Core.Call",
+        "method": "PushObjectAsResult",
+        "parameterCount": 2,
+        "token": "0x06000070",
+        "rva": "0x90c6780",
+        "bodyBytes": 59,
+        "bodySha256": "74B40772886B280B6EFACF40F45D1A71277BEC87063BAE35FAABF0ABDAE6C174"
+      },
+      "evaluationPush": {
+        "type": "IFix.Core.EvaluationStackOperation",
+        "method": "PushObject",
+        "parameterCount": 5,
+        "token": "0x06000050",
+        "rva": "0x90c6bec",
+        "bodyBytes": 783,
+        "bodySha256": "09B3C809B4CD22322ED135A1AF9A3B22DE33309528EB29B9D09F85F1E968C2E8"
+      },
+      "isConstructor": {
+        "type": "System.Reflection.MethodBase",
+        "method": "get_IsConstructor",
+        "parameterCount": 0,
+        "token": "0x0600259e",
+        "rva": "0x2cc81f0",
+        "bodyBytes": 85,
+        "bodySha256": "467B79567FC46741E098A0F13F533685E71392F51EDFDFE5906AAD7BD09A285B"
+      },
+      "isStatic": {
+        "type": "System.Reflection.MethodBase",
+        "method": "get_IsStatic",
+        "parameterCount": 0,
+        "token": "0x060025a1",
+        "rva": "0x2ff47d0",
+        "bodyBytes": 27,
+        "bodySha256": "DCBC689B25A059948E50AF4486ECDB3D2F33E1A117D60185E25078508CDF8FFB"
+      }
+    }
+  }
+}
