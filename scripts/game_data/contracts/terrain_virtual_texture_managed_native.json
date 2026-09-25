@@ -1,0 +1,121 @@
+{
+ "schema": "endfield.terrain-virtual-texture-managed-native-contract.v4",
+ "status": "validated",
+ "nativeInputs": {
+  "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+  "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+  "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+ },
+ "constructor": {
+  "methodIndex": 270574,
+  "type": "HG.Rendering.Runtime.VirtualTextureRenderer",
+  "method": ".ctor",
+  "rva": "0x8F0A050",
+  "parameterType": "HG.Rendering.Runtime.TerrainResource",
+  "parameterTypeIndex": 95104,
+  "windowStartRva": "0x8F0A050",
+  "windowEndRva": "0x8F0A1D3",
+  "windowSha256": "6F5141F84DBCE01CFD76ACC086DAADF7B9C09F272B67525266CA8612827238AB",
+  "resourceArgumentLoadRva": "0x8F0A07F",
+  "resourceNullTestRva": "0x8F0A0C2",
+  "resourceNullBranchRva": "0x8F0A0C5",
+  "nullExitRva": "0x8F0AF77",
+  "writeBarrierTargetRva": "0x26B40"
+ },
+ "parentConstructor": {
+  "methodIndex": 270478,
+  "type": "HG.Rendering.Runtime.HGTerrainRenderer",
+  "method": ".ctor",
+  "rva": "0x8EFACE4",
+  "parameterType": "HG.Rendering.Runtime.TerrainResource",
+  "parameterTypeIndex": 144354,
+  "windowStartRva": "0x8EFACE4",
+  "windowEndRva": "0x8EFADAB",
+  "windowSha256": "813EAE47E710615B60D67B36460122B7E2AB7861192D4B9BE556B2FDC4D2F429",
+  "childAllocationTypeLoadRva": "0x8EFAD18",
+  "childAllocationTypeUsageCellRva": "0xCFF1CE8",
+  "childAllocationTypeUsageRawHex": "6384042000000000",
+  "childAllocationTypeIndex": 148017,
+  "resourceArgumentStageRva": "0x8EFAD25",
+  "childAllocationCallRva": "0x8EFAD30",
+  "childAllocationTargetRva": "0x26060",
+  "childAllocationNullBranchRva": "0x8EFAD3E",
+  "childAllocationNullExitRva": "0x8EFB7BD",
+  "resourceForwardRva": "0x8EFAD47",
+  "childArgumentForwardRva": "0x8EFAD4A",
+  "childConstructorCallRva": "0x8EFAD4D",
+  "childFieldAddressRva": "0x8EFAD52",
+  "childFieldStoreRva": "0x8EFAD56",
+  "childWriteBarrierCallRva": "0x8EFAD5A",
+  "runtimeResourcesSourceRva": "0x8EFAD5F",
+  "runtimeResourcesStoreRva": "0x8EFAD74",
+  "runtimeResourcesWriteBarrierCallRva": "0x8EFAD7F",
+  "configurationSourceRva": "0x8EFAD91",
+  "configurationStoreRva": "0x8EFADA0",
+  "configurationWriteBarrierCallRva": "0x8EFADA6"
+ },
+ "types": {
+  "terrainResource": {"index": 35628, "name": "HG.Rendering.Runtime.TerrainResource", "field": "runtimeResources", "fieldOffset": "0x10", "fieldType": "HG.Rendering.Runtime.HGTerrainRuntimeResources", "configurationField": "configuration", "configurationFieldOffset": "0x18", "configurationFieldType": "HG.Rendering.Runtime.HGTerrainConfiguration", "valueType": true},
+  "runtimeResources": {"index": 35647, "name": "HG.Rendering.Runtime.HGTerrainRuntimeResources", "field": "textures", "fieldOffset": "0x100", "fieldType": "HG.Rendering.Runtime.HGTerrainRuntimeResources+TextureResources"},
+  "configuration": {"index": 35634, "name": "HG.Rendering.Runtime.HGTerrainConfiguration"},
+  "textureResources": {"index": 35635, "name": "HG.Rendering.Runtime.HGTerrainRuntimeResources+TextureResources"},
+  "renderer": {"index": 35655, "name": "HG.Rendering.Runtime.VirtualTextureRenderer"},
+  "parentRenderer": {"index": 35632, "name": "HG.Rendering.Runtime.HGTerrainRenderer", "fields": [
+   {"name": "m_vtRenderer", "offset": "0x10", "type": "HG.Rendering.Runtime.VirtualTextureRenderer"},
+   {"name": "m_runtimeResources", "offset": "0x18", "type": "HG.Rendering.Runtime.HGTerrainRuntimeResources"},
+   {"name": "m_configuration", "offset": "0x20", "type": "HG.Rendering.Runtime.HGTerrainConfiguration"}
+  ]}
+ },
+ "fieldCopies": [
+  {"source": "splatIndexMap", "sourceOffset": "0x10", "sourceType": "UnityEngine.Texture2D", "destination": "m_splatIndexMap", "destinationOffset": "0x18", "sourceNodeRva": "0x8F0A0CB", "sourceReadRva": "0x8F0A0DB", "destinationAddressRva": "0x8F0A0DF", "destinationWriteRva": "0x8F0A0E3", "writeBarrierCallRva": "0x8F0A0E7"},
+  {"source": "splatControlMap", "sourceOffset": "0x18", "sourceType": "UnityEngine.Texture2D", "destination": "m_splatControlMap", "destinationOffset": "0x20", "sourceNodeRva": "0x8F0A0EC", "sourceReadRva": "0x8F0A0FC", "destinationAddressRva": "0x8F0A100", "destinationWriteRva": "0x8F0A104", "writeBarrierCallRva": "0x8F0A108"},
+  {"source": "terrainLayerDiffuseArray", "sourceOffset": "0x30", "sourceType": "UnityEngine.Texture2DArray", "destination": "m_splatsDiffuseArray", "destinationOffset": "0x28", "sourceNodeRva": "0x8F0A10D", "sourceReadRva": "0x8F0A11D", "destinationAddressRva": "0x8F0A121", "destinationWriteRva": "0x8F0A125", "writeBarrierCallRva": "0x8F0A129"},
+  {"source": "terrainLayerNormalArray", "sourceOffset": "0x38", "sourceType": "UnityEngine.Texture2DArray", "destination": "m_splatsNormalArray", "destinationOffset": "0x30", "sourceNodeRva": "0x8F0A12E", "sourceReadRva": "0x8F0A13E", "destinationAddressRva": "0x8F0A142", "destinationWriteRva": "0x8F0A146", "writeBarrierCallRva": "0x8F0A14A"},
+  {"source": "normalmap", "sourceOffset": "0x28", "sourceType": "UnityEngine.Texture2D", "destination": "m_terrainNormalMap", "destinationOffset": "0x38", "sourceNodeRva": "0x8F0A14F", "sourceReadRva": "0x8F0A15F", "destinationAddressRva": "0x8F0A163", "destinationWriteRva": "0x8F0A167", "writeBarrierCallRva": "0x8F0A16B"},
+  {"source": "colorVariationTex", "sourceOffset": "0x40", "sourceType": "UnityEngine.Texture2D", "destination": "m_colorVariationTex", "destinationOffset": "0x40", "sourceNodeRva": "0x8F0A170", "sourceReadRva": "0x8F0A180", "destinationAddressRva": "0x8F0A184", "destinationWriteRva": "0x8F0A188", "writeBarrierCallRva": "0x8F0A18C"},
+  {"source": "heightmap", "sourceOffset": "0x20", "sourceType": "UnityEngine.Texture2D", "destination": "m_terrainHeightmap", "destinationOffset": "0x48", "sourceNodeRva": "0x8F0A191", "sourceReadRva": "0x8F0A1A1", "destinationAddressRva": "0x8F0A1A5", "destinationWriteRva": "0x8F0A1A9", "writeBarrierCallRva": "0x8F0A1AD"},
+  {"source": "deformableControlMap", "sourceOffset": "0x48", "sourceType": "UnityEngine.Texture2D", "destination": "m_deformableControlMap", "destinationOffset": "0x50", "sourceNodeRva": "0x8F0A1B2", "sourceReadRva": "0x8F0A1C2", "destinationAddressRva": "0x8F0A1C6", "destinationWriteRva": "0x8F0A1CA", "writeBarrierCallRva": "0x8F0A1CE"}
+ ],
+ "conversionRoute": [
+  {
+   "source": {"methodIndex": 826, "type": "UnityEngine.HyperGryph.Streaming.HGTerrainConvertFunc", "method": "ConvertFrom", "rva": "0x3D38380", "parameters": ["UnityEngine.Component", "UnityEngine.HyperGryph.Streaming.FlatBufferConvertContextV2", "UnityEngine.HyperGryph.Streaming.EntityTransition"]},
+   "sourceWindowEndRva": "0x3D39CE0",
+   "callRva": "0x3D399BB",
+   "target": {"methodIndex": 270624, "type": "HG.Rendering.Runtime.HGTerrainV2", "method": "SetupFromParams_Phase1", "rva": "0x3AB4D50"}
+  },
+  {
+   "source": {"methodIndex": 270624, "type": "HG.Rendering.Runtime.HGTerrainV2", "method": "SetupFromParams_Phase1", "rva": "0x3AB4D50"},
+   "sourceWindowEndRva": "0x3AB5000",
+   "callRva": "0x3AB4F74",
+   "target": {"methodIndex": 435510, "type": "UnityEngine.HyperGryph.HGTerrainManager", "method": "SetupTerrainManager", "rva": "0x3AB5080"}
+  },
+  {
+   "source": {"methodIndex": 435510, "type": "UnityEngine.HyperGryph.HGTerrainManager", "method": "SetupTerrainManager", "rva": "0x3AB5080"},
+   "sourceWindowEndRva": "0x3AB51F0",
+   "callRva": "0x3AB51CE",
+   "target": {"methodIndex": 435511, "type": "UnityEngine.HyperGryph.HGTerrainManager", "method": "SetupTerrainManager", "rva": "0x3AB51F0"}
+  }
+ ],
+ "phase1PropertyArguments": {
+  "windowStartRva": "0x3D39758",
+  "windowEndRva": "0x3D399C0",
+  "windowSha256": "90564371DC4D710F5CD095C0E3F833A296E0E5480B63E8124708D2DDBAC42049",
+  "staticType": {"index": 150, "name": "UnityEngine.HyperGryph.Streaming.HGTerrainConvertFunc", "usageCellRva": "0xD0CA848", "usageRawHex": "E7C1032000000000", "registeredTypeIndex": 123123, "staticFieldsOffset": "0xB8"},
+  "propertyType": "UnityEngine.HyperGryph.Streaming.PropertySerializeId",
+  "helperTargetRva": "0x3E7D200",
+  "helperMethod": {"methodIndex": 435606, "type": "UnityEngine.HyperGryph.Streaming.FlatBufferConvertContextV2", "name": "TryConvertAssetFrom"},
+  "phase1ParameterTypes": ["HG.Rendering.Runtime.TerrainV2.TerrainLayerTypeData", "UnityEngine.ComputeShader", "UnityEngine.ComputeShader", "UnityEngine.Shader", "UnityEngine.Texture2D", "int", "bool", "bool", "UnityEngine.Experimental.Rendering.GraphicsFormat"],
+  "requests": [
+   {"property": "PROP_ID_TERRAIN_CS", "fieldOffset": "0xC", "classLoadRva": "0x3D39758", "staticFieldsLoadRva": "0x3D39777", "idHeadRva": "0x3D3977E", "idHeadHex": "F20F10400C", "idTailRva": "0x3D39789", "idTailHex": "8B4014", "methodSpecLoadRva": "0x3D39790", "methodSpecUsageCellRva": "0xD0CA3E8", "methodSpecUsageRawHex": "454012C000000000", "methodSpecIndex": 598050, "methodSpecRawHex": "96A50600FFFFFFFFAAEB0000", "methodInstantiationIndex": 60330, "resultSlot": "0x108", "resultAddressRva": "0x3D39797", "helperCallRva": "0x3D397AC", "phase1ParameterIndex": 1, "phase1Argument": "r8", "phase1LoadRva": "0x3D399A8"},
+   {"property": "PROP_ID_TERRAIN_PS", "fieldOffset": "0x0", "classLoadRva": "0x3D397B9", "staticFieldsLoadRva": "0x3D397D8", "idHeadRva": "0x3D397DF", "idHeadHex": "F20F1000", "idTailRva": "0x3D397E9", "idTailHex": "8B4008", "methodSpecLoadRva": "0x3D397F0", "methodSpecUsageCellRva": "0xD0CA3D8", "methodSpecUsageRawHex": "554012C000000000", "methodSpecIndex": 598058, "methodSpecRawHex": "96A50600FFFFFFFF6F030000", "methodInstantiationIndex": 879, "resultSlot": "0xF8", "resultAddressRva": "0x3D397F7", "helperCallRva": "0x3D3980C", "phase1ParameterIndex": 3, "phase1Argument": "stack+0x20", "phase1LoadRva": "0x3D39993", "phase1StoreRva": "0x3D3999B"},
+   {"property": "PROP_ID_SPLAT_INDEX_MAP", "fieldOffset": "0x18", "classLoadRva": "0x3D39819", "staticFieldsLoadRva": "0x3D39838", "idHeadRva": "0x3D3983F", "idHeadHex": "F20F104018", "idTailRva": "0x3D3984A", "idTailHex": "8B4020", "methodSpecLoadRva": "0x3D39851", "methodSpecUsageCellRva": "0xD0CA4B0", "methodSpecUsageRawHex": "574012C000000000", "methodSpecIndex": 598059, "methodSpecRawHex": "96A50600FFFFFFFF200A0000", "methodInstantiationIndex": 2592, "resultSlot": "0xF0", "resultAddressRva": "0x3D39858", "helperCallRva": "0x3D3986D", "phase1ParameterIndex": 4, "phase1Argument": "stack+0x28", "phase1LoadRva": "0x3D39986", "phase1StoreRva": "0x3D3998E"},
+   {"property": "PROP_ID_TERRAIN_RTCS", "fieldOffset": "0x9C", "classLoadRva": "0x3D3987A", "staticFieldsLoadRva": "0x3D39899", "idHeadRva": "0x3D398A0", "idHeadHex": "F20F10809C000000", "idTailRva": "0x3D398AE", "idTailHex": "8B80A4000000", "methodSpecLoadRva": "0x3D398B8", "methodSpecUsageCellRva": "0xD0CA3E8", "methodSpecUsageRawHex": "454012C000000000", "methodSpecIndex": 598050, "methodSpecRawHex": "96A50600FFFFFFFFAAEB0000", "methodInstantiationIndex": 60330, "resultSlot": "0x100", "resultAddressRva": "0x3D398BF", "helperCallRva": "0x3D398D4", "phase1ParameterIndex": 2, "phase1Argument": "r9", "phase1LoadRva": "0x3D399A0"}
+  ]
+ },
+ "evidenceBoundary": {
+  "exact": "Selected native input hashes, named IL2CPP types and fields with runtime offsets and types, both registered renderer constructor pointers, the pinned parent handoff/assignment window, and the child assignment window are checked. The converter's three parameter types, named conversion-route methods, and three direct E8 calls are checked. Its four static property IDs, TryConvertAssetFrom MethodSpec usages and generic types, shared helper-call window, local result slots, and typed Phase1 argument forwarding are checked. A raw E8/rel32 candidate census covers every raw-backed GameAssembly section.",
+  "direct": "HGTerrainRenderer receives a TerrainResource value, allocates and initializes VirtualTextureRenderer with the same value, stores that child, and copies the value's runtime resources and configuration references into its own fields. The child constructor reads TerrainResource.runtimeResources.textures and copies eight TextureResources references into corresponding VirtualTextureRenderer fields, including two Texture2DArray layer arrays and a separate Texture2D color-variation field. HGTerrainConvertFunc.ConvertFrom calls HGTerrainV2.SetupFromParams_Phase1, which calls the first HGTerrainManager.SetupTerrainManager overload; that overload calls the second. The converter passes TerrainCS, TerrainRTCS, TerrainPS and SplatIndexMap property IDs with typed TryConvertAssetFrom MethodSpec usages and distinct local result addresses to a common helper, then forwards those four locals as the phase's two ComputeShader, Shader and Texture2D arguments.",
+  "conditional": "The conversion-to-manager route follows selected unpatched branches; the converter and phase have iFix patch guards, and runtime patch selection is not established. The parent-to-child handoff requires a successful child allocation. Each child field copy is inside a null-guarded constructor path; an absent runtime resources or TextureResources reference prevents those assignments.",
+  "unresolved": "The common helper's full implementation and actual returned objects are outside this contract. The conversion-to-manager route does not join any installed TRET/LAYER path or UnityPlayer owner-local handle to a managed texture field, nor does it identify the producer of TerrainResource.runtimeResources.textures. Absence of a direct relative-call candidate to the parent constructor does not exclude indirect invocation, patch dispatch, or runtime use. Shader sampling, pixel/channel meanings and live path selection remain open."
+ }
+}

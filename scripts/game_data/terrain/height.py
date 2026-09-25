@@ -1,4 +1,4 @@
-"""Indexed, fail-closed Terrain `_H` height-grid support for map recovery."""
+"""Indexed Terrain `_H` texture-byte diagnostic support for map recovery."""
 
 from __future__ import annotations
 
@@ -18,6 +18,9 @@ HEIGHT_NAME_RE = re.compile(r"^Terrain_(?P<lod>\d+)_(?P<i>\d+)_(?P<j>\d+)_H\.byt
 GRID_SAMPLES = 65
 GRID_VALUE_COUNT = GRID_SAMPLES * GRID_SAMPLES
 GRID_BYTES = GRID_VALUE_COUNT * 2
+INDEX_SCHEMA_VERSION = 2
+INDEX_INTERPRETATION = "terrain-h-two-byte-texel-diagnostic-v2"
+RENDER_INTERPRETATION = "terrain-h-byte0-plus-256-byte1-diagnostic-v2"
 WORLD_SPAN = 2048.0
 KNOWN_SCENE_ORIGINS = {"map01": (-1024.0, -1024.0), "map02": (-1024.0, -1024.0)}
 KNOWN_SCENE_FINEST_LODS = {"map01": 5, "map02": 6}
@@ -25,6 +28,8 @@ KNOWN_SCENE_FINEST_LODS = {"map01": 5, "map02": 6}
 
 @dataclass(frozen=True)
 class HeightTile:
+    """An `_H` tile with extrema of the diagnostic byte-pair composite."""
+
     scene: str
     lod: int
     i: int
@@ -59,7 +64,7 @@ def load_height_tiles(
     lod: int | None = None,
     grid_bounds: tuple[int, int, int, int] | None = None,
 ) -> list[HeightTile]:
-    """Decode exact `_H` grids and reject any shape/header disagreement."""
+    """Decode exact `_H` byte grids and reject any shape/header disagreement."""
     if not root.is_dir():
         return []
     rows: list[HeightTile] = []
@@ -90,6 +95,8 @@ def load_height_tiles(
                 f"Terrain height shape mismatch for {path}: "
                 f"{record.body_u16le_offsets_8_18}, payload={len(record.opaque_payload)}"
             )
+        # This little-endian pairing is a display code. The selected native
+        # format is R8G8_UNorm; neither byte's height role has been proved.
         values = struct.unpack("<4225H", record.opaque_payload)
         rows.append(HeightTile(
             scene=path_scene,
@@ -119,13 +126,17 @@ def write_height_index(root: Path, output: Path, *, relative_to: Path) -> dict:
             stat = path.stat()
             selected_paths.append((path.relative_to(root).as_posix(), stat.st_size, stat.st_mtime_ns))
     signature = hashlib.sha256(
-        "\n".join(f"{name}\0{size}\0{mtime}" for name, size, mtime in selected_paths).encode("utf-8")
+        (INDEX_INTERPRETATION + "\n" + "\n".join(
+            f"{name}\0{size}\0{mtime}" for name, size, mtime in selected_paths
+        )).encode("utf-8")
     ).hexdigest()
     try:
         previous = json.loads(output.read_text(encoding="utf-8"))
     except (OSError, ValueError, TypeError):
         previous = None
-    if isinstance(previous, dict) and previous.get("sourceFingerprint") == signature:
+    if (isinstance(previous, dict)
+            and previous.get("schemaVersion") == INDEX_SCHEMA_VERSION
+            and previous.get("sourceFingerprint") == signature):
         return previous
 
     tiles = [
@@ -145,13 +156,15 @@ def write_height_index(root: Path, output: Path, *, relative_to: Path) -> dict:
             "cellSize": tile.cell_size,
             "worldBounds": tile.world_bounds(),
             "sampleShape": [GRID_SAMPLES, GRID_SAMPLES],
-            "encoding": "row_major_uint16le",
+            "encoding": "two_byte_texels_diagnostic_row_major",
+            "diagnosticComposite": "byte0 + 256*byte1",
+            "storedFormatCode": 6,
             "valueRange": [tile.minimum, tile.maximum],
             "source": tile.path.relative_to(relative_to).as_posix(),
             "sha256": tile.sha256,
         })
     payload = {
-        "schemaVersion": 1,
+        "schemaVersion": INDEX_SCHEMA_VERSION,
         "status": "complete" if tiles else "unavailable",
         "sourceFingerprint": signature,
         "sourceRoot": root.relative_to(relative_to).as_posix() if root.is_relative_to(relative_to) else str(root),
@@ -159,9 +172,11 @@ def write_height_index(root: Path, output: Path, *, relative_to: Path) -> dict:
         "sceneCounts": dict(sorted(scene_counts.items())),
         "entries": entries,
         "boundary": (
-            "Terrain `_H` files are exact 65x65 row-major uint16 grids. World rectangles are "
-            "published only for scene origins already validated by the map coordinate contract; "
-            "absolute world-Y scale and no-data sentinel semantics remain unresolved."
+            "Terrain `_H` files contain exact 65-by-65 grids of two-byte texels. "
+            "The row-major byte0 + 256*byte1 composite is a diagnostic display "
+            "interpretation, not a proved height or world-Y value. World rectangles "
+            "are published only for scene origins validated by the map coordinate "
+            "contract; channel roles and no-data semantics remain unresolved."
         ),
     }
     output.parent.mkdir(parents=True, exist_ok=True)
@@ -226,6 +241,7 @@ def render_height_layer(
     sources = {f"{i}_{j}": tile.sha256 for (i, j), tile in sorted(selected.items())}
     sidecar = output.with_suffix(".sources.json")
     sidecar_payload = {
+        "renderInterpretation": RENDER_INTERPRETATION,
         "scene": scene,
         "lod": lod,
         "worldBounds": bounds,
@@ -244,9 +260,9 @@ def render_height_layer(
         "tileCount": len(selected),
         "valueRange": [low, high],
         "boundary": (
-            "Exact Terrain `_H` samples cropped by the authored UI map rectangle. Values preserve "
-            "their uint16 ordering for relative relief only; absolute world Y and no-data sentinel "
-            "semantics are not claimed."
+            "Exact Terrain `_H` two-byte texels cropped by the authored UI map rectangle. "
+            "The grayscale combines byte0 + 256*byte1 for diagnostic contrast; this does "
+            "not prove a height value, relative relief, world-Y scale, or no-data semantics."
         ),
     }
     try:
@@ -257,7 +273,9 @@ def render_height_layer(
         previous_sidecar.get(key) == value for key, value in sidecar_payload.items()
     ):
         return {**info, "coverageRatio": previous_sidecar.get("coverageRatio", 1.0)}
-    unpacked = {key: memoryview(tile.payload).cast("H") for key, tile in selected.items()}
+    # The composite is explicit so the diagnostic has the same byte ordering
+    # on big-endian and little-endian hosts. It is not a decoded height value.
+    texels = {key: memoryview(tile.payload) for key, tile in selected.items()}
     rows: list[bytearray] = []
     covered = 0
     for py in range(height):
@@ -269,13 +287,14 @@ def render_height_layer(
         for px in range(width):
             world_x = bounds["minX"] + (px + 0.5) / width * span_x
             tile_i = math.floor((world_x - origin[0]) / size)
-            values = unpacked.get((tile_i, tile_j))
-            if values is None:
+            payload = texels.get((tile_i, tile_j))
+            if payload is None:
                 row += b"\x00\x00\x00\x00"
                 continue
             local_x = ((world_x - origin[0]) / size - tile_i) * 64
             sx = max(0, min(64, round(local_x)))
-            value = int(values[sy * GRID_SAMPLES + sx])
+            byte_offset = 2 * (sy * GRID_SAMPLES + sx)
+            value = payload[byte_offset] + 256 * payload[byte_offset + 1]
             shade = max(0, min(255, round((value - low) * 255 / max(1, high - low))))
             row += bytes((shade, shade, shade, 210))
             covered += 1

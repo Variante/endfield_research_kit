@@ -7,6 +7,7 @@ import collections
 import gzip
 import hashlib
 import json
+import re
 from pathlib import Path
 from typing import Any, Iterable
 
@@ -20,8 +21,62 @@ from scripts.game_data.corpus_common import validate_provenance as _validate_pro
 from scripts.game_data.corpus_common import atomic_write_text as _atomic_write_text
 
 
-SCHEMA = "endfield.terrain-tret-corpus.v1"
+SCHEMA = "endfield.terrain-tret-corpus.v3"
 FAILURE_SAMPLE_LIMIT = 25
+TILE_SUFFIXES = frozenset("HNTASC")
+LAYER_PATH = re.compile(r"^(?P<scene>.+)/Layers/LAYER_(?P<suffix>[CDN])_(?P<index>\d+)\.bytes$")
+TILE_PATH = re.compile(
+    r"^(?P<scene>.+)/Terrain_(?P<lod>\d+)_(?P<x>\d+)_(?P<y>\d+)_(?P<suffix>[HNTASC])\.bytes$"
+)
+
+
+def classify_path_family(path: str) -> tuple[str, str, str] | None:
+    """Return family, scene-or-tile group, and member key for a named Terrain file."""
+    normalized = path.replace("\\", "/")
+    layer = LAYER_PATH.fullmatch(normalized)
+    if layer:
+        return "Layer_" + layer["suffix"], layer["scene"], layer["index"]
+    tile = TILE_PATH.fullmatch(normalized)
+    if tile:
+        key = "/".join((tile["scene"], tile["lod"], tile["x"], tile["y"]))
+        return "Terrain_" + tile["suffix"], key, tile["suffix"]
+    return None
+
+
+def path_group_diagnostics(
+    tile_groups: dict[str, set[str]],
+    layer_groups: dict[str, dict[str, set[str]]],
+    *, sample_limit: int = FAILURE_SAMPLE_LIMIT,
+) -> tuple[int, int, list[dict[str, Any]]]:
+    """Check six-way tile completeness and scene-scoped layer index pairing."""
+    diagnostics: list[dict[str, Any]] = []
+    incomplete_tiles = 0
+    for group, members in sorted(tile_groups.items()):
+        if members == TILE_SUFFIXES:
+            continue
+        incomplete_tiles += 1
+        if len(diagnostics) < sample_limit:
+            diagnostics.append(_failure(
+                group, "path-family", "incomplete six-file Terrain tile",
+                expected=sorted(TILE_SUFFIXES), actual=sorted(members),
+                missing=sorted(TILE_SUFFIXES - members),
+            ))
+    inconsistent_layer_scenes = 0
+    for scene, families in sorted(layer_groups.items()):
+        diffuse = families.get("D", set())
+        normal = families.get("N", set())
+        optional = families.get("C", set())
+        if diffuse == normal and optional <= diffuse:
+            continue
+        inconsistent_layer_scenes += 1
+        if len(diagnostics) < sample_limit:
+            diagnostics.append(_failure(
+                scene, "path-family", "LAYER_D/N index mismatch or C outside their set",
+                dCount=len(diffuse), nCount=len(normal), cCount=len(optional),
+                dOnly=sorted(diffuse - normal)[:10], nOnly=sorted(normal - diffuse)[:10],
+                cOutside=sorted(optional - diffuse)[:10],
+            ))
+    return incomplete_tiles, inconsistent_layer_scenes, diagnostics
 
 
 
@@ -177,6 +232,14 @@ def sweep(
     overlay_states: collections.Counter[str] = collections.Counter()
     layout_counts: collections.Counter[str] = collections.Counter()
     shape_counts: collections.Counter[str] = collections.Counter()
+    path_family_counts: collections.Counter[str] = collections.Counter()
+    format_by_path_family: dict[str, collections.Counter[str]] = collections.defaultdict(collections.Counter)
+    shape_by_path_family: dict[str, collections.Counter[str]] = collections.defaultdict(collections.Counter)
+    tile_groups: dict[str, set[str]] = collections.defaultdict(set)
+    layer_groups: dict[str, dict[str, set[str]]] = collections.defaultdict(
+        lambda: collections.defaultdict(set)
+    )
+    unclassified_paths = 0
     packed_bytes = 0
     decoded_bytes = 0
     exact_ranges = 0
@@ -366,6 +429,22 @@ def sweep(
                 overlay_states[str(row.get("overlayState"))] += 1
                 layout_counts[str(raw_layout_word)] += 1
                 shape_counts[shape] += 1
+                classified = classify_path_family(virtual_path)
+                if classified is None:
+                    unclassified_paths += 1
+                    if len(failures) < FAILURE_SAMPLE_LIMIT:
+                        failures.append(_failure(
+                            virtual_path, "path-family", "unclassified Terrain path",
+                        ))
+                else:
+                    family, group, member = classified
+                    path_family_counts[family] += 1
+                    format_by_path_family[family][str(raw_layout_word)] += 1
+                    shape_by_path_family[family][shape] += 1
+                    if family.startswith("Terrain_"):
+                        tile_groups[group].add(member)
+                    else:
+                        layer_groups[group][family[-1]].add(member)
                 if raw_layout_word in {108, 109}:
                     frontier_files += 1
                     frontier_ranges += len(ranges)
@@ -383,6 +462,11 @@ def sweep(
                         )
                     )
                 )
+
+    incomplete_tiles, inconsistent_layer_scenes, group_failures = path_group_diagnostics(
+        tile_groups, layer_groups, sample_limit=max(0, FAILURE_SAMPLE_LIMIT - len(failures)),
+    )
+    failures.extend(group_failures)
 
     failed_count = len(rows) - parsed_exact - unsupported_count
     failed = bool(failures or failed_count or unsupported_count or duplicate_paths)
@@ -425,6 +509,23 @@ def sweep(
                 "status": "exact_anonymous_record_tiling",
             },
         },
+        "pathFamilies": {
+            "counts": dict(sorted(path_family_counts.items())),
+            "graphicsFormatCounts": {
+                family: dict(sorted(counts.items(), key=lambda item: int(item[0])))
+                for family, counts in sorted(format_by_path_family.items())
+            },
+            "headerShapeCounts": {
+                family: dict(sorted(counts.items()))
+                for family, counts in sorted(shape_by_path_family.items())
+            },
+            "tileGroups": len(tile_groups),
+            "completeSixFileTiles": len(tile_groups) - incomplete_tiles,
+            "incompleteTileGroups": incomplete_tiles,
+            "layerScenes": len(layer_groups),
+            "inconsistentLayerScenes": inconsistent_layer_scenes,
+            "unclassifiedPaths": unclassified_paths,
+        },
         "evidenceBoundary": {
             "structure": (
                 "Every successful row is one authenticated outer-ledger logical file; "
@@ -434,7 +535,7 @@ def sweep(
             "semantics": (
                 "The native consumer directly establishes decoded +14 as GraphicsFormat, "
                 "+16 as the checked payload length, and +20 as the copy source. Range "
-                "contents, D/N path-marker meaning, texture-array ownership, and runtime "
+                "contents, path-suffix channel meaning, texture-array ownership, and runtime "
                 "render selection remain inferred or unresolved."
             ),
             "levels": (native_evidence.get("evidenceBoundary") or {}),
@@ -454,6 +555,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     frontier = (report.get("layer2And3") or {}).get("frontier108And109") or {}
     provenance = report.get("provenance") or {}
     native = report.get("nativeEvidence") or {}
+    families = report.get("pathFamilies") or {}
     lines = [
         "# Terrain TRET current-corpus gate",
         "",
@@ -468,6 +570,26 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Gate failures: **{summary.get('gateFailures', 0):,}**",
         f"- Packed / decoded bytes: **{summary.get('packedBytes', 0):,} / {summary.get('decodedBytes', 0):,}**",
         f"- Exact anonymous ranges: **{summary.get('exactRanges', 0):,}**",
+        "",
+        "## Path families",
+        "",
+        f"- Complete six-file tiles: **{families.get('completeSixFileTiles', 0):,} / {families.get('tileGroups', 0):,}**",
+        f"- Layer scenes with matching D/N indices and C subset: **{families.get('layerScenes', 0) - families.get('inconsistentLayerScenes', 0):,} / {families.get('layerScenes', 0):,}**",
+        f"- Unclassified paths: **{families.get('unclassifiedPaths', 0):,}**",
+        "",
+        "| Family | Files | GraphicsFormat counts | Header shape counts |",
+        "| --- | ---: | --- | --- |",
+        *(
+            f"| `{family}` | {count:,} | "
+            + ", ".join(
+                f"`{format_id}`: {format_count:,}"
+                for format_id, format_count in (families.get("graphicsFormatCounts") or {}).get(family, {}).items()
+            ) + " | " + ", ".join(
+                f"`{shape}`: {shape_count:,}"
+                for shape, shape_count in (families.get("headerShapeCounts") or {}).get(family, {}).items()
+            ) + " |"
+            for family, count in (families.get("counts") or {}).items()
+        ),
         "",
         "## Raw layout words 108 and 109",
         "",

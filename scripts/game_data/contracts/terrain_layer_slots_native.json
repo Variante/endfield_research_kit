@@ -1,0 +1,157 @@
+{
+ "schema": "endfield.terrain-layer-slots-native-contract.v2",
+ "status": "validated",
+ "nativeInputs": {
+  "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+  "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+  "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+ },
+ "windows": {
+  "layerCallback": {
+   "startRva": "0xE4CD40", "endRva": "0xE4CE19",
+   "sha256": "7F6FA8A3E85FDE393784974C6D5A484A4577530E14EEA3C82A1629779EE3A46F",
+   "pdata": [["0xE4CD40", "0xE4CE19"]]
+  },
+  "layerForward": {
+   "startRva": "0x316E10", "endRva": "0x316FA6",
+   "sha256": "2F1C89E6F17557596D5575D9437F3D5FD706C790BCF39C49AC446B5C5B39987D",
+   "pdata": [["0x316E10", "0x316E47"], ["0x316E47", "0x316E97"], ["0x316E97", "0x316F49"], ["0x316F49", "0x316F67"], ["0x316F67", "0x316F6D"], ["0x316F6D", "0x316F9D"], ["0x316F9D", "0x316FA6"]]
+  },
+  "layerConsumer": {
+   "startRva": "0x316FB0", "endRva": "0x317183",
+   "sha256": "C03F78098429B23554747FC5A29A09FD5416E5E451D411F8C320AD9275B75CA8",
+   "pdata": [["0x316FB0", "0x317059"], ["0x317059", "0x31717D"], ["0x31717D", "0x317183"]]
+  },
+  "copyDispatch": {
+   "startRva": "0xE4A940", "endRva": "0xE4AC50",
+   "sha256": "C9044145C514D8A87D67D1F7513134500C24041C8F00512D519F9EC5A59B85A3",
+   "pdata": [["0xE4A940", "0xE4A958"], ["0xE4A958", "0xE4A95F"], ["0xE4A95F", "0xE4A97E"], ["0xE4A97E", "0xE4A9C1"], ["0xE4A9C1", "0xE4AA98"], ["0xE4AA98", "0xE4ABC0"], ["0xE4ABC0", "0xE4AC50"]]
+  },
+  "copyHelper": {
+   "startRva": "0xE4B1B0", "endRva": "0xE4B313",
+   "sha256": "3D68BCCFD14F135D628E259357F9723ADB86DDAD7AE5F3B1730A67BA0D5B5BA7",
+   "pdata": [["0xE4B1B0", "0xE4B237"], ["0xE4B237", "0xE4B298"], ["0xE4B298", "0xE4B313"]]
+  },
+  "destinationGetter": {
+   "startRva": "0x5FF70", "endRva": "0x5FFDF",
+   "sha256": "A4A6B25F6001BB16089F24DCC671FCFB466830FEC0B4CB56D3B7552D1F6262AD",
+   "pdata": [["0x5FF70", "0x5FF80"], ["0x5FF80", "0x5FFCE"], ["0x5FFCE", "0x5FFD7"], ["0x5FFD7", "0x5FFDF"]],
+   "zeroHandleRva": "0x5FF76", "resourcePointerRva": "0x5FFBA", "nullResultRva": "0x5FFD7"
+  }
+ },
+ "queue": {
+  "dispatchCallRva": "0x295966",
+  "queuedStorageOffset": "0x78",
+  "queuedCountOffset": "0x90",
+  "readyStorageOffset": "0x128",
+  "readyCountOffset": "0x138",
+  "promotionQueuedCountReadRva": "0x296080",
+  "promotionQueuedStorageReadRva": "0x2960B3",
+  "promotionQueuedRecordLoadRva": "0x2960C2",
+  "promotionQueuedRecordStageRva": "0x2960CE",
+  "promotionReadyStorageReadRva": "0x2961B2",
+  "promotionReadyPointerArgumentRva": "0x2961B9",
+  "promotionReadyCountWriteRva": "0x2961C2",
+  "promotionReadySlotPointerRva": "0x2961C9",
+  "promotionReadyPointerCopyRva": "0x2961CD",
+  "readyPointerCopyTargetRva": "0xC3FC20",
+  "callbackReadyCountReadRva": "0xE4CD60",
+  "callbackReadyStorageReadRva": "0xE4CD77",
+  "callbackRecordLoadRva": "0xE4CD7E",
+  "callbackNumericArgumentRva": "0xE4CDC5",
+  "callbackHandleVectorRva": "0xE4CDBB",
+  "callbackConsumerCallRva": "0xE4CDC7",
+  "resolverTargetRva": "0x1FD560",
+  "ownerForwardRva": "0x316E19",
+  "ownerPathObjectOffset": "0x1F08",
+  "ownerConsumerCallRva": "0x316E20",
+  "consumerVectorStageRva": "0x317000",
+  "consumerOwnerStageRva": "0x317005",
+  "consumerCopyVectorRva": "0x317049",
+  "consumerCopyCallRva": "0x31704E",
+  "copyDispatchVectorLoadRva": "0xE4A952",
+  "copyRoutineCallRva": "0xE4B285",
+  "copyRoutineTargetRva": "0x314FC0"
+ },
+ "guards": [
+  {"window": "layerConsumer", "rva": "0x316FB6", "bytesHex": "80790400", "meaning": "owner-active-byte"},
+  {"window": "layerConsumer", "rva": "0x316FE6", "bytesHex": "48854328", "meaning": "numeric-argument-loaded-mask"},
+  {"window": "layerConsumer", "rva": "0x316FF0", "bytesHex": "48854330", "meaning": "numeric-argument-pending-mask"},
+  {"window": "layerConsumer", "rva": "0x31703E", "bytesHex": "807C242800", "meaning": "consumer-copy-ready-byte"},
+  {"window": "copyDispatch", "rva": "0xE4AA93", "bytesHex": "4D85FF", "meaning": "third-source-present"},
+  {"window": "copyDispatch", "rva": "0xE4AAA8", "bytesHex": "84C0", "meaning": "third-destination-available"},
+  {"window": "copyHelper", "rva": "0xE4B1EC", "bytesHex": "3BD8", "meaning": "first-source-destination-comparison"},
+  {"window": "copyHelper", "rva": "0xE4B215", "bytesHex": "0F8593000000", "meaning": "second-source-destination-comparison-branch"},
+  {"window": "copyHelper", "rva": "0xE4B22F", "bytesHex": "757D", "meaning": "third-source-destination-comparison-branch"}
+ ],
+ "slotFlow": [
+  {
+   "family": "D", "recordOffset": 8, "temporaryOffset": 8,
+   "callbackRecordRva": "0xE4CD93", "callbackResolveCallRva": "0xE4CD97", "callbackStoreRva": "0xE4CDA0",
+   "copyInputLoadRva": "0xE4A967", "copyInputLoadBytesHex": "4C8B7008",
+   "destinationOffset": "0x148", "destinationRva": "0xE4A99A", "getterCallRva": "0xE4A9A1",
+   "sourceArgumentRva": "0xE4A9AF", "sourceArgumentBytesHex": "498BCE", "copyCallRva": "0xE4A9B2",
+   "conditional": false
+  },
+  {
+   "family": "N", "recordOffset": 16, "temporaryOffset": 16,
+   "callbackRecordRva": "0xE4CD9C", "callbackResolveCallRva": "0xE4CDA5", "callbackStoreRva": "0xE4CDAE",
+   "copyInputLoadRva": "0xE4A96B", "copyInputLoadBytesHex": "488B7010",
+   "destinationOffset": "0x14C", "destinationRva": "0xE4AA28", "getterCallRva": "0xE4AA2F",
+   "sourceArgumentRva": "0xE4AA3D", "sourceArgumentBytesHex": "488BCE", "copyCallRva": "0xE4AA40",
+   "conditional": false
+  },
+  {
+   "family": "C", "recordOffset": 24, "temporaryOffset": 24,
+   "callbackRecordRva": "0xE4CDAA", "callbackResolveCallRva": "0xE4CDB3", "callbackStoreRva": "0xE4CDC0",
+   "copyInputLoadRva": "0xE4A96F", "copyInputLoadBytesHex": "4C8B7818",
+   "destinationOffset": "0x154", "destinationRva": "0xE4AAC4", "getterCallRva": "0xE4AACB",
+   "sourceArgumentRva": "0xE4AAD9", "sourceArgumentBytesHex": "498BCF", "copyCallRva": "0xE4AADC",
+   "availabilityCallRva": "0xE4AAA3", "availabilityTargetRva": "0x316DC0", "availabilityDestinationRva": "0xE4AA9C",
+   "conditional": true
+  }
+ ],
+ "propertyBinding": {
+  "nameLoaderTargetRva": "0xD1860",
+  "propertySinkTargetRva": "0x405350",
+  "ownerPathObjectOffset": "0x1F08",
+  "thirdResourceGuardOwnerLoadRva": "0x3164BB",
+  "thirdResourceGuardDestinationRva": "0x3164C2",
+  "thirdResourceGuardGetterCallRva": "0x3164C9",
+  "thirdResourceGuardTestRva": "0x3164CE",
+  "thirdResourceGuardBranchRva": "0x3164D1",
+  "thirdResourceGuardSkipRva": "0x31653B"
+ },
+ "propertyFlow": [
+  {
+   "family": "D", "property": "_Splats", "literalRva": "0x19BADA8",
+   "literalLoadRva": "0x11D5E9", "nameLoaderCallRva": "0x11D5FD",
+   "idResultRva": "0x11D609", "idStoreRva": "0x11D60B", "propertyIdOffset": "0x1E14",
+   "destinationOffset": "0x148", "bindingOwnerLoadRva": "0x31641C", "bindingDestinationRva": "0x316423",
+   "bindingGetterCallRva": "0x31642A", "bindingPropertyIdLoadRva": "0x31642F",
+   "bindingResourceStageRva": "0x316438", "bindingContextStageRva": "0x31643B", "bindingCallRva": "0x31643E"
+  },
+  {
+   "family": "N", "property": "_Normals", "literalRva": "0x19BADD0",
+   "literalLoadRva": "0x11D602", "nameLoaderCallRva": "0x11D616",
+   "idResultRva": "0x11D622", "idStoreRva": "0x11D624", "propertyIdOffset": "0x1E18",
+   "destinationOffset": "0x14C", "bindingOwnerLoadRva": "0x31653B", "bindingDestinationRva": "0x316542",
+   "bindingGetterCallRva": "0x316549", "bindingPropertyIdLoadRva": "0x31654E",
+   "bindingResourceStageRva": "0x316557", "bindingContextStageRva": "0x31655A", "bindingCallRva": "0x31655D"
+  },
+  {
+   "family": "C", "property": "_ConeMaps", "literalRva": "0x19BB018",
+   "literalLoadRva": "0x11D61B", "nameLoaderCallRva": "0x11D62F",
+   "idResultRva": "0x11D63B", "idStoreRva": "0x11D63D", "propertyIdOffset": "0x1E1C",
+   "destinationOffset": "0x154", "bindingOwnerLoadRva": "0x3164D3", "bindingDestinationRva": "0x3164DA",
+   "bindingGetterCallRva": "0x3164E1", "bindingPropertyIdLoadRva": "0x3164E6",
+   "bindingResourceStageRva": "0x3164EF", "bindingContextStageRva": "0x3164F2", "bindingCallRva": "0x3164F5"
+  }
+ ],
+ "evidenceBoundary": {
+  "exact": "The selected installed native inputs, upstream grouped layer record and tile dispatcher contracts, all listed UnityPlayer .pdata windows and their complete SHA256 windows, record-to-handle staging, owner forwarding, three copy pairings, guards, destination-handle getter, lower-level copy-routine call, property-name literals, property-ID stores and render-binding calls are checked.",
+  "direct": "The selected dispatcher takes the grouped LAYER record from its own queue. Its three path-result slots are resolved in D/N/C order, forwarded through the owner consumer, and paired with three distinct owner-local resource handles. The same three handles are paired with string-derived render-property IDs: D to _Splats, N to _Normals, and C to _ConeMaps.",
+  "conditional": "The owner consumer can decline a record before the copy dispatcher. The third copy also requires a present source and an available destination; its render binding skips a null resource. The common helper can skip the lower-level copy call when source and destination properties differ; the lower-level routine has its own guards.",
+  "unresolved": "The exact managed VirtualTextureRenderer fields, stored pixel/channel meanings, shader sampling and runtime selection of installed LAYER paths are not established by this native chain."
+ }
+}

@@ -1,307 +1,318 @@
-# Terrain: the `LAYER_*` arrays
+# Terrain: `TRET` and native path families
 
 Part of [`../game_data_recovery.md`](../game_data_recovery.md). See
-[`README.md`](README.md) for the level and lane map.
+[`README.md`](README.md) for the lane map.
 
-**Level 2, world lane.** The first payload family to decode end to end, and the
-one that supplied the container in
-[`shared_containers.md`](shared_containers.md). It is also a worked example
-of asking the engine's own field names before running byte statistics.
+**Level 3, world lane.** `scripts/game_data/terrain/tret.py` owns the decoded
+`TRET` framing; `scripts/game_data/terrain/height.py` reads the supported
+`_H` grid shape for Map; and `scripts/game_data/terrain/corpus.py` gates a
+current VFS corpus. The selected reader facts are in the reviewed
+[`terrain_tret_native.json`](../../scripts/game_data/contracts/terrain_tret_native.json)
+contract. The native path templates are separately recorded in
+[`terrain_layer_paths_native.json`](../../scripts/game_data/contracts/terrain_layer_paths_native.json)
+and checked by `scripts/game_data/terrain/layer_paths_native.py`.
+The selected downstream tile-slot chain is recorded separately in
+[`terrain_tile_slots_native.json`](../../scripts/game_data/contracts/terrain_tile_slots_native.json)
+and checked by `scripts/game_data/terrain/tile_slots_native.py`.
+The selected layer-result and render-property chain is recorded in
+[`terrain_layer_slots_native.json`](../../scripts/game_data/contracts/terrain_layer_slots_native.json)
+and checked by `scripts/game_data/terrain/layer_slots_native.py`.
+The independent managed texture-resource copy chain is recorded in
+[`terrain_virtual_texture_managed_native.json`](../../scripts/game_data/contracts/terrain_virtual_texture_managed_native.json)
+and checked by `scripts/game_data/terrain/virtual_texture_managed_native.py`.
 
-## What the `LAYER_*` families are, from the engine's own field names
+## Established structure
 
+The `LAYER_C_*`, `LAYER_D_*`, and `LAYER_N_*` logical files are members of the
+Terrain VFS block. After the VFS envelope is decoded, they begin with `TRET`.
+The maintained reader checks the version and a 20-byte fixed prefix. The
+selected UnityPlayer consumer reads the word at decoded `+14` as a
+`GraphicsFormat`, checks the declared payload length at `+16` against its
+allocation, and copies that many bytes from `+20`. The reader ABI does not
+receive an input length, so the native contract alone does not prove final
+source cursor; the corpus gate independently checks the complete decoded
+file.
 
-The second-largest `.bytes` family after IrradianceVolume, and untouched until now:
-**345 `LAYER_N_*` (469 MB) + 345 `LAYER_D_*` (414 MB) + 54 `LAYER_C_*` (57 MB)**, 940 MB
-in all. Asking the metadata first this time, rather than after seven byte-statistic
-eliminations.
+The observed `LAYER_C` layout has graphics format 5 and a one-byte-per-unit
+footprint. `LAYER_D` and `LAYER_N` use formats 108 and 109, respectively. The
+selected native enum names those two formats `RGBA_BC7_SRGB` and
+`RGBA_BC7_UNorm`; its footprint table assigns both 4-by-4 blocks of 16 bytes.
+The parser tiles their known mip-like ranges exactly, but keeps the contained
+values anonymous. The selected reader passes decoded `+12` as an unsigned
+numeric texture-setup argument and separately passes whether it exceeds one.
+Its pattern is consistent with a mip count, but that exact semantic name
+remains inferred. Current file counts, layout counts,
+and input hashes belong to the generated Terrain corpus report.
 
-`HG.Rendering.Runtime.VirtualTextureRenderer` has 93 fields, and four of them settle it:
+A bounded, MD5-verified installed six-file tile with one scene and tile index
+also parses exactly as `TRET`. `Terrain_*_H.bytes` is one 65-by-65 range of
+two-byte texels and `Terrain_*_C.bytes` one 34-by-34 range of two-byte texels;
+both carry GraphicsFormat 6, selected-native `R8G8_UNorm`. The `N`, `T` and
+`A` files each have a 132-by-132 source axis tiled into 4-by-4 compressed
+blocks; `N` and `A` carry format 101 (`RGBA_DXT5_UNorm`) and `T` format 100
+(`RGBA_DXT5_SRGB`). `S` has a 132-by-132 range of four-byte texels in format
+8 (`R8G8B8A8_UNorm`). The selected native enum names and format-descriptor
+footprints are checked by `terrain_tret_native.json`; the corpus reader keeps
+all contained values anonymous. The maintained `height.py` reader accepts
+the `_H` shape and combines each pair as `byte0 + 256*byte1` for Map diagnostic
+contrast. That display composite is not a proved height value or even a
+proved relative relief ordering. The sample does not show which path the
+runtime opened or how any payload is used. Its file hashes and exact header
+words belong to the generated
+`reports/terrain/path_family_sample.json`; `tret.py` and `height.py` are the
+reusable checks for the structural claims.
 
-```
-m_splatsDiffuseArray      m_splatIndexMap        m_terrainNormalMap
-m_splatsNormalArray       m_splatControlMap      m_terrainHeightmap
-                          m_colorVariationTex    m_deformableControlMap
-VT_CLIPMAP_BASE_WIDTH, VT_CACHE_PAGE_RESOLUTION, VT_CACHE_PAGE_BUFFER_SIDE_SIZE,
-VT_INDIRECT_TEX_BUFFER_COUNT, VT_GPU_FEEDBACK_BUFFER_COUNT, VT_WORK_GROUP_COUNT
-```
+The current full VFS ledger closes the path-family grouping as well as the
+framing: every named `Terrain_*` tile key has all six H/N/T/A/S/C members,
+and each suffix has one complete six-word header shape and GraphicsFormat
+throughout the audited set, matching the six-file sample. Across scenes,
+`LAYER_D` and `LAYER_N` have identical index sets; `LAYER_C` occurs only at
+indices in those sets. The maintained
+`terrain.corpus` gate checks those path joins, each logical file's outer
+identity and complete `TRET` body, and reports family counts, formats, and
+header shapes in `reports/animestudio/terrain_tret_latest.json`. These are
+stored-file relationships. They still do not identify the decoded channels or
+a renderer field.
 
-- **`LAYER_D` is the splat diffuse array and `LAYER_N` the splat normal array.** The
-  counts agree: **345 each, exactly paired**, which is what two texture arrays over the
-  same layer set look like. `LAYER_C` at 54 files is a control or colour map --
-  `m_splatControlMap` and `m_colorVariationTex` are both candidates and it is not
-  settled which.
+Terrain constants in IL2CPP metadata are reached through the
+`fieldDefaultValues` index and the compressed default-value data, as decoded
+by `scripts/game_data/il2cpp/protocol.py`. Reading those bytes as ordinary
+four-byte integers gives wrong values. Selected metadata examples include
+`HGTerrainGroundLayer.TEXTURE_SIZE = 2048` and
+`VirtualTextureRenderer.VT_CACHE_PAGE_RESOLUTION = 512`. Those constants
+describe renderer configuration; neither establishes a `LAYER_*` destination.
 
-## The `LAYER_*` families
+The installed `UnityPlayer.dll` has a validated routine containing direct
+loads of the exact templates `{0}/Layers/LAYER_C_{1}.bytes`,
+`{0}/Layers/LAYER_D_{1}.bytes`, and `{0}/Layers/LAYER_N_{1}.bytes`. The
+`layer_paths_native` validator gates the selected `GameAssembly.dll`,
+`global-metadata.dat`, and `UnityPlayer.dll`, the routine's adjacent `.pdata`
+entry, prelude, path and epilogue windows, its two formatter windows, the
+control-flow links, and each literal load. The path window previously treated
+as a whole function is a continuation after the entry and prelude. The gate
+withholds all paths on a missing or changed build. The same checked code
+allocates a 32-byte record, stores the numeric
+argument used to format all three paths at record `+0`, initializes three
+adjacent result slots, forwards each formatted path to one common helper with
+the corresponding slot pointer (`D` at `+8`, `N` at `+16`, `C` at `+24`), then
+appends the record to a collection. These are local record offsets, not
+`VirtualTextureRenderer` field offsets. This proves one grouped path record
+per numeric argument in the selected code; path construction alone does not
+establish a texture binding or render use.
 
-All three share the container above, verified on **105 files with no exceptions**:
+A later branch of that checked function takes a separate packed 32-bit tile
+argument. Selected instructions split it into high 4, middle 14 and low 14
+bits for path formatting, allocate a 56-byte record, and store the original
+word at its start. The exact templates for `Terrain_H`, `Terrain_N`,
+`Terrain_T`, `Terrain_A`, `Terrain_S` and `Terrain_C` each reach the same
+formatter and common path helper, with six separate result slots. The checked
+formatter receives the path root, then the high 4 bits, low 14 bits, and
+middle 14 bits, in that order. Its selected bridge forwards the resulting
+argument vector. The record is appended to a collection distinct from the
+`LAYER_C/D/N` collection. `layer_paths_native.py` checks all nine literal
+loads, both record layouts, the forwarding calls, packed-bit instructions,
+formatter argument order and appends against six selected `.pdata` windows.
+This proves two grouped path families and the construction of their
+path arguments, not a join between them or a renderer destination. The
+suffixes alone and the `_H` diagnostic composite do not name runtime
+texture roles.
 
-| field | value |
+The selected downstream code closes a named render-property join for the
+six-file tile family. A queue worker takes the path builder's grouped tile
+record, conditionally moves its pointer into a ready vector, and calls a tile
+callback. That callback resolves all six result slots into a temporary handle
+vector. Its staging order is **H/N/T/S/A/C**, even though the record was built
+in **H/N/T/A/S/C** order: the `A` and `S` handles exchange positions between
+the record and the temporary vector. The tile consumer passes each handle to
+the same guarded copy helper with a distinct owner-local destination. The
+helper requires present inputs and matching numeric properties before its copy
+call; the consumer can exit before any copy when owner data or tile
+availability is absent.
+
+The owner initializer constructs numeric property IDs from exact string
+literals. A checked render-binding function reads the same six destinations
+and pairs each with its corresponding ID; the binding helper forwards each
+resource and ID together. The selected code therefore joins the tile path
+suffix to these authored render-property names:
+
+| Tile suffix | Selected render-property literal |
 | --- | --- |
-| `+0` magic | **`TRET`** (105/105) |
-| `+4` version | 1 (105/105) |
-| `+8`, `+10` | width, height = **1024 x 1024** (105/105) |
-| `+12` | **11** -- the mip-level count (105/105) |
-| `+14` | format code: **5** = `C`, **108** = `D`, **109** = `N` |
-| body | a **full mip chain, 1 byte per texel** |
+| `H` | `_HeightmapAtlas` |
+| `N` | `_NormalmapAtlas` |
+| `T` | `_TintColorAtlas` |
+| `A` | `_AlbedoAtlas` |
+| `S` | `_SplatCtrlAtlas` |
+| `C` | `_CliffIndexAtlas` |
 
-***The size equation closes exactly:*** `header + sum((1024 >> i)^2 for i in 0..10)` equals the
-file length in **105 of 105 files, with zero trailing bytes**. The chain sums to 1,398,101.
-*The `+12` field is not inferred to be a mip count -- 11 is exactly the number of levels the size
-equation requires.*
+`tile_slots_native.py` authenticates the selected binaries, upstream path
+record, queue transfer, slot staging, conditional copies, literal-to-ID
+stores, and ID/resource pairing. Exact selected offsets and hashes live in its
+reviewed contract and generated report. The literal names identify the
+render-property route, not the encoded pixel channels, final GPU sampling, a
+managed `VirtualTextureRenderer` field, or which installed paths were selected
+at runtime. The separate `LAYER_C/D/N` record follows a different downstream
+consumer.
 
-***The header is 20 bytes for every family.*** The u32 at `+16` equals **file length - 20 in 105
-of 105 files**, which fixes the header at 20 and makes that field a payload size.
+That selected layer consumer closes the first destination hop for the grouped
+`LAYER_*` record. A separate queue promotes the record, and its callback
+resolves the three path-result handles in **D/N/C** order. It forwards the
+handles and the record's numeric argument through an owner subobject. On the
+accepted branch, a copy dispatcher pairs D and N with distinct owner-local
+resource handles and calls a common copy helper. C reaches a third resource
+handle only when its source is present and an owner-side availability check
+passes. The helper compares source and destination properties before calling
+a lower-level copy routine, which has further guards. These are conditional
+native operations; the contract does not show which installed paths were
+selected in a live run.
 
-## `C` is uncompressed; `D`/`N` are block-compressed
+The owner initializer constructs property IDs from exact string literals. A
+checked render-binding function resolves the **same three** owner-local
+resource handles, reads their corresponding IDs and forwards each resource/ID
+pair to the common property sink. The selected native join is:
 
-***There is no 27-byte prefix.*** That number was an artefact of assuming an uncompressed layout
-for all three. Block-compressed formats are 1 byte per texel but **pad every mip below 4x4 to a
-full 16-byte block**, so the two tails differ by exactly 27 bytes:
-
-| chain | bytes |
+| Layer path | Selected render-property literal |
 | --- | --- |
-| uncompressed, 1024^2 down to 1x1 at 1 B/texel | 1,398,101 |
-| block, 1024^2 down to 4x4 plus two 16-byte mips | **1,398,128** |
+| `LAYER_D` | `_Splats` |
+| `LAYER_N` | `_Normals` |
+| `LAYER_C` | `_ConeMaps` |
 
-| family | uncompressed chain | block chain |
-| --- | --- | --- |
-| `C` (7 files) | **7 / 7** | 0 / 7 |
-| `D` (49 files) | 0 / 49 | **49 / 49** |
-| `N` (49 files) | 0 / 49 | **49 / 49** |
+The `LAYER_C` binding skips its property call when its resource resolves to
+null. `layer_slots_native.py` gates the selected binaries, upstream path and
+tile dispatch contracts, the layer queue and callback, owner forwarding, the
+three source/destination pairings, guarded copy helper, property-name literals,
+ID stores, and resource/ID binding calls. Exact offsets and hashes live in its
+reviewed contract and generated report. The property names establish the
+render-binding route; they do not identify stored pixel channels, a managed
+`VirtualTextureRenderer` field, shader sampling, or live file selection.
 
-***Perfect separation, no crossover***, and it explains three things that did not previously fit:
+The selected `HGTerrainRenderer` constructor takes a `TerrainResource` value,
+allocates a `VirtualTextureRenderer`, passes that same value to its constructor,
+and stores the child in `m_vtRenderer`. It also copies the value's
+`runtimeResources` and `configuration` references into its own fields. The
+child constructor reads `runtimeResources.textures` and copies eight named
+texture fields into corresponding renderer fields. The reviewed managed-native
+contract checks the selected metadata identities, field offsets and types,
+both registered constructor pointers, the parent handoff and assignment
+window, and the child's complete assignment window, source loads, destination
+stores, and write-barrier calls. The checked child field copies are:
 
-* **`C` is a real image and `D`/`N` are not, byte-wise.** Downsampling L0 and comparing to L1
-  gives a mean error of **4.5 for `C`** and **72-75 for `D`/`N` at every candidate offset** --
-  block-compressed data cannot be box-filtered at byte level.
-* **Entropy and adjacency agree.** `C` reads **6.12 bits/byte with +0.973 adjacent-byte
-  correlation** -- a natural image; `D`/`N` read **7.56/7.83 bits with +0.09/+0.12** -- the
-  signature of compressed blocks.
-* The `D`/`N` level means sitting at ~128 at *every* level, which looked like signed encoding,
-  is just compressed data looking random.
-
-**So format code 5 is uncompressed 8-bit and 108/109 are two block-compressed formats** -- and
-the earlier note that `C` "holds a different kind of quantity" was right for the wrong reason.
-
-Decoding the levels confirms a real image pyramid: `LAYER_C`'s level means fall monotonically
-**37.97 -> 1.00**, which is what repeated downsampling does.
-
-**One statistical difference.** `D` and `N` sit at level means of **~124 and ~131**, hovering
-around 128 across every level, whereas `C` starts at **38** and decays. *Data centred on 128 is
-signed or offset-encoded; `C`'s is not*, so **`C` holds a different kind of quantity from
-`D`/`N`.**
-
-## `LAYER_C` is not a splat control map
-
-The file *counts* settle what the byte statistics could not. Over **744 LAYER files in 38
-directories**:
-
-| | |
+| `TextureResources` field | `VirtualTextureRenderer` field |
 | --- | --- |
-| directories where `D` and `N` index sets are identical | **38 / 38** |
-| directories where `C`'s index set is a subset of `D`'s | **22 / 22** |
-| directories with **no** `C` file at all | **16 / 38** |
-| `C` files per directory where present | 1, 2 or 4 -- *never a fixed one* |
+| `splatIndexMap` | `m_splatIndexMap` |
+| `splatControlMap` | `m_splatControlMap` |
+| `terrainLayerDiffuseArray` | `m_splatsDiffuseArray` |
+| `terrainLayerNormalArray` | `m_splatsNormalArray` |
+| `normalmap` | `m_terrainNormalMap` |
+| `colorVariationTex` | `m_colorVariationTex` |
+| `heightmap` | `m_terrainHeightmap` |
+| `deformableControlMap` | `m_deformableControlMap` |
 
-***A splat control map is terrain-wide: exactly one per terrain, always present.*** `C` is
-neither. Its indices are drawn from the same per-layer numbering as `D`/`N` (`C[4,5,13]` against
-`D[0..7]`), most terrains have none, and those that do have a handful. **So `C` is a per-layer
-optional map, and the `m_splatControlMap` reading is eliminated** -- leaving the
-`m_colorVariationTex` sort of per-layer extra, which is what an optional third texture attached
-to *some* layers looks like.
+The two layer-array fields have `Texture2DArray` type; the other six have
+`Texture2D` type. The parent handoff requires child allocation, and the child
+field copies require the source objects to be present. This directly joins the
+`TerrainResource` argument to both managed renderers, then
+`TextureResources` to the child fields. It is independent of the selected
+UnityPlayer `LAYER_*` and six-file tile chains. No checked edge carries one of
+those path-result handles into `TerrainResource.runtimeResources.textures`, so
+no installed file is yet identified with any of these managed fields. A
+matching word such as “splat” does not supply that missing edge.
 
-**The `D`/`N` pairing claim is independently confirmed** by the same census: identical index sets
-in every one of the 38 directories, which is stronger than the matching file counts it rested on
-before.
-- The surrounding machinery is named too: `HGASMVirtualTextureAllocator` with
-  `AllocateTile` and `GetVTData`, `ASMTileManager` with an LRU tile cache,
-  `HGTerrainGroundLayerClipmap` with `Initialize`/`Render`/`SetPlayerCenter`, and
-  `HGTerrainGroundLayer` carrying `TEXTURE_SIZE` and
-  `TERRAIN_GROUND_LAYER_CLIPMAP_NUM` with base, normal, wet and height render targets.
-- So this family is **GPU texture data for a virtual-texture terrain splat system**,
-  the same shape of answer the IrradianceVolume payload turned out to have.
+The selected managed-native audit also scans every raw-backed
+`GameAssembly.dll` section for the direct `E8` relative-call encoding targeting
+the registered constructors. It finds no candidate targeting
+`HGTerrainRenderer.ctor(TerrainResource)` and one targeting
+`VirtualTextureRenderer.ctor`, at the checked parent handoff. This is a bounded
+static call-encoding result. It does not exclude indirect invocation, patch
+dispatch, or live use of the parent. In particular, the direct-call scan cannot
+identify who supplies the `TerrainResource` argument, and cannot join the
+separate UnityPlayer file handles to its `TextureResources` fields.
 
-## The engine's constants are readable, and they decode as compressed integers
+The same selected contract now checks a conversion handoff by registered
+method identity and direct-call bytes. `HGTerrainConvertFunc.ConvertFrom`
+receives a component, `FlatBufferConvertContextV2`, and entity transition,
+then directly calls `HGTerrainV2.SetupFromParams_Phase1` on the reviewed
+unpatched path. That phase directly calls one
+`HGTerrainManager.SetupTerrainManager` overload, which directly calls its
+second overload. This establishes a converter-to-manager route, including a
+context argument at its entry. It does not establish which converted property
+or texture is passed into a `TerrainResource`, nor connect the manager's
+inputs to the separate `LAYER_*` owner-local handles. The converter and phase
+also have iFix patch guards, so this static route is conditional on the
+unpatched branch.
 
-`fieldDefaultValues` in `global-metadata.dat` holds every `const` in the image, and the
-blob is **ECMA-335 compressed unsigned integers** -- not raw 4-byte values. Reading it
-as raw int32 gives garbage like `TEXTURE_SIZE = 262280`; decoded properly:
+Within that selected converter route, four named `PropertySerializeId` static
+fields are read from the checked `HGTerrainConvertFunc` class. Each ID and a
+distinct local output address go to the same helper body, accompanied by a
+`FlatBufferConvertContextV2.TryConvertAssetFrom<T>` MethodSpec whose generic
+type matches the receiving argument. The converter then loads
+those exact four local slots into typed `SetupFromParams_Phase1` arguments:
 
-| constant | value | | constant | value |
-| --- | --- | --- | --- | --- |
-| `HGTerrainGroundLayer.TEXTURE_SIZE` | **2048** | | `VT_CACHE_PAGE_RESOLUTION` | **512** |
-| `TERRAIN_GROUND_LAYER_CLIPMAP_NUM` | **4** | | `VT_CACHE_PAGE_BUFFER_SIDE_SIZE` | **128** |
-| `ASMTileManager.MAX_TILE_COUNT` | **512** | | `VT_CACHE_PAGE_BUFFER_SIZE` | **8192** |
-| `VT_CLIPMAP_BASE_WIDTH` | **16** | | `VT_INDIRECT_TEX_BUFFER_COUNT` | **6** |
-| `VT_WORK_GROUP_COUNT` | **64** | | `VT_GPU_FEEDBACK_BUFFER_COUNT` | **8** |
-| `VT_COMPRESS_LOCAL_THREAD_COUNT` | **32** | | `VT_CPU_FEEDBACK_RAYCAST_DIST` | **1000.0f** |
-
-**Three things check the decoder at once.** Every integer comes out a power of two or a
-small round number; the one float reads exactly `1000.0`; and each field's `dataIndex`
-advances by exactly the width the decoder consumed -- 1 byte for values under 0x80, 2
-above. A wrong decoding satisfies none of those. *This is reusable: any `const` in the
-image is now readable the same way.*
-
-## The `LAYER_*` files are NOT raw texture slices
-
-With `TEXTURE_SIZE = 2048` in hand the prediction was testable, and it fails:
-
-| family | files | distinct sizes | typical |
-| --- | --- | --- | --- |
-| `LAYER_N` | 345 | **67** | ~1.33 MiB |
-| `LAYER_D` | 345 | ~60 | ~1.20 MiB |
-| `LAYER_C` | 54 | 9 | 0.86-1.11 MiB |
-
-No size is a multiple of a 2048x2048 surface at any block rate -- the ratios land on
-0.32, 0.64, 0.55 and similar, never a whole number or a mip chain. **Sizes that vary
-file by file are not raw slices**, so the payload is compressed or variably encoded,
-exactly as the IrradianceVolume payload turned out to be.
-
-*The constant gave the prediction a number to fail against. Without it "about 1.3 MB" would have looked like agreement with almost anything.*
-
-## CORRECTION: the `LAYER_*` files were already decoded, by the terrain lane
-
-They are in the **Terrain** block -- 744 of them, which the CLI confirms -- and
-`terrain_stream.load_samples` takes *every* file in that block rather than only
-`Terrain_*`. So they have been inside the gated corpus the whole time.
-
-- Running the maintained codec over them: **744 of 744 close**, 743 through the stream
-  decoder and 1 stored, each to exactly its declared length. Every decoded payload
-  begins `TRET`.
-- Only **two decoded sizes** exist: 1,398,148 (x690) and 1,398,121 (x53).
-- **The terrain report already names that group.** `terrain_tret_latest.json` carries
-  `layer2And3.frontier108And109.files = 690`, status `exact_anonymous_record_tiling` --
-  the same 690 files, already closed, already gated, counted inside the 46,164.
-
-***I nearly reported "744 of 744 decode" as a new result.*** It is not. The decode is
-the terrain lane's, done long ago; the filename triage found a family the block-level
-corpus had already swallowed. *A file-name family and a block are different
-partitions, and a new name for an old set is not a new set.*
-
-**What IS new here** is the naming. The terrain report calls that group
-`exact_anonymous_record_tiling` -- exact, and anonymous -- and its header report already
-carries the formats:
-
-| family | format | files | `VirtualTextureRenderer` field |
-| --- | --- | --- | --- |
-| `LAYER_D` | `mips11_format108` | 345 | **`m_splatsDiffuseArray`** |
-| `LAYER_N` | `mips11_format109` | 345 | **`m_splatsNormalArray`** |
-| `LAYER_C` | `mips11_format5` | 53 | see below |
-
-`frontier108And109` in `terrain_tret_latest.json` is exactly **formats 108 and 109**,
-which is exactly `LAYER_D` and `LAYER_N`. **690 anonymous records now have a name, and
-the 940 MB they hold has a purpose.**
-
-### `LAYER_C` is per-layer and optional, which rules out the control map
-
-Across the **38 directories** that hold LAYER files:
-
-- **`D` and `N` carry identical index sets in all 38** -- strictly paired, one diffuse
-  and one normal per splat layer. That confirms the pairing rather than assuming it from
-  the equal totals.
-- **`C` appears in only 22 of the 38**, and sparsely where it does: 1 `C` against 4
-  `D`/`N`, 4 against 18, 2 against 27, 1 against 7. Its indices run to 34, the same
-  layer-index shape as `D` and `N`.
-
-An **optional, per-layer** texture is `m_colorVariationTex`. It is **not**
-`m_splatControlMap`: a control map is one per terrain, always present, and would not
-carry a layer index nor be absent from 16 directories. *The distribution settles which
-of the two candidates it is without needing to read a byte of its content.*
-
-#### REOPENED: a rival candidate the distribution argument could not have weighed
-
-The argument above chose `m_colorVariationTex` by eliminating `m_splatControlMap`. The
-engine, read since, offers a **third** candidate with the same profile, and the choice is
-no longer forced.
-
-**A per-layer mask map is a first-class concept here.** `maskMapRemapOffset` and
-`maskMapRemapScale` sit inside **`TerrainLayerInfo`** and **`SplatLayerData`** -- the
-*per-layer* structs -- and the shader side carries `_MaskMapTexture`,
-`_MaskMapRemapMin/Max/Offset/Scale`. An optional, layer-indexed third texture is exactly
-what a mask map is.
-
-**And the typing mildly favours the rival.** `VirtualTextureRenderer` binds three:
-
-| field | type index |
+| Converter property ID | Phase 1 argument type |
 | --- | --- |
-| `m_splatsDiffuseArray` | **144608** |
-| `m_splatsNormalArray` | **144608** |
-| `m_colorVariationTex` | **144600** *(different)* |
+| `PROP_ID_TERRAIN_CS` | first `ComputeShader` |
+| `PROP_ID_TERRAIN_RTCS` | second `ComputeShader` |
+| `PROP_ID_TERRAIN_PS` | `Shader` |
+| `PROP_ID_SPLAT_INDEX_MAP` | `Texture2D` |
 
-*The two per-layer arrays share one type; the colour-variation binding has another* -- the
-shape of `Texture2DArray` twice and `Texture2D` once. A single non-array binding is an odd
-consumer for files that carry layer indices running to 34, whereas the mask map's
-parameters are stored per layer.
+The managed-native contract checks the selected class usage cell, metadata
+field identities and offsets, the complete request/argument code window, all
+four MethodSpec usages and calls to the common helper, the four local output
+and argument loads, and
+the Phase 1 parameter types. This establishes the converter's property-ID to
+setup-argument route. It does not establish the helper's returned objects,
+identify the producer of `TerrainResource.runtimeResources.textures`, or join
+these managed arguments to installed `LAYER_C/D/N` path-result handles. The
+`SplatIndexMap` argument is a single `Texture2D`; it is not evidence that any
+one of the three installed layer families populates the managed
+`Texture2DArray` fields.
 
-**The census is reproduced, not disputed.** An independent count gives `C` in 22 of 38
-directories, 54 files against 345 each of `D` and `N`, with `D` and `N` equal in every
-directory -- matching the numbers above exactly.
+A selected-metadata review identifies `HGTerrainRuntimeResources` as a
+`ScriptableObject`, with `TextureResources` as its nested reference type. The
+`HGTerrainConvertFunc` static class also declares property IDs named
+`PROP_ID_SPLAT_DIFFUSE_TEXTURE_ARRAY`,
+`PROP_ID_SPLAT_NORMAL_RO_TEXTURE_ARRAY`, and
+`PROP_ID_SPLAT_CONEMAP_TEXTURE_ARRAY`. A direct read census of the selected
+`ConvertFrom` body finds no read of those three static ID fields: its checked
+requests use the four IDs above, alongside separate terrain information and
+array-data IDs. This bounds only that direct converter body; other methods,
+indirect calls, and serialized asset loading are not excluded. The current
+MonoBehaviour/PlayableDirector object-index schema sweep has no fields named
+`terrainLayerDiffuseArray`, `terrainLayerNormalArray`, or
+`deformableControlMap`, but that export does not cover every possible
+`ScriptableObject` producer. Thus the authored ID names and the absent schema
+rows do not bridge the native `LAYER_C/D/N` owner handles into
+`TextureResources` or identify a live asset value.
 
-***The discriminator was run, and it disconfirms the answer above.*** Resolving the indices
-through `MetadataRegistration.types` in `GameAssembly.dll` (225,789 entries at VA
-`0x18c472bb0`; the type enum is bits 16-23 of the `Il2CppType` bitfield):
+## What remains inferred
 
-| field | type index | declared type |
-| --- | --- | --- |
-| `m_splatsDiffuseArray` / `m_splatsNormalArray` | 144608 | **`UnityEngine.Texture2DArray`** |
-| `m_colorVariationTex` | 144600 | **`UnityEngine.Texture2D`** |
+In the audited file set, `D` and `N` have matching per-directory index sets;
+`C` is sparse and its indices are a subset where present. The selected
+render-property join names D as `_Splats`, N as `_Normals`, and C as
+`_ConeMaps`, superseding interpretations based only on that pairing. The
+property names do not prove the files' encoded channel meanings or which
+installed file was selected in a live scene.
 
-**The arrays are per-layer; the colour-variation binding is a single texture.** And the
-argument that selected it eliminated `m_splatControlMap` on the grounds that *"a control map
-is one per terrain, always present, and would not carry a layer index"*. **`Texture2D` is
-one per terrain too** -- so the elimination that chose this answer also rules it out. *A
-distribution argument can only separate candidates it has typed; this one separated a name
-from a name.*
+`VirtualTextureRenderer` receives `m_splatsDiffuseArray` and
+`m_splatsNormalArray` from two separate `Texture2DArray` fields in
+`TextureResources`; `m_colorVariationTex` comes from a `Texture2D` field.
+A previous conclusion identified `LAYER_C` with
+`m_colorVariationTex` by elimination, then rejected that identification from
+the single-texture type, then reinstated it by proposing compositing. The
+direct selected binding to `_ConeMaps` retracts that identification. It also
+does not identify a managed field: a string-derived render-property ID, a
+native owner-local handle, and a `VirtualTextureRenderer` field are distinct
+evidence. The old per-layer mask suggestion has no direct field join either.
 
-**The rival does not simply inherit the win.** `VirtualTextureRenderer` binds exactly
-`m_splatsDiffuseArray`, `m_splatsNormalArray`, `m_colorVariationTex` and
-`m_decalBlockMaskLut` -- there is **no mask-map texture array**. The mask map's
-`maskMapRemapOffset`/`maskMapRemapScale` are `UnityEngine.Vector4` *parameters* per layer,
-which is consistent with a mask packed into the existing arrays rather than shipped as its
-own files.
+The tile chain still needs a checked runtime selection and shader sampling
+witness to establish the visual effect of any installed payload. For
+`LAYER_*`, the native property route is identified, but a shader sampling
+witness is still needed to explain its visual effect. A separate runtime
+selection witness must tie an installed path to a live copy. The selected
+property names alone do not establish either result.
 
-#### CORRECTION TO THE CORRECTION: the original identification survives
-
-The disconfirmation above over-reached, and two further checks show why.
-
-***There is no alternative binding.*** Across the **entire** metadata, exactly **four**
-fields are declared `UnityEngine.Texture2DArray`, all on `VirtualTextureRenderer`:
-`m_splatsDiffuseArray`, `m_splatsNormalArray`, `m_decalDiffuseTexArray`,
-`m_decalNormalMROTexArray`. **No third splat array exists anywhere**, so "something bound
-outside `VirtualTextureRenderer`" is not available -- there is nowhere else for a
-per-layer terrain texture to go.
-
-***And `LAYER_C` really is per-layer.*** Its indices are a **subset of that directory's
-`D` index set in 22 of 22 directories, with zero exceptions** (`C=[5]` against `D=0..6`;
-`C=[4,5,13]` against 15 layers; `C=[2,8]` against 11). The recorded claim was right and my
-doubt about it was not.
-
-**The objection dissolves rather than the answer.** The disconfirmation rested on
-`m_colorVariationTex` being a `Texture2D` and therefore "one per terrain", which was taken
-to exclude layer-indexed source files. *That only follows if each file is bound directly
-as an array slice.* Per-layer files **composited into** one texture -- which is what a
-virtual-texture renderer does, and what `HGTerrainSplatStreaming` in the engine's log
-strings names -- are per-layer inputs to a single binding, with no contradiction at all.
-
-**So `m_colorVariationTex` stands as the identification**, now on stronger ground than the
-distribution argument alone: it is the only colour-carrying terrain texture binding in the
-game, and the per-layer/per-terrain mismatch that seemed fatal is just the difference
-between a source file and a bound result. *I disconfirmed a correct answer by assuming the
-binding had to be one-to-one with the files, which is the sort of premise that never gets
-stated and so never gets checked.*
-
-`LAYER_C` also uses format **5** where `D` and `N` use 108 and 109 -- a low, presumably
-standard format against two engine-specific ones, which is consistent, though the format
-numbers themselves are not decoded.
-
-*Two batches were spent eliminating containers for IrradianceVolume before asking the
-metadata. This family got asked first, and the answer arrived in one read.*
-
-**A route to `LAYER_C`'s purpose that is now closed.** `LAYER_` occurs **132** times in
-`global-metadata.dat`, which looks like the obvious place to look next. It is not: every
-one of those is an **animation** layer -- `LAYER_MAIN`, `LAYER_UPPER`, `LAYER_TWO_ARMS`,
-`LAYER_LOOKAT_PITCH_YAW`, `LAYER_MASK2` -- plus a few concatenated string-table runs. The
-terrain `LAYER_*` files share a prefix with an unrelated concept, and *a string search
-that matches the wrong namespace is worse than no hits, because it returns something.*
-`LAYER_C`'s purpose stays where the distribution argument left it.
+The next source to check is the common converter helper's returned-object
+identity and the manager setup overloads' use of these four arguments.
+Compare those identities with the native `LAYER_*` result handles; the four
+property names alone cannot establish that join. An indirect-caller or
+resource-producer trace for `HGTerrainRenderer.ctor` is the separate route to
+the `TerrainResource` fields.

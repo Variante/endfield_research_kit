@@ -44,11 +44,47 @@
     "rva": 29733648,
     "entryStride": 80,
     "entries": [
+      {"value": 6, "prefixHex": "02010101"},
+      {"value": 8, "prefixHex": "04010101"},
+      {"value": 100, "prefixHex": "10040401"},
+      {"value": 101, "prefixHex": "10040401"},
       {"value": 108, "prefixHex": "10040401"},
       {"value": 109, "prefixHex": "10040401"}
     ]
   },
   "graphicsFormats": [
+    {
+      "value": 6,
+      "name": "R8G8_UNorm",
+      "fieldToken": "0x04000c34",
+      "blockWidth": 1,
+      "blockHeight": 1,
+      "bytesPerBlock": 2
+    },
+    {
+      "value": 8,
+      "name": "R8G8B8A8_UNorm",
+      "fieldToken": "0x04000c36",
+      "blockWidth": 1,
+      "blockHeight": 1,
+      "bytesPerBlock": 4
+    },
+    {
+      "value": 100,
+      "name": "RGBA_DXT5_SRGB",
+      "fieldToken": "0x04000c8e",
+      "blockWidth": 4,
+      "blockHeight": 4,
+      "bytesPerBlock": 16
+    },
+    {
+      "value": 101,
+      "name": "RGBA_DXT5_UNorm",
+      "fieldToken": "0x04000c8f",
+      "blockWidth": 4,
+      "blockHeight": 4,
+      "bytesPerBlock": 16
+    },
     {
       "value": 108,
       "name": "RGBA_BC7_SRGB",
@@ -79,9 +115,9 @@
   },
   "evidenceBoundary": {
     "exact": "The selected native file hashes, IL2CPP enum rows, and UnityPlayer byte ranges are revalidated before use.",
-    "direct": "The active reader consumes decoded +14 as GraphicsFormat, checks decoded +16 against the allocated size, and copies that size from decoded +20. The current format table gives 108 and 109 a 4x4 block with 16 bytes.",
+    "direct": "The active reader consumes decoded +14 as GraphicsFormat, checks decoded +16 against the allocated size, and copies that size from decoded +20. The checked format table gives 6 a 1x1 two-byte texel, 8 a 1x1 four-byte texel, and 100/101/108/109 a 4x4 block with 16 bytes.",
     "structuralOnly": "The maintained parser uses the direct footprint to expose anonymous contiguous ranges; it does not decode their values.",
     "inferred": "Decoded +12 is likely the numerical mip count; LAYER_D and LAYER_N likely identify diffuse/sRGB and normal/linear families.",
-    "unresolved": "The reader ABI has no input length or final source cursor. Channel meanings, texture-array slot ownership, and runtime selection remain unproved."
+    "unresolved": "The reader ABI has no input length or final source cursor. R8G8_UNorm does not establish how the two bytes form a height value; channel meanings, texture-array slot ownership, and runtime selection remain unproved."
   }
 }

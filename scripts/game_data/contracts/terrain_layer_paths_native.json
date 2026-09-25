@@ -1,0 +1,261 @@
+{
+ "schema": "endfield.terrain-layer-paths-native-contract.v7",
+ "status": "validated",
+ "nativeInputs": {
+  "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+  "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+  "unityPlayerSha256": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+ },
+ "functionWindow": {
+  "startRva": "0x23891B",
+  "endRva": "0x238F15",
+  "sha256": "7DB9E14EABED3752908189ECC115257EBE23A9981C610F65FF12BD9F37421F08"
+ },
+ "routineContext": {
+  "entryWindow": {
+   "startRva": "0x2387E0",
+   "endRva": "0x238805",
+   "sha256": "525679407468DFDFAA3871270D976588D4DDC006FFCEE82C695F027BDA0ED8DA"
+  },
+  "preludeWindow": {
+   "startRva": "0x238805",
+   "endRva": "0x23891B",
+   "sha256": "2CC1820A1227F72558101E498F3F63577174D17AE263F614E6FCAF8B6B02A4B8"
+  },
+  "epilogueWindow": {
+   "startRva": "0x238F15",
+   "endRva": "0x238F1F",
+   "sha256": "BC7631EFB811055B40D213069172730BA416A9028C2A0173125C69F2523EF864"
+  },
+  "entryPrologueBytesHex": "488BC45557488D68C84881EC28010000",
+  "entryExitBranchRva": "0x2387FA",
+  "preludeToPathsBranchRva": "0x2388E8",
+  "epilogueBytesHex": "4881C4280100005F5DC3"
+ },
+ "terrainTileFormatter": {
+  "helperWindow": {
+   "startRva": "0x238F20",
+   "endRva": "0x238F84",
+   "sha256": "47FA0A9A18F03E946A095C2EB99BDA3895EDD8EA6CBBCBAF967F5EDA00B8D673"
+  },
+  "bridgeWindow": {
+   "startRva": "0x238F90",
+   "endRva": "0x238FCF",
+   "sha256": "1CF346261B23E8B974F3CC08A0468E7CD25A02DEBEFE5B89EC68D387D479ADCE"
+  },
+  "frameRva": "0x238F20",
+  "highLoadRva": "0x238F28",
+  "rootStoreRva": "0x238F2E",
+  "highStoreRva": "0x238F32",
+  "lowPointerLoadRva": "0x238F36",
+  "lowLoadRva": "0x238F3E",
+  "middlePointerLoadRva": "0x238F41",
+  "lowStoreRva": "0x238F49",
+  "middleLoadRva": "0x238F4D",
+  "middleStoreRva": "0x238F6A",
+  "vectorPointerRva": "0x238F6E",
+  "bridgeCallRva": "0x238F76",
+  "parserCallRva": "0x238FC1",
+  "parserCallTargetRva": "0x238FD0"
+ },
+ "pathForwarding": {
+  "formatCallTargetRva": "0x509F10",
+  "consumeCallTargetRva": "0xE50A50"
+ },
+ "recordAssembly": {
+  "numericArgumentLoadAndStageRva": "0x23896B",
+  "numericArgumentStackOffset": "0x40",
+  "allocationSetupRva": "0x2389B1",
+  "allocationCallRva": "0x2389C4",
+  "allocatorRva": "0xC40360",
+  "recordBytes": 32,
+  "alignmentBytes": 8,
+  "allocatedPointerCaptureRva": "0x2389C9",
+  "destinationSlotInitRva": "0x2389D1",
+  "localPointerStoreRva": "0x2389ED",
+  "localPointerStackOffset": "0x50",
+  "numericArgumentStoreRva": "0x2389F3",
+  "appendArgumentRva": "0x238B03",
+  "appendCollectionOffset": "0x70",
+  "appendCallRva": "0x238B0B",
+  "appendCallTargetRva": "0x1694050"
+ },
+ "terrainTileRecord": {
+  "numericArgumentLoadAndStageRva": "0x238B6D",
+  "numericArgumentStackOffset": "0x40",
+  "highCopyRva": "0x238BAF",
+  "highShiftRva": "0x238BB9",
+  "highStoreRva": "0x238BC4",
+  "highShiftBits": 28,
+  "highStackOffset": "0x38",
+  "lowCopyRva": "0x238BBC",
+  "lowMaskRva": "0x238BBE",
+  "lowStoreRva": "0x238BDA",
+  "lowStackOffset": "0x34",
+  "middleCopyRva": "0x238BCA",
+  "middleShiftRva": "0x238BCC",
+  "middleMaskRva": "0x238BD5",
+  "middleStoreRva": "0x238BE3",
+  "middleShiftBits": 14,
+  "middleStackOffset": "0x30",
+  "lowMiddleMask": 16383,
+  "alignmentLoadRva": "0x238BCF",
+  "recordSizeLoadRva": "0x238BDE",
+  "allocationCallRva": "0x238BE7",
+  "allocatorRva": "0xC40360",
+  "recordBytes": 56,
+  "alignmentBytes": 8,
+  "allocatedPointerCaptureRva": "0x238BEC",
+  "destinationSlotInitRva": "0x238BF4",
+  "localPointerStoreRva": "0x238C28",
+  "localPointerStackOffset": "0x48",
+  "numericArgumentStoreRva": "0x238C2E",
+  "ownerPointerStoreRva": "0x238C30",
+  "ownerPointerStackOffset": "0x40",
+  "rootPointerOffset": "0x170",
+  "formatCallTargetRva": "0x238F20",
+  "consumeCallTargetRva": "0xE50A50",
+  "appendArgumentRva": "0x238EBE",
+  "appendCollectionOffset": "0xC0",
+  "appendCallRva": "0x238EC9",
+  "appendCallTargetRva": "0xF53580"
+ },
+ "paths": [
+  {
+   "family": "C",
+   "template": "{0}/Layers/LAYER_C_{1}.bytes",
+   "literalRva": "0x19BBF30",
+   "loadRva": "0x23894D",
+   "templateStoreRva": "0x238ACE",
+   "templateStoreBytesHex": "4C89642450",
+   "formatArgumentRva": "0x238ADC",
+   "formatIndexArgumentRva": "0x238AD3",
+   "formatStackOffset": "0x50",
+   "formatCallRva": "0x238AE5",
+   "destinationPointerRva": "0x238AEA",
+   "destinationPointerOffset": "0x18",
+   "consumeCallRva": "0x238AF5"
+  },
+  {
+   "family": "D",
+   "template": "{0}/Layers/LAYER_D_{1}.bytes",
+   "literalRva": "0x19BBF50",
+   "loadRva": "0x238946",
+   "templateStoreRva": "0x238A1C",
+   "templateStoreBytesHex": "4C896C2430",
+   "formatArgumentRva": "0x238A2A",
+   "formatIndexArgumentRva": "0x238A21",
+   "formatStackOffset": "0x30",
+   "formatCallRva": "0x238A33",
+   "destinationPointerRva": "0x238A38",
+   "destinationPointerOffset": "0x08",
+   "consumeCallRva": "0x238A43"
+  },
+  {
+   "family": "N",
+   "template": "{0}/Layers/LAYER_N_{1}.bytes",
+   "literalRva": "0x19BBF10",
+   "loadRva": "0x238A53",
+   "templateStoreRva": "0x238A74",
+   "templateStoreBytesHex": "48894C2440",
+   "formatArgumentRva": "0x238A8D",
+   "formatIndexArgumentRva": "0x238A89",
+   "formatStackOffset": "0x40",
+   "formatCallRva": "0x238A92",
+   "destinationPointerRva": "0x238A97",
+   "destinationPointerOffset": "0x10",
+   "consumeCallRva": "0x238AA2"
+  }
+ ],
+ "terrainPaths": [
+  {
+   "family": "Terrain_H",
+   "template": "{0}/Terrain_{1}_{2}_{3}_H.bytes",
+   "literalRva": "0x19BBED0",
+   "loadRva": "0x238B3B",
+   "rootPointerRva": "0x238C4E",
+   "templateStoreRva": "0x238C5A",
+   "templateStoreBytesHex": "4C896C2450",
+   "highArgumentRva": "0x238C64",
+   "formatCallRva": "0x238C7D",
+   "destinationPointerRva": "0x238C82",
+   "destinationPointerOffset": "0x08",
+   "consumeCallRva": "0x238C8D"
+  },
+  {
+   "family": "Terrain_N",
+   "template": "{0}/Terrain_{1}_{2}_{3}_N.bytes",
+   "literalRva": "0x19BBEF0",
+   "loadRva": "0x238C9E",
+   "rootPointerRva": "0x238CBE",
+   "templateStoreRva": "0x238CCA",
+   "templateStoreBytesHex": "48894C2440",
+   "highArgumentRva": "0x238CD4",
+   "formatCallRva": "0x238CED",
+   "destinationPointerRva": "0x238CF2",
+   "destinationPointerOffset": "0x10",
+   "consumeCallRva": "0x238CFD"
+  },
+  {
+   "family": "Terrain_T",
+   "template": "{0}/Terrain_{1}_{2}_{3}_T.bytes",
+   "literalRva": "0x19BC070",
+   "loadRva": "0x238D0E",
+   "rootPointerRva": "0x238D2D",
+   "templateStoreRva": "0x238D39",
+   "templateStoreBytesHex": "48894DC0",
+   "highArgumentRva": "0x238D42",
+   "formatCallRva": "0x238D5A",
+   "destinationPointerRva": "0x238D5F",
+   "destinationPointerOffset": "0x18",
+   "consumeCallRva": "0x238D6A"
+  },
+  {
+   "family": "Terrain_A",
+   "template": "{0}/Terrain_{1}_{2}_{3}_A.bytes",
+   "literalRva": "0x19BC090",
+   "loadRva": "0x238D7B",
+   "rootPointerRva": "0x238D9A",
+   "templateStoreRva": "0x238DA6",
+   "templateStoreBytesHex": "48894DD0",
+   "highArgumentRva": "0x238DAF",
+   "formatCallRva": "0x238DC7",
+   "destinationPointerRva": "0x238DCC",
+   "destinationPointerOffset": "0x20",
+   "consumeCallRva": "0x238DD7"
+  },
+  {
+   "family": "Terrain_S",
+   "template": "{0}/Terrain_{1}_{2}_{3}_S.bytes",
+   "literalRva": "0x19BC030",
+   "loadRva": "0x238DE8",
+   "rootPointerRva": "0x238E08",
+   "templateStoreRva": "0x238E14",
+   "templateStoreBytesHex": "48894DE0",
+   "highArgumentRva": "0x238E1D",
+   "formatCallRva": "0x238E35",
+   "destinationPointerRva": "0x238E3A",
+   "destinationPointerOffset": "0x28",
+   "consumeCallRva": "0x238E45"
+  },
+  {
+   "family": "Terrain_C",
+   "template": "{0}/Terrain_{1}_{2}_{3}_C.bytes",
+   "literalRva": "0x19BC050",
+   "loadRva": "0x238B42",
+   "rootPointerRva": "0x238E70",
+   "templateStoreRva": "0x238E7C",
+   "templateStoreBytesHex": "4C89642460",
+   "highArgumentRva": "0x238E86",
+   "formatCallRva": "0x238E9F",
+   "destinationPointerRva": "0x238EA4",
+   "destinationPointerOffset": "0x30",
+   "consumeCallRva": "0x238EAF"
+  }
+ ],
+ "evidenceBoundary": {
+  "exact": "The selected installed native hashes, six .pdata windows including the routine entry/continuations/epilogue and two formatter windows, branch targets, both record allocations, nine literal loads, nine formatter-to-helper forwarding sequences, packed tile argument extraction, formatter argument stores and both collection appends are checked byte-for-byte.",
+  "direct": "The selected UnityPlayer routine enters before the path-building window, continues through it, and reaches a shared epilogue. It groups LAYER_C/D/N paths in one 32-byte record appended under owner +0x70. A separate 56-byte record stores a packed tile argument at +0, forwards Terrain_H/N/T/A/S/C paths into six result slots at +8 through +48, and appends under owner +0xC0. The tile argument splits into high 4, middle 14 and low 14 bits; the selected formatter helper builds a contiguous root, high, low, middle argument vector and forwards it through a checked bridge.",
+  "unresolved": "Neither grouped path record identifies decoded channel roles, VirtualTextureRenderer bindings, layer compositing, live selection or rendering. The six Terrain templates and the layer templates are different path/record families."
+ }
+}
