@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>&#21095;&#24773;&#23545;&#35805; &middot; &#32456;&#26411;&#22320;&#30740;&#31350;&#24037;&#20855;</title>
 <link rel="icon" type="image/svg+xml" href="favicon.svg?v=20260701-gp5">
-<link rel="stylesheet" href="style.css?v=20260920-update-status2">
+<link rel="stylesheet" href="style.css?v=20260925-data-page1">
   <link rel="stylesheet" href="src/features/characters/style.css?v=20260902-character-updates">
   <link rel="stylesheet" href="src/features/map_recovery/style.css?v=20260924-map114">
   <link rel="stylesheet" href="src/features/audio/style.css?v=20260812-construction1">
-  <link rel="stylesheet" href="src/features/data_inspector/style.css?v=20260924-data-inspector14">
+  <link rel="stylesheet" href="src/features/data_inspector/style.css?v=20260925-data-page1">
   <link rel="stylesheet" href="src/features/recovery/style.css?v=20260924-recovery10">
 </head>
 <body data-active-view="story">
@@ -37,10 +37,10 @@
       <button id="gameplay-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="gameplay-view" tabindex="-1" data-view="gameplay" data-i18n="gameplayTab">玩法</button>
       <button id="audio-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="audio-view" tabindex="-1" data-view="audio" data-i18n="audioTab">&#38899;&#39057;</button>
       <button id="assets-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="assets-view" tabindex="-1" data-view="assets" data-i18n="assetsTab">资源</button>
+      <button id="data-inspector-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="data-inspector-view" tabindex="-1" data-view="data-inspector" data-i18n="dataInspectorTab">数据</button>
       <button id="reference-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="reference-view" tabindex="-1" data-view="reference" data-i18n="referenceTab">文本</button>
       <button id="updates-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="updates-view" tabindex="-1" data-view="updates" data-i18n="updatesTab">更新</button>
       <button id="recovery-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="recovery-view" tabindex="-1" data-view="recovery" data-debug-view="1" data-i18n="recoveryTab" hidden>&#36827;&#24230;</button>
-      <button id="data-inspector-tab" class="view-tab" type="button" role="tab" aria-selected="false" aria-controls="data-inspector-view" tabindex="-1" data-view="data-inspector" data-debug-view="1" data-i18n="dataInspectorTab" hidden>数据</button>
     </nav>
     <div class="topbar-actions">
       <label class="topbar-control" for="language">
@@ -590,17 +590,10 @@
                     <button class="asset-preview-bg-swatch" type="button" data-color="#2a2f36" style="--swatch-color: #2a2f36;"></button>
                   </div>
                 </div>
-                <div id="asset-json-script-controls" class="asset-json-script-controls" hidden>
-                  <label class="asset-json-script-toggle" for="asset-json-script-original">
-                    <input id="asset-json-script-original" type="checkbox">
-                    <span id="asset-json-script-original-label">Show original m_Script</span>
-                  </label>
-                </div>
                 <div id="asset-preview-stage">
                   <div id="asset-preview-placeholder">&#39044;&#35272;&#20250;&#26174;&#31034;&#22312;&#36825;&#37324;&#12290;</div>
                   <img id="asset-preview-image" alt="" hidden>
                   <video id="asset-preview-video" controls preload="metadata" hidden></video>
-                  <pre id="asset-preview-text" hidden></pre>
                   <canvas id="asset-model-canvas" hidden></canvas>
                 </div>
                 <div id="asset-preview-note" class="asset-preview-note" hidden></div>
@@ -654,26 +647,27 @@
 <script src="src/core/storage.js?v=20260701-gp5"></script>
 <script src="src/core/text.js?v=20260701-gp5"></script>
 <script src="src/core/locale.js?v=20260701-gp5"></script>
-<script src="src/core/paths.js?v=20260701-gp5"></script>
+<script src="src/core/paths.js?v=20260925-data-page1"></script>
 <script src="src/ui/media_player.js?v=20260812-multimedia5"></script>
 <script src="src/ui/splitter.js?v=20260701-gp5"></script>
 <script src="src/ui/filters.js?v=20260701-gp5"></script>
 <script src="src/ui/pagination.js?v=20260920-pagination1"></script>
-<script src="app_labels.js?v=20260821-mapnav1"></script>
+<script src="app_labels.js?v=20260925-data-page1"></script>
 <script src="app_tree.js?v=20260809-storygendervariant1"></script>
 <script src="src/features/story_triggers.js?v=20260725-mplayout2"></script>
 <script src="app.js?v=20260809-storygendervariant1"></script>
-<script src="assets.js?v=20260920-json-categories1"></script>
-  <script src="src/features/characters/index.js?v=20260902-character-updates"></script>
+<script src="assets.js?v=20260925-data-page1"></script>
+  <script src="src/features/characters/index.js?v=20260925-data-page1"></script>
 <script src="src/features/gameplay/labels.js?v=20260924-gp17"></script>
 <script src="src/features/gameplay/loadout.js?v=20260924-gp17"></script>
-    <script src="src/features/gameplay/index.js?v=20260924-gp17"></script>
+    <script src="src/features/gameplay/index.js?v=20260925-data-page1"></script>
 <script src="src/features/audio/index.js?v=20260822-audio-scene-catalog1"></script>
   <script src="src/features/map_recovery/index.js?v=20260924-map115"></script>
 <script src="src/features/next_views.js?v=20260821-map1"></script>
 <script src="src/features/reference/index.js?v=20260808-titles1"></script>
-<script src="src/features/updates/index.js?v=20260922-decoded-diff1"></script>
+<script src="src/features/updates/index.js?v=20260925-data-page1"></script>
 <script src="src/features/recovery/index.js?v=20260924-recovery10"></script>
-<script src="src/features/data_inspector/index.js?v=20260924-data-inspector22"></script>
+<script src="src/features/data_inspector/index.js?v=20260925-data-page1"></script>
+<script src="src/features/data_inspector/stores.js?v=20260925-data-page1"></script>
 </body>
 </html>

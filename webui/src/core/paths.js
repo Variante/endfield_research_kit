@@ -61,7 +61,44 @@
     return `/export_data/${normalizedRel.split("/").map(encodeURIComponent).join("/")}`;
   }
 
+  // The Data page (#data-inspector) opens one export-store row from these
+  // query parameters: dataRoot (current|previous), dataStore (unity|game-files),
+  // dataGroup (a Unity type, or a packed game folder), dataName (the row name
+  // inside that group). dataMode picks the page mode (files|sql|decoded).
+  const DATA_PAGE_PARAMS = Object.freeze(["dataMode", "dataRoot", "dataStore", "dataGroup", "dataName", "dataField", "dataQ"]);
+
+  function dataPageUrl({ root = "", store = "", group = "", name = "" } = {}, base = window.location.href) {
+    const url = new URL(base);
+    for (const key of DATA_PAGE_PARAMS) url.searchParams.delete(key);
+    url.searchParams.delete("inspectDataset");
+    url.searchParams.delete("inspect");
+    url.searchParams.set("dataMode", "files");
+    if (root && root !== "current") url.searchParams.set("dataRoot", root);
+    if (store) url.searchParams.set("dataStore", store);
+    if (group) url.searchParams.set("dataGroup", group);
+    if (name) url.searchParams.set("dataName", name);
+    url.hash = "#data-inspector";
+    return url.toString();
+  }
+
+  // A Unity object document ref ("Unity/<Type>/<name>" or
+  // "game/Unity/<Type>/<name>") is a row of the export's Unity store. Only the
+  // document suffixes the store holds qualify; loose media stays a file.
+  function unityStoreDocumentRef(relPath) {
+    const match = normalizeRelPath(relPath).match(/^(?:game\/)?Unity\/([^/]+)\/([^/]+\.(?:json|anim))$/i);
+    return match ? { store: "unity", group: match[1], name: match[2] } : null;
+  }
+
+  function dataPageUrlForRel(relPath) {
+    const ref = unityStoreDocumentRef(relPath);
+    return ref ? dataPageUrl(ref) : "";
+  }
+
   Object.assign(WebUI, {
+    DATA_PAGE_PARAMS,
+    dataPageUrl,
+    unityStoreDocumentRef,
+    dataPageUrlForRel,
     normalizeRelPath,
     splitPathIdExportStem,
     pathIdExportBaseStem,

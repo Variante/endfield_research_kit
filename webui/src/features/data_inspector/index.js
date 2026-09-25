@@ -1,4 +1,6 @@
-// Decoded Data Inspector (debug-only page).
+// Decoded Data Inspector: the "Decoded" mode of the Data page. The page
+// controller in stores.js owns the mode switch, deep links and view events,
+// and mounts this mode into its pane through WebUI.decodedInspector.
 //
 // Left pane: the shared list-page shell every other view uses -- sidebar header
 // with a filter-panel toggle and reset, collapsible `.filter-section` groups
@@ -168,12 +170,27 @@
 
   // ------------------------------------------------------------------ shell --
 
+  function modeSwitchHtml() {
+    return window.WebUI.dataPage?.modeSwitchHtml("decoded") || "";
+  }
+
+  // A full-pane status message. The mode switch stays reachable above it, so
+  // an absent catalog never strands the page in this mode.
+  function showMessage(html, options = {}) {
+    if (!state.container) return;
+    state.lastMessage = { html, options };
+    state.container.innerHTML = `<div class="data-page-message">${modeSwitchHtml()}
+      <div class="data-inspector-empty${options.error ? " is-error" : ""}">${html}</div></div>`;
+  }
+
   function renderShell() {
     const container = state.container;
     if (!container) return;
+    state.lastMessage = null;
     container.innerHTML = `
       <div class="data-inspector-shell">
         <aside id="data-inspector-left">
+          ${modeSwitchHtml()}
           <header>
             <h1>${esc(ui("Decoded Data Inspector", "解码数据检查器"))}</h1>
             <div id="data-inspector-stats">
@@ -286,8 +303,8 @@
     });
   }
 
-  function bindFilterSections() {
-    state.container.querySelectorAll(".filter-section-toggle").forEach((button) => {
+  function bindFilterSections(root = state.container) {
+    root.querySelectorAll(".filter-section-toggle").forEach((button) => {
       button.addEventListener("click", () => {
         const section = button.closest(".filter-section");
         const body = section?.querySelector(".filter-section-body");
@@ -314,21 +331,33 @@
   }
 
   function setupSplitters() {
+    const container = state.container;
+    setupListShellSplitters({
+      shell: $(".data-inspector-shell", container),
+      sidebar: $("#data-inspector-left", container),
+      pane: $("#data-inspector-splitter", container),
+      panel: $("#data-inspector-filter-panel", container),
+      filter: $("#data-inspector-filter-splitter", container),
+      list: $("#data-inspector-list-wrap", container),
+      paneStorageKey: PANE_STORAGE_KEY,
+      filterStorageKey: FILTER_HEIGHT_STORAGE_KEY,
+    });
+  }
+
+  // The pane splitter (sidebar width) and, when a filter panel and its splitter
+  // are given, the filter splitter (panel height) of one list-page shell. The
+  // Data page's Files and SQL modes reuse it with their own elements.
+  function setupListShellSplitters({
+    shell, sidebar, pane, panel = null, filter = null, list = null, paneStorageKey, filterStorageKey = "",
+  }) {
     const setup = window.WebUI?.setupSplitter;
     const utils = window.WebUI?.splitterUtils;
-    const container = state.container;
-    const shell = $(".data-inspector-shell", container);
-    const sidebar = $("#data-inspector-left", container);
-    const pane = $("#data-inspector-splitter", container);
-    const panel = $("#data-inspector-filter-panel", container);
-    const filter = $("#data-inspector-filter-splitter", container);
-    const list = $("#data-inspector-list-wrap", container);
-    if (!setup || !utils || !shell || !sidebar || !pane || !panel || !filter || !list) return;
+    if (!setup || !utils || !shell || !sidebar || !pane) return;
 
     let paneWasMobile = isMobileLayout();
     setup({
       handle: pane,
-      storageKey: PANE_STORAGE_KEY,
+      storageKey: paneStorageKey,
       bodyDragClass: "is-resizing-pane",
       client: (event) => event.clientX,
       keys: { decrease: ["ArrowLeft"], increase: ["ArrowRight"] },
@@ -348,11 +377,12 @@
         }
         if (shell.getBoundingClientRect().width < 48) return;
         let width = parsePixels(sidebar.style.width, sidebar.getBoundingClientRect().width);
-        if (paneWasMobile || !sidebar.style.width) width = utils.readStoredNumber(PANE_STORAGE_KEY) ?? width;
+        if (paneWasMobile || !sidebar.style.width) width = utils.readStoredNumber(paneStorageKey) ?? width;
         paneWasMobile = false;
         controller.set(width, { persist: false, commit: false });
       },
     });
+    if (!panel || !filter) return;
 
     const minPanelHeight = 56;
     const minListHeight = 160;
@@ -369,7 +399,7 @@
     };
     const controller = setup({
       handle: filter,
-      storageKey: FILTER_HEIGHT_STORAGE_KEY,
+      storageKey: filterStorageKey,
       bodyDragClass: "is-resizing-filter",
       client: (event) => event.clientY,
       keys: { decrease: ["ArrowUp"], increase: ["ArrowDown"] },
@@ -396,7 +426,7 @@
           return;
         }
         if (sidebar.getBoundingClientRect().height < 48) return;
-        const stored = utils.readStoredNumber(FILTER_HEIGHT_STORAGE_KEY);
+        const stored = utils.readStoredNumber(filterStorageKey);
         if (stored !== null) {
           filterWasMobile = false;
           ctrl.set(stored, { persist: false, commit: false });
@@ -1612,6 +1642,9 @@
   // ------------------------------------------------------------- selection ---
 
   function updateQuery() {
+    // Only the active Decoded mode owns the URL; a background re-render must
+    // not write its selection over another mode's deep link.
+    if (window.WebUI.dataPage && window.WebUI.dataPage.activeMode() !== "decoded") return;
     const url = new URL(window.location.href);
     if (state.selectedEntry) {
       url.searchParams.set("inspectDataset", state.selectedEntry._datasetId);
@@ -1682,12 +1715,11 @@
 
   async function loadDatasets(requestedSelection = {}) {
     const descriptors = state.root?.datasets || [];
-    const container = state.container;
     if (!descriptors.length) {
-      container.innerHTML = `<div class="data-inspector-empty">${esc(ui(
+      showMessage(esc(ui(
         "No decoded datasets are published. Run the data-inspector builder.",
         "尚未发布解码数据集，请运行数据检查器构建器。",
-      ))}</div>`;
+      )));
       return;
     }
     const token = ++state.loadToken;
@@ -1695,7 +1727,7 @@
     state.selectedEntry = null;
     state.selectedRecord = null;
     state.shardCache.clear();
-    container.innerHTML = `<div class="data-inspector-empty">${esc(ui("Loading decoded datasets…", "正在加载解码数据集…"))}</div>`;
+    showMessage(esc(ui("Loading decoded datasets…", "正在加载解码数据集…")));
     try {
       const results = await Promise.all(descriptors.map(async (descriptor) => {
         const response = await fetch(datasetPath(descriptor), { cache: "no-store" });
@@ -1736,46 +1768,60 @@
       }
     } catch (error) {
       if (token !== state.loadToken) return;
-      container.innerHTML = `<div class="data-inspector-empty is-error">${esc(ui(
+      showMessage(`${esc(ui(
         "Inspector data could not be loaded. Run the data-inspector builder.",
         "无法加载检查器数据，请运行数据检查器构建器。",
-      ))}<br><code>${esc(error.message)}</code></div>`;
+      ))}<br><code>${esc(error.message)}</code>`, { error: true });
     }
   }
 
-  async function load() {
-    const container = $("#data-inspector-app");
+  // `container` is the Data page's Decoded pane. The catalog loads once; a
+  // later mount only re-attaches.
+  async function load(container) {
     if (!container) return;
     state.container = container;
-    if (state.root) return;
-    container.innerHTML = `<div class="data-inspector-empty">${esc(ui("Loading decoded-data catalog…", "正在加载解码数据目录…"))}</div>`;
+    if (state.root || state.loading) return;
+    state.loading = true;
+    showMessage(esc(ui("Loading decoded-data catalog…", "正在加载解码数据目录…")));
     try {
       const response = await fetch(ROOT_PATH, { cache: "no-store" });
       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
       state.root = await response.json();
       await loadDatasets(readRequestedSelection());
     } catch (error) {
-      container.innerHTML = `<div class="data-inspector-empty is-error">${esc(ui(
+      state.lastMessage = null;
+      showMessage(`${esc(ui(
         "Decoded-data catalog is unavailable.",
         "解码数据目录不可用。",
-      ))}<br><code>${esc(error.message)}</code></div>`;
+      ))}<br><code>${esc(error.message)}</code>`, { error: true });
+    } finally {
+      state.loading = false;
     }
   }
 
-  function init() {
-    if (!$("#data-inspector-app")) return;
-    if (document.body.dataset.activeView === "data-inspector") load();
+  // Re-render for a locale change: the shell when datasets are loaded,
+  // otherwise the last message (its mode switch carries localized labels).
+  function relocalize() {
+    if (!state.container) return;
+    if (state.datasets.length) {
+      const selected = state.selectedKey;
+      renderShell();
+      if (selected) selectRecord(selected);
+    } else if (state.lastMessage) {
+      showMessage(state.lastMessage.html, state.lastMessage.options);
+    }
   }
 
-  window.addEventListener("webui:view-changed", (event) => {
-    if (event.detail?.view === "data-inspector") load();
-  });
-  window.addEventListener("webui:ui-locale-changed", () => {
-    if (!state.datasets.length || document.body.dataset.activeView !== "data-inspector") return;
-    const selected = state.selectedKey;
-    renderShell();
-    if (selected) selectRecord(selected);
-  });
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init, { once: true });
-  else init();
+  window.WebUI.decodedInspector = {
+    load,
+    relocalize,
+    requestedSelection: readRequestedSelection,
+    syncQuery: () => { if (state.root) updateQuery(); },
+  };
+  window.WebUI.dataInspectorShell = {
+    setupListShellSplitters,
+    bindFilterSections,
+    formatBytes,
+    copyToClipboard,
+  };
 })();

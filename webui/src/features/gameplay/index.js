@@ -3718,6 +3718,9 @@
   }
 
   function gameplayAssetPageHref(rel) {
+    // Unity object documents are export-store rows browsed on the Data page.
+    const dataUrl = window.WebUI?.dataPageUrlForRel?.(rel);
+    if (dataUrl) return dataUrl;
     const url = new URL(window.location.href);
     url.searchParams.set("asset", String(rel || ""));
     url.hash = "#assets";

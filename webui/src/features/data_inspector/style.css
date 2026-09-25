@@ -970,6 +970,473 @@
   overflow-wrap: anywhere;
 }
 
+/* -------------------------------------------------------------- data page --
+   The Data page hosts three modes in sibling panes: Files and SQL over the
+   export stores (stores.js) and the Decoded inspector above. Files and SQL
+   reuse the same list-page shell and detail classes. */
+
+.data-page,
+.data-page-pane,
+.data-page-message {
+  height: 100%;
+  min-height: 0;
+}
+
+.data-page-pane[hidden] {
+  display: none;
+}
+
+.data-page-message {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+}
+
+.data-page-message > .data-page-modes {
+  align-self: flex-start;
+  min-width: 300px;
+}
+
+.data-page-message > .data-inspector-empty {
+  max-width: 760px;
+  line-height: 1.55;
+}
+
+.data-page-modes {
+  display: flex;
+  gap: 2px;
+  margin: 12px 16px 0;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(var(--fg-rgb), .035);
+}
+
+.data-page-modes button {
+  flex: 1 1 0;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.data-page-modes button:hover {
+  color: var(--text);
+}
+
+.data-page-modes button.is-active {
+  background: rgba(var(--accent-rgb), .12);
+  color: var(--text);
+  font-weight: 650;
+}
+
+.data-page-left {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  width: 430px;
+  min-width: 300px;
+  overflow: hidden;
+  background: var(--bg-2);
+}
+
+.data-page-left > header {
+  padding: 12px 16px 8px;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-page-left h1 {
+  margin: 0 0 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.data-page-stats,
+.data-page-list-meta,
+.data-page-hint {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.data-page-hint {
+  margin: 0;
+}
+
+.data-page-reset {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.data-page-reset:hover {
+  border-color: var(--muted);
+  color: var(--text);
+}
+
+#data-files-filter-panel,
+.data-sql-panel {
+  overflow: auto;
+}
+
+.data-sql-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.data-page-list-meta {
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--border);
+}
+
+.data-page-list-group {
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+}
+
+.data-page-list-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.data-page-list {
+  position: absolute;
+  inset: 0 0 auto;
+}
+
+.data-files-row {
+  justify-content: center;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+
+.data-page-right {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.data-files-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.data-files-store-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 8px;
+  margin-bottom: 5px;
+}
+
+.data-files-store-name {
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.data-files-store-meta {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.data-files-hits {
+  position: relative;
+  padding: 8px 34px 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: rgba(var(--accent-rgb), .05);
+  font-size: 12px;
+}
+
+.data-files-hits .chips {
+  margin: 6px 0 4px;
+}
+
+.data-files-hits .is-error {
+  color: #b93636;
+}
+
+.data-files-hits-close {
+  position: absolute;
+  top: 5px;
+  right: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+}
+
+.data-files-facts .data-inspector-fact.is-wide {
+  grid-column: 1 / -1;
+}
+
+.data-page-hash {
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.data-page-inline-action {
+  margin-left: 8px;
+  padding: 1px 7px;
+  border: 1px solid rgba(var(--accent-rgb), .3);
+  border-radius: 999px;
+  background: rgba(var(--accent-rgb), .06);
+  color: var(--accent-text, var(--accent));
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.5;
+  vertical-align: baseline;
+}
+
+.data-page-inline-action:hover {
+  border-color: var(--accent);
+}
+
+.data-page-more {
+  display: block;
+  margin: 6px 0 4px 18px;
+  padding: 3px 10px;
+  border: 1px dashed var(--border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+}
+
+.data-page-more:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
+.data-page-text,
+.data-page-hex {
+  max-height: 70vh;
+  margin: 0;
+  padding: 12px 14px;
+  overflow: auto;
+  border-radius: 8px;
+  background: rgba(var(--fg-rgb), .04);
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.data-page-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.data-page-hex {
+  white-space: pre;
+}
+
+.data-page-inline-text {
+  max-height: 40vh;
+  margin: 4px 0 8px 18px;
+}
+
+.data-page-decoded {
+  margin: 4px 0 8px 18px;
+}
+
+.data-page-decoded .data-page-text,
+.data-page-decoded .data-page-hex {
+  margin: 0;
+}
+
+.data-page-decoded-label {
+  margin-bottom: 4px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.data-files-doc > .data-page-text,
+.data-files-doc > .data-page-hex {
+  background: transparent;
+  padding: 0;
+}
+
+/* SQL mode. */
+
+.data-sql-input {
+  width: 100%;
+  min-height: 150px;
+  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-size: 12px;
+  line-height: 1.45;
+  resize: vertical;
+}
+
+.data-sql-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.data-sql-run-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.data-page-primary {
+  padding: 6px 16px;
+  border: 1px solid var(--accent);
+  border-radius: 7px;
+  background: var(--accent);
+  color: var(--on-accent, #fff);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.data-page-primary:hover {
+  filter: brightness(1.06);
+}
+
+.data-sql-examples {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.data-sql-examples button {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+}
+
+.data-sql-examples button:hover {
+  border-color: var(--accent);
+}
+
+.data-sql-examples code {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.data-sql-schema {
+  margin: 0 0 8px;
+  font-size: 11px;
+  white-space: pre;
+  overflow-x: auto;
+}
+
+.data-sql-result {
+  padding: 14px 18px 40px;
+}
+
+.data-sql-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  margin-bottom: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.data-sql-error {
+  padding: 12px 14px;
+  border: 1px solid rgba(185, 54, 54, .4);
+  border-radius: 8px;
+  background: rgba(185, 54, 54, .06);
+  color: #b93636;
+}
+
+.data-sql-error pre {
+  margin: 6px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.data-sql-table-wrap {
+  max-width: 100%;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.data-sql-table {
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.data-sql-table th,
+.data-sql-table td {
+  padding: 5px 9px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.data-sql-table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--bg-2);
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.data-sql-table td.is-number {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.data-sql-table a {
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  overflow-wrap: anywhere;
+}
+
+.data-sql-index {
+  color: var(--muted);
+  text-align: right;
+}
+
+.data-sql-cell {
+  max-width: 70ch;
+  max-height: 9em;
+  overflow: auto;
+  font-family: var(--mono, ui-monospace, Consolas, monospace);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 /* ----------------------------------------------------------------- mobile -- */
 
 @media (max-width: 760px) {
@@ -1017,5 +1484,46 @@
 
   .data-inspector-meta > div {
     grid-template-columns: 1fr;
+  }
+
+  .data-page,
+  .data-page-pane,
+  .data-page-message {
+    height: auto;
+    min-height: 100vh;
+  }
+
+  .data-page-left {
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+    border-bottom: 1px solid var(--border);
+  }
+
+  #data-files-filter-panel,
+  .data-sql-panel {
+    overflow: visible;
+  }
+
+  .data-page-list-wrap {
+    flex: none;
+    min-height: 260px;
+    max-height: 44vh;
+  }
+
+  #data-files-splitter,
+  #data-files-filter-splitter,
+  #data-sql-splitter {
+    display: none;
+  }
+
+  .data-page-message > .data-page-modes {
+    align-self: stretch;
+    min-width: 0;
+  }
+
+  .data-sql-result {
+    padding-right: 14px;
+    padding-left: 14px;
   }
 }

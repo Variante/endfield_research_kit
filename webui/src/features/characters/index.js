@@ -1002,7 +1002,11 @@
     return facts;
   }
 
+  // Unity object documents (e.g. Material JSON) are export-store rows browsed
+  // on the Data page; every other exported file opens on the Assets page.
   function assetPageUrl(rel) {
+    const dataUrl = window.WebUI?.dataPageUrlForRel?.(rel);
+    if (dataUrl) return dataUrl;
     const url = new URL(window.location.href);
     url.searchParams.set("asset", String(rel || ""));
     url.hash = "#assets";
@@ -1011,7 +1015,9 @@
 
   function renderAssetPathLink(rel) {
     const url = assetPageUrl(rel);
-    const title = esc(ui("Open in Assets", "在资源页打开"));
+    const title = esc(window.WebUI?.dataPageUrlForRel?.(rel)
+      ? ui("Open in Data", "在数据页打开")
+      : ui("Open in Assets", "在资源页打开"));
     if (isImagePath(rel)) {
       const imgPath = assetImageHref(rel);
       return `<a class="characters-asset-link has-preview" href="${esc(url)}" title="${title}">

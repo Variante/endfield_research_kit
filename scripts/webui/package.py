@@ -101,8 +101,8 @@ ASSET_SHIM_JS = """(() => {
   const $$ = (sel) => Array.from(document.querySelectorAll(sel));
   const AVAILABLE_VIEWS = new Set(["story", "map-recovery", "characters", "gameplay", "audio", "reference", "updates", "recovery", "data-inspector"]);
   const HIDDEN_VIEWS = new Set(["assets"]);
-  const DEBUG_ONLY_VIEWS = new Set(["data-inspector"]);
-  const DEBUG_VIEW_FALLBACKS = Object.freeze({ audio: "gameplay", "data-inspector": "characters" });
+  const DEBUG_ONLY_VIEWS = new Set(["recovery"]);
+  const DEBUG_VIEW_FALLBACKS = Object.freeze({ audio: "gameplay", recovery: "story" });
   let activeView = "story";
 
   function resolveViewFromHash() {
@@ -192,6 +192,7 @@ ASSET_SHIM_JS = """(() => {
   window.addEventListener("webui:debug-changed", syncDebugViewVisibility);
   syncDebugViewVisibility();
   setActiveView(resolveViewFromHash(), { updateHash: false });
+  if (window.WebUI) window.WebUI.setActiveView = setActiveView;
 })();
 """
 PACKAGE_README = """Endfield WebUI story package
