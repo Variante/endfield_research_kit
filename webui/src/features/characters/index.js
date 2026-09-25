@@ -13,14 +13,10 @@
     updateData: null,
     language: "",
     query: "",
-    kind: "all",
-    source: "all",
-    evidenceType: "all",
     identitiesRange: [0, Infinity],
     evidenceGroupsRange: [0, Infinity],
     assetCountRange: [0, Infinity],
-    specialFilters: new Set(),
-    updateFilters: new Set(),
+    facets: null,
     selectedId: "",
     loadToken: 0,
     filterPanel: null,
@@ -344,20 +340,41 @@
     return current;
   }
 
-  function allSources() {
-    return [...new Set(groupedRecords().flatMap((row) => row.sourceTypes || []))].sort();
-  }
+  // "Other" filters are predicates, not stored values; a row carries every
+  // special key it satisfies and the group requires all active keys.
+  // Deleted-update placeholder rows are not character groups, so no special
+  // key applies to them.
+  const SPECIAL_TESTS = {
+    no_i18n: (row) => !hasOfficialName(row),
+    merged: (row) => (row.mergedIds || []).length > 0,
+    needs_merge: (row) => state.flaggedIds.has(row.id),
+    name_overridden: (row) => !!row.nameOverridden,
+  };
 
-  function allEvidenceTypes() {
-    const types = new Set();
-    for (const row of groupedRecords()) {
-      for (const record of row.records) {
-        for (const ev of (record.evidence || [])) {
-          if (ev.type && EVIDENCE_TYPE_FILTERS.includes(ev.type)) types.add(ev.type);
-        }
-      }
-    }
-    return EVIDENCE_TYPE_FILTERS.filter((t) => types.has(t));
+  // Chip groups over displayRecords(): single-select kind/source/NPC type
+  // (clicking the active chip returns to "all"), AND-combined special keys,
+  // and OR-combined version-change statuses. Counts are totals over all rows.
+  function ensureFacets() {
+    state.facets ||= window.WebUI.facets.create({
+      countMode: "total",
+      groups: [
+        { id: "kind", container: "#characters-kind-filter", section: "characters-kind", single: true,
+          values: (row) => row.kinds, items: ["character", "npc", "actor", "asset_npc"], label: kindLabel },
+        { id: "source", container: "#characters-source-filter", section: "characters-source", single: true,
+          values: (row) => row.sourceTypes, label: sourceLabel, order: (a, b) => (a < b ? -1 : a > b ? 1 : 0) },
+        { id: "evidenceType", container: "#characters-evidence-type-filter", section: "characters-evidence-type", single: true,
+          values: (row) => (row.records || []).flatMap((r) => (r.evidence || []).map((e) => e.type))
+            .filter((type) => EVIDENCE_TYPE_FILTERS.includes(type)),
+          label: evidenceTypeLabel, order: EVIDENCE_TYPE_FILTERS },
+        { id: "special", container: "#characters-special-filter", section: "characters-special", mode: "all",
+          values: (row) => (row.deletedUpdate ? [] : SPECIAL_FILTERS.filter((key) => SPECIAL_TESTS[key](row))),
+          items: SPECIAL_FILTERS, label: specialFilterLabel },
+        { id: "update", container: "#characters-update-filter", section: "characters-updates",
+          values: (row) => row.updateStatuses, items: UPDATE_STATUSES, label: updateStatusLabel },
+      ],
+      onChange: () => renderList(),
+    });
+    return state.facets;
   }
 
   function rowStats(row) {
@@ -491,15 +508,10 @@
   function filteredRecords() {
     const tokens = window.WebUI.parseQuery(state.query);
     const activeCountFilters = activeCountRangeFilters();
+    const facets = ensureFacets();
     const rows = displayRecords().filter((row) => {
-      if (state.updateFilters.size && ![...state.updateFilters].some((status) => (row.updateStatuses || []).includes(status))) return false;
-      if (row.deletedUpdate && !state.updateFilters.has("deleted")) return false;
-      if (state.kind !== "all" && !(row.kinds || []).includes(state.kind)) return false;
-      if (state.source !== "all" && !(row.sourceTypes || []).includes(state.source)) return false;
-      if (state.evidenceType !== "all") {
-        const hasType = row.records.some((r) => (r.evidence || []).some((e) => e.type === state.evidenceType));
-        if (!hasType) return false;
-      }
+      if (row.deletedUpdate && !facets.has("update", "deleted")) return false;
+      if (!facets.matches(row)) return false;
       if (activeCountFilters.length) {
         const stats = rowStats(row);
         for (const { stateKey, metricKey } of activeCountFilters) {
@@ -509,10 +521,6 @@
           if (Number.isFinite(max) && value > max) return false;
         }
       }
-      if (state.specialFilters.has("no_i18n") && hasOfficialName(row)) return false;
-      if (state.specialFilters.has("merged") && !(row.mergedIds || []).length) return false;
-      if (state.specialFilters.has("needs_merge") && !state.flaggedIds.has(row.id)) return false;
-      if (state.specialFilters.has("name_overridden") && !row.nameOverridden) return false;
       if (!tokens.length) return true;
       const haystack = [
         row.id,
@@ -539,96 +547,11 @@
   }
 
   function renderFilterChips() {
-    const buildChips = window.WebUI?.filters?.buildChips;
-    if (!buildChips) return;
+    ensureFacets().render(displayRecords());
     const records = groupedRecords();
-    const displayRows = displayRecords();
-    const kindCounts = new Map();
-    const sourceCounts = new Map();
-    for (const row of records) {
-      for (const kind of row.kinds || []) {
-        kindCounts.set(kind, (kindCounts.get(kind) || 0) + 1);
-      }
-      for (const source of row.sourceTypes || []) {
-        sourceCounts.set(source, (sourceCounts.get(source) || 0) + 1);
-      }
-    }
-    buildChips("#characters-kind-filter", ["character", "npc", "actor", "asset_npc"], {
-      active: state.kind === "all" ? "" : state.kind,
-      single: true,
-      label: (kind) => kindLabel(kind),
-      count: kindCounts,
-      onToggle: (next) => {
-        state.kind = next || "all";
-        renderFilterChips();
-        renderList();
-      },
-    });
-    buildChips("#characters-source-filter", allSources(), {
-      active: state.source === "all" ? "" : state.source,
-      single: true,
-      label: (source) => sourceLabel(source),
-      count: sourceCounts,
-      onToggle: (next) => {
-        state.source = next || "all";
-        renderFilterChips();
-        renderList();
-      },
-    });
-    const evidenceTypeCounts = new Map();
-    for (const row of records) {
-      const rowTypes = new Set();
-      for (const record of row.records) {
-        for (const ev of (record.evidence || [])) {
-          if (ev.type && EVIDENCE_TYPE_FILTERS.includes(ev.type)) rowTypes.add(ev.type);
-        }
-      }
-      for (const t of rowTypes) {
-        evidenceTypeCounts.set(t, (evidenceTypeCounts.get(t) || 0) + 1);
-      }
-    }
-    buildChips("#characters-evidence-type-filter", allEvidenceTypes(), {
-      active: state.evidenceType === "all" ? "" : state.evidenceType,
-      single: true,
-      label: (type) => evidenceTypeLabel(type),
-      count: evidenceTypeCounts,
-      onToggle: (next) => {
-        state.evidenceType = next || "all";
-        renderFilterChips();
-        renderList();
-      },
-    });
     renderCountRangeFilter("#characters-identities-range", "identitiesRange", "identities", records, ui("Identities", "身份数"));
     renderCountRangeFilter("#characters-evidence-range", "evidenceGroupsRange", "evidenceGroups", records, ui("Evidence groups", "证据组数"));
     renderCountRangeFilter("#characters-asset-count-range", "assetCountRange", "assetCount", records, ui("Assets", "资源数量"));
-    const specialCounts = new Map([
-      ["no_i18n", records.filter((row) => !hasOfficialName(row)).length],
-      ["merged", records.filter((row) => (row.mergedIds || []).length).length],
-      ["needs_merge", records.filter((row) => state.flaggedIds.has(row.id)).length],
-      ["name_overridden", records.filter((row) => row.nameOverridden).length],
-    ]);
-    buildChips("#characters-special-filter", SPECIAL_FILTERS, {
-      active: state.specialFilters,
-      label: (key) => specialFilterLabel(key),
-      count: specialCounts,
-      onToggle: () => {
-        renderFilterChips();
-        renderList();
-      },
-    });
-    const updateCounts = new Map(UPDATE_STATUSES.map((status) => [
-      status,
-      displayRows.filter((row) => (row.updateStatuses || []).includes(status)).length,
-    ]));
-    buildChips("#characters-update-filter", UPDATE_STATUSES, {
-      active: state.updateFilters,
-      label: (status) => updateStatusLabel(status),
-      count: updateCounts,
-      onToggle: () => {
-        renderFilterChips();
-        renderList();
-      },
-    });
   }
 
   function bindFilterSections() {
@@ -882,14 +805,10 @@
     });
     state.container.querySelector("#characters-reset")?.addEventListener("click", () => {
       state.query = "";
-      state.kind = "all";
-      state.source = "all";
-      state.evidenceType = "all";
       state.identitiesRange = [0, Infinity];
       state.evidenceGroupsRange = [0, Infinity];
       state.assetCountRange = [0, Infinity];
-      state.specialFilters.clear();
-      state.updateFilters.clear();
+      state.facets?.reset({ silent: true });
       state.sortKey = "default";
       state.sortDirection = "asc";
       state.pager?.reset();
@@ -917,18 +836,13 @@
     renderList();
   }
 
-  // Mirrors the (N) active-filter badge the Story and Text Tables pages show
-  // on each filter section title — same shared helper, same section keys as
-  // the `data-filter-section` attributes in renderShell().
+  // (N) badges for the non-chip sections; the chip sections' badges are kept
+  // by the facet model. Keys match the `data-filter-section` attributes in
+  // renderShell().
   function syncFilterSectionActiveCounts() {
     window.WebUI?.setFilterSectionActiveCounts?.({
       "characters-basic": (state.query.trim() ? 1 : 0) + (state.sortKey === "default" ? 0 : 1),
-      "characters-kind": state.kind === "all" ? 0 : 1,
-      "characters-source": state.source === "all" ? 0 : 1,
-      "characters-evidence-type": state.evidenceType === "all" ? 0 : 1,
       "characters-counts": activeCountRangeFilters().length,
-      "characters-special": state.specialFilters.size,
-      "characters-updates": state.updateFilters.size,
     });
   }
 
@@ -939,14 +853,10 @@
     syncFilterSectionActiveCounts();
     const filterSignature = JSON.stringify({
       query: state.query,
-      kind: state.kind,
-      source: state.source,
-      evidenceType: state.evidenceType,
+      facets: ensureFacets().snapshot(),
       identitiesRange: state.identitiesRange,
       evidenceGroupsRange: state.evidenceGroupsRange,
       assetCountRange: state.assetCountRange,
-      specialFilters: [...state.specialFilters].sort(),
-      updateFilters: [...state.updateFilters].sort(),
       sortKey: state.sortKey,
       sortDirection: state.sortDirection,
     });
@@ -1448,7 +1358,7 @@
       if (token !== state.loadToken) return null;
       state.data = data;
       state.updateData = updateData?.available === false || !Array.isArray(updateData?.entries) ? null : updateData;
-      if (!state.updateData) state.updateFilters.clear();
+      if (!state.updateData) state.facets?.reset({ silent: true, only: ["update"] });
       state.selectedId = "";
       renderShell();
       return data;

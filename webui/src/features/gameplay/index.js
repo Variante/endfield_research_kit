@@ -126,15 +126,7 @@
     collapsedKinds: new Set(),
     pager: null,
     levelFraction: 1,
-    filters: {
-      kinds: new Set(),
-      jobs: new Set(),
-      characterProperties: new Set(),
-      weaponTypes: new Set(),
-      equipmentTypes: new Set(),
-      enemyTypes: new Set(),
-      rarities: new Set(),
-    },
+    facets: null,
   };
 
   const gp$ = $;
@@ -4242,8 +4234,7 @@
         if (!STATE.filtered.includes(target)) {
           const query = gp$("#gameplay-q");
           if (query) query.value = "";
-          Object.values(STATE.filters).forEach((filter) => filter.clear());
-          buildFilterChips();
+          STATE.facets.reset({ silent: true });
           applyFilters();
         } else {
           renderList();
@@ -4526,17 +4517,6 @@
     renderDetail(STATE.selected);
   }
 
-  function countBy(entries, getter) {
-    const map = new Map();
-    for (const entry of entries) {
-      const value = getter(entry);
-      if (!value) continue;
-      map.set(value, (map.get(value) || 0) + 1);
-    }
-    return map;
-  }
-
-
   function jobFilterKey(entry) {
     if (!entry || entry.kind !== "character") return "";
     return String(entry.profession !== undefined && entry.profession !== null && entry.profession !== "" ? entry.profession : (entry.professionLabel || ""));
@@ -4604,66 +4584,60 @@
     return [kindLabel(entry && entry.kind), listTypeLabel(entry)].filter(Boolean).join(" / ");
   }
 
-  function typeFiltersMatch(entry) {
-    const hasCharacterProperties = STATE.filters.characterProperties.size > 0;
-    const hasWeaponTypes = STATE.filters.weaponTypes.size > 0;
-    const hasEquipmentTypes = STATE.filters.equipmentTypes.size > 0;
-    const hasEnemyTypes = STATE.filters.enemyTypes.size > 0;
-    if (!hasCharacterProperties && !hasWeaponTypes && !hasEquipmentTypes && !hasEnemyTypes) return true;
-    if (entry && entry.kind === "character") return hasCharacterProperties && STATE.filters.characterProperties.has(characterPropertyFilterKey(entry));
-    if (entry && entry.kind === "weapon") return hasWeaponTypes && STATE.filters.weaponTypes.has(weaponTypeFilterKey(entry));
-    if (entry && entry.kind === "equipment") return hasEquipmentTypes && STATE.filters.equipmentTypes.has(equipmentTypeFilterKey(entry));
-    if (entry && entry.kind === "enemy") return hasEnemyTypes && STATE.filters.enemyTypes.has(enemyTypeFilterKey(entry));
-    return false;
+  // Per-kind type groups are one cross-kind union: once any of them is
+  // active, an entry passes only through its own kind's group, so a weapon
+  // passes a character-property group exactly when its weapon-type group is
+  // active (and decides it). Kinds without a type group never pass.
+  const TYPE_GROUP_BY_KIND = {
+    character: "characterProperties",
+    weapon: "weaponTypes",
+    equipment: "equipmentTypes",
+    enemy: "enemyTypes",
+  };
+  // [group id, section/container suffix, value key, value label, owning kind]
+  const ENTRY_FACET_GROUPS = [
+    ["jobs", "job", jobFilterKey, jobFilterLabel],
+    ["characterProperties", "character-property", characterPropertyFilterKey, characterPropertyFilterLabel, "character"],
+    ["weaponTypes", "weapon-type", weaponTypeFilterKey, weaponTypeFilterLabel, "weapon"],
+    ["equipmentTypes", "equipment-type", equipmentTypeFilterKey, equipmentTypeFilterLabel, "equipment"],
+    ["enemyTypes", "enemy-type", enemyTypeFilterKey, enemyTypeFilterLabel, "enemy"],
+  ];
+  const facetLabels = new Map(); // group id -> Map(value -> label from the loaded entries)
+
+  function createFacets() {
+    const labelOf = (id) => (value) => facetLabels.get(id)?.get(value) || value;
+    const entryGroups = ENTRY_FACET_GROUPS.map(([id, suffix, key, , kind]) => ({
+      id,
+      container: `#gameplay-${suffix}-filter`,
+      section: `gameplay-${suffix}`,
+      values: key,
+      label: labelOf(id),
+      order: id === "enemyTypes"
+        ? (a, b) => ((ENEMY_TYPE_RANK[a] ?? 99) - (ENEMY_TYPE_RANK[b] ?? 99)) || String(labelOf(id)(a)).localeCompare(String(labelOf(id)(b)))
+        : "natural",
+      match: kind && ((entry, active) => (entry.kind === kind
+        ? active.has(key(entry))
+        : !!TYPE_GROUP_BY_KIND[entry.kind] && STATE.facets.isFiltered(TYPE_GROUP_BY_KIND[entry.kind]))),
+    }));
+    return window.WebUI.facets.create({
+      countMode: "total",
+      groups: [
+        { id: "kinds", container: "#gameplay-kind-filter", section: "gameplay-kind", values: (entry) => entry.kind,
+          label: kindLabel, className: (kind) => KIND_CHIP_CLASS[kind] || "kind-chip",
+          order: (a, b) => kindRank(a) - kindRank(b) || a.localeCompare(b) },
+        ...entryGroups,
+        { id: "rarities", container: "#gameplay-rarity-filter", section: "gameplay-rarity", values: rarityFilterKey,
+          label: rarityFilterLabel, order: (a, b) => Number(b) - Number(a) },
+      ],
+      onChange: () => applyFilters(),
+    });
   }
+
   function buildFilterChips() {
-    const kindCounts = countBy(STATE.entries, (entry) => entry.kind);
-    const jobCounts = countBy(STATE.entries, (entry) => jobFilterKey(entry));
-    const propertyCounts = countBy(STATE.entries, (entry) => characterPropertyFilterKey(entry));
-    const weaponTypeCounts = countBy(STATE.entries, (entry) => weaponTypeFilterKey(entry));
-    const equipmentTypeCounts = countBy(STATE.entries, (entry) => equipmentTypeFilterKey(entry));
-    const enemyTypeCounts = countBy(STATE.entries, (entry) => enemyTypeFilterKey(entry));
-    const rarityCounts = countBy(STATE.entries, (entry) => rarityFilterKey(entry));
-    const jobLabels = new Map(STATE.entries.map((entry) => [jobFilterKey(entry), jobFilterLabel(entry)]).filter(([value]) => value));
-    const propertyLabels = new Map(STATE.entries.map((entry) => [characterPropertyFilterKey(entry), characterPropertyFilterLabel(entry)]).filter(([value]) => value));
-    const weaponTypeLabels = new Map(STATE.entries.map((entry) => [weaponTypeFilterKey(entry), weaponTypeFilterLabel(entry)]).filter(([value]) => value));
-    const equipmentTypeLabels = new Map(STATE.entries.map((entry) => [equipmentTypeFilterKey(entry), equipmentTypeFilterLabel(entry)]).filter(([value]) => value));
-    const enemyTypeLabels = new Map(STATE.entries.map((entry) => [enemyTypeFilterKey(entry), enemyTypeFilterLabel(entry)]).filter(([value]) => value));
-    const kindItems = [...kindCounts.keys()].sort((a, b) => kindRank(a) - kindRank(b) || a.localeCompare(b)).map((value) => ({ value, label: kindLabel(value), count: kindCounts.get(value), className: KIND_CHIP_CLASS[value] || "kind-chip" }));
-    const jobItems = [...jobCounts.keys()].sort((a, b) => String(jobLabels.get(a) || a).localeCompare(String(jobLabels.get(b) || b))).map((value) => ({ value, label: jobLabels.get(value) || value, count: jobCounts.get(value) }));
-    const propertyItems = [...propertyCounts.keys()].sort((a, b) => String(propertyLabels.get(a) || a).localeCompare(String(propertyLabels.get(b) || b))).map((value) => ({ value, label: propertyLabels.get(value) || value, count: propertyCounts.get(value) }));
-    const weaponTypeItems = [...weaponTypeCounts.keys()].sort((a, b) => String(weaponTypeLabels.get(a) || a).localeCompare(String(weaponTypeLabels.get(b) || b))).map((value) => ({ value, label: weaponTypeLabels.get(value) || value, count: weaponTypeCounts.get(value) }));
-    const equipmentTypeItems = [...equipmentTypeCounts.keys()].sort((a, b) => String(equipmentTypeLabels.get(a) || a).localeCompare(String(equipmentTypeLabels.get(b) || b))).map((value) => ({ value, label: equipmentTypeLabels.get(value) || value, count: equipmentTypeCounts.get(value) }));
-    const enemyTypeItems = [...enemyTypeCounts.keys()].sort((a, b) => ((ENEMY_TYPE_RANK[a] ?? 99) - (ENEMY_TYPE_RANK[b] ?? 99)) || String(enemyTypeLabels.get(a) || a).localeCompare(String(enemyTypeLabels.get(b) || b))).map((value) => ({ value, label: enemyTypeLabels.get(value) || value, count: enemyTypeCounts.get(value) }));
-    const rarityItems = [...rarityCounts.keys()].sort((a, b) => Number(b) - Number(a)).map((value) => ({ value, label: rarityFilterLabel(value), count: rarityCounts.get(value) }));
-    window.WebUI.filters.buildChips("#gameplay-kind-filter", kindItems, {
-      active: STATE.filters.kinds,
-      onToggle: () => applyFilters(),
-    });
-    window.WebUI.filters.buildChips("#gameplay-job-filter", jobItems, {
-      active: STATE.filters.jobs,
-      onToggle: () => applyFilters(),
-    });
-    window.WebUI.filters.buildChips("#gameplay-character-property-filter", propertyItems, {
-      active: STATE.filters.characterProperties,
-      onToggle: () => applyFilters(),
-    });
-    window.WebUI.filters.buildChips("#gameplay-weapon-type-filter", weaponTypeItems, {
-      active: STATE.filters.weaponTypes,
-      onToggle: () => applyFilters(),
-    });
-    window.WebUI.filters.buildChips("#gameplay-equipment-type-filter", equipmentTypeItems, {
-      active: STATE.filters.equipmentTypes,
-      onToggle: () => applyFilters(),
-    });
-    window.WebUI.filters.buildChips("#gameplay-enemy-type-filter", enemyTypeItems, {
-      active: STATE.filters.enemyTypes,
-      onToggle: () => applyFilters(),
-    });
-    window.WebUI.filters.buildChips("#gameplay-rarity-filter", rarityItems, {
-      active: STATE.filters.rarities,
-      onToggle: () => applyFilters(),
-    });
+    for (const [id, , key, label] of ENTRY_FACET_GROUPS) {
+      facetLabels.set(id, new Map(STATE.entries.map((entry) => [key(entry), label(entry)]).filter(([value]) => value)));
+    }
+    STATE.facets.render(STATE.entries);
   }
   function kindRank(kind) {
     const index = KIND_ORDER.indexOf(kind);
@@ -4698,21 +4672,8 @@
     const tokens = parseQuery(gp$("#gameplay-q") && gp$("#gameplay-q").value);
     const scores = new Map();
     STATE.searchTokens = tokens;
-    window.WebUI?.setFilterSectionActiveCounts?.({
-      "gameplay-basic": tokens.length ? 1 : 0,
-      "gameplay-kind": STATE.filters.kinds.size,
-      "gameplay-job": STATE.filters.jobs.size,
-      "gameplay-character-property": STATE.filters.characterProperties.size,
-      "gameplay-weapon-type": STATE.filters.weaponTypes.size,
-      "gameplay-equipment-type": STATE.filters.equipmentTypes.size,
-      "gameplay-enemy-type": STATE.filters.enemyTypes.size,
-      "gameplay-rarity": STATE.filters.rarities.size,
-    });
-    STATE.filtered = STATE.entries.filter((entry) => {
-      if (STATE.filters.kinds.size && !STATE.filters.kinds.has(entry.kind)) return false;
-      if (STATE.filters.jobs.size && !STATE.filters.jobs.has(jobFilterKey(entry))) return false;
-      if (STATE.filters.rarities.size && !STATE.filters.rarities.has(rarityFilterKey(entry))) return false;
-      if (!typeFiltersMatch(entry)) return false;
+    window.WebUI?.setFilterSectionActiveCounts?.({ "gameplay-basic": tokens.length ? 1 : 0 });
+    STATE.filtered = STATE.facets.filter(STATE.entries).filter((entry) => {
       if (tokens.length) {
         const score = queryScore([entry.search, entry.title, entry.id, entry.group, entry.subtitle], tokens);
         if (score <= 0) return false;
@@ -4737,14 +4698,7 @@
   function resetFilters() {
     const q = gp$("#gameplay-q");
     if (q) q.value = "";
-    STATE.filters.kinds.clear();
-    STATE.filters.jobs.clear();
-    STATE.filters.characterProperties.clear();
-    STATE.filters.weaponTypes.clear();
-    STATE.filters.equipmentTypes.clear();
-    STATE.filters.enemyTypes.clear();
-    STATE.filters.rarities.clear();
-    buildFilterChips();
+    STATE.facets.reset({ silent: true });
     applyFilters();
   }
 
@@ -4920,6 +4874,7 @@
     STATE.collapsedKinds = loadCollapsedKinds();
     STATE.levelFraction = loadLevelFraction();
     ensurePanelToggle();
+    STATE.facets = createFacets();
     STATE.pager = window.WebUI.pagination?.createPager({
       container: "#gameplay-pager",
       storageKey: "gameplay_browser_page_size",
