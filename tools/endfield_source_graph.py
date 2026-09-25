@@ -36,7 +36,8 @@ from scripts.game_data.memorypack.tables import (
     decode_model_view_state_controller_memorypack,
 )
 from scripts.common import EXPORT_LAYOUT, WEBUI_BUILD_DIR, unity_asset_rel
-from scripts.source_paths import ExportLayout, ExportLayoutError
+from scripts.source_paths import ExportLayout, ExportLayoutError, packed_game_dir
+from scripts.game_data.game_file_store import read_game_file
 from scripts.game_data.unity_store import is_store_file, open_store_if_present, split_logical_ref
 EXPORT_ROOT = EXPORT_LAYOUT.root
 WEBUI_DATA = ROOT / "webui" / "data"
@@ -4787,6 +4788,17 @@ class SourceGraphBuilder:
             try:
                 return store.read_bytes(*parts) if store is not None else b""
             except KeyError:
+                return b""
+        layout = ExportLayout(self.export_root)
+        try:
+            game_relative = path.relative_to(layout.game).as_posix()
+        except ValueError:
+            game_relative = ""
+        if game_relative and packed_game_dir(game_relative) is not None:
+            # A file under a packed folder (Json/LipSync) is a game-file store row (layout v4).
+            try:
+                return read_game_file(layout.root, game_relative)
+            except (FileNotFoundError, KeyError):
                 return b""
         try:
             return path.read_bytes()

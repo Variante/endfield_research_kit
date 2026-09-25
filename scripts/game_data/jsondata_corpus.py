@@ -178,7 +178,14 @@ from scripts.game_data.teleport_validation_binary import (
     decode_teleport_validation_table,
 )
 from scripts.common import canonical_json_sha256
+from scripts.game_data.game_file_store import (
+    iter_game_tree,
+    locate_game_folder,
+    loose_packed_files,
+    read_game_file,
+)
 from scripts.repo_paths import REPO_ROOT
+from scripts.source_paths import ExportLayout
 
 
 REPORT_FORMAT = "endfield-jsondata-current-corpus-v1"
@@ -236,6 +243,41 @@ def _safe_export_path(export_root: Path, virtual_path: str) -> tuple[Path, str, 
         raise ValueError(f"JsonData export path escapes root: {virtual_path!r}")
     family = relative.parts[0] if len(relative.parts) > 1 else relative.name
     return candidate, relative.as_posix(), family
+
+
+def _json_game_folder(json_dir: Path) -> tuple[Path, str]:
+    """``(export root, game/-relative folder)`` of a JsonData directory under an export's game/.
+
+    Packed folders (``Json/LipSync``) are not on disk, so the directory must sit
+    inside an export root's ``game/`` for its files to be resolved through the
+    game-file store; any other directory fails closed.
+    """
+    located = locate_game_folder(json_dir)
+    if located is None or not located[1]:
+        raise ValueError(f"JsonData directory is not a folder under an export root's game/: {json_dir}")
+    return located
+
+
+def _json_export_files(export_root: Path, folder: str) -> set[str]:
+    """Folder-relative, casefolded paths of every JsonData file, loose and packed.
+
+    A loose file left under a packed folder is not part of the export (packed
+    folders are read only from the store), so it fails closed here instead of
+    being silently ignored.
+    """
+    layout = ExportLayout(export_root)
+    prefix = folder.casefold() + "/"
+    for packed, files in loose_packed_files(layout).items():
+        if (packed.casefold() + "/").startswith(prefix):
+            first = sorted(files, key=str.casefold)[0]
+            raise ValueError(
+                f"loose file under packed folder game/{packed}: {first!r}; "
+                f"pack the root before auditing it"
+            )
+    return {
+        entry.path[len(prefix):].casefold()
+        for entry in iter_game_tree(export_root, folder)
+    }
 
 
 def _classify_json(data: bytes) -> tuple[bool, str | None]:
@@ -1291,6 +1333,7 @@ def build_report(
 ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
     expected = expected_input_set_sha256.upper()
     export_root = export_root.resolve()
+    game_root, json_folder = _json_game_folder(export_root)
     outer, _header, ledger_rows, provenance = _read_outer_and_ledger(
         outer_path, ledger_path, expected_input_set_sha256=expected
     )
@@ -1336,13 +1379,14 @@ def build_report(
     results: list[dict[str, Any]] = []
     for ledger in selected:
         virtual_path = str(ledger["virtualPath"])
-        path, relative, family = _safe_export_path(export_root, virtual_path)
+        _path, relative, family = _safe_export_path(export_root, virtual_path)
         if relative.casefold() in seen_paths:
             raise ValueError(f"case-insensitive duplicate JsonData export path: {relative}")
         seen_paths.add(relative.casefold())
-        if not path.is_file():
-            raise ValueError(f"missing JsonData export file: {relative}")
-        data = path.read_bytes()
+        try:
+            data = read_game_file(game_root, f"{json_folder}/{relative}")
+        except FileNotFoundError:
+            raise ValueError(f"missing JsonData export file: {relative}") from None
         expected_length = int(ledger["length"])
         expected_md5 = str(ledger["recomputedFileDataMd5"]).upper()
         actual_md5 = hashlib.md5(data).hexdigest().upper()
@@ -1542,10 +1586,7 @@ def build_report(
             **classification,
         })
 
-    actual_files = {
-        path.relative_to(export_root).as_posix().casefold()
-        for path in export_root.rglob("*") if path.is_file()
-    }
+    actual_files = _json_export_files(game_root, json_folder)
     extras = sorted(actual_files - seen_paths)
     if extras:
         raise ValueError(f"JsonData export contains unowned files; first={extras[0]!r}")
@@ -1640,7 +1681,11 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--outer-summary", type=Path, default=DEFAULT_OUTER)
     parser.add_argument("--outer-ledger", type=Path, default=DEFAULT_LEDGER)
-    parser.add_argument("--export-root", type=Path, default=DEFAULT_EXPORT)
+    parser.add_argument(
+        "--export-root", type=Path, default=DEFAULT_EXPORT,
+        help="The export's game/Json folder (default: export_full/game/Json). Packed "
+             "folders such as Json/LipSync are read from its game/GameFiles.sqlite.",
+    )
     parser.add_argument("--expected-input-set-sha256", required=True)
     parser.add_argument("--buff-report", type=Path, default=DEFAULT_BUFF_REPORT)
     parser.add_argument("--skill-report", type=Path, default=DEFAULT_SKILL_REPORT)

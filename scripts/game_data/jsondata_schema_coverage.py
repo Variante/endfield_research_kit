@@ -37,6 +37,12 @@ from collections import defaultdict
 from pathlib import Path
 from typing import Any, Callable, Iterable, Iterator
 
+from scripts.game_data.game_file_store import (
+    iter_game_tree,
+    locate_game_folder,
+    open_game_files_if_present,
+    packed_dirs_within,
+)
 from scripts.repo_paths import REPO_ROOT
 
 
@@ -138,6 +144,33 @@ def named_bytes(detail: dict[str, Any], size: int) -> tuple[int, int, int]:
     return reach - opaque, opaque, unreached
 
 
+def iter_family_files(directory: Path) -> Iterator[Callable[[], bytes]]:
+    """A byte loader per file under a family directory.
+
+    Inside an export's game/, the walk is ``iter_game_tree``: a packed folder
+    (``Json/LipSync``) is read only from game/GameFiles.sqlite, and a missing
+    store fails closed rather than measuring an empty family. Any other
+    directory (for example files written by ``game_file_store extract``) is
+    walked on disk.
+    """
+    directory = Path(directory)
+    located = locate_game_folder(directory)
+    if located is not None and packed_dirs_within(located[1]):
+        export_root, folder = located
+        if open_game_files_if_present(export_root) is None:
+            raise CoverageError(
+                f"game/{folder} includes packed folders {packed_dirs_within(folder)} but "
+                f"{export_root} has no game-file store"
+            )
+        entries = list(iter_game_tree(export_root, folder))
+        if not entries and not directory.is_dir():
+            raise CoverageError(f"family directory not found: {directory}")
+        return (entry.read_bytes for entry in entries)
+    if not directory.is_dir():
+        raise CoverageError(f"family directory not found: {directory}")
+    return (path.read_bytes for path in sorted(directory.rglob("*")) if path.is_file())
+
+
 def sweep(
     root: Path,
     framers: Iterable[Callable[[bytes], dict[str, Any]]],
@@ -146,8 +179,7 @@ def sweep(
     """Frame every file under ``root`` with the first framer that accepts it."""
 
     directory = Path(root)
-    if not directory.is_dir():
-        raise CoverageError(f"family directory not found: {directory}")
+    loaders = iter_family_files(directory)
 
     buckets: dict[str, dict[str, int]] = defaultdict(
         lambda: {
@@ -161,11 +193,9 @@ def sweep(
         }
     )
     files = 0
-    for path in sorted(directory.rglob("*")):
-        if not path.is_file():
-            continue
+    for load in loaders:
         files += 1
-        data = path.read_bytes()
+        data = load()
         detail = None
         for framer in framers:
             try:
@@ -522,7 +552,11 @@ def main(argv: list[str] | None = None) -> int:
             "framings declare their opaque ranges."
         )
     )
-    parser.add_argument("--json-root", type=Path, default=DEFAULT_JSON_ROOT)
+    parser.add_argument(
+        "--json-root", type=Path, default=DEFAULT_JSON_ROOT,
+        help="An export's game/Json folder (packed families such as LipSync are read "
+             "from its game/GameFiles.sqlite), or any directory of loose family folders.",
+    )
     parser.add_argument(
         "--family",
         action="append",

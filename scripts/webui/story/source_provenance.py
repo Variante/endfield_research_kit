@@ -20,7 +20,12 @@ from typing import Any
 
 from scripts.common import EXPORT_LAYOUT
 from scripts.repo_paths import REPO_ROOT
-from scripts.source_paths import ExportLayout, ExportLayoutError
+from scripts.source_paths import ExportLayout, ExportLayoutError, packed_game_dir
+from scripts.game_data.game_file_store import (
+    game_file_exists,
+    iter_game_tree,
+    open_game_files_if_present,
+)
 from scripts.game_data.unity_store import is_store_file, open_store_if_present
 from scripts.webui.story.unity_documents import document_exists, document_sha256
 
@@ -119,23 +124,41 @@ def _stored_basename_candidates(name: str, root: Path) -> list[Path]:
     ]
 
 
+def _packed_game_relative(path: Path, root: Path) -> str | None:
+    """The game/-relative path of a resolved path under a packed folder (Json/LipSync), else None."""
+    game_root = _resolved(_layout(root).game)
+    if not path.is_relative_to(game_root):
+        return None
+    relative = path.relative_to(game_root).as_posix()
+    return relative if packed_game_dir(relative) is not None else None
+
+
+def _source_exists(path: Path, root: Path) -> bool:
+    """Whether a resolved candidate exists: packed game files in the game-file store,
+    Unity documents in the object store, anything else on disk."""
+    packed = _packed_game_relative(path, root)
+    if packed is not None:
+        return game_file_exists(_layout(root).root, packed)
+    return document_exists(path)
+
+
 def _basename_index(root: Path) -> dict[str, tuple[Path, ...]]:
-    """Loose files under game/ by lowercase name; stored Unity documents are looked up per name."""
+    """Files under game/ by lowercase name, loose and packed (game/GameFiles.sqlite rows
+    at their game/ paths); stored Unity documents are looked up per name."""
     root_resolved = root.resolve()
     cached = _BASENAME_INDEX_CACHE.get(root_resolved)
     if cached is not None:
         return cached
     index: dict[str, list[Path]] = defaultdict(list)
-    for data_root in (_layout(root).game.resolve(),):
-        if not data_root.is_dir():
-            continue
-        # ``data_root`` already descends from a resolved root and rglob reports
-        # on-disk names, so these entries are absolute and canonical. Calling
-        # resolve() per entry only added a realpath syscall for each of the
-        # ~185k exported files.
-        for candidate in data_root.rglob("*"):
-            if candidate.is_file():
-                index[candidate.name.lower()].append(candidate)
+    layout = _layout(root)
+    data_root = layout.game.resolve()
+    if data_root.is_dir():
+        # ``data_root`` already descends from a resolved root and the walk
+        # reports on-disk names, so these entries are absolute and canonical.
+        # Calling resolve() per entry only added a realpath syscall for each
+        # of the ~185k exported files.
+        for entry in iter_game_tree(layout.root, ""):
+            index[entry.name.lower()].append(data_root.joinpath(*entry.path.split("/")))
     frozen = {
         name: tuple(sorted(paths, key=lambda path: path.as_posix()))
         for name, paths in index.items()
@@ -176,8 +199,9 @@ def _candidate_paths(reference: str, root: Path) -> list[Path]:
     seen: set[Path] = set()
     for candidate in candidates:
         resolved = _resolved(candidate)
-        # A game/Unity/<Type>/<name> document exists when the object store has it.
-        if resolved in seen or not document_exists(resolved):
+        # A game/Unity/<Type>/<name> document exists when the object store has
+        # it, and a packed game file when the game-file store has it.
+        if resolved in seen or not _source_exists(resolved, root):
             continue
         seen.add(resolved)
         out.append(resolved)
@@ -212,15 +236,24 @@ def _kind_for_path(path: Path) -> str:
     return "original_game_file"
 
 
-def _sha256(path: Path) -> str:
-    return document_sha256(_resolved(path))
+def _sha256(path: Path, root: Path) -> str:
+    """Lowercase SHA-256 of a candidate's bytes; store rows answer from their recorded digest."""
+    resolved = _resolved(path)
+    packed = _packed_game_relative(resolved, root)
+    if packed is None:
+        return document_sha256(resolved)
+    store = open_game_files_if_present(_layout(root).root)
+    row = store.row(packed) if store is not None else None
+    if row is None:
+        raise FileNotFoundError(f"game-file store has no game/{packed}")
+    return row.sha256
 
 
-def _related_file(path: Path, *, reference: str, relation: str) -> dict[str, Any]:
+def _related_file(path: Path, *, root: Path, reference: str, relation: str) -> dict[str, Any]:
     return {
         "kind": _kind_for_path(path),
         "sourceFile": reference,
-        "sha256": _sha256(path),
+        "sha256": _sha256(path, root),
         "relationship": f"story_connection:{relation}",
     }
 
@@ -294,6 +327,7 @@ def enrich_story_connection_original_files(
                                     source_reference = candidate.as_posix()
                             row = _related_file(
                                 candidate,
+                                root=root,
                                 reference=source_reference,
                                 relation=relation,
                             )
