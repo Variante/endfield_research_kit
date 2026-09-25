@@ -1,11 +1,28 @@
-# Decoded Data Inspector
+# Data page (export stores and decoded datasets)
 
 ## Purpose
 
-The Decoded Data Inspector is a debug-only WebUI page for reviewing maintained
-decoder output without adding a bespoke page for every recovered format. It is
-revealed by `Show debug info`; normal semantic navigation remains Story, Map,
-Characters, Gameplay, Audio, Assets, Text, and Updates.
+The Data page (`data-inspector`, after Assets in normal navigation) has three
+modes. **Files** and **SQL** browse the export's SQLite stores -- every
+exported Unity object document in `game/Unity.sqlite` and every packed game
+file in `game/GameFiles.sqlite` -- as a file viewer and a read-only SQL console.
+**Decoded** is the Decoded Data Inspector below: maintained decoder output
+reviewed without a bespoke page per recovered format.
+
+Files and SQL need the repository's `serve.py`, whose `/api/stores` endpoints
+(`scripts/webui/data_inspector/store_browser.py`) answer bounded questions:
+the stores and their groups, a filtered page of rows (name glob or substring,
+object name, PathID, CAB), or one read-only statement with `inflate(data)` and
+`doc(data, '$.path')`, capped at 500 rows and 15 s. Connections are read-only
+with an authorizer refusing writes and ATTACH. Documents are fetched from the
+URLs `serve.py` already answers from the stores, so the viewer shows exact
+exported bytes: JSON as a lazy tree, text as text, anything else as hex. The
+viewer reads no schema; PathID "find" is an index lookup, not a resolved
+reference (a PPtr with a non-zero `m_FileID` points into another file). A
+static package has no API and opens in Decoded mode. Assets no longer lists
+exported JSON, because every such document is a store row here.
+
+The rest of this guide is the Decoded mode contract.
 
 Publishers cover two kinds of source. Families with a maintained
 `scripts/game_data/` reader -- `AnimationConfig`, NPC montages, `LevelConfig`,

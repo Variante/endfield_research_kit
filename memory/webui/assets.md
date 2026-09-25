@@ -2,8 +2,10 @@
 
 ## Purpose
 
-Assets inventories browser-visible exported images, video, JSON, OBJ, FBX, and
-related resource metadata. It is a resource browser and evidence source for
+Assets inventories browser-visible exported images, video, OBJ, FBX, and
+related resource metadata. Exported JSON documents are not listed: they are
+rows of the export's Unity object store, browsed on the Data page, and Assets
+links a material to its Data-page document. It is a resource browser and evidence source for
 other pages, not proof that an asset was used at runtime.
 
 ## Inputs and recovery flow

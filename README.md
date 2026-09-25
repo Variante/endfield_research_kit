@@ -68,6 +68,9 @@ space and memory than the initial Story/Text setup.
   and playback evidence.
 - **Assets** browses exported images, videos, materials, models, and their
   recovered references.
+- **Data** browses every exported Unity document and packed game file as a
+  file viewer or with read-only SQL (needs `python serve.py`), plus decoded
+  datasets.
 - **Text** provides searchable localized tables and source records.
 - **Updates** compares exported game data across two saved versions.
 

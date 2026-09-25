@@ -16,7 +16,7 @@ and behavior contracts remain in [`../webui/README.md`](../webui/README.md).
 | Assets | [`webui/assets.md`](webui/assets.md) | `scripts.webui.assets.build_assets` |
 | Text | [`webui/text.md`](webui/text.md) | `scripts.webui.story` |
 | Updates | [`webui/updates.md`](webui/updates.md) | `scripts.webui.updates.build_updates` |
-| Decoded Data Inspector (debug-only) | [`webui/data_inspector.md`](webui/data_inspector.md) | `scripts.webui.data_inspector.build_data_inspector` |
+| Data page (export stores, decoded datasets) | [`webui/data_inspector.md`](webui/data_inspector.md) | `scripts.webui.data_inspector.build_data_inspector` |
 
 Mission Pipeline is a standalone recovery workflow, not a WebUI page or normal
 export stage. Retired Progression and Combat & Projectiles pages stay retired;
@@ -50,7 +50,7 @@ The canonical full flow is:
    optionally asset/audio outputs.
 3. Refresh Story evidence and build localized Story and Text data.
 4. Run post-Story builders in dependency-safe phases: Map, Characters, the
-   debug-only Decoded Data Inspector,
+   Data page decoded datasets,
    Gameplay/projectiles, optional Assets/audio, joined sidecars, curated source
    graph, then graph consumers.
 5. Write step timings and process-tree memory benchmarks under
@@ -88,7 +88,7 @@ succeed.
   sidecars while their ownership model is under review; audio investigation
   remains on the Audio page.
   - Ordinary long-list pages (Characters, Gameplay, Audio, Assets, Text,
-    Updates, and the debug-only Data Inspector) share paginated left lists and a
+    Updates, and the Data page) share paginated left lists and a
     persisted custom 1-10000-items-per-page input, with 50/100/200/500 offered
     as suggestions, plus a direct page-number input that clamps to the valid
     range. Filtering and sorting return to the first page; Story and Map retain

@@ -536,7 +536,9 @@ The `objects` table carries `type, name, object_name, path_id, source_file`
 (the CAB) and `script_path_id` columns, all indexed; any other SQLite client
 can read it, and only the document body needs `zlib` to inflate.
 `python -m scripts.game_data.game_file_store` offers `stats`, `ls`, `cat`,
-`extract` and `verify` for the packed game files.
+`extract` and `verify` for the packed game files. The WebUI Data page browses
+both stores through `serve.py`'s read-only `/api/stores` endpoints
+(`scripts/webui/data_inspector/store_browser.py`).
 
 ## Main builders
 

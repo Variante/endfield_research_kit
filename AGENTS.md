@@ -447,7 +447,9 @@ Browser behavior:
   manual order-edit controls are behind `Show debug info`.
 - The Story reset button returns filters to Story sort while preserving
   expanded mission groups.
-- Normal semantic navigation exposes Gameplay and Characters. Mission Pipeline
+- Normal semantic navigation exposes Gameplay, Characters, and the Data page
+  (after Assets: export-store Files/SQL viewer plus decoded datasets; its
+  store modes need `serve.py`'s read-only `/api/stores` API). Mission Pipeline
   recovery is standalone and is no longer a WebUI page or export stage. The
   standalone Combat & Projectiles page is retired. Keep useful projectile
   behavior in Gameplay character skills. Do not attach audio or sound players

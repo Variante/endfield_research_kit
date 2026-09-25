@@ -13,7 +13,7 @@ its builder, generated contract, or frontend consumer.
 - [`updates.md`](updates.md): previous/current export comparison.
 - [`recovery.md`](recovery.md): per-block volume and per-file-type L1–L4
   recovery state, and the measured-versus-declared boundary the page enforces.
-- [`data_inspector.md`](data_inspector.md): generic decoded-dataset publication and debug inspection.
+- [`data_inspector.md`](data_inspector.md): the Data page: export-store file viewer and SQL console, plus decoded-dataset publication.
 
 One file here is not a page guide:
 

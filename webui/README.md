@@ -48,15 +48,14 @@ and the value of `document.body.dataset.activeView`.
 | Characters | `characters` | Identity groups, source evidence, related assets, and live overrides |
 | Gameplay | `gameplay` | Characters, equipment, enemies, items, progression, skills, projectiles, and assets |
 | Audio | `audio` | Wwise Events/media, authored contexts, decoded playback candidates, and recovery state |
-| Assets | `assets` | Exported images, models, materials, video, and metadata |
+| Assets | `assets` | Exported images, models, video, and metadata |
+| Data | `data-inspector` | Export stores (Unity documents, packed game files) as a file viewer and SQL console, plus decoded datasets |
 | Text | `reference` | Searchable localized table/reference rows |
 | Updates | `updates` | Exported game-data changes between two complete versions |
 
-`recovery` and `data-inspector` are two more, debug-only tabs revealed by
-`Show debug info`. Recovery shows block volume and each file type's L1-L4
-recovery state. `data-inspector`
-browses decoder output and mounted raw export sources. Keeping both behind the
-debug toggle keeps recovery internals out of normal semantic navigation.
+`recovery` is one more, debug-only tab revealed by `Show debug info`. It shows
+block volume and each file type's L1-L4 recovery state, which keeps recovery
+internals out of normal semantic navigation.
 
 Deep links are query parameters kept current with `history.replaceState`.
 `#<view>` also selects a tab: the retired `#projectiles` falls back to
@@ -70,7 +69,8 @@ Gameplay, and any other unknown hash falls back to Story.
 | `?asset=` | Assets entry by relative path |
 | `?audio=` + `?audioKind=` | Audio record (`events` or a media shard) |
 | `?gameplay=` + `?gameplayId=` + `?entry=` | Gameplay list, item, and sub-entry |
-| `?inspectDataset=` + `?inspect=` | Decoded Data Inspector dataset and record |
+| `?inspectDataset=` + `?inspect=` | Data page, Decoded mode: dataset and record |
+| `?dataMode=` + `?dataRoot=` + `?dataStore=` + `?dataGroup=` + `?dataName=` (+ `?dataQ=`, `?dataField=`) | Data page mode (`files`, `sql`, `decoded`), export (`previous`, omitted for current), store (`unity`, `game-files`), group, row, and search; build with `WebUI.dataPageUrl` / `dataPageUrlForRel` |
 
 Factory, World, Presentation, Progression, the standalone Combat & Projectiles
 page, and the Mission Pipeline page are retired; their useful progression,
@@ -97,7 +97,7 @@ Load order, as `index.html` declares it:
 | `src/features/reference/index.js` | localized Text Tables browser |
 | `src/features/updates/index.js` | Updates page |
   | `src/features/recovery/{index.js,style.css}` | debug-only Recovery progress page |
-| `src/features/data_inspector/{index.js,style.css}` | debug-only generic decoded-data browser |
+| `src/features/data_inspector/{index.js,stores.js,style.css}` | Data page: `stores.js` owns the mode switch, deep links, and the Files/SQL modes; `index.js` is the Decoded mode |
 
 Generated data belongs in `webui/data/`; user-managed inputs belong in
 `webui/overrides/`. Do not hand-edit generated JSON.
@@ -138,8 +138,16 @@ Builders may add compact sidecars, but each page must tolerate an absent
 optional sidecar and display an explicit degraded state when the omission
 matters. Schema changes must be coordinated with their frontend consumer.
 
-The Decoded Data Inspector contract is documented in
-[`memory/webui/data_inspector.md`](../memory/webui/data_inspector.md). Its
+The Data page contract is documented in
+[`memory/webui/data_inspector.md`](../memory/webui/data_inspector.md). Files
+and SQL modes read the export stores through the local server's read-only
+`/api/stores`, `/api/stores/rows` and `/api/stores/sql` endpoints
+(`scripts/webui/data_inspector/store_browser.py`) and fetch each document from
+its usual `/export_data/...` or `/export_previous/...` URL; a static package or
+an older `serve.py` has no API, so the page then opens in Decoded mode with an
+explanation. Assets no longer lists exported JSON: every such document is a
+store row, and Assets links a material to its Data-page document. The Decoded
+mode's
 sidebar is the shared list-page shell used by Story, Assets, Audio and
 Gameplay: header toggle plus reset, collapsible `.filter-section` chip groups
 (data family, decode status, source folder, tags), a filter splitter, a
