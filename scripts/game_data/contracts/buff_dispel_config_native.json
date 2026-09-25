@@ -1,0 +1,42 @@
+{
+  "schema": "endfield.buff-dispel-config-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "codeRegistrationVa": 6619194944,
+  "reviewedDependencies": ["buff_root_prefix_native.json"],
+  "methods": [
+    [102606, "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack", "Deserialize", 53280816],
+    [102581, "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack", "set___dispelConfig__"]
+  ],
+  "wrapperSetterParameterTypeIndex": 114949,
+  "ownerField": "Beyond.Gameplay.Core.BuffData::dispelConfig",
+  "valueType": "Beyond.Gameplay.Core.DispelConfig",
+  "valueTypeDefinition": 10053,
+  "valueTypeBoxedSize": 24,
+  "valueTypeRawSize": 8,
+  "valueFields": [
+    {"name": "canBeDispelled", "type": "bool", "runtimeOffset": 16, "wireOffset": 0},
+    {"name": "dispelledLevel", "type": "Beyond.Gameplay.Core.DispelLevel", "runtimeOffset": 20, "wireOffset": 4}
+  ],
+  "enumType": "Beyond.Gameplay.Core.DispelLevel",
+  "enumUnderlyingType": "int",
+  "sourceToFieldInstructions": [
+    [53281321, "837F3008", "require eight available source bytes"],
+    [53281334, "488B5F50", "load current source pointer"],
+    [53281338, "488B1B", "load raw eight-byte value"],
+    [53281353, "4883475008", "advance source pointer by eight"],
+    [53281358, "83474008", "advance consumed byte count by eight"],
+    [53281362, "83474408", "advance secondary byte count by eight"],
+    [53281391, "488998A8000000", "store value into BuffData.dispelConfig"]
+  ],
+  "evidenceBoundary": {
+    "exact": "On the pinned native build the root Deserialize method checks and copies eight raw source bytes into BuffData.dispelConfig, and the selected field-layout table places a bool at byte zero and a signed int32 enum at byte four. The three intervening bytes are preserved as padding.",
+    "direct": "The selected generated wrapper declares set___dispelConfig__, and current metadata names the two instance fields and the DispelLevel enum's int32 underlying value.",
+    "structuralOnly": "The child decoder reports stored bytes and values. It does not constrain padding contents or enum values to those currently observed in the corpus.",
+    "unresolved": "Runtime dispel decisions, enum effects, alternate native builds, and other BuffData naming blockers are outside this contract."
+  }
+}

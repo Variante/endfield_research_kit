@@ -1,0 +1,150 @@
+{
+  "schema": "endfield.skill-timeline-override-born-position-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 5,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "catalogContract": "levelscript_union_tags.json",
+  "dispatcher": {
+    "unionTag": 259,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59835728,
+    "routeWindow": {
+      "startRva": 59835728,
+      "endRva": 59835735,
+      "sha256": "60A686B1CC9FEEFE460701C4B1A55B05E1D20D5EDD284E699D6850EDEB65677E",
+      "boundary": "selected 0x0103 registered wrapper usage-cell load"
+    },
+    "usageCellRva": 218127264,
+    "usageRawHex": "3543032000000000",
+    "registeredTypeIndex": 106906,
+    "wrapperTypeDefinition": 16287,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_OverrideBornPosition_DataForMemoryPack"
+  },
+  "wrapper": {
+    "typeDefinition": 16287,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_OverrideBornPosition_DataForMemoryPack",
+    "parentTypeDefinition": 14293,
+    "parentTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack"
+  },
+  "methods": [
+    [
+      121596,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_OverrideBornPosition_DataForMemoryPack+Beyond_Gameplay_Core_OverrideBornPosition_DataForMemoryPackFormatter",
+      "Deserialize",
+      72581344
+    ],
+    [
+      121595,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_OverrideBornPosition_DataForMemoryPack",
+      "Deserialize",
+      72581440
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72581344,
+      "endRva": 72581440,
+      "sha256": "3583C2C008A05CA2EB4BC2340340C0EF5D51A749BAD245EE9FA86F582E452C58",
+      "boundary": "formatter forwarding and initialization"
+    },
+    {
+      "startRva": 72581440,
+      "endRva": 72581760,
+      "sha256": "CC02C7CC7F0BAD19AB7AB6C8895F18639368A4016196386828ABBFAF3152A428",
+      "boundary": "five source reads through normal return"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 72581568,
+    "hex": "4080FE05"
+  },
+  "setterMethods": [
+    [
+      121592,
+      "set___overrideRot__",
+      "System.Boolean"
+    ]
+  ],
+  "setterCallsites": [
+    {
+      "memberIndex": 4,
+      "methodIndex": 121592,
+      "callsiteRva": 72581739,
+      "callHex": "E860000000",
+      "targetRva": 72581840
+    }
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 72581584,
+      "sourceCallHex": "E8EB0677FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 72581625,
+      "sourceCallHex": "E8B20477FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 72581658,
+      "sourceCallHex": "E8910477FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 72581691,
+      "sourceCallHex": "E8700477FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "overrideRot",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 72581720,
+      "sourceCallHex": "E8630677FE",
+      "sourceTargetRva": 46827712
+    }
+  ],
+  "genericContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 72581612,
+      "instructionHex": "488B15351CB508",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Physical AbilityActionData tag 0x0103 dispatches to the selected OverrideBornPosition wrapper; the member-five header, ordered calls, setter and Priority generic context are pinned to the installed native build.",
+    "direct": "The stored record has the four common action slots followed by a Boolean overrideRot byte.",
+    "structuralOnly": "The name identifies a stored slot but does not prove a change to spawn position or rotation at runtime.",
+    "unresolved": "Live formatter branch selection, allocation/refill/error parity, and enclosing SkillData EOF remain separate."
+  }
+}

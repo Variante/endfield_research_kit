@@ -1,0 +1,86 @@
+{
+  "schema": "endfield.skill-timeline-tick-interval-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 385,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59828578,
+    "routeWindow": {
+      "startRva": 59828578,
+      "endRva": 59828628,
+      "sha256": "F9684DA91E61E428B28C1716CECC738156DE6915DDA5D904B36E157D63360BDC",
+      "boundary": "selected 0x0181 wrapper type usage and formatter route"
+    },
+    "usageCellRva": 218258408,
+    "usageRawHex": "7345032000000000",
+    "registeredTypeIndex": 107193,
+    "wrapperTypeDefinition": 16531,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack"
+  },
+  "methods": [
+    [123534, "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack", "Deserialize", 67470256],
+    [123535, "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPack+Beyond_Gameplay_Core_TickIntervalAction_DataForMemoryPackFormatter", "Deserialize", 67470160]
+  ],
+  "memberCountInstruction": {"rva": 67470384, "hex": "4080FE09"},
+  "codeWindows": [
+    {
+      "startRva": 67470256,
+      "endRva": 67470722,
+      "sha256": "3BD8CEE3D82D04ECA8A2D99E75537EAAA060F21530E118B35F8CAA441FD00AFF",
+      "boundary": "selected reader through nine ordered member reads and normal RET"
+    },
+    {
+      "startRva": 67470816,
+      "endRva": 67471056,
+      "sha256": "19567A5F04F70BADE22E94925C5B04AA7D21D79CDC9D9F3132B632E0CEBFC92D",
+      "boundary": "selected member assignment helper bodies"
+    },
+    {
+      "startRva": 67470160,
+      "endRva": 67470253,
+      "sha256": "5679782FD925BE7E009E1D74B969EC8FABC4C61D42EA8511E64C92E4E3859ACE",
+      "boundary": "formatter initialization and forwarding to selected reader"
+    }
+  ],
+  "setterMethods": [
+    [123527, "set___actionOnTick__", "Beyond.Gameplay.Core.SequenceActionData"],
+    [123528, "set___executeEachFrame__", "System.Boolean"],
+    [123529, "set___tickInterval__", "System.Single"],
+    [123530, "set___tickIntervalBlackboardKey__", "System.String"],
+    [123531, "set___useTickIntervalBlackboardKey__", "System.Boolean"]
+  ],
+  "orderedSourceReads": [
+    {"memberIndex": 0, "fieldName": "isEnable", "readKind": "bool-byte", "sourceCallsiteRva": 67470400, "sourceCallHex": "E87B04C5FE", "sourceTargetRva": 46827712},
+    {"memberIndex": 1, "fieldName": "priorityLevel", "readKind": "scalar32", "sourceCallsiteRva": 67470441, "sourceCallHex": "E84202C5FE", "sourceTargetRva": 46827184},
+    {"memberIndex": 2, "fieldName": "priorityOffset", "readKind": "scalar32", "sourceCallsiteRva": 67470474, "sourceCallHex": "E82102C5FE", "sourceTargetRva": 46827184},
+    {"memberIndex": 3, "fieldName": "serverActionIndex", "readKind": "scalar32", "sourceCallsiteRva": 67470507, "sourceCallHex": "E80002C5FE", "sourceTargetRva": 46827184},
+    {"memberIndex": 4, "fieldName": "actionOnTick", "readKind": "sequence-profile", "sourceCallsiteRva": 67470547, "sourceCallHex": "E8B8D7D4FE", "sourceTargetRva": 47864976},
+    {"memberIndex": 5, "fieldName": "executeEachFrame", "readKind": "bool-byte", "sourceCallsiteRva": 67470581, "sourceCallHex": "E8C603C5FE", "sourceTargetRva": 46827712},
+    {"memberIndex": 6, "fieldName": "tickInterval", "readKind": "float32-bits", "sourceCallsiteRva": 67470615, "sourceCallHex": "E89406C5FE", "sourceTargetRva": 46828464},
+    {"memberIndex": 7, "fieldName": "tickIntervalBlackboardKey", "readKind": "byte-payload", "sourceCallsiteRva": 67470649, "sourceCallHex": "E8C201C5FE", "sourceTargetRva": 46827264},
+    {"memberIndex": 8, "fieldName": "useTickIntervalBlackboardKey", "readKind": "bool-byte", "sourceCallsiteRva": 67470683, "sourceCallHex": "E86003C5FE", "sourceTargetRva": 46827712}
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 4,
+      "instructionRva": 67470534,
+      "instructionHex": "488B159BC9F908",
+      "cellRva": 218058344,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [428464, -1, 16408],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "typeKind": 18
+    }
+  ],
+  "evidenceBoundary": "exact selected-build 0x0181 dispatcher and ordered source reads; nested SequenceActionData remains bounded by the caller's separately reviewed action routes, and this contract alone does not establish whole-file EOF"
+}

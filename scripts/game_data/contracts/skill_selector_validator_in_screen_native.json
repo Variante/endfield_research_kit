@@ -1,0 +1,73 @@
+{
+  "schema": "endfield.skill-selector-validator-in-screen-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 0,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 7,
+    "switchTableRva": 66919388,
+    "switchEntryCount": 13,
+    "switchTableSha256": "C738323AAA09F0D3E1BA108B8FFD20300DB9249389D6CFAA684B8D2FC206C11F",
+    "switchTargetRva": 83215792,
+    "routeWindow": {
+      "startRva": 83215792,
+      "endRva": 83215866,
+      "sha256": "33BAD25825476F2179B9679B4708CE225747E65C66A72B13246ABB6F9FB89FE4",
+      "boundary": "selected validator tag-7 existing, new, and null-wrapper branches"
+    },
+    "usageCellRva": 217991520,
+    "usageRawHex": "4F44032000000000",
+    "registeredTypeIndex": 107047,
+    "wrapperTypeDefinition": 23011,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InScreenValidator_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      166938,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InScreenValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_InScreenValidator_DataForMemoryPackFormatter",
+      "Deserialize",
+      158089684
+    ],
+    [
+      166937,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InScreenValidator_DataForMemoryPack",
+      "Deserialize",
+      158089912
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 158089684,
+      "endRva": 158089773,
+      "sha256": "69AB71E69B13B639EE73D747E83CCA5AB9E75B96B2673B6C346D9B9015B42EA1",
+      "boundary": "formatter forwarding through complete JMP"
+    },
+    {
+      "startRva": 158089912,
+      "endRva": 158090149,
+      "sha256": "CAB4C3CBF2F3D30356539FA2405F71D255F4A5E0FC5BCECE1747EA4634345CC3",
+      "boundary": "member-zero header, normal and FF branches through RET"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 158090075,
+    "hex": "4084FF"
+  },
+  "sourceHeaderRead": {
+    "sourceCallsiteRva": 158090008,
+    "sourceCallHex": "E843455EF9",
+    "sourceTargetRva": 46827616
+  },
+  "setterMethods": [],
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "Selected SelectorValidator tag 0x0007, wrapper identity, member-zero header check and absence of member reads are pinned to the installed native inputs.",
+    "direct": "The wire profile is one-byte union tag followed by either an FF null wrapper or a zero-member header byte.",
+    "structuralOnly": "The stored validator type does not establish whether a target passes the in-screen check at runtime.",
+    "unresolved": "Live formatter selection, allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}

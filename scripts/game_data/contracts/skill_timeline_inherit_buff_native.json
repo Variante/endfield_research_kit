@@ -1,0 +1,213 @@
+{
+  "schema": "endfield.skill-timeline-inherit-buff-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 9,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 210,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59831378,
+    "routeWindow": {
+      "startRva": 59831378,
+      "endRva": 59831428,
+      "sha256": "54670F6611078D47B8A5FCD632F9EDA4A9AC32F8428C40BD0F0B405BD6B7CE5C",
+      "boundary": "selected 0x00D2 registered wrapper route"
+    },
+    "usageCellRva": 218752528,
+    "usageRawHex": "6F41032000000000",
+    "registeredTypeIndex": 106679,
+    "wrapperTypeDefinition": 16181,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_InheritBuffAction_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      120746,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_InheritBuffAction_DataForMemoryPack",
+      "Deserialize",
+      69601232
+    ],
+    [
+      120747,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_InheritBuffAction_DataForMemoryPack+Beyond_Gameplay_Core_InheritBuffAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      69601136
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 69601360,
+    "hex": "4080FE09"
+  },
+  "codeWindows": [
+    {
+      "startRva": 69601232,
+      "endRva": 69601808,
+      "sha256": "F255911623DE5F4D43C76FAD0E01AC6B056555D2A7D57D05C109B7CB583DDA97",
+      "boundary": "selected nine-member reader through normal return, class initialization, and error rejoin"
+    },
+    {
+      "startRva": 69601136,
+      "endRva": 69601232,
+      "sha256": "FB607A464FFD697C4761EF70CC24872AC460FADF531770D55EC263C54F328E26",
+      "boundary": "formatter forwarding into selected reader"
+    }
+  ],
+  "setterMethods": [
+    [
+      120739,
+      "set___buffOwner__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ],
+    [
+      120740,
+      "set___finishByAction__",
+      "System.Boolean"
+    ],
+    [
+      120741,
+      "set___finishWithNextSkillIfNotInherited__",
+      "System.Boolean"
+    ],
+    [
+      120742,
+      "set___inheritSkillIdList__",
+      "<type-index:58896>"
+    ],
+    [
+      120743,
+      "set___targetBuffId__",
+      "System.String"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 69601376,
+      "sourceCallHex": "E85B80A4FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 69601417,
+      "sourceCallHex": "E8227EA4FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 69601450,
+      "sourceCallHex": "E8017EA4FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 69601483,
+      "sourceCallHex": "E8E07DA4FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "buffOwner",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 69601523,
+      "sourceCallHex": "E89853B4FE",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "finishByAction",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 69601557,
+      "sourceCallHex": "E8A67FA4FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "finishWithNextSkillIfNotInherited",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 69601591,
+      "sourceCallHex": "E8847FA4FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "inheritSkillIdList",
+      "readKind": "string-list",
+      "sourceCallsiteRva": 69601632,
+      "sourceCallHex": "E88BEF5BFF",
+      "sourceTargetRva": 58849520
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "targetBuffId",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 69601666,
+      "sourceCallHex": "E8797DA4FE",
+      "sourceTargetRva": 46827264
+    }
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 4,
+      "instructionRva": 69601510,
+      "instructionHex": "488B151B0EE008",
+      "cellRva": 218502920,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeKind": 18
+    },
+    {
+      "memberIndex": 7,
+      "instructionRva": 69601619,
+      "instructionHex": "488B151E37D908",
+      "cellRva": 218054776,
+      "usageRawHex": "33A412C000000000",
+      "methodSpecIndex": 610841,
+      "methodSpec": [
+        428462,
+        -1,
+        1828
+      ],
+      "argumentRawHex": "387F258D010000000000150000000000",
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "typeKind": 21
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "buff_ec_native.json",
+      "role": "reviewed TargetSettings finite profile"
+    },
+    {
+      "path": "buff_frontier8.json",
+      "role": "reviewed List<string> generic context and bounded list profile"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected build dispatch 0x00D2 joins the InheritBuffAction wrapper to a nine-member reader. Nine ordered source calls, two generic type contexts, body windows and member count are pinned.",
+    "direct": "The reader consumes a TargetSettings object, two booleans, List<string>, and a final string after four inherited primitive fields.",
+    "structuralOnly": "Stored skill IDs and buff ID are strings; this contract does not prove runtime inheritance or transition behavior.",
+    "unresolved": "Live formatter branch selection, allocation/refill/error parity, and enclosing SkillData EOF remain separate."
+  }
+}

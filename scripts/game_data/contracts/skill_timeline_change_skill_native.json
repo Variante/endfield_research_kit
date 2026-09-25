@@ -1,0 +1,354 @@
+{
+  "schema": "endfield.skill-timeline-change-skill-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 14,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 44,
+    "switchTargetRva": 59830928,
+    "usageCellRva": 218694096,
+    "usageRawHex": "FF3E032000000000",
+    "registeredTypeIndex": 106367,
+    "wrapperTypeDefinition": 15987,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangeSkillAction_DataForMemoryPack",
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "routeWindow": {
+      "startRva": 59830928,
+      "endRva": 59830978,
+      "sha256": "C39799FF9885B922D33D2225D894760F86A07A1B84C90DE0503D502755116FBA",
+      "boundary": "selected 0x002C registered wrapper route"
+    }
+  },
+  "methods": [
+    [
+      119245,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangeSkillAction_DataForMemoryPack+Beyond_Gameplay_Core_ChangeSkillAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      68732720
+    ],
+    [
+      119244,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChangeSkillAction_DataForMemoryPack",
+      "Deserialize",
+      68732816
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 68732944,
+    "hex": "4080FE0E"
+  },
+  "codeWindows": [
+    {
+      "startRva": 68732720,
+      "endRva": 68732813,
+      "sha256": "5F9B4E2D8FE7402BB9515EF5129BBEBAF69F90BAD4DB18EB1D3D1191F86252DC",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 68732816,
+      "endRva": 68733591,
+      "sha256": "AF8BDEB6894F7668C06CA2F06A1CCDF7C893645E19F9A84D25FCD47A212B0C49",
+      "boundary": "header14 normal source reads and initialization through rejoin"
+    },
+    {
+      "startRva": 83410584,
+      "endRva": 83410597,
+      "sha256": "182BBC9267C50107192129C9F7D89F33EC97676A987B5FF6FAAC52C215A12787",
+      "boundary": "existing output rejoin"
+    },
+    {
+      "startRva": 83410653,
+      "endRva": 83410674,
+      "sha256": "AAF3574C19E8E4EB6BC8EF2C50D6E7B138C240F1A5F319187BCE0609195EAACD",
+      "boundary": "FF clear and epilogue rejoin"
+    }
+  ],
+  "setterMethods": [
+    [
+      119232,
+      "set___cacheTime__",
+      "Beyond.Blackboard+BlackboardDouble"
+    ],
+    [
+      119233,
+      "set___duration__",
+      "Beyond.Blackboard+BlackboardDouble"
+    ],
+    [
+      119234,
+      "set___inheritOriginSkillCdProgress__",
+      "System.Boolean"
+    ],
+    [
+      119235,
+      "set___lifeTimeType__",
+      "Beyond.Gameplay.Core.ChangeSkillAction+LifeTimeType"
+    ],
+    [
+      119236,
+      "set___overrideCacheTime__",
+      "System.Boolean"
+    ],
+    [
+      119237,
+      "set___revertedSkillId__",
+      "System.String"
+    ],
+    [
+      119238,
+      "set___skillSlot__",
+      "Beyond.Gameplay.Core.ChangeSkillAction+SkillSlot"
+    ],
+    [
+      119239,
+      "set___skillSource__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ],
+    [
+      119240,
+      "set___specificRevertedSkillId__",
+      "System.Boolean"
+    ],
+    [
+      119241,
+      "set___targetSkillId__",
+      "System.String"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68732960,
+      "sourceCallHex": "E89BC0B1FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 68733001,
+      "sourceCallHex": "E862BEB1FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 68733034,
+      "sourceCallHex": "E841BEB1FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 68733067,
+      "sourceCallHex": "E820BEB1FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "cacheTime",
+      "readKind": "scalar-payload",
+      "sourceCallsiteRva": 68733107,
+      "sourceCallHex": "E8D893C1FE",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "duration",
+      "readKind": "scalar-payload",
+      "sourceCallsiteRva": 68733148,
+      "sourceCallHex": "E8AF93C1FE",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "inheritOriginSkillCdProgress",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68733182,
+      "sourceCallHex": "E8BDBFB1FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "lifeTimeType",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 68733223,
+      "sourceCallHex": "E884BDB1FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "overrideCacheTime",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68733256,
+      "sourceCallHex": "E873BFB1FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 9,
+      "fieldName": "revertedSkillId",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 68733290,
+      "sourceCallHex": "E891BDB1FE",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 10,
+      "fieldName": "skillSlot",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 68733331,
+      "sourceCallHex": "E818BDB1FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 11,
+      "fieldName": "skillSource",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 68733371,
+      "sourceCallHex": "E8D092C1FE",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 12,
+      "fieldName": "specificRevertedSkillId",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68733405,
+      "sourceCallHex": "E8DEBEB1FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 13,
+      "fieldName": "targetSkillId",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 68733439,
+      "sourceCallHex": "E8FCBCB1FE",
+      "sourceTargetRva": 46827264
+    }
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 68732988,
+      "instructionHex": "488B15E5D5EF08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "memberIndex": 4,
+      "instructionRva": 68733094,
+      "instructionHex": "488B15737DE608",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "memberIndex": 5,
+      "instructionRva": 68733135,
+      "instructionHex": "488B154A7DE608",
+      "cellVa": 6660507168,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "memberIndex": 7,
+      "instructionRva": 68733210,
+      "instructionHex": "488B159738F008",
+      "cellVa": 6661145016,
+      "usageRawHex": "51E712C000000000",
+      "methodSpecIndex": 619432,
+      "methodSpec": [
+        428448,
+        -1,
+        42434
+      ],
+      "argumentRawHex": "58240000000000000000118000000000",
+      "typeDefinition": 9304,
+      "typeName": "Beyond.Gameplay.Core.ChangeSkillAction+LifeTimeType",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "memberIndex": 10,
+      "instructionRva": 68733318,
+      "instructionHex": "488B153338F008",
+      "cellVa": 6661145024,
+      "usageRawHex": "53E712C000000000",
+      "methodSpecIndex": 619433,
+      "methodSpec": [
+        428448,
+        -1,
+        42435
+      ],
+      "argumentRawHex": "57240000000000000000118000000000",
+      "typeDefinition": 9303,
+      "typeName": "Beyond.Gameplay.Core.ChangeSkillAction+SkillSlot",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "memberIndex": 11,
+      "instructionRva": 68733358,
+      "instructionHex": "488B15534DED08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected build SkillData dispatch 0x002C joins ChangeSkillAction to its fourteen-member native wrapper. Ordered calls, six generic contexts, body windows, and member-count instruction are pinned.",
+    "direct": "The source reads inherited bool and three scalar32 values, two BlackboardDouble payloads, bool, LifeTimeType scalar32, bool, revertedSkillId byte payload, SkillSlot scalar32, TargetSettings, bool, and targetSkillId byte payload in order. Independently pinned Buff EC/B2 readers supply finite child framing.",
+    "structuralOnly": "Stored IDs and timing values do not prove runtime skill switching, cooldown semantics, or target selection.",
+    "unresolved": "Live formatter branch selection, native refill/error parity, and enclosing SkillData EOF remain separate."
+  }
+}

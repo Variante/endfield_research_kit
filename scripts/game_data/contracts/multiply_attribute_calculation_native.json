@@ -1,0 +1,64 @@
+{
+  "schema": "endfield.multiply-attribute-calculation-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "ownerType": "Beyond.Gameplay.Core.MultiplyAttributeCalculation",
+  "methods": {
+    "evaluate": [61082, "Beyond.Gameplay.Core.MultiplyAttributeCalculation", "Evaluate", "0x4891320"],
+    "getAttribute": [60906, "Beyond.Gameplay.Core.CalculationBase", "GetAttribute", "0x4891430"],
+    "blackboardValue": [1021, "Beyond.ActionBlackboardExtensions", "GetValue", "0x30ff5e0"],
+    "patchCheck": [102181, "IFix.WrappersManagerImpl", "IsPatched", "0x2c97970"]
+  },
+  "fields": [
+    {"name": "valueSource", "type": "Beyond.Gameplay.Core.ValueSource", "offset": 16, "token": "0x0400af6e"},
+    {"name": "attributeType", "type": "Beyond.GEnums.AttributeType", "offset": 20, "token": "0x0400af6f"},
+    {"name": "multiplier", "type": "Beyond.Blackboard+BlackboardDouble", "offset": 24, "token": "0x0400af70"},
+    {"name": "addition", "type": "Beyond.Blackboard+BlackboardDouble", "offset": 32, "token": "0x0400af71"}
+  ],
+  "valueSourceEnum": {
+    "type": "Beyond.Gameplay.Core.ValueSource",
+    "members": {"AttackerOrHealer": 0, "Target": 1}
+  },
+  "codeWindows": [
+    {
+      "startRva": "0x4891320",
+      "endRva": "0x489142b",
+      "sha256": "5971ede230fecfafdb6cffa45c1080c6443cf355738368e492e1a49ea4e3b8e6",
+      "boundary": "complete contiguous Evaluate entry and nonpatch arithmetic body"
+    },
+    {
+      "startRva": "0x504ba96",
+      "endRva": "0x504baa6",
+      "sha256": "79aae838b38406a7d6e1c1bf46a4491fa85c7101d9fa4cb08624ab7ff163f1ba",
+      "boundary": "split target-source branch reached from Evaluate"
+    }
+  ],
+  "instructionWindows": [
+    ["0x4891383", "488b4b184533c0488bd7e84ee286fe", "multiplier field passed with blackboard to GetValue"],
+    ["0x4891392", "837b10000f28f00f85f7a67b00", "valueSource zero keeps attacker; nonzero branches to target fragment"],
+    ["0x489139f", "4c8b8c24b8000000448b4314488bd6488bcb48c744242000000000e871000000", "selected source, attributeType and override array reach GetAttribute"],
+    ["0x48913bf", "488b4b204533c0488bd7440f28c0e80ee286fe", "addition field passed with blackboard to GetValue"],
+    ["0x48913e6", "0f57c9f30f5acef2410f59c80f57c0f30f5ac7f20f58c166480f7ec0", "GetValue multiplier times GetAttribute result plus GetValue addition, then return bits"],
+    ["0x504ba96", "4c8b8c24c0000000488bf5e9015984ff", "nonzero valueSource selects defender and defender override array"]
+  ],
+  "calls": [
+    {"siteRva": "0x4891376", "method": "patchCheck"},
+    {"siteRva": "0x489138d", "method": "blackboardValue"},
+    {"siteRva": "0x48913ba", "method": "getAttribute"},
+    {"siteRva": "0x48913cd", "method": "blackboardValue"}
+  ],
+  "branches": [
+    {"siteRva": "0x489137d", "opcode": "0f85", "targetRva": "0x504baed"},
+    {"siteRva": "0x4891399", "opcode": "0f85", "targetRva": "0x504ba96"},
+    {"siteRva": "0x504baa1", "opcode": "e9", "targetRva": "0x48913a7"}
+  ],
+  "evidenceBoundary": {
+    "exact": "The named Evaluate method, selected runtime fields and enum members, direct call targets, control-flow branches, and reviewed nonpatch code bytes match this GameAssembly and metadata pair byte for byte.",
+    "direct": "On the unpatched Evaluate path, valueSource 0 selects attacker and nonzero selects defender; attributeType and that selected AbilitySystem reach GetAttribute. The returned attribute is multiplied by the resolved multiplier BlackboardDouble, then the resolved addition BlackboardDouble is added.",
+    "conditional": "This conclusion applies only when the iFix IsPatched branch does not redirect Evaluate and when this calculation subtype is invoked.",
+    "unresolved": "The GetAttribute and BlackboardDouble provider internals, iFix patch state, DamageUnit branch activation, subsequent mitigation and final damage remain outside this contract."
+  }
+}

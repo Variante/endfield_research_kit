@@ -1,0 +1,126 @@
+{
+  "schema": "endfield.skill-timeline-throw-pickup-item-start-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 4,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 384,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59836128,
+    "routeWindow": {
+      "startRva": 59836128,
+      "endRva": 59836178,
+      "sha256": "18B6DC6C29C89BF35E5B6E67F3E294096AD64D08B2F5315D7A54987EBE4C2B78",
+      "boundary": "selected 0x0180 registered wrapper route through rejoin jump"
+    },
+    "usageCellRva": 218258560,
+    "usageRawHex": "6D45032000000000",
+    "registeredTypeIndex": 107190,
+    "wrapperTypeDefinition": 16529,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ThrowPickupItemStartAction_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      123518,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ThrowPickupItemStartAction_DataForMemoryPack",
+      "Deserialize",
+      72824864
+    ],
+    [
+      123519,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ThrowPickupItemStartAction_DataForMemoryPack+Beyond_Gameplay_Core_ThrowPickupItemStartAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      72824768
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 72824864,
+      "endRva": 72825215,
+      "sha256": "673580575931AEAE91F49639033044BB9AB5A3D810712D419FC8BDE663467E04",
+      "boundary": "four-member reader through normal return and error rejoin"
+    },
+    {
+      "startRva": 72824768,
+      "endRva": 72824861,
+      "sha256": "11362D1C0A07FD3D4729AB18BE1B8E476ACE0440C061D3360BCDB69D6FC45FDD",
+      "boundary": "formatter initialization and forwarding through tail jump"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 72824992,
+    "hex": "4080FE04"
+  },
+  "setterMethods": [],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 72825008,
+      "sourceCallHex": "E80B5073FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 72825049,
+      "sourceCallHex": "E8D24D73FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 72825082,
+      "sourceCallHex": "E8B14D73FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 72825111,
+      "sourceCallHex": "E8944D73FE",
+      "sourceTargetRva": 46827184
+    }
+  ],
+  "genericContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 72825036,
+      "instructionHex": "488B155565B108",
+      "cellRva": 218668584,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected AbilityActionData tag 0x0180 resolves to ThrowPickupItemStartAction.Data; the registered wrapper, inherited four-member check, ordered calls and Priority generic type match the pinned native inputs.",
+    "direct": "The source consumes a bool byte, Priority enum DWORD and two scalar DWORDs in member order.",
+    "structuralOnly": "The wrapper stores only the common four-field prefix; the action name does not establish runtime pickup behavior.",
+    "unresolved": "Live provider choice, allocation/refill/error parity and enclosing SkillData closure require independent checks."
+  },
+  "wrapper": {
+    "typeDefinition": 16529,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ThrowPickupItemStartAction_DataForMemoryPack",
+    "parentTypeDefinition": 14293,
+    "parentTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack"
+  }
+}

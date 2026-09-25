@@ -1,0 +1,101 @@
+{
+  "schema": "endfield.skill-timeline-ignore-model-interval-check-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 4,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 208,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59853990,
+    "routeWindow": {
+      "startRva": 59853990,
+      "endRva": 59854040,
+      "sha256": "56D2D010B4B399CC4E392D09811DDAC33D5E711AFF0243DD4B171843339BA272",
+      "boundary": "selected 0x00D0 registered wrapper route"
+    },
+    "usageCellRva": 218755408,
+    "usageRawHex": "6941032000000000",
+    "registeredTypeIndex": 106676,
+    "wrapperTypeDefinition": 16177,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_IgnoreModelIntervalCheck_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      120714,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_IgnoreModelIntervalCheck_DataForMemoryPack",
+      "Deserialize",
+      74398560
+    ],
+    [
+      120715,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_IgnoreModelIntervalCheck_DataForMemoryPack+Beyond_Gameplay_Core_IgnoreModelIntervalCheck_DataForMemoryPackFormatter",
+      "Deserialize",
+      74398464
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 74398739,
+    "hex": "4080FE04"
+  },
+  "codeWindows": [
+    {
+      "startRva": 74398464,
+      "endRva": 74398560,
+      "sha256": "6CF30BC47E36165F696673819431E37FB7C4C551F78E34F430303503078268E7",
+      "boundary": "formatter forwarding into selected reader"
+    },
+    {
+      "startRva": 74398560,
+      "endRva": 74398889,
+      "sha256": "8E900A45509475A5E118AD777E29B1077FFAA01BB6539471FE727B9EBFD45BEA",
+      "boundary": "selected four-member reader through normal return and error rejoin"
+    }
+  ],
+  "setterMethods": [],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 74398755,
+      "sourceCallHex": "E8984C5BFE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 74398792,
+      "sourceCallHex": "E8634A5BFE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 74398821,
+      "sourceCallHex": "E8464A5BFE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 74398850,
+      "sourceCallHex": "E8294A5BFE",
+      "sourceTargetRva": 46827184
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected build dispatch 0x00D0 joins IgnoreModelIntervalCheck to its four-member wrapper and formatter. Four ordered source calls, body windows, and member count are pinned.",
+    "direct": "The reader consumes isEnable as one byte, then priorityLevel, priorityOffset, and serverActionIndex as scalar32 in generated member order.",
+    "structuralOnly": "The stored bytes do not establish the runtime interval check or the priority enum meaning.",
+    "unresolved": "Live formatter branch selection, refill/error parity, and enclosing SkillData EOF remain separate."
+  }
+}

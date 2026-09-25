@@ -378,12 +378,13 @@ def frame_skill_exact_timeline_action_group_profile(
     limit: int,
     *,
     action_group_end: int,
+    timeline_count: int = 1,
 ) -> dict[str, Any]:
-    """Advance after an exactly closed one-record ``timelineActions`` field.
+    """Advance after an exactly closed ``timelineActions`` field.
 
     The caller owns the nested TimelineActionData proof.  This entry point
     rechecks only the enclosing SkillData/ActionGroupData headers and the
-    empty-passive, one-timeline list counts before using that exact endpoint.
+    empty-passive and exact timeline list counts before using that endpoint.
     """
     if (
         limit <= action_group_end
@@ -393,14 +394,48 @@ def frame_skill_exact_timeline_action_group_profile(
         or data[0] != SKILL_MEMBER_COUNT
         or data[1] != 2
         or struct.unpack_from("<i", data, 2)[0] != 0
-        or struct.unpack_from("<i", data, 6)[0] != 1
+        or type(timeline_count) is not int
+        or timeline_count <= 0
+        or struct.unpack_from("<i", data, 6)[0] != timeline_count
     ):
         return {"status": "not-applicable", "namedFields": [], "parserCursor": 0}
     return _frame_skill_after_exact_action_group_profile(
         data,
         limit,
         action_group_end=action_group_end,
-        action_group_kind="ActionGroupData.exact-one-timeline-action-object",
+        action_group_kind=(
+            "ActionGroupData.exact-one-timeline-action-object"
+            if timeline_count == 1 else "ActionGroupData.exact-multiple-timeline-action-object"
+        ),
+    )
+
+
+def frame_skill_exact_passive_action_group_profile(
+    data: bytes,
+    limit: int,
+    *,
+    action_group_end: int,
+    passive_count: int,
+) -> dict[str, Any]:
+    """Advance after a proved passive list and zero timeline count."""
+    if (
+        limit <= action_group_end
+        or action_group_end <= 10
+        or limit > len(data)
+        or len(data) < action_group_end
+        or data[0] != SKILL_MEMBER_COUNT
+        or data[1] != 2
+        or type(passive_count) is not int
+        or passive_count <= 0
+        or struct.unpack_from("<i", data, 2)[0] != passive_count
+        or struct.unpack_from("<i", data, action_group_end - 4)[0] != 0
+    ):
+        return {"status": "not-applicable", "namedFields": [], "parserCursor": 0}
+    return _frame_skill_after_exact_action_group_profile(
+        data,
+        limit,
+        action_group_end=action_group_end,
+        action_group_kind="ActionGroupData.exact-passive-map-list-empty-timeline",
     )
 
 

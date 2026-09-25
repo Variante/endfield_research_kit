@@ -1,0 +1,46 @@
+{
+  "schema": "endfield.skill-timeline-check-heal-tag-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 5,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 99,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59835078,
+    "routeWindow": {
+      "startRva": 59835078,
+      "endRva": 59835085,
+      "sha256": "590960AD527FF06FF7063B820887746BDF3E946391E8C6E8D738F9FD2D2EECD7",
+      "boundary": "selected 0x0063 dispatcher usage-cell load"
+    },
+    "usageCellRva": 218341160,
+    "usageRawHex": "F13F032000000000",
+    "registeredTypeIndex": 106488,
+    "wrapperTypeDefinition": 16637,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckHealTag_DataForMemoryPack"
+  },
+  "memberCountInstruction": {"rva": 72494096, "hex": "4080FE05"},
+  "orderedSourceReads": [
+    {"memberIndex": 0, "fieldName": "isEnable", "readKind": "bool-byte", "sourceCallsiteRva": 72494112, "sourceCallHex": "E89B5C78FE", "sourceTargetRva": 46827712},
+    {"memberIndex": 1, "fieldName": "priorityLevel", "readKind": "enum32", "sourceCallsiteRva": 72494153, "sourceCallHex": "E8625A78FE", "sourceTargetRva": 46827184},
+    {"memberIndex": 2, "fieldName": "priorityOffset", "readKind": "scalar32", "sourceCallsiteRva": 72494186, "sourceCallHex": "E8415A78FE", "sourceTargetRva": 46827184},
+    {"memberIndex": 3, "fieldName": "serverActionIndex", "readKind": "scalar32", "sourceCallsiteRva": 72494219, "sourceCallHex": "E8205A78FE", "sourceTargetRva": 46827184},
+    {"memberIndex": 4, "fieldName": "query", "readKind": "query-profile", "sourceCallsiteRva": 72494264, "sourceCallHex": "E8639981FF", "sourceTargetRva": 64210464}
+  ],
+  "setterMethods": [[124291, "set___query__", "Beyond.Gameplay.Core.GameplayTagQuery"]],
+  "sourceContract": "buff_63_native.json",
+  "queryProfileContract": "buff_b4_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "The selected AbilityActionData tag, registered wrapper, five-member header, five ordered source calls and query setter are pinned to the current installed native inputs.",
+    "direct": "The selected reader takes a byte, three raw DWORDs and a GameplayTagQuery profile; the nested context and reused query profile give a nullable header-two query with a DWORD and bounded nullable DWORD list.",
+    "structuralOnly": "The finite reader preserves query null, list null and empty-list states without interpreting heal-tag evaluation.",
+    "unresolved": "Live formatter branch selection, native allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}

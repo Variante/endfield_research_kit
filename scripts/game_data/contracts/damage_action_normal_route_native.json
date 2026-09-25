@@ -1,0 +1,75 @@
+{
+  "schema": "endfield.damage-action-normal-route-native-contract.v2",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "methods": {
+    "normal": [58154, "Beyond.Gameplay.Core.DamageAction", "_CalculateDamageResultForNormalEntity", "0x3543110"],
+    "blackboardValue": [1021, "Beyond.ActionBlackboardExtensions", "GetValue", "0x30ff5e0"],
+    "patchCheck": [102181, "IFix.WrappersManagerImpl", "IsPatched", "0x2c97970"],
+    "getAttribute": [60906, "Beyond.Gameplay.Core.CalculationBase", "GetAttribute", "0x4891430"],
+    "getAttributes": [56128, "Beyond.Gameplay.Core.AbilitySystem", "get_attributes", "0x3201190"],
+    "attributeValue": [60513, "Beyond.Gameplay.Core.Attributes", "GetValue", "0x2d18740"]
+  },
+  "normalParameters": [
+    ["target", "Beyond.Gameplay.Core.AbilitySystem"],
+    ["attacker", "Beyond.Gameplay.Core.AbilitySystem"],
+    ["damageUnit", "Beyond.Gameplay.Core.DamageAction+DamageUnit"],
+    ["index", "int"],
+    ["damagePackData", "Beyond.Gameplay.Core.DamagePackData"],
+    ["serverDetails", "Proto.BATTLE_DAMAGE_DETAIL"],
+    ["calcSucceed", "bool"]
+  ],
+  "normalReturnType": "Beyond.Gameplay.Core.CalcResult",
+  "fields": [
+    ["Beyond.Gameplay.Core.DamageAction+DamageUnit", "simpleCalculation", "bool", 76, "0x0400a661"],
+    ["Beyond.Gameplay.Core.DamageAction+DamageUnit", "atkScale", "Beyond.Blackboard+BlackboardDouble", 80, "0x0400a662"],
+    ["Beyond.Gameplay.Core.DamageAction+DamageUnit", "atkCalculation", "Beyond.Gameplay.Core.CalculationBase", 88, "0x0400a663"],
+    ["Beyond.Gameplay.Core.DamageAction+DamageUnit", "takeAtkSnapshot", "bool", 96, "0x0400a664"],
+    ["Beyond.Gameplay.Core.DamagePackData", "attackerAttributes", "double[]", 136, "0x0400aef6"]
+  ],
+  "damagePackDataByref": true,
+  "damagePackDataUnboxedAttackerAttributesOffset": 120,
+  "codeWindows": [
+    {
+      "startRva": "0x3543110",
+      "endRva": "0x3543320",
+      "sha256": "8bcacb4db0bb9a724de9c8591833927a6fdcd5d2c12c0eb710bb412af1147390",
+      "boundary": "complete contiguous normal-entity entry, snapshot selector, simple scalar branch, calculation-object branch, debug rejoin and iFix bypass"
+    },
+    {
+      "startRva": "0x9cdc0",
+      "endRva": "0x9ce36",
+      "sha256": "9b59dc0a0374f08750044d4d186b988960a400cbaff12d54269cea9bd7d50616",
+      "boundary": "calculation-object helper entry and virtual-slot read only; full subtype dispatch remains outside this contract"
+    },
+    {
+      "startRva": "0x4891430",
+      "endRva": "0x4891492",
+      "sha256": "16ef652004b823534fcbd0cee354eaf3a61a4e17bb7e0fb59998653b2a4228cd",
+      "boundary": "GetAttribute main null-array selector, length check, indexed Double load, and iFix branch"
+    },
+    {
+      "startRva": "0x504bb5e",
+      "endRva": "0x504bb85",
+      "sha256": "5ad725b59493d910758db135a9831bc964b325a7d6000c0f06000232c9079154",
+      "boundary": "GetAttribute null-array fallback through source attributes.GetValue and return rejoin"
+    }
+  ],
+  "callTargets": [
+    ["0x3543153", "patchCheck"],
+    ["0x3543192", "blackboardValue"],
+    ["0x35432f0", "0x9cdc0"],
+    ["0x4891457", "patchCheck"],
+    ["0x504bb68", "getAttributes"],
+    ["0x504bb7a", "attributeValue"]
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected native pair has the named method and field identities, field offsets, parameter types, direct call targets, and reviewed body windows.",
+    "direct": "On the normally returning unpatched normal-entity path, takeAtkSnapshot is tested first. With that flag false, simpleCalculation true selects stored atkScale through GetValue and multiplies its Single result, converted to Double, by DamagePackData.attackerAttributes[2] as a Double, returning the intermediate CalcResult.value. With simpleCalculation false, a nonnull stored atkCalculation reaches the calculation-object dispatch helper instead of this simple scalar branch. In the selected unpatched CalculationBase.GetAttribute body, a supplied override array returns its indexed Double after a bounds check; only a null array falls back to source.attributes.GetValue(attributeType).",
+    "conditional": "The simple expression requires the normal-entity route, an invoked DamageUnit, an unpatched caller, takeAtkSnapshot false, simpleCalculation true, a nonnull attackerAttributes array with index 2, and normally returning provider/caller paths.",
+    "unresolved": "The authored action's execution, snapshot branch's semantics, blackboard provider result, override-array construction, live iFix state, calculation-object helper's complete dispatch, later processors, mitigation and final damage are not established."
+  }
+}

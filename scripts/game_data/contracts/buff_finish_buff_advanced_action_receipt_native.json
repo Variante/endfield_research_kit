@@ -1,0 +1,64 @@
+{
+  "schema": "endfield.buff-finish-buff-advanced-action-receipt-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sourceContract": "buff_b4_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "wrappedType": "Beyond.Gameplay.Core.FinishBuffAdvanced+Data",
+  "dispatcher": {
+    "unionTag": 180,
+    "encodingHex": "B4",
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59825228,
+    "routeWindow": {
+      "startRva": 59825228,
+      "endRva": 59825278,
+      "sha256": "B5E90ADDF5613407066A2BE2FA33B91C42917A7DA448F6F43C0AF7413A706D61"
+    },
+    "usageCellRva": 218760472,
+    "usageRawHex": "0341032000000000",
+    "registeredTypeIndex": 106625,
+    "wrapperTypeDefinition": 16117,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_FinishBuffAdvanced_DataForMemoryPack"
+  },
+  "wrapper": {
+    "typeDefinition": 16117,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_FinishBuffAdvanced_DataForMemoryPack",
+    "parentTypeDefinition": 14293,
+    "parentTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack",
+    "serializedMemberCount": 13,
+    "inheritedSetterMethods": [
+      [107646, "set___isEnable__", "System.Boolean"],
+      [107647, "set___priorityLevel__", "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"],
+      [107648, "set___priorityOffset__", "System.Int32"],
+      [107649, "set___serverActionIndex__", "System.Int32"]
+    ],
+    "setterMethods": [
+      [120256, "set___buffOwner__", "Beyond.Gameplay.Core.TargetSettings"],
+      [120257, "set___buffSettings__", "Beyond.Gameplay.Core.BuffFindSettings"],
+      [120258, "set___buffSource__", "Beyond.Gameplay.Core.TargetSettings"],
+      [120259, "set___finishAll__", "System.Boolean"],
+      [120260, "set___finishLayerCnt__", "Beyond.Blackboard+BlackboardDouble"],
+      [120261, "set___finishSource__", "Beyond.Gameplay.Core.TargetSettings"],
+      [120262, "set___isAbsorbed__", "System.Boolean"],
+      [120263, "set___isFinishedEarly__", "System.Boolean"],
+      [120264, "set___limitSource__", "System.Boolean"]
+    ]
+  },
+  "orderedReadKinds": [
+    "byte", "scalar32", "scalar32", "scalar32", "target-profile",
+    "finder-profile", "target-profile", "byte", "scalar-payload",
+    "target-profile", "byte", "byte", "byte"
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected AbilityActionData dispatcher maps physical short tag B4 to FinishBuffAdvanced and the pinned member13 wrapper. The dependency pins its direct source reader and finite nested profiles.",
+    "direct": "The inherited four setters and nine direct setters name the dependency's thirteen source members in the selected generated wrapper order.",
+    "structuralOnly": "BuffFindSettings, GameplayTagQuery, TargetSettings and BlackboardDouble interiors retain their finite anonymous profiles. A closed action span does not prove enclosing BuffData ownership or runtime finish behavior."
+  }
+}

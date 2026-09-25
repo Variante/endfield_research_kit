@@ -81,6 +81,49 @@ authored-ID dictionaries are dynamic; unknown fields, shapes, scalar types or
 discriminators fail closed. This establishes stored configuration structure,
 while runtime selection and render consumption remain separate evidence.
 
+`GameplayConfig/LevelMapMark.json` is a useful static map-marker source, but
+its numeric root key must not be promoted to a scene id. The named JSON schema
+closes the authored marker records: each carries a `basicData` template id,
+instance id and position, and most carry a typed `visibilityData` body. The
+reusable [`map_mark_relations.py`](../../scripts/game_data/map_mark_relations.py)
+audit checks those bytes against the complete JsonData corpus receipt, reruns
+the named schema readers, then joins each used template id to
+`Table/MapMarkTempTable.json`. Every used template in the selected corpus has
+one table row whose `markInfoId` agrees. The full template table also has
+variant keys such as `_invalid` and `_social` whose `markInfoId` names a base
+template, so a blanket table-key-equals-row-id rule is false. The audit keeps
+those variants out of the authored-marker join.
+
+The marker root keys separately meet `MapBriefInfoTable.subLevelTable` keys
+and some `MapRegionTable` keys; the latter rows explicitly carry a `levelId`.
+Neither relation supplies a scene for every marker group. A MapBrief map id
+must not be rewritten as a level id: multiple region level ids occur under the
+same MapBrief id. In the common `MapDetectorEntity` visibility variant, the
+stored `entityId` equals `basicData.markInstId` across the selected rows; that
+is an exact stored-value relation, not proof of when a marker appears or what
+server state controls it.
+
+There are two distinct individual-marker joins. The broader one requires an
+exact `basicData.markInstId` key and equal decoded position in
+`WorldEntityRegistry.worldEntityBriefInfos`, plus a matching used template.
+This assigns authored marker data to that existing registry entity; it does
+not assign an authored scene. The registry's numeric id bucket can plot the
+entity on Map, but that bucket is not a `LevelMapMark` scene field. A changed
+position or missing registry ID fails this annotation instead of being joined
+by proximity or by the marker's numeric group key.
+
+The narrower direct scene join uses `LevelShortIdTable` for individual markers.
+`LevelShortIdTable` is keyed by `sceneName`, and its `ids` dictionaries store
+logic IDs. The audit joins a marker's exact `basicData.markInstId` to one such
+ID, requires that scene in `LevelBasicInfoTable`, and then requires the same
+ID and exactly equal position in `WorldEntityRegistry.worldEntityBriefInfos`.
+In the selected corpus, the qualifying markers are the campfire variant;
+they are a subset of the registry-linked annotations on Map. This does
+**not** assign the marker's whole numeric group, or any other registry-linked
+marker, to that scene. `defaultVisible` is authored configuration, not observed
+runtime visibility. The current join inventory and changing counts live in
+`reports/game_data/map_mark_relations.json`.
+
 The remaining ten textual JsonData rows also have named schemas rather than a
 generic JSON classification. A reviewed 473-node contract closes the AI
 global settings and enemy-template paths, the root-level NPC-proxy and script-
@@ -405,9 +448,68 @@ The Buff named-schema receipt composes the independently proved prefix, middle,
 icon and suffix ranges before measuring what remains. It subtracts downstream
 coverage once, preserves opaque nested action bodies, and counts positive
 `stackingSettings.stackEffects` explicitly instead of treating a closed outer
-cursor as a fully named record. Anonymous Blackboard member ownership, the
-raw-eight-byte `dispelConfig`, and legacy stacking, tag, timeline-branch and
-fallback interiors remain separate naming obligations. Consequently, a file
+cursor as a fully named record. Field one, `addingCooldown`, now has a separately
+gated child receipt. The selected root reader's `BlackboardDouble` source call
+stores its result in the installed `BuffData.addingCooldown` field; the current
+generated wrapper, checked separately against the selected build, orders the
+child's `blackboardKey`, `useBlackboardKey`, and `value` setters. Missing or
+stale optional DummyDll evidence leaves the native source-to-field claim intact
+but suppresses these child labels. The selected child reader consumes a nullable
+signed-length byte payload, one byte, and four raw value bytes. Source-hash-checked current
+files rejoin the existing field endpoint with those named spans. The key's bytes,
+boolean byte, and value bits remain raw; this does not prove string-decoder
+parity, a live provider choice, blackboard lookup, or an evaluated cooldown.
+The receipt removes only this field's anonymous member-ownership blocker.
+The separate Buff action-receipt gate rechecks every completed corpus identity
+against the matching exported logical bytes and selected native inputs before
+using either of two named action adapters. Physical tag `0x0092` selects the
+19-member `CreateBuffActionData` wrapper, and tag `0x00B4` selects the
+13-member `FinishBuffAdvanced` wrapper. Their generated setter order and
+selected readers name each reached wrapper field and close the exact reported
+action span, whether it occurs in `abilityEventAction` or the supported root
+continuation. The receipt inventory records these joins under `reports/`.
+Nested input, selector, scalar and target profiles remain structural where
+their concrete providers or values are unproved; the gate does not remove a
+recursive action-interior blocker or promote the enclosing BuffData schema.
+Field seven, `dispelConfig`, has an independent selected-build child receipt.
+The root reader checks and copies eight source bytes directly into the installed
+`BuffData.dispelConfig` value. Current metadata places `canBeDispelled` at byte
+zero and the signed `DispelLevel` value at byte four; the three intervening
+bytes are preserved as padding. The validator checks the generated setter,
+source advance, destination store, field offsets and value size before the
+corpus attaches named spans. Missing or changed native inputs retain the raw
+eight bytes and the naming blocker. These stored values do not prove runtime
+dispel decisions or enum effects, and the reader does not constrain padding or
+enum values to current corpus observations.
+The selected root reader also passes `BuffStackingSettings` to its child reader
+and stores the result in `BuffData.stackingSettings`. Its twelve generated
+setters establish the stored member order. The `stackingKey` string reader
+consumes a signed four-byte length before distinguishing null, empty and
+nonempty values; the following `stackingType` occupies two bytes before two
+one-byte flags. The earlier compact reader left an empty key's length in place
+and consumed just one byte of `stackingType`. Its suffix could still appear to
+reach EOF by assigning those bytes to later fields, so EOF alone was not a
+field-ownership proof. The corrected child receipt rejoins the next field in
+source-hash-checked current files, including positive `stackEffects` with
+separately opaque action interiors. A missing or changed selected native build
+withholds the named child and raw-tag joins.
+The next root source call reads `tagsAfterTriggerExtendBuffAction` as a signed
+count followed by packed four-byte `GameplayTag` values, then stores that
+array in the named root field. It is a raw stored ID array; the apparent
+member-prefix/tag-name variants of the earlier suffix reader were shifted
+interpretations. The current exported files rejoin the following timeline and
+trigger tail at physical EOF under this correction. A separate selected native
+join identifies the next root call as `ReadPackable<List<TimelineActionData>>`,
+stores its result in `BuffData.timelineActions`, and then reads and stores
+`triggerInterval` through a different `BlackboardDouble` context. The
+source-hash-checked empty timeline branch consumes exactly its four-byte zero
+count before that exact trigger tail. In the selected current corpus, every
+remaining suffix-fallback first blocker was on this empty branch, so the
+conditional child receipt removes that blocker only when both the native gate
+and cursor joins validate. Positive timeline bodies still use a structural
+endpoint and retain their fallback-ownership blocker;
+positive `stackEffects` interiors and anonymous actions remain separate naming
+obligations. Consequently, a file
 with zero unconsumed composed bytes is still not a whole named schema unless
 those interiors have direct ownership evidence; no current BuffData file meets
 that stronger boundary.
@@ -597,7 +699,11 @@ long tail as members 21 through 43, from `levelIdNum` through
 SpawnerConfig has one sequential five-field owner reader plus a retained
 fallback. The owner always starts with `configId` and the exact current
 enemy-library prefix, including named 13-member rows and the nullable
-born-behavior boundary. Its high-coverage route profile then closes generated
+born-behavior boundary. The enemy row's `preWarnEffectFixedRotation` uses a
+16-byte `Optional<Vector3>` value (presence byte, zero padding, three floats);
+the previous four-float interpretation reached the same cursor but turned the
+presence byte into a tiny false axis. Its high-coverage route profile then
+closes generated
 two-field `SpawnerRouteData` values, 39-field `PatrolData` values whose
 action list contains exact four-member `PatrolAction` values, and the complete
 six-field settings object. Patrol actions name their position and type, nested
@@ -1404,9 +1510,10 @@ name every consumed member. The admitted shape also has an empty nested
 `timelineActions` contains only that record, the
 exact `ActionGroupData` endpoint feeds the existing fields 1 through 42 reader
 and authenticated terminal selection to close the whole file.
-Other first action tags and later timeline elements remain open at their first
-unsupported boundary. Provider selection stays conditional on the pinned
-native and input-set gates.
+This specialized reader leaves other first action tags and later timeline
+elements to the separate shared-sequence reader described below. Each reader
+stops at its own first unsupported boundary. Provider selection stays
+conditional on the pinned native and input-set gates.
 
 Physical tag `0x00B2` similarly maps to the 18-member `FindTargetActionData`.
 Its nested selector tags differ from the older Buff selector table, so the
@@ -1438,8 +1545,12 @@ inherits the exact 16-member `PlayAnimation` layout, then reads
 `speedCurveKey`, `stepBlendIn`, `stepDistance`, `stepTarget`, and `useFixSpeed`
 in generated setter order. `speed` uses `BlackboardDouble` and `stepTarget`
 uses `TargetSettings`; unresolved nested selector routes fail closed. The
-reader closes the first timeline record at an exact cursor without claiming
-later timeline elements or the whole SkillData file.
+specialized reader closes the first timeline record at an exact cursor. The
+shared sequence reader now calls that same bounded reader for reached later
+`0x0116` actions. An authenticated exported-byte replay advances through the
+formerly hidden later-timeline stops and rejoins whole-file EOF where every
+following child is admitted. A later unsupported physical action remains a
+first refusal; the shared adapter does not assign runtime animation behavior.
 
 Physical tag `0x0092` selects the 19-member `CreateBuffActionData` wrapper. Its
 four inherited members are followed by `asChildBuff`, `autoFinishByAction`,
@@ -1448,12 +1559,20 @@ four inherited members are followed by `asChildBuff`, `autoFinishByAction`,
 `inheritSourceSkillCastId`, `inheritSourceSkillCastInfo`, `isExtra`,
 `overrideBuffIconDuration`, `passTargetGroupsToBuff`, and `targetSettings`.
 Byte-pinned nested readers close every reached first action. A one-action
-sequence closes the enclosing first timeline record; multi-action sequences
-stop before the first unsupported later action. A one-action, one-timeline
-shape can then reuse the authenticated top-level continuation and terminal
-wrapper to close the whole SkillData file. Dispatch requires the complete
+sequence closes the enclosing first timeline record; later sequence actions
+are separately checked by the shared route table and can close when every
+reached child is supported. A one-action, one-timeline shape can reuse the
+authenticated top-level continuation and terminal wrapper to close the whole
+SkillData file. Dispatch requires the complete
 top-level ActionGroup/timeline/sequence shape so an unrelated byte equal to
 `0x92` cannot select this decoder.
+The first sequence can contain only CreateBuff while its ActionGroup still has
+later timeline records. A separate continuation keeps the detailed first
+CreateBuff proof and passes later records through the admitted shared routes;
+it promotes the whole ActionGroup only when every later record closes. The
+generic Buff reader can parse some later tags that are absent from the Skill
+composite contract, including `0x019E` and `0x000C`; those stay explicit
+stops until their Skill route ownership is authenticated.
 
 The shared timeline-sequence reader reuses only reviewed action contracts
 and preserves the distinction between an exact action, an exact enclosing
@@ -1461,6 +1580,706 @@ timeline record, and a whole ActionGroup. It closes reviewed roots for
 `ConvertToTargetContext` (`0x008C`), multi-action `CreateBuff` (`0x0092`),
 `LaunchProjectile` (`0x00DE`), and `SpawnAbilityEntity` (`0x0169`), then reuses
 the top-level continuation only when every timeline record is exact.
+It now advances through later `TimelineActionData` elements with the same
+bounded member order and checks each reached union tag and member-count byte
+against the reviewed route contract. A complete list can rejoin SkillData's
+top-level fields and selected terminal wrapper; any unsupported later child
+retains only the exact first-record prefix and its stop reason. The current
+export probe found both paths, so a first-record closure alone must never
+be treated as a whole ActionGroup.
+The reached later `BroadcastAlertToCharactersAction` tag (`0x0023`) is now
+admitted through the reviewed Buff formatter's eleven-member source order,
+including its bounded SkillAlert, byte payload, and TargetSettings children.
+The shared reader checks that dependency and the stored member-count byte
+before promoting a later record. Other later tags and nonempty nested forms
+still stop at their first unsupported child; an action name alone is not
+sufficient to extend the list.
+The corpus publisher chooses a complete shared-sequence profile over a
+specialized PlayAnimation first-record prefix when both describe the same
+file. The earlier priority order hid whole-file closures even though the
+shared list and top-level continuation were already exact; both evidence
+profiles remain in the generated row for review.
+`CustomRootMotionAction` (`0x0099`) is a separate Skill-only finite route:
+the selected native formatter reads a 24-member wrapper with bounded
+Blackboard, curve, target, LayerMask, and byte-payload children. The reviewed
+contract rechecks the dispatcher, method bodies, ordered callsites, and nested
+type instantiations on the selected build. Current exported bytes can then
+advance past this formerly unsupported action; later unsupported children
+remain bounded, and stored root-motion data does not establish live movement.
+The `FacBuildingPlayAnimationAction` route (`0x00B0`) exposed a different
+gap: the composite route was already admitted by the current derived plan and
+observed member-count checks, but the shared finite reader had no action
+body. Its six stored reads are a bool byte, three scalar words, a bounded
+length-prefixed byte payload, and a final bool byte. The selected native
+derived plan is re-evaluated at the corpus gate and must match that shape;
+the Skill reader then proves the following timeline and top-level cursors
+against authenticated export bytes. These stored fields do not prove which
+factory animation runs at runtime.
+`SetSuperArmorAction` (`0x0159`) had the converse gap: the shared Buff reader
+already had a finite body, but the Skill route table did not admit it. The
+selected native formatter and existing Buff contract authenticate seven reads,
+including two bounded scalar-flag payloads and a TargetSettings reference.
+The Skill composite contract now names that dependency, and the shared reader
+checks each reached payload's tag and member count before extending a later
+timeline. The stored route does not establish when super armor is applied.
+`EnemyWarningAction` (`0x00AA`) was a larger later-timeline stop. Its selected
+dispatcher and generated reader establish an 18-member source order with
+bounded TargetSettings and EffectActionCfg children. A separate native
+contract pins the dispatcher, complete reader body, ordered calls, nested
+generic type joins, and the existing Buff action profile it shares. The
+Skill reader admits this route only through that contract and still stops
+where a nested child has no finite grammar. The action name and stored
+parameters do not establish a warning event or on-screen behavior.
+`FinishAngryOnEnd` (`0x00B3`) is a later four-member stop reached after the
+warning route. Its independent selected native dispatcher and reader contract
+pin the common byte and three scalar words, including the Priority generic
+context. The finite Skill action reader now checks that route and can advance
+to the next timeline member without claiming that an angry state ever ran.
+`SaveValueFromAIBlackboard` (`0x0142`) reuses an already finite shared Buff
+body, but its Skill route was previously absent. The selected Buff formatter
+contract pins eleven reads: the common action prefix, a byte payload,
+TargetSettings, four further byte payloads, and a final scalar word. The
+composite Skill contract now admits that exact tag/member shape and checks
+the source dependency; a later unsupported action still stops the list.
+Three further Skill routes already had finite shared Buff readers and
+selected-build source contracts: `SetWeaknessAction` (`0x015B`) reads an
+eleven-member body with scalar payloads and a nested Sequence;
+`SetSkillCdAtOnce` (`0x0157`) reads eleven members including a byte payload,
+TargetSettings and scalar payload; `LockCameraAimAction` (`0x00E0`) has a
+54-member source order with curve, scalar, vector, and target profiles. Their
+new Skill route joins check the physical tags and member counts, and the
+selected gate rechecks the source method identities and code windows. An
+exact stored timeline does not establish whether a weakness, cooldown, or
+camera action executed.
+`TeleportAction` (`0x017C`) is another admitted later route. Its reviewed
+14-member source order includes a nested Sequence, scalar payload, and
+TargetSettings profile; the selected code windows and reached member-count
+bytes gate its use. Closing a serialized teleport action still does not prove
+an active destination or movement in the scene.
+`TeleportPosSelectAction` (`0x017D`) is a distinct nine-member route, not an
+alias of `TeleportAction`. The reviewed Buff frontier-nine contract authenticates
+its dispatcher, generated reader, ordered string/FixDistanceData/RangedData/
+TargetSettings members, and nested type joins on the selected build. The Skill
+reader reuses that contract and the bounded nested grammars; current VFS bytes
+advance through reached instances with populated child forms, while later
+unsupported actions still stop at their own tags. These
+stored selection parameters do not establish which teleport destination was
+chosen at runtime.
+`CheckTwoDirectionAngle` (`0x0082`) is another reached Skill condition whose
+finite reader was already reviewed for BuffData. Frontier nine pins its
+physical action tag, twelve source reads, four TargetSettings children, and a
+BlackboardDouble child on the selected native build. The Skill route now
+checks that same read order and native gate before consuming the nested
+profiles. SHA-matched exported SkillData records advance past this stop, and
+records with no further unsupported child can rejoin the independent timeline
+cursor. The stored directions and comparison value do not establish a live
+condition result.
+`SaveTwoDirectionAngle` (`0x0141`) is a separate eleven-member action. The
+reviewed Buff frontier-nine route pins its source order and four
+TargetSettings children; the selected Skill reader reuses those bounded
+profiles and ends with a stored string. Reached timelines can pass this action
+without treating its serialized directions as a measured angle or a live
+blackboard update.
+`PushBackAction` (`0x011E`) has a separately reviewed 20-member selected
+native reader. Its ordered calls and eight nested type joins authenticate
+TargetSettings, AnimationCurve, and BlackboardDouble children; the Skill
+reader reuses their bounded profiles. SHA-matched records can pass this
+action and rejoin the independent top-level continuation when no later route
+is missing. Stored curve and distance fields do not show a pushback event.
+`SnapToTargetWithRangeAction` (`0x0168`) has a separate selected-build reader
+contract for its 18-member `Data` wrapper. The native dispatcher, complete
+normal reader body, ordered source calls, and nested generic type contexts
+authenticate TargetSettings, AnimationCurve, and BlackboardDouble reads. A
+finite Skill reader advances every currently reached instance in SHA-matched
+exported records; some whole files rejoin the independent continuation, while
+others stop at later action tags such as `0x004E`. The stored target and curve
+fields describe serialized inputs only: this evidence does not observe a snap
+motion or a selected target in play.
+`ComboCacheAction` (`0x004E`) reuses the independently reviewed Buff action
+reader. Its five stored members end in a nullable counted mapping list; each
+populated mapping has its own six-member profile, including a bounded scalar
+and byte payload. The Skill route now requires the selected Buff contract's
+read order and code windows. Reached records advance to later action tags,
+which remain separately bounded; admitting this route alone does not close
+those whole files or show how a combo cache behaves during play.
+`AllowNextSkillAction` (`0x000E`) follows that route in many serialized
+timelines. The installed dispatcher and generated wrapper re-derive a direct
+five-member plan: the common bool/three-word prefix and a nullable
+`List<string>` named `allowedSkillIdList`. The Skill reader requires that
+type, tag, member order, and nested list element kind from the selected native
+build, then bounds each string payload. SHA-matched VFS replay advances the
+reached records to their next independent cursor; the full corpus gate still
+decides which files are exact. The decoded strings mostly match SkillData file
+identifiers, but some have no file in the current corpus. They are stored
+allowed IDs, not proof that a player could or did transition between skills.
+`DisableRootMotionAction` (`0x009E`) and `MarkCanInterrupt` (`0x00E8`) each
+store the common four-member action prefix. The selected dispatcher and
+generated-wrapper derivation recheck both direct plans; the reviewed Buff
+frontier also pins the complete `0x009E` native reader. Their Skill decoder
+admits only those physical tags and the four-member header, and SHA-matched
+files can advance to the independent following cursor. These stored flags
+do not show root-motion or interruption behavior at runtime.
+`AddCameraControlStateAction` (`0x019E`) is a distinct 23-member View action.
+The selected native Buff contract pins its complete reader and nested curve,
+byte-payload, and nullable-list profiles; the Skill admission additionally
+checks the current dispatcher route. Reusing that finite reader advances
+reached Skill records to their next independent cursor while retaining stops
+for later unsupported actions. The stored camera-state parameters do not
+establish a camera change in live play.
+`AddAIMarkerAction` (`0x0007`) reuses a reviewed Buff reader whose eight
+stored members include a BlackboardDouble scalar, TargetSettings profile,
+and direct scalar/byte fields. The Skill route now checks that source order
+and selected native code windows before extending a reached timeline.
+Records can rejoin the following cursor when every later action is also
+supported; a stored marker action does not prove an AI marker was applied.
+`AddDynamicNavmeshObstacle` (`0x0009`) reuses the reviewed Buff frontier-eight
+route. Its six source reads end with a nullable counted `List<string>` and a
+TargetSettings child; the Skill reader bounds both against the selected native
+contract before advancing. Current authenticated bytes exercise populated
+lists. A stored obstacle action describes serialization, not a runtime
+navigation change, and later unsupported actions retain their own stops.
+`TickIntervalAction` (`0x0181`) has a separately reviewed nine-member selected
+native route. The source order identifies a nested SequenceActionData followed
+by stored interval fields, including a string key; the nested sequence still
+uses the shared action grammar and retains its own unsupported-child stops.
+The Skill reader admits this route only after native validation. Its stored
+interval does not establish a timer firing during play.
+`CheckHp` (`0x0065`), `CheckPoiseValue` (`0x006E`), and `AddTagToEntities`
+(`0x000C`) reuse separately
+reviewed Buff action readers and their selected code windows. The Skill
+composite checks each eight-member read order before admitting the route;
+the existing finite TargetSettings, BlackboardString, GameplayTag-list, and
+scalar profiles retain their own bounds. Reached records can advance through
+these stored conditions/actions, while later tags remain independent stops.
+This evidence does not establish a health or poise check result or an applied
+gameplay tag.
+`CameraRotateAction` (`0x0025`) has a selected ten-member native reader with
+ordered enum, curve, and BlackboardDouble children. Its finite Skill reader
+advances authenticated reached records, but the observed files still encounter
+later actions. `NotNextCheckAction` (`0x00FD`) uses the reviewed Buff four-member
+reader and an extended physical union tag; it advances those continuations
+to `CurveEvaluateFloat` (`0x0098`). That nine-member route now has a selected
+native dispatcher gate and reuses the reviewed Buff source order, curve,
+BlackboardDouble, and bounded string payloads. Authenticated reached files can
+rejoin the independent top-level continuation when later routes are supported.
+These stored routes do not prove a camera rotation, a live next-action decision,
+or a curve result during play.
+`GainBreakingAttackAtb` (`0x00BF`) has a selected seven-member reader with
+BlackboardDouble and two TargetSettings children. `OverrideCameraFollowAction`
+(`0x0104`) reuses the reviewed Buff frontier-nine twelve-member route, including
+its scalar and target children. SHA-matched reached Skill records can pass
+these actions and rejoin the independent top-level continuation when no later
+unsupported child remains. The stored parameters do not establish an attack
+meter gain or a camera follow change during play.
+The selected dispatcher also reaches four previously unadmitted Buff readers:
+`CheckSuperArmor` (`0x007B`), `CheckTargetsEqual` (`0x0080`),
+`EnablePartsAction` (`0x00A7`), and `CharWeaponAnimationAction` (`0x0036`).
+Their reviewed native contracts pin seven, six, eleven, and twelve source
+reads respectively, and the existing finite Buff reader owns each nested
+profile. The Skill composite checks the source order and selected wrapper
+identity before admitting these routes. A reached action can still stop on
+an unsupported nested child; the stored condition or animation parameters
+do not prove a runtime result.
+An authenticated recheck of the apparent `CheckSuperArmor` tail anomalies
+confirmed the reader's exact endpoint: its TargetSettings and scalar-profile
+children close before the next physical union tag. The following byte patterns
+select separately registered `BoneAttachAction` or `SaveBuffStackNumByTag`
+routes, so those files retain a new-action stop rather than indicating an
+offset repair to `CheckSuperArmor`.
+`CommandToCharactersAction` (`0x004F`) has a separate selected fourteen-member
+reader. Its ordered source calls and nested type contexts authenticate the
+SkillAlertData and TargetSettings children, which reuse reviewed finite
+profiles. Reached Skill records can pass the action and join the following
+cursor; the command fields do not show that a character obeyed one at runtime.
+`ReceiveMoveInputAction` (`0x0123`) has a selected twenty-member outer reader
+and a nine-member MoveParamData child. The reviewed source calls and generic
+contexts identify enum, BlackboardDouble, AnimationCurve, and move-parameter
+reads; the Skill reader retains a finite child boundary. Stored move input
+configuration does not establish a player input or resulting movement.
+`CheckComboSkillCameraAlphaSetting` (`0x003D`) has a selected five-member
+reader with the common bool and four source scalar reads. Its reached Skill
+records continue to `TemporaryUnlockAction` (`0x017E`), whose reviewed Buff
+frontier-nine route fixes eight reads and a TargetSettings child. The Skill
+reader checks both selected native routes before admitting that chain.
+`CheckHasMoveInput` (`0x0045`) is another reached four-member condition with
+its own selected dispatcher, four source calls, and Priority enum context;
+after it, later actions retain their own stop. These stored conditions and
+flags do not show a camera state, input event, or unlock at runtime.
+`TogglableAction` (`0x0184`) reuses a reviewed six-member Buff reader whose
+last two members are independently bounded SequenceActionData children. The
+Skill admission checks the selected union route, code windows, and nested
+generic contexts before reusing that finite reader. An unsupported child
+retains its own stop; a stored toggle does not establish runtime state.
+`CheckSquadInFight` (`0x0052`) likewise reuses a reviewed five-member Buff
+reader. The selected AbilityActionData switch and Priority generic context
+are rechecked before the Skill reader admits either physical tag width. Its
+stored condition does not establish the squad's live combat state.
+`BreakInteractiveAction` (`0x0001`) has a selected nine-member action reader
+and a separately selected twelve-member `InteractiveShapeFinder` child. The
+native contract pins their source calls and nested types, while the finite
+Skill reader scopes finder admission to this action's TargetSettings child.
+The encoded calculation, damage-processor list, and target describe stored
+inputs; they do not show an interactive object breaking during play.
+`InheritBuffAction` (`0x00D2`) has a selected nine-member reader. Its native
+source order and generic contexts identify a TargetSettings child and a
+nullable string list; the Skill reader bounds both before the final string
+payload. Reached files with later action or finder gaps remain partial. The
+stored buff identifiers do not establish that a buff was inherited in play.
+`SwitchModeAction` (`0x0178`) and `ClearProjectileAction` (`0x004C`) reuse
+reviewed Buff readers with eight and twelve selected source reads. The Skill
+composite checks their current dispatcher wrappers and source contracts;
+the finite readers retain bounds on string, target, scalar, and list children.
+Some reached rows advance to later physical actions. These serialized
+commands do not establish a mode change or projectile removal during play.
+`AnimatedCameraAction` (`0x0010`) has a selected twenty-four-member reader.
+The native source and setter orders identify the camera fields and enum
+contexts, while the finite Skill reader preserves raw float bits and bounds
+the camera animation key payload. Current reached records continue to later
+action stops; serialized camera parameters do not show a camera animation
+playing at runtime.
+`HideUIAction` (`0x00C6`) has a selected five-member reader. Its source order
+and dispatcher identity bound the small action payload; the reached camera
+sequence continues to a later physical action. Stored UI flags do not show a
+live interface transition.
+`MoveToLocationAction` (`0x00F8`) has a selected twenty-three-member reader.
+The source order and generic contexts identify LayerMask, TargetSettings,
+and AnimationCurve children; the finite reader retains raw scalar and float
+bits and bounds each nested payload. Authenticated replay closes direct and
+post-`SwitchModeAction` whole files, while other reached rows continue to a
+later action or postprocessor. A stored movement request does not prove that
+an entity moved during play.
+`UltimateTimeAction` (`0x0194`) has a selected seven-member reader. Its source
+order and setter calls identify the nullable TargetSettings list, GameplayTag,
+and float fields; the list carrier reuses a reviewed Buff framing. Reached
+records continue to `UltimateShowAction` after the bounded payload, so this
+route alone does not close those whole files or show an ultimate effect in play.
+`UltimateShowAction` (`0x0193`) has a selected four-member inherited-action
+reader: one byte followed by Priority and two scalar words. The native route,
+member count, source calls, and Priority context are checked on the selected
+build. Authenticated replay closes some post-`UltimateTimeAction` whole files;
+the others keep their next physical action stop. The stored show command is
+not evidence that an ultimate display appeared during play.
+`ChannelingCastingAction` (`0x0031`) has a selected eight-member reader. Its
+inherited header, three stored Boolean fields, and BlackboardDouble duration
+are fixed by source calls and setter order; the scalar payload uses a reviewed
+Buff carrier. Authenticated replay closes both direct and post-ultimate reached
+files, but a stored duration and flag set do not establish a cast at runtime.
+`ModifyWeaponMountPoint` (`0x00F3`) has a selected nine-member primitive
+reader. The native source order fixes its stored mount-point words, override
+flags, and weapon index. Authenticated replay closes most reached whole files;
+the remaining row continues to a later physical action. The stored words do
+not establish a weapon transform or mount state during play.
+`RayCastEffectAction` (`0x0121`) has five selected source readers: the action
+and four ray-data records. Their ordered calls and nested generic contexts
+bound EffectActionCfg, TargetSettings, AnimationCurve, raycast-list, audio-id,
+and blackboard-vector payloads. The Skill reader admits the reviewed nested
+profiles and authenticated replay closes the reached files. These are stored
+ray and effect settings, not observed hits or effects.
+`PickTargetAction` (`0x0114`) has a selected seven-member reader. Its source
+calls and setter order identify the context key, BlackboardInt index, and
+TargetSettings child after the inherited header. Authenticated replay closes
+reached whole files or retains a later action stop; the stored target settings
+do not prove a target was selected during play.
+`DoOnceAction` (`0x00A0`) has a selected five-member reader with a bounded
+SequenceActionData child. Its native source order identifies the child type;
+that child still uses the admitted action grammar and preserves an unsupported
+descendant as a stop. Authenticated replay closes reached whole files where
+the child is supported. A stored sequence does not establish execution count.
+`CheckSkillCameraMotionFree` (`0x0072`) has a selected six-member reader. Two
+bounded strings follow its inherited header in native source order.
+Authenticated replay closes some reached files and retains later action or
+route gaps in the others. The stored camera keys do not prove camera motion.
+`CheckTargetAngle` (`0x007D`) has a selected eight-member reader whose native
+generic contexts identify a BlackboardDouble angle and two TargetSettings
+children. The finite profiles bound both target objects. Reached files either
+close exactly or retain later action/route stops; these fields do not establish
+a live angle check result.
+`MoveToTargetAction` (`0x00FB`) has a selected seventeen-member reader. Its
+source calls and setter order fix LayerMask, TargetSettings, and AnimationCurve
+children among primitive flags and float bits. Authenticated direct-stop
+replay closes supported whole files and leaves later actions visible in the
+others. Stored movement parameters do not prove actual motion.
+`JumpToTargetAction` (`0x00DA`) has a selected eleven-member reader with two
+TargetSettings children, a BlackboardVector3, and two BlackboardDouble values.
+The native contexts and reviewed finite profiles bound those objects; replay
+closes supported rows and retains next physical action stops in the rest.
+Stored jump data does not establish runtime traversal.
+`EliteBackSwingBeHit` (`0x00A5`) has a selected seven-member reader. Source
+calls and setter order identify a BlackboardDouble duration, a stored finish
+flag, and a BlackboardInt limit. Authenticated replay closes supported rows
+and retains later route gaps; the fields do not prove a reaction played.
+`GetTargetBuffBBAdvanced` (`0x00C4`) has a selected eight-member reader with
+two bounded string payloads, BuffFindSettings, and TargetSettings. Its source
+calls, nested contexts, and reviewed Buff child windows constrain the stored
+shape. Authenticated replay closes reached files after preceding camera-motion
+conditions where applicable; it does not prove a buff lookup at runtime.
+`CheckTargetContains` (`0x007E`) has a selected six-member reader with two
+TargetSettings children. Its source order distinguishes child and parent
+settings, and authenticated replay either closes the whole SkillData record or
+retains the next unsupported child. The stored pair does not establish the
+condition's result during play.
+`PhysicsCastAction` (`0x0113`) has a selected twenty-member reader. Separate
+native sections pin its SourceForwardData and SourceToTargetData children;
+the action also holds bounded fail/succeed sequences, target settings, scalar
+settings, and hit-result blackboard keys. Authenticated replay closes reached
+records where all descendants are admitted and retains a later route stop in
+the others. These stored parameters do not prove a cast or hit occurred.
+`LaunchUpwardAction` (`0x00DF`) has a selected fifteen-member reader with
+finite airborne-effect, direction, source, and target child profiles. Direct
+VFS replay confirms its reached first-stop records can advance; later values
+seen at the cursor remain next-stop observations until their enclosing reader
+and union route are independently proved. Stored upward-motion settings do
+not establish a runtime trajectory.
+`ChangeSkillAction` (`0x002C`) has a selected fourteen-member reader. Its
+native source order distinguishes target and reverted skill IDs, slot and
+source selectors, and cache and lifetime settings. Authenticated direct VFS
+replay advances every reached first stop; an unsupported later child remains
+visible where the whole record does not yet close. Stored skill replacement
+settings do not prove a runtime transition.
+`CheckBuffIdInContextAdvanced` (`0x0057`) has a selected eight-member reader
+with a bounded buff-ID list and GameplayTagQuery child. Its native contract
+points to the reviewed Buff child windows, while the Skill composite checks
+the selected route before admitting it. Reached records advance to later
+physical action tags; neither the stored query nor its ID list proves a buff
+was present at runtime.
+`ComboAction` (`0x004D`) has a selected seven-member reader. Its native
+generic contexts distinguish BlackboardInt count, BlackboardDouble duration,
+and TargetSettings source after the inherited header. Authenticated replay
+advances reached records; one row then reaches the independently proved
+BoneAttach route. Stored combo settings do not prove a combo was executed.
+`StoreCurSkillExecuteFrame` (`0x0173`) has a selected six-member reader. Its
+native source calls identify a bounded blackboard key and TargetSettings
+child after the inherited action fields; the target profile is tied to its
+reviewed Buff source window. Authenticated replay advances both reached
+records to a later unsupported action. The stored frame key does not prove
+when a skill executes.
+`SkillAIMoveAction` (`0x0165`) has a selected sixteen-member reader. Its
+`markerInfo` member is an eight-byte unmanaged copy in the selected generic
+reader, not an invocation of the separately generated marker wrapper. The
+native copy-size instructions and ordered source calls constrain that
+boundary, while the final TargetSettings child uses its reviewed profile.
+Authenticated replay closes both reached whole SkillData records; the stored
+movement settings do not establish an AI path taken during play.
+`BoneAttachAction` (`0x0000`) is a real selected union route, not a null
+sentinel. Its native switch target resolves to a distinct registered wrapper
+and thirteen source reads, including raw Vector3 rotation angles and a
+TargetSettings child. Authenticated replay of the reached Camille row advances
+from this action through the remaining timeline and rejoins the selected
+terminal at physical EOF. Stored bone attachment settings do not prove an
+attachment appeared in play.
+`IgnoreModelIntervalCheck` (`0x00D0`) has a selected four-member reader made
+only of the inherited action fields. Authenticated replay advances every
+reached first stop; some rows close the whole file, while others retain later
+physical action tags. Its name does not prove a model interval was skipped.
+`KnockDownAction` (`0x00DD`) has a selected thirteen-member reader. Native
+source calls and generic contexts distinguish BlackboardDouble duration,
+DirectionSettings face direction, and two TargetSettings children. Its finite
+child profiles rejoin the outer action; reached records either close the whole
+file or retain a later action stop. Stored knockdown parameters do not prove a
+character fell during play.
+`TargetPostProcessorAction` (`0x017B`) has a selected eleven-member reader
+with bounded center, direction, source and target selectors, plus lists of
+postprocessor and validator data. Native generic contexts and reviewed Buff
+child windows constrain those nested profiles. Authenticated replay closes
+every reached whole SkillData record; the stored selection graph does not
+establish which target was chosen at runtime.
+`RemoveAIMarkerAction` (`0x012D`) has a selected six-member reader. Its two
+new members are a raw GameplayTag word and a finite TargetSettings owner;
+their source calls and child windows are checked against the current native
+inputs. Authenticated replay closes every reached whole SkillData record.
+The stored marker and owner do not prove a live marker was removed.
+`TyphoeaArcheryChipDataAction` (`0x018E`) has a selected eighteen-member
+reader. After the inherited action fields it stores bounded blackboard-key
+strings and boolean save flags for projectile, ricochet, split, and trajectory
+settings. Selected source calls and setter types pin the order; authenticated
+replay closes every reached whole SkillData record. The fields do not prove a
+projectile was emitted or an affix applied during play.
+`TickIntervalActionV2` (`0x0182`) has a selected ten-member reader with a
+SequenceActionData child, BlackboardInt tick count, and BlackboardDouble
+interval. The native generic contexts and reviewed child readers constrain
+those fields. Authenticated replay closes the supported reached records and
+retains a later action tag in the remaining row; stored tick settings do not
+prove when a sequence ran.
+`CheckOriginSkillType` (`0x0048`) has a selected six-member reader shared with
+the reviewed Buff source shape: an attack-type mask and a bounded list of
+skill types follow the inherited action fields. Weapon SkillData records reach
+this previously hidden passive-list first refusal. Direct VFS replay
+authenticates their logical bytes; some close after admitting the route, while
+others advance to later physical action tags. The stored predicate inputs do
+not show whether the condition was true during play.
+`SaveMoveAxisAngle` (`0x013D`) has a selected five-member reader ending in a
+bounded key string. Reached Typhoea records advance past it, then stop inside
+nested finder or validator unions; none closes solely from this route.
+The key does not establish runtime movement-axis behavior.
+`MoveToDirectionAction` (`0x00F7`) has a selected nineteen-member reader. Its
+reviewed generic contexts distinguish a direction enum, raw LayerMask word,
+finite TargetSettings child, and AnimationCurve profile. Authenticated VFS
+replay decodes the reached action instances and closes their SkillData files.
+Stored motion parameters do not prove an executed movement.
+`CrushAction` (`0x0097`) reuses a selected Buff frontier contract with
+seventeen ordered reads and eight nested generic contexts. Authenticated VFS
+replay decodes the reached instances and closes their SkillData files. Its
+stored targets, blackboard values, and flags do not prove a crush
+or damage event during play.
+`BlowOffEnemyAction` (`0x001D`) reuses the selected Buff frontier contract's
+fourteen ordered reads and seven nested generic contexts. Authenticated VFS
+replay closes the reached SkillData files after admitting this action. Its
+target, direction, blackboard values, and flags are stored parameters; they do
+not prove knockback or movement during play.
+`CheckPhysicalInflictionType` (`0x006D`) has a selected six-member Skill route
+backed by the reviewed Buff source order. The final members are an enum mask
+and bounded saved-key bytes; two enum contexts authenticate their types.
+Authenticated VFS replay closes some reached passive files and advances a
+remaining file to a later action. The stored condition inputs do not prove a
+physical infliction occurred.
+`CreateBuffAttachingSkill` (`0x0093`) has a selected nineteen-member Skill
+route. Its derived wrapper declares no own setters and inherits the reviewed
+`CreateBuffAction` stored order; the independent route and source profile are
+checked against the selected native build. Authenticated VFS replay closes the
+reached passive files, including the continuation from `0x006D` when both
+routes are admitted. The wrapper name and stored buff fields do not establish
+runtime attachment behavior.
+`InheritCCSAction` (`0x00D3`) has a selected eight-member Skill route. Its
+native reader pins the stored blend-out float, bounded CCS key, TargetSettings
+owner, and override flag after the inherited action fields. Direct VFS replay
+of a reached Pelica timeline crosses this later stop, finishes every timeline
+record, and joins the independently selected terminal start. The stored key and owner
+do not prove live CCS ownership or blend effects.
+`ChannelingDamageAction` (`0x0032`) has a selected twelve-member Skill route.
+Its first eleven reads match the independently reviewed DamageAction source
+profile, followed by a float32 trigger interval. Six native generic contexts
+identify the nested types, including the DamageUnit list, whose elements still
+use the bounded child reader. Authenticated direct VFS replay closes every
+file at this first refusal through the selected terminal and EOF. The stored
+damage units and interval do not prove that channeling or damage occurred.
+`CheckHitColliderOptions` (`0x0064`) has a selected six-member Skill route. Its
+last two stored values are typed collider-option and check-type enums; native
+setter calls and generic contexts pin the read order. Authenticated direct VFS
+replay closes both reached whole files. The stored predicate does not prove a
+runtime hit or collider selection.
+`CompareDeckAttr` (`0x0085`) has a selected ten-member Skill route backed by
+the reviewed Buff source profile. Native reads and generic contexts identify
+two operand enums, two bounded BlackboardDouble values, a comparison enum,
+and a finite TargetSettings child. Authenticated direct VFS replay closes the
+reached passive lists and joins field 42 to the selected terminal starts in
+both files. The operands do not establish the condition's runtime result.
+`CheckBuffStackNumByTag` (`0x0059`) has a selected nine-member Skill route.
+Native source calls and generic contexts distinguish the stored stack-type
+enum, TargetSettings, comparison enum, finite GameplayTagQuery, and
+BlackboardDouble value. Authenticated VFS replay closes a Lifeng timeline and
+advances the other reached files to later physical or contracted route stops;
+the stored predicate does not establish a runtime buff stack count.
+`ForceSpellStatusAction` (`0x00BA`) has a selected eleven-member Skill route
+with three BlackboardInt children, two TargetSettings children, an energy
+shard enum, and a flag after the inherited action fields. Authenticated VFS
+replay advances the Yvonne and Deepfin timelines after `0x0059` through this
+action without later stops. Their maintained outer continuations meet the
+independently selected terminal starts and EOF, so the authenticated replay
+closes both whole files. Stored spell-state parameters do not prove a runtime
+transition.
+`ModifyCameraLockPointAction` (`0x00EB`) has a selected six-member Skill route.
+Native source calls and generic contexts identify the TargetSettings
+mount-point owner and typed MountPoint override after the inherited fields.
+Authenticated VFS replay closes the reached Agshield and Nefarp timelines and
+joins field 42 to each independently selected terminal start and EOF. The
+stored target and mount-point choice do not prove live camera behavior.
+The nested `SelectorFinder` physical tag `0x0017` is a zero-member
+TyphoeaArcherySelectedFinder wrapper; nested `SelectorValidator` tags
+`0x0007` and `0x0008` are respectively a zero-member InScreenValidator and a
+one-member InteractiveKeyValidator with a bounded key string. They have
+independent selected native switch tables, not AbilityActionData action tags.
+Authenticated VFS replay closes reached Typhoea and Rodin records where every
+later child and the selected terminal also close; the stored selector/validator
+objects do not show which target or key matched at runtime.
+An extended action prefix `FA FF 00` represents physical AbilityActionData tag
+`0x00FF`, `ObtainUspInNormalSkill`, and is distinct from the one-byte `FF` null
+union. Its reviewed Buff frontier route has six stored members. A shared
+reader that treats every numeric tag 255 as null loses this identity even when
+its byte cursor is exact; only width-one `FF` may take the null-summary path.
+`ApplyArmor` (`0x0013`) has a selected five-member action reader. Its inherited
+bool, Priority enum, and two scalar words precede a finite TargetSettings
+`applyTo` child; the pinned native reader and generic contexts establish that
+order. Authenticated direct VFS replay advances every reached timeline through
+field 42 to the independently selected terminal and EOF. The stored target
+does not prove that armor was applied during play.
+`BlightMiasmaToleranceZero` (`0x0019`) has a selected four-member wrapper with
+no own setters beyond the inherited action fields. Its pinned native reader
+and Priority generic context constrain the bool and three four-byte reads.
+Authenticated VFS replay closes the reached enemy timelines through their
+selected terminals and EOF. The wrapper name does not prove a live tolerance
+change.
+`BlockMoveInterruptSkill` (`0x001A`) has a selected four-member action reader:
+bool, Priority enum, and two scalar words. Authenticated VFS replay closes one
+reached Zhuangfy SkillData file through its selected terminal and advances two
+others to later physical action tags `0x00AF` and `0x0038`. The stored flag and
+priority do not establish runtime movement or interruption behavior.
+`ChannelingActionV2` (`0x0030`) has a selected ten-member route with a finite
+SequenceActionData child, TargetSettings child, count and interval words after
+the inherited action fields. The pinned reader checks six own setter calls and
+three generic contexts; its structure matches a reviewed sibling without
+equating the two wrappers. Authenticated replay crosses the reached Typhoea
+and Liino actions, closes their complete timeline lists and rejoins each
+selected terminal after field 42. Stored channel settings do not establish
+repeated runtime execution.
+`CharFollowAction` (`0x0034`) has a selected four-member derived wrapper with
+no own setters. Its native reader and Priority context constrain the inherited
+bool and three four-byte slots. Authenticated replay closes the reached enemy
+SkillData records through field 42 and their selected terminals. The wrapper
+name does not prove a character followed another during play.
+`FinishBuffByTag` (`0x00B5`) reuses a reviewed twelve-member Buff frontier
+route. Its finite child sequence includes three TargetSettings objects, a
+BlackboardDouble and a GameplayTagQuery after primitive members. Authenticated
+replay closes the reached timeline lists; a separate maintained fields 1–42
+continuation reaches each selected terminal exactly. These stored selection
+parameters do not prove that a live buff ended.
+`ExtendBuffAction` (`0x00AF`) reuses the selected six-member Buff frontier
+route: four primitive members, TargetSettings and finite BuffFindSettings.
+Authenticated replay closes two reached Zhuangfy records through field 42 and
+their selected terminals. Another advances to an unsupported nested
+SelectorValidator tag `0x06`; the surrounding file remains partial. Stored
+settings do not prove an extension occurred at runtime.
+`GetPatrolTeleportPos` (`0x00C2`) reuses a selected six-member Buff frontier
+route with a bounded string and float-width value after the inherited action
+fields. Authenticated replay closes every reached action group and rejoins
+field 42 to each selected terminal. The stored distance and key do not prove a
+runtime teleport or patrol decision.
+`OverrideBornPosition` (`0x0103`) has a selected five-member action wrapper
+reached through the three-byte extended union prefix. Its inherited bool,
+Priority enum and scalar words precede the own `overrideRot` byte; a pinned
+source call and setter constrain that final field. Authenticated VFS replay
+closes the reached JZMonk action groups and rejoins field 42 to their selected
+terminals. The stored flag does not prove a runtime birth position or rotation.
+`RefreshHeadBarShowHideAction` (`0x012C`) has a selected four-member derived
+wrapper with no own setters. The three-byte extended tag precedes the inherited
+bool and three four-byte reads; the Priority generic context is pinned by the
+current native contract. Authenticated replay closes reached enemy files
+through field 42 and their selected terminals, including records with the
+separate physical `0x00B9` action below. The wrapper name does not prove a
+live head-bar change.
+`ForceHideHeadBarAction` (`0x00B9`) has its own selected Skill dispatcher
+route, while its six source reads reuse the reviewed Buff formatter: four
+inherited action values, the `finishByAction` byte, and finite
+`TargetSettings`. The target can be null independently of the outer wrapper.
+Direct authenticated VFS replay closes all three reached enemy action groups,
+continues through field 42, and rejoins each verified terminal start. The
+complete Skill corpus gate confirms these files exact to EOF. This is stored
+action data; neither head-bar visibility nor live target selection is observed
+at runtime.
+`CreateAdditionalBattleShape` (`0x0091`) has a separate selected Skill
+dispatcher route to a ten-member generated wrapper. The first four reads are
+the inherited action fields; its six own setters receive `duration`, three
+follow/release flags, `ColliderShapeData`, and `TargetSettings` in native source
+order. The finite collider and target children reuse reviewed Buff readers;
+their opaque scalar bits retain structural-only interpretation. Direct
+authenticated VFS replay closes one reached action in each of three SkillData
+files and advances all three through their complete timeline lists. The
+complete Skill corpus gate confirms these files exact to EOF. Stored fields do
+not prove a live battle shape was created, followed a target, or released.
+`ThrowPickupItemStartAction` (`0x0180`) and `ThrowPickupItemAction` (`0x017F`)
+have separate selected four-member native wrappers with no own setters. Each
+stores the inherited bool, Priority enum, and two scalar words after its
+three-byte physical tag. The reached common-character records use `0x0180`
+as a first root and `0x017F` as a later action; admitting only the first leaves
+a later stop. Authenticated replay of both closes their action groups and
+rejoins field 42 to the selected terminals. Stored action assignments do not
+prove that an item was thrown during play.
+`TakeDownAction` (`0x017A`) has a selected twelve-member wrapper and three-byte
+physical tag. Four inherited action values precede `deadOption`, a finite
+BlackboardDouble `duration`, DirectionSettings `faceDirection`, float-width
+`immobilizedTime`, `returnTrueWhen`, two independently framed TargetSettings
+members `source` and `targetSettings`, and the terminal `teammateBigStagger`
+byte. The reviewed native route pins all twelve source calls, seven generic
+type arguments, and eight own-field setters. Direct authenticated VFS replay
+crosses the three reached actions in Aurora, Meurs, and Pogranichnik SkillData
+and rejoins each complete timeline list and selected terminal; the full corpus
+gate has yet to measure the resulting exact-file gain. The stored layout does
+not prove a runtime takedown or teammate state change.
+`CheckSpellInflictionType` (`0x007A`) has a selected six-member Skill route
+backed by the reviewed Buff source profile. Its last two members are a mask
+enum and bounded saved-key string; two generic contexts and the output
+setters authenticate the read order. Authenticated VFS replay closes the
+weapon SkillData files that reached this later passive route. The
+stored mask and key do not prove that the condition held during play.
+`CheckHealTag` (`0x0063`) has a selected five-member Skill route with a finite
+GameplayTagQuery child. Authenticated VFS replay closes some reached passive
+files and advances others to later tags `0x0044` or
+`0x006B`. The stored query does not show whether a healing condition was true
+at runtime.
+`CheckConsumeBuffLayer` (`0x003F`) has a selected seven-member Skill route
+backed by the reviewed Buff source and finite BlackboardInt child. Positive
+passive files reach this condition. Authenticated VFS replay closes
+their passive lists and fields through 42; each continuation meets the
+independently selected terminal start, and the full corpus gate verifies their
+whole-file exactness. The stored comparison inputs do not prove runtime buff
+consumption.
+`CheckObtainAtbType` (`0x006A`) has a selected eight-member Skill route with
+two bounded typed enum lists. Authenticated VFS replay closes some reached
+passive files and advances another to later tag `0x0132`. The stored flags and
+list values do not prove a live ATB
+change.
+`CheckGlobalCDTimerAction` (`0x0044`) has a selected six-member Skill route
+with a bounded buff identifier and finite TargetSettings child. Authenticated
+weapon files advance through it and next reach passive
+tag `0x000A`. This is a storage boundary, not evidence that a cooldown was
+evaluated during play.
+`AddGlobalCDTimer` (`0x000A`) has a selected seven-member Skill route with a
+bounded buff identifier, finite BlackboardDouble duration, and TargetSettings
+child. Authenticated replay closes the passive ActionGroupData in the files
+that advanced from `0x0044`. The top-level continuation through field
+42 then ends exactly at each independently selected terminal start; the full
+corpus gate verifies their whole-file closures. The stored duration and
+target do not establish runtime cooldown timing.
+The selected native contracts carry helper targets and code addresses. Reader
+modules check named field shapes, while their native validators compare the
+installed call targets to those contracts. Duplicating per-build helper RVAs
+in Python would make the code itself a second stale native catalog.
+The separate TimelineActionData diagnostic cursor derives the selected image
+base from a unique declaring-type/method row and its named reader window in
+the generated native context. Missing or ambiguous rows fail closed; a prior
+method index or RVA is not a cross-build identity.
+Frontier ranking must keep a stop's parser frame. A diagnostic `actual` integer
+can be a nested collection count or profile marker as well as a physical
+action tag; only a failed union-tag check identifies the latter. Replaying
+authenticated bytes and retaining the enclosing stop reason prevents a
+numeric coincidence from promoting an unrelated action route.
+The maintained Skill corpus builder retains the shared timeline decoder's
+first refusal per nonexact positive-timeline file, alongside passive first
+refusals. Earlier broad prefix handling obscured many later `0x0116` stops;
+another diagnostic gap discarded `laterStopReason` when the reader returned an
+exact first-record prefix with a later refusal. Both thrown and returned
+refusals are now recorded. The bounded diagnostic exposes an integer as a
+physical action tag only when the reader explicitly reports a union-tag
+failure. The generated report owns the changing counts and ranked inventory.
+Native route evidence and exact enclosing cursors, rather than diagnostic
+frequency alone, decide promotion.
+
+Positive `passiveEventActions` are a second, independent ActionGroup shape.
+The current native ActionGroup order and reviewed `AbilityActionMap` formatter
+establish a map header, scalar word, and nullable Sequence array before the
+next list count. The maintained Skill reader now admits this shape only when
+the following `timelineActions` count is zero and every reached action tag
+and member count matches an admitted contract route. The supported rows rejoin the
+existing fields 1 through 42 and selected terminal reader. Other passive
+rows retain the count prefix when their action routes remain outside the
+admitted table; the corpus now records each positive passive reader's first
+refusal in the file row, with a bounded reason ranking in the report and CLI.
+The previous broad catch hid these actionable route stops. The exact EOF
+result of the separate derived-plan oracle
+does not itself promote those rows in the reviewed Skill corpus.
+The selected native Buff contracts for `CheckBuffIdInContext` (`0x0056`),
+`CheckDamageDecorateMask` (`0x005B`), and `CheckSkillType` (`0x0078`) now supply
+three more finite condition routes. The Skill composite contract checks their
+read order and physical tag/member counts, and the selected gate revalidates
+their method identities and code windows before publishing passive maps.
+`CheckSkillType`'s list provider remains conditional where its Buff contract
+says so; observed passive rows rejoin an independent following cursor, while
+other missing action routes stay bounded.
+
+This review also found that Buff's handwritten tag/member-count table had
+drifted from the selected union contract at multiple routes, including an old
+23-member count for this 24-member wrapper. Buff's header check now asks the
+build-gated union contract for the pair instead of maintaining that second
+count table.
 `IfElseAction` (`0x00C9`) is an eight-member reader whose three nested
 `SequenceActionData` members are selected through the reviewed RIP-load and
 usage-cell chain to MethodSpec 619962. The atlas mechanically validates that
@@ -1669,10 +2488,15 @@ names a large majority of tags that no contract covers. All routes are distinct,
 so there is no shared default target to disambiguate. Counts belong to
 `reports/game_data/memorypack_action_dispatcher.json`.
 
-The table's identity is not rediscovered or hard-coded: it is read from the
-reviewed contracts that already pin its RVA, entry count and SHA256, every such
-contract must agree, and the live image's bytes are re-hashed against that pin.
-A build whose dispatcher moved yields no routes.
+The table's identity is not rediscovered or hard-coded: the reviewed
+`AbilityActionData` catalog first identifies this union's wrappers, then their
+contracts pin its RVA, entry count and SHA256. Every pin for that selected
+table is compared, and the live image's bytes are re-hashed against it.
+Nested finder and validator unions also have reviewed switch tables; treating
+all contract-directory pins as one union made action enumeration fail when
+those contracts were added. The catalog join keeps those independent tables
+out of the AbilityActionData agreement check without relaxing a contradiction
+within that union. A build whose dispatcher moved yields no routes.
 
 Member widths come with the names. A member's size is fixed by its type for
 every primitive, and for an enum by the primitive its generated `value__` field
@@ -1921,38 +2745,24 @@ agreeing on tag and member count with no mismatch**, with rows naming another
 union's types reported unjoinable instead of compared.
 `derived_schema.verify_against_reviewed_routes` keeps that discipline.
 
-**SkillData: the reader is no longer the constraint.** Running the plan reader
-through `skill_timeline_shared_sequence` over the 2,621 exported SkillData
-files changes closure not at all -- 661 both ways, identical extents, nothing
-lost -- and that null result is the finding. The decoder gates twice before its
-reader matters: a `rootTags` allowlist on the first timeline tag, and an
-`allowedReachedRoutes` allowlist on every route reached. Widening `rootTags` in
-memory to every first tag the corpus presents still yields **+0 closures**;
-what moves is the *reason*, from 73 anonymous "unsupported union tag" stops
-down to 1, with the rest landing on `not-contracted` and naming the exact
-route. So the plan reader does reach further -- on 10 files it converts a
-framing stop into a named contract refusal -- but SkillData's remaining work is
-contract coverage, not tag coverage.
+**Historical plan-reader comparison, not current corpus coverage.** The early
+comparison showed that an optional generated plan could advance a reader yet
+leave the reviewed Skill result unchanged. The decoder gates twice before that
+reader matters: `rootTags` admits the first timeline tag, and
+`allowedReachedRoutes` admits each route reached later. Widening only the root
+set converted some anonymous union failures into named `not-contracted`
+refusals; closure required admitting the reached child routes too. This is why
+the current first-stop profile belongs in the generated Skill corpus report,
+not in an old plan-reader result.
 
-**Widening both allowlists is what moves it, and the decoder verifies the
-widening itself.** `allowedReachedRoutes` is not only a list of permitted
-routes: for each one the decoder compares the recorded `memberCount` against
-the payload's own member-count byte. So a route added from the derived plans is
-checked on every file that reaches it, and a wrong count fails closed instead of
-producing plausible values. On that basis the contract now carries 21 further
-root tags and the **33 derived routes the corpus actually reaches**, each marked
-`evidence: derivedPlanCorpusVerified` so it stays distinguishable from the 61
-hand-reviewed rows, with `derivedRouteEvidence` recording the method and its
-boundary. The 322 determined routes the corpus never reached were deliberately
-**not** added: an unreached route would be an assertion rather than a
-verification.
-
-The result is **661 of 2,621 files closing before, 2,210 after** with the frozen
-reader alone, and **2,293** with the opt-in plan reader, which removes the
-residual framing stops (88 down to 5). No member-count mismatch occurred at any
-point. What remains is structural rather than coverage: 294 files refused at the
-envelope's `actionGroup` shape, 29 by the deliberate
-`createBuff:requires-multiple-actions` rule, and 5 framing stops.
+The admitted derived routes retain `evidence: derivedPlanCorpusVerified` so
+they remain distinguishable from hand-reviewed native readers. For every
+reached route, the decoder compares the recorded member count with the
+payload's own header and fails closed on disagreement. That check corroborates
+framing; it does not establish field meanings, source-reader order, or runtime
+behavior. Unreached generated plans are not admitted merely because a wrapper
+exists. `derivedRouteEvidence` in the composite contract records the method
+and its boundary, while the current corpus report records changing coverage.
 
 ### Four families, and what each refusal turned out to be
 
@@ -1967,8 +2777,11 @@ rather than one backlog.
 `: ordinary JSON text. The reader refusing
   them is correct behaviour, not a gap, and the family is excluded by name.
 - **`LevelData` and `LevelScriptData` hold a `Dictionary<string, object>`.**
-  `System.Object` names no layout, so the refusal stands and needs no further
-  work.
+  `System.Object` names no layout for this generic plan reader, so its refusal
+  stands. A separate LevelData reader frames the known object shape. Its
+  14-float spline knot is independently confirmed by the selected native
+  `BezierKnot` formatter's 56-byte copy and struct offsets; that does not
+  resolve the dictionary's anonymous values or runtime use.
 - **A counted map with a managed side was refused, and should not have been.**
   The rule had been to model only an unmanaged key *and* value, because that is
   the shape the padded-pair layout is proven for. But `declared_dictionary`
@@ -2024,9 +2837,11 @@ number that would expose a drifting model, and it reached zero only after the
 collection rule below; the 138 files that refused before it were refusing
 correctly.
 
-This also closes the family the decoder never reached. 88 files carry a
-non-empty `passiveEventActions` list, whose records no reviewed reader frames;
-**all of them now consume exactly to EOF**. The other 206 files the timeline
+This also closes the family the timeline decoder initially never reached. 88
+files carry a non-empty `passiveEventActions` list; the derived-plan oracle
+consumes all of them exactly to EOF. The maintained Skill reader separately
+promotes only passive maps whose reached routes are admitted and checked.
+The other 206 files the timeline
 decoder refuses at the envelope are correctly refused -- both action-group
 lists are empty, so there is no first timeline record to decode, which is an
 absence rather than a gap.
@@ -2231,11 +3046,11 @@ This corroborates the non-EOF boundary, not an authenticated file receipt.
 
 ## The formatter-check carrier's uninterpreted tail
 
-identity remain unresolved. No observed final cursor or terminal uniqueness
-follows from this conditional ABI.
-Preserve the open formatter-check carrier window's uninterpreted tail: its bytes do not certify a
-runtime allocation extent or select the returned formatter. Provider fallback
-includes a lazy callback path whose population remains a separate evidence gap.
+The open formatter-check carrier window's uninterpreted tail does not certify
+a runtime allocation extent or select the returned formatter. No observed final
+cursor or terminal uniqueness follows from this conditional ABI. Provider
+fallback includes a lazy callback path whose population remains a separate
+evidence gap.
 
 ## Recovery acceleration
 
@@ -2270,12 +3085,14 @@ and mutation tests cover every dependency class.
 
 ## Remaining gaps
 
-- Continue SkillData from the maintained prefix through fields 1 through 42,
-  prioritizing the nested ActionGroup/action-union readers that account for the
-  opaque middle. Fields 43 through 47 and EOF are now selected by the accepted
-  direct-reader cursor receipt, but this disjoint terminal proof cannot fill the
-  earlier gap or make a whole record exact. Any further promotion must keep the
-  exact receipt/corpus/native/verifier replay and current identity-set gates.
+- Continue SkillData through fields 1 through 42 for the remaining partial
+  files, prioritizing unsupported nested ActionGroup/action-union routes. The
+  maintained reader now closes supported multi-timeline lists and rejoins the
+  selected terminal, but a disjoint terminal proof cannot fill an earlier
+  unsupported child or make that file exact. Fields 43 through 47 and EOF are
+  selected by the accepted direct-reader cursor receipt. Any further promotion
+  must keep the exact receipt/corpus/native/verifier replay and current
+  identity-set gates.
 - `memorypack.buff_corpus` supplies the full current BuffData denominator from
   authenticated outer-ledger identities and decrypted stream bytes, using shared
   `memorypack.corpus_gate` provenance guards. It retains all filename-string
@@ -2292,6 +3109,15 @@ and mutation tests cover every dependency class.
   cannot borrow suffix bytes. The corpus records its accepted prefix endpoint or
   unsupported-action stop and the remaining gap for every accepted suffix; this
   does not certify the legacy field labels or close that gap.
+  The selected native BuffData reader's `List<DamageModifier.Data>` context
+  stores its result in `damageModifier`. The selected child wrapper reads
+  `condition`, `damageProcessors`, then `enableSide`; the independently gated
+  `memorypack.buff_damage_modifier_receipt` replays those stored spans against
+  logical-byte hashes for the current positive-list first blockers. This names
+  the parent members without promoting nested condition actions or processor
+  bodies to recursive schemas. Even condition-free rows can contain positive
+  processor lists; neither a bounded outer cursor nor a wrapper name proves
+  their leaf ownership or modifier behavior.
   `memorypack.buff_1b_corpus` rebuilds the authenticated census and checks exact
   root-continuation tag `0x1B` ranges against re-streamed logical bytes, then
   joins the record to the current exact-build selected action reader. This

@@ -1,0 +1,128 @@
+{
+  "schema": "endfield.skill-timeline-check-skill-camera-motion-free-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 6,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 114,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 82211066,
+    "routeWindow": {
+      "startRva": 82211066,
+      "endRva": 82211116,
+      "sha256": "1BAF16E5A542BF06DB761B2B1742809CD623B9701CC82663551CD4651D4DE3EA",
+      "boundary": "selected 0x0072 registered wrapper route"
+    },
+    "usageCellRva": 218339264,
+    "usageRawHex": "0F40032000000000",
+    "registeredTypeIndex": 106503,
+    "wrapperTypeDefinition": 16673,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillCameraMotionFree_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      124535,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillCameraMotionFree_DataForMemoryPack",
+      "Deserialize",
+      153918168
+    ],
+    [
+      124536,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckSkillCameraMotionFree_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckSkillCameraMotionFree_DataForMemoryPackFormatter",
+      "Deserialize",
+      153917928
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 153918345,
+    "hex": "807C243806"
+  },
+  "codeWindows": [
+    {
+      "startRva": 153918168,
+      "endRva": 153918631,
+      "sha256": "6B95998A82003B56D1F781265B8174B524B326A2C86408AACDA80C0C4FB45E4E",
+      "boundary": "selected six-member reader through normal return and error rejoin"
+    },
+    {
+      "startRva": 153917928,
+      "endRva": 153918168,
+      "sha256": "04FFD052EBBA574E6E932568E95EF6ADAD295EDAA3218B8D2FBB923DA288D50A",
+      "boundary": "formatter forwarding and initialization into selected reader"
+    }
+  ],
+  "setterMethods": [
+    [
+      124531,
+      "set___cameraAnimKey__",
+      "System.String"
+    ],
+    [
+      124532,
+      "set___editPrefabName__",
+      "System.String"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153918362,
+      "sourceCallHex": "E821ED9DF9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153918402,
+      "sourceCallHex": "E8E9EA9DF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153918435,
+      "sourceCallHex": "E8C8EA9DF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153918464,
+      "sourceCallHex": "E8ABEA9DF9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "cameraAnimKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 153918493,
+      "sourceCallHex": "E8DEEA9DF9",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "editPrefabName",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 153918523,
+      "sourceCallHex": "E8C0EA9DF9",
+      "sourceTargetRva": 46827264
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected build dispatch 0x0072 joins CheckSkillCameraMotionFree wrapper to its six-member reader. Six ordered source calls, body windows, and member-count instruction are pinned.",
+    "direct": "The source reads four inherited primitives followed by two string byte payloads, cameraAnimKey then editPrefabName.",
+    "structuralOnly": "The stored names do not prove any camera motion state or runtime condition evaluation.",
+    "unresolved": "Live formatter branch selection, allocation/refill/error parity, and enclosing SkillData EOF remain separate."
+  }
+}

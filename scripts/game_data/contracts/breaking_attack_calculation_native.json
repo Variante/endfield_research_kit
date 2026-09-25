@@ -1,0 +1,81 @@
+{
+  "schema": "endfield.breaking-attack-calculation-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "ownerType": "Beyond.Gameplay.Core.BreakingAttackCalculation",
+  "methods": {
+    "evaluate": [60899, "Beyond.Gameplay.Core.BreakingAttackCalculation", "Evaluate", "0x6047b0c"],
+    "getAttribute": [60906, "Beyond.Gameplay.Core.CalculationBase", "GetAttribute", "0x4891430"],
+    "blackboardValue": [1021, "Beyond.ActionBlackboardExtensions", "GetValue", "0x30ff5e0"],
+    "patchCheck": [102181, "IFix.WrappersManagerImpl", "IsPatched", "0x2c97970"],
+    "getPatch": [102180, "IFix.WrappersManagerImpl", "GetPatch", "0x64af4dc"],
+    "patchWrapper": [100320, "IFix.ILFixDynamicMethodWrapper", "__Gen_Wrap_8529", "0x22cb450"]
+  },
+  "evaluateParameters": [
+    ["attacker", "Beyond.Gameplay.Core.AbilitySystem"],
+    ["defender", "Beyond.Gameplay.Core.AbilitySystem"],
+    ["blackboard", "Beyond.ActionBlackboard"],
+    ["context", "Beyond.Gameplay.Core.IActionEnvironment+Context"],
+    ["attackerOverrideAttributes", "double[]"],
+    ["defenderOverrideAttributes", "double[]"],
+    ["argsForServer", "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"]
+  ],
+  "evaluateReturnType": "Beyond.Gameplay.Core.CalcResult",
+  "calleeSignatures": {
+    "getAttribute": {
+      "parameters": [["attrSource", "Beyond.Gameplay.Core.AbilitySystem"], ["attributeType", "Beyond.GEnums.AttributeType"], ["attrArray", "double[]"]],
+      "returnType": "double"
+    },
+    "blackboardValue": {
+      "parameters": [["param", "Beyond.Blackboard+BlackboardDouble"], ["blackboard", "Beyond.ActionBlackboard"]],
+      "returnType": "float"
+    },
+    "patchWrapper": {"returnType": "Beyond.Gameplay.Core.CalcResult"}
+  },
+  "resultValueField": ["Beyond.Gameplay.Core.CalcResult", "value", "double", "0x0400aed8"],
+  "fields": [
+    {"name": "multiplier", "type": "Beyond.Blackboard+BlackboardDouble", "offset": 16, "token": "0x0400aed3"},
+    {"name": "atkScale", "type": "Beyond.Blackboard+BlackboardDouble", "offset": 24, "token": "0x0400aed4"}
+  ],
+  "attributeEnumMembers": {
+    "type": "Beyond.GEnums.AttributeType",
+    "members": [
+      {"name": "Atk", "id": 2, "token": "0x040026ed"},
+      {"name": "BreakingAttackDamageTakenScalar", "id": 27, "token": "0x04002706"}
+    ]
+  },
+  "codeWindows": [
+    {"startRva": "0x6047b0c", "endRva": "0x6047ce2", "sha256": "40ae3cf7f06439b17b7846f655f6eeeaea195c79fa4ebc3bf0c9a919927e3cde", "boundary": "complete Evaluate body, selected attributes, blackboard fields, mixed-precision arithmetic, debug path and iFix bypass"}
+  ],
+  "instructionWindows": [
+    ["0x6047b71", "4c8b8c24c800000041b802000000488364242000488bd5488bcbe8a09884fe", "attacker and attacker override array query AttributeType.Atk through GetAttribute"],
+    ["0x6047b90", "4c8b8c24d000000041b81b000000488364242000488bd6488bcb440f28c0e87d9884fe", "defender and defender override array query BreakingAttackDamageTakenScalar"],
+    ["0x6047bb3", "488b4b104533c0488bd70f28f8e81b7a0bfd488b4b184533c0488bd7440f28c8e8087a0bfd", "multiplier and atkScale fields each reach BlackboardDouble GetValue"],
+    ["0x6047c2b", "f2410f59f80f57c9f3410f59f1f20f5acff30f59f10f57c0f30f5ac666480f7ec0", "Double attribute product, Single scale product, Double-to-Single conversion, Single multiply, Single-to-Double CalcResult return"],
+    ["0x6047c4e", "33d2b988c30000e882784600488bc84885c07506e8ad67a6facc4883642448004c8bce488b8424d80000004c8bc54889442440488bd3488b8424d00000004889442438488b8424c80000004889442430488b8424c0000000488944242848897c2420e89b3728fc", "iFix GetPatch and wrapper result path bypassing normal arithmetic"]
+  ],
+  "calls": [
+    {"siteRva": "0x6047b64", "method": "patchCheck"},
+    {"siteRva": "0x6047b8b", "method": "getAttribute"},
+    {"siteRva": "0x6047bae", "method": "getAttribute"},
+    {"siteRva": "0x6047bc0", "method": "blackboardValue"},
+    {"siteRva": "0x6047bd3", "method": "blackboardValue"},
+    {"siteRva": "0x6047c55", "method": "getPatch"},
+    {"siteRva": "0x6047cb0", "method": "patchWrapper"}
+  ],
+  "branches": [
+    {"siteRva": "0x6047b6b", "opcode": "0f85", "displacementBytes": 4, "targetRva": "0x6047c4e"},
+    {"siteRva": "0x6047be6", "opcode": "74", "displacementBytes": 1, "targetRva": "0x6047c2b"},
+    {"siteRva": "0x6047c4c", "opcode": "eb", "displacementBytes": 1, "targetRva": "0x6047cb5"},
+    {"siteRva": "0x6047c60", "opcode": "75", "displacementBytes": 1, "targetRva": "0x6047c68"}
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected native pair has the named Evaluate signature, two stored BlackboardDouble fields, matching selected enum members, direct call and branch targets, and the reviewed complete method body bytes.",
+    "direct": "On a normally returning unpatched path, attacker Atk and defender BreakingAttackDamageTakenScalar reach GetAttribute with their corresponding override arrays. Stored multiplier and atkScale reach BlackboardDouble GetValue. The native arithmetic first multiplies the Double attributes, separately multiplies the Single scale values, rounds the attribute product to Single, multiplies those two Singles, then converts the result to Double as CalcResult.value.",
+    "conditional": "An optional server debug-args branch records operands and rejoins the same arithmetic. If Evaluate's iFix IsPatched branch is taken, GetPatch and the wrapper supply the result and skip the ordinary arithmetic; no formula is claimed for the patch path.",
+    "unresolved": "Attribute and blackboard provider internals, their own patch state, live patch selection, authored action activation, mitigation and final damage remain unproved."
+  }
+}

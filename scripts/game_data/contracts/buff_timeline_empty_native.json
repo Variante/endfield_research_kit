@@ -1,0 +1,58 @@
+{
+  "schema": "endfield.buff-timeline-empty-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": ["buff_root_prefix_native.json"],
+  "methods": [
+    [102606, "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack", "Deserialize", 53280816],
+    [102600, "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack", "set___timelineActions__"],
+    [102601, "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack", "set___triggerInterval__", "Beyond.Blackboard+BlackboardDouble"]
+  ],
+  "ownerType": "Beyond.Gameplay.Core.BuffData",
+  "timelineField": "timelineActions",
+  "timelineFieldType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.TimelineAction+TimelineActionData>",
+  "followingField": "triggerInterval",
+  "followingFieldType": "Beyond.Blackboard+BlackboardDouble",
+  "listReadTargetRva": 58849520,
+  "followingReadTargetRva": 47864976,
+  "listSourceContext": {
+    "instructionRva": 53282283,
+    "instructionHex": "488B15CE40D209",
+    "cellVa": 6660507328,
+    "usageRawHex": "C7A412C000000000",
+    "methodSpecIndex": 610915,
+    "methodSpec": [428462, -1, 62695],
+    "methodType": "MemoryPack.MemoryPackReader",
+    "methodName": "ReadPackable",
+    "argumentRawHex": "68F0248D010000000000150000000000",
+    "argumentType": "System.Collections.Generic.List`1<Beyond.Gameplay.Core.TimelineAction+TimelineActionData>"
+  },
+  "followingSourceContext": {
+    "instructionRva": 53282342,
+    "instructionHex": "488B15F33FD209",
+    "cellVa": 6660507168,
+    "usageRawHex": "C9EB12C000000000",
+    "methodSpecIndex": 620004,
+    "methodSpec": [428464, -1, 17005],
+    "methodType": "MemoryPack.MemoryPackReader",
+    "methodName": "ReadValue",
+    "argumentRawHex": "AD000000000000000000120000000000",
+    "argumentType": "Beyond.Blackboard+BlackboardDouble"
+  },
+  "rootInstructions": [
+    [53282296, "E8F3F25400", "read timelineActions List<TimelineActionData>"],
+    [53282323, "488981C8000000", "store BuffData.timelineActions at runtime offset 0xC8"],
+    [53282355, "E85856ADFF", "read following triggerInterval BlackboardDouble"],
+    [53282382, "48898188000000", "store BuffData.triggerInterval at runtime offset 0x88"]
+  ],
+  "evidenceBoundary": {
+    "direct": "The selected BuffData reader passes a List<TimelineActionData> type context to ReadPackable, stores the returned object in BuffData.timelineActions, then reads and stores triggerInterval through its separate BlackboardDouble context.",
+    "conditional": "A current source-hash-checked null or zero timeline list has no element body; its four-byte count and immediately following triggerInterval reader can join the exact physical EOF tail without a suffix endpoint search.",
+    "structuralOnly": "Positive timeline list bodies remain framed by the separate outer-record and EOF-tail endpoint search; this contract does not authenticate nested action payloads.",
+    "unresolved": "Live ListFormatter selection, positive element reader parity, runtime action behavior, and alternate installed builds remain open."
+  }
+}

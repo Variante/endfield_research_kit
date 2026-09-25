@@ -1,0 +1,64 @@
+{
+  "schema": "endfield.buff-damage-modifier-child-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": ["buff_root_prefix_native.json"],
+  "rootMethod": [102606, "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack", "Deserialize", 53280816],
+  "rootContext": {
+    "instructionRva": 53281268,
+    "instructionHex": "488B15B543D209",
+    "cellVa": 6660507056,
+    "usageRawHex": "8BA412C000000000",
+    "methodSpecIndex": 610885,
+    "methodSpec": [428462, -1, 62669],
+    "argumentRawHex": "882C258D010000000000150000000000",
+    "genericCarrierRawHex": "3878288D01000000A046F08A0100000000000000000000000000000000000000",
+    "genericBaseRawHex": "91920000000000000000120000000000",
+    "genericType": "System.Collections.Generic.List`1",
+    "elementInstantiationIndex": 17026,
+    "elementRawHex": "64270000000000000000120000000000",
+    "elementType": "Beyond.Gameplay.Core.DamageModifier+Data"
+  },
+  "rootSourceInstructions": [
+    [53281281, "E8EAF65400", "selected list source call"],
+    [53281308, "48894140", "store returned list to BuffData.damageModifier"]
+  ],
+  "rootDestinationField": "Beyond.Gameplay.Core.BuffData::damageModifier",
+  "childMethod": [104492, "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageModifier_DataForMemoryPack", "Deserialize", 66871648],
+  "childWindow": {
+    "startRva": 66871648,
+    "endRva": 66871955,
+    "sha256": "7A133DDC7B024222AD5622ECA8A0AC4B0CFE9CBF4A95B00CAB6F11022FD48D00",
+    "boundary": "selected normal and FF reader through return; external refill/error branches are not interpreted"
+  },
+  "childWrapper": "Beyond.MemoryPack.Beyond_Gameplay_Core_DamageModifier_DataForMemoryPack",
+  "childSetters": [
+    [104487, "set___condition__", "Beyond.Gameplay.Core.SequenceActionData", 52469328],
+    [104488, "set___damageProcessors__", "<type-index:57452>", 52460176],
+    [104489, "set___enableSide__", "Beyond.Gameplay.Core.DamageModifier+Data+EnableSide", 84403284]
+  ],
+  "childSourceInstructions": [
+    [66871723, "4080FE03", "three-member wrapper header"],
+    [66871733, "488B15ACEC0209", "condition source context"],
+    [66871746, "E8C9FADDFE", "condition source read"],
+    [66871769, "E8723C24FF", "condition setter call"],
+    [66871774, "488B159BB30909", "damageProcessors source context"],
+    [66871787, "E8009785FF", "damageProcessors source read"],
+    [66871810, "E8891824FF", "damageProcessors setter call"],
+    [66871815, "488B1552B30909", "enableSide source context"],
+    [66871828, "E89724CEFE", "enableSide four-byte source read"],
+    [66871852, "894110", "enableSide store"]
+  ],
+  "childDestinationField": "Beyond.Gameplay.Core.DamageModifier+Data::enableSide",
+  "selectedReadOrder": ["condition", "damageProcessors", "enableSide"],
+  "evidenceBoundary": {
+    "exact": "The current selected root source context resolves List<DamageModifier.Data>, its result stores into BuffData.damageModifier, and the selected child reader and setter pointer sequence are pinned to installed native bytes.",
+    "direct": "The child wrapper declares condition, damageProcessors, enableSide in the observed read order; bounded stored bytes can be partitioned into these fields.",
+    "structuralOnly": "The condition and processor children are framed by existing bounded readers. Their nested field names, action semantics, runtime selection and modifier effect are not proved by this contract.",
+    "unresolved": "Recursive naming of positive condition actions and processors, alternate providers, and whole BuffData schema remain open."
+  }
+}

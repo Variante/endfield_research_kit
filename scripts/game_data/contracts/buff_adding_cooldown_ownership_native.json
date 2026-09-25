@@ -1,0 +1,40 @@
+{
+  "schema": "endfield.buff-adding-cooldown-ownership-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "reviewedDependencies": [
+    "buff_root_prefix_native.json",
+    "buff_35_native.json"
+  ],
+  "rootMethod": "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack.Deserialize",
+  "rootWrapper": "Beyond_Gameplay_Core_BuffDataForMemoryPack",
+  "rootFieldIndex": 1,
+  "rootSetter": ["set___addingCooldown__", "Blackboard.BlackboardDouble"],
+  "rootContextIndex": 1,
+  "rootContextType": "Beyond.Blackboard+BlackboardDouble",
+  "instanceField": "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack::__instance",
+  "destinationField": "Beyond.Gameplay.Core.BuffData::addingCooldown",
+  "sourceToFieldInstructions": [
+    [53281004, "E89F5BADFF", "call immediately after BlackboardDouble source context"],
+    [53281018, "488B4B10", "load wrapped BuffData instance after source call"],
+    [53281031, "48894128", "store returned object in BuffData.addingCooldown"]
+  ],
+  "nestedWrapper": "Beyond_Blackboard_BlackboardDoubleForMemoryPack",
+  "nestedBaseWrapper": "Beyond_Blackboard_BlackboardParamBase_float_double_ForMemoryPack",
+  "nestedSetters": [
+    ["set___blackboardKey__", "string"],
+    ["set___useBlackboardKey__", "bool"],
+    ["set___value__", "float"]
+  ],
+  "selectedReadOrder": ["blackboardKey", "useBlackboardKey", "value"],
+  "evidenceBoundary": {
+    "exact": "The selected native pair, root and nested method identities, their reviewed code windows, the BlackboardDouble generic source context, and the direct call-result store to the installed BuffData.addingCooldown field are checked byte-for-byte or against current MetadataRegistration offsets.",
+    "direct": "The current generated wrapper setter declarations name blackboardKey, useBlackboardKey, and value in source order; the separately reviewed nested reader consumes a nullable signed-length byte payload, one byte, and four raw source bytes.",
+    "conditional": "The child layout describes the selected reader and authenticated stored bytes; live generic provider selection is not observed.",
+    "unresolved": "String decoder parity, runtime blackboard lookup, evaluated cooldown, alternate BuffData branches, and whole-BuffData recursive schema remain open."
+  }
+}

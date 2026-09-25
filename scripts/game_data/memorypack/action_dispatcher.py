@@ -8,10 +8,12 @@ walks every entry of the dispatcher's switch table and reports the wrapper each
 tag routes to, joined with the member order
 ``scripts.game_data.memorypack.wrapper_members`` derives for it.
 
-The table's own identity is not rediscovered or hard-coded here.  It is read
-from the reviewed contracts that already pin it -- RVA, entry count and the
-table's SHA256 -- every such contract must agree, and the live image's bytes are
-re-hashed against that pin.  A build whose table differs therefore produces
+The table's own identity is not rediscovered or hard-coded here. The reviewed
+AbilityActionData catalog identifies which contract wrappers belong to this
+union, and those contracts pin its RVA, entry count and SHA256. Other nested
+unions have their own switch tables and are excluded by their wrapper identity.
+Every pin for the selected action table is still compared, and the live image's
+bytes are re-hashed against it. A build whose table differs therefore produces
 nothing rather than a plausible-looking wrong route set.
 
 What this establishes is a tag's *identity*: which generated wrapper the route
@@ -134,13 +136,24 @@ def _blocks(value: Any) -> Iterable[dict[str, Any]]:
 def reviewed_switch_table(
     contracts_dir: Path = CONTRACTS_DIR,
 ) -> tuple[SwitchTable, dict[int, dict[str, Any]]]:
-    """The switch table the reviewed contracts pin, plus their per-tag rows.
-
-    Every contract that pins the table must pin the same one.  Disagreement is
-    a reviewed-evidence conflict, not something to resolve by majority.
-    """
-    identities: dict[tuple[int, int, str], list[str]] = {}
-    reviewed: dict[int, dict[str, Any]] = {}
+    """Select the AbilityActionData table by catalog wrapper identity."""
+    try:
+        catalog = json.loads((contracts_dir / "levelscript_union_tags.json").read_bytes())
+    except (OSError, ValueError) as error:
+        raise ValueError(f"ability-action-catalog-unavailable:{error}") from error
+    families = catalog.get("families", {})
+    action_family = families.get("AbilityActionData")
+    action_switch = catalog.get("switches", {}).get("AbilityActionData", {})
+    if (
+        catalog.get("schema") != "endfield.levelscript-union-tags.v1"
+        or not isinstance(action_family, list)
+        or action_switch.get("base")
+        != "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack"
+        or action_switch.get("entryCount") != len(action_family)
+    ):
+        raise ValueError("ability-action-catalog-shape")
+    candidates: list[tuple[str, dict[str, Any], tuple[int, int, str]]] = []
+    selected_identities: set[tuple[int, int, str]] = set()
     for path in sorted(contracts_dir.glob("*.json")):
         try:
             value = json.loads(path.read_bytes())
@@ -152,19 +165,36 @@ def reviewed_switch_table(
                 int(block["switchEntryCount"]),
                 str(block["switchTableSha256"]).upper(),
             )
-            identities.setdefault(key, []).append(path.name)
+            candidates.append((path.name, block, key))
             tag = int(block["unionTag"])
-            existing = reviewed.get(tag)
-            if existing is not None and existing.get("wrapperTypeDefinition") is not None:
+            if not 0 <= tag < len(action_family):
                 continue
-            reviewed[tag] = block
-    if not identities:
+            catalog_route = action_family[tag]
+            if (
+                isinstance(catalog_route, dict)
+                and block.get("wrapperName") == catalog_route.get("wrapperName")
+                and block.get("wrapperName") is not None
+            ):
+                selected_identities.add(key)
+    if not selected_identities:
         raise ValueError("no reviewed contract pins an action dispatcher switch table")
-    if len(identities) != 1:
-        raise ValueError(f"conflicting-switch-table-pins={sorted(identities)}")
-    (rva, entry_count, sha256), sources = next(iter(identities.items()))
-    if not 0 < entry_count <= 4096:
+    if len(selected_identities) != 1:
+        raise ValueError(f"conflicting-switch-table-pins={sorted(selected_identities)}")
+    rva, entry_count, sha256 = next(iter(selected_identities))
+    if entry_count != len(action_family) or not 0 < entry_count <= 4096:
         raise ValueError(f"implausible-switch-entry-count={entry_count}")
+    selected = (rva, entry_count, sha256)
+    sources: list[str] = []
+    reviewed: dict[int, dict[str, Any]] = {}
+    for name, block, key in candidates:
+        if key != selected:
+            continue
+        sources.append(name)
+        tag = int(block["unionTag"])
+        existing = reviewed.get(tag)
+        if existing is not None and existing.get("wrapperTypeDefinition") is not None:
+            continue
+        reviewed[tag] = block
     return SwitchTable(rva, entry_count, sha256, tuple(sorted(set(sources)))), reviewed
 
 

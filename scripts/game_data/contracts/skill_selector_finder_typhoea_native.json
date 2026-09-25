@@ -1,0 +1,73 @@
+{
+  "schema": "endfield.skill-selector-finder-typhoea-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 0,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 23,
+    "switchTableRva": 59821652,
+    "switchEntryCount": 24,
+    "switchTableSha256": "E87C7C363EB6780D1983D85487D29380509F5835D733D303228F210BB09430E6",
+    "switchTargetRva": 82204560,
+    "routeWindow": {
+      "startRva": 82204560,
+      "endRva": 82204611,
+      "sha256": "EF6EFB6F0C329574F0F4CA65BB01EB028C308B83CE64DA1C7E78B89939F9A9B7",
+      "boundary": "selected finder tag-23 existing, new, and null-wrapper branches"
+    },
+    "usageCellRva": 217990536,
+    "usageRawHex": "8544032000000000",
+    "registeredTypeIndex": 107074,
+    "wrapperTypeDefinition": 23069,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      167308,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPackFormatter",
+      "Deserialize",
+      158104468
+    ],
+    [
+      167307,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_TyphoeaArcherySelectedFinder_DataForMemoryPack",
+      "Deserialize",
+      158104696
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 158104468,
+      "endRva": 158104557,
+      "sha256": "0B88F438B37F31CE3620E7F83762333113A6E41B9C16589E5768702AD2C83954",
+      "boundary": "formatter forwarding through complete JMP"
+    },
+    {
+      "startRva": 158104696,
+      "endRva": 158104933,
+      "sha256": "F3FAB296BA89AF4E01F989DEE8D8B244D253DA9006E8F961067BBFB503FF696F",
+      "boundary": "member-zero header, normal and FF branches through RET"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 158104859,
+    "hex": "4084FF"
+  },
+  "sourceHeaderRead": {
+    "sourceCallsiteRva": 158104792,
+    "sourceCallHex": "E8830B5EF9",
+    "sourceTargetRva": 46827616
+  },
+  "setterMethods": [],
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "Selected SelectorFinder tag 0x0017, wrapper identity, member-zero header check and absence of member reads are pinned to the installed native inputs.",
+    "direct": "The wire profile is one-byte union tag followed by either an FF null wrapper or a zero-member header byte.",
+    "structuralOnly": "The stored finder type does not establish which target the game selects at runtime.",
+    "unresolved": "Live formatter selection, allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}

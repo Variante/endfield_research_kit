@@ -1,0 +1,57 @@
+{
+  "schema": "endfield.buff-1b-action-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "dataType": [9248, "Beyond.Gameplay.Core.BlowOffAction+Data"],
+  "methods": {
+    "reader": [118712, "Beyond.MemoryPack.Beyond_Gameplay_Core_BlowOffAction_DataForMemoryPack", "Deserialize", "0x3f35580"],
+    "execute": [57607, "Beyond.Gameplay.Core.BlowOffAction", "ExecuteInternal", "0x5fd05fc"],
+    "applyBlowOff": [12918, "Beyond.Gameplay.ControlledStateComponent", "ApplyBlowOff", "0x655cf70"]
+  },
+  "applyBlowOffParameters": [
+    ["blowOffSource", "Beyond.Gameplay.Core.AbilitySystem"],
+    ["blowOffOption", "Beyond.Gameplay.Core.EnemyBlowOffOption"],
+    ["isPureBlowOff", "bool"]
+  ],
+  "serializedFields": [
+    ["attackerTargetSettings", "Beyond.Gameplay.Core.TargetSettings", 32, "0x0400a41e", 118697, "0x3f35920", "0x3f356ba"],
+    ["blowOffDistance", "Beyond.Blackboard+BlackboardDouble", 56, "0x0400a421", 118698, "0x3f35950", "0x3f356e3"],
+    ["blowOffHeight", "Beyond.Blackboard+BlackboardDouble", 80, "0x0400a424", 118699, "0x3f35980", "0x3f3570c"],
+    ["deadOption", "Beyond.Gameplay.ControlledStateDeadOption", 112, "0x0400a428", 118700, "0x3f359b0", "0x3f35734"],
+    ["directionAngleOffset", "Beyond.Blackboard+BlackboardDouble", 96, "0x0400a426", 118701, "0x3f359e0", "0x3f3575d"],
+    ["directionSettings", "Beyond.Gameplay.Core.DirectionSettings", 88, "0x0400a425", 118702, "0x3f35a10", "0x3f35786"],
+    ["distanceRandomRange", "Beyond.Blackboard+BlackboardDouble", 64, "0x0400a422", 118703, "0x3f35a40", "0x3f357af"],
+    ["forceMoveColliderToGround", "bool", 116, "0x0400a429", 118704, "0x3f35a70", "0x3f357d1"],
+    ["modelHeightRecoverTime", "Beyond.Blackboard+BlackboardDouble", 120, "0x0400a42a", 118705, "0x3f35aa0", "0x3f357fa"],
+    ["overwriteHeight", "bool", 72, "0x0400a423", 118706, "0x3f35ad0", "0x3f3581c"],
+    ["targetSettings", "Beyond.Gameplay.Core.TargetSettings", 40, "0x0400a41f", 118707, "0x3f35b00", "0x3f35845"],
+    ["teammateBigStagger", "bool", 48, "0x0400a420", 118708, "0x3f35b30", "0x3f35867"],
+    ["totalTime", "Beyond.Blackboard+BlackboardDouble", 104, "0x0400a427", 118709, "0x3f35b60", "0x3f35890"]
+  ],
+  "codeWindows": [
+    {
+      "startRva": "0x3f35580",
+      "endRva": "0x3f358a5",
+      "sha256": "7A4DDDCFF87F530A86377531035EAE4BBF8D077A05F5085CBF6EC56370850B25",
+      "boundary": "complete selected member17 reader normal path through RET; inherited prefix and thirteen direct named setters"
+    },
+    {
+      "startRva": "0x5fd05fc",
+      "endRva": "0x5fd2844",
+      "sha256": "4548D88E19FB11CFAA521265740E0BAA3E6BAE01DA8D7F88479B543182A9BF4B",
+      "boundary": "selected BlowOffAction ExecuteInternal body including unpatched direct ApplyBlowOff call and iFix branches"
+    }
+  ],
+  "directCalls": [
+    ["0x5fd24ed", "applyBlowOff"]
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected GameAssembly and metadata identify thirteen BlowOffAction.Data fields, their types and offsets, the reader setters, ExecuteInternal and ApplyBlowOff, with reviewed body windows and direct call sites.",
+    "direct": "The selected member17 reader assigns its thirteen action-specific fields in the recorded source order. The unpatched BlowOffAction.ExecuteInternal body has a direct call to ControlledStateComponent.ApplyBlowOff after target, state, direction and blackboard processing.",
+    "conditional": "Execution reaches the call only when the action uses this selected native body, the iFix branch does not replace it, and its preceding target/state guards pass.",
+    "unresolved": "The precise per-field runtime expression and value units, direction convention, actual target selection, live formatter/provider choice, patch state, actual execution, and whole BuffData EOF remain unproved."
+  }
+}

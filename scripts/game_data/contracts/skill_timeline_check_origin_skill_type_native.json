@@ -1,0 +1,104 @@
+{
+  "schema": "endfield.skill-timeline-check-origin-skill-type-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 6,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 72,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59830328,
+    "routeWindow": {
+      "startRva": 59830328,
+      "endRva": 59830378,
+      "sha256": "C06A793A1ED81DCA133831D702869E81AB33CE203B2CFE2EC08C67749E565DAD",
+      "boundary": "selected 0x0048 registered wrapper route"
+    },
+    "usageCellRva": 218340304,
+    "usageRawHex": "A33F032000000000",
+    "registeredTypeIndex": 106449,
+    "wrapperTypeDefinition": 16657,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckOriginSkillType_DataForMemoryPack"
+  },
+  "memberCountInstruction": {
+    "rva": 67082512,
+    "hex": "4080FE06"
+  },
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 67082528,
+      "sourceCallHex": "E89BEFCAFE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 67082569,
+      "sourceCallHex": "E862EDCAFE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 67082602,
+      "sourceCallHex": "E841EDCAFE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 67082635,
+      "sourceCallHex": "E820EDCAFE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "attackTypeMask",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 67082675,
+      "sourceCallHex": "E8F8ECCAFE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "skillTypeList",
+      "readKind": "counted-scalar32",
+      "sourceCallsiteRva": 67082715,
+      "sourceCallHex": "E8105F82FF",
+      "sourceTargetRva": 58849520
+    }
+  ],
+  "setterMethods": [
+    [
+      124425,
+      "set___attackTypeMask__",
+      159735
+    ],
+    [
+      124426,
+      "set___skillTypeList__",
+      58844
+    ]
+  ],
+  "sourceContract": "buff_48_native.json",
+  "listElementContract": "buff_78_native.json",
+  "listCountLoopContract": "buff_b4_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "The selected AbilityActionData union route, wrapper, six-member check and six ordered source calls are pinned to current native inputs.",
+    "direct": "The source reader takes a byte, four raw DWORDs, then a conditional counted list of raw DWORD SkillType elements, as separately witnessed by the Buff source contracts.",
+    "structuralOnly": "The finite decoder preserves null and empty lists and arbitrary scalar bits; stored values do not prove runtime skill-type condition evaluation.",
+    "unresolved": "Live formatter branch selection, allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}

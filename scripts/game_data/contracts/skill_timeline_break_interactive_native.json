@@ -1,0 +1,460 @@
+{
+  "schema": "endfield.skill-timeline-break-interactive-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 1,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59852940,
+    "routeWindow": {
+      "startRva": 59852940,
+      "endRva": 59852990,
+      "sha256": "7D6BB4C41A21B4C1545CF3F98C8BDAEC9E54910002496FDAE29D709D9B6EE77C",
+      "boundary": "selected 0x0001 type usage and formatter route"
+    },
+    "usageCellRva": 218752824,
+    "usageRawHex": "1F3E032000000000",
+    "registeredTypeIndex": 106255,
+    "wrapperTypeDefinition": 16185,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityActions_BreakInteractiveAction_DataForMemoryPack"
+  },
+  "serializedMemberCount": 9,
+  "methods": [
+    [
+      120777,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityActions_BreakInteractiveAction_DataForMemoryPack",
+      "Deserialize",
+      58169200
+    ],
+    [
+      120778,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityActions_BreakInteractiveAction_DataForMemoryPack+Beyond_Gameplay_Core_AbilityActions_BreakInteractiveAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      58170320
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 58169439,
+    "hex": "4080FE09"
+  },
+  "codeWindows": [
+    {
+      "startRva": 58169200,
+      "endRva": 58169796,
+      "sha256": "16B0037612EC0627CC4151BD6352EBAFF6A1F50D0511F6A8D859DE7E41576995",
+      "boundary": "selected nine-member source through normal return"
+    },
+    {
+      "startRva": 58170320,
+      "endRva": 58170413,
+      "sha256": "EF70D9B955923995071767ADA221803E267590B21B90D6C839A75B70886F97FB",
+      "boundary": "selected action formatter forwarding"
+    }
+  ],
+  "setterMethods": [
+    [
+      120770,
+      "set___atkCalculation__",
+      "Beyond.Gameplay.Core.CalculationBase"
+    ],
+    [
+      120771,
+      "set___attacker__",
+      "Beyond.Gameplay.ActionTargetType"
+    ],
+    [
+      120772,
+      "set___damageProcessors__",
+      "<type-index:57452>"
+    ],
+    [
+      120773,
+      "set___damageType__",
+      "Beyond.GEnums.DamageType"
+    ],
+    [
+      120774,
+      "set___targetInteractives__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 58169455,
+      "sourceCallHex": "E84CF052FF",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 58169496,
+      "sourceCallHex": "E813EE52FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 58169529,
+      "sourceCallHex": "E8F2ED52FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 58169562,
+      "sourceCallHex": "E8D1ED52FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "atkCalculation",
+      "readKind": "calculation-profile",
+      "sourceCallsiteRva": 58169602,
+      "sourceCallHex": "E889C362FF",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "attacker",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 58169643,
+      "sourceCallHex": "E880ED52FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "damageProcessors",
+      "readKind": "damage-processor-list",
+      "sourceCallsiteRva": 58169683,
+      "sourceCallHex": "E8985F0A00",
+      "sourceTargetRva": 58849520
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "damageType",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 58169720,
+      "sourceCallHex": "E833ED52FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "targetInteractives",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 58169756,
+      "sourceCallHex": "E8EFC262FF",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 58169589,
+      "instructionHex": "488B1534758E09",
+      "cellRva": 218500656,
+      "usageRawHex": "B1EA12C000000000",
+      "methodSpecIndex": 619864,
+      "methodSpec": [
+        428464,
+        -1,
+        13995
+      ],
+      "argumentRawHex": "60270000000000000000120000000000",
+      "typeKind": 18,
+      "typeDefinition": 10080,
+      "typeName": "Beyond.Gameplay.Core.CalculationBase",
+      "memberIndex": 4
+    },
+    {
+      "instructionRva": 58169670,
+      "instructionHex": "488B15337C8E09",
+      "cellRva": 218502528,
+      "usageRawHex": "1FA312C000000000",
+      "methodSpecIndex": 610703,
+      "methodSpec": [
+        428462,
+        -1,
+        62521
+      ],
+      "argumentRawHex": "38CB258D010000000000150000000000",
+      "typeKind": 21,
+      "typeName": "System.Collections.Generic.List`1",
+      "typeDefinition": 37521,
+      "classCarrier": {
+        "typePointerVa": 6647654776,
+        "typeRawHex": "38CB258D010000000000150000000000",
+        "carrierPointerVa": 6663031608,
+        "carrierRawHex": "3878288D010000005075E78A0100000000000000000000000000000000000000",
+        "basePointerVa": 6663206968,
+        "baseRawHex": "91920000000000000000120000000000",
+        "baseDefinitionIndex": 37521,
+        "classInstantiationPointerVa": 6625391952,
+        "opaqueCarrierTailHex": "00000000000000000000000000000000"
+      },
+      "classInstantiation": {
+        "index": 14393,
+        "table_slot_va": 6626089320,
+        "record_va": 6625391952,
+        "argument_vector_va": 6668195624,
+        "padding_hex": "00000000",
+        "arguments": [
+          {
+            "index": 0,
+            "type_pointer_va": 6661673448,
+            "raw_type_record_hex": "6B270000000000000000120000000000"
+          }
+        ]
+      },
+      "elementTypeDefinition": 10091,
+      "elementTypeName": "Beyond.Gameplay.Core.DamageProcessorBase",
+      "elementRawHex": "6B270000000000000000120000000000",
+      "memberIndex": 6
+    },
+    {
+      "instructionRva": 58169743,
+      "instructionHex": "488B15727D8E09",
+      "cellRva": 218502920,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeKind": 18,
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "memberIndex": 8
+    }
+  ],
+  "finder9": {
+    "dispatcher": {
+      "unionTag": 9,
+      "tableStartRva": 59821652,
+      "entryRva": 59821688,
+      "entryHex": "5ACA9003",
+      "targetRva": 59820634,
+      "routeWindow": {
+        "startRva": 59820634,
+        "endRva": 59820684,
+        "sha256": "A031AA913E29E859F6D9C2BEF6E95C07D6C857D07E5A7FCACECC4301048FB1D7",
+        "boundary": "selected finder9 type route"
+      },
+      "typeLoadRva": 59820642,
+      "typeLoadHex": "488B15677A6D09",
+      "usageCellRva": 217990352,
+      "usageRawHex": "5344032000000000",
+      "registeredTypeIndex": 107049,
+      "typeSlotVa": 6649298168,
+      "typePointerVa": 6662707144,
+      "typeRawHex": "035A0000000000000000120000000000",
+      "wrapperTypeDefinition": 23043,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InteractiveShapeFinder_DataForMemoryPack"
+    },
+    "serializedMemberCount": 12,
+    "methods": [
+      [
+        167133,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InteractiveShapeFinder_DataForMemoryPack",
+        "Deserialize",
+        61211840
+      ],
+      [
+        167134,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InteractiveShapeFinder_DataForMemoryPack+Beyond_Gameplay_Core_Selector_InteractiveShapeFinder_DataForMemoryPackFormatter",
+        "Deserialize",
+        61211408
+      ]
+    ],
+    "memberCountInstruction": {
+      "rva": 61212043,
+      "hex": "4080FE0C"
+    },
+    "codeWindows": [
+      {
+        "startRva": 61211840,
+        "endRva": 61212480,
+        "sha256": "2600D1EBEEDF6803A62CDFF3FE33EA7561AABA809C9FB926CA880A050C053DC1",
+        "boundary": "selected twelve-member finder reader through normal return"
+      },
+      {
+        "startRva": 61211408,
+        "endRva": 61211501,
+        "sha256": "8E110BA7EAB21588585DF33D6A50C2F764AA23F23E224FA94888DD130125F011",
+        "boundary": "selected finder formatter forwarding"
+      }
+    ],
+    "setterMethods": [
+      [
+        167130,
+        "set___checkIntUnSelectableTag__",
+        "System.Boolean"
+      ]
+    ],
+    "orderedSourceReads": [
+      {
+        "memberIndex": 0,
+        "fieldName": "autoSetTargetFaction",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 61212059,
+        "sourceCallHex": "E8208324FF",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 1,
+        "fieldName": "checkAlive",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 61212093,
+        "sourceCallHex": "E8FE8224FF",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 2,
+        "fieldName": "containsUnMarkable",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 61212127,
+        "sourceCallHex": "E8DC8224FF",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 3,
+        "fieldName": "factionTarget",
+        "readKind": "scalar32",
+        "sourceCallsiteRva": 61212168,
+        "sourceCallHex": "E8A38024FF",
+        "sourceTargetRva": 46827184
+      },
+      {
+        "memberIndex": 4,
+        "fieldName": "targetFactionType",
+        "readKind": "scalar32",
+        "sourceCallsiteRva": 61212208,
+        "sourceCallHex": "E87B8024FF",
+        "sourceTargetRva": 46827184
+      },
+      {
+        "memberIndex": 5,
+        "fieldName": "angle",
+        "readKind": "float32-bits",
+        "sourceCallsiteRva": 61212241,
+        "sourceCallHex": "E85A8524FF",
+        "sourceTargetRva": 46828464
+      },
+      {
+        "memberIndex": 6,
+        "fieldName": "angleKey",
+        "readKind": "byte-payload",
+        "sourceCallsiteRva": 61212275,
+        "sourceCallHex": "E8888024FF",
+        "sourceTargetRva": 46827264
+      },
+      {
+        "memberIndex": 7,
+        "fieldName": "limitAngle",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 61212309,
+        "sourceCallHex": "E8268224FF",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 8,
+        "fieldName": "limitHeight",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 61212343,
+        "sourceCallHex": "E8048224FF",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 9,
+        "fieldName": "maxHeight",
+        "readKind": "float32-bits",
+        "sourceCallsiteRva": 61212373,
+        "sourceCallHex": "E8D68424FF",
+        "sourceTargetRva": 46828464
+      },
+      {
+        "memberIndex": 10,
+        "fieldName": "shapeData",
+        "readKind": "collider-shape-profile",
+        "sourceCallsiteRva": 61212410,
+        "sourceCallHex": "E8915534FF",
+        "sourceTargetRva": 47864976
+      },
+      {
+        "memberIndex": 11,
+        "fieldName": "checkIntUnSelectableTag",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 61212440,
+        "sourceCallHex": "E8A38124FF",
+        "sourceTargetRva": 46827712
+      }
+    ],
+    "nestedContexts": [
+      {
+        "instructionRva": 61212397,
+        "instructionHex": "488B1534A06709",
+        "cellRva": 218998568,
+        "usageRawHex": "C7EA12C000000000",
+        "methodSpecIndex": 619875,
+        "methodSpec": [
+          428464,
+          -1,
+          14346
+        ],
+        "argumentRawHex": "1A050000000000000000120000000000",
+        "typeKind": 18,
+        "typeDefinition": 1306,
+        "typeName": "Beyond.Gameplay.ColliderShapeData",
+        "memberIndex": 10
+      }
+    ]
+  },
+  "dependencies": [
+    {
+      "path": "buff_calc1_native.json",
+      "role": "reviewed finite nested profile"
+    },
+    {
+      "path": "buff_calc5_native.json",
+      "role": "reviewed finite nested profile"
+    },
+    {
+      "path": "buff_9a_native.json",
+      "role": "reviewed finite nested profile"
+    },
+    {
+      "path": "buff_c5_native.json",
+      "role": "reviewed finite nested profile"
+    },
+    {
+      "path": "buff_damage_lists_native.json",
+      "role": "reviewed finite nested profile"
+    },
+    {
+      "path": "buff_ec_native.json",
+      "role": "reviewed finite nested profile"
+    },
+    {
+      "path": "buff_7c_native.json",
+      "role": "reviewed finite nested profile"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected build action dispatch 0x0001 and nested finder dispatch 9, both source readers, ordered calls, and generic contexts are pinned.",
+    "direct": "BreakInteractiveAction reads CalculationBase, a List<DamageProcessorBase>, and TargetSettings; finder9 reads ColliderShapeData at its eleventh member.",
+    "structuralOnly": "Finite profiles establish stored serialization boundaries, not gameplay breaking or target selection.",
+    "unresolved": "Live provider choice, allocation/refill/error parity and runtime effects remain open; whole SkillData EOF belongs to the enclosing timeline reader."
+  }
+}

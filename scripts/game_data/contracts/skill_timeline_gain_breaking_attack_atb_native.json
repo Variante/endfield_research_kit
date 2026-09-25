@@ -1,0 +1,70 @@
+{
+  "schema": "endfield.skill-timeline-gain-breaking-attack-atb-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "serializedMemberCount": 7,
+  "dispatcher": {
+    "unionTag": 191,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59832978,
+    "routeWindow": {
+      "startRva": 59832978,
+      "endRva": 59833028,
+      "sha256": "FB30D17DE1829EEE8B88100CBBA59A7CB90779DF36142E43F83EE26E33C11B32",
+      "boundary": "selected union route through wrapper type usage and formatter call"
+    },
+    "usageCellRva": 218758448,
+    "usageRawHex": "2141032000000000",
+    "registeredTypeIndex": 106640,
+    "wrapperTypeDefinition": 16143,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_GainBreakingAttackAtb_DataForMemoryPack"
+  },
+  "methods": [
+    [120456, "Beyond.MemoryPack.Beyond_Gameplay_Core_GainBreakingAttackAtb_DataForMemoryPack", "Deserialize", 70882624],
+    [120457, "Beyond.MemoryPack.Beyond_Gameplay_Core_GainBreakingAttackAtb_DataForMemoryPack+Beyond_Gameplay_Core_GainBreakingAttackAtb_DataForMemoryPackFormatter", "Deserialize", 70882528]
+  ],
+  "memberCountInstruction": {"rva": 70882752, "hex": "4080FE07"},
+  "codeWindows": [
+    {
+      "startRva": 70882624,
+      "endRva": 70883136,
+      "sha256": "2F971C3386714FDFA5A2DAD74B9343A14B0198B11B1DCD813D73FF95F1011FA2",
+      "boundary": "selected source reader through seven ordered reads, normal return, and error rejoin"
+    },
+    {
+      "startRva": 70882528,
+      "endRva": 70882624,
+      "sha256": "D4A6D9741F40E2F6EFEF62B558591561D3110850CEAD95ACF137E5FAE5D52BED",
+      "boundary": "formatter forwarding to selected source reader"
+    }
+  ],
+  "setterMethods": [
+    [120451, "set___factor__", "Beyond.Blackboard+BlackboardDouble"],
+    [120452, "set___source__", "Beyond.Gameplay.Core.TargetSettings"],
+    [120453, "set___target__", "Beyond.Gameplay.Core.TargetSettings"]
+  ],
+  "orderedSourceReads": [
+    {"memberIndex": 0, "fieldName": "isEnable", "readKind": "bool-byte", "sourceCallsiteRva": 70882768, "sourceCallHex": "E8EBF290FE", "sourceTargetRva": 46827712},
+    {"memberIndex": 1, "fieldName": "priorityLevel", "readKind": "scalar32", "sourceCallsiteRva": 70882809, "sourceCallHex": "E8B2F090FE", "sourceTargetRva": 46827184},
+    {"memberIndex": 2, "fieldName": "priorityOffset", "readKind": "scalar32", "sourceCallsiteRva": 70882842, "sourceCallHex": "E891F090FE", "sourceTargetRva": 46827184},
+    {"memberIndex": 3, "fieldName": "serverActionIndex", "readKind": "scalar32", "sourceCallsiteRva": 70882875, "sourceCallHex": "E870F090FE", "sourceTargetRva": 46827184},
+    {"memberIndex": 4, "fieldName": "factor", "readKind": "blackboard-double", "sourceCallsiteRva": 70882915, "sourceCallHex": "E828C6A0FE", "sourceTargetRva": 47864976},
+    {"memberIndex": 5, "fieldName": "source", "readKind": "target-settings", "sourceCallsiteRva": 70882956, "sourceCallHex": "E8FFC5A0FE", "sourceTargetRva": 47864976},
+    {"memberIndex": 6, "fieldName": "target", "readKind": "target-settings", "sourceCallsiteRva": 70882997, "sourceCallHex": "E8D6C5A0FE", "sourceTargetRva": 47864976}
+  ],
+  "nestedContexts": [
+    {"memberIndex": 4, "instructionRva": 70882902, "instructionHex": "488B15C3AFC508", "cellRva": 218056224, "usageRawHex": "C9EB12C000000000", "methodSpecIndex": 620004, "methodSpec": [428464, -1, 17005], "argumentRawHex": "AD000000000000000000120000000000", "typeDefinition": 173, "typeName": "Beyond.Blackboard+BlackboardDouble", "typeKind": 18},
+    {"memberIndex": 5, "instructionRva": 70882943, "instructionHex": "488B158280CC08", "cellRva": 218502920, "usageRawHex": "93EB12C000000000", "methodSpecIndex": 619977, "methodSpec": [428464, -1, 16792], "argumentRawHex": "28280000000000000000120000000000", "typeDefinition": 10280, "typeName": "Beyond.Gameplay.Core.TargetSettings", "typeKind": 18},
+    {"memberIndex": 6, "instructionRva": 70882984, "instructionHex": "488B155980CC08", "cellRva": 218502920, "usageRawHex": "93EB12C000000000", "methodSpecIndex": 619977, "methodSpec": [428464, -1, 16792], "argumentRawHex": "28280000000000000000120000000000", "typeDefinition": 10280, "typeName": "Beyond.Gameplay.Core.TargetSettings", "typeKind": 18}
+  ],
+  "dependencies": [
+    {"path": "buff_ec_native.json", "role": "reviewed BlackboardDouble and TargetSettings finite profiles"}
+  ],
+  "evidenceBoundary": "exact selected-build 0x00BF dispatcher, seven ordered source reads, and typed nested fields; finite child profiles and whole-file closure require separate cursor verification"
+}

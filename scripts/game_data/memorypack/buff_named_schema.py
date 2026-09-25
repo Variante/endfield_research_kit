@@ -96,21 +96,46 @@ def named_schema_receipt(candidate, *, source, length):
         name = field["name"]
         nested_unions = [record for record in unions
                          if field["start"] <= record["start"] < field["end"]]
-        field["recursiveNamedSchemaExact"] = name == "iconConfig" and middle.get("iconConfigStatus") == "exact"
+        child = field.get("nestedProfile") or {}
+        field["recursiveNamedSchemaExact"] = (
+            (name == "iconConfig" and middle.get("iconConfigStatus") == "exact")
+            or (name == "addingCooldown" and child.get("wholeValueExact") is True
+                and child.get("status") in ("exact", "exact-null")
+                and child.get("startOffset") == field["start"]
+                and child.get("consumedEnd") == field["end"])
+            or (name == "dispelConfig" and child.get("wholeValueExact") is True
+                and child.get("status") == "exact"
+                and child.get("startOffset") == field["start"]
+                and child.get("consumedEnd") == field["end"])
+        )
         if nested_unions:
             block(name, "anonymous-action-interior", field["start"], field["end"])
         if name in ("damageModifier", "globalModifier", "healModifier") and field.get("count", 0) > 0:
             block(name, "positive-modifier-recursive-proof", field["start"], field["end"])
-        if name == "addingCooldown" and field["end"] - field["start"] > 1:
+        if name == "addingCooldown" and field["end"] - field["start"] > 1 and not field["recursiveNamedSchemaExact"]:
             block(name, "anonymous-blackboard-member-ownership", field["start"], field["end"])
-        if name == "dispelConfig":
+        if name == "dispelConfig" and not field["recursiveNamedSchemaExact"]:
             block(name, "raw8-member-ownership", field["start"], field["end"])
     for field in suffix.get("opaqueNestedFields", []):
         block(field, "opaque-suffix-interior")
     if suffix:
-        block("stackingSettings", "compact-branch-native-ownership")
-        block("tagsAfterTriggerExtendBuffAction", "alternate-representation-native-ownership")
-        block("timelineActions", "suffix-fallback-ownership")
+        stacking_child = suffix.get("stackingSettingsNativeChild") or {}
+        tag_child = suffix.get("tagArrayNativeChild") or {}
+        if (stacking_child.get("status") != "exact-child-cursor"
+                or tag_child.get("status") != "exact-raw-array"
+                or stacking_child.get("consumedEnd") != tag_child.get("startOffset")):
+            block("stackingSettings", "compact-branch-native-ownership")
+        if (tag_child.get("status") != "exact-raw-array"
+                or stacking_child.get("consumedEnd") != tag_child.get("startOffset")):
+            block("tagsAfterTriggerExtendBuffAction", "alternate-representation-native-ownership")
+        timeline_child = suffix.get("timelineEmptyNativeChild") or {}
+        if (timeline_child.get("status") != "exact-null-or-empty-list-to-eof"
+                or timeline_child.get("count") not in (-1, 0)
+                or timeline_child.get("startOffset") != tag_child.get("consumedEnd")
+                or timeline_child.get("consumedEnd") != timeline_child.get("startOffset", -5) + 4
+                or timeline_child.get("consumedEnd") != timeline_child.get("followingStart")
+                or timeline_child.get("followingEnd") != length):
+            block("timelineActions", "suffix-fallback-ownership")
     if len(fields) != 15 or [field["index"] for field in fields] != list(range(15)):
         block("root", "incomplete-forward-prefix")
     if not suffix:

@@ -1,0 +1,990 @@
+{
+  "schema": "endfield.skill-timeline-physics-cast-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 275,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59830578,
+    "routeWindow": {
+      "startRva": 59830578,
+      "endRva": 59830628,
+      "sha256": "06CAA15BA4F0A352191BA5616807D1E1711C0BFAB3EF2A2B76A7B5F5B2ACF327",
+      "boundary": "selected 0x0113 type usage and formatter route"
+    },
+    "usageCellRva": 218124520,
+    "usageRawHex": "6943032000000000",
+    "registeredTypeIndex": 106932,
+    "wrapperTypeDefinition": 16317,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PhysicsCastAction_PhysicsCastActionDataForMemoryPack"
+  },
+  "sections": {
+    "action": {
+      "wrapperTypeDefinition": 16317,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PhysicsCastAction_PhysicsCastActionDataForMemoryPack",
+      "serializedMemberCount": 20,
+      "methods": [
+        [
+          121812,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_PhysicsCastAction_PhysicsCastActionDataForMemoryPack",
+          "Deserialize",
+          58139536
+        ],
+        [
+          121813,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_PhysicsCastAction_PhysicsCastActionDataForMemoryPack+Beyond_Gameplay_Core_PhysicsCastAction_PhysicsCastActionDataForMemoryPackFormatter",
+          "Deserialize",
+          58139440
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 58139536,
+          "endRva": 58140448,
+          "sha256": "E4ABBF91785F9D1544876B4489D79303DEB7FE7876708C7C43EF15FC1980D476",
+          "boundary": "action selected source through normal return"
+        },
+        {
+          "startRva": 58139440,
+          "endRva": 58139533,
+          "sha256": "FBD041EF1C58D0C50DCF39BA75532FD77CFB87FF9EF054E0F22220D9018A92EA",
+          "boundary": "action formatter entry"
+        }
+      ],
+      "setterMethods": [
+        [
+          121794,
+          "set___failActions__",
+          "Beyond.Gameplay.Core.SequenceActionData"
+        ],
+        [
+          121795,
+          "set___hitDistanceBlackboardKey__",
+          "System.String"
+        ],
+        [
+          121796,
+          "set___hitPositionTargetGroupKey__",
+          "System.String"
+        ],
+        [
+          121797,
+          "set___layerMask__",
+          "UnityEngine.LayerMask"
+        ],
+        [
+          121798,
+          "set___maxDistance__",
+          "Beyond.Blackboard+BlackboardDouble"
+        ],
+        [
+          121799,
+          "set___needTick__",
+          "System.Boolean"
+        ],
+        [
+          121800,
+          "set___pointDirType__",
+          "Beyond.Gameplay.Core.PhysicsCastAction+PhysicsCastPointDirectionType"
+        ],
+        [
+          121801,
+          "set___queryTriggerInteraction__",
+          "UnityEngine.QueryTriggerInteraction"
+        ],
+        [
+          121802,
+          "set___sourceForwardData__",
+          "Beyond.Gameplay.Core.PhysicsCastAction+SourceForwardData"
+        ],
+        [
+          121803,
+          "set___sourceSettings__",
+          "Beyond.Gameplay.Core.TargetSettings"
+        ],
+        [
+          121804,
+          "set___sourceToTargetData__",
+          "Beyond.Gameplay.Core.PhysicsCastAction+SourceToTargetData"
+        ],
+        [
+          121805,
+          "set___sphereRadius__",
+          "Beyond.Blackboard+BlackboardDouble"
+        ],
+        [
+          121806,
+          "set___stopTickWhenHit__",
+          "System.Boolean"
+        ],
+        [
+          121807,
+          "set___succeedActions__",
+          "Beyond.Gameplay.Core.SequenceActionData"
+        ],
+        [
+          121808,
+          "set___targetSettings__",
+          "Beyond.Gameplay.Core.TargetSettings"
+        ],
+        [
+          121809,
+          "set___tickInterval__",
+          "System.Single"
+        ]
+      ],
+      "orderedSourceReads": [
+        {
+          "memberIndex": 0,
+          "fieldName": "isEnable",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 58139680,
+          "sourceCallHex": "E89B6453FF",
+          "sourceTargetRva": 46827712
+        },
+        {
+          "memberIndex": 1,
+          "fieldName": "priorityLevel",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 58139721,
+          "sourceCallHex": "E8626253FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 2,
+          "fieldName": "priorityOffset",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 58139754,
+          "sourceCallHex": "E8416253FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 3,
+          "fieldName": "serverActionIndex",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 58139787,
+          "sourceCallHex": "E8206253FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 4,
+          "fieldName": "failActions",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 58139827,
+          "sourceCallHex": "E8D83763FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 5,
+          "fieldName": "hitDistanceBlackboardKey",
+          "readKind": "byte-payload",
+          "sourceCallsiteRva": 58139861,
+          "sourceCallHex": "E8266253FF",
+          "sourceTargetRva": 46827264
+        },
+        {
+          "memberIndex": 6,
+          "fieldName": "hitPositionTargetGroupKey",
+          "readKind": "byte-payload",
+          "sourceCallsiteRva": 58139895,
+          "sourceCallHex": "E8046253FF",
+          "sourceTargetRva": 46827264
+        },
+        {
+          "memberIndex": 7,
+          "fieldName": "layerMask",
+          "readKind": "layer-mask-raw4",
+          "sourceCallsiteRva": 58139936,
+          "sourceCallHex": "E89BCD8F00",
+          "sourceTargetRva": 67564224
+        },
+        {
+          "memberIndex": 8,
+          "fieldName": "maxDistance",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 58139976,
+          "sourceCallHex": "E8433763FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 9,
+          "fieldName": "needTick",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 58140010,
+          "sourceCallHex": "E8516353FF",
+          "sourceTargetRva": 46827712
+        },
+        {
+          "memberIndex": 10,
+          "fieldName": "pointDirType",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 58140051,
+          "sourceCallHex": "E8186153FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 11,
+          "fieldName": "queryTriggerInteraction",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 58140091,
+          "sourceCallHex": "E8F06053FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 12,
+          "fieldName": "sourceForwardData",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 58140131,
+          "sourceCallHex": "E8A83663FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 13,
+          "fieldName": "sourceSettings",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 58140172,
+          "sourceCallHex": "E87F3663FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 14,
+          "fieldName": "sourceToTargetData",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 58140213,
+          "sourceCallHex": "E8563663FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 15,
+          "fieldName": "sphereRadius",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 58140254,
+          "sourceCallHex": "E82D3663FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 16,
+          "fieldName": "stopTickWhenHit",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 58140288,
+          "sourceCallHex": "E83B6253FF",
+          "sourceTargetRva": 46827712
+        },
+        {
+          "memberIndex": 17,
+          "fieldName": "succeedActions",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 58140329,
+          "sourceCallHex": "E8E23563FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 18,
+          "fieldName": "targetSettings",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 58140370,
+          "sourceCallHex": "E8B93563FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 19,
+          "fieldName": "tickInterval",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 58140404,
+          "sourceCallHex": "E8B76453FF",
+          "sourceTargetRva": 46828464
+        }
+      ],
+      "nestedContexts": [
+        {
+          "memberIndex": 1,
+          "instructionRva": 58139708,
+          "instructionHex": "488B15E5799109",
+          "cellRva": 218668584,
+          "usageRawHex": "81E812C000000000",
+          "methodSpecIndex": 619584,
+          "methodSpec": [
+            428448,
+            -1,
+            42547
+          ],
+          "argumentRawHex": "EA230000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 9194,
+          "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+        },
+        {
+          "memberIndex": 4,
+          "instructionRva": 58139814,
+          "instructionHex": "488B15BB298809",
+          "cellRva": 218058344,
+          "usageRawHex": "75EB12C000000000",
+          "methodSpecIndex": 619962,
+          "methodSpec": [
+            428464,
+            -1,
+            16408
+          ],
+          "argumentRawHex": "F2230000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 9202,
+          "typeName": "Beyond.Gameplay.Core.SequenceActionData"
+        },
+        {
+          "memberIndex": 7,
+          "instructionRva": 58139923,
+          "instructionHex": "488B150EC49709",
+          "cellRva": 219081000,
+          "usageRawHex": "A7CA0FC000000000",
+          "methodSpecIndex": 517459,
+          "methodSpec": [
+            428448,
+            -1,
+            1206
+          ],
+          "argumentRawHex": "02AB0000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 43778,
+          "typeName": "UnityEngine.LayerMask"
+        },
+        {
+          "memberIndex": 8,
+          "instructionRva": 58139963,
+          "instructionHex": "488B15DE208809",
+          "cellRva": 218056224,
+          "usageRawHex": "C9EB12C000000000",
+          "methodSpecIndex": 620004,
+          "methodSpec": [
+            428464,
+            -1,
+            17005
+          ],
+          "argumentRawHex": "AD000000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 173,
+          "typeName": "Beyond.Blackboard+BlackboardDouble"
+        },
+        {
+          "memberIndex": 10,
+          "instructionRva": 58140038,
+          "instructionHex": "488B15832B8909",
+          "cellRva": 218124560,
+          "usageRawHex": "19E812C000000000",
+          "methodSpecIndex": 619532,
+          "methodSpec": [
+            428448,
+            -1,
+            42507
+          ],
+          "argumentRawHex": "C0250000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 9664,
+          "typeName": "Beyond.Gameplay.Core.PhysicsCastAction+PhysicsCastPointDirectionType"
+        },
+        {
+          "memberIndex": 11,
+          "instructionRva": 58140078,
+          "instructionHex": "488B15532B8909",
+          "cellRva": 218124552,
+          "usageRawHex": "97E612C000000000",
+          "methodSpecIndex": 619339,
+          "methodSpec": [
+            428448,
+            -1,
+            42373
+          ],
+          "argumentRawHex": "37D90000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 55607,
+          "typeName": "UnityEngine.QueryTriggerInteraction"
+        },
+        {
+          "memberIndex": 12,
+          "instructionRva": 58140118,
+          "instructionHex": "488B15132C8909",
+          "cellRva": 218124784,
+          "usageRawHex": "FDEB12C000000000",
+          "methodSpecIndex": 620030,
+          "methodSpec": [
+            428464,
+            -1,
+            17107
+          ],
+          "argumentRawHex": "C2250000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 9666,
+          "typeName": "Beyond.Gameplay.Core.PhysicsCastAction+SourceForwardData"
+        },
+        {
+          "memberIndex": 13,
+          "instructionRva": 58140159,
+          "instructionHex": "488B1502F18E09",
+          "cellRva": 218502920,
+          "usageRawHex": "93EB12C000000000",
+          "methodSpecIndex": 619977,
+          "methodSpec": [
+            428464,
+            -1,
+            16792
+          ],
+          "argumentRawHex": "28280000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 10280,
+          "typeName": "Beyond.Gameplay.Core.TargetSettings"
+        },
+        {
+          "memberIndex": 14,
+          "instructionRva": 58140200,
+          "instructionHex": "488B15B12B8909",
+          "cellRva": 218124768,
+          "usageRawHex": "FFEB12C000000000",
+          "methodSpecIndex": 620031,
+          "methodSpec": [
+            428464,
+            -1,
+            17108
+          ],
+          "argumentRawHex": "C3250000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 9667,
+          "typeName": "Beyond.Gameplay.Core.PhysicsCastAction+SourceToTargetData"
+        },
+        {
+          "memberIndex": 15,
+          "instructionRva": 58140241,
+          "instructionHex": "488B15C81F8809",
+          "cellRva": 218056224,
+          "usageRawHex": "C9EB12C000000000",
+          "methodSpecIndex": 620004,
+          "methodSpec": [
+            428464,
+            -1,
+            17005
+          ],
+          "argumentRawHex": "AD000000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 173,
+          "typeName": "Beyond.Blackboard+BlackboardDouble"
+        },
+        {
+          "memberIndex": 17,
+          "instructionRva": 58140316,
+          "instructionHex": "488B15C5278809",
+          "cellRva": 218058344,
+          "usageRawHex": "75EB12C000000000",
+          "methodSpecIndex": 619962,
+          "methodSpec": [
+            428464,
+            -1,
+            16408
+          ],
+          "argumentRawHex": "F2230000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 9202,
+          "typeName": "Beyond.Gameplay.Core.SequenceActionData"
+        },
+        {
+          "memberIndex": 18,
+          "instructionRva": 58140357,
+          "instructionHex": "488B153CF08E09",
+          "cellRva": 218502920,
+          "usageRawHex": "93EB12C000000000",
+          "methodSpecIndex": 619977,
+          "methodSpec": [
+            428464,
+            -1,
+            16792
+          ],
+          "argumentRawHex": "28280000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 10280,
+          "typeName": "Beyond.Gameplay.Core.TargetSettings"
+        }
+      ]
+    },
+    "sourceForwardData": {
+      "wrapperTypeDefinition": 22455,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PhysicsCastAction_SourceForwardDataForMemoryPack",
+      "serializedMemberCount": 5,
+      "methods": [
+        [
+          163036,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_PhysicsCastAction_SourceForwardDataForMemoryPack",
+          "Deserialize",
+          70981776
+        ],
+        [
+          163037,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_PhysicsCastAction_SourceForwardDataForMemoryPack+Beyond_Gameplay_Core_PhysicsCastAction_SourceForwardDataForMemoryPackFormatter",
+          "Deserialize",
+          70981680
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 70981776,
+          "endRva": 70982075,
+          "sha256": "D7EAB798CAF1A2FAD64F0494AF311DC813012C5A6522FFD6C4EDA157A6FCB26B",
+          "boundary": "sourceForwardData selected source through normal return"
+        },
+        {
+          "startRva": 70981680,
+          "endRva": 70981773,
+          "sha256": "52C685597AE210F704E42090FA6E542902085F7A3065A51359B747853D2B0A45",
+          "boundary": "sourceForwardData formatter entry"
+        }
+      ],
+      "setterMethods": [
+        [
+          163029,
+          "set___directionSubType__",
+          "Beyond.Gameplay.Core.PhysicsCastAction+SourceForwardDirectionSubType"
+        ],
+        [
+          163030,
+          "set___mountPoint__",
+          "Beyond.Gameplay.MountPoint"
+        ],
+        [
+          163031,
+          "set___offsetForwardDirectionType__",
+          "Beyond.Gameplay.DirectionType"
+        ],
+        [
+          163032,
+          "set___rayLocalRotationEuler__",
+          "Beyond.Blackboard+BlackboardVector3"
+        ],
+        [
+          163033,
+          "set___startPosOffset__",
+          "Beyond.Blackboard+BlackboardVector3"
+        ]
+      ],
+      "orderedSourceReads": [
+        {
+          "memberIndex": 0,
+          "fieldName": "directionSubType",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 70981874,
+          "sourceCallHex": "E8B96D8FFE",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 1,
+          "fieldName": "mountPoint",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 70981914,
+          "sourceCallHex": "E8916D8FFE",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 2,
+          "fieldName": "offsetForwardDirectionType",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 70981954,
+          "sourceCallHex": "E8696D8FFE",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 3,
+          "fieldName": "rayLocalRotationEuler",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 70981994,
+          "sourceCallHex": "E821439FFE",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 4,
+          "fieldName": "startPosOffset",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 70982035,
+          "sourceCallHex": "E8F8429FFE",
+          "sourceTargetRva": 47864976
+        }
+      ],
+      "nestedContexts": [
+        {
+          "memberIndex": 0,
+          "instructionRva": 70981861,
+          "instructionHex": "488B156436C308",
+          "cellRva": 217993040,
+          "usageRawHex": "1BE812C000000000",
+          "methodSpecIndex": 619533,
+          "methodSpec": [
+            428448,
+            -1,
+            42508
+          ],
+          "argumentRawHex": "C1250000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 9665,
+          "typeName": "Beyond.Gameplay.Core.PhysicsCastAction+SourceForwardDirectionSubType"
+        },
+        {
+          "memberIndex": 1,
+          "instructionRva": 70981901,
+          "instructionHex": "488B156C23C408",
+          "cellRva": 218053760,
+          "usageRawHex": "45E612C000000000",
+          "methodSpecIndex": 619298,
+          "methodSpec": [
+            428448,
+            -1,
+            8642
+          ],
+          "argumentRawHex": "80050000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 1408,
+          "typeName": "Beyond.Gameplay.MountPoint"
+        },
+        {
+          "memberIndex": 2,
+          "instructionRva": 70981941,
+          "instructionHex": "488B156CFDCD08",
+          "cellRva": 218699432,
+          "usageRawHex": "53E512C000000000",
+          "methodSpecIndex": 619177,
+          "methodSpec": [
+            428448,
+            -1,
+            42254
+          ],
+          "argumentRawHex": "7D050000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 1405,
+          "typeName": "Beyond.Gameplay.DirectionType"
+        },
+        {
+          "memberIndex": 3,
+          "instructionRva": 70981981,
+          "instructionHex": "488B15BCF4CD08",
+          "cellRva": 218697248,
+          "usageRawHex": "D1EB12C000000000",
+          "methodSpecIndex": 620008,
+          "methodSpec": [
+            428464,
+            -1,
+            17009
+          ],
+          "argumentRawHex": "B0000000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 176,
+          "typeName": "Beyond.Blackboard+BlackboardVector3"
+        },
+        {
+          "memberIndex": 4,
+          "instructionRva": 70982022,
+          "instructionHex": "488B1593F4CD08",
+          "cellRva": 218697248,
+          "usageRawHex": "D1EB12C000000000",
+          "methodSpecIndex": 620008,
+          "methodSpec": [
+            428464,
+            -1,
+            17009
+          ],
+          "argumentRawHex": "B0000000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 176,
+          "typeName": "Beyond.Blackboard+BlackboardVector3"
+        }
+      ]
+    },
+    "sourceToTargetData": {
+      "wrapperTypeDefinition": 22457,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_PhysicsCastAction_SourceToTargetDataForMemoryPack",
+      "serializedMemberCount": 6,
+      "methods": [
+        [
+          163052,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_PhysicsCastAction_SourceToTargetDataForMemoryPack",
+          "Deserialize",
+          70700688
+        ],
+        [
+          163053,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_PhysicsCastAction_SourceToTargetDataForMemoryPack+Beyond_Gameplay_Core_PhysicsCastAction_SourceToTargetDataForMemoryPackFormatter",
+          "Deserialize",
+          70700592
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 70700688,
+          "endRva": 70701028,
+          "sha256": "3ED65E52C942CCAC19405FD517F496C8D480CBB0F1E20A0E1ABFD18F9F0AE267",
+          "boundary": "sourceToTargetData selected source through normal return"
+        },
+        {
+          "startRva": 70700592,
+          "endRva": 70700685,
+          "sha256": "AD7AE9249D1573563D05B0DC98AB1E38D99A7F6B72B16E422222DBB1C1D5F713",
+          "boundary": "sourceToTargetData formatter entry"
+        }
+      ],
+      "setterMethods": [
+        [
+          163044,
+          "set___endPosOffset__",
+          "Beyond.Blackboard+BlackboardVector3"
+        ],
+        [
+          163045,
+          "set___offsetForwardDirectionType__",
+          "Beyond.Gameplay.DirectionType"
+        ],
+        [
+          163046,
+          "set___rayLocalRotationEuler__",
+          "Beyond.Blackboard+BlackboardVector3"
+        ],
+        [
+          163047,
+          "set___sourceMountPoint__",
+          "Beyond.Gameplay.MountPoint"
+        ],
+        [
+          163048,
+          "set___startPosOffset__",
+          "Beyond.Blackboard+BlackboardVector3"
+        ],
+        [
+          163049,
+          "set___targetMountPoint__",
+          "Beyond.Gameplay.MountPoint"
+        ]
+      ],
+      "orderedSourceReads": [
+        {
+          "memberIndex": 0,
+          "fieldName": "endPosOffset",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 70700786,
+          "sourceCallHex": "E8998DA3FE",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 1,
+          "fieldName": "offsetForwardDirectionType",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 70700827,
+          "sourceCallHex": "E890B793FE",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 2,
+          "fieldName": "rayLocalRotationEuler",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 70700867,
+          "sourceCallHex": "E8488DA3FE",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 3,
+          "fieldName": "sourceMountPoint",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 70700908,
+          "sourceCallHex": "E83FB793FE",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 4,
+          "fieldName": "startPosOffset",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 70700948,
+          "sourceCallHex": "E8F78CA3FE",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 5,
+          "fieldName": "targetMountPoint",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 70700989,
+          "sourceCallHex": "E8EEB693FE",
+          "sourceTargetRva": 46827184
+        }
+      ],
+      "nestedContexts": [
+        {
+          "memberIndex": 0,
+          "instructionRva": 70700773,
+          "instructionHex": "488B15343FD208",
+          "cellRva": 218697248,
+          "usageRawHex": "D1EB12C000000000",
+          "methodSpecIndex": 620008,
+          "methodSpec": [
+            428464,
+            -1,
+            17009
+          ],
+          "argumentRawHex": "B0000000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 176,
+          "typeName": "Beyond.Blackboard+BlackboardVector3"
+        },
+        {
+          "memberIndex": 1,
+          "instructionRva": 70700814,
+          "instructionHex": "488B159347D208",
+          "cellRva": 218699432,
+          "usageRawHex": "53E512C000000000",
+          "methodSpecIndex": 619177,
+          "methodSpec": [
+            428448,
+            -1,
+            42254
+          ],
+          "argumentRawHex": "7D050000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 1405,
+          "typeName": "Beyond.Gameplay.DirectionType"
+        },
+        {
+          "memberIndex": 2,
+          "instructionRva": 70700854,
+          "instructionHex": "488B15E33ED208",
+          "cellRva": 218697248,
+          "usageRawHex": "D1EB12C000000000",
+          "methodSpecIndex": 620008,
+          "methodSpec": [
+            428464,
+            -1,
+            17009
+          ],
+          "argumentRawHex": "B0000000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 176,
+          "typeName": "Beyond.Blackboard+BlackboardVector3"
+        },
+        {
+          "memberIndex": 3,
+          "instructionRva": 70700895,
+          "instructionHex": "488B151A6DC808",
+          "cellRva": 218053760,
+          "usageRawHex": "45E612C000000000",
+          "methodSpecIndex": 619298,
+          "methodSpec": [
+            428448,
+            -1,
+            8642
+          ],
+          "argumentRawHex": "80050000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 1408,
+          "typeName": "Beyond.Gameplay.MountPoint"
+        },
+        {
+          "memberIndex": 4,
+          "instructionRva": 70700935,
+          "instructionHex": "488B15923ED208",
+          "cellRva": 218697248,
+          "usageRawHex": "D1EB12C000000000",
+          "methodSpecIndex": 620008,
+          "methodSpec": [
+            428464,
+            -1,
+            17009
+          ],
+          "argumentRawHex": "B0000000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 176,
+          "typeName": "Beyond.Blackboard+BlackboardVector3"
+        },
+        {
+          "memberIndex": 5,
+          "instructionRva": 70700976,
+          "instructionHex": "488B15C96CC808",
+          "cellRva": 218053760,
+          "usageRawHex": "45E612C000000000",
+          "methodSpecIndex": 619298,
+          "methodSpec": [
+            428448,
+            -1,
+            8642
+          ],
+          "argumentRawHex": "80050000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 1408,
+          "typeName": "Beyond.Gameplay.MountPoint"
+        }
+      ]
+    }
+  },
+  "sequenceSource": {
+    "wrapperTypeDefinition": 13867,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+    "serializedMemberCount": 3,
+    "methods": [
+      [
+        104346,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack",
+        "Deserialize",
+        60582560
+      ],
+      [
+        104347,
+        "Beyond.MemoryPack.Beyond_Gameplay_Core_SequenceActionDataForMemoryPack+Beyond_Gameplay_Core_SequenceActionDataForMemoryPackFormatter",
+        "Deserialize",
+        60582464
+      ]
+    ],
+    "codeWindows": [
+      {
+        "startRva": 60582560,
+        "endRva": 60583785,
+        "sha256": "B73E7413FC689208783688C58F83848DEF7EE92C76AB86F98BDE1C95E5F9CD3F",
+        "boundary": "SequenceActionData nullable array and two booleans through return"
+      },
+      {
+        "startRva": 60582464,
+        "endRva": 60582557,
+        "sha256": "650BBFFE813D1F3A7663C6C9C42E160E5799B70541246A11AAADABF1D3F08DD6",
+        "boundary": "SequenceActionData formatter entry"
+      }
+    ],
+    "setterMethods": [
+      [
+        104341,
+        "set___actionData__",
+        "<type-index:98972>"
+      ],
+      [
+        104342,
+        "set___onlyExecuteWhenSourceIsGuard__",
+        "System.Boolean"
+      ],
+      [
+        104343,
+        "set___onlyExecuteWhenSourceIsMainChar__",
+        "System.Boolean"
+      ]
+    ]
+  },
+  "dependencies": [
+    {
+      "path": "buff_b2_native.json",
+      "role": "reviewed finite nested profile"
+    },
+    {
+      "path": "buff_ec_native.json",
+      "role": "reviewed finite nested profile"
+    },
+    {
+      "path": "buff_1f_native.json",
+      "role": "reviewed finite nested profile"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected build dispatcher tag 0x0113, three ordered selected readers plus the SequenceActionData reader; source calls, nested generic contexts, methods and code windows are pinned.",
+    "direct": "The action source reads two sequences, strings, mask, scalar, target and source direction records at generated positions.",
+    "structuralOnly": "Finite records and raw scalar boundaries do not establish runtime physics hits, actions or target selection.",
+    "unresolved": "Live formatter choice, allocation/refill/error parity and whole SkillData EOF remain the enclosing reader boundary."
+  }
+}

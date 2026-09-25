@@ -1,9 +1,10 @@
 """Exact current-build SkillData first-timeline CreateBuffAction framing.
 
 Physical union tag ``0x0092`` selects the current member-19 CreateBuffAction
-wrapper.  The decoder always closes and names the first action.  It closes the
-containing first TimelineActionData only when that SequenceActionData contains
-one action; later actions are never searched for or skipped heuristically.
+wrapper.  The first decoder names its 19 fields and closes its timeline only
+when that SequenceActionData contains one action.  A separate continuation
+reuses the authenticated shared action grammar for later timeline records;
+unknown routes stop at the last exact record.
 """
 from __future__ import annotations
 
@@ -272,5 +273,132 @@ def decode_first_timeline_create_buff(
             "close the first CreateBuff action exactly. The containing TimelineActionData "
             "is exact only for a one-action sequence; later actions and timeline records "
             "remain at their first unconsumed byte."
+        ),
+    }
+
+
+def decode_timeline_create_buff(
+    data: bytes,
+    *,
+    limit: int | None = None,
+) -> dict[str, Any]:
+    """Close later timelines after a sole first CreateBuff action.
+
+    Callers must validate this module's native contract and the shared
+    sequence composite contract before publishing the result.  The detailed
+    first action stays owned by this module; later unions use exactly the
+    shared reader's contracted routes and member counts.
+    """
+    first = decode_first_timeline_create_buff(data, limit=limit)
+    if not first["wholeFirstTimelineActionExact"] or first["wholeTimelineListExact"]:
+        return first
+
+    from scripts.game_data.memorypack.skill_timeline_shared_sequence import (
+        SharedSequenceReader,
+        _route_table,
+        _tag_at,
+    )
+
+    hard_limit = first["hardLimit"]
+    reader = SharedSequenceReader(data, "SkillData.CreateBuff.LaterTimeline", hard_limit)
+    reader.pos = first["parserCursor"]
+    routes = _route_table()
+    later_records: list[dict[str, Any]] = []
+    try:
+        for index in range(1, first["timelineActionsCount"]):
+            start = reader.pos
+            record_start = len(reader.records)
+            reader.header(4)
+            reader.take(4, "TimelineActionData.endFrame.int32")
+            if reader.pos + 5 > hard_limit or reader.peek() != 3:
+                raise ValueError(f"skillTimelineCreateBuff.timeline[{index}]:sequence-header")
+            action_count = struct.unpack_from("<i", data, reader.pos + 1)[0]
+            reader.sequence()
+            sequence_end = reader.pos
+            reader.take(4, "TimelineActionData.startFrame.int32")
+            reader.header(4)
+            reader.take(1, "ForceSyncAnimData.forceSync.bool-byte")
+            reader.byte_payload()
+            reader.take(4, "ForceSyncAnimData.playbackSpeed.float32-bits")
+            reader.take(4, "ForceSyncAnimData.targetFrame.int32")
+
+            actions = []
+            for record in reader.records[record_start:]:
+                if record.get("kind") != "union":
+                    continue
+                tag = record["tag"]
+                if tag == 0xFF:
+                    actions.append({
+                        "tag": tag, "tagHex": "0x00FF", "typeName": "null",
+                        "memberCount": None, "start": record["start"],
+                        "end": record["end"], "structurallyExact": True,
+                    })
+                    continue
+                route = routes.get(tag)
+                if route is None:
+                    raise ValueError(
+                        f"skillTimelineCreateBuff.timeline[{index}]:"
+                        f"route=0x{tag:04X}:not-contracted"
+                    )
+                actual_tag, width = _tag_at(data, record["start"], record["end"])
+                member_offset = record["start"] + width
+                if (
+                    actual_tag != tag
+                    or member_offset >= record["end"]
+                    or data[member_offset] != route["memberCount"]
+                ):
+                    raise ValueError(
+                        f"skillTimelineCreateBuff.timeline[{index}]:"
+                        f"route=0x{tag:04X}:member-count"
+                    )
+                actions.append({
+                    "tag": tag, "tagHex": f"0x{tag:04X}",
+                    "typeName": route["typeName"],
+                    "memberCount": route["memberCount"],
+                    "start": record["start"], "end": record["end"],
+                    "structurallyExact": True,
+                })
+            if action_count < 0 or sum(
+                action["start"] < sequence_end for action in actions
+            ) < action_count:
+                raise ValueError(
+                    f"skillTimelineCreateBuff.timeline[{index}]:action-count"
+                )
+            later_records.append({
+                "index": index, "start": start, "end": reader.pos,
+                "sequenceEnd": sequence_end,
+                "sequenceActionDataCount": action_count,
+                "actionData": actions, "wholeRecordExact": True,
+            })
+    except ValueError as exc:
+        return {**first, "laterStopReason": str(exc)}
+
+    ranges = list(first["namedRanges"])
+    cursor = first["parserCursor"]
+    for index, span in enumerate(reader.ranges):
+        if span["start"] != cursor or span["end"] <= cursor:
+            raise ValueError(
+                f"skillTimelineCreateBuff.laterRanges:not-contiguous:{cursor}:{span}"
+            )
+        ranges.append({
+            "name": f"timeline.createBuff.laterRange[{index}]",
+            "start": span["start"], "end": span["end"], "kind": span["kind"],
+        })
+        cursor = span["end"]
+    if cursor != reader.pos:
+        raise ValueError("skillTimelineCreateBuff.laterRanges:end-drift")
+    return {
+        **first,
+        "status": "exact-timeline-create-buff-shared-sequence-records",
+        "parserCursor": reader.pos,
+        "laterTimelineActions": later_records,
+        "namedRanges": ranges,
+        "wholeTimelineListExact": True,
+        "wholeActionGroupDataExact": True,
+        "evidenceBoundary": (
+            "The selected CreateBuff native contract proves the named first "
+            "action. The independently validated shared-sequence composite "
+            "contract bounds later action routes and member counts; no "
+            "unknown route is skipped."
         ),
     }

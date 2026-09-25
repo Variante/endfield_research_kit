@@ -1,0 +1,35 @@
+{
+  "schema": "endfield.skill-timeline-finish-buff-by-tag-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "sourceContract": "buff_frontier9.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "unionTag": 181,
+  "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_FinishBuffByTag_DataForMemoryPack",
+  "wrappedType": "Beyond.Gameplay.Core.FinishBuffByTag+Data",
+  "serializedMemberCount": 12,
+  "orderedSourceReads": [
+    {"memberIndex": 0, "readKind": "byte"},
+    {"memberIndex": 1, "readKind": "scalar32"},
+    {"memberIndex": 2, "readKind": "scalar32"},
+    {"memberIndex": 3, "readKind": "scalar32"},
+    {"memberIndex": 4, "readKind": "target-settings"},
+    {"memberIndex": 5, "readKind": "target-settings"},
+    {"memberIndex": 6, "readKind": "bool"},
+    {"memberIndex": 7, "readKind": "blackboard-double"},
+    {"memberIndex": 8, "readKind": "target-settings"},
+    {"memberIndex": 9, "readKind": "bool"},
+    {"memberIndex": 10, "readKind": "bool"},
+    {"memberIndex": 11, "readKind": "tag-query"}
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected AbilityActionData 0x00B5 route resolves to the FinishBuffByTag wrapper; the previously reviewed Buff frontier pins the method bodies and twelve-member read order for this same native build.",
+    "direct": "The source reads four primitive prefix members, three TargetSettings children, three booleans, one BlackboardDouble child and one GameplayTagQuery child in the recorded order.",
+    "structuralOnly": "The stored wrapper and nested type names do not establish that a buff is finished during gameplay or assign runtime meaning to raw values.",
+    "unresolved": "Live formatter selection, unsupported positive target children, and enclosing SkillData EOF require separate evidence."
+  }
+}

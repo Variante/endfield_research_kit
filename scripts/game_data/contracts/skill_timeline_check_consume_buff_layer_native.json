@@ -1,0 +1,116 @@
+{
+  "schema": "endfield.skill-timeline-check-consume-buff-layer-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 7,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 63,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59832078,
+    "routeWindow": {
+      "startRva": 59832078,
+      "endRva": 59832128,
+      "sha256": "0D7565E0E0074EDC1628252C0E76DD409771C14263C00045C04EA05506E103F3",
+      "boundary": "selected 0x003F registered wrapper route"
+    },
+    "usageCellRva": 218735016,
+    "usageRawHex": "913F032000000000",
+    "registeredTypeIndex": 106440,
+    "wrapperTypeDefinition": 16015,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckConsumeBuffLayer_DataForMemoryPack"
+  },
+  "memberCountInstruction": {
+    "rva": 61450272,
+    "hex": "4080FE07"
+  },
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 61450288,
+      "sourceCallHex": "E88BE020FF",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 61450329,
+      "sourceCallHex": "E852DE20FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 61450362,
+      "sourceCallHex": "E831DE20FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 61450395,
+      "sourceCallHex": "E810DE20FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "compareType",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 61450435,
+      "sourceCallHex": "E8E8DD20FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "num",
+      "readKind": "BlackboardInt-scalar-payload",
+      "sourceCallsiteRva": 61450475,
+      "sourceCallHex": "E8A0B330FF",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "storeKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 61450509,
+      "sourceCallHex": "E8EEDD20FF",
+      "sourceTargetRva": 46827264
+    }
+  ],
+  "setterMethods": [
+    [
+      119459,
+      "set___compareType__",
+      112164
+    ],
+    [
+      119460,
+      "set___num__",
+      157502
+    ],
+    [
+      119461,
+      "set___storeKey__",
+      143273
+    ]
+  ],
+  "sourceContract": "buff_3f_native.json",
+  "scalarPayloadContract": "buff_16b_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "The selected AbilityActionData union route, seven-member check, wrapper and seven direct source callsites are pinned to selected native inputs.",
+    "direct": "The source order is byte, four raw DWORDs, a finite BlackboardInt scalar payload, and an independent bounded byte payload; source and nested reader windows are independently authenticated.",
+    "structuralOnly": "The stored compare type, number and key bytes are recovered as framing and type joins; this does not prove a buff is consumed or a live condition result.",
+    "unresolved": "Live formatter selection, refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}

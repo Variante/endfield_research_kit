@@ -1,0 +1,290 @@
+{
+  "schema": "endfield.skill-timeline-jump-to-target-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 11,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 218,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59832228,
+    "routeWindow": {
+      "startRva": 59832228,
+      "endRva": 59832278,
+      "sha256": "6F958E71FA67755CCF31D9E658101079541CE5FBC4247E064D323CE9B4CE4A5B",
+      "boundary": "selected 0x00DA type usage and formatter route"
+    },
+    "usageCellRva": 218748328,
+    "usageRawHex": "2D42032000000000",
+    "registeredTypeIndex": 106774,
+    "wrapperTypeDefinition": 16201,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_JumpToTargetAction_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      120880,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_JumpToTargetAction_DataForMemoryPack",
+      "Deserialize",
+      69893152
+    ],
+    [
+      120881,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_JumpToTargetAction_DataForMemoryPack+Beyond_Gameplay_Core_JumpToTargetAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      69893056
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 69893280,
+    "hex": "4080FE0B"
+  },
+  "codeWindows": [
+    {
+      "startRva": 69893152,
+      "endRva": 69893715,
+      "sha256": "0D7114B3B7A1398D1E5B19E2DFFFD1C6EC0B7120D0F8A0EAE439AB6B9445B5A3",
+      "boundary": "selected eleven-member reader through normal return"
+    },
+    {
+      "startRva": 69893056,
+      "endRva": 69893152,
+      "sha256": "FE5648404F6549967E6268AADA55AEA31D95B95EFEB335A1CC3B52A8E735287B",
+      "boundary": "formatter forwarding into selected reader"
+    }
+  ],
+  "setterMethods": [
+    [
+      120871,
+      "set___jumpSource__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ],
+    [
+      120872,
+      "set___jumpToPosition__",
+      "Beyond.Blackboard+BlackboardVector3"
+    ],
+    [
+      120873,
+      "set___jumpToTarget__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ],
+    [
+      120874,
+      "set___maxHeight__",
+      "Beyond.Blackboard+BlackboardDouble"
+    ],
+    [
+      120875,
+      "set___time__",
+      "Beyond.Blackboard+BlackboardDouble"
+    ],
+    [
+      120876,
+      "set___useMaxHeight__",
+      "System.Boolean"
+    ],
+    [
+      120877,
+      "set___useWorldPosition__",
+      "System.Boolean"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 69893296,
+      "sourceCallHex": "E80B0CA0FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 69893337,
+      "sourceCallHex": "E8D209A0FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 69893370,
+      "sourceCallHex": "E8B109A0FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 69893403,
+      "sourceCallHex": "E89009A0FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "jumpSource",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 69893443,
+      "sourceCallHex": "E848DFAFFE",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "jumpToPosition",
+      "readKind": "blackboard-vector3",
+      "sourceCallsiteRva": 69893484,
+      "sourceCallHex": "E81FDFAFFE",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "jumpToTarget",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 69893525,
+      "sourceCallHex": "E8F6DEAFFE",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "maxHeight",
+      "readKind": "blackboard-scalar",
+      "sourceCallsiteRva": 69893566,
+      "sourceCallHex": "E8CDDEAFFE",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "time",
+      "readKind": "blackboard-scalar",
+      "sourceCallsiteRva": 69893607,
+      "sourceCallHex": "E8A4DEAFFE",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 9,
+      "fieldName": "useMaxHeight",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 69893641,
+      "sourceCallHex": "E8B20AA0FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 10,
+      "fieldName": "useWorldPosition",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 69893675,
+      "sourceCallHex": "E8900AA0FE",
+      "sourceTargetRva": 46827712
+    }
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 4,
+      "instructionRva": 69893430,
+      "instructionHex": "488B15CB99DB08",
+      "cellRva": 218502920,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeKind": 18,
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings"
+    },
+    {
+      "memberIndex": 5,
+      "instructionRva": 69893471,
+      "instructionHex": "488B15BA90DE08",
+      "cellRva": 218697248,
+      "usageRawHex": "D1EB12C000000000",
+      "methodSpecIndex": 620008,
+      "methodSpec": [
+        428464,
+        -1,
+        17009
+      ],
+      "argumentRawHex": "B0000000000000000000120000000000",
+      "typeKind": 18,
+      "typeDefinition": 176,
+      "typeName": "Beyond.Blackboard+BlackboardVector3"
+    },
+    {
+      "memberIndex": 6,
+      "instructionRva": 69893512,
+      "instructionHex": "488B157999DB08",
+      "cellRva": 218502920,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeKind": 18,
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings"
+    },
+    {
+      "memberIndex": 7,
+      "instructionRva": 69893553,
+      "instructionHex": "488B1568C8D408",
+      "cellRva": 218056224,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeKind": 18,
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble"
+    },
+    {
+      "memberIndex": 8,
+      "instructionRva": 69893594,
+      "instructionHex": "488B153FC8D408",
+      "cellRva": 218056224,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeKind": 18,
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble"
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "buff_ec_native.json",
+      "role": "reviewed BlackboardDouble and TargetSettings finite source profiles"
+    },
+    {
+      "path": "buff_b2_native.json",
+      "role": "reviewed BlackboardVector3 finite source profile"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected build dispatch 0x00DA joins JumpToTarget wrapper to formatter and eleven-member reader; all source calls and five generic contexts are pinned.",
+    "direct": "The selected reader consumes two TargetSettings, a BlackboardVector3 and two BlackboardDouble at their generated positions.",
+    "structuralOnly": "Finite nested profiles establish stored boundaries; raw jump fields do not establish game behavior.",
+    "unresolved": "Live formatter selection, allocation/refill/error parity, target selection, angle comparison and enclosing SkillData EOF remain open."
+  }
+}

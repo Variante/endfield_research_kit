@@ -1,0 +1,80 @@
+{
+  "schema": "endfield.damage-action-poise-route-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "methods": {
+    "processDamage": [58146, "Beyond.Gameplay.Core.DamageAction", "_ProcessDamage", "0x34b71c0"],
+    "patchCheck": [102181, "IFix.WrappersManagerImpl", "IsPatched", "0x2c97970"],
+    "poisePackConstructor": [61099, "Beyond.Gameplay.Core.PoisePackData", ".ctor", "0x3ca9640"],
+    "applyPoiseModifier": [61100, "Beyond.Gameplay.Core.PoisePackData", "ApplyPoiseModifier", "0x3c0cb70"]
+  },
+  "processDamageParameters": [
+    ["effectSource", "Beyond.Gameplay.Core.AbilitySystem"],
+    ["inputTarget", "Beyond.Gameplay.Core.TargetHandleView"],
+    ["targetWrapper", "Beyond.Gameplay.Core.BattleTargetWrapper"],
+    ["isExtraTarget", "bool"],
+    ["transferredSource", "Beyond.ObjectPtr`1<Beyond.Gameplay.Core.AbilitySystem>"],
+    ["hitEnvCalcResult", "Beyond.Gameplay.Core.CalcResult"]
+  ],
+  "processDamageReturnType": "bool",
+  "applyPoiseModifierParameters": [["processTiming", "Beyond.Gameplay.Core.PoiseProcessorBase+ProcessTiming"]],
+  "beforeCalculationEnum": ["Beyond.Gameplay.Core.PoiseProcessorBase+ProcessTiming", "BeforeCalculation", 1, "0x0400af88"],
+  "fields": [
+    ["Beyond.Gameplay.Core.DamageAction+DamageActionData", "damageUnits", "System.Collections.Generic.List`1<Beyond.Gameplay.Core.DamageAction+DamageUnit>", 56, "0x0400a67c"],
+    ["Beyond.Gameplay.Core.DamageAction+DamageUnit", "poiseCalculation", "Beyond.Gameplay.Core.CalculationBase", 112, "0x0400a666"],
+    ["Beyond.Gameplay.Core.PoisePackData", "calcResult", "Beyond.Gameplay.Core.CalcResult", 48, "0x0400af80"],
+    ["Beyond.Gameplay.Core.CalcResult", "value", "double", 16, "0x0400aed8"]
+  ],
+  "processDamagePdataEndRva": "0x34bb0d0",
+  "dispatchHelperRva": "0x9cdc0",
+  "dispatchHelperPdataEndRva": "0x9ced0",
+  "codeWindows": [
+    {"startRva": "0x34b73a3", "endRva": "0x34b73b9", "sha256": "81c8d8278d354f99b3d059894b1be020b9be5b63f374f1a6212e3c9bbf82e172", "boundary": "outer iFix check and normal-path branch"},
+    {"startRva": "0x34b75f0", "endRva": "0x34b7652", "sha256": "d3e199bfb6355c27f16a1101953c0f31117d8bff945d5fd070c3a792dce1302c", "boundary": "DamageActionData damageUnits list count/index read and indexed object saved at stack slot"},
+    {"startRva": "0x34b9b53", "endRva": "0x34b9b76", "sha256": "2c7a0703075800a6de5d42754accc3010e4c632a0823af67f57b59eb3b55d0aa", "boundary": "saved indexed DamageUnit loaded and nonnull poiseCalculation guard"},
+    {"startRva": "0x34b9d58", "endRva": "0x34b9dcc", "sha256": "932e4f31ec05fdd75a097b9bd487aa228d1968c885facbebc7c52281528b2952", "boundary": "PoisePackData constructor normal iFix branch and call"},
+    {"startRva": "0x34b9e99", "endRva": "0x34b9f1b", "sha256": "91a6923efa49d9904d199d68edd1af4aafc36966c4d30d07da1675eeb3d39e8c", "boundary": "before-calculation Poise modifier then stored calculation pointer dispatch"},
+    {"startRva": "0x34b9f1b", "endRva": "0x34b9f47", "sha256": "85632f2a01a5771d626912919cbdf1ff0982e152c67431f693720a1450745e88", "boundary": "post-evaluator guard that can divert before the result copy"},
+    {"startRva": "0x34b9f47", "endRva": "0x34b9fa5", "sha256": "3ed620a7295a732099ed8ab47092288a1f79bbfee10fd288f4b26df9f9ece141", "boundary": "normal calculation return placed at unboxed PoisePackData.calcResult.value"},
+    {"startRva": "0x9cdc0", "endRva": "0x9ced0", "sha256": "6c3ee044c69a1195a27e492c911caa1bcd27000d0e0febf5fe52748a7a4a0e8b", "boundary": "calculation-object helper complete normal return and virtual slot dispatch; concrete subtype target not joined"}
+  ],
+  "instructionWindows": {
+    "listField": ["0x34b7610", "488b5b38", "DamageActionData.damageUnits load"],
+    "indexedUnitStore": ["0x34b7632", "48898424a0000000", "indexed DamageUnit to saved stack slot"],
+    "savedUnitLoad": ["0x34b9b5b", "4c8bac24a0000000", "same saved DamageUnit to r13"],
+    "nonnullPoiseGuard": ["0x34b9b6b", "49837d7000", "nonnull DamageUnit.poiseCalculation guard"],
+    "beforeCalculationTiming": ["0x34b9e9c", "ba01000000", "ProcessTiming.BeforeCalculation value"],
+    "poisePackBase": ["0x34b9ea1", "488d8c24d0010000", "PoisePackData unboxed stack base"],
+    "poiseCalcLoad": ["0x34b9eae", "498b5d70", "stored DamageUnit.poiseCalculation to dispatch operand"],
+    "dispatchOperand": ["0x34b9f0e", "488bd3", "poise calculation pointer as dispatch argument"],
+    "returnValue": ["0x34b9f16", "66480f6ef0", "calculation result return to xmm6"],
+    "packValueMove": ["0x34b9f6f", "f20f10c6", "result forwarded to PoisePackData.calcResult.value copy"],
+    "packValueStore": ["0x34b9f73", "0f298424f0010000", "result copied into PoisePackData.calcResult.value slot"],
+    "helperIndirectCall": ["0x9cec6", "41ffd2", "calculation virtual target call"],
+    "helperIndirectReturn": ["0x9cec9", "66480f6ec0", "virtual result moved into xmm0"],
+    "helperReturn": ["0x9ce69", "66480f7ec0", "helper returns scalar bits in rax"]
+  },
+  "callTargets": [
+    ["0x34b73aa", "patchCheck"],
+    ["0x34b762a", "0x2c97700"],
+    ["0x34b9d74", "patchCheck"],
+    ["0x34b9dc7", "poisePackConstructor"],
+    ["0x34b9ea9", "applyPoiseModifier"],
+    ["0x34b9f11", "0x9cdc0"],
+    ["0x34b9f3a", "0x31ff200"]
+  ],
+  "branchTargets": [
+    ["0x34b73b3", "0f85", 4, "0x34badcf"],
+    ["0x34b9b70", "0f84", 4, "0x34bad91"],
+    ["0x34b9f41", "0f85", 4, "0x34bad55"]
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected native pair has the named method, signatures and field identities, field offsets, direct call and branch targets, reviewed body windows, and the _ProcessDamage .pdata extent.",
+    "direct": "On the normally returning unpatched DamageAction._ProcessDamage path, the action's damageUnits list is indexed and saved. That same DamageUnit's nonnull poiseCalculation gates a separate PoisePackData path. After PoisePackData construction and its before-calculation ApplyPoiseModifier call, the stored poiseCalculation pointer is passed to the calculation-object dispatch helper. Its returned CalcResult.value is copied into the PoisePackData.calcResult.value slot. This route is independent of the DamageUnit.simpleCalculation attack selector.",
+    "conditional": "The relation requires _ProcessDamage to be entered, a selected DamageUnit reached in the list, nonnull poiseCalculation, the outer and relevant inner iFix checks to select the reviewed normal branches, normally returning provider, modifier, and calculation calls, and the post-evaluator guard to allow continuation to the result copy.",
+    "unresolved": "The virtual subtype target selected by the helper, exact live patch state, executed action, blackboard provider values, downstream Poise modifiers and factors, immunity handling, final applied or displayed Poise amount, and any final damage result remain unproved."
+  }
+}

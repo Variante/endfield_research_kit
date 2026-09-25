@@ -1,0 +1,191 @@
+{
+  "schema": "endfield.attribute-formula-native-claims.v1",
+  "status": "validated",
+  "formula": {
+    "base": "clamp(raw + sum(BaseAddition) + otherBaseAdd(attr), min, max)",
+    "armed": "clamp((base * max(1 + sum(BaseMultiplier), 0) + sum(BaseFinalAddition)) * product(BaseFinalMultiplier) * otherBaseFinalScalar(attr), min, max)",
+    "final": "clamp(((armed + sum(Addition)) * max(1 + sum(Multiplier), 0) + sum(FinalAddition)) * product(FinalMultiplier) * otherFinalScalar(attr), min, max)",
+    "otherBaseAdd": {
+      "MaxHp": "floor(final Str) * BattleConst.efficiencyOfSTR",
+      "AtkIncreaseFactorFromStr": "(Str is main ? BattleConst.atkRateOfMain : 0) + (Str is sub ? BattleConst.atkRateOfSub : 0); likewise Agi, Wisd, Will",
+      "HealOutputIncrease": "from Will (BattleConst.healerEfficiencyOfWILL)",
+      "HealTakenIncrease": "from Will (BattleConst.recoverEfficiencyOfWILL)"
+    },
+    "otherFinalScalar": {
+      "Atk": "1 + sum over X in Str, Agi, Wisd, Will of floor(final X) * final AtkIncreaseFactorFromX"
+    },
+    "modifyAttributeTarget": {
+      "Specific": "the modifier's own attributeType",
+      "Main": "the owner's main attribute, when it has one",
+      "Sub": "the owner's sub attribute, when it has one",
+      "All": "Str, Agi, Wisd and Will"
+    },
+    "sources": {
+      "raw": "CharacterTable attributes row for the selected level and break stage; AttributeMetaTable defaultValue otherwise",
+      "clamp": "AttributeMetaTable hasMinValue/minValue and hasMaxValue/maxValue",
+      "weapon": "WeaponUpgradeTemplateTable baseAtk at the weapon level, as (Atk, BaseAddition)",
+      "skills": "SkillData cardAttributeModifier.attributeModifiers: attributeType, formulaItem (ModifierType), modifyAttributeType, param (blackboard key at the skill level)",
+      "equipment": "EquipTable equipAttrModifiers: attrType, modifierType, modifyAttributeType, attrValues",
+      "coefficients": "BattleConst atkRateOfMain, atkRateOfSub, efficiencyOfSTR, efficiencyOfAGI, efficiencyOfWISD, healerEfficiencyOfWILL, recoverEfficiencyOfWILL"
+    }
+  },
+  "evidenceBoundary": {
+    "direct": "Every method claim below is re-proved on the installed build: the base/armed/final calculators call the named modifier-array readers and other-attribute hooks, the hooks call the named BattleConst getters and main/sub fields, and the weapon reader walks WeaponUpgradeDetailList. ModifierType and ModifyAttributeType members are compared exactly.",
+    "conditional": "The arithmetic order in `formula` (initial values 0 for sums and 1 for multiplier sums and products, max(..., 0) on multiplier factors, Math.Floor on attributes before conversion, Math.Clamp to the per-attribute bounds, and the Main/Sub/All target selection) is a reviewed capstone reading of one build's method bodies. The stdlib decoder does not decode every SSE instruction, so a client update re-proves the call structure but not the arithmetic; review the bodies again when their hashes in the audit change.",
+    "unresolved": "Runtime-only modifier sources (combat buffs, gem terms, team effects) and the enhancement level that selects an equipAttrModifiers attrValues index are outside this contract."
+  },
+  "enumClaims": {
+    "Beyond.GEnums.ModifierType": {
+      "Addition": 0,
+      "Multiplier": 1,
+      "FinalAddition": 3,
+      "FinalMultiplier": 4,
+      "BaseAddition": 5,
+      "BaseMultiplier": 6,
+      "BaseFinalAddition": 7,
+      "BaseFinalMultiplier": 8,
+      "None": 9,
+      "Enum": 10
+    },
+    "Beyond.GEnums.ModifyAttributeType": {
+      "Specific": 0,
+      "Main": 1,
+      "Sub": 2,
+      "All": 3
+    }
+  },
+  "methods": {
+    "Attributes._CalculateBaseAttributeValue": {
+      "type": "Beyond.Gameplay.Core.Attributes",
+      "method": "_CalculateBaseAttributeValue",
+      "contract": "Sums each modifier source's BaseAddition onto the raw value, adds the other-attribute base add, and clamps to the attribute bounds.",
+      "claims": [
+        {"calls": [
+          "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader.GetBaseValue",
+          "Beyond.Gameplay.Core.Attributes._GetOtherAttributeBaseAdd"
+        ], "ordered": true},
+        {"readsField": "Beyond.Gameplay.Core.Attributes::m_rawData"},
+        {"readsField": "Beyond.Gameplay.Core.Attributes::m_dataMin"},
+        {"readsField": "Beyond.Gameplay.Core.Attributes::m_dataMax"}
+      ]
+    },
+    "Attributes._CalculateArmedAttributeValue": {
+      "type": "Beyond.Gameplay.Core.Attributes",
+      "method": "_CalculateArmedAttributeValue",
+      "contract": "Applies base multipliers, base final additions and base final scalars to the base value, then the other-attribute base final scalar.",
+      "claims": [
+        {"calls": [
+          "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader.GetBaseValue",
+          "Beyond.Gameplay.Core.Attributes._CalculateBaseAttributeValue",
+          "Beyond.Gameplay.Core.Attributes._GetOtherAttributeBaseFinalScalar"
+        ], "ordered": true}
+      ]
+    },
+    "Attributes._CalculateFinalAttributeValue": {
+      "type": "Beyond.Gameplay.Core.Attributes",
+      "method": "_CalculateFinalAttributeValue",
+      "contract": "Applies additions, multipliers, final additions and final scalars to the armed value, then the other-attribute final scalar.",
+      "claims": [
+        {"calls": [
+          "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader.GetValue",
+          "Beyond.Gameplay.Core.Attributes._CalculateArmedAttributeValue",
+          "Beyond.Gameplay.Core.Attributes._GetOtherAttributeFinalScalar"
+        ], "ordered": true}
+      ]
+    },
+    "AttributeModifierLoader.GetBaseValue": {
+      "type": "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader",
+      "method": "GetBaseValue",
+      "contract": "Returns BaseAddition, BaseMultiplier, BaseFinalAddition and BaseFinalScalar for one attribute, in that out-parameter order.",
+      "claims": [
+        {"calls": [
+          "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader.get_attributeBaseAdditions",
+          "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader.get_attributeBaseMultipliers",
+          "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader.get_attributeBaseFinalAdditions",
+          "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader.get_attributeBaseFinalScalars"
+        ], "ordered": true}
+      ]
+    },
+    "AttributeModifierLoader.GetValue": {
+      "type": "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader",
+      "method": "GetValue",
+      "contract": "Returns Addition, Multiplier, FinalAddition and FinalScalar for one attribute, in that out-parameter order.",
+      "claims": [
+        {"calls": [
+          "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader.get_attributeAdditions",
+          "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader.get_attributeMultipliers",
+          "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader.get_attributeFinalAdditions",
+          "Beyond.Gameplay.Core.Attributes+AttributeModifierLoader.get_attributeFinalScalars"
+        ], "ordered": true}
+      ]
+    },
+    "Attributes._GetOtherAttributeBaseAdd": {
+      "type": "Beyond.Gameplay.Core.Attributes",
+      "method": "_GetOtherAttributeBaseAdd",
+      "contract": "Dispatches MaxHp to the Str conversion and the four AtkIncreaseFactorFrom* attributes to the main/sub factor helpers.",
+      "claims": [
+        {"calls": [
+          "Beyond.Gameplay.Core.Attributes.GetHpBaseAddFromStrAttribute",
+          "Beyond.Gameplay.Core.Attributes.GetStrAtkFactorFromMainSubAttribute",
+          "Beyond.Gameplay.Core.Attributes.GetAgiAtkFactorFromMainSubAttribute",
+          "Beyond.Gameplay.Core.Attributes.GetWisdAtkFactorFromMainSubAttribute",
+          "Beyond.Gameplay.Core.Attributes.GetWillAtkFactorFromMainSubAttribute"
+        ]}
+      ]
+    },
+    "Attributes.GetHpBaseAddFromStrAttribute": {
+      "type": "Beyond.Gameplay.Core.Attributes",
+      "method": "GetHpBaseAddFromStrAttribute",
+      "contract": "Multiplies the owner's Str value by BattleConst.efficiencyOfSTR.",
+      "claims": [
+        {"calls": [
+          "Beyond.Cfg.Tables+BattleConst.get_efficiencyOfSTR",
+          "Beyond.Gameplay.Core.Attributes.GetValue"
+        ], "ordered": true}
+      ]
+    },
+    "Attributes.GetStrAtkFactorFromMainSubAttribute": {
+      "type": "Beyond.Gameplay.Core.Attributes",
+      "method": "GetStrAtkFactorFromMainSubAttribute",
+      "contract": "Adds BattleConst.atkRateOfMain when Str is the main attribute and atkRateOfSub when it is the sub attribute.",
+      "claims": [
+        {"calls": [
+          "Beyond.Cfg.Tables+BattleConst.get_atkRateOfMain",
+          "Beyond.Cfg.Tables+BattleConst.get_atkRateOfSub"
+        ]},
+        {"readsField": "Beyond.Gameplay.Core.Attributes::m_mainAttrType"},
+        {"readsField": "Beyond.Gameplay.Core.Attributes::m_subAttrType"}
+      ]
+    },
+    "Attributes._GetOtherAttributeFinalScalar": {
+      "type": "Beyond.Gameplay.Core.Attributes",
+      "method": "_GetOtherAttributeFinalScalar",
+      "contract": "For Atk, returns one plus the four attribute-derived ATK scalars.",
+      "claims": [
+        {"calls": [
+          "Beyond.Gameplay.Core.Attributes.GetAtkFinalScalarFromStr",
+          "Beyond.Gameplay.Core.Attributes.GetAtkFinalScalarFromAgi",
+          "Beyond.Gameplay.Core.Attributes.GetAtkFinalScalarFromWisd",
+          "Beyond.Gameplay.Core.Attributes.GetAtkFinalScalarFromWill"
+        ], "ordered": true}
+      ]
+    },
+    "Attributes.GetAtkFinalScalarFromStr": {
+      "type": "Beyond.Gameplay.Core.Attributes",
+      "method": "GetAtkFinalScalarFromStr",
+      "contract": "Multiplies the floored Str value by the AtkIncreaseFactorFromStr attribute.",
+      "claims": [
+        {"calls": ["Beyond.Gameplay.Core.Attributes.GetValue"]}
+      ]
+    },
+    "WeaponUtil.TryGetWeaponAttrModifierData": {
+      "type": "Beyond.Gameplay.WeaponUtil",
+      "method": "TryGetWeaponAttrModifierData",
+      "parametersPrefix": ["System.String", "System.Int32"],
+      "contract": "Reads the weapon upgrade curve row for the level and emits its baseAtk as an (Atk, BaseAddition) modifier.",
+      "claims": [
+        {"calls": ["Beyond.Cfg.WeaponUpgradeDetailList.get_list"]}
+      ]
+    }
+  }
+}

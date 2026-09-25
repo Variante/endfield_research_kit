@@ -1,0 +1,128 @@
+{
+  "schema": "endfield.skill-timeline-check-obtain-atb-type-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 8,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 106,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59831678,
+    "routeWindow": {
+      "startRva": 59831678,
+      "endRva": 59831685,
+      "sha256": "5370F7EE2A75BFACCB8FD2847CEB5EA4A136F877A844E88232604B84F68D64D6",
+      "boundary": "selected 0x006A dispatcher usage-cell load"
+    },
+    "usageCellRva": 218340176,
+    "usageRawHex": "FF3F032000000000",
+    "registeredTypeIndex": 106495,
+    "wrapperTypeDefinition": 16655,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckObtainAtbType_DataForMemoryPack"
+  },
+  "memberCountInstruction": {
+    "rva": 70221328,
+    "hex": "4080FE08"
+  },
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70221344,
+      "sourceCallHex": "E89B0A9BFE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 70221385,
+      "sourceCallHex": "E862089BFE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 70221418,
+      "sourceCallHex": "E841089BFE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 70221451,
+      "sourceCallHex": "E820089BFE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "checkObtainMethod",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70221484,
+      "sourceCallHex": "E80F0A9BFE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "checkObtainType",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70221518,
+      "sourceCallHex": "E8ED099BFE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "obtainMethodList",
+      "readKind": "counted-enum32",
+      "sourceCallsiteRva": 70221559,
+      "sourceCallHex": "E8F47952FF",
+      "sourceTargetRva": 58849520
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "obtainTypeList",
+      "readKind": "counted-enum32",
+      "sourceCallsiteRva": 70221600,
+      "sourceCallHex": "E8CB7952FF",
+      "sourceTargetRva": 58849520
+    }
+  ],
+  "setterMethods": [
+    [
+      124410,
+      "set___checkObtainMethod__",
+      "System.Boolean"
+    ],
+    [
+      124411,
+      "set___checkObtainType__",
+      "System.Boolean"
+    ],
+    [
+      124412,
+      "set___obtainMethodList__",
+      "<type-index:57720>"
+    ],
+    [
+      124413,
+      "set___obtainTypeList__",
+      "<type-index:57722>"
+    ]
+  ],
+  "sourceContract": "buff_6a_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "Selected AbilityActionData tag, wrapper, member-eight header, ordered source calls and four setters under the installed native inputs.",
+    "direct": "The source reads one byte, three DWORDs, two bytes, and two separately typed counted DWORD lists in member order.",
+    "structuralOnly": "Stored flags and list values preserve nullable and empty states; they do not establish gain behavior or ATB effects.",
+    "unresolved": "Live formatter branch selection, allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}

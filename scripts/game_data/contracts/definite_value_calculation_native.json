@@ -1,0 +1,78 @@
+{
+  "schema": "endfield.definite-value-calculation-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "ownerType": "Beyond.Gameplay.Core.DefiniteValueCalculation",
+  "methods": {
+    "evaluate": [60996, "Beyond.Gameplay.Core.DefiniteValueCalculation", "Evaluate", "0x4129cf0"],
+    "getDoubleValue": [1022, "Beyond.ActionBlackboardExtensions", "GetDoubleValue", "0x4129d90"],
+    "getValue": [1021, "Beyond.ActionBlackboardExtensions", "GetValue", "0x30ff5e0"],
+    "patchCheck": [102181, "IFix.WrappersManagerImpl", "IsPatched", "0x2c97970"],
+    "getPatch": [102180, "IFix.WrappersManagerImpl", "GetPatch", "0x64af4dc"],
+    "patchWrapper": [100320, "IFix.ILFixDynamicMethodWrapper", "__Gen_Wrap_8529", "0x22cb450"]
+  },
+  "evaluateParameters": [
+    ["attacker", "Beyond.Gameplay.Core.AbilitySystem"],
+    ["defender", "Beyond.Gameplay.Core.AbilitySystem"],
+    ["blackboard", "Beyond.ActionBlackboard"],
+    ["context", "Beyond.Gameplay.Core.IActionEnvironment+Context"],
+    ["attackerOverrideAttributes", "double[]"],
+    ["defenderOverrideAttributes", "double[]"],
+    ["argsForServer", "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"]
+  ],
+  "evaluateReturnType": "Beyond.Gameplay.Core.CalcResult",
+  "calleeSignatures": {
+    "getDoubleValue": {
+      "parameters": [["param", "Beyond.Blackboard+BlackboardDouble"], ["blackboard", "Beyond.ActionBlackboard"]],
+      "returnType": "double"
+    },
+    "getValue": {
+      "parameters": [["param", "Beyond.Blackboard+BlackboardDouble"], ["blackboard", "Beyond.ActionBlackboard"]],
+      "returnType": "float"
+    },
+    "patchWrapper": {"returnType": "Beyond.Gameplay.Core.CalcResult"}
+  },
+  "resultValueField": ["Beyond.Gameplay.Core.CalcResult", "value", "double", "0x0400aed8"],
+  "fields": [
+    {"name": "value", "type": "Beyond.Blackboard+BlackboardDouble", "offset": 16, "token": "0x0400af2b"},
+    {"name": "applyScale", "type": "bool", "offset": 24, "token": "0x0400af2c"},
+    {"name": "valueScale", "type": "Beyond.Blackboard+BlackboardDouble", "offset": 32, "token": "0x0400af2d"}
+  ],
+  "defaultScaleConstant": {"loadSiteRva": "0x4129d44", "float32": 1.0},
+  "codeWindows": [
+    {"startRva": "0x4129cf0", "endRva": "0x4129d88", "sha256": "795d5ce3764e6511f82c6667778f7caac42f17c052f945f7a5a86cff74c60565", "boundary": "Evaluate entry, value read, applyScale branch, no-scale return and iFix dispatch"},
+    {"startRva": "0x4f8094e", "endRva": "0x4f80970", "sha256": "6252a8877c22bb19964e1acc0701cdddc5be87572335194ccf2ed4f354d2a68f", "boundary": "valueScale GetValue and Double multiplication"},
+    {"startRva": "0x4f80970", "endRva": "0x4f809aa", "sha256": "fa2e9609d21b2283aa49c6cf290dfc757d33cc947524b53d35a96471abd28df0", "boundary": "optional server debug-args side path and normal return rejoin"},
+    {"startRva": "0x4f809aa", "endRva": "0x4f80a1a", "sha256": "a79bd167bd61202b1e93875d348b21d5c01944f01e201ca16c410dd7c62559ce", "boundary": "iFix GetPatch and wrapper result path bypassing normal value return"}
+  ],
+  "instructionWindows": [
+    ["0x4129d2e", "488b4b104533c0488bd7e853000000", "value field and blackboard passed to GetDoubleValue"],
+    ["0x4129d3d", "807b18000f28f0f30f103d9c8f79060f85fc6be500", "applyScale branch after preserving resolved Double; default scale constant load"],
+    ["0x4f8094e", "488b4b204533c0488bd7e883ec17fe0f57c90f28f8f30f5ac8f20f59f1e9e2931aff", "valueScale GetValue Single converted to Double and multiplied by resolved value"],
+    ["0x4129d63", "66480f7ef0", "normal CalcResult numeric return copies resolved Double bits"]
+  ],
+  "calls": [
+    {"siteRva": "0x4129d21", "method": "patchCheck"},
+    {"siteRva": "0x4129d38", "method": "getDoubleValue"},
+    {"siteRva": "0x4f80958", "method": "getValue"},
+    {"siteRva": "0x4f809b1", "method": "getPatch"},
+    {"siteRva": "0x4f80a09", "method": "patchWrapper"}
+  ],
+  "branches": [
+    {"siteRva": "0x4129d28", "opcode": "0f85", "targetRva": "0x4f809aa"},
+    {"siteRva": "0x4129d4c", "opcode": "0f85", "targetRva": "0x4f8094e"},
+    {"siteRva": "0x4129d5d", "opcode": "0f85", "targetRva": "0x4f80970"},
+    {"siteRva": "0x4f8096b", "opcode": "e9", "targetRva": "0x4129d52"},
+    {"siteRva": "0x4f809a5", "opcode": "e9", "targetRva": "0x4129d63"},
+    {"siteRva": "0x4f80a0f", "opcode": "e9", "targetRva": "0x4129d68"}
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected pair has the named Evaluate signature, stored field and callee types, direct call and branch targets, loaded default-scale constant, and reviewed main/split code bytes recorded here.",
+    "direct": "On normally returning unpatched Evaluate paths, value reaches GetDoubleValue. If applyScale is false its Double result becomes CalcResult.value directly. If applyScale is true, valueScale reaches GetValue, whose Single result is converted to Double and multiplied with the resolved value. The optional server debug-args branch rejoins the same numeric return.",
+    "conditional": "When Evaluate's iFix IsPatched branch is taken, it calls GetPatch and the selected wrapper, then bypasses the ordinary numeric return; this contract makes no formula claim for that path.",
+    "unresolved": "GetDoubleValue and GetValue provider internals, including their own patch state, live patch selection, authored action activation, mitigation and final damage remain unproved."
+  }
+}

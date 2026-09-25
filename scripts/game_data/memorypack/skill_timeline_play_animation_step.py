@@ -14,6 +14,7 @@ from typing import Any
 from scripts.common import NATIVE_EVIDENCE_VALIDATED, check_installed_native_inputs
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.memorypack.core import CONTRACTS_DIR
+from scripts.game_data.memorypack.buff_actions import Reader as ActionReader
 from scripts.game_data.memorypack.buff import read_buff_target_settings_full
 from scripts.game_data.memorypack.skill_timeline_play_animation import (
     _Reader,
@@ -171,6 +172,27 @@ def _decode_play_animation_step(reader: _Reader) -> dict[str, Any]:
         "fields": fields,
         "wholeActionExact": True,
     }
+
+
+def decode_play_animation_step_action(
+    reader: ActionReader, depth: int, tag: int, width: int,
+) -> None:
+    """Consume the selected action at any reached shared-sequence position."""
+    del depth
+    contract = _contract()
+    if (
+        tag != PLAY_ANIMATION_STEP_TAG
+        or width != 3
+        or contract.get("dispatcher", {}).get("unionTag") != tag
+        or contract.get("wrapper", {}).get("serializedMemberCount") != 30
+    ):
+        raise ValueError(f"{LABEL}.shared-action:route-drift")
+    start = reader.pos
+    nested = _Reader(reader.data, reader.limit, start=start)
+    _decode_play_animation_step(nested)
+    if nested.pos <= start:
+        raise ValueError(f"{LABEL}.shared-action:no-progress")
+    reader.take(nested.pos - start, "play-animation-step-action")
 
 
 def decode_first_timeline_play_animation_step(

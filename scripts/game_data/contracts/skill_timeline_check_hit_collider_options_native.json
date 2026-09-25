@@ -1,0 +1,197 @@
+{
+  "schema": "endfield.skill-timeline-check-hit-collider-options-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 6,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 100,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59836628,
+    "routeWindow": {
+      "startRva": 59836628,
+      "endRva": 59836678,
+      "sha256": "C65D63D26D7E2967B91F25D6D2DEB7CF54180E6998C045BBD2D2039E07CEA502",
+      "boundary": "selected 0x0064 registered wrapper route"
+    },
+    "usageCellRva": 218341288,
+    "usageRawHex": "F33F032000000000",
+    "registeredTypeIndex": 106489,
+    "wrapperTypeDefinition": 16639,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckHitColliderOptions_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      124308,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckHitColliderOptions_DataForMemoryPack+Beyond_Gameplay_Core_Conditions_CheckHitColliderOptions_DataForMemoryPackFormatter",
+      "Deserialize",
+      72812352
+    ],
+    [
+      124307,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_Conditions_CheckHitColliderOptions_DataForMemoryPack",
+      "Deserialize",
+      72812448
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 72812651,
+    "hex": "4080FE06"
+  },
+  "codeWindows": [
+    {
+      "startRva": 72812352,
+      "endRva": 72812448,
+      "sha256": "D3026F2DDA863E55D019784C4848951C91219A22D56E5927B59FA9D5CC38FE1A",
+      "boundary": "formatter forwarding and initialization into selected reader"
+    },
+    {
+      "startRva": 72812448,
+      "endRva": 72812896,
+      "sha256": "DB467D20DDEBB3352923C8ECBF667B7CD86782326378F228E8EB317F7371DAC8",
+      "boundary": "six source reads through normal return and error rejoin"
+    }
+  ],
+  "setterMethods": [
+    [
+      124303,
+      "set___checkColliderOptions__",
+      "Beyond.Gameplay.Core.ColliderOptions"
+    ],
+    [
+      124304,
+      "set___checkType__",
+      "Beyond.Gameplay.Core.Conditions.CheckHitColliderOptions+CheckType"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 72812667,
+      "sourceCallHex": "E8408073FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 72812708,
+      "sourceCallHex": "E8077E73FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 72812741,
+      "sourceCallHex": "E8E67D73FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 72812774,
+      "sourceCallHex": "E8C57D73FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "checkColliderOptions",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 72812810,
+      "sourceCallHex": "E8A17D73FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "checkType",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 72812846,
+      "sourceCallHex": "E87D7D73FE",
+      "sourceTargetRva": 46827184
+    }
+  ],
+  "setterCallsites": [
+    {
+      "memberIndex": 4,
+      "methodIndex": 124303,
+      "callsiteRva": 72812828,
+      "callHex": "E83F000000",
+      "targetRva": 72812896
+    },
+    {
+      "memberIndex": 5,
+      "methodIndex": 124304,
+      "callsiteRva": 72812864,
+      "callHex": "E84B000000",
+      "targetRva": 72812944
+    }
+  ],
+  "genericContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 72812695,
+      "instructionHex": "488B158A95B108",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17
+    },
+    {
+      "memberIndex": 4,
+      "instructionRva": 72812797,
+      "instructionHex": "488B15FC21B208",
+      "cellVa": 6661155584,
+      "usageRawHex": "25E512C000000000",
+      "methodSpecIndex": 619154,
+      "methodSpec": [
+        428448,
+        -1,
+        42241
+      ],
+      "argumentRawHex": "EE290000000000000000118000000000",
+      "typeDefinition": 10734,
+      "typeName": "Beyond.Gameplay.Core.ColliderOptions",
+      "typeKind": 17
+    },
+    {
+      "memberIndex": 5,
+      "instructionRva": 72812833,
+      "instructionHex": "488B159096AC08",
+      "cellVa": 6660792248,
+      "usageRawHex": "75E712C000000000",
+      "methodSpecIndex": 619450,
+      "methodSpec": [
+        428448,
+        -1,
+        42452
+      ],
+      "argumentRawHex": "C1340000000000000000118000000000",
+      "typeDefinition": 13505,
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckHitColliderOptions+CheckType",
+      "typeKind": 17
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Physical AbilityActionData tag 0x0064 dispatches to the selected CheckHitColliderOptions wrapper; six ordered source calls, two generated setters and three generic type contexts are pinned against the installed native build.",
+    "direct": "The stored six-member reader takes an enable byte, Priority DWORD, two raw DWORDs, ColliderOptions DWORD, and CheckType DWORD in that order.",
+    "structuralOnly": "The two enum names identify stored types; they do not prove collider selection or condition evaluation at runtime.",
+    "unresolved": "Live formatter branch selection, allocation/refill/error parity, and enclosing SkillData EOF remain separate."
+  }
+}

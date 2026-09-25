@@ -1,0 +1,576 @@
+{
+  "schema": "endfield.skill-timeline-animated-camera-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 24,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 16,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59831578,
+    "routeWindow": {
+      "startRva": 59831578,
+      "endRva": 59831628,
+      "sha256": "D866DF45BA0573FDF9A35E1A3B9AAD73955880E38AD88413E807F2C00F784424",
+      "boundary": "selected 0x0010 type usage load, formatter route and rejoin"
+    },
+    "usageCellRva": 218706376,
+    "usageRawHex": "713E032000000000",
+    "registeredTypeIndex": 106296,
+    "wrapperTypeDefinition": 15915,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AnimatedCameraAction_AnimatedCameraActionDataForMemoryPack"
+  },
+  "methods": [
+    [
+      118518,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AnimatedCameraAction_AnimatedCameraActionDataForMemoryPack+Beyond_Gameplay_Core_AnimatedCameraAction_AnimatedCameraActionDataForMemoryPackFormatter",
+      "Deserialize",
+      68410160
+    ],
+    [
+      118517,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_AnimatedCameraAction_AnimatedCameraActionDataForMemoryPack",
+      "Deserialize",
+      68410256
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 68410384,
+    "hex": "4080FE18"
+  },
+  "codeWindows": [
+    {
+      "startRva": 68410160,
+      "endRva": 68410256,
+      "sha256": "CB815854C3A043C9505355A7DA8E7F5650DF89EC9F947E096B87A6A3B057B2ED",
+      "boundary": "formatter forwarding and initialization"
+    },
+    {
+      "startRva": 68410256,
+      "endRva": 68411244,
+      "sha256": "9D624457EB213AB05556B7E94BF4FA9D89665E39606FA8048F00792A0C6E4F60",
+      "boundary": "selected header-twenty-four reader and normal return"
+    }
+  ],
+  "setterMethods": [
+    [
+      118495,
+      "set___affectedByTimeScale__",
+      "System.Boolean"
+    ],
+    [
+      118496,
+      "set___cameraAnimKey__",
+      "System.String"
+    ],
+    [
+      118497,
+      "set___checkCollisionOnEnd__",
+      "System.Boolean"
+    ],
+    [
+      118498,
+      "set___checkCollisionTime__",
+      "System.Single"
+    ],
+    [
+      118499,
+      "set___duration__",
+      "System.Single"
+    ],
+    [
+      118500,
+      "set___easeIn__",
+      "System.Boolean"
+    ],
+    [
+      118501,
+      "set___easeInTime__",
+      "System.Single"
+    ],
+    [
+      118502,
+      "set___easeOut__",
+      "System.Boolean"
+    ],
+    [
+      118503,
+      "set___easeOutTime__",
+      "System.Single"
+    ],
+    [
+      118504,
+      "set___endByInput__",
+      "System.Boolean"
+    ],
+    [
+      118505,
+      "set___fitByCameraPos__",
+      "System.Boolean"
+    ],
+    [
+      118506,
+      "set___followPosition__",
+      "System.Boolean"
+    ],
+    [
+      118507,
+      "set___followRotation__",
+      "System.Boolean"
+    ],
+    [
+      118508,
+      "set___hideAllRendererEffect__",
+      "System.Boolean"
+    ],
+    [
+      118509,
+      "set___horizontalInheritType__",
+      "Beyond.Gameplay.Core.AnimatedCameraAction+ParamInheritType"
+    ],
+    [
+      118510,
+      "set___outRelativeHorizontalAngle__",
+      "System.Single"
+    ],
+    [
+      118511,
+      "set___outVerticalValue__",
+      "System.Single"
+    ],
+    [
+      118512,
+      "set___outZoomScale__",
+      "System.Single"
+    ],
+    [
+      118513,
+      "set___verticalInheritType__",
+      "Beyond.Gameplay.Core.AnimatedCameraAction+ParamInheritType"
+    ],
+    [
+      118514,
+      "set___zoomScaleInheritType__",
+      "Beyond.Gameplay.Core.AnimatedCameraAction+ParamInheritType"
+    ]
+  ],
+  "setterCallsites": [
+    {
+      "memberIndex": 4,
+      "methodIndex": 118495,
+      "callsiteRva": 68410563,
+      "callHex": "E8F8020000",
+      "targetRva": 68411328
+    },
+    {
+      "memberIndex": 5,
+      "methodIndex": 118496,
+      "callsiteRva": 68410597,
+      "callHex": "E806030000",
+      "targetRva": 68411376
+    },
+    {
+      "memberIndex": 6,
+      "methodIndex": 118497,
+      "callsiteRva": 68410631,
+      "callHex": "E814030000",
+      "targetRva": 68411424
+    },
+    {
+      "memberIndex": 7,
+      "methodIndex": 118498,
+      "callsiteRva": 68410665,
+      "callHex": "E822030000",
+      "targetRva": 68411472
+    },
+    {
+      "memberIndex": 8,
+      "methodIndex": 118499,
+      "callsiteRva": 68410699,
+      "callHex": "E830030000",
+      "targetRva": 68411520
+    },
+    {
+      "memberIndex": 9,
+      "methodIndex": 118500,
+      "callsiteRva": 68410733,
+      "callHex": "E83E030000",
+      "targetRva": 68411568
+    },
+    {
+      "memberIndex": 10,
+      "methodIndex": 118501,
+      "callsiteRva": 68410767,
+      "callHex": "E84C030000",
+      "targetRva": 68411616
+    },
+    {
+      "memberIndex": 11,
+      "methodIndex": 118502,
+      "callsiteRva": 68410801,
+      "callHex": "E85A030000",
+      "targetRva": 68411664
+    },
+    {
+      "memberIndex": 12,
+      "methodIndex": 118503,
+      "callsiteRva": 68410835,
+      "callHex": "E868030000",
+      "targetRva": 68411712
+    },
+    {
+      "memberIndex": 13,
+      "methodIndex": 118504,
+      "callsiteRva": 68410869,
+      "callHex": "E876030000",
+      "targetRva": 68411760
+    },
+    {
+      "memberIndex": 14,
+      "methodIndex": 118505,
+      "callsiteRva": 68410903,
+      "callHex": "E884030000",
+      "targetRva": 68411808
+    },
+    {
+      "memberIndex": 15,
+      "methodIndex": 118506,
+      "callsiteRva": 68410937,
+      "callHex": "E892030000",
+      "targetRva": 68411856
+    },
+    {
+      "memberIndex": 16,
+      "methodIndex": 118507,
+      "callsiteRva": 68410971,
+      "callHex": "E8A0030000",
+      "targetRva": 68411904
+    },
+    {
+      "memberIndex": 17,
+      "methodIndex": 118508,
+      "callsiteRva": 68411005,
+      "callHex": "E8AE030000",
+      "targetRva": 68411952
+    },
+    {
+      "memberIndex": 18,
+      "methodIndex": 118509,
+      "callsiteRva": 68411045,
+      "callHex": "E8B6030000",
+      "targetRva": 68412000
+    },
+    {
+      "memberIndex": 19,
+      "methodIndex": 118510,
+      "callsiteRva": 68411079,
+      "callHex": "E8C4030000",
+      "targetRva": 68412048
+    },
+    {
+      "memberIndex": 20,
+      "methodIndex": 118511,
+      "callsiteRva": 68411113,
+      "callHex": "E8D2030000",
+      "targetRva": 68412096
+    },
+    {
+      "memberIndex": 21,
+      "methodIndex": 118512,
+      "callsiteRva": 68411147,
+      "callHex": "E8E0030000",
+      "targetRva": 68412144
+    },
+    {
+      "memberIndex": 22,
+      "methodIndex": 118513,
+      "callsiteRva": 68411187,
+      "callHex": "E8E8030000",
+      "targetRva": 68412192
+    },
+    {
+      "memberIndex": 23,
+      "methodIndex": 118514,
+      "callsiteRva": 68411223,
+      "callHex": "E8F4030000",
+      "targetRva": 68412240
+    }
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68410400,
+      "sourceCallHex": "E89BACB6FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 68410441,
+      "sourceCallHex": "E862AAB6FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 68410474,
+      "sourceCallHex": "E841AAB6FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 68410507,
+      "sourceCallHex": "E820AAB6FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "affectedByTimeScale",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68410540,
+      "sourceCallHex": "E80FACB6FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "cameraAnimKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 68410574,
+      "sourceCallHex": "E82DAAB6FE",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "checkCollisionOnEnd",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68410608,
+      "sourceCallHex": "E8CBABB6FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "checkCollisionTime",
+      "readKind": "float32-bits",
+      "sourceCallsiteRva": 68410642,
+      "sourceCallHex": "E899AEB6FE",
+      "sourceTargetRva": 46828464
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "duration",
+      "readKind": "float32-bits",
+      "sourceCallsiteRva": 68410676,
+      "sourceCallHex": "E877AEB6FE",
+      "sourceTargetRva": 46828464
+    },
+    {
+      "memberIndex": 9,
+      "fieldName": "easeIn",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68410710,
+      "sourceCallHex": "E865ABB6FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 10,
+      "fieldName": "easeInTime",
+      "readKind": "float32-bits",
+      "sourceCallsiteRva": 68410744,
+      "sourceCallHex": "E833AEB6FE",
+      "sourceTargetRva": 46828464
+    },
+    {
+      "memberIndex": 11,
+      "fieldName": "easeOut",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68410778,
+      "sourceCallHex": "E821ABB6FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 12,
+      "fieldName": "easeOutTime",
+      "readKind": "float32-bits",
+      "sourceCallsiteRva": 68410812,
+      "sourceCallHex": "E8EFADB6FE",
+      "sourceTargetRva": 46828464
+    },
+    {
+      "memberIndex": 13,
+      "fieldName": "endByInput",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68410846,
+      "sourceCallHex": "E8DDAAB6FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 14,
+      "fieldName": "fitByCameraPos",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68410880,
+      "sourceCallHex": "E8BBAAB6FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 15,
+      "fieldName": "followPosition",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68410914,
+      "sourceCallHex": "E899AAB6FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 16,
+      "fieldName": "followRotation",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68410948,
+      "sourceCallHex": "E877AAB6FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 17,
+      "fieldName": "hideAllRendererEffect",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 68410982,
+      "sourceCallHex": "E855AAB6FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 18,
+      "fieldName": "horizontalInheritType",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 68411023,
+      "sourceCallHex": "E81CA8B6FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 19,
+      "fieldName": "outRelativeHorizontalAngle",
+      "readKind": "float32-bits",
+      "sourceCallsiteRva": 68411056,
+      "sourceCallHex": "E8FBACB6FE",
+      "sourceTargetRva": 46828464
+    },
+    {
+      "memberIndex": 20,
+      "fieldName": "outVerticalValue",
+      "readKind": "float32-bits",
+      "sourceCallsiteRva": 68411090,
+      "sourceCallHex": "E8D9ACB6FE",
+      "sourceTargetRva": 46828464
+    },
+    {
+      "memberIndex": 21,
+      "fieldName": "outZoomScale",
+      "readKind": "float32-bits",
+      "sourceCallsiteRva": 68411124,
+      "sourceCallHex": "E8B7ACB6FE",
+      "sourceTargetRva": 46828464
+    },
+    {
+      "memberIndex": 22,
+      "fieldName": "verticalInheritType",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 68411165,
+      "sourceCallHex": "E88EA7B6FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 23,
+      "fieldName": "zoomScaleInheritType",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 68411205,
+      "sourceCallHex": "E866A7B6FE",
+      "sourceTargetRva": 46827184
+    }
+  ],
+  "genericContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 68410428,
+      "instructionHex": "488B15E5C1F408",
+      "cellRva": 218668584,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+    },
+    {
+      "memberIndex": 18,
+      "instructionRva": 68411010,
+      "instructionHex": "488B151753F508",
+      "cellRva": 218706336,
+      "usageRawHex": "1DE712C000000000",
+      "methodSpecIndex": 619406,
+      "methodSpec": [
+        428448,
+        -1,
+        42418
+      ],
+      "argumentRawHex": "07240000000000000000118000000000",
+      "typeDefinition": 9223,
+      "typeName": "Beyond.Gameplay.Core.AnimatedCameraAction+ParamInheritType"
+    },
+    {
+      "memberIndex": 22,
+      "instructionRva": 68411152,
+      "instructionHex": "488B158952F508",
+      "cellRva": 218706336,
+      "usageRawHex": "1DE712C000000000",
+      "methodSpecIndex": 619406,
+      "methodSpec": [
+        428448,
+        -1,
+        42418
+      ],
+      "argumentRawHex": "07240000000000000000118000000000",
+      "typeDefinition": 9223,
+      "typeName": "Beyond.Gameplay.Core.AnimatedCameraAction+ParamInheritType"
+    },
+    {
+      "memberIndex": 23,
+      "instructionRva": 68411192,
+      "instructionHex": "488B156152F508",
+      "cellRva": 218706336,
+      "usageRawHex": "1DE712C000000000",
+      "methodSpecIndex": 619406,
+      "methodSpec": [
+        428448,
+        -1,
+        42418
+      ],
+      "argumentRawHex": "07240000000000000000118000000000",
+      "typeDefinition": 9223,
+      "typeName": "Beyond.Gameplay.Core.AnimatedCameraAction+ParamInheritType"
+    }
+  ],
+  "bytePayloadHelper": {
+    "startRva": 46827264,
+    "endRva": 46827462,
+    "sha256": "B8944001C41E1AF65B44F7DDE366FCE5E4E8B35E2A32682E628C2E0A36145BEF",
+    "boundary": "reviewed signed-length byte payload source consumer"
+  },
+  "evidenceBoundary": {
+    "exact": "Selected AbilityActionData switch route 0x0010, wrapper and formatter method pointers, code windows, source callsites and generic arguments are pinned to installed native inputs.",
+    "direct": "The header-twenty-four reader consumes four inherited members followed by twenty camera members in source order: booleans, scalar and enum DWORDs, one bounded byte payload, and float32 bit patterns.",
+    "structuralOnly": "The finite decoder preserves raw byte and scalar extents. It does not decode the camera key or infer playback.",
+    "unresolved": "Live provider selection, allocation/refill/error parity and whole SkillData EOF require independent evidence."
+  }
+}

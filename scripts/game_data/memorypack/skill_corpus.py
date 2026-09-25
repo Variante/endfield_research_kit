@@ -52,6 +52,7 @@ from scripts.game_data.memorypack.corpus_gate import (
     verify_current_report_inputs as _verify_current_report_inputs,
 )
 from scripts.game_data.memorypack.skill import (
+    frame_skill_exact_passive_action_group_profile,
     frame_skill_exact_timeline_action_group_profile,
     frame_skill_common_prefix,
     frame_skill_empty_action_group_profile,
@@ -69,7 +70,7 @@ from scripts.game_data.memorypack.skill_timeline_play_animation_step import (
 )
 from scripts.game_data.memorypack.skill_timeline_create_buff import (
     CONTRACT_PATH as TIMELINE_CREATE_BUFF_CONTRACT_PATH,
-    decode_first_timeline_create_buff,
+    decode_timeline_create_buff,
     validate_current_native_contract as validate_timeline_create_buff_native_contract,
 )
 from scripts.game_data.memorypack.skill_timeline_find_target import (
@@ -84,7 +85,8 @@ from scripts.game_data.memorypack.skill_timeline_continuous_find_target import (
 )
 from scripts.game_data.memorypack.skill_timeline_shared_sequence import (
     CONTRACT_PATH as TIMELINE_SHARED_SEQUENCE_CONTRACT_PATH,
-    decode_first_timeline_shared_sequence,
+    decode_passive_shared_sequence,
+    decode_timeline_shared_sequence,
     validate_current_native_contract as validate_timeline_shared_sequence_native_contract,
 )
 from scripts.game_data.memorypack.skill_cursor_receipt import (
@@ -133,12 +135,53 @@ VERIFIED_TIMELINE_SHARED_SEQUENCE_PREFIX = (
 VERIFIED_TIMELINE_SHARED_SEQUENCE_EXACT = (
     "verified-whole-schema-exact-timeline-shared-sequence-profile"
 )
+VERIFIED_PASSIVE_SHARED_SEQUENCE_PREFIX = (
+    "verified-passive-shared-sequence-named-prefix-and-terminal"
+)
+VERIFIED_PASSIVE_SHARED_SEQUENCE_EXACT = (
+    "verified-whole-schema-exact-passive-shared-sequence-profile"
+)
 
 verify_current_report_inputs = functools.partial(
     _verify_current_report_inputs,
     expected_format=SKILL_REPORT_FORMAT,
     label="SkillData",
 )
+
+
+def _timeline_contract_paths() -> list[Path]:
+    """Fingerprint every reviewed contract the Skill timeline readers load."""
+    fixed = [
+        TIMELINE_PLAY_ANIMATION_CONTRACT_PATH,
+        TIMELINE_PLAY_ANIMATION_CONTRACT_PATH.with_name("buff_115_native.json"),
+        TIMELINE_PLAY_ANIMATION_STEP_CONTRACT_PATH,
+        TIMELINE_CREATE_BUFF_CONTRACT_PATH,
+        TIMELINE_CREATE_BUFF_CONTRACT_PATH.with_name("buff_92_native.json"),
+        TIMELINE_FIND_TARGET_CONTRACT_PATH,
+        TIMELINE_FIND_TARGET_CONTRACT_PATH.with_name("buff_b2_native.json"),
+        TIMELINE_CONTINUOUS_FIND_TARGET_CONTRACT_PATH,
+        TIMELINE_CONTINUOUS_FIND_TARGET_CONTRACT_PATH.with_name("buff_8a_native.json"),
+        TIMELINE_SHARED_SEQUENCE_CONTRACT_PATH,
+    ]
+    shared = json.loads(TIMELINE_SHARED_SEQUENCE_CONTRACT_PATH.read_bytes())
+    dependencies = shared.get("dependencies")
+    if not isinstance(dependencies, list):
+        _fail("skill-timeline-contract-dependencies", source=str(TIMELINE_SHARED_SEQUENCE_CONTRACT_PATH),
+              expected="dependency list", actual=type(dependencies).__name__)
+    root = TIMELINE_SHARED_SEQUENCE_CONTRACT_PATH.parent.resolve()
+    for dependency in dependencies:
+        name = dependency.get("path") if isinstance(dependency, Mapping) else None
+        if not isinstance(name, str) or not name:
+            _fail("skill-timeline-contract-dependency-path", source=str(TIMELINE_SHARED_SEQUENCE_CONTRACT_PATH),
+                  expected="nonempty path", actual=dependency)
+        if not name.lower().endswith(".json"):
+            continue
+        path = (root / name).resolve()
+        if not path.is_relative_to(root) or not path.is_file():
+            _fail("skill-timeline-contract-dependency-missing", source=name,
+                  expected=f"existing JSON below {root}", actual=str(path))
+        fixed.append(path)
+    return list(dict.fromkeys(fixed))
 
 
 def _skill_rows(file_rows, *, expected_input: str) -> list[dict[str, Any]]:
@@ -300,12 +343,16 @@ def _boundary_evidence_summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
             in {
                 "verified-exact-first-timeline-create-buff-action",
                 "verified-exact-first-timeline-create-buff-record",
+                "verified-exact-timeline-create-buff-shared-sequence-records",
             }
             for row in rows
         ),
         "exactFirstTimelineCreateBuffRecords": sum(
             (row.get("timelineCreateBuffProfile") or {}).get("status")
-            == "verified-exact-first-timeline-create-buff-record"
+            in {
+                "verified-exact-first-timeline-create-buff-record",
+                "verified-exact-timeline-create-buff-shared-sequence-records",
+            }
             for row in rows
         ),
         "namedTimelineCreateBuffBytes": sum(
@@ -359,6 +406,10 @@ def _boundary_evidence_summary(rows: list[Mapping[str, Any]]) -> dict[str, Any]:
         ),
         "exactTimelineSharedSequenceWholeFiles": sum(
             row.get("coverageStatus") == VERIFIED_TIMELINE_SHARED_SEQUENCE_EXACT
+            for row in rows
+        ),
+        "exactPassiveSharedSequenceWholeFiles": sum(
+            row.get("coverageStatus") == VERIFIED_PASSIVE_SHARED_SEQUENCE_EXACT
             for row in rows
         ),
         "boundary": (
@@ -840,14 +891,55 @@ def _apply_verified_terminal_selection(
             "namedFields": terminal_names,
             "wholeSchemaExact": False,
         }
-        timeline_profile = row.get("timelinePlayAnimationProfile")
-        timeline_profile_key = "timelinePlayAnimationProfile"
-        timeline_profile_kind = "play-animation"
-        timeline_profile_raw_status = "exact-first-timeline-play-animation-record"
-        timeline_profile_verified_status = "verified-exact-first-timeline-play-animation-record"
-        timeline_prefix_coverage = VERIFIED_TIMELINE_PLAY_ANIMATION_PREFIX
-        timeline_exact_coverage = VERIFIED_TIMELINE_PLAY_ANIMATION_EXACT
-        timeline_opaque_kind = "opaque-after-first-timeline-action-record"
+        shared_complete = row.get("timelineSharedSequenceProfile")
+        shared_continuation = (
+            shared_complete.get("topLevelContinuation")
+            if isinstance(shared_complete, Mapping) else None
+        )
+        passive_complete = row.get("passiveSharedSequenceProfile")
+        passive_continuation = (
+            passive_complete.get("topLevelContinuation")
+            if isinstance(passive_complete, Mapping) else None
+        )
+        if (
+            isinstance(passive_complete, Mapping)
+            and passive_complete.get("wholeActionGroupDataExact") is True
+            and isinstance(passive_continuation, Mapping)
+            and passive_continuation.get("status") == "exact-through-field-42"
+        ):
+            timeline_profile = passive_complete
+            timeline_profile_key = "passiveSharedSequenceProfile"
+            timeline_profile_kind = "passive-shared-sequence"
+            timeline_profile_raw_status = "exact-passive-shared-sequence-list"
+            timeline_profile_verified_status = "verified-exact-passive-shared-sequence-list"
+            timeline_prefix_coverage = VERIFIED_PASSIVE_SHARED_SEQUENCE_PREFIX
+            timeline_exact_coverage = VERIFIED_PASSIVE_SHARED_SEQUENCE_EXACT
+            timeline_opaque_kind = "opaque-after-passive-action-map-list"
+        elif (
+            isinstance(shared_complete, Mapping)
+            and shared_complete.get("wholeActionGroupDataExact") is True
+            and isinstance(shared_continuation, Mapping)
+            and shared_continuation.get("status") == "exact-through-field-42"
+        ):
+            # A complete shared list and continuation outrank a specialized
+            # first-record prefix. Both profiles remain in the report.
+            timeline_profile = shared_complete
+            timeline_profile_key = "timelineSharedSequenceProfile"
+            timeline_profile_kind = "shared-sequence"
+            timeline_profile_raw_status = "exact-first-timeline-shared-sequence-record"
+            timeline_profile_verified_status = "verified-exact-first-timeline-shared-sequence-record"
+            timeline_prefix_coverage = VERIFIED_TIMELINE_SHARED_SEQUENCE_PREFIX
+            timeline_exact_coverage = VERIFIED_TIMELINE_SHARED_SEQUENCE_EXACT
+            timeline_opaque_kind = "opaque-after-first-timeline-action-record"
+        else:
+            timeline_profile = row.get("timelinePlayAnimationProfile")
+            timeline_profile_key = "timelinePlayAnimationProfile"
+            timeline_profile_kind = "play-animation"
+            timeline_profile_raw_status = "exact-first-timeline-play-animation-record"
+            timeline_profile_verified_status = "verified-exact-first-timeline-play-animation-record"
+            timeline_prefix_coverage = VERIFIED_TIMELINE_PLAY_ANIMATION_PREFIX
+            timeline_exact_coverage = VERIFIED_TIMELINE_PLAY_ANIMATION_EXACT
+            timeline_opaque_kind = "opaque-after-first-timeline-action-record"
         if not isinstance(timeline_profile, Mapping):
             timeline_profile = row.get("timelinePlayAnimationStepProfile")
             timeline_profile_key = "timelinePlayAnimationStepProfile"
@@ -880,7 +972,14 @@ def _apply_verified_terminal_selection(
                 timeline_profile.get("status")
                 if isinstance(timeline_profile, Mapping) else None
             )
-            if raw_status == "exact-first-timeline-create-buff-action":
+            if raw_status == "exact-timeline-create-buff-shared-sequence-records":
+                timeline_profile_raw_status = raw_status
+                timeline_profile_verified_status = (
+                    "verified-exact-timeline-create-buff-shared-sequence-records"
+                )
+                timeline_prefix_coverage = VERIFIED_TIMELINE_CREATE_BUFF_RECORD_PREFIX
+                timeline_opaque_kind = "opaque-after-first-timeline-action-record"
+            elif raw_status == "exact-first-timeline-create-buff-action":
                 timeline_profile_raw_status = raw_status
                 timeline_profile_verified_status = (
                     "verified-exact-first-timeline-create-buff-action"
@@ -1286,7 +1385,7 @@ def _join_and_frame(
             and int.from_bytes(data[16:20], "little", signed=True) > 0
         ):
             try:
-                timeline_create_buff_profile = decode_first_timeline_create_buff(
+                timeline_create_buff_profile = decode_timeline_create_buff(
                     data,
                 )
             except ValueError as exc:
@@ -1302,19 +1401,36 @@ def _join_and_frame(
                     data,
                     candidate_start,
                     action_group_end=timeline_create_buff_profile["parserCursor"],
+                    timeline_count=timeline_create_buff_profile["timelineActionsCount"],
                 )
                 timeline_create_buff_profile["topLevelContinuation"] = continuation
         timeline_shared_sequence_profile = None
+        timeline_shared_sequence_stop_reason = None
         try:
-            timeline_shared_sequence_profile = decode_first_timeline_shared_sequence(
+            timeline_shared_sequence_profile = decode_timeline_shared_sequence(
                 data,
             )
-        except ValueError:
+        except ValueError as exc:
             # The shared decoder is intentionally sparse. Non-contracted roots,
             # later action tags, and member-count drift retain the established
             # ActionGroupData prefix without turning the corpus run into a
-            # family-wide failure.
+            # family-wide failure. Preserve a positive timeline's first refusal;
+            # the first-record profile otherwise hides the route frontier.
+            if (
+                len(data) >= 10
+                and data[0] == 48
+                and data[1] == 2
+                and int.from_bytes(data[2:6], "little", signed=True) == 0
+                and int.from_bytes(data[6:10], "little", signed=True) > 0
+            ):
+                timeline_shared_sequence_stop_reason = str(exc)
             timeline_shared_sequence_profile = None
+        if timeline_shared_sequence_profile is not None:
+            # A later timeline refusal is returned with its exact first-record
+            # prefix rather than raised. Preserve that first refusal too.
+            timeline_shared_sequence_stop_reason = _timeline_profile_stop(
+                timeline_shared_sequence_profile
+            )
         if (
             timeline_shared_sequence_profile is not None
             and timeline_shared_sequence_profile.get("wholeActionGroupDataExact")
@@ -1324,8 +1440,35 @@ def _join_and_frame(
                 data,
                 candidate_start,
                 action_group_end=timeline_shared_sequence_profile["parserCursor"],
+                timeline_count=timeline_shared_sequence_profile["timelineActionsCount"],
             )
             timeline_shared_sequence_profile["topLevelContinuation"] = continuation
+        passive_shared_sequence_profile = None
+        passive_shared_sequence_stop_reason = None
+        if (
+            len(data) >= 10
+            and data[0] == 48
+            and data[1] == 2
+            and int.from_bytes(data[2:6], "little", signed=True) > 0
+        ):
+            try:
+                passive_shared_sequence_profile = decode_passive_shared_sequence(data)
+            except ValueError as exc:
+                # Unknown passive action routes retain the count prefix. A
+                # reader cursor alone is not enough to promote an entire map.
+                # Keep the bounded first refusal for frontier ranking; the
+                # general prefix alone cannot name the missing child route.
+                passive_shared_sequence_stop_reason = str(exc)
+                passive_shared_sequence_profile = None
+            if passive_shared_sequence_profile is not None:
+                candidate_start = int(framed["candidates"][0]["startOffset"], 0)
+                continuation = frame_skill_exact_passive_action_group_profile(
+                    data,
+                    candidate_start,
+                    action_group_end=passive_shared_sequence_profile["parserCursor"],
+                    passive_count=passive_shared_sequence_profile["passiveEventActionsCount"],
+                )
+                passive_shared_sequence_profile["topLevelContinuation"] = continuation
         timeline_find_target_profile = None
         if (
             len(data) >= 22
@@ -1481,6 +1624,9 @@ def _join_and_frame(
             "timelinePlayAnimationStepProfile": timeline_play_animation_step_profile,
             "timelineCreateBuffProfile": timeline_create_buff_profile,
             "timelineSharedSequenceProfile": timeline_shared_sequence_profile,
+            "timelineSharedSequenceStopReason": timeline_shared_sequence_stop_reason,
+            "passiveSharedSequenceProfile": passive_shared_sequence_profile,
+            "passiveSharedSequenceStopReason": passive_shared_sequence_stop_reason,
             "timelineFindTargetProfile": timeline_find_target_profile,
             "timelineContinuousFindTargetProfile": timeline_continuous_find_target_profile,
             "framing": framed,
@@ -1499,6 +1645,28 @@ def _join_and_frame(
         dict(sorted(status_counts.items())),
         dict(sorted(coverage_counts.items())),
     )
+
+
+def _timeline_profile_stop(profile: dict[str, Any]) -> str | None:
+    """Carry a returned later refusal without assigning one to an exact list."""
+    reason = profile.get("laterStopReason")
+    if profile.get("wholeActionGroupDataExact") or not isinstance(reason, str):
+        return None
+    return reason or None
+
+
+def _timeline_refusal_group(reason: str) -> str:
+    """Group only explicitly identified union tags; keep other refusals distinct."""
+    route = re.search(r"route=0x([0-9A-Fa-f]+):not-contracted", reason)
+    if route:
+        return f"route-0x{int(route.group(1), 16):04X}"
+    union = re.search(
+        r"expected='supported (current|nested-finder|nested-validator) union tag' actual=(\d+)",
+        reason,
+    )
+    if union:
+        return f"{union.group(1)}-0x{int(union.group(2)):04X}"
+    return f"other:{reason[:120]}"
 
 
 def build_current_census(
@@ -1536,31 +1704,7 @@ def build_current_census(
               expected=sorted(authenticated_build_paths), actual=cli_key)
     parser_start = _parser_source_snapshots(Path(__file__))
     gate_start = _fingerprint(Path(__file__))
-    timeline_contract_paths = [
-        TIMELINE_PLAY_ANIMATION_CONTRACT_PATH,
-        TIMELINE_PLAY_ANIMATION_CONTRACT_PATH.with_name("buff_115_native.json"),
-        TIMELINE_PLAY_ANIMATION_STEP_CONTRACT_PATH,
-        TIMELINE_CREATE_BUFF_CONTRACT_PATH,
-        TIMELINE_CREATE_BUFF_CONTRACT_PATH.with_name("buff_92_native.json"),
-        TIMELINE_FIND_TARGET_CONTRACT_PATH,
-        TIMELINE_FIND_TARGET_CONTRACT_PATH.with_name("buff_b2_native.json"),
-        TIMELINE_CONTINUOUS_FIND_TARGET_CONTRACT_PATH,
-        TIMELINE_CONTINUOUS_FIND_TARGET_CONTRACT_PATH.with_name("buff_8a_native.json"),
-        TIMELINE_SHARED_SEQUENCE_CONTRACT_PATH,
-        *[
-            TIMELINE_SHARED_SEQUENCE_CONTRACT_PATH.with_name(name)
-            for name in (
-                "buff_0b_native.json", "buff_24_native.json", "buff_3c_native.json",
-                "buff_8c_native.json", "buff_92_native.json",
-                "buff_9a_native.json", "buff_a2_native.json", "buff_a9_native.json",
-                "buff_b2_native.json", "buff_b4_native.json", "buff_b6_native.json",
-                "buff_c0_native.json", "buff_d4_native.json", "buff_de_native.json", "buff_fe_native.json",
-                "buff_9b_native.json", "buff_ea_native.json", "buff_119_native.json",
-                "buff_145_native.json", "buff_166_native.json", "buff_169_native.json",
-                "buff_16d_native.json",
-            )
-        ],
-    ]
+    timeline_contract_paths = _timeline_contract_paths()
     timeline_contract_start = [_fingerprint(path) for path in timeline_contract_paths]
     timeline_native_validation = validate_timeline_play_animation_native_contract()
     timeline_play_animation_step_native_validation = (
@@ -1698,11 +1842,42 @@ def build_current_census(
         + coverage_counts.get(VERIFIED_TIMELINE_CONTINUOUS_FIND_TARGET_EXACT, 0)
         + coverage_counts.get(VERIFIED_TIMELINE_SHARED_SEQUENCE_PREFIX, 0)
         + coverage_counts.get(VERIFIED_TIMELINE_SHARED_SEQUENCE_EXACT, 0)
+        + coverage_counts.get(VERIFIED_PASSIVE_SHARED_SEQUENCE_PREFIX, 0)
+        + coverage_counts.get(VERIFIED_PASSIVE_SHARED_SEQUENCE_EXACT, 0)
     )
     ambiguous_count = coverage_counts.get("ambiguous-disjoint-independent-ranges", 0)
     failed_count = coverage_counts.get("failed-framing", 0)
     unsupported_count = len(rows) - unique_count - ambiguous_count - failed_count
     boundary_evidence = _boundary_evidence_summary(rows)
+    timeline_stop_counts = Counter(
+        _timeline_refusal_group(row["timelineSharedSequenceStopReason"])
+        for row in rows
+        if not row.get("wholeSchemaExact")
+        and row.get("timelineSharedSequenceStopReason")
+    )
+    timeline_stops = {
+        "files": sum(timeline_stop_counts.values()),
+        "topGroups": [
+            {"group": group, "files": count}
+            for group, count in sorted(
+                timeline_stop_counts.items(), key=lambda item: (-item[1], item[0])
+            )[:20]
+        ],
+    }
+    passive_stop_counts = Counter(
+        row["passiveSharedSequenceStopReason"]
+        for row in rows
+        if row.get("passiveSharedSequenceStopReason")
+    )
+    passive_stops = {
+        "files": sum(passive_stop_counts.values()),
+        "topReasons": [
+            {"reason": reason, "files": count}
+            for reason, count in sorted(
+                passive_stop_counts.items(), key=lambda item: (-item[1], item[0])
+            )[:20]
+        ],
+    }
     final_status = "failed" if failed_count else "partial" if partial else "complete"
     return {
         "format": SKILL_REPORT_FORMAT,
@@ -1746,6 +1921,8 @@ def build_current_census(
             "framingStatusCounts": status_counts,
             "coverageStatusCounts": coverage_counts,
             "byteBoundaryEvidence": boundary_evidence,
+            "timelineSharedSequenceStops": timeline_stops,
+            "passiveSharedSequenceStops": passive_stops,
         },
         "identitySetSha256": identity_set_sha256,
         "wholeSchemaExact": False,
@@ -1783,6 +1960,16 @@ def render_markdown(report: Mapping[str, Any]) -> str:
         "Authenticated ActionGroupData named prefixes: "
         f"{summary['byteBoundaryEvidence'].get('namedActionGroupPrefixFiles', 0)} files / "
         f"{summary['byteBoundaryEvidence'].get('namedActionGroupPrefixBytes', 0)} bytes.", "",
+        f"Shared timeline first refusals on nonexact files: {summary['timelineSharedSequenceStops']['files']} files.",
+        *(
+            f"- {row['files']} files: `{row['group']}`"
+            for row in summary["timelineSharedSequenceStops"]["topGroups"]
+        ), "",
+        f"Passive shared-sequence first refusals: {summary['passiveSharedSequenceStops']['files']} files.",
+        *(
+            f"- {row['files']} files: `{row['reason']}`"
+            for row in summary["passiveSharedSequenceStops"]["topReasons"]
+        ), "",
         report["evidenceBoundary"], "",
         (
             "The authenticated cursor receipt selects fields 43 through 47 through EOF; "
@@ -1858,7 +2045,19 @@ def main(argv: list[str] | None = None) -> int:
         }
         print(json.dumps({"status": "failed", "diagnostic": diagnostic}, ensure_ascii=False), file=sys.stderr)
         return 1
-    print(json.dumps({"status": result["status"], "files": result["summary"]["filesSucceeded"], "output": str(args.output)}, ensure_ascii=False))
+    print(json.dumps({
+        "status": result["status"],
+        "files": result["summary"]["filesSucceeded"],
+        "timelineSharedSequenceStops": {
+            "files": result["summary"]["timelineSharedSequenceStops"]["files"],
+            "topGroups": result["summary"]["timelineSharedSequenceStops"]["topGroups"][:3],
+        },
+        "passiveSharedSequenceStops": {
+            "files": result["summary"]["passiveSharedSequenceStops"]["files"],
+            "topReasons": result["summary"]["passiveSharedSequenceStops"]["topReasons"][:3],
+        },
+        "output": str(args.output),
+    }, ensure_ascii=False))
     return 1 if result["status"] == "failed" else 0
 
 

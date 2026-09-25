@@ -1,0 +1,403 @@
+{
+  "schema": "endfield.skill-timeline-typhoea-archery-chip-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 398,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59834678,
+    "routeWindow": {
+      "startRva": 59834678,
+      "endRva": 59834728,
+      "sha256": "8FF7826E53D4A83D0189DB8510B910F12E495106EDA107C1A54B53C54583BBD0",
+      "boundary": "selected 0x018E registered wrapper route"
+    },
+    "usageCellRva": 218256672,
+    "usageRawHex": "A945032000000000",
+    "registeredTypeIndex": 107220,
+    "wrapperTypeDefinition": 16557,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaArcheryChipDataAction_DataForMemoryPack"
+  },
+  "serializedMemberCount": 18,
+  "methods": [
+    [
+      123736,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaArcheryChipDataAction_DataForMemoryPack",
+      "Deserialize",
+      70502080
+    ],
+    [
+      123737,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TyphoeaArcheryChipDataAction_DataForMemoryPack+Beyond_Gameplay_Core_TyphoeaArcheryChipDataAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      70501984
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 70502080,
+      "endRva": 70502842,
+      "sha256": "A8E0C7D72A40BDCB182DE5AF90C5C6EB39C8FB243D77E42BCF945703B89184A6",
+      "boundary": "complete normal-path reader through RET"
+    },
+    {
+      "startRva": 70501984,
+      "endRva": 70502080,
+      "sha256": "E9A1C0512628E6539FA67FCCAB24F8E1C1A2EE659D2D42C33E6E865F833947E5",
+      "boundary": "formatter initialization and forwarding"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 70502208,
+    "hex": "4080FE12"
+  },
+  "setterMethods": [
+    [
+      123719,
+      "set___extraArrowKey__",
+      "System.String"
+    ],
+    [
+      123720,
+      "set___extraRicochetKey__",
+      "System.String"
+    ],
+    [
+      123721,
+      "set___hasMachineGunFeatureKey__",
+      "System.String"
+    ],
+    [
+      123722,
+      "set___isRapidFireArrowKey__",
+      "System.String"
+    ],
+    [
+      123723,
+      "set___needSaveHasMachineGunFeature__",
+      "System.Boolean"
+    ],
+    [
+      123724,
+      "set___needSaveProjectileID__",
+      "System.Boolean"
+    ],
+    [
+      123725,
+      "set___needSaveRemainBounceCount__",
+      "System.Boolean"
+    ],
+    [
+      123726,
+      "set___needSaveSkillTrajectoryType__",
+      "System.Boolean"
+    ],
+    [
+      123727,
+      "set___needSaveSplitCountKey__",
+      "System.Boolean"
+    ],
+    [
+      123728,
+      "set___projectileIDKey__",
+      "System.String"
+    ],
+    [
+      123729,
+      "set___remainBounceCountKey__",
+      "System.String"
+    ],
+    [
+      123730,
+      "set___saveAffix__",
+      "System.Boolean"
+    ],
+    [
+      123731,
+      "set___skillTrajectoryTypeKey__",
+      "System.String"
+    ],
+    [
+      123732,
+      "set___splitCountKey__",
+      "System.String"
+    ]
+  ],
+  "setterCallsites": [
+    {
+      "memberIndex": 4,
+      "methodIndex": 123719,
+      "callsiteRva": 70502387,
+      "callHex": "E808020000",
+      "targetRva": 70502912
+    },
+    {
+      "memberIndex": 5,
+      "methodIndex": 123720,
+      "callsiteRva": 70502421,
+      "callHex": "E816020000",
+      "targetRva": 70502960
+    },
+    {
+      "memberIndex": 6,
+      "methodIndex": 123721,
+      "callsiteRva": 70502455,
+      "callHex": "E824020000",
+      "targetRva": 70503008
+    },
+    {
+      "memberIndex": 7,
+      "methodIndex": 123722,
+      "callsiteRva": 70502489,
+      "callHex": "E842020000",
+      "targetRva": 70503072
+    },
+    {
+      "memberIndex": 8,
+      "methodIndex": 123723,
+      "callsiteRva": 70502523,
+      "callHex": "E860020000",
+      "targetRva": 70503136
+    },
+    {
+      "memberIndex": 9,
+      "methodIndex": 123724,
+      "callsiteRva": 70502557,
+      "callHex": "E86E020000",
+      "targetRva": 70503184
+    },
+    {
+      "memberIndex": 10,
+      "methodIndex": 123725,
+      "callsiteRva": 70502591,
+      "callHex": "E87C020000",
+      "targetRva": 70503232
+    },
+    {
+      "memberIndex": 11,
+      "methodIndex": 123726,
+      "callsiteRva": 70502625,
+      "callHex": "E88A020000",
+      "targetRva": 70503280
+    },
+    {
+      "memberIndex": 12,
+      "methodIndex": 123727,
+      "callsiteRva": 70502659,
+      "callHex": "E898020000",
+      "targetRva": 70503328
+    },
+    {
+      "memberIndex": 13,
+      "methodIndex": 123728,
+      "callsiteRva": 70502693,
+      "callHex": "E8A6020000",
+      "targetRva": 70503376
+    },
+    {
+      "memberIndex": 14,
+      "methodIndex": 123729,
+      "callsiteRva": 70502727,
+      "callHex": "E8B4020000",
+      "targetRva": 70503424
+    },
+    {
+      "memberIndex": 15,
+      "methodIndex": 123730,
+      "callsiteRva": 70502761,
+      "callHex": "E8C2020000",
+      "targetRva": 70503472
+    },
+    {
+      "memberIndex": 16,
+      "methodIndex": 123731,
+      "callsiteRva": 70502791,
+      "callHex": "E8D4020000",
+      "targetRva": 70503520
+    },
+    {
+      "memberIndex": 17,
+      "methodIndex": 123732,
+      "callsiteRva": 70502821,
+      "callHex": "E8E6020000",
+      "targetRva": 70503568
+    }
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70502224,
+      "sourceCallHex": "E86BC196FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 70502265,
+      "sourceCallHex": "E832BF96FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 70502298,
+      "sourceCallHex": "E811BF96FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 70502331,
+      "sourceCallHex": "E8F0BE96FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "extraArrowKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 70502364,
+      "sourceCallHex": "E81FBF96FE",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "extraRicochetKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 70502398,
+      "sourceCallHex": "E8FDBE96FE",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "hasMachineGunFeatureKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 70502432,
+      "sourceCallHex": "E8DBBE96FE",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "isRapidFireArrowKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 70502466,
+      "sourceCallHex": "E8B9BE96FE",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "needSaveHasMachineGunFeature",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70502500,
+      "sourceCallHex": "E857C096FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 9,
+      "fieldName": "needSaveProjectileID",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70502534,
+      "sourceCallHex": "E835C096FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 10,
+      "fieldName": "needSaveRemainBounceCount",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70502568,
+      "sourceCallHex": "E813C096FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 11,
+      "fieldName": "needSaveSkillTrajectoryType",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70502602,
+      "sourceCallHex": "E8F1BF96FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 12,
+      "fieldName": "needSaveSplitCountKey",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70502636,
+      "sourceCallHex": "E8CFBF96FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 13,
+      "fieldName": "projectileIDKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 70502670,
+      "sourceCallHex": "E8EDBD96FE",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 14,
+      "fieldName": "remainBounceCountKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 70502704,
+      "sourceCallHex": "E8CBBD96FE",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 15,
+      "fieldName": "saveAffix",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70502738,
+      "sourceCallHex": "E869BF96FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 16,
+      "fieldName": "skillTrajectoryTypeKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 70502772,
+      "sourceCallHex": "E887BD96FE",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 17,
+      "fieldName": "splitCountKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 70502802,
+      "sourceCallHex": "E869BD96FE",
+      "sourceTargetRva": 46827264
+    }
+  ],
+  "genericContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 70502252,
+      "instructionHex": "488B15B5D6D408",
+      "cellRva": 218668584,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeKind": 17,
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected build dispatches union 0x018E to the eighteen-member TyphoeaArcheryChipDataAction wrapper and formatter. Source calls, generic priority type, and setter order are pinned.",
+    "direct": "The source reads a byte/three-DWORD prefix, four strings, five booleans, two strings, one boolean, then two strings.",
+    "structuralOnly": "Stored keys and booleans do not establish live projectile or ricochet behavior.",
+    "unresolved": "Live formatter selection and enclosing SkillData EOF remain separate from this record boundary."
+  }
+}

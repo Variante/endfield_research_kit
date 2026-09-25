@@ -1,0 +1,99 @@
+{
+  "schema": "endfield.skill-timeline-modify-camera-lock-point-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 6,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 235,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 82214941,
+    "routeWindow": {
+      "startRva": 82214941,
+      "endRva": 82214948,
+      "sha256": "4B585933B9DFED82CE4F2E2752BB2CB9B9F21598433F22DF1DD3E25FE2482136",
+      "boundary": "selected 0x00EB dispatcher usage-cell load"
+    },
+    "usageCellRva": 218132440,
+    "usageRawHex": "C942032000000000",
+    "registeredTypeIndex": 106852,
+    "wrapperTypeDefinition": 16239,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyCameraLockPointAction_DataForMemoryPack"
+  },
+  "methods": [
+    [121169, "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyCameraLockPointAction_DataForMemoryPack", "Deserialize", 153766880],
+    [121170, "Beyond.MemoryPack.Beyond_Gameplay_Core_ModifyCameraLockPointAction_DataForMemoryPack+Beyond_Gameplay_Core_ModifyCameraLockPointAction_DataForMemoryPackFormatter", "Deserialize", 153766640]
+  ],
+  "codeWindows": [
+    {"startRva": 153766880, "endRva": 153767380, "sha256": "3CE8CF279C6D3BF2EC7B8F4E6EC4EF9E9ADD7882B5B267CF0F084128B4D60882", "boundary": "selected six-member reader through normal return and error rejoin"},
+    {"startRva": 153766640, "endRva": 153766729, "sha256": "88583924EF9F65CC1A9A02E87520855ACA5F24B57E87917AA4213BEA276DB0D7", "boundary": "formatter initialization and forwarding through tail jump"}
+  ],
+  "memberCountInstruction": {"rva": 153767081, "hex": "807C243806"},
+  "orderedSourceReads": [
+    {"memberIndex": 0, "fieldName": "isEnable", "readKind": "bool-byte", "sourceCallsiteRva": 153767098, "sourceCallHex": "E8013CA0F9", "sourceTargetRva": 46827712},
+    {"memberIndex": 1, "fieldName": "priorityLevel", "readKind": "enum32", "sourceCallsiteRva": 153767138, "sourceCallHex": "E8C939A0F9", "sourceTargetRva": 46827184},
+    {"memberIndex": 2, "fieldName": "priorityOffset", "readKind": "scalar32", "sourceCallsiteRva": 153767171, "sourceCallHex": "E8A839A0F9", "sourceTargetRva": 46827184},
+    {"memberIndex": 3, "fieldName": "serverActionIndex", "readKind": "scalar32", "sourceCallsiteRva": 153767200, "sourceCallHex": "E88B39A0F9", "sourceTargetRva": 46827184},
+    {"memberIndex": 4, "fieldName": "mountPointOwner", "readKind": "target-profile", "sourceCallsiteRva": 153767236, "sourceCallHex": "E8470FB0F9", "sourceTargetRva": 47864976},
+    {"memberIndex": 5, "fieldName": "overrideMountPoint", "readKind": "enum32", "sourceCallsiteRva": 153767273, "sourceCallHex": "E84239A0F9", "sourceTargetRva": 46827184}
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 153767125,
+      "instructionHex": "488B154C51DE03",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [428448, -1, 42547],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17
+    },
+    {
+      "memberIndex": 4,
+      "instructionRva": 153767223,
+      "instructionHex": "488B15CAC9DB03",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [428464, -1, 16792],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeKind": 18
+    },
+    {
+      "memberIndex": 5,
+      "instructionRva": 153767260,
+      "instructionHex": "488B151DEFD403",
+      "cellVa": 6660504704,
+      "usageRawHex": "45E612C000000000",
+      "methodSpecIndex": 619298,
+      "methodSpec": [428448, -1, 8642],
+      "argumentRawHex": "80050000000000000000118000000000",
+      "typeDefinition": 1408,
+      "typeName": "Beyond.Gameplay.MountPoint",
+      "typeKind": 17
+    }
+  ],
+  "setterMethods": [
+    [121165, "set___mountPointOwner__", "Beyond.Gameplay.Core.TargetSettings"],
+    [121166, "set___overrideMountPoint__", "Beyond.Gameplay.MountPoint"]
+  ],
+  "dependencies": [
+    {"path": "buff_ec_native.json", "role": "reviewed finite TargetSettings profile"}
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected AbilityActionData tag and registered wrapper, six-member check, ordered source calls, generic types, and output setters match the pinned installed native inputs.",
+    "direct": "The native reader consumes a byte, three raw DWORDs, one TargetSettings profile, and a final enum32 DWORD.",
+    "structuralOnly": "Stored mount-point values and target selection do not establish runtime camera lock behavior.",
+    "unresolved": "Live formatter branch selection, allocation/refill/error parity, and enclosing SkillData EOF remain separate."
+  }
+}

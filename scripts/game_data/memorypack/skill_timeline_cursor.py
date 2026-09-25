@@ -54,7 +54,6 @@ DEFAULT_JSON = ROOT / 'reports/animestudio/skilldata_timeline_cursor_latest.json
 DEFAULT_MD = ROOT / 'reports/animestudio/skilldata_timeline_cursor_latest.md'
 SKILL_PREFIX = 'Data/Json/SkillData/'
 ACTION_CONTRACT_RE = re.compile(r'^buff_([0-9a-f]+)_native[.]json$', re.IGNORECASE)
-IMAGE_BASE_FALLBACK = 0x180000000
 
 
 class TimelineCursorError(ValueError):
@@ -595,8 +594,19 @@ def _native_image_base(native: Mapping[str, Any]) -> int:
     windows = timeline.get('codeWindows') if isinstance(timeline, Mapping) else None
     if not isinstance(methods, list) or not isinstance(windows, list):
         raise TimelineCursorError('native context is missing TimelineActionData methods/windows')
-    method_rows = [row for row in methods if row.get('methodIndex') == 104653]
-    root_rows = [row for row in windows if row.get('startRva') == 0x32CCF70]
+    method_rows = [
+        row for row in methods
+        if isinstance(row, Mapping)
+        and row.get('declaringType')
+        == 'Beyond.MemoryPack.Beyond_Gameplay_Core_TimelineAction_TimelineActionDataForMemoryPack'
+        and row.get('name') == 'Deserialize'
+    ]
+    root_rows = [
+        row for row in windows
+        if isinstance(row, Mapping)
+        and isinstance(row.get('role'), str)
+        and row['role'].startswith('TimelineActionData Deserialize:')
+    ]
     if len(method_rows) != 1 or len(root_rows) != 1:
         raise TimelineCursorError('native context lacks one exact TimelineActionData reader root')
     pointer_va = method_rows[0].get('pointerVa')

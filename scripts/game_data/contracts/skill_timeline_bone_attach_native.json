@@ -1,0 +1,259 @@
+{
+  "schema": "endfield.skill-timeline-bone-attach-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 13,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 0,
+    "switchTargetRva": 59831428,
+    "usageCellRva": 218700896,
+    "usageRawHex": "D93B032000000000",
+    "registeredTypeIndex": 105964,
+    "wrapperTypeDefinition": 15947,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_BoneAttachAction_DataForMemoryPack",
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "routeWindow": {
+      "startRva": 59831428,
+      "endRva": 59831478,
+      "sha256": "5C55A260FFE5FB92C5788DD7081504E3C6BE0B99E4A70125B2C5B58DCAC3075C",
+      "boundary": "selected zero tag usage and formatter route"
+    }
+  },
+  "methods": [
+    [
+      118808,
+      "Beyond.MemoryPack.Beyond_Gameplay_BoneAttachAction_DataForMemoryPack",
+      "Deserialize",
+      69278400
+    ],
+    [
+      118809,
+      "Beyond.MemoryPack.Beyond_Gameplay_BoneAttachAction_DataForMemoryPack+Beyond_Gameplay_BoneAttachAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      69278304
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 69278528,
+    "hex": "4080FE0D"
+  },
+  "codeWindows": [
+    {
+      "startRva": 69278304,
+      "endRva": 69278400,
+      "sha256": "A9202D30E5257DE0897D22E0E08FC0BF7165B8DCC1FC207A1AD8228F7AA31AE3",
+      "boundary": "formatter initialization and forwarding"
+    },
+    {
+      "startRva": 69278400,
+      "endRva": 69279060,
+      "sha256": "411B964C7583B733009A4BCA8DA94D2A1214E7D8744517D420C00C63155E3DFD",
+      "boundary": "thirteen ordered reads and normal return"
+    }
+  ],
+  "sourceHelperWindows": [
+    {
+      "memberIndex": 8,
+      "startRva": 46828464,
+      "endRva": 46828547,
+      "sha256": "F112A76BE9309585E435B359DBF7BD870995695419CF8FF36D6384EE27AB831C",
+      "boundary": "float32 source guard, raw4 read and advance through return"
+    }
+  ],
+  "setterMethods": [
+    [
+      118797,
+      "set___alwaysFollowRotation__",
+      "System.Boolean"
+    ],
+    [
+      118798,
+      "set___anchorSlot__",
+      "Beyond.Gameplay.MountPoint"
+    ],
+    [
+      118799,
+      "set___isAddRotation__",
+      "System.Boolean"
+    ],
+    [
+      118800,
+      "set___isLerp__",
+      "System.Boolean"
+    ],
+    [
+      118801,
+      "set___lerpTime__",
+      "System.Single"
+    ],
+    [
+      118802,
+      "set___rotateAnchor__",
+      "Beyond.Gameplay.BoneAttachAction+RotateAnchor"
+    ],
+    [
+      118803,
+      "set___rotateAngles__",
+      "UnityEngine.Vector3"
+    ],
+    [
+      118804,
+      "set___subSlot__",
+      "Beyond.Gameplay.MountPoint"
+    ],
+    [
+      118805,
+      "set___targetSettings__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 69278544,
+      "sourceCallHex": "E86B6DA9FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 69278585,
+      "sourceCallHex": "E8326BA9FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 69278618,
+      "sourceCallHex": "E8116BA9FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 69278651,
+      "sourceCallHex": "E8F06AA9FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "alwaysFollowRotation",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 69278684,
+      "sourceCallHex": "E8DF6CA9FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "anchorSlot",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 69278725,
+      "sourceCallHex": "E8A66AA9FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "isAddRotation",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 69278758,
+      "sourceCallHex": "E8956CA9FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "isLerp",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 69278792,
+      "sourceCallHex": "E8736CA9FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "lerpTime",
+      "readKind": "raw-float32-bits",
+      "sourceCallsiteRva": 69278826,
+      "sourceCallHex": "E8416FA9FE",
+      "sourceTargetRva": 46828464
+    },
+    {
+      "memberIndex": 9,
+      "fieldName": "rotateAnchor",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 69278867,
+      "sourceCallHex": "E8186AA9FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 10,
+      "fieldName": "rotateAngles",
+      "readKind": "raw-vector3-12",
+      "sourceCallsiteRva": 69278912,
+      "sourceCallHex": "E8ABBC7BFF",
+      "sourceTargetRva": 60610928
+    },
+    {
+      "memberIndex": 11,
+      "fieldName": "subSlot",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 69278976,
+      "sourceCallHex": "E8AB69A9FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 12,
+      "fieldName": "targetSettings",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 69279016,
+      "sourceCallHex": "E8633FB9FE",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 12,
+      "instructionRva": 69279003,
+      "instructionHex": "488B15E6F9E408",
+      "cellRva": 218502920,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeKind": 18,
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "consumerCallRva": 69279016,
+      "consumerTargetRva": 47864976
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "buff_16a_native.json",
+      "role": "reviewed raw12 Vector3 source helper"
+    },
+    {
+      "path": "buff_ec_native.json",
+      "role": "reviewed finite TargetSettings source profile"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected-build zero tag has a unique switch target resolving to BoneAttachAction+Data. Wrapper identity, header 13, complete reader and formatter windows, ordered source calls, raw12 helper and TargetSettings generic context are pinned.",
+    "direct": "The native source reads the four inherited members, three flags, three scalar fields, one raw12 Vector3 and one TargetSettings in recorded order; the authenticated SkillData row rejoins the enclosing sequence and exact top-level terminal cursor.",
+    "structuralOnly": "The stored rotation, mount slots, booleans and target do not establish runtime attachment behavior or coordinate conventions.",
+    "unresolved": "Live formatter selection, native refill and error parity, and gameplay interpretation remain open."
+  }
+}

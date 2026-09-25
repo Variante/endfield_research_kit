@@ -1,0 +1,240 @@
+{
+  "schema": "endfield.skill-timeline-ultimate-time-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 7,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 404,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59833278,
+    "routeWindow": {
+      "startRva": 59833278,
+      "endRva": 59833328,
+      "sha256": "826FCAADF1220BD8D11DB273E97752E09F19F21A182FD1EF3300D6EE5D25E4FA",
+      "boundary": "selected 0x0194 type usage load, formatter route and rejoin"
+    },
+    "usageCellRva": 218345824,
+    "usageRawHex": "B945032000000000",
+    "registeredTypeIndex": 107228,
+    "wrapperTypeDefinition": 16569,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_UltimateTimeAction_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      123821,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_UltimateTimeAction_DataForMemoryPack+Beyond_Gameplay_Core_UltimateTimeAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      65101904
+    ],
+    [
+      123820,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_UltimateTimeAction_DataForMemoryPack",
+      "Deserialize",
+      65102400
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 65102528,
+    "hex": "4080FE07"
+  },
+  "codeWindows": [
+    {
+      "startRva": 65101904,
+      "endRva": 65101997,
+      "sha256": "E668ABE5BE8CB682650DEC03B218EA0632CF627CB18D5330B97748A5183C6994",
+      "boundary": "formatter forwarding and initialization"
+    },
+    {
+      "startRva": 65102400,
+      "endRva": 65102805,
+      "sha256": "2D281D134BC11C193F9C5C238F4B93214C4B753B883FA32EB9D83BDBB90B9869",
+      "boundary": "selected header-seven source reader and normal return"
+    }
+  ],
+  "setterMethods": [
+    [
+      123815,
+      "set___ignoreTargets__",
+      "<type-index:58981>"
+    ],
+    [
+      123816,
+      "set___timeDilationPriority__",
+      "Beyond.Gameplay.Core.GameplayTag"
+    ],
+    [
+      123817,
+      "set___timeScale__",
+      "System.Single"
+    ]
+  ],
+  "setterCallsites": [
+    {
+      "memberIndex": 4,
+      "methodIndex": 123815,
+      "callsiteRva": 65102714,
+      "callHex": "E8A10D0000",
+      "targetRva": 65106208
+    },
+    {
+      "memberIndex": 5,
+      "methodIndex": 123816,
+      "callsiteRva": 65102754,
+      "callHex": "E8A90D0000",
+      "targetRva": 65106256
+    },
+    {
+      "memberIndex": 6,
+      "methodIndex": 123817,
+      "callsiteRva": 65102784,
+      "callHex": "E8BB0D0000",
+      "targetRva": 65106304
+    }
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 65102544,
+      "sourceCallHex": "E8EB25E9FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 65102585,
+      "sourceCallHex": "E8B223E9FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 65102618,
+      "sourceCallHex": "E89123E9FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 65102651,
+      "sourceCallHex": "E87023E9FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "ignoreTargets",
+      "readKind": "target-list",
+      "sourceCallsiteRva": 65102691,
+      "sourceCallHex": "E88895A0FF",
+      "sourceTargetRva": 58849520
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "timeDilationPriority",
+      "readKind": "gameplay-tag32",
+      "sourceCallsiteRva": 65102732,
+      "sourceCallHex": "E82FDCE4FF",
+      "sourceTargetRva": 63324096
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "timeScale",
+      "readKind": "float32-bits",
+      "sourceCallsiteRva": 65102765,
+      "sourceCallHex": "E8FE27E9FE",
+      "sourceTargetRva": 46828464
+    }
+  ],
+  "genericContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 65102572,
+      "instructionHex": "488B15353B2709",
+      "cellRva": 218668584,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeKind": 17,
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+    },
+    {
+      "memberIndex": 4,
+      "instructionRva": 65102678,
+      "instructionHex": "488B15830B1F09",
+      "cellRva": 218132192,
+      "usageRawHex": "3FA412C000000000",
+      "methodSpecIndex": 610847,
+      "methodSpec": [
+        428462,
+        -1,
+        62642
+      ],
+      "argumentRawHex": "B878258D010000000000150000000000",
+      "typeKind": 21,
+      "typeDefinition": 37521,
+      "typeName": "System.Collections.Generic.List`1",
+      "generic": {
+        "carrierRawHex": "3878288D010000001052F08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 16792,
+        "elementArguments": [
+          "28280000000000000000120000000000"
+        ]
+      }
+    },
+    {
+      "memberIndex": 5,
+      "instructionRva": 65102719,
+      "instructionHex": "488B15C2D81D09",
+      "cellRva": 218053704,
+      "usageRawHex": "99CA0FC000000000",
+      "methodSpecIndex": 517452,
+      "methodSpec": [
+        428448,
+        -1,
+        816
+      ],
+      "argumentRawHex": "A22D0000000000000000118000000000",
+      "typeKind": 17,
+      "typeDefinition": 11682,
+      "typeName": "Beyond.Gameplay.Core.GameplayTag"
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "buff_ea_native.json",
+      "role": "reviewed nullable List<TargetSettings> context and finite count/element grammar"
+    },
+    {
+      "path": "buff_ec_native.json",
+      "role": "finite TargetSettings element reader"
+    },
+    {
+      "path": "buff_fe_native.json",
+      "role": "raw GameplayTag DWORD source helper"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected AbilityActionData tag 0x0194 route, wrapper, methods, source calls, setters and three generic contexts are pinned to installed native inputs.",
+    "direct": "The seven-member reader consumes the inherited byte/DWORD prefix, a nullable List<TargetSettings>, a raw GameplayTag DWORD and one float32 source value.",
+    "structuralOnly": "The list and target elements reuse reviewed finite framing; stored targets, tag and float bits do not establish gameplay behavior.",
+    "conditional": "The shared reference-list provider choice is conditional on its separately reviewed candidate, while selected static source order is direct.",
+    "unresolved": "Live provider selection, allocation/refill/error parity and whole SkillData EOF remain independent checks."
+  }
+}

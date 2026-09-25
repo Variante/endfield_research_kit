@@ -1,0 +1,364 @@
+{
+  "schema": "endfield.skill-timeline-skill-ai-move-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 357,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 82218883,
+    "routeWindow": {
+      "startRva": 82218883,
+      "endRva": 82218933,
+      "sha256": "BFE0A049986F0DA758265137A3BB30C77C8908966427CF0D79075401182CDACF",
+      "boundary": "selected 0x0165 registered wrapper route"
+    },
+    "usageCellRva": 218267944,
+    "usageRawHex": "DD44032000000000",
+    "registeredTypeIndex": 107118,
+    "wrapperTypeDefinition": 16479,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillAIMoveAction_DataForMemoryPack"
+  },
+  "sections": {
+    "action": {
+      "wrapperTypeDefinition": 16479,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillAIMoveAction_DataForMemoryPack",
+      "serializedMemberCount": 16,
+      "methods": [
+        [
+          123088,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillAIMoveAction_DataForMemoryPack",
+          "Deserialize",
+          153837156
+        ],
+        [
+          123089,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_SkillAIMoveAction_DataForMemoryPack+Beyond_Gameplay_Core_SkillAIMoveAction_DataForMemoryPackFormatter",
+          "Deserialize",
+          153836916
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 153837156,
+          "endRva": 153838015,
+          "sha256": "78A0CEA70BCA4F67A2B85E0F60577A348936914529A0850985CF68F1515EA2A1",
+          "boundary": "selected source reader through normal return"
+        },
+        {
+          "startRva": 153836916,
+          "endRva": 153837156,
+          "sha256": "486DB8C5C675B6549DC69D5017E812AE35F03FC97EF95F05930B477203091B3D",
+          "boundary": "formatter entry and forwarding to source reader"
+        }
+      ],
+      "memberCountInstruction": {
+        "rva": 153837369,
+        "hex": "807C243810"
+      },
+      "setterMethods": [
+        [
+          123074,
+          "set___mainCharLineBlockHalfAngle__",
+          "System.Single"
+        ],
+        [
+          123075,
+          "set___markerInfo__",
+          "Beyond.Gameplay.AI.EnemyCheckAIMarker+EnemyCheckAIMarkerInfo"
+        ],
+        [
+          123076,
+          "set___maxRange__",
+          "System.Single"
+        ],
+        [
+          123077,
+          "set___minRange__",
+          "System.Single"
+        ],
+        [
+          123078,
+          "set___moveInnerDist__",
+          "System.Single"
+        ],
+        [
+          123079,
+          "set___moveOuterDist__",
+          "System.Single"
+        ],
+        [
+          123080,
+          "set___otherTargetMinDist__",
+          "System.Single"
+        ],
+        [
+          123081,
+          "set___radius__",
+          "System.Single"
+        ],
+        [
+          123082,
+          "set___skillMoveTargetType__",
+          "Beyond.Gameplay.AI.SkillMoveTargetType"
+        ],
+        [
+          123083,
+          "set___skillRadius__",
+          "System.Single"
+        ],
+        [
+          123084,
+          "set___targetRefreshInterval__",
+          "System.Single"
+        ],
+        [
+          123085,
+          "set___targetSettings__",
+          "Beyond.Gameplay.Core.TargetSettings"
+        ]
+      ],
+      "orderedSourceReads": [
+        {
+          "memberIndex": 0,
+          "fieldName": "isEnable",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 153837386,
+          "sourceCallHex": "E871299FF9",
+          "sourceTargetRva": 46827712
+        },
+        {
+          "memberIndex": 1,
+          "fieldName": "priorityLevel",
+          "readKind": "enum32",
+          "sourceCallsiteRva": 153837426,
+          "sourceCallHex": "E839279FF9",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 2,
+          "fieldName": "priorityOffset",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 153837459,
+          "sourceCallHex": "E818279FF9",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 3,
+          "fieldName": "serverActionIndex",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 153837492,
+          "sourceCallHex": "E8F7269FF9",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 4,
+          "fieldName": "mainCharLineBlockHalfAngle",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 153837525,
+          "sourceCallHex": "E8D62B9FF9",
+          "sourceTargetRva": 46828464
+        },
+        {
+          "memberIndex": 5,
+          "fieldName": "markerInfo",
+          "readKind": "unmanaged8",
+          "sourceCallsiteRva": 153837566,
+          "sourceCallHex": "E899AF73FD",
+          "sourceTargetRva": 111087516
+        },
+        {
+          "memberIndex": 6,
+          "fieldName": "maxRange",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 153837600,
+          "sourceCallHex": "E88B2B9FF9",
+          "sourceTargetRva": 46828464
+        },
+        {
+          "memberIndex": 7,
+          "fieldName": "minRange",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 153837634,
+          "sourceCallHex": "E8692B9FF9",
+          "sourceTargetRva": 46828464
+        },
+        {
+          "memberIndex": 8,
+          "fieldName": "moveInnerDist",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 153837668,
+          "sourceCallHex": "E8472B9FF9",
+          "sourceTargetRva": 46828464
+        },
+        {
+          "memberIndex": 9,
+          "fieldName": "moveOuterDist",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 153837702,
+          "sourceCallHex": "E8252B9FF9",
+          "sourceTargetRva": 46828464
+        },
+        {
+          "memberIndex": 10,
+          "fieldName": "otherTargetMinDist",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 153837736,
+          "sourceCallHex": "E8032B9FF9",
+          "sourceTargetRva": 46828464
+        },
+        {
+          "memberIndex": 11,
+          "fieldName": "radius",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 153837770,
+          "sourceCallHex": "E8E12A9FF9",
+          "sourceTargetRva": 46828464
+        },
+        {
+          "memberIndex": 12,
+          "fieldName": "skillMoveTargetType",
+          "readKind": "enum32",
+          "sourceCallsiteRva": 153837811,
+          "sourceCallHex": "E8B8259FF9",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 13,
+          "fieldName": "skillRadius",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 153837840,
+          "sourceCallHex": "E89B2A9FF9",
+          "sourceTargetRva": 46828464
+        },
+        {
+          "memberIndex": 14,
+          "fieldName": "targetRefreshInterval",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 153837870,
+          "sourceCallHex": "E87D2A9FF9",
+          "sourceTargetRva": 46828464
+        },
+        {
+          "memberIndex": 15,
+          "fieldName": "targetSettings",
+          "readKind": "target-profile",
+          "sourceCallsiteRva": 153837907,
+          "sourceCallHex": "E838FBAEF9",
+          "sourceTargetRva": 47864976
+        }
+      ],
+      "genericContexts": [
+        {
+          "memberIndex": 1,
+          "instructionRva": 153837413,
+          "instructionHex": "488B15BC3EDD03",
+          "cellRva": 218668584,
+          "usageRawHex": "81E812C000000000",
+          "methodSpecIndex": 619584,
+          "methodSpec": [
+            428448,
+            -1,
+            42547
+          ],
+          "argumentRawHex": "EA230000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 9194,
+          "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+        },
+        {
+          "memberIndex": 5,
+          "instructionRva": 153837553,
+          "instructionHex": "488B15A0118A04",
+          "cellRva": 229994904,
+          "usageRawHex": "E1CA0FC000000000",
+          "methodSpecIndex": 517488,
+          "methodSpec": [
+            428448,
+            -1,
+            17044
+          ],
+          "argumentRawHex": "3C1E0000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 7740,
+          "typeName": "Beyond.Gameplay.AI.EnemyCheckAIMarker+EnemyCheckAIMarkerInfo"
+        },
+        {
+          "memberIndex": 12,
+          "instructionRva": 153837798,
+          "instructionHex": "488B15B3108A04",
+          "cellRva": 229994912,
+          "usageRawHex": "BFE612C000000000",
+          "methodSpecIndex": 619359,
+          "methodSpec": [
+            428448,
+            -1,
+            42385
+          ],
+          "argumentRawHex": "DE1C0000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 7390,
+          "typeName": "Beyond.Gameplay.AI.SkillMoveTargetType"
+        },
+        {
+          "memberIndex": 15,
+          "instructionRva": 153837894,
+          "instructionHex": "488B15BBB5DA03",
+          "cellRva": 218502920,
+          "usageRawHex": "93EB12C000000000",
+          "methodSpecIndex": 619977,
+          "methodSpec": [
+            428464,
+            -1,
+            16792
+          ],
+          "argumentRawHex": "28280000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 10280,
+          "typeName": "Beyond.Gameplay.Core.TargetSettings"
+        }
+      ]
+    }
+  },
+  "unmanagedCopy": {
+    "sourceTargetRva": 111087516,
+    "byteCount": 8,
+    "codeWindow": {
+      "startRva": 111087516,
+      "endRva": 111087582,
+      "sha256": "2B3FCA2E59B735FF7927C80F90FD541035DD4C4F7FC2C263EE8B787FD5EF9D54",
+      "boundary": "selected generic unmanaged marker-info copy of eight bytes"
+    },
+    "sizeInstructions": [
+      {
+        "rva": 111087526,
+        "hex": "83793008"
+      },
+      {
+        "rva": 111087538,
+        "hex": "BA08000000"
+      },
+      {
+        "rva": 111087552,
+        "hex": "BA08000000"
+      }
+    ]
+  },
+  "dependencies": [
+    {
+      "path": "buff_ec_native.json",
+      "role": "reviewed finite TargetSettings profile"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected build dispatches 0x0165 to SkillAIMoveAction's sixteen-member reader; source order, generic types and the eight-byte unmanaged copy are pinned.",
+    "direct": "The stored action contains raw floats, an eight-byte EnemyCheckAIMarkerInfo value copy, and a TargetSettings child.",
+    "structuralOnly": "The marker bytes remain opaque; the separate EnemyCheckAIMarkerInfo wrapper is not called by this selected action reader. Stored values do not establish AI move decisions or live target resolution.",
+    "unresolved": "Live formatter selection, allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}

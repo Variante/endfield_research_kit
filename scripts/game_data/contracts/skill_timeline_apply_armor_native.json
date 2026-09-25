@@ -1,0 +1,145 @@
+{
+  "schema": "endfield.skill-timeline-apply-armor-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 5,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 19,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59852990,
+    "routeWindow": {
+      "startRva": 59852990,
+      "endRva": 59852997,
+      "sha256": "AB45775D8444A0F696E2F225B6121B11433DA8C9B340C47DEB0748DAB06FD244",
+      "boundary": "selected 0x0013 registered wrapper usage-cell load"
+    },
+    "usageCellRva": 218707056,
+    "usageRawHex": "773E032000000000",
+    "registeredTypeIndex": 106299,
+    "wrapperTypeDefinition": 15921,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ApplyArmor_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      118567,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ApplyArmor_DataForMemoryPack+Beyond_Gameplay_Core_ApplyArmor_DataForMemoryPackFormatter",
+      "Deserialize",
+      73615200
+    ],
+    [
+      118566,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ApplyArmor_DataForMemoryPack",
+      "Deserialize",
+      73615296
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 73615296,
+      "endRva": 73615678,
+      "sha256": "BE50535E3724CBFC2891E1E27CE245D0250325B224AA5D5EDB245CFA76F9E653",
+      "boundary": "selected member-five normal and FF source paths through RET"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 73615487,
+    "hex": "4080FE05"
+  },
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 73615503,
+      "sourceCallHex": "E82C4067FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 73615544,
+      "sourceCallHex": "E8F33D67FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 73615573,
+      "sourceCallHex": "E8D63D67FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 73615602,
+      "sourceCallHex": "E8B93D67FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "applyTo",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 73615638,
+      "sourceCallHex": "E8751377FE",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "setterMethods": [
+    [
+      118563,
+      "set___applyTo__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ]
+  ],
+  "genericContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 73615531,
+      "instructionHex": "488B157655A508",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeDefinition": 9194
+    },
+    {
+      "memberIndex": 4,
+      "instructionRva": 73615625,
+      "instructionHex": "488B15F8CDA208",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeDefinition": 10280
+    }
+  ],
+  "sourceContract": "buff_26_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "The selected SkillData route, wrapper, member-five header, ordered source calls, generic type joins, and applyTo setter match the installed native inputs.",
+    "direct": "The source reads one byte, three scalar32 slots and a TargetSettings child object. The child path uses an independently reviewed bounded reader.",
+    "structuralOnly": "Field names identify stored slots; stored target bytes do not prove armor application or runtime execution.",
+    "unresolved": "Live formatter selection, allocation/refill/error parity, unsupported positive nested children and enclosing SkillData EOF remain separate."
+  }
+}

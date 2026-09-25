@@ -1,0 +1,282 @@
+{
+  "schema": "endfield.skill-timeline-additional-battle-shape-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 10,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "catalogContract": "levelscript_union_tags.json",
+  "readerContract": "buff_91_native.json",
+  "dependencies": [
+    {
+      "path": "buff_7c_native.json"
+    },
+    {
+      "path": "buff_ec_native.json"
+    },
+    {
+      "path": "buff_b2_native.json"
+    }
+  ],
+  "dispatcher": {
+    "unionTag": 145,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59833328,
+    "routeWindow": {
+      "startRva": 59833328,
+      "endRva": 59833335,
+      "sha256": "DC553AE828E396A52749659B8E03F5995C237FD4BC3403DA17248A1A2915F238",
+      "boundary": "selected 0x0091 registered wrapper usage-cell load"
+    },
+    "usageCellRva": 218730760,
+    "usageRawHex": "4F40032000000000",
+    "registeredTypeIndex": 106535,
+    "wrapperTypeDefinition": 16045,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateAdditionalBattleShape_DataForMemoryPack"
+  },
+  "wrapper": {
+    "typeDefinition": 16045,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateAdditionalBattleShape_DataForMemoryPack",
+    "parentTypeDefinition": 14293,
+    "parentTypeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AbilityAction_AbilityActionDataForMemoryPack"
+  },
+  "methods": [
+    [
+      119685,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateAdditionalBattleShape_DataForMemoryPack+Beyond_Gameplay_Core_CreateAdditionalBattleShape_DataForMemoryPackFormatter",
+      "Deserialize",
+      70867248
+    ],
+    [
+      119684,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CreateAdditionalBattleShape_DataForMemoryPack",
+      "Deserialize",
+      70867344
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 70867472,
+    "hex": "4080FE0A"
+  },
+  "setterMethods": [
+    [
+      119676,
+      "set___duration__",
+      "System.Single"
+    ],
+    [
+      119677,
+      "set___followTargetPosition__",
+      "System.Boolean"
+    ],
+    [
+      119678,
+      "set___followTargetRotation__",
+      "System.Boolean"
+    ],
+    [
+      119679,
+      "set___releaseByAction__",
+      "System.Boolean"
+    ],
+    [
+      119680,
+      "set___shapeData__",
+      "Beyond.Gameplay.ColliderShapeData"
+    ],
+    [
+      119681,
+      "set___targetSettings__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70867488,
+      "sourceCallHex": "E89B2E91FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 70867529,
+      "sourceCallHex": "E8622C91FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 70867562,
+      "sourceCallHex": "E8412C91FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 70867595,
+      "sourceCallHex": "E8202C91FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "duration",
+      "readKind": "float32-bits",
+      "sourceCallsiteRva": 70867628,
+      "sourceCallHex": "E8FF3091FE",
+      "sourceTargetRva": 46828464
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "followTargetPosition",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70867662,
+      "sourceCallHex": "E8ED2D91FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "followTargetRotation",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70867696,
+      "sourceCallHex": "E8CB2D91FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "releaseByAction",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 70867730,
+      "sourceCallHex": "E8A92D91FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "shapeData",
+      "readKind": "collider-shape-profile",
+      "sourceCallsiteRva": 70867771,
+      "sourceCallHex": "E85001A1FE",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 9,
+      "fieldName": "targetSettings",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 70867812,
+      "sourceCallHex": "E82701A1FE",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "setterCallsites": [
+    {
+      "memberIndex": 4,
+      "methodIndex": 119676,
+      "callsiteRva": 70867651,
+      "callHex": "E828010000",
+      "targetRva": 70867952
+    },
+    {
+      "memberIndex": 5,
+      "methodIndex": 119677,
+      "callsiteRva": 70867685,
+      "callHex": "E836010000",
+      "targetRva": 70868000
+    },
+    {
+      "memberIndex": 6,
+      "methodIndex": 119678,
+      "callsiteRva": 70867719,
+      "callHex": "E844010000",
+      "targetRva": 70868048
+    },
+    {
+      "memberIndex": 7,
+      "methodIndex": 119679,
+      "callsiteRva": 70867753,
+      "callHex": "E852010000",
+      "targetRva": 70868096
+    },
+    {
+      "memberIndex": 8,
+      "methodIndex": 119680,
+      "callsiteRva": 70867794,
+      "callHex": "E859010000",
+      "targetRva": 70868144
+    },
+    {
+      "memberIndex": 9,
+      "methodIndex": 119681,
+      "callsiteRva": 70867831,
+      "callHex": "E864010000",
+      "targetRva": 70868192
+    }
+  ],
+  "nestedContexts": [
+    {
+      "instructionRva": 70867516,
+      "instructionHex": "488B15E543CF08",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "generic": null,
+      "typeKind": 17
+    },
+    {
+      "instructionRva": 70867758,
+      "instructionHex": "488B15F34BD408",
+      "cellVa": 6661449512,
+      "usageRawHex": "C7EA12C000000000",
+      "methodSpecIndex": 619875,
+      "methodSpec": [
+        428464,
+        -1,
+        14346
+      ],
+      "argumentRawHex": "1A050000000000000000120000000000",
+      "typeDefinition": 1306,
+      "typeName": "Beyond.Gameplay.ColliderShapeData",
+      "generic": null,
+      "typeKind": 18
+    },
+    {
+      "instructionRva": 70867799,
+      "instructionHex": "488B15AABBCC08",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "generic": null,
+      "typeKind": 18
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected AbilityActionData switch 0x0091, generated wrapper identity, ten stored source-read slots and six own setter names on the pinned native inputs.",
+    "direct": "Ordered source calls and setter calls in the selected Deserialize body; direct authenticated VFS replay required for file occurrences.",
+    "structuralOnly": "Finite ColliderShapeData and TargetSettings framing reuse reviewed BuffData profile contracts. Scalars retain raw bits.",
+    "unresolved": "Runtime battle-shape creation, selection, lifetime, and action execution timing are not proved by stored fields."
+  }
+}

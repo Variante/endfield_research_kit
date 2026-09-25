@@ -1,0 +1,281 @@
+{
+  "schema": "endfield.skill-timeline-tick-interval-v2-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 386,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59833128,
+    "routeWindow": {
+      "startRva": 59833128,
+      "endRva": 59833178,
+      "sha256": "C7DBBA69606BC547DA085F20EE55ED6DB5E17139E8CFCFFF591FB3F8B445C741",
+      "boundary": "selected 0x0182 type usage and formatter route"
+    },
+    "usageCellRva": 218258848,
+    "usageRawHex": "7145032000000000",
+    "registeredTypeIndex": 107192,
+    "wrapperTypeDefinition": 16533,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalActionV2_DataForMemoryPack"
+  },
+  "serializedMemberCount": 10,
+  "methods": [
+    [
+      123551,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalActionV2_DataForMemoryPack",
+      "Deserialize",
+      61451168
+    ],
+    [
+      123552,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_TickIntervalActionV2_DataForMemoryPack+Beyond_Gameplay_Core_TickIntervalActionV2_DataForMemoryPackFormatter",
+      "Deserialize",
+      61452384
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 61451296,
+    "hex": "4080FE0A"
+  },
+  "codeWindows": [
+    {
+      "startRva": 61451168,
+      "endRva": 61451692,
+      "sha256": "33CAE86DFEAEE8A689AB93A4E27FB28A2E3B496FF3E9D6277B064963F8321797",
+      "boundary": "ten normal source reads through RET"
+    },
+    {
+      "startRva": 61452384,
+      "endRva": 61452477,
+      "sha256": "6B68F661B263097AD5D55642FF34C5CB30CEB05E4C5F79473F0ACCBCC84A2904",
+      "boundary": "formatter initialization and forwarding to selected reader"
+    }
+  ],
+  "setterMethods": [
+    [
+      123543,
+      "set___actionOnTick__",
+      "Beyond.Gameplay.Core.SequenceActionData"
+    ],
+    [
+      123544,
+      "set___fixedTickCount__",
+      "Beyond.Blackboard+BlackboardInt"
+    ],
+    [
+      123545,
+      "set___tickInterval__",
+      "Beyond.Blackboard+BlackboardDouble"
+    ],
+    [
+      123546,
+      "set___tickMode__",
+      "Beyond.Gameplay.Core.TickIntervalActionV2+TickMode"
+    ],
+    [
+      123547,
+      "set___totalDuration__",
+      "System.Single"
+    ],
+    [
+      123548,
+      "set___totalTickCount__",
+      "System.Int32"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 61451312,
+      "sourceCallHex": "E88BDC20FF",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 61451353,
+      "sourceCallHex": "E852DA20FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 61451386,
+      "sourceCallHex": "E831DA20FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 61451419,
+      "sourceCallHex": "E810DA20FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "actionOnTick",
+      "readKind": "sequence-profile",
+      "sourceCallsiteRva": 61451459,
+      "sourceCallHex": "E8C8AF30FF",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "fixedTickCount",
+      "readKind": "scalar-payload",
+      "sourceCallsiteRva": 61451500,
+      "sourceCallHex": "E89FAF30FF",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "tickInterval",
+      "readKind": "scalar-payload",
+      "sourceCallsiteRva": 61451541,
+      "sourceCallHex": "E876AF30FF",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "tickMode",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 61451582,
+      "sourceCallHex": "E86DD920FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "totalDuration",
+      "readKind": "float32-bits",
+      "sourceCallsiteRva": 61451615,
+      "sourceCallHex": "E84CDE20FF",
+      "sourceTargetRva": 46828464
+    },
+    {
+      "memberIndex": 9,
+      "fieldName": "totalTickCount",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 61451649,
+      "sourceCallHex": "E82AD920FF",
+      "sourceTargetRva": 46827184
+    }
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 61451340,
+      "instructionHex": "488B15D5F15E09",
+      "cellRva": 218668584,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeKind": 17
+    },
+    {
+      "memberIndex": 4,
+      "instructionRva": 61451446,
+      "instructionHex": "488B15ABA15509",
+      "cellRva": 218058344,
+      "usageRawHex": "75EB12C000000000",
+      "methodSpecIndex": 619962,
+      "methodSpec": [
+        428464,
+        -1,
+        16408
+      ],
+      "argumentRawHex": "F2230000000000000000120000000000",
+      "typeDefinition": 9202,
+      "typeName": "Beyond.Gameplay.Core.SequenceActionData",
+      "typeKind": 18
+    },
+    {
+      "memberIndex": 5,
+      "instructionRva": 61451487,
+      "instructionHex": "488B1542995509",
+      "cellRva": 218056232,
+      "usageRawHex": "CBEB12C000000000",
+      "methodSpecIndex": 620005,
+      "methodSpec": [
+        428464,
+        -1,
+        17006
+      ],
+      "argumentRawHex": "AE000000000000000000120000000000",
+      "typeDefinition": 174,
+      "typeName": "Beyond.Blackboard+BlackboardInt",
+      "typeKind": 18
+    },
+    {
+      "memberIndex": 6,
+      "instructionRva": 61451528,
+      "instructionHex": "488B1511995509",
+      "cellRva": 218056224,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble",
+      "typeKind": 18
+    },
+    {
+      "memberIndex": 7,
+      "instructionRva": 61451569,
+      "instructionHex": "488B1590B05809",
+      "cellRva": 218258888,
+      "usageRawHex": "71E812C000000000",
+      "methodSpecIndex": 619576,
+      "methodSpec": [
+        428448,
+        -1,
+        42542
+      ],
+      "argumentRawHex": "CD260000000000000000118000000000",
+      "typeDefinition": 9933,
+      "typeName": "Beyond.Gameplay.Core.TickIntervalActionV2+TickMode",
+      "typeKind": 17
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "skill_timeline_tick_interval_native.json",
+      "role": "selected SequenceActionData context and finite sequence reader"
+    },
+    {
+      "path": "buff_16b_native.json",
+      "role": "concrete BlackboardInt header-three reader"
+    },
+    {
+      "path": "buff_ec_native.json",
+      "role": "concrete BlackboardDouble header-three reader"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected-build union 0x0182 registration identifies TickIntervalActionV2+Data; ten source calls, method identities, body windows, member count and five generic type arguments are pinned.",
+    "direct": "The reader consumes a byte and three DWORDs, SequenceActionData, BlackboardInt, BlackboardDouble, a tick-mode DWORD, four float bits, and a final DWORD in source order.",
+    "structuralOnly": "The sequence and scalar wrappers have finite stored profiles; names do not establish runtime scheduling or numeric interpretation.",
+    "unresolved": "Live formatter selection, native refill/error parity, unsupported nested action routes, and enclosing SkillData EOF remain separate."
+  }
+}

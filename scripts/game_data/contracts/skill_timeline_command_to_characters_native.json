@@ -1,0 +1,276 @@
+{
+  "schema": "endfield.skill-timeline-command-to-characters-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 14,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 79,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59836578,
+    "routeWindow": {
+      "startRva": 59836578,
+      "endRva": 59836628,
+      "sha256": "9BBCEECEB51E4033604B6DD2B8F497EDA0AB5F96A551305809F6092D48787AFB",
+      "boundary": "selected 0x004F type usage load and formatter route"
+    },
+    "usageCellRva": 218732976,
+    "usageRawHex": "BD3F032000000000",
+    "registeredTypeIndex": 106462,
+    "wrapperTypeDefinition": 16029,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CommandToCharactersAction_CommandToCharactersActionDataForMemoryPack"
+  },
+  "methods": [
+    [
+      119566,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CommandToCharactersAction_CommandToCharactersActionDataForMemoryPack",
+      "Deserialize",
+      66678192
+    ],
+    [
+      119567,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_CommandToCharactersAction_CommandToCharactersActionDataForMemoryPack+Beyond_Gameplay_Core_CommandToCharactersAction_CommandToCharactersActionDataForMemoryPackFormatter",
+      "Deserialize",
+      66678096
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 66678443,
+    "hex": "4080FE0E"
+  },
+  "codeWindows": [
+    {
+      "startRva": 66678192,
+      "endRva": 66678975,
+      "sha256": "69DB144E6D060DF8B4ECEF3888406CE0D5914FC090A15F037CDE43E3E9E53A78",
+      "boundary": "selected 14-member reader through normal return"
+    },
+    {
+      "startRva": 66678096,
+      "endRva": 66678189,
+      "sha256": "6A920F71AC068B3A241B0D8820239DE42C882FE5E256E3E362821B489E99C9BE",
+      "boundary": "formatter forwarding into selected reader"
+    }
+  ],
+  "setterMethods": [
+    [
+      119554,
+      "set___activeDisToMainChar__",
+      "System.Single"
+    ],
+    [
+      119555,
+      "set___commandType__",
+      "Beyond.Gameplay.AI.CharacterCommandSystem+CommandType"
+    ],
+    [
+      119556,
+      "set___contextKey__",
+      "System.String"
+    ],
+    [
+      119557,
+      "set___dirMoveType__",
+      "Beyond.Gameplay.AI.CharacterCommandSystem+DirectionMoveType"
+    ],
+    [
+      119558,
+      "set___offsetAngle__",
+      "System.Single"
+    ],
+    [
+      119559,
+      "set___safeAreaData__",
+      "Beyond.Gameplay.Core.SkillAlertData"
+    ],
+    [
+      119560,
+      "set___safeAreaDir__",
+      "Beyond.Gameplay.DirectionType"
+    ],
+    [
+      119561,
+      "set___stopDis__",
+      "System.Single"
+    ],
+    [
+      119562,
+      "set___targetSettings__",
+      "Beyond.Gameplay.Core.TargetSettings"
+    ],
+    [
+      119563,
+      "set___targetType__",
+      "Beyond.Gameplay.ActionTargetType"
+    ]
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 66678459,
+      "sourceCallHex": "E8001AD1FE",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 66678500,
+      "sourceCallHex": "E8C717D1FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 66678533,
+      "sourceCallHex": "E8A617D1FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 66678566,
+      "sourceCallHex": "E88517D1FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "activeDisToMainChar",
+      "readKind": "float32-bits",
+      "sourceCallsiteRva": 66678599,
+      "sourceCallHex": "E8641CD1FE",
+      "sourceTargetRva": 46828464
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "commandType",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 66678640,
+      "sourceCallHex": "E83B17D1FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "contextKey",
+      "readKind": "byte-payload",
+      "sourceCallsiteRva": 66678673,
+      "sourceCallHex": "E86A17D1FE",
+      "sourceTargetRva": 46827264
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "dirMoveType",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 66678714,
+      "sourceCallHex": "E8F116D1FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "offsetAngle",
+      "readKind": "float32-bits",
+      "sourceCallsiteRva": 66678747,
+      "sourceCallHex": "E8D01BD1FE",
+      "sourceTargetRva": 46828464
+    },
+    {
+      "memberIndex": 9,
+      "fieldName": "safeAreaData",
+      "readKind": "skill-alert-profile",
+      "sourceCallsiteRva": 66678788,
+      "sourceCallHex": "E887ECE0FE",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 10,
+      "fieldName": "safeAreaDir",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 66678829,
+      "sourceCallHex": "E87E16D1FE",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 11,
+      "fieldName": "stopDis",
+      "readKind": "float32-bits",
+      "sourceCallsiteRva": 66678862,
+      "sourceCallHex": "E85D1BD1FE",
+      "sourceTargetRva": 46828464
+    },
+    {
+      "memberIndex": 12,
+      "fieldName": "targetSettings",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 66678899,
+      "sourceCallHex": "E818ECE0FE",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 13,
+      "fieldName": "targetType",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 66678936,
+      "sourceCallHex": "E81316D1FE",
+      "sourceTargetRva": 46827184
+    }
+  ],
+  "nestedContexts": [
+    {
+      "memberIndex": 9,
+      "instructionRva": 66678775,
+      "instructionHex": "488B15EAA60F09",
+      "cellRva": 218699496,
+      "usageRawHex": "7BEB12C000000000",
+      "methodSpecIndex": 619965,
+      "methodSpec": [
+        428464,
+        -1,
+        16654
+      ],
+      "argumentRawHex": "34240000000000000000120000000000",
+      "typeDefinition": 9268,
+      "typeName": "Beyond.Gameplay.Core.SkillAlertData"
+    },
+    {
+      "memberIndex": 12,
+      "instructionRva": 66678886,
+      "instructionHex": "488B159BA60C09",
+      "cellRva": 218502920,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeDefinition": 10280,
+      "typeName": "Beyond.Gameplay.Core.TargetSettings"
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "buff_23_native.json",
+      "role": "reviewed SkillAlertData nine-member profile"
+    },
+    {
+      "path": "buff_ec_native.json",
+      "role": "reviewed TargetSettings finite profile"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected build dispatch 0x004F joins the CommandToCharactersAction wrapper to its formatter and 14-member reader; all ordered source calls and two generic type contexts are pinned.",
+    "direct": "The selected source reads SkillAlertData and TargetSettings at generated member positions nine and twelve.",
+    "structuralOnly": "Nested profiles prove bounded stored structure; stored command fields do not establish runtime command recipients or movement.",
+    "unresolved": "Live formatter selection, allocation/refill/error parity and gameplay execution remain open; whole SkillData EOF belongs to the enclosing timeline reader."
+  }
+}

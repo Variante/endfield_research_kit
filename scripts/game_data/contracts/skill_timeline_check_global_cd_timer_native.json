@@ -1,0 +1,50 @@
+{
+  "schema": "endfield.skill-timeline-check-global-cd-timer-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 6,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 68,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59830978,
+    "routeWindow": {
+      "startRva": 59830978,
+      "endRva": 59830985,
+      "sha256": "2D0FA172A7E83D9581E348A1FB1CD0E38E59D5A0C1E8C2B74027606AB25B9EEC",
+      "boundary": "selected 0x0044 dispatcher usage-cell load"
+    },
+    "usageCellRva": 218341072,
+    "usageRawHex": "9B3F032000000000",
+    "registeredTypeIndex": 106445,
+    "wrapperTypeDefinition": 16633,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_CheckGlobalCDTimerAction_DataForMemoryPack"
+  },
+  "memberCountInstruction": {"rva": 70110752, "hex": "4080FE06"},
+  "orderedSourceReads": [
+    {"memberIndex": 0, "fieldName": "isEnable", "readKind": "bool-byte", "sourceCallsiteRva": 70110768, "sourceCallHex": "E88BBA9CFE", "sourceTargetRva": 46827712},
+    {"memberIndex": 1, "fieldName": "priorityLevel", "readKind": "enum32", "sourceCallsiteRva": 70110809, "sourceCallHex": "E852B89CFE", "sourceTargetRva": 46827184},
+    {"memberIndex": 2, "fieldName": "priorityOffset", "readKind": "scalar32", "sourceCallsiteRva": 70110842, "sourceCallHex": "E831B89CFE", "sourceTargetRva": 46827184},
+    {"memberIndex": 3, "fieldName": "serverActionIndex", "readKind": "scalar32", "sourceCallsiteRva": 70110875, "sourceCallHex": "E810B89CFE", "sourceTargetRva": 46827184},
+    {"memberIndex": 4, "fieldName": "buffId", "readKind": "byte-payload", "sourceCallsiteRva": 70110908, "sourceCallHex": "E83FB89CFE", "sourceTargetRva": 46827264},
+    {"memberIndex": 5, "fieldName": "target", "readKind": "target-profile", "sourceCallsiteRva": 70110949, "sourceCallHex": "E8A68DACFE", "sourceTargetRva": 47864976}
+  ],
+  "setterMethods": [
+    [124266, "set___buffId__", "System.String"],
+    [124267, "set___target__", "Beyond.Gameplay.Core.TargetSettings"]
+  ],
+  "sourceContract": "buff_44_native.json",
+  "targetProfileContract": "buff_ec_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "The selected AbilityActionData tag, wrapper, six-member check, six ordered source calls and two output setters are pinned to the installed native inputs.",
+    "direct": "The source takes a byte, three raw DWORDs, a signed-length byte payload and one TargetSettings profile; the separate Buff source contract identifies the TargetSettings generic context.",
+    "structuralOnly": "The finite reader preserves null and empty payloads and target variants without inferring global cooldown condition evaluation.",
+    "unresolved": "Live formatter selection, allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}

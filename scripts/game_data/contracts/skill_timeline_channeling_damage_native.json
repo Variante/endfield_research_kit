@@ -1,0 +1,282 @@
+{
+  "schema": "endfield.skill-timeline-channeling-damage-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 12,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 50,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 82209032,
+    "routeWindow": {
+      "startRva": 82209032,
+      "endRva": 82209039,
+      "sha256": "815994B62A488BB9285E7F9091FA9EC2F0A939806A6846FF2D77166C39CE493D",
+      "boundary": "selected 0x0032 registered wrapper usage-cell load"
+    },
+    "usageCellRva": 218693264,
+    "usageRawHex": "0B3F032000000000",
+    "registeredTypeIndex": 106373,
+    "wrapperTypeDefinition": 15999,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ChannelingDamageAction_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      119334,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChannelingDamageAction_DataForMemoryPack+Beyond_Gameplay_Core_ChannelingDamageAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      153693828
+    ],
+    [
+      119333,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ChannelingDamageAction_DataForMemoryPack",
+      "Deserialize",
+      153694068
+    ]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 153694068,
+      "endRva": 153694815,
+      "sha256": "47FD12A358A15B32973B90C00E0722A41B149B4BEB1D4EF6EF9E0DD1DDE4E414",
+      "boundary": "selected member-12 normal and FF source paths through RET"
+    }
+  ],
+  "memberCountInstruction": {
+    "rva": 153694293,
+    "hex": "807C24380C"
+  },
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153694310,
+      "sourceCallHex": "E85558A1F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 153694350,
+      "sourceCallHex": "E81D56A1F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153694383,
+      "sourceCallHex": "E8FC55A1F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 153694416,
+      "sourceCallHex": "E8DB55A1F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "alwaysNext",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153694449,
+      "sourceCallHex": "E8CA57A1F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "attacker",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 153694489,
+      "sourceCallHex": "E89255A1F9",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "damageUnits",
+      "readKind": "counted-damage-unit",
+      "sourceCallsiteRva": 153694529,
+      "sourceCallHex": "E8AAC758FA",
+      "sourceTargetRva": 58849520
+    },
+    {
+      "memberIndex": 7,
+      "fieldName": "effectSource",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 153694570,
+      "sourceCallHex": "E8212BB1F9",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 8,
+      "fieldName": "hitEnvData",
+      "readKind": "hit-environment-profile",
+      "sourceCallsiteRva": 153694611,
+      "sourceCallHex": "E8F82AB1F9",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 9,
+      "fieldName": "hitEnvironment",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 153694641,
+      "sourceCallHex": "E80A57A1F9",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 10,
+      "fieldName": "targetSettings",
+      "readKind": "target-profile",
+      "sourceCallsiteRva": 153694677,
+      "sourceCallHex": "E8B62AB1F9",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 11,
+      "fieldName": "triggerInterval",
+      "readKind": "float32",
+      "sourceCallsiteRva": 153694707,
+      "sourceCallHex": "E8B859A1F9",
+      "sourceTargetRva": 46828464
+    }
+  ],
+  "setterMethods": [
+    [
+      119330,
+      "set___triggerInterval__",
+      "System.Single"
+    ]
+  ],
+  "genericContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 153694337,
+      "instructionHex": "488B15A06DDF03",
+      "cellVa": 6661119528,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority",
+      "typeDefinition": 9194
+    },
+    {
+      "memberIndex": 5,
+      "instructionRva": 153694476,
+      "instructionHex": "488B158DF9DF03",
+      "cellVa": 6661155488,
+      "usageRawHex": "CBE412C000000000",
+      "methodSpecIndex": 619109,
+      "methodSpec": [
+        428448,
+        -1,
+        42208
+      ],
+      "argumentRawHex": "7E050000000000000000118000000000",
+      "typeName": "Beyond.Gameplay.ActionTargetType",
+      "typeDefinition": 1406
+    },
+    {
+      "memberIndex": 6,
+      "instructionRva": 153694516,
+      "instructionHex": "488B151DCDDF03",
+      "cellVa": 6661144152,
+      "usageRawHex": "89A412C000000000",
+      "methodSpecIndex": 610884,
+      "methodSpec": [
+        428462,
+        -1,
+        62668
+      ],
+      "argumentRawHex": "482C258D010000000000150000000000",
+      "typeName": "System.Collections.Generic.List`1",
+      "typeDefinition": 37521,
+      "generic": {
+        "carrierRawHex": "3878288D010000009046F08A0100000000000000000000000000000000000000",
+        "baseRawHex": "91920000000000000000120000000000",
+        "elementInstantiationIndex": 17024,
+        "elementArguments": [
+          "B2240000000000000000120000000000"
+        ]
+      }
+    },
+    {
+      "memberIndex": 7,
+      "instructionRva": 153694557,
+      "instructionHex": "488B15A4E5DC03",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeDefinition": 10280
+    },
+    {
+      "memberIndex": 8,
+      "instructionRva": 153694598,
+      "instructionHex": "488B15DBCCDF03",
+      "cellVa": 6661144168,
+      "usageRawHex": "DDEB12C000000000",
+      "methodSpecIndex": 620014,
+      "methodSpec": [
+        428464,
+        -1,
+        17025
+      ],
+      "argumentRawHex": "B3240000000000000000120000000000",
+      "typeName": "Beyond.Gameplay.Core.DamageAction+HitEnvData",
+      "typeDefinition": 9395
+    },
+    {
+      "memberIndex": 10,
+      "instructionRva": 153694664,
+      "instructionHex": "488B1539E5DC03",
+      "cellVa": 6660953864,
+      "usageRawHex": "93EB12C000000000",
+      "methodSpecIndex": 619977,
+      "methodSpec": [
+        428464,
+        -1,
+        16792
+      ],
+      "argumentRawHex": "28280000000000000000120000000000",
+      "typeName": "Beyond.Gameplay.Core.TargetSettings",
+      "typeDefinition": 10280
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "buff_9a_native.json",
+      "boundary": "eleven inherited member reads and DamageAction child profiles"
+    },
+    {
+      "path": "buff_damage_lists_native.json",
+      "boundary": "positive DamageUnit child-list limits and profiles"
+    }
+  ],
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "The selected SkillData route, wrapper, member-12 header, ordered source calls, generic type joins, and final triggerInterval setter match the installed native inputs.",
+    "direct": "The source reads the reviewed DamageAction member-11 byte profile followed by one float32. DamageUnit list, TargetSettings, and HitEnvData child paths reuse independently reviewed finite readers.",
+    "structuralOnly": "The field names identify stored slots. Raw bytes, counts, and scalars do not prove channeling damage timing or runtime execution.",
+    "unresolved": "Live formatter selection, allocation/refill/error parity, unsupported positive nested child lists, and enclosing SkillData EOF remain separate."
+  }
+}

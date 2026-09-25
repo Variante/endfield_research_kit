@@ -1,0 +1,90 @@
+{
+  "schema": "endfield.atk-scale-calculation-native-contract.v1",
+  "status": "validated",
+  "nativeInputs": {
+    "gameAssemblySha256": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "metadataSha256": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E"
+  },
+  "ownerType": "Beyond.Gameplay.Core.AtkScaleCalculation",
+  "methods": {
+    "evaluate": [60871, "Beyond.Gameplay.Core.AtkScaleCalculation", "Evaluate", "0x45a59a0"],
+    "blackboardValue": [1021, "Beyond.ActionBlackboardExtensions", "GetValue", "0x30ff5e0"],
+    "getAtk": [56224, "Beyond.Gameplay.Core.AbilitySystem", "get_atk", "0x42e2be0"],
+    "patchCheck": [102181, "IFix.WrappersManagerImpl", "IsPatched", "0x2c97970"]
+  },
+  "evaluateParameters": [
+    ["attacker", "Beyond.Gameplay.Core.AbilitySystem"],
+    ["defender", "Beyond.Gameplay.Core.AbilitySystem"],
+    ["blackboard", "Beyond.ActionBlackboard"],
+    ["context", "Beyond.Gameplay.Core.IActionEnvironment+Context"],
+    ["attackerOverrideAttributes", "double[]"],
+    ["defenderOverrideAttributes", "double[]"],
+    ["argsForServer", "Proto.DEV_BATTLE_CALCULATION_RUNTIME_ARGS"]
+  ],
+  "evaluateReturnType": "Beyond.Gameplay.Core.CalcResult",
+  "calleeSignatures": {
+    "blackboardValue": {
+      "parameters": [["param", "Beyond.Blackboard+BlackboardDouble"], ["blackboard", "Beyond.ActionBlackboard"]],
+      "returnType": "float"
+    },
+    "getAtk": {"parameters": [], "returnType": "double"}
+  },
+  "resultValueField": ["Beyond.Gameplay.Core.CalcResult", "value", "double", "0x0400aed8"],
+  "field": {
+    "name": "atkScale",
+    "type": "Beyond.Blackboard+BlackboardDouble",
+    "offset": 16,
+    "token": "0x0400aece"
+  },
+  "overrideIndexEnumMember": {
+    "type": "Beyond.GEnums.AttributeType",
+    "member": "Atk",
+    "id": 2,
+    "token": "0x040026ed"
+  },
+  "codeWindows": [
+    {
+      "startRva": "0x45a59a0",
+      "endRva": "0x45a5a78",
+      "sha256": "68f7834b33471c212e04a17730d560f83118d338a42f7a51f1a1241f3baba5df",
+      "boundary": "complete contiguous Evaluate entry, override branch, GetValue call, and arithmetic return"
+    },
+    {
+      "startRva": "0x4ffafa2",
+      "endRva": "0x4ffafbd",
+      "sha256": "1bc67a7fd79d03a0f7f87008d0842ab5cd11ff432754ab9cfa0a22c2f38222f2",
+      "boundary": "split attacker getter fallback and return to scale resolution"
+    },
+    {
+      "startRva": "0x4ffafbd",
+      "endRva": "0x4ffaff7",
+      "sha256": "69415169703734ce107dd0b75bb43b76182d82a1127c4827655afadce28fae91",
+      "boundary": "optional server debug-args branch converging on the same arithmetic"
+    }
+  ],
+  "instructionWindows": [
+    ["0x45a59eb", "488b8424a80000004885c00f84a655a500837818027670f20f107030", "attackerOverrideAttributes null check, index-two bounds check and double load"],
+    ["0x4ffafa2", "4885ed0f84b600000033d2488bcde82b7c2eff0f28f0e94aaa5aff", "null-override attacker.get_atk fallback and rejoin"],
+    ["0x45a5a07", "488b4f104533c0488bd3e8ca9bb5fe", "atkScale BlackboardDouble and blackboard reach GetValue"],
+    ["0x45a5a2a", "0f57c0f30f5ac7f20f59c666480f7ec0", "Single scale converts to Double, multiplies selected attack, returns numeric bits"]
+  ],
+  "calls": [
+    {"siteRva": "0x45a59de", "method": "patchCheck"},
+    {"siteRva": "0x45a5a11", "method": "blackboardValue"},
+    {"siteRva": "0x4ffafb0", "method": "getAtk"}
+  ],
+  "branches": [
+    {"siteRva": "0x45a59e5", "opcode": "0f85", "displacementBytes": 4, "targetRva": "0x4ffaff7"},
+    {"siteRva": "0x45a59f6", "opcode": "0f84", "displacementBytes": 4, "targetRva": "0x4ffafa2"},
+    {"siteRva": "0x45a5a00", "opcode": "76", "displacementBytes": 1, "targetRva": "0x45a5a72"},
+    {"siteRva": "0x45a5a24", "opcode": "0f85", "displacementBytes": 4, "targetRva": "0x4ffafbd"},
+    {"siteRva": "0x4ffafb8", "opcode": "e9", "displacementBytes": 4, "targetRva": "0x45a5a07"},
+    {"siteRva": "0x4ffaff2", "opcode": "e9", "displacementBytes": 4, "targetRva": "0x45a5a2a"}
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected build has the named Evaluate signature, atkScale field, AttributeType.Atk member, call targets, branch targets and reviewed unpatched code bytes recorded here.",
+    "direct": "On a normally returning unpatched Evaluate path, a nonnull attackerOverrideAttributes double[] supplies element 2 after a length check; when the array is null, attacker.get_atk supplies the base attack. atkScale reaches BlackboardDouble GetValue with the action blackboard. Its Single result is converted to Double and multiplied by the selected attack Double into CalcResult.value.",
+    "conditional": "The expression holds only when this subtype is invoked, the iFix patch branch is not taken, and any supplied override array contains element 2; a present short array takes a failure path rather than the getter fallback.",
+    "unresolved": "The BlackboardDouble provider, live patch state, authored action activation, attack getter internals, mitigation and final damage are not established."
+  }
+}

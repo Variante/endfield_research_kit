@@ -1,0 +1,1687 @@
+{
+  "schema": "endfield.skill-timeline-raycast-effect-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 289,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59830078,
+    "routeWindow": {
+      "startRva": 59830078,
+      "endRva": 59830128,
+      "sha256": "0612642F393F840C68698F7CFD6BE882099E2DFC5C40A1E0F206C05BCA612F70",
+      "boundary": "selected 0x0121 type usage and formatter route"
+    },
+    "usageCellRva": 218201032,
+    "usageRawHex": "BD43032000000000",
+    "registeredTypeIndex": 106974,
+    "wrapperTypeDefinition": 16345,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_RayCastEffectActionDataForMemoryPack"
+  },
+  "sections": {
+    "action": {
+      "wrapperTypeDefinition": 16345,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_RayCastEffectActionDataForMemoryPack",
+      "serializedMemberCount": 33,
+      "methods": [
+        [
+          122104,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_RayCastEffectActionDataForMemoryPack",
+          "Deserialize",
+          63542464
+        ],
+        [
+          122105,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_RayCastEffectActionDataForMemoryPack+Beyond_Gameplay_Core_RayCastEffectAction_RayCastEffectActionDataForMemoryPackFormatter",
+          "Deserialize",
+          63538544
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 63542464,
+          "endRva": 63543898,
+          "sha256": "39DDAD3B6F987A23746EEA1CA4514BD4A37274D5F20B5E9DD1C8203FF2217268",
+          "boundary": "action selected source through normal return"
+        },
+        {
+          "startRva": 63538544,
+          "endRva": 63538637,
+          "sha256": "20D4F9718325470E87A346C4F720DA0C8E5CF3FFD28F8CAA128CC0637AF8376C",
+          "boundary": "action formatter entry"
+        }
+      ],
+      "setterMethods": [
+        [
+          122073,
+          "set___autoSetTargetFaction__",
+          "System.Boolean"
+        ],
+        [
+          122074,
+          "set___containsUnMarkable__",
+          "System.Boolean"
+        ],
+        [
+          122075,
+          "set___curveRayData__",
+          "Beyond.Gameplay.Core.RayCastEffectAction+CurveRayData"
+        ],
+        [
+          122076,
+          "set___factionTarget__",
+          "Beyond.Gameplay.Core.FactionTarget"
+        ],
+        [
+          122077,
+          "set___hitEffectDirectionType__",
+          "Beyond.Gameplay.Core.RayCastEffectAction+RayHitEffectDirectionType"
+        ],
+        [
+          122078,
+          "set___hitEffectLayers__",
+          "UnityEngine.LayerMask"
+        ],
+        [
+          122079,
+          "set___hitEndSoundEvent__",
+          "Beyond.Audio.AudioId"
+        ],
+        [
+          122080,
+          "set___hitLoopSoundEvent__",
+          "Beyond.Audio.AudioId"
+        ],
+        [
+          122081,
+          "set___hitPosGroupKey__",
+          "System.String"
+        ],
+        [
+          122082,
+          "set___mountPointRayData__",
+          "Beyond.Gameplay.Core.RayCastEffectAction+MountPointRayData"
+        ],
+        [
+          122083,
+          "set___moveType__",
+          "Beyond.Gameplay.Core.RayCastEffectAction+RayCastEffectMoveType"
+        ],
+        [
+          122084,
+          "set___pointToPointRayData__",
+          "Beyond.Gameplay.Core.RayCastEffectAction+PointToPointRayData"
+        ],
+        [
+          122085,
+          "set___raycastDataList__",
+          "<type-index:59964>"
+        ],
+        [
+          122086,
+          "set___rayEffect__",
+          "Beyond.Gameplay.EffectActionCfg"
+        ],
+        [
+          122087,
+          "set___rayHitEffect__",
+          "Beyond.Gameplay.EffectActionCfg"
+        ],
+        [
+          122088,
+          "set___rayMaxLength__",
+          "System.Single"
+        ],
+        [
+          122089,
+          "set___rayRadius__",
+          "System.Single"
+        ],
+        [
+          122090,
+          "set___saveAllHitTargets__",
+          "System.Boolean"
+        ],
+        [
+          122091,
+          "set___sourcePosType__",
+          "Beyond.Gameplay.Core.RayCastEffectAction+RayCastEffectPosType"
+        ],
+        [
+          122092,
+          "set___sourceSettings__",
+          "Beyond.Gameplay.Core.TargetSettings"
+        ],
+        [
+          122093,
+          "set___startPosMountPoint__",
+          "Beyond.Gameplay.MountPoint"
+        ],
+        [
+          122094,
+          "set___startPosOffset__",
+          "UnityEngine.Vector3"
+        ],
+        [
+          122095,
+          "set___targetFactionType__",
+          "Beyond.Gameplay.Core.FactionType"
+        ],
+        [
+          122096,
+          "set___targetGroupKey__",
+          "System.String"
+        ],
+        [
+          122097,
+          "set___targetSettings__",
+          "Beyond.Gameplay.Core.TargetSettings"
+        ],
+        [
+          122098,
+          "set___touchingLayers__",
+          "UnityEngine.LayerMask"
+        ],
+        [
+          122099,
+          "set___useFaction__",
+          "System.Boolean"
+        ],
+        [
+          122100,
+          "set___useLastHitForEffect__",
+          "System.Boolean"
+        ],
+        [
+          122101,
+          "set___useRealHitLength__",
+          "System.Boolean"
+        ]
+      ],
+      "orderedSourceReads": [
+        {
+          "memberIndex": 0,
+          "fieldName": "isEnable",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 63542608,
+          "sourceCallHex": "E86BF300FF",
+          "sourceTargetRva": 46827712
+        },
+        {
+          "memberIndex": 1,
+          "fieldName": "priorityLevel",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63542649,
+          "sourceCallHex": "E832F100FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 2,
+          "fieldName": "priorityOffset",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63542682,
+          "sourceCallHex": "E811F100FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 3,
+          "fieldName": "serverActionIndex",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63542715,
+          "sourceCallHex": "E8F0F000FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 4,
+          "fieldName": "autoSetTargetFaction",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 63542748,
+          "sourceCallHex": "E8DFF200FF",
+          "sourceTargetRva": 46827712
+        },
+        {
+          "memberIndex": 5,
+          "fieldName": "containsUnMarkable",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 63542782,
+          "sourceCallHex": "E8BDF200FF",
+          "sourceTargetRva": 46827712
+        },
+        {
+          "memberIndex": 6,
+          "fieldName": "curveRayData",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 63542823,
+          "sourceCallHex": "E864C610FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 7,
+          "fieldName": "factionTarget",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63542864,
+          "sourceCallHex": "E85BF000FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 8,
+          "fieldName": "hitEffectDirectionType",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63542904,
+          "sourceCallHex": "E833F000FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 9,
+          "fieldName": "hitEffectLayers",
+          "readKind": "layer-mask-raw4",
+          "sourceCallsiteRva": 63542944,
+          "sourceCallHex": "E81B5C3D00",
+          "sourceTargetRva": 67564224
+        },
+        {
+          "memberIndex": 10,
+          "fieldName": "hitEndSoundEvent",
+          "readKind": "audio-id-raw4",
+          "sourceCallsiteRva": 63542984,
+          "sourceCallHex": "E8F3A8FCFF",
+          "sourceTargetRva": 63324096
+        },
+        {
+          "memberIndex": 11,
+          "fieldName": "hitLoopSoundEvent",
+          "readKind": "audio-id-raw4",
+          "sourceCallsiteRva": 63543024,
+          "sourceCallHex": "E8CBA8FCFF",
+          "sourceTargetRva": 63324096
+        },
+        {
+          "memberIndex": 12,
+          "fieldName": "hitPosGroupKey",
+          "readKind": "byte-payload",
+          "sourceCallsiteRva": 63543057,
+          "sourceCallHex": "E8EAEF00FF",
+          "sourceTargetRva": 46827264
+        },
+        {
+          "memberIndex": 13,
+          "fieldName": "mountPointRayData",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 63543098,
+          "sourceCallHex": "E851C510FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 14,
+          "fieldName": "moveType",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63543139,
+          "sourceCallHex": "E848EF00FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 15,
+          "fieldName": "pointToPointRayData",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 63543179,
+          "sourceCallHex": "E800C510FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 16,
+          "fieldName": "raycastDataList",
+          "readKind": "list-generic",
+          "sourceCallsiteRva": 63543220,
+          "sourceCallHex": "E83761B8FF",
+          "sourceTargetRva": 58849520
+        },
+        {
+          "memberIndex": 17,
+          "fieldName": "rayEffect",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 63543261,
+          "sourceCallHex": "E8AEC410FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 18,
+          "fieldName": "rayHitEffect",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 63543302,
+          "sourceCallHex": "E885C410FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 19,
+          "fieldName": "rayMaxLength",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 63543336,
+          "sourceCallHex": "E883F300FF",
+          "sourceTargetRva": 46828464
+        },
+        {
+          "memberIndex": 20,
+          "fieldName": "rayRadius",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 63543370,
+          "sourceCallHex": "E861F300FF",
+          "sourceTargetRva": 46828464
+        },
+        {
+          "memberIndex": 21,
+          "fieldName": "saveAllHitTargets",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 63543404,
+          "sourceCallHex": "E84FF000FF",
+          "sourceTargetRva": 46827712
+        },
+        {
+          "memberIndex": 22,
+          "fieldName": "sourcePosType",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63543445,
+          "sourceCallHex": "E816EE00FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 23,
+          "fieldName": "sourceSettings",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 63543485,
+          "sourceCallHex": "E8CEC310FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 24,
+          "fieldName": "startPosMountPoint",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63543526,
+          "sourceCallHex": "E8C5ED00FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 25,
+          "fieldName": "startPosOffset",
+          "readKind": "vector3-raw12",
+          "sourceCallsiteRva": 63543571,
+          "sourceCallHex": "E85840D3FF",
+          "sourceTargetRva": 60610928
+        },
+        {
+          "memberIndex": 26,
+          "fieldName": "targetFactionType",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63543638,
+          "sourceCallHex": "E855ED00FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 27,
+          "fieldName": "targetGroupKey",
+          "readKind": "byte-payload",
+          "sourceCallsiteRva": 63543671,
+          "sourceCallHex": "E884ED00FF",
+          "sourceTargetRva": 46827264
+        },
+        {
+          "memberIndex": 28,
+          "fieldName": "targetSettings",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 63543712,
+          "sourceCallHex": "E8EBC210FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 29,
+          "fieldName": "touchingLayers",
+          "readKind": "layer-mask-raw4",
+          "sourceCallsiteRva": 63543753,
+          "sourceCallHex": "E8F2583D00",
+          "sourceTargetRva": 67564224
+        },
+        {
+          "memberIndex": 30,
+          "fieldName": "useFaction",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 63543786,
+          "sourceCallHex": "E8D1EE00FF",
+          "sourceTargetRva": 46827712
+        },
+        {
+          "memberIndex": 31,
+          "fieldName": "useLastHitForEffect",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 63543820,
+          "sourceCallHex": "E8AFEE00FF",
+          "sourceTargetRva": 46827712
+        },
+        {
+          "memberIndex": 32,
+          "fieldName": "useRealHitLength",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 63543854,
+          "sourceCallHex": "E88DEE00FF",
+          "sourceTargetRva": 46827712
+        }
+      ],
+      "nestedContexts": [
+        {
+          "memberIndex": 1,
+          "instructionRva": 63542636,
+          "instructionHex": "488B15B5083F09",
+          "cellRva": 218668584,
+          "usageRawHex": "81E812C000000000",
+          "methodSpecIndex": 619584,
+          "methodSpec": [
+            428448,
+            -1,
+            42547
+          ],
+          "argumentRawHex": "EA230000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 9194,
+          "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+        },
+        {
+          "memberIndex": 6,
+          "instructionRva": 63542810,
+          "instructionHex": "488B1517E63709",
+          "cellRva": 218201144,
+          "usageRawHex": "01EC12C000000000",
+          "methodSpecIndex": 620032,
+          "methodSpec": [
+            428464,
+            -1,
+            17116
+          ],
+          "argumentRawHex": "ED250000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 9709,
+          "typeName": "Beyond.Gameplay.Core.RayCastEffectAction+CurveRayData"
+        },
+        {
+          "memberIndex": 7,
+          "instructionRva": 63542851,
+          "instructionHex": "488B15A6E53709",
+          "cellRva": 218201072,
+          "usageRawHex": "D1E512C000000000",
+          "methodSpecIndex": 619240,
+          "methodSpec": [
+            428448,
+            -1,
+            42294
+          ],
+          "argumentRawHex": "C0300000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 12480,
+          "typeName": "Beyond.Gameplay.Core.FactionTarget"
+        },
+        {
+          "memberIndex": 8,
+          "instructionRva": 63542891,
+          "instructionHex": "488B15D6E53709",
+          "cellRva": 218201160,
+          "usageRawHex": "33E812C000000000",
+          "methodSpecIndex": 619545,
+          "methodSpec": [
+            428448,
+            -1,
+            42518
+          ],
+          "argumentRawHex": "E9250000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 9705,
+          "typeName": "Beyond.Gameplay.Core.RayCastEffectAction+RayHitEffectDirectionType"
+        },
+        {
+          "memberIndex": 9,
+          "instructionRva": 63542931,
+          "instructionHex": "488B158E524509",
+          "cellRva": 219081000,
+          "usageRawHex": "A7CA0FC000000000",
+          "methodSpecIndex": 517459,
+          "methodSpec": [
+            428448,
+            -1,
+            1206
+          ],
+          "argumentRawHex": "02AB0000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 43778,
+          "typeName": "UnityEngine.LayerMask"
+        },
+        {
+          "memberIndex": 10,
+          "instructionRva": 63542971,
+          "instructionHex": "488B154E3D3609",
+          "cellRva": 218092560,
+          "usageRawHex": "7FCA0FC000000000",
+          "methodSpecIndex": 517439,
+          "methodSpec": [
+            428448,
+            -1,
+            9030
+          ],
+          "argumentRawHex": "6BD80000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 55403,
+          "typeName": "Beyond.Audio.AudioId"
+        },
+        {
+          "memberIndex": 11,
+          "instructionRva": 63543011,
+          "instructionHex": "488B15263D3609",
+          "cellRva": 218092560,
+          "usageRawHex": "7FCA0FC000000000",
+          "methodSpecIndex": 517439,
+          "methodSpec": [
+            428448,
+            -1,
+            9030
+          ],
+          "argumentRawHex": "6BD80000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 55403,
+          "typeName": "Beyond.Audio.AudioId"
+        },
+        {
+          "memberIndex": 13,
+          "instructionRva": 63543085,
+          "instructionHex": "488B1534E53709",
+          "cellRva": 218201192,
+          "usageRawHex": "03EC12C000000000",
+          "methodSpecIndex": 620033,
+          "methodSpec": [
+            428464,
+            -1,
+            17117
+          ],
+          "argumentRawHex": "EC250000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 9708,
+          "typeName": "Beyond.Gameplay.Core.RayCastEffectAction+MountPointRayData"
+        },
+        {
+          "memberIndex": 14,
+          "instructionRva": 63543126,
+          "instructionHex": "488B15CBE43709",
+          "cellRva": 218201128,
+          "usageRawHex": "2DE812C000000000",
+          "methodSpecIndex": 619542,
+          "methodSpec": [
+            428448,
+            -1,
+            42515
+          ],
+          "argumentRawHex": "E6250000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 9702,
+          "typeName": "Beyond.Gameplay.Core.RayCastEffectAction+RayCastEffectMoveType"
+        },
+        {
+          "memberIndex": 15,
+          "instructionRva": 63543166,
+          "instructionHex": "488B15D3E43709",
+          "cellRva": 218201176,
+          "usageRawHex": "05EC12C000000000",
+          "methodSpecIndex": 620034,
+          "methodSpec": [
+            428464,
+            -1,
+            17118
+          ],
+          "argumentRawHex": "EE250000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 9710,
+          "typeName": "Beyond.Gameplay.Core.RayCastEffectAction+PointToPointRayData"
+        },
+        {
+          "memberIndex": 16,
+          "instructionRva": 63543207,
+          "instructionHex": "488B1552E43709",
+          "cellRva": 218201088,
+          "usageRawHex": "B9A412C000000000",
+          "methodSpecIndex": 610908,
+          "methodSpec": [
+            428462,
+            -1,
+            62688
+          ],
+          "argumentRawHex": "2822258D010000000000150000000000",
+          "typeKind": 21,
+          "typeDefinition": 37521,
+          "typeName": "System.Collections.Generic.List`1",
+          "classCarrier": {
+            "typePointerVa": 6647645400,
+            "typeRawHex": "2822258D010000000000150000000000",
+            "carrierPointerVa": 6662988328,
+            "carrierRawHex": "3878288D01000000803DF08A0100000000000000000000000000000000000000",
+            "basePointerVa": 6663206968,
+            "baseRawHex": "91920000000000000000120000000000",
+            "baseDefinitionIndex": 37521,
+            "classInstantiationPointerVa": 6625967488,
+            "opaqueCarrierTailHex": "00000000000000000000000000000000"
+          },
+          "classInstantiation": {
+            "index": 17119,
+            "table_slot_va": 6626111128,
+            "record_va": 6625967488,
+            "argument_vector_va": 6668602496,
+            "padding_hex": "00000000",
+            "arguments": [
+              {
+                "index": 0,
+                "type_pointer_va": 6663930232,
+                "raw_type_record_hex": "EB250000000000000000120000000000"
+              }
+            ]
+          },
+          "elementTypeDefinition": 9707,
+          "elementTypeName": "Beyond.Gameplay.Core.RayCastEffectAction+RaycastData",
+          "elementRawHex": "EB250000000000000000120000000000"
+        },
+        {
+          "memberIndex": 17,
+          "instructionRva": 63543248,
+          "instructionHex": "488B15F1A24309",
+          "cellRva": 218970824,
+          "usageRawHex": "D3EA12C000000000",
+          "methodSpecIndex": 619881,
+          "methodSpec": [
+            428464,
+            -1,
+            14443
+          ],
+          "argumentRawHex": "200E0000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 3616,
+          "typeName": "Beyond.Gameplay.EffectActionCfg"
+        },
+        {
+          "memberIndex": 18,
+          "instructionRva": 63543289,
+          "instructionHex": "488B15C8A24309",
+          "cellRva": 218970824,
+          "usageRawHex": "D3EA12C000000000",
+          "methodSpecIndex": 619881,
+          "methodSpec": [
+            428464,
+            -1,
+            14443
+          ],
+          "argumentRawHex": "200E0000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 3616,
+          "typeName": "Beyond.Gameplay.EffectActionCfg"
+        },
+        {
+          "memberIndex": 22,
+          "instructionRva": 63543432,
+          "instructionHex": "488B1581E33709",
+          "cellRva": 218201104,
+          "usageRawHex": "2FE812C000000000",
+          "methodSpecIndex": 619543,
+          "methodSpec": [
+            428448,
+            -1,
+            42516
+          ],
+          "argumentRawHex": "E7250000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 9703,
+          "typeName": "Beyond.Gameplay.Core.RayCastEffectAction+RayCastEffectPosType"
+        },
+        {
+          "memberIndex": 23,
+          "instructionRva": 63543472,
+          "instructionHex": "488B15517E3C09",
+          "cellRva": 218502920,
+          "usageRawHex": "93EB12C000000000",
+          "methodSpecIndex": 619977,
+          "methodSpec": [
+            428464,
+            -1,
+            16792
+          ],
+          "argumentRawHex": "28280000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 10280,
+          "typeName": "Beyond.Gameplay.Core.TargetSettings"
+        },
+        {
+          "memberIndex": 24,
+          "instructionRva": 63543513,
+          "instructionHex": "488B15A0A33509",
+          "cellRva": 218053760,
+          "usageRawHex": "45E612C000000000",
+          "methodSpecIndex": 619298,
+          "methodSpec": [
+            428448,
+            -1,
+            8642
+          ],
+          "argumentRawHex": "80050000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 1408,
+          "typeName": "Beyond.Gameplay.MountPoint"
+        },
+        {
+          "memberIndex": 26,
+          "instructionRva": 63543628,
+          "instructionHex": "488B15ED7F3C09",
+          "cellRva": 218503488,
+          "usageRawHex": "D3E512C000000000",
+          "methodSpecIndex": 619241,
+          "methodSpec": [
+            428448,
+            -1,
+            42295
+          ],
+          "argumentRawHex": "BF300000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 12479,
+          "typeName": "Beyond.Gameplay.Core.FactionType"
+        },
+        {
+          "memberIndex": 28,
+          "instructionRva": 63543699,
+          "instructionHex": "488B156E7D3C09",
+          "cellRva": 218502920,
+          "usageRawHex": "93EB12C000000000",
+          "methodSpecIndex": 619977,
+          "methodSpec": [
+            428464,
+            -1,
+            16792
+          ],
+          "argumentRawHex": "28280000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 10280,
+          "typeName": "Beyond.Gameplay.Core.TargetSettings"
+        },
+        {
+          "memberIndex": 29,
+          "instructionRva": 63543740,
+          "instructionHex": "488B15654F4509",
+          "cellRva": 219081000,
+          "usageRawHex": "A7CA0FC000000000",
+          "methodSpecIndex": 517459,
+          "methodSpec": [
+            428448,
+            -1,
+            1206
+          ],
+          "argumentRawHex": "02AB0000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 43778,
+          "typeName": "UnityEngine.LayerMask"
+        }
+      ]
+    },
+    "curveRayData": {
+      "wrapperTypeDefinition": 22461,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_CurveRayDataForMemoryPack",
+      "serializedMemberCount": 8,
+      "methods": [
+        [
+          163082,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_CurveRayDataForMemoryPack",
+          "Deserialize",
+          63540384
+        ],
+        [
+          163083,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_CurveRayDataForMemoryPack+Beyond_Gameplay_Core_RayCastEffectAction_CurveRayDataForMemoryPackFormatter",
+          "Deserialize",
+          63538736
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 63540384,
+          "endRva": 63540851,
+          "sha256": "490EF600ACF8BF43D9097E9296E182BA3DF7E8D4A269E7D868D871550EBE8EBA",
+          "boundary": "curveRayData selected source through normal return"
+        },
+        {
+          "startRva": 63538736,
+          "endRva": 63538829,
+          "sha256": "A3820F7B34A527F5C6F1623F1DD89F3843D1A756B75DC96E7850DB31EE320066",
+          "boundary": "curveRayData formatter entry"
+        }
+      ],
+      "setterMethods": [
+        [
+          163072,
+          "set___endPosOffset__",
+          "UnityEngine.Vector3"
+        ],
+        [
+          163073,
+          "set___progressCurve__",
+          "UnityEngine.AnimationCurve"
+        ],
+        [
+          163074,
+          "set___sourceMountPoint__",
+          "Beyond.Gameplay.MountPoint"
+        ],
+        [
+          163075,
+          "set___sourcePosType__",
+          "Beyond.Gameplay.Core.RayCastEffectAction+RayCastEffectPosType"
+        ],
+        [
+          163076,
+          "set___startPosOffset__",
+          "UnityEngine.Vector3"
+        ],
+        [
+          163077,
+          "set___xCurve__",
+          "UnityEngine.AnimationCurve"
+        ],
+        [
+          163078,
+          "set___yCurve__",
+          "UnityEngine.AnimationCurve"
+        ],
+        [
+          163079,
+          "set___zCurve__",
+          "UnityEngine.AnimationCurve"
+        ]
+      ],
+      "orderedSourceReads": [
+        {
+          "memberIndex": 0,
+          "fieldName": "endPosOffset",
+          "readKind": "vector3-raw12",
+          "sourceCallsiteRva": 63540487,
+          "sourceCallHex": "E8644CD3FF",
+          "sourceTargetRva": 60610928
+        },
+        {
+          "memberIndex": 1,
+          "fieldName": "progressCurve",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 63540545,
+          "sourceCallHex": "E84ACF10FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 2,
+          "fieldName": "sourceMountPoint",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63540586,
+          "sourceCallHex": "E841F900FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 3,
+          "fieldName": "sourcePosType",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63540626,
+          "sourceCallHex": "E819F900FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 4,
+          "fieldName": "startPosOffset",
+          "readKind": "vector3-raw12",
+          "sourceCallsiteRva": 63540671,
+          "sourceCallHex": "E8AC4BD3FF",
+          "sourceTargetRva": 60610928
+        },
+        {
+          "memberIndex": 5,
+          "fieldName": "xCurve",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 63540729,
+          "sourceCallHex": "E892CE10FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 6,
+          "fieldName": "yCurve",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 63540770,
+          "sourceCallHex": "E869CE10FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 7,
+          "fieldName": "zCurve",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 63540811,
+          "sourceCallHex": "E840CE10FF",
+          "sourceTargetRva": 47864976
+        }
+      ],
+      "nestedContexts": [
+        {
+          "memberIndex": 1,
+          "instructionRva": 63540535,
+          "instructionHex": "488B150A474509",
+          "cellRva": 219075656,
+          "usageRawHex": "8DEA12C000000000",
+          "methodSpecIndex": 619846,
+          "methodSpec": [
+            428464,
+            -1,
+            1832
+          ],
+          "argumentRawHex": "FAA90000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 43514,
+          "typeName": "UnityEngine.AnimationCurve"
+        },
+        {
+          "memberIndex": 2,
+          "instructionRva": 63540573,
+          "instructionHex": "488B151CAF3509",
+          "cellRva": 218053760,
+          "usageRawHex": "45E612C000000000",
+          "methodSpecIndex": 619298,
+          "methodSpec": [
+            428448,
+            -1,
+            8642
+          ],
+          "argumentRawHex": "80050000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 1408,
+          "typeName": "Beyond.Gameplay.MountPoint"
+        },
+        {
+          "memberIndex": 3,
+          "instructionRva": 63540613,
+          "instructionHex": "488B1584EE3709",
+          "cellRva": 218201104,
+          "usageRawHex": "2FE812C000000000",
+          "methodSpecIndex": 619543,
+          "methodSpec": [
+            428448,
+            -1,
+            42516
+          ],
+          "argumentRawHex": "E7250000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 9703,
+          "typeName": "Beyond.Gameplay.Core.RayCastEffectAction+RayCastEffectPosType"
+        },
+        {
+          "memberIndex": 5,
+          "instructionRva": 63540719,
+          "instructionHex": "488B1552464509",
+          "cellRva": 219075656,
+          "usageRawHex": "8DEA12C000000000",
+          "methodSpecIndex": 619846,
+          "methodSpec": [
+            428464,
+            -1,
+            1832
+          ],
+          "argumentRawHex": "FAA90000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 43514,
+          "typeName": "UnityEngine.AnimationCurve"
+        },
+        {
+          "memberIndex": 6,
+          "instructionRva": 63540757,
+          "instructionHex": "488B152C464509",
+          "cellRva": 219075656,
+          "usageRawHex": "8DEA12C000000000",
+          "methodSpecIndex": 619846,
+          "methodSpec": [
+            428464,
+            -1,
+            1832
+          ],
+          "argumentRawHex": "FAA90000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 43514,
+          "typeName": "UnityEngine.AnimationCurve"
+        },
+        {
+          "memberIndex": 7,
+          "instructionRva": 63540798,
+          "instructionHex": "488B1503464509",
+          "cellRva": 219075656,
+          "usageRawHex": "8DEA12C000000000",
+          "methodSpecIndex": 619846,
+          "methodSpec": [
+            428464,
+            -1,
+            1832
+          ],
+          "argumentRawHex": "FAA90000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 43514,
+          "typeName": "UnityEngine.AnimationCurve"
+        }
+      ]
+    },
+    "mountPointRayData": {
+      "wrapperTypeDefinition": 22463,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_MountPointRayDataForMemoryPack",
+      "serializedMemberCount": 3,
+      "methods": [
+        [
+          163095,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_MountPointRayDataForMemoryPack",
+          "Deserialize",
+          71141424
+        ],
+        [
+          163096,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_MountPointRayDataForMemoryPack+Beyond_Gameplay_Core_RayCastEffectAction_MountPointRayDataForMemoryPackFormatter",
+          "Deserialize",
+          71141328
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 71141424,
+          "endRva": 71141660,
+          "sha256": "A298A8B49715D39431178039E1D66601D7273A9139D762DB407CA5FFFB36736F",
+          "boundary": "mountPointRayData selected source through normal return"
+        },
+        {
+          "startRva": 71141328,
+          "endRva": 71141421,
+          "sha256": "657D744938CF84F337231BD1BB2C3D1248E3134D507BCBFEE4F681E9FC178392",
+          "boundary": "mountPointRayData formatter entry"
+        }
+      ],
+      "setterMethods": [
+        [
+          163090,
+          "set___castDirection__",
+          "Beyond.Gameplay.Core.RayCastEffectAction+RayCastDirection"
+        ],
+        [
+          163091,
+          "set___sourceMountPoint__",
+          "Beyond.Gameplay.MountPoint"
+        ],
+        [
+          163092,
+          "set___startPosOffset__",
+          "UnityEngine.Vector3"
+        ]
+      ],
+      "orderedSourceReads": [
+        {
+          "memberIndex": 0,
+          "fieldName": "castDirection",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 71141522,
+          "sourceCallHex": "E819FE8CFE",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 1,
+          "fieldName": "sourceMountPoint",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 71141562,
+          "sourceCallHex": "E8F1FD8CFE",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 2,
+          "fieldName": "startPosOffset",
+          "readKind": "vector3-raw12",
+          "sourceCallsiteRva": 71141607,
+          "sourceCallHex": "E884505FFF",
+          "sourceTargetRva": 60610928
+        }
+      ],
+      "nestedContexts": [
+        {
+          "memberIndex": 0,
+          "instructionRva": 71141509,
+          "instructionHex": "488B15B4C8C008",
+          "cellRva": 217993536,
+          "usageRawHex": "2BE812C000000000",
+          "methodSpecIndex": 619541,
+          "methodSpec": [
+            428448,
+            -1,
+            42514
+          ],
+          "argumentRawHex": "EA250000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 9706,
+          "typeName": "Beyond.Gameplay.Core.RayCastEffectAction+RayCastDirection"
+        },
+        {
+          "memberIndex": 1,
+          "instructionRva": 71141549,
+          "instructionHex": "488B15CCB3C108",
+          "cellRva": 218053760,
+          "usageRawHex": "45E612C000000000",
+          "methodSpecIndex": 619298,
+          "methodSpec": [
+            428448,
+            -1,
+            8642
+          ],
+          "argumentRawHex": "80050000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 1408,
+          "typeName": "Beyond.Gameplay.MountPoint"
+        }
+      ]
+    },
+    "pointToPointRayData": {
+      "wrapperTypeDefinition": 22465,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_PointToPointRayDataForMemoryPack",
+      "serializedMemberCount": 13,
+      "methods": [
+        [
+          163118,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_PointToPointRayDataForMemoryPack",
+          "Deserialize",
+          63540960
+        ],
+        [
+          163119,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_PointToPointRayDataForMemoryPack+Beyond_Gameplay_Core_RayCastEffectAction_PointToPointRayDataForMemoryPackFormatter",
+          "Deserialize",
+          63538640
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 63540960,
+          "endRva": 63541597,
+          "sha256": "3747825CBCBCE85FB251C76B49D11243ECD6D3190F8D1014B968044CCDE5D0DB",
+          "boundary": "pointToPointRayData selected source through normal return"
+        },
+        {
+          "startRva": 63538640,
+          "endRva": 63538733,
+          "sha256": "CAA43CF7293727087D64BD4EC31D4256C175CF837AFE1E6C7198C2C252E78CD5",
+          "boundary": "pointToPointRayData formatter entry"
+        }
+      ],
+      "setterMethods": [
+        [
+          163103,
+          "set___endPosBB__",
+          "Beyond.Blackboard+BlackboardVector3"
+        ],
+        [
+          163104,
+          "set___endPosOffset__",
+          "UnityEngine.Vector3"
+        ],
+        [
+          163105,
+          "set___endPosStickToGround__",
+          "System.Boolean"
+        ],
+        [
+          163106,
+          "set___groundCheckDistance__",
+          "System.Single"
+        ],
+        [
+          163107,
+          "set___limitToPointDistance__",
+          "System.Boolean"
+        ],
+        [
+          163108,
+          "set___sourceMountPoint__",
+          "Beyond.Gameplay.MountPoint"
+        ],
+        [
+          163109,
+          "set___sourcePosType__",
+          "Beyond.Gameplay.Core.RayCastEffectAction+RayCastEffectPosType"
+        ],
+        [
+          163110,
+          "set___sourceWeaponIndex__",
+          "System.Int32"
+        ],
+        [
+          163111,
+          "set___sourceWeaponMountPoint__",
+          "Beyond.Gameplay.WeaponMountPoint"
+        ],
+        [
+          163112,
+          "set___startPosOffset__",
+          "UnityEngine.Vector3"
+        ],
+        [
+          163113,
+          "set___targetMountPoint__",
+          "Beyond.Gameplay.MountPoint"
+        ],
+        [
+          163114,
+          "set___targetPosType__",
+          "Beyond.Gameplay.Core.RayCastEffectAction+RayCastEffectPosType"
+        ],
+        [
+          163115,
+          "set___useSourceWeaponMountPoint__",
+          "System.Boolean"
+        ]
+      ],
+      "orderedSourceReads": [
+        {
+          "memberIndex": 0,
+          "fieldName": "endPosBB",
+          "readKind": "nested-generic",
+          "sourceCallsiteRva": 63541058,
+          "sourceCallHex": "E849CD10FF",
+          "sourceTargetRva": 47864976
+        },
+        {
+          "memberIndex": 1,
+          "fieldName": "endPosOffset",
+          "readKind": "vector3-raw12",
+          "sourceCallsiteRva": 63541104,
+          "sourceCallHex": "E8FB49D3FF",
+          "sourceTargetRva": 60610928
+        },
+        {
+          "memberIndex": 2,
+          "fieldName": "endPosStickToGround",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 63541155,
+          "sourceCallHex": "E818F900FF",
+          "sourceTargetRva": 46827712
+        },
+        {
+          "memberIndex": 3,
+          "fieldName": "groundCheckDistance",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 63541189,
+          "sourceCallHex": "E8E6FB00FF",
+          "sourceTargetRva": 46828464
+        },
+        {
+          "memberIndex": 4,
+          "fieldName": "limitToPointDistance",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 63541223,
+          "sourceCallHex": "E8D4F800FF",
+          "sourceTargetRva": 46827712
+        },
+        {
+          "memberIndex": 5,
+          "fieldName": "sourceMountPoint",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63541264,
+          "sourceCallHex": "E89BF600FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 6,
+          "fieldName": "sourcePosType",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63541304,
+          "sourceCallHex": "E873F600FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 7,
+          "fieldName": "sourceWeaponIndex",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63541337,
+          "sourceCallHex": "E852F600FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 8,
+          "fieldName": "sourceWeaponMountPoint",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63541377,
+          "sourceCallHex": "E82AF600FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 9,
+          "fieldName": "startPosOffset",
+          "readKind": "vector3-raw12",
+          "sourceCallsiteRva": 63541422,
+          "sourceCallHex": "E8BD48D3FF",
+          "sourceTargetRva": 60610928
+        },
+        {
+          "memberIndex": 10,
+          "fieldName": "targetMountPoint",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63541480,
+          "sourceCallHex": "E8C3F500FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 11,
+          "fieldName": "targetPosType",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 63541520,
+          "sourceCallHex": "E89BF500FF",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 12,
+          "fieldName": "useSourceWeaponMountPoint",
+          "readKind": "bool-byte",
+          "sourceCallsiteRva": 63541553,
+          "sourceCallHex": "E88AF700FF",
+          "sourceTargetRva": 46827712
+        }
+      ],
+      "nestedContexts": [
+        {
+          "memberIndex": 0,
+          "instructionRva": 63541045,
+          "instructionHex": "488B15E47E3F09",
+          "cellRva": 218697248,
+          "usageRawHex": "D1EB12C000000000",
+          "methodSpecIndex": 620008,
+          "methodSpec": [
+            428464,
+            -1,
+            17009
+          ],
+          "argumentRawHex": "B0000000000000000000120000000000",
+          "typeKind": 18,
+          "typeDefinition": 176,
+          "typeName": "Beyond.Blackboard+BlackboardVector3"
+        },
+        {
+          "memberIndex": 5,
+          "instructionRva": 63541251,
+          "instructionHex": "488B1576AC3509",
+          "cellRva": 218053760,
+          "usageRawHex": "45E612C000000000",
+          "methodSpecIndex": 619298,
+          "methodSpec": [
+            428448,
+            -1,
+            8642
+          ],
+          "argumentRawHex": "80050000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 1408,
+          "typeName": "Beyond.Gameplay.MountPoint"
+        },
+        {
+          "memberIndex": 6,
+          "instructionRva": 63541291,
+          "instructionHex": "488B15DEEB3709",
+          "cellRva": 218201104,
+          "usageRawHex": "2FE812C000000000",
+          "methodSpecIndex": 619543,
+          "methodSpec": [
+            428448,
+            -1,
+            42516
+          ],
+          "argumentRawHex": "E7250000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 9703,
+          "typeName": "Beyond.Gameplay.Core.RayCastEffectAction+RayCastEffectPosType"
+        },
+        {
+          "memberIndex": 8,
+          "instructionRva": 63541364,
+          "instructionHex": "488B157DA33509",
+          "cellRva": 218051576,
+          "usageRawHex": "FDE612C000000000",
+          "methodSpecIndex": 619390,
+          "methodSpec": [
+            428448,
+            -1,
+            42405
+          ],
+          "argumentRawHex": "81050000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 1409,
+          "typeName": "Beyond.Gameplay.WeaponMountPoint"
+        },
+        {
+          "memberIndex": 10,
+          "instructionRva": 63541470,
+          "instructionHex": "488B159BAB3509",
+          "cellRva": 218053760,
+          "usageRawHex": "45E612C000000000",
+          "methodSpecIndex": 619298,
+          "methodSpec": [
+            428448,
+            -1,
+            8642
+          ],
+          "argumentRawHex": "80050000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 1408,
+          "typeName": "Beyond.Gameplay.MountPoint"
+        },
+        {
+          "memberIndex": 11,
+          "instructionRva": 63541507,
+          "instructionHex": "488B1506EB3709",
+          "cellRva": 218201104,
+          "usageRawHex": "2FE812C000000000",
+          "methodSpecIndex": 619543,
+          "methodSpec": [
+            428448,
+            -1,
+            42516
+          ],
+          "argumentRawHex": "E7250000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 9703,
+          "typeName": "Beyond.Gameplay.Core.RayCastEffectAction+RayCastEffectPosType"
+        }
+      ]
+    },
+    "raycastData": {
+      "wrapperTypeDefinition": 22467,
+      "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_RaycastDataForMemoryPack",
+      "serializedMemberCount": 6,
+      "methods": [
+        [
+          163134,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_RaycastDataForMemoryPack",
+          "Deserialize",
+          157879268
+        ],
+        [
+          163135,
+          "Beyond.MemoryPack.Beyond_Gameplay_Core_RayCastEffectAction_RaycastDataForMemoryPack+Beyond_Gameplay_Core_RayCastEffectAction_RaycastDataForMemoryPackFormatter",
+          "Deserialize",
+          157879016
+        ]
+      ],
+      "codeWindows": [
+        {
+          "startRva": 157879268,
+          "endRva": 157879807,
+          "sha256": "EACDD6432AD270F69E91CAD3D3F7763E601DB6FEAE2826AADE19F6C802D2B342",
+          "boundary": "raycastData selected source through normal return"
+        },
+        {
+          "startRva": 157879016,
+          "endRva": 157879109,
+          "sha256": "8B2FB56184B6FC3DD516A8E2A657AD20AB15D49850D5D21805CCDD2998F5C986",
+          "boundary": "raycastData formatter entry"
+        }
+      ],
+      "setterMethods": [
+        [
+          163126,
+          "set___angleVelocity__",
+          "System.Single"
+        ],
+        [
+          163127,
+          "set___rayDir__",
+          "UnityEngine.Vector3"
+        ],
+        [
+          163128,
+          "set___rayDirectionType__",
+          "Beyond.Gameplay.Core.RayCastEffectAction+RayDirectionType"
+        ],
+        [
+          163129,
+          "set___sourceMountPoint__",
+          "Beyond.Gameplay.MountPoint"
+        ],
+        [
+          163130,
+          "set___startAngleOffset__",
+          "UnityEngine.Vector3"
+        ],
+        [
+          163131,
+          "set___targetMountPoint__",
+          "Beyond.Gameplay.MountPoint"
+        ]
+      ],
+      "orderedSourceReads": [
+        {
+          "memberIndex": 0,
+          "fieldName": "angleVelocity",
+          "readKind": "float32-bits",
+          "sourceCallsiteRva": 157879471,
+          "sourceCallHex": "E8FC7E61F9",
+          "sourceTargetRva": 46828464
+        },
+        {
+          "memberIndex": 1,
+          "fieldName": "rayDir",
+          "readKind": "vector3-raw12",
+          "sourceCallsiteRva": 157879510,
+          "sourceCallHex": "E84D96C7F6",
+          "sourceTargetRva": 3187496
+        },
+        {
+          "memberIndex": 2,
+          "fieldName": "rayDirectionType",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 157879570,
+          "sourceCallHex": "E8997961F9",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 3,
+          "fieldName": "sourceMountPoint",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 157879610,
+          "sourceCallHex": "E8717961F9",
+          "sourceTargetRva": 46827184
+        },
+        {
+          "memberIndex": 4,
+          "fieldName": "startAngleOffset",
+          "readKind": "vector3-raw12",
+          "sourceCallsiteRva": 157879644,
+          "sourceCallHex": "E8C795C7F6",
+          "sourceTargetRva": 3187496
+        },
+        {
+          "memberIndex": 5,
+          "fieldName": "targetMountPoint",
+          "readKind": "scalar32",
+          "sourceCallsiteRva": 157879700,
+          "sourceCallHex": "E8177961F9",
+          "sourceTargetRva": 46827184
+        }
+      ],
+      "nestedContexts": [
+        {
+          "memberIndex": 2,
+          "instructionRva": 157879557,
+          "instructionHex": "488B1574DB4904",
+          "cellRva": 229828736,
+          "usageRawHex": "31E812C000000000",
+          "methodSpecIndex": 619544,
+          "methodSpec": [
+            428448,
+            -1,
+            42517
+          ],
+          "argumentRawHex": "E8250000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 9704,
+          "typeName": "Beyond.Gameplay.Core.RayCastEffectAction+RayDirectionType"
+        },
+        {
+          "memberIndex": 3,
+          "instructionRva": 157879597,
+          "instructionHex": "488B154C2F9603",
+          "cellRva": 218053760,
+          "usageRawHex": "45E612C000000000",
+          "methodSpecIndex": 619298,
+          "methodSpec": [
+            428448,
+            -1,
+            8642
+          ],
+          "argumentRawHex": "80050000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 1408,
+          "typeName": "Beyond.Gameplay.MountPoint"
+        },
+        {
+          "memberIndex": 5,
+          "instructionRva": 157879687,
+          "instructionHex": "488B15F22E9603",
+          "cellRva": 218053760,
+          "usageRawHex": "45E612C000000000",
+          "methodSpecIndex": 619298,
+          "methodSpec": [
+            428448,
+            -1,
+            8642
+          ],
+          "argumentRawHex": "80050000000000000000118000000000",
+          "typeKind": 17,
+          "typeDefinition": 1408,
+          "typeName": "Beyond.Gameplay.MountPoint"
+        }
+      ]
+    }
+  },
+  "dependencies": [
+    {
+      "path": "buff_9a_native.json",
+      "role": "reviewed finite nested profile"
+    },
+    {
+      "path": "buff_ec_native.json",
+      "role": "reviewed finite nested profile"
+    },
+    {
+      "path": "buff_98_native.json",
+      "role": "reviewed finite nested profile"
+    },
+    {
+      "path": "buff_1f_native.json",
+      "role": "reviewed finite nested profile"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected build dispatcher tag 0x0121, five selected source readers, each ordered source call and resolved generic context are pinned.",
+    "direct": "The action source reads curve, mount-point, point-to-point and list ray data, effect configurations, TargetSettings, masks and AudioId at generated positions.",
+    "structuralOnly": "Finite records and raw scalar boundaries do not establish runtime ray hits, visual effects, audio emission or target selection.",
+    "unresolved": "Live formatter choice, allocation/refill/error parity and whole SkillData EOF remain the enclosing reader boundary."
+  }
+}

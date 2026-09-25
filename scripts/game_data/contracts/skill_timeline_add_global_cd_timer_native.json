@@ -1,0 +1,52 @@
+{
+  "schema": "endfield.skill-timeline-add-global-cd-timer-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 7,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 10,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59830878,
+    "routeWindow": {
+      "startRva": 59830878,
+      "endRva": 59830885,
+      "sha256": "E5B6217D5A34A4437C6D1289504F618866559F945631AE77B8F533EB9B8BB4FD",
+      "boundary": "selected 0x000A dispatcher usage-cell load"
+    },
+    "usageCellRva": 218667152,
+    "usageRawHex": "593E032000000000",
+    "registeredTypeIndex": 106284,
+    "wrapperTypeDefinition": 15903,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_AddGlobalCDTimer_DataForMemoryPack"
+  },
+  "memberCountInstruction": {"rva": 69878304, "hex": "4080FE07"},
+  "orderedSourceReads": [
+    {"memberIndex": 0, "fieldName": "isEnable", "readKind": "bool-byte", "sourceCallsiteRva": 69878320, "sourceCallHex": "E88B46A0FE", "sourceTargetRva": 46827712},
+    {"memberIndex": 1, "fieldName": "priorityLevel", "readKind": "enum32", "sourceCallsiteRva": 69878361, "sourceCallHex": "E85244A0FE", "sourceTargetRva": 46827184},
+    {"memberIndex": 2, "fieldName": "priorityOffset", "readKind": "scalar32", "sourceCallsiteRva": 69878394, "sourceCallHex": "E83144A0FE", "sourceTargetRva": 46827184},
+    {"memberIndex": 3, "fieldName": "serverActionIndex", "readKind": "scalar32", "sourceCallsiteRva": 69878427, "sourceCallHex": "E81044A0FE", "sourceTargetRva": 46827184},
+    {"memberIndex": 4, "fieldName": "buffId", "readKind": "byte-payload", "sourceCallsiteRva": 69878460, "sourceCallHex": "E83F44A0FE", "sourceTargetRva": 46827264},
+    {"memberIndex": 5, "fieldName": "cdTime", "readKind": "scalar-payload", "sourceCallsiteRva": 69878501, "sourceCallHex": "E8A619B0FE", "sourceTargetRva": 47864976},
+    {"memberIndex": 6, "fieldName": "target", "readKind": "target-profile", "sourceCallsiteRva": 69878542, "sourceCallHex": "E87D19B0FE", "sourceTargetRva": 47864976}
+  ],
+  "setterMethods": [
+    [118404, "set___buffId__", "System.String"],
+    [118405, "set___cdTime__", "Beyond.Blackboard+BlackboardDouble"],
+    [118406, "set___target__", "Beyond.Gameplay.Core.TargetSettings"]
+  ],
+  "sourceContract": "buff_0a_native.json",
+  "nestedProfileContract": "buff_ec_native.json",
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "The selected AbilityActionData tag, registered wrapper, seven-member check, seven ordered source calls and three output setters match the pinned installed native inputs.",
+    "direct": "The source takes a byte, three raw DWORDs, a signed-length byte payload, one BlackboardDouble profile and one TargetSettings profile; the source contract resolves all three generic contexts.",
+    "structuralOnly": "The finite reader preserves arbitrary scalar bits and nullable nested profiles without inferring global cooldown timing or targeting behavior.",
+    "unresolved": "Live formatter selection, allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}

@@ -76,6 +76,570 @@
       "memberCount": 5
     },
     {
+      "tag": "0x0007",
+      "typeName": "Beyond.Gameplay.Core.AddAIMarkerAction+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "buff_07_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member8"
+      }
+    },
+    {
+      "tag": "0x0009",
+      "typeName": "Beyond.Gameplay.Core.AddDynamicNavmeshObstacle+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "buff_frontier8.json",
+        "schema": "endfield.buff-frontier8-native-contract.v1",
+        "orderedReadRef": "actions[unionTag=9].readOrder"
+      }
+    },
+    {
+      "tag": "0x000C",
+      "typeName": "Beyond.Gameplay.Core.AddTagToEntities+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "buff_0c_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member8"
+      }
+    },
+    {
+      "tag": "0x000E",
+      "typeName": "Beyond.Gameplay.Core.AllowNextSkillAction+Data",
+      "memberCount": 5,
+      "evidence": "selectedDerivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x0065",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckHp+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "buff_65_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member8"
+      }
+    },
+    {
+      "tag": "0x006E",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckPoiseValue+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "buff_6e_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member8"
+      }
+    },
+    {
+      "tag": "0x0025",
+      "typeName": "Beyond.Gameplay.Core.CameraRotateAction+CameraRotationActionData",
+      "memberCount": 10,
+      "sourceContract": {
+        "path": "skill_timeline_camera_rotate_native.json",
+        "schema": "endfield.skill-timeline-camera-rotate-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00BF",
+      "typeName": "Beyond.Gameplay.Core.GainBreakingAttackAtb+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "skill_timeline_gain_breaking_attack_atb_native.json",
+        "schema": "endfield.skill-timeline-gain-breaking-attack-atb-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0104",
+      "typeName": "Beyond.Gameplay.Core.OverrideCameraFollowAction+OverrideCameraFollowActionData",
+      "memberCount": 12,
+      "sourceContract": {
+        "path": "buff_frontier9.json",
+        "schema": "endfield.buff-frontier9-native-contract.v1",
+        "orderedReadRef": "actions[unionTag=260].readOrder"
+      }
+    },
+    {
+      "tag": "0x00FD",
+      "typeName": "Beyond.Gameplay.Core.NotNextCheckAction+Data",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "buff_fd_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member4"
+      }
+    },
+    {
+      "tag": "0x0098",
+      "typeName": "Beyond.Gameplay.Core.CurveEvaluateFloat+Data",
+      "memberCount": 9,
+      "sourceContract": {
+        "path": "buff_98_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member9"
+      }
+    },
+    {
+      "tag": "0x007B",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckSuperArmor+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "buff_7b_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member7"
+      }
+    },
+    {
+      "tag": "0x0080",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckTargetsEqual+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "buff_80_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member6"
+      }
+    },
+    {
+      "tag": "0x00A7",
+      "typeName": "Beyond.Gameplay.Core.EnablePartsAction+Data",
+      "memberCount": 11,
+      "sourceContract": {
+        "path": "buff_a7_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member11"
+      }
+    },
+    {
+      "tag": "0x0036",
+      "typeName": "Beyond.Gameplay.Core.CharWeaponAnimationAction+CharWeaponAnimationActionData",
+      "memberCount": 12,
+      "sourceContract": {
+        "path": "buff_36_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member12"
+      }
+    },
+    {
+      "tag": "0x004F",
+      "typeName": "Beyond.Gameplay.Core.CommandToCharactersAction+CommandToCharactersActionData",
+      "memberCount": 14,
+      "sourceContract": {
+        "path": "skill_timeline_command_to_characters_native.json",
+        "schema": "endfield.skill-timeline-command-to-characters-native-contract.v1"
+      }
+    },
+    {
+      "tag": "0x0123",
+      "typeName": "Beyond.Gameplay.Core.ReceiveMoveInputAction+Data",
+      "memberCount": 20,
+      "sourceContract": {
+        "path": "skill_timeline_receive_move_input_native.json",
+        "schema": "endfield.skill-timeline-receive-move-input-native-contract.v1"
+      }
+    },
+    {
+      "tag": "0x003D",
+      "typeName": "Beyond.Gameplay.Core.CheckComboSkillCameraAlphaSetting+Data",
+      "memberCount": 5,
+      "sourceContract": {
+        "path": "skill_timeline_check_combo_skill_camera_alpha_native.json",
+        "schema": "endfield.skill-timeline-check-combo-skill-camera-alpha-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x017E",
+      "typeName": "Beyond.Gameplay.Core.TemporaryUnlockAction+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "buff_frontier9.json",
+        "schema": "endfield.buff-frontier9-native-contract.v1",
+        "orderedReadRef": "actions[unionTag=382].readOrder"
+      }
+    },
+    {
+      "tag": "0x0045",
+      "typeName": "Beyond.Gameplay.Core.CheckHasMoveInput+Data",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "skill_timeline_check_has_move_input_native.json",
+        "schema": "endfield.skill-timeline-check-has-move-input-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0184",
+      "typeName": "Beyond.Gameplay.Core.TogglableAction+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "buff_184_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member6"
+      }
+    },
+    {
+      "tag": "0x0052",
+      "typeName": "Beyond.Gameplay.Core.Condition.CheckSquadInFight+Data",
+      "memberCount": 5,
+      "sourceContract": {
+        "path": "buff_52_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member5"
+      }
+    },
+    {
+      "tag": "0x0001",
+      "typeName": "Beyond.Gameplay.Core.AbilityActions.BreakInteractiveAction+Data",
+      "memberCount": 9,
+      "sourceContract": {
+        "path": "skill_timeline_break_interactive_native.json",
+        "schema": "endfield.skill-timeline-break-interactive-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00D2",
+      "typeName": "Beyond.Gameplay.Core.InheritBuffAction+Data",
+      "memberCount": 9,
+      "sourceContract": {
+        "path": "skill_timeline_inherit_buff_native.json",
+        "schema": "endfield.skill-timeline-inherit-buff-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0178",
+      "typeName": "Beyond.Gameplay.Core.SwitchModeAction+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "buff_178_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member8"
+      }
+    },
+    {
+      "tag": "0x004C",
+      "typeName": "Beyond.Gameplay.Core.ClearProjectileAction+Data",
+      "memberCount": 12,
+      "sourceContract": {
+        "path": "buff_4c_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member12"
+      }
+    },
+    {
+      "tag": "0x0010",
+      "typeName": "Beyond.Gameplay.Core.AnimatedCameraAction+AnimatedCameraActionData",
+      "memberCount": 24,
+      "sourceContract": {
+        "path": "skill_timeline_animated_camera_native.json",
+        "schema": "endfield.skill-timeline-animated-camera-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00C6",
+      "typeName": "Beyond.Gameplay.Core.HideUIAction+Data",
+      "memberCount": 5,
+      "sourceContract": {
+        "path": "skill_timeline_hide_ui_native.json",
+        "schema": "endfield.skill-timeline-hide-ui-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00F8",
+      "typeName": "Beyond.Gameplay.Core.MoveToLocationAction+Data",
+      "memberCount": 23,
+      "sourceContract": {
+        "path": "skill_timeline_move_to_location_native.json",
+        "schema": "endfield.skill-timeline-move-to-location-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0194",
+      "typeName": "Beyond.Gameplay.Core.UltimateTimeAction+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "skill_timeline_ultimate_time_native.json",
+        "schema": "endfield.skill-timeline-ultimate-time-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0193",
+      "typeName": "Beyond.Gameplay.Core.UltimateShowAction+Data",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "skill_timeline_ultimate_show_native.json",
+        "schema": "endfield.skill-timeline-ultimate-show-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0031",
+      "typeName": "Beyond.Gameplay.Core.ChannelingCastingAction+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "skill_timeline_channeling_casting_native.json",
+        "schema": "endfield.skill-timeline-channeling-casting-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00F3",
+      "typeName": "Beyond.Gameplay.Core.ModifyWeaponMountPoint+Data",
+      "memberCount": 9,
+      "sourceContract": {
+        "path": "skill_timeline_modify_weapon_mount_point_native.json",
+        "schema": "endfield.skill-timeline-modify-weapon-mount-point-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0121",
+      "typeName": "Beyond.Gameplay.Core.RayCastEffectAction+RayCastEffectActionData",
+      "memberCount": 33,
+      "sourceContract": {
+        "path": "skill_timeline_raycast_effect_native.json",
+        "schema": "endfield.skill-timeline-raycast-effect-native-contract.v1",
+        "orderedReadRef": "sections.action.orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0114",
+      "typeName": "Beyond.Gameplay.Core.PickTargetAction+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "skill_timeline_pick_target_native.json",
+        "schema": "endfield.skill-timeline-pick-target-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00A0",
+      "typeName": "Beyond.Gameplay.Core.DoOnceAction+Data",
+      "memberCount": 5,
+      "sourceContract": {
+        "path": "skill_timeline_do_once_native.json",
+        "schema": "endfield.skill-timeline-do-once-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0072",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckSkillCameraMotionFree+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "skill_timeline_check_skill_camera_motion_free_native.json",
+        "schema": "endfield.skill-timeline-check-skill-camera-motion-free-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x007D",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckTargetAngle+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "skill_timeline_check_target_angle_native.json",
+        "schema": "endfield.skill-timeline-check-target-angle-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00FB",
+      "typeName": "Beyond.Gameplay.Core.MoveToTargetAction+Data",
+      "memberCount": 17,
+      "sourceContract": {
+        "path": "skill_timeline_move_to_target_native.json",
+        "schema": "endfield.skill-timeline-move-to-target-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00DA",
+      "typeName": "Beyond.Gameplay.Core.JumpToTargetAction+Data",
+      "memberCount": 11,
+      "sourceContract": {
+        "path": "skill_timeline_jump_to_target_native.json",
+        "schema": "endfield.skill-timeline-jump-to-target-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00A5",
+      "typeName": "Beyond.Gameplay.Core.EliteBackSwingBeHit+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "skill_timeline_elite_back_swing_be_hit_native.json",
+        "schema": "endfield.skill-timeline-elite-back-swing-be-hit-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00C4",
+      "typeName": "Beyond.Gameplay.Core.GetTargetBuffBBAdvanced+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "skill_timeline_get_target_buff_bb_advanced_native.json",
+        "schema": "endfield.skill-timeline-get-target-buff-bb-advanced-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x007E",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckTargetContains+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "skill_timeline_check_target_contains_native.json",
+        "schema": "endfield.skill-timeline-check-target-contains-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0113",
+      "typeName": "Beyond.Gameplay.Core.PhysicsCastAction+PhysicsCastActionData",
+      "memberCount": 20,
+      "sourceContract": {
+        "path": "skill_timeline_physics_cast_native.json",
+        "schema": "endfield.skill-timeline-physics-cast-native-contract.v1",
+        "orderedReadRef": "sections.action.orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00DF",
+      "typeName": "Beyond.Gameplay.Core.LaunchUpwardAction+Data",
+      "memberCount": 15,
+      "sourceContract": {
+        "path": "skill_timeline_launch_upward_native.json",
+        "schema": "endfield.skill-timeline-launch-upward-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x002C",
+      "typeName": "Beyond.Gameplay.Core.ChangeSkillAction+Data",
+      "memberCount": 14,
+      "sourceContract": {
+        "path": "skill_timeline_change_skill_native.json",
+        "schema": "endfield.skill-timeline-change-skill-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x004D",
+      "typeName": "Beyond.Gameplay.Core.ComboAction+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "skill_timeline_combo_action_native.json",
+        "schema": "endfield.skill-timeline-combo-action-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0173",
+      "typeName": "Beyond.Gameplay.Core.StoreCurSkillExecuteFrame+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "skill_timeline_store_cur_skill_execute_frame_native.json",
+        "schema": "endfield.skill-timeline-store-cur-skill-execute-frame-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0165",
+      "typeName": "Beyond.Gameplay.Core.SkillAIMoveAction+Data",
+      "memberCount": 16,
+      "sourceContract": {
+        "path": "skill_timeline_skill_ai_move_native.json",
+        "schema": "endfield.skill-timeline-skill-ai-move-native-contract.v1",
+        "orderedReadRef": "sections.action.orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0000",
+      "typeName": "Beyond.Gameplay.BoneAttachAction+Data",
+      "memberCount": 13,
+      "sourceContract": {
+        "path": "skill_timeline_bone_attach_native.json",
+        "schema": "endfield.skill-timeline-bone-attach-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00D0",
+      "typeName": "Beyond.Gameplay.Core.IgnoreModelIntervalCheck+Data",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "skill_timeline_ignore_model_interval_check_native.json",
+        "schema": "endfield.skill-timeline-ignore-model-interval-check-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00DD",
+      "typeName": "Beyond.Gameplay.Core.KnockDownAction+Data",
+      "memberCount": 13,
+      "sourceContract": {
+        "path": "skill_timeline_knock_down_native.json",
+        "schema": "endfield.skill-timeline-knock-down-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x017B",
+      "typeName": "Beyond.Gameplay.Core.TargetPostProcessorAction+Data",
+      "memberCount": 11,
+      "sourceContract": {
+        "path": "skill_timeline_target_postprocessor_native.json",
+        "schema": "endfield.skill-timeline-target-postprocessor-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x018E",
+      "typeName": "Beyond.Gameplay.Core.TyphoeaArcheryChipDataAction+Data",
+      "memberCount": 18,
+      "sourceContract": {
+        "path": "skill_timeline_typhoea_archery_chip_native.json",
+        "schema": "endfield.skill-timeline-typhoea-archery-chip-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0182",
+      "typeName": "Beyond.Gameplay.Core.TickIntervalActionV2+Data",
+      "memberCount": 10,
+      "sourceContract": {
+        "path": "skill_timeline_tick_interval_v2_native.json",
+        "schema": "endfield.skill-timeline-tick-interval-v2-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x012D",
+      "typeName": "Beyond.Gameplay.Core.RemoveAIMarkerAction+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "skill_timeline_remove_ai_marker_native.json",
+        "schema": "endfield.skill-timeline-remove-ai-marker-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0057",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckBuffIdInContextAdvanced+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "skill_timeline_check_buff_id_context_advanced_native.json",
+        "schema": "endfield.skill-timeline-check-buff-id-context-advanced-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
       "tag": "0x0006",
       "typeName": "AchieveSpecialGameEventAction",
       "memberCount": 5
@@ -104,6 +668,16 @@
       "tag": "0x001C",
       "typeName": "BlowOffCharacterAction",
       "memberCount": 15
+    },
+    {
+      "tag": "0x0023",
+      "typeName": "BroadcastAlertToCharactersAction",
+      "memberCount": 11,
+      "sourceContract": {
+        "path": "buff_23_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member11"
+      }
     },
     {
       "tag": "0x0024",
@@ -136,14 +710,44 @@
       "memberCount": 10
     },
     {
+      "tag": "0x004E",
+      "typeName": "Beyond.Gameplay.Core.ComboCacheAction+Data",
+      "memberCount": 5,
+      "sourceContract": {
+        "path": "buff_4e_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member5"
+      }
+    },
+    {
       "tag": "0x0050",
       "typeName": "CompareFloat",
       "memberCount": 7
     },
     {
+      "tag": "0x0056",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckBuffIdInContext+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "buff_56_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member8"
+      }
+    },
+    {
       "tag": "0x0058",
       "typeName": "CheckBuffStackNum",
       "memberCount": 8
+    },
+    {
+      "tag": "0x005B",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckDamageDecorateMask+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "buff_5b_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member6"
+      }
     },
     {
       "tag": "0x0061",
@@ -161,6 +765,16 @@
       "memberCount": 6
     },
     {
+      "tag": "0x0078",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckSkillType+Data",
+      "memberCount": 9,
+      "sourceContract": {
+        "path": "buff_78_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member9"
+      }
+    },
+    {
       "tag": "0x007C",
       "typeName": "CheckTagMatch",
       "memberCount": 6
@@ -169,6 +783,16 @@
       "tag": "0x0081",
       "typeName": "CheckTimedMarkerCondition",
       "memberCount": 9
+    },
+    {
+      "tag": "0x0082",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckTwoDirectionAngle+Data",
+      "memberCount": 12,
+      "sourceContract": {
+        "path": "buff_frontier9.json",
+        "schema": "endfield.buff-frontier9-native-contract.v1",
+        "orderedReadRef": "actions[unionTag=130].readOrder"
+      }
     },
     {
       "tag": "0x0088",
@@ -181,6 +805,16 @@
       "memberCount": 12
     },
     {
+      "tag": "0x0091",
+      "typeName": "Beyond.Gameplay.Core.CreateAdditionalBattleShape+Data",
+      "memberCount": 10,
+      "sourceContract": {
+        "path": "skill_timeline_additional_battle_shape_native.json",
+        "schema": "endfield.skill-timeline-additional-battle-shape-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
       "tag": "0x0092",
       "typeName": "CreateBuffAction",
       "memberCount": 19
@@ -189,6 +823,16 @@
       "tag": "0x0096",
       "typeName": "CreateTimedMarker",
       "memberCount": 9
+    },
+    {
+      "tag": "0x0099",
+      "typeName": "Beyond.Gameplay.Core.CustomRootMotionAction+Data",
+      "memberCount": 24,
+      "sourceContract": {
+        "path": "skill_custom_root_motion_native.json",
+        "schema": "endfield.skill-custom-root-motion-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
     },
     {
       "tag": "0x009A",
@@ -201,6 +845,12 @@
       "memberCount": 9
     },
     {
+      "tag": "0x009E",
+      "typeName": "Beyond.Gameplay.Core.DisableRootMotionAction+Data",
+      "memberCount": 4,
+      "evidence": "selectedDerivedPlanCorpusVerified"
+    },
+    {
       "tag": "0x00A2",
       "typeName": "EffectAction",
       "memberCount": 18
@@ -211,9 +861,29 @@
       "memberCount": 28
     },
     {
+      "tag": "0x00AA",
+      "typeName": "Beyond.Gameplay.Core.EnemyWarningAction+EnemyWarningActionData",
+      "memberCount": 18,
+      "sourceContract": {
+        "path": "skill_timeline_enemy_warning_native.json",
+        "schema": "endfield.skill-timeline-enemy-warning-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
       "tag": "0x00B2",
       "typeName": "FindTargetAction",
       "memberCount": 18
+    },
+    {
+      "tag": "0x00B3",
+      "typeName": "Beyond.Gameplay.Core.FinishAngryOnEnd+Data",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "skill_timeline_finish_angry_native.json",
+        "schema": "endfield.skill-timeline-finish-angry-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
     },
     {
       "tag": "0x00B4",
@@ -263,6 +933,22 @@
       "memberCount": 37
     },
     {
+      "tag": "0x00E0",
+      "typeName": "Beyond.Gameplay.Core.LockCameraAimAction+LockCameraAimActionData",
+      "memberCount": 54,
+      "sourceContract": {
+        "path": "buff_e0_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.memberSourceCalls"
+      }
+    },
+    {
+      "tag": "0x00E8",
+      "typeName": "Beyond.Gameplay.Core.MarkCanInterrupt+Data",
+      "memberCount": 4,
+      "evidence": "selectedDerivedPlanCorpusVerified"
+    },
+    {
       "tag": "0x00EA",
       "typeName": "MergeTargetAction",
       "memberCount": 7
@@ -299,6 +985,16 @@
       "memberCount": 19
     },
     {
+      "tag": "0x011E",
+      "typeName": "Beyond.Gameplay.Core.PushBackAction+Data",
+      "memberCount": 20,
+      "sourceContract": {
+        "path": "skill_timeline_push_back_native.json",
+        "schema": "endfield.skill-timeline-push-back-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
       "tag": "0x0120",
       "typeName": "RandomAction",
       "memberCount": 8
@@ -317,6 +1013,26 @@
       "tag": "0x0140",
       "typeName": "SaveTargetDistanceAction",
       "memberCount": 7
+    },
+    {
+      "tag": "0x0141",
+      "typeName": "Beyond.Gameplay.Core.SaveTwoDirectionAngle+Data",
+      "memberCount": 11,
+      "sourceContract": {
+        "path": "buff_frontier9.json",
+        "schema": "endfield.buff-frontier9-native-contract.v1",
+        "orderedReadRef": "actions[unionTag=321].readOrder"
+      }
+    },
+    {
+      "tag": "0x0142",
+      "typeName": "Beyond.Gameplay.Core.SaveValueFromAIBlackboard+Data",
+      "memberCount": 11,
+      "sourceContract": {
+        "path": "buff_142_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member11"
+      }
     },
     {
       "tag": "0x0144",
@@ -338,6 +1054,36 @@
       "tag": "0x014A",
       "typeName": "SetAnimatorParamAction",
       "memberCount": 8
+    },
+    {
+      "tag": "0x0157",
+      "typeName": "Beyond.Gameplay.Core.SetSkillCdAtOnce+Data",
+      "memberCount": 11,
+      "sourceContract": {
+        "path": "buff_157_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member11"
+      }
+    },
+    {
+      "tag": "0x0159",
+      "typeName": "Beyond.Gameplay.Core.SetSuperArmorAction+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "buff_159_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member7"
+      }
+    },
+    {
+      "tag": "0x015B",
+      "typeName": "Beyond.Gameplay.Core.SetWeaknessAction+Data",
+      "memberCount": 11,
+      "sourceContract": {
+        "path": "buff_15b_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member11"
+      }
     },
     {
       "tag": "0x0163",
@@ -407,7 +1153,11 @@
       "tag": "0x0032",
       "typeName": "Beyond.Gameplay.Core.ChannelingDamageAction+Data",
       "memberCount": 12,
-      "evidence": "derivedPlanCorpusVerified"
+      "sourceContract": {
+        "path": "skill_timeline_channeling_damage_native.json",
+        "schema": "endfield.skill-timeline-channeling-damage-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
     },
     {
       "tag": "0x004F",
@@ -425,7 +1175,11 @@
       "tag": "0x0064",
       "typeName": "Beyond.Gameplay.Core.Conditions.CheckHitColliderOptions+Data",
       "memberCount": 6,
-      "evidence": "derivedPlanCorpusVerified"
+      "sourceContract": {
+        "path": "skill_timeline_check_hit_collider_options_native.json",
+        "schema": "endfield.skill-timeline-check-hit-collider-options-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
     },
     {
       "tag": "0x0087",
@@ -455,13 +1209,51 @@
       "tag": "0x00B5",
       "typeName": "Beyond.Gameplay.Core.FinishBuffByTag+Data",
       "memberCount": 12,
-      "evidence": "derivedPlanCorpusVerified"
+      "sourceContract": {
+        "path": "skill_timeline_finish_buff_by_tag_native.json",
+        "schema": "endfield.skill-timeline-finish-buff-by-tag-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00AF",
+      "typeName": "Beyond.Gameplay.Core.ExtendBuffAction+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "buff_frontier8.json",
+        "schema": "endfield.buff-frontier8-native-contract.v1",
+        "orderedReadRef": "actions[unionTag=175].readOrder"
+      }
+    },
+    {
+      "tag": "0x00C2",
+      "typeName": "Beyond.Gameplay.Core.GetPatrolTeleportPos+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "buff_frontier8.json",
+        "schema": "endfield.buff-frontier8-native-contract.v1",
+        "orderedReadRef": "actions[unionTag=194].readOrder"
+      }
     },
     {
       "tag": "0x00BA",
       "typeName": "Beyond.Gameplay.Core.ForceSpellStatusAction+Data",
       "memberCount": 11,
-      "evidence": "derivedPlanCorpusVerified"
+      "sourceContract": {
+        "path": "skill_timeline_force_spell_status_native.json",
+        "schema": "endfield.skill-timeline-force-spell-status-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00B9",
+      "typeName": "Beyond.Gameplay.Core.ForceHideHeadBarAction+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "skill_timeline_force_hide_head_bar_native.json",
+        "schema": "endfield.skill-timeline-force-hide-head-bar-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
     },
     {
       "tag": "0x00BF",
@@ -509,7 +1301,12 @@
       "tag": "0x0116",
       "typeName": "Beyond.Gameplay.Core.PlayAnimationWithStep+PlayAnimationWithStepData",
       "memberCount": 30,
-      "evidence": "derivedPlanCorpusVerified"
+      "evidence": "derivedPlanCorpusVerified",
+      "sourceContract": {
+        "path": "skill_timeline_play_animation_step_native.json",
+        "schema": "endfield.skill-timeline-play-animation-step-native-contract.v1",
+        "orderedReadRef": "wrapper.selectedReadOrder"
+      }
     },
     {
       "tag": "0x0117",
@@ -542,6 +1339,16 @@
       "evidence": "derivedPlanCorpusVerified"
     },
     {
+      "tag": "0x0168",
+      "typeName": "Beyond.Gameplay.Core.SnapToTargetWithRangeAction+Data",
+      "memberCount": 18,
+      "sourceContract": {
+        "path": "skill_snap_to_target_with_range_native.json",
+        "schema": "endfield.skill-snap-to-target-with-range-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
       "tag": "0x016B",
       "typeName": "Beyond.Gameplay.Core.SpawnInteractiveGoldCoin+Data",
       "memberCount": 6,
@@ -554,10 +1361,64 @@
       "evidence": "derivedPlanCorpusVerified"
     },
     {
+      "tag": "0x017C",
+      "typeName": "Beyond.Gameplay.Core.TeleportAction+Data",
+      "memberCount": 14,
+      "sourceContract": {
+        "path": "buff_17c_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member14"
+      }
+    },
+    {
+      "tag": "0x017D",
+      "typeName": "Beyond.Gameplay.Core.TeleportPosSelectAction+Data",
+      "memberCount": 9,
+      "sourceContract": {
+        "path": "buff_frontier9.json",
+        "schema": "endfield.buff-frontier9-native-contract.v1",
+        "orderedReadRef": "actions[unionTag=381].readOrder"
+      }
+    },
+    {
+      "tag": "0x0181",
+      "typeName": "Beyond.Gameplay.Core.TickIntervalAction+Data",
+      "memberCount": 9,
+      "sourceContract": {
+        "path": "skill_timeline_tick_interval_native.json",
+        "schema": "endfield.skill-timeline-tick-interval-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x017A",
+      "typeName": "Beyond.Gameplay.Core.TakeDownAction+Data",
+      "memberCount": 12,
+      "sourceContract": {
+        "path": "skill_timeline_take_down_native.json",
+        "schema": "endfield.skill-timeline-take-down-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x017F",
+      "typeName": "Beyond.Gameplay.Core.ThrowPickupItemAction+Data",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "skill_timeline_throw_pickup_item_native.json",
+        "schema": "endfield.skill-timeline-throw-pickup-item-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
       "tag": "0x0180",
       "typeName": "Beyond.Gameplay.Core.ThrowPickupItemStartAction+Data",
       "memberCount": 4,
-      "evidence": "derivedPlanCorpusVerified"
+      "sourceContract": {
+        "path": "skill_timeline_throw_pickup_item_start_native.json",
+        "schema": "endfield.skill-timeline-throw-pickup-item-start-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
     },
     {
       "tag": "0x0185",
@@ -576,6 +1437,266 @@
       "typeName": "Beyond.Gameplay.Core.VoiceTriggerAction+VoiceTriggerActionData",
       "memberCount": 11,
       "evidence": "derivedPlanCorpusVerified"
+    },
+    {
+      "tag": "0x019E",
+      "typeName": "Beyond.Gameplay.View.AddCameraControlStateAction+AddCameraControlStateActionData",
+      "memberCount": 23,
+      "sourceContract": {
+        "path": "buff_19e_native.json",
+        "schemaVersion": 1,
+        "orderedReadRef": "anonymousReadOrder.member23"
+      }
+    },
+    {
+      "tag": "0x0048",
+      "typeName": "Beyond.Gameplay.Core.CheckOriginSkillType+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "skill_timeline_check_origin_skill_type_native.json",
+        "schema": "endfield.skill-timeline-check-origin-skill-type-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x013D",
+      "typeName": "Beyond.Gameplay.Core.SaveMoveAxisAngle+Data",
+      "memberCount": 5,
+      "sourceContract": {
+        "path": "skill_timeline_save_move_axis_angle_native.json",
+        "schema": "endfield.skill-timeline-save-move-axis-angle-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00F7",
+      "typeName": "Beyond.Gameplay.Core.MoveToDirectionAction+Data",
+      "memberCount": 19,
+      "sourceContract": {
+        "path": "skill_timeline_move_to_direction_native.json",
+        "schema": "endfield.skill-timeline-move-to-direction-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0097",
+      "typeName": "Beyond.Gameplay.Core.CrushAction+Data",
+      "memberCount": 17,
+      "sourceContract": {
+        "path": "buff_frontier9.json",
+        "schema": "endfield.buff-frontier9-native-contract.v1",
+        "orderedReadRef": "actions[unionTag=151].readOrder"
+      }
+    },
+    {
+      "tag": "0x007A",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckSpellInflictionType+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "skill_timeline_check_spell_infliction_type_native.json",
+        "schema": "endfield.skill-timeline-check-spell-infliction-type-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0063",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckHealTag+Data",
+      "memberCount": 5,
+      "sourceContract": {
+        "path": "skill_timeline_check_heal_tag_native.json",
+        "schema": "endfield.skill-timeline-check-heal-tag-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x003F",
+      "typeName": "Beyond.Gameplay.Core.CheckConsumeBuffLayer+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "skill_timeline_check_consume_buff_layer_native.json",
+        "schema": "endfield.skill-timeline-check-consume-buff-layer-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x006A",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckObtainAtbType+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "skill_timeline_check_obtain_atb_type_native.json",
+        "schema": "endfield.skill-timeline-check-obtain-atb-type-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0044",
+      "typeName": "Beyond.Gameplay.Core.CheckGlobalCDTimerAction+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "skill_timeline_check_global_cd_timer_native.json",
+        "schema": "endfield.skill-timeline-check-global-cd-timer-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x000A",
+      "typeName": "Beyond.Gameplay.Core.AddGlobalCDTimer+Data",
+      "memberCount": 7,
+      "sourceContract": {
+        "path": "skill_timeline_add_global_cd_timer_native.json",
+        "schema": "endfield.skill-timeline-add-global-cd-timer-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x001D",
+      "typeName": "Beyond.Gameplay.Core.BlowOffEnemyAction+Data",
+      "memberCount": 14,
+      "sourceContract": {
+        "path": "buff_frontier9.json",
+        "schema": "endfield.buff-frontier9-native-contract.v1",
+        "orderedReadRef": "actions[unionTag=29].readOrder"
+      }
+    },
+    {
+      "tag": "0x006D",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckPhysicalInflictionType+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "skill_timeline_check_physical_infliction_type_native.json",
+        "schema": "endfield.skill-timeline-check-physical-infliction-type-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0093",
+      "typeName": "Beyond.Gameplay.Core.CreateBuffAttachingSkill+Data",
+      "memberCount": 19,
+      "sourceContract": {
+        "path": "skill_timeline_create_buff_attaching_skill_native.json",
+        "schema": "endfield.skill-timeline-create-buff-attaching-skill-native-contract.v1",
+        "orderedReadRef": "inheritedFieldContract.wrapper.selectedReadOrder"
+      }
+    },
+    {
+      "tag": "0x00D3",
+      "typeName": "Beyond.Gameplay.Core.InheritCCSAction+Data",
+      "memberCount": 8,
+      "sourceContract": {
+        "path": "skill_timeline_inherit_ccs_native.json",
+        "schema": "endfield.skill-timeline-inherit-ccs-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0085",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CompareDeckAttr+Data",
+      "memberCount": 10,
+      "sourceContract": {
+        "path": "skill_timeline_compare_deck_attr_native.json",
+        "schema": "endfield.skill-timeline-compare-deck-attr-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0059",
+      "typeName": "Beyond.Gameplay.Core.Conditions.CheckBuffStackNumByTag+Data",
+      "memberCount": 9,
+      "sourceContract": {
+        "path": "skill_timeline_check_buff_stack_num_by_tag_native.json",
+        "schema": "endfield.skill-timeline-check-buff-stack-num-by-tag-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00EB",
+      "typeName": "Beyond.Gameplay.Core.ModifyCameraLockPointAction+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "skill_timeline_modify_camera_lock_point_native.json",
+        "schema": "endfield.skill-timeline-modify-camera-lock-point-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0013",
+      "typeName": "Beyond.Gameplay.Core.ApplyArmor+Data",
+      "memberCount": 5,
+      "sourceContract": {
+        "path": "skill_timeline_apply_armor_native.json",
+        "schema": "endfield.skill-timeline-apply-armor-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0019",
+      "typeName": "Beyond.Gameplay.Core.BlightMiasmaToleranceZero+Data",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "skill_timeline_blight_miasma_tolerance_zero_native.json",
+        "schema": "endfield.skill-timeline-blight-miasma-tolerance-zero-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x001A",
+      "typeName": "Beyond.Gameplay.Core.BlockMoveInterruptSkill+Data",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "skill_timeline_block_move_interrupt_skill_native.json",
+        "schema": "endfield.skill-timeline-block-move-interrupt-skill-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0030",
+      "typeName": "Beyond.Gameplay.Core.ChannelingActionV2+Data",
+      "memberCount": 10,
+      "sourceContract": {
+        "path": "skill_timeline_channeling_v2_native.json",
+        "schema": "endfield.skill-timeline-channeling-v2-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0034",
+      "typeName": "Beyond.Gameplay.Core.CharFollowAction+CharFollowActionData",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "skill_timeline_char_follow_action_native.json",
+        "schema": "endfield.skill-timeline-char-follow-action-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x0103",
+      "typeName": "Beyond.Gameplay.Core.OverrideBornPosition+Data",
+      "memberCount": 5,
+      "sourceContract": {
+        "path": "skill_timeline_override_born_position_native.json",
+        "schema": "endfield.skill-timeline-override-born-position-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x012C",
+      "typeName": "Beyond.Gameplay.Core.RefreshHeadBarShowHideAction+Data",
+      "memberCount": 4,
+      "sourceContract": {
+        "path": "skill_timeline_refresh_head_bar_show_hide_native.json",
+        "schema": "endfield.skill-timeline-refresh-head-bar-show-hide-native-contract.v1",
+        "orderedReadRef": "orderedSourceReads"
+      }
+    },
+    {
+      "tag": "0x00FF",
+      "typeName": "Beyond.Gameplay.Core.ObtainUspInNormalSkill+Data",
+      "memberCount": 6,
+      "sourceContract": {
+        "path": "buff_frontier7.json",
+        "schema": "endfield.buff-frontier7-native-contract.v1",
+        "orderedReadRef": "actions[unionTag=255].readOrder"
+      }
     }
   ],
   "dependencies": [
@@ -587,6 +1708,9 @@
     },
     {
       "path": "buff_140_native.json"
+    },
+    {
+      "path": "buff_142_native.json"
     },
     {
       "path": "buff_05_native.json"
@@ -601,6 +1725,36 @@
       "path": "buff_06_native.json"
     },
     {
+      "path": "buff_07_native.json"
+    },
+    {
+      "path": "buff_0c_native.json"
+    },
+    {
+      "path": "buff_65_native.json"
+    },
+    {
+      "path": "buff_6e_native.json"
+    },
+    {
+      "path": "buff_fd_native.json"
+    },
+    {
+      "path": "buff_98_native.json"
+    },
+    {
+      "path": "buff_7b_native.json"
+    },
+    {
+      "path": "buff_80_native.json"
+    },
+    {
+      "path": "buff_a7_native.json"
+    },
+    {
+      "path": "buff_36_native.json"
+    },
+    {
       "path": "buff_144_native.json"
     },
     {
@@ -608,6 +1762,9 @@
     },
     {
       "path": "buff_42_native.json"
+    },
+    {
+      "path": "buff_4e_native.json"
     },
     {
       "path": "buff_14a_native.json"
@@ -632,6 +1789,9 @@
     },
     {
       "path": "buff_163_native.json"
+    },
+    {
+      "path": "buff_159_native.json"
     },
     {
       "path": "buff_0b_native.json"
@@ -667,6 +1827,9 @@
       "path": "buff_24_native.json"
     },
     {
+      "path": "buff_23_native.json"
+    },
+    {
       "path": "buff_27_native.json"
     },
     {
@@ -679,7 +1842,13 @@
       "path": "buff_50_native.json"
     },
     {
+      "path": "buff_56_native.json"
+    },
+    {
       "path": "buff_58_native.json"
+    },
+    {
+      "path": "buff_5b_native.json"
     },
     {
       "path": "buff_61_native.json"
@@ -689,6 +1858,9 @@
     },
     {
       "path": "buff_69_native.json"
+    },
+    {
+      "path": "buff_78_native.json"
     },
     {
       "path": "buff_7c_native.json"
@@ -718,6 +1890,9 @@
       "path": "buff_a2_native.json"
     },
     {
+      "path": "buff_ad_native.json"
+    },
+    {
       "path": "buff_a9_native.json"
     },
     {
@@ -728,6 +1903,9 @@
     },
     {
       "path": "buff_b6_native.json"
+    },
+    {
+      "path": "buff_b9_native.json"
     },
     {
       "path": "buff_c0_native.json"
@@ -754,15 +1932,306 @@
       "path": "buff_fe_native.json"
     },
     {
+      "path": "buff_15b_native.json"
+    },
+    {
+      "path": "buff_17c_native.json"
+    },
+    {
+      "path": "buff_e0_native.json"
+    },
+    {
+      "path": "buff_157_native.json"
+    },
+    {
+      "path": "buff_19e_native.json"
+    },
+    {
       "path": "buff_frontier8.json"
     },
     {
+      "path": "buff_frontier9.json"
+    },
+    {
+      "path": "skill_custom_root_motion_native.json"
+    },
+    {
+      "path": "skill_timeline_enemy_warning_native.json"
+    },
+    {
+      "path": "skill_timeline_finish_angry_native.json"
+    },
+    {
+      "path": "skill_snap_to_target_with_range_native.json"
+    },
+    {
+      "path": "skill_timeline_push_back_native.json"
+    },
+    {
+      "path": "skill_timeline_tick_interval_native.json"
+    },
+    {
+      "path": "skill_timeline_camera_rotate_native.json"
+    },
+    {
+      "path": "skill_timeline_gain_breaking_attack_atb_native.json"
+    },
+    {
+      "path": "skill_timeline_curve_evaluate_float_native.json"
+    },
+    {
+      "path": "skill_timeline_command_to_characters_native.json"
+    },
+    {
+      "path": "skill_timeline_receive_move_input_native.json"
+    },
+    {
+      "path": "skill_timeline_check_combo_skill_camera_alpha_native.json"
+    },
+    {
+      "path": "skill_timeline_check_has_move_input_native.json"
+    },
+    {
+      "path": "buff_184_native.json"
+    },
+    {
+      "path": "buff_52_native.json"
+    },
+    {
+      "path": "skill_timeline_break_interactive_native.json"
+    },
+    {
+      "path": "skill_timeline_inherit_buff_native.json"
+    },
+    {
+      "path": "buff_178_native.json"
+    },
+    {
+      "path": "buff_4c_native.json"
+    },
+    {
+      "path": "skill_timeline_animated_camera_native.json"
+    },
+    {
+      "path": "skill_timeline_hide_ui_native.json"
+    },
+    {
+      "path": "skill_timeline_move_to_location_native.json"
+    },
+    {
+      "path": "skill_timeline_ultimate_time_native.json"
+    },
+    {
+      "path": "skill_timeline_ultimate_show_native.json"
+    },
+    {
+      "path": "skill_timeline_channeling_casting_native.json"
+    },
+    {
+      "path": "skill_timeline_modify_weapon_mount_point_native.json"
+    },
+    {
+      "path": "skill_timeline_raycast_effect_native.json"
+    },
+    {
+      "path": "skill_timeline_pick_target_native.json"
+    },
+    {
+      "path": "skill_timeline_do_once_native.json"
+    },
+    {
+      "path": "skill_timeline_check_skill_camera_motion_free_native.json"
+    },
+    {
+      "path": "skill_timeline_check_target_angle_native.json"
+    },
+    {
+      "path": "skill_timeline_move_to_target_native.json"
+    },
+    {
+      "path": "skill_timeline_jump_to_target_native.json"
+    },
+    {
+      "path": "skill_timeline_elite_back_swing_be_hit_native.json"
+    },
+    {
+      "path": "skill_timeline_get_target_buff_bb_advanced_native.json"
+    },
+    {
+      "path": "skill_timeline_launch_upward_native.json"
+    },
+    {
+      "path": "skill_timeline_change_skill_native.json"
+    },
+    {
+      "path": "skill_timeline_combo_action_native.json"
+    },
+    {
+      "path": "skill_timeline_store_cur_skill_execute_frame_native.json"
+    },
+    {
+      "path": "skill_timeline_skill_ai_move_native.json"
+    },
+    {
+      "path": "skill_timeline_bone_attach_native.json"
+    },
+    {
+      "path": "skill_timeline_ignore_model_interval_check_native.json"
+    },
+    {
+      "path": "skill_timeline_knock_down_native.json"
+    },
+    {
+      "path": "skill_timeline_target_postprocessor_native.json"
+    },
+    {
+      "path": "skill_timeline_typhoea_archery_chip_native.json"
+    },
+    {
+      "path": "buff_16b_native.json"
+    },
+    {
+      "path": "skill_timeline_tick_interval_v2_native.json"
+    },
+    {
+      "path": "skill_timeline_remove_ai_marker_native.json"
+    },
+    {
+      "path": "skill_timeline_check_buff_id_context_advanced_native.json"
+    },
+    {
+      "path": "buff_57_native.json"
+    },
+    {
+      "path": "skill_timeline_physics_cast_native.json"
+    },
+    {
+      "path": "skill_timeline_check_target_contains_native.json"
+    },
+    {
+      "path": "levelscript_union_tags.json"
+    },
+    {
       "path": "../memorypack/buff_actions.py"
+    },
+    {
+      "path": "../memorypack/skill_allow_next_skill.py"
+    },
+    {
+      "path": "../memorypack/skill_timeline_fixed_four.py"
+    },
+    {
+      "path": "skill_timeline_check_origin_skill_type_native.json"
+    },
+    {
+      "path": "skill_timeline_save_move_axis_angle_native.json"
+    },
+    {
+      "path": "skill_timeline_move_to_direction_native.json"
+    },
+    {
+      "path": "skill_timeline_check_spell_infliction_type_native.json"
+    },
+    {
+      "path": "skill_timeline_check_heal_tag_native.json"
+    },
+    {
+      "path": "skill_timeline_check_consume_buff_layer_native.json"
+    },
+    {
+      "path": "skill_timeline_check_obtain_atb_type_native.json"
+    },
+    {
+      "path": "skill_timeline_check_global_cd_timer_native.json"
+    },
+    {
+      "path": "skill_timeline_add_global_cd_timer_native.json"
+    },
+    {
+      "path": "skill_timeline_play_animation_step_native.json"
+    },
+    {
+      "path": "skill_timeline_check_physical_infliction_type_native.json"
+    },
+    {
+      "path": "skill_timeline_create_buff_attaching_skill_native.json"
+    },
+    {
+      "path": "skill_timeline_inherit_ccs_native.json"
+    },
+    {
+      "path": "skill_timeline_channeling_damage_native.json"
+    },
+    {
+      "path": "skill_timeline_check_hit_collider_options_native.json"
+    },
+    {
+      "path": "skill_timeline_compare_deck_attr_native.json"
+    },
+    {
+      "path": "skill_timeline_check_buff_stack_num_by_tag_native.json"
+    },
+    {
+      "path": "skill_timeline_force_spell_status_native.json"
+    },
+    {
+      "path": "skill_timeline_additional_battle_shape_native.json"
+    },
+    {
+      "path": "skill_timeline_force_hide_head_bar_native.json"
+    },
+    {
+      "path": "skill_timeline_modify_camera_lock_point_native.json"
+    },
+    {
+      "path": "skill_timeline_apply_armor_native.json"
+    },
+    {
+      "path": "skill_timeline_blight_miasma_tolerance_zero_native.json"
+    },
+    {
+      "path": "skill_timeline_block_move_interrupt_skill_native.json"
+    },
+    {
+      "path": "skill_timeline_channeling_v2_native.json"
+    },
+    {
+      "path": "skill_timeline_char_follow_action_native.json"
+    },
+    {
+      "path": "skill_timeline_override_born_position_native.json"
+    },
+    {
+      "path": "skill_timeline_refresh_head_bar_show_hide_native.json"
+    },
+    {
+      "path": "skill_timeline_take_down_native.json"
+    },
+    {
+      "path": "skill_timeline_throw_pickup_item_native.json"
+    },
+    {
+      "path": "skill_timeline_throw_pickup_item_start_native.json"
+    },
+    {
+      "path": "skill_timeline_finish_buff_by_tag_native.json"
+    },
+    {
+      "path": "skill_selector_finder_typhoea_native.json"
+    },
+    {
+      "path": "skill_selector_validator_in_screen_native.json"
+    },
+    {
+      "path": "skill_nested_interactive_key_validator_native.json"
+    },
+    {
+      "path": "buff_frontier7.json"
     }
   ],
   "evidenceBoundary": {
-    "exact": "Each allowed route composes an existing byte-pinned current-build formatter contract with the maintained finite structural reader. The shared decoder admits only listed physical tags/member counts and exact cursors. Byte-pinned action dependencies admit a first root only when the complete finite grammar rejoins the authenticated top-level cursor. This includes the broad Damage, Effect and FindTarget roots and the lower-frequency exact roots listed in rootTags. Tag 0x0118 pins PlayPerfectDodgeAnim and its six stored fields; C9 additionally pins its switch route and mechanically validated nested SequenceActionData MethodSpec/provider chain.",
-    "direct": "The first root is restricted to the listed authenticated routes; every listed root is admitted only where its complete nested body reaches the independent following cursor. Nested and later actions must also be in allowedReachedRoutes. IfElseAction requires the pinned SequenceActionData provider chain; JumpToAction reuses that provider; SetAbilityEntityTarget uses the pinned TargetSettings provider.",
+    "exact": "Each allowed route composes an existing byte-pinned current-build formatter contract with the maintained finite structural reader. The shared decoder admits only listed physical tags/member counts and exact cursors. Byte-pinned action dependencies admit a first root only when the complete finite grammar rejoins the authenticated top-level cursor. This includes the broad Damage, Effect and FindTarget roots and the lower-frequency exact roots listed in rootTags. Tag 0x0023 uses the pinned BroadcastAlertToCharactersAction formatter, its eleven ordered source reads, and the finite SkillAlertData reader. Tags 0x0056, 0x005B, 0x0078 and 0x0082 use the pinned Buff action source orders in their listed dependencies; reached passive-map records still require an exact enclosing cursor. Tag 0x00AA has an independently pinned EnemyWarningAction dispatcher, eighteen source calls and five nested generic contexts. Tag 0x0118 pins PlayPerfectDodgeAnim and its six stored fields; tag 0x0159 uses the pinned SetSuperArmorAction member-seven source order. C9 additionally pins its switch route and mechanically validated nested SequenceActionData MethodSpec/provider chain.",
+    "direct": "The first root is restricted to the listed authenticated routes; every listed root is admitted only where its complete nested body reaches the independent following cursor. Nested and later actions must also be in allowedReachedRoutes. The reached 0x0023 later records advance to independent following TimelineActionData boundaries under the selected native input and authenticated source-byte gates. IfElseAction requires the pinned SequenceActionData provider chain; JumpToAction reuses that provider; SetAbilityEntityTarget uses the pinned TargetSettings provider.",
     "structuralOnly": "Anonymous nested member kinds retain the dependency contract boundary; union wrapper identity and record extent are named, while gameplay meaning is not inferred.",
     "unresolved": "Any listed root with an unsupported nested profile remains bounded at its first unresolved child. C9 branches containing subtype-one nested profiles, positive DamageUnit member-ten GameplayTag lists, or positive EffectActionCfg arrays remain bounded and unsupported."
   },

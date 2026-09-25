@@ -25,6 +25,32 @@ from scripts.game_data.memorypack.buff import (
 from scripts.game_data.memorypack.buff_actions import event_prefix
 from scripts.game_data.memorypack.buff_icon_config import validate_current_native_contract
 from scripts.game_data.memorypack import buff_named_schema
+from scripts.game_data.memorypack.buff_adding_cooldown import (
+    CHILD_CONTRACT_PATH as ADDING_COOLDOWN_CHILD_CONTRACT_PATH,
+    CONTRACT_PATH as ADDING_COOLDOWN_CONTRACT_PATH,
+    DEFAULT_DUMMYDLL_ROOT as ADDING_COOLDOWN_DUMMYDLL_ROOT,
+    ROOT_CONTRACT_PATH as ADDING_COOLDOWN_ROOT_CONTRACT_PATH,
+    decode_adding_cooldown,
+    validate_current_native_contract as validate_adding_cooldown_native_contract,
+)
+from scripts.game_data.memorypack.buff_dispel_config import (
+    CONTRACT_PATH as DISPEL_CONFIG_CONTRACT_PATH,
+    ROOT_CONTRACT_PATH as DISPEL_CONFIG_ROOT_CONTRACT_PATH,
+    decode_dispel_config,
+    validate_current_native_contract as validate_dispel_config_native_contract,
+)
+from scripts.game_data.memorypack.buff_stacking_compact_native import (
+    CONTRACT_PATH as STACKING_COMPACT_CONTRACT_PATH,
+    ROOT_CONTRACT_PATH as STACKING_COMPACT_ROOT_CONTRACT_PATH,
+    decode_stacking_settings_compact,
+    validate_current_native_contract as validate_stacking_compact_native_contract,
+)
+from scripts.game_data.memorypack.buff_timeline_empty_native import (
+    CONTRACT_PATH as TIMELINE_EMPTY_CONTRACT_PATH,
+    ROOT_CONTRACT_PATH as TIMELINE_EMPTY_ROOT_CONTRACT_PATH,
+    decode_empty_timeline_suffix,
+    validate_current_native_contract as validate_timeline_empty_native_contract,
+)
 from scripts.game_data.memorypack.buff_residual_actions import (
     frame_buff_named_middle,
     root_continuation,
@@ -37,9 +63,10 @@ PREFIX='Data/Json/BuffData/'
 PATTERN=re.compile(r'^Data/Json/BuffData/[^/]+[.]json$')
 BOUNDARY=('Authenticated current VFS logical bytes and the current generated 30-field wrapper order. '
           'The first six fields and supported middle fields advance real cursors; the accepted id marker '
-          'starts the named field-15-to-29 suffix that closes at EOF. Positive modifier lists and nested '
+          'starts the named field-15-to-29 suffix that closes at EOF. The null/empty timeline list joins the '
+          'following exact tail under selected native ownership; positive timeline bodies retain their structural endpoint. Positive modifier lists and nested '
           'damage/heal modifier and action bodies remain explicit opaque or unsupported boundaries. The nested '
-          '19-member iconConfig is exact under its current-build native contract. Runtime behavior and '
+          '19-member iconConfig and raw-eight dispelConfig children are exact under their current-build native contracts. Runtime behavior and '
           'whole-schema exactness are not promoted.')
 
 
@@ -68,7 +95,13 @@ def select_rows(rows, *, expected_input):
     return vfs.family_rows(rows,expected_input=expected_input,prefix=PREFIX,pattern=PATTERN,label='buff')
 
 
-def frame_candidates(data: bytes, *, source: str) -> dict:
+def frame_candidates(
+    data: bytes, *, source: str,
+    adding_cooldown_native_validation: dict | None = None,
+    dispel_config_native_validation: dict | None = None,
+    stacking_compact_native_validation: dict | None = None,
+    timeline_empty_native_validation: dict | None = None,
+) -> dict:
     result={'wholeSchemaExact':False,'candidates':[],'candidateCount':0,
             'eventPrefixStatus':'unsupported','rootContinuationStatus':'unsupported'}
     if not data or data[0]!=30:
@@ -88,6 +121,47 @@ def frame_candidates(data: bytes, *, source: str) -> dict:
             vfs._fail('buff-reader-false-eof',source=source,offset=at,expected=len(data),actual=end)
         prefix_probe=None;current_prefix=None;continuation=None;named_middle=None;named_suffix=None
         if accepted:
+            stacking_child = None
+            tag_child = None
+            timeline_empty_child = None
+            if (stacking_compact_native_validation or {}).get('status') == 'validated':
+                stacking = decoded.get('stackingSettings') or {}
+                tags = decoded.get('tagsAfterTriggerExtendBuffAction') or {}
+                if not stacking or not tags:
+                    vfs._fail('buff-stacking-compact-child-missing', source=source,
+                              offset=at, expected='stackingSettings and following GameplayTag array', actual=decoded.get('status'))
+                stacking_child = decode_stacking_settings_compact(
+                    data, int(stacking['offset'], 0),
+                    native_validation=stacking_compact_native_validation,
+                )
+                tag_start = int(tags['offset'], 0)
+                tag_end = int(tags['consumedEnd'], 0)
+                timeline_start = int(decoded['timelineActionsCountOffset'], 0)
+                if stacking_child['consumedEnd'] != tag_start or tag_end != timeline_start:
+                    vfs._fail('buff-stacking-compact-child-join', source=source,
+                              offset=stacking_child['consumedEnd'], expected=[tag_start, timeline_start], actual=tag_end)
+                tag_child = {'status': 'exact-raw-array', 'startOffset': tag_start,
+                             'consumedEnd': tag_end, 'count': tags['count'],
+                             'tagIdsRaw': tags['tagIdsRaw'],
+                             'boundary': 'Selected native raw GameplayTag array; no tag names or runtime meaning.'}
+            if ((timeline_empty_native_validation or {}).get('status') == 'validated'
+                    and decoded.get('timelineActionsCount') in (-1, 0)):
+                timeline_start = int(decoded['timelineActionsCountOffset'], 0)
+                timeline_empty_child = decode_empty_timeline_suffix(
+                    data, timeline_start,
+                    native_validation=timeline_empty_native_validation,
+                )
+                tag_end = int(decoded['tagsAfterTriggerExtendBuffAction']['consumedEnd'], 0)
+                trigger_start = int(decoded['triggerInterval']['offset'], 0)
+                if (tag_end != timeline_start
+                        or timeline_empty_child['count'] != decoded['timelineActionsCount']
+                        or timeline_empty_child['followingStart'] != trigger_start
+                        or timeline_empty_child['followingEnd'] != len(data)):
+                    vfs._fail('buff-timeline-empty-child-join', source=source,
+                              offset=timeline_start, expected=[tag_end, trigger_start, len(data)],
+                              actual=[timeline_empty_child['count'],
+                                      timeline_empty_child['followingStart'],
+                                      timeline_empty_child['followingEnd']])
             current_prefix=event_prefix(data,source=source,limit=at)
             _profile_boundary(current_prefix,file_length=len(data))
             if current_prefix['status']=='supported-prefix':
@@ -95,10 +169,36 @@ def frame_candidates(data: bytes, *, source: str) -> dict:
                     data,source=source,start=current_prefix['consumedEnd'],limit=at,
                 )
                 _profile_boundary(continuation,file_length=len(data))
+                if (adding_cooldown_native_validation or {}).get('status') == 'validated':
+                    named = next((field for field in continuation['namedFields']
+                                  if field['index'] == 1 and field['name'] == 'addingCooldown'), None)
+                    if named is not None:
+                        try:
+                            named['nestedProfile'] = decode_adding_cooldown(
+                                data, named['start'], named['end'],
+                                native_validation=adding_cooldown_native_validation,
+                            )
+                        except ValueError as exc:
+                            vfs._fail('buff-adding-cooldown-child', source=source,
+                                      offset=named['start'], expected='exact named child cursor',
+                                      actual=str(exc))
                 if continuation['status']=='supported-prefix':
                     named_middle=frame_buff_named_middle(
                         data,continuation['consumedEnd'],at,
                     )
+                    if (dispel_config_native_validation or {}).get('status') == 'validated':
+                        named = next((field for field in named_middle.get('namedFields', [])
+                                      if field['index'] == 7 and field['name'] == 'dispelConfig'), None)
+                        if named is not None:
+                            try:
+                                named['nestedProfile'] = decode_dispel_config(
+                                    data, named['start'], named['end'],
+                                    native_validation=dispel_config_native_validation,
+                                )
+                            except ValueError as exc:
+                                vfs._fail('buff-dispel-config-child', source=source,
+                                          offset=named['start'], expected='exact named raw-eight child',
+                                          actual=str(exc))
             prefix=decode_buff_pre_id_modifier_prefix(data,at)
             prefix_end=prefix.get('endOffset')
             stop=int(prefix_end,0) if isinstance(prefix_end,str) else None
@@ -122,6 +222,9 @@ def frame_candidates(data: bytes, *, source: str) -> dict:
                 ],
                 'opaqueNestedRanges':buff_named_schema.suffix_opaque_ranges(decoded,length=len(data)),
                 'fieldOrderSource':'current generated BuffDataForMemoryPack setter order',
+                'stackingSettingsNativeChild':stacking_child,
+                'tagArrayNativeChild':tag_child,
+                'timelineEmptyNativeChild':timeline_empty_child,
                 'opaqueNestedFields':[
                     name for name,key in (
                         ('igniteEventAction','igniteEventActionBodyStatus'),
@@ -188,7 +291,10 @@ def frame_candidates(data: bytes, *, source: str) -> dict:
         'coverageStatus':'unsupported' if count==0 else 'ambiguous' if count>1 else 'unique'}
 
 
-def join_and_frame(ledger, stream, *, stderr):
+def join_and_frame(ledger, stream, *, stderr, adding_cooldown_native_validation=None,
+                   dispel_config_native_validation=None,
+                   stacking_compact_native_validation=None,
+                   timeline_empty_native_validation=None):
     by_path={row['virtualPath']:row for row in ledger};seen=set();results=[]
     if len(by_path)!=len(ledger):vfs._fail('duplicate-buff-ledger',source='join')
     for index,row in enumerate(stream):
@@ -205,7 +311,13 @@ def join_and_frame(ledger, stream, *, stderr):
         if len(data)!=length or length!=identity['length']:vfs._fail('stream-length-mismatch',source=path,expected=identity['length'],actual=[length,len(data)])
         md5=hashlib.md5(data).hexdigest().upper()
         if md5!=identity['recomputedFileDataMd5']:vfs._fail('stream-ledger-md5-mismatch',source=path,expected=identity['recomputedFileDataMd5'],actual=md5)
-        try:framed=frame_candidates(data,source=path)
+        try:framed=frame_candidates(
+            data, source=path,
+            adding_cooldown_native_validation=adding_cooldown_native_validation,
+            dispel_config_native_validation=dispel_config_native_validation,
+            stacking_compact_native_validation=stacking_compact_native_validation,
+            timeline_empty_native_validation=timeline_empty_native_validation,
+        )
         except (ValueError,IndexError,KeyError,OverflowError,struct.error) as exc:
             framed={'coverageStatus':'failed','wholeSchemaExact':False,'candidateCount':0,
                 'diagnostic':getattr(exc,'diagnostic',{'source':path,'offset':None,'expected':'bounded suffix-candidate reader','actual':f'{type(exc).__name__}: {exc}'})}
@@ -283,6 +395,13 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
     expected=expected_input_set_sha256.upper()
     native_validation=validate_current_native_contract()
     residual_validation=validate_residual_native_contract()
+    adding_cooldown_validation=validate_adding_cooldown_native_contract()
+    dispel_config_validation=validate_dispel_config_native_contract()
+    stacking_compact_validation=validate_stacking_compact_native_contract()
+    timeline_empty_validation=validate_timeline_empty_native_contract()
+    if stacking_compact_validation.get('status') != 'validated':
+        vfs._fail('buff-stacking-compact-native-validation', source=str(STACKING_COMPACT_CONTRACT_PATH),
+                  expected='validated', actual=stacking_compact_validation)
     expected_frontier_rows={
         'residual':[0x21,0x100,0x15F],
         'frontier6':[0x2A,0x9E,0xD7,0xE4,0x111,0x12F,0x18D],
@@ -303,12 +422,40 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
     outer,_,files,provenance=vfs._read_outer_and_ledger(outer_path,ledger_path,expected_input_set_sha256=expected)
     selected=select_rows(files,expected_input=expected)
     def snapshot():
+        adding_cooldown_sources = (
+            ADDING_COOLDOWN_CONTRACT_PATH,
+            ADDING_COOLDOWN_ROOT_CONTRACT_PATH,
+            ADDING_COOLDOWN_CHILD_CONTRACT_PATH,
+            ADDING_COOLDOWN_DUMMYDLL_ROOT / 'generation.json',
+            ADDING_COOLDOWN_DUMMYDLL_ROOT / 'MemoryPack.Beyond.dll',
+        )
+        dispel_config_sources = (
+            DISPEL_CONFIG_CONTRACT_PATH,
+            DISPEL_CONFIG_ROOT_CONTRACT_PATH,
+            Path(decode_dispel_config.__code__.co_filename),
+        )
+        stacking_compact_sources = (
+            STACKING_COMPACT_CONTRACT_PATH,
+            STACKING_COMPACT_ROOT_CONTRACT_PATH,
+            Path(decode_stacking_settings_compact.__code__.co_filename),
+        )
+        timeline_empty_sources = (
+            TIMELINE_EMPTY_CONTRACT_PATH,
+            TIMELINE_EMPTY_ROOT_CONTRACT_PATH,
+            Path(decode_empty_timeline_suffix.__code__.co_filename),
+        )
         return {'selectedChunkFingerprints':vfs._chunk_fingerprints(selected),
             'selectedChunkResolution':vfs._chunk_selection_snapshot(selected,outer),
             'streamToolFingerprints':vfs._stream_tool_snapshot(cli_path),
             'parser':vfs._parser_source_snapshots(Path(__file__)),
             'buffFrontiersNative':[vfs._fingerprint(Path(buff_frontiers.__file__))]+[
                 vfs._fingerprint(spec.path) for spec in buff_frontiers.FRONTIERS.values()],
+            'buffAddingCooldownSources':[
+                vfs._fingerprint(path) if path.is_file() else {'path':str(path),'status':'missing'}
+                for path in adding_cooldown_sources],
+            'buffDispelConfigSources':[vfs._fingerprint(path) for path in dispel_config_sources],
+            'buffStackingCompactSources':[vfs._fingerprint(path) for path in stacking_compact_sources],
+            'buffTimelineEmptySources':[vfs._fingerprint(path) for path in timeline_empty_sources],
             'buffNamedSchema':vfs._fingerprint(Path(buff_named_schema.__file__)),
             'corpusGate':vfs._fingerprint(Path(__file__))}
     before=snapshot()
@@ -316,6 +463,11 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
         vfs._fail('stream-cli-not-in-outer-build-fingerprints',source=str(cli_path))
     protected=[outer_path,ledger_path,Path(outer['primaryAssets']),Path(outer['fallbackAssets'])]
     protected.append(Path(buff_named_schema.__file__))
+    protected.extend(Path(row['path']) for row in before['buffAddingCooldownSources']
+                     if row.get('status') != 'missing')
+    protected.extend(Path(row['path']) for row in before['buffDispelConfigSources'])
+    protected.extend(Path(row['path']) for row in before['buffStackingCompactSources'])
+    protected.extend(Path(row['path']) for row in before['buffTimelineEmptySources'])
     # Many logical files share a chunk; protect every distinct physical input once.
     protected += [Path(path) for path in sorted({r['physicalChunkPath'] for r in files if r.get('physicalChunkPath')})]
     for group in (provenance['sourceFingerprints'],provenance['buildFingerprints'],before['streamToolFingerprints'],before['parser']):
@@ -325,7 +477,13 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
         if len({str(p.resolve()) for p in outputs})!=len(outputs):vfs._fail('duplicate-output',source='BuffData outputs')
     guard()
     stream,stderr=_read_stream_rows(_stream_command(cli_path,outer))
-    rows=join_and_frame(selected,stream,stderr=stderr)
+    rows=join_and_frame(
+        selected,stream,stderr=stderr,
+        adding_cooldown_native_validation=adding_cooldown_validation,
+        dispel_config_native_validation=dispel_config_validation,
+        stacking_compact_native_validation=stacking_compact_validation,
+        timeline_empty_native_validation=timeline_empty_validation,
+    )
     _,_,end_files,end_provenance=vfs._read_outer_and_ledger(outer_path,ledger_path,expected_input_set_sha256=expected)
     after=snapshot()
     comparisons={'outer':(provenance,end_provenance),'selectedLedger':(selected,select_rows(end_files,expected_input=expected))}
@@ -390,6 +548,10 @@ def build_current_census(*,outer_path,ledger_path,cli_path,expected_input_set_sh
         'provenance':{**provenance,**before,
             'buffIconConfigNativeValidation':native_validation,
             'buffResidualActionsNativeValidation':residual_validation,
+            'buffAddingCooldownNativeValidation':adding_cooldown_validation,
+            'buffDispelConfigNativeValidation':dispel_config_validation,
+            'buffStackingCompactNativeValidation':stacking_compact_validation,
+            'buffTimelineEmptyNativeValidation':timeline_empty_validation,
             'buffFrontiersNativeValidation':frontier_validations},'evidenceBoundary':BOUNDARY,
         'summary':{'filesSelected':len(selected),'filesSucceeded':counts['unique']+counts['ambiguous'],
             'filesFailed':counts['failed'],'filesUnsupported':counts['unsupported'],

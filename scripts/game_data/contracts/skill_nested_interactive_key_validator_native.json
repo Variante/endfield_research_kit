@@ -1,0 +1,48 @@
+{
+  "schema": "endfield.skill-nested-interactive-key-validator-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 1,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 8,
+    "switchTableRva": 66919388,
+    "switchEntryCount": 13,
+    "switchTableSha256": "C738323AAA09F0D3E1BA108B8FFD20300DB9249389D6CFAA684B8D2FC206C11F",
+    "switchTargetRva": 83215866,
+    "routeWindow": {
+      "startRva": 83215866,
+      "endRva": 83215916,
+      "sha256": "E84A28E1D6157B63CAE1FDAE6E06E06813BCF7027FAB49227D890BDB078B17FF",
+      "boundary": "selected validator tag-8 route through registered wrapper type-cell load"
+    },
+    "usageCellRva": 217991528,
+    "usageRawHex": "5144032000000000",
+    "registeredTypeIndex": 107048,
+    "wrapperTypeDefinition": 23013,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InteractiveKeyValidator_DataForMemoryPack"
+  },
+  "methods": [
+    [166949, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InteractiveKeyValidator_DataForMemoryPack", "Deserialize", 158090780],
+    [166950, "Beyond.MemoryPack.Beyond_Gameplay_Core_Selector_InteractiveKeyValidator_DataForMemoryPack+Beyond_Gameplay_Core_Selector_InteractiveKeyValidator_DataForMemoryPackFormatter", "Deserialize", 158090552]
+  ],
+  "codeWindows": [
+    {"startRva": 158090780, "endRva": 158091062, "sha256": "1575F10D4CDCDB585094A739EB992B65F3810B02AE57C9CCAB3A6B523481DFB5", "boundary": "selected one-member reader through normal return and error rejoin"},
+    {"startRva": 158090552, "endRva": 158090641, "sha256": "1CAA2218639340EB36DD1C37076A81A979DE65E8755727F19FC2EA17046C65D9", "boundary": "formatter initialization and forwarding through tail jump"}
+  ],
+  "memberCountInstruction": {"rva": 158090941, "hex": "807C243801"},
+  "orderedSourceReads": [
+    {"memberIndex": 0, "fieldName": "interactiveKey", "readKind": "byte-payload", "sourceCallsiteRva": 158090954, "sourceCallHex": "E831405EF9", "sourceTargetRva": 46827264}
+  ],
+  "setterMethods": [[166946, "set___interactiveKey__", "System.String"]],
+  "catalogContract": "levelscript_union_tags.json",
+  "evidenceBoundary": {
+    "exact": "The selected SelectorValidator tag-8 route, registered wrapper, one-member check, direct source call, and string setter match the pinned installed native inputs.",
+    "direct": "The one stored member is a signed-length byte payload. The route has a separate null-wrapper branch and does not add other source members.",
+    "structuralOnly": "The key bytes and nullable state do not establish interactive-object matching or selection behavior.",
+    "unresolved": "Live formatter branch selection, allocation/refill/error parity and enclosing SkillData EOF remain separate."
+  }
+}

@@ -7,6 +7,7 @@ import math
 import re
 import struct
 from collections import Counter
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -342,30 +343,6 @@ def read_buff_trigger_interval_bool_tail_exact(
     return trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, offset
 
 
-def read_buff_member1_empty_tag_field(
-    data: bytes,
-    offset: int,
-    field_name: str,
-) -> tuple[dict[str, Any], int]:
-    start = offset
-    end = offset + 9
-    if end > len(data):
-        raise ValueError(f"{field_name}:truncated-member1-empty-payload")
-    member_count = data[offset]
-    if member_count != 1:
-        raise ValueError(f"{field_name}:member-count={member_count}")
-    if data[offset + 1:end] != b"\x00" * 8:
-        raise ValueError(f"{field_name}:member1-nonzero-empty-payload")
-    return {
-        "memberCount": member_count,
-        "offset": format_offset(start),
-        "branch": "member1-empty-payload",
-        "branchNote": "single observed member-count-1 tag payload carries two zero u32 values before triggerInterval",
-        "tagId": 0,
-        "tagName": "",
-    }, end
-
-
 BUFF_ABILITY_ACTION_TAG_SOURCE_NOTE = (
     "AbilityActionData union tags recovered from the selected current-build "
     "MemoryPack.Beyond formatter cctor; the current table is contiguous 0x0000..0x0181. "
@@ -448,88 +425,6 @@ BUFF_ABILITY_ACTION_TAG_NAMES = {
     0x017c: "Core_TeleportAction_Data",
     0x0181: "Core_TickIntervalAction_Data",
     0x0183: "Core_TimeDilationAction_Data",
-}
-
-
-# Keyed by the current tag of each action's name. The count is the layout the
-# decoders were reviewed against; an action whose current wrapper has a
-# different member count fails closed at the item header rather than being
-# read with a stale layout.
-BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS = {
-    0x0006: 5,
-    0x0002: 12,
-    0x0008: 50,
-    0x000a: 7,
-    0x000b: 8,
-    0x0016: 24,
-    0x001c: 15,
-    0x0024: 12,
-    0x0027: 9,
-    0x002f: 10,
-    0x0035: 15,
-    0x003c: 10,
-    0x003f: 7,
-    0x0042: 10,
-    0x0044: 6,
-    0x0050: 7,
-    0x0056: 8,
-    0x0057: 8,
-    0x0058: 8,
-    0x005b: 6,
-    0x005d: 5,
-    0x0065: 8,
-    0x0068: 5,
-    0x0069: 6,
-    0x006a: 8,
-    0x006e: 8,
-    0x0076: 5,
-    0x007b: 7,
-    0x007c: 6,
-    0x0080: 6,
-    0x0081: 9,
-    0x0088: 5,
-    0x008a: 19,
-    0x008c: 12,
-    0x0092: 19,
-    0x0096: 9,
-    0x0099: 23,
-    0x009a: 11,
-    0x009b: 9,
-    0x00a2: 17,
-    0x00b2: 18,
-    0x00b4: 13,
-    0x00b6: 6,
-    0x00c1: 6,
-    0x00c7: 12,
-    0x00c9: 8,
-    0x00d4: 8,
-    0x00de: 34,
-    0x00e0: 14,
-    0x00ec: 10,
-    0x00f6: 43,
-    0x00fd: 4,
-    0x00fe: 18,
-    0x0104: 12,
-    0x010c: 6,
-    0x0115: 16,
-    0x0119: 22,
-    0x011c: 18,
-    0x0126: 5,
-    0x0128: 11,
-    0x0142: 11,
-    0x0144: 18,
-    0x0145: 6,
-    0x0157: 11,
-    0x015e: 8,
-    0x0160: 10,
-    0x0163: 8,
-    0x0169: 37,
-    0x016a: 15,
-    0x016b: 6,
-    0x016d: 8,
-    0x017c: 13,
-    0x0181: 9,
-    0x0183: 16,
 }
 
 
@@ -1383,6 +1278,17 @@ def frame_buff_named_middle(
     return result
 
 
+@lru_cache(maxsize=1)
+def _gameplay_stacking_native_validated() -> bool:
+    # Gameplay projects this newly named child field only after the selected
+    # installed build has authenticated its root-to-child source join. Cache
+    # the expensive native input hashes once for a builder process.
+    from scripts.game_data.memorypack.buff_stacking_compact_native import (
+        validate_current_native_contract,
+    )
+    return validate_current_native_contract().get("status") == "validated"
+
+
 def buff_gameplay_semantics(path: Path) -> dict[str, Any]:
     """Build the compact, fail-closed BuffData view consumed by Gameplay.
 
@@ -1460,6 +1366,10 @@ def buff_gameplay_semantics(path: Path) -> dict[str, Any]:
                 "identifierTypeName": BUFF_STACK_IDENTIFIER_TYPE_NAMES.get(identifier_value, "Unknown"),
                 "stackingType": stacking_value,
                 "stackingTypeName": BUFF_STACKING_TYPE_NAMES.get(stacking_value, "Unknown"),
+                **({"stackingKey": stacking["stackingKey"]}
+                   if isinstance(stacking.get("stackingKey"), str)
+                   and stacking["stackingKey"]
+                   and _gameplay_stacking_native_validated() else {}),
                 "maxStackCnt": stacking.get("maxStackCnt"),
                 "maxStackCntKey": stacking.get("maxStackCntKey"),
                 "useMaxStackCntKey": stacking.get("useMaxStackCntKey"),
@@ -4875,8 +4785,12 @@ def read_buff_ability_action_item_header(
     if member_count_offset >= limit:
         return None
     member_count = data[member_count_offset]
-    expected_member_count = BUFF_ABILITY_ACTION_TAG_MEMBER_COUNTS.get(tag)
-    if expected_member_count is None or member_count != expected_member_count:
+    expected_pair = union_tags.pair("AbilityActionData", BUFF_ABILITY_ACTION_TAG_NAMES[tag])
+    if (
+        not isinstance(expected_pair[0], int)
+        or expected_pair[0] != tag
+        or member_count != expected_pair[1]
+    ):
         return None
     return tag, tag_width, member_count
 
@@ -7417,129 +7331,30 @@ def buff_post_id_result_is_exact_tail(result: dict[str, Any]) -> bool:
     return result.get("status") == "parsed-through-exact-tail" and not result.get("tailParseStatus")
 
 
-def read_buff_compact_empty_tag_field(
-    data: bytes,
-    offset: int,
-    field_name: str,
-) -> tuple[dict[str, Any], int]:
-    end = offset + 5
-    if end > len(data):
-        raise ValueError(f"{field_name}:truncated-compact-empty-payload")
-    if data[offset:end] != b"\x00\x00\x00\x00\x00":
-        raw = data[offset] if offset < len(data) else None
-        raise ValueError(f"{field_name}:not-compact-empty-member-count={raw}")
-    return {
-        "memberCount": 0,
-        "offset": format_offset(offset),
-        "branch": "compact-empty-payload",
-        "branchNote": "observed empty tag payload uses five zero bytes before timelineActionsCount",
-        "tagId": 0,
-        "tagName": "",
-    }, end
-
-
-def buff_tag_name_has_control(value: str) -> bool:
-    return any(ord(ch) < 32 for ch in value)
-
-
-def read_buff_compact_tag_list_field(
-    data: bytes,
-    offset: int,
-    field_name: str,
-) -> tuple[dict[str, Any], int]:
-    start = offset
-    if offset + 5 > len(data):
-        raise ValueError(f"{field_name}:truncated-compact-tag-list")
-    prefix_member_count = data[offset]
-    if prefix_member_count != 0:
-        raise ValueError(f"{field_name}:compact-list-prefix={prefix_member_count}")
-    count = struct.unpack_from("<I", data, offset + 1)[0]
-    if count <= 0 or count > 16:
-        raise ValueError(f"{field_name}:compact-list-count={count}")
-    offset += 5
-    tags: list[dict[str, Any]] = []
-    for index in range(count):
-        tag, offset = read_buff_gameplay_tag_field(data, offset, f"{field_name}[{index}]")
-        if tag.get("memberCount") != 2:
-            raise ValueError(f"{field_name}[{index}]:member-count={tag.get('memberCount')}")
-        tag_name = str(tag.get("tagName") or "")
-        if not is_clean_skill_tag_name(tag_name):
-            raise ValueError(f"{field_name}[{index}]:unclean-tag-name")
-        tags.append(tag)
-    return {
-        "memberCount": prefix_member_count,
-        "offset": format_offset(start),
-        "branch": "compact-tag-list",
-        "branchNote": "observed tagsAfterTriggerExtendBuffAction list uses a zero prefix byte followed by u32 tag count",
-        "count": count,
-        "tags": tags,
-    }, offset
-
-
-def read_buff_compact_tag_id_list_field(
-    data: bytes,
-    offset: int,
-    field_name: str,
-) -> tuple[dict[str, Any], int]:
-    start = offset
-    if offset + 5 > len(data):
-        raise ValueError(f"{field_name}:truncated-compact-tag-id-list")
-    prefix_member_count = data[offset]
-    if prefix_member_count != 0:
-        raise ValueError(f"{field_name}:compact-id-list-prefix={prefix_member_count}")
-    count = struct.unpack_from("<I", data, offset + 1)[0]
-    if count <= 0 or count > 16:
-        raise ValueError(f"{field_name}:compact-id-list-count={count}")
-    offset += 5
-    end = offset + count * 4
-    if end > len(data):
-        raise ValueError(f"{field_name}:truncated-compact-tag-ids")
-    tag_ids = list(struct.unpack_from(f"<{count}I", data, offset))
-    if any(tag_id == 0 for tag_id in tag_ids):
-        raise ValueError(f"{field_name}:zero-compact-tag-id")
-    return {
-        "memberCount": prefix_member_count,
-        "offset": format_offset(start),
-        "branch": "compact-tag-id-list",
-        "branchNote": (
-            "observed tagsAfterTriggerExtendBuffAction list uses a zero prefix byte, "
-            "u32 count, and packed u32 gameplay-tag ids without inline names"
-        ),
-        "count": count,
-        "tagIds": [f"0x{tag_id:08x}" for tag_id in tag_ids],
-    }, end
-
-
 def read_buff_tags_after_trigger_field(
     data: bytes,
     offset: int,
 ) -> tuple[dict[str, Any], int]:
-    field_name = "tagsAfterTriggerExtendBuffAction"
-    try:
-        tag, end = read_buff_gameplay_tag_field(data, offset, field_name)
-        tag_name = str(tag.get("tagName") or "")
-        if tag.get("memberCount") == 0 and tag_name:
-            raise ValueError(f"{field_name}:member0-nonempty-tag")
-        if buff_tag_name_has_control(tag_name):
-            raise ValueError(f"{field_name}:control-tag-name")
-        return tag, end
-    except (struct.error, UnicodeDecodeError, ValueError):
-        pass
-
-    try:
-        return read_buff_member1_empty_tag_field(data, offset, field_name)
-    except (struct.error, UnicodeDecodeError, ValueError):
-        pass
-
-    try:
-        return read_buff_compact_empty_tag_field(data, offset, field_name)
-    except (struct.error, UnicodeDecodeError, ValueError):
-        pass
-
-    try:
-        return read_buff_compact_tag_list_field(data, offset, field_name)
-    except (struct.error, UnicodeDecodeError, ValueError):
-        return read_buff_compact_tag_id_list_field(data, offset, field_name)
+    start = offset
+    if offset + 4 > len(data):
+        raise ValueError("tagsAfterTriggerExtendBuffAction:truncated-count")
+    count = struct.unpack_from("<i", data, offset)[0]
+    if not -1 <= count <= 256:
+        raise ValueError(f"tagsAfterTriggerExtendBuffAction:count={count}")
+    offset += 4
+    end = offset + max(count, 0) * 4
+    if end > len(data):
+        raise ValueError("tagsAfterTriggerExtendBuffAction:truncated-packed-ids")
+    tag_ids = [struct.unpack_from("<I", data, offset + index * 4)[0]
+               for index in range(max(count, 0))]
+    return {
+        "offset": format_offset(start),
+        "branch": "raw-gameplay-tag-array",
+        "count": count,
+        "tagIdsRaw": tag_ids,
+        "consumedEnd": format_offset(end),
+        "boundary": "Selected native helper reads signed count and packed four-byte GameplayTag values; tag names and runtime use are unproved.",
+    }, end
 
 
 def parse_buff_tail_after_shield_configs(
@@ -7570,97 +7385,48 @@ def parse_buff_tail_after_shield_configs(
             data,
             tag_field_offset,
         )
-        if tags_after_trigger.get("branch") == "member1-empty-payload":
-            trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
-                read_buff_trigger_interval_bool_tail_exact(data, tail_offset)
-            )
-            result["status"] = "parsed-through-exact-tail"
-            result["stackingSettings"] = stacking_settings
-            result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
-            result["timelineActionsCount"] = 0
-            result["timelineActionsEncoding"] = "omitted-empty-count-after-member1-empty-tag"
-            result["triggerInterval"] = trigger_interval
-            result["useTimeDilationDt"] = use_time_dilation_dt
-            result["waitFirstTriggerInterval"] = wait_first_trigger_interval
-            result["endOffset"] = format_offset(tail_offset)
-            return result
-
         timeline_count_offset = tail_offset
+        result["timelineActionsCountOffset"] = format_offset(timeline_count_offset)
         timeline_action_count, tail_offset = read_buff_u32_field(
             data,
             tail_offset,
             "timelineActionsCount",
         )
         if timeline_action_count > 256:
-            try:
-                trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
-                    read_buff_trigger_interval_bool_tail_exact(data, timeline_count_offset)
-                )
-            except (struct.error, UnicodeDecodeError, ValueError):
-                raise ValueError(f"timelineActionsCount:large-count={timeline_action_count}")
-            result["status"] = "parsed-through-exact-tail"
-            result["stackingSettings"] = stacking_settings
-            result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
-            result["timelineActionsCount"] = 0
-            result["timelineActionsEncoding"] = "omitted-empty-count"
-            result["triggerInterval"] = trigger_interval
-            result["useTimeDilationDt"] = use_time_dilation_dt
-            result["waitFirstTriggerInterval"] = wait_first_trigger_interval
-            result["endOffset"] = format_offset(tail_offset)
-            return result
+            raise ValueError(f"timelineActionsCount:large-count={timeline_action_count}")
         if timeline_action_count:
             try:
-                trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
-                    read_buff_trigger_interval_bool_tail_exact(data, timeline_count_offset)
+                timeline_body_end, timeline_body_pattern = find_buff_timeline_actions_body_end(
+                    data, tail_offset, timeline_action_count,
                 )
-            except (struct.error, UnicodeDecodeError, ValueError):
-                try:
-                    timeline_body_end, timeline_body_pattern = find_buff_timeline_actions_body_end(
-                        data,
-                        tail_offset,
-                        timeline_action_count,
-                    )
-                    trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
-                        read_buff_trigger_interval_bool_tail_exact(data, timeline_body_end)
-                    )
-                except (struct.error, UnicodeDecodeError, ValueError):
-                    result["status"] = "parsed-through-timelineActionsCount"
-                    result["stackingSettings"] = stacking_settings
-                    result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
-                    result["timelineActionsCount"] = timeline_action_count
-                    result["tailParseStatus"] = "unparsed-timelineActions"
-                    result["tailParseOffset"] = format_offset(tail_offset)
-                    result["tailParseError"] = f"timelineActionsCount={timeline_action_count}"
-                    result["endOffset"] = format_offset(tail_offset)
-                    return result
-                result["status"] = "parsed-through-exact-tail"
+                trigger_interval, use_time_dilation_dt, wait_first_trigger_interval, tail_offset = (
+                    read_buff_trigger_interval_bool_tail_exact(data, timeline_body_end)
+                )
+            except (struct.error, UnicodeDecodeError, ValueError) as exc:
+                result["status"] = "parsed-through-timelineActionsCount"
                 result["stackingSettings"] = stacking_settings
                 result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
                 result["timelineActionsCount"] = timeline_action_count
-                try:
-                    result.update(decode_buff_timeline_actions_outer(
-                        data,
-                        timeline_count_offset + 4,
-                        timeline_action_count,
-                        timeline_body_end,
-                    ))
-                except (struct.error, UnicodeDecodeError, ValueError) as timeline_exc:
-                    result["timelineActionsBodyStatus"] = "opaque-timelineActions"
-                    result["timelineActionsSemanticStatus"] = f"partial-decode-failed:{timeline_exc}"
-                result["timelineActionsBodyOffset"] = format_offset(timeline_count_offset + 4)
-                result["timelineActionsBodyBytes"] = timeline_body_end - (timeline_count_offset + 4)
-                result["timelineActionsBodyPattern"] = f"0x{timeline_body_pattern:02x}"
-                result["triggerInterval"] = trigger_interval
-                result["useTimeDilationDt"] = use_time_dilation_dt
-                result["waitFirstTriggerInterval"] = wait_first_trigger_interval
+                result["tailParseStatus"] = "unparsed-timelineActions"
+                result["tailParseOffset"] = format_offset(tail_offset)
+                result["tailParseError"] = str(exc)
                 result["endOffset"] = format_offset(tail_offset)
                 return result
             result["status"] = "parsed-through-exact-tail"
             result["stackingSettings"] = stacking_settings
             result["tagsAfterTriggerExtendBuffAction"] = tags_after_trigger
-            result["timelineActionsCount"] = 0
-            result["timelineActionsEncoding"] = "omitted-empty-count"
-            result["timelineActionsApparentCount"] = timeline_action_count
+            result["timelineActionsCount"] = timeline_action_count
+            try:
+                result.update(decode_buff_timeline_actions_outer(
+                    data, timeline_count_offset + 4, timeline_action_count,
+                    timeline_body_end,
+                ))
+            except (struct.error, UnicodeDecodeError, ValueError) as timeline_exc:
+                result["timelineActionsBodyStatus"] = "opaque-timelineActions"
+                result["timelineActionsSemanticStatus"] = f"partial-decode-failed:{timeline_exc}"
+            result["timelineActionsBodyOffset"] = format_offset(timeline_count_offset + 4)
+            result["timelineActionsBodyBytes"] = timeline_body_end - (timeline_count_offset + 4)
+            result["timelineActionsBodyPattern"] = f"0x{timeline_body_pattern:02x}"
             result["triggerInterval"] = trigger_interval
             result["useTimeDilationDt"] = use_time_dilation_dt
             result["waitFirstTriggerInterval"] = wait_first_trigger_interval
@@ -8187,25 +7953,34 @@ def read_buff_stacking_settings_compact_id_branch(
                     "stackEffectsBodyError": str(exc),
                 }, stack_effects_body_offset
             stack_effects_body_status = "opaque-effectActions"
-            stack_effects_body_bytes = offset - stack_effects_body_offset
+            prefix_at = stack_effects_body_details.get("stackingKeyPrefixOffset")
+            if stack_effects_body_details.get("stackingKeyPrefixHandling") == "consumed-empty-string-prefix":
+                if not isinstance(prefix_at, str) or int(prefix_at, 0) + 4 != offset:
+                    raise ValueError("stackingSettings.stackingKey:consumed-prefix-mismatch")
+                stack_effects_body_bytes = int(prefix_at, 0) - stack_effects_body_offset
+            else:
+                stack_effects_body_bytes = offset - stack_effects_body_offset
 
-    stacking_key_offset = offset
-    stacking_key, stacking_key_end, stacking_key_error = read_memorypack_utf8_string(
-        data,
-        stacking_key_offset,
-        max_length=256,
-    )
-    branch = "compact-id"
-    branch_note = "validated rows use identifierType=Id; empty stackingKey branch consumes compact suffix bytes"
-    if stacking_key_error is None and stacking_key and is_clean_skill_identifier_string(stacking_key):
-        offset = stacking_key_end
-        branch = "compact-stacking-key"
-        branch_note = "non-empty stackingKey branch consumes the common compact suffix bytes"
-    else:
+    if stack_effects_body_details.get("stackingKeyPrefixHandling") == "consumed-empty-string-prefix":
+        stacking_key_offset = int(stack_effects_body_details["stackingKeyPrefixOffset"], 0)
+        if data[stacking_key_offset:offset] != b"\x00" * 4:
+            raise ValueError("stackingSettings.stackingKey:invalid-consumed-empty-prefix")
         stacking_key = ""
-
-    stacking_type = data[offset]
-    offset += 1
+    else:
+        stacking_key_offset = offset
+        stacking_key, offset, stacking_key_error = read_memorypack_utf8_string(
+            data, offset, max_length=256,
+        )
+        if stacking_key_error:
+            raise ValueError(f"stackingSettings.stackingKey:{stacking_key_error}")
+    stacking_key_length = struct.unpack_from("<i", data, stacking_key_offset)[0]
+    branch = ("null-stacking-key" if stacking_key_length == -1 else
+              "empty-stacking-key" if stacking_key_length == 0 else
+              "nonempty-stacking-key")
+    if offset + 2 > len(data):
+        raise ValueError("stackingSettings.stackingType:truncated-u16")
+    stacking_type = struct.unpack_from("<H", data, offset)[0]
+    offset += 2
     if stacking_type > 16:
         raise ValueError(f"stackingSettings.stackingType:raw={stacking_type}")
     use_max_stack_count_key, offset = read_buff_bool_field(
@@ -8219,7 +7994,9 @@ def read_buff_stacking_settings_compact_id_branch(
         "memberCount": member_count,
         "offset": format_offset(start),
         "branch": branch,
-        "branchNote": branch_note,
+        "branchNote": "selected native string length is always consumed before the two-byte stackingType and two flags",
+        "stackingKeyLengthRaw": stacking_key_length,
+        "stackingKeyOffset": format_offset(stacking_key_offset),
         "identifierTypeRaw": identifier_type,
         "stackingTypeRaw": stacking_type,
         "maxStackCnt": max_stack_count,
@@ -8237,7 +8014,7 @@ def read_buff_stacking_settings_compact_id_branch(
         result["stackEffectsBodyOffset"] = format_offset(stack_effects_body_offset)
         result["stackEffectsBodyBytes"] = stack_effects_body_bytes
         result.update(stack_effects_body_details)
-    if stacking_key:
+    if stacking_key is not None:
         result["stackingKey"] = stacking_key
     return result, offset
 

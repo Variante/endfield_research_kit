@@ -1,0 +1,113 @@
+{
+  "schema": "endfield.buff-stacking-compact-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "codeRegistrationVa": 6619194944,
+  "reviewedDependencies": ["buff_root_prefix_native.json"],
+  "methods": [
+    [102606, "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack", "Deserialize", 53280816],
+    [102598, "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffDataForMemoryPack", "set___stackingSettings__", "Beyond.Gameplay.Core.BuffStackingSettings"],
+    [104639, "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffStackingSettingsForMemoryPack", "Deserialize", 62820576]
+  ],
+  "wrapper": {
+    "typeDefinition": 13909,
+    "typeName": "Beyond.MemoryPack.Beyond_Gameplay_Core_BuffStackingSettingsForMemoryPack",
+    "setterMethods": [
+      [104625, "set___identifierType__", 157675],
+      [104626, "set___isNeedStackEffect__", 108357],
+      [104627, "set___maxStackCnt__", 126157],
+      [104628, "set___maxStackCntKey__", 143273],
+      [104629, "set___negatePriority__", 108357],
+      [104630, "set___priority__", 141872],
+      [104631, "set___priorityKey__", 143273],
+      [104632, "set___stackEffects__", 98581],
+      [104633, "set___stackingKey__", 143273],
+      [104634, "set___stackingType__", 157678],
+      [104635, "set___useMaxStackCntKey__", 108357],
+      [104636, "set___usePriorityKey__", 108357]
+    ]
+  },
+  "ownerField": "Beyond.Gameplay.Core.BuffData::stackingSettings",
+  "rootChildReaderRva": 47864976,
+  "rootSourceContext": {
+    "instructionRva": 53282171,
+    "instructionHex": "488B157E40D209",
+    "cellVa": 6660507136,
+    "usageRawHex": "AFEA12C000000000",
+    "methodSpecIndex": 619863,
+    "methodSpec": [428464, -1, 13986],
+    "argumentRawHex": "3F270000000000000000120000000000",
+    "typeDefinition": 10047,
+    "typeName": "Beyond.Gameplay.Core.BuffStackingSettings",
+    "typeKind": 18
+  },
+  "tagSourceContext": {
+    "instructionRva": 53282230,
+    "instructionHex": "488B15C33FD209",
+    "cellVa": 6660507008,
+    "usageRawHex": "FFCA0FC000000000",
+    "methodSpecIndex": 517503,
+    "methodSpec": [428475, -1, 816],
+    "argumentRawHex": "A22D0000000000000000118000000000",
+    "typeDefinition": 11682,
+    "typeName": "Beyond.Gameplay.Core.GameplayTag",
+    "typeKind": 17
+  },
+  "rootInstructions": [
+    [53282184, "E80357ADFF", "read BuffStackingSettings at the selected source context"],
+    [53282211, "488981A0000000", "store result into BuffData.stackingSettings"],
+    [53282243, "E8B8009E00", "read following GameplayTag array"],
+    [53282270, "48894170", "store following tagsAfterTriggerExtendBuffAction"]
+  ],
+  "childInstructions": [
+    [62821061, "E836F40BFF", "read stackingKey using the same signed-length string helper as earlier key fields"],
+    [62821118, "440FB730", "read stackingType as a two-byte word"],
+    [62821134, "4883435002", "advance source cursor by two bytes"],
+    [62821172, "6644897012", "store stackingType word"],
+    [62821183, "E87CF50BFF", "read useMaxStackCntKey byte"],
+    [62821219, "E858F50BFF", "read usePriorityKey byte"]
+  ],
+  "stringHelperInstructions": [
+    [46827309, "486338", "read signed four-byte string length"],
+    [46827324, "4883435004", "advance source cursor by four bytes before testing length"],
+    [46827360, "83FFFF", "test null length minus one"],
+    [46827365, "85FF", "test empty length zero"],
+    [46827369, "488B0500D83F0A", "return empty string after the consumed zero length"]
+  ],
+  "tagArrayInstructions": [
+    [63637185, "488B4350", "load source pointer for count"],
+    [63637203, "4883435004", "advance source cursor by four-byte count"],
+    [63637251, "85FF", "test zero count"],
+    [63637253, "7527", "branch to positive packed four-byte items"],
+    [63637299, "8D34BD00000000", "multiply positive item count by four bytes"]
+  ],
+  "codeWindows": [
+    {
+      "startRva": 62820576,
+      "endRva": 62821392,
+      "sha256": "5983A7F68C47F85B647089DA61950F9F1B4FD3856A31DAF3D4D5A9C0EB883979",
+      "boundary": "selected 12-member BuffStackingSettings reader through next method"
+    },
+    {
+      "startRva": 46827264,
+      "endRva": 46827472,
+      "sha256": "AA567B44329F6B8681FA1DB398E1F2C342D8ABBAB6E82DFB0418468C80121F91",
+      "boundary": "signed-length string reader including empty and null branches"
+    },
+    {
+      "startRva": 63637120,
+      "endRva": 63637488,
+      "sha256": "F98C437FEAE35A28058C37D655FE3B82E6A0257DB618598E2100EEDDC276C773",
+      "boundary": "following GameplayTag array count and packed-four-byte body"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "The selected BuffData reader passes the authenticated BuffStackingSettings type context and stores the result in BuffData.stackingSettings. The selected child reader reads all twelve wrapper members in setter order. The stackingKey string helper consumes a signed four-byte length before distinguishing null, empty, and nonempty values; the next stackingType source read and cursor increment are two bytes, followed by two one-byte flags. The next root field reads a signed four-byte GameplayTag array count and packed four-byte values.",
+    "structuralOnly": "Nested stackEffects bodies and positive timelineActions remain separately framed opaque or structural records. This contract names stored field ownership and cursor order, not evaluated stacking or action behavior.",
+    "unresolved": "The separate suffix fields, runtime stacking behavior, and alternate installed builds require their own evidence."
+  }
+}

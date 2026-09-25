@@ -1,0 +1,220 @@
+{
+  "schema": "endfield.skill-timeline-elite-back-swing-be-hit-native-contract.v1",
+  "status": "exact-current-build",
+  "serializedMemberCount": 7,
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 165,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59833428,
+    "routeWindow": {
+      "startRva": 59833428,
+      "endRva": 59833478,
+      "sha256": "843F63A5791A8A86089DAA05020766432970CF00484756DC00795E6688AA396F",
+      "boundary": "selected 0x00A5 type usage load, formatter route and rejoin"
+    },
+    "usageCellRva": 218727544,
+    "usageRawHex": "AF40032000000000",
+    "registeredTypeIndex": 106583,
+    "wrapperTypeDefinition": 16087,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_EliteBackSwingBeHit_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      120017,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EliteBackSwingBeHit_DataForMemoryPack",
+      "Deserialize",
+      61453168
+    ],
+    [
+      120018,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_EliteBackSwingBeHit_DataForMemoryPack+Beyond_Gameplay_Core_EliteBackSwingBeHit_DataForMemoryPackFormatter",
+      "Deserialize",
+      61453888
+    ]
+  ],
+  "memberCountInstruction": {
+    "rva": 61453296,
+    "hex": "4080FE07"
+  },
+  "codeWindows": [
+    {
+      "startRva": 61453168,
+      "endRva": 61453574,
+      "sha256": "0DF1CBC7DB573040913F76127B29B3B8162C0A30ADDF4DA232EF37129B6BAFD9",
+      "boundary": "selected header-seven source reader and normal return"
+    },
+    {
+      "startRva": 61453888,
+      "endRva": 61453981,
+      "sha256": "F2371E32A66AAD19E891C6D8EA6842AE788694AB67381F38DDBB4BE05B7310F1",
+      "boundary": "formatter forwarding to selected reader"
+    }
+  ],
+  "setterMethods": [
+    [
+      120012,
+      "set___duration__",
+      "Beyond.Blackboard+BlackboardDouble"
+    ],
+    [
+      120013,
+      "set___finishByAction__",
+      "System.Boolean"
+    ],
+    [
+      120014,
+      "set___limitTimes__",
+      "Beyond.Blackboard+BlackboardInt"
+    ]
+  ],
+  "setterCallsites": [
+    {
+      "memberIndex": 4,
+      "methodIndex": 120012,
+      "callsiteRva": 61453482,
+      "callHex": "E8B1000000",
+      "targetRva": 61453664
+    },
+    {
+      "memberIndex": 5,
+      "methodIndex": 120013,
+      "callsiteRva": 61453516,
+      "callHex": "E8BF000000",
+      "targetRva": 61453712
+    },
+    {
+      "memberIndex": 6,
+      "methodIndex": 120014,
+      "callsiteRva": 61453553,
+      "callHex": "E8CA000000",
+      "targetRva": 61453760
+    }
+  ],
+  "orderedSourceReads": [
+    {
+      "memberIndex": 0,
+      "fieldName": "isEnable",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 61453312,
+      "sourceCallHex": "E8BBD420FF",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 1,
+      "fieldName": "priorityLevel",
+      "readKind": "enum32",
+      "sourceCallsiteRva": 61453353,
+      "sourceCallHex": "E882D220FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 2,
+      "fieldName": "priorityOffset",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 61453386,
+      "sourceCallHex": "E861D220FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 3,
+      "fieldName": "serverActionIndex",
+      "readKind": "scalar32",
+      "sourceCallsiteRva": 61453419,
+      "sourceCallHex": "E840D220FF",
+      "sourceTargetRva": 46827184
+    },
+    {
+      "memberIndex": 4,
+      "fieldName": "duration",
+      "readKind": "scalar-payload",
+      "sourceCallsiteRva": 61453459,
+      "sourceCallHex": "E8F8A730FF",
+      "sourceTargetRva": 47864976
+    },
+    {
+      "memberIndex": 5,
+      "fieldName": "finishByAction",
+      "readKind": "bool-byte",
+      "sourceCallsiteRva": 61453493,
+      "sourceCallHex": "E806D420FF",
+      "sourceTargetRva": 46827712
+    },
+    {
+      "memberIndex": 6,
+      "fieldName": "limitTimes",
+      "readKind": "scalar-payload",
+      "sourceCallsiteRva": 61453534,
+      "sourceCallHex": "E8ADA730FF",
+      "sourceTargetRva": 47864976
+    }
+  ],
+  "genericContexts": [
+    {
+      "memberIndex": 1,
+      "instructionRva": 61453340,
+      "instructionHex": "488B1505EA5E09",
+      "cellRva": 218668584,
+      "usageRawHex": "81E812C000000000",
+      "methodSpecIndex": 619584,
+      "methodSpec": [
+        428448,
+        -1,
+        42547
+      ],
+      "argumentRawHex": "EA230000000000000000118000000000",
+      "typeDefinition": 9194,
+      "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+    },
+    {
+      "memberIndex": 4,
+      "instructionRva": 61453446,
+      "instructionHex": "488B1593915509",
+      "cellRva": 218056224,
+      "usageRawHex": "C9EB12C000000000",
+      "methodSpecIndex": 620004,
+      "methodSpec": [
+        428464,
+        -1,
+        17005
+      ],
+      "argumentRawHex": "AD000000000000000000120000000000",
+      "typeDefinition": 173,
+      "typeName": "Beyond.Blackboard+BlackboardDouble"
+    },
+    {
+      "memberIndex": 6,
+      "instructionRva": 61453521,
+      "instructionHex": "488B1550915509",
+      "cellRva": 218056232,
+      "usageRawHex": "CBEB12C000000000",
+      "methodSpecIndex": 620005,
+      "methodSpec": [
+        428464,
+        -1,
+        17006
+      ],
+      "argumentRawHex": "AE000000000000000000120000000000",
+      "typeDefinition": 174,
+      "typeName": "Beyond.Blackboard+BlackboardInt"
+    }
+  ],
+  "dependencies": [
+    {
+      "path": "buff_ec_native.json",
+      "role": "reviewed BlackboardDouble and BlackboardInt finite profiles"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected AbilityActionData tag 0x00A5 route, wrapper, methods, source calls, setters and three generic arguments are pinned to installed native inputs.",
+    "direct": "The seven-member source reader consumes the inherited byte and three DWORDs followed by BlackboardDouble, bool, and BlackboardInt.",
+    "structuralOnly": "The finite decoder preserves raw byte/DWORD extents and bounded scalar profiles; stored values do not establish hit behavior.",
+    "unresolved": "Live provider selection, allocation/refill/error parity and whole SkillData EOF remain independent checks."
+  }
+}

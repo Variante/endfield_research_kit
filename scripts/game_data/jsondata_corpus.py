@@ -674,8 +674,18 @@ def _load_family_evidence(
                 and row.get("terminalSelection", {}).get("wholeSchemaExact") is False
                 and row.get("parserCursor")
                 == timeline_shared_sequence.get("parserCursor")
-                and timeline_shared_sequence.get("wholeTimelineListExact") is False
-                and timeline_shared_sequence.get("wholeActionGroupDataExact") is False
+                and (
+                    (
+                        timeline_shared_sequence.get("wholeTimelineListExact") is False
+                        and timeline_shared_sequence.get("wholeActionGroupDataExact") is False
+                    )
+                    or (
+                        timeline_shared_sequence.get("wholeTimelineListExact") is True
+                        and timeline_shared_sequence.get("wholeActionGroupDataExact") is True
+                        and timeline_shared_sequence.get("topLevelContinuation", {}).get("status")
+                        == "stopped-at-unsupported-top-level-field"
+                    )
+                )
                 and shared_profile_exact
             )
             exact_timeline_shared_sequence = (

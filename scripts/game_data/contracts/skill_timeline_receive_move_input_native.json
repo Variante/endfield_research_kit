@@ -1,0 +1,756 @@
+{
+  "schema": "endfield.skill-timeline-receive-move-input-native-contract.v1",
+  "status": "exact-current-build",
+  "nativeInputs": {
+    "GameAssembly.dll": "C24495E51B406F03B03890C4788EE618AE022C991405BE5D5B8B787CB775AE89",
+    "global-metadata.dat": "0076743397ACADF03D3B0064343A963C7C88863B8160526D397E4B3EFB96F02E",
+    "UnityPlayer.dll": "BEE7BE52370ADDDD67BA61E4937CA51B7F272656841D187E95E505496DA798D1"
+  },
+  "dispatcher": {
+    "unionTag": 291,
+    "switchTableRva": 59855640,
+    "switchEntryCount": 416,
+    "switchTableSha256": "39C3FD3F0D261441F1790310D4D15455F09C4B0FD422E7810BA01A4C80D93189",
+    "switchTargetRva": 59834328,
+    "routeWindow": {
+      "startRva": 59834328,
+      "endRva": 59834378,
+      "sha256": "6DC340E4F5FCA03EB8DFCBBA45A80545B1CE3DFF123AA51697750474C5E56687",
+      "boundary": "selected 0x0123 type usage load, formatter route and rejoin"
+    },
+    "usageCellRva": 218198224,
+    "usageRawHex": "C543032000000000",
+    "registeredTypeIndex": 106978,
+    "wrapperTypeDefinition": 16349,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ReceiveMoveInputAction_DataForMemoryPack"
+  },
+  "methods": [
+    [
+      122143,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ReceiveMoveInputAction_DataForMemoryPack",
+      "Deserialize",
+      69400336
+    ],
+    [
+      122144,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ReceiveMoveInputAction_DataForMemoryPack+Beyond_Gameplay_Core_ReceiveMoveInputAction_DataForMemoryPackFormatter",
+      "Deserialize",
+      69400144
+    ],
+    [
+      163167,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ReceiveMoveInputAction_Data_MoveParamDataForMemoryPack",
+      "Deserialize",
+      69401376
+    ],
+    [
+      163168,
+      "Beyond.MemoryPack.Beyond_Gameplay_Core_ReceiveMoveInputAction_Data_MoveParamDataForMemoryPack+Beyond_Gameplay_Core_ReceiveMoveInputAction_Data_MoveParamDataForMemoryPackFormatter",
+      "Deserialize",
+      69400240
+    ]
+  ],
+  "memberCountInstructions": [
+    {
+      "rva": 69400464,
+      "hex": "4080FE14",
+      "memberCount": 20
+    },
+    {
+      "rva": 69401451,
+      "hex": "4080FE09",
+      "memberCount": 9
+    }
+  ],
+  "codeWindows": [
+    {
+      "startRva": 69400336,
+      "endRva": 69401370,
+      "sha256": "ABA929166474EF237F3E6DC9E8E89ACA1AC17EBDEA22834905CB9E1FA0066097",
+      "boundary": "selected outer reader through normal return, FF null branch, lazy initialization and error rejoin"
+    },
+    {
+      "startRva": 69400144,
+      "endRva": 69400237,
+      "sha256": "1CCDFE8CD73E6B3425B7407B10036FAFFB0F71E0B2C5E1D6C2D217A8E81A368F",
+      "boundary": "outer formatter forwarding and initialization"
+    },
+    {
+      "startRva": 69401376,
+      "endRva": 69401920,
+      "sha256": "80881C706B92F1884513F99FC6BD4F6217D8796513C21B6F4579C6EED676A263",
+      "boundary": "selected nested MoveParamData reader through normal return, FF branch and lazy initialization"
+    },
+    {
+      "startRva": 69400240,
+      "endRva": 69400333,
+      "sha256": "04A8382D4736128B7A5BDFB9A0B83AA3EE76E1E2EB59360F891DE42D4D5C5D55",
+      "boundary": "nested formatter forwarding and initialization"
+    }
+  ],
+  "outer": {
+    "serializedMemberCount": 20,
+    "setterMethods": [
+      [
+        122125,
+        "set___combineRootMotion__",
+        "System.Boolean"
+      ],
+      [
+        122126,
+        "set___disableCliffCheck__",
+        "System.Boolean"
+      ],
+      [
+        122127,
+        "set___duration__",
+        "Beyond.Blackboard+BlackboardDouble"
+      ],
+      [
+        122128,
+        "set___faceToMoveDir__",
+        "System.Boolean"
+      ],
+      [
+        122129,
+        "set___inputAlongRMScale__",
+        "Beyond.Blackboard+BlackboardDouble"
+      ],
+      [
+        122130,
+        "set___inputDirection__",
+        "Beyond.Gameplay.Core.ReceiveMoveInputAction+DirectionType"
+      ],
+      [
+        122131,
+        "set___overrideRotateSpeed__",
+        "System.Boolean"
+      ],
+      [
+        122132,
+        "set___recoverWhenLanding__",
+        "System.Boolean"
+      ],
+      [
+        122133,
+        "set___rootMotionScale__",
+        "Beyond.Blackboard+BlackboardDouble"
+      ],
+      [
+        122134,
+        "set___rotateSpeed__",
+        "Beyond.Blackboard+BlackboardDouble"
+      ],
+      [
+        122135,
+        "set___speed__",
+        "Beyond.Blackboard+BlackboardDouble"
+      ],
+      [
+        122136,
+        "set___speedCurve__",
+        "UnityEngine.AnimationCurve"
+      ],
+      [
+        122137,
+        "set___speedScale__",
+        "Beyond.Blackboard+BlackboardDouble"
+      ],
+      [
+        122138,
+        "set___speedType__",
+        "Beyond.Gameplay.Core.ReceiveMoveInputAction+SpeedType"
+      ],
+      [
+        122139,
+        "set___teammateParam__",
+        "Beyond.Gameplay.Core.ReceiveMoveInputAction+Data+MoveParamData"
+      ],
+      [
+        122140,
+        "set___useTeammateParam__",
+        "System.Boolean"
+      ]
+    ],
+    "orderedSourceReads": [
+      {
+        "memberIndex": 0,
+        "fieldName": "isEnable",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 69400480,
+        "sourceCallHex": "E81B91A7FE",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 1,
+        "fieldName": "priorityLevel",
+        "readKind": "enum32",
+        "sourceCallsiteRva": 69400521,
+        "sourceCallHex": "E8E28EA7FE",
+        "sourceTargetRva": 46827184
+      },
+      {
+        "memberIndex": 2,
+        "fieldName": "priorityOffset",
+        "readKind": "scalar32",
+        "sourceCallsiteRva": 69400554,
+        "sourceCallHex": "E8C18EA7FE",
+        "sourceTargetRva": 46827184
+      },
+      {
+        "memberIndex": 3,
+        "fieldName": "serverActionIndex",
+        "readKind": "scalar32",
+        "sourceCallsiteRva": 69400587,
+        "sourceCallHex": "E8A08EA7FE",
+        "sourceTargetRva": 46827184
+      },
+      {
+        "memberIndex": 4,
+        "fieldName": "combineRootMotion",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 69400620,
+        "sourceCallHex": "E88F90A7FE",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 5,
+        "fieldName": "disableCliffCheck",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 69400654,
+        "sourceCallHex": "E86D90A7FE",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 6,
+        "fieldName": "duration",
+        "readKind": "scalar-payload",
+        "sourceCallsiteRva": 69400695,
+        "sourceCallHex": "E81464B7FE",
+        "sourceTargetRva": 47864976
+      },
+      {
+        "memberIndex": 7,
+        "fieldName": "faceToMoveDir",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 69400729,
+        "sourceCallHex": "E82290A7FE",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 8,
+        "fieldName": "inputAlongRMScale",
+        "readKind": "scalar-payload",
+        "sourceCallsiteRva": 69400770,
+        "sourceCallHex": "E8C963B7FE",
+        "sourceTargetRva": 47864976
+      },
+      {
+        "memberIndex": 9,
+        "fieldName": "inputDirection",
+        "readKind": "enum32",
+        "sourceCallsiteRva": 69400811,
+        "sourceCallHex": "E8C08DA7FE",
+        "sourceTargetRva": 46827184
+      },
+      {
+        "memberIndex": 10,
+        "fieldName": "overrideRotateSpeed",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 69400844,
+        "sourceCallHex": "E8AF8FA7FE",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 11,
+        "fieldName": "recoverWhenLanding",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 69400878,
+        "sourceCallHex": "E88D8FA7FE",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 12,
+        "fieldName": "rootMotionScale",
+        "readKind": "scalar-payload",
+        "sourceCallsiteRva": 69400919,
+        "sourceCallHex": "E83463B7FE",
+        "sourceTargetRva": 47864976
+      },
+      {
+        "memberIndex": 13,
+        "fieldName": "rotateSpeed",
+        "readKind": "scalar-payload",
+        "sourceCallsiteRva": 69400960,
+        "sourceCallHex": "E80B63B7FE",
+        "sourceTargetRva": 47864976
+      },
+      {
+        "memberIndex": 14,
+        "fieldName": "speed",
+        "readKind": "scalar-payload",
+        "sourceCallsiteRva": 69401001,
+        "sourceCallHex": "E8E262B7FE",
+        "sourceTargetRva": 47864976
+      },
+      {
+        "memberIndex": 15,
+        "fieldName": "speedCurve",
+        "readKind": "curve-profile",
+        "sourceCallsiteRva": 69401042,
+        "sourceCallHex": "E8B962B7FE",
+        "sourceTargetRva": 47864976
+      },
+      {
+        "memberIndex": 16,
+        "fieldName": "speedScale",
+        "readKind": "scalar-payload",
+        "sourceCallsiteRva": 69401083,
+        "sourceCallHex": "E89062B7FE",
+        "sourceTargetRva": 47864976
+      },
+      {
+        "memberIndex": 17,
+        "fieldName": "speedType",
+        "readKind": "enum32",
+        "sourceCallsiteRva": 69401124,
+        "sourceCallHex": "E8878CA7FE",
+        "sourceTargetRva": 46827184
+      },
+      {
+        "memberIndex": 18,
+        "fieldName": "teammateParam",
+        "readKind": "move-param-profile",
+        "sourceCallsiteRva": 69401164,
+        "sourceCallHex": "E83F62B7FE",
+        "sourceTargetRva": 47864976
+      },
+      {
+        "memberIndex": 19,
+        "fieldName": "useTeammateParam",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 69401198,
+        "sourceCallHex": "E84D8EA7FE",
+        "sourceTargetRva": 46827712
+      }
+    ],
+    "genericContexts": [
+      {
+        "memberIndex": 1,
+        "instructionRva": 69400508,
+        "instructionHex": "488B1565A6E508",
+        "cellRva": 218668584,
+        "usageRawHex": "81E812C000000000",
+        "methodSpecIndex": 619584,
+        "methodSpec": [
+          428448,
+          -1,
+          42547
+        ],
+        "argumentRawHex": "EA230000000000000000118000000000",
+        "typeDefinition": 9194,
+        "typeName": "Beyond.Gameplay.Core.AbilityAction+AbilityActionData+Priority"
+      },
+      {
+        "memberIndex": 6,
+        "instructionRva": 69400682,
+        "instructionHex": "488B15AF4DDC08",
+        "cellRva": 218056224,
+        "usageRawHex": "C9EB12C000000000",
+        "methodSpecIndex": 620004,
+        "methodSpec": [
+          428464,
+          -1,
+          17005
+        ],
+        "argumentRawHex": "AD000000000000000000120000000000",
+        "typeDefinition": 173,
+        "typeName": "Beyond.Blackboard+BlackboardDouble"
+      },
+      {
+        "memberIndex": 8,
+        "instructionRva": 69400757,
+        "instructionHex": "488B15644DDC08",
+        "cellRva": 218056224,
+        "usageRawHex": "C9EB12C000000000",
+        "methodSpecIndex": 620004,
+        "methodSpec": [
+          428464,
+          -1,
+          17005
+        ],
+        "argumentRawHex": "AD000000000000000000120000000000",
+        "typeDefinition": 173,
+        "typeName": "Beyond.Blackboard+BlackboardDouble"
+      },
+      {
+        "memberIndex": 9,
+        "instructionRva": 69400798,
+        "instructionHex": "488B152B78DE08",
+        "cellRva": 218198288,
+        "usageRawHex": "35E812C000000000",
+        "methodSpecIndex": 619546,
+        "methodSpec": [
+          428448,
+          -1,
+          42519
+        ],
+        "argumentRawHex": "F4250000000000000000118000000000",
+        "typeDefinition": 9716,
+        "typeName": "Beyond.Gameplay.Core.ReceiveMoveInputAction+DirectionType"
+      },
+      {
+        "memberIndex": 12,
+        "instructionRva": 69400906,
+        "instructionHex": "488B15CF4CDC08",
+        "cellRva": 218056224,
+        "usageRawHex": "C9EB12C000000000",
+        "methodSpecIndex": 620004,
+        "methodSpec": [
+          428464,
+          -1,
+          17005
+        ],
+        "argumentRawHex": "AD000000000000000000120000000000",
+        "typeDefinition": 173,
+        "typeName": "Beyond.Blackboard+BlackboardDouble"
+      },
+      {
+        "memberIndex": 13,
+        "instructionRva": 69400947,
+        "instructionHex": "488B15A64CDC08",
+        "cellRva": 218056224,
+        "usageRawHex": "C9EB12C000000000",
+        "methodSpecIndex": 620004,
+        "methodSpec": [
+          428464,
+          -1,
+          17005
+        ],
+        "argumentRawHex": "AD000000000000000000120000000000",
+        "typeDefinition": 173,
+        "typeName": "Beyond.Blackboard+BlackboardDouble"
+      },
+      {
+        "memberIndex": 14,
+        "instructionRva": 69400988,
+        "instructionHex": "488B157D4CDC08",
+        "cellRva": 218056224,
+        "usageRawHex": "C9EB12C000000000",
+        "methodSpecIndex": 620004,
+        "methodSpec": [
+          428464,
+          -1,
+          17005
+        ],
+        "argumentRawHex": "AD000000000000000000120000000000",
+        "typeDefinition": 173,
+        "typeName": "Beyond.Blackboard+BlackboardDouble"
+      },
+      {
+        "memberIndex": 15,
+        "instructionRva": 69401029,
+        "instructionHex": "488B157CDAEB08",
+        "cellRva": 219075656,
+        "usageRawHex": "8DEA12C000000000",
+        "methodSpecIndex": 619846,
+        "methodSpec": [
+          428464,
+          -1,
+          1832
+        ],
+        "argumentRawHex": "FAA90000000000000000120000000000",
+        "typeDefinition": 43514,
+        "typeName": "UnityEngine.AnimationCurve"
+      },
+      {
+        "memberIndex": 16,
+        "instructionRva": 69401070,
+        "instructionHex": "488B152B4CDC08",
+        "cellRva": 218056224,
+        "usageRawHex": "C9EB12C000000000",
+        "methodSpecIndex": 620004,
+        "methodSpec": [
+          428464,
+          -1,
+          17005
+        ],
+        "argumentRawHex": "AD000000000000000000120000000000",
+        "typeDefinition": 173,
+        "typeName": "Beyond.Blackboard+BlackboardDouble"
+      },
+      {
+        "memberIndex": 17,
+        "instructionRva": 69401111,
+        "instructionHex": "488B15DA76DE08",
+        "cellRva": 218198264,
+        "usageRawHex": "37E812C000000000",
+        "methodSpecIndex": 619547,
+        "methodSpec": [
+          428448,
+          -1,
+          42520
+        ],
+        "argumentRawHex": "F5250000000000000000118000000000",
+        "typeDefinition": 9717,
+        "typeName": "Beyond.Gameplay.Core.ReceiveMoveInputAction+SpeedType"
+      },
+      {
+        "memberIndex": 18,
+        "instructionRva": 69401151,
+        "instructionHex": "488B15EA76DE08",
+        "cellRva": 218198320,
+        "usageRawHex": "11EC12C000000000",
+        "methodSpecIndex": 620040,
+        "methodSpec": [
+          428464,
+          -1,
+          17149
+        ],
+        "argumentRawHex": "F6250000000000000000120000000000",
+        "typeDefinition": 9718,
+        "typeName": "Beyond.Gameplay.Core.ReceiveMoveInputAction+Data+MoveParamData"
+      }
+    ]
+  },
+  "moveParam": {
+    "wrapperTypeDefinition": 22471,
+    "wrapperName": "Beyond.MemoryPack.Beyond_Gameplay_Core_ReceiveMoveInputAction_Data_MoveParamDataForMemoryPack",
+    "serializedMemberCount": 9,
+    "setterMethods": [
+      [
+        163156,
+        "set___disableDynamicPush__",
+        "System.Boolean"
+      ],
+      [
+        163157,
+        "set___faceToMoveDir__",
+        "System.Boolean"
+      ],
+      [
+        163158,
+        "set___inputDirection__",
+        "Beyond.Gameplay.Core.ReceiveMoveInputAction+DirectionType"
+      ],
+      [
+        163159,
+        "set___overrideRotateSpeed__",
+        "System.Boolean"
+      ],
+      [
+        163160,
+        "set___rotateSpeed__",
+        "Beyond.Blackboard+BlackboardDouble"
+      ],
+      [
+        163161,
+        "set___speed__",
+        "Beyond.Blackboard+BlackboardDouble"
+      ],
+      [
+        163162,
+        "set___speedCurve__",
+        "UnityEngine.AnimationCurve"
+      ],
+      [
+        163163,
+        "set___speedScale__",
+        "Beyond.Blackboard+BlackboardDouble"
+      ],
+      [
+        163164,
+        "set___speedType__",
+        "Beyond.Gameplay.Core.ReceiveMoveInputAction+SpeedType"
+      ]
+    ],
+    "orderedSourceReads": [
+      {
+        "memberIndex": 0,
+        "fieldName": "disableDynamicPush",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 69401467,
+        "sourceCallHex": "E8408DA7FE",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 1,
+        "fieldName": "faceToMoveDir",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 69401501,
+        "sourceCallHex": "E81E8DA7FE",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 2,
+        "fieldName": "inputDirection",
+        "readKind": "enum32",
+        "sourceCallsiteRva": 69401542,
+        "sourceCallHex": "E8E58AA7FE",
+        "sourceTargetRva": 46827184
+      },
+      {
+        "memberIndex": 3,
+        "fieldName": "overrideRotateSpeed",
+        "readKind": "bool-byte",
+        "sourceCallsiteRva": 69401575,
+        "sourceCallHex": "E8D48CA7FE",
+        "sourceTargetRva": 46827712
+      },
+      {
+        "memberIndex": 4,
+        "fieldName": "rotateSpeed",
+        "readKind": "scalar-payload",
+        "sourceCallsiteRva": 69401616,
+        "sourceCallHex": "E87B60B7FE",
+        "sourceTargetRva": 47864976
+      },
+      {
+        "memberIndex": 5,
+        "fieldName": "speed",
+        "readKind": "scalar-payload",
+        "sourceCallsiteRva": 69401657,
+        "sourceCallHex": "E85260B7FE",
+        "sourceTargetRva": 47864976
+      },
+      {
+        "memberIndex": 6,
+        "fieldName": "speedCurve",
+        "readKind": "curve-profile",
+        "sourceCallsiteRva": 69401698,
+        "sourceCallHex": "E82960B7FE",
+        "sourceTargetRva": 47864976
+      },
+      {
+        "memberIndex": 7,
+        "fieldName": "speedScale",
+        "readKind": "scalar-payload",
+        "sourceCallsiteRva": 69401739,
+        "sourceCallHex": "E80060B7FE",
+        "sourceTargetRva": 47864976
+      },
+      {
+        "memberIndex": 8,
+        "fieldName": "speedType",
+        "readKind": "enum32",
+        "sourceCallsiteRva": 69401780,
+        "sourceCallHex": "E8F789A7FE",
+        "sourceTargetRva": 46827184
+      }
+    ],
+    "genericContexts": [
+      {
+        "memberIndex": 2,
+        "instructionRva": 69401529,
+        "instructionHex": "488B155075DE08",
+        "cellRva": 218198288,
+        "usageRawHex": "35E812C000000000",
+        "methodSpecIndex": 619546,
+        "methodSpec": [
+          428448,
+          -1,
+          42519
+        ],
+        "argumentRawHex": "F4250000000000000000118000000000",
+        "typeDefinition": 9716,
+        "typeName": "Beyond.Gameplay.Core.ReceiveMoveInputAction+DirectionType"
+      },
+      {
+        "memberIndex": 4,
+        "instructionRva": 69401603,
+        "instructionHex": "488B15164ADC08",
+        "cellRva": 218056224,
+        "usageRawHex": "C9EB12C000000000",
+        "methodSpecIndex": 620004,
+        "methodSpec": [
+          428464,
+          -1,
+          17005
+        ],
+        "argumentRawHex": "AD000000000000000000120000000000",
+        "typeDefinition": 173,
+        "typeName": "Beyond.Blackboard+BlackboardDouble"
+      },
+      {
+        "memberIndex": 5,
+        "instructionRva": 69401644,
+        "instructionHex": "488B15ED49DC08",
+        "cellRva": 218056224,
+        "usageRawHex": "C9EB12C000000000",
+        "methodSpecIndex": 620004,
+        "methodSpec": [
+          428464,
+          -1,
+          17005
+        ],
+        "argumentRawHex": "AD000000000000000000120000000000",
+        "typeDefinition": 173,
+        "typeName": "Beyond.Blackboard+BlackboardDouble"
+      },
+      {
+        "memberIndex": 6,
+        "instructionRva": 69401685,
+        "instructionHex": "488B15ECD7EB08",
+        "cellRva": 219075656,
+        "usageRawHex": "8DEA12C000000000",
+        "methodSpecIndex": 619846,
+        "methodSpec": [
+          428464,
+          -1,
+          1832
+        ],
+        "argumentRawHex": "FAA90000000000000000120000000000",
+        "typeDefinition": 43514,
+        "typeName": "UnityEngine.AnimationCurve"
+      },
+      {
+        "memberIndex": 7,
+        "instructionRva": 69401726,
+        "instructionHex": "488B159B49DC08",
+        "cellRva": 218056224,
+        "usageRawHex": "C9EB12C000000000",
+        "methodSpecIndex": 620004,
+        "methodSpec": [
+          428464,
+          -1,
+          17005
+        ],
+        "argumentRawHex": "AD000000000000000000120000000000",
+        "typeDefinition": 173,
+        "typeName": "Beyond.Blackboard+BlackboardDouble"
+      },
+      {
+        "memberIndex": 8,
+        "instructionRva": 69401767,
+        "instructionHex": "488B154A74DE08",
+        "cellRva": 218198264,
+        "usageRawHex": "37E812C000000000",
+        "methodSpecIndex": 619547,
+        "methodSpec": [
+          428448,
+          -1,
+          42520
+        ],
+        "argumentRawHex": "F5250000000000000000118000000000",
+        "typeDefinition": 9717,
+        "typeName": "Beyond.Gameplay.Core.ReceiveMoveInputAction+SpeedType"
+      }
+    ]
+  },
+  "dependencies": [
+    {
+      "path": "buff_ec_native.json",
+      "role": "BlackboardDouble finite profile"
+    },
+    {
+      "path": "buff_98_native.json",
+      "role": "AnimationCurve finite profile"
+    }
+  ],
+  "evidenceBoundary": {
+    "exact": "Selected AbilityActionData tag 0x0123 routes to ReceiveMoveInputAction.Data; both outer and nested MoveParamData formatter and reader pointers and code windows are pinned to the selected build.",
+    "direct": "The selected outer reader consumes twenty members in source order; its nested MoveParamData reader consumes nine members. Generic contexts identify enum, BlackboardDouble, AnimationCurve, and MoveParamData types at source callsites.",
+    "structuralOnly": "Finite framing preserves raw scalar bits and bounded nested profile extents without assigning movement or camera behavior.",
+    "unresolved": "Live provider choice, allocation/refill/error parity and whole SkillData EOF require independent evidence."
+  }
+}
