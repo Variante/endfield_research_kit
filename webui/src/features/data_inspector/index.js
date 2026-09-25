@@ -1,13 +1,9 @@
-// Decoded Data Inspector: the "Decoded" mode of the Data page. The page
-// controller in stores.js owns the mode switch, deep links and view events,
-// and mounts this mode into its pane through WebUI.decodedInspector.
+// Decoded datasets: one source of the Data page's Files mode. The page
+// controller in stores.js owns the list shell (sources, facet filters,
+// virtualized list, pager, deep links) and uses WebUI.decodedInspector for this
+// source's catalog, matching, ordering, row markup and record viewer.
 //
-// Left pane: the shared list-page shell every other view uses -- sidebar header
-// with a filter-panel toggle and reset, collapsible `.filter-section` groups
-// driven by `WebUI.filters.buildChips`, a draggable filter splitter, a
-// virtualized record list, a shared pager, and a draggable pane splitter.
-//
-// Right pane: one general decoded-record viewer. It is deliberately
+// The record viewer is one general decoded-record viewer. It is deliberately
 // schema-agnostic -- no decoder-specific field list is taught to the frontend.
 // The record's own structure is preserved exactly as published, and semantics
 // are layered on top of it as annotations:
@@ -26,12 +22,7 @@
 // through from the publisher unchanged.
 (() => {
   const ROOT_PATH = "data/data_inspector/index.json";
-  const ROW_HEIGHT = 72;
-  const OVERSCAN_PX = 240;
   const AUTO_OPEN_DEPTH = 1;
-  const FILTER_PANEL_STORAGE_KEY = "data_inspector_filters_collapsed";
-  const FILTER_HEIGHT_STORAGE_KEY = "data_inspector_filter_height";
-  const PANE_STORAGE_KEY = "data_inspector_sidebar_width";
   const TREE_ROW_BUDGET = 4000;
   const RAW_PREVIEW_LIMIT = 1000000;
   const JSON_VIEW_LIMIT = 2000000;
@@ -43,29 +34,16 @@
 
   const state = {
     container: null,
+    hooks: {},
     root: null,
+    loadPromise: null,
     datasets: [],
     datasetTone: new Map(),
     records: [],
-    filtered: [],
-    rows: [],
     selectedKey: "",
     selectedRecord: null,
     selectedEntry: null,
-    query: "",
-    catalogTerm: "",
-    sort: "path",
-    filters: {
-      datasets: new Set(),
-      statuses: new Set(),
-      tags: new Set(),
-      folders: new Set(),
-    },
-    pager: null,
-    filterPanel: null,
     shardCache: new Map(),
-    loadToken: 0,
-    renderFrame: 0,
     treeQuery: "",
     treeView: "semantic",
   };
@@ -170,140 +148,7 @@
 
   // ------------------------------------------------------------------ shell --
 
-  function modeSwitchHtml() {
-    return window.WebUI.dataPage?.modeSwitchHtml("decoded") || "";
-  }
-
-  // A full-pane status message. The mode switch stays reachable above it, so
-  // an absent catalog never strands the page in this mode.
-  function showMessage(html, options = {}) {
-    if (!state.container) return;
-    state.lastMessage = { html, options };
-    state.container.innerHTML = `<div class="data-page-message">${modeSwitchHtml()}
-      <div class="data-inspector-empty${options.error ? " is-error" : ""}">${html}</div></div>`;
-  }
-
-  function renderShell() {
-    const container = state.container;
-    if (!container) return;
-    state.lastMessage = null;
-    container.innerHTML = `
-      <div class="data-inspector-shell">
-        <aside id="data-inspector-left">
-          ${modeSwitchHtml()}
-          <header>
-            <h1>${esc(ui("Decoded Data Inspector", "解码数据检查器"))}</h1>
-            <div id="data-inspector-stats">
-              <span id="data-inspector-count">?</span>
-              <span>${esc(ui("decoded records", "条解码记录"))}</span>
-            </div>
-            <div class="sidebar-header-actions">
-              <button id="data-inspector-filter-toggle" class="panel-toggle" type="button" aria-controls="data-inspector-filter-panel" aria-expanded="true"></button>
-              <button id="data-inspector-reset" type="button">${esc(ui("Reset filters", "重置筛选"))}</button>
-            </div>
-          </header>
-          <div id="data-inspector-filter-panel" class="filters">
-            <section class="filter-section filter-section-basic" data-filter-section="data-inspector-basic" data-fixed-open="1">
-              <div class="filter-section-title"><span data-filter-section-label>${esc(ui("Basic filters", "基础筛选"))}</span></div>
-              <div class="filter-section-body filter-section-body-stack">
-                <input id="data-inspector-q" type="search" autocomplete="off" value="${esc(state.query)}"
-                  placeholder="${esc(ui("Name / path / status / tag", "名称 / 路径 / 状态 / 标签"))}">
-                <div class="filter-control-row">
-                  <label id="data-inspector-sort-label" for="data-inspector-sort">${esc(ui("Sort", "排序"))}</label>
-                  <select id="data-inspector-sort" aria-labelledby="data-inspector-sort-label">
-                    <option value="path">${esc(ui("Source path (A-Z)", "源文件路径 (A-Z)"))}</option>
-                    <option value="title">${esc(ui("Name (A-Z)", "名称 (A-Z)"))}</option>
-                    <option value="dataset">${esc(ui("Data family, then name", "数据族，再按名称"))}</option>
-                    <option value="status">${esc(ui("Decode status", "解码状态"))}</option>
-                  </select>
-                </div>
-              </div>
-            </section>
-            <section class="filter-section is-collapsed" data-filter-section="data-inspector-dataset" data-default-collapsed="1">
-              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="data-inspector-dataset-body">
-                <span data-filter-section-label>${esc(ui("Data family", "数据族"))}</span>
-              </button>
-              <div id="data-inspector-dataset-body" class="filter-section-body" hidden>
-                <div id="data-inspector-dataset-filter" class="chips" data-multi="1"></div>
-              </div>
-            </section>
-            <section class="filter-section is-collapsed" data-filter-section="data-inspector-status" data-default-collapsed="1">
-              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="data-inspector-status-body">
-                <span data-filter-section-label>${esc(ui("Decode status", "解码状态"))}</span>
-              </button>
-              <div id="data-inspector-status-body" class="filter-section-body" hidden>
-                <div id="data-inspector-status-filter" class="chips" data-multi="1"></div>
-              </div>
-            </section>
-            <section class="filter-section is-collapsed" data-filter-section="data-inspector-folder" data-default-collapsed="1">
-              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="data-inspector-folder-body">
-                <span data-filter-section-label>${esc(ui("Source folder", "源文件目录"))}</span>
-              </button>
-              <div id="data-inspector-folder-body" class="filter-section-body" hidden>
-                <div id="data-inspector-folder-filter" class="chips" data-multi="1"></div>
-              </div>
-            </section>
-            <section class="filter-section is-collapsed" data-filter-section="data-inspector-tag" data-default-collapsed="1">
-              <button class="filter-section-toggle" type="button" aria-expanded="false" aria-controls="data-inspector-tag-body">
-                <span data-filter-section-label>${esc(ui("Tags", "标签"))}</span>
-              </button>
-              <div id="data-inspector-tag-body" class="filter-section-body" hidden>
-                <div id="data-inspector-tag-filter" class="chips" data-multi="1"></div>
-              </div>
-            </section>
-          </div>
-          <div id="data-inspector-filter-splitter" class="filter-splitter" role="separator" aria-label="${esc(ui("Resize filters", "调整筛选区高度"))}" aria-orientation="horizontal" tabindex="0"></div>
-          <div id="data-inspector-list-meta">
-            <span id="data-inspector-shown">0</span> / <span id="data-inspector-total">0</span>
-            <span>${esc(ui("records", "条记录"))}</span>
-          </div>
-          <div id="data-inspector-list-wrap">
-            <div id="data-inspector-list-spacer"></div>
-            <div id="data-inspector-list" role="listbox"></div>
-          </div>
-          <footer id="data-inspector-pager"></footer>
-        </aside>
-        <div id="data-inspector-splitter" class="pane-splitter" role="separator" aria-label="${esc(ui("Resize sidebar", "调整侧栏宽度"))}" aria-orientation="vertical" tabindex="0"></div>
-        <main id="data-inspector-right">
-          <div class="data-inspector-empty">${esc(ui("Select a decoded record.", "请选择一条解码记录。"))}</div>
-        </main>
-      </div>`;
-    bindShellEvents();
-    bindFilterSections();
-    setupFilterPanel();
-    setupSplitters();
-    const sort = $("#data-inspector-sort", container);
-    if (sort) sort.value = state.sort;
-    $("#data-inspector-count", container).textContent = formatNumber(state.records.length);
-    buildFilterChips();
-    applyFilters({ resetScroll: true, resetPage: false });
-  }
-
-  function bindShellEvents() {
-    const container = state.container;
-    $("#data-inspector-q", container)?.addEventListener("input", (event) => {
-      state.query = event.target.value;
-      state.catalogTerm = "";
-      applyFilters({ resetScroll: true });
-    });
-    $("#data-inspector-sort", container)?.addEventListener("change", (event) => {
-      state.sort = event.target.value;
-      applyFilters({ resetScroll: true });
-    });
-    $("#data-inspector-reset", container)?.addEventListener("click", () => resetFilters());
-    $("#data-inspector-list-wrap", container)?.addEventListener("scroll", scheduleListRender, { passive: true });
-    $("#data-inspector-list", container)?.addEventListener("click", (event) => {
-      const row = event.target.closest(".data-inspector-row[data-record-key]");
-      if (row) selectRecord(row.dataset.recordKey);
-    });
-    state.pager = window.WebUI.pagination?.createPager({
-      container: $("#data-inspector-pager", container),
-      storageKey: "data_inspector_page_size",
-      onChange: () => applyFilters({ resetScroll: true, resetPage: false }),
-    });
-  }
-
-  function bindFilterSections(root = state.container) {
+  function bindFilterSections(root = document) {
     root.querySelectorAll(".filter-section-toggle").forEach((button) => {
       button.addEventListener("click", () => {
         const section = button.closest(".filter-section");
@@ -315,32 +160,6 @@
         button.setAttribute("aria-expanded", String(!collapsed));
         window.dispatchEvent(new Event("resize"));
       });
-    });
-  }
-
-  function setupFilterPanel() {
-    state.filterPanel = window.WebUI?.filters?.createPanelToggle?.({
-      panel: "#data-inspector-filter-panel",
-      toggle: "#data-inspector-filter-toggle",
-      left: "#data-inspector-left",
-      storageKey: FILTER_PANEL_STORAGE_KEY,
-      isMobile: isMobileLayout,
-      labels: (collapsed) => (collapsed ? ui("Show filters", "显示筛选") : ui("Hide filters", "隐藏筛选")),
-      onChange: () => window.dispatchEvent(new Event("resize")),
-    }) || null;
-  }
-
-  function setupSplitters() {
-    const container = state.container;
-    setupListShellSplitters({
-      shell: $(".data-inspector-shell", container),
-      sidebar: $("#data-inspector-left", container),
-      pane: $("#data-inspector-splitter", container),
-      panel: $("#data-inspector-filter-panel", container),
-      filter: $("#data-inspector-filter-splitter", container),
-      list: $("#data-inspector-list-wrap", container),
-      paneStorageKey: PANE_STORAGE_KEY,
-      filterStorageKey: FILTER_HEIGHT_STORAGE_KEY,
     });
   }
 
@@ -444,110 +263,31 @@
     }
   }
 
-  // ---------------------------------------------------------------- filters --
+  // ------------------------------------------------------------- list rows --
 
-  function buildFilterChips() {
-    const chips = window.WebUI.filters.buildChips;
-    chips("#data-inspector-dataset-filter", state.datasets.map(({ descriptor, manifest }) => ({
-      value: descriptor.id,
-      label: descriptor.title || manifest.title || descriptor.id,
-      count: (manifest.catalog || []).length,
-      title: descriptor.description || manifest.description || "",
-      className: `kind-chip ${toneClass(descriptor.id)}`,
-    })), {
-      active: state.filters.datasets,
-      onToggle: () => applyFilters({ resetScroll: true }),
-    });
-
-    const statuses = countValues(state.records, (record) => [record.status]);
-    chips("#data-inspector-status-filter", [...statuses.keys()].sort().map((value) => ({
-      value,
-      label: statusLabel(value),
-      count: statuses.get(value),
-      title: value,
-      className: `kind-chip is-status-${statusClass(value)}`,
-    })), {
-      active: state.filters.statuses,
-      onToggle: () => applyFilters({ resetScroll: true }),
-    });
-
-    const folders = countValues(state.records, (record) => [record._folder]);
-    chips("#data-inspector-folder-filter", [...folders.keys()].sort().map((value) => ({
-      value,
-      label: value,
-      count: folders.get(value),
-      className: "kind-chip is-path-chip",
-    })), {
-      active: state.filters.folders,
-      onToggle: () => applyFilters({ resetScroll: true }),
-    });
-
-    const tags = countValues(state.records, (record) => record.tags || []);
-    chips("#data-inspector-tag-filter", [...tags.keys()].sort().map((value) => ({
-      value,
-      label: value,
-      count: tags.get(value),
-    })), {
-      active: state.filters.tags,
-      onToggle: () => applyFilters({ resetScroll: true }),
-    });
+  // The page controller (stores.js) owns the list, its filters and paging;
+  // these helpers give it this source's matching, ordering and row markup.
+  function queryMatcher(query, catalogTerm = "") {
+    if (catalogTerm) return (entry) => (entry.searchTerms || []).includes(catalogTerm);
+    const text = String(query || "").trim();
+    if (!text) return () => true;
+    const lower = text.toLocaleLowerCase();
+    const tokens = window.WebUI.parseQuery(text);
+    // Union type names contain `+`, which queryMatches treats as a regex
+    // operator. Keep regex search, while accepting an exact literal term.
+    return (entry) => entry._search.includes(lower) || window.WebUI.queryMatches(entry._search, tokens);
   }
 
-  function syncFilterCounts() {
-    window.WebUI?.setFilterSectionActiveCounts?.({
-      "data-inspector-basic": state.query.trim() ? 1 : 0,
-      "data-inspector-dataset": state.filters.datasets.size,
-      "data-inspector-status": state.filters.statuses.size,
-      "data-inspector-folder": state.filters.folders.size,
-      "data-inspector-tag": state.filters.tags.size,
-    });
+  function sortOptions() {
+    return [
+      ["path", ui("Source path (A-Z)", "源文件路径 (A-Z)")],
+      ["title", ui("Name (A-Z)", "名称 (A-Z)")],
+      ["dataset", ui("Data family, then name", "数据族，再按名称")],
+      ["status", ui("Decode status", "解码状态")],
+    ];
   }
 
-  function resetFilters() {
-    state.query = "";
-    state.catalogTerm = "";
-    state.sort = "path";
-    state.filters.datasets.clear();
-    state.filters.statuses.clear();
-    state.filters.folders.clear();
-    state.filters.tags.clear();
-    const search = $("#data-inspector-q", state.container);
-    if (search) search.value = "";
-    const sort = $("#data-inspector-sort", state.container);
-    if (sort) sort.value = state.sort;
-    buildFilterChips();
-    applyFilters({ resetScroll: true });
-  }
-
-  function applyFilters({ resetScroll = false, resetPage = resetScroll } = {}) {
-    if (resetPage) state.pager?.reset();
-    const tokens = window.WebUI.parseQuery(state.query);
-    state.filtered = state.records.filter((entry) => {
-      if (state.filters.datasets.size && !state.filters.datasets.has(entry._datasetId)) return false;
-      if (state.filters.statuses.size && !state.filters.statuses.has(entry.status)) return false;
-      if (state.filters.folders.size && !state.filters.folders.has(entry._folder)) return false;
-      if (state.filters.tags.size && !(entry.tags || []).some((tag) => state.filters.tags.has(tag))) return false;
-      if (state.catalogTerm) return (entry.searchTerms || []).includes(state.catalogTerm);
-      // Union type names contain `+`, which queryMatches treats as a regex
-      // operator. Keep regex search, while accepting an exact literal term.
-      return entry._search.includes(state.query.trim().toLocaleLowerCase())
-        || window.WebUI.queryMatches(entry._search, tokens);
-    });
-    sortFiltered();
-    state.pager?.setTotal(state.filtered.length);
-    const pageRecords = state.pager ? state.pager.slice(state.filtered) : state.filtered;
-    state.rows = pageRecords.map((entry, offset) => ({ entry, top: offset * ROW_HEIGHT }));
-    const spacer = $("#data-inspector-list-spacer", state.container);
-    if (spacer) spacer.style.height = `${state.rows.length * ROW_HEIGHT}px`;
-    const wrap = $("#data-inspector-list-wrap", state.container);
-    if (resetScroll && wrap) wrap.scrollTop = 0;
-    $("#data-inspector-shown", state.container).textContent = formatNumber(state.filtered.length);
-    $("#data-inspector-total", state.container).textContent = formatNumber(state.records.length);
-    syncFilterCounts();
-    renderList();
-  }
-
-  function sortFiltered() {
+  function comparator(sort) {
     const byTitle = (a, b) => a.title.localeCompare(b.title, undefined, { numeric: true })
       || a.id.localeCompare(b.id, undefined, { numeric: true });
     const comparators = {
@@ -556,43 +296,11 @@
       dataset: (a, b) => a._datasetTitle.localeCompare(b._datasetTitle, undefined, { numeric: true }) || byTitle(a, b),
       status: (a, b) => String(a.status).localeCompare(String(b.status)) || byTitle(a, b),
     };
-    state.filtered.sort(comparators[state.sort] || comparators.path);
+    return comparators[sort] || comparators.path;
   }
 
-  function scheduleListRender() {
-    if (state.renderFrame) return;
-    state.renderFrame = requestAnimationFrame(() => {
-      state.renderFrame = 0;
-      renderList();
-    });
-  }
-
-  function renderList() {
-    const wrap = $("#data-inspector-list-wrap", state.container);
-    const list = $("#data-inspector-list", state.container);
-    if (!wrap || !list) return;
-    if (!state.rows.length) {
-      list.innerHTML = `<div class="data-inspector-empty-list">${esc(state.records.length
-        ? ui("No matching records.", "没有匹配的记录。")
-        : ui("No decoded datasets are published.", "尚未发布解码数据集。"))}</div>`;
-      return;
-    }
-    const startTop = Math.max(0, wrap.scrollTop - OVERSCAN_PX);
-    const endTop = wrap.scrollTop + wrap.clientHeight + OVERSCAN_PX;
-    const fragment = document.createDocumentFragment();
-    let index = Math.max(0, Math.min(state.rows.length, Math.floor(startTop / ROW_HEIGHT)));
-    while (index < state.rows.length && state.rows[index].top < endTop) {
-      const { entry, top } = state.rows[index];
-      const selected = entry._key === state.selectedKey;
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = `data-inspector-row${selected ? " is-selected" : ""}`;
-      button.dataset.recordKey = entry._key;
-      button.style.top = `${top}px`;
-      button.style.height = `${ROW_HEIGHT}px`;
-      button.setAttribute("role", "option");
-      button.setAttribute("aria-selected", String(selected));
-      button.innerHTML = `
+  function rowHtml(entry) {
+    return `
         <span class="data-inspector-row-title-line">
           <span class="data-inspector-row-family ${esc(toneClass(entry._datasetId))}">${esc(entry._datasetTitle)}</span>
           <span class="data-inspector-row-title">${esc(entry.title)}</span>
@@ -602,12 +310,7 @@
           <span class="data-inspector-status is-${esc(statusClass(entry.status))}" title="${esc(entry.status)}">${esc(statusLabel(entry.status))}</span>
           <span class="data-inspector-row-summary">${esc(entry.summary || "")}</span>
         </span>`;
-      fragment.appendChild(button);
-      index += 1;
-    }
-    list.replaceChildren(fragment);
   }
-
   // --------------------------------------------------------- value semantics --
 
   const EXACT_INTEGER_KEY = /(?:id|path|hash|guid)$/i;
@@ -1473,7 +1176,7 @@
   }
 
   function renderDetail() {
-    const host = $("#data-inspector-right", state.container);
+    const host = state.container;
     const record = state.selectedRecord;
     const entry = state.selectedEntry;
     if (!host || !record || !entry) return;
@@ -1558,24 +1261,14 @@
       button.addEventListener("click", () => {
         const term = button.dataset.inspectorCatalogTerm;
         if (!term || !state.selectedEntry) return;
-        state.catalogTerm = term;
-        state.query = term;
-        state.filters.datasets.clear();
-        state.filters.datasets.add(state.selectedEntry._datasetId);
-        state.filters.statuses.clear();
-        state.filters.folders.clear();
-        state.filters.tags.clear();
-        const search = $("#data-inspector-q", container);
-        if (search) search.value = term;
-        buildFilterChips();
-        applyFilters({ resetScroll: true });
+        state.hooks?.onCatalogTerm?.(term, state.selectedEntry);
       });
     });
     container.querySelectorAll("[data-inspector-action-path]").forEach((button) => {
       button.addEventListener("click", () => locateDecodedField(button.dataset.inspectorActionPath));
     });
     container.querySelectorAll("[data-inspector-reference-key]").forEach((button) => {
-      button.addEventListener("click", () => navigateToReference(button.dataset.inspectorReferenceKey));
+      button.addEventListener("click", () => state.hooks?.onOpenRecord?.(button.dataset.inspectorReferenceKey));
     });
     $("#data-inspector-tree-q", container)?.addEventListener("input", (event) => {
       state.treeQuery = event.target.value;
@@ -1641,29 +1334,6 @@
 
   // ------------------------------------------------------------- selection ---
 
-  function updateQuery() {
-    // Only the active Decoded mode owns the URL; a background re-render must
-    // not write its selection over another mode's deep link.
-    if (window.WebUI.dataPage && window.WebUI.dataPage.activeMode() !== "decoded") return;
-    const url = new URL(window.location.href);
-    if (state.selectedEntry) {
-      url.searchParams.set("inspectDataset", state.selectedEntry._datasetId);
-      url.searchParams.set("inspect", state.selectedEntry.id);
-    } else {
-      url.searchParams.delete("inspectDataset");
-      url.searchParams.delete("inspect");
-    }
-    history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
-  }
-
-  function readRequestedSelection() {
-    const params = new URLSearchParams(window.location.search);
-    return {
-      datasetId: params.get("inspectDataset") || "",
-      recordId: params.get("inspect") || "",
-    };
-  }
-
   async function loadShard(entry) {
     const key = `${entry._datasetId}/${entry.shard}`;
     if (state.shardCache.has(key)) return state.shardCache.get(key);
@@ -1671,152 +1341,115 @@
       if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
       return response.json();
     });
+    promise.catch(() => state.shardCache.delete(key));
     state.shardCache.set(key, promise);
     return promise;
   }
 
-  async function selectRecord(key) {
-    const entry = state.records.find((candidate) => candidate._key === key);
-    if (!entry) return;
+  // Render one record into `host`, the Data page's viewer pane. The hooks hand
+  // navigation back to the page controller: `onCatalogTerm(term, entry)` for a
+  // catalog-term button, `onOpenRecord(key)` for a resolved stored reference.
+  async function showRecord(host, entry, hooks = {}) {
+    if (!host || !entry) return;
+    state.container = host;
+    state.hooks = hooks;
+    const key = entry._key;
+    if (state.selectedKey !== key) {
+      state.selectedRecord = null;
+      state.treeQuery = "";
+    }
     state.selectedKey = key;
     state.selectedEntry = entry;
-    state.selectedRecord = null;
-    state.treeQuery = "";
-    updateQuery();
-    renderList();
-    const host = $("#data-inspector-right", state.container);
     host.innerHTML = `<div class="data-inspector-empty">${esc(ui("Loading record…", "正在加载记录…"))}</div>`;
     try {
       const shard = await loadShard(entry);
-      if (state.selectedKey !== key) return;
+      if (state.selectedKey !== key || state.container !== host) return;
       const record = (shard.records || []).find((candidate) => candidate.id === entry.id);
       if (!record) throw new Error("record is absent from its declared shard");
       state.selectedRecord = record;
       renderDetail();
     } catch (error) {
-      if (state.selectedKey !== key) return;
+      if (state.selectedKey !== key || state.container !== host) return;
       host.innerHTML = `<div class="data-inspector-empty is-error">${esc(error.message)}</div>`;
     }
   }
 
-  function navigateToReference(key) {
-    if (!state.records.some((entry) => entry._key === key)) return;
-    if (!state.filtered.some((entry) => entry._key === key)) resetFilters();
-    const index = state.filtered.findIndex((entry) => entry._key === key);
-    if (index >= 0) state.pager?.showIndex(index);
-    applyFilters({ resetPage: false });
-    const row = state.rows.find(({ entry }) => entry._key === key);
-    const wrap = $("#data-inspector-list-wrap", state.container);
-    if (row && wrap) wrap.scrollTop = row.top;
-    selectRecord(key);
+  function clearSelection() {
+    state.selectedKey = "";
+    state.selectedEntry = null;
+    state.selectedRecord = null;
   }
 
   // ------------------------------------------------------------------ load ---
 
-  async function loadDatasets(requestedSelection = {}) {
+  function catalog() {
+    return {
+      ok: true,
+      datasets: state.datasets.map(({ descriptor, manifest }) => ({
+        id: descriptor.id,
+        title: descriptor.title || manifest.title || descriptor.id,
+        description: descriptor.description || manifest.description || "",
+        count: (manifest.catalog || []).length,
+      })),
+      records: state.records,
+    };
+  }
+
+  async function loadCatalog() {
+    const response = await fetch(ROOT_PATH, { cache: "no-store" });
+    if (!response.ok) throw new Error(`${ROOT_PATH}: ${response.status} ${response.statusText}`);
+    state.root = await response.json();
     const descriptors = state.root?.datasets || [];
-    if (!descriptors.length) {
-      showMessage(esc(ui(
-        "No decoded datasets are published. Run the data-inspector builder.",
-        "尚未发布解码数据集，请运行数据检查器构建器。",
-      )));
-      return;
-    }
-    const token = ++state.loadToken;
-    state.selectedKey = "";
-    state.selectedEntry = null;
-    state.selectedRecord = null;
-    state.shardCache.clear();
-    showMessage(esc(ui("Loading decoded datasets…", "正在加载解码数据集…")));
-    try {
-      const results = await Promise.all(descriptors.map(async (descriptor) => {
-        const response = await fetch(datasetPath(descriptor), { cache: "no-store" });
-        if (!response.ok) throw new Error(`${descriptor.id}: ${response.status} ${response.statusText}`);
-        return { descriptor, manifest: await response.json() };
-      }));
-      if (token !== state.loadToken) return;
-      state.datasets = results;
-      state.datasetTone = new Map(results.map(({ descriptor }, index) => [descriptor.id, index % 6]));
-      state.records = results.flatMap(({ descriptor, manifest }) => (
-        (manifest.catalog || []).map((entry) => {
-          const record = {
-            ...entry,
-            _datasetId: descriptor.id,
-            _datasetTitle: descriptor.title || manifest.title || descriptor.id,
-            _key: `${descriptor.id}:${entry.id}`,
-            _folder: folderKey(entry.sourcePath || entry.id),
-          };
-          record._search = buildSearchText({
-            ...record,
-            tags: [descriptor.id, descriptor.title, ...(entry.tags || [])],
-          });
-          return record;
-        })
-      ));
-      renderShell();
-      const target = state.records.find((entry) => (
-        entry.id === requestedSelection.recordId
-        && (!requestedSelection.datasetId || entry._datasetId === requestedSelection.datasetId)
-      ));
-      if (target) {
-        const index = state.filtered.findIndex((entry) => entry._key === target._key);
-        if (index >= 0) state.pager?.showIndex(index);
-        applyFilters({ resetScroll: false, resetPage: false });
-        selectRecord(target._key);
-      } else {
-        updateQuery();
-      }
-    } catch (error) {
-      if (token !== state.loadToken) return;
-      showMessage(`${esc(ui(
-        "Inspector data could not be loaded. Run the data-inspector builder.",
-        "无法加载检查器数据，请运行数据检查器构建器。",
-      ))}<br><code>${esc(error.message)}</code>`, { error: true });
-    }
+    const results = await Promise.all(descriptors.map(async (descriptor) => {
+      const reply = await fetch(datasetPath(descriptor), { cache: "no-store" });
+      if (!reply.ok) throw new Error(`${descriptor.id}: ${reply.status} ${reply.statusText}`);
+      return { descriptor, manifest: await reply.json() };
+    }));
+    state.datasets = results;
+    state.datasetTone = new Map(results.map(({ descriptor }, index) => [descriptor.id, index % 6]));
+    state.records = results.flatMap(({ descriptor, manifest }) => (
+      (manifest.catalog || []).map((entry) => {
+        const record = {
+          ...entry,
+          _datasetId: descriptor.id,
+          _datasetTitle: descriptor.title || manifest.title || descriptor.id,
+          _key: `${descriptor.id}:${entry.id}`,
+          _folder: folderKey(entry.sourcePath || entry.id),
+        };
+        record._search = buildSearchText({
+          ...record,
+          tags: [descriptor.id, descriptor.title, ...(entry.tags || [])],
+        });
+        return record;
+      })
+    ));
+    return catalog();
   }
 
-  // `container` is the Data page's Decoded pane. The catalog loads once; a
-  // later mount only re-attaches.
-  async function load(container) {
-    if (!container) return;
-    state.container = container;
-    if (state.root || state.loading) return;
-    state.loading = true;
-    showMessage(esc(ui("Loading decoded-data catalog…", "正在加载解码数据目录…")));
-    try {
-      const response = await fetch(ROOT_PATH, { cache: "no-store" });
-      if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
-      state.root = await response.json();
-      await loadDatasets(readRequestedSelection());
-    } catch (error) {
-      state.lastMessage = null;
-      showMessage(`${esc(ui(
-        "Decoded-data catalog is unavailable.",
-        "解码数据目录不可用。",
-      ))}<br><code>${esc(error.message)}</code>`, { error: true });
-    } finally {
-      state.loading = false;
+  // The catalog and every dataset manifest load once (detail shards load per
+  // record). Resolves to { ok, datasets, records } or { ok: false, error }.
+  function load() {
+    if (!state.loadPromise) {
+      state.loadPromise = loadCatalog().catch((error) => ({ ok: false, error: error.message }));
     }
-  }
-
-  // Re-render for a locale change: the shell when datasets are loaded,
-  // otherwise the last message (its mode switch carries localized labels).
-  function relocalize() {
-    if (!state.container) return;
-    if (state.datasets.length) {
-      const selected = state.selectedKey;
-      renderShell();
-      if (selected) selectRecord(selected);
-    } else if (state.lastMessage) {
-      showMessage(state.lastMessage.html, state.lastMessage.options);
-    }
+    return state.loadPromise;
   }
 
   window.WebUI.decodedInspector = {
     load,
-    relocalize,
-    requestedSelection: readRequestedSelection,
-    syncQuery: () => { if (state.root) updateQuery(); },
+    showRecord,
+    clearSelection,
+    find: (datasetId, recordId) => state.records.find((entry) => (
+      entry.id === recordId && (!datasetId || entry._datasetId === datasetId)
+    )) || null,
+    byKey: (key) => state.records.find((entry) => entry._key === key) || null,
+    queryMatcher,
+    comparator,
+    sortOptions,
+    rowHtml,
+    statusLabel,
+    statusClass,
+    toneClass,
   };
   window.WebUI.dataInspectorShell = {
     setupListShellSplitters,

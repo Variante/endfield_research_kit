@@ -89,8 +89,8 @@ succeed.
   remains on the Audio page.
   - Ordinary long-list pages (Characters, Gameplay, Audio, Assets, Text,
     Updates, and the Data page) share paginated left lists and a
-    persisted custom 1-10000-items-per-page input, with 50/100/200/500 offered
-    as suggestions, plus a direct page-number input that clamps to the valid
+    persisted custom 1-10000-items-per-page input, 1000 by default, with
+    50/100/200/500/1000 offered as suggestions, plus a direct page-number input that clamps to the valid
     range. Filtering and sorting return to the first page; Story and Map retain
     their hierarchical navigation.
 - Assets derives JSON filter categories from the exported source/object

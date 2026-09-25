@@ -2,27 +2,33 @@
 
 ## Purpose
 
-The Data page (`data-inspector`, after Assets in normal navigation) has three
-modes. **Files** and **SQL** browse the export's SQLite stores -- every
-exported Unity object document in `game/Unity.sqlite` and every packed game
-file in `game/GameFiles.sqlite` -- as a file viewer and a read-only SQL console.
-**Decoded** is the Decoded Data Inspector below: maintained decoder output
-reviewed without a bespoke page per recovered format.
+The Data page (`data-inspector`, after Assets in normal navigation) has two
+modes. **Files** is one list and one viewer over three sources: the export's
+Unity object documents (`game/Unity.sqlite`), its packed game files
+(`game/GameFiles.sqlite`), and the decoded datasets below. Sources and their
+groups (Unity types, packed folders, datasets) are multi-select `WebUI.facets`
+chips; nothing selected lists every source, and a selected group narrows its
+own source. Decoded-only filters (status, source folder, tags) appear only
+while decoded data is selected. **SQL** is a read-only console over either
+store.
 
-Files and SQL need the repository's `serve.py`, whose `/api/stores` endpoints
-(`scripts/webui/data_inspector/store_browser.py`) answer bounded questions:
-the stores and their groups, a filtered page of rows (name glob or substring,
-object name, PathID, CAB), or one read-only statement with `inflate(data)` and
-`doc(data, '$.path')`, capped at 500 rows and 15 s. Connections are read-only
-with an authorizer refusing writes and ATTACH. Documents are fetched from the
-URLs `serve.py` already answers from the stores, so the viewer shows exact
-exported bytes: JSON as a lazy tree, text as text, anything else as hex. The
-viewer reads no schema; PathID "find" is an index lookup, not a resolved
-reference (a PPtr with a non-zero `m_FileID` points into another file). A
-static package has no API and opens in Decoded mode. Assets no longer lists
-exported JSON, because every such document is a store row here.
+The store sources and SQL need the repository's `serve.py`, whose
+`/api/stores` endpoints (`scripts/webui/data_inspector/store_browser.py`)
+answer bounded questions: the stores and their groups, a filtered page of rows
+across any set of groups (name glob or substring, object name, PathID, CAB),
+or one read-only statement with `inflate(data)` and `doc(data, '$.path')`,
+capped at 500 rows and 15 s. Connections are read-only with an authorizer
+refusing writes and ATTACH. Documents are fetched from the URLs `serve.py`
+already answers from the stores, so the viewer shows exact exported bytes:
+JSON as a lazy tree with base64 decoded inline, text as text, anything else as
+hex. The viewer reads no schema; PathID "find" is an index lookup, not a
+resolved reference (a PPtr with a non-zero `m_FileID` points into another
+file). A static package has no API, so Files lists only the decoded datasets.
+Assets no longer lists exported JSON, because every such document is a store
+row here.
 
-The rest of this guide is the Decoded mode contract.
+The rest of this guide is the decoded-dataset contract: what a decoded record
+is and how the shared viewer renders it.
 
 Publishers cover two kinds of source. Families with a maintained
 `scripts/game_data/` reader -- `AnimationConfig`, NPC montages, `LevelConfig`,

@@ -49,7 +49,7 @@ and the value of `document.body.dataset.activeView`.
 | Gameplay | `gameplay` | Characters, equipment, enemies, items, progression, skills, projectiles, and assets |
 | Audio | `audio` | Wwise Events/media, authored contexts, decoded playback candidates, and recovery state |
 | Assets | `assets` | Exported images, models, video, and metadata |
-| Data | `data-inspector` | Export stores (Unity documents, packed game files) as a file viewer and SQL console, plus decoded datasets |
+| Data | `data-inspector` | One Files list over the export stores (Unity documents, packed game files) and the decoded datasets, plus a SQL console |
 | Text | `reference` | Searchable localized table/reference rows |
 | Updates | `updates` | Exported game-data changes between two complete versions |
 
@@ -69,8 +69,8 @@ Gameplay, and any other unknown hash falls back to Story.
 | `?asset=` | Assets entry by relative path |
 | `?audio=` + `?audioKind=` | Audio record (`events` or a media shard) |
 | `?gameplay=` + `?gameplayId=` + `?entry=` | Gameplay list, item, and sub-entry |
-| `?inspectDataset=` + `?inspect=` | Data page, Decoded mode: dataset and record |
-| `?dataMode=` + `?dataRoot=` + `?dataStore=` + `?dataGroup=` + `?dataName=` (+ `?dataQ=`, `?dataField=`) | Data page mode (`files`, `sql`, `decoded`), export (`previous`, omitted for current), store (`unity`, `game-files`), group, row, and search; build with `WebUI.dataPageUrl` / `dataPageUrlForRel` |
+| `?inspectDataset=` + `?inspect=` | Data page, Files mode: the selected decoded record (dataset and record id) |
+| `?dataMode=` + `?dataRoot=` + `?dataStore=` + `?dataGroup=` + `?dataName=` (+ `?dataQ=`, `?dataField=`, `?dataStatus=`, `?dataFolder=`, `?dataTag=`, `?dataSort=`) | Data page mode (`files`, `sql`; the retired `decoded` opens `files`), export (`previous`, omitted for current), selected sources (repeated `dataStore`: `unity`, `game-files`, `decoded`), selected groups (repeated `dataGroup=<source>:<group>`; an unqualified group belongs to `dataStore`), the selected store row, search, and the repeated decoded filters and decoded order; build with `WebUI.dataPageUrl` / `dataPageUrlForRel` |
 
 Factory, World, Presentation, Progression, the standalone Combat & Projectiles
 page, and the Mission Pipeline page are retired; their useful progression,
@@ -86,7 +86,7 @@ Load order, as `index.html` declares it:
 | --- | --- |
 | `index.html`, `style.css` | shell, page containers, shared layout and media presentation |
 | `src/core/{namespace,dom,loader,storage,text,locale,paths}.js` | globals, DOM helpers, fetch/caching, persistence, text, locale, paths |
-| `src/ui/{media_player,splitter,filters}.js` | shared media player, resizable splitters, filter panels |
+| `src/ui/{media_player,splitter,filters,facets,pagination}.js` | shared media player, resizable splitters, filter chips and panel toggle, declarative facet filters (`WebUI.facets`, below), list pager |
 | `app_labels.js`, `app_tree.js`, `src/features/story_triggers.js`, `app.js` | Story/Text labels, tree rendering, trigger evidence, Story page |
 | `assets.js` | Assets page |
 | `src/features/characters/{index.js,style.css}` | Characters view and runtime overrides |
@@ -97,10 +97,62 @@ Load order, as `index.html` declares it:
 | `src/features/reference/index.js` | localized Text Tables browser |
 | `src/features/updates/index.js` | Updates page |
   | `src/features/recovery/{index.js,style.css}` | debug-only Recovery progress page |
-| `src/features/data_inspector/{index.js,stores.js,style.css}` | Data page: `stores.js` owns the mode switch, deep links, and the Files/SQL modes; `index.js` is the Decoded mode |
+| `src/features/data_inspector/{index.js,stores.js,style.css}` | Data page: `stores.js` owns the mode switch, deep links, and the Files/SQL modes; `index.js` is the decoded-dataset source (catalog, matching, row markup, record viewer) that Files lists and shows |
 
 Generated data belongs in `webui/data/`; user-managed inputs belong in
 `webui/overrides/`. Do not hand-edit generated JSON.
+
+### Facet filters (`WebUI.facets`)
+
+`src/ui/facets.js` is the shared model for a list page's chip groups, built on
+`WebUI.filters.buildChips`. A page declares its groups once and the model owns
+the active values, chip rendering, per-chip counts, the `.filter-section`
+`(n)` badges, matching, reset, and URL/storage persistence. Semantics are the
+same on every page: several chips in one group are OR, groups combine with
+AND, and a group with nothing active does not constrain.
+
+```js
+const facets = WebUI.facets.create({
+  groups: [
+    { id: "kind", container: "#x-kind-filter", section: "x-kind", param: "kind",
+      values: (item) => item.kind, label: kindLabel, order: "count" },
+    { id: "tag", container: "#x-tag-filter", section: "x-tag", values: (item) => item.tags },
+  ],
+  predicate: (item) => matchesSearch(item), // non-facet filters; also narrows counts
+  onChange: () => applyFilters(),            // after a toggle, set(), reset(), fromParams()
+});
+facets.render(items);                        // after load and on locale change
+const shown = facets.filter();               // or facets.filter(list) / facets.matches(item)
+```
+
+- `values(item)` returns a value, an array, or nothing. Counts are faceted by
+  default: a chip counts the items that pass the predicate and every other
+  group, so it shows what selecting it would add (`countMode: "total"` counts
+  against the predicate only). A zero-count chip is dimmed (`is-facet-empty`,
+  or hidden with `hideEmpty`); an active value absent from the data stays
+  visible so it can be cleared.
+- Group options: `single` (radio-style), `mode: "all"` (an item needs every
+  active value), `match(item, active)` (a custom test), `items` (a fixed chip
+  list, e.g. an enumeration that must show zero counts), `counts` (explicit
+  counts), `label`, `title`, `className`, `order` (`natural`, `count`, `none`,
+  an array, or a comparator), and `section` (several groups may share one
+  badge).
+- A server-side group omits `values` and gives `items` plus `counts`;
+  `matches()` ignores it and the page applies its active values itself, as
+  the Data page does for store groups.
+- State: `active(id)` (a copy), `has`, `set(id, values)`, `toggle(id, value,
+  on)`, `reset({ only })`, `isFiltered(id?)`, `activeCount(id?)`,
+  `counts(id)`. Every mutator takes `{ silent: true }` to skip `onChange`.
+- Persistence: `toParams(params)` / `fromParams(params)` write and read one
+  repeated URL parameter per active value (`?kind=a&kind=b`, so values may
+  contain commas) for groups that declare `param`; `snapshot()` /
+  `restore(snapshot)` round-trip a plain `{ groupId: [values] }` object for
+  storage.
+
+Migrating a page replaces its per-group `Set`s, `buildChips` calls, hand-rolled
+filter tests, count maps, badge updates and reset code with one `create()`
+call, one `render()` after data loads, and `facets.filter()` in the apply step.
+The Data page Files mode is the reference consumer.
 
 ## Generated data
 
@@ -139,21 +191,33 @@ optional sidecar and display an explicit degraded state when the omission
 matters. Schema changes must be coordinated with their frontend consumer.
 
 The Data page contract is documented in
-[`memory/webui/data_inspector.md`](../memory/webui/data_inspector.md). Files
-and SQL modes read the export stores through the local server's read-only
-`/api/stores`, `/api/stores/rows` and `/api/stores/sql` endpoints
-(`scripts/webui/data_inspector/store_browser.py`) and fetch each document from
-its usual `/export_data/...` or `/export_previous/...` URL; a static package or
-an older `serve.py` has no API, so the page then opens in Decoded mode with an
-explanation. Assets no longer lists exported JSON: every such document is a
-store row, and Assets links a material to its Data-page document. The Decoded
-mode's
-sidebar is the shared list-page shell used by Story, Assets, Audio and
-Gameplay: header toggle plus reset, collapsible `.filter-section` chip groups
-(data family, decode status, source folder, tags), a filter splitter, a
-virtualized list, a pager, and a pane splitter. Dataset catalogs are merged
-into one searchable list without loading detail shards; full exported Unity
-JSON is fetched from `/export_full/` only when requested.
+[`memory/webui/data_inspector.md`](../memory/webui/data_inspector.md). It has
+two modes, Files and SQL. Files is one list shell over every data source: the
+export stores, read through the local server's read-only `/api/stores`,
+`/api/stores/rows` and `/api/stores/sql` endpoints
+(`scripts/webui/data_inspector/store_browser.py`), and the generated decoded
+datasets. Sources and their groups (Unity types, packed folders, datasets) are
+multi-select `WebUI.facets` chips: a source is listed when its source chip or
+any of its group chips is on, or when nothing is selected; selected groups
+narrow their source. The listed sources are paged as one sequence in the order
+Unity objects, packed game files, decoded records; `/api/stores/rows` takes
+repeated `group=` parameters (none means the whole store), orders rows by
+`type, name`, and returns each row's `group`. The search matches store rows by
+the chosen field (name, or the Unity-only object name, PathID and CAB) and
+decoded records by name, path, status and tag. Decode status, source folder,
+tag and decoded-order controls appear only while decoded datasets are
+selected. One viewer pane shows a store row's document, fetched from its usual
+`/export_data/...` or `/export_previous/...` URL, or a decoded record's
+annotated view. A static package or an older `serve.py` has no store API:
+Files then lists only the decoded datasets with an explanation, and SQL
+explains that it needs `python serve.py`. Assets no longer lists exported
+JSON: every such document is a store row, and Assets links a material to its
+Data-page document. The Files sidebar is the shared list-page shell used by
+Story, Assets, Audio and Gameplay: header toggle plus reset, collapsible
+`.filter-section` chip groups, a filter splitter, a virtualized list, a pager,
+and a pane splitter. Dataset catalogs are merged into one searchable list
+without loading detail shards; full exported Unity JSON is fetched from
+`/export_full/` only when requested.
 The debug-only `level-data` dataset uses the maintained LevelData reader to
 show each file's exact or bounded status, open-field boundary, and stored spline
 rows where decoded; it makes no movement or runtime-use claim.
@@ -269,7 +333,7 @@ outside `webui/overrides/`, and export tools never replace these files.
   filter panel (`#*-filter-panel`, `#*-filter-toggle`) of named filter
   sections, a reset button, shown/total counts, a resizable splitter, a
   paginated left list with a persisted custom 1-10000-items-per-page input
-  (50/100/200/500 remain suggestions), a direct page-number input, and a detail
+  (1000 by default; 50/100/200/500/1000 are suggestions), a direct page-number input, and a detail
   pane on the right. Entering a page outside the available range clamps to the
   first or last page. Story and Map keep their specialized hierarchical
   navigation instead of applying flat-list pagination.

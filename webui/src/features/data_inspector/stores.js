@@ -1,22 +1,39 @@
-// Data page controller: the mode switch (Files | SQL | Decoded), deep links,
-// view events, and the two store modes.
+// Data page controller: the mode switch (Files | SQL), deep links, view
+// events, and both modes.
 //
-// Files and SQL read the export's SQLite stores (game/Unity.sqlite,
-// game/GameFiles.sqlite) through the local server's read-only /api/stores
-// API (scripts/webui/data_inspector/store_browser.py). A row's bytes are
-// fetched from the row's own /export_* URL, exactly like any exported file.
-// A static package has no such API: both modes then explain that they need
-// `python serve.py` from the repository, and the page opens in Decoded mode.
+// Files lists rows from every data source in one list shell:
+//   * the export's SQLite stores (game/Unity.sqlite, game/GameFiles.sqlite),
+//     read through the local server's read-only /api/stores API
+//     (scripts/webui/data_inspector/store_browser.py); a row's bytes are
+//     fetched from its own /export_* URL, exactly like any exported file;
+//   * the generated decoded datasets (webui/data/data_inspector), whose
+//     catalog, matching and record viewer live in index.js
+//     (WebUI.decodedInspector).
+// Sources and their groups (Unity types, packed folders, datasets) are
+// WebUI.facets chips. A source is listed when its source chip or any of its
+// group chips is on, or when nothing is selected at all; within a listed
+// source, selected groups narrow it and no selected group means all of them.
+// The list is the listed sources in order (Unity, packed files, decoded),
+// paged as one sequence. Decode status, source folder and tag filters apply to
+// decoded records and are shown only while decoded datasets are selected.
 //
-// The viewer is generic. It knows the store vocabulary the API publishes
-// (store, group, row name, object name, PathID, CAB) and nothing about any
-// Unity type's schema: a JSON document is rendered as its own tree, text as
-// text, and anything that is not UTF-8 text as a hex dump.
+// SQL runs one read-only statement over a store. A static package has no
+// store API: Files then lists only the decoded datasets, and SQL explains that
+// it needs `python serve.py`.
+//
+// The store viewer is generic. It knows the store vocabulary the API
+// publishes (store, group, row name, object name, PathID, CAB) and nothing
+// about any Unity type's schema: a JSON document is rendered as its own tree,
+// text as text, and anything that is not UTF-8 text as a hex dump.
 (() => {
   const API_PREFIX = "/api/stores";
-  const MODES = ["files", "sql", "decoded"];
+  const MODES = ["files", "sql"];
+  const STORE_SOURCES = ["unity", "game-files"];
+  const SOURCES = [...STORE_SOURCES, "decoded"];
+  const DECODED_FILTER_GROUPS = ["status", "folder", "tag"];
   const MAX_API_ROWS = 1000;
-  const ROW_HEIGHT = 50;
+  const STORE_ROW_HEIGHT = 50;
+  const DECODED_ROW_HEIGHT = 72;
   const OVERSCAN_PX = 240;
   const FULL_FETCH_BYTES = 4 * 1024 * 1024;
   const PREFIX_FETCH_BYTES = 512 * 1024;
@@ -33,12 +50,14 @@
   const PANE_STORAGE_KEY = "data_inspector_sidebar_width";
   const FILES_FILTER_HEIGHT_KEY = "data_files_filter_height";
   const FILES_FILTER_PANEL_KEY = "data_files_filters_collapsed";
-  const FILES_GROUP_KEY = "data_files_last_group";
+  const FILES_SELECTION_KEY = "data_files_selection";
   const FILES_PAGE_SIZE_KEY = "data_files_page_size";
   const SQL_DRAFT_KEY = "data_sql_draft";
   const MOBILE_LAYOUT_QUERY = "(max-width: 760px)";
   const PATH_ID_KEY = /path_?id$/i;
   const BASE64_TEXT = /^[A-Za-z0-9+/]+={0,2}$/;
+  const FIELDS = ["name", "object", "pathId", "cab"];
+  const SORTS = ["path", "title", "dataset", "status"];
 
   const WebUI = window.WebUI;
   const { $ } = WebUI;
@@ -49,6 +68,7 @@
   const ui = (en, cn) => (zh() ? cn : en);
   const isMobileLayout = () => !!(window.matchMedia && window.matchMedia(MOBILE_LAYOUT_QUERY).matches);
   const shell = () => WebUI.dataInspectorShell || {};
+  const decodedApi = () => WebUI.decodedInspector || null;
   const formatBytes = (value) => (shell().formatBytes ? shell().formatBytes(value) : `${value} B`);
 
   // ------------------------------------------------------------------ API --
@@ -63,12 +83,15 @@
 
   // A static host (or a serve.py that predates the API) answers with a
   // non-JSON 404 or no response at all; that is "unavailable", not an error.
+  // An array parameter value is sent as a repeated parameter.
   async function storeApi(endpoint, params = {}) {
     let response;
     try {
       const url = new URL(`${API_PREFIX}${endpoint ? `/${endpoint}` : ""}`, window.location.href);
       for (const [key, value] of Object.entries(params)) {
-        if (value !== undefined && value !== null && value !== "") url.searchParams.set(key, String(value));
+        for (const item of Array.isArray(value) ? value : [value]) {
+          if (item !== undefined && item !== null && item !== "") url.searchParams.append(key, String(item));
+        }
       }
       response = await fetch(url, { cache: "no-store", headers: { Accept: "application/json" } });
     } catch (error) {
@@ -95,26 +118,33 @@
     rendered: { files: false, sql: false },
     // Per root: { ok, payload, error, unavailable } once probed.
     roots: { current: null, previous: null },
-    probing: null,
+    // The decoded datasets: status idle | loading | ready | error.
+    decoded: { status: "idle", datasets: [], records: [], error: "" },
     lastAppliedLink: "",
   };
 
   const files = {
     root: "current",
-    store: "",
-    group: "",
     field: "name",
     query: "",
+    catalogTerm: "",
+    sort: "path",
+    facets: null,
+    selectionRestored: false,
+    decodedMatcher: () => true,
     total: 0,
     offset: 0,
     rows: [],
+    tops: [],
+    height: 0,
+    segments: [],
     loading: false,
     error: "",
     reqToken: 0,
     pager: null,
     filterPanel: null,
     selected: null,
-    autoSelect: "",
+    autoSelect: null,
     autoSelectSingle: false,
     pathIdHits: null,
     doc: null,
@@ -133,11 +163,14 @@
     token: 0,
   };
 
-  function storeLabel(id) {
+  function sourceLabel(id) {
     if (id === "unity") return ui("Unity objects", "Unity 对象");
     if (id === "game-files") return ui("Packed game files", "打包的游戏文件");
+    if (id === "decoded") return ui("Decoded datasets", "解码数据集");
     return id;
   }
+
+  const storeLabel = sourceLabel;
 
   function rootPayload(root) {
     const probe = page.roots[root];
@@ -148,6 +181,10 @@
     return rootPayload(root)?.stores || [];
   }
 
+  function storeEntry(root, store) {
+    return storesFor(root).find((entry) => entry.id === store) || null;
+  }
+
   function hasPreviousStores() {
     return storesFor("previous").length > 0;
   }
@@ -156,22 +193,47 @@
     return !!page.roots.current?.ok;
   }
 
-  function storeHasGroup(root, store, group) {
-    return storesFor(root).some((entry) => entry.id === store && entry.groups.some((item) => item.name === group));
+  function unityStoreIn(root) {
+    return !!storeEntry(root, "unity");
   }
 
-  function unityStoreIn(root) {
-    return storesFor(root).some((entry) => entry.id === "unity");
+  function decodedReady() {
+    return page.decoded.status === "ready";
+  }
+
+  // Sources the Files list can show for the selected export root.
+  function availableSources() {
+    const out = STORE_SOURCES.filter((id) => storeEntry(files.root, id));
+    if (page.decoded.status !== "error") out.push("decoded");
+    return out;
+  }
+
+  function sourceRowCount(id) {
+    if (id === "decoded") return decodedReady() ? page.decoded.records.length : undefined;
+    return Number(storeEntry(files.root, id)?.rows) || 0;
+  }
+
+  // Which sources the current selection lists (see the header comment).
+  function includedSources() {
+    const facets = files.facets;
+    const available = availableSources();
+    if (!facets) return available;
+    const any = ["source", ...SOURCES].some((id) => facets.isFiltered(id));
+    return available.filter((id) => !any || facets.has("source", id) || facets.isFiltered(id));
+  }
+
+  function decodedFiltersShown() {
+    const facets = files.facets;
+    return !!facets && (facets.has("source", "decoded") || facets.isFiltered("decoded"));
   }
 
   // -------------------------------------------------------------- mode UI --
 
   function modeSwitchHtml(active) {
-    const labels = { files: ui("Files", "文件"), sql: "SQL", decoded: ui("Decoded", "解码") };
+    const labels = { files: ui("Files", "文件"), sql: "SQL" };
     const titles = {
-      files: ui("Browse export-store rows and view their documents", "浏览导出存储中的行并查看文档"),
+      files: ui("Browse export-store rows and decoded datasets", "浏览导出存储中的行与解码数据集"),
       sql: ui("Run one read-only SQL statement over a store", "对存储执行一条只读 SQL 语句"),
-      decoded: ui("Generated decoder datasets (Decoded Data Inspector)", "生成的解码数据集（解码数据检查器）"),
     };
     return `<div class="data-page-modes" role="tablist" aria-label="${esc(ui("Data page mode", "数据页模式"))}">${MODES
       .map((mode) => `<button type="button" role="tab" data-data-mode="${mode}" title="${esc(titles[mode])}"
@@ -184,34 +246,43 @@
       <div class="data-inspector-empty${error ? " is-error" : ""}">${html}</div></div>`;
   }
 
-  function unavailableHtml() {
+  function unavailableHtml({ files: forFiles = false } = {}) {
     const probe = page.roots.current;
     if (probe && !probe.ok && !probe.unavailable) {
       return `${esc(ui("The export stores could not be read:", "无法读取导出存储："))}<br><code>${esc(probe.error)}</code>`;
     }
-    return `${esc(ui(
-      "Files and SQL read the export's SQLite stores (game/Unity.sqlite, game/GameFiles.sqlite) through the local server's store API, which a static package does not have. Start the WebUI from the repository with",
-      "文件与 SQL 模式通过本地服务器的存储 API 读取导出的 SQLite 存储（game/Unity.sqlite、game/GameFiles.sqlite），静态包中没有该 API。请在仓库中运行",
+    return `${esc(forFiles ? ui(
+      "Export-store rows (game/Unity.sqlite, game/GameFiles.sqlite) are read through the local server's store API, which a static package does not have; only the decoded datasets are listed. Start the WebUI from the repository with",
+      "导出存储中的行（game/Unity.sqlite、game/GameFiles.sqlite）通过本地服务器的存储 API 读取，静态包中没有该 API，因此仅列出解码数据集。请在仓库中运行",
+    ) : ui(
+      "SQL reads the export's SQLite stores (game/Unity.sqlite, game/GameFiles.sqlite) through the local server's store API, which a static package does not have. Start the WebUI from the repository with",
+      "SQL 模式通过本地服务器的存储 API 读取导出的 SQLite 存储（game/Unity.sqlite、game/GameFiles.sqlite），静态包中没有该 API。请在仓库中运行",
     ))} <code>python serve.py</code>${esc(ui(
-      ", or restart a server that predates the store API. Decoded mode works without it.",
-      " 启动 WebUI；若服务器早于存储 API，请重启。解码模式不需要它。",
+      ", or restart a server that predates the store API.",
+      " 启动 WebUI；若服务器早于存储 API，请重启。",
     ))}${probe?.error ? `<br><code>${esc(probe.error)}</code>` : ""}`;
   }
 
   function setMode(mode, { updateUrl = true } = {}) {
+    if (mode === "decoded") mode = "files";
     if (!MODES.includes(mode) || !page.app) return;
     page.mode = mode;
     for (const [name, pane] of Object.entries(page.panes)) pane.hidden = name !== mode;
     page.app.querySelector(".data-page")?.setAttribute("data-mode", mode);
     if (mode === "files") ensureFilesPane();
     else if (mode === "sql") ensureSqlPane();
-    else if (mode === "decoded") WebUI.decodedInspector?.load(page.panes.decoded);
     if (updateUrl) syncModeUrl();
     requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
   }
 
   function pageIsActive() {
     return document.body.dataset.activeView === "data-inspector";
+  }
+
+  function clearDataParams(params) {
+    for (const key of WebUI.DATA_PAGE_PARAMS || []) params.delete(key);
+    params.delete("inspectDataset");
+    params.delete("inspect");
   }
 
   function replaceUrl(mutate) {
@@ -233,52 +304,102 @@
       return;
     }
     replaceUrl((params) => {
-      for (const key of WebUI.DATA_PAGE_PARAMS || []) params.delete(key);
+      clearDataParams(params);
       params.set("dataMode", page.mode);
-      if (page.mode !== "decoded") {
-        params.delete("inspectDataset");
-        params.delete("inspect");
-      }
     });
-    if (page.mode === "decoded") WebUI.decodedInspector?.syncQuery();
   }
 
+  // Files deep link: dataStore (repeated) = source chips; dataGroup (repeated)
+  // = `<source>:<group>` group chips; dataStatus/dataFolder/dataTag
+  // (repeated) = decoded filters; dataQ/dataField = search; dataSort = decoded
+  // order; dataName = the selected store row, or inspectDataset + inspect =
+  // the selected decoded record.
   function syncFilesUrl() {
+    if (!page.rendered.files && !files.facets) return;
     replaceUrl((params) => {
-      for (const key of WebUI.DATA_PAGE_PARAMS || []) params.delete(key);
-      params.delete("inspectDataset");
-      params.delete("inspect");
+      clearDataParams(params);
       params.set("dataMode", "files");
       if (files.root !== "current") params.set("dataRoot", files.root);
-      if (files.store) params.set("dataStore", files.store);
-      if (files.group) params.set("dataGroup", files.group);
-      const selected = files.selected;
-      if (selected && selected.root === files.root && selected.store === files.store && selected.group === files.group) {
-        params.set("dataName", selected.row.name);
+      const facets = files.facets;
+      if (facets) {
+        for (const source of facets.active("source")) params.append("dataStore", source);
+        for (const source of SOURCES) {
+          for (const group of facets.active(source)) params.append("dataGroup", `${source}:${group}`);
+        }
+        facets.toParams(params);
       }
       if (files.query) {
         params.set("dataQ", files.query);
         if (files.field !== "name") params.set("dataField", files.field);
+      }
+      if (files.sort !== "path") params.set("dataSort", files.sort);
+      const selected = files.selected;
+      if (selected?.kind === "store" && selected.root === files.root) params.set("dataName", selected.row.name);
+      if (selected?.kind === "decoded") {
+        params.set("inspectDataset", selected.entry._datasetId);
+        params.set("inspect", selected.entry.id);
       }
     });
   }
 
   function readLinkParams() {
     const params = new URLSearchParams(window.location.search);
+    const all = (key) => params.getAll(key).filter(Boolean);
     return {
       mode: params.get("dataMode") || "",
       root: params.get("dataRoot") === "previous" ? "previous" : "current",
-      store: params.get("dataStore") || "",
-      group: params.get("dataGroup") || "",
+      stores: all("dataStore"),
+      groups: all("dataGroup"),
+      statuses: all("dataStatus"),
+      folders: all("dataFolder"),
+      tags: all("dataTag"),
       name: params.get("dataName") || "",
       query: params.get("dataQ") || "",
       field: params.get("dataField") || "",
-      decoded: !!(params.get("inspect") || params.get("inspectDataset")),
+      sort: params.get("dataSort") || "",
+      inspectDataset: params.get("inspectDataset") || "",
+      inspect: params.get("inspect") || "",
     };
   }
 
   function linkKey(link) {
-    return JSON.stringify([link.mode, link.root, link.store, link.group, link.name, link.query, link.field, link.decoded]);
+    return JSON.stringify(link);
+  }
+
+  function linkHasTarget(link) {
+    return !!(link.stores.length || link.groups.length || link.statuses.length || link.folders.length
+      || link.tags.length || link.name || link.query || link.inspect);
+  }
+
+  // `unity:MonoBehaviour`, `game-files:Json/LipSync` and `decoded:<dataset>`
+  // name their source. An unqualified group (the older single-store form)
+  // belongs to the link's store, or to whichever store has a group of that
+  // name.
+  function selectionFromLink(link) {
+    const snapshot = { source: link.stores.filter((id) => SOURCES.includes(id)) };
+    const add = (source, group) => {
+      (snapshot[source] ||= []);
+      if (!snapshot[source].includes(group)) snapshot[source].push(group);
+    };
+    for (const raw of link.groups) {
+      const match = raw.match(/^(unity|game-files|decoded):(.+)$/);
+      if (match) {
+        add(match[1], match[2]);
+        continue;
+      }
+      const owner = link.stores.find((id) => STORE_SOURCES.includes(id))
+        || STORE_SOURCES.find((id) => storeEntry(files.root, id)?.groups.some((group) => group.name === raw))
+        || "unity";
+      add(owner, raw);
+    }
+    if (link.statuses.length) snapshot.status = link.statuses;
+    if (link.folders.length) snapshot.folder = link.folders;
+    if (link.tags.length) snapshot.tag = link.tags;
+    if (link.inspect && !link.stores.length && !link.groups.length) {
+      if (link.inspectDataset) add("decoded", link.inspectDataset);
+      else snapshot.source.push("decoded");
+    }
+    return snapshot;
   }
 
   // --------------------------------------------------------------- mount --
@@ -291,12 +412,33 @@
     }
   }
 
-  function initialMode(link) {
-    if (link.decoded) return "decoded";
-    const hasStores = storesFor("current").length > 0 || hasPreviousStores();
-    if (MODES.includes(link.mode)) return link.mode === "decoded" || apiAvailable() ? link.mode : "decoded";
-    if (link.store || link.group || link.name) return apiAvailable() ? "files" : "decoded";
-    return apiAvailable() && hasStores ? "files" : "decoded";
+  function startDecodedLoad() {
+    if (page.decoded.status !== "idle") return;
+    const api = decodedApi();
+    if (!api) {
+      page.decoded = { status: "error", datasets: [], records: [], error: "decoded inspector module is not loaded" };
+      return;
+    }
+    page.decoded.status = "loading";
+    api.load().then((result) => {
+      page.decoded = result.ok
+        ? { status: "ready", datasets: result.datasets, records: result.records, error: "" }
+        : { status: "error", datasets: [], records: [], error: result.error || "" };
+      onDecodedLoaded();
+    });
+  }
+
+  function onDecodedLoaded() {
+    if (!page.rendered.files) return;
+    if (!apiAvailable() && page.decoded.status === "error") {
+      renderFilesPane();
+      return;
+    }
+    updateMatcher();
+    renderStats();
+    renderSources();
+    syncFieldSelect();
+    if (includedSources().includes("decoded") || files.autoSelect?.kind === "decoded") fetchRows();
   }
 
   async function mount() {
@@ -309,12 +451,10 @@
       <div class="data-page" data-mode="">
         <div id="data-page-files" class="data-page-pane" data-pane="files"></div>
         <div id="data-page-sql" class="data-page-pane" data-pane="sql" hidden></div>
-        <div id="data-page-decoded" class="data-page-pane" data-pane="decoded" hidden></div>
       </div>`;
     page.panes = {
       files: $("#data-page-files", app),
       sql: $("#data-page-sql", app),
-      decoded: $("#data-page-decoded", app),
     };
     app.addEventListener("click", (event) => {
       const button = event.target.closest("[data-data-mode]");
@@ -325,6 +465,7 @@
     page.panes.files.innerHTML = messagePaneHtml("files", esc(ui("Reading the export stores…", "正在读取导出存储…")));
 
     const link = readLinkParams();
+    startDecodedLoad();
     page.roots.current = await probeRoot("current");
     const previousProbe = probeRoot("previous").then((result) => {
       page.roots.previous = result;
@@ -335,26 +476,32 @@
     if (link.root === "previous" || !storesFor("current").length) await previousProbe;
     // A mode picked while the probe ran rendered without its result.
     page.rendered = { files: false, sql: false };
-    applyLink(link, { initial: true });
+    applyLink(link);
   }
 
-  // Apply a deep link. Files links set the search to the row name so the
-  // list shows it, and select the exact row once the page arrives.
-  function applyLink(link, { initial = false } = {}) {
+  // Apply a deep link: its selection, search and target row. A store row is
+  // found by setting the search to its name; a decoded record by listing its
+  // dataset. The exact row is selected once its page arrives.
+  function applyLink(link) {
     page.lastAppliedLink = linkKey(link);
-    const mode = initial ? initialMode(link) : (link.decoded ? "decoded" : (MODES.includes(link.mode) ? link.mode : "files"));
-    if (mode === "files" && (link.store || link.group || link.name || link.query)) {
+    const mode = link.mode === "sql" && apiAvailable() ? "sql" : "files";
+    if (mode === "files" && linkHasTarget(link)) {
       files.root = link.root === "previous" && hasPreviousStores() ? "previous" : "current";
-      if (link.store) files.store = link.store;
-      if (link.group) files.group = link.group;
-      files.field = ["name", "object", "pathId", "cab"].includes(link.field) ? link.field : "name";
+      ensureFacets().restore(selectionFromLink(link));
+      files.selectionRestored = true;
+      files.field = FIELDS.includes(link.field) ? link.field : "name";
       files.query = link.name || link.query;
       if (link.name) files.field = "name";
-      files.autoSelect = link.name;
+      files.catalogTerm = "";
+      files.sort = SORTS.includes(link.sort) ? link.sort : "path";
+      files.autoSelect = link.inspect
+        ? { kind: "decoded", datasetId: link.inspectDataset, recordId: link.inspect }
+        : link.name ? { kind: "store", name: link.name } : null;
       files.pathIdHits = null;
       files.offset = 0;
       files.rows = [];
       files.error = "";
+      files.pager?.reset();
       if (page.rendered.files) renderFilesPane();
     }
     setMode(mode);
@@ -367,7 +514,7 @@
       return;
     }
     const link = readLinkParams();
-    if (linkKey(link) !== page.lastAppliedLink && (link.store || link.group || link.name || link.mode)) applyLink(link);
+    if (linkKey(link) !== page.lastAppliedLink && (linkHasTarget(link) || link.mode)) applyLink(link);
     else requestAnimationFrame(() => window.dispatchEvent(new Event("resize")));
   }
 
@@ -392,20 +539,123 @@
 
   // ============================================================== FILES ====
 
-  function pickDefaultGroup() {
-    const stores = storesFor(files.root);
-    if (files.store && files.group && storeHasGroup(files.root, files.store, files.group)) return;
-    const remembered = String(WebUI.storageGet?.(FILES_GROUP_KEY) || "");
-    const [rememberedStore, rememberedGroup] = remembered.split("|");
-    if (rememberedStore && storeHasGroup(files.root, rememberedStore, rememberedGroup)) {
-      files.store = rememberedStore;
-      files.group = rememberedGroup;
-      return;
+  function ensureFacets() {
+    if (files.facets) return files.facets;
+    const storeGroup = (id) => ({
+      id,
+      container: `[data-source-chips="${id}"]`,
+      section: "data-files-sources",
+      items: () => (storeEntry(files.root, id)?.groups || []).map((group) => ({ value: group.name, count: group.count })),
+      order: "none",
+      className: "kind-chip is-path-chip",
+    });
+    files.facets = WebUI.facets.create({
+      groups: [
+        {
+          id: "source",
+          container: "#data-files-source-chips",
+          section: "data-files-sources",
+          items: () => availableSources().map((id) => ({ value: id, count: sourceRowCount(id) })),
+          label: sourceLabel,
+          order: "none",
+          className: "kind-chip",
+        },
+        storeGroup("unity"),
+        storeGroup("game-files"),
+        {
+          id: "decoded",
+          container: '[data-source-chips="decoded"]',
+          section: "data-files-sources",
+          values: (entry) => entry._datasetId,
+          items: () => page.decoded.datasets.map((dataset) => ({
+            value: dataset.id, label: dataset.title, title: dataset.description,
+          })),
+          order: "none",
+          className: (id) => `kind-chip ${decodedApi()?.toneClass(id) || ""}`,
+        },
+        {
+          id: "status",
+          container: "#data-files-status-filter",
+          section: "data-files-status",
+          param: "dataStatus",
+          values: (entry) => entry.status,
+          label: (value) => decodedApi()?.statusLabel(value) || value,
+          title: (value) => value,
+          className: (value) => `kind-chip is-status-${decodedApi()?.statusClass(value) || "unknown"}`,
+        },
+        {
+          id: "folder",
+          container: "#data-files-folder-filter",
+          section: "data-files-folder",
+          param: "dataFolder",
+          values: (entry) => entry._folder,
+          className: "kind-chip is-path-chip",
+        },
+        {
+          id: "tag",
+          container: "#data-files-tag-filter",
+          section: "data-files-tag",
+          param: "dataTag",
+          values: (entry) => entry.tags || [],
+        },
+      ],
+      predicate: (entry) => files.decodedMatcher(entry),
+      onChange: onFacetChange,
+    });
+    return files.facets;
+  }
+
+  function renderFacets() {
+    ensureFacets().render(page.decoded.records);
+  }
+
+  function updateMatcher() {
+    const api = decodedApi();
+    // PathID, CAB and object-name searches are Unity-only: they match no
+    // decoded record.
+    if (files.query && files.field !== "name") files.decodedMatcher = () => false;
+    else files.decodedMatcher = api ? api.queryMatcher(files.query, files.catalogTerm) : () => true;
+  }
+
+  function persistSelection() {
+    if (!files.facets) return;
+    WebUI.storageSet?.(FILES_SELECTION_KEY, JSON.stringify(files.facets.snapshot()));
+  }
+
+  function restoreSelection() {
+    if (files.selectionRestored) return;
+    files.selectionRestored = true;
+    let saved = null;
+    try {
+      saved = JSON.parse(String(WebUI.storageGet?.(FILES_SELECTION_KEY) || "null"));
+    } catch (_error) {
+      saved = null;
     }
-    const store = stores.find((entry) => entry.id === files.store && entry.groups.length)
-      || stores.find((entry) => entry.groups.length);
-    files.store = store?.id || "";
-    files.group = store?.groups[0]?.name || "";
+    if (saved && typeof saved === "object") ensureFacets().restore(saved);
+  }
+
+  // Store groups the new export root does not have are dropped on a root
+  // switch, so a hidden group cannot empty the list.
+  function pruneStoreGroups() {
+    const facets = ensureFacets();
+    for (const id of STORE_SOURCES) {
+      const names = new Set((storeEntry(files.root, id)?.groups || []).map((group) => group.name));
+      const kept = [...facets.active(id)].filter((name) => names.has(name));
+      if (kept.length !== facets.activeCount(id)) facets.set(id, kept, { silent: true });
+    }
+  }
+
+  function onFacetChange() {
+    if (!decodedFiltersShown() && DECODED_FILTER_GROUPS.some((id) => files.facets.isFiltered(id))) {
+      files.facets.reset({ silent: true, only: DECODED_FILTER_GROUPS });
+    }
+    syncDecodedFilterSections();
+    persistSelection();
+    files.autoSelect = null;
+    syncFieldSelect();
+    renderHits();
+    files.pager?.reset();
+    fetchRows();
   }
 
   function ensureFilesPane() {
@@ -415,7 +665,7 @@
 
   function fieldOptions() {
     const options = [["name", ui("Row name", "行名称")]];
-    if (files.store === "unity") {
+    if (unityStoreIn(files.root) && includedSources().includes("unity")) {
       options.push(["object", ui("Object name", "对象名称")], ["pathId", "PathID"], ["cab", "CAB"]);
     }
     return options;
@@ -423,11 +673,23 @@
 
   function fieldHint(field) {
     return {
-      name: ui("Case-insensitive substring; * and ? make it a glob.", "不区分大小写的子串；含 * 或 ? 时按通配符匹配。"),
-      object: ui("Object-name substring.", "对象名称子串。"),
-      pathId: ui("A PathID in decimal or as 16 hex digits.", "十进制或 16 位十六进制 PathID。"),
-      cab: ui("The exact source CAB, e.g. CAB-0123…", "完整的来源 CAB，例如 CAB-0123…"),
+      name: ui(
+        "Store rows: case-insensitive name substring; * and ? make it a glob. Decoded records: name, path, status and tags.",
+        "存储行：不区分大小写的名称子串，含 * 或 ? 时按通配符匹配。解码记录：名称、路径、状态与标签。",
+      ),
+      object: ui("Object-name substring (Unity rows only).", "对象名称子串（仅 Unity 行）。"),
+      pathId: ui("A PathID in decimal or as 16 hex digits (Unity rows only).", "十进制或 16 位十六进制 PathID（仅 Unity 行）。"),
+      cab: ui("The exact source CAB, e.g. CAB-0123… (Unity rows only).", "完整的来源 CAB，例如 CAB-0123…（仅 Unity 行）。"),
     }[field] || "";
+  }
+
+  function filterSectionHtml(key, label, body, { collapsed = true } = {}) {
+    return `<section class="filter-section${collapsed ? " is-collapsed" : ""}" data-filter-section="${key}"${collapsed ? ' data-default-collapsed="1"' : ""}>
+      <button class="filter-section-toggle" type="button" aria-expanded="${!collapsed}" aria-controls="${key}-body">
+        <span data-filter-section-label>${esc(label)}</span>
+      </button>
+      <div id="${key}-body" class="filter-section-body"${collapsed ? " hidden" : ""}>${body}</div>
+    </section>`;
   }
 
   // `fetch: false` re-renders from the rows already read (a locale change).
@@ -435,24 +697,28 @@
     const pane = page.panes.files;
     if (!pane) return;
     page.rendered.files = true;
-    if (!apiAvailable()) {
-      pane.innerHTML = messagePaneHtml("files", unavailableHtml(), { error: !!page.roots.current && !page.roots.current.unavailable });
+    if (!apiAvailable() && page.decoded.status === "error") {
+      pane.innerHTML = messagePaneHtml("files", `${unavailableHtml({ files: true })}<br><br>${esc(ui(
+        "The decoded datasets could not be loaded either; run the data-inspector builder.",
+        "解码数据集也无法加载，请运行数据检查器构建器。",
+      ))}${page.decoded.error ? `<br><code>${esc(page.decoded.error)}</code>` : ""}`, { error: true });
       return;
     }
     if (files.root === "previous" && !hasPreviousStores()) files.root = "current";
     if (files.root === "current" && !storesFor("current").length && hasPreviousStores()) files.root = "previous";
-    pickDefaultGroup();
-    if (files.store !== "unity" && files.field !== "name") files.field = "name";
+    ensureFacets();
+    restoreSelection();
+    updateMatcher();
     pane.innerHTML = `
       <div class="data-inspector-shell data-page-shell">
         <aside id="data-files-left" class="data-page-left">
           ${modeSwitchHtml("files")}
           <header>
-            <h1>${esc(ui("Export stores", "导出存储"))}</h1>
+            <h1>${esc(ui("Data", "数据"))}</h1>
             <div id="data-files-stats" class="data-page-stats"></div>
             <div class="sidebar-header-actions">
               <button id="data-files-filter-toggle" class="panel-toggle" type="button" aria-controls="data-files-filter-panel" aria-expanded="true"></button>
-              <button id="data-files-reset" class="data-page-reset" type="button">${esc(ui("Clear search", "清除搜索"))}</button>
+              <button id="data-files-reset" class="data-page-reset" type="button">${esc(ui("Reset filters", "重置筛选"))}</button>
             </div>
           </header>
           <div id="data-files-filter-panel" class="filters">
@@ -464,7 +730,7 @@
                   <select id="data-files-root"></select>
                 </div>
                 <input id="data-files-q" type="search" autocomplete="off" spellcheck="false" value="${esc(files.query)}"
-                  placeholder="${esc(ui("Search this group", "在当前分组中搜索"))}">
+                  placeholder="${esc(ui("Search the selected sources", "在所选来源中搜索"))}">
                 <div class="filter-control-row">
                   <label for="data-files-field">${esc(ui("Match", "匹配"))}</label>
                   <select id="data-files-field"></select>
@@ -472,21 +738,31 @@
                 <p id="data-files-hint" class="data-page-hint"></p>
               </div>
             </section>
-            <section class="filter-section" data-filter-section="data-files-groups">
-              <button class="filter-section-toggle" type="button" aria-expanded="true" aria-controls="data-files-groups-body">
-                <span data-filter-section-label>${esc(ui("Stores and groups", "存储与分组"))}</span>
+            <section class="filter-section" data-filter-section="data-files-sources">
+              <button class="filter-section-toggle" type="button" aria-expanded="true" aria-controls="data-files-sources-body">
+                <span data-filter-section-label>${esc(ui("Sources and groups", "来源与分组"))}</span>
               </button>
-              <div id="data-files-groups-body" class="filter-section-body">
+              <div id="data-files-sources-body" class="filter-section-body">
                 <div id="data-files-groups" class="data-files-groups"></div>
               </div>
             </section>
+            <div id="data-files-decoded-filters" class="data-files-decoded-filters" hidden>
+              ${filterSectionHtml("data-files-decoded-sort", ui("Decoded record order", "解码记录排序"), `
+                <div class="filter-control-row">
+                  <label for="data-files-sort">${esc(ui("Sort", "排序"))}</label>
+                  <select id="data-files-sort"></select>
+                </div>`, { collapsed: false })}
+              ${filterSectionHtml("data-files-status", ui("Decode status", "解码状态"), '<div id="data-files-status-filter" class="chips" data-multi="1"></div>')}
+              ${filterSectionHtml("data-files-folder", ui("Source folder", "源文件目录"), '<div id="data-files-folder-filter" class="chips" data-multi="1"></div>')}
+              ${filterSectionHtml("data-files-tag", ui("Tags", "标签"), '<div id="data-files-tag-filter" class="chips" data-multi="1"></div>')}
+            </div>
           </div>
           <div id="data-files-filter-splitter" class="filter-splitter" role="separator" aria-label="${esc(ui("Resize filters", "调整筛选区高度"))}" aria-orientation="horizontal" tabindex="0"></div>
           <div id="data-files-hits" class="data-files-hits" hidden></div>
           <div id="data-files-list-meta" class="data-page-list-meta"></div>
           <div id="data-files-list-wrap" class="data-page-list-wrap">
             <div id="data-files-list-spacer"></div>
-            <div id="data-files-list" class="data-page-list" role="listbox" aria-label="${esc(ui("Store rows", "存储行"))}"></div>
+            <div id="data-files-list" class="data-page-list" role="listbox" aria-label="${esc(ui("Rows", "行"))}" tabindex="-1"></div>
           </div>
           <footer id="data-files-pager"></footer>
         </aside>
@@ -517,13 +793,13 @@
     files.pager = WebUI.pagination?.createPager({
       container: $("#data-files-pager", pane),
       storageKey: FILES_PAGE_SIZE_KEY,
-      defaultPageSize: 200,
       onChange: () => fetchRows(),
     }) || null;
     syncRootSelects();
-    syncFieldSelect();
+    syncSortSelect();
     renderStats();
-    renderGroups();
+    renderSources();
+    syncFieldSelect();
     renderHits();
     renderViewer();
     if (!fetch) {
@@ -536,67 +812,81 @@
     }
   }
 
+  function resetSearchState() {
+    files.pathIdHits = null;
+    files.autoSelect = null;
+    updateMatcher();
+    renderFacets();
+    renderHits();
+    files.pager?.reset();
+  }
+
   function bindFilesEvents(pane) {
     $("#data-files-q", pane)?.addEventListener("input", (event) => {
       clearTimeout(files.qTimer);
       const value = event.target.value;
       files.qTimer = setTimeout(() => {
         files.query = value.trim();
-        files.pathIdHits = null;
-        files.autoSelect = "";
-        files.pager?.reset();
-        renderHits();
+        files.catalogTerm = "";
+        resetSearchState();
+        syncFieldSelect();
         fetchRows();
       }, SEARCH_DEBOUNCE_MS);
     });
     $("#data-files-field", pane)?.addEventListener("change", (event) => {
       files.field = event.target.value;
-      files.pathIdHits = null;
       syncFieldSelect();
-      renderHits();
-      files.pager?.reset();
+      resetSearchState();
       if (files.query) fetchRows();
       else syncFilesUrl();
     });
-    $("#data-files-root", pane)?.addEventListener("change", (event) => {
-      files.root = event.target.value === "previous" ? "previous" : "current";
-      files.pathIdHits = null;
-      pickDefaultGroup();
-      syncFieldSelect();
-      renderStats();
-      renderGroups();
-      renderHits();
+    $("#data-files-sort", pane)?.addEventListener("change", (event) => {
+      files.sort = SORTS.includes(event.target.value) ? event.target.value : "path";
       files.pager?.reset();
       fetchRows();
     });
+    $("#data-files-root", pane)?.addEventListener("change", (event) => {
+      files.root = event.target.value === "previous" ? "previous" : "current";
+      pruneStoreGroups();
+      persistSelection();
+      renderStats();
+      renderSources();
+      syncFieldSelect();
+      resetSearchState();
+      fetchRows();
+    });
     $("#data-files-reset", pane)?.addEventListener("click", () => {
+      clearTimeout(files.qTimer);
       files.query = "";
+      files.catalogTerm = "";
       files.field = "name";
-      files.pathIdHits = null;
-      files.autoSelect = "";
+      files.sort = "path";
       const input = $("#data-files-q", pane);
       if (input) input.value = "";
+      ensureFacets().reset({ silent: true });
+      persistSelection();
+      syncSortSelect();
+      syncDecodedFilterSections();
       syncFieldSelect();
-      renderHits();
-      files.pager?.reset();
+      resetSearchState();
       fetchRows();
     });
     $("#data-files-list-wrap", pane)?.addEventListener("scroll", scheduleListRender, { passive: true });
     $("#data-files-list", pane)?.addEventListener("click", (event) => {
-      const button = event.target.closest(".data-files-row[data-row-index]");
+      const button = event.target.closest(".data-inspector-row[data-row-index]");
       if (!button) return;
-      const row = files.rows[Number(button.dataset.rowIndex)];
-      if (row) selectRow(row);
+      const item = files.rows[Number(button.dataset.rowIndex)];
+      if (item) selectItem(item);
     });
     $("#data-files-list", pane)?.addEventListener("keydown", (event) => {
       if (event.key !== "ArrowDown" && event.key !== "ArrowUp") return;
-      const index = files.rows.findIndex((row) => rowKey(row) === selectedKey());
+      const index = files.rows.findIndex((item) => rowKey(item) === selectedKey());
       const next = index + (event.key === "ArrowDown" ? 1 : -1);
       if (next < 0 || next >= files.rows.length) return;
       event.preventDefault();
-      selectRow(files.rows[next]);
+      selectItem(files.rows[next]);
       scrollRowIntoView(next);
-      requestAnimationFrame(() => $(`.data-files-row[data-row-index="${next}"]`, pane)?.focus());
+      requestAnimationFrame(() => $(`.data-inspector-row[data-row-index="${next}"]`, pane)?.focus());
     });
     $("#data-files-right", pane)?.addEventListener("click", onViewerClick);
     $("#data-files-hits", pane)?.addEventListener("click", (event) => {
@@ -626,13 +916,25 @@
     }
   }
 
+  function syncSortSelect() {
+    const select = $("#data-files-sort", page.panes.files);
+    if (!select) return;
+    select.innerHTML = (decodedApi()?.sortOptions() || [])
+      .map(([value, label]) => `<option value="${value}">${esc(label)}</option>`).join("");
+    select.value = files.sort;
+  }
+
   function syncFieldSelect() {
     const select = $("#data-files-field", page.panes.files);
     if (!select) return;
     const options = fieldOptions();
-    if (!options.some(([value]) => value === files.field)) files.field = "name";
+    if (!options.some(([value]) => value === files.field)) {
+      files.field = "name";
+      updateMatcher();
+    }
     select.innerHTML = options.map(([value, label]) => `<option value="${value}">${esc(label)}</option>`).join("");
     select.value = files.field;
+    select.disabled = options.length < 2;
     const hint = $("#data-files-hint", page.panes.files);
     if (hint) hint.textContent = fieldHint(files.field);
     const input = $("#data-files-q", page.panes.files);
@@ -640,69 +942,82 @@
     WebUI.setFilterSectionActiveCounts?.({ "data-files-basic": files.query ? 1 : 0 });
   }
 
+  function syncDecodedFilterSections() {
+    const host = $("#data-files-decoded-filters", page.panes.files);
+    if (!host) return;
+    const shown = decodedFiltersShown() && decodedReady();
+    if (host.hidden === !shown) return;
+    host.hidden = !shown;
+    window.dispatchEvent(new Event("resize"));
+  }
+
   function renderStats() {
     const host = $("#data-files-stats", page.panes.files);
     if (!host) return;
-    const stores = storesFor(files.root);
-    const rows = stores.reduce((sum, entry) => sum + (Number(entry.rows) || 0), 0);
-    host.textContent = `${formatNumber(rows)} ${ui("rows", "行")} · ${formatNumber(stores.length)} ${ui("stores", "个存储")}`
+    const sources = availableSources();
+    const rows = sources.reduce((sum, id) => sum + (sourceRowCount(id) || 0), 0);
+    host.textContent = `${formatNumber(rows)} ${ui("rows", "行")} · ${formatNumber(sources.length)} ${ui("sources", "个来源")}`
       + (rootPayload(files.root)?.root ? ` · ${rootPayload(files.root).root}` : "");
   }
 
-  function renderGroups() {
-    const host = $("#data-files-groups", page.panes.files);
-    if (!host) return;
-    const stores = storesFor(files.root);
-    if (!stores.length) {
-      host.innerHTML = `<p class="data-page-hint">${esc(ui(
-        "This export has no store files (game/Unity.sqlite, game/GameFiles.sqlite).",
-        "该导出没有存储文件（game/Unity.sqlite、game/GameFiles.sqlite）。",
-      ))}</p>`;
-      return;
-    }
-    host.innerHTML = stores.map((entry) => {
+  function sourceBlockHtml(id) {
+    let meta = "";
+    let extra = "";
+    if (id === "decoded") {
+      const state = page.decoded;
+      meta = state.status === "ready"
+        ? `<code>webui/data/data_inspector</code> · ${esc(formatNumber(state.datasets.length))} ${esc(ui("datasets", "个数据集"))} · ${esc(formatNumber(state.records.length))} ${esc(ui("records", "条记录"))}`
+        : esc(ui("Loading…", "正在加载…"));
+      if (state.status === "ready" && !state.datasets.length) {
+        extra = `<p class="data-page-hint">${esc(ui("No decoded datasets are published. Run the data-inspector builder.", "尚未发布解码数据集，请运行数据检查器构建器。"))}</p>`;
+      }
+    } else {
+      const entry = storeEntry(files.root, id);
       const lost = Array.isArray(entry.unreadableAtPack) ? entry.unreadableAtPack : [];
       const lostTitle = lost.slice(0, 20).map((item) => (item && typeof item === "object"
         ? `${[item.type, item.name].filter(Boolean).join("/") || item.path || ""}${item.error ? `: ${item.error}` : ""}`
         : String(item))).join("\n");
-      return `<div class="data-files-store">
-        <div class="data-files-store-head" title="${esc(entry.file || "")}">
-          <span class="data-files-store-name">${esc(storeLabel(entry.id))}</span>
-          <span class="data-files-store-meta"><code>${esc(entry.file || entry.id)}</code> · ${esc(formatBytes(entry.bytes))} · ${esc(formatNumber(entry.rows))} ${esc(ui("rows", "行"))}</span>
-          ${lost.length ? `<span class="data-inspector-chip is-warn" title="${esc(lostTitle)}">${esc(formatNumber(lost.length))} ${esc(ui("unreadable at pack, not stored", "打包时不可读，未存入"))}</span>` : ""}
-        </div>
-        <div class="chips data-files-group-chips" data-store-chips="${esc(entry.id)}"></div>
-      </div>`;
-    }).join("");
-    for (const entry of stores) {
-      const container = host.querySelector(`[data-store-chips="${CSS.escape(entry.id)}"]`);
-      WebUI.filters?.buildChips(container, entry.groups.map((group) => ({
-        value: `${entry.id}|${group.name}`,
-        label: group.name,
-        count: group.count,
-        className: "kind-chip is-path-chip",
-      })), {
-        single: true,
-        active: `${files.store}|${files.group}`,
-        onToggle: (_next, info) => selectGroup(entry.id, info.value.slice(entry.id.length + 1)),
-      });
+      meta = `<code>${esc(entry.file || entry.id)}</code> · ${esc(formatBytes(entry.bytes))} · ${esc(formatNumber(entry.rows))} ${esc(ui("rows", "行"))}`;
+      if (lost.length) {
+        extra = `<span class="data-inspector-chip is-warn" title="${esc(lostTitle)}">${esc(formatNumber(lost.length))} ${esc(ui("unreadable at pack, not stored", "打包时不可读，未存入"))}</span>`;
+      }
     }
+    return `<div class="data-files-store" data-source="${esc(id)}">
+      <div class="data-files-store-head">
+        <span class="data-files-store-name">${esc(sourceLabel(id))}</span>
+        <span class="data-files-store-meta">${meta}</span>
+        ${extra}
+      </div>
+      <div class="chips data-files-group-chips" data-source-chips="${esc(id)}" data-multi="1"></div>
+    </div>`;
   }
 
-  function selectGroup(store, group, { keepQuery = false } = {}) {
-    if (store === files.store && group === files.group) return;
-    files.store = store;
-    files.group = group;
-    WebUI.storageSet?.(FILES_GROUP_KEY, `${store}|${group}`);
-    if (!keepQuery) {
-      files.pathIdHits = null;
-      files.autoSelect = "";
+  function renderSources() {
+    const host = $("#data-files-groups", page.panes.files);
+    if (!host) return;
+    const sources = availableSources();
+    const notes = [];
+    if (!apiAvailable()) {
+      notes.push(`<p class="data-page-hint data-files-api-note">${unavailableHtml({ files: true })}</p>`);
+    } else if (!storesFor(files.root).length) {
+      notes.push(`<p class="data-page-hint">${esc(ui(
+        "This export has no store files (game/Unity.sqlite, game/GameFiles.sqlite).",
+        "该导出没有存储文件（game/Unity.sqlite、game/GameFiles.sqlite）。",
+      ))}</p>`);
     }
-    syncFieldSelect();
-    renderGroups();
-    renderHits();
-    files.pager?.reset();
-    fetchRows();
+    if (page.decoded.status === "error") {
+      notes.push(`<p class="data-page-hint is-error">${esc(ui("Decoded datasets are unavailable:", "解码数据集不可用："))} <code>${esc(page.decoded.error)}</code></p>`);
+    }
+    host.innerHTML = `
+      <p class="data-page-hint">${esc(ui(
+        "Select sources or groups; several at once list them together. Nothing selected lists every source.",
+        "选择来源或分组，可多选并一起列出。未选择时列出所有来源。",
+      ))}</p>
+      <div id="data-files-source-chips" class="chips data-files-source-chips" data-multi="1"></div>
+      ${sources.map(sourceBlockHtml).join("")}
+      ${notes.join("")}`;
+    renderFacets();
+    syncDecodedFilterSections();
   }
 
   function renderHits() {
@@ -728,8 +1043,8 @@
       <div>PathID <code>${esc(hits.pathId)}</code> ${esc(ui("occurs in", "出现在"))}</div>
       <div class="chips" id="data-files-hit-chips"></div>
       <p class="data-page-hint">${esc(ui(
-        "A PathID is unique only within one CAB; compare the CAB of each row.",
-        "PathID 仅在同一 CAB 内唯一；请比较各行的 CAB。",
+        "A PathID is unique only within one CAB; compare the CAB of each row. Select types to narrow the list.",
+        "PathID 仅在同一 CAB 内唯一；请比较各行的 CAB。可选择类型以缩小列表。",
       ))}</p>`;
     WebUI.filters?.buildChips($("#data-files-hit-chips", host), hits.types.map((item) => ({
       value: item.type,
@@ -737,92 +1052,174 @@
       count: item.rows,
       className: "kind-chip is-path-chip",
     })), {
-      single: true,
-      active: files.store === "unity" ? files.group : "",
-      onToggle: (_next, info) => selectGroup("unity", info.value, { keepQuery: true }),
+      active: files.facets ? files.facets.active("unity") : new Set(),
+      prune: false,
+      onToggle: (value, info) => ensureFacets().toggle("unity", value, info.on),
     });
   }
 
-  // One page of rows. The API caps a request at 1,000 rows, so a larger page
-  // size is read in consecutive requests.
+  // ------------------------------------------------------------ list data --
+
+  function decodedRows() {
+    if (!decodedReady() || (files.query && files.field !== "name")) return [];
+    const rows = ensureFacets().filter(page.decoded.records);
+    const compare = decodedApi()?.comparator(files.sort);
+    return compare ? rows.sort(compare) : rows;
+  }
+
+  // One page of the listed sources, read as one sequence: each store segment
+  // is one /api/stores/rows request (the API caps a request at 1,000 rows, so
+  // a larger remainder is read in consecutive requests), and a segment the
+  // page does not reach is still asked for one row to learn its total.
   async function fetchRows() {
     syncFilesUrl();
     const token = ++files.reqToken;
-    if (!files.store || !files.group) {
-      files.rows = [];
-      files.total = 0;
-      files.error = "";
-      files.pager?.setTotal(0);
-      renderListMeta();
-      applyListRows({ resetScroll: true });
-      return;
-    }
-    const pageSize = files.pager?.pageSize || 200;
-    const offset = (files.pager?.page || 0) * pageSize;
+    const facets = ensureFacets();
+    const sources = includedSources();
+    const pageSize = files.pager?.pageSize || WebUI.pagination?.DEFAULT_PAGE_SIZE || MAX_API_ROWS;
+    const start = (files.pager?.page || 0) * pageSize;
     files.loading = true;
     renderListMeta();
     let rows = [];
-    let total = 0;
-    try {
-      while (rows.length < pageSize) {
-        const limit = Math.min(MAX_API_ROWS, pageSize - rows.length);
-        const result = await storeApi("rows", {
-          root: files.root,
-          store: files.store,
-          group: files.group,
-          q: files.query,
-          field: files.query ? files.field : "name",
-          offset: offset + rows.length,
-          limit,
-        });
-        if (token !== files.reqToken) return;
-        total = Number(result.total) || 0;
-        rows = rows.concat(result.rows || []);
-        if ((result.rows || []).length < limit) break;
+    let cumulative = 0;
+    const segments = [];
+    const errors = [];
+    for (const source of sources) {
+      const offset = Math.max(0, start - cumulative);
+      if (source === "decoded") {
+        const list = decodedRows();
+        const want = pageSize - rows.length;
+        if (want > 0) rows = rows.concat(list.slice(offset, offset + want).map((entry) => ({ kind: "decoded", entry })));
+        segments.push({ source, start: cumulative, total: list.length, pending: page.decoded.status === "loading" });
+        cumulative += list.length;
+        continue;
       }
-      files.error = "";
-    } catch (error) {
-      if (token !== files.reqToken) return;
-      files.error = error.message;
-      rows = [];
-      total = 0;
+      if (files.query && files.field !== "name" && source !== "unity") {
+        segments.push({ source, start: cumulative, total: 0, skipped: true });
+        continue;
+      }
+      try {
+        let total = 0;
+        let read = 0;
+        for (;;) {
+          const want = pageSize - rows.length;
+          const limit = Math.max(1, Math.min(MAX_API_ROWS, want));
+          const result = await storeApi("rows", {
+            root: files.root,
+            store: source,
+            group: [...facets.active(source)],
+            q: files.query,
+            field: files.query ? files.field : "name",
+            offset: offset + read,
+            limit,
+          });
+          if (token !== files.reqToken) return;
+          total = Number(result.total) || 0;
+          const batch = want > 0 ? (result.rows || []) : [];
+          rows = rows.concat(batch.map((row) => ({ kind: "store", store: source, row })));
+          read += batch.length;
+          if (want <= 0 || batch.length < limit) break;
+        }
+        segments.push({ source, start: cumulative, total });
+        cumulative += total;
+      } catch (error) {
+        if (token !== files.reqToken) return;
+        errors.push(`${sourceLabel(source)}: ${error.message}`);
+        segments.push({ source, start: cumulative, total: 0, error: error.message });
+      }
     }
     files.loading = false;
     files.rows = rows;
-    files.total = total;
-    files.offset = offset;
-    files.pager?.setTotal(total);
-    if (files.pager && files.pager.page * pageSize !== offset && total > 0) {
+    files.total = cumulative;
+    files.segments = segments;
+    files.offset = start;
+    files.error = errors.join("\n");
+    files.pager?.setTotal(cumulative);
+    if (files.pager && files.pager.page * pageSize !== start && cumulative > 0) {
       // The total shrank below this page; the pager moved back, so refetch.
       fetchRows();
       return;
     }
+    computeTops();
     renderListMeta();
     applyListRows({ resetScroll: true });
     resolveAutoSelect();
   }
 
+  function computeTops() {
+    let top = 0;
+    files.tops = files.rows.map((item) => {
+      const current = top;
+      top += item.kind === "decoded" ? DECODED_ROW_HEIGHT : STORE_ROW_HEIGHT;
+      return current;
+    });
+    files.height = top;
+  }
+
+  function rowHeight(index) {
+    return files.rows[index]?.kind === "decoded" ? DECODED_ROW_HEIGHT : STORE_ROW_HEIGHT;
+  }
+
   function resolveAutoSelect() {
-    if (files.autoSelect) {
-      const wanted = files.autoSelect;
-      files.autoSelect = "";
-      const index = Math.max(
-        files.rows.findIndex((row) => row.name === wanted),
-        files.rows.findIndex((row) => row.name.toLowerCase() === wanted.toLowerCase()),
-      );
-      if (index >= 0) {
-        selectRow(files.rows[index]);
-        scrollRowIntoView(index);
-      } else if (!files.error) {
-        showViewerMessage(`${esc(ui("No row named", "未找到名为"))} <code>${esc(wanted)}</code> ${esc(ui(
-          `in ${files.store} / ${files.group}.`,
-          `的行（${files.store} / ${files.group}）。`,
-        ))}`, { error: true });
+    const wanted = files.autoSelect;
+    if (wanted) {
+      if (wanted.kind === "decoded" && page.decoded.status === "loading") return;
+      files.autoSelect = null;
+      let index = -1;
+      if (wanted.kind === "decoded") {
+        const entry = decodedApi()?.find(wanted.datasetId, wanted.recordId);
+        index = entry ? files.rows.findIndex((item) => item.kind === "decoded" && item.entry._key === entry._key) : -1;
+        if (index < 0 && entry && !wanted.moved) {
+          // The record is listed on another page: move there once.
+          const segment = files.segments.find((item) => item.source === "decoded");
+          const position = decodedRows().findIndex((candidate) => candidate._key === entry._key);
+          if (segment && position >= 0 && files.pager?.showIndex(segment.start + position)) {
+            files.autoSelect = { ...wanted, moved: true };
+            fetchRows();
+            return;
+          }
+        }
+        if (index < 0) {
+          showViewerMessage(`${esc(ui("No decoded record", "未找到解码记录"))} <code>${esc(wanted.recordId)}</code>${
+            wanted.datasetId ? ` (<code>${esc(wanted.datasetId)}</code>)` : ""} ${esc(ui("in the current list.", "（当前列表中）。"))}`, { error: true });
+          return;
+        }
+      } else {
+        index = files.rows.findIndex((item) => item.kind === "store" && item.row.name === wanted.name);
+        if (index < 0) {
+          index = files.rows.findIndex((item) => item.kind === "store"
+            && item.row.name.toLowerCase() === wanted.name.toLowerCase());
+        }
+        if (index < 0) {
+          if (!files.error) {
+            showViewerMessage(`${esc(ui("No row named", "未找到名为"))} <code>${esc(wanted.name)}</code> ${esc(ui(
+              `in ${selectionText()}.`,
+              `的行（${selectionText()}）。`,
+            ))}`, { error: true });
+          }
+          return;
+        }
       }
+      selectItem(files.rows[index]);
+      scrollRowIntoView(index);
     } else if (files.autoSelectSingle) {
       files.autoSelectSingle = false;
-      if (files.rows.length === 1) selectRow(files.rows[0]);
+      if (files.rows.length === 1) selectItem(files.rows[0]);
     }
+  }
+
+  function selectionText() {
+    const facets = files.facets;
+    const parts = includedSources().map((source) => {
+      const groups = facets ? [...facets.active(source)] : [];
+      const names = source === "decoded"
+        ? groups.map((id) => page.decoded.datasets.find((dataset) => dataset.id === id)?.title || id)
+        : groups;
+      if (!names.length) return sourceLabel(source);
+      const shown = names.slice(0, 3).join(", ");
+      return `${sourceLabel(source)} / ${shown}${names.length > 3 ? ` +${names.length - 3}` : ""}`;
+    });
+    return parts.join(" · ") || ui("nothing", "无");
   }
 
   function renderListMeta() {
@@ -832,14 +1229,18 @@
       host.textContent = ui("Loading…", "正在加载…");
       return;
     }
-    const group = files.group ? `${storeLabel(files.store)} / ${files.group}` : "";
-    host.innerHTML = `<span>${esc(formatNumber(files.total))}</span> ${esc(files.query ? ui("matching rows", "条匹配行") : ui("rows", "行"))}${
-      group ? ` · <span class="data-page-list-group">${esc(group)}</span>` : ""}`;
+    const pending = files.segments.some((segment) => segment.pending);
+    const skipped = files.segments.filter((segment) => segment.skipped).map((segment) => sourceLabel(segment.source));
+    host.innerHTML = `<span>${esc(formatNumber(files.total))}</span> ${esc(files.query ? ui("matching rows", "条匹配行") : ui("rows", "行"))}`
+      + ` · <span class="data-page-list-group">${esc(selectionText())}</span>`
+      + (pending ? ` · ${esc(ui("decoded datasets loading…", "解码数据集加载中…"))}` : "")
+      + (skipped.length ? ` · ${esc(ui(`${skipped.join(", ")}: not searchable by this field`, `${skipped.join("、")}：不支持按此字段搜索`))}` : "")
+      + (files.error && files.rows.length ? `<div class="is-error">${esc(files.error)}</div>` : "");
   }
 
   function applyListRows({ resetScroll = false } = {}) {
     const spacer = $("#data-files-list-spacer", page.panes.files);
-    if (spacer) spacer.style.height = `${files.rows.length * ROW_HEIGHT}px`;
+    if (spacer) spacer.style.height = `${files.height}px`;
     const wrap = $("#data-files-list-wrap", page.panes.files);
     if (resetScroll && wrap) wrap.scrollTop = 0;
     renderList();
@@ -853,58 +1254,81 @@
     });
   }
 
-  function rowKey(row, root = files.root, store = files.store, group = files.group) {
-    return `${root}\n${store}\n${group}\n${row.name}`;
+  function rowKey(item, root = files.root) {
+    return item.kind === "decoded"
+      ? `d\n${item.entry._key}`
+      : `s\n${root}\n${item.store}\n${item.row.group}\n${item.row.name}`;
   }
 
   function selectedKey() {
     const selected = files.selected;
-    return selected ? rowKey(selected.row, selected.root, selected.store, selected.group) : "";
+    if (!selected) return "";
+    return selected.kind === "decoded"
+      ? rowKey(selected)
+      : rowKey({ kind: "store", store: selected.store, row: selected.row }, selected.root);
   }
 
-  function rowMetaText(row) {
-    const parts = [];
-    if (files.store === "unity") {
+  function rowMetaText(item) {
+    const { row, store } = item;
+    const parts = [row.group];
+    if (store === "unity") {
       const stem = row.name.replace(/\.[^.]+$/, "").replace(/_p[0-9A-Fa-f]{16}$/, "");
       if (row.objectName && row.objectName !== stem) parts.push(row.objectName);
       if (row.pathIdHex) parts.push(`0x${row.pathIdHex}`);
     }
     parts.push(formatBytes(row.size));
-    if (files.store !== "unity" && row.sha256) parts.push(String(row.sha256).slice(0, 12));
+    if (store !== "unity" && row.sha256) parts.push(String(row.sha256).slice(0, 12));
     return parts.join(" · ");
+  }
+
+  function firstVisibleIndex(top) {
+    let low = 0;
+    let high = files.tops.length;
+    while (low < high) {
+      const mid = (low + high) >> 1;
+      if (files.tops[mid] + rowHeight(mid) <= top) low = mid + 1;
+      else high = mid;
+    }
+    return low;
   }
 
   function renderList() {
     const wrap = $("#data-files-list-wrap", page.panes.files);
     const list = $("#data-files-list", page.panes.files);
     if (!wrap || !list) return;
-    if (files.error) {
+    if (files.error && !files.rows.length) {
       list.innerHTML = `<div class="data-inspector-empty-list is-error">${esc(files.error)}</div>`;
       return;
     }
     if (!files.rows.length) {
-      list.innerHTML = `<div class="data-inspector-empty-list">${esc(files.loading ? ui("Loading…", "正在加载…")
-        : files.group ? ui("No matching rows.", "没有匹配的行。") : ui("Select a group.", "请选择一个分组。"))}</div>`;
+      const pending = files.segments.some((segment) => segment.pending) || files.loading;
+      list.innerHTML = `<div class="data-inspector-empty-list">${esc(pending ? ui("Loading…", "正在加载…")
+        : includedSources().length ? ui("No matching rows.", "没有匹配的行。") : ui("No source is available.", "没有可用的来源。"))}</div>`;
       return;
     }
     const current = selectedKey();
     const startTop = Math.max(0, wrap.scrollTop - OVERSCAN_PX);
     const endTop = wrap.scrollTop + wrap.clientHeight + OVERSCAN_PX;
     const fragment = document.createDocumentFragment();
-    let index = Math.max(0, Math.min(files.rows.length, Math.floor(startTop / ROW_HEIGHT)));
-    for (; index < files.rows.length && index * ROW_HEIGHT < endTop; index += 1) {
-      const row = files.rows[index];
-      const selected = rowKey(row) === current;
+    const decoded = decodedApi();
+    for (let index = firstVisibleIndex(startTop); index < files.rows.length && files.tops[index] < endTop; index += 1) {
+      const item = files.rows[index];
+      const selected = rowKey(item) === current;
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `data-inspector-row data-files-row${selected ? " is-selected" : ""}`;
       button.dataset.rowIndex = String(index);
-      button.style.top = `${index * ROW_HEIGHT}px`;
-      button.style.height = `${ROW_HEIGHT}px`;
+      button.style.top = `${files.tops[index]}px`;
+      button.style.height = `${rowHeight(index)}px`;
       button.setAttribute("role", "option");
       button.setAttribute("aria-selected", String(selected));
-      button.innerHTML = `<span class="data-inspector-row-title" title="${esc(row.name)}">${esc(row.name)}</span>
-        <span class="data-inspector-row-path">${esc(rowMetaText(row))}</span>`;
+      if (item.kind === "decoded") {
+        button.className = `data-inspector-row${selected ? " is-selected" : ""}`;
+        button.innerHTML = decoded ? decoded.rowHtml(item.entry) : esc(item.entry.title);
+      } else {
+        button.className = `data-inspector-row data-files-row${selected ? " is-selected" : ""}`;
+        button.innerHTML = `<span class="data-inspector-row-title" title="${esc(item.row.name)}">${esc(item.row.name)}</span>
+          <span class="data-inspector-row-path">${esc(rowMetaText(item))}</span>`;
+      }
       fragment.appendChild(button);
     }
     list.replaceChildren(fragment);
@@ -913,8 +1337,9 @@
   function scrollRowIntoView(index) {
     const wrap = $("#data-files-list-wrap", page.panes.files);
     if (!wrap) return;
-    const top = index * ROW_HEIGHT;
-    if (top < wrap.scrollTop || top + ROW_HEIGHT > wrap.scrollTop + wrap.clientHeight) {
+    const top = files.tops[index] || 0;
+    const height = rowHeight(index);
+    if (top < wrap.scrollTop || top + height > wrap.scrollTop + wrap.clientHeight) {
       wrap.scrollTop = Math.max(0, top - wrap.clientHeight / 2);
     }
     renderList();
@@ -922,14 +1347,55 @@
 
   // -------------------------------------------------------------- viewer --
 
-  function selectRow(row) {
-    files.selected = { root: files.root, store: files.store, group: files.group, row };
+  function selectItem(item) {
+    files.selected = item.kind === "decoded"
+      ? { kind: "decoded", entry: item.entry }
+      : { kind: "store", root: files.root, store: item.store, group: item.row.group, row: item.row };
     files.doc = null;
+    // A decoded record still loading must not render over a store row.
+    if (item.kind === "store") decodedApi()?.clearSelection();
     renderList();
     syncFilesUrl();
     renderViewer();
-    loadDocument();
+    if (item.kind === "store") loadDocument();
   }
+
+  // Navigation handed back by the decoded record viewer.
+  const decodedHooks = {
+    // A catalog term lists the records of this record's dataset carrying it.
+    onCatalogTerm(term, entry) {
+      clearTimeout(files.qTimer);
+      files.query = term;
+      files.catalogTerm = term;
+      files.field = "name";
+      ensureFacets().restore({ decoded: [entry._datasetId] });
+      persistSelection();
+      syncDecodedFilterSections();
+      syncFieldSelect();
+      resetSearchState();
+      fetchRows();
+    },
+    // A resolved stored reference opens its target record, widening the list
+    // to that record's dataset when the current filters hide it.
+    onOpenRecord(key) {
+      const entry = decodedApi()?.byKey(key);
+      if (!entry) return;
+      const listed = includedSources().includes("decoded") && decodedRows().some((item) => item._key === key);
+      if (!listed) {
+        clearTimeout(files.qTimer);
+        files.query = "";
+        files.catalogTerm = "";
+        files.field = "name";
+        ensureFacets().restore({ decoded: [entry._datasetId] });
+        persistSelection();
+        syncDecodedFilterSections();
+        syncFieldSelect();
+        resetSearchState();
+      }
+      files.autoSelect = { kind: "decoded", datasetId: entry._datasetId, recordId: entry.id };
+      fetchRows();
+    },
+  };
 
   function showViewerMessage(html, { error = false } = {}) {
     const host = $("#data-files-right", page.panes.files);
@@ -955,9 +1421,13 @@
     const selected = files.selected;
     if (!selected) {
       host.innerHTML = `<div class="data-inspector-empty">${esc(ui(
-        "Select a row to view its document.",
-        "选择一行以查看其文档。",
+        "Select a row to view its document or decoded record.",
+        "选择一行以查看其文档或解码记录。",
       ))}</div>`;
+      return;
+    }
+    if (selected.kind === "decoded") {
+      decodedApi()?.showRecord(host, selected.entry, decodedHooks);
       return;
     }
     const { row, store, group, root } = selected;
@@ -973,7 +1443,7 @@
       }
       if (row.sourceFile) {
         cards.push(factCard("CAB", `<code>${esc(row.sourceFile)}</code><button type="button" class="data-page-inline-action" data-filter-cab="${esc(row.sourceFile)}"
-          title="${esc(ui("List rows of this group from the same CAB", "列出本分组中来自同一 CAB 的行"))}">${esc(ui("filter", "筛选"))}</button>`, { wide: true }));
+          title="${esc(ui("List Unity rows of the selected groups from the same CAB", "列出所选分组中来自同一 CAB 的 Unity 行"))}">${esc(ui("filter", "筛选"))}</button>`, { wide: true }));
       }
       if (row.scriptPathId != null) {
         cards.push(factCard(ui("Script PathID", "脚本 PathID"), `<code>${esc(row.scriptPathId)}</code>${findPathIdButton(row.scriptPathId)}`));
@@ -1406,6 +1876,8 @@
   // ------------------------------------------------------- viewer events --
 
   function onViewerClick(event) {
+    // A decoded record binds its own viewer events (index.js).
+    if (files.selected?.kind === "decoded") return;
     const target = event.target;
     const summary = target.closest("summary");
     if (summary && summary.parentElement?.matches("details.data-inspector-branch[data-tree-token]")) {
@@ -1432,12 +1904,12 @@
     }
     const cab = target.closest("[data-filter-cab]");
     if (cab) {
+      clearTimeout(files.qTimer);
       files.field = "cab";
       files.query = cab.dataset.filterCab;
-      files.pathIdHits = null;
+      files.catalogTerm = "";
       syncFieldSelect();
-      renderHits();
-      files.pager?.reset();
+      resetSearchState();
       fetchRows();
       return;
     }
@@ -1525,8 +1997,9 @@
     return `<div class="data-page-decoded">${label}${hex}</div>`;
   }
 
-  // Where does this PathID occur? One indexed query over the Unity store,
-  // then the ordinary pathId filter inside the chosen group.
+  // Where does this PathID occur? One indexed query over the Unity store for
+  // the per-type counts, then the ordinary pathId filter over the whole Unity
+  // store (the type chips of the hit panel narrow it).
   async function findPathId(value) {
     const text = String(value || "").trim();
     if (!/^-?\d+$/.test(text) || !unityStoreIn(files.root)) return;
@@ -1543,20 +2016,18 @@
     } catch (failure) {
       error = failure.message;
     }
-    files.pathIdHits = { pathId: text, types, error };
+    clearTimeout(files.qTimer);
     files.field = "pathId";
     files.query = text;
-    files.autoSelect = "";
-    files.autoSelectSingle = true;
-    const preferred = types.find((item) => files.store === "unity" && item.type === files.group) || types[0];
-    if (preferred && (files.store !== "unity" || files.group !== preferred.type)) {
-      files.store = "unity";
-      files.group = preferred.type;
-      renderGroups();
-    }
+    files.catalogTerm = "";
+    ensureFacets().restore({ source: ["unity"] });
+    persistSelection();
+    syncDecodedFilterSections();
     syncFieldSelect();
+    resetSearchState();
+    files.pathIdHits = { pathId: text, types, error };
+    files.autoSelectSingle = true;
     renderHits();
-    files.pager?.reset();
     fetchRows();
   }
 
@@ -1836,7 +2307,6 @@ doc(data, '$.a.b')     ${esc(ui("-> one JSON value", "-> 单个 JSON 值"))}</pr
     if (!page.mounted) return;
     if (page.rendered.files) renderFilesPane({ fetch: false });
     if (page.rendered.sql) renderSqlPane();
-    WebUI.decodedInspector?.relocalize();
   }
 
   WebUI.dataPage = {

@@ -5,8 +5,9 @@ multi-gigabyte SQLite file itself, so the local server answers three bounded
 questions and the Data page renders them:
 
 * ``list_stores``: which stores an export root has, with per-group counts;
-* ``query_rows``: a page of rows of one group (a Unity type, or a packed
-  game folder), filtered by name, object name, PathID or CAB;
+* ``query_rows``: a page of rows of one or more groups (Unity types, or
+  packed game folders; none means the whole store), filtered by name,
+  object name, PathID or CAB;
 * ``run_sql``: one read-only SQL statement with ``inflate(data)`` and
   ``doc(data, '$.path')`` registered, a row cap and a time limit.
 
@@ -25,7 +26,7 @@ import sqlite3
 import time
 import zlib
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable
 
 from scripts.game_data.game_file_store import GAME_FILE_STORE_SCHEMA
 from scripts.game_data.unity_store import STORE_SCHEMA as UNITY_STORE_SCHEMA
@@ -152,18 +153,40 @@ def _signed64(text: str) -> int:
     return value - (1 << 64) if value >= (1 << 63) else value
 
 
+def _like_substring(text: str) -> str:
+    return "%" + text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+
+
+def _normalize_groups(group: str | Iterable[str] | None) -> list[str]:
+    """One group, several, or none (the whole store), de-duplicated in order."""
+    if group is None:
+        return []
+    values = [group] if isinstance(group, str) else list(group)
+    seen: dict[str, None] = {}
+    for value in values:
+        if not isinstance(value, str):
+            raise StoreBrowserError(f"group must be text, not {type(value).__name__}")
+        if value:
+            seen.setdefault(value, None)
+    return list(seen)
+
+
 def query_rows(
     export_root: Path,
     *,
     route: str,
     store: str,
-    group: str,
+    group: str | Iterable[str] | None = None,
     query: str = "",
     field: str = "name",
     offset: int = 0,
     limit: int = DEFAULT_ROW_LIMIT,
 ) -> dict[str, Any]:
-    """One page of a group's rows, filtered by ``field``.
+    """One page of rows of the selected groups, filtered by ``field``.
+
+    ``group`` is one group (a Unity type, or a packed game folder), several,
+    or empty for every group of the store. Rows are ordered by ``type, name``
+    and each carries its ``group``; ``total`` counts the whole selection.
 
     ``field`` is ``name`` (a glob when the query has ``*``/``?``, else a
     case-insensitive substring), ``object`` (object name substring, Unity
@@ -171,12 +194,14 @@ def query_rows(
     source CAB, Unity only).
     """
     layout = ExportLayout(export_root)
-    if not group:
-        raise StoreBrowserError("group is required")
+    groups = _normalize_groups(group)
     limit = max(1, min(int(limit), MAX_ROW_LIMIT))
     offset = max(0, int(offset))
-    where = ["type = ?"]
-    params: list[Any] = [group]
+    where: list[str] = []
+    params: list[Any] = []
+    # "+type" keeps the planner off the (type, name) index for the PathID and
+    # CAB filters, which would scan whole types; their own indexes are exact.
+    type_column = "type"
     query = query.strip()
     unity = store == STORE_UNITY
     if query:
@@ -186,42 +211,43 @@ def query_rows(
                 params.append(query)
             else:
                 where.append("name LIKE ? ESCAPE '\\'")
-                params.append("%" + query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%")
+                params.append(_like_substring(query))
         elif field == "object" and unity:
             where.append("object_name LIKE ? ESCAPE '\\'")
-            params.append("%" + query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%")
+            params.append(_like_substring(query))
         elif field == "pathId" and unity:
             try:
                 path_id = _signed64(query) if _HEX16.match(query) else int(query)
             except ValueError as exc:
                 raise StoreBrowserError(f"not a PathID: {query!r}") from exc
-            # "+type" keeps the planner off the (type, name) index, which would
-            # scan a whole type; the (path_id, source_file) index is exact.
-            where[0] = "+type = ?"
+            type_column = "+type"
             where.append("path_id = ?")
             params.append(path_id)
         elif field == "cab" and unity:
-            where[0] = "+type = ?"
+            type_column = "+type"
             where.append("source_file = ?")
             params.append(query)
         else:
             raise StoreBrowserError(f"unsupported filter field {field!r} for store {store!r}")
+    if groups:
+        where.insert(0, f"{type_column} IN ({', '.join('?' * len(groups))})")
+        params[0:0] = groups
     connection = _connect(_store_file(layout, store), store)
     try:
-        clause = " AND ".join(where)
-        total = connection.execute(f"SELECT COUNT(*) FROM objects WHERE {clause}", params).fetchone()[0]
-        columns = "name, object_name, path_id, source_file, script_path_id, size, sha256"
+        clause = f"WHERE {' AND '.join(where)}" if where else ""
+        total = connection.execute(f"SELECT COUNT(*) FROM objects {clause}", params).fetchone()[0]
+        columns = "type, name, object_name, path_id, source_file, script_path_id, size, sha256"
         rows = connection.execute(
-            f"SELECT {columns} FROM objects WHERE {clause} ORDER BY name LIMIT ? OFFSET ?",
+            f"SELECT {columns} FROM objects {clause} ORDER BY type, name LIMIT ? OFFSET ?",
             [*params, limit, offset],
         ).fetchall()
     finally:
         connection.close()
     out = []
-    for name, object_name, path_id, source_file, script_path_id, size, sha256 in rows:
-        ref = f"game/Unity/{group}/{name}" if unity else f"game/{group}/{name}"
-        row: dict[str, Any] = {"name": name, "ref": ref, "size": size, "sha256": sha256,
-                               "url": _row_url(route, store, group, name)}
+    for row_group, name, object_name, path_id, source_file, script_path_id, size, sha256 in rows:
+        ref = f"game/Unity/{row_group}/{name}" if unity else f"game/{row_group}/{name}"
+        row: dict[str, Any] = {"group": row_group, "name": name, "ref": ref, "size": size, "sha256": sha256,
+                               "url": _row_url(route, store, row_group, name)}
         if unity:
             row.update({
                 "objectName": object_name,
@@ -231,7 +257,7 @@ def query_rows(
                 "scriptPathId": None if script_path_id is None else str(script_path_id),
             })
         out.append(row)
-    return {"store": store, "group": group, "total": total, "offset": offset, "limit": limit, "rows": out}
+    return {"store": store, "groups": groups, "total": total, "offset": offset, "limit": limit, "rows": out}
 
 
 def _cell(value: Any) -> Any:

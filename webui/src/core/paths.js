@@ -61,11 +61,17 @@
     return `/export_data/${normalizedRel.split("/").map(encodeURIComponent).join("/")}`;
   }
 
-  // The Data page (#data-inspector) opens one export-store row from these
-  // query parameters: dataRoot (current|previous), dataStore (unity|game-files),
-  // dataGroup (a Unity type, or a packed game folder), dataName (the row name
-  // inside that group). dataMode picks the page mode (files|sql|decoded).
-  const DATA_PAGE_PARAMS = Object.freeze(["dataMode", "dataRoot", "dataStore", "dataGroup", "dataName", "dataField", "dataQ"]);
+  // The Data page (#data-inspector) opens rows from these query parameters:
+  // dataRoot (current|previous), dataStore (repeated: a whole source, unity |
+  // game-files | decoded), dataGroup (repeated: `<source>:<group>`, a Unity
+  // type, packed game folder or decoded dataset; an unqualified group belongs
+  // to dataStore), dataName (a store row name to select), dataQ/dataField (the
+  // search), dataStatus/dataFolder/dataTag (repeated decoded filters),
+  // dataSort (decoded order). dataMode picks the page mode (files|sql).
+  const DATA_PAGE_PARAMS = Object.freeze([
+    "dataMode", "dataRoot", "dataStore", "dataGroup", "dataName", "dataField", "dataQ",
+    "dataStatus", "dataFolder", "dataTag", "dataSort",
+  ]);
 
   function dataPageUrl({ root = "", store = "", group = "", name = "" } = {}, base = window.location.href) {
     const url = new URL(base);
@@ -74,8 +80,9 @@
     url.searchParams.delete("inspect");
     url.searchParams.set("dataMode", "files");
     if (root && root !== "current") url.searchParams.set("dataRoot", root);
-    if (store) url.searchParams.set("dataStore", store);
-    if (group) url.searchParams.set("dataGroup", group);
+    if (store && group) url.searchParams.set("dataGroup", `${store}:${group}`);
+    else if (store) url.searchParams.set("dataStore", store);
+    else if (group) url.searchParams.set("dataGroup", group);
     if (name) url.searchParams.set("dataName", name);
     url.hash = "#data-inspector";
     return url.toString();

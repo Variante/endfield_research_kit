@@ -971,9 +971,10 @@
 }
 
 /* -------------------------------------------------------------- data page --
-   The Data page hosts three modes in sibling panes: Files and SQL over the
-   export stores (stores.js) and the Decoded inspector above. Files and SQL
-   reuse the same list-page shell and detail classes. */
+   The Data page hosts two modes in sibling panes (stores.js): Files, one list
+   over the export stores and the decoded datasets whose decoded records use
+   the viewer above, and SQL over the export stores. Both reuse the same
+   list-page shell and detail classes. */
 
 .data-page,
 .data-page-pane,
@@ -1087,6 +1088,12 @@
   overflow: auto;
 }
 
+/* The sources section is open by default and can be tall; until the filter
+   splitter sets a height, keep room for the list below it. */
+#data-files-filter-panel:not(.is-filter-resized) {
+  max-height: 55%;
+}
+
 .data-sql-panel {
   flex: 1 1 auto;
   min-height: 0;
@@ -1147,6 +1154,19 @@
 
 .data-files-store-meta {
   color: var(--muted);
+  font-size: 11px;
+}
+
+.data-files-source-chips {
+  margin-bottom: 2px;
+}
+
+.data-files-groups > .data-page-hint.is-error,
+.data-page-list-meta .is-error {
+  color: #b93636;
+}
+
+.data-files-api-note code {
   font-size: 11px;
 }
 
@@ -1511,6 +1531,10 @@
   #data-files-filter-panel,
   .data-sql-panel {
     overflow: visible;
+  }
+
+  #data-files-filter-panel:not(.is-filter-resized) {
+    max-height: none;
   }
 
   .data-page-list-wrap {

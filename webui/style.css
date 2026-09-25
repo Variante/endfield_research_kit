@@ -820,6 +820,8 @@ textarea:focus-visible,
 }
 .chip:hover { color: var(--text); border-color: var(--muted); }
 .chip.on { background: var(--accent); color: var(--on-accent); border-color: var(--accent); font-weight: 600; }
+/* WebUI.facets: a value no item would add under the other active filters. */
+.chip.is-facet-empty:not(.on) { opacity: .5; }
 .chip.kind-chip { border-color: var(--border); }
 .chip.kind-chip:hover {
   border-color: var(--border);
