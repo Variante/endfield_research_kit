@@ -73,17 +73,21 @@ import sys
 from collections import Counter
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Iterator
+from typing import Any
 
 from scripts.game_data import cabmap
+from scripts.game_data.unity_store import UnityObjectStore, UnityStoreError, is_store_file, open_store
 from scripts.repo_paths import REPO_ROOT
+from scripts.source_paths import ExportLayout
 
 
 SCHEMA = "endfield.monobehaviour-field-semantics.v1"
 
 DEFAULT_EXPORT_ROOT = REPO_ROOT / "export_full"
-UNITY_SUBPATH = Path("game") / "Unity"
-MONOBEHAVIOUR_SUBPATH = UNITY_SUBPATH / "MonoBehaviour"
+#: The swept Unity type. Its documents, like every exported object document,
+#: are rows of the export's ``game/Unity.sqlite`` store; ``game/Unity/<Type>/``
+#: keeps only converted media, which the PathID index still covers.
+MONOBEHAVIOUR_TYPE = "MonoBehaviour"
 
 # AnimeStudio spells the PathID into every exported filename as upper-case hex
 # of the unsigned 64-bit value. That is what makes a target lookup a dictionary
@@ -328,46 +332,57 @@ def _walk(
     entry.kinds["other"] += 1
 
 
-def _object_paths(root: Path) -> Iterator[Path]:
-    if not root.is_dir():
-        raise FieldSemanticsError(f"exported MonoBehaviour root not found: {root}")
-    with os.scandir(root) as entries:
-        for entry in entries:
-            if entry.is_file() and entry.name.endswith(".json"):
-                yield Path(entry.path)
+def _open_store(export_root: Path) -> UnityObjectStore:
+    try:
+        return open_store(Path(export_root))
+    except UnityStoreError as exc:
+        raise FieldSemanticsError(f"exported Unity object store not readable: {exc}") from exc
+
+
+def _loose_media_names(export_root: Path) -> dict[str, list[str]]:
+    """Converted media file names left loose under ``game/Unity/<Type>/``, by type."""
+
+    unity_root = ExportLayout(Path(export_root)).unity_dir
+    media: dict[str, list[str]] = {}
+    if not unity_root.is_dir():
+        return media
+    for type_dir in sorted(p for p in unity_root.iterdir() if p.is_dir()):
+        with os.scandir(type_dir) as entries:
+            names = [e.name for e in entries if e.is_file() and not is_store_file(e.name)]
+        if names:
+            media[type_dir.name] = names
+    return media
 
 
 def build_path_id_index(export_root: Path) -> tuple[dict[int, tuple[str, str]], dict[str, Any]]:
-    """Index every exported object's PathID to its type directory and filename.
+    """Index every exported object's PathID to its Unity type and exported file name.
 
-    This reads directory entries only. It is the cheap half of target
-    resolution, and its audit records the collision count, because the index is
-    usable as a key exactly to the extent that the export has none.
+    This reads names only: the object store's name column plus the loose
+    converted media. It is the cheap half of target resolution, and its audit
+    records the collision count, because the index is usable as a key exactly
+    to the extent that the export has none.
     """
 
-    unity_root = Path(export_root) / UNITY_SUBPATH
-    if not unity_root.is_dir():
-        raise FieldSemanticsError(f"exported Unity root not found: {unity_root}")
+    store = _open_store(export_root)
+    media = _loose_media_names(export_root)
 
     index: dict[int, tuple[str, str]] = {}
     per_type: Counter = Counter()
     collisions = 0
     unkeyed = 0
-    for type_dir in sorted(p for p in unity_root.iterdir() if p.is_dir()):
-        with os.scandir(type_dir) as entries:
-            for entry in entries:
-                if not entry.is_file():
-                    continue
-                match = PATH_ID_IN_FILENAME.search(entry.name)
-                if match is None:
-                    unkeyed += 1
-                    continue
-                path_id = _signed64(int(match.group(1), 16))
-                per_type[type_dir.name] += 1
-                if path_id in index:
-                    collisions += 1
-                    continue
-                index[path_id] = (type_dir.name, entry.name)
+    for type_name in sorted(set(store.types()) | set(media)):
+        names = sorted(set(store.names(type_name)) | set(media.get(type_name, ())))
+        for name in names:
+            match = PATH_ID_IN_FILENAME.search(name)
+            if match is None:
+                unkeyed += 1
+                continue
+            path_id = _signed64(int(match.group(1), 16))
+            per_type[type_name] += 1
+            if path_id in index:
+                collisions += 1
+                continue
+            index[path_id] = (type_name, name)
     audit = {
         "objectsIndexed": sum(per_type.values()),
         "distinctPathIds": len(index),
@@ -382,7 +397,9 @@ def _signed64(value: int) -> int:
     return value - (1 << 64) if value >= (1 << 63) else value
 
 
-def _target_identity(path: Path) -> tuple[str | None, int | None]:
+def _target_identity(
+    store: UnityObjectStore, export_root: Path, type_name: str, name: str
+) -> tuple[str | None, int | None]:
     """One exported object's source CAB and script identity, from its head.
 
     Both come out of the same read because a reference is checked and named at
@@ -393,9 +410,12 @@ def _target_identity(path: Path) -> tuple[str | None, int | None]:
     """
 
     try:
-        with path.open("rb") as handle:
-            head = handle.read(4096)
-    except OSError:
+        if is_store_file(name):
+            head = store.read_bytes(type_name, name)[:4096]
+        else:
+            with (ExportLayout(Path(export_root)).unity_type_dir(type_name) / name).open("rb") as handle:
+                head = handle.read(4096)
+    except (KeyError, OSError):
         return None, None
     source = re.search(rb'"sourceFile"\s*:\s*"([^"]*)"', head)
     script = re.search(rb'"scriptPathId"\s*:\s*(-?\d+)', head)
@@ -415,20 +435,20 @@ def sweep(
 
     from scripts.game_data.monobehaviour.census import layout_signature
 
-    root = Path(export_root) / MONOBEHAVIOUR_SUBPATH
+    store = _open_store(export_root)
     classes: dict[tuple[int | None, str], ClassStats] = {}
     scanned = 0
     unreadable = 0
 
-    for path in _object_paths(root):
+    for object_row, data in store.iter_documents(MONOBEHAVIOUR_TYPE, "*.json"):
         if limit is not None and scanned >= limit:
             break
         scanned += 1
         if progress and scanned % progress == 0:
             print(f"  swept {scanned} objects", file=sys.stderr, flush=True)
         try:
-            document = json.loads(path.read_bytes().decode("utf-8-sig"))
-        except (OSError, UnicodeError, json.JSONDecodeError):
+            document = json.loads(data.decode("utf-8-sig"))
+        except (UnicodeError, json.JSONDecodeError):
             unreadable += 1
             continue
         block = document.get("$animestudio")
@@ -446,7 +466,7 @@ def sweep(
         stats = classes.get(key)
         if stats is None:
             stats = ClassStats(script_path_id=key[0], layout_signature=key[1])
-            stats.example_file = path.name
+            stats.example_file = object_row.name
             classes[key] = stats
         stats.objects += 1
 
@@ -497,7 +517,7 @@ def resolve_targets(
     guessing at it, and the rows then say ``unresolved`` with that reason.
     """
 
-    unity_root = Path(export_root) / UNITY_SUBPATH
+    store = _open_store(export_root)
     names = names or {}
     resolved: dict[tuple[int | None, str], dict[str, dict[str, Any]]] = {}
     for key, stats in classes.items():
@@ -538,7 +558,7 @@ def resolve_targets(
                 if found is None:
                     continue
                 actual, target_script = _target_identity(
-                    unity_root / found[0] / found[1]
+                    store, export_root, found[0], found[1]
                 )
                 if target_script is not None:
                     target_classes[target_script] += 1
@@ -787,7 +807,12 @@ def main(argv: list[str] | None = None) -> int:
             "are references, what they resolve to, and how often they are filled."
         )
     )
-    parser.add_argument("--export-root", type=Path, default=DEFAULT_EXPORT_ROOT)
+    parser.add_argument(
+        "--export-root",
+        type=Path,
+        default=DEFAULT_EXPORT_ROOT,
+        help="export root: MonoBehaviour documents come from its game/Unity.sqlite object store",
+    )
     parser.add_argument(
         "--names-report",
         type=Path,

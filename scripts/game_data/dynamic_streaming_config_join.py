@@ -23,6 +23,7 @@ from scripts.game_data.dynamic_visibility_state_join import _scene_key, _selecte
 from scripts.game_data.extraction.verify_export_freshness import build_report
 from scripts.game_data.il2cpp.native_image import read_reviewed_contract
 from scripts.game_data.schemas.map_config import decode_map_config
+from scripts.game_data.unity_store import UnityObjectRow, UnityObjectStore, UnityStoreError, open_store
 from scripts.repo_paths import REPO_ROOT
 
 
@@ -152,14 +153,16 @@ def _asset_entries(asset_map: Path, expected: set[str]) -> dict[str, dict[str, A
     return entries
 
 
-def _objects_by_stem(object_dir: Path, stems: set[str]) -> dict[str, list[Path]]:
-    found: dict[str, list[Path]] = defaultdict(list)
-    for path in object_dir.iterdir():
-        if path.suffix != ".json" or "_p" not in path.stem:
-            continue
-        stem = path.stem.rsplit("_p", 1)[0].casefold()
-        if stem in stems:
-            found[stem].append(path)
+def _objects_by_stem(store: UnityObjectStore, stems: set[str]) -> dict[str, list[UnityObjectRow]]:
+    """Exported MonoBehaviour rows whose file name is ``<stem>_p<pathId>.json``, by casefolded stem."""
+    found: dict[str, list[UnityObjectRow]] = defaultdict(list)
+    for wanted in sorted({stem.casefold() for stem in stems}):
+        for row in store.rows("MonoBehaviour", f"{wanted}_p*.json"):
+            if not row.name.endswith(".json") or "_p" not in row.stem:
+                continue
+            stem = row.stem.rsplit("_p", 1)[0].casefold()
+            if stem == wanted and stem in stems:
+                found[stem].append(row)
     return found
 
 
@@ -261,20 +264,20 @@ def _vfs_streaming_scenes(
 
 
 def _check_object(
-    logical: str, row: dict[str, Any], candidate_paths: list[Path],
-) -> tuple[dict[str, Any], Path]:
-    matches: list[tuple[dict[str, Any], Path]] = []
-    for path in candidate_paths:
-        obj = json.loads(path.read_text(encoding="utf-8"))
+    logical: str, row: dict[str, Any], candidates: list[UnityObjectRow], store: UnityObjectStore,
+) -> tuple[dict[str, Any], UnityObjectRow]:
+    matches: list[tuple[dict[str, Any], UnityObjectRow]] = []
+    for candidate in candidates:
+        obj = json.loads(store.read_bytes(candidate.type, candidate.name).decode("utf-8"))
         meta = obj.get("$animestudio", {})
         if (meta.get("pathId") == row.get("PathID")
                 and str(meta.get("sourceOriginalPath", "")).casefold() == str(row.get("Source", "")).casefold()):
-            matches.append((obj, path))
+            matches.append((obj, candidate))
     if len(matches) != 1:
         raise DynamicStreamingConfigJoinError(
             f"{logical}: expected one exported object by Source+PathID, found {len(matches)}"
         )
-    obj, path = matches[0]
+    obj, object_row = matches[0]
     scene, filename = logical.split("/", 1)
     stem = filename.removesuffix(".asset")
     fields = tuple(key for key in obj if key != "$animestudio")
@@ -288,7 +291,7 @@ def _check_object(
             or obj.get("streamingDataPathRoot", "").casefold()
             != f"Data/Streaming/PC/{scene}".casefold()):
         raise DynamicStreamingConfigJoinError(f"{logical}: exported StreamingMapConfig shape/path differs")
-    return obj, path
+    return obj, object_row
 
 
 def audit(
@@ -321,7 +324,11 @@ def audit(
     indexed, all_class_keys = _indexed_scripts(object_index, assets)
     streaming_file_counts = _vfs_streaming_scenes(vfs_ledger, expected_input_set_sha256)
     stems = {PurePosixPath(container).stem for container in assets}
-    objects = _objects_by_stem(export_root / "game/Unity/MonoBehaviour", stems)
+    try:
+        store = open_store(export_root)
+    except UnityStoreError as exc:
+        raise DynamicStreamingConfigJoinError(f"export Unity object store is unavailable: {exc}") from exc
+    objects = _objects_by_stem(store, stems)
     scene_main_counts: Counter[str] = Counter()
     for file in main["files"]:
         scene = _scene_key(file["path"])
@@ -333,7 +340,7 @@ def audit(
     for container, asset in sorted(assets.items()):
         logical = container.removeprefix(prefix)
         map_ids = by_path.get(logical, [])
-        obj, path = _check_object(logical, asset, objects.get(PurePosixPath(logical).stem, []))
+        obj, object_row = _check_object(logical, asset, objects.get(PurePosixPath(logical).stem, []), store)
         indexed_row = indexed[(_asset_source_key(asset["Source"]), asset["PathID"])]
         script = indexed_row.get("script") or {}
         if (indexed_row.get("type") != "MonoBehaviour"
@@ -353,8 +360,8 @@ def audit(
             "assetContainer": asset["Container"],
             "assetSource": asset["Source"],
             "assetPathId": asset["PathID"],
-            "exportedObject": str(path.relative_to(export_root)).replace("\\", "/"),
-            "exportedObjectSha256": sha256_file(path).upper(),
+            "exportedObject": object_row.ref,
+            "exportedObjectSha256": object_row.sha256.upper(),
             "monoScriptClass": script["fullName"],
             "mapSceneName": obj["mapSceneName"],
             "exportScenePathRoot": obj["exportScenePathRoot"],

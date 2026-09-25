@@ -41,6 +41,7 @@ from scripts.game_data.dynamic_system_routing_native import (
 from scripts.game_data.extraction.verify_export_freshness import DEFAULT_SUMMARY, build_report as export_freshness_report
 from scripts.game_data.il2cpp.native_image import open_native_image, read_reviewed_contract
 from scripts.game_data.il2cpp.context import generic_type_carrier, literal_record, unresolved_usage_index
+from scripts.game_data.unity_store import UnityStoreError, open_store
 from scripts.game_data.il2cpp.protocol import (
     field_defaults, native_enum_members, read_compressed_int32, runtime_type_field_offsets,
 )
@@ -1159,11 +1160,15 @@ def load_current_template_asset(
     asset_map = _template_asset_map_row(map_path, container)
     if asset_map.get("Type") != "MonoBehaviour" or asset_map.get("Name") != "DynamicSceneTemplates":
         raise DynamicRootCompError("DynamicSceneTemplates asset map type/name differs")
-    candidates = list((export_root / "game/Unity/MonoBehaviour").glob("DynamicSceneTemplates_p*.json"))
+    try:
+        store = open_store(export_root)
+    except UnityStoreError as exc:
+        raise DynamicRootCompError(f"DynamicSceneTemplates export object store is unavailable: {exc}") from exc
+    candidates = store.rows("MonoBehaviour", "DynamicSceneTemplates_p*.json")
     if len(candidates) != 1:
         raise DynamicRootCompError(f"DynamicSceneTemplates exported object count differs: {len(candidates)}")
-    object_path = candidates[0]
-    asset = json.loads(object_path.read_text(encoding="utf-8"))
+    object_row = candidates[0]
+    asset = json.loads(store.read_bytes(object_row.type, object_row.name).decode("utf-8"))
     meta = asset.get("$animestudio")
     if not isinstance(meta, dict) or (meta.get("type"), meta.get("classId"), meta.get("name")) != ("MonoBehaviour", 114, asset_map["Name"]):
         raise DynamicRootCompError("DynamicSceneTemplates exported MonoBehaviour identity differs")
@@ -1187,11 +1192,11 @@ def load_current_template_asset(
             or any(character not in "0123456789abcdefABCDEF" for character in meta["rawDataSha256"])):
         raise DynamicRootCompError("DynamicSceneTemplates raw object provenance is incomplete")
     manifest_path = export_root / "meta/StreamingAssets/export_manifest/StreamingAssets_animestudio_json_by_type_MonoBehaviour.jsonl"
-    expected_output = "MonoBehaviour/" + object_path.name
+    expected_output = "MonoBehaviour/" + object_row.name
     manifest_rows = []
     with manifest_path.open("r", encoding="utf-8") as manifest:
         for line in manifest:
-            if object_path.name in line:
+            if object_row.name in line:
                 row = json.loads(line)
                 if row.get("kind") == "output" and row.get("output") == expected_output:
                     manifest_rows.append(row)
@@ -1211,8 +1216,8 @@ def load_current_template_asset(
     templates = _template_rows(asset, entity_enum, data_enum)
     return templates, {
         "assetPath": selected["templateAssetPath"],
-        "exportObject": str(object_path.relative_to(export_root)).replace("\\", "/"),
-        "exportObjectSha256": sha256_file(object_path).upper(),
+        "exportObject": object_row.ref,
+        "exportObjectSha256": object_row.sha256.upper(),
         "source": str(source_path),
         "sourceOffset": meta["sourceOffset"],
         "pathId": meta["pathId"],

@@ -36,25 +36,20 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Iterator
 
+from scripts.game_data.unity_store import UnityObjectStore, UnityStoreError, open_store, store_path
 from scripts.repo_paths import REPO_ROOT
 
 
 SCHEMA = "endfield.monobehaviour-script-census.v1"
 
 DEFAULT_EXPORT_ROOT = REPO_ROOT / "export_full"
-UNITY_SUBPATH = Path("game") / "Unity" / "MonoBehaviour"
-
-# The export writes the ``$animestudio`` block first, so a bounded head read
-# reaches the layout for almost every object. ``scriptPathId`` trails the
-# PPtr reference list and can sit past it, which is why a head miss escalates
-# to a full read instead of being recorded as absent.
-HEAD_BYTES = 1 << 16
+#: The Unity type the census sweeps in the export's object store.
+MONOBEHAVIOUR_TYPE = "MonoBehaviour"
 
 
 class CensusError(RuntimeError):
@@ -116,33 +111,25 @@ def top_level_field_names(field_paths: list[str]) -> list[str]:
     return names
 
 
-def _object_paths(root: Path) -> Iterator[Path]:
-    if not root.is_dir():
-        raise CensusError(f"exported MonoBehaviour root not found: {root}")
-    with os.scandir(root) as entries:
-        for entry in entries:
-            if entry.is_file() and entry.name.endswith(".json"):
-                yield Path(entry.path)
+def _open_store(export_root: Path) -> UnityObjectStore:
+    try:
+        return open_store(Path(export_root))
+    except UnityStoreError as exc:
+        raise CensusError(f"exported Unity object store not readable: {exc}") from exc
 
 
-def _read_metadata(path: Path) -> dict[str, Any] | None:
-    """Return one object's ``$animestudio`` block, escalating a head miss.
+def _object_documents(store: UnityObjectStore) -> Iterator[tuple[str, bytes]]:
+    """Every exported MonoBehaviour JSON document, streamed in name order."""
 
-    Reading the head keeps the sweep bounded on a corpus this size, but a head
-    that does not contain the whole block must fall back to a full read rather
-    than report a missing field that is present on disk.
-    """
+    for row, data in store.iter_documents(MONOBEHAVIOUR_TYPE, "*.json"):
+        yield row.name, data
+
+
+def _read_metadata(data: bytes) -> dict[str, Any] | None:
+    """Return one object's ``$animestudio`` block, or None for an unreadable document."""
 
     try:
-        with path.open("rb") as handle:
-            head = handle.read(HEAD_BYTES)
-            complete = len(head) < HEAD_BYTES
-            if not complete:
-                head = head + handle.read()
-    except OSError:
-        return None
-    try:
-        document = json.loads(head.decode("utf-8-sig"))
+        document = json.loads(data.decode("utf-8-sig"))
     except (UnicodeError, json.JSONDecodeError):
         return None
     block = document.get("$animestudio")
@@ -172,19 +159,19 @@ def census(
 ) -> dict[str, Any]:
     """Group every exported MonoBehaviour by its serialized script identity."""
 
-    root = Path(export_root) / UNITY_SUBPATH
+    store = _open_store(export_root)
     classes: dict[tuple[int | None, str], ScriptClass] = {}
     by_signature: dict[str, set[int | None]] = {}
     scanned = 0
     unreadable = 0
 
-    for path in _object_paths(root):
+    for name, data in _object_documents(store):
         if limit is not None and scanned >= limit:
             break
         scanned += 1
         if progress and scanned % progress == 0:
             print(f"  scanned {scanned} objects", file=sys.stderr, flush=True)
-        block = _read_metadata(path)
+        block = _read_metadata(data)
         if block is None:
             unreadable += 1
             continue
@@ -208,7 +195,7 @@ def census(
                 layout_signature=signature,
                 field_paths=field_paths,
                 type_tree_node_count=int(block.get("typeTreeNodeCount") or 0),
-                example_file=path.name,
+                example_file=name,
             )
             classes[key] = row
         row.objects += 1
@@ -269,7 +256,8 @@ def build_report(
     return {
         "schema": SCHEMA,
         "exportRoot": str(export_root),
-        "monoBehaviourRoot": str(Path(export_root) / UNITY_SUBPATH),
+        "unityStore": str(store_path(export_root)),
+        "unityType": MONOBEHAVIOUR_TYPE,
         "limit": limit,
         "summary": summary,
         "classes": [row.row(max_sources=max_sources, max_fields=max_fields) for row in rows],
@@ -283,7 +271,12 @@ def main(argv: list[str] | None = None) -> int:
             "identity and report each class's field layout and object count."
         )
     )
-    parser.add_argument("--export-root", type=Path, default=DEFAULT_EXPORT_ROOT)
+    parser.add_argument(
+        "--export-root",
+        type=Path,
+        default=DEFAULT_EXPORT_ROOT,
+        help="export root whose game/Unity.sqlite object store holds the MonoBehaviour documents",
+    )
     parser.add_argument(
         "--limit",
         type=int,
